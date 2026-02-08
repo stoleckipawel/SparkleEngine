@@ -233,7 +233,14 @@ for /L %%I in (1,1,%DEP_COUNT%) do (
     set "DEP_PATH=!DEPS_DIR!\!DEP_ID!-src"
 
     if exist "!DEP_PATH!\*" (
-        echo [OK]   !DEP_DISPLAY!
+        :: Verify this is a valid git repo (catches interrupted clones)
+        git -C "!DEP_PATH!" rev-parse --is-inside-work-tree >nul 2>&1
+        if errorlevel 1 (
+            echo [ERROR] !DEP_DISPLAY! — corrupt or incomplete clone after sync
+            set /A "STILL_MISSING+=1"
+        ) else (
+            echo [OK]   !DEP_DISPLAY!
+        )
     ) else (
         echo [WARN] !DEP_DISPLAY! still missing
         set /A "STILL_MISSING+=1"

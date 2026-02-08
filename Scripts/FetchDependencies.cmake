@@ -38,6 +38,9 @@ set(FETCHCONTENT_QUIET OFF)
 set(ENV{GIT_LFS_SKIP_SMUDGE} 1)
 set(ENV{GIT_CONFIG_PARAMETERS} "'filter.lfs.process=' 'filter.lfs.smudge=' 'filter.lfs.clean=' 'filter.lfs.required=false'")
 
+# Locate git once — used by recovery loop and compressonator sparse checkout.
+find_program(_git_exe git REQUIRED)
+
 message(STATUS "")
 message(STATUS "=== Fetching Third-Party Dependencies ===")
 message(STATUS "")
@@ -80,7 +83,6 @@ foreach(_dep imgui cgltf stb ktx)
         string(TOUPPER "${_dep}" _dep_upper)
         if("${FETCHCONTENT_SOURCE_DIR_${_dep_upper}}" STREQUAL "")
             # Ensure checkout is complete (may have been interrupted by LFS errors).
-            find_program(_git_exe git REQUIRED)
             execute_process(
                 COMMAND "${_git_exe}" reset --hard HEAD
                 WORKING_DIRECTORY "${_src_dir}"
@@ -225,7 +227,6 @@ if(NOT EXISTS "${_comp_src}/cmp_core/source/cmp_core.cpp")
     # --sparse            = enable sparse checkout (only materialize listed paths)
     # --depth=1           = shallow (single commit, no history)
     file(REMOVE_RECURSE "${_comp_src}")
-    find_program(_git_exe git REQUIRED)
 
     message(STATUS "    Cloning (partial + sparse)...")
     execute_process(

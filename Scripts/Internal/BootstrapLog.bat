@@ -12,7 +12,7 @@
 ::   LOGFILE       - Absolute path to the current session's log file
 :: ============================================================================
 
-setlocal
+setlocal enabledelayedexpansion
 
 :: Guard: Already capturing - nothing to do
 if defined LOG_CAPTURED (
@@ -28,7 +28,21 @@ if "%~1"=="" (
 )
 
 set "CALLER=%~1"
+
+:: ---------------------------------------------------------------------------
+:: Build remaining arguments (everything after the caller path)
+:: ---------------------------------------------------------------------------
+:: CRITICAL: In batch, %* does NOT update after shift — it always contains
+:: the full original argument list including %1. We must rebuild the remaining
+:: args manually to avoid passing the caller path as %1 to the re-invoked script.
+set "REMAINING_ARGS="
 shift
+:COLLECT_ARGS
+if "%~1"=="" goto :ARGS_READY
+set "REMAINING_ARGS=!REMAINING_ARGS! %1"
+shift
+goto :COLLECT_ARGS
+:ARGS_READY
 
 :: ---------------------------------------------------------------------------
 :: Resolve repository root directory
@@ -65,7 +79,8 @@ set "LOGFILE=%LOG_DIR%\logTools_%TS%.txt"
 :: ---------------------------------------------------------------------------
 :: Exports LOG_CAPTURED and LOGFILE so the re-invoked script skips bootstrap.
 :: Use double-double quotes for CMD-safe escaping within PowerShell string.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:LOG_CAPTURED='1'; $env:LOGFILE='%LOGFILE%'; & cmd /c '\""%CALLER%\"" %*' 2>&1 | Tee-Object -FilePath '%LOGFILE%'; exit $LASTEXITCODE"
+:: REMAINING_ARGS is used instead of %* to avoid passing the caller path as %1.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:LOG_CAPTURED='1'; $env:LOGFILE='!LOGFILE!'; & cmd /c '\"\"!CALLER!\"\"!REMAINING_ARGS!' 2>&1 | Tee-Object -FilePath '!LOGFILE!'; exit $LASTEXITCODE"
 set "RC=%ERRORLEVEL%"
 
 :: Copy to a stable "latest" log for easy access

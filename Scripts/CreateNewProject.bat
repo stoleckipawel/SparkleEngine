@@ -121,16 +121,25 @@ if errorlevel 1 (
     goto :FINISH
 )
 
-:: ---------------------------------------------------------------------------
-:: Replace __PROJECT_NAME__ placeholder in all files
-:: ---------------------------------------------------------------------------
-echo [LOG] Configuring project files...
+:: Ensure the project marker exists (template should have one, but guarantee it)
+if not exist "!PROJECT_DIR!\.sparkle-project" (
+    echo.> "!PROJECT_DIR!\.sparkle-project"
+    echo [LOG] Created .sparkle-project marker.
+)
 
-:: Process CMakeLists.txt
-call :REPLACE_PLACEHOLDER "!PROJECT_DIR!\CMakeLists.txt"
+:: ---------------------------------------------------------------------------
+:: Replace __PROJECT_NAME__ placeholder in all project files
+:: ---------------------------------------------------------------------------
+:: Recursively process all text files so adding new template files
+:: with placeholders "just works" without updating this script.
+echo [LOG] Configuring project files ^(replacing __PROJECT_NAME__^)...
 
-:: Process main.cpp
-call :REPLACE_PLACEHOLDER "!PROJECT_DIR!\src\main.cpp"
+for /R "!PROJECT_DIR!" %%F in (*.txt *.cmake *.cpp *.h *.hlsl *.hlsli *.json *.md) do (
+    findstr /M /C:"__PROJECT_NAME__" "%%F" >nul 2>&1
+    if not errorlevel 1 (
+        call :REPLACE_PLACEHOLDER "%%F"
+    )
+)
 
 :: ---------------------------------------------------------------------------
 :: Success message

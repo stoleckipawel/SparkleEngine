@@ -25,6 +25,11 @@
 setlocal enabledelayedexpansion
 
 :: ---------------------------------------------------------------------------
+:: Map CONTINUE argument to PARENT_BATCH (suppresses pause on exit)
+:: ---------------------------------------------------------------------------
+if /I "%~1"=="CONTINUE" if not defined PARENT_BATCH set "PARENT_BATCH=1"
+
+:: ---------------------------------------------------------------------------
 :: Logging bootstrap
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
@@ -52,9 +57,13 @@ echo.
 where cmake >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] CMake not found. Install CMake and add to PATH.
+    echo         Download: https://cmake.org/download/
     set "RC=1"
 ) else (
-    echo [OK] CMake
+    :: Show version for diagnostics (min required: 3.24 for FetchContent)
+    for /f "tokens=3" %%V in ('cmake --version 2^>nul ^| findstr /i "cmake version"') do (
+        echo [OK] CMake %%V
+    )
 )
 
 :: ---------------------------------------------------------------------------
@@ -62,10 +71,32 @@ if errorlevel 1 (
 :: ---------------------------------------------------------------------------
 where msbuild >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] MSBuild not found. Install Visual Studio C++ workload.
+    echo [ERROR] MSBuild not found. Install Visual Studio with C++ workload.
+    echo         Run Visual Studio Installer ^> Modify ^> Desktop development with C++.
     set "RC=1"
 ) else (
     echo [OK] MSBuild
+)
+
+:: ---------------------------------------------------------------------------
+:: Required: Visual Studio 2022+ with C++ workload
+:: ---------------------------------------------------------------------------
+:: vswhere is shipped with VS2022 at a known path. Check for it to give
+:: better guidance when the C++ workload is missing.
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if exist "!VSWHERE!" (
+    :: Check for Desktop C++ workload (Microsoft.VisualStudio.Workload.NativeDesktop)
+    "!VSWHERE!" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath >nul 2>&1
+    if errorlevel 1 (
+        echo [ERROR] Visual Studio C++ tools not found.
+        echo         Run Visual Studio Installer ^> Modify ^> Desktop development with C++.
+        set "RC=1"
+    ) else (
+        echo [OK] Visual Studio C++ tools
+    )
+) else (
+    echo [WARN] vswhere not found — cannot verify Visual Studio installation.
+    echo        Ensure Visual Studio 2022+ with C++ workload is installed.
 )
 
 :: ---------------------------------------------------------------------------
@@ -104,18 +135,23 @@ if errorlevel 1 (
 where git >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] git not found. Required for third-party dependency fetching.
+    echo         Download: https://git-scm.com/download/win
     set "RC=1"
 ) else (
-    echo [OK] git
+    for /f "tokens=3" %%V in ('git --version 2^>nul') do (
+        echo [OK] git %%V
+    )
 )
 
 :: ---------------------------------------------------------------------------
-:: Required: git-lfs (for Compressonator and KTX repos)
+:: Optional: git-lfs
 :: ---------------------------------------------------------------------------
+:: LFS is NOT required — FetchDependencies.cmake sets GIT_LFS_SKIP_SMUDGE=1
+:: and overrides the LFS filter commands to prevent multi-GB downloads.
+:: Having git-lfs installed is harmless but not needed.
 where git-lfs >nul 2>&1
 if errorlevel 1 (
-    echo [WARN] git-lfs not found. Some third-party repos may fail to clone.
-    echo         Install Git LFS: https://git-lfs.github.com/
+    echo [WARN] git-lfs not found. Not required ^(LFS is skipped during fetch^).
 ) else (
     echo [OK] git-lfs
 )

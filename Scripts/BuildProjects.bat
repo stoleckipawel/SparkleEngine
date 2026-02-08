@@ -30,6 +30,10 @@ if not defined LOG_CAPTURED (
 :: ---------------------------------------------------------------------------
 call "%~dp0Internal\Config.bat"
 
+:: Initialize exit code (set explicitly on all paths, but default to failure
+:: so any missed path fails safe instead of silently succeeding)
+set "EXIT_RC=1"
+
 :: ---------------------------------------------------------------------------
 :: Step 0: Check third-party dependencies are synced
 :: ---------------------------------------------------------------------------
@@ -40,7 +44,8 @@ set "TP_RC=!ERRORLEVEL!"
 set "PARENT_BATCH="
 if "!TP_RC!" NEQ "0" (
     echo [ERROR] Third-party dependency check failed.
-    set "OVERALL_RC=1"
+    echo         Run Scripts\CheckThirdParty.bat standalone for details.
+    set "EXIT_RC=1"
     goto :FINISH
 )
 
@@ -61,7 +66,7 @@ for /D %%P in ("!PROJECTS_DIR!\*") do (
 if "!PROJECT_COUNT!"=="0" (
     echo [ERROR] No projects found in Projects\ folder.
     echo         Create a project using CreateNewProject.bat
-    set "OVERALL_RC=1"
+    set "EXIT_RC=1"
     goto :FINISH
 )
 
@@ -159,7 +164,7 @@ echo [LOG] Selected configuration: !CONFIG!
 set "IMPL_SCRIPT=%~dp0Internal\BuildProjectsImpl.bat"
 if not exist "!IMPL_SCRIPT!" (
     echo [ERROR] Missing: Scripts\Internal\BuildProjectsImpl.bat
-    set "OVERALL_RC=1"
+    set "EXIT_RC=1"
     goto :FINISH
 )
 
@@ -168,7 +173,7 @@ if not exist "!IMPL_SCRIPT!" (
 :: ---------------------------------------------------------------------------
 set "PARENT_BATCH=1"
 set "HAS_SUCCESS=0"
-set "OVERALL_RC=0"
+set "EXIT_RC=0"
 
 if /I "!CONFIG!"=="All" (
     :: Track per-configuration results for launch prompt
@@ -189,13 +194,13 @@ if /I "!CONFIG!"=="All" (
             set "HAS_SUCCESS=1"
         ) else (
             echo [ERROR] %%C build failed with code !CFG_RC!
-            set "OVERALL_RC=!CFG_RC!"
+            set "EXIT_RC=!CFG_RC!"
         )
     )
 ) else (
     call "!IMPL_SCRIPT!" !CONFIG! "!SELECTED_PROJECT!"
-    set "OVERALL_RC=!ERRORLEVEL!"
-    if "!OVERALL_RC!"=="0" set "HAS_SUCCESS=1"
+    set "EXIT_RC=!ERRORLEVEL!"
+    if "!EXIT_RC!"=="0" set "HAS_SUCCESS=1"
 )
 
 set "PARENT_BATCH="
@@ -203,29 +208,28 @@ set "PARENT_BATCH="
 :: ---------------------------------------------------------------------------
 :: Optional: Launch built executable
 :: ---------------------------------------------------------------------------
-if "!HAS_SUCCESS!"=="1" (
-    echo.
-    echo ============================================================
-    echo   Launch Executable?
-    echo ============================================================
-    echo.
-    echo   Y^) Yes - Launch the built executable
-    echo   N^) No  - Exit without launching
-    echo.
-    echo ============================================================
-    
-    :LAUNCH_PROMPT
-    set "LAUNCH_SEL="
-    set /P "LAUNCH_SEL=Enter choice [Y/N]: "
-    
-    if /I "!LAUNCH_SEL!"=="Y" goto :DO_LAUNCH
-    if /I "!LAUNCH_SEL!"=="N" goto :SKIP_LAUNCH
-    if "!LAUNCH_SEL!"=="" goto :SKIP_LAUNCH
-    
-    echo [WARN] Invalid input. Please enter Y or N.
-    goto :LAUNCH_PROMPT
-)
-goto :SKIP_LAUNCH
+if "!HAS_SUCCESS!" NEQ "1" goto :SKIP_LAUNCH
+
+echo.
+echo ============================================================
+echo   Launch Executable?
+echo ============================================================
+echo.
+echo   Y^) Yes - Launch the built executable
+echo   N^) No  - Exit without launching
+echo.
+echo ============================================================
+
+:LAUNCH_PROMPT
+set "LAUNCH_SEL="
+set /P "LAUNCH_SEL=Enter choice [Y/N]: "
+
+if /I "!LAUNCH_SEL!"=="Y" goto :DO_LAUNCH
+if /I "!LAUNCH_SEL!"=="N" goto :SKIP_LAUNCH
+if "!LAUNCH_SEL!"=="" goto :SKIP_LAUNCH
+
+echo [WARN] Invalid input. Please enter Y or N.
+goto :LAUNCH_PROMPT
 
 :DO_LAUNCH
 :: Determine output directory based on configuration
@@ -281,7 +285,7 @@ goto :FINISH
 :: ============================================================================
 :FINISH
 set "_TMP_LOGFILE=%LOGFILE%"
-set "_TMP_RC=%OVERALL_RC%"
+set "_TMP_RC=%EXIT_RC%"
 endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
 
 if defined PARENT_BATCH (

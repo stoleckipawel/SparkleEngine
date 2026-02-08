@@ -59,7 +59,8 @@ set "PARENT_BATCH="
 if "!DEP_RC!" NEQ "0" (
     echo.
     echo [ERROR] Required build tools are missing.
-    echo         Install the missing tools listed above and re-run Setup.bat.
+    echo         Install the tools marked [ERROR] above, then re-run Setup.bat.
+    echo         For details: Scripts\CheckDependencies.bat
     set "EXIT_RC=1"
     goto :FINISH
 )
@@ -79,6 +80,10 @@ if "!TP_RC!" NEQ "0" (
     echo.
     echo [ERROR] Third-party dependency fetch failed.
     echo         Check the output above for errors.
+    echo         Possible fixes:
+    echo           - Verify internet connection
+    echo           - Clean corrupt deps: Scripts\Clean.bat DEPS
+    echo           - Manual sync:        Scripts\CheckThirdParty.bat
     set "EXIT_RC=1"
     goto :FINISH
 )
@@ -90,60 +95,31 @@ echo.
 echo [LOG] Step 3/3: Generating Visual Studio solution...
 echo.
 
-:: Extract project name for solution file check
-set "PROJECT_NAME="
-for /f "tokens=2 delims=( " %%P in ('findstr /i "project(" "!ROOT_DIR!\CMakeLists.txt"') do (
-    set "RAW_NAME=%%P"
-)
-for /f "delims=) tokens=1" %%A in ("!RAW_NAME!") do set "PROJECT_NAME=%%A"
-set "PROJECT_NAME=!PROJECT_NAME: =!"
-set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.sln"
+:: Delegate to GenerateProjectFiles.bat — single source of truth for cmake
+:: invocation, toolset detection, and solution generation.
+set "PARENT_BATCH=1"
+call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
+set "GEN_RC=!ERRORLEVEL!"
+set "PARENT_BATCH="
 
-:: Only generate if solution doesn't exist or CMakeCache is missing
-if exist "!SOLUTION_FILE!" (
-    if exist "!BUILD_DIR!\CMakeCache.txt" (
-        echo [OK]   Solution already exists: !SOLUTION_FILE!
-        echo [LOG] Skipping generation — solution is up to date.
-        goto :SETUP_COMPLETE
-    )
-)
-
-:: Run cmake configure
-if not exist "!BUILD_DIR!" mkdir "!BUILD_DIR!"
-
-pushd "!BUILD_DIR!"
-if "!USE_CLANG!"=="1" (
-    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -T ClangCL
-    cmake -G "!GENERATOR!" -A !ARCH! -T ClangCL "!ROOT_DIR!"
-) else (
-    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH!
-    cmake -G "!GENERATOR!" -A !ARCH! "!ROOT_DIR!"
-)
-set "CMAKE_RC=!ERRORLEVEL!"
-popd
-
-if "!CMAKE_RC!" NEQ "0" (
+if "!GEN_RC!" NEQ "0" (
     echo.
-    echo [ERROR] CMake generation failed.
+    echo [ERROR] Solution generation failed.
+    echo         Check the CMake output above for the root cause.
+    echo         Possible fixes:
+    echo           - Clean stale cache: Scripts\Clean.bat BUILD
+    echo           - Full reset:        Scripts\Clean.bat ALL
     set "EXIT_RC=1"
     goto :FINISH
 )
 
-echo [LOG] Solution generated: !SOLUTION_FILE!
-
 :: ---------------------------------------------------------------------------
 :: Setup complete
 :: ---------------------------------------------------------------------------
-:SETUP_COMPLETE
 echo.
 echo ============================================================
 echo   [SUCCESS] Setup Complete
 echo ============================================================
-echo.
-echo   Next steps:
-echo     1. Open build\!PROJECT_NAME!.sln in Visual Studio
-echo     2. Set DemoProject as startup project
-echo     3. Build and run ^(F5^)
 echo.
 echo   Useful scripts:
 echo     GenerateProjectFiles.bat  - Regenerate VS solution
@@ -153,6 +129,36 @@ echo     Clean.bat                 - Clean build artifacts
 echo.
 echo ============================================================
 
+:: ---------------------------------------------------------------------------
+:: Prompt to open VS solution (Setup.bat is always interactive)
+:: ---------------------------------------------------------------------------
+echo.
+echo ============================================================
+echo   Open Visual Studio?
+echo ============================================================
+echo.
+echo   Y^) Yes - Open !PROJECT_NAME!.sln in Visual Studio
+echo   N^) No  - Exit
+echo.
+echo ============================================================
+
+:OPEN_VS_PROMPT
+set "OPEN_VS="
+set /P "OPEN_VS=Enter choice [Y/N]: "
+
+if /I "!OPEN_VS!"=="Y" (
+    echo.
+    echo [LOG] Opening: !SOLUTION_FILE!
+    start "" "!SOLUTION_FILE!"
+    goto :AFTER_VS_PROMPT
+)
+if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT
+if "!OPEN_VS!"=="" goto :AFTER_VS_PROMPT
+
+echo [WARN] Invalid input. Please enter Y or N.
+goto :OPEN_VS_PROMPT
+
+:AFTER_VS_PROMPT
 set "EXIT_RC=0"
 goto :FINISH
 

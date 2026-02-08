@@ -153,50 +153,24 @@ if "!CLEAN_MODE!"=="PRISTINE" goto :CLEAN_PRISTINE
 :: Mode: Build artifacts only (preserve _deps/)
 :: ---------------------------------------------------------------------------
 :CLEAN_BUILD_ONLY
-
-:: Remove bin/
-if exist "!BIN_DIR!" (
-    echo [CLEAN] Removing: bin\
-    rmdir /S /Q "!BIN_DIR!" 2>nul
-    if exist "!BIN_DIR!" (
-        echo [ERROR] Failed to remove: bin\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove .vs/
-if exist "!ROOT_DIR!\.vs" (
-    echo [CLEAN] Removing: .vs\
-    rmdir /S /Q "!ROOT_DIR!\.vs" 2>nul
-    if exist "!ROOT_DIR!\.vs" (
-        echo [ERROR] Failed to remove: .vs\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
+call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 
 :: Remove build/ contents EXCEPT _deps/
 if exist "!BUILD_DIR!" (
-    :: Remove files in build/ root
     echo [CLEAN] Removing: build\ contents ^(preserving _deps/^)
     for %%F in ("!BUILD_DIR!\*") do (
         del /F /Q "%%F" 2>nul
     )
-    :: Remove subdirectories except _deps
     for /D %%D in ("!BUILD_DIR!\*") do (
         if /I "%%~nxD" NEQ "_deps" (
-            echo [CLEAN] Removing: build\%%~nxD\
-            rmdir /S /Q "%%D" 2>nul
-            if exist "%%D" (
-                echo [ERROR] Failed to remove: build\%%~nxD\  ^(files may be locked^)
-                set /A "CLEAN_ERRORS+=1"
-            )
+            call :REMOVE_DIR "%%D" "build\%%~nxD\"
         ) else (
             echo [SKIP]  Preserving: build\_deps\
         )
     )
 )
 
-:: Remove VS project files from root
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
 
@@ -221,16 +195,7 @@ if "!DIR_COUNT!"=="0" (
 
 :: Remove each subdirectory individually for better error reporting
 for /D %%D in ("!DEPS_DIR!\*") do (
-    echo [CLEAN] Removing: _deps\%%~nxD
-    rmdir /S /Q "%%D" 2>nul
-    if exist "%%D" (
-        :: Retry with cmd /c in case of path length issues
-        cmd /c "rmdir /S /Q "%%D"" 2>nul
-        if exist "%%D" (
-            echo [ERROR] Failed to remove: %%~nxD  ^(files may be locked^)
-            set /A "CLEAN_ERRORS+=1"
-        )
-    )
+    call :REMOVE_DIR "%%D" "_deps\%%~nxD"
 )
 
 :: Remove _deps directory itself if empty
@@ -246,42 +211,9 @@ goto :CLEAN_SUMMARY
 :: Mode: Everything (full clean)
 :: ---------------------------------------------------------------------------
 :CLEAN_ALL
-
-:: Remove build/ entirely
-if exist "!BUILD_DIR!" (
-    echo [CLEAN] Removing: build\
-    rmdir /S /Q "!BUILD_DIR!" 2>nul
-    if exist "!BUILD_DIR!" (
-        :: Retry with cmd /c for long path issues
-        cmd /c "rmdir /S /Q "!BUILD_DIR!"" 2>nul
-        if exist "!BUILD_DIR!" (
-            echo [ERROR] Failed to remove: build\  ^(files may be locked^)
-            set /A "CLEAN_ERRORS+=1"
-        )
-    )
-)
-
-:: Remove bin/
-if exist "!BIN_DIR!" (
-    echo [CLEAN] Removing: bin\
-    rmdir /S /Q "!BIN_DIR!" 2>nul
-    if exist "!BIN_DIR!" (
-        echo [ERROR] Failed to remove: bin\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove .vs/
-if exist "!ROOT_DIR!\.vs" (
-    echo [CLEAN] Removing: .vs\
-    rmdir /S /Q "!ROOT_DIR!\.vs" 2>nul
-    if exist "!ROOT_DIR!\.vs" (
-        echo [ERROR] Failed to remove: .vs\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove VS project files and CMake artifacts from root
+call :REMOVE_DIR "!BUILD_DIR!" "build\"
+call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
 
@@ -289,57 +221,38 @@ goto :CLEAN_SUMMARY
 :: Mode: Pristine (nuclear — returns to freshly-cloned state)
 :: ---------------------------------------------------------------------------
 :CLEAN_PRISTINE
-
-:: Remove build/ entirely
-if exist "!BUILD_DIR!" (
-    echo [CLEAN] Removing: build\
-    rmdir /S /Q "!BUILD_DIR!" 2>nul
-    if exist "!BUILD_DIR!" (
-        cmd /c "rmdir /S /Q "!BUILD_DIR!"" 2>nul
-        if exist "!BUILD_DIR!" (
-            echo [ERROR] Failed to remove: build\  ^(files may be locked^)
-            set /A "CLEAN_ERRORS+=1"
-        )
-    )
-)
-
-:: Remove bin/
-if exist "!BIN_DIR!" (
-    echo [CLEAN] Removing: bin\
-    rmdir /S /Q "!BIN_DIR!" 2>nul
-    if exist "!BIN_DIR!" (
-        echo [ERROR] Failed to remove: bin\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove .vs/
-if exist "!ROOT_DIR!\.vs" (
-    echo [CLEAN] Removing: .vs\
-    rmdir /S /Q "!ROOT_DIR!\.vs" 2>nul
-    if exist "!ROOT_DIR!\.vs" (
-        echo [ERROR] Failed to remove: .vs\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove logs/
-if exist "!ROOT_DIR!\logs" (
-    echo [CLEAN] Removing: logs\
-    rmdir /S /Q "!ROOT_DIR!\logs" 2>nul
-    if exist "!ROOT_DIR!\logs" (
-        echo [ERROR] Failed to remove: logs\  ^(files may be locked^)
-        set /A "CLEAN_ERRORS+=1"
-    )
-)
-
-:: Remove VS project files and CMake artifacts from root
+call :REMOVE_DIR "!BUILD_DIR!" "build\"
+call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
+call :REMOVE_DIR "!ROOT_DIR!\logs" "logs\"
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
 
-:: ---------------------------------------------------------------------------
+:: ============================================================================
+:: Subroutine: Safely remove a directory with retry
+:: ============================================================================
+:: Args: %1 = absolute path, %2 = display name for logging
+:: Increments CLEAN_ERRORS on failure (locked files, permission issues).
+:REMOVE_DIR
+if not exist "%~1" goto :EOF
+
+echo [CLEAN] Removing: %~2
+rmdir /S /Q "%~1" 2>nul
+if not exist "%~1" goto :EOF
+
+:: Retry with cmd /c for long-path or lock issues on Windows
+cmd /c "rmdir /S /Q "%~1"" 2>nul
+if exist "%~1" (
+    echo [ERROR] Failed to remove: %~2  ^(files may be locked^)
+    set /A "CLEAN_ERRORS+=1"
+)
+goto :EOF
+
+:: ============================================================================
 :: Subroutine: Remove root-level VS/CMake artifacts
-:: ---------------------------------------------------------------------------
+:: ============================================================================
+:: These should not exist when using an out-of-source build, but CMake
+:: sometimes creates them if accidentally invoked from the repo root.
 :CLEAN_ROOT_ARTIFACTS
 echo [CLEAN] Removing VS project files from root...
 del /F /Q "!ROOT_DIR!\*.sln" 2>nul
@@ -352,10 +265,7 @@ del /F /Q "!ROOT_DIR!\CMakeCache.txt" 2>nul
 del /F /Q "!ROOT_DIR!\cmake_install.cmake" 2>nul
 del /F /Q "!ROOT_DIR!\Makefile" 2>nul
 
-if exist "!ROOT_DIR!\CMakeFiles" (
-    echo [CLEAN] Removing: CMakeFiles\
-    rmdir /S /Q "!ROOT_DIR!\CMakeFiles" 2>nul
-)
+call :REMOVE_DIR "!ROOT_DIR!\CMakeFiles" "CMakeFiles\"
 goto :EOF
 
 :: ---------------------------------------------------------------------------

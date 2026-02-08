@@ -22,13 +22,16 @@ setlocal enabledelayedexpansion
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
     call "%~dp0BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    exit /B !ERRORLEVEL!
 )
 
 :: ---------------------------------------------------------------------------
 :: Load shared configuration
 :: ---------------------------------------------------------------------------
 call "%~dp0Config.bat"
+
+:: Initialize exit code (default to failure — set to 0 on success)
+set "EXIT_RC=1"
 
 :: ---------------------------------------------------------------------------
 :: Parse arguments
@@ -49,21 +52,15 @@ if /I "%CONFIG%"=="RelWithDebInfo" (
 :: ---------------------------------------------------------------------------
 :: Ensure solution exists (generate if missing)
 :: ---------------------------------------------------------------------------
-set "PROJECT_NAME="
-for /f "tokens=2 delims=( " %%P in ('findstr /i "project(" "!ROOT_DIR!\CMakeLists.txt"') do (
-    set "RAW_PROJECT_NAME=%%P"
-)
-for /f "delims=) tokens=1" %%A in ("!RAW_PROJECT_NAME!") do set "PROJECT_NAME=%%A"
-set "PROJECT_NAME=!PROJECT_NAME: =!"
-set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.sln"
-
+:: PROJECT_NAME and SOLUTION_FILE are provided by Config.bat.
 if not exist "!SOLUTION_FILE!" (
     echo [LOG] Solution not found. Invoking GenerateProjectFiles.bat...
     set "PARENT_BATCH=1"
     call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
     set "PARENT_BATCH="
     if errorlevel 1 (
-        echo [ERROR] Solution generation failed.
+        echo [ERROR] Solution generation failed. Cannot build.
+        echo         Run Scripts\GenerateProjectFiles.bat standalone for details.
         set "EXIT_RC=1"
         goto :FINISH
     )
@@ -139,8 +136,9 @@ goto :FINISH
 :: ---------------------------------------------------------------------------
 :FINISH
 set "_TMP_LOGFILE=%LOGFILE%"
+set "_TMP_RC=%EXIT_RC%"
 set "_TMP_PARENT=%PARENT_BATCH%"
-endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%EXIT_RC%" & set "PARENT_BATCH=%_TMP_PARENT%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "PARENT_BATCH=%_TMP_PARENT%"
 
 if defined PARENT_BATCH (
     exit /B %EXIT_RC%

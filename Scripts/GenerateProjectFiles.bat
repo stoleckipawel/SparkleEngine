@@ -25,10 +25,13 @@
 setlocal enabledelayedexpansion
 
 :: ---------------------------------------------------------------------------
-:: Check if running from parent script (CONTINUE argument)
+:: Determine interactive vs non-interactive mode
 :: ---------------------------------------------------------------------------
-set "CALLED_FROM_PARENT=0"
-if /I "%~1"=="CONTINUE" set "CALLED_FROM_PARENT=1"
+:: INTERACTIVE=0 suppresses prompts (dep check, Open VS, pause) when called
+:: from a parent script. Callers signal this via PARENT_BATCH or CONTINUE arg.
+set "INTERACTIVE=1"
+if defined PARENT_BATCH set "INTERACTIVE=0"
+if /I "%~1"=="CONTINUE" set "INTERACTIVE=0"
 
 :: ---------------------------------------------------------------------------
 :: Logging bootstrap
@@ -44,21 +47,25 @@ if not defined LOG_CAPTURED (
 call "%~dp0Internal\Config.bat"
 
 :: ---------------------------------------------------------------------------
-:: Step 1: Validate build dependencies
+:: Step 1: Validate build dependencies (standalone mode only)
 :: ---------------------------------------------------------------------------
-echo [LOG] Checking build dependencies...
-set "PARENT_BATCH=1"
-call "%~dp0CheckDependencies.bat" CONTINUE
-if errorlevel 1 (
+:: When called from a parent (Setup.bat, BuildProjectsImpl.bat), the caller
+:: has already validated tools. Skip the redundant check to keep logs clean.
+if "!INTERACTIVE!"=="1" (
+    echo [LOG] Checking build dependencies...
+    set "PARENT_BATCH=1"
+    call "%~dp0CheckDependencies.bat" CONTINUE
+    if errorlevel 1 (
+        set "PARENT_BATCH="
+        echo [ERROR] Dependency check failed. Install the missing tools above.
+        set "EXIT_RC=1"
+        goto :FINISH
+    )
     set "PARENT_BATCH="
-    echo [ERROR] Dependency check failed.
-    set "EXIT_RC=1"
-    goto :FINISH
 )
-set "PARENT_BATCH="
 
 :: ---------------------------------------------------------------------------
-:: Step 2: Configure build environment
+:: Step 2: Log build environment
 :: ---------------------------------------------------------------------------
 if "!USE_CLANG!"=="1" (
     echo [LOG] Toolset: ClangCL
@@ -66,99 +73,88 @@ if "!USE_CLANG!"=="1" (
     echo [LOG] Toolset: MSVC ^(Clang not found^)
 )
 
-:: ---------------------------------------------------------------------------
-:: Step 3: Extract project name from CMakeLists.txt
-:: ---------------------------------------------------------------------------
-set "PROJECT_NAME="
-for /f "tokens=2 delims=( " %%P in ('findstr /i "project(" "!ROOT_DIR!\CMakeLists.txt"') do (
-    set "RAW_NAME=%%P"
-)
-:: Strip trailing parenthesis and whitespace
-for /f "delims=) tokens=1" %%A in ("!RAW_NAME!") do set "PROJECT_NAME=%%A"
-set "PROJECT_NAME=!PROJECT_NAME: =!"
-
+:: PROJECT_NAME and SOLUTION_FILE are set by Config.bat
 echo [LOG] Project: !PROJECT_NAME!
-set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.sln"
 
 :: ---------------------------------------------------------------------------
-:: Step 4: Generate solution (incremental — only if needed)
+:: Step 3: Generate solution via CMake configure
 :: ---------------------------------------------------------------------------
-set "SOLUTION_GENERATED=0"
+:: Always run cmake — incremental configures are fast and ensure the
+:: solution stays in sync with CMakeLists.txt changes.
 if not exist "!BUILD_DIR!\CMakeCache.txt" (
-    set "SOLUTION_GENERATED=1"
     echo [LOG] No CMake cache found. Running full configure...
 ) else if not exist "!SOLUTION_FILE!" (
-    set "SOLUTION_GENERATED=1"
     echo [LOG] Solution file missing. Regenerating...
 ) else (
-    echo [LOG] CMake cache and solution exist. Running incremental configure...
-    set "SOLUTION_GENERATED=1"
+    echo [LOG] Running incremental configure...
 )
 
-if "!SOLUTION_GENERATED!"=="1" (
-    if not exist "!BUILD_DIR!" (
-        echo [LOG] Creating build directory: !BUILD_DIR!
-        mkdir "!BUILD_DIR!"
-        if errorlevel 1 (
-            echo [ERROR] Failed to create build directory.
-            set "EXIT_RC=1"
-            goto :FINISH
-        )
-    )
-
-    pushd "!BUILD_DIR!"
-
-    if "!USE_CLANG!"=="1" (
-        echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -T ClangCL
-        cmake -G "!GENERATOR!" -A !ARCH! -T ClangCL "!ROOT_DIR!"
-    ) else (
-        echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH!
-        cmake -G "!GENERATOR!" -A !ARCH! "!ROOT_DIR!"
-    )
-
-    set "CMAKE_RC=!ERRORLEVEL!"
-    popd
-
-    if "!CMAKE_RC!" NEQ "0" (
-        echo [ERROR] CMake generation failed.
+if not exist "!BUILD_DIR!" (
+    echo [LOG] Creating build directory: !BUILD_DIR!
+    mkdir "!BUILD_DIR!"
+    if errorlevel 1 (
+        echo [ERROR] Failed to create build directory.
         set "EXIT_RC=1"
         goto :FINISH
     )
-
-    echo [LOG] Solution generated: !SOLUTION_FILE!
 )
 
+pushd "!BUILD_DIR!"
+
+if "!USE_CLANG!"=="1" (
+    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -T ClangCL -Wno-dev
+    cmake -G "!GENERATOR!" -A !ARCH! -T ClangCL -Wno-dev "!ROOT_DIR!"
+) else (
+    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -Wno-dev
+    cmake -G "!GENERATOR!" -A !ARCH! -Wno-dev "!ROOT_DIR!"
+)
+
+set "CMAKE_RC=!ERRORLEVEL!"
+popd
+
+if "!CMAKE_RC!" NEQ "0" (
+    echo.
+    echo [ERROR] CMake generation failed ^(exit code !CMAKE_RC!^).
+    echo         Check the CMake output above for the root cause.
+    echo         Common fixes:
+    echo           - Install missing tools: Scripts\CheckDependencies.bat
+    echo           - Clean stale cache:     Scripts\Clean.bat BUILD
+    echo           - Full reset:            Scripts\Clean.bat ALL
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
+echo [LOG] Solution generated: !SOLUTION_FILE!
+
 :: ---------------------------------------------------------------------------
-:: Optional: Open solution after generation
+:: Optional: Open solution after generation (interactive mode only)
 :: ---------------------------------------------------------------------------
-if "!CALLED_FROM_PARENT!"=="0" (
-    if not defined PARENT_BATCH (
-        echo.
-        echo ============================================================
-        echo   Open Visual Studio?
-        echo ============================================================
-        echo.
-        echo   Y^) Yes - Open the generated solution
-        echo   N^) No  - Continue without opening
-        echo.
-        echo ============================================================
+if "!INTERACTIVE!"=="1" (
+    echo.
+    echo ============================================================
+    echo   Open Visual Studio?
+    echo ============================================================
+    echo.
+    echo   Y^) Yes - Open the generated solution
+    echo   N^) No  - Continue without opening
+    echo.
+    echo ============================================================
 
-        :OPEN_VS_PROMPT
-        set "OPEN_VS="
-        set /P "OPEN_VS=Enter choice [Y/N]: "
+    :OPEN_VS_PROMPT
+    set "OPEN_VS="
+    set /P "OPEN_VS=Enter choice [Y/N]: "
 
-        if /I "!OPEN_VS!"=="Y" (
-            echo.
-            echo [LOG] Opening: !SOLUTION_FILE!
-            start "" "!SOLUTION_FILE!"
-            goto :AFTER_VS_PROMPT
-        )
-        if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT
-        if "!OPEN_VS!"=="" goto :AFTER_VS_PROMPT
-
-        echo [WARN] Invalid input. Please enter Y or N.
-        goto :OPEN_VS_PROMPT
+    if /I "!OPEN_VS!"=="Y" (
+        echo.
+        echo [LOG] Opening: !SOLUTION_FILE!
+        start "" "!SOLUTION_FILE!"
+        goto :AFTER_VS_PROMPT
     )
+    if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT
+    if "!OPEN_VS!"=="" goto :AFTER_VS_PROMPT
+
+    echo [WARN] Invalid input. Please enter Y or N.
+    goto :OPEN_VS_PROMPT
 )
 :AFTER_VS_PROMPT
 
@@ -172,26 +168,23 @@ goto :FINISH
 :: ============================================================================
 :FINISH
 set "_TMP_LOGFILE=%LOGFILE%"
-set "_TMP_CALLED_FROM_PARENT=%CALLED_FROM_PARENT%"
 set "_TMP_RC=%EXIT_RC%"
-endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "CALLED_FROM_PARENT=%_TMP_CALLED_FROM_PARENT%"
+set "_TMP_INTERACTIVE=%INTERACTIVE%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "_INTERACTIVE=%_TMP_INTERACTIVE%"
 
-if defined PARENT_BATCH (
+:: In non-interactive mode, return silently to caller
+if "%_INTERACTIVE%"=="0" (
+    set "_INTERACTIVE="
     exit /B %EXIT_RC%
 )
-
-if "%CALLED_FROM_PARENT%"=="1" (
-    exit /B %EXIT_RC%
-)
+set "_INTERACTIVE="
 
 echo.
 if "%EXIT_RC%"=="0" (
-    echo.
     echo ============================================================
     echo   [SUCCESS] Solution generation completed.
     echo ============================================================
 ) else (
-    echo.
     echo ============================================================
     echo   [ERROR] Solution generation failed.
     echo ============================================================
