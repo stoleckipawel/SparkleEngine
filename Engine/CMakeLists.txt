@@ -40,9 +40,10 @@
 # Option to build as shared libraries (DLLs) or static libraries
 option(SPARKLE_BUILD_SHARED "Build Sparkle modules as shared libraries (DLLs)" OFF)
 
-# Add third-party libraries first (they're used by modules)
-add_subdirectory(third_party/imgui)
-add_subdirectory(third_party/cgltf)
+# All third-party dependencies are fetched automatically via FetchContent.
+# See Scripts/FetchDependencies.cmake for the full list and pinned versions.
+# Sources are cached in build/_deps/ — no manual download or vendoring needed.
+include(${CMAKE_SOURCE_DIR}/Scripts/FetchDependencies.cmake)
 
 # ============================================================================
 # CORE MODULES (always built - the foundation of the engine)
@@ -54,18 +55,13 @@ add_subdirectory(Renderer)       # SparkleRenderer.dll - Rendering pipeline
 add_subdirectory(GameFramework)  # SparkleEngine.dll   - World, Entities, Components (NO rendering deps)
 add_subdirectory(Application)    # SparkleApplication  - App class (ties GameFramework + Renderer)
 add_subdirectory(UI)             # SparkleUI.dll       - Widget system, Layout
-
-# ============================================================================
-# OPTIONAL MODULES (placeholders - add when implementation exists)
-# ============================================================================
-# Uncomment as these modules get implemented:
-# add_subdirectory(Physics)      # SparklePhysics.dll    - PhysX/Jolt integration
-# add_subdirectory(Animation)    # SparkleAnimation.dll  - Skeletal animation
-# add_subdirectory(Audio)        # SparkleAudio.dll      - FMOD/Wwise integration
-# add_subdirectory(AI)           # SparkleAI.dll         - Navigation, BehaviorTree
-# add_subdirectory(Networking)   # SparkleNetworking.dll - Replication, RPCs
-# add_subdirectory(Scripting)    # SparkleScripting.dll  - Lua/Mono integration
-# add_subdirectory(Editor)       # SparkleEditor.dll     - Editor tools
+add_subdirectory(Physics)      # SparklePhysics.dll    - PhysX/Jolt integration
+add_subdirectory(Animation)    # SparkleAnimation.dll  - Skeletal animation
+add_subdirectory(Audio)        # SparkleAudio.dll      - FMOD/Wwise integration
+add_subdirectory(AI)           # SparkleAI.dll         - Navigation, BehaviorTree
+add_subdirectory(Networking)   # SparkleNetworking.dll - Replication, RPCs
+add_subdirectory(Scripting)    # SparkleScripting.dll  - Lua/Mono integration
+add_subdirectory(Editor)       # SparkleEditor.dll     - Editor tools
 
 # ============================================================================
 # MODULE LINKING GUIDE

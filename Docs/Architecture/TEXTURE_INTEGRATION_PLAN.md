@@ -58,25 +58,21 @@ WIC support will be removed after validation in Phase 12.
 
 **All third-party dependencies use CMake FetchContent** — sources are downloaded automatically at configure time into `build/_deps/`. No manual cloning or vendoring needed. Configuration is in `Scripts/FetchDependencies.cmake`.
 
-**Libraries:**
+**Libraries (~64 MB total, fetched automatically):**
 
 | Library | Role | License | FetchContent Target | Pinned Version |
 |---|---|---|---|---|
+| **Dear ImGui** | Immediate-mode GUI (DX12 + Win32 backends) | MIT | `imgui` (STATIC) | `v1.92.5` |
+| **cgltf** | Single-header glTF 2.0 parser | MIT | `cgltf` (INTERFACE) | `v1.15` |
 | **stb** | Load PNG/JPEG/BMP/TGA/HDR + CPU mip generation | Public domain | `stb` (INTERFACE) | `master` |
-| **AMD Compressonator** | BC1–BC7 block compression (CMP_Core only) | MIT | `CMP_Core` (STATIC) | `master` |
+| **AMD Compressonator** | BC1–BC7 block compression (CMP_Core only) | MIT | `CMP_Core` (STATIC, sparse checkout) | `master` |
 | **KTX-Software** | KTX2 container I/O (pre-compressed asset pipeline) | Apache 2.0 | `ktx` (STATIC) | `v4.3.2` |
 
 **How it works:**
 1. User runs `cmake -B build` — FetchContent clones repos automatically
 2. Sources go into `build/_deps/` (gitignored, cached between configures)
 3. Only the minimal subsets are built (e.g., CMP_Core only, not full Compressonator GUI)
-
-**Existing third-party also migrated to FetchContent:**
-
-| Library | Target | Pinned Version |
-|---|---|---|
-| **Dear ImGui** | `imgui` (STATIC, DX12 + Win32 backends) | `v1.92.5` |
-| **cgltf** | `cgltf` (INTERFACE, header-only) | `v1.15` |
+4. Compressonator uses git sparse checkout (`cmp_core/` + `cmp_math/` only, ~5 MB vs ~450 MB full repo)
 
 **Note:** `Engine/third_party/` only contains `d3dx12.h` (Microsoft D3D12 helper header).
 

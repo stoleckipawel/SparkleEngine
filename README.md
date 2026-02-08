@@ -95,8 +95,8 @@ SparkleCore (base - no dependencies)
 
 | Step | Command | Description |
 |:----:|---------|-------------|
-| 1 | `Scripts\BuildSolution.bat` | Generate Visual Studio solution |
-| 2 | `Scripts\BuildProjects.bat Release` | Build all projects |
+| 1 | `Scripts\Setup.bat` | First-time setup (tools + deps + solution) |
+| 2 | `Scripts\BuildProjects.bat` | Interactive build (select project + config) |
 | 3 | `Scripts\CreateNewProject.bat MyGame` | Create new project from template |
 
 **Prerequisites:** Visual Studio 2022 (17.0+)  Windows SDK (10.0.19041+)  CMake (3.20+)
@@ -188,7 +188,7 @@ SparkleCore (base - no dependencies)
 | `Engine/Renderer/` | Camera, Depth, Textures, Materials |
 | `Engine/GameFramework/` | Scene, Mesh, Assets, App Framework |
 | `Engine/UI/` | ImGui Panels, Overlays, Debug Tools |
-| `Engine/third_party/` | imgui, d3dx12, cgltf |
+| `Engine/third_party/` | d3dx12 |
 
 Each module follows the structure:
 ```
@@ -224,24 +224,25 @@ All build and development scripts are located in the `Scripts/` folder.
 
 | Script | Purpose |
 |--------|---------|
-| `BuildSolution.bat` | Generate VS solution via CMake |
-| `BuildProjects.bat [config]` | Build all projects (Debug/Release/RelWithDebInfo) |
-| `BuildProjectsDebug.bat` | Shortcut for Debug build |
-| `BuildProjectsRelease.bat` | Shortcut for Release build |
+| `Setup.bat` | First-time setup (validate tools, fetch deps, generate solution) |
+| `GenerateProjectFiles.bat` | Incremental VS solution generation via CMake |
+| `BuildProjects.bat` | Interactive project + config build menu |
 | `CreateNewProject.bat <name>` | Scaffold new game from template |
 | `CheckDependencies.bat` | Verify build prerequisites |
-| `CleanIntermediateFiles.bat` | Remove build artifacts |
+| `CheckThirdParty.bat` | Validate/sync third-party dependencies |
+| `Clean.bat` | Clean build artifacts, deps, or everything |
 | `RunClangFormat.bat` | Format all source files |
 
 **Usage from repository root:**
 ```powershell
-Scripts\BuildSolution.bat           # Generate solution
-Scripts\BuildProjects.bat Release   # Build in Release mode
-Scripts\CreateNewProject.bat MyGame # Create new project
+Scripts\Setup.bat                    # First-time setup (clone → build)
+Scripts\GenerateProjectFiles.bat     # Regenerate VS solution
+Scripts\BuildProjects.bat            # Interactive build menu
+Scripts\Clean.bat                    # Clean with options menu
+Scripts\CreateNewProject.bat MyGame  # Create new project
 ```
 
-**Internal scripts** (`Scripts/Internal/`) handle logging and build implementation.  
-**Clang config** (`Scripts/Clang/`) contains `.clang-tidy` and `.clang-tidy-ignore`.  
+**Internal scripts** (`Scripts/Internal/`) handle logging, shared config, and build implementation.  
 **Build logs** are written to the `logs/` folder (gitignored).
 
 </td>

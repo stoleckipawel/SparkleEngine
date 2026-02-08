@@ -26,11 +26,23 @@ if not defined LOG_CAPTURED (
 )
 
 :: ---------------------------------------------------------------------------
-:: Path configuration
+:: Load shared configuration
 :: ---------------------------------------------------------------------------
-set "SRC_DIR=%~dp0"
-if "!SRC_DIR:~-1!"=="\" set "SRC_DIR=!SRC_DIR:~0,-1!"
-set "PROJECTS_DIR=!SRC_DIR!\projects"
+call "%~dp0Internal\Config.bat"
+
+:: ---------------------------------------------------------------------------
+:: Step 0: Check third-party dependencies are synced
+:: ---------------------------------------------------------------------------
+echo [LOG] Checking third-party dependencies...
+set "PARENT_BATCH=1"
+call "%~dp0CheckThirdParty.bat"
+set "TP_RC=!ERRORLEVEL!"
+set "PARENT_BATCH="
+if "!TP_RC!" NEQ "0" (
+    echo [ERROR] Third-party dependency check failed.
+    set "OVERALL_RC=1"
+    goto :FINISH
+)
 
 :: ---------------------------------------------------------------------------
 :: Discover available projects (with .sparkle-project marker, excluding TemplateProject)
@@ -47,9 +59,10 @@ for /D %%P in ("!PROJECTS_DIR!\*") do (
 )
 
 if "!PROJECT_COUNT!"=="0" (
-    echo [ERROR] No projects found in projects\ folder.
+    echo [ERROR] No projects found in Projects\ folder.
     echo         Create a project using CreateNewProject.bat
-    call :FINISH 1
+    set "OVERALL_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
@@ -146,7 +159,8 @@ echo [LOG] Selected configuration: !CONFIG!
 set "IMPL_SCRIPT=%~dp0Internal\BuildProjectsImpl.bat"
 if not exist "!IMPL_SCRIPT!" (
     echo [ERROR] Missing: Scripts\Internal\BuildProjectsImpl.bat
-    call :FINISH 1
+    set "OVERALL_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
@@ -208,7 +222,7 @@ if "!HAS_SUCCESS!"=="1" (
     if /I "!LAUNCH_SEL!"=="N" goto :SKIP_LAUNCH
     if "!LAUNCH_SEL!"=="" goto :SKIP_LAUNCH
     
-    echo [ERROR] Please enter Y or N.
+    echo [WARN] Invalid input. Please enter Y or N.
     goto :LAUNCH_PROMPT
 )
 goto :SKIP_LAUNCH
@@ -222,9 +236,9 @@ if /I "!CONFIG!"=="All" (
     if "!RC_Release!" NEQ "0" if "!RC_Debug!"=="0" set "RUN_CONFIG=Debug"
 )
 
-set "BIN_DIR=%~dp0bin\!RUN_CONFIG!"
-if not exist "!BIN_DIR!" (
-    echo [WARN] Output directory not found: !BIN_DIR!
+set "LAUNCH_BIN_DIR=!BIN_DIR!\!RUN_CONFIG!"
+if not exist "!LAUNCH_BIN_DIR!" (
+    echo [WARN] Output directory not found: !LAUNCH_BIN_DIR!
     goto :SKIP_LAUNCH
 )
 
@@ -232,43 +246,43 @@ if not exist "!BIN_DIR!" (
 set "TARGET_EXE="
 if "!SELECTED_PROJECT!"=="ALL" (
     :: For "All" builds, find first executable
-    for %%F in ("!BIN_DIR!\*.exe") do (
+    for %%F in ("!LAUNCH_BIN_DIR!\*.exe") do (
         if not defined TARGET_EXE set "TARGET_EXE=%%~fF"
     )
 ) else (
     :: Look for specific project executable
-    if exist "!BIN_DIR!\!SELECTED_PROJECT!.exe" (
-        set "TARGET_EXE=!BIN_DIR!\!SELECTED_PROJECT!.exe"
+    if exist "!LAUNCH_BIN_DIR!\!SELECTED_PROJECT!.exe" (
+        set "TARGET_EXE=!LAUNCH_BIN_DIR!\!SELECTED_PROJECT!.exe"
     ) else (
         :: Fallback to first exe
-        for %%F in ("!BIN_DIR!\*.exe") do (
+        for %%F in ("!LAUNCH_BIN_DIR!\*.exe") do (
             if not defined TARGET_EXE set "TARGET_EXE=%%~fF"
         )
     )
 )
 
 if not defined TARGET_EXE (
-    echo [WARN] No executables found in: !BIN_DIR!
+    echo [WARN] No executables found in: !LAUNCH_BIN_DIR!
     goto :SKIP_LAUNCH
 )
 
 :: Launch with working directory set to bin folder (for imgui.ini, etc.)
 echo.
 echo [LOG] Launching: !TARGET_EXE!
-start "" /D "!BIN_DIR!" "!TARGET_EXE!"
+start "" /D "!LAUNCH_BIN_DIR!" "!TARGET_EXE!"
 
 :SKIP_LAUNCH
 echo.
 echo [LOG] BuildProjects.bat completed.
-call :FINISH !OVERALL_RC!
+goto :FINISH
 
 :: ============================================================================
-:: Subroutine: Clean exit with proper endlocal handling
+:: Clean exit with proper endlocal handling
 :: ============================================================================
 :FINISH
-set "EXIT_RC=%~1"
 set "_TMP_LOGFILE=%LOGFILE%"
-endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%EXIT_RC%"
+set "_TMP_RC=%OVERALL_RC%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
 
 if defined PARENT_BATCH (
     exit /B %EXIT_RC%

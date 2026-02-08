@@ -18,22 +18,17 @@
 setlocal enabledelayedexpansion
 
 :: ---------------------------------------------------------------------------
-:: Path configuration
-:: ---------------------------------------------------------------------------
-set "ARCH=x64"
-set "SCRIPT_DIR=%~dp0"
-:: Script resides in Scripts\Internal; repository root is two levels up
-for %%I in ("%SCRIPT_DIR%..\..\") do set "SRC_DIR=%%~fI"
-set "BUILD_DIR=!SRC_DIR!build"
-set "PROJECTS_DIR=!SRC_DIR!projects"
-
-:: ---------------------------------------------------------------------------
 :: Logging bootstrap (if not already captured by parent)
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
-    call "%SCRIPT_DIR%BootstrapLog.bat" "%~f0" %*
+    call "%~dp0BootstrapLog.bat" "%~f0" %*
     exit /B %ERRORLEVEL%
 )
+
+:: ---------------------------------------------------------------------------
+:: Load shared configuration
+:: ---------------------------------------------------------------------------
+call "%~dp0Config.bat"
 
 :: ---------------------------------------------------------------------------
 :: Parse arguments
@@ -55,7 +50,7 @@ if /I "%CONFIG%"=="RelWithDebInfo" (
 :: Ensure solution exists (generate if missing)
 :: ---------------------------------------------------------------------------
 set "PROJECT_NAME="
-for /f "tokens=2 delims=( " %%P in ('findstr /i "project(" "!SRC_DIR!CMakeLists.txt"') do (
+for /f "tokens=2 delims=( " %%P in ('findstr /i "project(" "!ROOT_DIR!\CMakeLists.txt"') do (
     set "RAW_PROJECT_NAME=%%P"
 )
 for /f "delims=) tokens=1" %%A in ("!RAW_PROJECT_NAME!") do set "PROJECT_NAME=%%A"
@@ -63,13 +58,14 @@ set "PROJECT_NAME=!PROJECT_NAME: =!"
 set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.sln"
 
 if not exist "!SOLUTION_FILE!" (
-    echo [LOG] Solution not found. Invoking BuildSolution.bat...
+    echo [LOG] Solution not found. Invoking GenerateProjectFiles.bat...
     set "PARENT_BATCH=1"
-    call "!SRC_DIR!BuildSolution.bat" CONTINUE
+    call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
     set "PARENT_BATCH="
     if errorlevel 1 (
         echo [ERROR] Solution generation failed.
-        call :FINISH 1
+        set "EXIT_RC=1"
+        goto :FINISH
     )
 )
 
@@ -85,7 +81,7 @@ if /I "!TARGET_PROJECT!"=="ALL" (
         set "PROJ_NAME=%%~nxS"
         :: Skip TemplateProject
         if /I "!PROJ_NAME!" NEQ "TemplateProject" (
-            set "PROJECT_VCXPROJ=!BUILD_DIR!\projects\!PROJ_NAME!\!PROJ_NAME!.vcxproj"
+            set "PROJECT_VCXPROJ=!BUILD_DIR!\Projects\!PROJ_NAME!\!PROJ_NAME!.vcxproj"
             
             if exist "!PROJECT_VCXPROJ!" (
                 set /A "BUILD_COUNT+=1"
@@ -102,7 +98,7 @@ if /I "!TARGET_PROJECT!"=="ALL" (
     )
 ) else (
     :: Build specific project
-    set "PROJECT_VCXPROJ=!BUILD_DIR!\projects\!TARGET_PROJECT!\!TARGET_PROJECT!.vcxproj"
+    set "PROJECT_VCXPROJ=!BUILD_DIR!\Projects\!TARGET_PROJECT!\!TARGET_PROJECT!.vcxproj"
     
     if exist "!PROJECT_VCXPROJ!" (
         set /A "BUILD_COUNT+=1"
@@ -126,7 +122,8 @@ if "!BUILD_COUNT!"=="0" (
 )
 
 if "!BUILD_FAILED!"=="1" (
-    call :FINISH 1
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 if /I "!TARGET_PROJECT!"=="ALL" (
@@ -134,13 +131,13 @@ if /I "!TARGET_PROJECT!"=="ALL" (
 ) else (
     echo [LOG] !TARGET_PROJECT! built successfully for !CONFIG!.
 )
-call :FINISH 0
+set "EXIT_RC=0"
+goto :FINISH
 
 :: ---------------------------------------------------------------------------
-:: Subroutine: Clean exit with proper endlocal handling
+:: Clean exit with proper endlocal handling
 :: ---------------------------------------------------------------------------
 :FINISH
-set "EXIT_RC=%~1"
 set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_PARENT=%PARENT_BATCH%"
 endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%EXIT_RC%" & set "PARENT_BATCH=%_TMP_PARENT%"

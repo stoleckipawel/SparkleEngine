@@ -1,6 +1,0 @@
-# Ignore third-party libraries from clang-tidy checks
-# Workspace-relative glob patterns.
-third_party/**
-engine/third_party/**
-*/third_party/**
-vcpkg/**

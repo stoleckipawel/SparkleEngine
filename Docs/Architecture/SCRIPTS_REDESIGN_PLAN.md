@@ -1,6 +1,6 @@
 # Sparkle Engine — Scripts System Redesign Plan
 
-> **Status:** Draft — awaiting approval before implementation.
+> **Status:** ✅ Implemented — all steps completed.
 > **Scope:** Full audit, redesign, and fix of every `.bat` and `.cmake` file under `Scripts/`.
 
 ---

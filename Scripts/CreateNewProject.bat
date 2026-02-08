@@ -8,36 +8,56 @@
 ::   If ProjectName is omitted, prompts interactively.
 ::
 :: The script will:
-::   1. Copy the template from projects/TemplateProject
+::   1. Copy the template from Projects/TemplateProject
 ::   2. Replace __PROJECT_NAME__ placeholder with actual project name
 ::   3. Create .sparkle-project marker file
 ::   4. Prompt to regenerate the VS solution
+::
+:: Environment:
+::   PARENT_BATCH  - When set, suppresses pause on completion
+::   LOG_CAPTURED  - Indicates logging is already active
+::   LOGFILE       - Path to current log file
+::
+:: Exit Codes:
+::   0 - Project created successfully
+::   1 - Creation failed
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
 :: ---------------------------------------------------------------------------
-:: Resolve paths
+:: Logging bootstrap
 :: ---------------------------------------------------------------------------
-set "SCRIPT_DIR=%~dp0"
-set "ROOT_DIR=%SCRIPT_DIR%"
-set "TEMPLATE_DIR=%ROOT_DIR%projects\TemplateProject"
-set "PROJECTS_DIR=%ROOT_DIR%projects"
+if not defined LOG_CAPTURED (
+    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+    exit /B %ERRORLEVEL%
+)
+
+:: ---------------------------------------------------------------------------
+:: Load shared configuration
+:: ---------------------------------------------------------------------------
+call "%~dp0Internal\Config.bat"
+
+:: ---------------------------------------------------------------------------
+:: Resolve template path
+:: ---------------------------------------------------------------------------
+set "TEMPLATE_DIR=!PROJECTS_DIR!\TemplateProject"
 
 :: ---------------------------------------------------------------------------
 :: Validate template exists
 :: ---------------------------------------------------------------------------
-if not exist "%TEMPLATE_DIR%" (
-    echo [ERROR] Template directory not found: %TEMPLATE_DIR%
-    echo         Please ensure the projects/TemplateProject folder exists.
-    goto :ERROR_EXIT
+if not exist "!TEMPLATE_DIR!" (
+    echo [ERROR] Template directory not found: !TEMPLATE_DIR!
+    echo         Please ensure the Projects\TemplateProject folder exists.
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
 :: Get project name from argument or prompt
 :: ---------------------------------------------------------------------------
 set "PROJECT_NAME=%~1"
-if "%PROJECT_NAME%"=="" (
+if "!PROJECT_NAME!"=="" (
     echo.
     echo ============================================================
     echo   Sparkle Project Generator
@@ -47,54 +67,58 @@ if "%PROJECT_NAME%"=="" (
 )
 
 :: Validate project name is not empty
-if "%PROJECT_NAME%"=="" (
+if "!PROJECT_NAME!"=="" (
     echo [ERROR] Project name cannot be empty.
-    goto :ERROR_EXIT
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
 :: Validate project name (alphanumeric + underscore only)
 :: ---------------------------------------------------------------------------
-echo %PROJECT_NAME%| findstr /r "^[A-Za-z_][A-Za-z0-9_]*$" >nul
+echo !PROJECT_NAME!| findstr /r "^[A-Za-z_][A-Za-z0-9_]*$" >nul
 if errorlevel 1 (
-    echo [ERROR] Invalid project name: %PROJECT_NAME%
+    echo [ERROR] Invalid project name: !PROJECT_NAME!
     echo         Project name must start with a letter or underscore,
     echo         and contain only letters, numbers, and underscores.
-    goto :ERROR_EXIT
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
 :: Check if project already exists
 :: ---------------------------------------------------------------------------
-set "PROJECT_DIR=%PROJECTS_DIR%\%PROJECT_NAME%"
-if exist "%PROJECT_DIR%" (
-    echo [ERROR] Project already exists: %PROJECT_DIR%
+set "PROJECT_DIR=!PROJECTS_DIR!\!PROJECT_NAME!"
+if exist "!PROJECT_DIR!" (
+    echo [ERROR] Project already exists: !PROJECT_DIR!
     echo         Choose a different name or delete the existing project.
-    goto :ERROR_EXIT
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
 :: Create project directory structure
 :: ---------------------------------------------------------------------------
 echo.
-echo [LOG] Creating project: %PROJECT_NAME%
-echo [LOG] Destination: %PROJECT_DIR%
+echo [LOG] Creating project: !PROJECT_NAME!
+echo [LOG] Destination: !PROJECT_DIR!
 echo.
 
 :: Create projects folder if it doesn't exist
-if not exist "%PROJECTS_DIR%" (
+if not exist "!PROJECTS_DIR!" (
     echo [LOG] Creating projects directory...
-    mkdir "%PROJECTS_DIR%"
+    mkdir "!PROJECTS_DIR!"
 )
 
 :: ---------------------------------------------------------------------------
 :: Copy template to new project
 :: ---------------------------------------------------------------------------
 echo [LOG] Copying template files...
-xcopy /E /I /Q "%TEMPLATE_DIR%" "%PROJECT_DIR%" >nul
+xcopy /E /I /Q "!TEMPLATE_DIR!" "!PROJECT_DIR!" >nul
 if errorlevel 1 (
     echo [ERROR] Failed to copy template files.
-    goto :ERROR_EXIT
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
@@ -103,10 +127,10 @@ if errorlevel 1 (
 echo [LOG] Configuring project files...
 
 :: Process CMakeLists.txt
-call :REPLACE_PLACEHOLDER "%PROJECT_DIR%\CMakeLists.txt"
+call :REPLACE_PLACEHOLDER "!PROJECT_DIR!\CMakeLists.txt"
 
 :: Process main.cpp
-call :REPLACE_PLACEHOLDER "%PROJECT_DIR%\src\main.cpp"
+call :REPLACE_PLACEHOLDER "!PROJECT_DIR!\src\main.cpp"
 
 :: ---------------------------------------------------------------------------
 :: Success message
@@ -116,13 +140,13 @@ echo ============================================================
 echo   [SUCCESS] Project Created
 echo ============================================================
 echo.
-echo   Name:     %PROJECT_NAME%
-echo   Location: %PROJECT_DIR%
+echo   Name:     !PROJECT_NAME!
+echo   Location: !PROJECT_DIR!
 echo.
 echo   Next steps:
-echo   1. Run BuildSolution.bat to regenerate VS solution
+echo   1. Run GenerateProjectFiles.bat to regenerate VS solution
 echo   2. Open build\Sparkle.sln in Visual Studio
-echo   3. Set %PROJECT_NAME% as startup project
+echo   3. Set !PROJECT_NAME! as startup project
 echo.
 echo ============================================================
 
@@ -140,26 +164,49 @@ echo ============================================================
 :REBUILD_PROMPT
 set "REBUILD="
 set /p "REBUILD=Enter choice [Y/N]: "
-if /i "%REBUILD%"=="Y" goto :DO_REBUILD
-if /i "%REBUILD%"=="N" goto :SUCCESS_EXIT
-if "%REBUILD%"=="" goto :SUCCESS_EXIT
-echo [ERROR] Please enter Y or N.
+if /i "!REBUILD!"=="Y" goto :DO_REBUILD
+if /i "!REBUILD!"=="N" goto :SKIP_REBUILD
+if "!REBUILD!"=="" goto :SKIP_REBUILD
+echo [WARN] Invalid input. Please enter Y or N.
 goto :REBUILD_PROMPT
 
 :DO_REBUILD
 echo.
 echo [LOG] Regenerating Visual Studio solution...
-call "%ROOT_DIR%BuildSolution.bat"
+set "PARENT_BATCH=1"
+call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
+set "PARENT_BATCH="
 
-:SUCCESS_EXIT
-echo.
-if not defined PARENT_BATCH pause
-exit /B 0
+:SKIP_REBUILD
+set "EXIT_RC=0"
+goto :FINISH
 
-:ERROR_EXIT
+:: ============================================================================
+:: Clean exit with proper endlocal handling
+:: ============================================================================
+:FINISH
+set "_TMP_LOGFILE=%LOGFILE%"
+set "_TMP_RC=%EXIT_RC%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
+
+if defined PARENT_BATCH (
+    exit /B %EXIT_RC%
+)
+
 echo.
-if not defined PARENT_BATCH pause
-exit /B 1
+if "%EXIT_RC%"=="0" (
+    echo ============================================================
+    echo   [SUCCESS] Project creation completed.
+    echo ============================================================
+) else (
+    echo ============================================================
+    echo   [ERROR] Project creation failed.
+    echo ============================================================
+)
+echo.
+echo [LOG] Logs: %LOGFILE%
+pause
+exit /B %EXIT_RC%
 
 :: ---------------------------------------------------------------------------
 :: Subroutine: Replace __PROJECT_NAME__ in a file using PowerShell
