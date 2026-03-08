@@ -4,22 +4,19 @@
 # Module Dependency Hierarchy (strict layering - each layer only depends on layers below):
 #
 #   ┌─────────────────────────────────────────────────────────────┐
-#   │                     SparkleEditor.dll                       │
+#   │                 SparkleApplication.lib                      │
+#   │              (App bootstrap and main loop)                  │
 #   └─────────────────────────────────────────────────────────────┘
 #                               │
-#   ┌─────────────────────────────────────────────────────────────┐
-#   │                     SparkleEngine.dll                       │
-#   │          (GameFramework, World, Components, Assets)         │
-#   └─────────────────────────────────────────────────────────────┘
+#                ┌──────────────┴──────────────┐
+#                ▼                             ▼
+#   ┌───────────────────────────┐   ┌─────────────────────────────┐
+#   │    SparkleGameFramework   │   │        SparkleUI.dll        │
+#   │   (World, Entities, Assets)  │   │   (Widgets and overlays)   │
+#   └───────────────────────────┘   └─────────────────────────────┘
+#                │                             │
+#                └──────────────┬──────────────┘
 #                               │
-#         ┌─────────────────────┼─────────────────────┐
-#         ▼                     ▼                     ▼
-#   ┌───────────┐    ┌────────────┐    ┌──────────────┐
-#   │ Physics   │    │   Audio    │    │     AI       │
-#   └───────────┘    └────────────┘    └──────────────┘
-#         │                │                   │
-#         └────────────────┼───────────────────┘
-#                          │
 #   ┌─────────────────────────────────────────────────────────────┐
 #   │                   SparkleRenderer.dll                       │
 #   └─────────────────────────────────────────────────────────────┘
@@ -55,13 +52,6 @@ add_subdirectory(Renderer)       # SparkleRenderer.dll - Rendering pipeline
 add_subdirectory(GameFramework)  # SparkleEngine.dll   - World, Entities, Components (NO rendering deps)
 add_subdirectory(Application)    # SparkleApplication  - App class (ties GameFramework + Renderer)
 add_subdirectory(UI)             # SparkleUI.dll       - Widget system, Layout
-add_subdirectory(Physics)      # SparklePhysics.dll    - PhysX/Jolt integration
-add_subdirectory(Animation)    # SparkleAnimation.dll  - Skeletal animation
-add_subdirectory(Audio)        # SparkleAudio.dll      - FMOD/Wwise integration
-add_subdirectory(AI)           # SparkleAI.dll         - Navigation, BehaviorTree
-add_subdirectory(Networking)   # SparkleNetworking.dll - Replication, RPCs
-add_subdirectory(Scripting)    # SparkleScripting.dll  - Lua/Mono integration
-add_subdirectory(Editor)       # SparkleEditor.dll     - Editor tools
 
 # ============================================================================
 # MODULE LINKING GUIDE

@@ -4,6 +4,7 @@
 // ----------------------------------------------------------------------------
 // USAGE:
 //   App app("MyGame");
+//   // Defaults to the Sponza startup level for now.
 //   app.Run();
 // ============================================================================
 #pragma once
@@ -26,7 +27,6 @@ class SPARKLE_APPLICATION_API App
 {
   public:
 	explicit App(std::string windowTitle);
-	App(std::string windowTitle, std::string startupLevelName);
 	~App();
 
 	App(const App&) = delete;
@@ -45,7 +45,7 @@ class SPARKLE_APPLICATION_API App
 	void LoadStartupLevel();
 
 	std::string m_windowTitle;
-	std::string m_startupLevelName;
+	std::string m_startupLevelName = "Sponza";
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<LevelRegistry> m_levelRegistry;
 	std::unique_ptr<AssetSystem> m_assetSystem;

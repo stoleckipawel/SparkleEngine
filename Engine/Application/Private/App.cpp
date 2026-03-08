@@ -16,11 +16,6 @@
 
 App::App(std::string windowTitle) : m_windowTitle(std::move(windowTitle)) {}
 
-App::App(std::string windowTitle, std::string startupLevelName) :
-    m_windowTitle(std::move(windowTitle)), m_startupLevelName(std::move(startupLevelName))
-{
-}
-
 App::~App() = default;
 
 void App::Run()
