@@ -20,6 +20,10 @@ x64/
 x86/
 [Aa][Rr][Mm]*/
 
+# Keep shader debug include files tracked.
+!Engine/Assets/Shaders/Debug/
+!Engine/Assets/Shaders/Debug/ViewModes.hlsli
+
 # User-specific files
 *.rsuser
 *.suo
