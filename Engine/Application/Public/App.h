@@ -4,7 +4,8 @@
 // ----------------------------------------------------------------------------
 // USAGE:
 //   App app("MyGame");
-//   // Defaults to the Sponza startup level for now.
+//   // Uses the project/window title as the startup level when it matches a
+//   // registered level. Falls back to the LevelRegistry default otherwise.
 //   app.Run();
 // ============================================================================
 #pragma once
@@ -45,7 +46,6 @@ class SPARKLE_APPLICATION_API App
 	void LoadStartupLevel();
 
 	std::string m_windowTitle;
-	std::string m_startupLevelName = "Sponza";
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<LevelRegistry> m_levelRegistry;
 	std::unique_ptr<AssetSystem> m_assetSystem;

@@ -4,7 +4,12 @@
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Timer::Timer() noexcept : m_start{Clock::now()}, m_last{m_start} {}
+Timer::Timer() noexcept : 
+m_start{Clock::now()}, 
+m_last{m_start} 
+{
+	
+}
 
 // -----------------------------------------------------------------------------
 // Tick — call once per frame from the main loop

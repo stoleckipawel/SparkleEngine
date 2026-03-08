@@ -14,7 +14,9 @@
 
 #include <utility>
 
-App::App(std::string windowTitle) : m_windowTitle(std::move(windowTitle)) {}
+App::App(std::string windowTitle) : m_windowTitle(windowTitle.empty() ? "Sparkle" : std::move(windowTitle))
+{
+}
 
 App::~App() = default;
 
@@ -73,7 +75,7 @@ void App::Initialize()
 
 void App::LoadStartupLevel()
 {
-	if (auto* level = m_levelRegistry->FindLevelOrDefault(m_startupLevelName))
+	if (auto* level = m_levelRegistry->FindLevelOrDefault(m_windowTitle))
 	{
 		m_scene->LoadLevel(*level, *m_assetSystem);
 	}
