@@ -33,6 +33,7 @@
 #include "Events/ScopedEventHandle.h"
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 enum class DepthMode : std::uint8_t;
 
@@ -58,6 +59,7 @@ class Window;
 class UI;
 class TextureManager;
 class ShaderCompileResult;
+struct RendererMaterialCacheState;
 
 // =============================================================================
 // Renderer
@@ -117,6 +119,8 @@ class SPARKLE_RENDERER_API Renderer final
 
 	/// Populates materials from the scene's loaded material descriptions.
 	void BuildMaterials(SceneView& view) const;
+	void RebuildMaterialCache() const;
+	void ReleaseMaterialTextureTables() const noexcept;
 
 	/// Populates mesh draw commands from the scene's mesh list.
 	void BuildMeshDraws(SceneView& view) const;
@@ -184,4 +188,7 @@ class SPARKLE_RENDERER_API Renderer final
 	// Event subscriptions (RAII - auto-cleanup on destruction)
 	ScopedEventHandle m_depthModeChangedHandle;
 	ScopedEventHandle m_resizeHandle;
+
+	// Persistent material cache. Rebuilt only when the scene material set changes.
+	mutable std::unique_ptr<RendererMaterialCacheState> m_materialCache;
 };

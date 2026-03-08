@@ -20,7 +20,7 @@ TextureLoader::TextureLoader(const AssetSystem& assetSystem, const std::filesyst
 	QueryPixelFormat(wicFactory.Get(), wicFrame.Get());
 	MapToDxgiFormat(resolvedPath);
 	CalculateBufferLayout();
-	CopyPixelData(wicFrame.Get());
+	CopyPixelData(wicFactory.Get(), wicFrame.Get());
 }
 
 // =============================================================================
@@ -48,6 +48,7 @@ ComPtr<IWICBitmapFrameDecode> TextureLoader::DecodeImageFile(IWICImagingFactory*
 void TextureLoader::QueryPixelFormat(IWICImagingFactory* wicFactory, IWICBitmapFrameDecode* wicFrame)
 {
 	CHECK(wicFrame->GetPixelFormat(&m_data.wicPixelFormat));
+	m_sourceWicPixelFormat = m_data.wicPixelFormat;
 
 	ComPtr<IWICComponentInfo> wicComponentInfo;
 	CHECK(wicFactory->CreateComponentInfo(m_data.wicPixelFormat, wicComponentInfo.ReleaseAndGetAddressOf()));
@@ -61,6 +62,9 @@ void TextureLoader::QueryPixelFormat(IWICImagingFactory* wicFactory, IWICBitmapF
 
 void TextureLoader::MapToDxgiFormat(const std::filesystem::path& resolvedPath)
 {
+	m_requiresFormatConversion = false;
+	m_targetWicPixelFormat = GUID_WICPixelFormat32bppRGBA;
+
 	auto findIt = std::find_if(
 	    s_lookupTable.begin(),
 	    s_lookupTable.end(),
@@ -69,12 +73,19 @@ void TextureLoader::MapToDxgiFormat(const std::filesystem::path& resolvedPath)
 		    return std::memcmp(&entry.wic, &m_data.wicPixelFormat, sizeof(GUID)) == 0;
 	    });
 
-	if (findIt == s_lookupTable.end())
+	if (findIt != s_lookupTable.end())
 	{
-		LOG_FATAL(std::string("Unsupported pixel format for file: ") + resolvedPath.string());
+		m_data.dxgiPixelFormat = findIt->dxgiFormat;
+		return;
 	}
 
-	m_data.dxgiPixelFormat = findIt->dxgiFormat;
+	m_requiresFormatConversion = true;
+	m_data.wicPixelFormat = m_targetWicPixelFormat;
+	m_data.bitsPerPixel = 32;
+	m_data.channelCount = 4;
+	m_data.dxgiPixelFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	LOG_WARNING(std::string("TextureLoader: converting unsupported pixel format to 32bpp RGBA for file: ") + resolvedPath.string());
 }
 
 void TextureLoader::CalculateBufferLayout()
@@ -94,8 +105,32 @@ void TextureLoader::CalculateBufferLayout()
 	m_data.data.resize(static_cast<size_t>(m_data.slicePitch));
 }
 
-void TextureLoader::CopyPixelData(IWICBitmapFrameDecode* wicFrame)
+void TextureLoader::CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapFrameDecode* wicFrame)
 {
 	WICRect copyRect = {0, 0, static_cast<INT>(m_data.width), static_cast<INT>(m_data.height)};
-	CHECK(wicFrame->CopyPixels(&copyRect, m_data.stride, m_data.slicePitch, reinterpret_cast<BYTE*>(m_data.data.data())));
+
+	if (!m_requiresFormatConversion)
+	{
+		CHECK(wicFrame->CopyPixels(&copyRect, m_data.stride, m_data.slicePitch, reinterpret_cast<BYTE*>(m_data.data.data())));
+		return;
+	}
+
+	ComPtr<IWICFormatConverter> formatConverter;
+	CHECK(wicFactory->CreateFormatConverter(formatConverter.ReleaseAndGetAddressOf()));
+
+	BOOL canConvert = FALSE;
+	CHECK(formatConverter->CanConvert(m_sourceWicPixelFormat, m_targetWicPixelFormat, &canConvert));
+	if (!canConvert)
+	{
+		LOG_FATAL("TextureLoader: WIC cannot convert source pixel format to 32bpp RGBA.");
+	}
+
+	CHECK(formatConverter->Initialize(
+		wicFrame,
+		m_targetWicPixelFormat,
+		WICBitmapDitherTypeNone,
+		nullptr,
+		0.0f,
+		WICBitmapPaletteTypeCustom));
+	CHECK(formatConverter->CopyPixels(&copyRect, m_data.stride, m_data.slicePitch, reinterpret_cast<BYTE*>(m_data.data.data())));
 }

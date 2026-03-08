@@ -2,6 +2,54 @@
 #include "D3D12DescriptorAllocator.h"
 #include "Log.h"
 
+#include <algorithm>
+
+std::optional<UINT> D3D12DescriptorAllocator::TryAllocateContiguousFromFreeListLocked(uint32_t count)
+{
+	if (m_freeIndices.size() < count)
+	{
+		return std::nullopt;
+	}
+
+	std::sort(m_freeIndices.begin(), m_freeIndices.end());
+
+	for (std::size_t start = 0; start + count <= m_freeIndices.size(); ++start)
+	{
+		bool isContiguousRun = true;
+		for (std::size_t offset = 1; offset < count; ++offset)
+		{
+			if (m_freeIndices[start + offset] != m_freeIndices[start] + offset)
+			{
+				isContiguousRun = false;
+				break;
+			}
+		}
+
+		if (isContiguousRun)
+		{
+			const UINT startIndex = m_freeIndices[start];
+			m_freeIndices.erase(m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start),
+			                   m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start + count));
+			return startIndex;
+		}
+	}
+
+	return std::nullopt;
+}
+
+D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguousFromLinearRangeLocked(uint32_t count)
+{
+	if (m_currentOffset + count > m_heap->GetNumDescriptors())
+	{
+		LOG_FATAL("Descriptor heap cannot allocate contiguous block (insufficient space).");
+		return D3D12DescriptorHandle{};
+	}
+
+	const UINT startIndex = m_currentOffset;
+	m_currentOffset += count;
+	return m_heap->GetHandleAt(startIndex);
+}
+
 D3D12DescriptorHandle D3D12DescriptorAllocator::Allocate()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -39,17 +87,12 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguous(uint32_t coun
 
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	// Contiguous allocation requires linear growth - cannot use fragmented free-list
-	if (m_currentOffset + count > m_heap->GetNumDescriptors())
+	if (const auto reusedStartIndex = TryAllocateContiguousFromFreeListLocked(count))
 	{
-		LOG_FATAL("Descriptor heap cannot allocate contiguous block (insufficient space).");
-		return D3D12DescriptorHandle{};
+		return m_heap->GetHandleAt(*reusedStartIndex);
 	}
 
-	uint32_t startIndex = m_currentOffset;
-	m_currentOffset += count;
-
-	return m_heap->GetHandleAt(startIndex);
+	return AllocateContiguousFromLinearRangeLocked(count);
 }
 
 void D3D12DescriptorAllocator::Free(const D3D12DescriptorHandle& handle) noexcept

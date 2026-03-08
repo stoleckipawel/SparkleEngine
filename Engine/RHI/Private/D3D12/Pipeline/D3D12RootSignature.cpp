@@ -17,7 +17,10 @@ void D3D12RootSignature::Create()
 
 	// Descriptor ranges for tables
 	CD3DX12_DESCRIPTOR_RANGE srvRange = {};
-	srvRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::BaseTexture);
+	srvRange.Init(
+	    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+	    RootBindings::SRVRegister::MaterialTextureCount,
+	    RootBindings::SRVRegister::MaterialTableBase);
 
 	CD3DX12_DESCRIPTOR_RANGE samplerRange = {};
 	// Sampler table is a single contiguous range starting at s0.
@@ -44,7 +47,7 @@ void D3D12RootSignature::Create()
 	    0,
 	    RootBindings::Visibility::PerObjectPS);
 
-	// Texture SRV table (t0+)
+	// Material texture SRV table (t0-t4)
 	rootParameters[RootBindings::RootParam::TextureSRV].InitAsDescriptorTable(1, &srvRange, RootBindings::Visibility::TextureSRV);
 
 	// Sampler table (s0-sN)

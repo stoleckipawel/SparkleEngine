@@ -63,10 +63,16 @@ cbuffer PerObjectPSConstantBufferData : register(b3)
 {
 	float4 BaseColor;  // RGBA base/albedo color or tint
 
-	float Metallic;          // PBR metallic [0,1]
-	float Roughness;         // PBR roughness [0,1]
-	float F0;                // PBR reflectance at normal incidence
-	float _padPerObjectPS0;  // pad to 16 bytes
+	float3 EmissiveColor;  // Emissive multiplier/fallback color
+	float Metallic;        // PBR metallic [0,1]
+
+	float Roughness;    // PBR roughness [0,1]
+	float F0;           // PBR reflectance at normal incidence
+	float AlphaCutoff;  // Alpha test threshold for masked materials
+	uint AlphaMode;     // Matches MaterialDesc::AlphaMode numeric values
+
+	uint TextureFlags;     // Bitmask of authored textures present on the material
+	float3 _padPerObjectPS0;
 
 	// remaining space reserved
 };

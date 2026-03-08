@@ -67,7 +67,7 @@ class TextureLoader
 	void QueryPixelFormat(IWICImagingFactory* wicFactory, IWICBitmapFrameDecode* wicFrame);
 	void MapToDxgiFormat(const std::filesystem::path& resolvedPath);
 	void CalculateBufferLayout();
-	void CopyPixelData(IWICBitmapFrameDecode* wicFrame);
+	void CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapFrameDecode* wicFrame);
 
 	// -------------------------------------------------------------------------
 	// State
@@ -83,4 +83,8 @@ class TextureLoader
 
 	// Supported pixel format lookup table (defined in .cpp).
 	static const std::vector<GUID_to_DXGI> s_lookupTable;
+
+	bool m_requiresFormatConversion = false;
+	GUID m_sourceWicPixelFormat = {};
+	GUID m_targetWicPixelFormat = GUID_WICPixelFormat32bppRGBA;
 };

@@ -13,6 +13,20 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 	mat.metallic = desc.metallic;
 	mat.roughness = desc.roughness;
 	mat.f0 = desc.f0;
-	// Texture binding deferred until TextureManager supports dynamic loading
+	mat.emissiveColor = desc.emissiveColor;
+	mat.alphaMode = static_cast<std::uint32_t>(desc.alphaMode);
+	mat.alphaCutoff = desc.alphaCutoff;
+
+	if (desc.albedoTexture)
+		mat.textureFlags |= MaterialTextureFlags::Albedo;
+	if (desc.normalTexture)
+		mat.textureFlags |= MaterialTextureFlags::Normal;
+	if (desc.metallicRoughnessTexture)
+		mat.textureFlags |= MaterialTextureFlags::MetallicRoughness;
+	if (desc.occlusionTexture)
+		mat.textureFlags |= MaterialTextureFlags::Occlusion;
+	if (desc.emissiveTexture)
+		mat.textureFlags |= MaterialTextureFlags::Emissive;
+
 	return mat;
 }

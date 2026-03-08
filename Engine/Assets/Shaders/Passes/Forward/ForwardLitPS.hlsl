@@ -24,5 +24,6 @@ void main(in PS::Input Input, out PS::Output Output)
 	// Postprocess Final Output
 	const float3 FinalColor =
 	    ViewMode::Resolve(Lit, MatProps, DirectDiffuse, DirectSpecular, DirectSubsurface, IndirectDiffuse, IndirectSpecular);
-	Output.Color0 = float4(FinalColor, 1.0f);
+	const float outputAlpha = (MatProps.AlphaMode == Material::AlphaModeBlend) ? MatProps.Alpha : 1.0f;
+	Output.Color0 = float4(FinalColor, outputAlpha);
 }

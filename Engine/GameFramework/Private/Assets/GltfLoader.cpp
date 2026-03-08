@@ -247,6 +247,31 @@ namespace GltfLoaderInternal
 
 			MaterialDesc desc;
 			desc.name = mat.name ? mat.name : std::format("Material_{}", i);
+			desc.emissiveColor = XMFLOAT3(mat.emissive_factor[0], mat.emissive_factor[1], mat.emissive_factor[2]);
+			desc.alphaCutoff = mat.alpha_cutoff;
+
+			switch (mat.alpha_mode)
+			{
+				case cgltf_alpha_mode_mask:
+					desc.alphaMode = AlphaMode::Mask;
+					break;
+				case cgltf_alpha_mode_blend:
+					desc.alphaMode = AlphaMode::Blend;
+					break;
+				case cgltf_alpha_mode_opaque:
+				default:
+					desc.alphaMode = AlphaMode::Opaque;
+					break;
+			}
+
+			auto addUniqueTexturePath = [&outTexturePaths](const std::filesystem::path& path)
+			{
+				auto pathStr = path.string();
+				if (std::ranges::find(outTexturePaths, pathStr) == outTexturePaths.end())
+				{
+					outTexturePaths.push_back(std::move(pathStr));
+				}
+			};
 
 			if (mat.has_pbr_metallic_roughness)
 			{
@@ -265,12 +290,7 @@ namespace GltfLoaderInternal
 					if (!path.empty())
 					{
 						desc.albedoTexture = path;
-
-						auto pathStr = path.string();
-						if (std::ranges::find(outTexturePaths, pathStr) == outTexturePaths.end())
-						{
-							outTexturePaths.push_back(std::move(pathStr));
-						}
+						addUniqueTexturePath(path);
 					}
 				}
 
@@ -281,12 +301,7 @@ namespace GltfLoaderInternal
 					if (!path.empty())
 					{
 						desc.metallicRoughnessTexture = path;
-
-						auto pathStr = path.string();
-						if (std::ranges::find(outTexturePaths, pathStr) == outTexturePaths.end())
-						{
-							outTexturePaths.push_back(std::move(pathStr));
-						}
+						addUniqueTexturePath(path);
 					}
 				}
 			}
@@ -298,12 +313,29 @@ namespace GltfLoaderInternal
 				if (!path.empty())
 				{
 					desc.normalTexture = path;
+					addUniqueTexturePath(path);
+				}
+			}
 
-					auto pathStr = path.string();
-					if (std::ranges::find(outTexturePaths, pathStr) == outTexturePaths.end())
-					{
-						outTexturePaths.push_back(std::move(pathStr));
-					}
+			// Occlusion texture
+			if (mat.occlusion_texture.texture && mat.occlusion_texture.texture->image)
+			{
+				auto path = ResolveImagePath(mat.occlusion_texture.texture->image, gltfDirectory);
+				if (!path.empty())
+				{
+					desc.occlusionTexture = path;
+					addUniqueTexturePath(path);
+				}
+			}
+
+			// Emissive texture
+			if (mat.emissive_texture.texture && mat.emissive_texture.texture->image)
+			{
+				auto path = ResolveImagePath(mat.emissive_texture.texture->image, gltfDirectory);
+				if (!path.empty())
+				{
+					desc.emissiveTexture = path;
+					addUniqueTexturePath(path);
 				}
 			}
 

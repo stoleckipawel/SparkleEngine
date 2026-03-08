@@ -9,22 +9,37 @@
 
 #include <DirectXMath.h>
 #include <cstdint>
+#include <d3d12.h>
 
 struct MaterialDesc;
+
+namespace MaterialTextureFlags
+{
+	constexpr std::uint32_t Albedo = 0x01;
+	constexpr std::uint32_t Normal = 0x02;
+	constexpr std::uint32_t MetallicRoughness = 0x04;
+	constexpr std::uint32_t Occlusion = 0x08;
+	constexpr std::uint32_t Emissive = 0x10;
+}
 
 // =============================================================================
 // MaterialData
 // =============================================================================
 
-/// PBR material parameters. No GPU handles — albedoTextureIdx indexes
-/// into the texture array managed by TextureManager.
+/// Renderer-facing material package. Holds scalar fallbacks and the persistent
+/// bindful texture-table handle used at draw time.
 struct SPARKLE_RENDERER_API MaterialData
 {
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	float metallic = 0.0f;
 	float roughness = 0.5f;
-	float f0 = 0.04f;                             // Fresnel reflectance at normal incidence
-	std::uint32_t albedoTextureIdx = UINT32_MAX;  // UINT32_MAX = no texture bound
+	float f0 = 0.04f;  // Fresnel reflectance at normal incidence
+	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
+	std::uint32_t alphaMode = 0;  // Matches AlphaMode::Opaque numeric values
+	float alphaCutoff = 0.5f;
+	std::uint32_t textureFlags = 0;
+	// Base GPU handle for the material's contiguous 5-SRV table (t0-t4).
+	D3D12_GPU_DESCRIPTOR_HANDLE textureTableGpuHandle = {};
 
 	/// Creates a MaterialData from a CPU-side MaterialDesc.
 	[[nodiscard]] static MaterialData FromDesc(const MaterialDesc& desc);
@@ -34,9 +49,13 @@ struct SPARKLE_RENDERER_API MaterialData
 	{
 		PerObjectPSConstantBufferData data{};
 		data.BaseColor = baseColor;
+		data.EmissiveColor = emissiveColor;
 		data.Metallic = metallic;
 		data.Roughness = roughness;
 		data.F0 = f0;
+		data.AlphaCutoff = alphaCutoff;
+		data.AlphaMode = alphaMode;
+		data.TextureFlags = textureFlags;
 		return data;
 	}
 };

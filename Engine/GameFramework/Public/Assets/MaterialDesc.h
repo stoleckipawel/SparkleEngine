@@ -23,9 +23,17 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <DirectXMath.h>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
+
+enum class AlphaMode : std::uint32_t
+{
+	Opaque = 0,
+	Mask = 1,
+	Blend = 2,
+};
 
 // =============================================================================
 // MaterialDesc
@@ -47,6 +55,9 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	float metallic = 0.0f;
 	float roughness = 0.5f;
 	float f0 = 0.04f;  // Fresnel reflectance at normal incidence (dielectric default)
+	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
+	AlphaMode alphaMode = AlphaMode::Opaque;
+	float alphaCutoff = 0.5f;
 
 	// -------------------------------------------------------------------------
 	// Texture Paths (relative to asset root)
@@ -55,4 +66,6 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	std::optional<std::filesystem::path> albedoTexture;
 	std::optional<std::filesystem::path> normalTexture;
 	std::optional<std::filesystem::path> metallicRoughnessTexture;
+	std::optional<std::filesystem::path> occlusionTexture;
+	std::optional<std::filesystem::path> emissiveTexture;
 };

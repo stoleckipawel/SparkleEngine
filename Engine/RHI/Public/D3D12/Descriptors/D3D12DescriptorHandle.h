@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <d3d12.h>
+
 class D3D12Rhi;
 
 class D3D12DescriptorHandle

@@ -20,6 +20,7 @@
 // ============================================================================
 
 #pragma once
+#include <cstddef>
 #include <DirectXMath.h>
 #include <cstdint>
 #include <type_traits>
@@ -98,14 +99,28 @@ struct alignas(256) PerObjectPSConstantBufferData
 {
 	DirectX::XMFLOAT4 BaseColor;  // RGBA base/albedo color or tint
 
-	float Metallic;          // PBR metallic [0,1]
-	float Roughness;         // PBR roughness [0,1]
-	float F0;                // PBR reflectance at normal incidence
-	float _padPerObjectPS0;  // pad to 16 bytes
+	DirectX::XMFLOAT3 EmissiveColor;  // Emissive multiplier/fallback color
+	float Metallic;                  // PBR metallic [0,1]
+
+	float Roughness;     // PBR roughness [0,1]
+	float F0;            // PBR reflectance at normal incidence
+	float AlphaCutoff;   // Alpha test threshold for masked materials
+	uint32_t AlphaMode;  // Matches MaterialDesc::AlphaMode numeric values
+
+	uint32_t TextureFlags;  // Bitmask of authored textures present on the material
+	DirectX::XMFLOAT3 _padPerObjectPS0 = {0.0f, 0.0f, 0.0f};
 
 	// remaining space reserved
 };
 CBV_CHECK(PerObjectPSConstantBufferData);
+static_assert(offsetof(PerObjectPSConstantBufferData, BaseColor) == 0, "PerObjectPSConstantBufferData::BaseColor must start at c0");
+static_assert(offsetof(PerObjectPSConstantBufferData, EmissiveColor) == 16, "PerObjectPSConstantBufferData::EmissiveColor must start at c1");
+static_assert(offsetof(PerObjectPSConstantBufferData, Metallic) == 28, "PerObjectPSConstantBufferData::Metallic must share c1.w");
+static_assert(offsetof(PerObjectPSConstantBufferData, Roughness) == 32, "PerObjectPSConstantBufferData::Roughness must start at c2.x");
+static_assert(offsetof(PerObjectPSConstantBufferData, F0) == 36, "PerObjectPSConstantBufferData::F0 must start at c2.y");
+static_assert(offsetof(PerObjectPSConstantBufferData, AlphaCutoff) == 40, "PerObjectPSConstantBufferData::AlphaCutoff must start at c2.z");
+static_assert(offsetof(PerObjectPSConstantBufferData, AlphaMode) == 44, "PerObjectPSConstantBufferData::AlphaMode must start at c2.w");
+static_assert(offsetof(PerObjectPSConstantBufferData, TextureFlags) == 48, "PerObjectPSConstantBufferData::TextureFlags must start at c3.x");
 
 //------------------------------------------------------------------------------
 // Per-Instance Data (structured buffer element) — updated per instance

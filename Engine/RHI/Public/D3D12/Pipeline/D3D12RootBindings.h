@@ -17,8 +17,8 @@
 //   Root Param 1: PerView CBV (b1)
 //   Root Param 2: PerObjectVS CBV (b2)
 //   Root Param 3: PerObjectPS CBV (b3)
-//   Root Param 4: Texture SRV table (t0)
-//   Root Param 5: Sampler table (s0-s26)
+//   Root Param 4: Material texture SRV table (t0-t4)
+//   Root Param 5: Sampler table (s0-s32)
 // ============================================================================
 
 #pragma once
@@ -61,7 +61,14 @@ namespace RootBindings
 	// -----------------------------------------------------------------------------
 	namespace SRVRegister
 	{
-		constexpr uint32_t BaseTexture = 0;
+		constexpr uint32_t BaseColor = 0;
+		constexpr uint32_t Normal = 1;
+		constexpr uint32_t MetallicRoughness = 2;
+		constexpr uint32_t Occlusion = 3;
+		constexpr uint32_t Emissive = 4;
+
+		constexpr uint32_t MaterialTableBase = BaseColor;
+		constexpr uint32_t MaterialTextureCount = 5;
 	}  // namespace SRVRegister
 
 	// -----------------------------------------------------------------------------

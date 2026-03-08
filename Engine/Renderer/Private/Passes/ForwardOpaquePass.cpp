@@ -121,17 +121,11 @@ void ForwardOpaquePass::BindFrameResources(RenderContext& context)
 	context.BindConstantBuffer(RootBindings::RootParam::PerView, m_constantBufferManager->GetPerViewGpuAddress());
 }
 
-// Binds descriptor heaps, default textures, and sampler tables.
+// Binds descriptor heaps and globally shared sampler tables.
 void ForwardOpaquePass::BindGlobalResources(RenderContext& context)
 {
 	// Set shader-visible descriptor heaps
 	m_descriptorHeapManager->SetShaderVisibleHeaps();
-
-	// Bind default texture SRV
-	if (const D3D12Texture* checkerTex = m_textureManager->GetTexture(TextureId::Checker))
-	{
-		context.BindDescriptorTable(RootBindings::RootParam::TextureSRV, checkerTex->GetGPUHandle());
-	}
 
 	// Bind sampler table
 	if (m_samplerLibrary->IsInitialized())
@@ -167,6 +161,15 @@ void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
 		context.BindConstantBuffer(
 		    RootBindings::RootParam::PerObjectPS,
 		    m_constantBufferManager->UpdatePerObjectPS(m_sceneView->materials[draw.materialId].ToPerObjectPSData()));
+
+		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = m_sceneView->materials[draw.materialId].textureTableGpuHandle;
+		if (materialTextureTable.ptr == 0)
+		{
+			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
+			continue;
+		}
+
+		context.BindDescriptorTable(RootBindings::RootParam::TextureSRV, materialTextureTable);
 
 		// Issue draw call
 		context.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);

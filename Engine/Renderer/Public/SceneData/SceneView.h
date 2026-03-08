@@ -6,9 +6,10 @@
 // single frame. Built by Renderer::BuildSceneView() each frame.
 //
 // DESIGN:
-//   - NO D3D12 types, NO GPU handles — pure data only
+//   - Frame-scoped data assembled by Renderer from longer-lived engine state
 //   - Camera stored as pointer to renderer-owned RenderCamera
-//   - Can be serialized, logged, or replayed for debugging
+//   - Material payloads may reference renderer-owned GPU resources such as
+//     persistent descriptor-table handles, but SceneView does not own them
 //
 // =============================================================================
 

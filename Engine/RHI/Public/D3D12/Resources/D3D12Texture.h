@@ -1,14 +1,14 @@
 // ============================================================================
 // D3D12Texture.h
 // ----------------------------------------------------------------------------
-// Manages loading, uploading, and GPU resource creation for 2D textures.
+// Manages upload and GPU resource creation for 2D textures.
 //
 // USAGE:
-//   D3D12Texture myTex("textures/diffuse.png");
+//   D3D12Texture myTex(rhi, std::move(payload), descriptorHeapManager);
 //   auto gpuHandle = myTex.GetGPUHandle();  // Bind to shader
 //
 // DESIGN:
-//   - Loads via TextureLoader (supports common formats)
+//   - Consumes a caller-provided TexturePayload
 //   - Creates D3D12 committed resource and upload buffer
 //   - Allocates SRV descriptor from engine's descriptor heap
 //
@@ -18,22 +18,19 @@
 //   - Destructor frees the descriptor slot
 //
 // NOTES:
-//   - Constructor performs load + upload synchronously
+//   - Constructor performs resource creation + upload synchronously
 //   - Upload buffer kept alive until command list execution completes
 // ============================================================================
 
 #pragma once
 
-#include <filesystem>
-#include <memory>
-#include "TextureLoader.h"
+#include "TexturePayload.h"
 #include "D3D12DescriptorHandle.h"
 #include <d3d12.h>
 #include <wrl/client.h>
 
 using Microsoft::WRL::ComPtr;
 
-class AssetSystem;
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 
@@ -44,15 +41,13 @@ class D3D12Texture
 	// Lifecycle
 	// ========================================================================
 
-	/// Constructs a texture from file. Loads, uploads, and creates SRV.
-	/// @param assetSystem Reference to the asset system for path resolution.
+	/// Constructs a texture from a runtime payload with explicit mip data.
 	/// @param rhi Reference to the D3D12 RHI for device access.
-	/// @param fileName Path to the texture file (absolute or relative to assets).
+	/// @param texturePayload CPU-side texture payload containing all mip levels.
 	/// @param descriptorHeapManager Reference to the descriptor heap manager for SRV allocation.
 	D3D12Texture(
-	    const AssetSystem& assetSystem,
 	    D3D12Rhi& rhi,
-	    const std::filesystem::path& fileName,
+	    TexturePayload texturePayload,
 	    D3D12DescriptorHeapManager& descriptorHeapManager);
 
 	/// Releases the SRV descriptor slot.
@@ -76,6 +71,9 @@ class D3D12Texture
 	/// Returns the CPU descriptor handle (for copy operations).
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_srvHandle.GetCPU(); }
 
+	/// Writes an SRV for this texture into the provided CPU descriptor slot.
+	void WriteShaderResourceView(D3D12_CPU_DESCRIPTOR_HANDLE destination) const;
+
   private:
 	// ------------------------------------------------------------------------
 	// Initialization Helpers
@@ -89,6 +87,7 @@ class D3D12Texture
 
 	/// Allocates SRV descriptor and creates the view.
 	void CreateShaderResourceView();
+	[[nodiscard]] D3D12_SHADER_RESOURCE_VIEW_DESC BuildShaderResourceViewDesc() const noexcept;
 
 	// ------------------------------------------------------------------------
 	// Resources
@@ -97,7 +96,7 @@ class D3D12Texture
 	D3D12Rhi& m_rhi;                                                ///< RHI reference
 	ComPtr<ID3D12Resource2> m_textureResource;                      ///< GPU texture resource (default heap)
 	ComPtr<ID3D12Resource2> m_uploadResource;                       ///< Upload buffer (upload heap)
-	std::unique_ptr<TextureLoader> m_loader;                        ///< Texture loading helper
+	TexturePayload m_texturePayload;                                ///< CPU-side payload for upload/build metadata
 	D3D12DescriptorHandle m_srvHandle;                              ///< SRV descriptor handle
 	D3D12_RESOURCE_DESC m_texResourceDesc = {};                     ///< Texture resource description
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;  ///< Descriptor heap manager reference

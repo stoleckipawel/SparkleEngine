@@ -2,7 +2,9 @@
 #include "Renderer.h"
 
 #include "Assets/AssetSystem.h"
+#include "Assets/MaterialDesc.h"
 #include "D3D12DebugLayer.h"
+#include "D3D12DescriptorHeap.h"
 #include "D3D12Rhi.h"
 #include "D3D12SwapChain.h"
 #include "Window.h"
@@ -13,11 +15,13 @@
 #include "Scene/Scene.h"
 #include "Scene/Mesh.h"
 #include "D3D12PipelineState.h"
+#include "D3D12RootBindings.h"
 #include "D3D12RootSignature.h"
 #include "D3D12ConstantBuffer.h"
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12ConstantBufferData.h"
 #include "D3D12FrameResource.h"
+#include "D3D12Texture.h"
 #include "D3D12VertexLayout.h"
 #include "Samplers/D3D12SamplerLibrary.h"
 #include "D3D12DepthStencil.h"
@@ -28,10 +32,13 @@
 #include "Renderer/Public/RenderContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/Passes/ForwardOpaquePass.h"
+#include "Renderer/Public/Textures/MaterialFallbackTextures.h"
 #include "Scene/Camera/GameCamera.h"
+#include "SceneData/MaterialCacheUtils.h"
+#include "SceneData/RendererMaterialCacheState.h"
 
 Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept :
-    m_timer(&timer), m_assetSystem(&assetSystem), m_scene(&scene), m_window(&window)
+    m_timer(&timer), m_assetSystem(&assetSystem), m_scene(&scene), m_window(&window), m_materialCache(std::make_unique<RendererMaterialCacheState>())
 {
 	// Create and own the RHI
 	m_rhi = std::make_unique<D3D12Rhi>();
@@ -252,20 +259,130 @@ void Renderer::InitializeSceneView(SceneView& view) const
 
 void Renderer::BuildMaterials(SceneView& view) const
 {
+	if (!m_materialCache)
+	{
+		LOG_FATAL("Renderer::BuildMaterials: material cache state is unavailable.");
+		return;
+	}
+
 	const auto& loadedMaterials = m_scene->GetLoadedMaterials();
+	auto& materialCache = *m_materialCache;
+
+	const bool shouldUseLoadedMaterials = !loadedMaterials.empty();
+	const bool materialSetChanged = shouldUseLoadedMaterials
+	    ? (!materialCache.materialCacheUsesLoadedMaterials ||
+	       !MaterialCacheUtils::MaterialDescSetEquals(materialCache.cachedMaterialDescs, loadedMaterials))
+	    : materialCache.materialCacheUsesLoadedMaterials;
+
+	if (!materialCache.materialCacheBuilt || materialSetChanged)
+	{
+		RebuildMaterialCache();
+	}
+
+	if (!materialCache.cachedMaterialData.empty())
+	{
+		view.materials = materialCache.cachedMaterialData;
+	}
+}
+
+void Renderer::RebuildMaterialCache() const
+{
+	if (!m_materialCache)
+	{
+		LOG_FATAL("Renderer::RebuildMaterialCache: material cache state is unavailable.");
+		return;
+	}
+
+	const auto& loadedMaterials = m_scene->GetLoadedMaterials();
+	auto& materialCache = *m_materialCache;
+
+	ReleaseMaterialTextureTables();
+	materialCache.cachedMaterialData.clear();
+	materialCache.cachedMaterialDescs.clear();
+	materialCache.materialCacheUsesLoadedMaterials = !loadedMaterials.empty();
+
+	const auto* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	if (!srvHeap)
+	{
+		LOG_FATAL("Renderer::RebuildMaterialCache: SRV heap is unavailable.");
+		return;
+	}
+
+	auto buildMaterialTable = [this, srvHeap](const MaterialDesc& desc)
+	{
+		MaterialData material = MaterialData::FromDesc(desc);
+
+		const D3D12Texture* textures[RootBindings::SRVRegister::MaterialTextureCount] = {
+		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.albedoTexture, MaterialFallbackTexture::Albedo),
+		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.normalTexture, MaterialFallbackTexture::Normal),
+		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.metallicRoughnessTexture, MaterialFallbackTexture::MetallicRoughness),
+		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.occlusionTexture, MaterialFallbackTexture::Occlusion),
+		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.emissiveTexture, MaterialFallbackTexture::Emissive)};
+
+		const D3D12DescriptorHandle tableHandle =
+		    m_descriptorHeapManager->AllocateContiguous(
+		        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		        RootBindings::SRVRegister::MaterialTextureCount);
+
+		for (std::uint32_t slot = 0; slot < RootBindings::SRVRegister::MaterialTextureCount; ++slot)
+		{
+			if (!textures[slot])
+			{
+				LOG_FATAL(std::format("Renderer::RebuildMaterialCache: Material texture slot {} resolved to null.", slot));
+			}
+
+			const D3D12_CPU_DESCRIPTOR_HANDLE destination = srvHeap->GetHandleAt(tableHandle.GetIndex() + slot).GetCPU();
+			textures[slot]->WriteShaderResourceView(destination);
+		}
+
+		material.textureTableGpuHandle = tableHandle.GetGPU();
+		m_materialCache->materialTextureTables.push_back(tableHandle);
+		m_materialCache->cachedMaterialData.push_back(material);
+	};
+
 	if (!loadedMaterials.empty())
 	{
-		view.materials.reserve(loadedMaterials.size());
+		materialCache.cachedMaterialDescs = loadedMaterials;
+		materialCache.cachedMaterialData.reserve(loadedMaterials.size());
+		materialCache.materialTextureTables.reserve(loadedMaterials.size());
+
 		for (const auto& desc : loadedMaterials)
 		{
-			view.materials.push_back(MaterialData::FromDesc(desc));
+			buildMaterialTable(desc);
 		}
 	}
 	else
 	{
-		// Single default PBR material at index 0
-		view.materials.emplace_back();
+		materialCache.cachedMaterialData.reserve(1);
+		materialCache.materialTextureTables.reserve(1);
+
+		MaterialDesc defaultMaterial;
+		defaultMaterial.name = "Renderer_DefaultMaterial";
+		buildMaterialTable(defaultMaterial);
 	}
+
+	materialCache.materialCacheBuilt = true;
+}
+
+void Renderer::ReleaseMaterialTextureTables() const noexcept
+{
+	if (!m_materialCache)
+	{
+		return;
+	}
+
+	for (const D3D12DescriptorHandle& tableHandle : m_materialCache->materialTextureTables)
+	{
+		if (tableHandle.IsValid())
+		{
+			m_descriptorHeapManager->FreeContiguous(
+			    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			    tableHandle,
+			    RootBindings::SRVRegister::MaterialTextureCount);
+		}
+	}
+
+	m_materialCache->materialTextureTables.clear();
 }
 
 void Renderer::BuildMeshDraws(SceneView& view) const
@@ -281,7 +398,7 @@ void Renderer::BuildMeshDraws(SceneView& view) const
 		MeshDraw draw = {};
 		DirectX::XMStoreFloat4x4(&draw.worldMatrix, mesh->GetWorldMatrix());
 		DirectX::XMStoreFloat3x4(&draw.worldInvTranspose, mesh->GetWorldInverseTransposeMatrix());
-		draw.materialId = mesh->GetMaterialId();
+		draw.materialId = MaterialCacheUtils::ResolveMaterialId(mesh->GetMaterialId(), view.materials.size());
 		draw.meshPtr = mesh.get();
 		view.meshDraws.push_back(draw);
 	}
@@ -294,6 +411,12 @@ Renderer::~Renderer() noexcept
 {
 	m_rhi->Flush();
 
+	ReleaseMaterialTextureTables();
+	if (m_materialCache)
+	{
+		m_materialCache->cachedMaterialData.clear();
+		m_materialCache->cachedMaterialDescs.clear();
+	}
 
 	m_frameGraph.reset();
 
