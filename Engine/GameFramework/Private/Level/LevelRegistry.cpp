@@ -4,6 +4,10 @@
 
 #include "Level/Levels/EmptyLevel.h"
 #include "Level/Levels/BasicShapesLevel.h"
+#include "Level/Levels/ABeautifulGameLevel.h"
+#include "Level/Levels/CesiumManLevel.h"
+#include "Level/Levels/DamagedHelmetLevel.h"
+#include "Level/Levels/DiffuseTransmissionPlantLevel.h"
 #include "Level/Levels/SponzaLevel.h"
 
 #include "Core/Public/Diagnostics/Log.h"
@@ -27,6 +31,10 @@ void LevelRegistry::RegisterBuiltinLevels()
 {
 	Register(std::make_unique<EmptyLevel>());
 	Register(std::make_unique<BasicShapesLevel>());
+	Register(std::make_unique<ABeautifulGameLevel>());
+	Register(std::make_unique<CesiumManLevel>());
+	Register(std::make_unique<DamagedHelmetLevel>());
+	Register(std::make_unique<DiffuseTransmissionPlantLevel>());
 	Register(std::make_unique<SponzaLevel>());
 
 	SetDefaultLevelName("BasicShapes");

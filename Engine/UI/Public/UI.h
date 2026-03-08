@@ -34,7 +34,6 @@
 #include <Windows.h>
 
 #include <memory>
-
 #include "Sections/ViewMode.h"
 
 class Timer;

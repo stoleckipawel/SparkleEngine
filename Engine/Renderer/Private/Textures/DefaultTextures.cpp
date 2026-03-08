@@ -8,10 +8,10 @@
 namespace
 {
 	constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
-	    {"White", "Sponza/white.png"},
-	    {"Black", "DamagedHelmet/Default_emissive.jpg"},
-	    {"FlatNormal", "DamagedHelmet/Default_normal.jpg"},
-	    {"DefaultMetallicRoughness", "DamagedHelmet/Default_metalRoughness.jpg"}};
+	    {"White", "Defaults/white.png"},
+	    {"Black", "Defaults/black.jpg"},
+	    {"FlatNormal", "Defaults/flat_normal.jpg"},
+	    {"DefaultMetallicRoughness", "Defaults/default_metallic_roughness.jpg"}};
 
 	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
 }

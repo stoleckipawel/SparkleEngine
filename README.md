@@ -206,7 +206,11 @@ Module/
 
 | Project | Description |
 |---------|-------------|
-| `Projects/DemoProject/` | Sponza scene viewer |
+| `Projects/ABeautifulGame/` | A Beautiful Game scene viewer |
+| `Projects/CesiumMan/` | CesiumMan scene viewer |
+| `Projects/DamagedHelmet/` | DamagedHelmet scene viewer |
+| `Projects/DiffuseTransmissionPlant/` | DiffuseTransmissionPlant scene viewer |
+| `Projects/Sponza/` | Sponza scene viewer |
 | `Projects/TemplateProject/` | Template for new projects |
 
 ### Build Output
