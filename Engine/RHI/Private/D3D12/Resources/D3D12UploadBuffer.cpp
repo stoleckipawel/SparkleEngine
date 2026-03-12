@@ -5,7 +5,6 @@
 #include "Log.h"
 #include <cstring>
 
-// Note: For optimal performance, consider using a default heap and staging resource for large or frequent uploads.
 ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* data, size_t dataSize)
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
@@ -32,10 +31,8 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 
 	DebugUtils::SetDebugName(uploadBuffer, L"RHI_UploadBuffer");
 
-	// Map the buffer and copy the data. Use std::memcpy for portability; the
-	// upload heap is write-combined so large copies should be minimized.
 	void* mappedData = nullptr;
-	D3D12_RANGE readRange = {0, 0};  // We do not intend to read from this resource on CPU
+	D3D12_RANGE readRange = {0, 0};
 	CHECK(uploadBuffer->Map(0, &readRange, &mappedData));
 
 	if (dataSize > 0 && data != nullptr && mappedData != nullptr)
@@ -43,11 +40,6 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 		std::memcpy(mappedData, data, dataSize);
 	}
 	uploadBuffer->Unmap(0, nullptr);
-
-	// NOTE: For large or frequent uploads prefer:
-	//  - a persistent upload ring/linear allocator (single upload resource mapped)
-	//  - or staging into an upload resource and issuing a CopyBufferRegion into
-	//    a default-heap GPU resource for optimal GPU access.
 
 	return uploadBuffer;
 }

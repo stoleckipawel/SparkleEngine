@@ -14,10 +14,6 @@ class Level;
 class SPARKLE_ENGINE_API LevelRegistry final
 {
   public:
-	// ========================================================================
-	// Lifecycle
-	// ========================================================================
-
 	LevelRegistry();
 	~LevelRegistry() noexcept;
 
@@ -26,35 +22,18 @@ class SPARKLE_ENGINE_API LevelRegistry final
 	LevelRegistry(LevelRegistry&&) = delete;
 	LevelRegistry& operator=(LevelRegistry&&) = delete;
 
-	// ========================================================================
-	// Registration
-	// ========================================================================
-
-	/// Registers a level. Rejects duplicates (logs a warning).
 	void Register(std::unique_ptr<Level> level);
 
-	// ========================================================================
-	// Lookup
-	// ========================================================================
-
-	/// Finds a registered level by name. Returns nullptr if not found.
 	Level* FindLevel(std::string_view name) const;
 
-	/// Finds by name if non-empty, otherwise returns the default level.
-	/// Logs a warning and returns nullptr if neither resolves.
 	Level* FindLevelOrDefault(std::string_view name) const;
 
 	const std::unordered_map<std::string, std::unique_ptr<Level>>& GetAllLevels() const noexcept;
-	
+
 	std::size_t GetLevelCount() const noexcept;
 
-	// ========================================================================
-	// Default Level
-	// ========================================================================
-
-
 	void SetDefaultLevelName(std::string_view name);
-	
+
 	std::string_view GetDefaultLevelName() const noexcept;
 	Level* GetDefaultLevel() const;
 

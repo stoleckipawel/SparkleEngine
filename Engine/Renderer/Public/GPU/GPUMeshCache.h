@@ -1,10 +1,3 @@
-// =============================================================================
-// GPUMeshCache.h - Lazy GPU mesh upload manager
-// =============================================================================
-//
-// Caches GPU meshes by their CPU mesh pointer. Uploads on first access.
-// Owned by Renderer - provides lazy upload for render passes.
-//
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -15,10 +8,6 @@
 
 class D3D12Rhi;
 class Mesh;
-
-// =============================================================================
-// GPUMeshCache
-// =============================================================================
 
 class SPARKLE_RENDERER_API GPUMeshCache final
 {
@@ -31,17 +20,9 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	GPUMeshCache(GPUMeshCache&&) noexcept = default;
 	GPUMeshCache& operator=(GPUMeshCache&&) noexcept = default;
 
-	// -------------------------------------------------------------------------
-	// Cache Operations
-	// -------------------------------------------------------------------------
-
 	GPUMesh* GetOrUpload(const Mesh& cpuMesh);
 
 	void Clear() noexcept;
-
-	// -------------------------------------------------------------------------
-	// Queries
-	// -------------------------------------------------------------------------
 
 	std::size_t GetCachedCount() const noexcept { return m_cache.size(); }
 	bool Contains(const Mesh& cpuMesh) const noexcept;

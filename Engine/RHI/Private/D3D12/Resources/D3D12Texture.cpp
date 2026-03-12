@@ -33,7 +33,6 @@ D3D12Texture::D3D12Texture(
 
 void D3D12Texture::CreateResource()
 {
-	// Describe the texture resource
 	m_texResourceDesc = {};
 	m_texResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	m_texResourceDesc.Width = static_cast<UINT64>(m_texturePayload.width);
@@ -46,7 +45,6 @@ void D3D12Texture::CreateResource()
 	m_texResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	m_texResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	// Create the default heap resource for the texture
 	CD3DX12_HEAP_PROPERTIES heapDefaultProperties(D3D12_HEAP_TYPE_DEFAULT);
 	CHECK(m_rhi.GetDevice()->CreateCommittedResource(
 	    &heapDefaultProperties,
@@ -57,11 +55,9 @@ void D3D12Texture::CreateResource()
 	    IID_PPV_ARGS(m_textureResource.ReleaseAndGetAddressOf())));
 	DebugUtils::SetDebugName(m_textureResource, L"RHI_D3D12Texture");
 
-	// Calculate required size for the upload buffer
 	const UINT subresourceCount = static_cast<UINT>(m_texturePayload.mipLevels.size());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);
 
-	// Create the upload heap resource for staging texture data
 	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
 	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 	CHECK(m_rhi.GetDevice()->CreateCommittedResource(
@@ -87,7 +83,6 @@ void D3D12Texture::UploadToGPU()
 		subresources.push_back(subresource);
 	}
 
-	// Upload the data to the GPU texture resource
 	UpdateSubresources(
 		m_rhi.GetCommandList().Get(),
 		m_textureResource.Get(),
@@ -97,7 +92,6 @@ void D3D12Texture::UploadToGPU()
 		static_cast<UINT>(subresources.size()),
 		subresources.data());
 
-	// Transition the texture resource to PIXEL_SHADER_RESOURCE state
 	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    m_textureResource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
@@ -131,7 +125,7 @@ D3D12Texture::~D3D12Texture() noexcept
 {
 	m_textureResource.Reset();
 	m_uploadResource.Reset();
-	// Return SRV descriptor to allocator
+
 	if (m_srvHandle.IsValid())
 	{
 		m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_srvHandle);

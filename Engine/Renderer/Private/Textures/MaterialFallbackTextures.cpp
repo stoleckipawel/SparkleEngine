@@ -1,7 +1,3 @@
-// ============================================================================
-// MaterialFallbackTextures.cpp
-// ============================================================================
-
 #include "PCH.h"
 #include "Renderer/Public/Textures/MaterialFallbackTextures.h"
 

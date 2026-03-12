@@ -1,7 +1,3 @@
-// ============================================================================
-// D3D12SamplerLibrary.h
-// Pre-built sampler descriptor table for shader binding.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include "D3D12DescriptorHandle.h"
@@ -14,9 +10,6 @@ class D3D12Rhi;
 class D3D12SamplerLibrary
 {
   public:
-	// -------------------------------------------------------------------------
-	// Filter Configuration
-	// -------------------------------------------------------------------------
 	enum class MinMagFilter : uint8_t
 	{
 		Point,
@@ -27,7 +20,7 @@ class D3D12SamplerLibrary
 	{
 		Point,
 		Linear,
-		None  // Disables mipmapping (MaxLOD = 0)
+		None
 	};
 
 	enum class AddressMode : uint8_t
@@ -37,12 +30,8 @@ class D3D12SamplerLibrary
 		Mirror
 	};
 
-	// -------------------------------------------------------------------------
-	// Sampler Slots
-	// -------------------------------------------------------------------------
 	enum class Slot : uint32_t
 	{
-		// Point MinMag
 		PointMipPointWrap = RootBindings::SamplerRegister::PointMipPointWrap,
 		PointMipPointClamp = RootBindings::SamplerRegister::PointMipPointClamp,
 		PointMipPointMirror = RootBindings::SamplerRegister::PointMipPointMirror,
@@ -53,7 +42,6 @@ class D3D12SamplerLibrary
 		PointNoMipClamp = RootBindings::SamplerRegister::PointNoMipClamp,
 		PointNoMipMirror = RootBindings::SamplerRegister::PointNoMipMirror,
 
-		// Linear MinMag
 		LinearMipPointWrap = RootBindings::SamplerRegister::LinearMipPointWrap,
 		LinearMipPointClamp = RootBindings::SamplerRegister::LinearMipPointClamp,
 		LinearMipPointMirror = RootBindings::SamplerRegister::LinearMipPointMirror,
@@ -64,7 +52,6 @@ class D3D12SamplerLibrary
 		LinearNoMipClamp = RootBindings::SamplerRegister::LinearNoMipClamp,
 		LinearNoMipMirror = RootBindings::SamplerRegister::LinearNoMipMirror,
 
-		// Anisotropic
 		Aniso1xWrap = RootBindings::SamplerRegister::Aniso1xWrap,
 		Aniso1xClamp = RootBindings::SamplerRegister::Aniso1xClamp,
 		Aniso1xMirror = RootBindings::SamplerRegister::Aniso1xMirror,
@@ -84,9 +71,6 @@ class D3D12SamplerLibrary
 		Count = RootBindings::SamplerRegister::Count
 	};
 
-	// -------------------------------------------------------------------------
-	// Lifecycle
-	// -------------------------------------------------------------------------
 	D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager);
 	~D3D12SamplerLibrary() noexcept;
 
@@ -95,9 +79,6 @@ class D3D12SamplerLibrary
 	D3D12SamplerLibrary(D3D12SamplerLibrary&&) = delete;
 	D3D12SamplerLibrary& operator=(D3D12SamplerLibrary&&) = delete;
 
-	// -------------------------------------------------------------------------
-	// Accessors
-	// -------------------------------------------------------------------------
 	bool IsInitialized() const noexcept { return m_bInitialized; }
 	D3D12_GPU_DESCRIPTOR_HANDLE GetTableGPUHandle() const noexcept { return m_tableHandle.GetGPU(); }
 	static constexpr uint32_t GetSamplerCount() noexcept { return static_cast<uint32_t>(Slot::Count); }

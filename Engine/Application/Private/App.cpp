@@ -73,7 +73,7 @@ void App::Initialize()
 	m_renderer = std::make_unique<Renderer>(*m_timer, *m_assetSystem, *m_scene, *m_window);
 }
 
-void App::LoadStartupLevel() 
+void App::LoadStartupLevel()
 {
 	if (auto* level = m_levelRegistry->FindLevelOrDefault(m_windowTitle))
 	{

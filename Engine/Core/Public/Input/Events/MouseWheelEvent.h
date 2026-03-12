@@ -3,29 +3,19 @@
 #include "../Mouse/MousePosition.h"
 #include "../Device/InputDevice.h"
 
-// =============================================================================
-// MouseWheelEvent
-// =============================================================================
-
-/// Event data for mouse wheel scroll.
 struct MouseWheelEvent
 {
-	float Delta = 0.0f;        ///< Scroll amount (+1.0 = one notch up/right)
-	MousePosition Position;    ///< Cursor position at time of scroll
-	bool bHorizontal = false;  ///< True = horizontal (tilt), False = vertical
+	float Delta = 0.0f;
+	MousePosition Position;
+	bool bHorizontal = false;
 
-	/// Returns the device type (always Mouse).
 	constexpr InputDevice GetDevice() const noexcept { return InputDevice::Mouse; }
 
-	/// Returns true if this is a vertical wheel event.
 	constexpr bool IsVertical() const noexcept { return !bHorizontal; }
 
-	/// Returns true if this is a horizontal wheel event.
 	constexpr bool IsHorizontal() const noexcept { return bHorizontal; }
 
-	/// Returns true if scrolling up/right (positive direction).
 	constexpr bool IsPositive() const noexcept { return Delta > 0.0f; }
 
-	/// Returns true if scrolling down/left (negative direction).
 	constexpr bool IsNegative() const noexcept { return Delta < 0.0f; }
 };

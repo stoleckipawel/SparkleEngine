@@ -1,21 +1,7 @@
-// ============================================================================
-// RenderContext.cpp
-// ----------------------------------------------------------------------------
-// Implementation of high-level command abstraction for render passes.
-// ============================================================================
-
 #include "PCH.h"
 #include "Renderer/Public/RenderContext.h"
 
-// ============================================================================
-// Construction
-// ============================================================================
-
 RenderContext::RenderContext(ID3D12GraphicsCommandList* cmdList) noexcept : m_cmdList(cmdList) {}
-
-// ============================================================================
-// Pipeline State
-// ============================================================================
 
 void RenderContext::SetPipelineState(ID3D12PipelineState* pso) noexcept
 {
@@ -26,10 +12,6 @@ void RenderContext::SetRootSignature(ID3D12RootSignature* rootSig) noexcept
 {
 	m_cmdList->SetGraphicsRootSignature(rootSig);
 }
-
-// ============================================================================
-// Geometry / Input Assembly
-// ============================================================================
 
 void RenderContext::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) noexcept
 {
@@ -46,10 +28,6 @@ void RenderContext::BindIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& view) noexcep
 	m_cmdList->IASetIndexBuffer(&view);
 }
 
-// ============================================================================
-// Resource Binding
-// ============================================================================
-
 void RenderContext::BindConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
 {
 	m_cmdList->SetGraphicsRootConstantBufferView(rootParameterIndex, gpuAddress);
@@ -59,10 +37,6 @@ void RenderContext::BindDescriptorTable(std::uint32_t rootParameterIndex, D3D12_
 {
 	m_cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex, baseDescriptor);
 }
-
-// ============================================================================
-// Render Targets
-// ============================================================================
 
 void RenderContext::SetRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const D3D12_CPU_DESCRIPTOR_HANDLE* dsv) noexcept
 {
@@ -86,10 +60,6 @@ void RenderContext::ClearDepthStencil(D3D12_CPU_DESCRIPTOR_HANDLE dsv, float dep
 {
 	m_cmdList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
 }
-
-// ============================================================================
-// Viewport & Scissor
-// ============================================================================
 
 void RenderContext::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) noexcept
 {
@@ -115,10 +85,6 @@ void RenderContext::SetScissorRect(std::int32_t left, std::int32_t top, std::int
 	m_cmdList->RSSetScissorRects(1, &scissor);
 }
 
-// ============================================================================
-// Draw Commands
-// ============================================================================
-
 void RenderContext::DrawIndexedInstanced(
     std::uint32_t indexCountPerInstance,
     std::uint32_t instanceCount,
@@ -138,10 +104,6 @@ void RenderContext::DrawInstanced(
 	m_cmdList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
-// ============================================================================
-// Resource Barriers
-// ============================================================================
-
 void RenderContext::TransitionResource(ID3D12Resource* resource, ResourceState before, ResourceState after) noexcept
 {
 	D3D12_RESOURCE_BARRIER barrier{};
@@ -154,10 +116,6 @@ void RenderContext::TransitionResource(ID3D12Resource* resource, ResourceState b
 
 	m_cmdList->ResourceBarrier(1, &barrier);
 }
-
-// ============================================================================
-// State Mapping
-// ============================================================================
 
 D3D12_RESOURCE_STATES RenderContext::MapToD3D12State(ResourceState state) noexcept
 {

@@ -16,7 +16,6 @@
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx12.h>
 
-// Forward declaration to ensure the Win32 backend handler is visible to this unit.
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static void AllocSRV(
@@ -36,7 +35,6 @@ static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE c
 
 void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
 {
-	// Let ImGui consume input before the rest of the engine handles it.
 	if (ProcessWindowMessage(event.hWnd, event.msg, event.wParam, event.lParam))
 	{
 		event.handled = true;
@@ -151,7 +149,6 @@ ViewMode::Type UI::GetViewMode() noexcept
 	return viewMode.Get();
 }
 
-// Begins an ImGui frame. Updates delta time and display size; binds heaps.
 void UI::NewFrame()
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -176,20 +173,17 @@ void UI::Build()
 	ImGui::Render();
 }
 
-
 void UI::Update()
 {
 	NewFrame();
 	Build();
 }
 
-// Submits ImGui draw data using the current DX12 command list.
 void UI::Render() noexcept
 {
 	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_rhi->GetCommandList().Get());
 }
 
-// Destructor - shuts down ImGui backends and destroys the context.
 UI::~UI() noexcept
 {
 	ImGui_ImplDX12_Shutdown();
@@ -197,13 +191,12 @@ UI::~UI() noexcept
 	ImGui::DestroyContext();
 }
 
-// Configures DPI awareness and scales style/font sizes accordingly.
 void UI::SetupDPIScaling() noexcept
 {
 	ImGui_ImplWin32_EnableDpiAwareness();
 	float mainScale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.FontSizeBase = 16.0f;
-	// Bake a fixed style scale until dynamic style scaling is supported.
+
 	style.ScaleAllSizes(mainScale);
 }

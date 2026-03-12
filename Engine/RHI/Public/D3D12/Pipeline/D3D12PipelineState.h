@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12PipelineState.h
-// ----------------------------------------------------------------------------
-// Encapsulates a D3D12 graphics pipeline state object (PSO) and its creation.
-//
 #pragma once
 
 #include "ShaderCompileResult.h"
@@ -16,11 +11,6 @@ using Microsoft::WRL::ComPtr;
 
 class D3D12Rhi;
 
-// ============================================================================
-// Configuration Structures
-// ============================================================================
-
-/// Depth test configuration for pipeline state creation.
 struct DepthTestDesc
 {
 	bool DepthEnable = true;
@@ -28,7 +18,6 @@ struct DepthTestDesc
 	D3D12_COMPARISON_FUNC DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 };
 
-// Describes stencil test configuration for the pipeline state.
 struct StencilTestDesc
 {
 	bool StencilEnable = false;
@@ -44,7 +33,6 @@ struct StencilTestDesc
 	D3D12_STENCIL_OP BackFaceStencilPassOp = D3D12_STENCIL_OP_KEEP;
 };
 
-// D3D12PipelineState owns a graphics pipeline state object and the configuration needed to build it.
 class D3D12PipelineState
 {
   public:

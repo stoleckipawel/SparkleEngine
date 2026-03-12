@@ -3,42 +3,38 @@
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
-	// Create CBV/SRV/UAV heap (shader visible)
 	m_HeapSRV = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 	    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
 	    L"CBVSRVUAVHeap");
-	// Initialize SRV allocator to manage SRV indices within the unified CBV/SRV/UAV heap
+
 	m_AllocatorSRV = std::make_unique<D3D12DescriptorAllocator>(m_HeapSRV.get());
 
-	// Create Sampler heap (shader visible)
 	m_HeapSampler = std::make_unique<D3D12DescriptorHeap>(
 	    *m_rhi,
 	    D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 	    D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
 	    L"SamplerHeap");
-	// Initialize Sampler allocator
+
 	m_AllocatorSampler = std::make_unique<D3D12DescriptorAllocator>(m_HeapSampler.get());
 
-	// Create Depth Stencil View heap (not shader visible)
 	m_HeapDepthStencil =
 	    std::make_unique<D3D12DescriptorHeap>(*m_rhi, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"DepthStencilHeap");
-	// Initialize DSV allocator
+
 	m_AllocatorDepthStencil = std::make_unique<D3D12DescriptorAllocator>(m_HeapDepthStencil.get());
 
-	// Create Render Target View heap (not shader visible)
 	m_HeapRenderTarget =
 	    std::make_unique<D3D12DescriptorHeap>(*m_rhi, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, L"RenderTargetHeap");
-	// Initialize RTV allocator
+
 	m_AllocatorRenderTarget = std::make_unique<D3D12DescriptorAllocator>(m_HeapRenderTarget.get());
 }
 
 void D3D12DescriptorHeapManager::SetShaderVisibleHeaps() const
 {
 	ID3D12DescriptorHeap* heaps[] = {
-	    m_HeapSRV->GetRaw(),     // CBV/SRV/UAV heap
-	    m_HeapSampler->GetRaw()  // Sampler heap (optional for UI; harmless)
+	    m_HeapSRV->GetRaw(),
+	    m_HeapSampler->GetRaw()
 	};
 
 	m_rhi->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
@@ -68,13 +64,11 @@ void D3D12DescriptorHeapManager::FreeHandle(
 		LOG_FATAL("FreeHandle: invalid heap or allocator");
 	}
 
-	// Compute index from CPU handle pointer arithmetic against the heap's CPU start
 	const auto heapCPUStart = heap->GetRaw()->GetCPUDescriptorHandleForHeapStart();
 	const UINT increment = m_rhi->GetDevice()->GetDescriptorHandleIncrementSize(type);
 	const SIZE_T delta = (cpuHandle.ptr - heapCPUStart.ptr);
 	const UINT index = static_cast<UINT>(delta / static_cast<SIZE_T>(increment));
 
-	// Only request GPU start for shader-visible heaps; otherwise pass a zeroed GPU handle.
 	D3D12_GPU_DESCRIPTOR_HANDLE heapGPUStart = {0};
 	const auto heapDesc = heap->GetRaw()->GetDesc();
 	if (heapDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)

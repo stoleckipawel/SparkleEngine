@@ -1,8 +1,3 @@
-// ============================================================================
-// DxcContext.h
-// ----------------------------------------------------------------------------
-// Manages the lifetime of DXC COM interfaces for shader compilation.
-//
 #pragma once
 
 #include <dxcapi.h>

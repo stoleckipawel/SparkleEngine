@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12DescriptorHandle.h
-// ----------------------------------------------------------------------------
-// Lightweight, type-aware descriptor identifier with CPU/GPU handles.
-//
 #pragma once
 
 #include <d3d12.h>
@@ -19,8 +14,6 @@ class D3D12DescriptorHandle
 	    D3D12_CPU_DESCRIPTOR_HANDLE cpuStartHandle,
 	    D3D12_GPU_DESCRIPTOR_HANDLE gpuStartHandle);
 
-	// Default constructor creates an invalid handle (index ~0u, handles 0).
-	// Useful for containers and default-constructible classes; must be assigned before use.
 	D3D12DescriptorHandle() = default;
 
 	UINT GetIndex() const noexcept { return m_index; }
@@ -38,9 +31,9 @@ class D3D12DescriptorHandle
 	static constexpr UINT InvalidIndex = ~0u;
 
   private:
-	UINT m_index = InvalidIndex;  // Descriptor index within the heap (invalid by default)
-	UINT m_incrementSize = 0;     // Cached descriptor increment size
+	UINT m_index = InvalidIndex;
+	UINT m_incrementSize = 0;
 	D3D12_DESCRIPTOR_HEAP_TYPE m_heapType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle = {0};  // CPU handle for descriptor
-	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle = {0};  // GPU handle for descriptor (shader-visible only)
+	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle = {0};
+	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle = {0};
 };

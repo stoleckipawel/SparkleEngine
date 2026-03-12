@@ -64,7 +64,7 @@ float3 TransformNormalToWorld(float3 normalTangent, float3 vertexNormalWorld, fl
 }
 
 // -----------------------------------------------------------------------------
-// Rotation (for procedural animation)
+// Rotation Helper
 // -----------------------------------------------------------------------------
 
 float3 Rotate(float3 v, float3 axis, float angle)

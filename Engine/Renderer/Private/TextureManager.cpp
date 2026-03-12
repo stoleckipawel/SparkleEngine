@@ -1,7 +1,3 @@
-// ============================================================================
-// TextureManager.cpp
-// ============================================================================
-
 #include "PCH.h"
 #include "TextureManager.h"
 #include "FileSystemUtils.h"
@@ -87,7 +83,6 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 		return;
 	}
 
-	// Unload existing texture at this slot if present
 	if (m_textures[index])
 	{
 		LOG_DEBUG(std::format("TextureManager: Replacing texture at slot {}", index));

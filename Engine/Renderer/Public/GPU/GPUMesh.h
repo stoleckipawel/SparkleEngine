@@ -1,10 +1,3 @@
-// =============================================================================
-// GPUMesh.h - GPU-resident mesh buffers for rendering
-// =============================================================================
-//
-// Owns D3D12 vertex and index buffers uploaded from CPU MeshData.
-// Created and cached by GPUMeshCache - not directly instantiated by user code.
-//
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -15,10 +8,6 @@
 
 class D3D12Rhi;
 struct MeshData;
-
-// =============================================================================
-// GPUMesh
-// =============================================================================
 
 class SPARKLE_RENDERER_API GPUMesh final
 {
@@ -31,21 +20,9 @@ class SPARKLE_RENDERER_API GPUMesh final
 	GPUMesh(GPUMesh&&) noexcept = default;
 	GPUMesh& operator=(GPUMesh&&) noexcept = default;
 
-	// -------------------------------------------------------------------------
-	// Upload
-	// -------------------------------------------------------------------------
-
 	bool Upload(D3D12Rhi& rhi, const MeshData& meshData);
 
-	// -------------------------------------------------------------------------
-	// Binding
-	// -------------------------------------------------------------------------
-
 	void Bind(ID3D12GraphicsCommandList* cmdList) const noexcept;
-
-	// -------------------------------------------------------------------------
-	// Accessors
-	// -------------------------------------------------------------------------
 
 	std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
 	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }

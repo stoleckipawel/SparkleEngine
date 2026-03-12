@@ -1,8 +1,3 @@
-// ============================================================================
-// DxcShaderCompiler.h
-// ----------------------------------------------------------------------------
-// Compiles HLSL shaders using the DirectX Shader Compiler (DXC).
-//
 #pragma once
 
 #include "ShaderCompileOptions.h"
@@ -32,7 +27,6 @@ class DxcShaderCompiler
 
 	static void ApplyBuildConfiguration(ShaderCompileOptions& options);
 
-	// outArgs references strings owned by the storage vectors passed alongside it.
 	static void BuildCompileArguments(
 	    const ShaderCompileOptions& options,
 	    const std::wstring& wSourcePath,

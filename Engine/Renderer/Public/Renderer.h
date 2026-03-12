@@ -1,11 +1,3 @@
-// =============================================================================
-// Renderer.h - High-Level Graphics Pipeline Orchestration
-// =============================================================================
-//
-// Central rendering subsystem that manages the graphics pipeline, resource
-// binding, and frame submission. Acts as the primary interface between game
-// logic and the D3D12 RHI layer.
-//
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -21,7 +13,6 @@ enum class DepthMode : std::uint8_t;
 
 class Timer;
 
-// Forward declarations
 class AssetSystem;
 class D3D12Rhi;
 class D3D12Texture;
@@ -43,10 +34,6 @@ class TextureManager;
 class ShaderCompileResult;
 struct RendererMaterialCacheState;
 
-// =============================================================================
-// Renderer
-// =============================================================================
-
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
@@ -58,17 +45,9 @@ class SPARKLE_RENDERER_API Renderer final
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
-	// =========================================================================
-	// Frame Operations
-	// =========================================================================
-
 	void OnRender() noexcept;
 
   private:
-	// -------------------------------------------------------------------------
-	// Initialization Helpers
-	// -------------------------------------------------------------------------
-
 	void PostLoad() noexcept;
 	void CreateDepthStencilBuffer();
 	void CreatePSO();
@@ -77,37 +56,21 @@ class SPARKLE_RENDERER_API Renderer final
 	void SubscribeToDepthModeChanges() noexcept;
 	void SubscribeToWindowResize() noexcept;
 
-	// -------------------------------------------------------------------------
-	// Frame Pipeline Stages
-	// -------------------------------------------------------------------------
-
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
 	void RecordFrame() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
 
-	// -------------------------------------------------------------------------
-	// Scene View (Cauldron-style frame data)
-	// -------------------------------------------------------------------------
-
-	/// Builds a SceneView from owned subsystems for the current frame.
 	SceneView BuildSceneView() const;
 
-	/// Initializes viewport and camera references for the SceneView.
 	void InitializeSceneView(SceneView& view) const;
 
-	/// Populates materials from the scene's loaded material descriptions.
 	void BuildMaterials(SceneView& view) const;
 	void RebuildMaterialCache() const;
 	void ReleaseMaterialTextureTables() const noexcept;
 
-	/// Populates mesh draw commands from the scene's mesh list.
 	void BuildMeshDraws(SceneView& view) const;
-
-	// -------------------------------------------------------------------------
-	// Owned Resources
-	// -------------------------------------------------------------------------
 
 	Timer* m_timer = nullptr;
 
@@ -150,6 +113,5 @@ class SPARKLE_RENDERER_API Renderer final
 	ScopedEventHandle m_depthModeChangedHandle;
 	ScopedEventHandle m_resizeHandle;
 
-	// Persistent material cache. Rebuilt only when the scene material set changes.
 	mutable std::unique_ptr<RendererMaterialCacheState> m_materialCache;
 };

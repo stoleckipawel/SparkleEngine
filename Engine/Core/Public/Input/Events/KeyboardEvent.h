@@ -6,10 +6,10 @@
 
 struct KeyboardEvent
 {
-	Key KeyCode = Key::Unknown;                     ///< Which key was pressed/released
-	ModifierFlags Modifiers = ModifierFlags::None;  ///< Active modifiers at time of event
-	bool bPressed = false;                          ///< True = press, False = release
-	bool bRepeat = false;                           ///< True if OS auto-repeat
+	Key KeyCode = Key::Unknown;
+	ModifierFlags Modifiers = ModifierFlags::None;
+	bool bPressed = false;
+	bool bRepeat = false;
 
 	constexpr InputDevice GetDevice() const noexcept { return InputDevice::Keyboard; }
 

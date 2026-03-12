@@ -1,7 +1,3 @@
-// ============================================================================
-// DiffuseTransmissionPlantLevel.h — Diffuse Transmission Plant glTF test scene
-// ============================================================================
-
 #pragma once
 
 #include "Level/Level.h"
@@ -16,11 +12,7 @@ class DiffuseTransmissionPlantLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
-		MeshRequest req;
-		req.source = AssetSource::Imported;
-		req.assetPath = "DiffuseTransmissionPlant/DiffuseTransmissionPlant.gltf";
-		req.assetType = AssetType::Mesh;
-		desc.meshRequests.push_back(req);
+		desc.importedMeshRequests.push_back({"DiffuseTransmissionPlant/DiffuseTransmissionPlant.gltf"});
 		return desc;
 	}
 };

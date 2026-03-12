@@ -1,10 +1,3 @@
-// ============================================================================
-// ForwardOpaquePass.h
-// ----------------------------------------------------------------------------
-// Forward-rendering pass for opaque geometry. Binds pipeline state, constant
-// buffers, textures, samplers, and draws all opaque mesh draw commands from
-// the current SceneView.
-//
 #pragma once
 
 #include "Renderer/Public/FrameGraph/RenderPass.h"
@@ -19,10 +12,6 @@ class D3D12SamplerLibrary;
 class D3D12SwapChain;
 class GPUMeshCache;
 class TextureManager;
-
-// ============================================================================
-// ForwardOpaquePass
-// ============================================================================
 
 class ForwardOpaquePass final : public RenderPass
 {
@@ -51,10 +40,6 @@ class ForwardOpaquePass final : public RenderPass
 	void BindGlobalResources(RenderContext& context);
 	void DrawOpaqueMeshes(RenderContext& context);
 
-	// -------------------------------------------------------------------------
-	// Dependencies (not owned)
-	// -------------------------------------------------------------------------
-
 	D3D12RootSignature* m_rootSignature = nullptr;
 	D3D12PipelineState* m_pipelineState = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
@@ -64,10 +49,6 @@ class ForwardOpaquePass final : public RenderPass
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12DepthStencil* m_depthStencil = nullptr;
-
-	// -------------------------------------------------------------------------
-	// Per-frame state (set during Setup, valid until next Setup call)
-	// -------------------------------------------------------------------------
 
 	const SceneView* m_sceneView = nullptr;
 	ResourceHandle m_backBuffer;

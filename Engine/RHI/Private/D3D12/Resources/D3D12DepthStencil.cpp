@@ -61,7 +61,6 @@ void D3D12DepthStencil::CreateDepthStencilView()
 
 void D3D12DepthStencil::Clear() noexcept
 {
-	// Clear depth to convention-appropriate value (0.0 for reversed-Z, 1.0 for standard)
 	const float clearDepth = DepthConvention::GetClearDepth();
 	m_rhi.GetCommandList()
 	    ->ClearDepthStencilView(GetCPUHandle(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, clearDepth, 0, 0, nullptr);

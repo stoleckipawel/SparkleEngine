@@ -2,16 +2,12 @@
 
 #include <cstdint>
 
-// =============================================================================
-// ButtonState — Four-State Button Status
-// =============================================================================
-
 enum class ButtonState : std::uint8_t
 {
-	Up = 0,        // Not pressed (continuous)
-	Pressed = 1,   // Just pressed this frame (edge)
-	Held = 2,      // Held down after first frame (continuous)
-	Released = 3,  // Just released this frame (edge)
+	Up = 0,
+	Pressed = 1,
+	Held = 2,
+	Released = 3,
 };
 
 constexpr bool IsDown(ButtonState state) noexcept

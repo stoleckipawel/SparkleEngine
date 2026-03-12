@@ -8,8 +8,6 @@
 #include <functional>
 #include <utility>
 
-
-
 template <typename Signature, std::size_t Capacity = 8> class Event;
 template <typename... Args, std::size_t Capacity> class Event<void(Args...), Capacity>
 {
@@ -19,15 +17,10 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	Event() noexcept = default;
 	~Event() = default;
 
-	// Non-copyable, non-movable (prevents handle invalidation)
 	Event(const Event&) = delete;
 	Event& operator=(const Event&) = delete;
 	Event(Event&&) = delete;
 	Event& operator=(Event&&) = delete;
-
-	// =========================================================================
-	// Subscription Management
-	// =========================================================================
 
 	EventHandle Add(CallbackType Callback) noexcept
 	{
@@ -41,12 +34,10 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 			}
 		}
 
-		// Capacity exceeded
 		assert(false && "Event capacity exceeded. Increase template Capacity parameter.");
 		return EventHandle{};
 	}
 
-	/// Removes a listener by handle. No-op if handle is invalid or not found.
 	void Remove(EventHandle Handle) noexcept
 	{
 		if (!Handle.IsValid())
@@ -63,7 +54,6 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 		}
 	}
 
-	/// Removes all listeners.
 	void Clear() noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)
@@ -73,11 +63,6 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 		}
 	}
 
-	// =========================================================================
-	// Broadcasting
-	// =========================================================================
-
-	/// Invokes all registered listeners with the given arguments.
 	void Broadcast(Args... InArgs) const noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)
@@ -89,11 +74,6 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 		}
 	}
 
-	// =========================================================================
-	// Queries
-	// =========================================================================
-
-	/// Returns true if any listeners are registered.
 	bool IsBound() const noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)
@@ -104,7 +84,6 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 		return false;
 	}
 
-	/// Returns the number of active subscriptions.
 	std::size_t GetBoundCount() const noexcept
 	{
 		std::size_t Count = 0;
@@ -116,20 +95,15 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 		return Count;
 	}
 
-	/// Returns the maximum number of subscriptions this event can hold.
 	static constexpr std::size_t GetCapacity() noexcept { return Capacity; }
 
   private:
-	// -------------------------------------------------------------------------
-	// Internal Storage
-	// -------------------------------------------------------------------------
-
 	struct Entry
 	{
-		EventHandle Handle;     ///< Subscription identifier
-		CallbackType Callback;  ///< Listener function
+		EventHandle Handle;
+		CallbackType Callback;
 	};
 
-	std::array<Entry, Capacity> m_Entries{};  ///< Fixed-size listener storage
-	std::uint32_t m_NextId = 0;               ///< Counter for unique handle IDs
+	std::array<Entry, Capacity> m_Entries{};
+	std::uint32_t m_NextId = 0;
 };

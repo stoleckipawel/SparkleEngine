@@ -173,20 +173,17 @@ std::optional<std::filesystem::path> AssetSystem::ResolvePath(const std::filesys
 		return std::nullopt;
 	}
 
-	// Absolute paths bypass resolution
 	if (inputPath.is_absolute())
 	{
 		std::error_code ec;
 		return std::filesystem::exists(inputPath, ec) ? std::make_optional(inputPath) : std::nullopt;
 	}
 
-	// Project assets take precedence
 	if (auto result = TryResolveIn(m_projectAssetsPath, inputPath, type))
 	{
 		return result;
 	}
 
-	// Fall back to engine assets
 	if (auto result = TryResolveIn(m_engineAssetsPath, inputPath, type))
 	{
 		return result;
@@ -218,7 +215,6 @@ std::optional<std::filesystem::path> AssetSystem::TryResolveIn(
 
 	std::error_code ec;
 
-	// Try type-specific subdirectory first
 	if (const auto subdir = GetAssetSubdirectory(type); !subdir.empty())
 	{
 		auto candidate = searchDir / subdir / relativePath;
@@ -228,7 +224,6 @@ std::optional<std::filesystem::path> AssetSystem::TryResolveIn(
 		}
 	}
 
-	// Fall back to direct path under search directory
 	auto candidate = searchDir / relativePath;
 	if (std::filesystem::exists(candidate, ec))
 	{

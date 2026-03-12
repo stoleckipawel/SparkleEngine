@@ -1,8 +1,3 @@
-// ============================================================================
-// TextureManager.h
-// ----------------------------------------------------------------------------
-// Centralized texture resource management with caching and lifecycle control.
-//
 #pragma once
 
 #include "Renderer/Public/Textures/DefaultTextures.h"
@@ -20,31 +15,17 @@ class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 class D3D12Texture;
 
-// ============================================================================
-// TextureId Enumeration
-// ============================================================================
-
-/// Well-known texture identifiers for fast, type-safe lookups.
-/// Add new entries before Count; do not reorder existing entries.
 enum class TextureId : uint8_t
 {
-	Checker,     ///< Default checker pattern for debugging
-	SkyCubemap,  ///< Environment cubemap for skybox/reflections
+	Checker,
+	SkyCubemap,
 
-	Count  ///< Number of texture slots (must be last)
+	Count
 };
-
-// ============================================================================
-// TextureManager
-// ============================================================================
 
 class SPARKLE_RENDERER_API TextureManager final
 {
   public:
-	// ========================================================================
-	// Lifecycle
-	// ========================================================================
-
 	TextureManager(const AssetSystem& assetSystem, D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
 
 	~TextureManager() noexcept;
@@ -54,32 +35,15 @@ class SPARKLE_RENDERER_API TextureManager final
 	TextureManager(TextureManager&&) = delete;
 	TextureManager& operator=(TextureManager&&) = delete;
 
-	// ========================================================================
-	// Loading
-	// ========================================================================
-
-	/// Loads all default engine textures (checker, cubemap, etc.).
 	void LoadDefaults();
 
-	/// Loads a texture from file and stores it at the given ID slot.
-	/// Replaces any existing texture at that slot.
-	/// @param id Texture slot identifier
-	/// @param relativePath Path relative to textures asset directory
 	void LoadTexture(TextureId id, const std::filesystem::path& relativePath);
 
-	/// Loads or reuses a texture from the material path cache.
-	/// Paths are resolved through AssetSystem and cached by canonical absolute path.
 	D3D12Texture* LoadFromPath(const std::filesystem::path& texturePath);
 
-	/// Unloads a specific texture, freeing GPU resources.
 	void UnloadTexture(TextureId id) noexcept;
 
-	/// Unloads all textures.
 	void UnloadAll() noexcept;
-
-	// ========================================================================
-	// Accessors
-	// ========================================================================
 
 	D3D12Texture* GetTexture(TextureId id) noexcept;
 	const D3D12Texture* GetTexture(TextureId id) const noexcept;
@@ -99,17 +63,9 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::size_t GetLoadedCount() const noexcept;
 
   private:
-	// ------------------------------------------------------------------------
-	// Dependencies (not owned)
-	// ------------------------------------------------------------------------
-
 	const AssetSystem* m_assetSystem = nullptr;
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-
-	// ------------------------------------------------------------------------
-	// Texture Storage
-	// ------------------------------------------------------------------------
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;

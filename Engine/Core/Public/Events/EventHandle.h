@@ -6,7 +6,7 @@
 
 struct SPARKLE_CORE_API EventHandle
 {
-	std::uint32_t Id = 0;  ///< Unique identifier (0 = invalid)
+	std::uint32_t Id = 0;
 
 	bool IsValid() const noexcept { return Id != 0; }
 	void Invalidate() noexcept { Id = 0; }

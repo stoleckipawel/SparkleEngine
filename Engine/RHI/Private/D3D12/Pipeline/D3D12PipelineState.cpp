@@ -8,8 +8,6 @@
 #include <vector>
 #include <string>
 
-// Implements graphics pipeline state setup and configuration for D3D12.
-
 void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept
 {
 	psoDesc.StreamOutput = {};
@@ -81,27 +79,21 @@ D3D12PipelineState::D3D12PipelineState(
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
-	// Vertex layout
 	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
 	psoDesc.InputLayout.pInputElementDescs = vertexLayout.data();
 	psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
-	// Root signature
 	psoDesc.pRootSignature = rootSignature.GetRaw();
 
-	// Shaders
 	psoDesc.VS.pShaderBytecode = vertexShader.Data;
 	psoDesc.VS.BytecodeLength = vertexShader.Size;
 	psoDesc.PS.pShaderBytecode = pixelShader.Data;
 	psoDesc.PS.BytecodeLength = pixelShader.Size;
 
-	// Rasterizer state
 	SetRasterizerState(psoDesc, false, D3D12_CULL_MODE_BACK);
 
-	// Stream output (disabled)
 	SetStreamOutput(psoDesc);
 
-	// Blend state
 	psoDesc.BlendState.AlphaToCoverageEnable = FALSE;
 	psoDesc.BlendState.IndependentBlendEnable = FALSE;
 	D3D12_RENDER_TARGET_BLEND_DESC rtBlend = {};
@@ -117,23 +109,19 @@ D3D12PipelineState::D3D12PipelineState(
 	rtBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	SetRenderTargetBlendState(psoDesc, rtBlend);
 
-	// Depth state
 	DepthTestDesc depthTestDesc = {};
 	depthTestDesc.DepthEnable = true;
 	depthTestDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	depthTestDesc.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
 	SetDepthTestState(psoDesc, depthTestDesc);
 
-	// Stencil state
 	StencilTestDesc stencilDesc = {};
 	SetStencilTestState(psoDesc, stencilDesc);
 
-	// Render target formats
 	psoDesc.NumRenderTargets = 1;
 	psoDesc.RTVFormats[0] = RHISettings::BackBufferFormat;
 	psoDesc.DSVFormat = RHISettings::DepthStencilFormat;
 
-	// Multisampling
 	psoDesc.NodeMask = 0;
 	psoDesc.CachedPSO = {};
 	psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -141,7 +129,6 @@ D3D12PipelineState::D3D12PipelineState(
 	psoDesc.SampleDesc.Count = 1;
 	psoDesc.SampleDesc.Quality = 0;
 
-	// Create PSO
 	HRESULT hr = m_rhi.GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{

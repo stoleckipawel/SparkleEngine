@@ -1,7 +1,3 @@
-// ============================================================================
-// AssetTypes.h
-// Classification of engine asset types with directory mapping.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include <cstdint>
@@ -9,14 +5,14 @@
 
 enum class AssetType : uint8_t
 {
-	Shader,         // HLSL source files (.hlsl, .hlsli)
-	ShaderSymbols,  // Compiled shader debug symbols (.pdb)
-	Texture,        // Image files (.png, .jpg, .dds, etc.)
-	Mesh,           // 3D model files (.gltf, .glb, .obj, etc.)
-	Material,       // Material definitions (.mat, .json)
-	Scene,          // Scene/level files (.scene, .json)
-	Audio,          // Sound files (.wav, .ogg, .mp3)
-	Font,           // Font files (.ttf, .otf)
+	Shader,
+	ShaderSymbols,
+	Texture,
+	Mesh,
+	Material,
+	Scene,
+	Audio,
+	Font,
 
 	Count
 };

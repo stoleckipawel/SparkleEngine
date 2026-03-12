@@ -1,7 +1,3 @@
-// =============================================================================
-// MaterialData.h — PBR Material Parameters
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -22,29 +18,21 @@ namespace MaterialTextureFlags
 	constexpr std::uint32_t Emissive = 0x10;
 }
 
-// =============================================================================
-// MaterialData
-// =============================================================================
-
-/// Renderer-facing material package. Holds scalar fallbacks and the persistent
-/// bindful texture-table handle used at draw time.
 struct SPARKLE_RENDERER_API MaterialData
 {
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	float metallic = 0.0f;
 	float roughness = 0.5f;
-	float f0 = 0.04f;  // Fresnel reflectance at normal incidence
+	float f0 = 0.04f;
 	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
-	std::uint32_t alphaMode = 0;  // Matches AlphaMode::Opaque numeric values
+	std::uint32_t alphaMode = 0;
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
-	// Base GPU handle for the material's contiguous 5-SRV table (t0-t4).
+
 	D3D12_GPU_DESCRIPTOR_HANDLE textureTableGpuHandle = {};
 
-	/// Creates a MaterialData from a CPU-side MaterialDesc.
 	static MaterialData FromDesc(const MaterialDesc& desc);
 
-	/// Builds the GPU constant buffer data from this material.
 	PerObjectPSConstantBufferData ToPerObjectPSData() const
 	{
 		PerObjectPSConstantBufferData data{};

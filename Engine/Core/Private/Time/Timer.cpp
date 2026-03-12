@@ -1,21 +1,18 @@
 #include "PCH.h"
 #include "Timer.h"
 
-Timer::Timer() noexcept : 
-m_start{Clock::now()}, 
-m_last{m_start} 
+Timer::Timer() noexcept :
+m_start{Clock::now()},
+m_last{m_start}
 {
-	
 }
 
 void Timer::Tick() noexcept
 {
-	// Read current time and compute raw delta.
 	const TimePoint now = Clock::now();
 	m_unscaledDelta = std::chrono::duration_cast<Duration>(now - m_last);
 	m_last = now;
 
-	// Accumulate totals.
 	m_unscaledTotal += m_unscaledDelta;
 
 	const bool bPaused = m_bPaused.load(std::memory_order_relaxed);
@@ -25,10 +22,8 @@ void Timer::Tick() noexcept
 		m_scaledTotal += scaled;
 	}
 
-	// Advance frame counter.
 	++m_frameCount;
 
-	// Update snapshot for consumers.
 	m_timeInfo.frameIndex = m_frameCount;
 	m_timeInfo.unscaledTime = m_unscaledTotal;
 	m_timeInfo.scaledTime = m_scaledTotal;

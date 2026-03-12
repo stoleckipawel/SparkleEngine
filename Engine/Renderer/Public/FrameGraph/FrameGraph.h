@@ -1,10 +1,3 @@
-// =============================================================================
-// FrameGraph.h - Render Pass Graph Manager
-// =============================================================================
-//
-// Manages render passes and their execution order. All passes declare their
-// resource dependencies in Setup, then record GPU commands in Execute.
-//
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -15,15 +8,10 @@
 #include <vector>
 #include <utility>
 
-// Forward declarations
 class D3D12SwapChain;
 class D3D12DepthStencil;
 class RenderContext;
 struct SceneView;
-
-// =============================================================================
-// FrameGraph
-// =============================================================================
 
 class SPARKLE_RENDERER_API FrameGraph
 {
@@ -36,10 +24,6 @@ class SPARKLE_RENDERER_API FrameGraph
 	FrameGraph(FrameGraph&&) = delete;
 	FrameGraph& operator=(FrameGraph&&) = delete;
 
-	// -------------------------------------------------------------------------
-	// Pass Registration
-	// -------------------------------------------------------------------------
-
 	template <typename T, typename... Args> T& AddPass(std::string_view name, Args&&... args)
 	{
 		static_assert(std::is_base_of_v<RenderPass, T>, "T must derive from RenderPass");
@@ -49,23 +33,11 @@ class SPARKLE_RENDERER_API FrameGraph
 		return ref;
 	}
 
-	// -------------------------------------------------------------------------
-	// Frame Execution
-	// -------------------------------------------------------------------------
-
-	/// Calls Setup() on each pass so they can declare resource usage.
 	void Setup(const SceneView& sceneView);
 
-	/// Compiles the frame graph. MVP: no-op.
-	/// Future: dependency analysis, barrier insertion, pass reordering.
 	void Compile();
 
-	/// Calls Execute() on each pass to record GPU commands.
 	void Execute(RenderContext& context);
-
-	// -------------------------------------------------------------------------
-	// Accessors
-	// -------------------------------------------------------------------------
 
 	std::size_t GetPassCount() const noexcept { return m_passes.size(); }
 	D3D12SwapChain* GetSwapChain() const noexcept { return m_swapChain; }

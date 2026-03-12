@@ -94,20 +94,17 @@ namespace Engine::FileSystem
 
 	std::optional<std::filesystem::path> DiscoverEngineRoot()
 	{
-		// Direct search from executable (handles standalone engine builds)
 		if (auto fromExe = FindAncestorWithMarker(GetExecutableDirectory(), kEngineMarker))
 		{
 			return NormalizePath(*fromExe);
 		}
 
-		// Direct search from working directory
 		std::error_code ec;
 		if (auto fromCwd = FindAncestorWithMarker(std::filesystem::current_path(ec), kEngineMarker); fromCwd && !ec)
 		{
 			return NormalizePath(*fromCwd);
 		}
 
-		// Fall back: find workspace root, then check engine/ subfolder
 		if (auto workspace = DiscoverWorkspaceRoot())
 		{
 			auto enginePath = *workspace / "engine";
@@ -130,5 +127,4 @@ namespace Engine::FileSystem
 
 		return std::nullopt;
 	}
-
-}  // namespace Engine::FileSystem
+}

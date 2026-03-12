@@ -1,11 +1,3 @@
-// ============================================================================
-// InputSystem.cpp
-// ----------------------------------------------------------------------------
-// Central hub for all input processing.
-// Handles event dispatch, callback management, and layer filtering.
-//
-// ============================================================================
-
 #include "PCH.h"
 #include "InputSystem.h"
 #include "Win32InputBackend.h"
@@ -20,10 +12,6 @@
 #include <algorithm>
 #include <cstdio>
 
-// ============================================================================
-// Factory
-// ============================================================================
-
 std::unique_ptr<InputSystem> InputSystem::Create()
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -34,17 +22,11 @@ std::unique_ptr<InputSystem> InputSystem::Create()
 #endif
 }
 
-// ============================================================================
-// Construction / Destruction
-// ============================================================================
-
-InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) : m_Backend(std::move(Backend)) {}
+InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend)
+: m_Backend(std::move(Backend))
+{}
 
 InputSystem::~InputSystem() = default;
-
-// ============================================================================
-// Frame Lifecycle
-// ============================================================================
 
 void InputSystem::BeginFrame()
 {
@@ -59,12 +41,9 @@ void InputSystem::EndFrame()
 
 void InputSystem::ProcessDeferredEvents()
 {
-	// Update gameplay layer based on UI capture state
-	// When ImGui wants input, disable gameplay layer to prevent camera/game input
 	ImGuiIO& io = ImGui::GetIO();
 	SetLayerEnabled(InputLayer::Gameplay, !io.WantCaptureKeyboard && !io.WantCaptureMouse);
 
-	// Process each event type's deferred queue
 	ProcessDeferredEventsForType<KeyboardEvent>();
 	ProcessDeferredEventsForType<MouseButtonEvent>();
 	ProcessDeferredEventsForType<MouseMoveEvent>();
@@ -73,20 +52,14 @@ void InputSystem::ProcessDeferredEvents()
 
 void InputSystem::ClearDeferredQueues()
 {
-	// Clear each event type's deferred queue
 	GetDeferredQueue<KeyboardEvent>().clear();
 	GetDeferredQueue<MouseButtonEvent>().clear();
 	GetDeferredQueue<MouseMoveEvent>().clear();
 	GetDeferredQueue<MouseWheelEvent>().clear();
 }
 
-// ============================================================================
-// Window Integration
-// ============================================================================
-
 void InputSystem::SubscribeToWindow(Window& window)
 {
-	// Subscribe to window messages using RAII handle for automatic cleanup
 	auto handle = window.OnWindowMessage.Add(
 	    [this](WindowMessageEvent& event)
 	    {
@@ -97,17 +70,10 @@ void InputSystem::SubscribeToWindow(Window& window)
 
 void InputSystem::HandleWindowMessage(WindowMessageEvent& event)
 {
-	// Process the message through our backend
 	if (OnWindowMessage(event.msg, event.wParam, event.lParam))
 	{
-		// Message was handled as input - don't set handled=true
-		// because we want other systems (like UI) to also see input
 	}
 }
-
-// ============================================================================
-// Message Processing
-// ============================================================================
 
 bool InputSystem::OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2)
 {
@@ -144,10 +110,6 @@ bool InputSystem::OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param
 	return true;
 }
 
-// ============================================================================
-// Layer Control
-// ============================================================================
-
 void InputSystem::SetLayerEnabled(InputLayer Layer, bool bEnabled)
 {
 	const auto index = static_cast<std::size_t>(Layer);
@@ -178,10 +140,6 @@ InputLayer InputSystem::GetActiveLayer() const noexcept
 	}
 	return InputLayer::Gameplay;
 }
-
-// ============================================================================
-// Callback Subscription
-// ============================================================================
 
 EventHandle InputSystem::SubscribeKeyboard(KeyboardCallback Callback, InputLayer Layer, DispatchMode Mode)
 {
@@ -246,7 +204,6 @@ void InputSystem::UnsubscribeFromAll(EventHandle Handle)
 		    callbacks.end());
 	};
 
-	// Apply to all callback vectors in the tuple
 	std::apply(
 	    [&removeByHandle](auto&... callbacks)
 	    {
@@ -255,13 +212,8 @@ void InputSystem::UnsubscribeFromAll(EventHandle Handle)
 	    m_Callbacks);
 }
 
-// ============================================================================
-// Mouse Capture Control
-// ============================================================================
-
 void InputSystem::CaptureMouse()
 {
-	// Capture mouse to the foreground window
 	HWND hWnd = GetForegroundWindow();
 	if (hWnd)
 	{
@@ -319,7 +271,6 @@ void InputSystem::CenterCursor(void* windowHandle)
 		ClientToScreen(hWnd, &center);
 		SetCursorPos(center.x, center.y);
 
-		// Update last mouse position to the new center to prevent delta jump
 		ScreenToClient(hWnd, &center);
 		m_LastMouseX = center.x;
 		m_LastMouseY = center.y;
@@ -328,15 +279,14 @@ void InputSystem::CenterCursor(void* windowHandle)
 
 void InputSystem::SetCursorVisibility(bool bVisible)
 {
-	// Idempotency check - don't change state if already in desired state
 	const bool bCurrentlyHidden = m_State.IsCursorHidden();
 	if (bVisible && !bCurrentlyHidden)
 	{
-		return;  // Already visible
+		return;
 	}
 	if (!bVisible && bCurrentlyHidden)
 	{
-		return;  // Already hidden
+		return;
 	}
 
 	if (bVisible)
@@ -348,10 +298,6 @@ void InputSystem::SetCursorVisibility(bool bVisible)
 		HideCursor();
 	}
 }
-
-// ============================================================================
-// Internal Methods
-// ============================================================================
 
 uint32_t InputSystem::GenerateCallbackId()
 {
@@ -373,10 +319,6 @@ bool InputSystem::ShouldDispatchToLayer(InputLayer Layer) const noexcept
 	InputLayer activeLayer = GetActiveLayer();
 	return static_cast<uint8_t>(Layer) <= static_cast<uint8_t>(activeLayer);
 }
-
-// ============================================================================
-// State Update (overloads for each event type)
-// ============================================================================
 
 void InputSystem::UpdateStateFromEvent(const KeyboardEvent& Event)
 {
@@ -424,10 +366,6 @@ void InputSystem::UpdateStateFromEvent(const MouseWheelEvent& Event)
 
 	m_State.SetMousePosition(Event.Position.X, Event.Position.Y);
 }
-
-// ============================================================================
-// Public Event Broadcasting
-// ============================================================================
 
 void InputSystem::BroadcastToPublicEvent(const KeyboardEvent& Event)
 {

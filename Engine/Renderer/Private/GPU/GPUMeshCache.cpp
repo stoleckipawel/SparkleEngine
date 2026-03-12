@@ -1,7 +1,3 @@
-// =============================================================================
-// GPUMeshCache.cpp — Lazy GPU mesh upload manager implementation
-// =============================================================================
-
 #include "PCH.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 
@@ -9,28 +5,21 @@
 #include "Scene/Mesh.h"
 #include "Log.h"
 
-// =============================================================================
-// Construction
-// =============================================================================
-
-GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}
-
-// =============================================================================
-// Cache Operations
-// =============================================================================
+GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept
+: m_rhi(&rhi)
+{
+}
 
 GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 {
 	const Mesh* key = &cpuMesh;
 
-	// Check cache first
 	auto it = m_cache.find(key);
 	if (it != m_cache.end())
 	{
 		return it->second.get();
 	}
 
-	// Upload new GPU mesh
 	auto gpuMesh = std::make_unique<GPUMesh>();
 	if (!gpuMesh->Upload(*m_rhi, cpuMesh.GetMeshData()))
 	{
@@ -48,10 +37,6 @@ void GPUMeshCache::Clear() noexcept
 {
 	m_cache.clear();
 }
-
-// =============================================================================
-// Queries
-// =============================================================================
 
 bool GPUMeshCache::Contains(const Mesh& cpuMesh) const noexcept
 {

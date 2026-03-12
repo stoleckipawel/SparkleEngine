@@ -1,7 +1,3 @@
-// =============================================================================
-// MaterialData.cpp
-// =============================================================================
-
 #include "PCH.h"
 #include "Renderer/Public/SceneData/MaterialData.h"
 #include "Assets/MaterialDesc.h"

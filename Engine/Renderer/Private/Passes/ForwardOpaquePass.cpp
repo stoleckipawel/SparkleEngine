@@ -23,10 +23,6 @@
 
 #include "Core/Public/Diagnostics/Log.h"
 
-// =============================================================================
-// Construction
-// =============================================================================
-
 ForwardOpaquePass::ForwardOpaquePass(
     std::string_view name,
     D3D12RootSignature& rootSignature,
@@ -52,20 +48,12 @@ ForwardOpaquePass::ForwardOpaquePass(
 	LOG_INFO("ForwardOpaquePass: Created");
 }
 
-// =============================================================================
-// Setup — captures per-frame state and declares resource usage
-// =============================================================================
-
 void ForwardOpaquePass::Setup(PassBuilder& builder, const SceneView& sceneView)
 {
 	m_sceneView = &sceneView;
 	m_backBuffer = builder.UseBackBuffer();
 	m_depthBuffer = builder.UseDepthBuffer();
 }
-
-// =============================================================================
-// Execute — records all opaque draw commands
-// =============================================================================
 
 void ForwardOpaquePass::Execute(RenderContext& context)
 {
@@ -76,20 +64,15 @@ void ForwardOpaquePass::Execute(RenderContext& context)
 	DrawOpaqueMeshes(context);
 }
 
-// Transitions, binds, and clears render targets for this pass.
 void ForwardOpaquePass::PrepareTargets(RenderContext& context)
 {
-	// Transition resources to writable states
-	// MVP: Direct calls until FrameGraph manages transitions
 	m_swapChain->SetRenderTargetState();
 	m_depthStencil->SetWriteState();
 
-	// Bind render targets
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_swapChain->GetCPUHandle();
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_depthStencil->GetCPUHandle();
 	context.SetRenderTarget(rtvHandle, &dsvHandle);
 
-	// Clear targets
 	m_swapChain->Clear();
 	m_depthStencil->Clear();
 }
@@ -125,7 +108,6 @@ void ForwardOpaquePass::BindGlobalResources(RenderContext& context)
 	}
 }
 
-// Issues draw calls for all opaque meshes in the scene view.
 void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
 {
 	for (const auto& draw : m_sceneView->meshDraws)
@@ -138,11 +120,9 @@ void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
 			continue;
 		}
 
-		// Bind geometry
 		context.BindVertexBuffer(gpuMesh->GetVertexBufferView());
 		context.BindIndexBuffer(gpuMesh->GetIndexBufferView());
 
-		// Per-object VS constant buffer (b2) — world transforms
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
@@ -162,7 +142,6 @@ void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
 
 		context.BindDescriptorTable(RootBindings::RootParam::TextureSRV, materialTextureTable);
 
-		// Issue draw call
 		context.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
 	}
 }

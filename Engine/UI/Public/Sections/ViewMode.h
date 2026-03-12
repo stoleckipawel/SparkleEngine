@@ -1,8 +1,3 @@
-// ============================================================================
-// ViewMode.h
-// ----------------------------------------------------------------------------
-// UI section for selecting debug visualization modes.
-//
 #pragma once
 
 #include <cstdint>
@@ -12,7 +7,7 @@
 class ViewMode final : public UIRendererSection
 {
   public:
-	enum class Type : std::uint8_t  // Keep in sync with Debug/ViewModes.hlsli
+	enum class Type : std::uint8_t
 	{
 		Lit = 0,
 		GBufferDiffuse,
@@ -42,11 +37,9 @@ class ViewMode final : public UIRendererSection
 	Type Get() const noexcept { return m_mode; }
 	void Set(Type mode) noexcept { m_mode = mode; }
 
-
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::ViewMode; }
 	const char* GetTitle() const noexcept override { return "View Modes"; }
 
-	// Renders only contents; window/layout is owned by the caller.
 	void BuildUI() override;
 
   private:

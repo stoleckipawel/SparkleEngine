@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12DepthStencil.h
-// ----------------------------------------------------------------------------
-// Manages a GPU depth-stencil resource and its DSV descriptor.
-//
 #pragma once
 
 #include "D3D12DescriptorHandle.h"

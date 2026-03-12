@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12DescriptorAllocator.h
-// ----------------------------------------------------------------------------
-// Free-list based allocator for D3D12 descriptor heap slots.
-//
 #pragma once
 
 #include <vector>
@@ -17,7 +12,6 @@ class D3D12DescriptorAllocator
 
 	D3D12DescriptorHandle Allocate();
 
-	// Used for descriptor tables that require sequential descriptors.
 	D3D12DescriptorHandle AllocateContiguous(uint32_t count);
 
 	void Free(const D3D12DescriptorHandle& handle) noexcept;

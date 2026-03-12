@@ -1,10 +1,3 @@
-// ============================================================================
-// DefaultTextures.h
-// ----------------------------------------------------------------------------
-// Shared renderer default texture definitions.
-// These are generic defaults, not material-slot-specific policies.
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

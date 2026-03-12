@@ -6,10 +6,6 @@ Mesh::Mesh(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotati
 {
 }
 
-// =============================================================================
-// Transform
-// =============================================================================
-
 void Mesh::SetTranslation(const DirectX::XMFLOAT3& t) noexcept
 {
 	m_translation = t;
@@ -27,10 +23,6 @@ void Mesh::SetScale(const DirectX::XMFLOAT3& s) noexcept
 	m_scale = s;
 	InvalidateWorldCache();
 }
-
-// =============================================================================
-// World Matrix
-// =============================================================================
 
 void Mesh::RebuildWorldIfNeeded() const noexcept
 {
@@ -65,10 +57,6 @@ DirectX::XMFLOAT3X3 Mesh::GetWorldRotationMatrix3x3() const noexcept
 	XMStoreFloat3x3(&rot3x3, R);
 	return rot3x3;
 }
-
-// =============================================================================
-// Geometry
-// =============================================================================
 
 void Mesh::RebuildGeometry()
 {

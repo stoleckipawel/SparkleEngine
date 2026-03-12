@@ -1,19 +1,9 @@
-// ============================================================================
-// ShaderCompileResult.h
-// ----------------------------------------------------------------------------
-// Encapsulates the output of a shader compilation attempt.
-//
 #pragma once
 
 #include <string>
 #include <vector>
 #include <cstdint>
 
-// ============================================================================
-// ShaderBytecode (Non-owning View)
-// ============================================================================
-
-/// Non-owning view into shader bytecode. Matches D3D12_SHADER_BYTECODE layout.
 struct ShaderBytecode
 {
 	const void* Data = nullptr;

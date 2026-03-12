@@ -20,7 +20,7 @@
 | :art: | **Graphics** | DirectX 12 with explicit resource management, descriptor heaps, triple-buffered swap chain |
 | :movie_camera: | **Camera** | 3-tier architecture (GameCamera  RenderCamera  Frustum) with FPS controls and culling |
 | :video_game: | **Input** | Layer-based event routing, RAII subscriptions, mouse capture, pollable state |
-| :triangular_ruler: | **Geometry** | 15 procedural primitives including Platonic solids and subdivision surfaces |
+| :triangular_ruler: | **Geometry** | Imported mesh rendering with CPU-side mesh data and glTF scene loading |
 | :straight_ruler: | **Depth** | Configurable Reversed-Z for superior precision in large scenes |
 | :file_folder: | **Assets** | Marker-based discovery with compile-time hashed asset IDs |
 | :desktop_computer: | **UI** | Integrated ImGui with debug panels and stats overlay |

@@ -31,10 +31,8 @@ void DxcShaderCompiler::ConfigureIncludePaths(const AssetSystem& assetSystem, Sh
 	const auto& projectShaders = assetSystem.GetTypedPath(AssetType::Shader, PathRoot::Project);
 	const auto& engineShaders = assetSystem.GetTypedPath(AssetType::Shader, PathRoot::Engine);
 
-	// Primary include: project if available, otherwise engine.
 	options.IncludeDir = !projectShaders.empty() ? projectShaders : engineShaders;
 
-	// Fallback: engine as secondary include when project is primary.
 	if (!projectShaders.empty() && !engineShaders.empty())
 	{
 		options.AdditionalIncludeDirs.push_back(engineShaders);
@@ -62,7 +60,6 @@ ShaderCompileResult DxcShaderCompiler::Compile(const AssetSystem& assetSystem, c
 		return ShaderCompileResult::Failure("DXC context is not initialized");
 	}
 
-	// Load source file
 	ComPtr<IDxcBlobEncoding> sourceBlob;
 	HRESULT hr = ctx.GetUtils()->LoadFile(options.SourcePath.c_str(), nullptr, sourceBlob.ReleaseAndGetAddressOf());
 	if (FAILED(hr) || !sourceBlob)
@@ -75,7 +72,6 @@ ShaderCompileResult DxcShaderCompiler::Compile(const AssetSystem& assetSystem, c
 	sourceBuffer.Size = sourceBlob->GetBufferSize();
 	sourceBuffer.Encoding = DXC_CP_ACP;
 
-	// Build compile arguments - store wide strings to keep pointers valid
 	std::wstring wSourcePath = Engine::Strings::ToWide(options.SourcePath);
 	std::wstring wEntryPoint = Engine::Strings::ToWide(std::string_view{options.EntryPoint});
 	std::wstring wTargetProfile = Engine::Strings::ToWide(std::string_view{options.BuildTargetProfile()});
@@ -85,7 +81,6 @@ ShaderCompileResult DxcShaderCompiler::Compile(const AssetSystem& assetSystem, c
 
 	BuildCompileArguments(options, wSourcePath, wEntryPoint, wTargetProfile, wIncludeDirs, wDefines, args);
 
-	// Create include handler and compile
 	ComPtr<IDxcIncludeHandler> includeHandler = ctx.CreateIncludeHandler();
 
 	ComPtr<IDxcResult> result;
@@ -101,7 +96,6 @@ ShaderCompileResult DxcShaderCompiler::Compile(const AssetSystem& assetSystem, c
 		return ShaderCompileResult::Failure("DXC Compile() call failed");
 	}
 
-	// Check for errors
 	std::string errorMsg = ExtractErrorMessage(result.Get());
 
 	HRESULT status;
@@ -114,20 +108,17 @@ ShaderCompileResult DxcShaderCompiler::Compile(const AssetSystem& assetSystem, c
 		return ShaderCompileResult::Failure(std::move(errorMsg));
 	}
 
-	// Log warnings if present
 	if (!errorMsg.empty())
 	{
 		LOG_WARNING("Shader warnings: " + errorMsg);
 	}
 
-	// Extract bytecode
 	std::vector<uint8_t> bytecode = ExtractBytecode(result.Get());
 	if (bytecode.empty())
 	{
 		return ShaderCompileResult::Failure("Failed to extract shader bytecode");
 	}
 
-	// Save debug symbols
 	SaveShaderSymbols(assetSystem, result.Get(), options.SourcePath);
 
 	LOG_INFO("Shader compiled successfully: " + options.SourcePath.filename().string());
@@ -146,22 +137,17 @@ void DxcShaderCompiler::BuildCompileArguments(
 	outArgs.clear();
 	outArgs.reserve(32);
 
-	// Source file (for error messages and PIX)
 	outArgs.push_back(wSourcePath.c_str());
 
-	// Entry point
 	outArgs.push_back(L"-E");
 	outArgs.push_back(wEntryPoint.c_str());
 
-	// Target profile
 	outArgs.push_back(L"-T");
 	outArgs.push_back(wTargetProfile.c_str());
 
-	// HLSL version
 	outArgs.push_back(L"-HV");
 	outArgs.push_back(L"2021");
 
-	// Include directories
 	wIncludeDirs.clear();
 	wIncludeDirs.push_back(Engine::Strings::ToWide(options.IncludeDir));
 	for (const auto& dir : options.AdditionalIncludeDirs)
@@ -174,7 +160,6 @@ void DxcShaderCompiler::BuildCompileArguments(
 		outArgs.push_back(dir.c_str());
 	}
 
-	// Preprocessor defines
 	wDefines.clear();
 	for (const auto& def : options.Defines)
 	{
@@ -186,17 +171,14 @@ void DxcShaderCompiler::BuildCompileArguments(
 		outArgs.push_back(def.c_str());
 	}
 
-	// Strictness and resource binding
 	outArgs.push_back(DXC_ARG_ENABLE_STRICTNESS);
 	outArgs.push_back(DXC_ARG_ALL_RESOURCES_BOUND);
 
-	// Warnings
 	if (options.TreatWarningsAsErrors)
 	{
 		outArgs.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
 	}
 
-	// Stripping
 	if (options.StripReflection)
 	{
 		outArgs.push_back(L"-Qstrip_reflect");
@@ -206,13 +188,11 @@ void DxcShaderCompiler::BuildCompileArguments(
 		outArgs.push_back(L"-Qstrip_debug");
 	}
 
-	// Debug info
 	if (options.EnableDebugInfo)
 	{
 		outArgs.push_back(DXC_ARG_DEBUG);
 	}
 
-	// Optimization level
 	if (options.EnableOptimizations)
 	{
 		outArgs.push_back(DXC_ARG_OPTIMIZATION_LEVEL3);

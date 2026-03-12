@@ -14,13 +14,13 @@ struct MouseWheelEvent;
 
 struct CameraMovementSettings
 {
-	float moveSpeed = 0.15f;           ///< Base movement speed (units/sec)
-	float minMoveSpeed = 0.01f;        ///< Minimum speed (mouse wheel lower bound)
-	float maxMoveSpeed = 10.0f;        ///< Maximum speed (mouse wheel upper bound)
-	float speedStep = 0.1f;            ///< Speed change per scroll notch
-	float sprintMultiplier = 2.0f;     ///< Speed multiplier when holding shift
-	float mouseSensitivity = 0.0015f;  ///< Mouse look sensitivity (radians/pixel)
-	bool invertY = false;              ///< Invert mouse Y axis
+	float moveSpeed = 0.15f;
+	float minMoveSpeed = 0.01f;
+	float maxMoveSpeed = 10.0f;
+	float speedStep = 0.1f;
+	float sprintMultiplier = 2.0f;
+	float mouseSensitivity = 0.0015f;
+	bool invertY = false;
 };
 
 class SPARKLE_ENGINE_API CameraController final

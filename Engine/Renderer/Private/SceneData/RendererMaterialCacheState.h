@@ -1,10 +1,3 @@
-// =============================================================================
-// RendererMaterialCacheState.h
-// ----------------------------------------------------------------------------
-// Private renderer-owned material cache state. Kept out of Renderer.cpp so the
-// orchestration file does not carry storage implementation details.
-// =============================================================================
-
 #pragma once
 
 #include "Assets/MaterialDesc.h"

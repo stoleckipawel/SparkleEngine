@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12ConstantBuffer.h
-// ----------------------------------------------------------------------------
-// Template class for managing typed GPU constant buffers.
-//
 #pragma once
 
 #include "D3D12DescriptorHeap.h"

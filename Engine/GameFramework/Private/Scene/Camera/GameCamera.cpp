@@ -40,11 +40,9 @@ void GameCamera::Rotate(float yawDelta, float pitchDelta) noexcept
 	m_yaw += yawDelta;
 	m_pitch += pitchDelta;
 
-	// Clamp pitch to prevent gimbal lock (allow nearly straight up/down)
 	constexpr float maxPitch = XM_PIDIV2 - 0.001f;
 	m_pitch = std::clamp(m_pitch, -maxPitch, maxPitch);
 
-	// Wrap yaw to [0, 2π] - handles any accumulated rotation
 	m_yaw = std::fmod(m_yaw, XM_2PI);
 	if (m_yaw < 0.0f)
 	{
@@ -93,7 +91,6 @@ void GameCamera::SetYawPitch(float yawRadians, float pitchRadians) noexcept
 	m_yaw = yawRadians;
 	m_pitch = pitchRadians;
 
-	// Clamp pitch
 	constexpr float maxPitch = XM_PIDIV2 - 0.01f;
 	m_pitch = std::clamp(m_pitch, -maxPitch, maxPitch);
 

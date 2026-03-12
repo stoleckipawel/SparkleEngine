@@ -3,7 +3,6 @@
 #include "Level/Level.h"
 
 #include "Level/Levels/EmptyLevel.h"
-#include "Level/Levels/BasicShapesLevel.h"
 #include "Level/Levels/ABeautifulGameLevel.h"
 #include "Level/Levels/CesiumManLevel.h"
 #include "Level/Levels/DamagedHelmetLevel.h"
@@ -12,10 +11,6 @@
 
 #include "Core/Public/Diagnostics/Log.h"
 
-// =============================================================================
-// Lifecycle
-// =============================================================================
-
 LevelRegistry::LevelRegistry()
 {
 	RegisterBuiltinLevels();
@@ -23,26 +18,17 @@ LevelRegistry::LevelRegistry()
 
 LevelRegistry::~LevelRegistry() noexcept = default;
 
-// =============================================================================
-// Built-in Levels
-// =============================================================================
-
 void LevelRegistry::RegisterBuiltinLevels()
 {
 	Register(std::make_unique<EmptyLevel>());
-	Register(std::make_unique<BasicShapesLevel>());
 	Register(std::make_unique<ABeautifulGameLevel>());
 	Register(std::make_unique<CesiumManLevel>());
 	Register(std::make_unique<DamagedHelmetLevel>());
 	Register(std::make_unique<DiffuseTransmissionPlantLevel>());
 	Register(std::make_unique<SponzaLevel>());
 
-	SetDefaultLevelName("BasicShapes");
+	SetDefaultLevelName("Empty");
 }
-
-// =============================================================================
-// Registration
-// =============================================================================
 
 void LevelRegistry::Register(std::unique_ptr<Level> level)
 {
@@ -64,10 +50,6 @@ void LevelRegistry::Register(std::unique_ptr<Level> level)
 	LOG_INFO("LevelRegistry: Registered level '" + nameKey + "'");
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
-
-// =============================================================================
-// Lookup
-// =============================================================================
 
 Level* LevelRegistry::FindLevel(std::string_view name) const
 {
@@ -109,10 +91,6 @@ std::size_t LevelRegistry::GetLevelCount() const noexcept
 {
 	return m_levels.size();
 }
-
-// =============================================================================
-// Default Level
-// =============================================================================
 
 void LevelRegistry::SetDefaultLevelName(std::string_view name)
 {

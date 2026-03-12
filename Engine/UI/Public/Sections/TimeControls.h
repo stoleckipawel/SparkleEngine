@@ -1,8 +1,3 @@
-// ============================================================================
-// TimeControls.h
-// ----------------------------------------------------------------------------
-// UI section for time scale and pause/resume controls.
-//
 #pragma once
 
 #include "Framework/UIRendererSection.h"

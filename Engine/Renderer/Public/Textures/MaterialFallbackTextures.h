@@ -1,10 +1,3 @@
-// ============================================================================
-// MaterialFallbackTextures.h
-// ----------------------------------------------------------------------------
-// Central definitions for renderer-owned material fallback textures.
-// Keeps fallback policy out of TextureManager implementation details.
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/Textures/DefaultTextures.h"

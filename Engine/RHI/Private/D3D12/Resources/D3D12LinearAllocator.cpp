@@ -13,7 +13,6 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 	m_Capacity = capacity;
 	m_Offset.store(0, std::memory_order_relaxed);
 
-	// Create committed UPLOAD resource
 	D3D12_HEAP_PROPERTIES heapProps = {};
 	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
 	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -47,8 +46,7 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 
 	DebugUtils::SetDebugName(m_Resource, debugName);
 
-	// Map once and keep mapped for lifetime (UPLOAD heap allows persistent mapping)
-	D3D12_RANGE readRange = {0, 0};  // We don't read from this buffer
+	D3D12_RANGE readRange = {0, 0};
 	hr = m_Resource->Map(0, &readRange, reinterpret_cast<void**>(&m_CpuBase));
 	if (FAILED(hr))
 	{
@@ -76,7 +74,7 @@ void D3D12LinearAllocator::Shutdown()
 void D3D12LinearAllocator::Reset() noexcept
 {
 	m_Offset.store(0, std::memory_order_release);
-	m_HighWaterMark = 0;  // Reset per-frame tracking
+	m_HighWaterMark = 0;
 }
 
 D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t alignment)
@@ -85,10 +83,8 @@ D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t ali
 	assert(size > 0 && "Cannot allocate zero bytes");
 	assert((alignment & (alignment - 1)) == 0 && "Alignment must be power of 2");
 
-	// Round up size to alignment boundary
 	const uint64_t alignedSize = AlignUp(size, alignment);
 
-	// Atomic allocation (lock-free, thread-safe)
 	uint64_t currentOffset;
 	uint64_t alignedOffset;
 	uint64_t newOffset;
@@ -105,7 +101,6 @@ D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t ali
 		}
 	} while (!m_Offset.compare_exchange_weak(currentOffset, newOffset, std::memory_order_acq_rel, std::memory_order_relaxed));
 
-	// Track high water mark for capacity tuning
 	uint64_t currentHigh = m_HighWaterMark.load(std::memory_order_relaxed);
 	while (newOffset > currentHigh && !m_HighWaterMark.compare_exchange_weak(currentHigh, newOffset, std::memory_order_relaxed))
 		;

@@ -2,17 +2,10 @@
 
 #include <cstdint>
 
-// =============================================================================
-// Key — Platform-Agnostic Key Codes
-// =============================================================================
-
 enum class Key : std::uint16_t
 {
 	Unknown = 0,
 
-	// -------------------------------------------------------------------------
-	// Alphabet (1-26)
-	// -------------------------------------------------------------------------
 	A = 1,
 	B,
 	C,
@@ -40,9 +33,6 @@ enum class Key : std::uint16_t
 	Y,
 	Z,
 
-	// -------------------------------------------------------------------------
-	// Number Row (27-36)
-	// -------------------------------------------------------------------------
 	Num0 = 27,
 	Num1,
 	Num2,
@@ -54,9 +44,6 @@ enum class Key : std::uint16_t
 	Num8,
 	Num9,
 
-	// -------------------------------------------------------------------------
-	// Function Keys (37-48)
-	// -------------------------------------------------------------------------
 	F1 = 37,
 	F2,
 	F3,
@@ -70,9 +57,6 @@ enum class Key : std::uint16_t
 	F11,
 	F12,
 
-	// -------------------------------------------------------------------------
-	// Navigation (49-58)
-	// -------------------------------------------------------------------------
 	Up = 49,
 	Down,
 	Left,
@@ -84,21 +68,15 @@ enum class Key : std::uint16_t
 	Insert,
 	Delete,
 
-	// -------------------------------------------------------------------------
-	// Modifier Keys (59-66)
-	// -------------------------------------------------------------------------
 	LeftShift = 59,
 	RightShift,
 	LeftCtrl,
 	RightCtrl,
 	LeftAlt,
 	RightAlt,
-	LeftSuper,  // Windows key / Command
+	LeftSuper,
 	RightSuper,
 
-	// -------------------------------------------------------------------------
-	// Common Keys (67-76)
-	// -------------------------------------------------------------------------
 	Space = 67,
 	Enter,
 	Escape,
@@ -110,24 +88,18 @@ enum class Key : std::uint16_t
 	PrintScreen,
 	Pause,
 
-	// -------------------------------------------------------------------------
-	// Punctuation / Symbols (77-87)
-	// -------------------------------------------------------------------------
-	Comma = 77,    // ,<
-	Period,        // .>
-	Slash,         // /?
-	Semicolon,     // ;:
-	Apostrophe,    // '"
-	LeftBracket,   // [{
-	RightBracket,  // ]}
-	Backslash,     // \|
-	Grave,         // `~
-	Minus,         // -_
-	Equals,        // =+
+	Comma = 77,
+	Period,
+	Slash,
+	Semicolon,
+	Apostrophe,
+	LeftBracket,
+	RightBracket,
+	Backslash,
+	Grave,
+	Minus,
+	Equals,
 
-	// -------------------------------------------------------------------------
-	// Numpad (88-103)
-	// -------------------------------------------------------------------------
 	Numpad0 = 88,
 	Numpad1,
 	Numpad2,
@@ -145,47 +117,34 @@ enum class Key : std::uint16_t
 	NumpadMultiply,
 	NumpadDivide,
 
-	// -------------------------------------------------------------------------
-	// Count marker for array sizing
-	// -------------------------------------------------------------------------
 	Count
 };
 
-// =============================================================================
-// Key Classification Utilities
-// =============================================================================
-
-/// Returns true if this is a letter key (A-Z).
 constexpr bool IsLetterKey(Key key) noexcept
 {
 	return key >= Key::A && key <= Key::Z;
 }
 
-/// Returns true if this is a number key (0-9 on number row).
 constexpr bool IsNumberKey(Key key) noexcept
 {
 	return key >= Key::Num0 && key <= Key::Num9;
 }
 
-/// Returns true if this is a function key (F1-F12).
 constexpr bool IsFunctionKey(Key key) noexcept
 {
 	return key >= Key::F1 && key <= Key::F12;
 }
 
-/// Returns true if this is a numpad key.
 constexpr bool IsNumpadKey(Key key) noexcept
 {
 	return key >= Key::Numpad0 && key <= Key::NumpadDivide;
 }
 
-/// Returns true if this is a modifier key (Shift, Ctrl, Alt, Super).
 constexpr bool IsModifierKey(Key key) noexcept
 {
 	return key >= Key::LeftShift && key <= Key::RightSuper;
 }
 
-/// Returns true if this is an arrow/navigation key.
 constexpr bool IsNavigationKey(Key key) noexcept
 {
 	return key >= Key::Up && key <= Key::Delete;

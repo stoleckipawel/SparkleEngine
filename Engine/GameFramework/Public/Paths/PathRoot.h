@@ -1,7 +1,3 @@
-// ============================================================================
-// PathRoot.h
-// Identifies the root scope for resolving engine paths (Project vs Engine).
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include <cstdint>
@@ -9,9 +5,9 @@
 
 enum class PathRoot : uint8_t
 {
-	Any,      // Check Project first, then Engine (default)
-	Project,  // Game paths only
-	Engine,   // Built-in engine paths only
+	Any,
+	Project,
+	Engine,
 
 	Count
 };

@@ -1,7 +1,3 @@
-// ============================================================================
-// CesiumManLevel.h — Cesium Man glTF test scene
-// ============================================================================
-
 #pragma once
 
 #include "Level/Level.h"
@@ -16,11 +12,7 @@ class CesiumManLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
-		MeshRequest req;
-		req.source = AssetSource::Imported;
-		req.assetPath = "CesiumMan/CesiumMan.gltf";
-		req.assetType = AssetType::Mesh;
-		desc.meshRequests.push_back(req);
+		desc.importedMeshRequests.push_back({"CesiumMan/CesiumMan.gltf"});
 		return desc;
 	}
 };

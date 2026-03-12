@@ -1,5 +1,5 @@
 # SparkleGameFramework Module (SparkleEngine.dll)
-# Game framework: World, Entities, Components, Scene, Camera, Mesh, Assets
+# Game framework: World, Entities, Components, Scene, Camera, Imported Meshes, Assets
 # Dependencies: SparkleCore, SparklePlatform
 #
 # This corresponds to "SparkleEngine.dll" in the Unreal-style architecture.
@@ -52,8 +52,6 @@ target_include_directories(SparkleGameFramework
         # Subdirectories for internal includes
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Camera
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Primitives/Basic
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Primitives/Polyhedra
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Assets
 )
 

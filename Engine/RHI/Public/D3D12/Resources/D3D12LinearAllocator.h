@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12LinearAllocator.h
-// ----------------------------------------------------------------------------
-// High-performance per-frame linear (bump) allocator for GPU upload memory.
-//
 #pragma once
 
 #include "DebugUtils.h"
@@ -18,16 +13,12 @@ using Microsoft::WRL::ComPtr;
 
 class D3D12Rhi;
 
-// ============================================================================
-// D3D12LinearAllocation Result
-// ============================================================================
-
 struct D3D12LinearAllocation
 {
-	void* CpuPtr = nullptr;                    // Write destination
-	D3D12_GPU_VIRTUAL_ADDRESS GpuAddress = 0;  // Bind address for CBV
-	uint64_t Size = 0;                         // Allocated size (aligned)
-	uint64_t Offset = 0;                       // Offset from buffer start
+	void* CpuPtr = nullptr;
+	D3D12_GPU_VIRTUAL_ADDRESS GpuAddress = 0;
+	uint64_t Size = 0;
+	uint64_t Offset = 0;
 };
 
 class D3D12LinearAllocator
@@ -36,7 +27,6 @@ class D3D12LinearAllocator
 	D3D12LinearAllocator() = default;
 	~D3D12LinearAllocator() noexcept { Shutdown(); }
 
-	// Non-copyable, non-movable (owns GPU resource)
 	D3D12LinearAllocator(const D3D12LinearAllocator&) = delete;
 	D3D12LinearAllocator& operator=(const D3D12LinearAllocator&) = delete;
 	D3D12LinearAllocator(D3D12LinearAllocator&&) = delete;

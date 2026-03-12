@@ -17,7 +17,6 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManag
 
 	m_descriptorSize = m_rhi->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
-	// Point MinMag samplers
 	CreateSampler(Slot::PointMipPointWrap, {MinMagFilter::Point, MipFilter::Point, AddressMode::Wrap, 1});
 	CreateSampler(Slot::PointMipPointClamp, {MinMagFilter::Point, MipFilter::Point, AddressMode::Clamp, 1});
 	CreateSampler(Slot::PointMipPointMirror, {MinMagFilter::Point, MipFilter::Point, AddressMode::Mirror, 1});
@@ -28,7 +27,6 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManag
 	CreateSampler(Slot::PointNoMipClamp, {MinMagFilter::Point, MipFilter::None, AddressMode::Clamp, 1});
 	CreateSampler(Slot::PointNoMipMirror, {MinMagFilter::Point, MipFilter::None, AddressMode::Mirror, 1});
 
-	// Linear MinMag samplers
 	CreateSampler(Slot::LinearMipPointWrap, {MinMagFilter::Linear, MipFilter::Point, AddressMode::Wrap, 1});
 	CreateSampler(Slot::LinearMipPointClamp, {MinMagFilter::Linear, MipFilter::Point, AddressMode::Clamp, 1});
 	CreateSampler(Slot::LinearMipPointMirror, {MinMagFilter::Linear, MipFilter::Point, AddressMode::Mirror, 1});
@@ -39,7 +37,6 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManag
 	CreateSampler(Slot::LinearNoMipClamp, {MinMagFilter::Linear, MipFilter::None, AddressMode::Clamp, 1});
 	CreateSampler(Slot::LinearNoMipMirror, {MinMagFilter::Linear, MipFilter::None, AddressMode::Mirror, 1});
 
-	// Anisotropic samplers
 	CreateSampler(Slot::Aniso1xWrap, {MinMagFilter::Linear, MipFilter::Linear, AddressMode::Wrap, 1});
 	CreateSampler(Slot::Aniso1xClamp, {MinMagFilter::Linear, MipFilter::Linear, AddressMode::Clamp, 1});
 	CreateSampler(Slot::Aniso1xMirror, {MinMagFilter::Linear, MipFilter::Linear, AddressMode::Mirror, 1});
@@ -97,13 +94,9 @@ D3D12_FILTER D3D12SamplerLibrary::ToD3D12Filter(MinMagFilter minMag, MipFilter m
 		return D3D12_FILTER_ANISOTROPIC;
 	}
 
-	// D3D12_FILTER encoding: bits [0-1] mip, [2-3] mag, [4-5] min
-	// 0 = point, 1 = linear
 	const uint32_t minMagBit = (minMag == MinMagFilter::Linear) ? 1u : 0u;
 	const uint32_t mipBit = (mip == MipFilter::Linear) ? 1u : 0u;
 
-	// Filter = (min << 4) | (mag << 2) | mip
-	// Since min == mag (unified), both use minMagBit
 	const uint32_t filterValue = (minMagBit << 4) | (minMagBit << 2) | mipBit;
 
 	return static_cast<D3D12_FILTER>(filterValue);

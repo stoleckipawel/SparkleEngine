@@ -1,7 +1,3 @@
-// ============================================================================
-// ABeautifulGameLevel.h — A Beautiful Game glTF test scene
-// ============================================================================
-
 #pragma once
 
 #include "Level/Level.h"
@@ -16,11 +12,7 @@ class ABeautifulGameLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
-		MeshRequest req;
-		req.source = AssetSource::Imported;
-		req.assetPath = "ABeautifulGame/ABeautifulGame.gltf";
-		req.assetType = AssetType::Mesh;
-		desc.meshRequests.push_back(req);
+		desc.importedMeshRequests.push_back({"ABeautifulGame/ABeautifulGame.gltf"});
 		return desc;
 	}
 };

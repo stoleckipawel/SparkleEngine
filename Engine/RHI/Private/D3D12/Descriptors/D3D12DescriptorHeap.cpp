@@ -2,7 +2,6 @@
 #include "D3D12DescriptorHeap.h"
 #include "DebugUtils.h"
 
-// General descriptor heap (RTV, DSV, Sampler, SRV/CBV/UAV).
 D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name) :
     m_rhi(&rhi)
 {
@@ -10,7 +9,6 @@ D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TY
 	m_desc.Flags = flags;
 	m_desc.NumDescriptors = GetNumDescriptors();
 
-	// Create descriptor heap
 	CHECK(m_rhi->GetDevice()->CreateDescriptorHeap(&m_desc, IID_PPV_ARGS(m_heap.ReleaseAndGetAddressOf())));
 	DebugUtils::SetDebugName(m_heap, name);
 }
@@ -24,11 +22,9 @@ D3D12DescriptorHandle D3D12DescriptorHeap::GetHandleAt(UINT index) const
 {
 	if (index >= m_desc.NumDescriptors)
 	{
-		// Guard: index must be within heap descriptor count
 		LOG_FATAL("Index out of range");
 	}
 
-	// For shader-visible heaps, provide the GPU start handle; otherwise leave GPU handle zeroed.
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {0};
 	if (m_desc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
 	{

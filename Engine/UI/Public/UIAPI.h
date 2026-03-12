@@ -1,9 +1,5 @@
-// ============================================================================
-// UIAPI.h - SparkleUI Module Export Macros
-// ============================================================================
 #pragma once
 
-// DLL Export/Import macros for SparkleUI
 #ifdef SPARKLE_STATIC
 	#define SPARKLE_UI_API
 #else

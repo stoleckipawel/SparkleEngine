@@ -1,10 +1,8 @@
-
 #include "PCH.h"
 #include "D3D12DebugLayer.h"
 
 #if ENGINE_GPU_VALIDATION
 
-// Call before device creation.
 D3D12DebugLayer::D3D12DebugLayer()
 {
 	InitD3D12Debug();
@@ -55,9 +53,8 @@ void D3D12DebugLayer::ApplyInfoQueueFilters(ID3D12Device* device)
 	ComPtr<ID3D12InfoQueue> infoQueue;
 	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.ReleaseAndGetAddressOf()))))
 	{
-		// Suppress known noisy message id (if present). Keep list small and explicit.
 		D3D12_MESSAGE_ID disabledMessages[] = {
-		    static_cast<D3D12_MESSAGE_ID>(1424)  // FENCE_ZERO_WAIT (SDK noise)
+		    static_cast<D3D12_MESSAGE_ID>(1424)
 		};
 		D3D12_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumIDs = static_cast<UINT>(std::size(disabledMessages));
@@ -66,7 +63,6 @@ void D3D12DebugLayer::ApplyInfoQueueFilters(ID3D12Device* device)
 	}
 }
 
-// Must be called before device Reset.
 void D3D12DebugLayer::ReportLiveDeviceObjects(ID3D12Device* device)
 {
 	#if ENGINE_REPORT_LIVE_OBJECTS

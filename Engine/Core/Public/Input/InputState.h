@@ -19,17 +19,11 @@ class SPARKLE_CORE_API InputState
 	InputState() = default;
 	~InputState() = default;
 
-	// Non-copyable (large state, explicit copy if needed)
 	InputState(const InputState&) = delete;
 	InputState& operator=(const InputState&) = delete;
 
-	// Movable
 	InputState(InputState&&) = default;
 	InputState& operator=(InputState&&) = default;
-
-	// =========================================================================
-	// Keyboard Queries
-	// =========================================================================
 
 	bool IsKeyDown(Key InKey) const noexcept;
 
@@ -41,10 +35,6 @@ class SPARKLE_CORE_API InputState
 
 	ButtonState GetKeyState(Key InKey) const noexcept;
 
-	// =========================================================================
-	// Mouse Button Queries
-	// =========================================================================
-
 	bool IsMouseButtonDown(MouseButton InButton) const noexcept;
 
 	bool IsMouseButtonPressed(MouseButton InButton) const noexcept;
@@ -55,54 +45,30 @@ class SPARKLE_CORE_API InputState
 
 	ButtonState GetMouseButtonState(MouseButton InButton) const noexcept;
 
-	// =========================================================================
-	// Mouse Position Queries
-	// =========================================================================
-
 	MousePosition GetMousePosition() const noexcept;
 
 	MousePosition GetMouseDelta() const noexcept;
 
-	/// Positive = scroll up/forward, Negative = scroll down/backward.
 	float GetMouseWheelDelta() const noexcept;
 
-	/// Positive = scroll right, Negative = scroll left.
 	float GetMouseWheelHorizontalDelta() const noexcept;
-
-	// =========================================================================
-	// Modifier Queries
-	// =========================================================================
 
 	ModifierFlags GetModifiers() const noexcept;
 
 	bool HasModifier(ModifierFlags InModifier) const noexcept;
 
-	/// Convenience: Returns true if any Shift key is held.
 	bool IsShiftDown() const noexcept;
 
-	/// Convenience: Returns true if any Ctrl key is held.
 	bool IsCtrlDown() const noexcept;
 
-	/// Convenience: Returns true if any Alt key is held.
 	bool IsAltDown() const noexcept;
-
-	// =========================================================================
-	// Mouse Capture Queries
-	// =========================================================================
 
 	bool IsMouseCaptured() const noexcept;
 
 	bool IsCursorHidden() const noexcept;
 
   private:
-	// =========================================================================
-	// Friend Access (InputSystem manages state)
-	// =========================================================================
 	friend class InputSystem;
-
-	// -------------------------------------------------------------------------
-	// Mutation Methods (called by InputSystem only)
-	// -------------------------------------------------------------------------
 
 	void SetKeyState(Key InKey, ButtonState InState) noexcept;
 
@@ -110,13 +76,10 @@ class SPARKLE_CORE_API InputState
 
 	void SetMousePosition(int32_t X, int32_t Y) noexcept;
 
-	/// Accumulates mouse movement delta (additive within frame).
 	void AccumulateMouseDelta(int32_t DeltaX, int32_t DeltaY) noexcept;
 
-	/// Accumulates vertical mouse wheel delta (additive within frame).
 	void AccumulateWheelDelta(float Delta) noexcept;
 
-	/// Accumulates horizontal mouse wheel delta (additive within frame).
 	void AccumulateWheelHorizontalDelta(float Delta) noexcept;
 
 	void SetModifiers(ModifierFlags InModifiers) noexcept;
@@ -125,45 +88,29 @@ class SPARKLE_CORE_API InputState
 
 	void SetCursorHidden(bool bHidden) noexcept;
 
-	/// Called at the start of each frame to transition states.
-	/// Pressed -> Held, Released -> Up, clears deltas.
 	void BeginFrame() noexcept;
 
-	/// Called at the end of each frame for optional cleanup.
 	void EndFrame() noexcept;
 
-	// -------------------------------------------------------------------------
-	// Internal Storage
-	// -------------------------------------------------------------------------
-
-	/// Number of keys in the Key enum.
 	static constexpr std::size_t KeyCount = static_cast<std::size_t>(Key::Count);
 
-	/// Number of mouse buttons in the MouseButton enum.
 	static constexpr std::size_t MouseButtonCount = static_cast<std::size_t>(MouseButton::Count);
 
-	// Key states
 	std::array<ButtonState, KeyCount> m_KeyStates{};
 
-	// Mouse button states
 	std::array<ButtonState, MouseButtonCount> m_MouseButtonStates{};
 
-	// Mouse position
 	int32_t m_MouseX = 0;
 	int32_t m_MouseY = 0;
 
-	// Mouse delta accumulated this frame
 	int32_t m_MouseDeltaX = 0;
 	int32_t m_MouseDeltaY = 0;
 
-	// Mouse wheel delta accumulated this frame
 	float m_WheelDelta = 0.0f;
 	float m_WheelHorizontalDelta = 0.0f;
 
-	// Current modifier flags
 	ModifierFlags m_Modifiers = ModifierFlags::None;
 
-	// Mouse capture/cursor state
 	bool m_bMouseCaptured = false;
 	bool m_bCursorHidden = false;
 };

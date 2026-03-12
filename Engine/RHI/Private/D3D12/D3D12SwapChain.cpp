@@ -14,10 +14,8 @@ D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHea
 	m_swapChain->SetMaximumFrameLatency(RHISettings::FramesInFlight);
 	m_waitableObject = m_swapChain->GetFrameLatencyWaitableObject();
 
-	// Initialize current frame-in-flight index from swap chain
 	UpdateFrameInFlightIndex();
 
-	// Create render target views for all buffers
 	CreateRenderTargetViews();
 }
 
@@ -29,7 +27,6 @@ D3D12SwapChain::~D3D12SwapChain() noexcept
 
 void D3D12SwapChain::Create()
 {
-	// Create swap chain description
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = m_window->GetWidth();
 	swapChainDesc.Height = m_window->GetHeight();
@@ -44,11 +41,9 @@ void D3D12SwapChain::Create()
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 	swapChainDesc.Flags = ComputeSwapChainFlags();
 
-	// Create fullscreen swap chain description
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC swapChainFullsceenDesc{};
 	swapChainFullsceenDesc.Windowed = true;
 
-	// Create the swap chain for the window
 	ComPtr<IDXGISwapChain1> swapChain;
 	CHECK(m_rhi.GetDxgiFactory()->CreateSwapChainForHwnd(
 	    m_rhi.GetCommandQueue().Get(),
@@ -143,12 +138,10 @@ D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
 }
 void D3D12SwapChain::Present()
 {
-	// Present according to runtime setting: vsync on -> interval 1, vsync off -> interval 0
 	UINT presentInterval = RHISettings::VSync ? 1u : 0u;
 	UINT presentFlags = 0u;
 	if (!RHISettings::VSync)
 	{
-		// If tearing is supported by the runtime, request it when presenting without vsync.
 		BOOL allowTearing = FALSE;
 		m_rhi.GetDxgiFactory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
 		presentFlags = (allowTearing == TRUE) ? DXGI_PRESENT_ALLOW_TEARING : 0u;

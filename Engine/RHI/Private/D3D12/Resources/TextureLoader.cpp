@@ -23,10 +23,6 @@ TextureLoader::TextureLoader(const AssetSystem& assetSystem, const std::filesyst
 	CopyPixelData(wicFactory.Get(), wicFrame.Get());
 }
 
-// =============================================================================
-// Loading Helpers
-// =============================================================================
-
 ComPtr<IWICBitmapFrameDecode> TextureLoader::DecodeImageFile(IWICImagingFactory* wicFactory, const std::filesystem::path& resolvedPath)
 {
 	ComPtr<IWICStream> wicFileStream;
@@ -90,7 +86,6 @@ void TextureLoader::MapToDxgiFormat(const std::filesystem::path& resolvedPath)
 
 void TextureLoader::CalculateBufferLayout()
 {
-	// Use 64-bit arithmetic to avoid overflow on large textures
 	const uint64_t bytesPerPixel = static_cast<uint64_t>((m_data.bitsPerPixel + 7) / 8);
 	const uint64_t stride64 = bytesPerPixel * static_cast<uint64_t>(m_data.width);
 	const uint64_t slicePitch64 = stride64 * static_cast<uint64_t>(m_data.height);

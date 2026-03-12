@@ -6,10 +6,6 @@ ImportedMesh::ImportedMesh(MeshData&& meshData, const DirectX::XMFLOAT4X4& world
 {
 }
 
-// =============================================================================
-// World Matrix
-// =============================================================================
-
 DirectX::XMMATRIX ImportedMesh::GetWorldMatrix() const noexcept
 {
 	return DirectX::XMLoadFloat4x4(&m_worldTransform);
@@ -20,10 +16,6 @@ DirectX::XMMATRIX ImportedMesh::GetWorldInverseTransposeMatrix() const noexcept
 	const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_worldTransform);
 	return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, world));
 }
-
-// =============================================================================
-// Geometry
-// =============================================================================
 
 void ImportedMesh::GenerateGeometry(MeshData& outMeshData) const
 {

@@ -8,7 +8,6 @@
 
 namespace MathUtils
 {
-
 	inline DirectX::XMFLOAT3 Add(const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b)
 	{
 		return {a.x + b.x, a.y + b.y, a.z + b.z};
@@ -59,5 +58,4 @@ namespace MathUtils
 		uint32_t hi = std::max(a, b);
 		return (uint64_t) lo | ((uint64_t) hi << 32);
 	}
-
-}  // namespace MathUtils
+}

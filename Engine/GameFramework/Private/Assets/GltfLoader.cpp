@@ -11,10 +11,6 @@
 
 using namespace DirectX;
 
-// =============================================================================
-// Internal Helpers
-// =============================================================================
-
 namespace GltfLoaderInternal
 {
 	XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
@@ -128,7 +124,6 @@ namespace GltfLoaderInternal
 			{
 				const cgltf_primitive& primitive = node.mesh->primitives[p];
 
-				// Only triangle geometry is supported
 				if (primitive.type != cgltf_primitive_type_triangles)
 				{
 					continue;
@@ -147,8 +142,6 @@ namespace GltfLoaderInternal
 		}
 	}
 
-	// Typed read from a cgltf accessor at a given element index.
-	// Returns a zeroed value if the accessor is null or index is out of range.
 	template <typename T> T ReadAccessorElement(const cgltf_accessor* accessor, cgltf_size index)
 	{
 		T result{};
@@ -159,7 +152,6 @@ namespace GltfLoaderInternal
 		return result;
 	}
 
-	// Finds the accessor for a named attribute in a primitive (POSITION, NORMAL, etc.)
 	const cgltf_accessor* FindAttribute(const cgltf_primitive& primitive, cgltf_attribute_type type)
 	{
 		for (cgltf_size i = 0; i < primitive.attributes_count; ++i)
@@ -172,7 +164,6 @@ namespace GltfLoaderInternal
 		return nullptr;
 	}
 
-	// Reads all indices from a primitive's index accessor into a uint32 vector.
 	void ReadIndices(const cgltf_accessor* accessor, std::vector<uint32_t>& outIndices)
 	{
 		if (!accessor)
@@ -185,14 +176,10 @@ namespace GltfLoaderInternal
 		}
 	}
 
-	// Computes the world transform for a node by walking up the parent chain.
-	// cgltf provides local transforms; we accumulate to world space.
 	XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node)
 	{
 		XMMATRIX world = XMMatrixIdentity();
 
-		// Walk up the hierarchy, accumulating local transforms
-		// We collect them first, then multiply in root-to-leaf order
 		const cgltf_node* chain[64];
 		int depth = 0;
 
@@ -201,14 +188,11 @@ namespace GltfLoaderInternal
 			chain[depth++] = n;
 		}
 
-		// Multiply root-to-leaf (reverse of collection order)
 		for (int i = depth - 1; i >= 0; --i)
 		{
 			float localMatrix[16];
 			cgltf_node_transform_local(chain[i], localMatrix);
 
-			// cgltf stores matrices in column-major order (OpenGL convention).
-			// DirectXMath uses row-major storage, so we transpose.
 			XMMATRIX local = XMMatrixTranspose(XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix)));
 			world = XMMatrixMultiply(world, local);
 		}
@@ -216,19 +200,14 @@ namespace GltfLoaderInternal
 		return world;
 	}
 
-	// Resolves the file path for a cgltf image relative to the glTF file directory.
 	std::filesystem::path ResolveImagePath(const cgltf_image* image, const std::filesystem::path& gltfDirectory)
 	{
 		if (!image || !image->uri)
 			return {};
 
-		// URI may be percent-encoded; cgltf_decode_uri handles this in-place,
-		// but we don't want to mutate the data — just use the raw URI for now.
-		// Most glTF exporters produce simple relative paths without encoding.
 		return gltfDirectory / image->uri;
 	}
 
-	// Extracts material descriptions from a parsed glTF scene.
 	void ExtractMaterials(
 	    const cgltf_data* data,
 	    const std::filesystem::path& gltfDirectory,
@@ -279,7 +258,6 @@ namespace GltfLoaderInternal
 				desc.metallic = pbr.metallic_factor;
 				desc.roughness = pbr.roughness_factor;
 
-				// Albedo texture
 				if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image)
 				{
 					auto path = ResolveImagePath(pbr.base_color_texture.texture->image, gltfDirectory);
@@ -290,7 +268,6 @@ namespace GltfLoaderInternal
 					}
 				}
 
-				// Metallic-roughness texture
 				if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image)
 				{
 					auto path = ResolveImagePath(pbr.metallic_roughness_texture.texture->image, gltfDirectory);
@@ -302,7 +279,6 @@ namespace GltfLoaderInternal
 				}
 			}
 
-			// Normal map
 			if (mat.normal_texture.texture && mat.normal_texture.texture->image)
 			{
 				auto path = ResolveImagePath(mat.normal_texture.texture->image, gltfDirectory);
@@ -313,7 +289,6 @@ namespace GltfLoaderInternal
 				}
 			}
 
-			// Occlusion texture
 			if (mat.occlusion_texture.texture && mat.occlusion_texture.texture->image)
 			{
 				auto path = ResolveImagePath(mat.occlusion_texture.texture->image, gltfDirectory);
@@ -324,7 +299,6 @@ namespace GltfLoaderInternal
 				}
 			}
 
-			// Emissive texture
 			if (mat.emissive_texture.texture && mat.emissive_texture.texture->image)
 			{
 				auto path = ResolveImagePath(mat.emissive_texture.texture->image, gltfDirectory);
@@ -339,18 +313,15 @@ namespace GltfLoaderInternal
 		}
 	}
 
-	// Resolves the material index for a primitive. Returns 0 (default) if unassigned.
 	std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data)
 	{
 		if (!primitive.material)
 			return 0;
 
-		// cgltf stores materials in a flat array; pointer arithmetic gives the index
 		auto index = static_cast<std::uint32_t>(primitive.material - data->materials);
 		return index;
 	}
 
-	// Extracts vertex and index data for a single glTF primitive.
 	MeshData ExtractPrimitive(const cgltf_primitive& primitive)
 	{
 		const cgltf_accessor* positions = FindAttribute(primitive, cgltf_attribute_type_position);
@@ -366,7 +337,6 @@ namespace GltfLoaderInternal
 		MeshData meshData;
 		meshData.Reserve(vertexCount, primitive.indices ? static_cast<uint32_t>(primitive.indices->count) : 0);
 
-		// Build vertex array
 		meshData.vertices.resize(vertexCount);
 
 		for (uint32_t v = 0; v < vertexCount; ++v)
@@ -393,25 +363,15 @@ namespace GltfLoaderInternal
 			vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 		}
 
-		// Read index buffer
 		ReadIndices(primitive.indices, meshData.indices);
 
 		return meshData;
 	}
-
-}  // namespace GltfLoaderInternal
-
-// =============================================================================
-// GltfLoader::Load
-// =============================================================================
+}
 
 GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 {
 	LoadResult result;
-
-	// -------------------------------------------------------------------------
-	// Validate input
-	// -------------------------------------------------------------------------
 
 	if (!GltfLoaderInternal::ValidateInputPath(filePath, result))
 	{
@@ -421,10 +381,6 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 	const std::string pathStr = filePath.string();
 	const std::filesystem::path gltfDirectory = filePath.parent_path();
 
-	// -------------------------------------------------------------------------
-	// Parse glTF
-	// -------------------------------------------------------------------------
-
 	cgltf_options options{};
 	cgltf_data* data = nullptr;
 
@@ -433,37 +389,18 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 		return result;
 	}
 
-	// RAII cleanup — cgltf_free must be called regardless of early exits
 	GltfLoaderInternal::CgltfGuard guard{data};
-
-	// -------------------------------------------------------------------------
-	// Load buffer data (required for accessor reads)
-	// -------------------------------------------------------------------------
 
 	if (!GltfLoaderInternal::LoadGltfBuffers(options, data, pathStr, result))
 	{
 		return result;
 	}
 
-	// -------------------------------------------------------------------------
-	// Validate parsed data
-	// -------------------------------------------------------------------------
-
 	GltfLoaderInternal::ValidateGltf(data, pathStr);
-
-	// -------------------------------------------------------------------------
-	// Extract materials
-	// -------------------------------------------------------------------------
 
 	GltfLoaderInternal::ExtractMaterials(data, gltfDirectory, result.materials, result.texturePaths);
 
-	// If the file has no materials, insert a default so meshes always have
-	// a valid material index (0).
 	GltfLoaderInternal::EnsureDefaultMaterial(result);
-
-	// -------------------------------------------------------------------------
-	// Count total primitives for reservation
-	// -------------------------------------------------------------------------
 
 	const std::size_t totalPrimitives = GltfLoaderInternal::CountTotalPrimitives(data);
 
@@ -471,15 +408,7 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 	result.transforms.reserve(totalPrimitives);
 	result.materialIndices.reserve(totalPrimitives);
 
-	// -------------------------------------------------------------------------
-	// Extract meshes from node hierarchy
-	// -------------------------------------------------------------------------
-
 	GltfLoaderInternal::ExtractMeshesFromNodes(data, result);
-
-	// -------------------------------------------------------------------------
-	// Finalize
-	// -------------------------------------------------------------------------
 
 	result.bSuccess = true;
 

@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12DescriptorHeapManager.h
-// ----------------------------------------------------------------------------
-// Manager for all descriptor heaps required by the engine.
-//
 #pragma once
 
 #include "D3D12Rhi.h"
@@ -22,11 +17,9 @@ class D3D12DescriptorHeapManager final
 
 	void SetShaderVisibleHeaps() const;
 
-	// Single descriptor allocation
 	D3D12DescriptorHandle AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type) { return GetAllocator(type)->Allocate(); }
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle) { GetAllocator(type)->Free(handle); }
 
-	// Contiguous block allocation (for descriptor tables)
 	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count)
 	{
 		return GetAllocator(type)->AllocateContiguous(count);
@@ -36,7 +29,6 @@ class D3D12DescriptorHeapManager final
 		GetAllocator(type)->FreeContiguous(handle, count);
 	}
 
-	// Raw handle interface for external libraries (ImGui, etc.)
 	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& outCPU, D3D12_GPU_DESCRIPTOR_HANDLE& outGPU);
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 

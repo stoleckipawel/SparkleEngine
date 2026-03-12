@@ -5,10 +5,6 @@
 
 using namespace DirectX;
 
-// ============================================================================
-// RenderCamera Implementation
-// ============================================================================
-
 RenderCamera::RenderCamera(GameCamera& gameCamera) noexcept : m_gameCamera(gameCamera)
 {
 	RebuildMatrices();
@@ -31,7 +27,6 @@ void RenderCamera::ForceUpdate() noexcept
 
 void RenderCamera::RebuildMatrices() noexcept
 {
-	// Build view matrix
 	const XMFLOAT3 position = m_gameCamera.GetPosition();
 	const XMFLOAT3& direction = m_gameCamera.GetDirection();
 
@@ -39,13 +34,11 @@ void RenderCamera::RebuildMatrices() noexcept
 	const XMVECTOR directionVec = XMLoadFloat3(&direction);
 	const XMVECTOR targetVec = XMVectorAdd(positionVec, directionVec);
 
-	// Use world up as hint - XMMatrixLookAtLH internally orthonormalizes
 	const XMVECTOR worldUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	const XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, worldUp);
 	XMStoreFloat4x4(&m_viewMatrix, view);
 
-	// Build projection matrix
 	const float fovRadians = XMConvertToRadians(m_gameCamera.GetFovYDegrees());
 	const float aspect = m_gameCamera.GetAspectRatio();
 	const float nearZ = m_gameCamera.GetNearZ();
@@ -54,11 +47,9 @@ void RenderCamera::RebuildMatrices() noexcept
 	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovRadians, aspect, nearZ, farZ);
 	XMStoreFloat4x4(&m_projectionMatrix, proj);
 
-	// Cache viewProj
 	const XMMATRIX viewProj = XMMatrixMultiply(view, proj);
 	XMStoreFloat4x4(&m_viewProjMatrix, viewProj);
 
-	// Extract frustum planes from combined view-projection matrix
 	m_frustum.ExtractFromViewProjection(m_viewProjMatrix);
 }
 
@@ -101,7 +92,6 @@ PerViewConstantBufferData RenderCamera::GetViewConstantBufferData() const noexce
 {
 	PerViewConstantBufferData data = {};
 
-	// Matrices already cached as XMFLOAT4X4 — direct copy avoids Load/Store round-trip
 	data.ViewMTX = m_viewMatrix;
 	data.ProjectionMTX = m_projectionMatrix;
 	data.ViewProjMTX = m_viewProjMatrix;

@@ -1,7 +1,3 @@
-// ============================================================================
-// D3D12ConstantBufferManager.h
-// Centralized constant buffer management with GPU/CPU synchronization.
-// ----------------------------------------------------------------------------
 #pragma once
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -37,38 +33,21 @@ class D3D12ConstantBufferManager final
 	D3D12ConstantBufferManager(D3D12ConstantBufferManager&&) = delete;
 	D3D12ConstantBufferManager& operator=(D3D12ConstantBufferManager&&) = delete;
 
-	// -------------------------------------------------------------------------
-	// GPU Address Accessors (for binding root CBVs)
-	// -------------------------------------------------------------------------
-
-	// Get GPU address of current frame's per-frame CB.
 	D3D12_GPU_VIRTUAL_ADDRESS GetPerFrameGpuAddress() const;
 
-	// Get GPU address of current frame's per-view CB.
 	D3D12_GPU_VIRTUAL_ADDRESS GetPerViewGpuAddress() const;
 
-	// -------------------------------------------------------------------------
-	// Update Methods
-	// -------------------------------------------------------------------------
-
-	// Update per-frame constant buffer. Call once per frame.
 	void UpdatePerFrame();
 
-	// Update per-view constant buffer. Call once per camera/view.
 	void UpdatePerView(const PerViewConstantBufferData& data);
 
-	// Update per-object VS constant buffer for a draw.
-	// Any system can provide this data (Primitive, SkeletalMesh, etc.) without coupling.
 	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectVS(const PerObjectVSConstantBufferData& data);
 
-	// Update per-object PS constant buffer (material data).
 	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectPS(const PerObjectPSConstantBufferData& data);
 
   private:
-	// Per-Frame constant buffers (persistent, one per frame-in-flight)
 	std::unique_ptr<D3D12ConstantBuffer<PerFrameConstantBufferData>> m_perFrameCB[RHISettings::FramesInFlight];
 
-	// Per-View constant buffers (persistent, one per frame-in-flight)
 	std::unique_ptr<D3D12ConstantBuffer<PerViewConstantBufferData>> m_perViewCB[RHISettings::FramesInFlight];
 
 	Timer* m_timer = nullptr;

@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12UploadBuffer.h
-// ----------------------------------------------------------------------------
-// Utility for uploading small data blobs to GPU memory.
-//
 #pragma once
 
 #include <d3d12.h>
@@ -17,6 +12,5 @@ class D3D12Rhi;
 class D3D12UploadBuffer
 {
   public:
-	// `data` must point to at least `dataSize` bytes.
 	static ComPtr<ID3D12Resource2> Upload(D3D12Rhi& rhi, const void* data, size_t dataSize);
 };

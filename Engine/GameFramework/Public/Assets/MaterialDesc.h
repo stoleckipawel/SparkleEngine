@@ -19,21 +19,13 @@ struct SPARKLE_ENGINE_API MaterialDesc
 {
 	std::string name;
 
-	// -------------------------------------------------------------------------
-	// PBR Parameters
-	// -------------------------------------------------------------------------
-
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	float metallic = 0.0f;
 	float roughness = 0.5f;
-	float f0 = 0.04f;  // Fresnel reflectance at normal incidence (dielectric default)
+	float f0 = 0.04f;
 	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
 	AlphaMode alphaMode = AlphaMode::Opaque;
 	float alphaCutoff = 0.5f;
-
-	// -------------------------------------------------------------------------
-	// Texture Paths (relative to asset root)
-	// -------------------------------------------------------------------------
 
 	std::optional<std::filesystem::path> albedoTexture;
 	std::optional<std::filesystem::path> normalTexture;

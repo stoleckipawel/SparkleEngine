@@ -1,10 +1,3 @@
-// ============================================================================
-// TexturePayload.h
-// ----------------------------------------------------------------------------
-// Runtime texture payload used to upload textures created outside the legacy
-// file-loader path. Designed for future stb/mip-generation integration.
-// ============================================================================
-
 #pragma once
 
 #include <cstdint>

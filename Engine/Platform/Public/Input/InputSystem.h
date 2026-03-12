@@ -1,8 +1,3 @@
-// ============================================================================
-// InputSystem.h
-// ----------------------------------------------------------------------------
-// Central hub for all input processing.
-//
 #pragma once
 
 #include "Platform/Public/PlatformAPI.h"
@@ -27,19 +22,10 @@
 #include <tuple>
 #include <vector>
 
-// Forward declarations
 class Window;
 struct WindowMessageEvent;
 
-// ============================================================================
-// Type list for all supported input event types
-// ============================================================================
-
 using InputEventTypes = std::tuple<KeyboardEvent, MouseButtonEvent, MouseMoveEvent, MouseWheelEvent>;
-
-// ============================================================================
-// Callback Type Aliases
-// ============================================================================
 
 template <typename TEvent> using InputCallback = std::function<void(const TEvent&)>;
 
@@ -48,178 +34,92 @@ using MouseButtonCallback = InputCallback<MouseButtonEvent>;
 using MouseMoveCallback = InputCallback<MouseMoveEvent>;
 using MouseWheelCallback = InputCallback<MouseWheelEvent>;
 
-// ============================================================================
-// InputSystem
-// ============================================================================
-
 class SPARKLE_PLATFORM_API InputSystem
 {
   public:
-	// =========================================================================
-	// Factory
-	// =========================================================================
-
 	static std::unique_ptr<InputSystem> Create();
 
-	// =========================================================================
-	// Construction
-	// =========================================================================
-
-	/// @param Backend Platform-specific message translator (ownership transferred)
 	explicit InputSystem(std::unique_ptr<IInputBackend> Backend);
 
 	~InputSystem();
 
-	// Non-copyable
 	InputSystem(const InputSystem&) = delete;
 	InputSystem& operator=(const InputSystem&) = delete;
 
-	// Non-movable (due to mutex and callbacks)
 	InputSystem(InputSystem&&) = delete;
 	InputSystem& operator=(InputSystem&&) = delete;
 
-	// =========================================================================
-	// Frame Lifecycle
-	// =========================================================================
-
-	/// Call at the start of each frame.
-	/// Polls window events, processes input, and fires callbacks.
 	void BeginFrame();
 
-	/// Call at the end of each frame for cleanup.
 	void EndFrame();
 
-	/// Call after window message pumping and before gameplay updates.
 	void ProcessDeferredEvents();
 
-	// =========================================================================
-	// Window Integration
-	// =========================================================================
-
-	/// Subscribes to a Window's message events for input processing.
-	/// Uses the observer pattern - InputSystem receives messages via Window's event.
-	/// @param window The window to subscribe to
 	void SubscribeToWindow(Window& window);
 
-	// =========================================================================
-	// Message Processing
-	// =========================================================================
-
-	/// @param event The window message event data
 	void HandleWindowMessage(WindowMessageEvent& event);
 
-	/// @param Msg    Windows message ID (WM_*)
-	/// @param Param1 WPARAM
-	/// @param Param2 LPARAM
-	/// @return True if the message was handled as an input event
 	bool OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2);
-
-	// =========================================================================
-	// State Access
-	// =========================================================================
 
 	const InputState& GetState() const noexcept { return m_State; }
 
-	// =========================================================================
-	// Layer Control
-	// =========================================================================
-
-	/// Enables or disables an input layer.
-	/// Disabled layers do not receive callbacks (except System layer).
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
 
 	bool IsLayerEnabled(InputLayer Layer) const noexcept;
 
 	InputLayer GetActiveLayer() const noexcept;
 
-	// =========================================================================
-	// Callback Subscription
-	// =========================================================================
-
-	/// Subscribes to keyboard events.
-	/// @param Callback Function to call on keyboard events
-	/// @param Layer    Input layer for priority filtering
-	/// @param Mode     Immediate (in WndProc) or Deferred (ProcessDeferredEvents)
-	/// @return Handle for unsubscription
 	EventHandle SubscribeKeyboard(
 	    KeyboardCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
-	/// Subscribes to mouse button events.
 	EventHandle SubscribeMouseButton(
 	    MouseButtonCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
-	/// Subscribes to mouse move events.
 	EventHandle SubscribeMouseMove(
 	    MouseMoveCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
-	/// Subscribes to mouse wheel events.
 	EventHandle SubscribeMouseWheel(
 	    MouseWheelCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
-	/// Unsubscribes a callback by handle.
-	/// Safe to call with invalid handle (no-op).
 	void Unsubscribe(EventHandle Handle);
 
-	// =========================================================================
-	// Public Events (for decoupled subscription)
-	// =========================================================================
-
-	/// Fired when a key is pressed.
 	Event<void(const KeyboardEvent&)> OnKeyPressed;
 
-	/// Fired when a key is released.
 	Event<void(const KeyboardEvent&)> OnKeyReleased;
 
-	/// Fired when a mouse button is pressed.
 	Event<void(const MouseButtonEvent&)> OnMouseButtonPressed;
 
-	/// Fired when a mouse button is released.
 	Event<void(const MouseButtonEvent&)> OnMouseButtonReleased;
 
-	/// Fired when the mouse moves.
 	Event<void(const MouseMoveEvent&)> OnMouseMove;
 
-	/// Fired when the mouse wheel scrolls.
 	Event<void(const MouseWheelEvent&)> OnMouseWheel;
 
-	// =========================================================================
-	// Mouse Capture Control
-	// =========================================================================
-
-	/// Captures the mouse to the window (for drag operations, look control).
 	void CaptureMouse();
 
 	void ReleaseMouse();
 
 	bool IsMouseCaptured() const noexcept;
 
-	/// Hides the cursor.
 	void HideCursor();
 
-	/// Shows the cursor.
 	void ShowCursor();
 
 	bool IsCursorHidden() const noexcept;
 
 	void SetCursorVisibility(bool bVisible);
 
-	/// Centers the cursor in the given window. Used during mouse look to allow infinite movement.
-	/// Call this each frame while mouse look is active to prevent cursor hitting screen edges.
 	void CenterCursor(void* windowHandle);
 
   private:
-	// =========================================================================
-	// Callback Entry
-	// =========================================================================
-
 	template <typename TEvent> struct CallbackEntry
 	{
 		std::function<void(const TEvent&)> Callback;
@@ -227,10 +127,6 @@ class SPARKLE_PLATFORM_API InputSystem
 		InputLayer Layer = InputLayer::Gameplay;
 		DispatchMode Mode = DispatchMode::Immediate;
 	};
-
-	// =========================================================================
-	// Tuple types for callback storage and deferred queues
-	// =========================================================================
 
 	using CallbackTuple = std::tuple<
 	    std::vector<CallbackEntry<KeyboardEvent>>,
@@ -241,18 +137,9 @@ class SPARKLE_PLATFORM_API InputSystem
 	using DeferredQueueTuple =
 	    std::tuple<std::vector<KeyboardEvent>, std::vector<MouseButtonEvent>, std::vector<MouseMoveEvent>, std::vector<MouseWheelEvent>>;
 
-	// =========================================================================
-	// Internal Methods
-	// =========================================================================
-
-	/// Generates a unique callback handle ID.
 	uint32_t GenerateCallbackId();
 
 	bool ShouldDispatchToLayer(InputLayer Layer) const noexcept;
-
-	// -------------------------------------------------------------------------
-	// Tuple Accessors
-	// -------------------------------------------------------------------------
 
 	template <typename TEvent> std::vector<CallbackEntry<TEvent>>& GetCallbacks();
 
@@ -260,11 +147,6 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	template <typename TEvent> std::vector<TEvent>& GetDeferredQueue();
 
-	// -------------------------------------------------------------------------
-	// Template Dispatch Helpers (reduces code duplication)
-	// -------------------------------------------------------------------------
-
-	/// Dispatches an event to all callbacks matching the specified mode.
 	template <typename TEvent> void DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode);
 
 	template <typename TEvent> void QueueIfHasDeferredCallbacks(const TEvent& Event);
@@ -273,72 +155,41 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	template <typename TEvent> void ProcessDeferredEventsForType();
 
-	// -------------------------------------------------------------------------
-	// State Update (overloads for each event type)
-	// -------------------------------------------------------------------------
-
 	void UpdateStateFromEvent(const KeyboardEvent& Event);
 	void UpdateStateFromEvent(const MouseButtonEvent& Event);
 	void UpdateStateFromEvent(const MouseMoveEvent& Event);
 	void UpdateStateFromEvent(const MouseWheelEvent& Event);
-
-	// -------------------------------------------------------------------------
-	// Public Event Broadcasting (broadcasts to public Event<> members)
-	// -------------------------------------------------------------------------
 
 	void BroadcastToPublicEvent(const KeyboardEvent& Event);
 	void BroadcastToPublicEvent(const MouseButtonEvent& Event);
 	void BroadcastToPublicEvent(const MouseMoveEvent& Event);
 	void BroadcastToPublicEvent(const MouseWheelEvent& Event);
 
-	// -------------------------------------------------------------------------
-	// Tuple Operations
-	// -------------------------------------------------------------------------
-
 	void ClearDeferredQueues();
 
-	/// Removes a callback handle from all callback vectors.
 	void UnsubscribeFromAll(EventHandle Handle);
 
-	// =========================================================================
-	// Data Members
-	// =========================================================================
-
-	/// Platform backend for message translation.
 	std::unique_ptr<IInputBackend> m_Backend;
 
-	/// Pollable input state.
 	InputState m_State;
 
-	/// Mutex for callback list modifications (subscription/unsubscription).
 	std::mutex m_CallbackMutex;
 
-	/// Callback storage (tuple-based)
 	CallbackTuple m_Callbacks;
 
-	/// Deferred event queues (tuple-based)
 	DeferredQueueTuple m_DeferredQueues;
 
-	/// Next callback handle ID.
 	uint32_t m_NextCallbackId = 1;
 
-	/// Layer enable state (all enabled by default except Console/Debug).
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
 	std::array<bool, LayerCount> m_LayerEnabled = {true, false, false, true, true};
-	// System=true, Console=false, Debug=false, HUD=true, Gameplay=true
 
-	/// Previous mouse position for delta calculation.
 	int32_t m_LastMouseX = 0;
 	int32_t m_LastMouseY = 0;
 	bool m_bHasLastMousePosition = false;
 
-	/// Window message subscription (auto-cleanup via ScopedEventHandle).
 	ScopedEventHandle m_windowMessageHandle;
 };
-
-// ============================================================================
-// Template Implementations
-// ============================================================================
 
 template <typename TEvent> std::vector<InputSystem::CallbackEntry<TEvent>>& InputSystem::GetCallbacks()
 {

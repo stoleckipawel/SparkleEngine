@@ -1,4 +1,3 @@
-
 #include "PCH.h"
 #include "D3D12RootSignature.h"
 #include "D3D12Rhi.h"
@@ -15,7 +14,6 @@ void D3D12RootSignature::Create()
 {
 	CD3DX12_ROOT_PARAMETER rootParameters[RootBindings::RootParam::Count] = {};
 
-	// Descriptor ranges for tables
 	CD3DX12_DESCRIPTOR_RANGE srvRange = {};
 	srvRange.Init(
 	    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
@@ -23,10 +21,9 @@ void D3D12RootSignature::Create()
 	    RootBindings::SRVRegister::MaterialTableBase);
 
 	CD3DX12_DESCRIPTOR_RANGE samplerRange = {};
-	// Sampler table is a single contiguous range starting at s0.
+
 	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, RootBindings::SamplerRegister::Count, 0);
 
-	// Root CBVs (b0-b3)
 	rootParameters[RootBindings::RootParam::PerFrame].InitAsConstantBufferView(
 	    RootBindings::CBRegister::PerFrame,
 	    0,
@@ -47,13 +44,10 @@ void D3D12RootSignature::Create()
 	    0,
 	    RootBindings::Visibility::PerObjectPS);
 
-	// Material texture SRV table (t0-t4)
 	rootParameters[RootBindings::RootParam::TextureSRV].InitAsDescriptorTable(1, &srvRange, RootBindings::Visibility::TextureSRV);
 
-	// Sampler table (s0-sN)
 	rootParameters[RootBindings::RootParam::SamplerTable].InitAsDescriptorTable(1, &samplerRange, RootBindings::Visibility::SamplerTable);
 
-	// Create root signature
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 	rootSignatureDesc
 	    .Init(RootBindings::RootParam::Count, rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);

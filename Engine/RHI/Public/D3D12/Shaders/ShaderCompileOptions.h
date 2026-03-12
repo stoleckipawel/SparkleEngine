@@ -1,8 +1,3 @@
-// ============================================================================
-// ShaderCompileOptions.h
-// ----------------------------------------------------------------------------
-// Configuration structures for DXC shader compilation.
-//
 #pragma once
 
 #include "RHIConfig.h"
@@ -10,23 +5,17 @@
 #include <vector>
 #include <string>
 
-// ============================================================================
-// Shader Stage Enumeration
-// ============================================================================
-
-/// Identifies the programmable shader stage in the graphics pipeline.
 enum class ShaderStage : uint8_t
 {
-	Vertex,    ///< Vertex shader - transforms vertices
-	Pixel,     ///< Pixel shader - computes fragment colors
-	Geometry,  ///< Geometry shader - processes primitives
-	Hull,      ///< Hull shader - tessellation control
-	Domain,    ///< Domain shader - tessellation evaluation
-	Compute,   ///< Compute shader - general-purpose GPU compute
-	Count      ///< Number of shader stages (for array sizing)
+	Vertex,
+	Pixel,
+	Geometry,
+	Hull,
+	Domain,
+	Compute,
+	Count
 };
 
-/// Returns the DXC target prefix for a shader stage (e.g., "vs" for Vertex).
 inline const char* GetShaderStagePrefix(ShaderStage stage)
 {
 	static constexpr const char* kPrefixes[] = {"vs", "ps", "gs", "hs", "ds", "cs"};
@@ -34,32 +23,23 @@ inline const char* GetShaderStagePrefix(ShaderStage stage)
 	return kPrefixes[static_cast<size_t>(stage)];
 }
 
-// ============================================================================
-// Shader Compile Options
-// ============================================================================
-
-/// Configuration for a single shader compilation request.
 struct ShaderCompileOptions
 {
-	std::filesystem::path SourcePath;        ///< Absolute path to the .hlsl file
-	std::filesystem::path IncludeDir;        ///< Root directory for #include resolution
-	std::string EntryPoint = "main";         ///< Entry function name
-	ShaderStage Stage = ShaderStage::Pixel;  ///< Target shader stage
+	std::filesystem::path SourcePath;
+	std::filesystem::path IncludeDir;
+	std::string EntryPoint = "main";
+	ShaderStage Stage = ShaderStage::Pixel;
 
-	// Feature flags
-	bool EnableDebugInfo = false;       ///< Include debug symbols
-	bool EnableOptimizations = true;    ///< Enable compiler optimizations
-	bool TreatWarningsAsErrors = true;  ///< Promote warnings to errors
-	bool StripReflection = true;        ///< Remove reflection data from output
-	bool StripDebugInfo = true;         ///< Remove debug info from output
+	bool EnableDebugInfo = false;
+	bool EnableOptimizations = true;
+	bool TreatWarningsAsErrors = true;
+	bool StripReflection = true;
+	bool StripDebugInfo = true;
 
-	/// Additional include directories beyond the primary IncludeDir.
 	std::vector<std::filesystem::path> AdditionalIncludeDirs;
 
-	/// Additional preprocessor defines (format: "NAME" or "NAME=VALUE").
 	std::vector<std::string> Defines;
 
-	/// Builds the shader model target string (e.g., "vs_6_0").
 	std::string BuildTargetProfile() const
 	{
 		std::string profile;

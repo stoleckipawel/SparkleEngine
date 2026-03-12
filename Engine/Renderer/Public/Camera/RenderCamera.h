@@ -1,9 +1,3 @@
-// ============================================================================
-// RenderCamera.h
-// ----------------------------------------------------------------------------
-// Rendering-side camera representation. Reads from GameCamera and builds
-// view/projection matrices for GPU submission.
-//
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -13,10 +7,6 @@
 #include <DirectXMath.h>
 
 class GameCamera;
-
-// ============================================================================
-// RenderCamera
-// ============================================================================
 
 class SPARKLE_RENDERER_API RenderCamera final
 {
@@ -29,10 +19,8 @@ class SPARKLE_RENDERER_API RenderCamera final
 	RenderCamera(RenderCamera&&) = delete;
 	RenderCamera& operator=(RenderCamera&&) = delete;
 
-	/// Call each frame before rendering.
 	void Update() noexcept;
 
-	/// Forces a full matrix rebuild regardless of dirty state.
 	void ForceUpdate() noexcept;
 
 	DirectX::XMMATRIX GetViewMatrix() const noexcept;
@@ -41,7 +29,6 @@ class SPARKLE_RENDERER_API RenderCamera final
 
 	const Frustum& GetFrustum() const noexcept { return m_frustum; }
 
-	/// Camera transform data (cached from GameCamera).
 	DirectX::XMFLOAT3 GetPosition() const noexcept;
 	DirectX::XMFLOAT3 GetDirection() const noexcept;
 	float GetNearZ() const noexcept;

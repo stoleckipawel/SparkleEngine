@@ -1,8 +1,3 @@
-// ============================================================================
-// D3D12RootBindings.h
-// ----------------------------------------------------------------------------
-// Single source of truth for shader resource binding layout.
-//
 #pragma once
 
 #include <cstdint>
@@ -10,11 +5,6 @@
 
 namespace RootBindings
 {
-
-	// ========================================================================
-	// Root Parameter Indices
-	// ========================================================================
-
 	namespace RootParam
 	{
 		constexpr uint32_t PerFrame = 0;
@@ -25,22 +15,16 @@ namespace RootBindings
 		constexpr uint32_t SamplerTable = 5;
 
 		constexpr uint32_t Count = 6;
-	}  // namespace RootParam
+	}
 
-	// -----------------------------------------------------------------------------
-	// Constant Buffer Registers
-	// -----------------------------------------------------------------------------
 	namespace CBRegister
 	{
 		constexpr uint32_t PerFrame = 0;
 		constexpr uint32_t PerView = 1;
 		constexpr uint32_t PerObjectVS = 2;
 		constexpr uint32_t PerObjectPS = 3;
-	}  // namespace CBRegister
+	}
 
-	// -----------------------------------------------------------------------------
-	// Texture Registers
-	// -----------------------------------------------------------------------------
 	namespace SRVRegister
 	{
 		constexpr uint32_t BaseColor = 0;
@@ -51,16 +35,10 @@ namespace RootBindings
 
 		constexpr uint32_t MaterialTableBase = BaseColor;
 		constexpr uint32_t MaterialTextureCount = 5;
-	}  // namespace SRVRegister
+	}
 
-	// -----------------------------------------------------------------------------
-	// Sampler Registers
-	// -----------------------------------------------------------------------------
-	// Layout: [Point MinMag][Linear MinMag][Anisotropic]
-	// Each group: [MipPoint/MipLinear/NoMip] x [Wrap/Clamp/Mirror]
 	namespace SamplerRegister
 	{
-		// Point MinMag (s0-s8)
 		constexpr uint32_t PointMipPointWrap = 0;
 		constexpr uint32_t PointMipPointClamp = 1;
 		constexpr uint32_t PointMipPointMirror = 2;
@@ -71,7 +49,6 @@ namespace RootBindings
 		constexpr uint32_t PointNoMipClamp = 7;
 		constexpr uint32_t PointNoMipMirror = 8;
 
-		// Linear MinMag (s9-s17)
 		constexpr uint32_t LinearMipPointWrap = 9;
 		constexpr uint32_t LinearMipPointClamp = 10;
 		constexpr uint32_t LinearMipPointMirror = 11;
@@ -82,7 +59,6 @@ namespace RootBindings
 		constexpr uint32_t LinearNoMipClamp = 16;
 		constexpr uint32_t LinearNoMipMirror = 17;
 
-		// Anisotropic (s18-s32)
 		constexpr uint32_t Aniso1xWrap = 18;
 		constexpr uint32_t Aniso1xClamp = 19;
 		constexpr uint32_t Aniso1xMirror = 20;
@@ -100,11 +76,8 @@ namespace RootBindings
 		constexpr uint32_t Aniso16xMirror = 32;
 
 		constexpr uint32_t Count = 33;
-	}  // namespace SamplerRegister
+	}
 
-	// -----------------------------------------------------------------------------
-	// Shader Visibility
-	// -----------------------------------------------------------------------------
 	namespace Visibility
 	{
 		constexpr D3D12_SHADER_VISIBILITY PerFrame = D3D12_SHADER_VISIBILITY_ALL;
@@ -113,6 +86,5 @@ namespace RootBindings
 		constexpr D3D12_SHADER_VISIBILITY PerObjectPS = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY TextureSRV = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY SamplerTable = D3D12_SHADER_VISIBILITY_PIXEL;
-	}  // namespace Visibility
-
-}  // namespace RootBindings
+	}
+}

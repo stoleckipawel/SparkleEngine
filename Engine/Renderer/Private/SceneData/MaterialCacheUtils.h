@@ -1,10 +1,3 @@
-// =============================================================================
-// MaterialCacheUtils.h
-// ----------------------------------------------------------------------------
-// Internal helpers for renderer-side material cache rebuild decisions and
-// material texture resolution.
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/Assets/MaterialDesc.h"

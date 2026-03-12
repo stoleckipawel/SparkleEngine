@@ -1,39 +1,22 @@
-// ============================================================================
-// ResourceState.h
-// ----------------------------------------------------------------------------
-// API-agnostic resource state enumeration for the Frame Graph system.
-//
-// PURPOSE:
-//   Abstracts GPU resource states away from D3D12 specifics, providing a clean
-//   boundary for render passes. The RenderContext translates these states to
-//   the appropriate D3D12_RESOURCE_STATES when issuing barriers.
-//
 #pragma once
 
 #include <cstdint>
 
-// ============================================================================
-// Resource State Enumeration
-// ============================================================================
-
-/// GPU resource state for barrier transitions.
-/// Used by RenderContext to abstract D3D12 resource barriers.
 enum class ResourceState : std::uint8_t
 {
-	Common,           ///< Initial/final state, general purpose
-	RenderTarget,     ///< Writing to color buffer (render target)
-	DepthWrite,       ///< Writing to depth buffer
-	DepthRead,        ///< Sampling depth buffer (read-only)
-	ShaderResource,   ///< Sampling in pixel shader (SRV)
-	UnorderedAccess,  ///< Compute read/write (UAV)
-	CopySource,       ///< Source for copy operation
-	CopyDest,         ///< Destination for copy operation
-	Present,          ///< Swap chain present state
+	Common,
+	RenderTarget,
+	DepthWrite,
+	DepthRead,
+	ShaderResource,
+	UnorderedAccess,
+	CopySource,
+	CopyDest,
+	Present,
 
 	Count
 };
 
-/// Convert ResourceState to string for debugging/logging.
 constexpr const char* ResourceStateToString(ResourceState state) noexcept
 {
 	switch (state)

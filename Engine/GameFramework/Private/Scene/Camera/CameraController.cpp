@@ -14,10 +14,8 @@
 CameraController::CameraController(Timer& timer, InputSystem& inputSystem, Window& window, GameCamera& camera) noexcept :
     m_timer(timer), m_inputSystem(inputSystem), m_window(window), m_camera(camera)
 {
-	// Set initial aspect ratio from window
 	OnWindowResized();
 
-	// Subscribe to window resize events
 	auto resizeHandle = m_window.OnResized.Add(
 	    [this]()
 	    {
@@ -25,7 +23,6 @@ CameraController::CameraController(Timer& timer, InputSystem& inputSystem, Windo
 	    });
 	m_windowResizeHandle = ScopedEventHandle(m_window.OnResized, resizeHandle);
 
-	// Subscribe to input events using ScopedEventHandle for RAII cleanup
 	auto mouseButtonPressedHandle = m_inputSystem.OnMouseButtonPressed.Add(
 	    [this](const MouseButtonEvent& event)
 	    {
@@ -57,8 +54,6 @@ CameraController::CameraController(Timer& timer, InputSystem& inputSystem, Windo
 
 CameraController::~CameraController() noexcept
 {
-	// ScopedEventHandle automatically unsubscribes in its destructor
-	// Just need to release mouse capture if active
 	if (m_bMouseLookActive)
 	{
 		m_inputSystem.ReleaseMouse();
@@ -71,12 +66,10 @@ void CameraController::Update() noexcept
 	const InputState& input = m_inputSystem.GetState();
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
 
-	// Mouse look - always process when active (even when paused)
 	if (m_bMouseLookActive)
 	{
 		const MousePosition mouseDelta = input.GetMouseDelta();
 
-		// Apply invert Y setting
 		const float ySign = m_settings.invertY ? 1.0f : -1.0f;
 
 		const float yawDelta = static_cast<float>(mouseDelta.X) * m_settings.mouseSensitivity;
@@ -84,17 +77,14 @@ void CameraController::Update() noexcept
 
 		m_camera.Rotate(yawDelta, pitchDelta);
 
-		// Re-center cursor to allow infinite mouse movement without hitting screen edges
 		m_inputSystem.CenterCursor(m_window.GetHWND());
 	}
 
-	// Movement - requires valid deltaTime
 	if (deltaTime <= 0.0f)
 	{
 		return;
 	}
 
-	// Calculate effective speed
 	float speed = m_settings.moveSpeed;
 	if (input.IsKeyDown(Key::LeftShift) || input.IsKeyDown(Key::RightShift))
 	{
@@ -103,7 +93,6 @@ void CameraController::Update() noexcept
 
 	const float distance = speed * deltaTime;
 
-	// Apply movement
 	if (input.IsKeyDown(Key::W))
 		m_camera.MoveForward(distance);
 	if (input.IsKeyDown(Key::S))
@@ -160,13 +149,11 @@ void CameraController::OnWindowResized() noexcept
 
 void CameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
 {
-	// Only adjust speed on vertical scroll
 	if (!event.IsVertical())
 	{
 		return;
 	}
 
-	// Adjust movement speed based on scroll direction
 	m_settings.moveSpeed += event.Delta * m_settings.speedStep;
 	m_settings.moveSpeed = std::clamp(m_settings.moveSpeed, m_settings.minMoveSpeed, m_settings.maxMoveSpeed);
 }

@@ -28,31 +28,26 @@ void D3D12Rhi::SelectAdapter() noexcept
 	const DXGI_GPU_PREFERENCE pref =
 	    RHISettings::PreferHighPerformanceAdapter ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
 
-	// Try adapter-by-preference first. Use a local temporary adapter to avoid
-	// repeatedly replacing the member until a suitable one is found.
 	for (UINT i = 0;; ++i)
 	{
 		ComPtr<IDXGIAdapter1> candidate;
 		HRESULT hr = m_dxgiFactory->EnumAdapterByGpuPreference(i, pref, IID_PPV_ARGS(candidate.ReleaseAndGetAddressOf()));
 		if (hr != S_OK)
-			break;  // no more adapters or error
+			break;
 
 		DXGI_ADAPTER_DESC1 desc{};
 		if (FAILED(candidate->GetDesc1(&desc)))
 			continue;
 		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-			continue;  // skip WARP
+			continue;
 
-		// Lightweight feature probe: does this adapter support D3D12 at the
-		// desired feature level? We don't create a device here, just test.
 		if (SUCCEEDED(D3D12CreateDevice(candidate.Get(), m_desiredD3DFeatureLevel, _uuidof(ID3D12Device), nullptr)))
 		{
-			m_adapter = candidate;  // accept
+			m_adapter = candidate;
 			return;
 		}
 	}
 
-	// Fallback enumerating adapters1 in classic order
 	for (UINT i = 0;; ++i)
 	{
 		ComPtr<IDXGIAdapter1> candidate;
@@ -72,8 +67,6 @@ void D3D12Rhi::SelectAdapter() noexcept
 			return;
 		}
 	}
-
-	// If not found, leave m_adapter null; caller will handle this failure.
 }
 
 void D3D12Rhi::CheckShaderModel6Support() const noexcept
@@ -92,7 +85,6 @@ void D3D12Rhi::CheckShaderModel6Support() const noexcept
 	}
 }
 
-
 void D3D12Rhi::CreateFactory()
 {
 #if ENGINE_GPU_VALIDATION
@@ -103,7 +95,7 @@ void D3D12Rhi::CreateFactory()
 	CHECK(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf())));
 }
 
-void D3D12Rhi::CreateDevice(bool /*requireDXRSupport*/)
+void D3D12Rhi::CreateDevice(bool )
 {
 	SelectAdapter();
 	if (!m_adapter)
@@ -143,8 +135,6 @@ void D3D12Rhi::CreateCommandLists()
 		    nullptr,
 		    IID_PPV_ARGS(m_cmdList[i].ReleaseAndGetAddressOf())));
 
-		// Close immediately - command lists are created in recording state,
-		// but we want them closed so BeginFrame can reset allocator then reopen.
 		CHECK(m_cmdList[i]->Close());
 	}
 }
@@ -219,7 +209,7 @@ void D3D12Rhi::SetBarrier(
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barrier.Transition.pResource = resource;
-	// Transition all subresources (depth + stencil planes)
+
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = stateBefore;
 	barrier.Transition.StateAfter = stateAfter;
@@ -234,8 +224,6 @@ void D3D12Rhi::SetBarrier(
 
 void D3D12Rhi::WaitForGPU(uint32_t frameInFlightIndex) noexcept
 {
-	// TODO: Implement WaitForMultipleObjects for correct frame buffering & pacing
-
 	const uint64_t fenceCurrentValue = m_fenceValues[frameInFlightIndex];
 	if (!m_fence)
 	{
@@ -252,7 +240,6 @@ void D3D12Rhi::WaitForGPU(uint32_t frameInFlightIndex) noexcept
 
 void D3D12Rhi::Signal(uint32_t frameInFlightIndex) noexcept
 {
-	// Schedule a Signal command in the queue. -> Updates Fence Completed Value
 	const uint64_t currentFenceValue = m_nextFenceValue++;
 	if (!m_cmdQueue || !m_fence)
 	{
@@ -261,13 +248,11 @@ void D3D12Rhi::Signal(uint32_t frameInFlightIndex) noexcept
 
 	CHECK(m_cmdQueue->Signal(m_fence.Get(), currentFenceValue));
 
-	// Set the fence value for the next frame.
 	m_fenceValues[frameInFlightIndex] = currentFenceValue;
 }
 
 void D3D12Rhi::Flush() noexcept
 {
-	// Signal and wait for all frames to complete
 	for (UINT i = 0; i < RHISettings::FramesInFlight; ++i)
 	{
 		Signal(i);
@@ -305,6 +290,6 @@ D3D12Rhi::~D3D12Rhi() noexcept
 	m_dxgiFactory.Reset();
 
 #if ENGINE_GPU_VALIDATION
-	m_debugLayer.reset();  // Destroy after device to report live objects
+	m_debugLayer.reset();
 #endif
 }

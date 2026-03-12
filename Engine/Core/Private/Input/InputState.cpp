@@ -1,10 +1,6 @@
 #include "PCH.h"
 #include "InputState.h"
 
-// ============================================================================
-// Keyboard Queries
-// ============================================================================
-
 bool InputState::IsKeyDown(Key InKey) const noexcept
 {
 	const ButtonState state = GetKeyState(InKey);
@@ -35,10 +31,6 @@ ButtonState InputState::GetKeyState(Key InKey) const noexcept
 	}
 	return m_KeyStates[index];
 }
-
-// ============================================================================
-// Mouse Button Queries
-// ============================================================================
 
 bool InputState::IsMouseButtonDown(MouseButton InButton) const noexcept
 {
@@ -71,10 +63,6 @@ ButtonState InputState::GetMouseButtonState(MouseButton InButton) const noexcept
 	return m_MouseButtonStates[index];
 }
 
-// ============================================================================
-// Mouse Position Queries
-// ============================================================================
-
 MousePosition InputState::GetMousePosition() const noexcept
 {
 	return MousePosition{m_MouseX, m_MouseY};
@@ -94,10 +82,6 @@ float InputState::GetMouseWheelHorizontalDelta() const noexcept
 {
 	return m_WheelHorizontalDelta;
 }
-
-// ============================================================================
-// Modifier Queries
-// ============================================================================
 
 ModifierFlags InputState::GetModifiers() const noexcept
 {
@@ -124,10 +108,6 @@ bool InputState::IsAltDown() const noexcept
 	return HasModifier(ModifierFlags::Alt);
 }
 
-// ============================================================================
-// Mouse Capture Queries
-// ============================================================================
-
 bool InputState::IsMouseCaptured() const noexcept
 {
 	return m_bMouseCaptured;
@@ -137,10 +117,6 @@ bool InputState::IsCursorHidden() const noexcept
 {
 	return m_bCursorHidden;
 }
-
-// ============================================================================
-// Mutation Methods (called by InputSystem only)
-// ============================================================================
 
 void InputState::SetKeyState(Key InKey, ButtonState InState) noexcept
 {
@@ -199,7 +175,6 @@ void InputState::SetCursorHidden(bool bHidden) noexcept
 
 void InputState::BeginFrame() noexcept
 {
-	// Transition button states: Pressed → Held, Released → Up
 	for (auto& state : m_KeyStates)
 	{
 		if (state == ButtonState::Pressed)
@@ -224,7 +199,6 @@ void InputState::BeginFrame() noexcept
 		}
 	}
 
-	// Clear accumulated deltas
 	m_MouseDeltaX = 0;
 	m_MouseDeltaY = 0;
 	m_WheelDelta = 0.0f;

@@ -40,10 +40,8 @@
 Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept :
     m_timer(&timer), m_assetSystem(&assetSystem), m_scene(&scene), m_window(&window), m_materialCache(std::make_unique<RendererMaterialCacheState>())
 {
-	// Create and own the RHI
 	m_rhi = std::make_unique<D3D12Rhi>();
 
-	// Open command list for initialization recording (starts closed after RHI creation)
 	constexpr UINT kInitFrameIndex = 0;
 	m_rhi->SetCurrentFrameIndex(kInitFrameIndex);
 	m_rhi->ResetCommandAllocator(kInitFrameIndex);
@@ -51,7 +49,6 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 
 	m_rootSignature = std::make_unique<D3D12RootSignature>(*m_rhi);
 
-	// Compile shaders
 	m_vertexShader = std::make_unique<ShaderCompileResult>(
 	    DxcShaderCompiler::CompileFromAsset(*m_assetSystem, "Passes/Forward/ForwardLitVS.hlsl", ShaderStage::Vertex, "main"));
 	m_pixelShader = std::make_unique<ShaderCompileResult>(
@@ -61,8 +58,6 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, *m_window, *m_descriptorHeapManager);
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 
-	// Create UI after descriptor heap manager is ready
-	// UI subscribes to Window's OnWindowMessage event automatically in its constructor
 	m_ui = std::make_unique<UI>(*m_timer, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
@@ -74,28 +69,21 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 	    *m_swapChain,
 	    *m_ui);
 
-	// Initialize sampler library first (requires contiguous descriptor allocation)
 	m_samplerLibrary = std::make_unique<D3D12SamplerLibrary>(*m_rhi, *m_descriptorHeapManager);
 
-	// Create texture manager (auto-loads default textures)
 	m_textureManager = std::make_unique<TextureManager>(*m_assetSystem, *m_rhi, *m_descriptorHeapManager);
 
-	// Create GPU mesh cache for lazy uploading CPU meshes
 	m_gpuMeshCache = std::make_unique<GPUMeshCache>(*m_rhi);
 
-	// Subscribe to events
 	SubscribeToDepthModeChanges();
 	SubscribeToWindowResize();
 
-	// Create pipeline state object
 	CreatePSO();
 
 	CreateDepthStencilBuffer();
 
-	// Create render camera bound to scene's game camera
 	m_renderCamera = std::make_unique<RenderCamera>(m_scene->GetCamera());
 
-	// Create Frame Graph and register passes
 	m_frameGraph = std::make_unique<FrameGraph>(m_swapChain.get(), m_depthStencil.get());
 	m_frameGraph->AddPass<ForwardOpaquePass>(
 	    "ForwardOpaque",
@@ -114,12 +102,10 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 
 void Renderer::PostLoad() noexcept
 {
-	// Execute initialization commands and sync with GPU
 	m_rhi->CloseCommandList();
 	m_rhi->ExecuteCommandList();
 	m_rhi->Flush();
 }
-
 
 void Renderer::CreateDepthStencilBuffer()
 {
@@ -183,32 +169,24 @@ void Renderer::SetupFrame() noexcept
 
 void Renderer::RecordFrame() noexcept
 {
-	// Build scene view from current frame state
 	SceneView sceneView = BuildSceneView();
 
-	// Build per-view constant buffer data (camera + sun light)
 	PerViewConstantBufferData viewData = m_renderCamera->GetViewConstantBufferData();
 	viewData.SunDirection = sceneView.sunLight.direction;
 	viewData.SunIntensity = sceneView.sunLight.intensity;
 	viewData.SunColor = sceneView.sunLight.color;
 	m_constantBufferManager->UpdatePerView(viewData);
 
-	// Frame graph: declare resource usage
 	m_frameGraph->Setup(sceneView);
 
-	// Frame graph: compile (MVP: no-op)
 	m_frameGraph->Compile();
 
-	// Create render context for this frame's command list
 	RenderContext context(m_rhi->GetCommandList().Get());
 
-	// Frame graph: record all pass commands
 	m_frameGraph->Execute(context);
 
-	// UI overlay (after all passes, before present transition)
 	m_ui->Render();
 
-	// Transition resources for presentation
 	m_depthStencil->SetReadState();
 	m_swapChain->SetPresentState();
 }
@@ -219,7 +197,6 @@ void Renderer::SubmitFrame() noexcept
 	m_rhi->ExecuteCommandList();
 	m_rhi->Signal(m_swapChain->GetFrameInFlightIndex());
 
-	// Record fence value for ring buffer synchronization
 	m_frameResourceManager->EndFrame(m_rhi->GetNextFenceValue() - 1);
 	m_swapChain->Present();
 }
@@ -229,16 +206,11 @@ void Renderer::EndFrame() noexcept
 	m_swapChain->UpdateFrameInFlightIndex();
 }
 
-// -----------------------------------------------------------------------------
-// Scene View — per-frame data preparation
-// -----------------------------------------------------------------------------
-
 SceneView Renderer::BuildSceneView() const
 {
 	SceneView view = {};
 	InitializeSceneView(view);
 
-	// Materials and draw commands
 	BuildMaterials(view);
 	BuildMeshDraws(view);
 
@@ -247,14 +219,10 @@ SceneView Renderer::BuildSceneView() const
 
 void Renderer::InitializeSceneView(SceneView& view) const
 {
-	// Viewport (from window, which swap chain tracks)
 	view.width = m_window->GetWidth();
 	view.height = m_window->GetHeight();
 
-	// Camera — store pointer to already-updated RenderCamera
 	view.camera = m_renderCamera.get();
-
-	// Lighting — struct defaults (sun down, white, intensity 1)
 }
 
 void Renderer::BuildMaterials(SceneView& view) const
@@ -404,9 +372,6 @@ void Renderer::BuildMeshDraws(SceneView& view) const
 	}
 }
 
-// -----------------------------------------------------------------------------
-// Shuts down the renderer and all owned subsystems
-// -----------------------------------------------------------------------------
 Renderer::~Renderer() noexcept
 {
 	m_rhi->Flush();
@@ -447,8 +412,6 @@ void Renderer::CreatePSO()
 
 void Renderer::OnDepthModeChanged([[maybe_unused]] DepthMode mode) noexcept
 {
-	// Depth convention changed - must recreate PSO with new depth comparison
-	// and depth stencil buffer with new optimized clear value
 	m_rhi->Flush();
 	CreatePSO();
 	CreateDepthStencilBuffer();

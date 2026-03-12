@@ -25,8 +25,6 @@ void FrameGraph::Setup(const SceneView& sceneView)
 
 void FrameGraph::Compile()
 {
-	// MVP: No-op
-	// Future: Analyze dependencies, insert resource barriers, optimize pass ordering
 }
 
 void FrameGraph::Execute(RenderContext& context)

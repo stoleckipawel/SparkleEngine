@@ -1,7 +1,3 @@
-// ============================================================================
-// EmptyLevel.h — Empty level
-// ============================================================================
-
 #pragma once
 
 #include "Level/Level.h"
@@ -15,6 +11,6 @@ class EmptyLevel final : public Level
 
 	LevelDesc BuildDescription() const override
 	{
-		return {};  // Empty level — no mesh requests
+		return {};
 	}
 };

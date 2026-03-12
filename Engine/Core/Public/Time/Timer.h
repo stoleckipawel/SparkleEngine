@@ -8,9 +8,8 @@
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
-using Duration = std::chrono::duration<double>;  ///< Seconds, double-precision
+using Duration = std::chrono::duration<double>;
 
-// Supported time display units. Default is Milliseconds (convenient for UI).
 enum class TimeUnit : uint8_t
 {
 	Seconds,
@@ -19,25 +18,21 @@ enum class TimeUnit : uint8_t
 	Nanoseconds
 };
 
-// Which clock domain to query.
 enum class TimeDomain : uint8_t
 {
-	Unscaled,  // wall/real time (ignores timeScale, continues when paused)
-	Scaled     // game time (multiplied by timeScale, stops when paused)
+	Unscaled,
+	Scaled
 };
 
-// -------------------------------------------------------------------------
-// TimeInfo: immutable snapshot of frame timing. Cheap to copy by value.
-// -------------------------------------------------------------------------
 struct TimeInfo
 {
-	uint64_t frameIndex = 0;                    // 1-based frame counter
-	Duration unscaledTime = Duration::zero();   // total wall time since init
-	Duration scaledTime = Duration::zero();     // total scaled/game time since init (stops when paused)
-	Duration unscaledDelta = Duration::zero();  // raw delta this frame (seconds)
-	double timeScale = 1.0;                     // game-time multiplier
-	Duration scaledDelta = Duration::zero();    // delta * timeScale (0 if paused)
-	bool bPaused = false;                       // true when scaled time is paused
+	uint64_t frameIndex = 0;
+	Duration unscaledTime = Duration::zero();
+	Duration scaledTime = Duration::zero();
+	Duration unscaledDelta = Duration::zero();
+	double timeScale = 1.0;
+	Duration scaledDelta = Duration::zero();
+	bool bPaused = false;
 };
 
 class SPARKLE_CORE_API Timer final
@@ -51,13 +46,10 @@ class SPARKLE_CORE_API Timer final
 	Timer(Timer&&) = delete;
 	Timer& operator=(Timer&&) = delete;
 
-	// Advance clocks. Call once per rendered frame.
 	void Tick() noexcept;
 
-	// Immutable snapshot of current frame timing.
 	TimeInfo GetTimeInfo() const noexcept { return m_timeInfo; }
 
-	// Frame counter (1-based, incremented each Tick).
 	uint64_t GetFrameCount() const noexcept { return m_frameCount; }
 
 	double GetDelta(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;

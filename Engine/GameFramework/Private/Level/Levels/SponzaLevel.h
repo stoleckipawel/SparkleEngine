@@ -1,7 +1,3 @@
-// ============================================================================
-// SponzaLevel.h — Sponza Palace PBR test scene
-// ============================================================================
-
 #pragma once
 
 #include "Level/Level.h"
@@ -16,11 +12,7 @@ class SponzaLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
-		MeshRequest req;
-		req.source = AssetSource::Imported;
-		req.assetPath = "Sponza/Sponza.gltf";
-		req.assetType = AssetType::Mesh;
-		desc.meshRequests.push_back(req);
+		desc.importedMeshRequests.push_back({"Sponza/Sponza.gltf"});
 		return desc;
 	}
 };

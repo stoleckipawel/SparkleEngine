@@ -33,10 +33,6 @@ D3D12ConstantBufferManager::~D3D12ConstantBufferManager() noexcept
 	}
 }
 
-//------------------------------------------------------------------------------
-// GPU Address Accessors
-//------------------------------------------------------------------------------
-
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::GetPerFrameGpuAddress() const
 {
 	return m_perFrameCB[m_swapChain->GetFrameInFlightIndex()]->GetGPUVirtualAddress();
@@ -46,10 +42,6 @@ D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::GetPerViewGpuAddress() con
 {
 	return m_perViewCB[m_swapChain->GetFrameInFlightIndex()]->GetGPUVirtualAddress();
 }
-
-//------------------------------------------------------------------------------
-// Per-Frame Update (once per CPU frame)
-//------------------------------------------------------------------------------
 
 void D3D12ConstantBufferManager::UpdatePerFrame()
 {
@@ -69,34 +61,16 @@ void D3D12ConstantBufferManager::UpdatePerFrame()
 	m_perFrameCB[frameInFlightIndex]->Update(data);
 }
 
-//------------------------------------------------------------------------------
-// Per-View Update (once per camera/view)
-//------------------------------------------------------------------------------
-
 void D3D12ConstantBufferManager::UpdatePerView(const PerViewConstantBufferData& data)
 {
 	const uint32_t frameInFlightIndex = m_swapChain->GetFrameInFlightIndex();
 	m_perViewCB[frameInFlightIndex]->Update(data);
 }
 
-//------------------------------------------------------------------------------
-// Per-Object VS Update (per draw call - uses ring buffer)
-//------------------------------------------------------------------------------
-// This is the critical path for scaling to many objects:
-//   - Each call allocates from the per-frame linear allocator
-//   - Returns a unique GPU VA that won't be overwritten until next frame
-//   - Thread-safe allocation allows future multithreaded recording
-//------------------------------------------------------------------------------
-
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::UpdatePerObjectVS(const PerObjectVSConstantBufferData& data)
 {
-	// Allocate from ring buffer and copy data - returns unique GPU VA
 	return m_frameResourceManager->AllocateConstantBuffer(data);
 }
-
-//------------------------------------------------------------------------------
-// Per-Object PS Update (per draw call - uses ring buffer)
-//------------------------------------------------------------------------------
 
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::UpdatePerObjectPS(const PerObjectPSConstantBufferData& data)
 {
