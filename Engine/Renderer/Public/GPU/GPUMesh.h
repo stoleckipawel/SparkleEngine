@@ -35,15 +35,12 @@ class SPARKLE_RENDERER_API GPUMesh final
 	// Upload
 	// -------------------------------------------------------------------------
 
-	// Creates GPU buffers from CPU mesh data. Call once per mesh.
-	// Returns true on success.
 	bool Upload(D3D12Rhi& rhi, const MeshData& meshData);
 
 	// -------------------------------------------------------------------------
 	// Binding
 	// -------------------------------------------------------------------------
 
-	// Sets vertex and index buffers on the command list (IA stage)
 	void Bind(ID3D12GraphicsCommandList* cmdList) const noexcept;
 
 	// -------------------------------------------------------------------------

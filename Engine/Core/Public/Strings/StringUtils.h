@@ -1,14 +1,3 @@
-// ============================================================================
-// StringUtils.h
-// ----------------------------------------------------------------------------
-// String manipulation utilities for the engine.
-//
-// FUNCTIONS:
-//   TrimAsciiWhitespace() - Trims whitespace from string ends
-//   Unquote() - Removes surrounding double quotes
-//   ToWide() - Converts narrow to wide string (ASCII)
-//   ToWide(path) - Converts filesystem path to wide string
-//
 #pragma once
 
 #include <filesystem>

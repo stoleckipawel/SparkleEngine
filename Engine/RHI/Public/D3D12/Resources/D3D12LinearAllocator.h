@@ -42,19 +42,14 @@ class D3D12LinearAllocator
 	D3D12LinearAllocator(D3D12LinearAllocator&&) = delete;
 	D3D12LinearAllocator& operator=(D3D12LinearAllocator&&) = delete;
 
-	// Creates the upload buffer with specified capacity.
 	void Initialize(D3D12Rhi& rhi, uint64_t capacity, const wchar_t* debugName = L"D3D12LinearAllocator");
 
-	// Releases all resources. Called automatically by destructor.
 	void Shutdown();
 
-	// Resets the allocator for a new frame.
 	void Reset() noexcept;
 
-	// Allocates aligned memory from the linear buffer.
 	D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256);
 
-	// Convenience method: allocate, copy data, return GPU address.
 	template <typename T> D3D12_GPU_VIRTUAL_ADDRESS AllocateAndCopy(const T& data)
 	{
 		static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable");
@@ -64,16 +59,12 @@ class D3D12LinearAllocator
 		return alloc.GpuAddress;
 	}
 
-	// Returns current allocation offset (bytes used this frame).
 	uint64_t GetCurrentOffset() const noexcept { return m_Offset.load(std::memory_order_relaxed); }
 
-	// Returns total capacity in bytes.
 	uint64_t GetCapacity() const noexcept { return m_Capacity; }
 
-	// Returns peak usage across all frames (for capacity tuning).
 	uint64_t GetHighWaterMark() const noexcept { return m_HighWaterMark.load(std::memory_order_relaxed); }
 
-	// Returns percentage of capacity used this frame.
 	float GetUsagePercent() const noexcept
 	{
 		if (m_Capacity == 0)
@@ -81,11 +72,9 @@ class D3D12LinearAllocator
 		return static_cast<float>(GetCurrentOffset()) / static_cast<float>(m_Capacity) * 100.0f;
 	}
 
-	// Returns true if allocator is initialized and ready.
 	bool IsInitialized() const noexcept { return m_bInitialized; }
 
   private:
-	// Aligns a value up to the specified alignment.
 	static constexpr uint64_t AlignUp(uint64_t value, uint64_t alignment) noexcept
 	{
 		return (value + alignment - 1) & ~(alignment - 1);

@@ -1,9 +1,3 @@
-// ============================================================================
-// CameraController.h
-// ----------------------------------------------------------------------------
-// Connects InputSystem and Window to GameCamera. Handles WASD movement,
-// mouse look, and aspect ratio updates.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -18,10 +12,6 @@ struct KeyboardEvent;
 struct MouseButtonEvent;
 struct MouseWheelEvent;
 
-// ============================================================================
-// CameraMovementSettings - Configurable movement parameters
-// ============================================================================
-
 struct CameraMovementSettings
 {
 	float moveSpeed = 0.15f;           ///< Base movement speed (units/sec)
@@ -32,10 +22,6 @@ struct CameraMovementSettings
 	float mouseSensitivity = 0.0015f;  ///< Mouse look sensitivity (radians/pixel)
 	bool invertY = false;              ///< Invert mouse Y axis
 };
-
-// ============================================================================
-// CameraController
-// ============================================================================
 
 class SPARKLE_ENGINE_API CameraController final
 {
@@ -48,23 +34,12 @@ class SPARKLE_ENGINE_API CameraController final
 	CameraController(CameraController&&) = delete;
 	CameraController& operator=(CameraController&&) = delete;
 
-	/// Updates camera based on current input. Call once per frame.
 	void Update() noexcept;
 
-	// ========================================================================
-	// Settings Access
-	// ========================================================================
-
-	/// Returns mutable reference to movement settings for UI/config binding.
 	CameraMovementSettings& GetSettings() noexcept { return m_settings; }
 	const CameraMovementSettings& GetSettings() const noexcept { return m_settings; }
 
-	/// Sets all movement settings at once.
 	void SetSettings(const CameraMovementSettings& settings) noexcept { m_settings = settings; }
-
-	// ========================================================================
-	// Convenience Accessors (delegate to settings)
-	// ========================================================================
 
 	void SetMoveSpeed(float speed) noexcept { m_settings.moveSpeed = speed; }
 	void SetSprintMultiplier(float multiplier) noexcept { m_settings.sprintMultiplier = multiplier; }
@@ -88,15 +63,12 @@ class SPARKLE_ENGINE_API CameraController final
 	Window& m_window;
 	GameCamera& m_camera;
 
-	// Event subscriptions with RAII cleanup
 	ScopedEventHandle m_mouseButtonPressedHandle;
 	ScopedEventHandle m_mouseButtonReleasedHandle;
 	ScopedEventHandle m_keyPressedHandle;
 	ScopedEventHandle m_windowResizeHandle;
 	ScopedEventHandle m_mouseWheelHandle;
 
-	// Movement configuration
 	CameraMovementSettings m_settings;
-
 	bool m_bMouseLookActive = false;
 };

@@ -1,8 +1,3 @@
-// ============================================================================
-// Timer.h
-// ----------------------------------------------------------------------------
-// Authoritative frame-timing service for the engine.
-//
 #pragma once
 
 #include "Core/Public/CoreAPI.h"
@@ -10,10 +5,6 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-
-// ========================================================================
-// Internal Clock Types
-// ========================================================================
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
@@ -49,9 +40,6 @@ struct TimeInfo
 	bool bPaused = false;                       // true when scaled time is paused
 };
 
-// -------------------------------------------------------------------------
-// Timer: authoritative frame-timing service for the engine.
-// -------------------------------------------------------------------------
 class SPARKLE_CORE_API Timer final
 {
   public:

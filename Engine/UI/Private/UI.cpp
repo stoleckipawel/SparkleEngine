@@ -36,7 +36,7 @@ static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE c
 
 void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
 {
-	// UI gets first chance to handle messages (for ImGui input capture)
+	// Let ImGui consume input before the rest of the engine handles it.
 	if (ProcessWindowMessage(event.hWnd, event.msg, event.wParam, event.lParam))
 	{
 		event.handled = true;

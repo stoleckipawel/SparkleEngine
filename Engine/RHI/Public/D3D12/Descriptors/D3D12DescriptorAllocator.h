@@ -13,21 +13,15 @@
 class D3D12DescriptorAllocator
 {
   public:
-	// Constructs allocator for an existing heap (does not take ownership).
 	explicit D3D12DescriptorAllocator(D3D12DescriptorHeap* heap) : m_heap(heap) {}
 
-	// Allocates a single descriptor slot.
 	D3D12DescriptorHandle Allocate();
 
-	// Allocates a contiguous block of descriptor slots.
 	// Used for descriptor tables that require sequential descriptors.
-	// Returns handle to first descriptor; subsequent slots are offset by descriptor size.
 	D3D12DescriptorHandle AllocateContiguous(uint32_t count);
 
-	// Returns a previously allocated descriptor slot to the free-list.
 	void Free(const D3D12DescriptorHandle& handle) noexcept;
 
-	// Returns a contiguous block to the free-list.
 	void FreeContiguous(const D3D12DescriptorHandle& firstHandle, uint32_t count) noexcept;
 
   private:

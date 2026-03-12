@@ -40,7 +40,6 @@ class SPARKLE_RENDERER_API FrameGraph
 	// Pass Registration
 	// -------------------------------------------------------------------------
 
-	/// Creates and registers a render pass of the given type.
 	template <typename T, typename... Args> T& AddPass(std::string_view name, Args&&... args)
 	{
 		static_assert(std::is_base_of_v<RenderPass, T>, "T must derive from RenderPass");

@@ -1,8 +1,3 @@
-// ============================================================================
-// ScopedEventHandle.h
-// ----------------------------------------------------------------------------
-// RAII guard that automatically removes subscription on destruction.
-//
 #pragma once
 
 #include "Core/Public/CoreAPI.h"
@@ -11,15 +6,7 @@
 #include <functional>
 #include <utility>
 
-// Forward declaration of Event template
 template <typename Signature, std::size_t Capacity> class Event;
-
-// ============================================================================
-// ScopedEventHandle
-// ============================================================================
-
-/// RAII guard that automatically removes subscription on destruction.
-/// Stores a type-erased cleanup function to avoid template parameter coupling.
 class SPARKLE_CORE_API ScopedEventHandle
 {
   public:
@@ -38,11 +25,7 @@ class SPARKLE_CORE_API ScopedEventHandle
 	}
 
 	~ScopedEventHandle() { Reset(); }
-
-	// -------------------------------------------------------------------------
-	// Move Semantics (Move-Only)
-	// -------------------------------------------------------------------------
-
+	
 	ScopedEventHandle(ScopedEventHandle&& Other) noexcept : m_Handle(Other.m_Handle), m_RemoveFn(std::move(Other.m_RemoveFn))
 	{
 		Other.m_Handle.Invalidate();
@@ -61,10 +44,6 @@ class SPARKLE_CORE_API ScopedEventHandle
 		}
 		return *this;
 	}
-
-	// -------------------------------------------------------------------------
-	// Deleted Copy Operations
-	// -------------------------------------------------------------------------
 
 	ScopedEventHandle(const ScopedEventHandle&) = delete;
 	ScopedEventHandle& operator=(const ScopedEventHandle&) = delete;

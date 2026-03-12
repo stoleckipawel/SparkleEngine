@@ -60,10 +60,9 @@ class SPARKLE_ENGINE_API Mesh
 	// Geometry
 	// -------------------------------------------------------------------------
 
-	// Rebuilds internal MeshData by calling GenerateGeometry()
 	void RebuildGeometry();
 
-	// Returns CPU mesh data. Builds geometry on first call if not yet built.
+	// Lazily builds geometry on first access.
 	const MeshData& GetMeshData() const;
 
 	uint32 GetIndexCount() const noexcept { return m_meshData.GetIndexCount(); }
@@ -80,7 +79,6 @@ class SPARKLE_ENGINE_API Mesh
 	// NVI: Geometry Generation
 	// -------------------------------------------------------------------------
 
-	// Override in derived classes to populate mesh geometry
 	virtual void GenerateGeometry(MeshData& outMeshData) const = 0;
 
 	void InvalidateWorldCache() noexcept { m_bWorldDirty = true; }

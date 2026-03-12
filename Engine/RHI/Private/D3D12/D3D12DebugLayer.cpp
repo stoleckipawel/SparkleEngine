@@ -4,14 +4,13 @@
 
 #if ENGINE_GPU_VALIDATION
 
-// Constructs and enables debug layers. Call before device creation.
+// Call before device creation.
 D3D12DebugLayer::D3D12DebugLayer()
 {
 	InitD3D12Debug();
 	InitDXGIDebug();
 }
 
-// Shuts down debug layers and reports live objects.
 D3D12DebugLayer::~D3D12DebugLayer() noexcept
 {
 	ReportLiveDXGIObjects();
@@ -19,7 +18,6 @@ D3D12DebugLayer::~D3D12DebugLayer() noexcept
 	m_d3d12Debug.Reset();
 }
 
-// Initializes InfoQueue debugging after device creation.
 void D3D12DebugLayer::InitializeInfoQueue(ID3D12Device* device)
 {
 	if (!device)
@@ -29,21 +27,18 @@ void D3D12DebugLayer::InitializeInfoQueue(ID3D12Device* device)
 	ApplyInfoQueueFilters(device);
 }
 
-// Enables the D3D12 debug layer for validation and error reporting.
 void D3D12DebugLayer::InitD3D12Debug()
 {
 	CHECK(D3D12GetDebugInterface(IID_PPV_ARGS(m_d3d12Debug.ReleaseAndGetAddressOf())));
 	m_d3d12Debug->EnableDebugLayer();
 }
 
-// Enables the DXGI debug layer for leak tracking and live object reporting.
 void D3D12DebugLayer::InitDXGIDebug()
 {
 	CHECK(DXGIGetDebugInterface1(0, IID_PPV_ARGS(m_dxgiDebug.ReleaseAndGetAddressOf())));
 	m_dxgiDebug->EnableLeakTrackingForThread();
 }
 
-// Configures D3D12 InfoQueue to break on error, corruption, and warning messages.
 void D3D12DebugLayer::ConfigureInfoQueue(ID3D12Device* device)
 {
 	ComPtr<ID3D12InfoQueue> infoQueue;
@@ -55,7 +50,6 @@ void D3D12DebugLayer::ConfigureInfoQueue(ID3D12Device* device)
 	}
 }
 
-// Applies filters to suppress noisy or known-issue messages in the InfoQueue.
 void D3D12DebugLayer::ApplyInfoQueueFilters(ID3D12Device* device)
 {
 	ComPtr<ID3D12InfoQueue> infoQueue;
@@ -72,7 +66,7 @@ void D3D12DebugLayer::ApplyInfoQueueFilters(ID3D12Device* device)
 	}
 }
 
-// Reports live D3D12 device objects (must be called before device is Reset).
+// Must be called before device Reset.
 void D3D12DebugLayer::ReportLiveDeviceObjects(ID3D12Device* device)
 {
 	#if ENGINE_REPORT_LIVE_OBJECTS
@@ -85,7 +79,6 @@ void D3D12DebugLayer::ReportLiveDeviceObjects(ID3D12Device* device)
 	#endif
 }
 
-// Reports DXGI live objects (factory, adapters, swapchains).
 void D3D12DebugLayer::ReportLiveDXGIObjects()
 {
 	#if ENGINE_REPORT_LIVE_OBJECTS

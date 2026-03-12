@@ -1,6 +1,3 @@
-// ============================================================================
-// ApplicationAPI.h - Export/Import macros for SparkleApplication module
-// ============================================================================
 #pragma once
 
 #ifdef SPARKLE_STATIC

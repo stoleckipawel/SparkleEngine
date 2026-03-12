@@ -2,8 +2,6 @@
 #include "D3D12DescriptorHandle.h"
 #include "D3D12Rhi.h"
 
-// Constructs a descriptor handle for a given heap type and index.
-// Computes CPU/GPU handles using heap start and device increment size.
 D3D12DescriptorHandle::D3D12DescriptorHandle(
     D3D12Rhi& rhi,
     UINT idx,

@@ -27,10 +27,8 @@ class D3D12DebugLayer;
 class D3D12Rhi final
 {
   public:
-	// Constructs and initializes device, command queue, allocators, and fences.
 	explicit D3D12Rhi(bool requireDXRSupport = false) noexcept;
 
-	// Releases all D3D12 resources.
 	~D3D12Rhi() noexcept;
 
 	D3D12Rhi(const D3D12Rhi&) = delete;
@@ -61,7 +59,6 @@ class D3D12Rhi final
 	    D3D12_RESOURCE_STATES stateBefore,
 	    D3D12_RESOURCE_STATES stateAfter) noexcept;
 
-	// Sets the current frame index for convenience methods.
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept { m_currentFrameIndex = frameInFlightIndex; }
 	uint32_t GetCurrentFrameIndex() const noexcept { return m_currentFrameIndex; }
 

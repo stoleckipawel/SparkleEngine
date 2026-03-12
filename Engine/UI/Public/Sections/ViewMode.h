@@ -46,7 +46,7 @@ class ViewMode final : public UIRendererSection
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::ViewMode; }
 	const char* GetTitle() const noexcept override { return "View Modes"; }
 
-	// Builds the view mode controls. Renders only contents; window/layout is owned by the caller.
+	// Renders only contents; window/layout is owned by the caller.
 	void BuildUI() override;
 
   private:

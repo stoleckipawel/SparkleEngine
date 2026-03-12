@@ -1,10 +1,3 @@
-// =============================================================================
-// GltfLoader.h - glTF 2.0 Asset Loader
-// =============================================================================
-//
-// Loads glTF / GLB files into CPU-side mesh and material data.
-// Pure CPU work - no GPU operations, no Renderer or RHI dependencies.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -16,19 +9,9 @@
 #include <string>
 #include <vector>
 
-// =============================================================================
-// GltfLoader
-// =============================================================================
-
 class SPARKLE_ENGINE_API GltfLoader final
 {
   public:
-	// =========================================================================
-	// Load Result
-	// =========================================================================
-
-	/// Self-contained result from loading a glTF file.
-	/// Owns all loaded data - caller takes ownership via move.
 	struct LoadResult
 	{
 		std::vector<MeshData> meshes;                 // One per glTF primitive

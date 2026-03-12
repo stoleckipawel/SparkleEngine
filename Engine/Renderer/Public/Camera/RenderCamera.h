@@ -29,7 +29,6 @@ class SPARKLE_RENDERER_API RenderCamera final
 	RenderCamera(RenderCamera&&) = delete;
 	RenderCamera& operator=(RenderCamera&&) = delete;
 
-	/// Syncs state from game camera and rebuilds matrices if dirty.
 	/// Call each frame before rendering.
 	void Update() noexcept;
 
@@ -40,7 +39,6 @@ class SPARKLE_RENDERER_API RenderCamera final
 	DirectX::XMMATRIX GetProjectionMatrix() const noexcept;
 	DirectX::XMMATRIX GetViewProjectionMatrix() const noexcept;
 
-	/// Returns the view frustum for culling operations.
 	const Frustum& GetFrustum() const noexcept { return m_frustum; }
 
 	/// Camera transform data (cached from GameCamera).
@@ -49,11 +47,9 @@ class SPARKLE_RENDERER_API RenderCamera final
 	float GetNearZ() const noexcept;
 	float GetFarZ() const noexcept;
 
-	/// Returns view constant buffer data for GPU upload.
 	PerViewConstantBufferData GetViewConstantBufferData() const noexcept;
 
   private:
-	/// Rebuilds all matrices and frustum from GameCamera state.
 	void RebuildMatrices() noexcept;
 
 	GameCamera& m_gameCamera;

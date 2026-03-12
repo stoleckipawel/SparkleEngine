@@ -1,9 +1,3 @@
-// =============================================================================
-// MeshFactory.h - Factory for creating primitive mesh instances
-// =============================================================================
-//
-// Creates and owns CPU-side Mesh objects. Does not handle GPU upload.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -49,17 +43,14 @@ class SPARKLE_ENGINE_API MeshFactory
 	// Factory Methods
 	// -------------------------------------------------------------------------
 
-	// Clears existing meshes and spawns 'count' instances randomly within AABB
 	void Rebuild(Shape shape, uint32 count, const DirectX::XMFLOAT3& center, const DirectX::XMFLOAT3& extents, uint32 seed = 0);
 
-	// Appends a single mesh with explicit transform
 	void AppendShape(
 	    Shape shape,
 	    const DirectX::XMFLOAT3& translation = {0.0f, 0.0f, 0.0f},
 	    const DirectX::XMFLOAT3& rotation = {0.0f, 0.0f, 0.0f},
 	    const DirectX::XMFLOAT3& scale = {1.0f, 1.0f, 1.0f});
 
-	// Appends N instances randomly within AABB
 	void AppendShapes(Shape shape, uint32 count, const DirectX::XMFLOAT3& center, const DirectX::XMFLOAT3& extents, uint32 seed = 0);
 
 	// -------------------------------------------------------------------------

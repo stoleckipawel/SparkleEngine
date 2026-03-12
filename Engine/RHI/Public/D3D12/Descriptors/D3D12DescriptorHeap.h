@@ -17,7 +17,7 @@ class D3D12DescriptorHeap
 	// Lifecycle
 	// ========================================================================
 
-	/// Constructs a heap with the given type and flags. Name is set on COM object.
+	/// Name is set on the COM object.
 	explicit D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name);
 
 	D3D12DescriptorHeap(const D3D12DescriptorHeap&) = delete;
@@ -25,23 +25,20 @@ class D3D12DescriptorHeap
 	D3D12DescriptorHeap(D3D12DescriptorHeap&&) = delete;
 	D3D12DescriptorHeap& operator=(D3D12DescriptorHeap&&) = delete;
 
-	/// Releases the underlying heap.
 	~D3D12DescriptorHeap() noexcept;
 
 	// ========================================================================
 	// Accessors
 	// ========================================================================
 
-	/// Returns the descriptor count based on heap type and tier policy.
+	/// Depends on heap type and tier policy.
 	/// - Sampler: D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE
 	/// - Shader-visible CBV/SRV/UAV: Tier 2 max size
 	/// - Non-visible (RTV/DSV): same as shader-visible (configurable)
 	UINT GetNumDescriptors() const;
 
-	/// Returns raw heap pointer for D3D12 binding.
 	ID3D12DescriptorHeap* GetRaw() const noexcept { return m_heap.Get(); }
 
-	/// Returns a typed descriptor handle at the given index.
 	/// Performs bounds check and returns invalid handle on error.
 	D3D12DescriptorHandle GetHandleAt(UINT index) const;
 

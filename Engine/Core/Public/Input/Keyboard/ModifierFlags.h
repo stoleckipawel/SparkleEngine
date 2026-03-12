@@ -1,12 +1,3 @@
-// =============================================================================
-// ModifierFlags.h — Keyboard Modifier Bitmask
-// =============================================================================
-//
-// Bitmask flags for modifier key state. Supports both combined (Shift) and
-// individual (LeftShift/RightShift) checking.
-//
-// =============================================================================
-
 #pragma once
 
 #include <cstdint>

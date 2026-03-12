@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "D3D12DescriptorHeapManager.h"
 
-// Initializes all descriptor heaps required by the engine.
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
 	// Create CBV/SRV/UAV heap (shader visible)

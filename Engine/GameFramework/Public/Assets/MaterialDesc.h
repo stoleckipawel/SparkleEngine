@@ -1,10 +1,3 @@
-// =============================================================================
-// MaterialDesc.h - CPU-Side PBR Material Description
-// =============================================================================
-//
-// Describes a PBR material loaded from glTF or other asset sources.
-// Pure data - no GPU handles, no rendering dependencies.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -22,16 +15,8 @@ enum class AlphaMode : std::uint32_t
 	Blend = 2,
 };
 
-// =============================================================================
-// MaterialDesc
-// =============================================================================
-
 struct SPARKLE_ENGINE_API MaterialDesc
 {
-	// -------------------------------------------------------------------------
-	// Identity
-	// -------------------------------------------------------------------------
-
 	std::string name;
 
 	// -------------------------------------------------------------------------

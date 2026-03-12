@@ -50,7 +50,6 @@ struct RendererMaterialCacheState;
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	// Constructs and initializes all rendering resources.
 	Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept;
 	~Renderer() noexcept;
 
@@ -63,7 +62,6 @@ class SPARKLE_RENDERER_API Renderer final
 	// Frame Operations
 	// =========================================================================
 
-	// Executes a complete render frame: setup, scene traversal, UI, submission.
 	void OnRender() noexcept;
 
   private:
@@ -111,63 +109,44 @@ class SPARKLE_RENDERER_API Renderer final
 	// Owned Resources
 	// -------------------------------------------------------------------------
 
-	// Timer reference (not owned - owned by App)
 	Timer* m_timer = nullptr;
 
-	// AssetSystem reference (not owned - owned by App)
 	const AssetSystem* m_assetSystem = nullptr;
 
-	// RHI (OWNED - Renderer creates and manages the RHI)
 	std::unique_ptr<D3D12Rhi> m_rhi;
 
-	// GPU mesh cache for lazy uploading CPU meshes to GPU
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 
-	// Texture manager
 	std::unique_ptr<TextureManager> m_textureManager;
 
-	// Frame buffers
 	std::unique_ptr<D3D12DepthStencil> m_depthStencil;
 
-	// Sampler library
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
 
-	// Pipeline
 	std::unique_ptr<D3D12PipelineState> m_pso;
 	std::unique_ptr<D3D12RootSignature> m_rootSignature;
 
-	// Compiled shaders (owned bytecode, hidden from public header)
 	std::unique_ptr<ShaderCompileResult> m_vertexShader;
 	std::unique_ptr<ShaderCompileResult> m_pixelShader;
 
-	// Camera (set once at initialization)
 	std::unique_ptr<RenderCamera> m_renderCamera;
 
-	// Constant buffer manager
 	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
 
-	// Frame resource manager (per-frame GPU ring buffers)
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
 
-	// Descriptor heap manager
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
 
-	// Swap chain
 	std::unique_ptr<D3D12SwapChain> m_swapChain;
 
-	// UI (owned, created after descriptor heap manager)
 	std::unique_ptr<UI> m_ui;
 
-	// Frame Graph (owned, created after all dependencies)
 	std::unique_ptr<FrameGraph> m_frameGraph;
 
-	// Scene reference (not owned, for mesh access)
 	Scene* m_scene = nullptr;
 
-	// Window reference (not owned)
 	Window* m_window = nullptr;
 
-	// Event subscriptions (RAII - auto-cleanup on destruction)
 	ScopedEventHandle m_depthModeChangedHandle;
 	ScopedEventHandle m_resizeHandle;
 

@@ -12,12 +12,6 @@ class D3D12Rhi;
 class D3D12DescriptorHandle
 {
   public:
-	// Constructs a descriptor handle for a given heap type and index.
-	// Parameters:
-	//   rhi: reference to D3D12Rhi for device access
-	//   idx: descriptor index within the heap
-	//   type: D3D12 heap type (CBV_SRV_UAV, SAMPLER, RTV, DSV)
-	//   cpuStartHandle/gpuStartHandle: start handles of the owning heap
 	explicit D3D12DescriptorHandle(
 	    D3D12Rhi& rhi,
 	    UINT idx,
@@ -29,13 +23,9 @@ class D3D12DescriptorHandle
 	// Useful for containers and default-constructible classes; must be assigned before use.
 	D3D12DescriptorHandle() = default;
 
-	// Returns the descriptor index within the heap.
 	UINT GetIndex() const noexcept { return m_index; }
-	// Returns the CPU descriptor handle for binding or heap management.
 	const D3D12_CPU_DESCRIPTOR_HANDLE& GetCPU() const noexcept { return m_cpuHandle; }
-	// Returns the GPU descriptor handle for shader-visible heaps.
 	const D3D12_GPU_DESCRIPTOR_HANDLE& GetGPU() const noexcept { return m_gpuHandle; }
-	// Returns the device's descriptor increment size for this heap type.
 	UINT GetIncrementSize() const noexcept { return m_incrementSize; }
 
 	void SetIndex(UINT idx) noexcept { m_index = idx; }

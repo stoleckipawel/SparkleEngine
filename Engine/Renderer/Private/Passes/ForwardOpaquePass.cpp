@@ -94,40 +94,31 @@ void ForwardOpaquePass::PrepareTargets(RenderContext& context)
 	m_depthStencil->Clear();
 }
 
-// Configures root signature, viewport/scissor, and pipeline state.
 void ForwardOpaquePass::ConfigurePipeline(RenderContext& context)
 {
 	context.SetRootSignature(m_rootSignature->GetRaw());
 
-	// Viewport and scissor from swap chain defaults
 	const D3D12_VIEWPORT viewport = m_swapChain->GetDefaultViewport();
 	context.SetViewport(viewport.TopLeftX, viewport.TopLeftY, viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
 
 	const D3D12_RECT scissor = m_swapChain->GetDefaultScissorRect();
 	context.SetScissorRect(scissor.left, scissor.top, scissor.right, scissor.bottom);
 
-	// Set pipeline state and primitive topology
 	context.SetPipelineState(m_pipelineState->Get().Get());
 	context.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-// Binds per-frame and per-view constant buffers.
 void ForwardOpaquePass::BindFrameResources(RenderContext& context)
 {
-	// Bind per-frame constant buffer (b0)
 	context.BindConstantBuffer(RootBindings::RootParam::PerFrame, m_constantBufferManager->GetPerFrameGpuAddress());
 
-	// Bind per-view constant buffer (b1)
 	context.BindConstantBuffer(RootBindings::RootParam::PerView, m_constantBufferManager->GetPerViewGpuAddress());
 }
 
-// Binds descriptor heaps and globally shared sampler tables.
 void ForwardOpaquePass::BindGlobalResources(RenderContext& context)
 {
-	// Set shader-visible descriptor heaps
 	m_descriptorHeapManager->SetShaderVisibleHeaps();
 
-	// Bind sampler table
 	if (m_samplerLibrary->IsInitialized())
 	{
 		context.BindDescriptorTable(RootBindings::RootParam::SamplerTable, m_samplerLibrary->GetTableGPUHandle());

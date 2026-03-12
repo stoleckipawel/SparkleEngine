@@ -1,8 +1,3 @@
-// ============================================================================
-// InputState.h
-// ----------------------------------------------------------------------------
-// Pollable input state container (single-threaded, main thread only).
-//
 #pragma once
 
 #include "Core/Public/CoreAPI.h"
@@ -16,15 +11,8 @@
 #include <array>
 #include <cstdint>
 
-// Forward declaration for friend access
 class InputSystem;
 
-// ============================================================================
-// InputState
-// ============================================================================
-
-/// Thread-safe container for pollable input state.
-/// Updated by InputSystem, read by gameplay code.
 class SPARKLE_CORE_API InputState
 {
   public:
@@ -43,55 +31,41 @@ class SPARKLE_CORE_API InputState
 	// Keyboard Queries
 	// =========================================================================
 
-	/// Returns true if key is currently down (Pressed or Held).
 	bool IsKeyDown(Key InKey) const noexcept;
 
-	/// Returns true only on the frame the key was first pressed.
 	bool IsKeyPressed(Key InKey) const noexcept;
 
-	/// Returns true only on the frame the key was released.
 	bool IsKeyReleased(Key InKey) const noexcept;
 
-	/// Returns true if key has been held down for more than one frame.
 	bool IsKeyHeld(Key InKey) const noexcept;
 
-	/// Returns the raw ButtonState for a key.
 	ButtonState GetKeyState(Key InKey) const noexcept;
 
 	// =========================================================================
 	// Mouse Button Queries
 	// =========================================================================
 
-	/// Returns true if mouse button is currently down (Pressed or Held).
 	bool IsMouseButtonDown(MouseButton InButton) const noexcept;
 
-	/// Returns true only on the frame the button was first pressed.
 	bool IsMouseButtonPressed(MouseButton InButton) const noexcept;
 
-	/// Returns true only on the frame the button was released.
 	bool IsMouseButtonReleased(MouseButton InButton) const noexcept;
 
-	/// Returns true if button has been held down for more than one frame.
 	bool IsMouseButtonHeld(MouseButton InButton) const noexcept;
 
-	/// Returns the raw ButtonState for a mouse button.
 	ButtonState GetMouseButtonState(MouseButton InButton) const noexcept;
 
 	// =========================================================================
 	// Mouse Position Queries
 	// =========================================================================
 
-	/// Returns current mouse position in window coordinates (pixels).
 	MousePosition GetMousePosition() const noexcept;
 
-	/// Returns mouse movement delta since last frame (pixels).
 	MousePosition GetMouseDelta() const noexcept;
 
-	/// Returns accumulated mouse wheel delta since last frame.
 	/// Positive = scroll up/forward, Negative = scroll down/backward.
 	float GetMouseWheelDelta() const noexcept;
 
-	/// Returns accumulated horizontal mouse wheel delta since last frame.
 	/// Positive = scroll right, Negative = scroll left.
 	float GetMouseWheelHorizontalDelta() const noexcept;
 
@@ -99,10 +73,8 @@ class SPARKLE_CORE_API InputState
 	// Modifier Queries
 	// =========================================================================
 
-	/// Returns current modifier key flags (Shift, Ctrl, Alt, etc.).
 	ModifierFlags GetModifiers() const noexcept;
 
-	/// Returns true if the specified modifier is currently held.
 	bool HasModifier(ModifierFlags InModifier) const noexcept;
 
 	/// Convenience: Returns true if any Shift key is held.
@@ -118,10 +90,8 @@ class SPARKLE_CORE_API InputState
 	// Mouse Capture Queries
 	// =========================================================================
 
-	/// Returns true if mouse is currently captured by the application.
 	bool IsMouseCaptured() const noexcept;
 
-	/// Returns true if cursor is currently hidden.
 	bool IsCursorHidden() const noexcept;
 
   private:
@@ -134,13 +104,10 @@ class SPARKLE_CORE_API InputState
 	// Mutation Methods (called by InputSystem only)
 	// -------------------------------------------------------------------------
 
-	/// Sets the state for a specific key.
 	void SetKeyState(Key InKey, ButtonState InState) noexcept;
 
-	/// Sets the state for a specific mouse button.
 	void SetMouseButtonState(MouseButton InButton, ButtonState InState) noexcept;
 
-	/// Sets the current mouse position.
 	void SetMousePosition(int32_t X, int32_t Y) noexcept;
 
 	/// Accumulates mouse movement delta (additive within frame).
@@ -152,13 +119,10 @@ class SPARKLE_CORE_API InputState
 	/// Accumulates horizontal mouse wheel delta (additive within frame).
 	void AccumulateWheelHorizontalDelta(float Delta) noexcept;
 
-	/// Sets the current modifier flags.
 	void SetModifiers(ModifierFlags InModifiers) noexcept;
 
-	/// Sets the mouse capture state.
 	void SetMouseCaptured(bool bCaptured) noexcept;
 
-	/// Sets the cursor hidden state.
 	void SetCursorHidden(bool bHidden) noexcept;
 
 	/// Called at the start of each frame to transition states.

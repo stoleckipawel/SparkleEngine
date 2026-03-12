@@ -31,10 +31,8 @@ class D3D12SwapChain final
 	// Lifecycle
 	// ========================================================================
 
-	/// Constructs the swap chain and render target views.
 	D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager);
 
-	/// Releases all swap chain resources.
 	~D3D12SwapChain() noexcept;
 
 	D3D12SwapChain(const D3D12SwapChain&) = delete;
@@ -46,63 +44,47 @@ class D3D12SwapChain final
 	// Frame Operations
 	// ========================================================================
 
-	/// Presents the current back buffer to the screen.
 	void Present();
 
-	/// Clears the current render target view with the clear color.
 	void Clear();
 
-	/// Transitions current buffer to render target state.
 	void SetRenderTargetState();
 
-	/// Transitions current buffer to present state.
 	void SetPresentState();
 
-	/// Resizes swap chain buffers (called on window resize).
 	void Resize();
 
 	// ========================================================================
 	// Accessors
 	// ========================================================================
 
-	/// Returns the CPU descriptor handle for a specific buffer index.
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
-	/// Returns the CPU descriptor handle for the current back buffer.
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return GetCPUHandle(m_frameInFlightIndex); }
 
-	/// Returns the current frame-in-flight index (0 to FramesInFlight-1).
 	UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
 
-	/// Updates frame index from swap chain (call after Present).
 	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = m_swapChain->GetCurrentBackBufferIndex(); }
 
-	/// Returns the waitable object handle for frame pacing.
 	HANDLE GetWaitableObject() const { return m_waitableObject; }
 
-	/// Returns the default viewport matching window dimensions.
 	D3D12_VIEWPORT GetDefaultViewport() const;
 
-	/// Returns the default scissor rect matching window dimensions.
 	D3D12_RECT GetDefaultScissorRect() const;
 
-	/// Returns the back buffer format from engine settings.
 	DXGI_FORMAT GetBackBufferFormat() const { return RHISettings::BackBufferFormat; }
 
 	// ========================================================================
 	// Feature Queries
 	// ========================================================================
 
-	/// Returns DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING if supported, else 0.
 	UINT GetAllowTearingFlag() const;
 
-	/// Returns waitable object flag if multiple frames in flight.
 	UINT GetFrameLatencyWaitableFlag() const
 	{
 		return (RHISettings::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
 	}
 
-	/// Returns combined swap chain flags for creation.
 	UINT ComputeSwapChainFlags() const;
 
   private:

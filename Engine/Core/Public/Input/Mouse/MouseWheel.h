@@ -1,10 +1,3 @@
-// =============================================================================
-// MouseWheel.h - Mouse Wheel State and Delta Tracking
-// =============================================================================
-//
-// Tracks mouse wheel rotation for both vertical and horizontal wheels.
-// Supports high-precision wheels with fractional delta values.
-//
 #pragma once
 
 #include <cstdint>

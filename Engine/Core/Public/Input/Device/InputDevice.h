@@ -1,12 +1,3 @@
-// =============================================================================
-// InputDevice.h — Input Device Type Identifiers
-// =============================================================================
-//
-// Identifies the source device of an input event.
-// Enables consumers to filter or handle input differently per device.
-//
-// =============================================================================
-
 #pragma once
 
 #include <cstdint>

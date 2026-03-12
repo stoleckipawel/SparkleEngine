@@ -48,7 +48,6 @@ struct StencilTestDesc
 class D3D12PipelineState
 {
   public:
-	// Constructs and creates the graphics pipeline state object.
 	D3D12PipelineState(
 	    D3D12Rhi& rhi,
 	    std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout,
@@ -61,7 +60,6 @@ class D3D12PipelineState
 	D3D12PipelineState(const D3D12PipelineState&) = delete;
 	D3D12PipelineState& operator=(const D3D12PipelineState&) = delete;
 
-	// Binds this pipeline state to the command list.
 	void Set() const noexcept;
 
 	const ComPtr<ID3D12PipelineState>& Get() const noexcept { return m_pso; }

@@ -1,9 +1,3 @@
-// ============================================================================
-// LevelDesc.h
-// ----------------------------------------------------------------------------
-// Declarative description of level content. Levels return this data-only
-// structure instead of imperatively loading content into Scene.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -15,7 +9,6 @@
 #include <filesystem>
 #include <vector>
 
-// Procedural primitive spawn request.
 struct SPARKLE_ENGINE_API PrimitiveRequest
 {
 	MeshFactory::Shape shape = MeshFactory::Shape::Box;

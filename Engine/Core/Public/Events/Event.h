@@ -1,8 +1,3 @@
-// ============================================================================
-// Event.h
-// ----------------------------------------------------------------------------
-// Multicast event dispatcher for decoupled notification broadcasting.
-//
 #pragma once
 
 #include "EventHandle.h"
@@ -13,16 +8,9 @@
 #include <functional>
 #include <utility>
 
-// ============================================================================
-// Event<void(Args...), Capacity>
-// ============================================================================
 
-/// Forward declaration for partial specialization.
+
 template <typename Signature, std::size_t Capacity = 8> class Event;
-
-/// Multicast event with fixed-capacity listener storage.
-/// @tparam Args Parameter types for the callback signature.
-/// @tparam Capacity Maximum number of concurrent subscriptions.
 template <typename... Args, std::size_t Capacity> class Event<void(Args...), Capacity>
 {
   public:
@@ -41,9 +29,6 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	// Subscription Management
 	// =========================================================================
 
-	/// Adds a listener callback. Returns handle for later removal.
-	/// @param Callback The function to call when event is broadcast.
-	/// @return Valid handle, or invalid handle if capacity exceeded.
 	EventHandle Add(CallbackType Callback) noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)

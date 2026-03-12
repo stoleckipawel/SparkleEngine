@@ -1,7 +1,3 @@
-// ============================================================================
-// FileSystemUtils.h
-// Platform-agnostic filesystem utilities and marker-based root discovery.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include <cstdint>
@@ -51,4 +47,4 @@ namespace Engine::FileSystem
 	// Discovers project root (.sparkle-project marker).
 	std::optional<std::filesystem::path> DiscoverProjectRoot();
 
-}  // namespace Engine::FileSystem
+}

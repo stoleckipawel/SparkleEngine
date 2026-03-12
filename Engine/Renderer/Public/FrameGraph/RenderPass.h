@@ -31,7 +31,6 @@ class RenderPass
 	// Construction / Destruction
 	// -------------------------------------------------------------------------
 
-	/// Constructs a render pass with the given debug name.
 	/// @param name Pass name for debugging, profiling, and GPU markers
 	explicit RenderPass(std::string_view name) noexcept : m_name(name) {}
 
@@ -65,7 +64,6 @@ class RenderPass
 	// Accessors
 	// -------------------------------------------------------------------------
 
-	/// Returns the pass name for debugging/profiling.
 	const std::string& GetName() const noexcept { return m_name; }
 
   protected:

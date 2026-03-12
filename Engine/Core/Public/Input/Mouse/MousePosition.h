@@ -1,12 +1,3 @@
-// =============================================================================
-// MousePosition.h — Mouse Position with Multiple Representations
-// =============================================================================
-//
-// Tracks mouse position in both pixel coordinates and normalized [0,1] range.
-// Used by mouse events and input state queries.
-//
-// =============================================================================
-
 #pragma once
 
 #include <cstdint>

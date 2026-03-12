@@ -1,7 +1,3 @@
-// =============================================================================
-// GltfLoader.cpp — glTF 2.0 Asset Loader Implementation
-// =============================================================================
-
 #define CGLTF_IMPLEMENTATION
 #include "PCH.h"
 #include "GameFramework/Public/Assets/GltfLoader.h"

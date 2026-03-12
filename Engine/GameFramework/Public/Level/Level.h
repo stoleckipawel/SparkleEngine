@@ -1,9 +1,3 @@
-// ============================================================================
-// Level.h
-// ----------------------------------------------------------------------------
-// Abstract base class for levels. A Level defines the initial content
-// that populates a Scene: geometry, lighting setup, etc.
-//
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

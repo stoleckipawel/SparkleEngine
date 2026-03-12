@@ -1,7 +1,3 @@
-// ============================================================================
-// App.h
-// Application base class - ties together GameFramework and Renderer.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"

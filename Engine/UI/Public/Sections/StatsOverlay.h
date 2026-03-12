@@ -24,7 +24,7 @@ class StatsOverlay final : public UIRendererSection
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::Stats; }
 	const char* GetTitle() const noexcept override { return "Stats"; }
 
-	// Builds the overlay contents. Call once per-frame while an ImGui frame is active.
+	// Call once per-frame while an ImGui frame is active.
 	void BuildUI() override;
 
   private:

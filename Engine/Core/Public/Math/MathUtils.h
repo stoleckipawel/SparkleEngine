@@ -1,7 +1,3 @@
-// ============================================================================
-// MathUtils.h
-// Lightweight math utilities for DirectXMath types.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include <DirectXMath.h>

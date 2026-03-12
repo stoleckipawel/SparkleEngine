@@ -5,7 +5,6 @@
 #include "D3D12DescriptorHeapManager.h"
 #include "DebugUtils.h"
 
-// Constructs the swap chain and creates render target views
 D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)
 {

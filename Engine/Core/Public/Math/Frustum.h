@@ -1,8 +1,3 @@
-// ============================================================================
-// Frustum.h
-// ----------------------------------------------------------------------------
-// View frustum representation for culling operations.
-//
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

@@ -1,7 +1,3 @@
-// ============================================================================
-// AssetId.h
-// Compile-time and runtime asset identification using FNV-1a 64-bit hashes.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include "Hash/HashUtils.h"
@@ -18,7 +14,6 @@ class AssetId final
 	// Default constructs an invalid (zero) ID.
 	constexpr AssetId() noexcept = default;
 
-	// Constructs from asset path/name. Hash computed at compile-time if constexpr.
 	constexpr explicit AssetId(std::string_view name) noexcept :
 	    m_hash(Engine::Hash::Fnv1a64(name))
 #if defined(_DEBUG)
@@ -28,11 +23,9 @@ class AssetId final
 	{
 	}
 
-	// Returns the underlying 64-bit hash value.
 	// Use this for serialization, switch statements, or when raw hash is needed.
 	constexpr uint64_t GetHash() const noexcept { return m_hash; }
 
-	// Returns true if this ID represents a valid asset (non-zero hash).
 	// An empty string hashes to non-zero, so only default-constructed IDs are invalid.
 	constexpr bool IsValid() const noexcept { return m_hash != 0; }
 
@@ -40,7 +33,6 @@ class AssetId final
 	constexpr explicit operator bool() const noexcept { return IsValid(); }
 
 #if defined(_DEBUG)
-	// Returns the original string used to create this ID (debug builds only).
 	// Useful for logging, debugging, and collision detection.
 	constexpr std::string_view GetDebugName() const noexcept { return m_debugName; }
 #endif
@@ -79,10 +71,6 @@ template <> struct std::hash<AssetId>
 // EXAMPLES:
 //   constexpr auto id = "textures/diffuse.png"_asset;  // Compile-time
 //   auto id2 = "shaders/pbr.hlsl"_asset;               // Also compile-time
-//
-// NOTE: This only works with string literals. For runtime strings, use the
-//       AssetId(std::string_view) constructor directly.
-//
 consteval AssetId operator""_asset(const char* str, size_t len) noexcept
 {
 	return AssetId(std::string_view(str, len));

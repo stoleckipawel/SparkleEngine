@@ -22,7 +22,6 @@ class D3D12Texture
 	// Lifecycle
 	// ========================================================================
 
-	/// Constructs a texture from a runtime payload with explicit mip data.
 	/// @param rhi Reference to the D3D12 RHI for device access.
 	/// @param texturePayload CPU-side texture payload containing all mip levels.
 	/// @param descriptorHeapManager Reference to the descriptor heap manager for SRV allocation.
@@ -31,7 +30,6 @@ class D3D12Texture
 	    TexturePayload texturePayload,
 	    D3D12DescriptorHeapManager& descriptorHeapManager);
 
-	/// Releases the SRV descriptor slot.
 	~D3D12Texture() noexcept;
 
 	// Non-copyable: descriptor ownership cannot be shared
@@ -46,10 +44,8 @@ class D3D12Texture
 	// Accessors
 	// ========================================================================
 
-	/// Returns the GPU descriptor handle for shader binding.
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_srvHandle.GetGPU(); }
 
-	/// Returns the CPU descriptor handle (for copy operations).
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_srvHandle.GetCPU(); }
 
 	/// Writes an SRV for this texture into the provided CPU descriptor slot.
@@ -60,13 +56,11 @@ class D3D12Texture
 	// Initialization Helpers
 	// ------------------------------------------------------------------------
 
-	/// Creates the committed GPU texture resource.
 	void CreateResource();
 
 	/// Copies texture data from CPU to GPU via upload buffer.
 	void UploadToGPU();
 
-	/// Allocates SRV descriptor and creates the view.
 	void CreateShaderResourceView();
 	D3D12_SHADER_RESOURCE_VIEW_DESC BuildShaderResourceViewDesc() const noexcept;
 

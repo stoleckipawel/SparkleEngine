@@ -59,10 +59,9 @@ class GameCamera final
 	// Dirty Flag (for RenderCamera optimization)
 	// ========================================================================
 
-	/// Returns true if camera state changed since last ClearDirty().
 	bool IsDirty() const noexcept { return m_dirty; }
 
-	/// Clears the dirty flag. Called by RenderCamera after rebuilding matrices.
+	/// Called by RenderCamera after rebuilding matrices.
 	void ClearDirty() noexcept { m_dirty = false; }
 
 	// ========================================================================
@@ -84,7 +83,6 @@ class GameCamera final
 	float GetAspectRatio() const noexcept { return m_aspectRatio; }
 
   private:
-	/// Updates cached direction vector from current yaw/pitch.
 	void UpdateCachedDirection() const noexcept;
 
 	/// Marks camera as dirty (needs matrix rebuild).

@@ -25,10 +25,6 @@ const GameCamera& Scene::GetCamera() const noexcept
 	return *m_camera;
 }
 
-// =============================================================================
-// Level Loading
-// =============================================================================
-
 void Scene::LoadLevel(const Level& level, AssetSystem& assetSystem)
 {
 	LOG_INFO("Scene: Loading level '" + std::string(level.GetName()) + "'");
@@ -56,7 +52,6 @@ void Scene::LoadMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem)
 				LoadProceduralMeshRequest(request);
 				break;
 			default:
-				// Fail fast if a new AssetSource is added without handling.
 				LOG_FATAL("Scene: Unhandled AssetSource in LoadMeshRequests");
 				break;
 		}

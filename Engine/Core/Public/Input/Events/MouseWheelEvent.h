@@ -1,11 +1,3 @@
-// =============================================================================
-// MouseWheelEvent.h — Mouse Wheel Scroll Event
-// =============================================================================
-//
-// Event fired when the mouse wheel is scrolled (vertical or horizontal).
-//
-// =============================================================================
-
 #pragma once
 
 #include "../Mouse/MousePosition.h"

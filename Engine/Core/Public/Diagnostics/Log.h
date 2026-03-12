@@ -1,7 +1,3 @@
-// ============================================================================
-// Log.h
-// Public logging API for engine and client code.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include "Core/Public/CoreAPI.h"
@@ -32,7 +28,7 @@ namespace Logger
 	inline void SetLevel(LogLevel level) noexcept;
 	inline LogLevel GetLevel() noexcept;
 	inline bool IsEnabled(LogLevel level) noexcept;
-}  // namespace Logger
+} 
 
 // =============================================================================
 // Compile-Time Filtering

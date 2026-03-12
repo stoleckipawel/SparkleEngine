@@ -15,7 +15,6 @@ using Microsoft::WRL::ComPtr;
 class D3D12DebugLayer final
 {
   public:
-	// Constructs and enables debug layers. Call before device creation.
 	D3D12DebugLayer();
 
 	// Shuts down debug layers and reports live objects.
@@ -29,10 +28,8 @@ class D3D12DebugLayer final
 	// After device creation, initialize InfoQueue filters for the created device.
 	void InitializeInfoQueue(ID3D12Device* device);
 
-	// Reports live D3D12 device objects (call before device Reset).
 	void ReportLiveDeviceObjects(ID3D12Device* device);
 
-	// Reports DXGI live objects (factory, adapters, swapchains).
 	void ReportLiveDXGIObjects();
 
   private:

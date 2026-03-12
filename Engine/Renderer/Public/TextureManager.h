@@ -45,7 +45,6 @@ class SPARKLE_RENDERER_API TextureManager final
 	// Lifecycle
 	// ========================================================================
 
-	/// Constructs the texture manager with required dependencies.
 	TextureManager(const AssetSystem& assetSystem, D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
 
 	~TextureManager() noexcept;
@@ -82,7 +81,6 @@ class SPARKLE_RENDERER_API TextureManager final
 	// Accessors
 	// ========================================================================
 
-	/// Returns the texture at the given ID, or nullptr if not loaded.
 	D3D12Texture* GetTexture(TextureId id) noexcept;
 	const D3D12Texture* GetTexture(TextureId id) const noexcept;
 	D3D12Texture* GetDefaultTexture(DefaultTexture type);
@@ -96,10 +94,8 @@ class SPARKLE_RENDERER_API TextureManager final
 	D3D12Texture* GetDefaultMetallicRoughnessTexture() { return GetDefaultTexture(DefaultTexture::DefaultMetallicRoughness); }
 	const D3D12Texture* GetDefaultMetallicRoughnessTexture() const { return GetDefaultTexture(DefaultTexture::DefaultMetallicRoughness); }
 
-	/// Returns true if the texture at the given ID is loaded.
 	bool IsLoaded(TextureId id) const noexcept;
 
-	/// Returns the number of currently loaded textures.
 	std::size_t GetLoadedCount() const noexcept;
 
   private:

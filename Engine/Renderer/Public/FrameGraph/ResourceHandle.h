@@ -40,26 +40,20 @@ struct ResourceHandle
 	// Factory Methods
 	// -------------------------------------------------------------------------
 
-	/// Creates an invalid handle.
 	static constexpr ResourceHandle Invalid() noexcept { return ResourceHandle{INVALID_INDEX}; }
 
-	/// Creates a back buffer handle.
 	static constexpr ResourceHandle BackBuffer() noexcept { return ResourceHandle{BACKBUFFER_INDEX}; }
 
-	/// Creates a depth buffer handle.
 	static constexpr ResourceHandle DepthBuffer() noexcept { return ResourceHandle{DEPTH_BUFFER_INDEX}; }
 
 	// -------------------------------------------------------------------------
 	// Validation
 	// -------------------------------------------------------------------------
 
-	/// Returns true if this handle refers to a valid resource.
 	constexpr bool IsValid() const noexcept { return index != INVALID_INDEX; }
 
-	/// Returns true if this is the back buffer handle.
 	constexpr bool IsBackBuffer() const noexcept { return index == BACKBUFFER_INDEX; }
 
-	/// Returns true if this is the depth buffer handle.
 	constexpr bool IsDepthBuffer() const noexcept { return index == DEPTH_BUFFER_INDEX; }
 
 	// -------------------------------------------------------------------------

@@ -20,7 +20,6 @@ class D3D12DescriptorHeapManager final
 	D3D12DescriptorHeapManager(D3D12DescriptorHeapManager&&) = delete;
 	D3D12DescriptorHeapManager& operator=(D3D12DescriptorHeapManager&&) = delete;
 
-	// Binds shader-visible heaps (CBV/SRV/UAV and Sampler) to the command list.
 	void SetShaderVisibleHeaps() const;
 
 	// Single descriptor allocation

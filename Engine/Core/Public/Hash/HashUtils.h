@@ -1,7 +1,3 @@
-// ============================================================================
-// HashUtils.h
-// FNV-1a 64-bit hash implementation for compile-time and runtime use.
-// ----------------------------------------------------------------------------
 #pragma once
 
 #include <cstdint>

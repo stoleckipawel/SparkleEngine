@@ -4,7 +4,6 @@
 #include "Window.h"
 #include "DebugUtils.h"
 
-// Constructs and initializes the RHI and all required resources
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 {
 #if ENGINE_GPU_VALIDATION
@@ -24,7 +23,6 @@ D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 	CreateFenceAndEvent();
 }
 
-// Selects the best available adapter (GPU) that supports Direct3D 12
 void D3D12Rhi::SelectAdapter() noexcept
 {
 	const DXGI_GPU_PREFERENCE pref =
@@ -78,7 +76,6 @@ void D3D12Rhi::SelectAdapter() noexcept
 	// If not found, leave m_adapter null; caller will handle this failure.
 }
 
-// Checks for Shader Model 6.0 support
 void D3D12Rhi::CheckShaderModel6Support() const noexcept
 {
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {};

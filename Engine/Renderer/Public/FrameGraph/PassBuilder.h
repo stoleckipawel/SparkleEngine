@@ -53,7 +53,6 @@ class SPARKLE_RENDERER_API PassBuilder
 		return handle;
 	}
 
-	/// Creates a transient texture resource.
 	template <typename TextureDesc> ResourceHandle CreateTexture([[maybe_unused]] const TextureDesc& desc) noexcept
 	{
 		return ResourceHandle::Invalid();

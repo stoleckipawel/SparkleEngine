@@ -35,11 +35,8 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	// Cache Operations
 	// -------------------------------------------------------------------------
 
-	// Returns cached GPUMesh or uploads new one. Never returns null on success.
-	// Returns nullptr if upload fails.
 	GPUMesh* GetOrUpload(const Mesh& cpuMesh);
 
-	// Releases all cached GPU meshes
 	void Clear() noexcept;
 
 	// -------------------------------------------------------------------------

@@ -1,12 +1,3 @@
-// =============================================================================
-// Key.h — Platform-Agnostic Keyboard Key Codes
-// =============================================================================
-//
-// Portable key codes with zero-based values. Platform backends translate
-// native codes (VK_*, XKB, etc.) to these values.
-//
-// =============================================================================
-
 #pragma once
 
 #include <cstdint>

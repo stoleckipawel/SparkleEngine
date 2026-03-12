@@ -40,7 +40,6 @@ class SPARKLE_ENGINE_API AssetSystem final
 	// Path Accessors
 	// =========================================================================
 
-	// Returns the directory path for a specific asset type.
 	// When root is Any: returns Project path if available, otherwise Engine.
 	const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root = PathRoot::Any) const noexcept;
 
@@ -57,11 +56,9 @@ class SPARKLE_ENGINE_API AssetSystem final
 	// Path Resolution
 	// =========================================================================
 
-	// Resolves a virtual path to an absolute physical path.
 	// Searches Project first, then Engine. Returns nullopt if not found.
 	std::optional<std::filesystem::path> ResolvePath(const std::filesystem::path& virtualPath, AssetType type) const;
 
-	// Resolves a virtual path to an absolute physical path.
 	// Fatals if the asset cannot be found. Use when the asset is required.
 	std::filesystem::path ResolvePathValidated(const std::filesystem::path& virtualPath, AssetType type) const;
 

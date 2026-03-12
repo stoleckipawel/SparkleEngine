@@ -1,14 +1,3 @@
-// ============================================================================
-// PCH.h - SparkleCore Module
-// ----------------------------------------------------------------------------
-// Precompiled header for Core module.
-//
-// RULES:
-// - Only STL and Windows headers (stable, rarely change)
-// - NO module headers (Log.h, EngineConfig.h, etc.)
-// - Headers must be used in 50%+ of this module's .cpp files
-// ============================================================================
-
 #pragma once
 
 // ============================================================================

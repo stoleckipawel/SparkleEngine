@@ -23,8 +23,6 @@ struct ShaderBytecode
 	explicit operator bool() const noexcept { return IsValid(); }
 };
 
-// Encapsulates the output of a shader compilation attempt.
-// Owns the compiled bytecode and any diagnostic messages.
 class ShaderCompileResult
 {
   public:
@@ -37,18 +35,14 @@ class ShaderCompileResult
 	ShaderCompileResult(const ShaderCompileResult&) = delete;
 	ShaderCompileResult& operator=(const ShaderCompileResult&) = delete;
 
-	// True if compilation succeeded and bytecode is available.
 	bool IsSuccess() const noexcept { return m_success; }
 	explicit operator bool() const noexcept { return m_success; }
 
-	// Returns a non-owning view of the bytecode for PSO creation.
 	ShaderBytecode GetBytecode() const noexcept { return {m_bytecode.data(), m_bytecode.size()}; }
 
-	// Error or warning messages from the compiler.
 	const std::string& GetErrorMessage() const noexcept { return m_errorMessage; }
 	bool HasErrors() const noexcept { return !m_errorMessage.empty(); }
 
-	// Factory methods for creating results.
 	static ShaderCompileResult Success(std::vector<uint8_t>&& bytecode)
 	{
 		ShaderCompileResult result;

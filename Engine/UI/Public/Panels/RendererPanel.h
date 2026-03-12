@@ -29,7 +29,7 @@ class RendererPanel final
 	bool HasSection(UIRendererSectionId id) const noexcept;
 	UIRendererSection& GetSection(UIRendererSectionId id) noexcept;
 
-	// Builds the window and all sections. Must be called during an active ImGui frame.
+	// Must be called during an active ImGui frame.
 	void BuildUI();
 
   private:

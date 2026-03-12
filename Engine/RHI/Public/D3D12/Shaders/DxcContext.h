@@ -21,13 +21,11 @@ class DxcContext
 	DxcContext(DxcContext&&) = delete;
 	DxcContext& operator=(DxcContext&&) = delete;
 
-	// True if DXC interfaces were created successfully.
 	bool IsValid() const noexcept { return m_compiler != nullptr && m_utils != nullptr; }
 
 	IDxcCompiler3* GetCompiler() const noexcept { return m_compiler.Get(); }
 	IDxcUtils* GetUtils() const noexcept { return m_utils.Get(); }
 
-	// Creates a fresh include handler for a compilation.
 	ComPtr<IDxcIncludeHandler> CreateIncludeHandler() const;
 
   private:
@@ -35,5 +33,4 @@ class DxcContext
 	ComPtr<IDxcUtils> m_utils;
 };
 
-// Returns a shared DxcContext instance. Thread-safe initialization.
 DxcContext& GetDxcContext();

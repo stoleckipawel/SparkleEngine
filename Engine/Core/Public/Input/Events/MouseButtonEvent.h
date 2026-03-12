@@ -1,21 +1,9 @@
-// =============================================================================
-// MouseButtonEvent.h — Mouse Button Input Event
-// =============================================================================
-//
-// Event fired when a mouse button is pressed or released.
-//
-// =============================================================================
-
 #pragma once
 
 #include "../Mouse/MouseButton.h"
 #include "../Mouse/MousePosition.h"
 #include "../Keyboard/ModifierFlags.h"
 #include "../Device/InputDevice.h"
-
-// =============================================================================
-// MouseButtonEvent
-// =============================================================================
 
 /// Event data for mouse button press/release.
 struct MouseButtonEvent

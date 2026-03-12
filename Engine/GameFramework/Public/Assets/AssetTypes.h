@@ -21,8 +21,6 @@ enum class AssetType : uint8_t
 	Count
 };
 
-// Returns the canonical subdirectory name for a given asset type.
-// Used by AssetSystem to construct full filesystem paths.
 constexpr std::string_view GetAssetSubdirectory(AssetType type) noexcept
 {
 	switch (type)
@@ -49,7 +47,6 @@ constexpr std::string_view GetAssetSubdirectory(AssetType type) noexcept
 	}
 }
 
-// Returns a human-readable name for logging and debugging.
 constexpr std::string_view GetAssetTypeName(AssetType type) noexcept
 {
 	switch (type)
