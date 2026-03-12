@@ -25,8 +25,8 @@ struct MouseMoveEvent
 	ModifierFlags Modifiers = ModifierFlags::None;  ///< Active keyboard modifiers
 
 	/// Returns the device type (always Mouse).
-	[[nodiscard]] constexpr InputDevice GetDevice() const noexcept { return InputDevice::Mouse; }
+	constexpr InputDevice GetDevice() const noexcept { return InputDevice::Mouse; }
 
 	/// Returns true if the specified modifier is active.
-	[[nodiscard]] constexpr bool HasModifier(ModifierFlags flag) const noexcept { return HasAnyFlag(Modifiers, flag); }
+	constexpr bool HasModifier(ModifierFlags flag) const noexcept { return HasAnyFlag(Modifiers, flag); }
 };

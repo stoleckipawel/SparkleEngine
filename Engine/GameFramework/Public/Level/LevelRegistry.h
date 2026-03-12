@@ -31,10 +31,6 @@
 
 class Level;
 
-// ============================================================================
-// LevelRegistry
-// ============================================================================
-
 class SPARKLE_ENGINE_API LevelRegistry final
 {
   public:
@@ -62,33 +58,27 @@ class SPARKLE_ENGINE_API LevelRegistry final
 	// ========================================================================
 
 	/// Finds a registered level by name. Returns nullptr if not found.
-	[[nodiscard]] Level* FindLevel(std::string_view name) const;
+	Level* FindLevel(std::string_view name) const;
 
 	/// Finds by name if non-empty, otherwise returns the default level.
 	/// Logs a warning and returns nullptr if neither resolves.
-	[[nodiscard]] Level* FindLevelOrDefault(std::string_view name) const;
+	Level* FindLevelOrDefault(std::string_view name) const;
 
-	/// Returns all registered levels
-	[[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<Level>>& GetAllLevels() const noexcept;
-
-	/// Returns the number of registered levels.
-	[[nodiscard]] std::size_t GetLevelCount() const noexcept;
+	const std::unordered_map<std::string, std::unique_ptr<Level>>& GetAllLevels() const noexcept;
+	
+	std::size_t GetLevelCount() const noexcept;
 
 	// ========================================================================
 	// Default Level
 	// ========================================================================
 
-	/// Sets the name of the level to load on startup.
+
 	void SetDefaultLevelName(std::string_view name);
-
-	/// Returns the current default level name.
-	[[nodiscard]] std::string_view GetDefaultLevelName() const noexcept;
-
-	/// Returns the default level, or nullptr if the name doesn't match any registered level.
-	[[nodiscard]] Level* GetDefaultLevel() const;
+	
+	std::string_view GetDefaultLevelName() const noexcept;
+	Level* GetDefaultLevel() const;
 
   private:
-	/// Registers engine-provided built-in levels.
 	void RegisterBuiltinLevels();
 
 	std::unordered_map<std::string, std::unique_ptr<Level>> m_levels;

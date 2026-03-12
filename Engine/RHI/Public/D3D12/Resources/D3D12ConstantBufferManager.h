@@ -60,10 +60,10 @@ class D3D12ConstantBufferManager final
 	// -------------------------------------------------------------------------
 
 	// Get GPU address of current frame's per-frame CB.
-	[[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS GetPerFrameGpuAddress() const;
+	D3D12_GPU_VIRTUAL_ADDRESS GetPerFrameGpuAddress() const;
 
 	// Get GPU address of current frame's per-view CB.
-	[[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS GetPerViewGpuAddress() const;
+	D3D12_GPU_VIRTUAL_ADDRESS GetPerViewGpuAddress() const;
 
 	// -------------------------------------------------------------------------
 	// Update Methods
@@ -77,10 +77,10 @@ class D3D12ConstantBufferManager final
 
 	// Update per-object VS constant buffer for a draw.
 	// Any system can provide this data (Primitive, SkeletalMesh, etc.) without coupling.
-	[[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectVS(const PerObjectVSConstantBufferData& data);
+	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectVS(const PerObjectVSConstantBufferData& data);
 
 	// Update per-object PS constant buffer (material data).
-	[[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectPS(const PerObjectPSConstantBufferData& data);
+	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectPS(const PerObjectPSConstantBufferData& data);
 
   private:
 	// Per-Frame constant buffers (persistent, one per frame-in-flight)

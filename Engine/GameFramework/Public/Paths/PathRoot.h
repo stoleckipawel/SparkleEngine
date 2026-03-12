@@ -24,7 +24,7 @@ enum class PathRoot : uint8_t
 	Count
 };
 
-[[nodiscard]] constexpr std::string_view GetPathRootName(PathRoot root) noexcept
+constexpr std::string_view GetPathRootName(PathRoot root) noexcept
 {
 	switch (root)
 	{

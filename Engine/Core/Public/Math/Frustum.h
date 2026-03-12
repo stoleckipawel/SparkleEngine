@@ -57,11 +57,11 @@ struct SPARKLE_CORE_API Frustum
 	// ========================================================================
 
 	/// Tests if a point is inside the frustum.
-	[[nodiscard]] bool ContainsPoint(const DirectX::XMFLOAT3& point) const noexcept;
+	bool ContainsPoint(const DirectX::XMFLOAT3& point) const noexcept;
 
 	/// Tests if a sphere intersects the frustum.
-	[[nodiscard]] bool IntersectsSphere(const DirectX::XMFLOAT3& center, float radius) const noexcept;
+	bool IntersectsSphere(const DirectX::XMFLOAT3& center, float radius) const noexcept;
 
 	/// Tests if an axis-aligned bounding box intersects the frustum.
-	[[nodiscard]] bool IntersectsAABB(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max) const noexcept;
+	bool IntersectsAABB(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max) const noexcept;
 };

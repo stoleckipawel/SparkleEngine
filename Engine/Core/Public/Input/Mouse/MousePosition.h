@@ -39,20 +39,20 @@ struct MousePosition
 	// -------------------------------------------------------------------------
 
 	/// Returns pixel position as XMINT2.
-	[[nodiscard]] constexpr DirectX::XMINT2 AsInt() const noexcept { return DirectX::XMINT2{X, Y}; }
+	constexpr DirectX::XMINT2 AsInt() const noexcept { return DirectX::XMINT2{X, Y}; }
 
 	/// Returns pixel position as float vector.
-	[[nodiscard]] constexpr DirectX::XMFLOAT2 AsFloat() const noexcept
+	constexpr DirectX::XMFLOAT2 AsFloat() const noexcept
 	{
 		return DirectX::XMFLOAT2{static_cast<float>(X), static_cast<float>(Y)};
 	}
 
 	/// Returns normalized position [0,1].
-	[[nodiscard]] constexpr DirectX::XMFLOAT2 AsNormalized() const noexcept { return DirectX::XMFLOAT2{NormalizedX, NormalizedY}; }
+	constexpr DirectX::XMFLOAT2 AsNormalized() const noexcept { return DirectX::XMFLOAT2{NormalizedX, NormalizedY}; }
 
 	/// Returns normalized position in [-1,1] range (NDC-style, Y-up).
 	/// Useful for screen-space ray casting.
-	[[nodiscard]] constexpr DirectX::XMFLOAT2 AsNDC() const noexcept
+	constexpr DirectX::XMFLOAT2 AsNDC() const noexcept
 	{
 		return DirectX::XMFLOAT2{
 		    NormalizedX * 2.0f - 1.0f,  // [0,1] → [-1,1]
@@ -65,7 +65,7 @@ struct MousePosition
 	// -------------------------------------------------------------------------
 
 	/// Creates MousePosition from pixel coordinates and window dimensions.
-	[[nodiscard]] static constexpr MousePosition FromPixels(
+	static constexpr MousePosition FromPixels(
 	    std::int32_t x,
 	    std::int32_t y,
 	    std::uint32_t windowWidth,
@@ -91,10 +91,10 @@ struct MouseDelta
 	float Y = 0.0f;  ///< Vertical movement in pixels (positive = down)
 
 	/// Returns delta as XMFLOAT2.
-	[[nodiscard]] constexpr DirectX::XMFLOAT2 AsFloat() const noexcept { return DirectX::XMFLOAT2{X, Y}; }
+	constexpr DirectX::XMFLOAT2 AsFloat() const noexcept { return DirectX::XMFLOAT2{X, Y}; }
 
 	/// Returns delta with Y inverted (positive = up).
-	[[nodiscard]] constexpr DirectX::XMFLOAT2 AsFloatYUp() const noexcept { return DirectX::XMFLOAT2{X, -Y}; }
+	constexpr DirectX::XMFLOAT2 AsFloatYUp() const noexcept { return DirectX::XMFLOAT2{X, -Y}; }
 
 	/// Accumulates another delta into this one.
 	constexpr void Accumulate(float dx, float dy) noexcept

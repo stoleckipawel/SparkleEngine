@@ -176,11 +176,11 @@ class SPARKLE_RENDERER_API RenderContext final
 
 	/// Returns the underlying D3D12 command list for advanced operations.
 	/// Use sparingly — prefer semantic methods above.
-	[[nodiscard]] ID3D12GraphicsCommandList* GetNativeCommandList() const noexcept { return m_cmdList; }
+	ID3D12GraphicsCommandList* GetNativeCommandList() const noexcept { return m_cmdList; }
 
   private:
 	/// Maps ResourceState enum to D3D12_RESOURCE_STATES.
-	[[nodiscard]] static D3D12_RESOURCE_STATES MapToD3D12State(ResourceState state) noexcept;
+	static D3D12_RESOURCE_STATES MapToD3D12State(ResourceState state) noexcept;
 
 	ID3D12GraphicsCommandList* m_cmdList = nullptr;
 };

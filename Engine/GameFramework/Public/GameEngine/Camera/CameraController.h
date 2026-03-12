@@ -79,8 +79,8 @@ class SPARKLE_ENGINE_API CameraController final
 	// ========================================================================
 
 	/// Returns mutable reference to movement settings for UI/config binding.
-	[[nodiscard]] CameraMovementSettings& GetSettings() noexcept { return m_settings; }
-	[[nodiscard]] const CameraMovementSettings& GetSettings() const noexcept { return m_settings; }
+	CameraMovementSettings& GetSettings() noexcept { return m_settings; }
+	const CameraMovementSettings& GetSettings() const noexcept { return m_settings; }
 
 	/// Sets all movement settings at once.
 	void SetSettings(const CameraMovementSettings& settings) noexcept { m_settings = settings; }
@@ -94,10 +94,10 @@ class SPARKLE_ENGINE_API CameraController final
 	void SetMouseSensitivity(float sensitivity) noexcept { m_settings.mouseSensitivity = sensitivity; }
 	void SetInvertY(bool invert) noexcept { m_settings.invertY = invert; }
 
-	[[nodiscard]] float GetMoveSpeed() const noexcept { return m_settings.moveSpeed; }
-	[[nodiscard]] float GetSprintMultiplier() const noexcept { return m_settings.sprintMultiplier; }
-	[[nodiscard]] float GetMouseSensitivity() const noexcept { return m_settings.mouseSensitivity; }
-	[[nodiscard]] bool GetInvertY() const noexcept { return m_settings.invertY; }
+	float GetMoveSpeed() const noexcept { return m_settings.moveSpeed; }
+	float GetSprintMultiplier() const noexcept { return m_settings.sprintMultiplier; }
+	float GetMouseSensitivity() const noexcept { return m_settings.mouseSensitivity; }
+	bool GetInvertY() const noexcept { return m_settings.invertY; }
 
   private:
 	void OnMouseButtonPressed(const MouseButtonEvent& event) noexcept;

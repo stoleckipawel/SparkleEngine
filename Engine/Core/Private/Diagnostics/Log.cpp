@@ -19,7 +19,7 @@ namespace
 	// Default level is `Info` so normal engine messages are visible.
 	std::atomic<int> g_level{static_cast<int>(LogLevel::Info)};
 
-	[[nodiscard]] std::string_view ExtractFileName(const char* path) noexcept
+	std::string_view ExtractFileName(const char* path) noexcept
 	{
 		if (!path)
 			return {};
@@ -33,7 +33,7 @@ namespace
 	}
 
 	// Fixed-width level tag used to make logs easy to scan.
-	[[nodiscard]] const char* LevelTag(LogLevel lvl) noexcept
+	const char* LevelTag(LogLevel lvl) noexcept
 	{
 		switch (lvl)
 		{

@@ -55,24 +55,24 @@ struct MeshData
 	// Validation
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
+	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
 
 	// -------------------------------------------------------------------------
 	// Size Queries
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] uint32 GetVertexCount() const noexcept { return static_cast<uint32>(vertices.size()); }
-	[[nodiscard]] uint32 GetIndexCount() const noexcept { return static_cast<uint32>(indices.size()); }
+	uint32 GetVertexCount() const noexcept { return static_cast<uint32>(vertices.size()); }
+	uint32 GetIndexCount() const noexcept { return static_cast<uint32>(indices.size()); }
 
-	[[nodiscard]] SizeType GetVertexBufferSize() const noexcept { return vertices.size() * sizeof(VertexData); }
-	[[nodiscard]] SizeType GetIndexBufferSize() const noexcept { return indices.size() * sizeof(uint32); }
+	SizeType GetVertexBufferSize() const noexcept { return vertices.size() * sizeof(VertexData); }
+	SizeType GetIndexBufferSize() const noexcept { return indices.size() * sizeof(uint32); }
 
 	// -------------------------------------------------------------------------
 	// Data Access
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] const VertexData* GetVertexData() const noexcept { return vertices.data(); }
-	[[nodiscard]] const uint32* GetIndexData() const noexcept { return indices.data(); }
+	const VertexData* GetVertexData() const noexcept { return vertices.data(); }
+	const uint32* GetIndexData() const noexcept { return indices.data(); }
 
 	// -------------------------------------------------------------------------
 	// Mutation

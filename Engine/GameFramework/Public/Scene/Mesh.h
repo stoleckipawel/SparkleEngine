@@ -55,21 +55,21 @@ class SPARKLE_ENGINE_API Mesh
 	// -------------------------------------------------------------------------
 
 	void SetTranslation(const DirectX::XMFLOAT3& t) noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3 GetTranslation() const noexcept { return m_translation; }
+	DirectX::XMFLOAT3 GetTranslation() const noexcept { return m_translation; }
 
 	void SetRotationEuler(const DirectX::XMFLOAT3& r) noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3 GetRotationEuler() const noexcept { return m_rotationEuler; }
+	DirectX::XMFLOAT3 GetRotationEuler() const noexcept { return m_rotationEuler; }
 
 	void SetScale(const DirectX::XMFLOAT3& s) noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3 GetScale() const noexcept { return m_scale; }
+	DirectX::XMFLOAT3 GetScale() const noexcept { return m_scale; }
 
 	// -------------------------------------------------------------------------
 	// World Matrix
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] virtual DirectX::XMMATRIX GetWorldMatrix() const noexcept;
-	[[nodiscard]] virtual DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3X3 GetWorldRotationMatrix3x3() const noexcept;
+	virtual DirectX::XMMATRIX GetWorldMatrix() const noexcept;
+	virtual DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
+	DirectX::XMFLOAT3X3 GetWorldRotationMatrix3x3() const noexcept;
 
 	// -------------------------------------------------------------------------
 	// Geometry
@@ -79,9 +79,9 @@ class SPARKLE_ENGINE_API Mesh
 	void RebuildGeometry();
 
 	// Returns CPU mesh data. Builds geometry on first call if not yet built.
-	[[nodiscard]] const MeshData& GetMeshData() const;
+	const MeshData& GetMeshData() const;
 
-	[[nodiscard]] uint32 GetIndexCount() const noexcept { return m_meshData.GetIndexCount(); }
+	uint32 GetIndexCount() const noexcept { return m_meshData.GetIndexCount(); }
 
 	// -------------------------------------------------------------------------
 	// Material

@@ -38,25 +38,25 @@ enum class ButtonState : std::uint8_t
 // =============================================================================
 
 /// Returns true if the button is down (Pressed or Held).
-[[nodiscard]] constexpr bool IsDown(ButtonState state) noexcept
+constexpr bool IsDown(ButtonState state) noexcept
 {
 	return state == ButtonState::Pressed || state == ButtonState::Held;
 }
 
 /// Returns true if the button is up (Up or Released).
-[[nodiscard]] constexpr bool IsUp(ButtonState state) noexcept
+constexpr bool IsUp(ButtonState state) noexcept
 {
 	return state == ButtonState::Up || state == ButtonState::Released;
 }
 
 /// Returns true if this is an edge state (Pressed or Released).
-[[nodiscard]] constexpr bool IsEdge(ButtonState state) noexcept
+constexpr bool IsEdge(ButtonState state) noexcept
 {
 	return state == ButtonState::Pressed || state == ButtonState::Released;
 }
 
 /// Returns true if this is a continuous state (Up or Held).
-[[nodiscard]] constexpr bool IsContinuous(ButtonState state) noexcept
+constexpr bool IsContinuous(ButtonState state) noexcept
 {
 	return state == ButtonState::Up || state == ButtonState::Held;
 }

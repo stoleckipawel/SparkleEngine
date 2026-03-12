@@ -165,37 +165,37 @@ enum class Key : std::uint16_t
 // =============================================================================
 
 /// Returns true if this is a letter key (A-Z).
-[[nodiscard]] constexpr bool IsLetterKey(Key key) noexcept
+constexpr bool IsLetterKey(Key key) noexcept
 {
 	return key >= Key::A && key <= Key::Z;
 }
 
 /// Returns true if this is a number key (0-9 on number row).
-[[nodiscard]] constexpr bool IsNumberKey(Key key) noexcept
+constexpr bool IsNumberKey(Key key) noexcept
 {
 	return key >= Key::Num0 && key <= Key::Num9;
 }
 
 /// Returns true if this is a function key (F1-F12).
-[[nodiscard]] constexpr bool IsFunctionKey(Key key) noexcept
+constexpr bool IsFunctionKey(Key key) noexcept
 {
 	return key >= Key::F1 && key <= Key::F12;
 }
 
 /// Returns true if this is a numpad key.
-[[nodiscard]] constexpr bool IsNumpadKey(Key key) noexcept
+constexpr bool IsNumpadKey(Key key) noexcept
 {
 	return key >= Key::Numpad0 && key <= Key::NumpadDivide;
 }
 
 /// Returns true if this is a modifier key (Shift, Ctrl, Alt, Super).
-[[nodiscard]] constexpr bool IsModifierKey(Key key) noexcept
+constexpr bool IsModifierKey(Key key) noexcept
 {
 	return key >= Key::LeftShift && key <= Key::RightSuper;
 }
 
 /// Returns true if this is an arrow/navigation key.
-[[nodiscard]] constexpr bool IsNavigationKey(Key key) noexcept
+constexpr bool IsNavigationKey(Key key) noexcept
 {
 	return key >= Key::Up && key <= Key::Delete;
 }

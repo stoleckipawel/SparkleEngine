@@ -59,22 +59,22 @@ class GameCamera final
 	// Transform
 	// ========================================================================
 
-	[[nodiscard]] DirectX::XMFLOAT3 GetPosition() const noexcept { return m_position; }
+	DirectX::XMFLOAT3 GetPosition() const noexcept { return m_position; }
 	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
 
-	[[nodiscard]] const DirectX::XMFLOAT3& GetDirection() const noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3 GetRight() const noexcept;
+	const DirectX::XMFLOAT3& GetDirection() const noexcept;
+	DirectX::XMFLOAT3 GetRight() const noexcept;
 
 	void SetYawPitch(float yawRadians, float pitchRadians) noexcept;
-	[[nodiscard]] float GetYaw() const noexcept { return m_yaw; }
-	[[nodiscard]] float GetPitch() const noexcept { return m_pitch; }
+	float GetYaw() const noexcept { return m_yaw; }
+	float GetPitch() const noexcept { return m_pitch; }
 
 	// ========================================================================
 	// Dirty Flag (for RenderCamera optimization)
 	// ========================================================================
 
 	/// Returns true if camera state changed since last ClearDirty().
-	[[nodiscard]] bool IsDirty() const noexcept { return m_dirty; }
+	bool IsDirty() const noexcept { return m_dirty; }
 
 	/// Clears the dirty flag. Called by RenderCamera after rebuilding matrices.
 	void ClearDirty() noexcept { m_dirty = false; }
@@ -83,11 +83,11 @@ class GameCamera final
 	// Projection
 	// ========================================================================
 
-	[[nodiscard]] float GetFovYDegrees() const noexcept { return m_fovYDegrees; }
+	float GetFovYDegrees() const noexcept { return m_fovYDegrees; }
 	void SetFovYDegrees(float fovDegrees) noexcept { m_fovYDegrees = fovDegrees; }
 
-	[[nodiscard]] float GetNearZ() const noexcept { return m_nearZ; }
-	[[nodiscard]] float GetFarZ() const noexcept { return m_farZ; }
+	float GetNearZ() const noexcept { return m_nearZ; }
+	float GetFarZ() const noexcept { return m_farZ; }
 	void SetNearFar(float nearZ, float farZ) noexcept
 	{
 		m_nearZ = nearZ;
@@ -95,7 +95,7 @@ class GameCamera final
 	}
 
 	void SetAspectRatio(float aspectRatio) noexcept;
-	[[nodiscard]] float GetAspectRatio() const noexcept { return m_aspectRatio; }
+	float GetAspectRatio() const noexcept { return m_aspectRatio; }
 
   private:
 	/// Updates cached direction vector from current yaw/pitch.

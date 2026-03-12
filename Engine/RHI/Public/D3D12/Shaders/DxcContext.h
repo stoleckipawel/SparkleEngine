@@ -39,10 +39,10 @@ class DxcContext
 	DxcContext& operator=(DxcContext&&) = delete;
 
 	// True if DXC interfaces were created successfully.
-	[[nodiscard]] bool IsValid() const noexcept { return m_compiler != nullptr && m_utils != nullptr; }
+	bool IsValid() const noexcept { return m_compiler != nullptr && m_utils != nullptr; }
 
-	[[nodiscard]] IDxcCompiler3* GetCompiler() const noexcept { return m_compiler.Get(); }
-	[[nodiscard]] IDxcUtils* GetUtils() const noexcept { return m_utils.Get(); }
+	IDxcCompiler3* GetCompiler() const noexcept { return m_compiler.Get(); }
+	IDxcUtils* GetUtils() const noexcept { return m_utils.Get(); }
 
 	// Creates a fresh include handler for a compilation.
 	ComPtr<IDxcIncludeHandler> CreateIncludeHandler() const;

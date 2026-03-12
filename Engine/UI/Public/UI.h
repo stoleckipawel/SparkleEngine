@@ -91,7 +91,7 @@ class SPARKLE_UI_API UI final
 	// ========================================================================
 
 	/// Returns the current view mode selected in the UI.
-	[[nodiscard]] ViewMode::Type GetViewMode() noexcept;
+	ViewMode::Type GetViewMode() noexcept;
 
   private:
 	// ------------------------------------------------------------------------
@@ -113,11 +113,11 @@ class SPARKLE_UI_API UI final
 
 	/// Initializes the Win32 platform backend.
 	/// @return True if successful, false on failure.
-	[[nodiscard]] bool InitializeWin32Backend();
+	bool InitializeWin32Backend();
 
 	/// Initializes the D3D12 rendering backend.
 	/// @return True if successful, false on failure.
-	[[nodiscard]] bool InitializeD3D12Backend();
+	bool InitializeD3D12Backend();
 
 	/// Registers default UI panels and sections.
 	void InitializeDefaultPanels();

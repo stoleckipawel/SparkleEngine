@@ -84,20 +84,20 @@ class SPARKLE_CORE_API Timer final
 	void Tick() noexcept;
 
 	// Immutable snapshot of current frame timing.
-	[[nodiscard]] TimeInfo GetTimeInfo() const noexcept { return m_timeInfo; }
+	TimeInfo GetTimeInfo() const noexcept { return m_timeInfo; }
 
 	// Frame counter (1-based, incremented each Tick).
-	[[nodiscard]] uint64_t GetFrameCount() const noexcept { return m_frameCount; }
+	uint64_t GetFrameCount() const noexcept { return m_frameCount; }
 
-	[[nodiscard]] double GetDelta(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;
-	[[nodiscard]] double GetTotalTime(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;
+	double GetDelta(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;
+	double GetTotalTime(TimeDomain domain, TimeUnit unit = TimeUnit::Milliseconds) const noexcept;
 
 	void SetTimeScale(double scale) noexcept { m_timeScale = scale; }
-	[[nodiscard]] double GetTimeScale() const noexcept { return m_timeScale; }
+	double GetTimeScale() const noexcept { return m_timeScale; }
 
 	void Pause() noexcept { m_bPaused.store(true, std::memory_order_relaxed); }
 	void Resume() noexcept { m_bPaused.store(false, std::memory_order_relaxed); }
-	[[nodiscard]] bool IsPaused() const noexcept { return m_bPaused.load(std::memory_order_relaxed); }
+	bool IsPaused() const noexcept { return m_bPaused.load(std::memory_order_relaxed); }
 
 	struct Stopwatch
 	{
@@ -106,13 +106,13 @@ class SPARKLE_CORE_API Timer final
 		Stopwatch() noexcept : start(Clock::now()) {}
 		void Reset() noexcept { start = Clock::now(); }
 
-		[[nodiscard]] Duration Elapsed() const noexcept { return std::chrono::duration_cast<Duration>(Clock::now() - start); }
-		[[nodiscard]] double ElapsedSeconds() const noexcept { return Elapsed().count(); }
-		[[nodiscard]] double ElapsedMillis() const noexcept { return Elapsed().count() * 1e3; }
+		Duration Elapsed() const noexcept { return std::chrono::duration_cast<Duration>(Clock::now() - start); }
+		double ElapsedSeconds() const noexcept { return Elapsed().count(); }
+		double ElapsedMillis() const noexcept { return Elapsed().count() * 1e3; }
 	};
 
   private:
-	[[nodiscard]] static double ToUnit(Duration d, TimeUnit u) noexcept;
+	static double ToUnit(Duration d, TimeUnit u) noexcept;
 
 	TimePoint m_start{};
 	TimePoint m_last{};

@@ -36,12 +36,12 @@ struct TexturePayload
 	TextureFormatIntent formatIntent = TextureFormatIntent::Unknown;
 	std::vector<TextureMipLevelData> mipLevels;
 
-	[[nodiscard]] std::uint16_t GetMipCount() const noexcept
+	std::uint16_t GetMipCount() const noexcept
 	{
 		return static_cast<std::uint16_t>(mipLevels.size());
 	}
 
-	[[nodiscard]] bool IsValid() const noexcept
+	bool IsValid() const noexcept
 	{
 		if (width == 0 || height == 0 || dxgiFormat == DXGI_FORMAT_UNKNOWN || mipLevels.empty())
 		{

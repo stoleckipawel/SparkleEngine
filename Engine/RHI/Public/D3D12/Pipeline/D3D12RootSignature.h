@@ -34,8 +34,8 @@ class D3D12RootSignature
 	D3D12RootSignature(const D3D12RootSignature&) = delete;
 	D3D12RootSignature& operator=(const D3D12RootSignature&) = delete;
 
-	[[nodiscard]] ComPtr<ID3D12RootSignature> Get() noexcept { return m_rootSignature; }
-	[[nodiscard]] ID3D12RootSignature* GetRaw() const noexcept { return m_rootSignature.Get(); }
+	ComPtr<ID3D12RootSignature> Get() noexcept { return m_rootSignature; }
+	ID3D12RootSignature* GetRaw() const noexcept { return m_rootSignature.Get(); }
 
   private:
 	void Create();

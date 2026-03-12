@@ -87,7 +87,7 @@ class D3D12Rhi final
 
 	// Sets the current frame index for convenience methods.
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept { m_currentFrameIndex = frameInFlightIndex; }
-	[[nodiscard]] uint32_t GetCurrentFrameIndex() const noexcept { return m_currentFrameIndex; }
+	uint32_t GetCurrentFrameIndex() const noexcept { return m_currentFrameIndex; }
 
 	// Convenience overloads using current frame index
 	void CloseCommandList() noexcept { CloseCommandList(m_currentFrameIndex); }
@@ -96,7 +96,7 @@ class D3D12Rhi final
 	{
 		SetBarrier(m_currentFrameIndex, resource, stateBefore, stateAfter);
 	}
-	[[nodiscard]] const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList() const noexcept { return m_cmdList[m_currentFrameIndex]; }
+	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList() const noexcept { return m_cmdList[m_currentFrameIndex]; }
 
 	// =========================================================================
 	// Synchronization
@@ -122,28 +122,28 @@ class D3D12Rhi final
 	// D3D12-Specific Accessors
 	// =========================================================================
 
-	[[nodiscard]] const ComPtr<IDXGIFactory7>& GetDxgiFactory() const noexcept { return m_dxgiFactory; }
-	[[nodiscard]] const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept { return m_adapter; }
-	[[nodiscard]] const ComPtr<ID3D12Device10>& GetDevice() const noexcept { return m_device; }
-	[[nodiscard]] const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept { return m_cmdQueue; }
-	[[nodiscard]] const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept
+	const ComPtr<IDXGIFactory7>& GetDxgiFactory() const noexcept { return m_dxgiFactory; }
+	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept { return m_adapter; }
+	const ComPtr<ID3D12Device10>& GetDevice() const noexcept { return m_device; }
+	const ComPtr<ID3D12CommandQueue>& GetCommandQueue() const noexcept { return m_cmdQueue; }
+	const ComPtr<ID3D12CommandAllocator>& GetCommandAllocator(uint32_t frameInFlightIndex) const noexcept
 	{
 		return m_cmdAllocator[frameInFlightIndex];
 	}
-	[[nodiscard]] const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept
+	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList(uint32_t frameInFlightIndex) const noexcept
 	{
 		return m_cmdList[frameInFlightIndex];
 	}
-	[[nodiscard]] const ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
+	const ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
 
 	// =========================================================================
 	// D3D12-Specific Fence Management
 	// =========================================================================
 
-	[[nodiscard]] uint64_t GetFenceValueForFrame(uint32_t frameInFlightIndex) const noexcept { return m_fenceValues[frameInFlightIndex]; }
+	uint64_t GetFenceValueForFrame(uint32_t frameInFlightIndex) const noexcept { return m_fenceValues[frameInFlightIndex]; }
 	void SetFenceValueForFrame(uint32_t frameInFlightIndex, uint64_t value) noexcept { m_fenceValues[frameInFlightIndex] = value; }
-	[[nodiscard]] HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
-	[[nodiscard]] uint64_t GetNextFenceValue() const noexcept { return m_nextFenceValue; }
+	HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
+	uint64_t GetNextFenceValue() const noexcept { return m_nextFenceValue; }
 	void SetNextFenceValue(uint64_t value) noexcept { m_nextFenceValue = value; }
 
   private:

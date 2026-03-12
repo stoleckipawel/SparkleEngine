@@ -19,11 +19,11 @@
 class Win32InputBackend final : public IInputBackend
 {
   public:
-	[[nodiscard]] InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) override;
+	InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) override;
 
 	/// Translates Win32 VK_* to engine Key enum.
-	[[nodiscard]] static Key TranslateVirtualKey(WPARAM VirtualKey) noexcept;
+	static Key TranslateVirtualKey(WPARAM VirtualKey) noexcept;
 
 	/// Gets current modifier state from Win32 GetKeyState().
-	[[nodiscard]] static ModifierFlags GetCurrentModifiers() noexcept;
+	static ModifierFlags GetCurrentModifiers() noexcept;
 };

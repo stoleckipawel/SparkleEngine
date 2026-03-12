@@ -83,11 +83,11 @@ class SPARKLE_ENGINE_API MeshFactory
 	// Accessors
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const noexcept { return m_meshes; }
-	[[nodiscard]] SizeType GetMeshCount() const noexcept { return m_meshes.size(); }
+	const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const noexcept { return m_meshes; }
+	SizeType GetMeshCount() const noexcept { return m_meshes.size(); }
 
 	/// Transfers ownership of all meshes out of the factory.
-	[[nodiscard]] std::vector<std::unique_ptr<Mesh>> TakeMeshes() && noexcept { return std::move(m_meshes); }
+	std::vector<std::unique_ptr<Mesh>> TakeMeshes() && noexcept { return std::move(m_meshes); }
 
   private:
 	std::vector<std::unique_ptr<Mesh>> m_meshes;

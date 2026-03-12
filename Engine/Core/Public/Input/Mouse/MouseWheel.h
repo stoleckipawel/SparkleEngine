@@ -98,12 +98,12 @@ struct MouseWheel
 	}
 
 	/// Gets state by axis enum.
-	[[nodiscard]] constexpr MouseWheelState& operator[](MouseWheelAxis axis) noexcept
+	constexpr MouseWheelState& operator[](MouseWheelAxis axis) noexcept
 	{
 		return axis == MouseWheelAxis::Horizontal ? Horizontal : Vertical;
 	}
 
-	[[nodiscard]] constexpr const MouseWheelState& operator[](MouseWheelAxis axis) const noexcept
+	constexpr const MouseWheelState& operator[](MouseWheelAxis axis) const noexcept
 	{
 		return axis == MouseWheelAxis::Horizontal ? Horizontal : Vertical;
 	}

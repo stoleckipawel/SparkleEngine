@@ -78,85 +78,85 @@ class SPARKLE_CORE_API InputState
 	// =========================================================================
 
 	/// Returns true if key is currently down (Pressed or Held).
-	[[nodiscard]] bool IsKeyDown(Key InKey) const noexcept;
+	bool IsKeyDown(Key InKey) const noexcept;
 
 	/// Returns true only on the frame the key was first pressed.
-	[[nodiscard]] bool IsKeyPressed(Key InKey) const noexcept;
+	bool IsKeyPressed(Key InKey) const noexcept;
 
 	/// Returns true only on the frame the key was released.
-	[[nodiscard]] bool IsKeyReleased(Key InKey) const noexcept;
+	bool IsKeyReleased(Key InKey) const noexcept;
 
 	/// Returns true if key has been held down for more than one frame.
-	[[nodiscard]] bool IsKeyHeld(Key InKey) const noexcept;
+	bool IsKeyHeld(Key InKey) const noexcept;
 
 	/// Returns the raw ButtonState for a key.
-	[[nodiscard]] ButtonState GetKeyState(Key InKey) const noexcept;
+	ButtonState GetKeyState(Key InKey) const noexcept;
 
 	// =========================================================================
 	// Mouse Button Queries
 	// =========================================================================
 
 	/// Returns true if mouse button is currently down (Pressed or Held).
-	[[nodiscard]] bool IsMouseButtonDown(MouseButton InButton) const noexcept;
+	bool IsMouseButtonDown(MouseButton InButton) const noexcept;
 
 	/// Returns true only on the frame the button was first pressed.
-	[[nodiscard]] bool IsMouseButtonPressed(MouseButton InButton) const noexcept;
+	bool IsMouseButtonPressed(MouseButton InButton) const noexcept;
 
 	/// Returns true only on the frame the button was released.
-	[[nodiscard]] bool IsMouseButtonReleased(MouseButton InButton) const noexcept;
+	bool IsMouseButtonReleased(MouseButton InButton) const noexcept;
 
 	/// Returns true if button has been held down for more than one frame.
-	[[nodiscard]] bool IsMouseButtonHeld(MouseButton InButton) const noexcept;
+	bool IsMouseButtonHeld(MouseButton InButton) const noexcept;
 
 	/// Returns the raw ButtonState for a mouse button.
-	[[nodiscard]] ButtonState GetMouseButtonState(MouseButton InButton) const noexcept;
+	ButtonState GetMouseButtonState(MouseButton InButton) const noexcept;
 
 	// =========================================================================
 	// Mouse Position Queries
 	// =========================================================================
 
 	/// Returns current mouse position in window coordinates (pixels).
-	[[nodiscard]] MousePosition GetMousePosition() const noexcept;
+	MousePosition GetMousePosition() const noexcept;
 
 	/// Returns mouse movement delta since last frame (pixels).
-	[[nodiscard]] MousePosition GetMouseDelta() const noexcept;
+	MousePosition GetMouseDelta() const noexcept;
 
 	/// Returns accumulated mouse wheel delta since last frame.
 	/// Positive = scroll up/forward, Negative = scroll down/backward.
-	[[nodiscard]] float GetMouseWheelDelta() const noexcept;
+	float GetMouseWheelDelta() const noexcept;
 
 	/// Returns accumulated horizontal mouse wheel delta since last frame.
 	/// Positive = scroll right, Negative = scroll left.
-	[[nodiscard]] float GetMouseWheelHorizontalDelta() const noexcept;
+	float GetMouseWheelHorizontalDelta() const noexcept;
 
 	// =========================================================================
 	// Modifier Queries
 	// =========================================================================
 
 	/// Returns current modifier key flags (Shift, Ctrl, Alt, etc.).
-	[[nodiscard]] ModifierFlags GetModifiers() const noexcept;
+	ModifierFlags GetModifiers() const noexcept;
 
 	/// Returns true if the specified modifier is currently held.
-	[[nodiscard]] bool HasModifier(ModifierFlags InModifier) const noexcept;
+	bool HasModifier(ModifierFlags InModifier) const noexcept;
 
 	/// Convenience: Returns true if any Shift key is held.
-	[[nodiscard]] bool IsShiftDown() const noexcept;
+	bool IsShiftDown() const noexcept;
 
 	/// Convenience: Returns true if any Ctrl key is held.
-	[[nodiscard]] bool IsCtrlDown() const noexcept;
+	bool IsCtrlDown() const noexcept;
 
 	/// Convenience: Returns true if any Alt key is held.
-	[[nodiscard]] bool IsAltDown() const noexcept;
+	bool IsAltDown() const noexcept;
 
 	// =========================================================================
 	// Mouse Capture Queries
 	// =========================================================================
 
 	/// Returns true if mouse is currently captured by the application.
-	[[nodiscard]] bool IsMouseCaptured() const noexcept;
+	bool IsMouseCaptured() const noexcept;
 
 	/// Returns true if cursor is currently hidden.
-	[[nodiscard]] bool IsCursorHidden() const noexcept;
+	bool IsCursorHidden() const noexcept;
 
   private:
 	// =========================================================================

@@ -71,10 +71,10 @@ class D3D12LinearAllocator
 	void Reset() noexcept;
 
 	// Allocates aligned memory from the linear buffer.
-	[[nodiscard]] D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256);
+	D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256);
 
 	// Convenience method: allocate, copy data, return GPU address.
-	template <typename T> [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS AllocateAndCopy(const T& data)
+	template <typename T> D3D12_GPU_VIRTUAL_ADDRESS AllocateAndCopy(const T& data)
 	{
 		static_assert(std::is_trivially_copyable_v<T>, "T must be trivially copyable");
 
@@ -84,16 +84,16 @@ class D3D12LinearAllocator
 	}
 
 	// Returns current allocation offset (bytes used this frame).
-	[[nodiscard]] uint64_t GetCurrentOffset() const noexcept { return m_Offset.load(std::memory_order_relaxed); }
+	uint64_t GetCurrentOffset() const noexcept { return m_Offset.load(std::memory_order_relaxed); }
 
 	// Returns total capacity in bytes.
-	[[nodiscard]] uint64_t GetCapacity() const noexcept { return m_Capacity; }
+	uint64_t GetCapacity() const noexcept { return m_Capacity; }
 
 	// Returns peak usage across all frames (for capacity tuning).
-	[[nodiscard]] uint64_t GetHighWaterMark() const noexcept { return m_HighWaterMark.load(std::memory_order_relaxed); }
+	uint64_t GetHighWaterMark() const noexcept { return m_HighWaterMark.load(std::memory_order_relaxed); }
 
 	// Returns percentage of capacity used this frame.
-	[[nodiscard]] float GetUsagePercent() const noexcept
+	float GetUsagePercent() const noexcept
 	{
 		if (m_Capacity == 0)
 			return 0.0f;
@@ -101,11 +101,11 @@ class D3D12LinearAllocator
 	}
 
 	// Returns true if allocator is initialized and ready.
-	[[nodiscard]] bool IsInitialized() const noexcept { return m_bInitialized; }
+	bool IsInitialized() const noexcept { return m_bInitialized; }
 
   private:
 	// Aligns a value up to the specified alignment.
-	[[nodiscard]] static constexpr uint64_t AlignUp(uint64_t value, uint64_t alignment) noexcept
+	static constexpr uint64_t AlignUp(uint64_t value, uint64_t alignment) noexcept
 	{
 		return (value + alignment - 1) & ~(alignment - 1);
 	}

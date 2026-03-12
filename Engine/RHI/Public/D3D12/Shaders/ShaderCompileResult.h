@@ -37,7 +37,7 @@ struct ShaderBytecode
 	const void* Data = nullptr;
 	size_t Size = 0;
 
-	[[nodiscard]] bool IsValid() const noexcept { return Data != nullptr && Size > 0; }
+	bool IsValid() const noexcept { return Data != nullptr && Size > 0; }
 	explicit operator bool() const noexcept { return IsValid(); }
 };
 
@@ -56,15 +56,15 @@ class ShaderCompileResult
 	ShaderCompileResult& operator=(const ShaderCompileResult&) = delete;
 
 	// True if compilation succeeded and bytecode is available.
-	[[nodiscard]] bool IsSuccess() const noexcept { return m_success; }
+	bool IsSuccess() const noexcept { return m_success; }
 	explicit operator bool() const noexcept { return m_success; }
 
 	// Returns a non-owning view of the bytecode for PSO creation.
-	[[nodiscard]] ShaderBytecode GetBytecode() const noexcept { return {m_bytecode.data(), m_bytecode.size()}; }
+	ShaderBytecode GetBytecode() const noexcept { return {m_bytecode.data(), m_bytecode.size()}; }
 
 	// Error or warning messages from the compiler.
-	[[nodiscard]] const std::string& GetErrorMessage() const noexcept { return m_errorMessage; }
-	[[nodiscard]] bool HasErrors() const noexcept { return !m_errorMessage.empty(); }
+	const std::string& GetErrorMessage() const noexcept { return m_errorMessage; }
+	bool HasErrors() const noexcept { return !m_errorMessage.empty(); }
 
 	// Factory methods for creating results.
 	static ShaderCompileResult Success(std::vector<uint8_t>&& bytecode)

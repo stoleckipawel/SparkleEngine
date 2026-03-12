@@ -149,16 +149,16 @@ class D3D12FrameResourceManager final
 	//--------------------------------------------------------------------------
 
 	// Get the current frame's linear allocator.
-	[[nodiscard]] D3D12LinearAllocator& GetCurrentAllocator() noexcept { return m_frameResources[m_currentFrameIndex].CbAllocator; }
+	D3D12LinearAllocator& GetCurrentAllocator() noexcept { return m_frameResources[m_currentFrameIndex].CbAllocator; }
 
 	// Allocate from current frame's allocator.
-	[[nodiscard]] D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256)
+	D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256)
 	{
 		return GetCurrentAllocator().Allocate(size, alignment);
 	}
 
 	// Allocate and copy data, return GPU address for CBV binding.
-	template <typename T> [[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS AllocateConstantBuffer(const T& data)
+	template <typename T> D3D12_GPU_VIRTUAL_ADDRESS AllocateConstantBuffer(const T& data)
 	{
 		return GetCurrentAllocator().AllocateAndCopy(data);
 	}
@@ -168,13 +168,13 @@ class D3D12FrameResourceManager final
 	//--------------------------------------------------------------------------
 
 	// Get current frame's allocator usage percentage.
-	[[nodiscard]] float GetCurrentUsagePercent() const noexcept
+	float GetCurrentUsagePercent() const noexcept
 	{
 		return m_frameResources[m_currentFrameIndex].CbAllocator.GetUsagePercent();
 	}
 
 	// Get high water mark across all frames (for capacity tuning).
-	[[nodiscard]] uint64_t GetMaxHighWaterMark() const noexcept
+	uint64_t GetMaxHighWaterMark() const noexcept
 	{
 		uint64_t maxHwm = 0;
 		for (const auto& frame : m_frameResources)
@@ -185,7 +185,7 @@ class D3D12FrameResourceManager final
 	}
 
 	// Get capacity per frame.
-	[[nodiscard]] uint64_t GetCapacityPerFrame() const noexcept { return m_capacityPerFrame; }
+	uint64_t GetCapacityPerFrame() const noexcept { return m_capacityPerFrame; }
 
   private:
 	std::array<D3D12FrameResource, RHISettings::FramesInFlight> m_frameResources;

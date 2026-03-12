@@ -93,10 +93,10 @@ class SPARKLE_CORE_API ScopedEventHandle
 	}
 
 	/// Returns true if this scoped handle is active.
-	[[nodiscard]] bool IsValid() const noexcept { return m_Handle.IsValid(); }
+	bool IsValid() const noexcept { return m_Handle.IsValid(); }
 
 	/// Returns the underlying event handle.
-	[[nodiscard]] EventHandle GetHandle() const noexcept { return m_Handle; }
+	EventHandle GetHandle() const noexcept { return m_Handle; }
 
   private:
 	EventHandle m_Handle;              ///< Wrapped subscription handle

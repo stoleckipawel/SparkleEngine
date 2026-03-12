@@ -45,29 +45,29 @@ class SPARKLE_RENDERER_API PassBuilder
 	// -------------------------------------------------------------------------
 
 	/// Declares write access to the swap chain back buffer.
-	[[nodiscard]] ResourceHandle UseBackBuffer() noexcept { return ResourceHandle::BackBuffer(); }
+	ResourceHandle UseBackBuffer() noexcept { return ResourceHandle::BackBuffer(); }
 
 	/// Declares write access to the depth buffer.
-	[[nodiscard]] ResourceHandle UseDepthBuffer() noexcept { return ResourceHandle::DepthBuffer(); }
+	ResourceHandle UseDepthBuffer() noexcept { return ResourceHandle::DepthBuffer(); }
 
 	// -------------------------------------------------------------------------
 	// Future API (stubbed for MVP)
 	// -------------------------------------------------------------------------
 
 	/// Declares read access to a resource.
-	[[nodiscard]] ResourceHandle Read([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
+	ResourceHandle Read([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
 	{
 		return handle;
 	}
 
 	/// Declares write access to a resource.
-	[[nodiscard]] ResourceHandle Write([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
+	ResourceHandle Write([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
 	{
 		return handle;
 	}
 
 	/// Creates a transient texture resource.
-	template <typename TextureDesc> [[nodiscard]] ResourceHandle CreateTexture([[maybe_unused]] const TextureDesc& desc) noexcept
+	template <typename TextureDesc> ResourceHandle CreateTexture([[maybe_unused]] const TextureDesc& desc) noexcept
 	{
 		return ResourceHandle::Invalid();
 	}

@@ -62,9 +62,9 @@ class SPARKLE_ENGINE_API GltfLoader final
 		bool bSuccess = false;
 		std::string errorMessage;
 
-		[[nodiscard]] bool IsValid() const noexcept { return bSuccess && !meshes.empty(); }
-		[[nodiscard]] std::size_t GetMeshCount() const noexcept { return meshes.size(); }
-		[[nodiscard]] std::size_t GetMaterialCount() const noexcept { return materials.size(); }
+		bool IsValid() const noexcept { return bSuccess && !meshes.empty(); }
+		std::size_t GetMeshCount() const noexcept { return meshes.size(); }
+		std::size_t GetMaterialCount() const noexcept { return materials.size(); }
 	};
 
 	// =========================================================================
@@ -74,7 +74,7 @@ class SPARKLE_ENGINE_API GltfLoader final
 	/// Loads a glTF or GLB file from an absolute path.
 	/// @param filePath Absolute filesystem path to the .gltf or .glb file
 	/// @return LoadResult containing all meshes, materials, and transforms
-	[[nodiscard]] static LoadResult Load(const std::filesystem::path& filePath);
+	static LoadResult Load(const std::filesystem::path& filePath);
 
 	// Static utility — no instantiation
 	GltfLoader() = delete;

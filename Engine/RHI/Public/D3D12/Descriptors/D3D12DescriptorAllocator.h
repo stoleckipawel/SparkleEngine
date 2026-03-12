@@ -47,8 +47,8 @@ class D3D12DescriptorAllocator
 	void FreeContiguous(const D3D12DescriptorHandle& firstHandle, uint32_t count) noexcept;
 
   private:
-	[[nodiscard]] std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);
-	[[nodiscard]] D3D12DescriptorHandle AllocateContiguousFromLinearRangeLocked(uint32_t count);
+	std::optional<UINT> TryAllocateContiguousFromFreeListLocked(uint32_t count);
+	D3D12DescriptorHandle AllocateContiguousFromLinearRangeLocked(uint32_t count);
 
 	D3D12DescriptorHeap* m_heap;
 	std::vector<UINT> m_freeIndices;

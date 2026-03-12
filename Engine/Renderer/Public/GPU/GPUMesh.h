@@ -63,13 +63,13 @@ class SPARKLE_RENDERER_API GPUMesh final
 	// Accessors
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
-	[[nodiscard]] std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }
+	std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
+	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }
 
-	[[nodiscard]] bool IsValid() const noexcept { return m_vertexBuffer && m_indexBuffer; }
+	bool IsValid() const noexcept { return m_vertexBuffer && m_indexBuffer; }
 
-	[[nodiscard]] const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const noexcept { return m_vertexBufferView; }
-	[[nodiscard]] const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const noexcept { return m_indexBufferView; }
+	const D3D12_VERTEX_BUFFER_VIEW& GetVertexBufferView() const noexcept { return m_vertexBufferView; }
+	const D3D12_INDEX_BUFFER_VIEW& GetIndexBufferView() const noexcept { return m_indexBufferView; }
 
   private:
 	Microsoft::WRL::ComPtr<ID3D12Resource2> m_vertexBuffer;

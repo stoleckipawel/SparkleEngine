@@ -42,10 +42,10 @@ struct SPARKLE_RENDERER_API MaterialData
 	D3D12_GPU_DESCRIPTOR_HANDLE textureTableGpuHandle = {};
 
 	/// Creates a MaterialData from a CPU-side MaterialDesc.
-	[[nodiscard]] static MaterialData FromDesc(const MaterialDesc& desc);
+	static MaterialData FromDesc(const MaterialDesc& desc);
 
 	/// Builds the GPU constant buffer data from this material.
-	[[nodiscard]] PerObjectPSConstantBufferData ToPerObjectPSData() const
+	PerObjectPSConstantBufferData ToPerObjectPSData() const
 	{
 		PerObjectPSConstantBufferData data{};
 		data.BaseColor = baseColor;

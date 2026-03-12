@@ -27,7 +27,7 @@ namespace Engine
 
 		// Computes FNV-1a 64-bit hash of a string.
 		// Works at both compile-time (constexpr) and runtime.
-		[[nodiscard]] constexpr uint64_t Fnv1a64(std::string_view str) noexcept
+		constexpr uint64_t Fnv1a64(std::string_view str) noexcept
 		{
 			uint64_t hash = kFnv64OffsetBasis;
 			for (const char c : str)
@@ -39,7 +39,7 @@ namespace Engine
 		}
 
 		// Computes FNV-1a 64-bit hash of raw bytes.
-		[[nodiscard]] constexpr uint64_t Fnv1a64(const void* data, size_t size) noexcept
+		constexpr uint64_t Fnv1a64(const void* data, size_t size) noexcept
 		{
 			uint64_t hash = kFnv64OffsetBasis;
 			const auto* bytes = static_cast<const unsigned char*>(data);
@@ -55,7 +55,7 @@ namespace Engine
 		inline constexpr uint32_t kFnv32OffsetBasis = 2166136261u;
 		inline constexpr uint32_t kFnv32Prime = 16777619u;
 
-		[[nodiscard]] constexpr uint32_t Fnv1a32(std::string_view str) noexcept
+		constexpr uint32_t Fnv1a32(std::string_view str) noexcept
 		{
 			uint32_t hash = kFnv32OffsetBasis;
 			for (const char c : str)

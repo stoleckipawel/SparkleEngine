@@ -25,14 +25,14 @@ struct KeyboardEvent
 	bool bRepeat = false;                           ///< True if OS auto-repeat
 
 	/// Returns the device type (always Keyboard).
-	[[nodiscard]] constexpr InputDevice GetDevice() const noexcept { return InputDevice::Keyboard; }
+	constexpr InputDevice GetDevice() const noexcept { return InputDevice::Keyboard; }
 
 	/// Returns true if this is a key press event.
-	[[nodiscard]] constexpr bool IsPressed() const noexcept { return bPressed; }
+	constexpr bool IsPressed() const noexcept { return bPressed; }
 
 	/// Returns true if this is a key release event.
-	[[nodiscard]] constexpr bool IsReleased() const noexcept { return !bPressed; }
+	constexpr bool IsReleased() const noexcept { return !bPressed; }
 
 	/// Returns true if the specified modifier is active.
-	[[nodiscard]] constexpr bool HasModifier(ModifierFlags flag) const noexcept { return HasAnyFlag(Modifiers, flag); }
+	constexpr bool HasModifier(ModifierFlags flag) const noexcept { return HasAnyFlag(Modifiers, flag); }
 };

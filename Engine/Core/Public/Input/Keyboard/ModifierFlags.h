@@ -51,25 +51,25 @@ enum class ModifierFlags : std::uint16_t
 // Bitwise Operators
 // =============================================================================
 
-[[nodiscard]] constexpr ModifierFlags operator|(ModifierFlags lhs, ModifierFlags rhs) noexcept
+constexpr ModifierFlags operator|(ModifierFlags lhs, ModifierFlags rhs) noexcept
 {
 	return static_cast<ModifierFlags>(
 	    static_cast<std::underlying_type_t<ModifierFlags>>(lhs) | static_cast<std::underlying_type_t<ModifierFlags>>(rhs));
 }
 
-[[nodiscard]] constexpr ModifierFlags operator&(ModifierFlags lhs, ModifierFlags rhs) noexcept
+constexpr ModifierFlags operator&(ModifierFlags lhs, ModifierFlags rhs) noexcept
 {
 	return static_cast<ModifierFlags>(
 	    static_cast<std::underlying_type_t<ModifierFlags>>(lhs) & static_cast<std::underlying_type_t<ModifierFlags>>(rhs));
 }
 
-[[nodiscard]] constexpr ModifierFlags operator^(ModifierFlags lhs, ModifierFlags rhs) noexcept
+constexpr ModifierFlags operator^(ModifierFlags lhs, ModifierFlags rhs) noexcept
 {
 	return static_cast<ModifierFlags>(
 	    static_cast<std::underlying_type_t<ModifierFlags>>(lhs) ^ static_cast<std::underlying_type_t<ModifierFlags>>(rhs));
 }
 
-[[nodiscard]] constexpr ModifierFlags operator~(ModifierFlags flags) noexcept
+constexpr ModifierFlags operator~(ModifierFlags flags) noexcept
 {
 	return static_cast<ModifierFlags>(~static_cast<std::underlying_type_t<ModifierFlags>>(flags));
 }
@@ -97,13 +97,13 @@ constexpr ModifierFlags& operator^=(ModifierFlags& lhs, ModifierFlags rhs) noexc
 // =============================================================================
 
 /// Checks if all specified modifier flags are set.
-[[nodiscard]] constexpr bool HasAllFlags(ModifierFlags flags, ModifierFlags test) noexcept
+constexpr bool HasAllFlags(ModifierFlags flags, ModifierFlags test) noexcept
 {
 	return (flags & test) == test;
 }
 
 /// Checks if any of the specified modifier flags are set.
-[[nodiscard]] constexpr bool HasAnyFlag(ModifierFlags flags, ModifierFlags test) noexcept
+constexpr bool HasAnyFlag(ModifierFlags flags, ModifierFlags test) noexcept
 {
 	return (flags & test) != ModifierFlags::None;
 }

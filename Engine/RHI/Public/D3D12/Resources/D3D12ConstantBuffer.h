@@ -62,23 +62,23 @@ template <typename T> class D3D12ConstantBuffer
 
 	// Returns the GPU virtual address for root CBV binding (SetGraphicsRootConstantBufferView)
 	// This is the preferred binding method for frequently-updated constant buffers.
-	[[nodiscard]] D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const noexcept
+	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const noexcept
 	{
 		return m_resource ? m_resource->GetGPUVirtualAddress() : 0;
 	}
 
 	// Returns the GPU descriptor handle for descriptor table binding
 	// Use this only when binding via descriptor tables, not for root CBVs.
-	[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_cbvHandle.GetGPU(); }
+	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_cbvHandle.GetGPU(); }
 
 	// Returns the CPU descriptor handle for descriptor heap management
-	[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_cbvHandle.GetCPU(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_cbvHandle.GetCPU(); }
 
 	// Returns the aligned size of the backing constant buffer in bytes (256-byte aligned)
-	[[nodiscard]] UINT GetSizeInBytes() const noexcept { return m_constantBufferSize; }
+	UINT GetSizeInBytes() const noexcept { return m_constantBufferSize; }
 
 	// Returns true if the buffer resource is valid and mapped
-	[[nodiscard]] bool IsValid() const noexcept { return m_resource != nullptr && m_mappedData != nullptr; }
+	bool IsValid() const noexcept { return m_resource != nullptr && m_mappedData != nullptr; }
 
 	// No copy or move allowed, strict ownership
 	D3D12ConstantBuffer(const D3D12ConstantBuffer&) = delete;

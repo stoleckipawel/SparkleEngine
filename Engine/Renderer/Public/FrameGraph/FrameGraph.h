@@ -81,9 +81,9 @@ class SPARKLE_RENDERER_API FrameGraph
 	// Accessors
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] std::size_t GetPassCount() const noexcept { return m_passes.size(); }
-	[[nodiscard]] D3D12SwapChain* GetSwapChain() const noexcept { return m_swapChain; }
-	[[nodiscard]] D3D12DepthStencil* GetDepthStencil() const noexcept { return m_depthStencil; }
+	std::size_t GetPassCount() const noexcept { return m_passes.size(); }
+	D3D12SwapChain* GetSwapChain() const noexcept { return m_swapChain; }
+	D3D12DepthStencil* GetDepthStencil() const noexcept { return m_depthStencil; }
 
   private:
 	std::vector<std::unique_ptr<RenderPass>> m_passes;

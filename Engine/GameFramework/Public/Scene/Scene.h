@@ -56,8 +56,8 @@ class SPARKLE_ENGINE_API Scene final
 	// Camera
 	// ========================================================================
 
-	[[nodiscard]] GameCamera& GetCamera() noexcept;
-	[[nodiscard]] const GameCamera& GetCamera() const noexcept;
+	GameCamera& GetCamera() noexcept;
+	const GameCamera& GetCamera() const noexcept;
 
 	// ========================================================================
 	// Level Loading
@@ -70,7 +70,7 @@ class SPARKLE_ENGINE_API Scene final
 	void Clear();
 
 	/// Returns the name of the currently loaded level (empty if none).
-	[[nodiscard]] const std::string& GetCurrentLevelName() const noexcept { return m_currentLevelName; }
+	const std::string& GetCurrentLevelName() const noexcept { return m_currentLevelName; }
 
 	// ========================================================================
 	// Asset Loading
@@ -82,7 +82,7 @@ class SPARKLE_ENGINE_API Scene final
 	bool LoadGltf(const std::filesystem::path& filePath);
 
 	/// Returns materials loaded from the last glTF import.
-	[[nodiscard]] const std::vector<MaterialDesc>& GetLoadedMaterials() const noexcept { return m_loadedMaterials; }
+	const std::vector<MaterialDesc>& GetLoadedMaterials() const noexcept { return m_loadedMaterials; }
 
 	// ========================================================================
 	// Mesh Management
@@ -95,8 +95,8 @@ class SPARKLE_ENGINE_API Scene final
 	// Accessors
 	// ========================================================================
 
-	[[nodiscard]] const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const noexcept { return m_meshes; }
-	[[nodiscard]] bool HasMeshes() const noexcept { return !m_meshes.empty(); }
+	const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const noexcept { return m_meshes; }
+	bool HasMeshes() const noexcept { return !m_meshes.empty(); }
 
   private:
 	void LoadMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem);

@@ -42,13 +42,13 @@ class SPARKLE_ENGINE_API AssetSystem final
 	// Root Path Accessors
 	// =========================================================================
 
-	[[nodiscard]] const std::filesystem::path& GetProjectPath() const noexcept { return m_projectPath; }
-	[[nodiscard]] const std::filesystem::path& GetProjectAssetsPath() const noexcept { return m_projectAssetsPath; }
-	[[nodiscard]] const std::filesystem::path& GetEnginePath() const noexcept { return m_enginePath; }
-	[[nodiscard]] const std::filesystem::path& GetEngineAssetsPath() const noexcept { return m_engineAssetsPath; }
+	const std::filesystem::path& GetProjectPath() const noexcept { return m_projectPath; }
+	const std::filesystem::path& GetProjectAssetsPath() const noexcept { return m_projectAssetsPath; }
+	const std::filesystem::path& GetEnginePath() const noexcept { return m_enginePath; }
+	const std::filesystem::path& GetEngineAssetsPath() const noexcept { return m_engineAssetsPath; }
 
-	[[nodiscard]] const std::filesystem::path& GetWorkingDirectory() const noexcept { return m_workingDirectory; }
-	[[nodiscard]] const std::filesystem::path& GetExecutableDirectory() const noexcept { return m_executableDirectory; }
+	const std::filesystem::path& GetWorkingDirectory() const noexcept { return m_workingDirectory; }
+	const std::filesystem::path& GetExecutableDirectory() const noexcept { return m_executableDirectory; }
 
 	// =========================================================================
 	// Path Accessors
@@ -56,16 +56,16 @@ class SPARKLE_ENGINE_API AssetSystem final
 
 	// Returns the directory path for a specific asset type.
 	// When root is Any: returns Project path if available, otherwise Engine.
-	[[nodiscard]] const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root = PathRoot::Any) const noexcept;
 
-	[[nodiscard]] const std::filesystem::path& GetShaderPath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetTexturePath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetMeshPath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetMaterialPath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetScenePath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetAudioPath(PathRoot root = PathRoot::Any) const noexcept;
-	[[nodiscard]] const std::filesystem::path& GetFontPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetShaderPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetTexturePath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetMeshPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetMaterialPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetScenePath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetAudioPath(PathRoot root = PathRoot::Any) const noexcept;
+	const std::filesystem::path& GetFontPath(PathRoot root = PathRoot::Any) const noexcept;
 
 	// =========================================================================
 	// Path Resolution
@@ -73,24 +73,24 @@ class SPARKLE_ENGINE_API AssetSystem final
 
 	// Resolves a virtual path to an absolute physical path.
 	// Searches Project first, then Engine. Returns nullopt if not found.
-	[[nodiscard]] std::optional<std::filesystem::path> ResolvePath(const std::filesystem::path& virtualPath, AssetType type) const;
+	std::optional<std::filesystem::path> ResolvePath(const std::filesystem::path& virtualPath, AssetType type) const;
 
 	// Resolves a virtual path to an absolute physical path.
 	// Fatals if the asset cannot be found. Use when the asset is required.
-	[[nodiscard]] std::filesystem::path ResolvePathValidated(const std::filesystem::path& virtualPath, AssetType type) const;
+	std::filesystem::path ResolvePathValidated(const std::filesystem::path& virtualPath, AssetType type) const;
 
 	// =========================================================================
 	// Output Paths
 	// =========================================================================
 
-	[[nodiscard]] const std::filesystem::path& GetShaderSymbolsOutputPath() const noexcept { return m_shaderSymbolsOutputPath; }
+	const std::filesystem::path& GetShaderSymbolsOutputPath() const noexcept { return m_shaderSymbolsOutputPath; }
 
 	// =========================================================================
 	// Queries
 	// =========================================================================
 
-	[[nodiscard]] bool HasProjectAssets() const noexcept { return !m_projectAssetsPath.empty(); }
-	[[nodiscard]] bool HasEngineAssets() const noexcept { return !m_engineAssetsPath.empty(); }
+	bool HasProjectAssets() const noexcept { return !m_projectAssetsPath.empty(); }
+	bool HasEngineAssets() const noexcept { return !m_engineAssetsPath.empty(); }
 
   private:
 	void DiscoverPaths();
@@ -98,7 +98,7 @@ class SPARKLE_ENGINE_API AssetSystem final
 	void InitializeOutputPaths();
 	void ValidatePaths();
 
-	[[nodiscard]] std::optional<std::filesystem::path> TryResolveIn(
+	std::optional<std::filesystem::path> TryResolveIn(
 	    const std::filesystem::path& searchDir,
 	    const std::filesystem::path& relativePath,
 	    AssetType type) const;

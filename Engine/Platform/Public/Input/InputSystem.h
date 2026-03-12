@@ -99,7 +99,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	// =========================================================================
 
 	/// Creates an InputSystem with the appropriate platform backend auto-detected.
-	[[nodiscard]] static std::unique_ptr<InputSystem> Create();
+	static std::unique_ptr<InputSystem> Create();
 
 	// =========================================================================
 	// Construction
@@ -163,7 +163,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	// =========================================================================
 
 	/// Returns the current pollable input state (read-only).
-	[[nodiscard]] const InputState& GetState() const noexcept { return m_State; }
+	const InputState& GetState() const noexcept { return m_State; }
 
 	// =========================================================================
 	// Layer Control
@@ -174,10 +174,10 @@ class SPARKLE_PLATFORM_API InputSystem
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
 
 	/// Returns true if the specified layer is enabled.
-	[[nodiscard]] bool IsLayerEnabled(InputLayer Layer) const noexcept;
+	bool IsLayerEnabled(InputLayer Layer) const noexcept;
 
 	/// Returns the highest priority (lowest value) enabled layer.
-	[[nodiscard]] InputLayer GetActiveLayer() const noexcept;
+	InputLayer GetActiveLayer() const noexcept;
 
 	// =========================================================================
 	// Callback Subscription
@@ -188,25 +188,25 @@ class SPARKLE_PLATFORM_API InputSystem
 	/// @param Layer    Input layer for priority filtering
 	/// @param Mode     Immediate (in WndProc) or Deferred (ProcessDeferredEvents)
 	/// @return Handle for unsubscription
-	[[nodiscard]] EventHandle SubscribeKeyboard(
+	EventHandle SubscribeKeyboard(
 	    KeyboardCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
 	/// Subscribes to mouse button events.
-	[[nodiscard]] EventHandle SubscribeMouseButton(
+	EventHandle SubscribeMouseButton(
 	    MouseButtonCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
 	/// Subscribes to mouse move events.
-	[[nodiscard]] EventHandle SubscribeMouseMove(
+	EventHandle SubscribeMouseMove(
 	    MouseMoveCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
 
 	/// Subscribes to mouse wheel events.
-	[[nodiscard]] EventHandle SubscribeMouseWheel(
+	EventHandle SubscribeMouseWheel(
 	    MouseWheelCallback Callback,
 	    InputLayer Layer = InputLayer::Gameplay,
 	    DispatchMode Mode = DispatchMode::Immediate);
@@ -248,7 +248,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	void ReleaseMouse();
 
 	/// Returns true if mouse is currently captured.
-	[[nodiscard]] bool IsMouseCaptured() const noexcept;
+	bool IsMouseCaptured() const noexcept;
 
 	/// Hides the cursor.
 	void HideCursor();
@@ -257,7 +257,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	void ShowCursor();
 
 	/// Returns true if cursor is currently hidden.
-	[[nodiscard]] bool IsCursorHidden() const noexcept;
+	bool IsCursorHidden() const noexcept;
 
 	/// Sets cursor visibility (alias for Show/HideCursor).
 	void SetCursorVisibility(bool bVisible);
@@ -297,22 +297,22 @@ class SPARKLE_PLATFORM_API InputSystem
 	// =========================================================================
 
 	/// Generates a unique callback handle ID.
-	[[nodiscard]] uint32_t GenerateCallbackId();
+	uint32_t GenerateCallbackId();
 
 	/// Checks if a callback should fire based on layer state.
-	[[nodiscard]] bool ShouldDispatchToLayer(InputLayer Layer) const noexcept;
+	bool ShouldDispatchToLayer(InputLayer Layer) const noexcept;
 
 	// -------------------------------------------------------------------------
 	// Tuple Accessors
 	// -------------------------------------------------------------------------
 
 	/// Gets the callback vector for a specific event type.
-	template <typename TEvent> [[nodiscard]] std::vector<CallbackEntry<TEvent>>& GetCallbacks();
+	template <typename TEvent> std::vector<CallbackEntry<TEvent>>& GetCallbacks();
 
-	template <typename TEvent> [[nodiscard]] const std::vector<CallbackEntry<TEvent>>& GetCallbacks() const;
+	template <typename TEvent> const std::vector<CallbackEntry<TEvent>>& GetCallbacks() const;
 
 	/// Gets the deferred queue for a specific event type.
-	template <typename TEvent> [[nodiscard]] std::vector<TEvent>& GetDeferredQueue();
+	template <typename TEvent> std::vector<TEvent>& GetDeferredQueue();
 
 	// -------------------------------------------------------------------------
 	// Template Dispatch Helpers (reduces code duplication)

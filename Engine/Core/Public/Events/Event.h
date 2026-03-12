@@ -69,7 +69,7 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	/// Adds a listener callback. Returns handle for later removal.
 	/// @param Callback The function to call when event is broadcast.
 	/// @return Valid handle, or invalid handle if capacity exceeded.
-	[[nodiscard]] EventHandle Add(CallbackType Callback) noexcept
+	EventHandle Add(CallbackType Callback) noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)
 		{
@@ -134,7 +134,7 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	// =========================================================================
 
 	/// Returns true if any listeners are registered.
-	[[nodiscard]] bool IsBound() const noexcept
+	bool IsBound() const noexcept
 	{
 		for (std::size_t i = 0; i < Capacity; ++i)
 		{
@@ -145,7 +145,7 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	}
 
 	/// Returns the number of active subscriptions.
-	[[nodiscard]] std::size_t GetBoundCount() const noexcept
+	std::size_t GetBoundCount() const noexcept
 	{
 		std::size_t Count = 0;
 		for (std::size_t i = 0; i < Capacity; ++i)
@@ -157,7 +157,7 @@ template <typename... Args, std::size_t Capacity> class Event<void(Args...), Cap
 	}
 
 	/// Returns the maximum number of subscriptions this event can hold.
-	[[nodiscard]] static constexpr std::size_t GetCapacity() noexcept { return Capacity; }
+	static constexpr std::size_t GetCapacity() noexcept { return Capacity; }
 
   private:
 	// -------------------------------------------------------------------------

@@ -27,11 +27,11 @@ struct SPARKLE_CORE_API EventHandle
 	std::uint32_t Id = 0;  ///< Unique identifier (0 = invalid)
 
 	/// Returns true if handle points to a valid subscription.
-	[[nodiscard]] bool IsValid() const noexcept { return Id != 0; }
+	bool IsValid() const noexcept { return Id != 0; }
 
 	/// Marks this handle as invalid.
 	void Invalidate() noexcept { Id = 0; }
 
-	[[nodiscard]] bool operator==(const EventHandle& Other) const noexcept { return Id == Other.Id; }
-	[[nodiscard]] bool operator!=(const EventHandle& Other) const noexcept { return Id != Other.Id; }
+	bool operator==(const EventHandle& Other) const noexcept { return Id == Other.Id; }
+	bool operator!=(const EventHandle& Other) const noexcept { return Id != Other.Id; }
 };

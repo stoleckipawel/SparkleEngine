@@ -35,31 +35,31 @@ namespace Engine::FileSystem
 	// Path Normalization
 	// =========================================================================
 
-	[[nodiscard]] std::filesystem::path NormalizePath(const std::filesystem::path& path);
+	std::filesystem::path NormalizePath(const std::filesystem::path& path);
 
 	// =========================================================================
 	// Directory Queries
 	// =========================================================================
 
-	[[nodiscard]] std::filesystem::path GetExecutableDirectory();
+	std::filesystem::path GetExecutableDirectory();
 
 	// =========================================================================
 	// Marker-Based Discovery
 	// =========================================================================
 
 	// Walks up directory tree from startDir looking for a marker file.
-	[[nodiscard]] std::optional<std::filesystem::path> FindAncestorWithMarker(
+	std::optional<std::filesystem::path> FindAncestorWithMarker(
 	    const std::filesystem::path& startDir,
 	    std::string_view markerFileName,
 	    uint32_t maxDepth = 32);
 
 	// Discovers workspace root (.sparkle marker).
-	[[nodiscard]] std::optional<std::filesystem::path> DiscoverWorkspaceRoot();
+	std::optional<std::filesystem::path> DiscoverWorkspaceRoot();
 
 	// Discovers engine root (.sparkle-engine marker).
-	[[nodiscard]] std::optional<std::filesystem::path> DiscoverEngineRoot();
+	std::optional<std::filesystem::path> DiscoverEngineRoot();
 
 	// Discovers project root (.sparkle-project marker).
-	[[nodiscard]] std::optional<std::filesystem::path> DiscoverProjectRoot();
+	std::optional<std::filesystem::path> DiscoverProjectRoot();
 
 }  // namespace Engine::FileSystem

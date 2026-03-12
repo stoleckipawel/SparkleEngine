@@ -50,8 +50,8 @@ class SPARKLE_ENGINE_API ImportedMesh final : public Mesh
 	// World Matrix Override
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] DirectX::XMMATRIX GetWorldMatrix() const noexcept override;
-	[[nodiscard]] DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept override;
+	DirectX::XMMATRIX GetWorldMatrix() const noexcept override;
+	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept override;
 
   protected:
 	// -------------------------------------------------------------------------

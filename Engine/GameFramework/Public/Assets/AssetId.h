@@ -49,28 +49,28 @@ class AssetId final
 
 	// Returns the underlying 64-bit hash value.
 	// Use this for serialization, switch statements, or when raw hash is needed.
-	[[nodiscard]] constexpr uint64_t GetHash() const noexcept { return m_hash; }
+	constexpr uint64_t GetHash() const noexcept { return m_hash; }
 
 	// Returns true if this ID represents a valid asset (non-zero hash).
 	// An empty string hashes to non-zero, so only default-constructed IDs are invalid.
-	[[nodiscard]] constexpr bool IsValid() const noexcept { return m_hash != 0; }
+	constexpr bool IsValid() const noexcept { return m_hash != 0; }
 
 	// Enables `if (assetId)` syntax for validity checks.
-	[[nodiscard]] constexpr explicit operator bool() const noexcept { return IsValid(); }
+	constexpr explicit operator bool() const noexcept { return IsValid(); }
 
 #if defined(_DEBUG)
 	// Returns the original string used to create this ID (debug builds only).
 	// Useful for logging, debugging, and collision detection.
-	[[nodiscard]] constexpr std::string_view GetDebugName() const noexcept { return m_debugName; }
+	constexpr std::string_view GetDebugName() const noexcept { return m_debugName; }
 #endif
 
 	// Equality comparison. Two AssetIds are equal if their hashes match.
 	// Using `= default` generates optimal code and enables constexpr comparison.
-	[[nodiscard]] constexpr bool operator==(const AssetId& other) const noexcept = default;
+	constexpr bool operator==(const AssetId& other) const noexcept = default;
 
 	// Three-way comparison for ordered containers (std::map, std::set).
 	// Using `= default` generates optimal code comparing m_hash directly.
-	[[nodiscard]] constexpr auto operator<=>(const AssetId& other) const noexcept = default;
+	constexpr auto operator<=>(const AssetId& other) const noexcept = default;
 
   private:
 	uint64_t m_hash = 0;
@@ -85,7 +85,7 @@ class AssetId final
 // std::hash specialization enables AssetId as key in std::unordered_map/set.
 template <> struct std::hash<AssetId>
 {
-	[[nodiscard]] constexpr size_t operator()(const AssetId& id) const noexcept { return static_cast<size_t>(id.GetHash()); }
+	constexpr size_t operator()(const AssetId& id) const noexcept { return static_cast<size_t>(id.GetHash()); }
 };
 
 // =============================================================================
@@ -102,7 +102,7 @@ template <> struct std::hash<AssetId>
 // NOTE: This only works with string literals. For runtime strings, use the
 //       AssetId(std::string_view) constructor directly.
 //
-[[nodiscard]] consteval AssetId operator""_asset(const char* str, size_t len) noexcept
+consteval AssetId operator""_asset(const char* str, size_t len) noexcept
 {
 	return AssetId(std::string_view(str, len));
 }

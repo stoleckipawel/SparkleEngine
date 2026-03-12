@@ -112,7 +112,7 @@ class SPARKLE_RENDERER_API Renderer final
 	// -------------------------------------------------------------------------
 
 	/// Builds a SceneView from owned subsystems for the current frame.
-	[[nodiscard]] SceneView BuildSceneView() const;
+	SceneView BuildSceneView() const;
 
 	/// Initializes viewport and camera references for the SceneView.
 	void InitializeSceneView(SceneView& view) const;

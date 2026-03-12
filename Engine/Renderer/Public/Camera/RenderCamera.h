@@ -59,21 +59,21 @@ class SPARKLE_RENDERER_API RenderCamera final
 	/// Forces a full matrix rebuild regardless of dirty state.
 	void ForceUpdate() noexcept;
 
-	[[nodiscard]] DirectX::XMMATRIX GetViewMatrix() const noexcept;
-	[[nodiscard]] DirectX::XMMATRIX GetProjectionMatrix() const noexcept;
-	[[nodiscard]] DirectX::XMMATRIX GetViewProjectionMatrix() const noexcept;
+	DirectX::XMMATRIX GetViewMatrix() const noexcept;
+	DirectX::XMMATRIX GetProjectionMatrix() const noexcept;
+	DirectX::XMMATRIX GetViewProjectionMatrix() const noexcept;
 
 	/// Returns the view frustum for culling operations.
-	[[nodiscard]] const Frustum& GetFrustum() const noexcept { return m_frustum; }
+	const Frustum& GetFrustum() const noexcept { return m_frustum; }
 
 	/// Camera transform data (cached from GameCamera).
-	[[nodiscard]] DirectX::XMFLOAT3 GetPosition() const noexcept;
-	[[nodiscard]] DirectX::XMFLOAT3 GetDirection() const noexcept;
-	[[nodiscard]] float GetNearZ() const noexcept;
-	[[nodiscard]] float GetFarZ() const noexcept;
+	DirectX::XMFLOAT3 GetPosition() const noexcept;
+	DirectX::XMFLOAT3 GetDirection() const noexcept;
+	float GetNearZ() const noexcept;
+	float GetFarZ() const noexcept;
 
 	/// Returns view constant buffer data for GPU upload.
-	[[nodiscard]] PerViewConstantBufferData GetViewConstantBufferData() const noexcept;
+	PerViewConstantBufferData GetViewConstantBufferData() const noexcept;
 
   private:
 	/// Rebuilds all matrices and frustum from GameCamera state.

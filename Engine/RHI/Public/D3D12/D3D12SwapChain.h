@@ -86,44 +86,44 @@ class D3D12SwapChain final
 	// ========================================================================
 
 	/// Returns the CPU descriptor handle for a specific buffer index.
-	[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
 	/// Returns the CPU descriptor handle for the current back buffer.
-	[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return GetCPUHandle(m_frameInFlightIndex); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return GetCPUHandle(m_frameInFlightIndex); }
 
 	/// Returns the current frame-in-flight index (0 to FramesInFlight-1).
-	[[nodiscard]] UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
+	UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
 
 	/// Updates frame index from swap chain (call after Present).
 	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = m_swapChain->GetCurrentBackBufferIndex(); }
 
 	/// Returns the waitable object handle for frame pacing.
-	[[nodiscard]] HANDLE GetWaitableObject() const { return m_waitableObject; }
+	HANDLE GetWaitableObject() const { return m_waitableObject; }
 
 	/// Returns the default viewport matching window dimensions.
-	[[nodiscard]] D3D12_VIEWPORT GetDefaultViewport() const;
+	D3D12_VIEWPORT GetDefaultViewport() const;
 
 	/// Returns the default scissor rect matching window dimensions.
-	[[nodiscard]] D3D12_RECT GetDefaultScissorRect() const;
+	D3D12_RECT GetDefaultScissorRect() const;
 
 	/// Returns the back buffer format from engine settings.
-	[[nodiscard]] DXGI_FORMAT GetBackBufferFormat() const { return RHISettings::BackBufferFormat; }
+	DXGI_FORMAT GetBackBufferFormat() const { return RHISettings::BackBufferFormat; }
 
 	// ========================================================================
 	// Feature Queries
 	// ========================================================================
 
 	/// Returns DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING if supported, else 0.
-	[[nodiscard]] UINT GetAllowTearingFlag() const;
+	UINT GetAllowTearingFlag() const;
 
 	/// Returns waitable object flag if multiple frames in flight.
-	[[nodiscard]] UINT GetFrameLatencyWaitableFlag() const
+	UINT GetFrameLatencyWaitableFlag() const
 	{
 		return (RHISettings::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
 	}
 
 	/// Returns combined swap chain flags for creation.
-	[[nodiscard]] UINT ComputeSwapChainFlags() const;
+	UINT ComputeSwapChainFlags() const;
 
   private:
 	// ------------------------------------------------------------------------

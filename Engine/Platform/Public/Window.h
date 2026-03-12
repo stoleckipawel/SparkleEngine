@@ -88,14 +88,14 @@ class SPARKLE_PLATFORM_API Window final
 	// Accessors
 	// =========================================================================
 
-	[[nodiscard]] HWND GetHWND() const noexcept { return m_hWnd; }
+	HWND GetHWND() const noexcept { return m_hWnd; }
 
-	[[nodiscard]] uint32_t GetWidth() const noexcept;
-	[[nodiscard]] uint32_t GetHeight() const noexcept;
+	uint32_t GetWidth() const noexcept;
+	uint32_t GetHeight() const noexcept;
 
-	[[nodiscard]] bool ShouldClose() const noexcept { return m_bShouldClose; }
-	[[nodiscard]] bool IsFullScreen() const noexcept { return m_bIsFullScreen; }
-	[[nodiscard]] bool IsMinimized() const noexcept { return m_bIsMinimized; }
+	bool ShouldClose() const noexcept { return m_bShouldClose; }
+	bool IsFullScreen() const noexcept { return m_bIsFullScreen; }
+	bool IsMinimized() const noexcept { return m_bIsMinimized; }
 
 	// =========================================================================
 	// State Modifiers

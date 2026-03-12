@@ -21,9 +21,9 @@ using namespace DirectX;
 
 namespace GltfLoaderInternal
 {
-	[[nodiscard]] XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
-	[[nodiscard]] MeshData ExtractPrimitive(const cgltf_primitive& primitive);
-	[[nodiscard]] std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data);
+	XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
+	MeshData ExtractPrimitive(const cgltf_primitive& primitive);
+	std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data);
 
 	struct CgltfGuard
 	{
@@ -31,7 +31,7 @@ namespace GltfLoaderInternal
 		~CgltfGuard() { cgltf_free(ptr); }
 	};
 
-	[[nodiscard]] bool ValidateInputPath(const std::filesystem::path& filePath, GltfLoader::LoadResult& result)
+	bool ValidateInputPath(const std::filesystem::path& filePath, GltfLoader::LoadResult& result)
 	{
 		if (std::filesystem::exists(filePath))
 		{
@@ -43,7 +43,7 @@ namespace GltfLoaderInternal
 		return false;
 	}
 
-	[[nodiscard]] bool ParseGltfFile(
+	bool ParseGltfFile(
 	    cgltf_options& options,
 	    const std::string& pathStr,
 	    cgltf_data*& outData,
@@ -60,7 +60,7 @@ namespace GltfLoaderInternal
 		return false;
 	}
 
-	[[nodiscard]] bool LoadGltfBuffers(
+	bool LoadGltfBuffers(
 	    cgltf_options& options,
 	    cgltf_data* data,
 	    const std::string& pathStr,
@@ -99,7 +99,7 @@ namespace GltfLoaderInternal
 		result.materials.push_back(std::move(defaultMat));
 	}
 
-	[[nodiscard]] std::size_t CountTotalPrimitives(const cgltf_data* data)
+	std::size_t CountTotalPrimitives(const cgltf_data* data)
 	{
 		std::size_t totalPrimitives = 0;
 		for (cgltf_size n = 0; n < data->nodes_count; ++n)
@@ -153,7 +153,7 @@ namespace GltfLoaderInternal
 
 	// Typed read from a cgltf accessor at a given element index.
 	// Returns a zeroed value if the accessor is null or index is out of range.
-	template <typename T> [[nodiscard]] T ReadAccessorElement(const cgltf_accessor* accessor, cgltf_size index)
+	template <typename T> T ReadAccessorElement(const cgltf_accessor* accessor, cgltf_size index)
 	{
 		T result{};
 		if (accessor && index < accessor->count)
@@ -164,7 +164,7 @@ namespace GltfLoaderInternal
 	}
 
 	// Finds the accessor for a named attribute in a primitive (POSITION, NORMAL, etc.)
-	[[nodiscard]] const cgltf_accessor* FindAttribute(const cgltf_primitive& primitive, cgltf_attribute_type type)
+	const cgltf_accessor* FindAttribute(const cgltf_primitive& primitive, cgltf_attribute_type type)
 	{
 		for (cgltf_size i = 0; i < primitive.attributes_count; ++i)
 		{
@@ -191,7 +191,7 @@ namespace GltfLoaderInternal
 
 	// Computes the world transform for a node by walking up the parent chain.
 	// cgltf provides local transforms; we accumulate to world space.
-	[[nodiscard]] XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node)
+	XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node)
 	{
 		XMMATRIX world = XMMatrixIdentity();
 
@@ -221,7 +221,7 @@ namespace GltfLoaderInternal
 	}
 
 	// Resolves the file path for a cgltf image relative to the glTF file directory.
-	[[nodiscard]] std::filesystem::path ResolveImagePath(const cgltf_image* image, const std::filesystem::path& gltfDirectory)
+	std::filesystem::path ResolveImagePath(const cgltf_image* image, const std::filesystem::path& gltfDirectory)
 	{
 		if (!image || !image->uri)
 			return {};
@@ -344,7 +344,7 @@ namespace GltfLoaderInternal
 	}
 
 	// Resolves the material index for a primitive. Returns 0 (default) if unassigned.
-	[[nodiscard]] std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data)
+	std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data)
 	{
 		if (!primitive.material)
 			return 0;
@@ -355,7 +355,7 @@ namespace GltfLoaderInternal
 	}
 
 	// Extracts vertex and index data for a single glTF primitive.
-	[[nodiscard]] MeshData ExtractPrimitive(const cgltf_primitive& primitive)
+	MeshData ExtractPrimitive(const cgltf_primitive& primitive)
 	{
 		const cgltf_accessor* positions = FindAttribute(primitive, cgltf_attribute_type_position);
 		const cgltf_accessor* normals = FindAttribute(primitive, cgltf_attribute_type_normal);

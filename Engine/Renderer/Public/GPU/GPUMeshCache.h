@@ -49,7 +49,7 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 
 	// Returns cached GPUMesh or uploads new one. Never returns null on success.
 	// Returns nullptr if upload fails.
-	[[nodiscard]] GPUMesh* GetOrUpload(const Mesh& cpuMesh);
+	GPUMesh* GetOrUpload(const Mesh& cpuMesh);
 
 	// Releases all cached GPU meshes
 	void Clear() noexcept;
@@ -58,8 +58,8 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	// Queries
 	// -------------------------------------------------------------------------
 
-	[[nodiscard]] std::size_t GetCachedCount() const noexcept { return m_cache.size(); }
-	[[nodiscard]] bool Contains(const Mesh& cpuMesh) const noexcept;
+	std::size_t GetCachedCount() const noexcept { return m_cache.size(); }
+	bool Contains(const Mesh& cpuMesh) const noexcept;
 
   private:
 	D3D12Rhi* m_rhi;

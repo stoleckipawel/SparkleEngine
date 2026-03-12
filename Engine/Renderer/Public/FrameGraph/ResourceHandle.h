@@ -57,26 +57,26 @@ struct ResourceHandle
 	// -------------------------------------------------------------------------
 
 	/// Creates an invalid handle.
-	[[nodiscard]] static constexpr ResourceHandle Invalid() noexcept { return ResourceHandle{INVALID_INDEX}; }
+	static constexpr ResourceHandle Invalid() noexcept { return ResourceHandle{INVALID_INDEX}; }
 
 	/// Creates a back buffer handle.
-	[[nodiscard]] static constexpr ResourceHandle BackBuffer() noexcept { return ResourceHandle{BACKBUFFER_INDEX}; }
+	static constexpr ResourceHandle BackBuffer() noexcept { return ResourceHandle{BACKBUFFER_INDEX}; }
 
 	/// Creates a depth buffer handle.
-	[[nodiscard]] static constexpr ResourceHandle DepthBuffer() noexcept { return ResourceHandle{DEPTH_BUFFER_INDEX}; }
+	static constexpr ResourceHandle DepthBuffer() noexcept { return ResourceHandle{DEPTH_BUFFER_INDEX}; }
 
 	// -------------------------------------------------------------------------
 	// Validation
 	// -------------------------------------------------------------------------
 
 	/// Returns true if this handle refers to a valid resource.
-	[[nodiscard]] constexpr bool IsValid() const noexcept { return index != INVALID_INDEX; }
+	constexpr bool IsValid() const noexcept { return index != INVALID_INDEX; }
 
 	/// Returns true if this is the back buffer handle.
-	[[nodiscard]] constexpr bool IsBackBuffer() const noexcept { return index == BACKBUFFER_INDEX; }
+	constexpr bool IsBackBuffer() const noexcept { return index == BACKBUFFER_INDEX; }
 
 	/// Returns true if this is the depth buffer handle.
-	[[nodiscard]] constexpr bool IsDepthBuffer() const noexcept { return index == DEPTH_BUFFER_INDEX; }
+	constexpr bool IsDepthBuffer() const noexcept { return index == DEPTH_BUFFER_INDEX; }
 
 	// -------------------------------------------------------------------------
 	// Comparison (C++20 three-way)

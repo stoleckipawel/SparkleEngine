@@ -87,7 +87,7 @@ class RenderPass
 	// -------------------------------------------------------------------------
 
 	/// Returns the pass name for debugging/profiling.
-	[[nodiscard]] const std::string& GetName() const noexcept { return m_name; }
+	const std::string& GetName() const noexcept { return m_name; }
 
   protected:
 	std::string m_name;

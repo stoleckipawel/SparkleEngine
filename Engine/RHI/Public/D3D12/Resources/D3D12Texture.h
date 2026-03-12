@@ -87,7 +87,7 @@ class D3D12Texture
 
 	/// Allocates SRV descriptor and creates the view.
 	void CreateShaderResourceView();
-	[[nodiscard]] D3D12_SHADER_RESOURCE_VIEW_DESC BuildShaderResourceViewDesc() const noexcept;
+	D3D12_SHADER_RESOURCE_VIEW_DESC BuildShaderResourceViewDesc() const noexcept;
 
 	// ------------------------------------------------------------------------
 	// Resources

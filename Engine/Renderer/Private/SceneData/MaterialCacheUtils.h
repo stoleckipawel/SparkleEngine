@@ -21,9 +21,9 @@ enum class MaterialFallbackTexture : std::uint8_t;
 
 namespace MaterialCacheUtils
 {
-	[[nodiscard]] std::uint32_t ResolveMaterialId(std::uint32_t materialId, std::size_t materialCount);
-	[[nodiscard]] bool MaterialDescSetEquals(const std::vector<MaterialDesc>& left, const std::vector<MaterialDesc>& right);
-	[[nodiscard]] const D3D12Texture* ResolveMaterialTexture(
+	std::uint32_t ResolveMaterialId(std::uint32_t materialId, std::size_t materialCount);
+	bool MaterialDescSetEquals(const std::vector<MaterialDesc>& left, const std::vector<MaterialDesc>& right);
+	const D3D12Texture* ResolveMaterialTexture(
 	    TextureManager& textureManager,
 	    const std::optional<std::filesystem::path>& texturePath,
 	    MaterialFallbackTexture fallbackType);

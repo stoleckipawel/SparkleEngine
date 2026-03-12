@@ -48,17 +48,17 @@ class SPARKLE_ENGINE_API Level
 	// ========================================================================
 
 	/// Unique level name used for registry lookup (e.g., "Sponza").
-	[[nodiscard]] virtual std::string_view GetName() const = 0;
+	virtual std::string_view GetName() const = 0;
 
 	/// Human-readable description (e.g., "Sponza Palace — PBR test scene").
-	[[nodiscard]] virtual std::string_view GetDescription() const = 0;
+	virtual std::string_view GetDescription() const = 0;
 
 	// ========================================================================
 	// Description
 	// ========================================================================
 
 	/// Returns a declarative description of the level's content.
-	[[nodiscard]] virtual LevelDesc BuildDescription() const = 0;
+	virtual LevelDesc BuildDescription() const = 0;
 
   protected:
 	Level() = default;

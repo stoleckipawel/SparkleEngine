@@ -25,7 +25,7 @@ namespace Engine
 	namespace Strings
 	{
 		// Trims ASCII whitespace (space, tab, CR, LF) from both ends of a string.
-		[[nodiscard]] constexpr std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
+		constexpr std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
 		{
 			constexpr std::string_view kWhitespace = " \t\r\n";
 			const auto start = str.find_first_not_of(kWhitespace);
@@ -38,7 +38,7 @@ namespace Engine
 		}
 
 		// Removes surrounding double quotes from a string if present.
-		[[nodiscard]] constexpr std::string_view Unquote(std::string_view str) noexcept
+		constexpr std::string_view Unquote(std::string_view str) noexcept
 		{
 			if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
 			{
@@ -48,19 +48,19 @@ namespace Engine
 		}
 
 		// Converts a narrow string to wide string (ASCII range only).
-		[[nodiscard]] inline std::wstring ToWide(std::string_view str)
+		inline std::wstring ToWide(std::string_view str)
 		{
 			return std::wstring(str.begin(), str.end());
 		}
 
 		// Converts a filesystem path to wide string.
-		[[nodiscard]] inline std::wstring ToWide(const std::filesystem::path& path)
+		inline std::wstring ToWide(const std::filesystem::path& path)
 		{
 			return path.wstring();
 		}
 
 		// Converts a wide string to narrow string (ASCII range only).
-		[[nodiscard]] inline std::string ToNarrow(std::wstring_view str)
+		inline std::string ToNarrow(std::wstring_view str)
 		{
 			return std::string(str.begin(), str.end());
 		}

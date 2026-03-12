@@ -48,7 +48,7 @@ struct InputBackendResult
 
 	InputBackendResult() : Keyboard{} {}
 
-	[[nodiscard]] bool IsValid() const noexcept { return Type != InputEventType::None; }
+	bool IsValid() const noexcept { return Type != InputEventType::None; }
 };
 
 // ============================================================================
@@ -61,7 +61,7 @@ class SPARKLE_PLATFORM_API IInputBackend
 	virtual ~IInputBackend() = default;
 
 	/// Translates a native message to an engine input event.
-	[[nodiscard]] virtual InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) = 0;
+	virtual InputBackendResult ProcessMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2) = 0;
 
   protected:
 	IInputBackend() = default;

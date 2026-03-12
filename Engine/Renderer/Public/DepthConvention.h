@@ -73,21 +73,21 @@ class DepthConvention
 
 	// Configuration
 	static void SetMode(DepthMode mode) noexcept;
-	[[nodiscard]] static DepthMode GetMode() noexcept;
-	[[nodiscard]] static bool IsReversedZ() noexcept;
+	static DepthMode GetMode() noexcept;
+	static bool IsReversedZ() noexcept;
 
 	//--------------------------------------------------------------------------
 	// Depth Buffer Configuration
 	//--------------------------------------------------------------------------
 
 	// Value to clear depth buffer to (0.0 for reversed-Z, 1.0 for standard)
-	[[nodiscard]] static float GetClearDepth() noexcept;
+	static float GetClearDepth() noexcept;
 
 	// Depth comparison function for opaque geometry
-	[[nodiscard]] static D3D12_COMPARISON_FUNC GetDepthComparisonLessEqualFunc() noexcept;
+	static D3D12_COMPARISON_FUNC GetDepthComparisonLessEqualFunc() noexcept;
 
 	// Depth comparison function with equality (for depth-equal passes)
-	[[nodiscard]] static D3D12_COMPARISON_FUNC GetDepthComparisonFuncEqual() noexcept;
+	static D3D12_COMPARISON_FUNC GetDepthComparisonFuncEqual() noexcept;
 
 	//--------------------------------------------------------------------------
 	// Projection Matrix Generation (Left-Handed, Z in [0,1])
@@ -95,17 +95,17 @@ class DepthConvention
 
 	// Perspective projection with finite near/far planes.
 	// Automatically applies correct depth mapping based on current mode.
-	[[nodiscard]] static DirectX::XMMATRIX CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept;
+	static DirectX::XMMATRIX CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept;
 
 	//--------------------------------------------------------------------------
 	// Depth Linearization (for shaders / debug visualization)
 	//--------------------------------------------------------------------------
 
 	// Convert NDC depth [0,1] to linear view-space Z
-	[[nodiscard]] static float LinearizeDepth(float ndcDepth, float nearZ, float farZ) noexcept;
+	static float LinearizeDepth(float ndcDepth, float nearZ, float farZ) noexcept;
 
 	// Convert linear view-space Z to NDC depth [0,1]
-	[[nodiscard]] static float DepthToNDC(float linearZ, float nearZ, float farZ) noexcept;
+	static float DepthToNDC(float linearZ, float nearZ, float farZ) noexcept;
 
   private:
 	static DepthMode s_mode;
