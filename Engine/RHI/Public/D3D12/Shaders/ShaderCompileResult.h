@@ -3,24 +3,6 @@
 // ----------------------------------------------------------------------------
 // Encapsulates the output of a shader compilation attempt.
 //
-// USAGE:
-//   auto result = DxcShaderCompiler::Compile(options);
-//   if (result.IsSuccess()) {
-//       auto bytecode = result.GetBytecode();  // For PSO creation
-//   } else {
-//       LOG_ERROR(result.GetErrorMessage());
-//   }
-//
-// DESIGN:
-//   - Owns compiled bytecode and diagnostic messages
-//   - Move-only to prevent accidental bytecode copies
-//   - ShaderBytecode provides non-owning view matching D3D12 layout
-//
-// NOTES:
-//   - Factory methods Success() and Failure() for clean construction
-//   - GetBytecode() returns view; result must outlive usage
-// ============================================================================
-
 #pragma once
 
 #include <string>

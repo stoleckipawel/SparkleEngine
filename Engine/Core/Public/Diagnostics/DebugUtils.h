@@ -2,14 +2,6 @@
 // DebugUtils.h
 // Debug naming utilities for D3D12 objects.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   DebugUtils::SetDebugName(device.Get(), L"MainDevice");
-//   DebugUtils::SetDebugName(buffer, L"VertexBuffer");
-//
-// NOTES:
-//   - SetDebugName calls are compiled out in Release builds
-//   - Works with raw ID3D12Object* and ComPtr<T>
-// ============================================================================
 #pragma once
 
 #include <d3d12.h>
@@ -19,7 +11,6 @@ using Microsoft::WRL::ComPtr;
 
 namespace DebugUtils
 {
-
 	// Set debug name for a raw D3D12 object. No-op in release builds.
 	inline void SetDebugName(ID3D12Object* object, const wchar_t* name) noexcept
 	{

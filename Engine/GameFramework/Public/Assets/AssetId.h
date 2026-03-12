@@ -2,25 +2,6 @@
 // AssetId.h
 // Compile-time and runtime asset identification using FNV-1a 64-bit hashes.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   // Compile-time (zero runtime cost):
-//   constexpr AssetId diffuseId = "textures/brick_diffuse.png"_asset;
-//
-//   // Runtime:
-//   AssetId dynamicId(userProvidedPath);
-//
-//   // As map key:
-//   std::unordered_map<AssetId, TextureHandle> textureCache;
-//
-// DESIGN:
-//   - 8-byte hash provides O(1) lookups instead of string comparisons
-//   - constexpr construction enables compile-time hash computation
-//   - Debug builds store original path string to detect collisions
-//
-// NOTES:
-//   - FNV-1a 64-bit has ~1 in 10^14 collision probability for <100k assets
-//   - Use with asset registries, caches, hot-reload, dependency tracking
-// ============================================================================
 #pragma once
 
 #include "Hash/HashUtils.h"

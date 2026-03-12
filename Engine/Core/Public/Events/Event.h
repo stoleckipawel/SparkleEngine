@@ -3,31 +3,6 @@
 // ----------------------------------------------------------------------------
 // Multicast event dispatcher for decoupled notification broadcasting.
 //
-// USAGE:
-//   Event<void(int, float)> OnValueChanged;
-//   auto handle = OnValueChanged.Add([](int a, float b) { ... });
-//   OnValueChanged.Broadcast(42, 3.14f);
-//   OnValueChanged.Remove(handle);
-//
-// DESIGN:
-//   - Fixed capacity (template parameter) avoids runtime heap allocations
-//   - Stable handles for safe removal from any context
-//   - No RTTI or exceptions
-//
-// INTENDED USE:
-//   Suitable for low-frequency events (settings changes, resize, etc.),
-//   not intended for per-frame high-frequency hot paths.
-//
-// NOTES:
-//   - Default capacity is 8 listeners per event
-//   - Asserts on capacity overflow in debug builds
-//
-// See also:
-//   - EventHandle.h       — Subscription handle
-//   - ScopedEventHandle.h — RAII auto-unsubscribe wrapper
-//
-// ============================================================================
-
 #pragma once
 
 #include "EventHandle.h"

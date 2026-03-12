@@ -5,12 +5,9 @@
 #include "Log.h"
 #include <cstring>
 
-// Uploads data to a GPU-accessible buffer using an upload heap.
-// Returns a ComPtr to the created ID3D12Resource2 buffer.
 // Note: For optimal performance, consider using a default heap and staging resource for large or frequent uploads.
 ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* data, size_t dataSize)
 {
-	// Describe the buffer resource
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
@@ -23,8 +20,6 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	// Create the committed resource in the upload heap
 	ComPtr<ID3D12Resource2> uploadBuffer;
 	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
 	CHECK(rhi.GetDevice()->CreateCommittedResource(
@@ -47,8 +42,6 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 	{
 		std::memcpy(mappedData, data, dataSize);
 	}
-
-	// Unmap with null written range to indicate full range may have changed.
 	uploadBuffer->Unmap(0, nullptr);
 
 	// NOTE: For large or frequent uploads prefer:

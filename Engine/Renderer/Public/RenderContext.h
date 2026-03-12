@@ -8,28 +8,6 @@
 //   clean API for render passes. Centralizes barrier management and creates
 //   an abstraction boundary for future multi-backend support.
 //
-// USAGE:
-//   RenderContext ctx(cmdList);
-//   ctx.SetRootSignature(rootSig);
-//   ctx.SetPipelineState(pso);
-//   ctx.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-//   ctx.BindVertexBuffer(vbView);
-//   ctx.BindIndexBuffer(ibView);
-//   ctx.BindConstantBuffer(0, gpuAddress);
-//   ctx.DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
-//
-// DESIGN:
-//   - Thin wrapper over ID3D12GraphicsCommandList (MVP)
-//   - Passes call semantic methods instead of raw D3D12
-//   - Single point for GPU debugging and validation
-//   - GetNativeCommandList() escape hatch for UI, ImGui, etc.
-//
-// NOTES:
-//   - Created per-frame by Renderer with active command list
-//   - ResourceState enum abstracts D3D12_RESOURCE_STATES
-//   - Future: expand for Vulkan/Metal backends
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
@@ -175,7 +153,7 @@ class SPARKLE_RENDERER_API RenderContext final
 	// -------------------------------------------------------------------------
 
 	/// Returns the underlying D3D12 command list for advanced operations.
-	/// Use sparingly — prefer semantic methods above.
+	/// Use sparingly - prefer semantic methods above.
 	ID3D12GraphicsCommandList* GetNativeCommandList() const noexcept { return m_cmdList; }
 
   private:

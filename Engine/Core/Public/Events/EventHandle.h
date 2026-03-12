@@ -3,13 +3,6 @@
 // ----------------------------------------------------------------------------
 // Opaque handle for event subscription management.
 //
-// USAGE:
-//   EventHandle handle = event.Add([](){ ... });
-//   if (handle.IsValid()) { ... }
-//   event.Remove(handle);
-//
-// ============================================================================
-
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

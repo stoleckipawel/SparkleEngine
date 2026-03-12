@@ -4,29 +4,6 @@
 // Connects InputSystem and Window to GameCamera. Handles WASD movement,
 // mouse look, and aspect ratio updates.
 //
-// USAGE:
-//   CameraController controller(timer, inputSystem, window, camera);
-//   // Each frame:
-//   controller.Update();
-//
-// DESIGN:
-//   - Bridges input/window and camera (camera is pure data)
-//   - Subscribes to input events for mouse capture
-//   - Subscribes to window resize for aspect ratio
-//   - Polls InputState for movement
-//   - Uses ScopedEventHandle for RAII event cleanup
-//
-// CONTROLS:
-//   - WASD: Move forward/left/back/right
-//   - QE: Move up/down
-//   - Right Mouse Button (hold): Enable mouse-look
-//   - Mouse Move (while RMB held): Rotate camera
-//   - Mouse Wheel: Adjust movement speed
-//   - Shift (hold): Sprint
-//   - Escape: Release mouse capture
-//
-// ============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

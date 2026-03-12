@@ -3,28 +3,6 @@
 // ----------------------------------------------------------------------------
 // ImGui integration layer for Win32 and D3D12 backends.
 //
-// USAGE:
-//   UI ui(timer, rhi, window, heapManager, swapChain);
-//   // Each frame:
-//   ui.Update();           // Build draw lists
-//   ui.Render();           // Submit to GPU
-//   // Destructor cleans up
-//
-// DESIGN:
-//   - Wraps ImGui context creation/destruction
-//   - Subscribes to Window's message events (decoupled via observer pattern)
-//   - Manages Win32 input forwarding and DX12 rendering
-//   - Owns UI panels (RendererPanel for settings)
-//
-// THREADING:
-//   All ImGui calls must be made from the main thread where the
-//   device/command list are used. This class is not thread-safe.
-//
-// NOTES:
-//   - Owned by Renderer, receives Timer and D3D12 references
-//   - DPI scaling is applied automatically during initialization
-// ============================================================================
-
 #pragma once
 
 #include "UI/Public/UIAPI.h"

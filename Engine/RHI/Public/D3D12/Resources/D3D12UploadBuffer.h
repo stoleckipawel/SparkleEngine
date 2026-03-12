@@ -3,19 +3,6 @@
 // ----------------------------------------------------------------------------
 // Utility for uploading small data blobs to GPU memory.
 //
-// USAGE:
-//   auto resource = D3D12UploadBuffer::Upload(data, dataSize);
-//
-// DESIGN:
-//   - Creates committed upload-heap resources for each upload
-//   - Suitable for small, infrequent uploads (textures, initial buffers)
-//
-// PERFORMANCE NOTE:
-//   For large or frequent uploads, prefer:
-//   - LinearAllocator for per-frame constant buffers
-//   - Staging to default heap with explicit copy commands
-// ============================================================================
-
 #pragma once
 
 #include <d3d12.h>

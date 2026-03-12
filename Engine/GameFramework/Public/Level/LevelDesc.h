@@ -4,13 +4,6 @@
 // Declarative description of level content. Levels return this data-only
 // structure instead of imperatively loading content into Scene.
 //
-// DESIGN:
-//   - Pure value types (no GPU or Scene dependencies)
-//   - Scene consumes LevelDesc and performs loading
-//   - No camera data here; GameCamera owns camera state
-//
-// ============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -32,7 +25,7 @@ struct SPARKLE_ENGINE_API PrimitiveRequest
 	std::uint32_t seed = 1337;
 };
 
-// Mesh request — unified path for imported and procedural meshes.
+// Mesh request - unified path for imported and procedural meshes.
 enum class AssetSource
 {
 	Imported,

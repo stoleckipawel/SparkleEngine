@@ -4,20 +4,6 @@
 // Central registry for all available levels. Engine registers built-in levels
 // automatically; applications register custom levels at startup.
 //
-// USAGE:
-//   LevelRegistry registry;
-//   registry.Register(std::make_unique<MyCustomLevel>());
-//   Level* level = registry.FindLevel("Sponza");
-//
-// DESIGN:
-//   - Owned object — created and managed by App (no singleton)
-//   - Built-in engine levels registered in constructor (Empty, BasicShapes, Sponza)
-//   - Applications register additional levels before App::Run()
-//   - Duplicate names are rejected with a warning
-//   - Default level name determines what Scene::LoadLevel loads on startup
-//
-// ============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

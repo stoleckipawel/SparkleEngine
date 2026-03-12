@@ -1,23 +1,10 @@
 // =============================================================================
-// MaterialDesc.h — CPU-Side PBR Material Description
+// MaterialDesc.h - CPU-Side PBR Material Description
 // =============================================================================
 //
 // Describes a PBR material loaded from glTF or other asset sources.
-// Pure data — no GPU handles, no rendering dependencies.
+// Pure data - no GPU handles, no rendering dependencies.
 //
-// USAGE:
-//   MaterialDesc desc;
-//   desc.baseColor = {1.0f, 0.5f, 0.2f, 1.0f};
-//   desc.roughness = 0.8f;
-//   if (desc.albedoTexture) { ... load texture ... }
-//
-// NOTES:
-//   - Lives in GameFramework (CPU-only, no Renderer dependency)
-//   - Renderer maps this to its own MaterialData for GPU upload
-//   - Texture fields store relative paths resolved via AssetSystem
-//
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

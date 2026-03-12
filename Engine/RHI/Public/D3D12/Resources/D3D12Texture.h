@@ -3,25 +3,6 @@
 // ----------------------------------------------------------------------------
 // Manages upload and GPU resource creation for 2D textures.
 //
-// USAGE:
-//   D3D12Texture myTex(rhi, std::move(payload), descriptorHeapManager);
-//   auto gpuHandle = myTex.GetGPUHandle();  // Bind to shader
-//
-// DESIGN:
-//   - Consumes a caller-provided TexturePayload
-//   - Creates D3D12 committed resource and upload buffer
-//   - Allocates SRV descriptor from engine's descriptor heap
-//
-// OWNERSHIP:
-//   - Owns an SRV descriptor slot; non-copyable/non-movable to prevent
-//     double-free of descriptor indices
-//   - Destructor frees the descriptor slot
-//
-// NOTES:
-//   - Constructor performs resource creation + upload synchronously
-//   - Upload buffer kept alive until command list execution completes
-// ============================================================================
-
 #pragma once
 
 #include "TexturePayload.h"

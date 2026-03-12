@@ -3,24 +3,6 @@
 // ----------------------------------------------------------------------------
 // Manages D3D12 and DXGI debug/validation layers.
 //
-// USAGE:
-//   // Owned by D3D12Rhi, created before device:
-//   m_debugLayer = std::make_unique<D3D12DebugLayer>();
-//   // After device creation:
-//   m_debugLayer->InitializeInfoQueue(device);
-//   // Destructor handles shutdown and live object reporting
-//
-// DESIGN:
-//   - Only available when ENGINE_GPU_VALIDATION is defined (debug builds)
-//   - Enables SDK validation layers for catching API misuse
-//   - Configures ID3D12InfoQueue filters to control message severity
-//   - Reports live D3D12/DXGI objects at shutdown for leak detection
-//
-// NOTES:
-//   - Owned by D3D12Rhi as a unique_ptr member
-//   - Must be created before device and destroyed after device
-// ============================================================================
-
 #pragma once
 
 #ifdef ENGINE_GPU_VALIDATION

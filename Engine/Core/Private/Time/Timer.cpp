@@ -1,9 +1,6 @@
 #include "PCH.h"
 #include "Timer.h"
 
-// -----------------------------------------------------------------------------
-// Constructor
-// -----------------------------------------------------------------------------
 Timer::Timer() noexcept : 
 m_start{Clock::now()}, 
 m_last{m_start} 
@@ -11,9 +8,6 @@ m_last{m_start}
 	
 }
 
-// -----------------------------------------------------------------------------
-// Tick — call once per frame from the main loop
-// -----------------------------------------------------------------------------
 void Timer::Tick() noexcept
 {
 	// Read current time and compute raw delta.
@@ -44,9 +38,6 @@ void Timer::Tick() noexcept
 	m_timeInfo.bPaused = bPaused;
 }
 
-// -----------------------------------------------------------------------------
-// Unit conversion (private helper, called by public accessors)
-// -----------------------------------------------------------------------------
 double Timer::ToUnit(Duration d, TimeUnit u) noexcept
 {
 	switch (u)
@@ -63,9 +54,6 @@ double Timer::ToUnit(Duration d, TimeUnit u) noexcept
 	return d.count();
 }
 
-// -----------------------------------------------------------------------------
-// Unit-aware accessors
-// -----------------------------------------------------------------------------
 double Timer::GetDelta(TimeDomain domain, TimeUnit unit) const noexcept
 {
 	const Duration delta = (domain == TimeDomain::Scaled) ? m_timeInfo.scaledDelta : m_unscaledDelta;

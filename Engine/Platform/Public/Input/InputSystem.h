@@ -3,45 +3,6 @@
 // ----------------------------------------------------------------------------
 // Central hub for all input processing.
 //
-// RESPONSIBILITIES:
-//   - Owns the platform backend (IInputBackend)
-//   - Owns the pollable InputState
-//   - Routes window messages to backend for translation
-//   - Updates InputState from translated events
-//   - Manages event callbacks (immediate and deferred)
-//   - Handles input layer priority and filtering
-//   - Controls mouse capture and cursor visibility
-//
-// FRAME LIFECYCLE:
-//   1. InputSystem.BeginFrame()        — Transitions button states, clears deltas
-//   2. Window.PumpMessages()           — Window broadcasts OnWindowMessage event
-//   3. InputSystem.ProcessDeferredEvents() — Fires deferred callbacks
-//   4. GameCamera.Update()             — Polls InputState
-//   5. InputSystem.EndFrame()          — Optional cleanup
-//
-// THREADING:
-//   Single-threaded. All methods must be called from the main thread.
-//
-// EXAMPLE:
-//   auto backend = std::make_unique<Win32InputBackend>();
-//   InputSystem input(std::move(backend));
-//
-//   // Subscribe to window messages (decoupled from Window)
-//   input.SubscribeToWindow(window);
-//
-//   auto handle = input.SubscribeKeyboard([](const KeyboardEvent& e) {
-//       if (e.KeyCode == Key::Escape && e.bPressed) { QuitApp(); }
-//   }, InputLayer::Gameplay);
-//
-//   // In frame loop:
-//   input.BeginFrame();
-//   window.PumpMessages();  // Window broadcasts messages, InputSystem receives them
-//   input.ProcessDeferredEvents();
-//   if (input.GetState().IsKeyHeld(Key::W)) { MoveForward(dt); }
-//   input.EndFrame();
-//
-// ============================================================================
-
 #pragma once
 
 #include "Platform/Public/PlatformAPI.h"

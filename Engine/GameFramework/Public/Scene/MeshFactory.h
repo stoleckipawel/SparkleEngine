@@ -1,20 +1,9 @@
 // =============================================================================
-// MeshFactory.h — Factory for creating primitive mesh instances
+// MeshFactory.h - Factory for creating primitive mesh instances
 // =============================================================================
 //
 // Creates and owns CPU-side Mesh objects. Does not handle GPU upload.
 //
-// USAGE:
-//   MeshFactory factory;
-//   factory.AppendShapes(Shape::Sphere, 100, center, extents, seed);
-//   for (const auto& mesh : factory.GetMeshes()) { ... }
-//
-// NOTES:
-//   - All geometry is CPU-only (MeshData)
-//   - GPU upload is handled by Renderer's GPUMeshCache
-//
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

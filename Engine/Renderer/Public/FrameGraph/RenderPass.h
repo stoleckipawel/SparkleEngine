@@ -8,27 +8,6 @@
 //   Passes declare resource dependencies in Setup, then record GPU commands
 //   in Execute.
 //
-// USAGE:
-//   class ForwardOpaquePass : public RenderPass
-//   {
-//   public:
-//       ForwardOpaquePass(...) : RenderPass("ForwardOpaque") {}
-//       void Setup(PassBuilder& builder, const SceneView& sceneView) override;
-//       void Execute(RenderContext& context) override;
-//   };
-//
-// DESIGN:
-//   - Two-phase execution: Setup (declare resources) then Execute (record GPU)
-//   - Setup receives PassBuilder for resource requests, SceneView for scene data
-//   - Execute receives RenderContext for GPU command recording
-//   - Pass name stored for debugging, profiling, and GPU markers
-//
-// NOTES:
-//   - Derived passes should NOT access Scene directly — use SceneView only
-//   - Setup must NOT issue any GPU commands
-//   - Execute should use RenderContext methods, not raw D3D12 calls
-// ============================================================================
-
 #pragma once
 
 #include <string>

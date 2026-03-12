@@ -3,22 +3,6 @@
 // ----------------------------------------------------------------------------
 // Hosts a single right-docked ImGui window with renderer settings sections.
 //
-// USAGE:
-//   RendererPanel panel(384.0f);
-//   panel.SetSection(std::make_unique<StatsOverlay>());
-//   panel.SetSection(std::make_unique<ViewMode>());
-//   panel.BuildUI();  // Called each frame in ImGui context
-//
-// DESIGN:
-//   - Owns UIRendererSection instances in a vector
-//   - SetSection replaces existing section with same ID (stable ordering)
-//   - BuildUI renders collapsing headers for each section
-//
-// NOTES:
-//   - Width is configurable; defaults to 384 pixels
-//   - Sections are rendered in insertion/replacement order
-// ============================================================================
-
 #pragma once
 
 #include <memory>

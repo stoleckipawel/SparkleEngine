@@ -4,29 +4,6 @@
 // Rendering-side camera representation. Reads from GameCamera and builds
 // view/projection matrices for GPU submission.
 //
-// USAGE:
-//   GameCamera gameCamera;
-//   RenderCamera renderCamera(gameCamera);
-//
-//   // Each frame before rendering:
-//   renderCamera.Update();  // Rebuilds matrices from GameCamera (if dirty)
-//
-//   // Use matrices for rendering:
-//   XMMATRIX view = renderCamera.GetViewMatrix();
-//   XMMATRIX proj = renderCamera.GetProjectionMatrix();
-//
-//   // Use frustum for culling:
-//   const Frustum& frustum = renderCamera.GetFrustum();
-//
-// DESIGN:
-//   - Pure rendering construct (no game logic, no setters)
-//   - Constructed with a GameCamera reference (always valid)
-//   - Reads ALL state from GameCamera (single source of truth)
-//   - Only rebuilds matrices when GameCamera is dirty (optimization)
-//   - Extracts frustum planes for culling
-//
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

@@ -3,23 +3,6 @@
 // ----------------------------------------------------------------------------
 // Authoritative frame-timing service for the engine.
 //
-// USAGE:
-//   Timer timer;  // Automatically initializes
-//   // Each frame:
-//   timer.Tick();
-//   auto info = timer.GetTimeInfo();
-//   double dt = timer.GetDelta(TimeDomain::Scaled);
-//
-// DESIGN:
-//   - Provides both unscaled (wall) and scaled (game) time domains
-//   - TimeInfo struct gives immutable snapshot of frame timing
-//   - Supports pause/resume and time scaling for slow-mo effects
-//
-// NOTES:
-//   - Owned by App, passed by reference to systems that need it
-//   - Frame counter is 1-based
-// ============================================================================
-
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

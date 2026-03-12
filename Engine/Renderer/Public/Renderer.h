@@ -1,29 +1,11 @@
 // =============================================================================
-// Renderer.h — High-Level Graphics Pipeline Orchestration
+// Renderer.h - High-Level Graphics Pipeline Orchestration
 // =============================================================================
 //
 // Central rendering subsystem that manages the graphics pipeline, resource
 // binding, and frame submission. Acts as the primary interface between game
 // logic and the D3D12 RHI layer.
 //
-// USAGE:
-//   Renderer renderer(scene);  // Construct with scene reference
-//   renderer.OnRender();        // Call each frame from the main loop
-//
-// RESPONSIBILITIES:
-//   - Pipeline state object (PSO) creation and management
-//   - Per-frame and per-object constant buffer binding
-//   - Depth buffer management and depth mode switching
-//   - Scene traversal and mesh rendering
-//   - Integration with UI overlay rendering
-//
-// NOTES:
-//   - Owned by App, constructed after Window and before render loop
-//   - Automatically subscribes to Window resize events
-//   - Owns shader bytecode, textures, and pipeline objects
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

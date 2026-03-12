@@ -10,7 +10,6 @@
 
 namespace Engine::FileSystem
 {
-
 	std::filesystem::path NormalizePath(const std::filesystem::path& path)
 	{
 		if (path.empty())

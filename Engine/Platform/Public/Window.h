@@ -1,28 +1,11 @@
 // =============================================================================
-// Window.h — Platform Window Management
+// Window.h - Platform Window Management
 // =============================================================================
 //
 // Manages the main application window, message handling, and display state.
 // Encapsulates Win32 window creation and provides a clean interface for
 // querying window dimensions and fullscreen state.
 //
-// USAGE:
-//   Window window("MyApp");  // Creates and shows window
-//   while (!window.ShouldClose()) {
-//       window.PollEvents();  // Process Win32 messages
-//       // ... render frame ...
-//   }
-//   // Destructor cleans up
-//
-// DESIGN:
-//   - Owned by App, passed by reference to systems that need it
-//   - Must be created before any D3D12 initialization
-//   - Handles WM_SIZE for resize events, WM_CLOSE for shutdown
-//   - Fullscreen uses borderless windowed mode (not exclusive)
-//   - Uses event broadcasting for subsystem communication (decoupled)
-//
-// =============================================================================
-
 #pragma once
 
 #include "Platform/Public/PlatformAPI.h"

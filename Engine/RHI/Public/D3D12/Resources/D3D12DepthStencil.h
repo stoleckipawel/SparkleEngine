@@ -3,23 +3,6 @@
 // ----------------------------------------------------------------------------
 // Manages a GPU depth-stencil resource and its DSV descriptor.
 //
-// USAGE:
-//   D3D12DepthStencil depthStencil;
-//   depthStencil.SetWriteState();
-//   depthStencil.Clear();
-//   // ... render with depth testing ...
-//   depthStencil.SetReadState();
-//
-// DESIGN:
-//   - Uses committed default-heap resource with optimized clear value
-//   - Owns the DSV descriptor handle and GPU resource exclusively
-//   - All public accessors are const noexcept and non-mutating
-//
-// NOTES:
-//   - Copy/move deleted to enforce unique ownership semantics
-//   - Resize requires creating a new instance
-// ============================================================================
-
 #pragma once
 
 #include "D3D12DescriptorHandle.h"

@@ -2,14 +2,6 @@
 // PathRoot.h
 // Identifies the root scope for resolving engine paths (Project vs Engine).
 // ----------------------------------------------------------------------------
-// USAGE:
-//   auto path = assetSystem.GetShaderPath(PathRoot::Engine);
-//   auto name = GetPathRootName(PathRoot::Project);  // "Project"
-//
-// DESIGN:
-//   - Project paths can override engine defaults
-//   - PathRoot::Any checks Project first, then Engine
-// ============================================================================
 #pragma once
 
 #include <cstdint>

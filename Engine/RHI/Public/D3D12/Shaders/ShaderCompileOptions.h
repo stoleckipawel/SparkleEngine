@@ -3,18 +3,6 @@
 // ----------------------------------------------------------------------------
 // Configuration structures for DXC shader compilation.
 //
-// USAGE:
-//   ShaderCompileOptions opts;
-//   opts.SourcePath = "shaders/MyShader.hlsl";
-//   opts.Stage = ShaderStage::Vertex;
-//   opts.EntryPoint = "VSMain";
-//   auto profile = opts.BuildTargetProfile();  // "vs_6_0"
-//
-// NOTES:
-//   - Target profile is built from engine's configured shader model version
-//   - Supports additional include dirs and preprocessor defines
-// ============================================================================
-
 #pragma once
 
 #include "RHIConfig.h"

@@ -2,17 +2,6 @@
 // FileSystemUtils.h
 // Platform-agnostic filesystem utilities and marker-based root discovery.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   auto normalized = Engine::FileSystem::NormalizePath(rawPath);
-//   auto exeDir = Engine::FileSystem::GetExecutableDirectory();
-//   auto workspaceRoot = Engine::FileSystem::DiscoverWorkspaceRoot();
-//
-// DESIGN:
-//   Marker files identify directory roles:
-//     .sparkle         - Workspace root (repository level)
-//     .sparkle-engine  - Engine root (engine/ subdirectory)
-//     .sparkle-project - Project root (each game/sample project)
-// ============================================================================
 #pragma once
 
 #include <cstdint>

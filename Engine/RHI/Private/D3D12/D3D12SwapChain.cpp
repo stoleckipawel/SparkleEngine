@@ -59,18 +59,14 @@ void D3D12SwapChain::Create()
 	    nullptr,
 	    &swapChain));
 
-	// Query for IDXGISwapChain3 interface
 	CHECK(swapChain.As(&m_swapChain));
 }
 
-// Clears the current render target view with a solid color
 void D3D12SwapChain::Clear()
 {
 	float clearColor[4] = {0.0f, 0.00f, 0.00f, 1.0f};
 	m_rhi.GetCommandList()->ClearRenderTargetView(GetCPUHandle(), clearColor, 0, nullptr);
 }
-
-// Resizes the swap chain buffers and recreates render target views
 void D3D12SwapChain::Resize()
 {
 	ReleaseBuffers();
@@ -86,8 +82,6 @@ void D3D12SwapChain::Resize()
 
 	UpdateFrameInFlightIndex();
 }
-
-// Returns the CPU descriptor handle for the current back buffer
 void D3D12SwapChain::AllocateHandles()
 {
 	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
@@ -95,24 +89,19 @@ void D3D12SwapChain::AllocateHandles()
 		m_rtvHandles[i] = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	}
 }
-
-// Creates render target views for all swap chain buffers
 void D3D12SwapChain::CreateRenderTargetViews()
 {
 	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
 	{
-		// Get the buffer resource from the swap chain
 		CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
 		DebugUtils::SetDebugName(m_buffers[i], L"RHI_BackBuffer");
 
-		// Describe the render target view
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 		rtvDesc.Format = RHISettings::BackBufferFormat;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;
 
-		// Create the render target view
 		m_rhi.GetDevice()->CreateRenderTargetView(m_buffers[i].Get(), &rtvDesc, GetCPUHandle(i));
 	}
 }
@@ -133,8 +122,6 @@ UINT D3D12SwapChain::ComputeSwapChainFlags() const
 	flags |= GetAllowTearingFlag();
 	return flags;
 }
-
-// Returns the default viewport for rendering
 D3D12_VIEWPORT D3D12SwapChain::GetDefaultViewport() const
 {
 	D3D12_VIEWPORT vp;
@@ -146,8 +133,6 @@ D3D12_VIEWPORT D3D12SwapChain::GetDefaultViewport() const
 	vp.MaxDepth = 1.0f;
 	return vp;
 }
-
-// Returns the default scissor rectangle for rendering
 D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
 {
 	D3D12_RECT scissorRect;
@@ -157,8 +142,6 @@ D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
 	scissorRect.bottom = m_window->GetHeight();
 	return scissorRect;
 }
-
-// Presents the current back buffer to the screen
 void D3D12SwapChain::Present()
 {
 	// Present according to runtime setting: vsync on -> interval 1, vsync off -> interval 0
@@ -171,18 +154,14 @@ void D3D12SwapChain::Present()
 		m_rhi.GetDxgiFactory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));
 		presentFlags = (allowTearing == TRUE) ? DXGI_PRESENT_ALLOW_TEARING : 0u;
 	}
-
-	// Present the frame
 	CHECK(m_swapChain->Present(presentInterval, presentFlags));
 }
 
-// Sets the current buffer to render target state
 void D3D12SwapChain::SetRenderTargetState()
 {
 	m_rhi.SetBarrier(m_buffers[m_frameInFlightIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 }
 
-// Sets the current buffer to present state
 void D3D12SwapChain::SetPresentState()
 {
 	m_rhi.SetBarrier(
@@ -191,8 +170,6 @@ void D3D12SwapChain::SetPresentState()
 	    D3D12_RESOURCE_STATE_RENDER_TARGET,
 	    D3D12_RESOURCE_STATE_PRESENT);
 }
-
-// Releases all buffer resources
 void D3D12SwapChain::ReleaseBuffers()
 {
 	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)

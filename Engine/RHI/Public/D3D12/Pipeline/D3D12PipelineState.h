@@ -3,20 +3,6 @@
 // ----------------------------------------------------------------------------
 // Encapsulates a D3D12 graphics pipeline state object (PSO) and its creation.
 //
-// USAGE:
-//   D3D12PipelineState pso(vertexLayout, rootSig, vsBytecode, psBytecode);
-//   pso.Set();  // Binds to current command list
-//
-// DESIGN:
-//   - Owns the ID3D12PipelineState COM object
-//   - Configures rasterizer, blend, depth, and stencil states
-//   - DepthTestDesc and StencilTestDesc provide clean configuration structs
-//
-// NOTES:
-//   - Non-copyable to prevent PSO duplication
-//   - Set() must be called after command list is recording
-// ============================================================================
-
 #pragma once
 
 #include "ShaderCompileResult.h"

@@ -2,16 +2,6 @@
 // MathUtils.h
 // Lightweight math utilities for DirectXMath types.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   auto sum = MathUtils::Add(a, b);
-//   auto normalized = MathUtils::Normalize3(direction);
-//   auto uv = MathUtils::SphericalUV(normal);
-//
-// DESIGN:
-//   - All functions are inline for zero call overhead
-//   - Uses XMFLOAT3/XMFLOAT2 for simple operations (no SIMD load/store)
-//   - For performance-critical code, prefer DirectX::XMVector operations
-// ============================================================================
 #pragma once
 
 #include <DirectXMath.h>

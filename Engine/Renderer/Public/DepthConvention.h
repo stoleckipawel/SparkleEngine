@@ -3,29 +3,6 @@
 // ----------------------------------------------------------------------------
 // Centralized authority for depth buffer configuration and projection matrices.
 //
-// USAGE:
-//   auto mode = GDepthConvention.GetMode();
-//   auto clearVal = GDepthConvention.GetClearDepth();
-//   auto compFunc = GDepthConvention.GetComparisonFunc();
-//   // Subscribe to mode changes:
-//   auto handle = DepthConvention::OnModeChanged.Add([](DepthMode m) { ... });
-//
-// DESIGN:
-//   - Single source of truth for depth range, comparison, and clear values
-//   - Event broadcast when mode changes (Camera, DepthStencil listen)
-//   - Supports Standard (0-1) and ReversedZ (1-0) modes
-//
-// CONSISTENCY:
-//   - Projection matrix generation (Camera)
-//   - Depth buffer creation and clearing (D3D12DepthStencil)
-//   - Pipeline state depth comparison (D3D12PipelineState)
-//   - Shader depth reconstruction
-//
-// NOTES:
-//   - ReversedZ recommended for better precision distribution
-//   - Singleton accessed via GDepthConvention global reference
-// ============================================================================
-
 #pragma once
 
 #include "Event.h"

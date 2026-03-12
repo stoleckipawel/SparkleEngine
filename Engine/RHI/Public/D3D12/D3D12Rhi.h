@@ -1,35 +1,11 @@
 // =============================================================================
-// D3D12Rhi.h — Direct3D 12 Rendering Hardware Interface
+// D3D12Rhi.h - Direct3D 12 Rendering Hardware Interface
 // =============================================================================
 //
 // Core RHI layer managing D3D12 device, command queues, allocators, and GPU
 // synchronization. Provides a lightweight abstraction over Direct3D 12 with
 // minimal COM reference counting overhead.
 //
-// USAGE:
-//   D3D12Rhi rhi;                        // Creates device, queues, fences
-//   rhi.ResetCommandAllocator();         // Begin frame
-//   rhi.ResetCommandList();
-//   // ... record commands ...
-//   rhi.CloseCommandList();
-//   rhi.ExecuteCommandList();
-//   rhi.Signal();                        // End frame
-//   rhi.WaitForGPU();                    // Sync before shutdown
-//   // destructor releases all resources
-//
-// DESIGN:
-//   - RAII: constructor initializes, destructor cleans up
-//   - Getters return const& to internal ComPtr to avoid refcount churn
-//   - Per-frame command allocators for FramesInFlight buffering
-//   - Fence-based GPU synchronization with per-frame tracking
-//
-// NOTES:
-//   - Owned by Renderer, passed by reference to dependent classes
-//   - Requires D3D_FEATURE_LEVEL_12_1 and Shader Model 6.0
-//   - Debug layer enabled when ENGINE_GPU_VALIDATION is defined
-//
-// =============================================================================
-
 #pragma once
 
 #include <d3d12.h>

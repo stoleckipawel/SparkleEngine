@@ -1,32 +1,10 @@
 // =============================================================================
-// GltfLoader.h — glTF 2.0 Asset Loader
+// GltfLoader.h - glTF 2.0 Asset Loader
 // =============================================================================
 //
 // Loads glTF / GLB files into CPU-side mesh and material data.
-// Pure CPU work — no GPU operations, no Renderer or RHI dependencies.
+// Pure CPU work - no GPU operations, no Renderer or RHI dependencies.
 //
-// USAGE:
-//   GltfLoader::LoadResult result = GltfLoader::Load("Sponza/Sponza.gltf");
-//   if (result.success)
-//   {
-//       for (auto& mesh : result.meshes) { ... }
-//       for (auto& mat  : result.materials) { ... }
-//   }
-//
-// DESIGN:
-//   - Static loader (no instance state needed)
-//   - Returns a self-contained LoadResult with all data
-//   - Each glTF primitive becomes one MeshData
-//   - Transforms are pre-computed to world space per node hierarchy
-//   - Materials map 1:1 to glTF PBR metallic-roughness workflow
-//
-// NOTES:
-//   - Uses cgltf for parsing (header-only, C99)
-//   - Texture paths are relative to the glTF file directory
-//   - Scene stores results; Renderer uploads to GPU on demand
-//
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
@@ -50,7 +28,7 @@ class SPARKLE_ENGINE_API GltfLoader final
 	// =========================================================================
 
 	/// Self-contained result from loading a glTF file.
-	/// Owns all loaded data — caller takes ownership via move.
+	/// Owns all loaded data - caller takes ownership via move.
 	struct LoadResult
 	{
 		std::vector<MeshData> meshes;                 // One per glTF primitive
@@ -76,7 +54,7 @@ class SPARKLE_ENGINE_API GltfLoader final
 	/// @return LoadResult containing all meshes, materials, and transforms
 	static LoadResult Load(const std::filesystem::path& filePath);
 
-	// Static utility — no instantiation
+	// Static utility - no instantiation
 	GltfLoader() = delete;
 	~GltfLoader() = delete;
 };

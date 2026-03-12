@@ -3,23 +3,6 @@
 // ----------------------------------------------------------------------------
 // RAII wrapper for a single D3D12 descriptor heap.
 //
-// USAGE:
-//   D3D12DescriptorHeap heap(
-//       D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-//       D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
-//       L"MainSRVHeap");
-//   auto handle = heap.GetHandleAt(0);
-//
-// DESIGN:
-//   - Non-copyable, non-movable RAII around ID3D12DescriptorHeap
-//   - Descriptor count determined by heap type and tier
-//   - GetHandleAt() performs bounds checking
-//
-// NOTES:
-//   - Sampler heaps limited to D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE
-//   - CBV/SRV/UAV heaps use Tier 2 max size
-// ============================================================================
-
 #pragma once
 
 #include "D3D12Rhi.h"

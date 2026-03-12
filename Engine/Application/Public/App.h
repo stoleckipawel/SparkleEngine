@@ -2,12 +2,6 @@
 // App.h
 // Application base class - ties together GameFramework and Renderer.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   App app("MyGame");
-//   // Uses the project/window title as the startup level when it matches a
-//   // registered level. Falls back to the LevelRegistry default otherwise.
-//   app.Run();
-// ============================================================================
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"

@@ -3,21 +3,6 @@
 // ----------------------------------------------------------------------------
 // Container for gameplay objects (camera, meshes, etc.).
 //
-// USAGE:
-//   Scene scene;
-//   scene.LoadLevel(sponzaLevel, assetSystem);
-//
-// DESIGN:
-//   - Pure container for logical game objects
-//   - Levels define scene content; Scene is the runtime container
-//   - No direct GPU/RHI dependencies (decoupled from rendering backend)
-//   - Supports both procedural primitives and imported meshes
-//   - Camera and mesh data created in constructor
-//   - Scene owns its objects, external systems configure them
-//   - GPU resource upload handled externally by GPUMeshCache
-//
-// ============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

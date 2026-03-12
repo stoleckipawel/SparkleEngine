@@ -3,19 +3,6 @@
 // ----------------------------------------------------------------------------
 // UI section for time scale and pause/resume controls.
 //
-// USAGE:
-//   TimeControls timeCtrl(timer);
-//   timeCtrl.BuildUI();  // Called each frame in ImGui context
-//
-// DESIGN:
-//   - Implements UIRendererSection interface for panel integration
-//   - Exposes Timer scale and pause state
-//   - Slider for time scale, checkbox for pause/resume
-//
-// NOTES:
-//   - Timer reference must be provided at construction
-// ============================================================================
-
 #pragma once
 
 #include "Framework/UIRendererSection.h"

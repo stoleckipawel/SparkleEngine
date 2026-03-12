@@ -163,7 +163,6 @@ void UI::NewFrame()
 	ImGui::NewFrame();
 }
 
-// Builds demo UI and finalizes draw data for this frame.
 void UI::Build()
 {
 	if (m_rendererPanel)

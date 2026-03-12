@@ -1,25 +1,10 @@
 // =============================================================================
-// Mesh.h — CPU-side renderable mesh with transform and geometry
+// Mesh.h - CPU-side renderable mesh with transform and geometry
 // =============================================================================
 //
 // Base class for primitives and imported meshes. Owns transform (TRS) and
 // CPU geometry (MeshData). GPU resources are managed by Renderer's GPUMesh.
 //
-// USAGE:
-//   class MyMesh : public Mesh {
-//       void GenerateGeometry(MeshData& out) const override;
-//   };
-//   MyMesh mesh({0,0,0}, {0,0,0}, {1,1,1});
-//   mesh.RebuildGeometry();
-//   const MeshData& data = mesh.GetMeshData();
-//
-// NOTES:
-//   - No D3D12 or GPU dependencies — pure CPU data
-//   - Geometry is built lazily via RebuildGeometry() or on first access
-//   - Derived classes implement GenerateGeometry() for shape-specific data
-//
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

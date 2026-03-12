@@ -3,40 +3,6 @@
 // ----------------------------------------------------------------------------
 // Pollable input state container (single-threaded, main thread only).
 //
-// USAGE:
-//   const InputState& state = inputSystem.GetState();
-//   if (state.IsKeyPressed(Key::Space)) { Jump(); }
-//   if (state.IsKeyHeld(Key::W)) { MoveForward(dt); }
-//   auto delta = state.GetMouseDelta();
-//
-// DESIGN:
-//   - Query-only public interface (mutations via friend InputSystem)
-//   - Single-threaded: All access must be from main/game thread
-//   - ButtonState 4-state model: Up → Pressed → Held → Released → Up
-//   - Frame-edge detection: Pressed/Released valid for one frame only
-//
-// BUTTON STATE TRANSITIONS:
-//   Frame N:   Key down detected     → State = Pressed
-//   Frame N+1: Key still down        → State = Held
-//   Frame M:   Key up detected       → State = Released
-//   Frame M+1: Key still up          → State = Up
-//
-// THREADING:
-//   This class is NOT thread-safe. All methods must be called from the
-//   main thread. This matches industry practice (Unreal, Unity) where
-//   input is processed and consumed on the game thread only.
-//
-// NOTES:
-//   - IsKeyDown() returns true for both Pressed AND Held states
-//   - IsKeyPressed() returns true only on the frame the key was pressed
-//   - Mouse delta is accumulated between frames, cleared on BeginFrame()
-//
-// See also:
-//   - InputSystem.h — Owns and updates InputState
-//   - ButtonState.h — 4-state enum definition
-//
-// ============================================================================
-
 #pragma once
 
 #include "Core/Public/CoreAPI.h"
@@ -196,7 +162,7 @@ class SPARKLE_CORE_API InputState
 	void SetCursorHidden(bool bHidden) noexcept;
 
 	/// Called at the start of each frame to transition states.
-	/// Pressed → Held, Released → Up, clears deltas.
+	/// Pressed -> Held, Released -> Up, clears deltas.
 	void BeginFrame() noexcept;
 
 	/// Called at the end of each frame for optional cleanup.

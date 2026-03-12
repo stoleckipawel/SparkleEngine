@@ -1,9 +1,3 @@
-// ============================================================================
-// InputState.cpp
-// ----------------------------------------------------------------------------
-// Implementation of pollable input state container.
-// ============================================================================
-
 #include "PCH.h"
 #include "InputState.h"
 
@@ -239,6 +233,4 @@ void InputState::BeginFrame() noexcept
 
 void InputState::EndFrame() noexcept
 {
-	// Currently no end-of-frame processing needed.
-	// Reserved for future use (e.g., state snapshots, debug logging).
 }

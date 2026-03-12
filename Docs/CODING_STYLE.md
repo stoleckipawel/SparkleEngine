@@ -99,30 +99,22 @@ High-quality comments explain **why** and **what** — not just **how**. They en
 
 ### File Headers
 
-Use decorated block comments for public headers that define major subsystems:
+Use decorated block comments only when a file needs a short purpose statement at the top. Keep them brief and factual:
 
 ```cpp
 // =============================================================================
 // ComponentName.h — Brief One-Line Description
 // =============================================================================
 //
-// Detailed explanation of the component's purpose, responsibilities, and
-// usage patterns. Include:
-//
-// USAGE:
-//   ClassName::DoSomething();
-//   auto result = ClassName::Query(...);
-//
-// NOTES:
-//   - Thread safety guarantees
-//   - Performance characteristics
-//   - Dependencies or initialization order
-//
+// Short summary of the file's purpose or the constraint a reader needs to know.
+// Stop once the intent is clear.
 // =============================================================================
 ```
 
-**When to use:** Public headers defining major subsystems (AssetSystem, Log, Renderer).
-**When to skip:** Internal implementation headers, trivial utility classes.
+Do not add template sections such as `USAGE`, `DESIGN`, `CONTROLS`, `RESPONSIBILITIES`, or `NOTES` at the start of headers. If a header does not benefit from a short summary, skip the file header entirely.
+
+**When to use:** Public headers where a compact purpose statement reduces ambiguity.
+**When to skip:** Internal implementation headers, trivial utility classes, or headers whose names already make the intent obvious.
 
 ### Section Dividers
 
@@ -173,7 +165,7 @@ static ShaderCompileResult CompileFromAsset(
 
 ### Function Comments (Definition)
 
-At implementation site, use a brief one-liner for context:
+At implementation site, add a brief one-liner only when it explains intent that is not already obvious from the function name or surrounding code:
 
 ```cpp
 // Selects the best available adapter (GPU) that supports Direct3D 12
@@ -191,7 +183,7 @@ void Window::Initialize()
 
 ### Inline Comments
 
-Use sparingly for non-obvious logic. Focus on **why**, not **what**:
+Use sparingly for non-obvious logic. Focus on **why**, not **what**. Delete comments that merely narrate the next line, restate the function name, or label a block whose intent is already obvious from the code:
 
 ```cpp
 // Try adapter-by-preference first. Use a local temporary adapter to avoid
@@ -213,6 +205,9 @@ if (SUCCEEDED(D3D12CreateDevice(candidate.Get(), m_DesiredD3DFeatureLevel, ...))
 
 // Check if null
 if (ptr == nullptr)
+
+// Creates render target views for all swap chain buffers
+void CreateRenderTargetViews();
 ```
 
 **Good (explains why):**
@@ -272,6 +267,7 @@ Use standardized tags for actionable items:
 |--------------|---------|
 | Paraphrasing code | `// Set x to 5` above `x = 5;` |
 | Trivial getters/setters | `// Returns the width` above `GetWidth()` |
+| Boilerplate header sections | `USAGE`, `DESIGN`, `CONTROLS`, `RESPONSIBILITIES`, `NOTES` blocks at the top of headers |
 | Commented-out code | Delete it; version control has history |
 | Journal entries | `// Modified by John on 2024-01-15` — use git |
 | ASCII art dividers | `///////////////////////////` |

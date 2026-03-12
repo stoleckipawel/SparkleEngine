@@ -3,29 +3,6 @@
 // ----------------------------------------------------------------------------
 // Centralized texture resource management with caching and lifecycle control.
 //
-// USAGE:
-//   TextureManager textures(assetSystem, rhi, descriptorHeapManager);
-//   textures.LoadTexture(TextureId::Checker, "ColorCheckerBoard.png");
-//   auto* tex = textures.GetTexture(TextureId::Checker);
-//   auto gpuHandle = tex->GetGPUHandle();
-//
-// DESIGN:
-//   - Owns all engine textures in a single location
-//   - Uses enum-based IDs for type-safe, fast lookups
-//   - Separates texture loading from Renderer responsibilities
-//   - Foundation for future streaming/caching systems
-//
-// FUTURE:
-//   - Async texture loading with placeholder fallbacks
-//   - LRU cache with automatic eviction
-//   - Texture streaming for large worlds
-//   - Compressed texture format support (BC7, ASTC)
-//
-// NOTES:
-//   - All textures loaded synchronously in current implementation
-//   - Textures are non-copyable; manager owns all instances
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/Textures/DefaultTextures.h"

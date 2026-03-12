@@ -3,26 +3,6 @@
 // ----------------------------------------------------------------------------
 // Manages the DXGI swap chain and associated render targets for presentation.
 //
-// USAGE:
-//   D3D12SwapChain swapChain(window, descriptorHeapManager);
-//   // Each frame:
-//   swapChain.SetRenderTargetState();
-//   swapChain.Clear();
-//   // ... render ...
-//   swapChain.SetPresentState();
-//   swapChain.Present();
-//
-// DESIGN:
-//   - Owns IDXGISwapChain3 and per-frame back buffer resources
-//   - Supports variable-rate tearing and frame latency waitable objects
-//   - Handles resize by releasing and recreating buffers
-//
-// NOTES:
-//   - Owned by Renderer, passed by reference where needed
-//   - Frame index updated via UpdateFrameInFlightIndex() after Present()
-//   - Buffer count configured by RHISettings::FramesInFlight
-// ============================================================================
-
 #pragma once
 
 #ifndef WIN32_LEAN_AND_MEAN

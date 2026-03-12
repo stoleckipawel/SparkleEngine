@@ -1,23 +1,10 @@
 // =============================================================================
-// GPUMesh.h — GPU-resident mesh buffers for rendering
+// GPUMesh.h - GPU-resident mesh buffers for rendering
 // =============================================================================
 //
 // Owns D3D12 vertex and index buffers uploaded from CPU MeshData.
-// Created and cached by GPUMeshCache — not directly instantiated by user code.
+// Created and cached by GPUMeshCache - not directly instantiated by user code.
 //
-// USAGE:
-//   GPUMesh gpuMesh;
-//   gpuMesh.Upload(rhi, meshData);
-//   gpuMesh.Bind(cmdList);
-//   cmdList->DrawIndexedInstanced(gpuMesh.GetIndexCount(), 1, 0, 0, 0);
-//
-// OWNERSHIP:
-//   - GPUMeshCache owns GPUMesh instances
-//   - Renderer owns GPUMeshCache
-//   - GameFramework has no knowledge of this class
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

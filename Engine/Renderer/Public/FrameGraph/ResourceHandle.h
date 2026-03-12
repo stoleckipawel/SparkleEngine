@@ -7,22 +7,6 @@
 //   Identifies resources within the Frame Graph without exposing GPU details.
 //   Passes use handles to declare resource dependencies during Setup phase.
 //
-// USAGE:
-//   ResourceHandle backBuffer = builder.UseBackBuffer();
-//   ResourceHandle depth = builder.UseDepthBuffer();
-//   if (handle.IsValid()) { ... }
-//
-// DESIGN:
-//   - Simple value type (copyable, comparable)
-//   - Well-known handles for MVP: BACKBUFFER, DEPTH_BUFFER
-//   - INVALID handle for error/uninitialized state
-//   - Future: dynamic handle allocation for transient resources
-//
-// NOTES:
-//   - No GPU types — pure index into Frame Graph resource registry
-//   - Equality comparable for use in containers
-// ============================================================================
-
 #pragma once
 
 #include <compare>

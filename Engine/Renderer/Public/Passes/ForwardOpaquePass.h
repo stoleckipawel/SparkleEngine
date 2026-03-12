@@ -5,24 +5,6 @@
 // buffers, textures, samplers, and draws all opaque mesh draw commands from
 // the current SceneView.
 //
-// USAGE:
-//   frameGraph.AddPass<ForwardOpaquePass>("ForwardOpaque",
-//       rootSig, pso, cbManager, heapManager, texManager, samplerLib,
-//       meshCache, swapChain, depthStencil);
-//
-// DESIGN:
-//   - Derives from RenderPass for FrameGraph integration
-//   - Constructor-injected dependencies (non-owning references)
-//   - Setup captures SceneView pointer and declares resource usage
-//   - Execute records all draw commands through RenderContext
-//   - MVP: directly calls swap chain / depth stencil for transitions
-//
-// NOTES:
-//   - Created and owned by FrameGraph via AddPass<T>()
-//   - Dependencies must outlive this pass
-//   - When FrameGraph matures, resource transitions will move out
-// ============================================================================
-
 #pragma once
 
 #include "Renderer/Public/FrameGraph/RenderPass.h"

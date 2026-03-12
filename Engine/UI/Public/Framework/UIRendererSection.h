@@ -3,22 +3,6 @@
 // ----------------------------------------------------------------------------
 // Base interface and IDs for sections within the renderer settings panel.
 //
-// USAGE:
-//   class MySection : public UIRendererSection {
-//       UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::Stats; }
-//       const char* GetTitle() const noexcept override { return "My Section"; }
-//       void BuildUI() override { /* ImGui calls */ }
-//   };
-//
-// DESIGN:
-//   - Stable IDs allow typed retrieval and replacement of sections
-//   - Sections are owned by RendererPanel and are long-lived
-//
-// NOTES:
-//   - Add new section IDs before Count
-//   - BuildUI() is called each frame when section is visible
-// ============================================================================
-
 #pragma once
 
 #include <cstdint>

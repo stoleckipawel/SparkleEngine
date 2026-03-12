@@ -1,23 +1,11 @@
 // =============================================================================
-// ImportedMesh.h — Mesh loaded from an external file (glTF, FBX, etc.)
+// ImportedMesh.h - Mesh loaded from an external file (glTF, FBX, etc.)
 // =============================================================================
 //
 // A Mesh subclass that holds pre-built MeshData and a pre-computed world
 // transform from the asset's node hierarchy. Unlike procedural primitives,
-// geometry is not generated — it is supplied at construction time.
+// geometry is not generated - it is supplied at construction time.
 //
-// USAGE:
-//   auto mesh = std::make_unique<ImportedMesh>(std::move(meshData), worldTransform);
-//   mesh->SetMaterialId(materialIndex);
-//
-// DESIGN:
-//   - Owns a copy of the CPU mesh data (moved in at construction)
-//   - Stores a raw XMFLOAT4X4 world transform (from glTF node hierarchy)
-//   - Overrides GetWorldMatrix/GetWorldInverseTransposeMatrix for custom transform
-//   - GenerateGeometry() copies stored data (no procedural generation)
-//
-// =============================================================================
-
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

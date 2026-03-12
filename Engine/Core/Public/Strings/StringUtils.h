@@ -9,11 +9,6 @@
 //   ToWide() - Converts narrow to wide string (ASCII)
 //   ToWide(path) - Converts filesystem path to wide string
 //
-// NOTES:
-//   - All functions are noexcept where possible
-//   - constexpr functions for compile-time evaluation
-// ============================================================================
-
 #pragma once
 
 #include <filesystem>

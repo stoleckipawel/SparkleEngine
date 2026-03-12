@@ -2,15 +2,6 @@
 // HashUtils.h
 // FNV-1a 64-bit hash implementation for compile-time and runtime use.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   constexpr uint64_t hash = Engine::Hash::Fnv1a64("my_string");
-//   uint64_t runtimeHash = Engine::Hash::Fnv1a64(data, size);
-//
-// DESIGN:
-//   - FNV-1a chosen for excellent distribution and simplicity
-//   - constexpr enables compile-time hash computation
-//   - Non-cryptographic: suitable for hash tables, not security
-// ============================================================================
 #pragma once
 
 #include <cstdint>

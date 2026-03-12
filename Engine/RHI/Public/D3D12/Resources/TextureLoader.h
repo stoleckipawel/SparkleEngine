@@ -3,25 +3,6 @@
 // ----------------------------------------------------------------------------
 // Loads image files from disk using Windows Imaging Component (WIC).
 //
-// USAGE:
-//   TextureLoader loader("textures/diffuse.png");
-//   const auto& data = loader.GetData();
-//   // data.data, data.width, data.height, data.dxgiPixelFormat, etc.
-//
-// SUPPORTED FORMATS:
-//   - Common image formats (PNG, JPEG, BMP, etc.) via WIC
-//   - Limited DXGI format conversion (expand s_lookupTable as needed)
-//
-// DESIGN:
-//   - Returns raw pixel data as uint8_t vector for unambiguous byte storage
-//   - Data struct includes dimensions, stride, and DXGI format
-//   - Conversion from WIC to DXGI format via lookup table
-//
-// NOTES:
-//   - Throws on unsupported formats or load failures
-//   - Pixel data is in CPU memory; caller uploads to GPU
-// ============================================================================
-
 #pragma once
 
 #include <cstdint>

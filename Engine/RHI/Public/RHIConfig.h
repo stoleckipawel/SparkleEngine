@@ -3,16 +3,6 @@
 // ----------------------------------------------------------------------------
 // RHI module configuration constants and compile-time toggles.
 //
-// DESIGN:
-//   - Header-only with minimal dependencies
-//   - Compile-time macros for debug/validation features
-//   - Runtime-configurable settings in RHISettings namespace
-//
-// NOTES:
-//   - This keeps RHI self-contained without coupling to Core
-//   - FramesInFlight affects resource allocation and latency
-// ============================================================================
-
 #pragma once
 
 #include <dxgi1_6.h>

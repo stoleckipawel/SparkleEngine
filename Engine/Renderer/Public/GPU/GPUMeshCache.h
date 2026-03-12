@@ -1,22 +1,10 @@
 // =============================================================================
-// GPUMeshCache.h — Lazy GPU mesh upload manager
+// GPUMeshCache.h - Lazy GPU mesh upload manager
 // =============================================================================
 //
 // Caches GPU meshes by their CPU mesh pointer. Uploads on first access.
-// Owned by Renderer — provides lazy upload for render passes.
+// Owned by Renderer - provides lazy upload for render passes.
 //
-// USAGE:
-//   GPUMeshCache cache(rhi);
-//   GPUMesh* gpuMesh = cache.GetOrUpload(cpuMesh);
-//   gpuMesh->Bind(cmdList);
-//
-// OWNERSHIP:
-//   - Renderer owns GPUMeshCache
-//   - GPUMeshCache owns GPUMesh instances
-//   - CPU Mesh lifetime must exceed cache usage
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

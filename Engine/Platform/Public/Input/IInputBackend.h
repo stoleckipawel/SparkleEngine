@@ -3,12 +3,6 @@
 // ----------------------------------------------------------------------------
 // Platform abstraction for translating native messages to input events.
 //
-// DESIGN:
-//   Single responsibility: convert platform messages → engine events.
-//   Cursor/capture control lives in InputSystem (higher-level concern).
-//
-// ============================================================================
-
 #pragma once
 
 #include "Platform/Public/PlatformAPI.h"

@@ -2,15 +2,6 @@
 // D3D12SamplerLibrary.h
 // Pre-built sampler descriptor table for shader binding.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   D3D12SamplerLibrary::Get().Initialize(device, heapManager);
-//   auto handle = D3D12SamplerLibrary::Get().GetSamplerHandle(Slot::LinearMipLinearWrap);
-//
-// DESIGN:
-//   - Owns a contiguous block of sampler descriptors for table binding
-//   - Samplers created once during initialization, never modified
-//   - Descriptor order matches Samplers.hlsli register declarations
-// ============================================================================
 #pragma once
 
 #include "D3D12DescriptorHandle.h"

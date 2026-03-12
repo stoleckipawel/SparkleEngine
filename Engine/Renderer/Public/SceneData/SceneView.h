@@ -1,18 +1,10 @@
 // =============================================================================
-// SceneView.h — Per-Frame Scene Representation for Rendering
+// SceneView.h - Per-Frame Scene Representation for Rendering
 // =============================================================================
 //
 // Pure-data structure representing everything the renderer needs to draw a
 // single frame. Built by Renderer::BuildSceneView() each frame.
 //
-// DESIGN:
-//   - Frame-scoped data assembled by Renderer from longer-lived engine state
-//   - Camera stored as pointer to renderer-owned RenderCamera
-//   - Material payloads may reference renderer-owned GPU resources such as
-//     persistent descriptor-table handles, but SceneView does not own them
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

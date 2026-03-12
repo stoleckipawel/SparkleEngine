@@ -3,23 +3,6 @@
 // ----------------------------------------------------------------------------
 // Lightweight, type-aware descriptor identifier with CPU/GPU handles.
 //
-// USAGE:
-//   D3D12DescriptorHandle handle(index, heapType, cpuStart, gpuStart);
-//   if (handle.IsValid()) {
-//       auto cpu = handle.GetCPU();
-//       auto gpu = handle.GetGPU();  // Only for shader-visible heaps
-//   }
-//
-// DESIGN:
-//   - Value type: cheap to copy and store in containers
-//   - Handles are constructed from heap information, not raw pointers
-//   - Invalid handles have index ~0u and null CPU handle
-//
-// NOTES:
-//   - GPU handle is only valid for CBV_SRV_UAV and SAMPLER heap types
-//   - Default constructor creates invalid handle for container use
-// ============================================================================
-
 #pragma once
 
 #include <d3d12.h>

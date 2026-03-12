@@ -3,22 +3,6 @@
 // ----------------------------------------------------------------------------
 // View frustum representation for culling operations.
 //
-// USAGE:
-//   Frustum frustum;
-//   frustum.ExtractFromViewProjection(viewProjMatrix);
-//
-//   if (frustum.IntersectsSphere(center, radius)) {
-//       // Object is potentially visible
-//   }
-//
-// DESIGN:
-//   - Six planes representing view frustum boundaries
-//   - Planes stored as (A, B, C, D) where Ax + By + Cz + D = 0
-//   - Normals point inward (positive half-space is inside frustum)
-//   - Supports point and sphere intersection tests
-//
-// ============================================================================
-
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

@@ -3,25 +3,6 @@
 // ----------------------------------------------------------------------------
 // Per-frame GPU resource management for multi-buffered rendering.
 //
-// USAGE:
-//   GFrameResourceManager.Initialize();
-//   // Each frame:
-//   GFrameResourceManager.BeginFrame();  // Wait for fence, reset allocator
-//   auto alloc = GFrameResourceManager.AllocateCB<MyData>(data);
-//   GFrameResourceManager.EndFrame();    // Signal fence
-//
-// DESIGN:
-//   - FrameResource: per-frame allocator and fence value
-//   - FrameResourceManager: ring of FrameResource instances
-//   - Prevents CPU/GPU race conditions via fence synchronization
-//
-// SYNCHRONIZATION MODEL:
-//   1. BeginFrame(): Wait for oldest frame's fence, reset allocator
-//   2. AllocateXXX(): Allocate from current frame's linear allocator
-//   3. EndFrame(): Signal fence with current frame's value
-//   4. Advance frame index (wraps around)
-// ============================================================================
-
 #pragma once
 
 #include <d3d12.h>
@@ -82,7 +63,7 @@ struct D3D12FrameResource
 class D3D12FrameResourceManager final
 {
   public:
-	// Default capacity: 4MB per frame (16384 draws × 256 bytes)
+	// Default capacity: 4MB per frame (16384 draws x 256 bytes)
 	static constexpr uint64_t DefaultCapacityPerFrame = 4 * 1024 * 1024;
 
 	// Construct and initialize all frame resources.

@@ -3,22 +3,6 @@
 // ----------------------------------------------------------------------------
 // POD structures for GPU constant buffers, mirrored in HLSL (Common.hlsli).
 //
-// DESIGN:
-//   - All CBV-bound types use alignas(256) per D3D12 requirements
-//   - Types are trivially copyable for safe memcpy to GPU memory
-//   - CBV_CHECK macro validates layout constraints at compile time
-//
-// HLSL REGISTER CONVENTIONS:
-//   b0 -> PerFrameConstantBufferData   (once per CPU frame)
-//   b1 -> PerViewConstantBufferData    (per camera/view)
-//   b2 -> PerObjectVSConstantBufferData (per draw call, transforms)
-//   b3 -> PerObjectPSConstantBufferData (per draw call, materials)
-//
-// NOTES:
-//   - Keep parity with Common.hlsli when modifying
-//   - Structured buffers (SRV) follow 16-byte HLSL packing, not 256-byte
-// ============================================================================
-
 #pragma once
 #include <cstddef>
 #include <DirectXMath.h>
@@ -30,7 +14,7 @@
 // ============================================================================
 
 // Helper macro to validate CBV layout/size for all constant-buffer structs.
-// Usage: CBV_CHECK(MyCbStruct);
+// Example: CBV_CHECK(MyCbStruct);
 // Validate that CB types are safe to memcpy to GPU memory and match HLSL layout
 #define CBV_CHECK(Type)                                                                      \
 	static_assert(std::is_standard_layout_v<Type>, #Type " must be standard-layout");        \
@@ -40,7 +24,7 @@
 	static_assert(sizeof(Type) <= 64 * 1024, #Type " must be <= 64KB")
 
 //------------------------------------------------------------------------------
-// Per-Frame CB (b0) — updated once per CPU frame, shared by all draws
+// Per-Frame CB (b0) - updated once per CPU frame, shared by all draws
 //------------------------------------------------------------------------------
 struct alignas(256) PerFrameConstantBufferData
 {
@@ -59,7 +43,7 @@ struct alignas(256) PerFrameConstantBufferData
 CBV_CHECK(PerFrameConstantBufferData);
 
 //------------------------------------------------------------------------------
-// Per-View CB (b1) — updated per camera/view (main, shadow, reflection, etc.)
+// Per-View CB (b1) - updated per camera/view (main, shadow, reflection, etc.)
 //------------------------------------------------------------------------------
 struct alignas(256) PerViewConstantBufferData
 {
@@ -82,7 +66,7 @@ struct alignas(256) PerViewConstantBufferData
 CBV_CHECK(PerViewConstantBufferData);
 
 //------------------------------------------------------------------------------
-// Per-Object VS CB (b2) — updated per draw call (transforms)
+// Per-Object VS CB (b2) - updated per draw call (transforms)
 //------------------------------------------------------------------------------
 struct alignas(256) PerObjectVSConstantBufferData
 {
@@ -93,7 +77,7 @@ struct alignas(256) PerObjectVSConstantBufferData
 };
 CBV_CHECK(PerObjectVSConstantBufferData);
 //------------------------------------------------------------------------------
-// Per-Object PS CB (b3) — updated per draw call (material scalars)
+// Per-Object PS CB (b3) - updated per draw call (material scalars)
 //------------------------------------------------------------------------------
 struct alignas(256) PerObjectPSConstantBufferData
 {
@@ -123,6 +107,6 @@ static_assert(offsetof(PerObjectPSConstantBufferData, AlphaMode) == 44, "PerObje
 static_assert(offsetof(PerObjectPSConstantBufferData, TextureFlags) == 48, "PerObjectPSConstantBufferData::TextureFlags must start at c3.x");
 
 //------------------------------------------------------------------------------
-// Per-Instance Data (structured buffer element) — updated per instance
+// Per-Instance Data (structured buffer element) - updated per instance
 // TODO: Implement when instanced rendering is needed
 //------------------------------------------------------------------------------

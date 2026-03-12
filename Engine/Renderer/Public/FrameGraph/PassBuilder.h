@@ -1,24 +1,11 @@
 // =============================================================================
-// PassBuilder.h — Resource Declaration Interface for Render Passes
+// PassBuilder.h - Resource Declaration Interface for Render Passes
 // =============================================================================
 //
 // Builder interface passed to RenderPass::Setup() for declaring resource usage.
 // Passes use PassBuilder to state which resources they read from and write to.
 // The FrameGraph uses this to manage lifetimes and barrier transitions.
 //
-// USAGE:
-//   void ForwardOpaquePass::Setup(PassBuilder& builder, const SceneView& view)
-//   {
-//       m_backBuffer = builder.UseBackBuffer();
-//       m_depthBuffer = builder.UseDepthBuffer();
-//   }
-//
-// NOTES:
-//   - MVP: Only UseBackBuffer() and UseDepthBuffer() are functional
-//   - Future: Read(), Write(), CreateTexture() for transient resources
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

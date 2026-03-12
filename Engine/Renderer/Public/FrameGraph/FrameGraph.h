@@ -1,23 +1,10 @@
 // =============================================================================
-// FrameGraph.h — Render Pass Graph Manager
+// FrameGraph.h - Render Pass Graph Manager
 // =============================================================================
 //
 // Manages render passes and their execution order. All passes declare their
 // resource dependencies in Setup, then record GPU commands in Execute.
 //
-// USAGE:
-//   SceneView view = renderer.BuildSceneView();
-//   frameGraph.Setup(view);       // Passes declare resource usage
-//   frameGraph.Compile();         // MVP: no-op
-//   frameGraph.Execute(context);  // Passes record GPU commands
-//
-// DESIGN:
-//   - Owns all render passes via unique_ptr
-//   - Two-phase per frame: Setup (declare) then Execute (record)
-//   - Future: automatic barrier insertion and pass reordering
-//
-// =============================================================================
-
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"

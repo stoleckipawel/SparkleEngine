@@ -3,20 +3,6 @@
 // ----------------------------------------------------------------------------
 // Game-side camera. Pure data object with transform/projection state.
 //
-// USAGE:
-//   GameCamera camera;
-//   camera.Move(direction, distance);
-//   camera.Rotate(yawDelta, pitchDelta);
-//
-// DESIGN:
-//   - Pure data object, no knowledge of external systems
-//   - External controllers (CameraController) handle input and window events
-//   - Provides movement methods for controllers to use
-//   - Uses dirty flag to signal when matrices need rebuilding
-//   - Caches direction vector to avoid redundant trig calculations
-//
-// ============================================================================
-
 #pragma once
 
 #include <DirectXMath.h>

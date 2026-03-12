@@ -8,26 +8,6 @@
 //   boundary for render passes. The RenderContext translates these states to
 //   the appropriate D3D12_RESOURCE_STATES when issuing barriers.
 //
-// USAGE:
-//   RenderContext::TransitionResource(resource, ResourceState::Common, ResourceState::RenderTarget);
-//
-// DESIGN:
-//   - No D3D12 types in this header — purely semantic states
-//   - Maps 1:1 to common D3D12 states used in rendering
-//   - Extensible for future Vulkan/Metal backends
-//
-// MAPPING (for reference):
-//   Common          -> D3D12_RESOURCE_STATE_COMMON
-//   RenderTarget    -> D3D12_RESOURCE_STATE_RENDER_TARGET
-//   DepthWrite      -> D3D12_RESOURCE_STATE_DEPTH_WRITE
-//   DepthRead       -> D3D12_RESOURCE_STATE_DEPTH_READ
-//   ShaderResource  -> D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
-//   UnorderedAccess -> D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-//   CopySource      -> D3D12_RESOURCE_STATE_COPY_SOURCE
-//   CopyDest        -> D3D12_RESOURCE_STATE_COPY_DEST
-//   Present         -> D3D12_RESOURCE_STATE_PRESENT
-// ============================================================================
-
 #pragma once
 
 #include <cstdint>

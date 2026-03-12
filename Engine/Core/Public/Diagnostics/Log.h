@@ -2,17 +2,6 @@
 // Log.h
 // Public logging API for engine and client code.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   LOG_INFO("Engine initialized");
-//   LOG_WARNING("Resource not found: %s", path.c_str());
-//   LOG_ERROR("Failed to load texture");
-//   LOG_FATAL("Unrecoverable error");
-//   CHECK(device->CreateBuffer(...));
-//
-// NOTES:
-//   - Adjust runtime verbosity with Logger::SetLevel()
-//   - Fatal logs flush synchronously, break to debugger, then terminate
-// ============================================================================
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

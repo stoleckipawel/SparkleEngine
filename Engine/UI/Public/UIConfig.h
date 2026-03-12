@@ -3,14 +3,6 @@
 // ----------------------------------------------------------------------------
 // UI module configuration constants and compile-time toggles.
 //
-// DESIGN:
-//   - Header-only with minimal dependencies
-//   - Compile-time macros for UI features
-//
-// NOTES:
-//   - This keeps UI self-contained without coupling to Core
-// ============================================================================
-
 #pragma once
 
 // ============================================================================

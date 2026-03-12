@@ -3,14 +3,6 @@
 // ----------------------------------------------------------------------------
 // RAII guard that automatically removes subscription on destruction.
 //
-// USAGE:
-//   Event<void(int)> OnChanged;
-//   auto handle = OnChanged.Add([](int x) { ... });
-//   ScopedEventHandle scoped(OnChanged, handle);
-//   // Automatically unsubscribes when scoped goes out of scope
-//
-// ============================================================================
-
 #pragma once
 
 #include "Core/Public/CoreAPI.h"

@@ -2,24 +2,6 @@
 // AssetTypes.h
 // Classification of engine asset types with directory mapping.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   auto subdir = GetAssetSubdirectory(AssetType::Texture);  // "Textures"
-//
-// DESIGN:
-//   Each asset type maps to a canonical subdirectory under the asset root.
-//   This enables automatic path resolution and type-specific loading.
-//
-// DIRECTORY STRUCTURE:
-//   Assets/
-//   ├── Shaders/           <- AssetType::Shader
-//   │   └── ShaderSymbols/ <- AssetType::ShaderSymbols (debug PDBs)
-//   ├── Textures/          <- AssetType::Texture
-//   ├── Meshes/            <- AssetType::Mesh
-//   ├── Materials/         <- AssetType::Material
-//   ├── Scenes/            <- AssetType::Scene
-//   ├── Audio/             <- AssetType::Audio
-//   └── Fonts/             <- AssetType::Font
-// ============================================================================
 #pragma once
 
 #include <cstdint>

@@ -2,20 +2,6 @@
 // AssetSystem.h
 // Unified asset path resolution service with marker-based discovery.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   AssetSystem assetSystem;  // Auto-discovers paths in constructor
-//   const auto& shaderDir = assetSystem.GetShaderPath();
-//   auto fullPath = assetSystem.ResolvePath(AssetType::Texture, "diffuse.png");
-//
-// DESIGN:
-//   Marker Hierarchy (files that identify directory roles):
-//     .sparkle         - Workspace root (repository level)
-//     .sparkle-engine  - Engine root (engine/ subdirectory)
-//     .sparkle-project - Project root (each game/sample project)
-//
-//   Discovery walks up from executable/working directory for markers.
-//   If workspace root is found, engine is at <workspace>/engine/.
-// ============================================================================
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"

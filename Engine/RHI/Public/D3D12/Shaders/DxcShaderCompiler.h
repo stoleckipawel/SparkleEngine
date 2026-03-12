@@ -3,27 +3,6 @@
 // ----------------------------------------------------------------------------
 // Compiles HLSL shaders using the DirectX Shader Compiler (DXC).
 //
-// USAGE:
-//   // Direct compilation with full options:
-//   ShaderCompileOptions opts;
-//   opts.SourcePath = "path/to/shader.hlsl";
-//   opts.Stage = ShaderStage::Vertex;
-//   auto result = DxcShaderCompiler::Compile(opts);
-//
-//   // Convenience method from asset path:
-//   auto result = DxcShaderCompiler::CompileFromAsset(
-//       "Passes/Forward/ForwardLitVS.hlsl", ShaderStage::Vertex);
-//
-// DESIGN:
-//   - Stateless compiler: create options, call Compile(), get result
-//   - Uses DxcContext for efficient interface reuse
-//   - Saves PDB symbols in debug builds
-//
-// NOTES:
-//   - Returns ShaderCompileResult with bytecode or error message
-//   - Include paths support project-override-engine semantics
-// ============================================================================
-
 #pragma once
 
 #include "ShaderCompileOptions.h"

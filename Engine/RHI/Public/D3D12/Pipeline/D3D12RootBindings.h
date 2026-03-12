@@ -3,24 +3,6 @@
 // ----------------------------------------------------------------------------
 // Single source of truth for shader resource binding layout.
 //
-// USAGE:
-//   cmdList->SetGraphicsRootConstantBufferView(
-//       RootBindings::RootParam::PerFrame, gpuAddress);
-//
-// SYNC WITH:
-//   - D3D12RootSignature.cpp (root signature creation)
-//   - ConstantBuffers.hlsli (HLSL register declarations)
-//   - Samplers.hlsli (sampler register declarations)
-//
-// LAYOUT:
-//   Root Param 0: PerFrame CBV (b0)
-//   Root Param 1: PerView CBV (b1)
-//   Root Param 2: PerObjectVS CBV (b2)
-//   Root Param 3: PerObjectPS CBV (b3)
-//   Root Param 4: Material texture SRV table (t0-t4)
-//   Root Param 5: Sampler table (s0-s32)
-// ============================================================================
-
 #pragma once
 
 #include <cstdint>
@@ -75,7 +57,7 @@ namespace RootBindings
 	// Sampler Registers
 	// -----------------------------------------------------------------------------
 	// Layout: [Point MinMag][Linear MinMag][Anisotropic]
-	// Each group: [MipPoint/MipLinear/NoMip] × [Wrap/Clamp/Mirror]
+	// Each group: [MipPoint/MipLinear/NoMip] x [Wrap/Clamp/Mirror]
 	namespace SamplerRegister
 	{
 		// Point MinMag (s0-s8)

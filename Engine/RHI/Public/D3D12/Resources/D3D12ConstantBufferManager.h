@@ -2,24 +2,6 @@
 // D3D12ConstantBufferManager.h
 // Centralized constant buffer management with GPU/CPU synchronization.
 // ----------------------------------------------------------------------------
-// USAGE:
-//   D3D12ConstantBufferManager cbManager(timer, rhi, window, ...);
-//   auto gpuAddr = cbManager.GetPerFrameGpuAddress();
-//   cbManager.UpdatePerFrame();
-//
-// DESIGN:
-//   Per-Frame/Per-View CBs:
-//     Use persistent ConstantBuffer<T> instances (one per frame-in-flight).
-//     Updated once per frame, bound to root CBV slots.
-//
-//   Per-Object CBs:
-//     Use FrameResourceManager's linear allocator for suballocation per-draw.
-//     UpdatePerObjectXXX() returns a unique GPU VA per call.
-//
-// NOTES:
-//   - Per-object allocations are thread-safe (atomic linear allocator)
-//   - Per-frame/per-view updates should be called from main thread
-// ============================================================================
 #pragma once
 #include <d3d12.h>
 #include <wrl/client.h>

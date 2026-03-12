@@ -3,23 +3,6 @@
 // ----------------------------------------------------------------------------
 // Manager for all descriptor heaps required by the engine.
 //
-// USAGE:
-//   D3D12DescriptorHeapManager heapManager;  // Created by Renderer
-//   auto handle = heapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-//   heapManager.SetShaderVisibleHeaps();
-//   heapManager.FreeHandle(type, handle);
-//   // Destructor cleans up
-//
-// DESIGN:
-//   - Owns heaps for all four D3D12 heap types (SRV, Sampler, DSV, RTV)
-//   - Provides allocation/free for single and contiguous descriptors
-//   - Raw handle interface for external libraries (ImGui)
-//
-// NOTES:
-//   - Owned by Renderer, passed by reference to dependent classes
-//   - Constructor initializes heaps after device creation
-// ============================================================================
-
 #pragma once
 
 #include "D3D12Rhi.h"

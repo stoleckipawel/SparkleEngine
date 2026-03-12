@@ -1,30 +1,23 @@
 // =============================================================================
-// InputLayer.h — Input Consumption Priority Layers
+// InputLayer.h - Input Consumption Priority Layers
 // =============================================================================
 //
 // Priority layers for input consumption. Lower values = higher priority.
 // Higher priority layers can block lower ones.
 //
 // Layer ordering (highest to lowest priority):
-//   System    → OS-level shortcuts, cannot be blocked (Alt+F4, Alt+Tab)
-//   Console   → Debug console, command input
-//   Debug     → Profiler, debug overlays, dev tools
-//   HUD       → UI elements (ImGui, menus, dialogs)
-//   Gameplay  → Player control, camera, vehicles, interaction
+//   System    -> OS-level shortcuts, cannot be blocked (Alt+F4, Alt+Tab)
+//   Console   -> Debug console, command input
+//   Debug     -> Profiler, debug overlays, dev tools
+//   HUD       -> UI elements (ImGui, menus, dialogs)
+//   Gameplay  -> Player control, camera, vehicles, interaction
 //
-// Usage:
-//   - Subscribe callbacks to appropriate layer
-//   - Enable/disable layers at runtime (e.g., disable Gameplay when HUD is active)
-//   - System layer callbacks always fire; others respect layer enable state
-//
-// =============================================================================
-
 #pragma once
 
 #include <cstdint>
 
 // =============================================================================
-// InputLayer — Input Consumption Priority Layers
+// InputLayer - Input Consumption Priority Layers
 // =============================================================================
 
 enum class InputLayer : std::uint8_t
