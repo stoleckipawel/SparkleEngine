@@ -13,7 +13,6 @@ enum class DepthMode : std::uint8_t;
 
 class Timer;
 
-class AssetSystem;
 class D3D12Rhi;
 class D3D12Texture;
 class D3D12PipelineState;
@@ -26,18 +25,24 @@ class D3D12FrameResourceManager;
 class D3D12SwapChain;
 class FrameGraph;
 class GPUMeshCache;
+class LevelManager;
 class RenderCamera;
 class Scene;
 class Window;
 class UI;
 class TextureManager;
 class ShaderCompileResult;
+class SceneRenderStateCoordinator;
 struct RendererMaterialCacheState;
 
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept;
+	Renderer(
+	    Timer& timer,
+	    Scene& scene,
+	    Window& window,
+	    LevelManager& levelManager) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -55,6 +60,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void OnResize() noexcept;
 	void SubscribeToDepthModeChanges() noexcept;
 	void SubscribeToWindowResize() noexcept;
+	void RebuildSceneScopedRendererResources();
 
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
@@ -73,8 +79,6 @@ class SPARKLE_RENDERER_API Renderer final
 	void BuildMeshDraws(SceneView& view) const;
 
 	Timer* m_timer = nullptr;
-
-	const AssetSystem* m_assetSystem = nullptr;
 
 	std::unique_ptr<D3D12Rhi> m_rhi;
 
@@ -105,10 +109,12 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<UI> m_ui;
 
 	std::unique_ptr<FrameGraph> m_frameGraph;
+	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 
 	Scene* m_scene = nullptr;
 
 	Window* m_window = nullptr;
+	LevelManager* m_levelManager = nullptr;
 
 	ScopedEventHandle m_depthModeChangedHandle;
 	ScopedEventHandle m_resizeHandle;

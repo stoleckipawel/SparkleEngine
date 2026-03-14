@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Level/LevelDesc.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -12,10 +13,21 @@
 class Mesh;
 class GameCamera;
 class Level;
-class LevelRegistry;
-class AssetSystem;
-struct LevelDesc;
 struct ImportedMeshRequest;
+
+enum class SceneLoadStatus : std::uint8_t
+{
+	Succeeded = 0,
+	Failed
+};
+
+struct SPARKLE_ENGINE_API SceneLoadResult
+{
+	SceneLoadStatus status = SceneLoadStatus::Failed;
+	std::string errorMessage;
+
+	bool Succeeded() const noexcept { return status == SceneLoadStatus::Succeeded; }
+};
 
 class SPARKLE_ENGINE_API Scene final
 {
@@ -31,14 +43,13 @@ class SPARKLE_ENGINE_API Scene final
 	GameCamera& GetCamera() noexcept;
 	const GameCamera& GetCamera() const noexcept;
 
-	void LoadLevel(const Level& level, AssetSystem& assetSystem);
-	void LoadLevelOrDefault(const LevelRegistry& levelRegistry, std::string_view levelName, AssetSystem& assetSystem);
+	SceneLoadResult LoadLevel(const Level& level);
 
 	void Clear();
 
-	const std::string& GetCurrentLevelName() const noexcept { return m_currentLevelName; }
+	const LevelCameraDesc& GetCurrentLevelInitialCamera() const noexcept { return m_camera; }
 
-	bool LoadGltf(const std::filesystem::path& assetPath, AssetSystem& assetSystem);
+	bool LoadGltf(const std::filesystem::path& assetPath);
 
 	const std::vector<MaterialDesc>& GetLoadedMaterials() const noexcept { return m_loadedMaterials; }
 
@@ -46,14 +57,14 @@ class SPARKLE_ENGINE_API Scene final
 	bool HasMeshes() const noexcept { return !m_meshes.empty(); }
 
   private:
-	void LoadImportedMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem);
-	void LoadImportedMeshRequest(const ImportedMeshRequest& request, AssetSystem& assetSystem);
+	bool LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage);
+	bool LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage);
 	bool AppendResolvedGltf(const std::filesystem::path& resolvedPath);
 
-	std::unique_ptr<GameCamera> m_camera;
+	std::unique_ptr<GameCamera> m_gameCamera;
 
 	std::vector<std::unique_ptr<Mesh>> m_meshes;
 	std::vector<MaterialDesc> m_loadedMaterials;
 
-	std::string m_currentLevelName;
+	LevelCameraDesc m_camera;
 };

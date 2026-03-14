@@ -10,8 +10,6 @@
 
 using Microsoft::WRL::ComPtr;
 
-class AssetSystem;
-
 class TextureLoader
 {
   public:
@@ -29,7 +27,7 @@ class TextureLoader
 		DXGI_FORMAT dxgiPixelFormat = DXGI_FORMAT_UNKNOWN;
 	};
 
-	explicit TextureLoader(const AssetSystem& assetSystem, const std::filesystem::path& fileName);
+	explicit TextureLoader(const std::filesystem::path& fileName);
 
 	const Data& GetData() const noexcept { return m_data; }
 
@@ -48,7 +46,15 @@ class TextureLoader
 		DXGI_FORMAT dxgiFormat;
 	};
 
+	struct GUID_to_WIC
+	{
+		GUID sourceWic;
+		GUID targetWic;
+		DXGI_FORMAT dxgiFormat;
+	};
+
 	static const std::vector<GUID_to_DXGI> s_lookupTable;
+	static const std::vector<GUID_to_WIC> s_convertTable;
 
 	bool m_requiresFormatConversion = false;
 	GUID m_sourceWicPixelFormat = {};

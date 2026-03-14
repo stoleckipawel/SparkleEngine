@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "TextureLoader.h"
-#include "Assets/AssetSystem.h"
+#include "FileSystemUtils.h"
 #include "Log.h"
 #include <cstring>
 #include <limits>
@@ -9,9 +9,16 @@ const std::vector<TextureLoader::GUID_to_DXGI> TextureLoader::s_lookupTable = {
     {GUID_WICPixelFormat32bppRGBA, DXGI_FORMAT_R8G8B8A8_UNORM},
     {GUID_WICPixelFormat32bppBGRA, DXGI_FORMAT_B8G8R8A8_UNORM}};
 
-TextureLoader::TextureLoader(const AssetSystem& assetSystem, const std::filesystem::path& fileName)
+const std::vector<TextureLoader::GUID_to_WIC> TextureLoader::s_convertTable = {
+    {GUID_WICPixelFormat24bppBGR, GUID_WICPixelFormat32bppRGBA, DXGI_FORMAT_R8G8B8A8_UNORM},
+    {GUID_WICPixelFormat24bppRGB, GUID_WICPixelFormat32bppRGBA, DXGI_FORMAT_R8G8B8A8_UNORM},
+    {GUID_WICPixelFormat8bppGray, GUID_WICPixelFormat32bppRGBA, DXGI_FORMAT_R8G8B8A8_UNORM},
+    {GUID_WICPixelFormat32bppPBGRA, GUID_WICPixelFormat32bppBGRA, DXGI_FORMAT_B8G8R8A8_UNORM},
+    {GUID_WICPixelFormat32bppPRGBA, GUID_WICPixelFormat32bppRGBA, DXGI_FORMAT_R8G8B8A8_UNORM}};
+
+TextureLoader::TextureLoader(const std::filesystem::path& fileName)
 {
-	const auto resolvedPath = assetSystem.ResolvePathValidated(fileName, AssetType::Texture);
+	const auto resolvedPath = Filesystem::ResolveAssetPathValidated(fileName, AssetType::Texture);
 
 	ComPtr<IWICImagingFactory> wicFactory;
 	CHECK(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(wicFactory.ReleaseAndGetAddressOf())));
@@ -72,6 +79,25 @@ void TextureLoader::MapToDxgiFormat(const std::filesystem::path& resolvedPath)
 	if (findIt != s_lookupTable.end())
 	{
 		m_data.dxgiPixelFormat = findIt->dxgiFormat;
+		return;
+	}
+
+	auto convertIt = std::find_if(
+	    s_convertTable.begin(),
+	    s_convertTable.end(),
+	    [&](const GUID_to_WIC& entry)
+	    {
+		    return std::memcmp(&entry.sourceWic, &m_sourceWicPixelFormat, sizeof(GUID)) == 0;
+	    });
+
+	if (convertIt != s_convertTable.end())
+	{
+		m_requiresFormatConversion = true;
+		m_targetWicPixelFormat = convertIt->targetWic;
+		m_data.wicPixelFormat = convertIt->targetWic;
+		m_data.bitsPerPixel = 32;
+		m_data.channelCount = 4;
+		m_data.dxgiPixelFormat = convertIt->dxgiFormat;
 		return;
 	}
 

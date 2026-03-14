@@ -12,6 +12,7 @@ class CesiumManLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
+		desc.initialCamera.transform = Transform({0.0f, 1.5f, -3.0f}, {0.0f, 0.0f, 0.0f});
 		desc.importedMeshRequests.push_back({"CesiumMan/CesiumMan.gltf"});
 		return desc;
 	}

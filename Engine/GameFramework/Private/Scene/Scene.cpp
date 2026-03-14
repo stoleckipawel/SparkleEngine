@@ -1,84 +1,99 @@
 #include "PCH.h"
 #include "Scene.h"
 
+#include "FileSystemUtils.h"
 #include "Scene/Mesh.h"
 #include "Scene/ImportedMesh.h"
 #include "Camera/GameCamera.h"
-#include "Assets/AssetSystem.h"
 #include "Assets/GltfLoader.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
-#include "Level/LevelRegistry.h"
 #include "Core/Public/Diagnostics/Log.h"
 
-Scene::Scene() : m_camera(std::make_unique<GameCamera>()) {}
+Scene::Scene() : m_gameCamera(std::make_unique<GameCamera>()) {}
 
 Scene::~Scene() noexcept = default;
 
 GameCamera& Scene::GetCamera() noexcept
 {
-	return *m_camera;
+	return *m_gameCamera;
 }
 
 const GameCamera& Scene::GetCamera() const noexcept
 {
-	return *m_camera;
+	return *m_gameCamera;
 }
 
-void Scene::LoadLevel(const Level& level, AssetSystem& assetSystem)
+SceneLoadResult Scene::LoadLevel(const Level& level)
 {
-	LOG_INFO("Scene: Loading level '" + std::string(level.GetName()) + "'");
+	SceneLoadResult result;
+	const std::string levelName(level.GetName());
+
+	LOG_INFO("Scene: Loading level '" + levelName + "'");
 
 	Clear();
 
 	LevelDesc desc = level.BuildDescription();
-	LoadImportedMeshRequests(desc, assetSystem);
-
-	m_currentLevelName = std::string(level.GetName());
-
-	LOG_INFO("Scene: Level '" + m_currentLevelName + "' loaded");
-}
-
-void Scene::LoadLevelOrDefault(const LevelRegistry& levelRegistry, std::string_view levelName, AssetSystem& assetSystem)
-{
-	if (auto* level = levelRegistry.FindLevelOrDefault(levelName))
+	if (!LoadImportedMeshRequests(desc, result.errorMessage))
 	{
-		LoadLevel(*level, assetSystem);
+		Clear();
+		LOG_ERROR(
+		    "Scene: Failed to load level '" + levelName + "'" +
+		    (result.errorMessage.empty() ? std::string() : " - " + result.errorMessage));
+		return result;
 	}
+
+	m_camera = desc.initialCamera;
+	result.status = SceneLoadStatus::Succeeded;
+
+	LOG_INFO("Scene: Level '" + levelName + "' loaded");
+	return result;
 }
 
-void Scene::LoadImportedMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem)
+bool Scene::LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage)
 {
 	for (const auto& request : desc.importedMeshRequests)
 	{
-		LoadImportedMeshRequest(request, assetSystem);
+		if (!LoadImportedMeshRequest(request, errorMessage))
+		{
+			return false;
+		}
 	}
+
+	return true;
 }
 
-void Scene::LoadImportedMeshRequest(const ImportedMeshRequest& request, AssetSystem& assetSystem)
+bool Scene::LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage)
 {
-	auto resolved = assetSystem.ResolvePath(request.assetPath, AssetType::Mesh);
+	auto resolved = Filesystem::ResolveAssetPath(request.assetPath, AssetType::Mesh);
 	if (resolved)
 	{
-		AppendResolvedGltf(*resolved);
-		return;
+		if (AppendResolvedGltf(*resolved))
+		{
+			return true;
+		}
+
+		errorMessage = "Failed to load mesh asset '" + resolved->string() + "'";
+		return false;
 	}
 
+	errorMessage = "Mesh asset not found '" + request.assetPath.string() + "'";
 	LOG_WARNING("Scene: Asset not found — " + request.assetPath.string());
+	return false;
 }
 
 void Scene::Clear()
 {
 	m_meshes.clear();
 	m_loadedMaterials.clear();
-	m_currentLevelName.clear();
+	m_camera = {};
 }
 
-bool Scene::LoadGltf(const std::filesystem::path& assetPath, AssetSystem& assetSystem)
+bool Scene::LoadGltf(const std::filesystem::path& assetPath)
 {
 	Clear();
 
-	auto resolvedPath = assetSystem.ResolvePath(assetPath, AssetType::Mesh);
+	auto resolvedPath = Filesystem::ResolveAssetPath(assetPath, AssetType::Mesh);
 	if (!resolvedPath)
 	{
 		LOG_WARNING("Scene: Asset not found — " + assetPath.string());

@@ -2,7 +2,7 @@
 
 int main()
 {
-	App app("__PROJECT_NAME__");
+	App app;
 	app.Run();
 	return 0;
 }

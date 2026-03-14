@@ -45,7 +45,7 @@ target_include_directories(SparkleRHI
         ${CMAKE_CURRENT_SOURCE_DIR}/../Renderer/Public
         # UI module for UI.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../UI/Public
-        # GameFramework module for Assets/AssetSystem.h
+        # GameFramework module for AssetTypes.h and PathRoot.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
         # D3D12 subdirectories for internal includes
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12

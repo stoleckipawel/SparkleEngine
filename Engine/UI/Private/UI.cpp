@@ -5,9 +5,11 @@
 #include "D3D12DescriptorHeapManager.h"
 #include "D3D12SwapChain.h"
 #include "RHIConfig.h"
+#include "Runtime/Level/LevelManager.h"
 #include "Timer.h"
 
 #include "Panels/RendererPanel.h"
+#include "Sections/SceneSection.h"
 #include "Sections/StatsOverlay.h"
 #include "Sections/ViewMode.h"
 #include "Sections/TimeControls.h"
@@ -46,8 +48,19 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	return ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam);
 }
 
-UI::UI(Timer& timer, D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager, D3D12SwapChain& swapChain) :
-    m_timer(&timer), m_rhi(&rhi), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain)
+UI::UI(
+    Timer& timer,
+	LevelManager* levelManager,
+    D3D12Rhi& rhi,
+    Window& window,
+    D3D12DescriptorHeapManager& descriptorHeapManager,
+    D3D12SwapChain& swapChain) :
+    m_timer(&timer),
+	m_levelManager(levelManager),
+    m_rhi(&rhi),
+    m_window(&window),
+    m_descriptorHeapManager(&descriptorHeapManager),
+    m_swapChain(&swapChain)
 {
 	InitializeImGuiContext();
 
@@ -119,6 +132,9 @@ void UI::InitializeDefaultPanels()
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::Stats))
 		m_rendererPanel->SetSection(std::make_unique<StatsOverlay>(*m_timer));
 
+	if (!m_rendererPanel->HasSection(UIRendererSectionId::Scene) && m_levelManager != nullptr)
+		m_rendererPanel->SetSection(std::make_unique<SceneSection>(*m_levelManager));
+
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::ViewMode))
 		m_rendererPanel->SetSection(std::make_unique<ViewMode>());
 
@@ -161,8 +177,10 @@ void UI::NewFrame()
 
 void UI::Build()
 {
+	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
+
 	if (m_rendererPanel)
-		m_rendererPanel->BuildUI();
+		m_rendererPanel->BuildUI(disableInteraction);
 
 #if USE_IMGUI_DEMO_WINDOW
 	bool showDemoWindow = true;

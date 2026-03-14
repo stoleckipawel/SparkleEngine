@@ -206,11 +206,7 @@ Module/
 
 | Project | Description |
 |---------|-------------|
-| `Projects/ABeautifulGame/` | A Beautiful Game scene viewer |
-| `Projects/CesiumMan/` | CesiumMan scene viewer |
-| `Projects/DamagedHelmet/` | DamagedHelmet scene viewer |
-| `Projects/DiffuseTransmissionPlant/` | DiffuseTransmissionPlant scene viewer |
-| `Projects/Sponza/` | Sponza scene viewer |
+| `Projects/Showcase/` | Single built sample project with runtime level switching across all registered levels, including `Empty` |
 | `Projects/TemplateProject/` | Template for new projects |
 
 ### Build Output

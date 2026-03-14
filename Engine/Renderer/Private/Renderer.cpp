@@ -1,8 +1,8 @@
 #include "PCH.h"
 #include "Renderer.h"
 
-#include "Assets/AssetSystem.h"
 #include "Assets/MaterialDesc.h"
+#include "Runtime/Level/LevelManager.h"
 #include "D3D12DebugLayer.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12Rhi.h"
@@ -35,13 +35,18 @@
 #include "Renderer/Public/Textures/MaterialFallbackTextures.h"
 #include "Scene/Camera/GameCamera.h"
 #include "SceneData/MaterialCacheUtils.h"
+#include "SceneData/SceneRenderStateCoordinator.h"
 #include "SceneData/RendererMaterialCacheState.h"
 
-Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept :
+Renderer::Renderer(
+    Timer& timer,
+    Scene& scene,
+    Window& window,
+	LevelManager& levelManager) noexcept :
     m_timer(&timer),
-    m_assetSystem(&assetSystem),
     m_scene(&scene),
     m_window(&window),
+	m_levelManager(&levelManager),
     m_materialCache(std::make_unique<RendererMaterialCacheState>())
 {
 	m_rhi = std::make_unique<D3D12Rhi>();
@@ -54,15 +59,15 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 	m_rootSignature = std::make_unique<D3D12RootSignature>(*m_rhi);
 
 	m_vertexShader = std::make_unique<ShaderCompileResult>(
-	    DxcShaderCompiler::CompileFromAsset(*m_assetSystem, "Passes/Forward/ForwardLitVS.hlsl", ShaderStage::Vertex, "main"));
+	    DxcShaderCompiler::CompileFromAsset("Passes/Forward/ForwardLitVS.hlsl", ShaderStage::Vertex, "main"));
 	m_pixelShader = std::make_unique<ShaderCompileResult>(
-	    DxcShaderCompiler::CompileFromAsset(*m_assetSystem, "Passes/Forward/ForwardLitPS.hlsl", ShaderStage::Pixel, "main"));
+	    DxcShaderCompiler::CompileFromAsset("Passes/Forward/ForwardLitPS.hlsl", ShaderStage::Pixel, "main"));
 
 	m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*m_rhi);
 	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, *m_window, *m_descriptorHeapManager);
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 
-	m_ui = std::make_unique<UI>(*m_timer, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
+	m_ui = std::make_unique<UI>(*m_timer, m_levelManager, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -75,7 +80,7 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 
 	m_samplerLibrary = std::make_unique<D3D12SamplerLibrary>(*m_rhi, *m_descriptorHeapManager);
 
-	m_textureManager = std::make_unique<TextureManager>(*m_assetSystem, *m_rhi, *m_descriptorHeapManager);
+	m_textureManager = std::make_unique<TextureManager>(*m_rhi, *m_descriptorHeapManager);
 
 	m_gpuMeshCache = std::make_unique<GPUMeshCache>(*m_rhi);
 
@@ -87,6 +92,24 @@ Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, W
 	CreateDepthStencilBuffer();
 
 	m_renderCamera = std::make_unique<RenderCamera>(m_scene->GetCamera());
+	SceneRenderStateCoordinatorCallbacks sceneRenderCallbacks{};
+	sceneRenderCallbacks.context = this;
+	sceneRenderCallbacks.releaseMaterialTextureTables = [](void* context) noexcept
+	{
+		static_cast<Renderer*>(context)->ReleaseMaterialTextureTables();
+	};
+	sceneRenderCallbacks.rebuildSceneResources = [](void* context) noexcept
+	{
+		static_cast<Renderer*>(context)->RebuildSceneScopedRendererResources();
+	};
+	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
+	    m_levelManager->GetLevelChangeEvents(),
+	    *m_rhi,
+	    *m_gpuMeshCache,
+	    *m_textureManager,
+	    *m_renderCamera,
+	    *m_materialCache,
+	    sceneRenderCallbacks);
 
 	m_frameGraph = std::make_unique<FrameGraph>(m_swapChain.get(), m_depthStencil.get());
 	m_frameGraph->AddPass<ForwardOpaquePass>(
@@ -141,6 +164,16 @@ void Renderer::SubscribeToWindowResize() noexcept
 		    OnResize();
 	    });
 	m_resizeHandle = ScopedEventHandle(m_window->OnResized, handle);
+}
+
+void Renderer::RebuildSceneScopedRendererResources()
+{
+	if (!m_scene || !m_materialCache)
+	{
+		return;
+	}
+
+	RebuildMaterialCache();
 }
 
 void Renderer::OnRender() noexcept
@@ -271,6 +304,8 @@ void Renderer::RebuildMaterialCache() const
 	ReleaseMaterialTextureTables();
 	materialCache.cachedMaterialData.clear();
 	materialCache.cachedMaterialDescs.clear();
+	materialCache.materialCacheBuilt = false;
+	materialCache.materialCacheUsesLoadedMaterials = false;
 	materialCache.materialCacheUsesLoadedMaterials = !loadedMaterials.empty();
 
 	const auto* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);

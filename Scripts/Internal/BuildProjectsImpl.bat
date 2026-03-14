@@ -115,7 +115,7 @@ if /I "!TARGET_PROJECT!"=="ALL" (
 )
 
 if "!BUILD_COUNT!"=="0" (
-    echo [WARN] No projects were built. Ensure solution is generated.
+    echo [WARN] No runnable projects were built. Ensure Showcase or another generated project exists and the solution is generated.
 )
 
 if "!BUILD_FAILED!"=="1" (

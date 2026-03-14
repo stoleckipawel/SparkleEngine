@@ -64,8 +64,8 @@ for /D %%P in ("!PROJECTS_DIR!\*") do (
 )
 
 if "!PROJECT_COUNT!"=="0" (
-    echo [ERROR] No projects found in Projects\ folder.
-    echo         Create a project using CreateNewProject.bat
+    echo [ERROR] No runnable projects found in Projects\ folder.
+    echo         Restore Projects\Showcase or create a project using CreateNewProject.bat
     set "EXIT_RC=1"
     goto :FINISH
 )

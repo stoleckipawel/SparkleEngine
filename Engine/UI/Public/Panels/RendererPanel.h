@@ -23,7 +23,7 @@ class RendererPanel final
 	bool HasSection(UIRendererSectionId id) const noexcept;
 	UIRendererSection& GetSection(UIRendererSectionId id) noexcept;
 
-	void BuildUI();
+	void BuildUI(bool disableInteraction = false);
 
   private:
 	std::size_t FindSectionIndex(UIRendererSectionId id) const noexcept;

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "UI/Public/UIAPI.h"
-
 #include "Events/ScopedEventHandle.h"
 
 #include <Windows.h>
@@ -13,6 +12,7 @@ class Timer;
 class RendererPanel;
 class UIRendererSection;
 class StatsOverlay;
+class LevelManager;
 class Window;
 class D3D12DescriptorHeapManager;
 class D3D12SwapChain;
@@ -22,7 +22,12 @@ struct WindowMessageEvent;
 class SPARKLE_UI_API UI final
 {
   public:
-	UI(Timer& timer, D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager, D3D12SwapChain& swapChain);
+	UI(Timer& timer,
+	   LevelManager* levelManager,
+	   D3D12Rhi& rhi,
+	   Window& window,
+	   D3D12DescriptorHeapManager& descriptorHeapManager,
+	   D3D12SwapChain& swapChain);
 
 	~UI() noexcept;
 
@@ -60,6 +65,7 @@ class SPARKLE_UI_API UI final
 
 	std::unique_ptr<RendererPanel> m_rendererPanel;
 	Timer* m_timer = nullptr;
+	LevelManager* m_levelManager = nullptr;
 	D3D12Rhi* m_rhi = nullptr;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

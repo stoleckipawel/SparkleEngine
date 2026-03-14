@@ -69,6 +69,7 @@ target_link_libraries(SparkleUI
         SparklePlatform
         SparkleRenderer
     PRIVATE
+        SparkleGameFramework
         imgui
 )
 

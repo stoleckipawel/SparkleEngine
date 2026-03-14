@@ -3,7 +3,6 @@
 #include "FileSystemUtils.h"
 #include "D3D12Texture.h"
 #include "TextureLoader.h"
-#include "Assets/AssetSystem.h"
 #include "D3D12Rhi.h"
 #include "D3D12DescriptorHeapManager.h"
 
@@ -33,26 +32,26 @@ namespace
 		return payload;
 	}
 
-	TexturePayload LoadTexturePayload(const AssetSystem& assetSystem, const std::filesystem::path& filePath)
+	TexturePayload LoadTexturePayload(const std::filesystem::path& filePath)
 	{
-		const TextureLoader loader(assetSystem, filePath);
+		const TextureLoader loader(filePath);
 		return CreateTexturePayloadFromLoadedData(loader.GetData());
 	}
 }  // namespace
 
 std::unique_ptr<D3D12Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
-	if (!m_assetSystem || !m_rhi || !m_descriptorHeapManager)
+	if (!m_rhi || !m_descriptorHeapManager)
 	{
 		LOG_FATAL("TextureManager::CreateTextureFromPath: manager dependencies are unavailable.");
 		return nullptr;
 	}
 
-	return std::make_unique<D3D12Texture>(*m_rhi, LoadTexturePayload(*m_assetSystem, texturePath), *m_descriptorHeapManager);
+	return std::make_unique<D3D12Texture>(*m_rhi, LoadTexturePayload(texturePath), *m_descriptorHeapManager);
 }
 
-TextureManager::TextureManager(const AssetSystem& assetSystem, D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-    m_assetSystem(&assetSystem), m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
+TextureManager::TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
+    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
 {
 	LoadDefaults();
 }
@@ -140,9 +139,24 @@ void TextureManager::UnloadTexture(TextureId id) noexcept
 	}
 }
 
+void TextureManager::UnloadSceneTextures() noexcept
+{
+	for (auto it = m_pathTextures.begin(); it != m_pathTextures.end();)
+	{
+		if (m_defaultPathTextureKeys.contains(it->first))
+		{
+			++it;
+			continue;
+		}
+
+		it = m_pathTextures.erase(it);
+	}
+}
+
 void TextureManager::UnloadAll() noexcept
 {
 	m_pathTextures.clear();
+	m_defaultPathTextureKeys.clear();
 	for (auto& texture : m_textures)
 	{
 		texture.reset();
@@ -203,6 +217,7 @@ void TextureManager::LoadDefaultTextures()
 	for (std::uint8_t index = 0; index < static_cast<std::uint8_t>(DefaultTexture::Count); ++index)
 	{
 		const auto type = static_cast<DefaultTexture>(index);
+		RegisterDefaultPathTexture(DefaultTextures::GetPath(type));
 		if (!LoadFromPath(DefaultTextures::GetPath(type)))
 		{
 			LOG_WARNING(
@@ -211,6 +226,23 @@ void TextureManager::LoadDefaultTextures()
 			        DefaultTextures::GetName(type)));
 		}
 	}
+}
+
+void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& texturePath)
+{
+	const std::filesystem::path resolvedPath = ResolveTexturePath(texturePath);
+	if (resolvedPath.empty())
+	{
+		return;
+	}
+
+	const TextureCacheKey cacheKey = MakeCacheKey(resolvedPath);
+	if (cacheKey.empty())
+	{
+		return;
+	}
+
+	m_defaultPathTextureKeys.insert(cacheKey);
 }
 
 const D3D12Texture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
@@ -237,14 +269,9 @@ const D3D12Texture* TextureManager::FindPathTexture(const std::filesystem::path&
 
 std::filesystem::path TextureManager::ResolveTexturePath(const std::filesystem::path& texturePath) const
 {
-	if (!m_assetSystem)
+	if (auto resolved = Filesystem::ResolveAssetPath(texturePath, AssetType::Texture))
 	{
-		return {};
-	}
-
-	if (auto resolved = m_assetSystem->ResolvePath(texturePath, AssetType::Texture))
-	{
-		return Engine::FileSystem::NormalizePath(*resolved);
+		return Filesystem::NormalizePath(*resolved);
 	}
 
 	return {};

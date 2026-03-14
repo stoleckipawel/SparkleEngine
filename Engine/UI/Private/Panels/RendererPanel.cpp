@@ -61,7 +61,7 @@ UIRendererSection& RendererPanel::GetSection(UIRendererSectionId id) noexcept
 	return *m_sections[index];
 }
 
-void RendererPanel::BuildUI()
+void RendererPanel::BuildUI(bool disableInteraction)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -76,7 +76,9 @@ void RendererPanel::BuildUI()
 
 		ImGui::Text("%s", section.GetTitle());
 		ImGui::Separator();
+		ImGui::BeginDisabled(disableInteraction);
 		section.BuildUI();
+		ImGui::EndDisabled();
 
 		if (i + 1 < m_sections.size())
 			ImGui::Separator();

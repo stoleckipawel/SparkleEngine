@@ -12,6 +12,7 @@ class DiffuseTransmissionPlantLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
+		desc.initialCamera.transform = Transform({0.0f, 1.8f, -5.0f}, {-0.1f, 0.0f, 0.0f});
 		desc.importedMeshRequests.push_back({"DiffuseTransmissionPlant/DiffuseTransmissionPlant.gltf"});
 		return desc;
 	}

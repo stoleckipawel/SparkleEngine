@@ -12,6 +12,7 @@ class ABeautifulGameLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
+		desc.initialCamera.transform = Transform({0.0f, 1.2f, -4.5f}, {0.0f, 0.0f, 0.0f});
 		desc.importedMeshRequests.push_back({"ABeautifulGame/ABeautifulGame.gltf"});
 		return desc;
 	}

@@ -12,6 +12,7 @@ class SponzaLevel final : public Level
 	LevelDesc BuildDescription() const override
 	{
 		LevelDesc desc;
+		desc.initialCamera.transform = Transform({0.0f, 1.6f, -8.0f}, {0.0f, 0.0f, 0.0f});
 		desc.importedMeshRequests.push_back({"Sponza/Sponza.gltf"});
 		return desc;
 	}

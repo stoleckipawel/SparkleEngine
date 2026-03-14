@@ -166,9 +166,16 @@ endif()
 # ---------------------------
 # Default startup project for VS
 # ---------------------------
-# Use first discovered project as startup, or fall back to SparkleEngine
+# Prefer Showcase as the startup sample when it is present in the repo.
 if(DISCOVERED_PROJECTS)
-    list(GET DISCOVERED_PROJECTS 0 STARTUP_PROJECT)
+    set(STARTUP_PROJECT "")
+    list(FIND DISCOVERED_PROJECTS "Showcase" SHOWCASE_PROJECT_INDEX)
+    if(NOT SHOWCASE_PROJECT_INDEX EQUAL -1)
+        set(STARTUP_PROJECT "Showcase")
+    else()
+        list(GET DISCOVERED_PROJECTS 0 STARTUP_PROJECT)
+    endif()
+
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${STARTUP_PROJECT})
     message(STATUS "VS startup project: ${STARTUP_PROJECT}")
 else()

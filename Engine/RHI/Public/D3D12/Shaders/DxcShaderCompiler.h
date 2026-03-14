@@ -9,21 +9,18 @@
 
 using Microsoft::WRL::ComPtr;
 
-class AssetSystem;
-
 class DxcShaderCompiler
 {
   public:
-	static ShaderCompileResult Compile(const AssetSystem& assetSystem, const ShaderCompileOptions& options);
+	static ShaderCompileResult Compile(const ShaderCompileOptions& options);
 
 	static ShaderCompileResult CompileFromAsset(
-	    const AssetSystem& assetSystem,
 	    const std::filesystem::path& sourcePath,
 	    ShaderStage stage,
 	    const std::string& entryPoint = "main");
 
   private:
-	static void ConfigureIncludePaths(const AssetSystem& assetSystem, ShaderCompileOptions& options);
+	static void ConfigureIncludePaths(ShaderCompileOptions& options);
 
 	static void ApplyBuildConfiguration(ShaderCompileOptions& options);
 
@@ -40,5 +37,5 @@ class DxcShaderCompiler
 
 	static std::string ExtractErrorMessage(IDxcResult* result);
 
-	static void SaveShaderSymbols(const AssetSystem& assetSystem, IDxcResult* result, const std::filesystem::path& sourcePath);
+	static void SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
 };
