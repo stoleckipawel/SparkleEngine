@@ -335,28 +335,6 @@ InputBackendResult Win32InputBackend::ProcessMessage(uint32_t Msg, uintptr_t Par
 			break;
 		}
 
-		case WM_XBUTTONDOWN:
-		{
-			Result.Type = InputEventType::MouseButton;
-			Result.MouseButton.Button = (GET_XBUTTON_WPARAM(WParam) == XBUTTON1) ? MouseButton::X1 : MouseButton::X2;
-			Result.MouseButton.bPressed = true;
-			Result.MouseButton.Position.X = GET_X_LPARAM(LParam);
-			Result.MouseButton.Position.Y = GET_Y_LPARAM(LParam);
-			Result.MouseButton.Modifiers = GetCurrentModifiers();
-			break;
-		}
-
-		case WM_XBUTTONUP:
-		{
-			Result.Type = InputEventType::MouseButton;
-			Result.MouseButton.Button = (GET_XBUTTON_WPARAM(WParam) == XBUTTON1) ? MouseButton::X1 : MouseButton::X2;
-			Result.MouseButton.bPressed = false;
-			Result.MouseButton.Position.X = GET_X_LPARAM(LParam);
-			Result.MouseButton.Position.Y = GET_Y_LPARAM(LParam);
-			Result.MouseButton.Modifiers = GetCurrentModifiers();
-			break;
-		}
-
 		case WM_MOUSEMOVE:
 		{
 			Result.Type = InputEventType::MouseMove;

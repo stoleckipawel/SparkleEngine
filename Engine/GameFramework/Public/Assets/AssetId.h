@@ -12,7 +12,7 @@ class AssetId final
 	constexpr AssetId() noexcept = default;
 
 	constexpr explicit AssetId(std::string_view name) noexcept :
-	    m_hash(Engine::Hash::Fnv1a64(name))
+	    m_hash(Hash::Fnv1a64(name))
 #if defined(_DEBUG)
 	    ,
 	    m_debugName(name)

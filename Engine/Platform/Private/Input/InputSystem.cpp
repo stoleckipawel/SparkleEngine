@@ -131,11 +131,12 @@ bool InputSystem::IsLayerEnabled(InputLayer Layer) const noexcept
 
 InputLayer InputSystem::GetActiveLayer() const noexcept
 {
-	for (std::size_t i = 0; i < LayerCount; ++i)
+	for (std::size_t i = LayerCount; i > 0; --i)
 	{
-		if (m_LayerEnabled[i])
+		const std::size_t index = i - 1;
+		if (m_LayerEnabled[index])
 		{
-			return static_cast<InputLayer>(i);
+			return static_cast<InputLayer>(index);
 		}
 	}
 	return InputLayer::Gameplay;

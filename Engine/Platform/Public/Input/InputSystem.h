@@ -182,7 +182,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	uint32_t m_NextCallbackId = 1;
 
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
-	std::array<bool, LayerCount> m_LayerEnabled = {true, false, false, true, true};
+	std::array<bool, LayerCount> m_LayerEnabled = {true, true};
 
 	int32_t m_LastMouseX = 0;
 	int32_t m_LastMouseY = 0;
