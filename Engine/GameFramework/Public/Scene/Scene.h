@@ -38,7 +38,7 @@ class SPARKLE_ENGINE_API Scene final
 
 	const std::string& GetCurrentLevelName() const noexcept { return m_currentLevelName; }
 
-	bool LoadGltf(const std::filesystem::path& filePath);
+	bool LoadGltf(const std::filesystem::path& assetPath, AssetSystem& assetSystem);
 
 	const std::vector<MaterialDesc>& GetLoadedMaterials() const noexcept { return m_loadedMaterials; }
 
@@ -48,7 +48,7 @@ class SPARKLE_ENGINE_API Scene final
   private:
 	void LoadImportedMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem);
 	void LoadImportedMeshRequest(const ImportedMeshRequest& request, AssetSystem& assetSystem);
-	bool AppendGltf(const std::filesystem::path& filePath);
+	bool AppendResolvedGltf(const std::filesystem::path& resolvedPath);
 
 	std::unique_ptr<GameCamera> m_camera;
 

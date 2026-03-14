@@ -19,23 +19,17 @@ namespace
 
 	bool MaterialDescEquals(const MaterialDesc& left, const MaterialDesc& right)
 	{
-		return left.name == right.name &&
-		       left.baseColor.x == right.baseColor.x && left.baseColor.y == right.baseColor.y &&
-		       left.baseColor.z == right.baseColor.z && left.baseColor.w == right.baseColor.w &&
-		       left.metallic == right.metallic &&
-		       left.roughness == right.roughness &&
-		       left.f0 == right.f0 &&
-		       left.emissiveColor.x == right.emissiveColor.x && left.emissiveColor.y == right.emissiveColor.y &&
-		       left.emissiveColor.z == right.emissiveColor.z &&
-		       left.alphaMode == right.alphaMode &&
-		       left.alphaCutoff == right.alphaCutoff &&
-		       OptionalPathEquals(left.albedoTexture, right.albedoTexture) &&
-		       OptionalPathEquals(left.normalTexture, right.normalTexture) &&
+		return left.name == right.name && left.baseColor.x == right.baseColor.x && left.baseColor.y == right.baseColor.y &&
+		       left.baseColor.z == right.baseColor.z && left.baseColor.w == right.baseColor.w && left.metallic == right.metallic &&
+		       left.roughness == right.roughness && left.f0 == right.f0 && left.emissiveColor.x == right.emissiveColor.x &&
+		       left.emissiveColor.y == right.emissiveColor.y && left.emissiveColor.z == right.emissiveColor.z &&
+		       left.alphaMode == right.alphaMode && left.alphaCutoff == right.alphaCutoff &&
+		       OptionalPathEquals(left.albedoTexture, right.albedoTexture) && OptionalPathEquals(left.normalTexture, right.normalTexture) &&
 		       OptionalPathEquals(left.metallicRoughnessTexture, right.metallicRoughnessTexture) &&
 		       OptionalPathEquals(left.occlusionTexture, right.occlusionTexture) &&
 		       OptionalPathEquals(left.emissiveTexture, right.emissiveTexture);
 	}
-}
+}  // namespace
 
 std::uint32_t MaterialCacheUtils::ResolveMaterialId(std::uint32_t materialId, std::size_t materialCount)
 {
@@ -44,9 +38,11 @@ std::uint32_t MaterialCacheUtils::ResolveMaterialId(std::uint32_t materialId, st
 		return materialId;
 	}
 
-	LOG_WARNING(std::format("MaterialCacheUtils::ResolveMaterialId: Material {} is out of range ({} materials); falling back to material 0",
-	                        materialId,
-	                        materialCount));
+	LOG_WARNING(
+	    std::format(
+	        "MaterialCacheUtils::ResolveMaterialId: Material {} is out of range ({} materials); falling back to material 0",
+	        materialId,
+	        materialCount));
 	return 0;
 }
 
@@ -69,9 +65,9 @@ bool MaterialCacheUtils::MaterialDescSetEquals(const std::vector<MaterialDesc>& 
 }
 
 const D3D12Texture* MaterialCacheUtils::ResolveMaterialTexture(
-	TextureManager& textureManager,
-	const std::optional<std::filesystem::path>& texturePath,
-	MaterialFallbackTexture fallbackType)
+    TextureManager& textureManager,
+    const std::optional<std::filesystem::path>& texturePath,
+    MaterialFallbackTexture fallbackType)
 {
 	if (texturePath)
 	{

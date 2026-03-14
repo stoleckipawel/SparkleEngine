@@ -58,4 +58,4 @@ namespace MathUtils
 		uint32_t hi = std::max(a, b);
 		return (uint64_t) lo | ((uint64_t) hi << 32);
 	}
-}
+}  // namespace MathUtils

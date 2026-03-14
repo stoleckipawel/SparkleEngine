@@ -252,23 +252,3 @@ const std::filesystem::path& AssetSystem::GetMeshPath(PathRoot root) const noexc
 {
 	return GetTypedPath(AssetType::Mesh, root);
 }
-
-const std::filesystem::path& AssetSystem::GetMaterialPath(PathRoot root) const noexcept
-{
-	return GetTypedPath(AssetType::Material, root);
-}
-
-const std::filesystem::path& AssetSystem::GetScenePath(PathRoot root) const noexcept
-{
-	return GetTypedPath(AssetType::Scene, root);
-}
-
-const std::filesystem::path& AssetSystem::GetAudioPath(PathRoot root) const noexcept
-{
-	return GetTypedPath(AssetType::Audio, root);
-}
-
-const std::filesystem::path& AssetSystem::GetFontPath(PathRoot root) const noexcept
-{
-	return GetTypedPath(AssetType::Font, root);
-}

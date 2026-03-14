@@ -127,4 +127,4 @@ namespace Engine::FileSystem
 
 		return std::nullopt;
 	}
-}
+}  // namespace Engine::FileSystem

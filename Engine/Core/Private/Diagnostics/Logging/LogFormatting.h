@@ -45,4 +45,4 @@ namespace Logging
 
 		return "[?]       ";
 	}
-}
+}  // namespace Logging

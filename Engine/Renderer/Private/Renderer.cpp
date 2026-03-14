@@ -38,7 +38,11 @@
 #include "SceneData/RendererMaterialCacheState.h"
 
 Renderer::Renderer(Timer& timer, const AssetSystem& assetSystem, Scene& scene, Window& window) noexcept :
-    m_timer(&timer), m_assetSystem(&assetSystem), m_scene(&scene), m_window(&window), m_materialCache(std::make_unique<RendererMaterialCacheState>())
+    m_timer(&timer),
+    m_assetSystem(&assetSystem),
+    m_scene(&scene),
+    m_window(&window),
+    m_materialCache(std::make_unique<RendererMaterialCacheState>())
 {
 	m_rhi = std::make_unique<D3D12Rhi>();
 
@@ -238,9 +242,9 @@ void Renderer::BuildMaterials(SceneView& view) const
 
 	const bool shouldUseLoadedMaterials = !loadedMaterials.empty();
 	const bool materialSetChanged = shouldUseLoadedMaterials
-	    ? (!materialCache.materialCacheUsesLoadedMaterials ||
-	       !MaterialCacheUtils::MaterialDescSetEquals(materialCache.cachedMaterialDescs, loadedMaterials))
-	    : materialCache.materialCacheUsesLoadedMaterials;
+	                                    ? (!materialCache.materialCacheUsesLoadedMaterials ||
+	                                       !MaterialCacheUtils::MaterialDescSetEquals(materialCache.cachedMaterialDescs, loadedMaterials))
+	                                    : materialCache.materialCacheUsesLoadedMaterials;
 
 	if (!materialCache.materialCacheBuilt || materialSetChanged)
 	{
@@ -283,14 +287,16 @@ void Renderer::RebuildMaterialCache() const
 		const D3D12Texture* textures[RootBindings::SRVRegister::MaterialTextureCount] = {
 		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.albedoTexture, MaterialFallbackTexture::Albedo),
 		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.normalTexture, MaterialFallbackTexture::Normal),
-		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.metallicRoughnessTexture, MaterialFallbackTexture::MetallicRoughness),
+		    MaterialCacheUtils::ResolveMaterialTexture(
+		        *m_textureManager,
+		        desc.metallicRoughnessTexture,
+		        MaterialFallbackTexture::MetallicRoughness),
 		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.occlusionTexture, MaterialFallbackTexture::Occlusion),
 		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.emissiveTexture, MaterialFallbackTexture::Emissive)};
 
-		const D3D12DescriptorHandle tableHandle =
-		    m_descriptorHeapManager->AllocateContiguous(
-		        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		        RootBindings::SRVRegister::MaterialTextureCount);
+		const D3D12DescriptorHandle tableHandle = m_descriptorHeapManager->AllocateContiguous(
+		    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		    RootBindings::SRVRegister::MaterialTextureCount);
 
 		for (std::uint32_t slot = 0; slot < RootBindings::SRVRegister::MaterialTextureCount; ++slot)
 		{

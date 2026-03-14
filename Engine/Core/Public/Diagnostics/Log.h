@@ -20,7 +20,7 @@ namespace Logger
 	SPARKLE_CORE_API void SetLevel(LogLevel level) noexcept;
 	SPARKLE_CORE_API LogLevel GetLevel() noexcept;
 	SPARKLE_CORE_API bool IsEnabled(LogLevel level) noexcept;
-}
+}  // namespace Logger
 
 #define LE_LOG_LEVEL_TRACE 0
 #define LE_LOG_LEVEL_DEBUG 1

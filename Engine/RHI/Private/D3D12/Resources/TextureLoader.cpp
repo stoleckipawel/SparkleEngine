@@ -120,12 +120,7 @@ void TextureLoader::CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapFram
 		LOG_FATAL("TextureLoader: WIC cannot convert source pixel format to 32bpp RGBA.");
 	}
 
-	CHECK(formatConverter->Initialize(
-		wicFrame,
-		m_targetWicPixelFormat,
-		WICBitmapDitherTypeNone,
-		nullptr,
-		0.0f,
-		WICBitmapPaletteTypeCustom));
+	CHECK(
+	    formatConverter->Initialize(wicFrame, m_targetWicPixelFormat, WICBitmapDitherTypeNone, nullptr, 0.0f, WICBitmapPaletteTypeCustom));
 	CHECK(formatConverter->CopyPixels(&copyRect, m_data.stride, m_data.slicePitch, reinterpret_cast<BYTE*>(m_data.data.data())));
 }

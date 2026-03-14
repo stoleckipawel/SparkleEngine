@@ -29,10 +29,7 @@ struct TexturePayload
 	TextureFormatIntent formatIntent = TextureFormatIntent::Unknown;
 	std::vector<TextureMipLevelData> mipLevels;
 
-	std::uint16_t GetMipCount() const noexcept
-	{
-		return static_cast<std::uint16_t>(mipLevels.size());
-	}
+	std::uint16_t GetMipCount() const noexcept { return static_cast<std::uint16_t>(mipLevels.size()); }
 
 	bool IsValid() const noexcept
 	{

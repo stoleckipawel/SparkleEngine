@@ -53,9 +53,7 @@ void D3D12DebugLayer::ApplyInfoQueueFilters(ID3D12Device* device)
 	ComPtr<ID3D12InfoQueue> infoQueue;
 	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(infoQueue.ReleaseAndGetAddressOf()))))
 	{
-		D3D12_MESSAGE_ID disabledMessages[] = {
-		    static_cast<D3D12_MESSAGE_ID>(1424)
-		};
+		D3D12_MESSAGE_ID disabledMessages[] = {static_cast<D3D12_MESSAGE_ID>(1424)};
 		D3D12_INFO_QUEUE_FILTER filter = {};
 		filter.DenyList.NumIDs = static_cast<UINT>(std::size(disabledMessages));
 		filter.DenyList.pIDList = disabledMessages;

@@ -20,4 +20,4 @@ namespace MaterialCacheUtils
 	    TextureManager& textureManager,
 	    const std::optional<std::filesystem::path>& texturePath,
 	    MaterialFallbackTexture fallbackType);
-}
+}  // namespace MaterialCacheUtils

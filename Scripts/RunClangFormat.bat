@@ -5,7 +5,7 @@
 :: Runs clang-format on all source files under Engine/ and Projects/.
 :: Displays progress, tracks modifications, and generates a summary log.
 ::
-:: Supported extensions: .cpp, .h, .hlsl, .hlsli
+:: Supported extensions: .cpp, .h, .hpp, .hxx, .hlsl, .hlsli
 :: Output log: logs/LogClangFormat.txt
 ::
 :: Usage: RunClangFormat.bat
@@ -35,6 +35,17 @@ if not defined LOG_CAPTURED (
 :: ---------------------------------------------------------------------------
 call "%~dp0Internal\Config.bat"
 
+set /A TOTAL=0
+set /A IDX=0
+set /A MODIFIED=0
+set /A FORMAT_ERRORS=0
+
+if not exist "!ENGINE_DIR!" (
+    echo [ERROR] Engine source directory not found: !ENGINE_DIR!
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
 :: ---------------------------------------------------------------------------
 :: Validate clang-format is available
 :: ---------------------------------------------------------------------------
@@ -59,40 +70,49 @@ echo [LOG] ClangFormat started: %DATE% %TIME% > "!FORMAT_LOG!"
 :: ---------------------------------------------------------------------------
 echo [LOG] Scanning for source files...
 
-set /A TOTAL=0
-for %%E in (cpp h hlsl hlsli) do (
-    for /R "!ENGINE_DIR!" %%F in (*.%%E) do (
-        echo %%~fF | findstr /I /C:"\third_party\" >nul || set /A TOTAL+=1
-    )
-    if exist "!PROJECTS_DIR!" (
-        for /R "!PROJECTS_DIR!" %%F in (*.%%E) do (
-            set /A TOTAL+=1
-        )
-    )
+for %%E in (cpp h hpp hxx hlsl hlsli) do (
+	call :COUNT_DIR "!ENGINE_DIR!" %%E 1
+	if exist "!PROJECTS_DIR!" call :COUNT_DIR "!PROJECTS_DIR!" %%E 0
 )
 
-if %TOTAL%==0 (
+if !TOTAL! EQU 0 (
     echo [WARN] No source files found.
     echo [LOG] No files found. >> "!FORMAT_LOG!"
     goto :SUMMARY
 )
 
-echo [LOG] Found %TOTAL% files to process.
+echo [LOG] Found !TOTAL! files to process.
 echo.
 
 :: ---------------------------------------------------------------------------
 :: Process each file
 :: ---------------------------------------------------------------------------
-set /A IDX=0
-set /A MODIFIED=0
-set /A FORMAT_ERRORS=0
-
-for %%E in (cpp h hlsl hlsli) do (
-    call :PROCESS_DIR "!ENGINE_DIR!" %%E
-    if exist "!PROJECTS_DIR!" call :PROCESS_DIR "!PROJECTS_DIR!" %%E
+for %%E in (cpp h hpp hxx hlsl hlsli) do (
+	call :PROCESS_DIR "!ENGINE_DIR!" %%E 1
+	if exist "!PROJECTS_DIR!" call :PROCESS_DIR "!PROJECTS_DIR!" %%E 0
 )
 
 goto :SUMMARY
+
+:: ---------------------------------------------------------------------------
+:: Subroutine: Count files of given extension in directory tree
+:: ---------------------------------------------------------------------------
+:COUNT_DIR
+set "SCAN_DIR=%~1"
+set "EXT=%~2"
+set "SKIP_THIRD_PARTY=%~3"
+
+if not exist "%SCAN_DIR%" goto :EOF
+
+for /R "%SCAN_DIR%" %%F in (*.%EXT%) do (
+	if "%SKIP_THIRD_PARTY%"=="1" (
+		echo %%~fF | findstr /I /C:"\third_party\" >nul
+		if errorlevel 1 set /A TOTAL+=1
+	) else (
+		set /A TOTAL+=1
+	)
+)
+goto :EOF
 
 :: ---------------------------------------------------------------------------
 :: Subroutine: Process all files of given extension in directory tree
@@ -100,44 +120,50 @@ goto :SUMMARY
 :PROCESS_DIR
 set "SCAN_DIR=%~1"
 set "EXT=%~2"
+set "SKIP_THIRD_PARTY=%~3"
+
+if not exist "%SCAN_DIR%" goto :EOF
 
 for /R "%SCAN_DIR%" %%F in (*.%EXT%) do (
-    :: Skip files in third_party directory
-    echo %%~fF | findstr /I /C:"\third_party\" >nul
-    if errorlevel 1 (
-        set /A IDX+=1
-        set "FILE=%%~fF"
+	if "%SKIP_THIRD_PARTY%"=="1" (
+		echo %%~fF | findstr /I /C:"\third_party\" >nul
+		if errorlevel 1 call :FORMAT_FILE "%%~fF"
+	) else (
+		call :FORMAT_FILE "%%~fF"
+	)
+)
+goto :EOF
 
-        :: Display progress
-        echo [!IDX!/!TOTAL!] !FILE!
-        echo [SCAN] !IDX!/!TOTAL! - !FILE! >> "!FORMAT_LOG!"
+:: ---------------------------------------------------------------------------
+:: Subroutine: Format a single file and track changes
+:: ---------------------------------------------------------------------------
+:FORMAT_FILE
+set "FILE=%~1"
+set /A IDX+=1
 
-        :: Compute hash before formatting
-        set "HASH_BEFORE="
-        for /f "skip=1 tokens=1" %%H in ('certutil -hashfile "%%~fF" MD5 2^>nul') do (
-            if not defined HASH_BEFORE set "HASH_BEFORE=%%H"
-        )
+echo [!IDX!/!TOTAL!] !FILE!
+echo [SCAN] !IDX!/!TOTAL! - !FILE! >> "!FORMAT_LOG!"
 
-        :: Run clang-format in-place
-        clang-format -style=file -i "%%~fF" 2>>"!FORMAT_LOG!"
-        if errorlevel 1 (
-            echo [ERROR] clang-format failed: %%~fF >> "!FORMAT_LOG!"
-            set /A FORMAT_ERRORS+=1
-        )
+set "HASH_BEFORE="
+for /f "skip=1 tokens=1" %%H in ('certutil -hashfile "%~1" MD5 2^>nul') do (
+	if not defined HASH_BEFORE set "HASH_BEFORE=%%H"
+)
 
-        :: Compute hash after formatting
-        set "HASH_AFTER="
-        for /f "skip=1 tokens=1" %%H in ('certutil -hashfile "%%~fF" MD5 2^>nul') do (
-            if not defined HASH_AFTER set "HASH_AFTER=%%H"
-        )
+clang-format -style=file -i "%~1" 2>>"!FORMAT_LOG!"
+if errorlevel 1 (
+	echo [ERROR] clang-format failed: %~1 >> "!FORMAT_LOG!"
+	set /A FORMAT_ERRORS+=1
+)
 
-        :: Check if file was modified
-        if not "!HASH_BEFORE!"=="!HASH_AFTER!" (
-            set /A MODIFIED+=1
-            echo [MODIFIED] !FILE! >> "!FORMAT_LOG!"
-            echo   ^> Modified
-        )
-    )
+set "HASH_AFTER="
+for /f "skip=1 tokens=1" %%H in ('certutil -hashfile "%~1" MD5 2^>nul') do (
+	if not defined HASH_AFTER set "HASH_AFTER=%%H"
+)
+
+if not "!HASH_BEFORE!"=="!HASH_AFTER!" (
+	set /A MODIFIED+=1
+	echo [MODIFIED] !FILE! >> "!FORMAT_LOG!"
+	echo   ^> Modified
 )
 goto :EOF
 

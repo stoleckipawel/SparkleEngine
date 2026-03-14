@@ -15,7 +15,7 @@ namespace RootBindings
 		constexpr uint32_t SamplerTable = 5;
 
 		constexpr uint32_t Count = 6;
-	}
+	}  // namespace RootParam
 
 	namespace CBRegister
 	{
@@ -23,7 +23,7 @@ namespace RootBindings
 		constexpr uint32_t PerView = 1;
 		constexpr uint32_t PerObjectVS = 2;
 		constexpr uint32_t PerObjectPS = 3;
-	}
+	}  // namespace CBRegister
 
 	namespace SRVRegister
 	{
@@ -35,7 +35,7 @@ namespace RootBindings
 
 		constexpr uint32_t MaterialTableBase = BaseColor;
 		constexpr uint32_t MaterialTextureCount = 5;
-	}
+	}  // namespace SRVRegister
 
 	namespace SamplerRegister
 	{
@@ -76,7 +76,7 @@ namespace RootBindings
 		constexpr uint32_t Aniso16xMirror = 32;
 
 		constexpr uint32_t Count = 33;
-	}
+	}  // namespace SamplerRegister
 
 	namespace Visibility
 	{
@@ -86,5 +86,5 @@ namespace RootBindings
 		constexpr D3D12_SHADER_VISIBILITY PerObjectPS = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY TextureSRV = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY SamplerTable = D3D12_SHADER_VISIBILITY_PIXEL;
-	}
-}
+	}  // namespace Visibility
+}  // namespace RootBindings

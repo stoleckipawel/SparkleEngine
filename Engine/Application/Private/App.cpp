@@ -14,9 +14,7 @@
 
 #include <utility>
 
-App::App(std::string windowTitle) : m_windowTitle(windowTitle.empty() ? "Sparkle" : std::move(windowTitle))
-{
-}
+App::App(std::string windowTitle) : m_windowTitle(windowTitle.empty() ? "Sparkle" : std::move(windowTitle)) {}
 
 App::~App() = default;
 

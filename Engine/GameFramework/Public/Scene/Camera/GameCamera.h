@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Math/Transform.h"
+
 #include <DirectXMath.h>
 
 class GameCamera final
@@ -23,15 +25,16 @@ class GameCamera final
 
 	void Rotate(float yawDelta, float pitchDelta) noexcept;
 
-	DirectX::XMFLOAT3 GetPosition() const noexcept { return m_position; }
+	DirectX::XMFLOAT3 GetPosition() const noexcept { return m_transform.GetTranslation(); }
 	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
+	const Transform& GetTransform() const noexcept { return m_transform; }
 
 	const DirectX::XMFLOAT3& GetDirection() const noexcept;
 	DirectX::XMFLOAT3 GetRight() const noexcept;
 
 	void SetYawPitch(float yawRadians, float pitchRadians) noexcept;
-	float GetYaw() const noexcept { return m_yaw; }
-	float GetPitch() const noexcept { return m_pitch; }
+	float GetYaw() const noexcept { return m_transform.GetRotationEuler().y; }
+	float GetPitch() const noexcept { return m_transform.GetRotationEuler().x; }
 
 	bool IsDirty() const noexcept { return m_dirty; }
 
@@ -56,9 +59,7 @@ class GameCamera final
 
 	void MarkDirty() noexcept { m_dirty = true; }
 
-	DirectX::XMFLOAT3 m_position = {0.0f, 0.0f, -4.0f};
-	float m_pitch = 0.0f;
-	float m_yaw = 0.0f;
+	Transform m_transform{{0.0f, 0.0f, -4.0f}};
 
 	mutable DirectX::XMFLOAT3 m_cachedDirection = {0.0f, 0.0f, 1.0f};
 	mutable bool m_directionDirty = true;

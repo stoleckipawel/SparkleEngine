@@ -1,61 +1,41 @@
 #include "PCH.h"
 #include "Mesh.h"
 
+Mesh::Mesh(const Transform& transform) noexcept : m_transform(transform) {}
+
 Mesh::Mesh(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotation, const DirectX::XMFLOAT3& scale) noexcept :
-    m_translation(translation), m_rotationEuler(rotation), m_scale(scale)
+    Mesh(Transform(translation, rotation, scale))
 {
 }
 
 void Mesh::SetTranslation(const DirectX::XMFLOAT3& t) noexcept
 {
-	m_translation = t;
-	InvalidateWorldCache();
+	m_transform.SetTranslation(t);
 }
 
 void Mesh::SetRotationEuler(const DirectX::XMFLOAT3& r) noexcept
 {
-	m_rotationEuler = r;
-	InvalidateWorldCache();
+	m_transform.SetRotationEuler(r);
 }
 
 void Mesh::SetScale(const DirectX::XMFLOAT3& s) noexcept
 {
-	m_scale = s;
-	InvalidateWorldCache();
-}
-
-void Mesh::RebuildWorldIfNeeded() const noexcept
-{
-	if (!m_bWorldDirty)
-		return;
-
-	const DirectX::XMMATRIX S = DirectX::XMMatrixScaling(m_scale.x, m_scale.y, m_scale.z);
-	const DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(m_rotationEuler.x, m_rotationEuler.y, m_rotationEuler.z);
-	const DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(m_translation.x, m_translation.y, m_translation.z);
-	DirectX::XMStoreFloat4x4(&m_worldMatrixCache, S * R * T);
-	m_bWorldDirty = false;
+	m_transform.SetScale(s);
 }
 
 DirectX::XMMATRIX Mesh::GetWorldMatrix() const noexcept
 {
-	RebuildWorldIfNeeded();
-	return DirectX::XMLoadFloat4x4(&m_worldMatrixCache);
+	return m_transform.GetWorldMatrix();
 }
 
 DirectX::XMMATRIX Mesh::GetWorldInverseTransposeMatrix() const noexcept
 {
-	RebuildWorldIfNeeded();
-	const DirectX::XMMATRIX world = DirectX::XMLoadFloat4x4(&m_worldMatrixCache);
-	return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, world));
+	return m_transform.GetWorldInverseTransposeMatrix();
 }
 
 DirectX::XMFLOAT3X3 Mesh::GetWorldRotationMatrix3x3() const noexcept
 {
-	using namespace DirectX;
-	const XMMATRIX R = XMMatrixRotationRollPitchYaw(m_rotationEuler.x, m_rotationEuler.y, m_rotationEuler.z);
-	XMFLOAT3X3 rot3x3;
-	XMStoreFloat3x3(&rot3x3, R);
-	return rot3x3;
+	return m_transform.GetRotationMatrix3x3();
 }
 
 void Mesh::RebuildGeometry()

@@ -17,4 +17,4 @@ namespace D3D12VertexLayout
 	{
 		return kStaticMeshLayout;
 	}
-}
+}  // namespace D3D12VertexLayout

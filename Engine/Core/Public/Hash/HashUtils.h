@@ -44,4 +44,4 @@ namespace Hash
 		}
 		return hash;
 	}
-}
+}  // namespace Hash

@@ -94,7 +94,7 @@ void D3D12Rhi::CreateFactory()
 	CHECK(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf())));
 }
 
-void D3D12Rhi::CreateDevice(bool )
+void D3D12Rhi::CreateDevice(bool)
 {
 	SelectAdapter();
 	if (!m_adapter)

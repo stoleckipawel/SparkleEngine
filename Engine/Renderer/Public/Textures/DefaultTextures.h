@@ -26,4 +26,4 @@ namespace DefaultTextures
 	SPARKLE_RENDERER_API const DefaultTextureDesc& GetDesc(DefaultTexture type);
 	SPARKLE_RENDERER_API const char* GetName(DefaultTexture type);
 	SPARKLE_RENDERER_API std::filesystem::path GetPath(DefaultTexture type);
-}
+}  // namespace DefaultTextures

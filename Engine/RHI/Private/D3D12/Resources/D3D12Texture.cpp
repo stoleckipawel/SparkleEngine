@@ -6,14 +6,11 @@
 
 #include <vector>
 
-D3D12Texture::D3D12Texture(
-	D3D12Rhi& rhi,
-	TexturePayload texturePayload,
-	D3D12DescriptorHeapManager& descriptorHeapManager) :
-	m_rhi(rhi),
-	m_texturePayload(std::move(texturePayload)),
-	m_srvHandle(descriptorHeapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
-	m_descriptorHeapManager(&descriptorHeapManager)
+D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TexturePayload texturePayload, D3D12DescriptorHeapManager& descriptorHeapManager) :
+    m_rhi(rhi),
+    m_texturePayload(std::move(texturePayload)),
+    m_srvHandle(descriptorHeapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
+    m_descriptorHeapManager(&descriptorHeapManager)
 {
 	if (!m_srvHandle.IsValid())
 	{
@@ -83,13 +80,13 @@ void D3D12Texture::UploadToGPU()
 	}
 
 	UpdateSubresources(
-		m_rhi.GetCommandList().Get(),
-		m_textureResource.Get(),
-		m_uploadResource.Get(),
-		0,
-		0,
-		static_cast<UINT>(subresources.size()),
-		subresources.data());
+	    m_rhi.GetCommandList().Get(),
+	    m_textureResource.Get(),
+	    m_uploadResource.Get(),
+	    0,
+	    0,
+	    static_cast<UINT>(subresources.size()),
+	    subresources.data());
 
 	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 	    m_textureResource.Get(),

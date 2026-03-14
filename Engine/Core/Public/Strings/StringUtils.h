@@ -43,5 +43,5 @@ namespace Engine
 		{
 			return std::string(str.begin(), str.end());
 		}
-	}
-}
+	}  // namespace Strings
+}  // namespace Engine

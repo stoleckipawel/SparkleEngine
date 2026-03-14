@@ -32,10 +32,7 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 
 void D3D12DescriptorHeapManager::SetShaderVisibleHeaps() const
 {
-	ID3D12DescriptorHeap* heaps[] = {
-	    m_HeapSRV->GetRaw(),
-	    m_HeapSampler->GetRaw()
-	};
+	ID3D12DescriptorHeap* heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
 
 	m_rhi->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
 }

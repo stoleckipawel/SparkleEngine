@@ -29,7 +29,7 @@ namespace Logger
 	{
 		return static_cast<int>(level) >= g_level.load(std::memory_order_relaxed);
 	}
-}
+}  // namespace Logger
 
 void LogWrite(std::string_view msg, LogLevel lvl, const char* file, std::uint32_t line) noexcept
 {

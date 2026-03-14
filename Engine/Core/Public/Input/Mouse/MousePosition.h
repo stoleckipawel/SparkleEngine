@@ -13,20 +13,11 @@ struct MousePosition
 
 	constexpr DirectX::XMINT2 AsInt() const noexcept { return DirectX::XMINT2{X, Y}; }
 
-	constexpr DirectX::XMFLOAT2 AsFloat() const noexcept
-	{
-		return DirectX::XMFLOAT2{static_cast<float>(X), static_cast<float>(Y)};
-	}
+	constexpr DirectX::XMFLOAT2 AsFloat() const noexcept { return DirectX::XMFLOAT2{static_cast<float>(X), static_cast<float>(Y)}; }
 
 	constexpr DirectX::XMFLOAT2 AsNormalized() const noexcept { return DirectX::XMFLOAT2{NormalizedX, NormalizedY}; }
 
-	constexpr DirectX::XMFLOAT2 AsNDC() const noexcept
-	{
-		return DirectX::XMFLOAT2{
-		    NormalizedX * 2.0f - 1.0f,
-		    1.0f - NormalizedY * 2.0f
-		};
-	}
+	constexpr DirectX::XMFLOAT2 AsNDC() const noexcept { return DirectX::XMFLOAT2{NormalizedX * 2.0f - 1.0f, 1.0f - NormalizedY * 2.0f}; }
 
 	static constexpr MousePosition FromPixels(
 	    std::int32_t x,

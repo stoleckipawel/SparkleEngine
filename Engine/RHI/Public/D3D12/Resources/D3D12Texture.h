@@ -13,10 +13,7 @@ class D3D12Rhi;
 class D3D12Texture
 {
   public:
-	D3D12Texture(
-	    D3D12Rhi& rhi,
-	    TexturePayload texturePayload,
-	    D3D12DescriptorHeapManager& descriptorHeapManager);
+	D3D12Texture(D3D12Rhi& rhi, TexturePayload texturePayload, D3D12DescriptorHeapManager& descriptorHeapManager);
 
 	~D3D12Texture() noexcept;
 

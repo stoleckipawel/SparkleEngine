@@ -5,10 +5,7 @@
 #include "Scene/Mesh.h"
 #include "Log.h"
 
-GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept
-: m_rhi(&rhi)
-{
-}
+GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}
 
 GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 {

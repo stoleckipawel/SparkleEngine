@@ -35,11 +35,7 @@ namespace GltfLoaderInternal
 		return false;
 	}
 
-	bool ParseGltfFile(
-	    cgltf_options& options,
-	    const std::string& pathStr,
-	    cgltf_data*& outData,
-	    GltfLoader::LoadResult& result)
+	bool ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, GltfLoader::LoadResult& result)
 	{
 		cgltf_result parseResult = cgltf_parse_file(&options, pathStr.c_str(), &outData);
 		if (parseResult == cgltf_result_success)
@@ -52,11 +48,7 @@ namespace GltfLoaderInternal
 		return false;
 	}
 
-	bool LoadGltfBuffers(
-	    cgltf_options& options,
-	    cgltf_data* data,
-	    const std::string& pathStr,
-	    GltfLoader::LoadResult& result)
+	bool LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, GltfLoader::LoadResult& result)
 	{
 		cgltf_result bufferResult = cgltf_load_buffers(&options, data, pathStr.c_str());
 		if (bufferResult == cgltf_result_success)
@@ -75,7 +67,8 @@ namespace GltfLoaderInternal
 		cgltf_result validateResult = cgltf_validate(data);
 		if (validateResult != cgltf_result_success)
 		{
-			LOG_WARNING(std::format("GltfLoader: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
+			LOG_WARNING(
+			    std::format("GltfLoader: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
 		}
 	}
 
@@ -367,7 +360,7 @@ namespace GltfLoaderInternal
 
 		return meshData;
 	}
-}
+}  // namespace GltfLoaderInternal
 
 GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 {

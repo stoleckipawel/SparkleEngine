@@ -28,8 +28,9 @@ std::optional<UINT> D3D12DescriptorAllocator::TryAllocateContiguousFromFreeListL
 		if (isContiguousRun)
 		{
 			const UINT startIndex = m_freeIndices[start];
-			m_freeIndices.erase(m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start),
-			                   m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start + count));
+			m_freeIndices.erase(
+			    m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start),
+			    m_freeIndices.begin() + static_cast<std::ptrdiff_t>(start + count));
 			return startIndex;
 		}
 	}

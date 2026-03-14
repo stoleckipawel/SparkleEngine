@@ -18,7 +18,7 @@ namespace Logging
 				return;
 			}
 
-			const std::size_t count = (std::min)(len, Remaining());
+			const std::size_t count = (std::min) (len, Remaining());
 			if (count == 0)
 			{
 				return;
@@ -28,10 +28,7 @@ namespace Logging
 			m_pos += count;
 		}
 
-		void Append(std::string_view text) noexcept
-		{
-			Append(text.data(), text.size());
-		}
+		void Append(std::string_view text) noexcept { Append(text.data(), text.size()); }
 
 		void Append(const char* text) noexcept
 		{
@@ -55,7 +52,7 @@ namespace Logging
 				return;
 			}
 
-			m_pos += (std::min)(static_cast<std::size_t>(written), space);
+			m_pos += (std::min) (static_cast<std::size_t>(written), space);
 		}
 
 		void Newline() noexcept
@@ -76,18 +73,12 @@ namespace Logging
 		std::size_t Size() const noexcept { return m_pos; }
 
 	  private:
-		std::size_t Remaining() const noexcept
-		{
-			return m_pos < (kCapacity - 1) ? (kCapacity - 1 - m_pos) : 0;
-		}
+		std::size_t Remaining() const noexcept { return m_pos < (kCapacity - 1) ? (kCapacity - 1 - m_pos) : 0; }
 
-		void Terminate() noexcept
-		{
-			m_data[m_pos < kCapacity ? m_pos : (kCapacity - 1)] = '\0';
-		}
+		void Terminate() noexcept { m_data[m_pos < kCapacity ? m_pos : (kCapacity - 1)] = '\0'; }
 
 		static constexpr std::size_t kCapacity = 2048;
 		char m_data[kCapacity]{};
 		std::size_t m_pos = 0;
 	};
-}
+}  // namespace Logging

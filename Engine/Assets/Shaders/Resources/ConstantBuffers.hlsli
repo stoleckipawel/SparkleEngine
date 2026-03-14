@@ -71,7 +71,7 @@ cbuffer PerObjectPSConstantBufferData : register(b3)
 	float AlphaCutoff;  // Alpha test threshold for masked materials
 	uint AlphaMode;     // Matches MaterialDesc::AlphaMode numeric values
 
-	uint TextureFlags;     // Bitmask of authored textures present on the material
+	uint TextureFlags;  // Bitmask of authored textures present on the material
 	float3 _padPerObjectPS0;
 
 	// remaining space reserved

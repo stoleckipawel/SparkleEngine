@@ -16,7 +16,7 @@ namespace MaterialTextureFlags
 	constexpr std::uint32_t MetallicRoughness = 0x04;
 	constexpr std::uint32_t Occlusion = 0x08;
 	constexpr std::uint32_t Emissive = 0x10;
-}
+}  // namespace MaterialTextureFlags
 
 struct SPARKLE_RENDERER_API MaterialData
 {

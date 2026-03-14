@@ -33,7 +33,7 @@ namespace
 		return text;
 	}
 #endif
-}
+}  // namespace
 
 namespace Logging
 {
@@ -86,4 +86,4 @@ namespace Logging
 		}
 #endif
 	}
-}
+}  // namespace Logging

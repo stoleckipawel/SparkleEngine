@@ -79,20 +79,14 @@ class D3D12FrameResourceManager final
 
 	D3D12LinearAllocator& GetCurrentAllocator() noexcept { return m_frameResources[m_currentFrameIndex].CbAllocator; }
 
-	D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256)
-	{
-		return GetCurrentAllocator().Allocate(size, alignment);
-	}
+	D3D12LinearAllocation Allocate(uint64_t size, uint64_t alignment = 256) { return GetCurrentAllocator().Allocate(size, alignment); }
 
 	template <typename T> D3D12_GPU_VIRTUAL_ADDRESS AllocateConstantBuffer(const T& data)
 	{
 		return GetCurrentAllocator().AllocateAndCopy(data);
 	}
 
-	float GetCurrentUsagePercent() const noexcept
-	{
-		return m_frameResources[m_currentFrameIndex].CbAllocator.GetUsagePercent();
-	}
+	float GetCurrentUsagePercent() const noexcept { return m_frameResources[m_currentFrameIndex].CbAllocator.GetUsagePercent(); }
 
 	uint64_t GetMaxHighWaterMark() const noexcept
 	{

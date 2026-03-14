@@ -38,7 +38,7 @@ namespace
 		const TextureLoader loader(assetSystem, filePath);
 		return CreateTexturePayloadFromLoadedData(loader.GetData());
 	}
-}
+}  // namespace
 
 std::unique_ptr<D3D12Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
@@ -48,10 +48,7 @@ std::unique_ptr<D3D12Texture> TextureManager::CreateTextureFromPath(const std::f
 		return nullptr;
 	}
 
-	return std::make_unique<D3D12Texture>(
-		*m_rhi,
-		LoadTexturePayload(*m_assetSystem, texturePath),
-		*m_descriptorHeapManager);
+	return std::make_unique<D3D12Texture>(*m_rhi, LoadTexturePayload(*m_assetSystem, texturePath), *m_descriptorHeapManager);
 }
 
 TextureManager::TextureManager(const AssetSystem& assetSystem, D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
@@ -208,8 +205,10 @@ void TextureManager::LoadDefaultTextures()
 		const auto type = static_cast<DefaultTexture>(index);
 		if (!LoadFromPath(DefaultTextures::GetPath(type)))
 		{
-			LOG_WARNING(std::format("TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
-			                        DefaultTextures::GetName(type)));
+			LOG_WARNING(
+			    std::format(
+			        "TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
+			        DefaultTextures::GetName(type)));
 		}
 	}
 }
@@ -259,10 +258,13 @@ TextureManager::TextureCacheKey TextureManager::MakeCacheKey(const std::filesyst
 	}
 
 	std::wstring key = resolvedPath.generic_wstring();
-	std::transform(key.begin(), key.end(), key.begin(),
-	               [](wchar_t value)
-	               {
-		               return static_cast<wchar_t>(std::towlower(value));
-	               });
+	std::transform(
+	    key.begin(),
+	    key.end(),
+	    key.begin(),
+	    [](wchar_t value)
+	    {
+		    return static_cast<wchar_t>(std::towlower(value));
+	    });
 	return key;
 }

@@ -33,10 +33,7 @@ template <typename T> class D3D12ConstantBuffer
 		}
 	}
 
-	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const noexcept
-	{
-		return m_resource ? m_resource->GetGPUVirtualAddress() : 0;
-	}
+	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const noexcept { return m_resource ? m_resource->GetGPUVirtualAddress() : 0; }
 
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_cbvHandle.GetGPU(); }
 

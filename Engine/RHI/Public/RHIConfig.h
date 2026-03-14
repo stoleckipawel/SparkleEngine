@@ -29,4 +29,4 @@ namespace RHISettings
 
 	inline constexpr int ShaderModelMajor = 6;
 	inline constexpr int ShaderModelMinor = 0;
-}
+}  // namespace RHISettings

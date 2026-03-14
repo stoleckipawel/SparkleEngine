@@ -12,10 +12,7 @@ GameCamera::GameCamera() noexcept
 
 void GameCamera::Move(const XMFLOAT3& direction, float distance) noexcept
 {
-	XMVECTOR pos = XMLoadFloat3(&m_position);
-	XMVECTOR dir = XMLoadFloat3(&direction);
-	pos = XMVectorAdd(pos, XMVectorScale(dir, distance));
-	XMStoreFloat3(&m_position, pos);
+	m_transform.TranslateScaled(direction, distance);
 	MarkDirty();
 }
 
@@ -37,25 +34,15 @@ void GameCamera::MoveUp(float distance) noexcept
 
 void GameCamera::Rotate(float yawDelta, float pitchDelta) noexcept
 {
-	m_yaw += yawDelta;
-	m_pitch += pitchDelta;
-
 	constexpr float maxPitch = XM_PIDIV2 - 0.001f;
-	m_pitch = std::clamp(m_pitch, -maxPitch, maxPitch);
-
-	m_yaw = std::fmod(m_yaw, XM_2PI);
-	if (m_yaw < 0.0f)
-	{
-		m_yaw += XM_2PI;
-	}
-
+	m_transform.RotateYawPitch(yawDelta, pitchDelta, -maxPitch, maxPitch);
 	m_directionDirty = true;
 	MarkDirty();
 }
 
 void GameCamera::SetPosition(const XMFLOAT3& position) noexcept
 {
-	m_position = position;
+	m_transform.SetTranslation(position);
 	MarkDirty();
 }
 
@@ -67,8 +54,11 @@ void GameCamera::SetAspectRatio(float aspectRatio) noexcept
 
 void GameCamera::UpdateCachedDirection() const noexcept
 {
-	const float cosPitch = std::cos(m_pitch);
-	m_cachedDirection = XMFLOAT3{std::sin(m_yaw) * cosPitch, std::sin(m_pitch), std::cos(m_yaw) * cosPitch};
+	const XMFLOAT3 rotationEuler = m_transform.GetRotationEuler();
+	const float pitch = rotationEuler.x;
+	const float yaw = rotationEuler.y;
+	const float cosPitch = std::cos(pitch);
+	m_cachedDirection = XMFLOAT3{std::sin(yaw) * cosPitch, std::sin(pitch), std::cos(yaw) * cosPitch};
 	m_directionDirty = false;
 }
 
@@ -83,17 +73,14 @@ const XMFLOAT3& GameCamera::GetDirection() const noexcept
 
 XMFLOAT3 GameCamera::GetRight() const noexcept
 {
-	return XMFLOAT3{std::cos(m_yaw), 0.0f, -std::sin(m_yaw)};
+	const float yaw = m_transform.GetRotationEuler().y;
+	return XMFLOAT3{std::cos(yaw), 0.0f, -std::sin(yaw)};
 }
 
 void GameCamera::SetYawPitch(float yawRadians, float pitchRadians) noexcept
 {
-	m_yaw = yawRadians;
-	m_pitch = pitchRadians;
-
 	constexpr float maxPitch = XM_PIDIV2 - 0.01f;
-	m_pitch = std::clamp(m_pitch, -maxPitch, maxPitch);
-
+	m_transform.SetYawPitch(yawRadians, pitchRadians, -maxPitch, maxPitch);
 	m_directionDirty = true;
 	MarkDirty();
 }

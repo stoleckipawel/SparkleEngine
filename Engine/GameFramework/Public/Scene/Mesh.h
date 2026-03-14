@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "Core/Public/Math/Transform.h"
 #include "MeshData.h"
 
 #include <DirectXMath.h>
@@ -8,6 +9,8 @@
 class SPARKLE_ENGINE_API Mesh
 {
   public:
+	explicit Mesh(const Transform& transform) noexcept;
+
 	Mesh(
 	    const DirectX::XMFLOAT3& translation = {0.0f, 0.0f, 0.0f},
 	    const DirectX::XMFLOAT3& rotation = {0.0f, 0.0f, 0.0f},
@@ -20,13 +23,17 @@ class SPARKLE_ENGINE_API Mesh
 	Mesh& operator=(Mesh&&) noexcept = default;
 
 	void SetTranslation(const DirectX::XMFLOAT3& t) noexcept;
-	DirectX::XMFLOAT3 GetTranslation() const noexcept { return m_translation; }
+	DirectX::XMFLOAT3 GetTranslation() const noexcept { return m_transform.GetTranslation(); }
 
 	void SetRotationEuler(const DirectX::XMFLOAT3& r) noexcept;
-	DirectX::XMFLOAT3 GetRotationEuler() const noexcept { return m_rotationEuler; }
+	DirectX::XMFLOAT3 GetRotationEuler() const noexcept { return m_transform.GetRotationEuler(); }
 
 	void SetScale(const DirectX::XMFLOAT3& s) noexcept;
-	DirectX::XMFLOAT3 GetScale() const noexcept { return m_scale; }
+	DirectX::XMFLOAT3 GetScale() const noexcept { return m_transform.GetScale(); }
+
+	void SetTransform(const Transform& transform) noexcept { m_transform = transform; }
+	Transform& GetTransform() noexcept { return m_transform; }
+	const Transform& GetTransform() const noexcept { return m_transform; }
 
 	virtual DirectX::XMMATRIX GetWorldMatrix() const noexcept;
 	virtual DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
@@ -43,17 +50,8 @@ class SPARKLE_ENGINE_API Mesh
   protected:
 	virtual void GenerateGeometry(MeshData& outMeshData) const = 0;
 
-	void InvalidateWorldCache() noexcept { m_bWorldDirty = true; }
-
   private:
-	void RebuildWorldIfNeeded() const noexcept;
-
-	DirectX::XMFLOAT3 m_translation{0.0f, 0.0f, 0.0f};
-	DirectX::XMFLOAT3 m_rotationEuler{0.0f, 0.0f, 0.0f};
-	DirectX::XMFLOAT3 m_scale{1.0f, 1.0f, 1.0f};
-
-	mutable DirectX::XMFLOAT4X4 m_worldMatrixCache{};
-	mutable bool m_bWorldDirty = true;
+	Transform m_transform;
 
 	mutable MeshData m_meshData;
 	mutable bool m_bGeometryDirty = true;

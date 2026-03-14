@@ -9,10 +9,6 @@ enum class AssetType : uint8_t
 	ShaderSymbols,
 	Texture,
 	Mesh,
-	Material,
-	Scene,
-	Audio,
-	Font,
 
 	Count
 };
@@ -29,14 +25,6 @@ constexpr std::string_view GetAssetSubdirectory(AssetType type) noexcept
 			return "Textures";
 		case AssetType::Mesh:
 			return "Meshes";
-		case AssetType::Material:
-			return "Materials";
-		case AssetType::Scene:
-			return "Scenes";
-		case AssetType::Audio:
-			return "Audio";
-		case AssetType::Font:
-			return "Fonts";
 		case AssetType::Count:
 		default:
 			return {};
@@ -55,14 +43,6 @@ constexpr std::string_view GetAssetTypeName(AssetType type) noexcept
 			return "Texture";
 		case AssetType::Mesh:
 			return "Mesh";
-		case AssetType::Material:
-			return "Material";
-		case AssetType::Scene:
-			return "Scene";
-		case AssetType::Audio:
-			return "Audio";
-		case AssetType::Font:
-			return "Font";
 		case AssetType::Count:
 		default:
 			return "Unknown";

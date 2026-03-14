@@ -10,7 +10,7 @@ namespace
 	    {"DefaultMetallicRoughness", "Defaults/default_metallic_roughness.jpg"}};
 
 	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
-}
+}  // namespace
 
 const DefaultTextureDesc& DefaultTextures::GetDesc(DefaultTexture type)
 {

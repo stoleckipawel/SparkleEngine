@@ -34,10 +34,6 @@ class SPARKLE_ENGINE_API AssetSystem final
 	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) const noexcept;
 	const std::filesystem::path& GetTexturePath(PathRoot root = PathRoot::Any) const noexcept;
 	const std::filesystem::path& GetMeshPath(PathRoot root = PathRoot::Any) const noexcept;
-	const std::filesystem::path& GetMaterialPath(PathRoot root = PathRoot::Any) const noexcept;
-	const std::filesystem::path& GetScenePath(PathRoot root = PathRoot::Any) const noexcept;
-	const std::filesystem::path& GetAudioPath(PathRoot root = PathRoot::Any) const noexcept;
-	const std::filesystem::path& GetFontPath(PathRoot root = PathRoot::Any) const noexcept;
 
 	std::optional<std::filesystem::path> ResolvePath(const std::filesystem::path& virtualPath, AssetType type) const;
 

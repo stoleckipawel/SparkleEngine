@@ -11,7 +11,7 @@ namespace
 	    {"Emissive", DefaultTexture::Black}};
 
 	constexpr MaterialFallbackTextureDesc kUnknownFallbackDesc{};
-}
+}  // namespace
 
 const MaterialFallbackTextureDesc& MaterialFallbackTextures::GetDesc(MaterialFallbackTexture type)
 {

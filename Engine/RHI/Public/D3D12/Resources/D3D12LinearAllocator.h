@@ -63,10 +63,7 @@ class D3D12LinearAllocator
 	bool IsInitialized() const noexcept { return m_bInitialized; }
 
   private:
-	static constexpr uint64_t AlignUp(uint64_t value, uint64_t alignment) noexcept
-	{
-		return (value + alignment - 1) & ~(alignment - 1);
-	}
+	static constexpr uint64_t AlignUp(uint64_t value, uint64_t alignment) noexcept { return (value + alignment - 1) & ~(alignment - 1); }
 
   private:
 	D3D12Rhi* m_rhi = nullptr;

@@ -22,9 +22,7 @@ std::unique_ptr<InputSystem> InputSystem::Create()
 #endif
 }
 
-InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend)
-: m_Backend(std::move(Backend))
-{}
+InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) : m_Backend(std::move(Backend)) {}
 
 InputSystem::~InputSystem() = default;
 

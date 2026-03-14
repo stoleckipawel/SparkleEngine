@@ -26,6 +26,7 @@ class SPARKLE_APPLICATION_API App
 	App& operator=(App&&) = delete;
 
 	void Run();
+
   private:
 	void Initialize();
 	void BeginFrame();
@@ -42,5 +43,3 @@ class SPARKLE_APPLICATION_API App
 	std::unique_ptr<CameraController> m_cameraController;
 	std::unique_ptr<Renderer> m_renderer;
 };
-
-

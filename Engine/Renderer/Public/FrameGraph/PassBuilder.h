@@ -19,15 +19,9 @@ class SPARKLE_RENDERER_API PassBuilder
 
 	ResourceHandle UseDepthBuffer() noexcept { return ResourceHandle::DepthBuffer(); }
 
-	ResourceHandle Read([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
-	{
-		return handle;
-	}
+	ResourceHandle Read([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept { return handle; }
 
-	ResourceHandle Write([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept
-	{
-		return handle;
-	}
+	ResourceHandle Write([[maybe_unused]] ResourceHandle handle, [[maybe_unused]] ResourceState state) noexcept { return handle; }
 
 	template <typename TextureDesc> ResourceHandle CreateTexture([[maybe_unused]] const TextureDesc& desc) noexcept
 	{

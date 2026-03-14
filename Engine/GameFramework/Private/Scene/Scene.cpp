@@ -60,7 +60,7 @@ void Scene::LoadImportedMeshRequest(const ImportedMeshRequest& request, AssetSys
 	auto resolved = assetSystem.ResolvePath(request.assetPath, AssetType::Mesh);
 	if (resolved)
 	{
-		AppendGltf(*resolved);
+		AppendResolvedGltf(*resolved);
 		return;
 	}
 
@@ -74,17 +74,25 @@ void Scene::Clear()
 	m_currentLevelName.clear();
 }
 
-bool Scene::LoadGltf(const std::filesystem::path& filePath)
+bool Scene::LoadGltf(const std::filesystem::path& assetPath, AssetSystem& assetSystem)
 {
 	Clear();
-	return AppendGltf(filePath);
+
+	auto resolvedPath = assetSystem.ResolvePath(assetPath, AssetType::Mesh);
+	if (!resolvedPath)
+	{
+		LOG_WARNING("Scene: Asset not found — " + assetPath.string());
+		return false;
+	}
+
+	return AppendResolvedGltf(*resolvedPath);
 }
 
-bool Scene::AppendGltf(const std::filesystem::path& filePath)
+bool Scene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 {
-	LOG_INFO("Scene: Loading glTF from " + filePath.string());
+	LOG_INFO("Scene: Loading glTF from " + resolvedPath.string());
 
-	GltfLoader::LoadResult result = GltfLoader::Load(filePath);
+	GltfLoader::LoadResult result = GltfLoader::Load(resolvedPath);
 
 	if (!result.IsValid())
 	{

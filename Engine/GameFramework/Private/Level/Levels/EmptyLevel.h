@@ -9,8 +9,5 @@ class EmptyLevel final : public Level
 
 	std::string_view GetDescription() const override { return "Empty level — blank canvas"; }
 
-	LevelDesc BuildDescription() const override
-	{
-		return {};
-	}
+	LevelDesc BuildDescription() const override { return {}; }
 };

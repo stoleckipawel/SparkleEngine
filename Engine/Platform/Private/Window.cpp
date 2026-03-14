@@ -69,8 +69,7 @@ void Window::CreateWindowHandle(std::string_view title)
 	    nullptr,
 	    nullptr,
 	    m_hInstance,
-	    this
-	);
+	    this);
 
 	if (!m_hWnd)
 	{

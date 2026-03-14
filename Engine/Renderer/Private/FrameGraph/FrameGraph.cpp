@@ -23,9 +23,7 @@ void FrameGraph::Setup(const SceneView& sceneView)
 	}
 }
 
-void FrameGraph::Compile()
-{
-}
+void FrameGraph::Compile() {}
 
 void FrameGraph::Execute(RenderContext& context)
 {

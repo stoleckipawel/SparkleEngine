@@ -25,4 +25,4 @@ namespace Engine::FileSystem
 	std::optional<std::filesystem::path> DiscoverEngineRoot();
 
 	std::optional<std::filesystem::path> DiscoverProjectRoot();
-}
+}  // namespace Engine::FileSystem
