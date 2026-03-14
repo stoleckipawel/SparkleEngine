@@ -8,6 +8,7 @@
 #include "Assets/GltfLoader.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
+#include "Level/LevelRegistry.h"
 #include "Core/Public/Diagnostics/Log.h"
 
 Scene::Scene() : m_camera(std::make_unique<GameCamera>()) {}
@@ -36,6 +37,14 @@ void Scene::LoadLevel(const Level& level, AssetSystem& assetSystem)
 	m_currentLevelName = std::string(level.GetName());
 
 	LOG_INFO("Scene: Level '" + m_currentLevelName + "' loaded");
+}
+
+void Scene::LoadLevelOrDefault(const LevelRegistry& levelRegistry, std::string_view levelName, AssetSystem& assetSystem)
+{
+	if (auto* level = levelRegistry.FindLevelOrDefault(levelName))
+	{
+		LoadLevel(*level, assetSystem);
+	}
 }
 
 void Scene::LoadImportedMeshRequests(const LevelDesc& desc, AssetSystem& assetSystem)

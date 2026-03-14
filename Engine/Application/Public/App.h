@@ -26,14 +26,11 @@ class SPARKLE_APPLICATION_API App
 	App& operator=(App&&) = delete;
 
 	void Run();
-
   private:
 	void Initialize();
 	void BeginFrame();
 	void EndFrame();
-	void RenderLoop();
-	void Shutdown();
-	void LoadStartupLevel();
+	void EngineLoop();
 
 	std::string m_windowTitle;
 	std::unique_ptr<Timer> m_timer;
@@ -45,3 +42,5 @@ class SPARKLE_APPLICATION_API App
 	std::unique_ptr<CameraController> m_cameraController;
 	std::unique_ptr<Renderer> m_renderer;
 };
+
+

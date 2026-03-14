@@ -12,6 +12,7 @@
 class Mesh;
 class GameCamera;
 class Level;
+class LevelRegistry;
 class AssetSystem;
 struct LevelDesc;
 struct ImportedMeshRequest;
@@ -31,6 +32,7 @@ class SPARKLE_ENGINE_API Scene final
 	const GameCamera& GetCamera() const noexcept;
 
 	void LoadLevel(const Level& level, AssetSystem& assetSystem);
+	void LoadLevelOrDefault(const LevelRegistry& levelRegistry, std::string_view levelName, AssetSystem& assetSystem);
 
 	void Clear();
 
