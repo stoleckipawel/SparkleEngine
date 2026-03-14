@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "D3D12PipelineState.h"
 #include "D3D12Rhi.h"
-#include "DebugUtils.h"
 #include "DepthConvention.h"
 
 #include <cstdio>
@@ -135,7 +134,7 @@ D3D12PipelineState::D3D12PipelineState(
 		HandlePsoCreateFailure(hr);
 	}
 
-	DebugUtils::SetDebugName(m_pso, L"RHI_PipelineState");
+	m_pso->SetName(L"RHI_PipelineState");
 }
 
 void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept

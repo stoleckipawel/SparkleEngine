@@ -2,7 +2,6 @@
 
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "DebugUtils.h"
 #include <cstring>
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -91,7 +90,7 @@ template <typename T> class D3D12ConstantBuffer
 		    nullptr,
 		    IID_PPV_ARGS(&m_resource)));
 
-		DebugUtils::SetDebugName(m_resource, L"RHI_ConstantBuffer");
+		m_resource->SetName(L"RHI_ConstantBuffer");
 
 		D3D12_RANGE readRange = {0, 0};
 		void* mapped = nullptr;

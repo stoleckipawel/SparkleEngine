@@ -43,8 +43,7 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 	{
 		throw std::runtime_error("D3D12LinearAllocator: Failed to create upload buffer");
 	}
-
-	DebugUtils::SetDebugName(m_Resource, debugName);
+	m_Resource->SetName(debugName);
 
 	D3D12_RANGE readRange = {0, 0};
 	hr = m_Resource->Map(0, &readRange, reinterpret_cast<void**>(&m_CpuBase));

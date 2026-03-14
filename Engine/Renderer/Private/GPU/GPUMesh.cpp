@@ -3,7 +3,6 @@
 
 #include "D3D12Rhi.h"
 #include "Scene/MeshData.h"
-#include "DebugUtils.h"
 #include "Log.h"
 
 #include <d3dx12.h>
@@ -49,7 +48,7 @@ bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)
 		return false;
 	}
 
-	DebugUtils::SetDebugName(m_vertexBuffer, L"GPUMesh_VertexBuffer");
+	m_vertexBuffer->SetName(L"GPUMesh_VertexBuffer");
 
 	void* mappedVertex = nullptr;
 	D3D12_RANGE readRange{0, 0};
@@ -81,7 +80,7 @@ bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)
 		return false;
 	}
 
-	DebugUtils::SetDebugName(m_indexBuffer, L"GPUMesh_IndexBuffer");
+	m_indexBuffer->SetName(L"GPUMesh_IndexBuffer");
 
 	void* mappedIndex = nullptr;
 	hr = m_indexBuffer->Map(0, &readRange, &mappedIndex);

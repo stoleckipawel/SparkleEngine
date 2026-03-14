@@ -2,7 +2,6 @@
 #include "D3D12RootSignature.h"
 #include "D3D12Rhi.h"
 #include "D3D12RootBindings.h"
-#include "DebugUtils.h"
 #include "Log.h"
 
 D3D12RootSignature::D3D12RootSignature(D3D12Rhi& rhi) : m_rhi(rhi)
@@ -60,7 +59,7 @@ void D3D12RootSignature::Create()
 	    signature->GetBufferPointer(),
 	    signature->GetBufferSize(),
 	    IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
-	DebugUtils::SetDebugName(m_rootSignature, L"RHI_RootSignature");
+	m_rootSignature->SetName(L"RHI_RootSignature");
 }
 
 D3D12RootSignature::~D3D12RootSignature() noexcept

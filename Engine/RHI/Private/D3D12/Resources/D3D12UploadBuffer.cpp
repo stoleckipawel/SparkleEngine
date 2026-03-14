@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "D3D12UploadBuffer.h"
 #include "D3D12Rhi.h"
-#include "DebugUtils.h"
 #include "Log.h"
 #include <cstring>
 
@@ -29,7 +28,7 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 	    nullptr,
 	    IID_PPV_ARGS(uploadBuffer.ReleaseAndGetAddressOf())));
 
-	DebugUtils::SetDebugName(uploadBuffer, L"RHI_UploadBuffer");
+	uploadBuffer->SetName(L"RHI_UploadBuffer");
 
 	void* mappedData = nullptr;
 	D3D12_RANGE readRange = {0, 0};

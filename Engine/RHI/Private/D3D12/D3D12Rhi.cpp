@@ -2,7 +2,6 @@
 #include "D3D12Rhi.h"
 #include "D3D12DebugLayer.h"
 #include "Window.h"
-#include "DebugUtils.h"
 
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 {

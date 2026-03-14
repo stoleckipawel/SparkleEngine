@@ -2,7 +2,6 @@
 #include "D3D12Texture.h"
 #include "D3D12Rhi.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "DebugUtils.h"
 #include "Log.h"
 
 #include <vector>
@@ -53,7 +52,7 @@ void D3D12Texture::CreateResource()
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    nullptr,
 	    IID_PPV_ARGS(m_textureResource.ReleaseAndGetAddressOf())));
-	DebugUtils::SetDebugName(m_textureResource, L"RHI_D3D12Texture");
+	m_textureResource->SetName(L"RHI_D3D12Texture");
 
 	const UINT subresourceCount = static_cast<UINT>(m_texturePayload.mipLevels.size());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);

@@ -3,7 +3,6 @@
 #include "D3D12Rhi.h"
 #include "Window.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "DebugUtils.h"
 #include "DepthConvention.h"
 
 D3D12DepthStencil::D3D12DepthStencil(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
@@ -51,7 +50,7 @@ void D3D12DepthStencil::CreateResource()
 	    D3D12_RESOURCE_STATE_DEPTH_READ,
 	    &depthOptimizedClearValue,
 	    IID_PPV_ARGS(m_resource.ReleaseAndGetAddressOf())));
-	DebugUtils::SetDebugName(m_resource, L"RHI_DepthStencil");
+	m_resource->SetName(L"RHI_DepthStencil");
 }
 
 void D3D12DepthStencil::CreateDepthStencilView()

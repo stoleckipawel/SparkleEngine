@@ -3,7 +3,6 @@
 #include "Window.h"
 #include "D3D12Rhi.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "DebugUtils.h"
 
 D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)
@@ -88,7 +87,7 @@ void D3D12SwapChain::CreateRenderTargetViews()
 	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
 	{
 		CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
-		DebugUtils::SetDebugName(m_buffers[i], L"RHI_BackBuffer");
+		m_buffers[i]->SetName(L"RHI_BackBuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 		rtvDesc.Format = RHISettings::BackBufferFormat;
