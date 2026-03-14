@@ -17,9 +17,9 @@ enum class LogLevel : std::uint8_t
 
 namespace Logger
 {
-	inline void SetLevel(LogLevel level) noexcept;
-	inline LogLevel GetLevel() noexcept;
-	inline bool IsEnabled(LogLevel level) noexcept;
+	SPARKLE_CORE_API void SetLevel(LogLevel level) noexcept;
+	SPARKLE_CORE_API LogLevel GetLevel() noexcept;
+	SPARKLE_CORE_API bool IsEnabled(LogLevel level) noexcept;
 }
 
 #define LE_LOG_LEVEL_TRACE 0
