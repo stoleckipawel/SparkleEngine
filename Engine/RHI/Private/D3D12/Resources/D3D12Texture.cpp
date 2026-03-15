@@ -80,7 +80,7 @@ void D3D12Texture::UploadToGPU()
 	}
 
 	UpdateSubresources(
-	    m_rhi.GetCommandList().Get(),
+	    m_rhi.GetCommandList(m_rhi.GetCurrentFrameIndex()).Get(),
 	    m_textureResource.Get(),
 	    m_uploadResource.Get(),
 	    0,
@@ -92,7 +92,7 @@ void D3D12Texture::UploadToGPU()
 	    m_textureResource.Get(),
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_rhi.GetCommandList()->ResourceBarrier(1, &barrier);
+	m_rhi.GetCommandList(m_rhi.GetCurrentFrameIndex())->ResourceBarrier(1, &barrier);
 }
 
 void D3D12Texture::CreateShaderResourceView()

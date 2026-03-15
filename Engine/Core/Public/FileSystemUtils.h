@@ -46,4 +46,4 @@ namespace Filesystem
 
 	bool HasProjectAssets() noexcept;
 	bool HasEngineAssets() noexcept;
-} 
+}  // namespace Filesystem

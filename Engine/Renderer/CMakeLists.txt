@@ -69,6 +69,7 @@ target_link_libraries(SparkleRenderer
         SparkleCore
         SparklePlatform
         SparkleRHI
+    SparkleUI
 )
 
 set_target_properties(SparkleRenderer PROPERTIES

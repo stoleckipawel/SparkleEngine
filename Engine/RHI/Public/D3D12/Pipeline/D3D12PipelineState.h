@@ -48,8 +48,6 @@ class D3D12PipelineState
 	D3D12PipelineState(const D3D12PipelineState&) = delete;
 	D3D12PipelineState& operator=(const D3D12PipelineState&) = delete;
 
-	void Set() const noexcept;
-
 	const ComPtr<ID3D12PipelineState>& Get() const noexcept { return m_pso; }
 
   private:

@@ -32,22 +32,8 @@ class D3D12Rhi final
 
 	void ExecuteCommandList(uint32_t frameInFlightIndex) noexcept;
 
-	void SetBarrier(
-	    uint32_t frameInFlightIndex,
-	    ID3D12Resource* resource,
-	    D3D12_RESOURCE_STATES stateBefore,
-	    D3D12_RESOURCE_STATES stateAfter) noexcept;
-
 	void SetCurrentFrameIndex(uint32_t frameInFlightIndex) noexcept { m_currentFrameIndex = frameInFlightIndex; }
 	uint32_t GetCurrentFrameIndex() const noexcept { return m_currentFrameIndex; }
-
-	void CloseCommandList() noexcept { CloseCommandList(m_currentFrameIndex); }
-	void ExecuteCommandList() noexcept { ExecuteCommandList(m_currentFrameIndex); }
-	void SetBarrier(ID3D12Resource* resource, D3D12_RESOURCE_STATES stateBefore, D3D12_RESOURCE_STATES stateAfter) noexcept
-	{
-		SetBarrier(m_currentFrameIndex, resource, stateBefore, stateAfter);
-	}
-	const ComPtr<ID3D12GraphicsCommandList7>& GetCommandList() const noexcept { return m_cmdList[m_currentFrameIndex]; }
 
 	void Signal(uint32_t frameInFlightIndex) noexcept;
 
@@ -70,12 +56,8 @@ class D3D12Rhi final
 		return m_cmdList[frameInFlightIndex];
 	}
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
-
-	uint64_t GetFenceValueForFrame(uint32_t frameInFlightIndex) const noexcept { return m_fenceValues[frameInFlightIndex]; }
-	void SetFenceValueForFrame(uint32_t frameInFlightIndex, uint64_t value) noexcept { m_fenceValues[frameInFlightIndex] = value; }
 	HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
 	uint64_t GetNextFenceValue() const noexcept { return m_nextFenceValue; }
-	void SetNextFenceValue(uint64_t value) noexcept { m_nextFenceValue = value; }
 
   private:
 	void SelectAdapter() noexcept;

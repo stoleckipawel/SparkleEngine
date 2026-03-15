@@ -20,6 +20,11 @@ D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 	CreateCommandAllocators();
 	CreateCommandLists();
 	CreateFenceAndEvent();
+
+	constexpr uint32_t kInitialFrameIndex = 0;
+	SetCurrentFrameIndex(kInitialFrameIndex);
+	ResetCommandAllocator(kInitialFrameIndex);
+	ResetCommandList(kInitialFrameIndex);
 }
 
 void D3D12Rhi::SelectAdapter() noexcept
@@ -196,29 +201,6 @@ void D3D12Rhi::ExecuteCommandList(uint32_t frameInFlightIndex) noexcept
 
 	ID3D12CommandList* ppcommandLists[] = {m_cmdList[frameInFlightIndex].Get()};
 	m_cmdQueue->ExecuteCommandLists(1, ppcommandLists);
-}
-
-void D3D12Rhi::SetBarrier(
-    uint32_t frameInFlightIndex,
-    ID3D12Resource* resource,
-    D3D12_RESOURCE_STATES stateBefore,
-    D3D12_RESOURCE_STATES stateAfter) noexcept
-{
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = resource;
-
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = stateBefore;
-	barrier.Transition.StateAfter = stateAfter;
-
-	if (!m_cmdList[frameInFlightIndex])
-	{
-		LOG_FATAL("SetBarrier: command list is null");
-	}
-
-	m_cmdList[frameInFlightIndex]->ResourceBarrier(1, &barrier);
 }
 
 void D3D12Rhi::WaitForGPU(uint32_t frameInFlightIndex) noexcept

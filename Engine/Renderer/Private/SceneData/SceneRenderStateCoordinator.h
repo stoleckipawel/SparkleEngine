@@ -5,28 +5,24 @@
 class D3D12Rhi;
 class GPUMeshCache;
 class LevelChangeEvents;
+class MaterialCacheManager;
 class RenderCamera;
+class RenderSceneSnapshotCache;
+class Scene;
 class TextureManager;
-struct RendererMaterialCacheState;
-
-struct SceneRenderStateCoordinatorCallbacks
-{
-	void* context = nullptr;
-	void (*releaseMaterialTextureTables)(void* context) noexcept = nullptr;
-	void (*rebuildSceneResources)(void* context) noexcept = nullptr;
-};
 
 class SceneRenderStateCoordinator final
 {
   public:
 	SceneRenderStateCoordinator(
 	    LevelChangeEvents& levelChangeEvents,
+	    Scene& scene,
 	    D3D12Rhi& rhi,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
 	    RenderCamera& renderCamera,
-	    RendererMaterialCacheState& materialCache,
-	    SceneRenderStateCoordinatorCallbacks callbacks) noexcept;
+	    RenderSceneSnapshotCache& renderSceneSnapshotCache,
+	    MaterialCacheManager& materialCache) noexcept;
 	~SceneRenderStateCoordinator() noexcept = default;
 
 	SceneRenderStateCoordinator(const SceneRenderStateCoordinator&) = delete;
@@ -41,14 +37,14 @@ class SceneRenderStateCoordinator final
 	void InvalidateSceneScopedRendererState() noexcept;
 	void RefreshSceneScopedRendererState() noexcept;
 	void ReleaseSceneScopedMaterialResources() noexcept;
-	void ResetMaterialCacheState() noexcept;
 
+	Scene* m_scene = nullptr;
 	D3D12Rhi* m_rhi = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	RenderCamera* m_renderCamera = nullptr;
-	RendererMaterialCacheState* m_materialCache = nullptr;
-	SceneRenderStateCoordinatorCallbacks m_callbacks;
+	RenderSceneSnapshotCache* m_renderSceneSnapshotCache = nullptr;
+	MaterialCacheManager* m_materialCache = nullptr;
 	ScopedEventHandle m_levelWillUnloadHandle;
 	ScopedEventHandle m_levelChangedHandle;
 };

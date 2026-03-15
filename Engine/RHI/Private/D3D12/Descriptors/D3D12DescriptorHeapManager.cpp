@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "D3D12DescriptorHeapManager.h"
 
+#include "Renderer/Public/CommandContext.h"
+
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
 	m_HeapSRV = std::make_unique<D3D12DescriptorHeap>(
@@ -30,51 +32,37 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 	m_AllocatorRenderTarget = std::make_unique<D3D12DescriptorAllocator>(m_HeapRenderTarget.get());
 }
 
-void D3D12DescriptorHeapManager::SetShaderVisibleHeaps() const
+D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
+
+void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(CommandContext& cmd) const
 {
 	ID3D12DescriptorHeap* heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
-
-	m_rhi->GetCommandList()->SetDescriptorHeaps(_countof(heaps), heaps);
-}
-
-void D3D12DescriptorHeapManager::AllocateHandle(
-    D3D12_DESCRIPTOR_HEAP_TYPE type,
-    D3D12_CPU_DESCRIPTOR_HANDLE& outCPU,
-    D3D12_GPU_DESCRIPTOR_HANDLE& outGPU)
-{
-	D3D12DescriptorAllocator* allocator = GetAllocator(type);
-	const D3D12DescriptorHandle handle = allocator->Allocate();
-	outCPU = handle.GetCPU();
-	outGPU = handle.GetGPU();
+	cmd.SetDescriptorHeaps(_countof(heaps), heaps);
 }
 
 void D3D12DescriptorHeapManager::FreeHandle(
-    D3D12_DESCRIPTOR_HEAP_TYPE type,
-    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+	D3D12_DESCRIPTOR_HEAP_TYPE type,
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
+	(void)gpuHandle;
+
 	D3D12DescriptorHeap* heap = GetHeap(type);
-	D3D12DescriptorAllocator* allocator = GetAllocator(type);
-
-	if (!heap || !allocator)
+	if (heap == nullptr || m_rhi == nullptr)
 	{
-		LOG_FATAL("FreeHandle: invalid heap or allocator");
+		return;
 	}
 
-	const auto heapCPUStart = heap->GetRaw()->GetCPUDescriptorHandleForHeapStart();
-	const UINT increment = m_rhi->GetDevice()->GetDescriptorHandleIncrementSize(type);
-	const SIZE_T delta = (cpuHandle.ptr - heapCPUStart.ptr);
-	const UINT index = static_cast<UINT>(delta / static_cast<SIZE_T>(increment));
-
-	D3D12_GPU_DESCRIPTOR_HANDLE heapGPUStart = {0};
-	const auto heapDesc = heap->GetRaw()->GetDesc();
-	if (heapDesc.Flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+	const D3D12DescriptorHandle firstHandle = heap->GetHandleAt(0);
+	const UINT incrementSize = firstHandle.GetIncrementSize();
+	if (incrementSize == 0 || cpuHandle.ptr < firstHandle.GetCPU().ptr)
 	{
-		heapGPUStart = heap->GetRaw()->GetGPUDescriptorHandleForHeapStart();
+		return;
 	}
 
-	const D3D12DescriptorHandle handle(*m_rhi, index, type, heapCPUStart, heapGPUStart);
-	allocator->Free(handle);
+	const SIZE_T byteOffset = cpuHandle.ptr - firstHandle.GetCPU().ptr;
+	const UINT index = static_cast<UINT>(byteOffset / incrementSize);
+	FreeHandle(type, heap->GetHandleAt(index));
 }
 
 D3D12DescriptorHeap* D3D12DescriptorHeapManager::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept
@@ -109,19 +97,4 @@ D3D12DescriptorAllocator* D3D12DescriptorHeapManager::GetAllocator(D3D12_DESCRIP
 		default:
 			return nullptr;
 	}
-}
-
-D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept
-{
-	m_AllocatorRenderTarget.reset();
-	m_HeapRenderTarget.reset();
-
-	m_AllocatorDepthStencil.reset();
-	m_HeapDepthStencil.reset();
-
-	m_AllocatorSampler.reset();
-	m_HeapSampler.reset();
-
-	m_AllocatorSRV.reset();
-	m_HeapSRV.reset();
 }

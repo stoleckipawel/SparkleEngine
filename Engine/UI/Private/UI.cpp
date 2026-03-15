@@ -14,6 +14,8 @@
 #include "Sections/ViewMode.h"
 #include "Sections/TimeControls.h"
 
+#include "Renderer/Public/CommandContext.h"
+
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx12.h>
@@ -50,13 +52,13 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 
 UI::UI(
     Timer& timer,
-	LevelManager* levelManager,
+    LevelManager* levelManager,
     D3D12Rhi& rhi,
     Window& window,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain) :
     m_timer(&timer),
-	m_levelManager(levelManager),
+    m_levelManager(levelManager),
     m_rhi(&rhi),
     m_window(&window),
     m_descriptorHeapManager(&descriptorHeapManager),
@@ -196,9 +198,9 @@ void UI::Update()
 	Build();
 }
 
-void UI::Render() noexcept
+void UI::Render(CommandContext& cmd) noexcept
 {
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_rhi->GetCommandList().Get());
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmd.GetCommandList());
 }
 
 UI::~UI() noexcept

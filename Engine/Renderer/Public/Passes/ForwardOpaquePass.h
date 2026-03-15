@@ -1,23 +1,22 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/RenderPass.h"
-#include "Renderer/Public/FrameGraph/ResourceHandle.h"
+#include "Renderer/Public/FrameGraph/TextureHandle.h"
 
 class D3D12ConstantBufferManager;
-class D3D12DepthStencil;
 class D3D12DescriptorHeapManager;
 class D3D12PipelineState;
 class D3D12RootSignature;
 class D3D12SamplerLibrary;
-class D3D12SwapChain;
+class CommandContext;
+class FrameGraph;
 class GPUMeshCache;
 class TextureManager;
+struct FrameContext;
 
-class ForwardOpaquePass final : public RenderPass
+class ForwardOpaquePass final
 {
   public:
 	ForwardOpaquePass(
-	    std::string_view name,
 	    D3D12RootSignature& rootSignature,
 	    D3D12PipelineState& pipelineState,
 	    D3D12ConstantBufferManager& constantBufferManager,
@@ -25,20 +24,19 @@ class ForwardOpaquePass final : public RenderPass
 	    TextureManager& textureManager,
 	    D3D12SamplerLibrary& samplerLibrary,
 	    GPUMeshCache& gpuMeshCache,
-	    D3D12SwapChain& swapChain,
-	    D3D12DepthStencil& depthStencil) noexcept;
+	    TextureHandle backBufferHandle,
+	    TextureHandle depthBufferHandle) noexcept;
 
-	~ForwardOpaquePass() noexcept override = default;
+	~ForwardOpaquePass() noexcept = default;
 
-	void Setup(PassBuilder& builder, const SceneView& sceneView) override;
-	void Execute(RenderContext& context) override;
+	void Execute(const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame);
 
   private:
-	void PrepareTargets(RenderContext& context);
-	void ConfigurePipeline(RenderContext& context);
-	void BindFrameResources(RenderContext& context);
-	void BindGlobalResources(RenderContext& context);
-	void DrawOpaqueMeshes(RenderContext& context);
+	void PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd);
+	void ConfigurePipeline(CommandContext& cmd, const FrameContext& frame);
+	void BindFrameResources(CommandContext& cmd);
+	void BindGlobalResources(CommandContext& cmd);
+	void DrawOpaqueMeshes(CommandContext& cmd, const FrameContext& frame);
 
 	D3D12RootSignature* m_rootSignature = nullptr;
 	D3D12PipelineState* m_pipelineState = nullptr;
@@ -47,10 +45,7 @@ class ForwardOpaquePass final : public RenderPass
 	TextureManager* m_textureManager = nullptr;
 	D3D12SamplerLibrary* m_samplerLibrary = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
-	D3D12SwapChain* m_swapChain = nullptr;
-	D3D12DepthStencil* m_depthStencil = nullptr;
 
-	const SceneView* m_sceneView = nullptr;
-	ResourceHandle m_backBuffer;
-	ResourceHandle m_depthBuffer;
+	TextureHandle m_backBuffer;
+	TextureHandle m_depthBuffer;
 };

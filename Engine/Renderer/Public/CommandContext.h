@@ -9,16 +9,16 @@
 class D3D12PipelineState;
 class D3D12RootSignature;
 
-class SPARKLE_RENDERER_API RenderContext final
+class SPARKLE_RENDERER_API CommandContext final
 {
   public:
-	explicit RenderContext(ID3D12GraphicsCommandList* cmdList) noexcept;
-	~RenderContext() noexcept = default;
+	explicit CommandContext(ID3D12GraphicsCommandList* cmdList) noexcept;
+	~CommandContext() noexcept = default;
 
-	RenderContext(const RenderContext&) = delete;
-	RenderContext& operator=(const RenderContext&) = delete;
-	RenderContext(RenderContext&&) = delete;
-	RenderContext& operator=(RenderContext&&) = delete;
+	CommandContext(const CommandContext&) = delete;
+	CommandContext& operator=(const CommandContext&) = delete;
+	CommandContext(CommandContext&&) = delete;
+	CommandContext& operator=(CommandContext&&) = delete;
 
 	void SetPipelineState(ID3D12PipelineState* pso) noexcept;
 
@@ -33,6 +33,8 @@ class SPARKLE_RENDERER_API RenderContext final
 	void BindConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
 
 	void BindDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept;
+
+	void SetDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept;
 
 	void SetRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const D3D12_CPU_DESCRIPTOR_HANDLE* dsv = nullptr) noexcept;
 
@@ -62,9 +64,12 @@ class SPARKLE_RENDERER_API RenderContext final
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept;
 
+	void CopyResource(ID3D12Resource* destinationResource, ID3D12Resource* sourceResource) noexcept;
+
+	void AliasResource(ID3D12Resource* beforeResource, ID3D12Resource* afterResource) noexcept;
 	void TransitionResource(ID3D12Resource* resource, ResourceState before, ResourceState after) noexcept;
 
-	ID3D12GraphicsCommandList* GetNativeCommandList() const noexcept { return m_cmdList; }
+	ID3D12GraphicsCommandList* GetCommandList() const noexcept { return m_cmdList; }
 
   private:
 	static D3D12_RESOURCE_STATES MapToD3D12State(ResourceState state) noexcept;

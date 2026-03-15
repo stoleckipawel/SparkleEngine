@@ -4,6 +4,8 @@
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"
 
+class CommandContext;
+
 class D3D12DescriptorHeapManager final
 {
   public:
@@ -15,10 +17,17 @@ class D3D12DescriptorHeapManager final
 	D3D12DescriptorHeapManager(D3D12DescriptorHeapManager&&) = delete;
 	D3D12DescriptorHeapManager& operator=(D3D12DescriptorHeapManager&&) = delete;
 
-	void SetShaderVisibleHeaps() const;
+	void SetShaderVisibleHeaps(CommandContext& cmd) const;
 
 	D3D12DescriptorHandle AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type) { return GetAllocator(type)->Allocate(); }
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle) { GetAllocator(type)->Free(handle); }
+	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
+	{
+		const D3D12DescriptorHandle handle = AllocateHandle(type);
+		cpuHandle = handle.GetCPU();
+		gpuHandle = handle.GetGPU();
+	}
+	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
 	D3D12DescriptorHandle AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t count)
 	{
@@ -28,9 +37,6 @@ class D3D12DescriptorHeapManager final
 	{
 		GetAllocator(type)->FreeContiguous(handle, count);
 	}
-
-	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& outCPU, D3D12_GPU_DESCRIPTOR_HANDLE& outGPU);
-	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
 	D3D12DescriptorHeap* GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;
 	D3D12DescriptorAllocator* GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept;

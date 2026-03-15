@@ -35,13 +35,7 @@ template <typename T> class D3D12ConstantBuffer
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetGPUVirtualAddress() const noexcept { return m_resource ? m_resource->GetGPUVirtualAddress() : 0; }
 
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_cbvHandle.GetGPU(); }
-
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_cbvHandle.GetCPU(); }
-
-	UINT GetSizeInBytes() const noexcept { return m_constantBufferSize; }
-
-	bool IsValid() const noexcept { return m_resource != nullptr && m_mappedData != nullptr; }
 
 	D3D12ConstantBuffer(const D3D12ConstantBuffer&) = delete;
 	D3D12ConstantBuffer& operator=(const D3D12ConstantBuffer&) = delete;

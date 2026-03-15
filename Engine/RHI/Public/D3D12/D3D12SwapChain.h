@@ -33,23 +33,17 @@ class D3D12SwapChain final
 
 	void Present();
 
-	void Clear();
-
-	void SetRenderTargetState();
-
-	void SetPresentState();
-
 	void Resize();
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return GetCPUHandle(m_frameInFlightIndex); }
 
+	ID3D12Resource* GetCurrentResource() const noexcept { return m_buffers[m_frameInFlightIndex].Get(); }
+
 	UINT GetFrameInFlightIndex() const { return m_frameInFlightIndex; }
 
 	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = m_swapChain->GetCurrentBackBufferIndex(); }
-
-	HANDLE GetWaitableObject() const { return m_waitableObject; }
 
 	D3D12_VIEWPORT GetDefaultViewport() const;
 

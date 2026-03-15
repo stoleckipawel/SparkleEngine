@@ -1,13 +1,13 @@
 #include "PCH.h"
 #include "Renderer/Public/Passes/ForwardOpaquePass.h"
 
-#include "Renderer/Public/RenderContext.h"
-#include "Renderer/Public/SceneData/SceneView.h"
+#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/FrameContext.h"
+#include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Renderer/Public/GPU/GPUMesh.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Renderer/Public/TextureManager.h"
-#include "Renderer/Public/FrameGraph/PassBuilder.h"
 
 #include "D3D12RootSignature.h"
 #include "D3D12PipelineState.h"
@@ -17,14 +17,11 @@
 #include "D3D12DescriptorHeapManager.h"
 #include "D3D12Texture.h"
 #include "Samplers/D3D12SamplerLibrary.h"
-#include "D3D12SwapChain.h"
-#include "D3D12DepthStencil.h"
 #include "Scene/Mesh.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 
 ForwardOpaquePass::ForwardOpaquePass(
-    std::string_view name,
     D3D12RootSignature& rootSignature,
     D3D12PipelineState& pipelineState,
     D3D12ConstantBufferManager& constantBufferManager,
@@ -32,9 +29,8 @@ ForwardOpaquePass::ForwardOpaquePass(
     TextureManager& textureManager,
     D3D12SamplerLibrary& samplerLibrary,
     GPUMeshCache& gpuMeshCache,
-    D3D12SwapChain& swapChain,
-    D3D12DepthStencil& depthStencil) noexcept :
-    RenderPass(name),
+	TextureHandle backBufferHandle,
+	TextureHandle depthBufferHandle) noexcept :
     m_rootSignature(&rootSignature),
     m_pipelineState(&pipelineState),
     m_constantBufferManager(&constantBufferManager),
@@ -42,75 +38,62 @@ ForwardOpaquePass::ForwardOpaquePass(
     m_textureManager(&textureManager),
     m_samplerLibrary(&samplerLibrary),
     m_gpuMeshCache(&gpuMeshCache),
-    m_swapChain(&swapChain),
-    m_depthStencil(&depthStencil)
+	m_backBuffer(backBufferHandle),
+	m_depthBuffer(depthBufferHandle)
 {
 	LOG_INFO("ForwardOpaquePass: Created");
 }
 
-void ForwardOpaquePass::Setup(PassBuilder& builder, const SceneView& sceneView)
+void ForwardOpaquePass::Execute(const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame)
 {
-	m_sceneView = &sceneView;
-	m_backBuffer = builder.UseBackBuffer();
-	m_depthBuffer = builder.UseDepthBuffer();
+	PrepareTargets(frameGraph, cmd);
+	ConfigurePipeline(cmd, frame);
+	BindFrameResources(cmd);
+	BindGlobalResources(cmd);
+	DrawOpaqueMeshes(cmd, frame);
 }
 
-void ForwardOpaquePass::Execute(RenderContext& context)
+void ForwardOpaquePass::PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd)
 {
-	PrepareTargets(context);
-	ConfigurePipeline(context);
-	BindFrameResources(context);
-	BindGlobalResources(context);
-	DrawOpaqueMeshes(context);
+	frameGraph.BindRenderTarget(cmd, m_backBuffer, m_depthBuffer);
+	frameGraph.ClearRenderTarget(cmd, m_backBuffer);
+	frameGraph.ClearDepthStencil(cmd, m_depthBuffer);
 }
 
-void ForwardOpaquePass::PrepareTargets(RenderContext& context)
+void ForwardOpaquePass::ConfigurePipeline(CommandContext& cmd, const FrameContext& frame)
 {
-	m_swapChain->SetRenderTargetState();
-	m_depthStencil->SetWriteState();
+	cmd.SetRootSignature(m_rootSignature->GetRaw());
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_swapChain->GetCPUHandle();
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = m_depthStencil->GetCPUHandle();
-	context.SetRenderTarget(rtvHandle, &dsvHandle);
+	const D3D12_VIEWPORT viewport = frame.viewport;
+	cmd.SetViewport(viewport.TopLeftX, viewport.TopLeftY, viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
 
-	m_swapChain->Clear();
-	m_depthStencil->Clear();
+	const D3D12_RECT scissor = frame.scissorRect;
+	cmd.SetScissorRect(scissor.left, scissor.top, scissor.right, scissor.bottom);
+
+	cmd.SetPipelineState(m_pipelineState->Get().Get());
+	cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void ForwardOpaquePass::ConfigurePipeline(RenderContext& context)
+void ForwardOpaquePass::BindFrameResources(CommandContext& cmd)
 {
-	context.SetRootSignature(m_rootSignature->GetRaw());
+	cmd.BindConstantBuffer(RootBindings::RootParam::PerFrame, m_constantBufferManager->GetPerFrameGpuAddress());
 
-	const D3D12_VIEWPORT viewport = m_swapChain->GetDefaultViewport();
-	context.SetViewport(viewport.TopLeftX, viewport.TopLeftY, viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
-
-	const D3D12_RECT scissor = m_swapChain->GetDefaultScissorRect();
-	context.SetScissorRect(scissor.left, scissor.top, scissor.right, scissor.bottom);
-
-	context.SetPipelineState(m_pipelineState->Get().Get());
-	context.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmd.BindConstantBuffer(RootBindings::RootParam::PerView, m_constantBufferManager->GetPerViewGpuAddress());
 }
 
-void ForwardOpaquePass::BindFrameResources(RenderContext& context)
+void ForwardOpaquePass::BindGlobalResources(CommandContext& cmd)
 {
-	context.BindConstantBuffer(RootBindings::RootParam::PerFrame, m_constantBufferManager->GetPerFrameGpuAddress());
-
-	context.BindConstantBuffer(RootBindings::RootParam::PerView, m_constantBufferManager->GetPerViewGpuAddress());
-}
-
-void ForwardOpaquePass::BindGlobalResources(RenderContext& context)
-{
-	m_descriptorHeapManager->SetShaderVisibleHeaps();
+	m_descriptorHeapManager->SetShaderVisibleHeaps(cmd);
 
 	if (m_samplerLibrary->IsInitialized())
 	{
-		context.BindDescriptorTable(RootBindings::RootParam::SamplerTable, m_samplerLibrary->GetTableGPUHandle());
+		cmd.BindDescriptorTable(RootBindings::RootParam::SamplerTable, m_samplerLibrary->GetTableGPUHandle());
 	}
 }
 
-void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
+void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const FrameContext& frame)
 {
-	for (const auto& draw : m_sceneView->meshDraws)
+	for (const auto& draw : frame.sceneView.meshDraws)
 	{
 		const auto* cpuMesh = static_cast<const Mesh*>(draw.meshPtr);
 		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*cpuMesh);
@@ -120,28 +103,28 @@ void ForwardOpaquePass::DrawOpaqueMeshes(RenderContext& context)
 			continue;
 		}
 
-		context.BindVertexBuffer(gpuMesh->GetVertexBufferView());
-		context.BindIndexBuffer(gpuMesh->GetIndexBufferView());
+		cmd.BindVertexBuffer(gpuMesh->GetVertexBufferView());
+		cmd.BindIndexBuffer(gpuMesh->GetIndexBufferView());
 
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
 
-		context.BindConstantBuffer(RootBindings::RootParam::PerObjectVS, m_constantBufferManager->UpdatePerObjectVS(perObjectVS));
+		cmd.BindConstantBuffer(RootBindings::RootParam::PerObjectVS, m_constantBufferManager->UpdatePerObjectVS(perObjectVS));
 
-		context.BindConstantBuffer(
+		cmd.BindConstantBuffer(
 		    RootBindings::RootParam::PerObjectPS,
-		    m_constantBufferManager->UpdatePerObjectPS(m_sceneView->materials[draw.materialId].ToPerObjectPSData()));
+		    m_constantBufferManager->UpdatePerObjectPS(frame.sceneView.materials[draw.materialId].ToPerObjectPSData()));
 
-		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = m_sceneView->materials[draw.materialId].textureTableGpuHandle;
+		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = frame.sceneView.materials[draw.materialId].textureTableGpuHandle;
 		if (materialTextureTable.ptr == 0)
 		{
 			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;
 		}
 
-		context.BindDescriptorTable(RootBindings::RootParam::TextureSRV, materialTextureTable);
+		cmd.BindDescriptorTable(RootBindings::RootParam::TextureSRV, materialTextureTable);
 
-		context.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
+		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
 	}
 }

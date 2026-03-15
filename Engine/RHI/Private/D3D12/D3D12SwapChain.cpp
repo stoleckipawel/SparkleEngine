@@ -55,11 +55,6 @@ void D3D12SwapChain::Create()
 	CHECK(swapChain.As(&m_swapChain));
 }
 
-void D3D12SwapChain::Clear()
-{
-	float clearColor[4] = {0.0f, 0.00f, 0.00f, 1.0f};
-	m_rhi.GetCommandList()->ClearRenderTargetView(GetCPUHandle(), clearColor, 0, nullptr);
-}
 void D3D12SwapChain::Resize()
 {
 	ReleaseBuffers();
@@ -148,19 +143,6 @@ void D3D12SwapChain::Present()
 	CHECK(m_swapChain->Present(presentInterval, presentFlags));
 }
 
-void D3D12SwapChain::SetRenderTargetState()
-{
-	m_rhi.SetBarrier(m_buffers[m_frameInFlightIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-}
-
-void D3D12SwapChain::SetPresentState()
-{
-	m_rhi.SetBarrier(
-
-	    m_buffers[m_frameInFlightIndex].Get(),
-	    D3D12_RESOURCE_STATE_RENDER_TARGET,
-	    D3D12_RESOURCE_STATE_PRESENT);
-}
 void D3D12SwapChain::ReleaseBuffers()
 {
 	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)

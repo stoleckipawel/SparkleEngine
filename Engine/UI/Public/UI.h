@@ -17,6 +17,7 @@ class Window;
 class D3D12DescriptorHeapManager;
 class D3D12SwapChain;
 class D3D12Rhi;
+class CommandContext;
 struct WindowMessageEvent;
 
 class SPARKLE_UI_API UI final
@@ -42,7 +43,7 @@ class SPARKLE_UI_API UI final
 
 	void Update();
 
-	void Render() noexcept;
+	void Render(CommandContext& cmd) noexcept;
 
 	ViewMode::Type GetViewMode() noexcept;
 

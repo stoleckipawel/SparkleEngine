@@ -1,34 +1,37 @@
 #include "PCH.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/RenderContext.h"
-#include "Renderer/Public/SceneData/SceneView.h"
+
+#include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
+#include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
+
+#include "D3D12DescriptorHeapManager.h"
+#include "D3D12SwapChain.h"
+#include "Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 
-FrameGraph::FrameGraph(D3D12SwapChain* swapChain, D3D12DepthStencil* depthStencil) : m_swapChain(swapChain), m_depthStencil(depthStencil)
+FrameGraph::FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager* descriptorHeapManager, D3D12SwapChain* swapChain) :
+	m_rhi(rhi),
+	m_window(window),
+	m_descriptorHeapManager(descriptorHeapManager),
+	m_swapChain(swapChain),
+	m_transientAllocator(
+	    rhi != nullptr && descriptorHeapManager != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*rhi, *descriptorHeapManager) : nullptr)
 {
 	LOG_INFO("FrameGraph created");
 }
 
 FrameGraph::~FrameGraph()
 {
+	ReleaseExternalViewDescriptors();
 	LOG_INFO("FrameGraph destroyed");
 }
 
-void FrameGraph::Setup(const SceneView& sceneView)
+FrameGraph::CompiledPlan FrameGraph::Compile()
 {
-	for (auto& pass : m_passes)
-	{
-		pass->Setup(m_builder, sceneView);
-	}
-}
-
-void FrameGraph::Compile() {}
-
-void FrameGraph::Execute(RenderContext& context)
-{
-	for (auto& pass : m_passes)
-	{
-		pass->Execute(context);
-	}
+	SyncImportedResourceAccesses();
+	BuildTransientMaterializationPlan(m_compiledPlan);
+	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry);
+	compiler.Compile();
+	return m_compiledPlan;
 }

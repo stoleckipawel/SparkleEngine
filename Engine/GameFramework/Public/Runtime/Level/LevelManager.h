@@ -33,6 +33,9 @@ class SPARKLE_ENGINE_API LevelManager final
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
 
   private:
+	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
+	static constexpr std::string_view GetStartupLevelName() noexcept { return "Sponza"; }
+
 	void InitializeStartupLevel() noexcept;
 	SceneLoadResult LoadLevelFromUnloadedState(const Level& level) noexcept;
 	void ResetCameraFromLoadedLevel() noexcept;

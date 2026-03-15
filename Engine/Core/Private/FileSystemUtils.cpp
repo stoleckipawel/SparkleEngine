@@ -26,7 +26,8 @@ namespace
 
 	void InitializeTypedPaths(AssetPathState& state)
 	{
-		auto buildTypedPaths = [](const std::filesystem::path& root, std::array<std::filesystem::path, AssetPathState::kAssetTypeCount>& paths)
+		auto buildTypedPaths =
+		    [](const std::filesystem::path& root, std::array<std::filesystem::path, AssetPathState::kAssetTypeCount>& paths)
 		{
 			if (root.empty())
 			{
@@ -420,8 +421,8 @@ namespace Filesystem
 		return !GetAssetPathState().projectAssetsPath.empty();
 	}
 
-		bool HasEngineAssets() noexcept
-		{
-			return !GetAssetPathState().engineAssetsPath.empty();
-		}
-	}  // namespace Filesystem
+	bool HasEngineAssets() noexcept
+	{
+		return !GetAssetPathState().engineAssetsPath.empty();
+	}
+}  // namespace Filesystem

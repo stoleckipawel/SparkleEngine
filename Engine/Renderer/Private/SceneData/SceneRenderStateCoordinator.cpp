@@ -6,23 +6,27 @@
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Runtime/Level/LevelChangeEvents.h"
-#include "SceneData/RendererMaterialCacheState.h"
+#include "Scene/Scene.h"
+#include "SceneData/MaterialCacheManager.h"
+#include "SceneData/RenderSceneSnapshotCache.h"
 #include "TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
-	LevelChangeEvents& levelChangeEvents,
-	D3D12Rhi& rhi,
-	GPUMeshCache& gpuMeshCache,
-	TextureManager& textureManager,
-	RenderCamera& renderCamera,
-	RendererMaterialCacheState& materialCache,
-	SceneRenderStateCoordinatorCallbacks callbacks) noexcept :
-	m_rhi(&rhi),
-	m_gpuMeshCache(&gpuMeshCache),
-	m_textureManager(&textureManager),
-	m_renderCamera(&renderCamera),
-	m_materialCache(&materialCache),
-	m_callbacks(callbacks)
+    LevelChangeEvents& levelChangeEvents,
+    Scene& scene,
+    D3D12Rhi& rhi,
+    GPUMeshCache& gpuMeshCache,
+    TextureManager& textureManager,
+    RenderCamera& renderCamera,
+    RenderSceneSnapshotCache& renderSceneSnapshotCache,
+    MaterialCacheManager& materialCache) noexcept :
+    m_scene(&scene),
+    m_rhi(&rhi),
+    m_gpuMeshCache(&gpuMeshCache),
+    m_textureManager(&textureManager),
+    m_renderCamera(&renderCamera),
+    m_renderSceneSnapshotCache(&renderSceneSnapshotCache),
+    m_materialCache(&materialCache)
 {
 	SubscribeToLevelLifecycleEvents(levelChangeEvents);
 }
@@ -76,36 +80,27 @@ void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 		m_renderCamera->ForceUpdate();
 	}
 
-	if (m_callbacks.rebuildSceneResources)
+	if (m_scene && m_renderSceneSnapshotCache && m_materialCache)
 	{
-		m_callbacks.rebuildSceneResources(m_callbacks.context);
+		const auto& sceneSnapshot = m_renderSceneSnapshotCache->Capture(*m_scene);
+		m_materialCache->Rebuild(sceneSnapshot);
 	}
 }
 
 void SceneRenderStateCoordinator::ReleaseSceneScopedMaterialResources() noexcept
 {
-	if (m_callbacks.releaseMaterialTextureTables)
+	if (m_renderSceneSnapshotCache)
 	{
-		m_callbacks.releaseMaterialTextureTables(m_callbacks.context);
+		m_renderSceneSnapshotCache->Reset();
+	}
+
+	if (m_materialCache)
+	{
+		m_materialCache->Reset();
 	}
 
 	if (m_textureManager)
 	{
 		m_textureManager->UnloadSceneTextures();
 	}
-
-	ResetMaterialCacheState();
-}
-
-void SceneRenderStateCoordinator::ResetMaterialCacheState() noexcept
-{
-	if (!m_materialCache)
-	{
-		return;
-	}
-
-	m_materialCache->cachedMaterialData.clear();
-	m_materialCache->cachedMaterialDescs.clear();
-	m_materialCache->materialCacheBuilt = false;
-	m_materialCache->materialCacheUsesLoadedMaterials = false;
 }

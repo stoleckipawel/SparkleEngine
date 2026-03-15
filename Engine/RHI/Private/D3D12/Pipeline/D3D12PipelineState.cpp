@@ -171,8 +171,3 @@ D3D12PipelineState::~D3D12PipelineState() noexcept
 {
 	m_pso.Reset();
 }
-
-void D3D12PipelineState::Set() const noexcept
-{
-	m_rhi.GetCommandList()->SetPipelineState(m_pso.Get());
-}

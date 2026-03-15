@@ -5,41 +5,34 @@
 
 using namespace DirectX;
 
-DepthMode DepthConvention::s_mode = DepthMode::ReversedZ;
-DepthConvention::OnModeChangedEvent DepthConvention::OnModeChanged;
-
-void DepthConvention::SetMode(DepthMode mode) noexcept
-{
-	if (s_mode == mode)
-		return;
-
-	s_mode = mode;
-	OnModeChanged.Broadcast(mode);
-}
-
-DepthMode DepthConvention::GetMode() noexcept
-{
-	return s_mode;
-}
-
-bool DepthConvention::IsReversedZ() noexcept
-{
-	return s_mode == DepthMode::ReversedZ;
-}
-
 float DepthConvention::GetClearDepth() noexcept
 {
-	return IsReversedZ() ? 0.0f : 1.0f;
+	if (DepthConvention::IsReversedZ())
+	{
+		return 0.0f;
+	}
+
+	return 1.0f;
 }
 
 D3D12_COMPARISON_FUNC DepthConvention::GetDepthComparisonLessEqualFunc() noexcept
 {
-	return IsReversedZ() ? D3D12_COMPARISON_FUNC_GREATER : D3D12_COMPARISON_FUNC_LESS;
+	if (DepthConvention::IsReversedZ())
+	{
+		return D3D12_COMPARISON_FUNC_GREATER;
+	}
+
+	return D3D12_COMPARISON_FUNC_LESS;
 }
 
 D3D12_COMPARISON_FUNC DepthConvention::GetDepthComparisonFuncEqual() noexcept
 {
-	return IsReversedZ() ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	if (DepthConvention::IsReversedZ())
+	{
+		return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+	}
+
+	return D3D12_COMPARISON_FUNC_LESS_EQUAL;
 }
 
 XMMATRIX DepthConvention::CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept
@@ -50,7 +43,7 @@ XMMATRIX DepthConvention::CreatePerspectiveFovLH(float fovY, float aspect, float
 	const float height = cosFov / sinFov;
 	const float width = height / aspect;
 
-	if (IsReversedZ())
+	if (DepthConvention::IsReversedZ())
 	{
 		const float fRange = nearZ / (nearZ - farZ);
 
@@ -67,7 +60,7 @@ XMMATRIX DepthConvention::CreatePerspectiveFovLH(float fovY, float aspect, float
 
 float DepthConvention::LinearizeDepth(float ndcDepth, float nearZ, float farZ) noexcept
 {
-	if (IsReversedZ())
+	if (DepthConvention::IsReversedZ())
 	{
 		if (ndcDepth <= 0.0f)
 			return farZ;
@@ -80,8 +73,9 @@ float DepthConvention::LinearizeDepth(float ndcDepth, float nearZ, float farZ) n
 
 float DepthConvention::DepthToNDC(float linearZ, float nearZ, float farZ) noexcept
 {
-	if (IsReversedZ())
+	if (DepthConvention::IsReversedZ())
 	{
+		(void) farZ;
 		if (linearZ <= 0.0f)
 			return 0.0f;
 		return nearZ / linearZ;

@@ -23,9 +23,9 @@ class D3D12Texture
 	D3D12Texture(D3D12Texture&&) = delete;
 	D3D12Texture& operator=(D3D12Texture&&) = delete;
 
-	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const noexcept { return m_srvHandle.GetGPU(); }
-
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const noexcept { return m_srvHandle.GetCPU(); }
+
+	const ComPtr<ID3D12Resource2>& GetResource() const noexcept { return m_textureResource; }
 
 	void WriteShaderResourceView(D3D12_CPU_DESCRIPTOR_HANDLE destination) const;
 

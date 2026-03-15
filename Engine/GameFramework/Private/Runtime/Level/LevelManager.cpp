@@ -11,15 +11,7 @@
 
 #include <vector>
 
-namespace
-{
-	constexpr std::string_view kEmptyLevelName = "Empty";
-	constexpr std::string_view kStartupLevelName = "Sponza";
-}
-
-LevelManager::LevelManager(
-    Scene& scene) noexcept :
-	m_scene(&scene)
+LevelManager::LevelManager(Scene& scene) noexcept : m_scene(&scene)
 {
 	InitializeStartupLevel();
 }
@@ -32,7 +24,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 		return;
 	}
 
-	const Level* startupLevel = m_levelRegistry.FindLevelOrDefault(kStartupLevelName);
+	const Level* startupLevel = m_levelRegistry.FindLevelOrDefault(GetStartupLevelName());
 	if (!startupLevel)
 	{
 		LOG_WARNING("LevelManager: Startup level initialization failed because no registered level could be resolved");
@@ -170,10 +162,10 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 
 		LevelLoadFailedEventArgs failedArgs;
 		failedArgs.failedLevelName = requestedLevelName;
-		failedArgs.fallbackLevelName = std::string(kEmptyLevelName);
+		failedArgs.fallbackLevelName = std::string(GetEmptyLevelName());
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(failedArgs);
 
-		const Level* fallbackLevel = m_levelRegistry.FindLevel(kEmptyLevelName);
+		const Level* fallbackLevel = m_levelRegistry.FindLevel(GetEmptyLevelName());
 		if (!fallbackLevel)
 		{
 			LOG_ERROR("LevelManager: Fallback level 'Empty' is not registered");
