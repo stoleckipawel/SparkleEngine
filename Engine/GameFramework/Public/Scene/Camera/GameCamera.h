@@ -41,7 +41,7 @@ class GameCamera final
 	void ClearDirty() noexcept { m_dirty = false; }
 
 	float GetFovYDegrees() const noexcept { return m_fovYDegrees; }
-	void SetFovYDegrees(float fovDegrees) noexcept { m_fovYDegrees = fovDegrees; }
+	void SetFovYDegrees(float fovDegrees) noexcept;
 
 	float GetNearZ() const noexcept { return m_nearZ; }
 	float GetFarZ() const noexcept { return m_farZ; }

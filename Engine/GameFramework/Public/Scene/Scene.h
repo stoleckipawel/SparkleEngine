@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class Mesh;
@@ -44,10 +45,9 @@ class SPARKLE_ENGINE_API Scene final
 	const GameCamera& GetCamera() const noexcept;
 
 	SceneLoadResult LoadLevel(const Level& level);
+	SceneLoadResult LoadLevel(const LevelDesc& desc);
 
 	void Clear();
-
-	const LevelCameraDesc& GetCurrentLevelInitialCamera() const noexcept { return m_camera; }
 
 	bool LoadGltf(const std::filesystem::path& assetPath);
 
@@ -65,6 +65,4 @@ class SPARKLE_ENGINE_API Scene final
 
 	std::vector<std::unique_ptr<Mesh>> m_meshes;
 	std::vector<MaterialDesc> m_loadedMaterials;
-
-	LevelCameraDesc m_camera;
 };

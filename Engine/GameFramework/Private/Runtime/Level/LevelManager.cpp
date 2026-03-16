@@ -3,13 +3,12 @@
 
 #include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
-#include "Level/LevelDesc.h"
 #include "Level/LevelRegistry.h"
 #include "Runtime/Level/LevelChangeEvents.h"
 #include "Scene/Scene.h"
-#include "Scene/Camera/GameCamera.h"
+#include "Scene/Camera/CameraController.h"
 
-#include <vector>
+#include <algorithm>
 
 LevelManager::LevelManager(Scene& scene) noexcept : m_scene(&scene)
 {
@@ -29,6 +28,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 	{
 		LOG_WARNING("LevelManager: Startup level initialization failed because no registered level could be resolved");
 		m_activeLevelName.clear();
+		m_levelCameraDesc = {};
 		return;
 	}
 
@@ -38,6 +38,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 	if (!loadResult.Succeeded())
 	{
 		m_activeLevelName.clear();
+		m_levelCameraDesc = {};
 		LOG_WARNING(
 		    "LevelManager: Startup level initialization failed for '" + startupLevelName + "'" +
 		    (loadResult.errorMessage.empty() ? std::string() : " - " + loadResult.errorMessage));
@@ -45,7 +46,8 @@ void LevelManager::InitializeStartupLevel() noexcept
 	}
 
 	m_activeLevelName = startupLevelName;
-	ResetCameraFromLoadedLevel();
+	m_levelCameraDesc = startupLevel->GetLevelDesc().cameraDesc;
+	ApplyLevelCamera();
 
 	LOG_INFO("LevelManager: Startup level initialized to '" + m_activeLevelName + "'");
 }
@@ -58,6 +60,8 @@ std::vector<std::string> LevelManager::GetRegisteredLevelNames() const
 	{
 		levelNames.push_back(levelEntry.first);
 	}
+
+	std::sort(levelNames.begin(), levelNames.end());
 
 	return levelNames;
 }
@@ -92,6 +96,35 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 	ProcessLevelChangeRequest(*requestedLevel);
 }
 
+void LevelManager::RegisterCameraController(CameraController& cameraController) noexcept
+{
+	m_cameraController = &cameraController;
+	ApplyLevelCamera();
+}
+
+bool LevelManager::SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept
+{
+	if (m_activeLevelName.empty())
+	{
+		LOG_WARNING("LevelManager: Cannot save camera defaults because there is no active level");
+		return false;
+	}
+
+	std::string errorMessage;
+	if (!m_levelRegistry.SaveLevelCameraDefaults(m_activeLevelName, cameraDesc, &errorMessage))
+	{
+		LOG_WARNING(
+		    "LevelManager: Failed to persist camera defaults for level '" + m_activeLevelName + "'" +
+		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
+		return false;
+	}
+
+	m_levelCameraDesc = cameraDesc;
+
+	LOG_INFO("LevelManager: Saved camera defaults for level '" + m_activeLevelName + "'");
+	return true;
+}
+
 SceneLoadResult LevelManager::LoadLevelFromUnloadedState(const Level& level) noexcept
 {
 	if (!m_scene)
@@ -108,19 +141,15 @@ SceneLoadResult LevelManager::LoadLevelFromUnloadedState(const Level& level) noe
 	return m_scene->LoadLevel(level);
 }
 
-void LevelManager::ResetCameraFromLoadedLevel() noexcept
+void LevelManager::ApplyLevelCamera() noexcept
 {
-	if (!m_scene)
+	if (m_cameraController == nullptr)
 	{
+		LOG_DEBUG("LevelManager: Skipping level camera application because no camera controller is registered yet");
 		return;
 	}
 
-	GameCamera& camera = m_scene->GetCamera();
-	const LevelCameraDesc& cameraDesc = m_scene->GetCurrentLevelInitialCamera();
-	const DirectX::XMFLOAT3 rotationEuler = cameraDesc.transform.GetRotationEuler();
-
-	camera.SetPosition(cameraDesc.transform.GetTranslation());
-	camera.SetYawPitch(rotationEuler.y, rotationEuler.x);
+	m_cameraController->ApplyCameraDesc(m_levelCameraDesc);
 }
 
 void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexcept
@@ -148,6 +177,7 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 
 	m_scene->Clear();
 	m_activeLevelName.clear();
+	m_levelCameraDesc = {};
 
 	LevelUnloadedEventArgs unloadedArgs;
 	unloadedArgs.previousLevelName = previousLevelName;
@@ -186,13 +216,15 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 		}
 
 		m_activeLevelName = fallbackLevelName;
+		m_levelCameraDesc = fallbackLevel->GetLevelDesc().cameraDesc;
 	}
 	else
 	{
 		m_activeLevelName = requestedLevelName;
+		m_levelCameraDesc = requestedLevel.GetLevelDesc().cameraDesc;
 	}
 
-	ResetCameraFromLoadedLevel();
+	ApplyLevelCamera();
 
 	LevelChangedEventArgs changedArgs;
 	changedArgs.previousLevelName = previousLevelName;

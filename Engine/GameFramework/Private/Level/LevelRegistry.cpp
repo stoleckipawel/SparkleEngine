@@ -1,33 +1,73 @@
 #include "PCH.h"
 #include "Level/LevelRegistry.h"
-#include "Level/Level.h"
 
-#include "Level/Levels/EmptyLevel.h"
-#include "Level/Levels/ABeautifulGameLevel.h"
-#include "Level/Levels/CesiumManLevel.h"
-#include "Level/Levels/DamagedHelmetLevel.h"
-#include "Level/Levels/DiffuseTransmissionPlantLevel.h"
-#include "Level/Levels/SponzaLevel.h"
-
+#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Diagnostics/Log.h"
+#include "Level/Level.h"
+#include "Level/LevelParser.h"
+
+#include <algorithm>
 
 LevelRegistry::LevelRegistry()
 {
-	RegisterBuiltinLevels();
+	DiscoverLevels();
 }
 
 LevelRegistry::~LevelRegistry() noexcept = default;
 
-void LevelRegistry::RegisterBuiltinLevels()
+void LevelRegistry::DiscoverLevels()
 {
-	Register(std::make_unique<EmptyLevel>());
-	Register(std::make_unique<ABeautifulGameLevel>());
-	Register(std::make_unique<CesiumManLevel>());
-	Register(std::make_unique<DamagedHelmetLevel>());
-	Register(std::make_unique<DiffuseTransmissionPlantLevel>());
-	Register(std::make_unique<SponzaLevel>());
+	const std::filesystem::path levelsPath = Filesystem::GetProjectPath() / "Levels";
+	std::error_code errorCode;
+	if (!std::filesystem::exists(levelsPath, errorCode))
+	{
+		LOG_WARNING("LevelRegistry: Levels directory not found at '" + levelsPath.string() + "'");
+		return;
+	}
 
-	SetDefaultLevelName("Empty");
+	std::vector<std::filesystem::path> levelFiles;
+	for (const auto& entry : std::filesystem::directory_iterator(levelsPath, errorCode))
+	{
+		if (errorCode)
+		{
+			LOG_WARNING("LevelRegistry: Failed while scanning levels directory '" + levelsPath.string() + "'");
+			break;
+		}
+
+		if (!entry.is_regular_file())
+		{
+			continue;
+		}
+
+		if (entry.path().extension() == ".level")
+		{
+			levelFiles.push_back(entry.path());
+		}
+	}
+
+	std::sort(levelFiles.begin(), levelFiles.end());
+	for (const std::filesystem::path& levelFile : levelFiles)
+	{
+		std::string errorMessage;
+		auto loadedLevel = LevelParser::LoadFromFile(levelFile, errorMessage);
+		if (!loadedLevel)
+		{
+			LOG_WARNING("LevelRegistry: Failed to load level file '" + levelFile.string() + "'" +
+			            (errorMessage.empty() ? std::string() : " - " + errorMessage));
+			continue;
+		}
+
+		Register(std::move(loadedLevel));
+	}
+
+	if (FindLevel("Empty") != nullptr)
+	{
+		SetDefaultLevelName("Empty");
+	}
+	else if (!m_levels.empty())
+	{
+		SetDefaultLevelName(m_levels.begin()->first);
+	}
 }
 
 void LevelRegistry::Register(std::unique_ptr<Level> level)
@@ -95,6 +135,22 @@ std::size_t LevelRegistry::GetLevelCount() const noexcept
 void LevelRegistry::SetDefaultLevelName(std::string_view name)
 {
 	m_defaultLevelName = std::string(name);
+}
+
+bool LevelRegistry::SaveLevelCameraDefaults(std::string_view levelName, const CameraDesc& cameraDesc, std::string* errorMessage)
+{
+	Level* level = FindLevel(levelName);
+	if (level == nullptr)
+	{
+		if (errorMessage != nullptr)
+		{
+			*errorMessage = "Level not found";
+		}
+		return false;
+	}
+
+	level->SetInitialCamera(cameraDesc);
+	return LevelParser::SaveToFile(*level, errorMessage);
 }
 
 std::string_view LevelRegistry::GetDefaultLevelName() const noexcept

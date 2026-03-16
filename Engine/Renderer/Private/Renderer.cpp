@@ -49,7 +49,13 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
 
-	m_ui = std::make_unique<UI>(*m_timer, &levelManager, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
+	m_ui = std::make_unique<UI>(
+	    *m_timer,
+	    &levelManager,
+	    *m_rhi,
+	    *m_window,
+	    *m_descriptorHeapManager,
+	    *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,

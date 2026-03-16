@@ -9,6 +9,9 @@
 #include "Input/Mouse/MousePosition.h"
 #include "Input/Events/MouseWheelEvent.h"
 #include "Timer.h"
+
+#include <DirectXMath.h>
+
 #include <algorithm>
 
 CameraController::CameraController(Timer& timer, InputSystem& inputSystem, Window& window, GameCamera& camera) noexcept :
@@ -61,6 +64,96 @@ CameraController::~CameraController() noexcept
 	}
 }
 
+void CameraController::SetSettings(const CameraMovementSettings& settings) noexcept
+{
+	m_settings = settings;
+	SetMoveSpeed(settings.moveSpeed);
+}
+
+void CameraController::ApplyCameraDesc(const CameraDesc& cameraDesc) noexcept
+{
+	SetPosition(cameraDesc.position);
+	SetYawPitch(cameraDesc.yawRadians, cameraDesc.pitchRadians);
+	SetFovYDegrees(cameraDesc.fovYDegrees);
+	SetMoveSpeed(cameraDesc.moveSpeed);
+}
+
+CameraDesc CameraController::CaptureCurrentCameraDesc() const noexcept
+{
+	return CameraDesc::FromRuntimeState(
+	    GetPosition(),
+	    GetYaw(),
+	    GetPitch(),
+	    GetFovYDegrees(),
+	    GetMoveSpeed());
+}
+
+void CameraController::SetPosition(const DirectX::XMFLOAT3& position) noexcept
+{
+	m_camera.SetPosition(position);
+}
+
+void CameraController::SetYaw(float yawRadians) noexcept
+{
+	SetYawPitch(yawRadians, GetPitch());
+}
+
+void CameraController::SetPitch(float pitchRadians) noexcept
+{
+	SetYawPitch(GetYaw(), pitchRadians);
+}
+
+void CameraController::SetYawPitch(float yawRadians, float pitchRadians) noexcept
+{
+	m_camera.SetYawPitch(yawRadians, ClampPitch(pitchRadians));
+}
+
+void CameraController::SetMoveSpeed(float speed) noexcept
+{
+	m_settings.moveSpeed = ClampMoveSpeed(speed);
+}
+
+void CameraController::SetFovYDegrees(float fovDegrees) noexcept
+{
+	m_camera.SetFovYDegrees(ClampFovYDegrees(fovDegrees));
+}
+
+DirectX::XMFLOAT3 CameraController::GetPosition() const noexcept
+{
+	return m_camera.GetPosition();
+}
+
+float CameraController::GetYaw() const noexcept
+{
+	return m_camera.GetYaw();
+}
+
+float CameraController::GetPitch() const noexcept
+{
+	return m_camera.GetPitch();
+}
+
+float CameraController::GetFovYDegrees() const noexcept
+{
+	return m_camera.GetFovYDegrees();
+}
+
+float CameraController::ClampPitch(float pitchRadians) noexcept
+{
+	constexpr float maxPitch = DirectX::XM_PIDIV2 - 0.01f;
+	return std::clamp(pitchRadians, -maxPitch, maxPitch);
+}
+
+float CameraController::ClampMoveSpeed(float speed) const noexcept
+{
+	return std::clamp(speed, m_settings.minMoveSpeed, m_settings.maxMoveSpeed);
+}
+
+float CameraController::ClampFovYDegrees(float fovDegrees) const noexcept
+{
+	return std::clamp(fovDegrees, 1.0f, 179.0f);
+}
+
 void CameraController::Update() noexcept
 {
 	const InputState& input = m_inputSystem.GetState();
@@ -70,12 +163,12 @@ void CameraController::Update() noexcept
 	{
 		const MousePosition mouseDelta = input.GetMouseDelta();
 
-		const float ySign = m_settings.invertY ? 1.0f : -1.0f;
+		const float ySign = GetInvertY() ? 1.0f : -1.0f;
 
-		const float yawDelta = static_cast<float>(mouseDelta.X) * m_settings.mouseSensitivity;
-		const float pitchDelta = ySign * static_cast<float>(mouseDelta.Y) * m_settings.mouseSensitivity;
+		const float yawDelta = static_cast<float>(mouseDelta.X) * GetMouseSensitivity();
+		const float pitchDelta = ySign * static_cast<float>(mouseDelta.Y) * GetMouseSensitivity();
 
-		m_camera.Rotate(yawDelta, pitchDelta);
+		SetYawPitch(GetYaw() + yawDelta, GetPitch() + pitchDelta);
 
 		m_inputSystem.CenterCursor(m_window.GetHWND());
 	}
@@ -85,10 +178,10 @@ void CameraController::Update() noexcept
 		return;
 	}
 
-	float speed = m_settings.moveSpeed;
+	float speed = GetMoveSpeed();
 	if (input.IsKeyDown(Key::LeftShift) || input.IsKeyDown(Key::RightShift))
 	{
-		speed *= m_settings.sprintMultiplier;
+		speed *= GetSprintMultiplier();
 	}
 
 	const float distance = speed * deltaTime;
@@ -154,6 +247,5 @@ void CameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
 		return;
 	}
 
-	m_settings.moveSpeed += event.Delta * m_settings.speedStep;
-	m_settings.moveSpeed = std::clamp(m_settings.moveSpeed, m_settings.minMoveSpeed, m_settings.maxMoveSpeed);
+	SetMoveSpeed(m_settings.moveSpeed + (event.Delta * m_settings.speedStep));
 }

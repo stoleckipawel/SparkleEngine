@@ -1,6 +1,9 @@
 #pragma once
 
+#include <DirectXMath.h>
+
 #include <filesystem>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -27,6 +30,59 @@ namespace Engine
 				return str.substr(1, str.size() - 2);
 			}
 			return str;
+		}
+
+		inline std::string TrimCopy(std::string_view str)
+		{
+			return std::string(TrimAsciiWhitespace(str));
+		}
+
+		inline std::string UnquoteCopy(std::string_view str)
+		{
+			return std::string(Unquote(TrimAsciiWhitespace(str)));
+		}
+
+		inline bool TryParseFloat(std::string_view str, float& outValue)
+		{
+			const std::string trimmed = TrimCopy(str);
+			if (trimmed.empty())
+			{
+				return false;
+			}
+
+			try
+			{
+				std::size_t parsedLength = 0;
+				outValue = std::stof(trimmed, &parsedLength);
+				return parsedLength == trimmed.size();
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
+
+		inline bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
+		{
+			std::stringstream stream(std::string(str));
+			std::string segment;
+			float values[3] = {};
+
+			for (int index = 0; index < 3; ++index)
+			{
+				if (!std::getline(stream, segment, ','))
+				{
+					return false;
+				}
+
+				if (!TryParseFloat(segment, values[index]))
+				{
+					return false;
+				}
+			}
+
+			outValue = {values[0], values[1], values[2]};
+			return true;
 		}
 
 		inline std::wstring ToWide(std::string_view str)

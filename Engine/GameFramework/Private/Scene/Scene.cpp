@@ -26,27 +26,29 @@ const GameCamera& Scene::GetCamera() const noexcept
 
 SceneLoadResult Scene::LoadLevel(const Level& level)
 {
-	SceneLoadResult result;
-	const std::string levelName(level.GetName());
+	return LoadLevel(level.BuildDescription());
+}
 
-	LOG_INFO("Scene: Loading level '" + levelName + "'");
+SceneLoadResult Scene::LoadLevel(const LevelDesc& desc)
+{
+	SceneLoadResult result;
+
+	LOG_INFO("Scene: Loading level '" + desc.name + "'");
 
 	Clear();
 
-	LevelDesc desc = level.BuildDescription();
 	if (!LoadImportedMeshRequests(desc, result.errorMessage))
 	{
 		Clear();
 		LOG_ERROR(
-		    "Scene: Failed to load level '" + levelName + "'" +
+		    "Scene: Failed to load level '" + desc.name + "'" +
 		    (result.errorMessage.empty() ? std::string() : " - " + result.errorMessage));
 		return result;
 	}
 
-	m_camera = desc.initialCamera;
 	result.status = SceneLoadStatus::Succeeded;
 
-	LOG_INFO("Scene: Level '" + levelName + "' loaded");
+	LOG_INFO("Scene: Level '" + desc.name + "' loaded");
 	return result;
 }
 
@@ -86,7 +88,6 @@ void Scene::Clear()
 {
 	m_meshes.clear();
 	m_loadedMaterials.clear();
-	m_camera = {};
 }
 
 bool Scene::LoadGltf(const std::filesystem::path& assetPath)

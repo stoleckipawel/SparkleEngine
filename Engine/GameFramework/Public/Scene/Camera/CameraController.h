@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 
 #include "Events/ScopedEventHandle.h"
 
@@ -39,19 +40,34 @@ class SPARKLE_ENGINE_API CameraController final
 	CameraMovementSettings& GetSettings() noexcept { return m_settings; }
 	const CameraMovementSettings& GetSettings() const noexcept { return m_settings; }
 
-	void SetSettings(const CameraMovementSettings& settings) noexcept { m_settings = settings; }
+	void SetSettings(const CameraMovementSettings& settings) noexcept;
+	void ApplyCameraDesc(const CameraDesc& cameraDesc) noexcept;
+	CameraDesc CaptureCurrentCameraDesc() const noexcept;
 
-	void SetMoveSpeed(float speed) noexcept { m_settings.moveSpeed = speed; }
+	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
+	void SetYaw(float yawRadians) noexcept;
+	void SetPitch(float pitchRadians) noexcept;
+	void SetYawPitch(float yawRadians, float pitchRadians) noexcept;
+	void SetMoveSpeed(float speed) noexcept;
 	void SetSprintMultiplier(float multiplier) noexcept { m_settings.sprintMultiplier = multiplier; }
 	void SetMouseSensitivity(float sensitivity) noexcept { m_settings.mouseSensitivity = sensitivity; }
 	void SetInvertY(bool invert) noexcept { m_settings.invertY = invert; }
+	void SetFovYDegrees(float fovDegrees) noexcept;
 
+	DirectX::XMFLOAT3 GetPosition() const noexcept;
+	float GetYaw() const noexcept;
+	float GetPitch() const noexcept;
 	float GetMoveSpeed() const noexcept { return m_settings.moveSpeed; }
 	float GetSprintMultiplier() const noexcept { return m_settings.sprintMultiplier; }
 	float GetMouseSensitivity() const noexcept { return m_settings.mouseSensitivity; }
 	bool GetInvertY() const noexcept { return m_settings.invertY; }
+	float GetFovYDegrees() const noexcept;
 
   private:
+	static float ClampPitch(float pitchRadians) noexcept;
+	float ClampMoveSpeed(float speed) const noexcept;
+	float ClampFovYDegrees(float fovDegrees) const noexcept;
+
 	void OnMouseButtonPressed(const MouseButtonEvent& event) noexcept;
 	void OnMouseButtonReleased(const MouseButtonEvent& event) noexcept;
 	void OnKeyPressed(const KeyboardEvent& event) noexcept;

@@ -9,6 +9,7 @@
 #include "Timer.h"
 
 #include "Panels/RendererPanel.h"
+#include "Sections/CameraSection.h"
 #include "Sections/SceneSection.h"
 #include "Sections/StatsOverlay.h"
 #include "Sections/ViewMode.h"
@@ -136,6 +137,12 @@ void UI::InitializeDefaultPanels()
 
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::Scene) && m_levelManager != nullptr)
 		m_rendererPanel->SetSection(std::make_unique<SceneSection>(*m_levelManager));
+
+	if (!m_rendererPanel->HasSection(UIRendererSectionId::Camera) &&
+	    m_levelManager != nullptr)
+	{
+		m_rendererPanel->SetSection(std::make_unique<CameraSection>(*m_levelManager));
+	}
 
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::ViewMode))
 		m_rendererPanel->SetSection(std::make_unique<ViewMode>());

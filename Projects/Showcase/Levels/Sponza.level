@@ -1,0 +1,12 @@
+[Level]
+Name = Sponza
+
+[Camera]
+Position = 0.0, 1.6, -8.0
+YawRadians = 0.0
+PitchRadians = 0.0
+FovYDegrees = 60.0
+MoveSpeed = 0.15
+
+[Meshes]
+Asset = Sponza/Sponza.gltf

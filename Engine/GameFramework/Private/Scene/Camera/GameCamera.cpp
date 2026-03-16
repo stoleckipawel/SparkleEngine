@@ -52,6 +52,12 @@ void GameCamera::SetAspectRatio(float aspectRatio) noexcept
 	MarkDirty();
 }
 
+void GameCamera::SetFovYDegrees(float fovDegrees) noexcept
+{
+	m_fovYDegrees = std::clamp(fovDegrees, 1.0f, 179.0f);
+	MarkDirty();
+}
+
 void GameCamera::UpdateCachedDirection() const noexcept
 {
 	const XMFLOAT3 rotationEuler = m_transform.GetRotationEuler();

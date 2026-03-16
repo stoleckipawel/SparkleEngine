@@ -1,0 +1,12 @@
+[Level]
+Name = DiffuseTransmissionPlant
+
+[Camera]
+Position = 0.0, 1.8, -5.0
+YawRadians = 0.0
+PitchRadians = -0.1
+FovYDegrees = 60.0
+MoveSpeed = 0.15
+
+[Meshes]
+Asset = DiffuseTransmissionPlant/DiffuseTransmissionPlant.gltf

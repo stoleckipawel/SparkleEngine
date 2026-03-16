@@ -1,0 +1,12 @@
+[Level]
+Name = ABeautifulGame
+
+[Camera]
+Position = 0.0, 1.2, -4.5
+YawRadians = 0.0
+PitchRadians = 0.0
+FovYDegrees = 60.0
+MoveSpeed = 0.15
+
+[Meshes]
+Asset = ABeautifulGame/ABeautifulGame.gltf
