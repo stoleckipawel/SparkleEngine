@@ -16,9 +16,9 @@ struct MouseWheelEvent;
 struct CameraMovementSettings
 {
 	float moveSpeed = 0.15f;
-	float minMoveSpeed = 0.01f;
+	float minMoveSpeed = 0.0001f;
 	float maxMoveSpeed = 10.0f;
-	float speedStep = 0.1f;
+	float speedStep = 0.01f;
 	float sprintMultiplier = 2.0f;
 	float mouseSensitivity = 0.0015f;
 	bool invertY = false;

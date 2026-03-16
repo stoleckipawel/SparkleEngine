@@ -38,7 +38,7 @@ class ViewMode final : public UIRendererSection
 	void Set(Type mode) noexcept { m_mode = mode; }
 
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::ViewMode; }
-	const char* GetTitle() const noexcept override { return "View Modes"; }
+	const char* GetTitle() const noexcept override { return "Viewport"; }
 
 	void BuildUI() override;
 

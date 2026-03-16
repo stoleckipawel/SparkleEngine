@@ -16,7 +16,7 @@ class SceneSection final : public UIRendererSection
 	SceneSection& operator=(SceneSection&&) = delete;
 
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::Scene; }
-	const char* GetTitle() const noexcept override { return "Scene"; }
+	const char* GetTitle() const noexcept override { return "Level"; }
 
 	void BuildUI() override;
 

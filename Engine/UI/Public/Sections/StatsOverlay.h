@@ -16,7 +16,7 @@ class StatsOverlay final : public UIRendererSection
 	StatsOverlay& operator=(StatsOverlay&&) = delete;
 
 	UIRendererSectionId GetId() const noexcept override { return UIRendererSectionId::Stats; }
-	const char* GetTitle() const noexcept override { return "Stats"; }
+	const char* GetTitle() const noexcept override { return "Runtime"; }
 
 	void BuildUI() override;
 

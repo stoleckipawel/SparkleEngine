@@ -2,8 +2,10 @@
 #include "Sections/SceneSection.h"
 
 #include "Runtime/Level/LevelManager.h"
+#include "Util/UiUtil.h"
 
 #include <algorithm>
+#include <cstdio>
 
 #include <imgui.h>
 
@@ -23,12 +25,17 @@ void SceneSection::BuildUI()
 
 	const std::string activeLevelName(m_levelManager->GetActiveLevelName());
 	const char* previewValue = activeLevelName.empty() ? "<None>" : activeLevelName.c_str();
+	char levelCountText[16] = {};
+	std::snprintf(levelCountText, sizeof(levelCountText), "%zu", levelNames.size());
 
-	ImGui::Text("Active Level: %s", previewValue);
-	ImGui::Text("Status: %s", m_levelManager->IsLevelChangeInProgress() ? "Changing level" : "Ready");
-	ImGui::Text("Registered Levels: %zu", levelNames.size());
+	UiUtil::DrawKeyValueRow("Active", previewValue);
+	UiUtil::DrawKeyValueRow("State", m_levelManager->IsLevelChangeInProgress() ? "Switching" : "Ready");
+	UiUtil::DrawKeyValueRow("Loaded", levelCountText);
+	ImGui::Dummy(ImVec2(0.0f, 4.0f));
+	ImGui::TextDisabled("Load Level");
+	ImGui::SetNextItemWidth(-1.0f);
 
-	if (ImGui::BeginCombo("Level", previewValue))
+	if (ImGui::BeginCombo("##Level", previewValue))
 	{
 		for (const std::string& levelName : levelNames)
 		{

@@ -2,11 +2,11 @@
 Name = Sponza
 
 [Camera]
-Position = 0.0, 1.6, -8.0
-YawRadians = 0.0
-PitchRadians = 0.0
-FovYDegrees = 60.0
-MoveSpeed = 0.15
+Position = 6.59380865, 4.73201418, -0.0687320083
+YawRadians = 4.74119043
+PitchRadians = 0.0547033325
+FovYDegrees = 66.9000015
+MoveSpeed = 0.00999999978
 
 [Meshes]
 Asset = Sponza/Sponza.gltf

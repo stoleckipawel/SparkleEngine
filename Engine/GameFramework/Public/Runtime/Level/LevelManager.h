@@ -26,7 +26,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	LevelManager& operator=(LevelManager&&) = delete;
 
 	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
-	bool HasActiveLevel() const noexcept { return !m_activeLevelName.empty(); }
+	bool HasActiveLevel() const noexcept { return m_bHasActiveLevel; }
 	bool IsLevelChangeInProgress() const noexcept { return m_bLevelChangeInProgress; }
 	std::vector<std::string> GetRegisteredLevelNames() const;
 	LevelChangeEvents& GetLevelChangeEvents() noexcept { return m_levelChangeEvents; }
@@ -36,6 +36,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	void RegisterCameraController(CameraController& cameraController) noexcept;
 	CameraController* GetCameraController() noexcept { return m_cameraController; }
 	const CameraController* GetCameraController() const noexcept { return m_cameraController; }
+	bool ResetActiveLevelCamera() noexcept;
 	bool SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept;
 
   private:
@@ -54,5 +55,6 @@ class SPARKLE_ENGINE_API LevelManager final
 	CameraDesc m_levelCameraDesc;
 
 	std::string m_activeLevelName;
+	bool m_bHasActiveLevel = false;
 	bool m_bLevelChangeInProgress = false;
 };

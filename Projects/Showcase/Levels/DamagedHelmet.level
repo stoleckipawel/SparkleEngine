@@ -2,11 +2,11 @@
 Name = DamagedHelmet
 
 [Camera]
-Position = 0.0, 0.8, -2.2
-YawRadians = 0.0
-PitchRadians = 0.0
-FovYDegrees = 60.0
-MoveSpeed = 0.15
+Position = 0.0370000005, 0.153095871, -2.19272876
+YawRadians = 0.0169122405
+PitchRadians = 0.0134999566
+FovYDegrees = 60
+MoveSpeed = 0.00999999978
 
 [Meshes]
 Asset = DamagedHelmet/DamagedHelmet.gltf

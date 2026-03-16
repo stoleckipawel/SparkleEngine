@@ -14,6 +14,7 @@
 #include "Sections/StatsOverlay.h"
 #include "Sections/ViewMode.h"
 #include "Sections/TimeControls.h"
+#include "Style/SparkleUiTheme.h"
 
 #include "Renderer/Public/CommandContext.h"
 
@@ -66,6 +67,7 @@ UI::UI(
     m_swapChain(&swapChain)
 {
 	InitializeImGuiContext();
+	SetupDPIScaling();
 
 	if (!InitializeWin32Backend())
 		return;
@@ -73,7 +75,6 @@ UI::UI(
 	if (!InitializeD3D12Backend())
 		return;
 
-	SetupDPIScaling();
 	InitializeDefaultPanels();
 	SubscribeToWindowEvents(window);
 }
@@ -87,6 +88,7 @@ void UI::InitializeImGuiContext()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 	ImGui::StyleColorsDark();
+	SparkleUiTheme::ApplyEditorialDarkTheme();
 }
 
 bool UI::InitializeWin32Backend()
@@ -121,9 +123,6 @@ bool UI::InitializeD3D12Backend()
 	}
 
 	ImGui_ImplDX12_Init(&initInfo);
-
-	ImGuiIO& io = ImGui::GetIO();
-	io.Fonts->AddFontDefault();
 
 	return true;
 }
@@ -221,8 +220,9 @@ void UI::SetupDPIScaling() noexcept
 {
 	ImGui_ImplWin32_EnableDpiAwareness();
 	float mainScale = ImGui_ImplWin32_GetDpiScaleForMonitor(::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
+	SparkleUiTheme::ConfigureTypography(mainScale);
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.FontSizeBase = 16.0f;
+	style.FontSizeBase = 16.0f * mainScale;
 
 	style.ScaleAllSizes(mainScale);
 }

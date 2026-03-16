@@ -28,6 +28,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 	{
 		LOG_WARNING("LevelManager: Startup level initialization failed because no registered level could be resolved");
 		m_activeLevelName.clear();
+		m_bHasActiveLevel = false;
 		m_levelCameraDesc = {};
 		return;
 	}
@@ -38,6 +39,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 	if (!loadResult.Succeeded())
 	{
 		m_activeLevelName.clear();
+		m_bHasActiveLevel = false;
 		m_levelCameraDesc = {};
 		LOG_WARNING(
 		    "LevelManager: Startup level initialization failed for '" + startupLevelName + "'" +
@@ -46,6 +48,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 	}
 
 	m_activeLevelName = startupLevelName;
+	m_bHasActiveLevel = true;
 	m_levelCameraDesc = startupLevel->GetLevelDesc().cameraDesc;
 	ApplyLevelCamera();
 
@@ -102,9 +105,27 @@ void LevelManager::RegisterCameraController(CameraController& cameraController) 
 	ApplyLevelCamera();
 }
 
+bool LevelManager::ResetActiveLevelCamera() noexcept
+{
+	if (!m_bHasActiveLevel)
+	{
+		LOG_WARNING("LevelManager: Cannot reset camera because there is no active level");
+		return false;
+	}
+
+	if (m_cameraController == nullptr)
+	{
+		LOG_WARNING("LevelManager: Cannot reset camera because no camera controller is registered");
+		return false;
+	}
+
+	ApplyLevelCamera();
+	return true;
+}
+
 bool LevelManager::SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept
 {
-	if (m_activeLevelName.empty())
+	if (!m_bHasActiveLevel)
 	{
 		LOG_WARNING("LevelManager: Cannot save camera defaults because there is no active level");
 		return false;
@@ -177,6 +198,7 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 
 	m_scene->Clear();
 	m_activeLevelName.clear();
+	m_bHasActiveLevel = false;
 	m_levelCameraDesc = {};
 
 	LevelUnloadedEventArgs unloadedArgs;
@@ -216,11 +238,13 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 		}
 
 		m_activeLevelName = fallbackLevelName;
+		m_bHasActiveLevel = true;
 		m_levelCameraDesc = fallbackLevel->GetLevelDesc().cameraDesc;
 	}
 	else
 	{
 		m_activeLevelName = requestedLevelName;
+		m_bHasActiveLevel = true;
 		m_levelCameraDesc = requestedLevel.GetLevelDesc().cameraDesc;
 	}
 

@@ -64,7 +64,7 @@ namespace Engine
 
 		inline bool TryParseFloat3(std::string_view str, DirectX::XMFLOAT3& outValue)
 		{
-			std::stringstream stream(std::string(str));
+			std::stringstream stream{std::string(str)};
 			std::string segment;
 			float values[3] = {};
 
