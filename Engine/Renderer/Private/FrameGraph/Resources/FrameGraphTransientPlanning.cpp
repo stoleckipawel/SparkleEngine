@@ -114,11 +114,6 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 {
 	assert(m_rhi != nullptr);
 
-	if (m_transientAllocator != nullptr)
-	{
-		m_transientAllocator->Reset();
-	}
-
 	plan.transientResources.clear();
 	plan.transientResources.reserve(m_virtualTransientResources.size());
 

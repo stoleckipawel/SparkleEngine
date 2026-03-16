@@ -23,6 +23,11 @@ FrameGraph::FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager
 
 FrameGraph::~FrameGraph()
 {
+	if (m_transientAllocator != nullptr)
+	{
+		m_transientAllocator->Reset();
+	}
+
 	ReleaseExternalViewDescriptors();
 	LOG_INFO("FrameGraph destroyed");
 }

@@ -133,6 +133,11 @@ void Renderer::InitializeWindowObserver() noexcept
 
 void Renderer::RefreshFrameExecution() noexcept
 {
+	if (m_rhi)
+	{
+		m_rhi->Flush();
+	}
+
 	m_frameExecutor.reset();
 	m_frameGraph.reset();
 	InitializeFrameGraph();
