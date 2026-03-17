@@ -13,7 +13,7 @@ namespace UiUtil
 	{
 		constexpr float PropertyLabelWidth = 78.0f;
 		constexpr float ScalarInputWidth = 86.0f;
-		constexpr float Float3InputWidth = 146.0f;
+		constexpr float Float3InputWidth = 188.0f;
 
 		void PushFontIfAvailable(ImFont* font)
 		{
@@ -31,7 +31,15 @@ namespace UiUtil
 			}
 		}
 
-		void DrawHeaderBar(const char* title, float height, ImU32 backgroundColor, ImU32 borderColor, ImFont* font, const ImVec2& padding)
+		void DrawHeaderBar(
+		    const char* title,
+		    const char* trailingText,
+		    float height,
+		    ImU32 backgroundColor,
+		    ImU32 borderColor,
+		    ImFont* titleFont,
+		    ImFont* trailingFont,
+		    const ImVec2& padding)
 		{
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			const ImVec2 start = ImGui::GetCursorScreenPos();
@@ -43,9 +51,19 @@ namespace UiUtil
 
 			ImGui::InvisibleButton("##header_bar", ImVec2(width, height));
 			ImGui::SetCursorScreenPos(ImVec2(start.x + padding.x, start.y + padding.y));
-			PushFontIfAvailable(font);
+			PushFontIfAvailable(titleFont);
 			ImGui::TextUnformatted(title);
-			PopFontIfAvailable(font);
+			PopFontIfAvailable(titleFont);
+
+			if (trailingText != nullptr && trailingText[0] != '\0')
+			{
+				const float trailingWidth = ImGui::CalcTextSize(trailingText).x;
+				ImGui::SetCursorScreenPos(ImVec2(end.x - padding.x - trailingWidth, start.y + padding.y));
+				PushFontIfAvailable(trailingFont);
+				ImGui::TextDisabled("%s", trailingText);
+				PopFontIfAvailable(trailingFont);
+			}
+
 			ImGui::SetCursorScreenPos(ImVec2(start.x, end.y + 4.0f));
 		}
 
@@ -63,15 +81,7 @@ namespace UiUtil
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
-		DrawHeaderBar(title, 28.0f, IM_COL32(34, 34, 37, 255), IM_COL32(72, 72, 78, 255), headingFont, ImVec2(8.0f, 4.0f));
-
-		if (subtitle != nullptr && subtitle[0] != '\0')
-		{
-			PushFontIfAvailable(monoFont);
-			ImGui::TextDisabled("%s", subtitle);
-			PopFontIfAvailable(monoFont);
-			ImGui::Dummy(ImVec2(0.0f, 2.0f));
-		}
+		DrawHeaderBar(title, subtitle, 24.0f, IM_COL32(34, 34, 37, 255), IM_COL32(72, 72, 78, 255), headingFont, monoFont, ImVec2(8.0f, 3.0f));
 	}
 
 	void BeginSectionCard(const char* title)
@@ -124,6 +134,7 @@ namespace UiUtil
 	    const char* inputFormat)
 	{
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
+		const char* sliderValueFormat = (inputFormat != nullptr && inputFormat[0] != '\0') ? "" : sliderFormat;
 		bool changedBySlider = false;
 		bool changedByInput = false;
 
@@ -149,7 +160,7 @@ namespace UiUtil
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::SetNextItemWidth(-1.0f);
-				changedBySlider = ImGui::SliderFloat("##slider", &value, minValue, maxValue, sliderFormat);
+				changedBySlider = ImGui::SliderFloat("##slider", &value, minValue, maxValue, sliderValueFormat);
 
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SetNextItemWidth(-1.0f);
@@ -174,6 +185,7 @@ namespace UiUtil
 	    const char* inputFormat)
 	{
 		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
+		const char* sliderValueFormat = (inputFormat != nullptr && inputFormat[0] != '\0') ? "" : sliderFormat;
 		bool changedBySlider = false;
 		bool changedByInput = false;
 
@@ -191,19 +203,19 @@ namespace UiUtil
 			PopFontIfAvailable(monoFont);
 
 			ImGui::TableSetColumnIndex(1);
-			if (ImGui::BeginTable("##float3_editor", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+			if (ImGui::BeginTable("##float3_editor", 1, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
 			{
-				ImGui::TableSetupColumn("slider", ImGuiTableColumnFlags_WidthStretch);
-				ImGui::TableSetupColumn("input", ImGuiTableColumnFlags_WidthFixed, Float3InputWidth);
+				ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
 				ImGui::TableNextRow();
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::SetNextItemWidth(-1.0f);
-				changedBySlider = ImGui::SliderFloat3("##slider", values, minValue, maxValue, sliderFormat);
+				changedBySlider = ImGui::SliderFloat3("##slider", values, minValue, maxValue, sliderValueFormat);
 
-				ImGui::TableSetColumnIndex(1);
-				ImGui::SetNextItemWidth(-1.0f);
-				changedByInput = ImGui::InputFloat3("##input", values, inputFormat);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::SetNextItemWidth(Float3InputWidth);
+				changedByInput = ImGui::InputFloat3("##input", values, inputFormat) || changedByInput;
 
 				ImGui::EndTable();
 			}
@@ -219,7 +231,7 @@ namespace UiUtil
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();
 		ImGui::PushID(title);
-		DrawHeaderBar(title, 22.0f, IM_COL32(44, 46, 50, 255), IM_COL32(70, 74, 80, 255), headingFont, ImVec2(6.0f, 3.0f));
+		DrawHeaderBar(title, nullptr, 22.0f, IM_COL32(44, 46, 50, 255), IM_COL32(70, 74, 80, 255), headingFont, nullptr, ImVec2(6.0f, 3.0f));
 		ImGui::PopID();
 	}
 }
