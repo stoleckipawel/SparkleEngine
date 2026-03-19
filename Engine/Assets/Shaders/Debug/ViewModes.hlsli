@@ -3,7 +3,7 @@
 // =============================================================================
 // Debug View Modes
 // =============================================================================
-// Keep these indices in sync with Engine/UI/Public/Sections/ViewMode.h.
+// Keep these indices in sync with Engine/Renderer/Public/Debug/RenderViewMode.h.
 
 namespace ViewMode
 {

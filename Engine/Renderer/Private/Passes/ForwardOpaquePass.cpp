@@ -29,8 +29,8 @@ ForwardOpaquePass::ForwardOpaquePass(
     TextureManager& textureManager,
     D3D12SamplerLibrary& samplerLibrary,
     GPUMeshCache& gpuMeshCache,
-	TextureHandle backBufferHandle,
-	TextureHandle depthBufferHandle) noexcept :
+    TextureHandle backBufferHandle,
+    TextureHandle depthBufferHandle) noexcept :
     m_rootSignature(&rootSignature),
     m_pipelineState(&pipelineState),
     m_constantBufferManager(&constantBufferManager),
@@ -38,8 +38,8 @@ ForwardOpaquePass::ForwardOpaquePass(
     m_textureManager(&textureManager),
     m_samplerLibrary(&samplerLibrary),
     m_gpuMeshCache(&gpuMeshCache),
-	m_backBuffer(backBufferHandle),
-	m_depthBuffer(depthBufferHandle)
+    m_backBuffer(backBufferHandle),
+    m_depthBuffer(depthBufferHandle)
 {
 	LOG_INFO("ForwardOpaquePass: Created");
 }
@@ -93,7 +93,7 @@ void ForwardOpaquePass::BindGlobalResources(CommandContext& cmd)
 
 void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const FrameContext& frame)
 {
-	for (const auto& draw : frame.sceneView.meshDraws)
+	for (const auto& draw : frame.renderSceneView.meshDraws)
 	{
 		const auto* cpuMesh = static_cast<const Mesh*>(draw.meshPtr);
 		GPUMesh* gpuMesh = m_gpuMeshCache->GetOrUpload(*cpuMesh);
@@ -114,9 +114,9 @@ void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const FrameContext
 
 		cmd.BindConstantBuffer(
 		    RootBindings::RootParam::PerObjectPS,
-		    m_constantBufferManager->UpdatePerObjectPS(frame.sceneView.materials[draw.materialId].ToPerObjectPSData()));
+		    m_constantBufferManager->UpdatePerObjectPS(frame.renderSceneView.materials[draw.materialId].ToPerObjectPSData()));
 
-		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = frame.sceneView.materials[draw.materialId].textureTableGpuHandle;
+		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = frame.renderSceneView.materials[draw.materialId].textureTableGpuHandle;
 		if (materialTextureTable.ptr == 0)
 		{
 			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");

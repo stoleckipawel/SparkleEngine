@@ -230,8 +230,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		using SetupFnType = std::decay_t<SetupFn>;
 		static_assert(
-		    std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&> ||
-		        std::is_invocable_v<SetupFnType&, PassBuilder&>,
+		    std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassBuilder&>,
 		    "FrameGraph setup lambda must accept (PassBuilder&, const FrameContext&) or (PassBuilder&).\n");
 
 		SetupFnType callback(std::forward<SetupFn>(setupFn));
@@ -257,10 +256,10 @@ class SPARKLE_RENDERER_API FrameGraph
 		static_assert(
 		    std::is_invocable_v<ExecuteFnType&, const FrameGraph&, CommandContext&, const FrameContext&> ||
 		        std::is_invocable_v<ExecuteFnType&, CommandContext&, const FrameContext&> ||
-		        std::is_invocable_v<ExecuteFnType&, CommandContext&> ||
-		        std::is_invocable_v<ExecuteFnType&, const FrameContext&> ||
+		        std::is_invocable_v<ExecuteFnType&, CommandContext&> || std::is_invocable_v<ExecuteFnType&, const FrameContext&> ||
 		        std::is_invocable_v<ExecuteFnType&>,
-		    "FrameGraph execute lambda must accept (const FrameGraph&, CommandContext&, const FrameContext&), (CommandContext&, const FrameContext&), (CommandContext&), (const FrameContext&), or ().");
+		    "FrameGraph execute lambda must accept (const FrameGraph&, CommandContext&, const FrameContext&), (CommandContext&, const "
+		    "FrameContext&), (CommandContext&), (const FrameContext&), or ().");
 
 		ExecuteFnType callback(std::forward<ExecuteFn>(executeFn));
 		if constexpr (std::is_invocable_v<ExecuteFnType&, const FrameGraph&, CommandContext&, const FrameContext&>)

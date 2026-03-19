@@ -20,7 +20,7 @@ namespace
 	FrameGraphResourceKind ResolveTextureResourceKind(FrameGraphTextureKind kind) noexcept
 	{
 		return kind == FrameGraphTextureKind::DepthStencil ? FrameGraphResourceKind::DepthStencil
-		                                                  : FrameGraphResourceKind::ColorRenderTarget;
+		                                                   : FrameGraphResourceKind::ColorRenderTarget;
 	}
 
 	FrameGraphBufferDesc ResolveBufferDesc(const FrameGraphBufferDesc& desc, std::string_view fallbackName)
@@ -33,7 +33,7 @@ namespace
 
 		return resolvedDesc;
 	}
-}
+}  // namespace
 
 TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {

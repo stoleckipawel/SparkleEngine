@@ -1,9 +1,9 @@
 #include "PCH.h"
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12FrameResource.h"
+#include "Renderer/Public/RendererCVars.h"
 #include "Timer.h"
 #include "Window.h"
-#include "UI.h"
 #include "D3D12SwapChain.h"
 #include <cmath>
 
@@ -13,9 +13,8 @@ D3D12ConstantBufferManager::D3D12ConstantBufferManager(
     Window& window,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12FrameResourceManager& frameResourceManager,
-    D3D12SwapChain& swapChain,
-    UI& ui) :
-    m_timer(&timer), m_window(&window), m_frameResourceManager(&frameResourceManager), m_swapChain(&swapChain), m_ui(&ui)
+    D3D12SwapChain& swapChain) :
+    m_timer(&timer), m_window(&window), m_frameResourceManager(&frameResourceManager), m_swapChain(&swapChain)
 {
 	for (uint32_t i = 0; i < RHISettings::FramesInFlight; ++i)
 	{
@@ -55,7 +54,7 @@ void D3D12ConstantBufferManager::UpdatePerFrame()
 	const float height = static_cast<float>(m_window->GetHeight());
 	data.ViewportSize = DirectX::XMFLOAT2(width, height);
 	data.ViewportSizeInv = DirectX::XMFLOAT2(width != 0.0f ? 1.0f / width : 0.0f, height != 0.0f ? 1.0f / height : 0.0f);
-	data.ViewModeIndex = static_cast<uint32_t>(m_ui->GetViewMode());
+	data.ViewModeIndex = static_cast<std::uint32_t>(CVarRenderViewMode.Get());
 
 	const uint32_t frameInFlightIndex = m_swapChain->GetFrameInFlightIndex();
 	m_perFrameCB[frameInFlightIndex]->Update(data);

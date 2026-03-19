@@ -7,8 +7,8 @@
 class Timer;
 class Window;
 class InputSystem;
-class Scene;
-class CameraController;
+class GameScene;
+class GameCameraController;
 class Renderer;
 class LevelManager;
 
@@ -34,8 +34,8 @@ class SPARKLE_APPLICATION_API App
 	std::unique_ptr<Timer> m_timer;
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;
-	std::unique_ptr<Scene> m_scene;
+	std::unique_ptr<GameScene> m_gameScene;
 	std::unique_ptr<LevelManager> m_levelManager;
-	std::unique_ptr<CameraController> m_cameraController;
+	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
 };

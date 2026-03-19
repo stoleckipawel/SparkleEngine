@@ -23,35 +23,61 @@ namespace Lighting
 		float3 Radiance;   // Color * intensity (can be HDR)
 	};
 
+	struct PointLight
+	{
+		float3 Position;
+		float3 Radiance;
+		float Radius;
+		bool Enabled;
+	};
+
 	// =========================================================================
-	// Main Directional Light (from PerView constant buffer)
+	// Directional Lights (from PerView constant buffer)
 	// =========================================================================
 
-	DirectionalLight GetMainLight()
+	DirectionalLight GetDirectionalLight(uint lightIndex)
 	{
 		DirectionalLight light;
-		light.Direction = normalize(-SunDirection);  // CB stores direction toward surface; negate for "toward light"
-		light.Radiance = SunColor * SunIntensity;
+		light.Direction =
+		    normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);  // CB stores direction toward surface; negate for "toward light"
+		light.Radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
 		return light;
 	}
 
-	// =========================================================================
-	// Direct Lighting
-	// =========================================================================
-	// Evaluates contribution from analytical light sources (directional, point, spot).
+	PointLight GetPointLight(uint lightIndex)
+	{
+		PointLight light;
+		light.Position = ViewLighting.PointLights[lightIndex].Position;
+		light.Radiance = ViewLighting.PointLights[lightIndex].Color * ViewLighting.PointLights[lightIndex].Intensity;
+		light.Radius = ViewLighting.PointLights[lightIndex].Radius;
+		light.Enabled = ViewLighting.PointLights[lightIndex].Enabled != 0;
+		return light;
+	}
 
-	void CalculateDirect(
+	float CalculatePointLightAttenuation(float distanceToLight, float radius)
+	{
+		if (distanceToLight >= radius)
+		{
+			return 0.0f;
+		}
+
+		const float normalizedDistance = saturate(distanceToLight / max(radius, 0.001f));
+		const float smoothFalloff = 1.0f - normalizedDistance * normalizedDistance;
+		return (smoothFalloff * smoothFalloff) / max(distanceToLight * distanceToLight, 0.01f);
+	}
+
+	void AccumulateDirectLight(
+	    float3 positionWorld,
 	    float3 viewDirWorld,
 	    Material::Properties matProps,
+	    float3 lightDirection,
+	    float3 lightRadiance,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		// Get light and compute shading vectors
-		DirectionalLight mainLight = GetMainLight();
-		BRDF::ShadingData sd = BRDF::ComputeShadingData(matProps.NormalWorld, viewDirWorld, mainLight.Direction);
+		BRDF::ShadingData sd = BRDF::ComputeShadingData(matProps.NormalWorld, viewDirWorld, lightDirection);
 
-		// Early out if surface faces away from light or camera
 		if (sd.NoL <= 0.0f || sd.NoV <= 0.0f)
 		{
 			outDiffuse = 0.0f;
@@ -60,13 +86,10 @@ namespace Lighting
 			return;
 		}
 
-		// Clamp roughness to avoid division by zero in specular
 		const float roughness = max(matProps.Roughness, 0.04f);
 		const float metallic = saturate(matProps.Metallic);
-
 		const float3 F0 = lerp(matProps.DielectricF0.xxx, matProps.BaseColor, metallic);
 
-		// Evaluate BRDF
 		float3 diffuseBRDF, specularBRDF, subsurfaceBRDF;
 		BRDF::Direct::Evaluate(
 		    sd,
@@ -80,10 +103,82 @@ namespace Lighting
 		    specularBRDF,
 		    subsurfaceBRDF);
 
-		// Apply light radiance and geometric attenuation
-		outDiffuse = diffuseBRDF * mainLight.Radiance * sd.NoL;
-		outSpecular = specularBRDF * mainLight.Radiance * sd.NoL;
-		outSubsurface = subsurfaceBRDF * mainLight.Radiance;  // SSS ignores NoL
+		outDiffuse = diffuseBRDF * lightRadiance * sd.NoL;
+		outSpecular = specularBRDF * lightRadiance * sd.NoL;
+		outSubsurface = subsurfaceBRDF * lightRadiance;
+	}
+
+	// =========================================================================
+	// Direct Lighting
+	// =========================================================================
+	// Evaluates contribution from analytical light sources (directional, point, spot).
+
+	void CalculateDirect(
+	    float3 positionWorld,
+	    float3 viewDirWorld,
+	    Material::Properties matProps,
+	    out float3 outDiffuse,
+	    out float3 outSpecular,
+	    out float3 outSubsurface)
+	{
+		outDiffuse = 0.0f;
+		outSpecular = 0.0f;
+		outSubsurface = 0.0f;
+
+		float3 diffuseContribution, specularContribution, subsurfaceContribution;
+		const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
+		const uint pointLightCount = min(ViewLighting.PointLightCount, MAX_POINT_LIGHTS);
+
+		
+		[loop]
+		for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
+		{
+			DirectionalLight directionalLight = GetDirectionalLight(lightIndex);
+			AccumulateDirectLight(
+			    positionWorld,
+			    viewDirWorld,
+			    matProps,
+			    directionalLight.Direction,
+			    directionalLight.Radiance,
+			    diffuseContribution,
+			    specularContribution,
+			    subsurfaceContribution);
+			outDiffuse += diffuseContribution;
+			outSpecular += specularContribution;
+			outSubsurface += subsurfaceContribution;
+		}
+
+		[loop] 
+		for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
+		{
+			PointLight pointLight = GetPointLight(lightIndex);
+			if (!pointLight.Enabled)
+			{
+				continue;
+			}
+
+			const float3 toLight = pointLight.Position - positionWorld;
+			const float distanceToLight = length(toLight);
+			const float attenuation = CalculatePointLightAttenuation(distanceToLight, pointLight.Radius);
+			if (attenuation <= 0.0f)
+			{
+				continue;
+			}
+
+			const float3 pointLightDirection = toLight / max(distanceToLight, 0.001f);
+			AccumulateDirectLight(
+			    positionWorld,
+			    viewDirWorld,
+			    matProps,
+			    pointLightDirection,
+			    pointLight.Radiance * attenuation,
+			    diffuseContribution,
+			    specularContribution,
+			    subsurfaceContribution);
+			outDiffuse += diffuseContribution;
+			outSpecular += specularContribution;
+			outSubsurface += subsurfaceContribution;
+		}
 	}
 
 	// =========================================================================

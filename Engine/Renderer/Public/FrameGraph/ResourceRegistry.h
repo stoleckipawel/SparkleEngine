@@ -43,10 +43,7 @@ struct FrameGraphResourceAccess
 	D3D12DescriptorHandle depthStencilView;
 	D3D12DescriptorHandle shaderResourceView;
 
-	bool IsResolved() const noexcept
-	{
-		return swapChain != nullptr || externalResource != nullptr;
-	}
+	bool IsResolved() const noexcept { return swapChain != nullptr || externalResource != nullptr; }
 };
 
 struct FrameGraphResourceMetadata

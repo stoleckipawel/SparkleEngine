@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "D3D12Rhi.h"
 #include "D3D12DebugLayer.h"
+#include "RHI/Public/RHICVars.h"
 #include "Window.h"
 
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
@@ -30,7 +31,7 @@ D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 void D3D12Rhi::SelectAdapter() noexcept
 {
 	const DXGI_GPU_PREFERENCE pref =
-	    RHISettings::PreferHighPerformanceAdapter ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
+	    CVarRhiPreferHighPerformanceAdapter.Get() ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_MINIMUM_POWER;
 
 	for (UINT i = 0;; ++i)
 	{

@@ -12,11 +12,11 @@ namespace Forward
 	    out float3 outIndirectDiffuse,
 	    out float3 outIndirectSpecular)
 	{
-		const float3 viewDir = normalize(CameraPosition - psInput.PositionWorld);
+		const float3 viewDir = normalize(Camera.Position - psInput.PositionWorld);
 
-		Lighting::CalculateDirect(viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
+		Lighting::CalculateDirect(psInput.PositionWorld, viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
 
-		const float3 fakeAmbient = float3(0.05f, 0.05f, 0.05f);
+		const float3 fakeAmbient = float3(0.00f, 0.0f, 0.00f);
 		Lighting::CalculateIndirectIBL(viewDir, matProps, fakeAmbient, fakeAmbient, outIndirectDiffuse, outIndirectSpecular);
 
 		return (outDirectDiffuse + outIndirectDiffuse) + (outDirectSpecular + outIndirectSpecular) + outDirectSubsurface +

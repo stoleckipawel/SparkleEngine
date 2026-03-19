@@ -18,22 +18,20 @@ class FrameGraph;
 class GPUMeshCache;
 class LevelManager;
 class RenderCamera;
-class Scene;
+class GameScene;
 class Window;
 class UI;
 class TextureManager;
-class FrameExecutor;
 class PipelineStateManager;
 class RendererWindowObserver;
 class SceneRenderStateCoordinator;
 class MaterialCacheManager;
-class RenderSceneSnapshotCache;
-class SceneViewBuilder;
+class RenderSceneViewBuilder;
 
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, Scene& scene, Window& window, LevelManager& levelManager) noexcept;
+	Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -48,19 +46,23 @@ class SPARKLE_RENDERER_API Renderer final
 	void InitializeCoreSystems(LevelManager& levelManager) noexcept;
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
 	void InitializeFrameGraph() noexcept;
-	void InitializeFrameExecutor() noexcept;
 	void InitializeWindowObserver() noexcept;
 	void RefreshFrameExecution() noexcept;
+	void BeginFrame() noexcept;
+	void SetupFrame() noexcept;
+	void RecordFrame() noexcept;
+	void SubmitFrame() noexcept;
+	void EndFrame() noexcept;
 
 	Timer* m_timer = nullptr;
-	Scene* m_scene = nullptr;
+	GameScene* m_gameScene = nullptr;
 	Window* m_window = nullptr;
 
 	std::unique_ptr<D3D12Rhi> m_rhi;
 
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
 	std::unique_ptr<D3D12SwapChain> m_swapChain;
-	std::unique_ptr<UI> m_ui;
+	std::unique_ptr<UI> m_editor;
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
 	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
@@ -68,12 +70,9 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;
-	std::unique_ptr<SceneViewBuilder> m_sceneViewBuilder;
-	std::unique_ptr<RenderSceneSnapshotCache> m_renderSceneSnapshotCache;
+	std::unique_ptr<RenderSceneViewBuilder> m_renderSceneViewBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
-
-	std::unique_ptr<FrameExecutor> m_frameExecutor;
 	std::unique_ptr<RendererWindowObserver> m_windowObserver;
 };

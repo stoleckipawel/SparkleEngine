@@ -41,11 +41,11 @@ void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(CommandContext& cmd) cons
 }
 
 void D3D12DescriptorHeapManager::FreeHandle(
-	D3D12_DESCRIPTOR_HEAP_TYPE type,
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle)
 {
-	(void)gpuHandle;
+	(void) gpuHandle;
 
 	D3D12DescriptorHeap* heap = GetHeap(type);
 	if (heap == nullptr || m_rhi == nullptr)

@@ -23,10 +23,6 @@ namespace RHISettings
 
 	inline constexpr DXGI_FORMAT DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-	inline bool VSync = true;
-
-	inline bool PreferHighPerformanceAdapter = true;
-
 	inline constexpr int ShaderModelMajor = 6;
 	inline constexpr int ShaderModelMinor = 0;
 }  // namespace RHISettings

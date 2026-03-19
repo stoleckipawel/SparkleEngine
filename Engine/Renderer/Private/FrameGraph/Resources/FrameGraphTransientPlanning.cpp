@@ -108,7 +108,7 @@ namespace
 
 		return FrameGraph::CompiledTransientResourcePlan::AllocationPool::Color;
 	}
-}
+}  // namespace
 
 void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept
 {
@@ -126,8 +126,9 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		}
 
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
-		const D3D12_RESOURCE_DESC resourceDesc = isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc)
-		                                               : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind);
+		const D3D12_RESOURCE_DESC resourceDesc = isBuffer
+		                                             ? BuildTransientBufferDesc(transientResource.bufferDesc)
+		                                             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind);
 		const D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = m_rhi->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(
@@ -147,8 +148,9 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		                .heapOffset = 0,
 		                .heapFlags = isBuffer ? D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS : D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
 		                .resourceDesc = resourceDesc,
-		                .optimizedClearValue = isBuffer ? D3D12_CLEAR_VALUE{}
-		                                               : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
+		                .optimizedClearValue =
+		                    isBuffer ? D3D12_CLEAR_VALUE{}
+		                             : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
 		                .hasOptimizedClearValue = !isBuffer,
 		                .initialState = resourceMetadata.initialState},
 		        .displayLabel = BuildTransientDisplayLabel(transientResource.handle, resourceMetadata),
@@ -162,6 +164,6 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const CompiledPlan& plan) 
 
 	for (const CompiledTransientResourcePlan& transientPlan : plan.transientResources)
 	{
-		(void)m_transientAllocator->Materialize(transientPlan);
+		(void) m_transientAllocator->Materialize(transientPlan);
 	}
 }

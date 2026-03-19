@@ -12,7 +12,6 @@ target_compile_features(__PROJECT_NAME__ PRIVATE cxx_std_20)
 # SparkleApplication brings in GameFramework + Renderer + lower-level dependencies.
 target_link_libraries(__PROJECT_NAME__ PRIVATE
     SparkleApplication
-    SparkleUI
 )
 
 # Include third-party headers if needed directly

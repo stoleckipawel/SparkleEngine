@@ -4,8 +4,8 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "Input/InputSystem.h"
-#include "Scene/Scene.h"
-#include "Scene/Camera/CameraController.h"
+#include "Scene/GameScene.h"
+#include "Scene/Camera/GameCameraController.h"
 #include "Runtime/Level/LevelManager.h"
 #include "Time/Timer.h"
 
@@ -22,13 +22,13 @@ void App::Initialize()
 	m_inputSystem = InputSystem::Create();
 	m_inputSystem->SubscribeToWindow(*m_window);
 
-	m_scene = std::make_unique<Scene>();
-	m_levelManager = std::make_unique<LevelManager>(*m_scene);
+	m_gameScene = std::make_unique<GameScene>();
+	m_levelManager = std::make_unique<LevelManager>(*m_gameScene);
 
-	m_cameraController = std::make_unique<CameraController>(*m_timer, *m_inputSystem, *m_window, m_scene->GetCamera());
-	m_levelManager->RegisterCameraController(*m_cameraController);
+	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetCamera());
+	m_levelManager->RegisterGameCameraController(*m_gameCameraController);
 
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_scene, *m_window, *m_levelManager);
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 }
 
 void App::BeginFrame()
@@ -36,7 +36,7 @@ void App::BeginFrame()
 	m_inputSystem->BeginFrame();
 	m_window->PollEvents();
 	m_inputSystem->ProcessDeferredEvents();
-	m_cameraController->Update();
+	m_gameCameraController->Update();
 }
 
 void App::EndFrame()

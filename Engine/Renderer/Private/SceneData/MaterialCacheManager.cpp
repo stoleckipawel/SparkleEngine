@@ -7,42 +7,43 @@
 #include "D3D12DescriptorHeapManager.h"
 #include "D3D12RootBindings.h"
 #include "D3D12Texture.h"
-#include "Renderer/Public/SceneData/SceneView.h"
+#include "Renderer/Public/SceneData/RenderSceneView.h"
 #include "Renderer/Public/Textures/MaterialFallbackTextures.h"
+#include "Scene/GameScene.h"
 #include "SceneData/MaterialCacheUtils.h"
-#include "SceneData/RenderSceneSnapshot.h"
 #include "TextureManager.h"
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-	m_textureManager(&textureManager), m_descriptorHeapManager(&descriptorHeapManager)
-{}
+    m_textureManager(&textureManager), m_descriptorHeapManager(&descriptorHeapManager)
+{
+}
 
 MaterialCacheManager::~MaterialCacheManager() noexcept
 {
 	Reset();
 }
 
-void MaterialCacheManager::PopulateSceneMaterials(const RenderSceneSnapshot& sceneSnapshot, SceneView& view)
+void MaterialCacheManager::PopulateSceneMaterials(const GameScene& gameScene, RenderSceneView& renderSceneView)
 {
-	const auto& loadedMaterials = sceneSnapshot.materials;
+	const auto& loadedMaterials = gameScene.GetLoadedMaterials();
 	const bool shouldUseLoadedMaterials = !loadedMaterials.empty();
-	const bool materialSetChanged = shouldUseLoadedMaterials
-	                                    ? (!m_materialCacheUsesLoadedMaterials ||
-	                                       !MaterialCacheUtils::MaterialDescSetEquals(m_cachedMaterialDescs, loadedMaterials))
-	                                    : m_materialCacheUsesLoadedMaterials;
+	const bool materialSetChanged =
+	    shouldUseLoadedMaterials
+	        ? (!m_materialCacheUsesLoadedMaterials || !MaterialCacheUtils::MaterialDescSetEquals(m_cachedMaterialDescs, loadedMaterials))
+	        : m_materialCacheUsesLoadedMaterials;
 
 	if (!m_materialCacheBuilt || materialSetChanged)
 	{
-		Rebuild(sceneSnapshot);
+		Rebuild(gameScene);
 	}
 
 	if (!m_cachedMaterialData.empty())
 	{
-		view.materials = m_cachedMaterialData;
+		renderSceneView.materials = m_cachedMaterialData;
 	}
 }
 
-void MaterialCacheManager::Rebuild(const RenderSceneSnapshot& sceneSnapshot)
+void MaterialCacheManager::Rebuild(const GameScene& gameScene)
 {
 	if (!m_textureManager || !m_descriptorHeapManager)
 	{
@@ -50,7 +51,7 @@ void MaterialCacheManager::Rebuild(const RenderSceneSnapshot& sceneSnapshot)
 		return;
 	}
 
-	const auto& loadedMaterials = sceneSnapshot.materials;
+	const auto& loadedMaterials = gameScene.GetLoadedMaterials();
 
 	ReleaseMaterialTextureTables();
 	m_cachedMaterialData.clear();

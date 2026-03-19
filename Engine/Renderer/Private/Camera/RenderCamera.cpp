@@ -96,10 +96,10 @@ PerViewConstantBufferData RenderCamera::GetViewConstantBufferData() const noexce
 	data.ProjectionMTX = m_projectionMatrix;
 	data.ViewProjMTX = m_viewProjMatrix;
 
-	data.CameraPosition = m_gameCamera.GetPosition();
-	data.CameraDirection = m_gameCamera.GetDirection();
-	data.NearZ = m_gameCamera.GetNearZ();
-	data.FarZ = m_gameCamera.GetFarZ();
+	data.Camera.Position = m_gameCamera.GetPosition();
+	data.Camera.Direction = m_gameCamera.GetDirection();
+	data.Camera.NearZ = m_gameCamera.GetNearZ();
+	data.Camera.FarZ = m_gameCamera.GetFarZ();
 
 	return data;
 }

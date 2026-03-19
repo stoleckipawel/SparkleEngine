@@ -82,9 +82,9 @@ void FrameGraph::CopyResource(CommandContext& cmd, ResourceHandle destinationHan
 	const FrameGraphResourceMetadata& destinationMetadata = m_resourceRegistry.GetMetadata(destinationHandle);
 	const FrameGraphResourceMetadata& sourceMetadata = m_resourceRegistry.GetMetadata(sourceHandle);
 	assert(destinationMetadata.resourceClass == sourceMetadata.resourceClass);
-	assert(destinationMetadata.kind == sourceMetadata.kind ||
-	       (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
-	        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
+	assert(
+	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
+	                                                        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
 
 	ID3D12Resource* destinationResource = ResolveResource(destinationHandle);
 	ID3D12Resource* sourceResource = ResolveResource(sourceHandle);

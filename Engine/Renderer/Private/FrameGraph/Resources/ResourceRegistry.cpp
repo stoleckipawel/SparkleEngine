@@ -28,15 +28,14 @@ void ResourceRegistry::RegisterBackBuffer(
     D3D12SwapChain& swapChain,
     ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata =
-	    RegisterMetadata(
-	        handle,
-	        FrameGraphResourceClass::Texture,
-	        FrameGraphResourceKind::BackBuffer,
-	        FrameGraphResourceOwnership::Imported,
-	        desc.name,
-	        initialState,
-	        initialState);
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::Texture,
+	    FrameGraphResourceKind::BackBuffer,
+	    FrameGraphResourceOwnership::Imported,
+	    desc.name,
+	    initialState,
+	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
@@ -45,10 +44,10 @@ void ResourceRegistry::RegisterBackBuffer(
 }
 
 void ResourceRegistry::RegisterTransientTexture(
-	ResourceHandle handle,
-	const FrameGraphTextureDesc& desc,
-	FrameGraphResourceKind kind,
-	ResourceState initialState) noexcept
+    ResourceHandle handle,
+    const FrameGraphTextureDesc& desc,
+    FrameGraphResourceKind kind,
+    ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
 	    handle,
@@ -87,35 +86,33 @@ void ResourceRegistry::RegisterImportedTexture(
 
 void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata =
-	    RegisterMetadata(
-	        handle,
-	        FrameGraphResourceClass::Buffer,
-	        FrameGraphResourceKind::Buffer,
-	        FrameGraphResourceOwnership::Transient,
-	        desc.name,
-	        initialState,
-	        initialState);
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::Buffer,
+	    FrameGraphResourceKind::Buffer,
+	    FrameGraphResourceOwnership::Transient,
+	    desc.name,
+	    initialState,
+	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
 	ClearResolvedAccess(handle);
 }
 
 void ResourceRegistry::RegisterImportedBuffer(
-	ResourceHandle handle,
-	const FrameGraphBufferDesc& desc,
-	ID3D12Resource& resource,
-	ResourceState initialState) noexcept
+    ResourceHandle handle,
+    const FrameGraphBufferDesc& desc,
+    ID3D12Resource& resource,
+    ResourceState initialState) noexcept
 {
-	FrameGraphResourceMetadata& metadata =
-	    RegisterMetadata(
-	        handle,
-	        FrameGraphResourceClass::Buffer,
-	        FrameGraphResourceKind::Buffer,
-	        FrameGraphResourceOwnership::Imported,
-	        desc.name,
-	        initialState,
-	        initialState);
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::Buffer,
+	    FrameGraphResourceKind::Buffer,
+	    FrameGraphResourceOwnership::Imported,
+	    desc.name,
+	    initialState,
+	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
@@ -193,10 +190,10 @@ FrameGraphResourceMetadata& ResourceRegistry::RegisterMetadata(
     ResourceHandle handle,
     FrameGraphResourceClass resourceClass,
     FrameGraphResourceKind kind,
-	FrameGraphResourceOwnership ownership,
-	std::string_view debugName,
-	ResourceState initialState,
-	ResourceState finalState) noexcept
+    FrameGraphResourceOwnership ownership,
+    std::string_view debugName,
+    ResourceState initialState,
+    ResourceState finalState) noexcept
 {
 	const bool alreadyRegistered = IsRegistered(handle);
 	EnsureStorage(handle);

@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "D3D12ViewCameraConstantBufferData.h"
+#include "D3D12ViewLightingConstantBufferData.h"
+
 #define CBV_CHECK(Type)                                                                      \
 	static_assert(std::is_standard_layout_v<Type>, #Type " must be standard-layout");        \
 	static_assert(std::is_trivially_copyable_v<Type>, #Type " must be trivially-copyable");  \
@@ -31,19 +34,11 @@ struct alignas(256) PerViewConstantBufferData
 	DirectX::XMFLOAT4X4 ProjectionMTX;
 	DirectX::XMFLOAT4X4 ViewProjMTX;
 
-	DirectX::XMFLOAT3 CameraPosition;
-	float NearZ;
-
-	float FarZ;
-	DirectX::XMFLOAT3 CameraDirection;
-
-	DirectX::XMFLOAT3 SunDirection;
-	float SunIntensity;
-
-	DirectX::XMFLOAT3 SunColor;
-	float _padPerView0;
+	PerViewCameraConstantBufferData Camera = {};
+	PerViewLightingConstantBufferData ViewLighting = {};
 };
 CBV_CHECK(PerViewConstantBufferData);
+static_assert(sizeof(PerViewConstantBufferData) == 12800, "Per-view constant buffer data must match the shader layout");
 
 struct alignas(256) PerObjectVSConstantBufferData
 {

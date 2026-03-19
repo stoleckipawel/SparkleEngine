@@ -17,9 +17,9 @@ void FrameGraph::EmitCompiledAliasingBarriers(CommandContext& cmd, const std::ve
 }
 
 void FrameGraph::EmitCompiledAliasingBarriers(
-	CommandContext& cmd,
-	std::string_view passName,
-	const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
+    CommandContext& cmd,
+    std::string_view passName,
+    const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
 {
 	for (const CompiledAliasingBarrier& barrier : barriers)
 	{
@@ -41,7 +41,7 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 }
 
 void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers)
-	const noexcept
+    const noexcept
 {
 	for (const CompiledBarrier& barrier : barriers)
 	{

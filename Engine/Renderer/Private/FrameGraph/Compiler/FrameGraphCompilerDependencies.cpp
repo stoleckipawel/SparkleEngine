@@ -32,7 +32,7 @@ namespace
 			version.readerPasses.push_back(readerPass);
 		}
 	}
-}
+}  // namespace
 
 void FrameGraphCompiler::BuildResourceVersionGraph() noexcept
 {
@@ -96,7 +96,6 @@ void FrameGraphCompiler::CullDeadPasses() noexcept
 	{
 		MarkPassAliveRecursive(rootPass);
 	}
-
 }
 
 void FrameGraphCompiler::MarkPassAliveRecursive(PassIndex passIndex) noexcept
@@ -134,26 +133,6 @@ const char* FrameGraphCompiler::GetRootPassReason(const CompilePassRecord& passR
 
 	return nullptr;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 bool FrameGraphCompiler::WritesBackBuffer(const CompilePassRecord& passRecord) const noexcept

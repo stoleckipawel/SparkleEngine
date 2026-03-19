@@ -10,10 +10,10 @@ namespace
 
 	bool AreResourceDescsEqual(const D3D12_RESOURCE_DESC& lhs, const D3D12_RESOURCE_DESC& rhs) noexcept
 	{
-		return lhs.Dimension == rhs.Dimension && lhs.Alignment == rhs.Alignment && lhs.Width == rhs.Width &&
-		       lhs.Height == rhs.Height && lhs.DepthOrArraySize == rhs.DepthOrArraySize && lhs.MipLevels == rhs.MipLevels &&
-		       lhs.Format == rhs.Format && lhs.SampleDesc.Count == rhs.SampleDesc.Count &&
-		       lhs.SampleDesc.Quality == rhs.SampleDesc.Quality && lhs.Layout == rhs.Layout && lhs.Flags == rhs.Flags;
+		return lhs.Dimension == rhs.Dimension && lhs.Alignment == rhs.Alignment && lhs.Width == rhs.Width && lhs.Height == rhs.Height &&
+		       lhs.DepthOrArraySize == rhs.DepthOrArraySize && lhs.MipLevels == rhs.MipLevels && lhs.Format == rhs.Format &&
+		       lhs.SampleDesc.Count == rhs.SampleDesc.Count && lhs.SampleDesc.Quality == rhs.SampleDesc.Quality &&
+		       lhs.Layout == rhs.Layout && lhs.Flags == rhs.Flags;
 	}
 
 	bool AreClearValuesEqual(const D3D12_CLEAR_VALUE& lhs, const D3D12_CLEAR_VALUE& rhs, FrameGraphResourceKind kind) noexcept
@@ -44,8 +44,9 @@ namespace
 		return true;
 	}
 
-	bool CanSharePhysicalBlock(const FrameGraph::CompiledPhysicalBlockPlan& block,
-	                           const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	bool CanSharePhysicalBlock(
+	    const FrameGraph::CompiledPhysicalBlockPlan& block,
+	    const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
 		const auto& physicalPlan = transientPlan.physicalAllocation;
 		if (block.pool != physicalPlan.pool)
@@ -53,7 +54,8 @@ namespace
 			return false;
 		}
 
-		if (block.lastExecutionIndex == FrameGraph::INVALID_PASS_INDEX || transientPlan.firstExecutionIndex == FrameGraph::INVALID_PASS_INDEX)
+		if (block.lastExecutionIndex == FrameGraph::INVALID_PASS_INDEX ||
+		    transientPlan.firstExecutionIndex == FrameGraph::INVALID_PASS_INDEX)
 		{
 			return false;
 		}
@@ -79,14 +81,15 @@ namespace
 			return false;
 		}
 
-		if (block.hasOptimizedClearValue && !AreClearValuesEqual(block.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
+		if (block.hasOptimizedClearValue &&
+		    !AreClearValuesEqual(block.optimizedClearValue, physicalPlan.optimizedClearValue, transientPlan.kind))
 		{
 			return false;
 		}
 
 		return true;
 	}
-}
+}  // namespace
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 {
@@ -159,7 +162,6 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 		assert(transientPlan.firstUserPass != FrameGraph::INVALID_PASS_INDEX);
 		assert(transientPlan.lastUserPass != FrameGraph::INVALID_PASS_INDEX);
 		assert(!transientPlan.requiredStates.empty());
-
 	}
 }
 
@@ -214,20 +216,21 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			const std::uint32_t blockIndex = static_cast<std::uint32_t>(m_plan.physicalBlocks.size());
 			const std::string blockLabel = std::string{"Block#"} + std::to_string(blockIndex);
 			m_plan.physicalBlocks.push_back(
-			    FrameGraph::CompiledPhysicalBlockPlan{.physicalBlockIndex = blockIndex,
-			                                          .pool = transientPlan->physicalAllocation.pool,
-			                                          .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
-			                                          .alignment = transientPlan->physicalAllocation.alignment,
-			                                          .heapOffset = transientPlan->physicalAllocation.heapOffset,
-			                                          .heapFlags = transientPlan->physicalAllocation.heapFlags,
-			                                          .resourceDesc = transientPlan->physicalAllocation.resourceDesc,
-			                                          .optimizedClearValue = transientPlan->physicalAllocation.optimizedClearValue,
-			                                          .hasOptimizedClearValue = transientPlan->physicalAllocation.hasOptimizedClearValue,
-			                                          .firstExecutionIndex = transientPlan->firstExecutionIndex,
-			                                          .lastExecutionIndex = transientPlan->lastExecutionIndex,
-			                                          .displayLabel = blockLabel,
-			                                          .eventScopeLabel = std::string{"FG/PhysicalBlock/"} + std::to_string(blockIndex),
-			                                          .handles = {transientPlan->handle}});
+			    FrameGraph::CompiledPhysicalBlockPlan{
+			        .physicalBlockIndex = blockIndex,
+			        .pool = transientPlan->physicalAllocation.pool,
+			        .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
+			        .alignment = transientPlan->physicalAllocation.alignment,
+			        .heapOffset = transientPlan->physicalAllocation.heapOffset,
+			        .heapFlags = transientPlan->physicalAllocation.heapFlags,
+			        .resourceDesc = transientPlan->physicalAllocation.resourceDesc,
+			        .optimizedClearValue = transientPlan->physicalAllocation.optimizedClearValue,
+			        .hasOptimizedClearValue = transientPlan->physicalAllocation.hasOptimizedClearValue,
+			        .firstExecutionIndex = transientPlan->firstExecutionIndex,
+			        .lastExecutionIndex = transientPlan->lastExecutionIndex,
+			        .displayLabel = blockLabel,
+			        .eventScopeLabel = std::string{"FG/PhysicalBlock/"} + std::to_string(blockIndex),
+			        .handles = {transientPlan->handle}});
 			selectedBlock = &m_plan.physicalBlocks.back();
 		}
 		else
@@ -237,7 +240,6 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		}
 
 		transientPlan->physicalAllocation.physicalBlockIndex = selectedBlock->physicalBlockIndex;
-
 	}
 
 	for (const FrameGraph::CompiledTransientResourcePlan& transientPlan : m_plan.transientResources)
@@ -290,16 +292,16 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 
 			assert(previousOwner.lastExecutionIndex < nextOwner.firstExecutionIndex);
 
-			FrameGraph::CompiledAliasingBarrier barrier{.physicalBlockIndex = block.physicalBlockIndex,
-			                                            .beforeHandle = previousOwner.handle,
-			                                            .afterHandle = nextOwner.handle,
-			                                            .executeBeforePass = previousOwner.lastUserPass,
-			                                            .executeAfterPass = nextOwner.firstUserPass};
+			FrameGraph::CompiledAliasingBarrier barrier{
+			    .physicalBlockIndex = block.physicalBlockIndex,
+			    .beforeHandle = previousOwner.handle,
+			    .afterHandle = nextOwner.handle,
+			    .executeBeforePass = previousOwner.lastUserPass,
+			    .executeAfterPass = nextOwner.firstUserPass};
 
 			assert(barrier.executeAfterPass != FrameGraph::INVALID_PASS_INDEX);
 			assert(barrier.executeAfterPass < m_plan.passes.size());
 			m_plan.passes[barrier.executeAfterPass].compiledAliasingBarriers.push_back(barrier);
-
 		}
 	}
 }

@@ -6,26 +6,23 @@
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Runtime/Level/LevelChangeEvents.h"
-#include "Scene/Scene.h"
+#include "Scene/GameScene.h"
 #include "SceneData/MaterialCacheManager.h"
-#include "SceneData/RenderSceneSnapshotCache.h"
 #include "TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,
-    Scene& scene,
+    GameScene& gameScene,
     D3D12Rhi& rhi,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderCamera& renderCamera,
-    RenderSceneSnapshotCache& renderSceneSnapshotCache,
     MaterialCacheManager& materialCache) noexcept :
-    m_scene(&scene),
+    m_gameScene(&gameScene),
     m_rhi(&rhi),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
     m_renderCamera(&renderCamera),
-    m_renderSceneSnapshotCache(&renderSceneSnapshotCache),
     m_materialCache(&materialCache)
 {
 	SubscribeToLevelLifecycleEvents(levelChangeEvents);
@@ -80,20 +77,14 @@ void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 		m_renderCamera->ForceUpdate();
 	}
 
-	if (m_scene && m_renderSceneSnapshotCache && m_materialCache)
+	if (m_gameScene && m_materialCache)
 	{
-		const auto& sceneSnapshot = m_renderSceneSnapshotCache->Capture(*m_scene);
-		m_materialCache->Rebuild(sceneSnapshot);
+		m_materialCache->Rebuild(*m_gameScene);
 	}
 }
 
 void SceneRenderStateCoordinator::ReleaseSceneScopedMaterialResources() noexcept
 {
-	if (m_renderSceneSnapshotCache)
-	{
-		m_renderSceneSnapshotCache->Reset();
-	}
-
 	if (m_materialCache)
 	{
 		m_materialCache->Reset();

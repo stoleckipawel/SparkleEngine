@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "Window.h"
-#include "PlatformConfig.h"
+#include "Platform/Public/PlatformCVars.h"
 #include "Diagnostics/Log.h"
 
 Window::Window(std::string_view windowTitle)
@@ -81,7 +81,7 @@ void Window::ApplyInitialWindowState()
 {
 	GetWindowRect(m_hWnd, &m_windowedRect);
 
-	if (PlatformSettings::StartFullscreen)
+	if (CVarPlatformStartFullscreen.Get())
 	{
 		SetFullScreen(true);
 	}

@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
+#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
 #include <cstddef>
 #include <memory>
@@ -32,7 +33,7 @@ class SPARKLE_ENGINE_API LevelRegistry final
 	std::size_t GetLevelCount() const noexcept;
 
 	void SetDefaultLevelName(std::string_view name);
-	bool SaveLevelCameraDefaults(std::string_view levelName, const CameraDesc& cameraDesc, std::string* errorMessage = nullptr);
+	bool SaveLevel(const Level& level, std::string* errorMessage = nullptr) const;
 
 	std::string_view GetDefaultLevelName() const noexcept;
 	Level* GetDefaultLevel() const;

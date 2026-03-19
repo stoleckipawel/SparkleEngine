@@ -13,9 +13,7 @@ namespace
 		return std::string{"#"} + std::to_string(handle.index) + ":" + name;
 	}
 
-	std::string BuildResourceEventScopeLabel(ResourceHandle handle,
-	                                        FrameGraphResourceClass resourceClass,
-	                                        const std::string& debugName)
+	std::string BuildResourceEventScopeLabel(ResourceHandle handle, FrameGraphResourceClass resourceClass, const std::string& debugName)
 	{
 		const std::string& name = debugName.empty() ? std::string{"Resource"} : debugName;
 		std::string label{"FG/Resource/"};
@@ -52,10 +50,10 @@ namespace
 		}
 	}
 
-}
+}  // namespace
 
 FrameGraphCompiler::FrameGraphCompiler(FrameGraph::CompiledPlan& plan, ResourceRegistry& resourceRegistry) noexcept :
-	m_plan(plan), m_resourceRegistry(resourceRegistry)
+    m_plan(plan), m_resourceRegistry(resourceRegistry)
 {
 }
 
@@ -140,21 +138,20 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(handle);
 		m_plan.resources.push_back(
-		    CompileResourceEntry{.index = static_cast<ResourceIndex>(resourceIndex),
-		                         .handle = entry.handle,
-		                         .resourceClass = entry.resourceClass,
-		                         .kind = entry.kind,
-		                         .ownership = entry.ownership,
-		                         .initialState = entry.initialState,
-		                         .finalState = entry.finalState,
-		                         .currentState = runtimeState.currentState,
-		                         .debugName = entry.debugName,
-		                         .displayLabel = BuildResourceDisplayLabel(entry.handle, entry.debugName),
-		                         .eventScopeLabel = BuildResourceEventScopeLabel(entry.handle, entry.resourceClass, entry.debugName),
-		                         .currentVersion = 0,
-		                         .versions = {ResourceVersion{.handle = entry.handle,
-		                                                      .version = 0,
-		                                                      .writerPass = FrameGraph::INVALID_PASS_INDEX}}});
+		    CompileResourceEntry{
+		        .index = static_cast<ResourceIndex>(resourceIndex),
+		        .handle = entry.handle,
+		        .resourceClass = entry.resourceClass,
+		        .kind = entry.kind,
+		        .ownership = entry.ownership,
+		        .initialState = entry.initialState,
+		        .finalState = entry.finalState,
+		        .currentState = runtimeState.currentState,
+		        .debugName = entry.debugName,
+		        .displayLabel = BuildResourceDisplayLabel(entry.handle, entry.debugName),
+		        .eventScopeLabel = BuildResourceEventScopeLabel(entry.handle, entry.resourceClass, entry.debugName),
+		        .currentVersion = 0,
+		        .versions = {ResourceVersion{.handle = entry.handle, .version = 0, .writerPass = FrameGraph::INVALID_PASS_INDEX}}});
 	}
 }
 
@@ -168,8 +165,9 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 	}
 }
 
-ResourceState FrameGraphCompiler::InferRequiredResourceState(const PassResourceDeclaration& declaration,
-                                                             const CompileResourceEntry& resource) const noexcept
+ResourceState FrameGraphCompiler::InferRequiredResourceState(
+    const PassResourceDeclaration& declaration,
+    const CompileResourceEntry& resource) const noexcept
 {
 	if (IsReadOnlyUsage(declaration.usage))
 	{
@@ -201,8 +199,8 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(const PassResourceD
 				assert(resource.kind == FrameGraphResourceKind::DepthStencil);
 				return ResourceState::DepthWrite;
 			default:
-			assert(false);
-			return ResourceState::Common;
+				assert(false);
+				return ResourceState::Common;
 		}
 	}
 

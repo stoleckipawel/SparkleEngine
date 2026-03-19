@@ -2,22 +2,25 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
+#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 #include "Level/LevelRegistry.h"
 #include "Runtime/Level/LevelChangeEvents.h"
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 
 class Level;
-class Scene;
-class CameraController;
-struct SceneLoadResult;
+class GameScene;
+class GameCameraController;
+class GameSceneLightingState;
+struct GameSceneLoadResult;
 
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	explicit LevelManager(Scene& scene) noexcept;
+	explicit LevelManager(GameScene& scene) noexcept;
 	~LevelManager() noexcept = default;
 
 	LevelManager(const LevelManager&) = delete;
@@ -25,36 +28,37 @@ class SPARKLE_ENGINE_API LevelManager final
 	LevelManager(LevelManager&&) = delete;
 	LevelManager& operator=(LevelManager&&) = delete;
 
-	std::string_view GetActiveLevelName() const noexcept { return m_activeLevelName; }
-	bool HasActiveLevel() const noexcept { return m_bHasActiveLevel; }
+	bool HasActiveLevel() const noexcept { return m_activeLevel != nullptr; }
 	bool IsLevelChangeInProgress() const noexcept { return m_bLevelChangeInProgress; }
 	std::vector<std::string> GetRegisteredLevelNames() const;
 	LevelChangeEvents& GetLevelChangeEvents() noexcept { return m_levelChangeEvents; }
 	const LevelChangeEvents& GetLevelChangeEvents() const noexcept { return m_levelChangeEvents; }
 
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
-	void RegisterCameraController(CameraController& cameraController) noexcept;
-	CameraController* GetCameraController() noexcept { return m_cameraController; }
-	const CameraController* GetCameraController() const noexcept { return m_cameraController; }
+	void RegisterGameCameraController(GameCameraController& gameCameraController) noexcept;
+	GameCameraController* GetGameCameraController() noexcept { return m_gameCameraController; }
+	const GameCameraController* GetGameCameraController() const noexcept { return m_gameCameraController; }
+	Level* GetActiveLevel() noexcept { return m_activeLevel; }
+	const Level* GetActiveLevel() const noexcept { return m_activeLevel; }
+	GameSceneLightingState* GetGameSceneLightingState() noexcept;
+	const GameSceneLightingState* GetGameSceneLightingState() const noexcept;
 	bool ResetActiveLevelCamera() noexcept;
 	bool SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept;
+	bool SaveActiveLevelLightingDefaults() noexcept;
 
   private:
 	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
 	static constexpr std::string_view GetStartupLevelName() noexcept { return "Sponza"; }
 
-	void ApplyLevelCamera() noexcept;
+	void InitializeActiveLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
-	SceneLoadResult LoadLevelFromUnloadedState(const Level& level) noexcept;
-	void ProcessLevelChangeRequest(const Level& requestedLevel) noexcept;
+	GameSceneLoadResult LoadLevelFromUnloadedState(const Level& level) noexcept;
+	void ProcessLevelChangeRequest(Level& requestedLevel) noexcept;
 
-	Scene* m_scene = nullptr;
-	CameraController* m_cameraController = nullptr;
+	GameScene* m_gameScene = nullptr;
+	GameCameraController* m_gameCameraController = nullptr;
 	LevelRegistry m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
-	CameraDesc m_levelCameraDesc;
-
-	std::string m_activeLevelName;
-	bool m_bHasActiveLevel = false;
+	Level* m_activeLevel = nullptr;
 	bool m_bLevelChangeInProgress = false;
 };

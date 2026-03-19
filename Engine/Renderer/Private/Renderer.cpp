@@ -8,33 +8,32 @@
 #include "Window.h"
 #include "TextureManager.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
-#include "Scene/Scene.h"
+#include "Scene/GameScene.h"
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12FrameResource.h"
 #include "Samplers/D3D12SamplerLibrary.h"
 #include "UI.h"
 #include "Time/Timer.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
+#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Scene/Camera/GameCamera.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-#include "Frame/FrameExecutor.h"
 #include "PipelineStateManager.h"
 #include "RendererWindowObserver.h"
 #include "SceneData/MaterialCacheManager.h"
-#include "SceneData/RenderSceneSnapshotCache.h"
 #include "SceneData/SceneRenderStateCoordinator.h"
-#include "SceneData/SceneViewBuilder.h"
+#include "SceneData/RenderSceneViewBuilder.h"
 
-Renderer::Renderer(Timer& timer, Scene& scene, Window& window, LevelManager& levelManager) noexcept :
-    m_timer(&timer), m_scene(&scene), m_window(&window)
+Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
+    m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
 {
 	InitializeCoreSystems(levelManager);
 
 	InitializeSceneSystems(levelManager);
 	InitializeFrameGraph();
-	InitializeFrameExecutor();
 	InitializeWindowObserver();
 
 	PostLoad();
@@ -49,13 +48,7 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
 
-	m_ui = std::make_unique<UI>(
-	    *m_timer,
-	    &levelManager,
-	    *m_rhi,
-	    *m_window,
-	    *m_descriptorHeapManager,
-	    *m_swapChain);
+	m_editor = std::make_unique<UI>(*m_timer, &levelManager, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -63,8 +56,7 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	    *m_window,
 	    *m_descriptorHeapManager,
 	    *m_frameResourceManager,
-	    *m_swapChain,
-	    *m_ui);
+	    *m_swapChain);
 
 	m_samplerLibrary = std::make_unique<D3D12SamplerLibrary>(*m_rhi, *m_descriptorHeapManager);
 	m_gpuMeshCache = std::make_unique<GPUMeshCache>(*m_rhi);
@@ -72,20 +64,18 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 
 void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
-	m_renderSceneSnapshotCache = std::make_unique<RenderSceneSnapshotCache>();
 	m_textureManager = std::make_unique<TextureManager>(*m_rhi, *m_descriptorHeapManager);
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, *m_descriptorHeapManager);
-	m_sceneViewBuilder = std::make_unique<SceneViewBuilder>(*m_materialCacheManager);
+	m_renderSceneViewBuilder = std::make_unique<RenderSceneViewBuilder>(*m_materialCacheManager);
 
-	m_renderCamera = std::make_unique<RenderCamera>(m_scene->GetCamera());
+	m_renderCamera = std::make_unique<RenderCamera>(m_gameScene->GetCamera());
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
-	    *m_scene,
+	    *m_gameScene,
 	    *m_rhi,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
 	    *m_renderCamera,
-	    *m_renderSceneSnapshotCache,
 	    *m_materialCacheManager);
 }
 
@@ -102,27 +92,10 @@ void Renderer::InitializeFrameGraph() noexcept
 	    *m_gpuMeshCache,
 	    *m_swapChain,
 	    *m_descriptorHeapManager,
-	    *m_ui};
+	    *m_editor};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	m_frameGraph = frameGraphBuilder.Build();
-}
-
-void Renderer::InitializeFrameExecutor() noexcept
-{
-	m_frameExecutor = std::make_unique<FrameExecutor>(
-	    *m_timer,
-	    *m_scene,
-	    *m_window,
-	    *m_rhi,
-	    *m_swapChain,
-	    *m_frameResourceManager,
-	    *m_renderCamera,
-	    *m_ui,
-	    *m_constantBufferManager,
-	    *m_frameGraph,
-	    *m_renderSceneSnapshotCache,
-	    *m_sceneViewBuilder);
 }
 
 void Renderer::InitializeWindowObserver() noexcept
@@ -144,10 +117,57 @@ void Renderer::RefreshFrameExecution() noexcept
 		m_rhi->Flush();
 	}
 
-	m_frameExecutor.reset();
 	m_frameGraph.reset();
 	InitializeFrameGraph();
-	InitializeFrameExecutor();
+}
+
+void Renderer::BeginFrame() noexcept
+{
+	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
+	m_rhi->SetCurrentFrameIndex(frameIndex);
+	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
+	m_rhi->WaitForGPU(frameIndex);
+	m_rhi->ResetCommandAllocator(frameIndex);
+	m_rhi->ResetCommandList(frameIndex);
+}
+
+void Renderer::SetupFrame() noexcept
+{
+	m_renderCamera->Update();
+
+	m_timer->Tick();
+	m_editor->Update();
+	m_constantBufferManager->UpdatePerFrame();
+}
+
+void Renderer::RecordFrame() noexcept
+{
+	FrameContext frame = FrameContext::Build(*m_gameScene, *m_window, *m_swapChain, *m_renderCamera, *m_renderSceneViewBuilder);
+
+	m_constantBufferManager->UpdatePerView(frame.perViewData);
+
+	m_frameGraph->Setup(frame);
+	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
+
+	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
+	CommandContext cmd(m_rhi->GetCommandList(frameIndex).Get());
+	m_frameGraph->Execute(compiledPlan, cmd, frame);
+}
+
+void Renderer::SubmitFrame() noexcept
+{
+	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
+	m_rhi->CloseCommandList(frameIndex);
+	m_rhi->ExecuteCommandList(frameIndex);
+	m_rhi->Signal(frameIndex);
+
+	m_frameResourceManager->EndFrame(m_rhi->GetNextFenceValue() - 1);
+	m_swapChain->Present();
+}
+
+void Renderer::EndFrame() noexcept
+{
+	m_swapChain->UpdateFrameInFlightIndex();
 }
 
 void Renderer::PostLoad() noexcept
@@ -160,7 +180,11 @@ void Renderer::PostLoad() noexcept
 
 void Renderer::OnRender() noexcept
 {
-	m_frameExecutor->ExecuteFrame();
+	BeginFrame();
+	SetupFrame();
+	RecordFrame();
+	SubmitFrame();
+	EndFrame();
 }
 
 Renderer::~Renderer() noexcept

@@ -26,9 +26,10 @@ namespace
 		return label;
 	}
 
-	void ValidatePassDeclarations(std::string_view passName,
-	                              FrameGraphPassFlags flags,
-	                              const std::vector<PassResourceDeclaration>& declarations) noexcept
+	void ValidatePassDeclarations(
+	    std::string_view passName,
+	    FrameGraphPassFlags flags,
+	    const std::vector<PassResourceDeclaration>& declarations) noexcept
 	{
 		assert(HasAnyPassFlags(flags, FrameGraphPassFlags::Raster));
 
@@ -48,13 +49,13 @@ namespace
 			assert(false);
 		}
 	}
-}
+}  // namespace
 
 void FrameGraph::AddLambdaPass(
-	std::string_view name,
-	FrameGraphPassFlags flags,
-	SetupCallback setupCallback,
-	ExecuteCallback executeCallback)
+    std::string_view name,
+    FrameGraphPassFlags flags,
+    SetupCallback setupCallback,
+    ExecuteCallback executeCallback)
 {
 	assert(HasExactlyOnePassKind(flags));
 	m_passes.push_back(RegisteredPass{std::string(name), flags, std::move(setupCallback), std::move(executeCallback)});

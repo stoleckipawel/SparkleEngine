@@ -63,8 +63,8 @@ Sparkle Engine uses a **modular DLL architecture** where each subsystem is a sep
 <td>Game systems: Scene, Mesh, Assets, Application framework</td>
 </tr>
 <tr>
-<td align="center">🖼️<br><b>UI</b></td>
-<td><code>SparkleUI</code></td>
+<td align="center">🖼️<br><b>Editor</b></td>
+<td><code>SparkleEditor</code></td>
 <td>ImGui integration: Panels, Overlays, Debug tools</td>
 </tr>
 </table>
@@ -76,7 +76,7 @@ SparkleCore (base - no dependencies)
     └── SparklePlatform
             └── SparkleRHI
                     └── SparkleRenderer
-                            ├── SparkleUI
+                            ├── SparkleEditor
                             └── SparkleGameFramework
 ```
 
@@ -187,7 +187,7 @@ SparkleCore (base - no dependencies)
 | `Engine/RHI/` | D3D12 Device, Heaps, PSO, Shaders |
 | `Engine/Renderer/` | Camera, Depth, Textures, Materials |
 | `Engine/GameFramework/` | Scene, Mesh, Assets, App Framework |
-| `Engine/UI/` | ImGui Panels, Overlays, Debug Tools |
+| `Engine/Editor/` | ImGui Panels, Overlays, Debug Tools |
 | `Engine/third_party/` | d3dx12 |
 
 Each module follows the structure:

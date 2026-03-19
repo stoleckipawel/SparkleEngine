@@ -5,54 +5,49 @@
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
 #include "Runtime/Level/LevelChangeEvents.h"
-#include "Scene/Scene.h"
-#include "Scene/Camera/CameraController.h"
+#include "Scene/GameScene.h"
+#include "Scene/Camera/GameCameraController.h"
+#include "Scene/Lighting/GameSceneLightingState.h"
 
 #include <algorithm>
 
-LevelManager::LevelManager(Scene& scene) noexcept : m_scene(&scene)
+LevelManager::LevelManager(GameScene& scene) noexcept : m_gameScene(&scene)
 {
 	InitializeStartupLevel();
 }
 
 void LevelManager::InitializeStartupLevel() noexcept
 {
-	if (!m_scene)
+	if (!m_gameScene)
 	{
 		LOG_WARNING("LevelManager: Cannot initialize startup level because required services are unavailable");
 		return;
 	}
 
-	const Level* startupLevel = m_levelRegistry.FindLevelOrDefault(GetStartupLevelName());
+	Level* startupLevel = m_levelRegistry.FindLevelOrDefault(GetStartupLevelName());
 	if (!startupLevel)
 	{
 		LOG_WARNING("LevelManager: Startup level initialization failed because no registered level could be resolved");
-		m_activeLevelName.clear();
-		m_bHasActiveLevel = false;
-		m_levelCameraDesc = {};
+		m_activeLevel = nullptr;
 		return;
 	}
 
 	const std::string startupLevelName(startupLevel->GetName());
 
-	const SceneLoadResult loadResult = m_scene->LoadLevel(*startupLevel);
+	const GameSceneLoadResult loadResult = m_gameScene->LoadLevel(*startupLevel);
 	if (!loadResult.Succeeded())
 	{
-		m_activeLevelName.clear();
-		m_bHasActiveLevel = false;
-		m_levelCameraDesc = {};
+		m_activeLevel = nullptr;
 		LOG_WARNING(
 		    "LevelManager: Startup level initialization failed for '" + startupLevelName + "'" +
 		    (loadResult.errorMessage.empty() ? std::string() : " - " + loadResult.errorMessage));
 		return;
 	}
 
-	m_activeLevelName = startupLevelName;
-	m_bHasActiveLevel = true;
-	m_levelCameraDesc = startupLevel->GetLevelDesc().cameraDesc;
-	ApplyLevelCamera();
+	m_activeLevel = startupLevel;
+	InitializeActiveLevel();
 
-	LOG_INFO("LevelManager: Startup level initialized to '" + m_activeLevelName + "'");
+	LOG_INFO("LevelManager: Startup level initialized to '" + std::string(startupLevel->GetName()) + "'");
 }
 
 std::vector<std::string> LevelManager::GetRegisteredLevelNames() const
@@ -82,13 +77,14 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 		return;
 	}
 
-	if (requestedLevelName == m_activeLevelName)
+	if (m_activeLevel != nullptr && requestedLevelName == m_activeLevel->GetName())
 	{
-		LOG_DEBUG("LevelManager: Ignoring level change request for the already active level '" + m_activeLevelName + "'");
+		LOG_DEBUG(
+		    "LevelManager: Ignoring level change request for the already active level '" + std::string(m_activeLevel->GetName()) + "'");
 		return;
 	}
 
-	const Level* requestedLevel = m_levelRegistry.FindLevel(requestedLevelName);
+	Level* requestedLevel = m_levelRegistry.FindLevel(requestedLevelName);
 	if (!requestedLevel)
 	{
 		LOG_WARNING("LevelManager: Requested level '" + std::string(requestedLevelName) + "' is not registered");
@@ -99,58 +95,99 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 	ProcessLevelChangeRequest(*requestedLevel);
 }
 
-void LevelManager::RegisterCameraController(CameraController& cameraController) noexcept
+void LevelManager::RegisterGameCameraController(GameCameraController& gameCameraController) noexcept
 {
-	m_cameraController = &cameraController;
-	ApplyLevelCamera();
+	m_gameCameraController = &gameCameraController;
+	InitializeActiveLevel();
+}
+
+GameSceneLightingState* LevelManager::GetGameSceneLightingState() noexcept
+{
+	return m_gameScene != nullptr ? &m_gameScene->GetLightingState() : nullptr;
+}
+
+const GameSceneLightingState* LevelManager::GetGameSceneLightingState() const noexcept
+{
+	return m_gameScene != nullptr ? &m_gameScene->GetLightingState() : nullptr;
 }
 
 bool LevelManager::ResetActiveLevelCamera() noexcept
 {
-	if (!m_bHasActiveLevel)
+	if (m_activeLevel == nullptr)
 	{
 		LOG_WARNING("LevelManager: Cannot reset camera because there is no active level");
 		return false;
 	}
 
-	if (m_cameraController == nullptr)
+	if (m_gameCameraController == nullptr)
 	{
 		LOG_WARNING("LevelManager: Cannot reset camera because no camera controller is registered");
 		return false;
 	}
 
-	ApplyLevelCamera();
+	InitializeActiveLevel();
 	return true;
 }
 
 bool LevelManager::SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept
 {
-	if (!m_bHasActiveLevel)
+	if (m_activeLevel == nullptr)
 	{
 		LOG_WARNING("LevelManager: Cannot save camera defaults because there is no active level");
 		return false;
 	}
 
+	m_activeLevel->SetInitialCamera(cameraDesc);
+
 	std::string errorMessage;
-	if (!m_levelRegistry.SaveLevelCameraDefaults(m_activeLevelName, cameraDesc, &errorMessage))
+	if (!m_levelRegistry.SaveLevel(*m_activeLevel, &errorMessage))
 	{
 		LOG_WARNING(
-		    "LevelManager: Failed to persist camera defaults for level '" + m_activeLevelName + "'" +
+		    "LevelManager: Failed to persist camera defaults for level '" + std::string(m_activeLevel->GetName()) + "'" +
 		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
 		return false;
 	}
 
-	m_levelCameraDesc = cameraDesc;
-
-	LOG_INFO("LevelManager: Saved camera defaults for level '" + m_activeLevelName + "'");
+	LOG_INFO("LevelManager: Saved camera defaults for level '" + std::string(m_activeLevel->GetName()) + "'");
 	return true;
 }
 
-SceneLoadResult LevelManager::LoadLevelFromUnloadedState(const Level& level) noexcept
+bool LevelManager::SaveActiveLevelLightingDefaults() noexcept
 {
-	if (!m_scene)
+	if (m_activeLevel == nullptr)
 	{
-		SceneLoadResult unavailableResult;
+		LOG_WARNING("LevelManager: Cannot save lighting defaults because there is no active level");
+		return false;
+	}
+
+	const GameSceneLightingState* lightingState = GetGameSceneLightingState();
+	if (lightingState == nullptr)
+	{
+		LOG_WARNING("LevelManager: Cannot save lighting defaults because scene lighting state is unavailable");
+		return false;
+	}
+
+	const LevelLightingDesc lightingDesc = lightingState->CaptureLevelLightingDesc();
+	m_activeLevel->SetInitialLighting(lightingDesc);
+
+	std::string errorMessage;
+	if (!m_levelRegistry.SaveLevel(*m_activeLevel, &errorMessage))
+	{
+		LOG_WARNING(
+		    "LevelManager: Failed to persist lighting defaults for level '" + std::string(m_activeLevel->GetName()) + "'" +
+		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
+		return false;
+	}
+
+	LOG_INFO("LevelManager: Saved lighting defaults for level '" + std::string(m_activeLevel->GetName()) + "'");
+	return true;
+}
+
+GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const Level& level) noexcept
+{
+	if (!m_gameScene)
+	{
+		GameSceneLoadResult unavailableResult;
 		unavailableResult.errorMessage = "Required runtime services are unavailable";
 		return unavailableResult;
 	}
@@ -159,23 +196,29 @@ SceneLoadResult LevelManager::LoadLevelFromUnloadedState(const Level& level) noe
 	willLoadArgs.targetLevelName = std::string(level.GetName());
 	m_levelChangeEvents.OnLevelWillLoad.Broadcast(willLoadArgs);
 
-	return m_scene->LoadLevel(level);
+	return m_gameScene->LoadLevel(level);
 }
 
-void LevelManager::ApplyLevelCamera() noexcept
+void LevelManager::InitializeActiveLevel() noexcept
 {
-	if (m_cameraController == nullptr)
+	if (m_activeLevel == nullptr)
 	{
-		LOG_DEBUG("LevelManager: Skipping level camera application because no camera controller is registered yet");
+		LOG_DEBUG("LevelManager: Skipping level initialization because there is no active level");
 		return;
 	}
 
-	m_cameraController->ApplyCameraDesc(m_levelCameraDesc);
+	if (m_gameCameraController == nullptr && GetGameSceneLightingState() == nullptr)
+	{
+		LOG_DEBUG("LevelManager: Skipping level initialization because runtime state is unavailable");
+		return;
+	}
+
+	m_activeLevel->Initialize(m_gameCameraController, GetGameSceneLightingState());
 }
 
-void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexcept
+void LevelManager::ProcessLevelChangeRequest(Level& requestedLevel) noexcept
 {
-	if (!m_scene)
+	if (!m_gameScene)
 	{
 		LOG_WARNING("LevelManager: Cannot process level change because required services are unavailable");
 		return;
@@ -183,7 +226,7 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 
 	m_bLevelChangeInProgress = true;
 
-	const std::string previousLevelName = m_activeLevelName;
+	const std::string previousLevelName = m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string();
 	const std::string requestedLevelName(requestedLevel.GetName());
 
 	LevelChangeStartedEventArgs startedArgs;
@@ -196,16 +239,14 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 	willUnloadArgs.requestedLevelName = requestedLevelName;
 	m_levelChangeEvents.OnLevelWillUnload.Broadcast(willUnloadArgs);
 
-	m_scene->Clear();
-	m_activeLevelName.clear();
-	m_bHasActiveLevel = false;
-	m_levelCameraDesc = {};
+	m_gameScene->Clear();
+	m_activeLevel = nullptr;
 
 	LevelUnloadedEventArgs unloadedArgs;
 	unloadedArgs.previousLevelName = previousLevelName;
 	m_levelChangeEvents.OnLevelUnloaded.Broadcast(unloadedArgs);
 
-	SceneLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
+	GameSceneLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
 	if (!loadResult.Succeeded())
 	{
 		LOG_WARNING(
@@ -217,7 +258,7 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 		failedArgs.fallbackLevelName = std::string(GetEmptyLevelName());
 		m_levelChangeEvents.OnLevelLoadFailed.Broadcast(failedArgs);
 
-		const Level* fallbackLevel = m_levelRegistry.FindLevel(GetEmptyLevelName());
+		Level* fallbackLevel = m_levelRegistry.FindLevel(GetEmptyLevelName());
 		if (!fallbackLevel)
 		{
 			LOG_ERROR("LevelManager: Fallback level 'Empty' is not registered");
@@ -237,25 +278,23 @@ void LevelManager::ProcessLevelChangeRequest(const Level& requestedLevel) noexce
 			return;
 		}
 
-		m_activeLevelName = fallbackLevelName;
-		m_bHasActiveLevel = true;
-		m_levelCameraDesc = fallbackLevel->GetLevelDesc().cameraDesc;
+		m_activeLevel = fallbackLevel;
 	}
 	else
 	{
-		m_activeLevelName = requestedLevelName;
-		m_bHasActiveLevel = true;
-		m_levelCameraDesc = requestedLevel.GetLevelDesc().cameraDesc;
+		m_activeLevel = &requestedLevel;
 	}
 
-	ApplyLevelCamera();
+	InitializeActiveLevel();
 
 	LevelChangedEventArgs changedArgs;
 	changedArgs.previousLevelName = previousLevelName;
-	changedArgs.activeLevelName = m_activeLevelName;
+	changedArgs.activeLevelName = m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string();
 	m_levelChangeEvents.OnLevelChanged.Broadcast(changedArgs);
 
 	m_bLevelChangeInProgress = false;
 
-	LOG_INFO("LevelManager: Level change completed from '" + previousLevelName + "' to '" + m_activeLevelName + "'");
+	LOG_INFO(
+	    "LevelManager: Level change completed from '" + previousLevelName + "' to '" +
+	    (m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string()) + "'");
 }

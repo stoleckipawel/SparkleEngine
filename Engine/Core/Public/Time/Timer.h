@@ -62,18 +62,6 @@ class SPARKLE_CORE_API Timer final
 	void Resume() noexcept { m_bPaused.store(false, std::memory_order_relaxed); }
 	bool IsPaused() const noexcept { return m_bPaused.load(std::memory_order_relaxed); }
 
-	struct Stopwatch
-	{
-		TimePoint start;
-
-		Stopwatch() noexcept : start(Clock::now()) {}
-		void Reset() noexcept { start = Clock::now(); }
-
-		Duration Elapsed() const noexcept { return std::chrono::duration_cast<Duration>(Clock::now() - start); }
-		double ElapsedSeconds() const noexcept { return Elapsed().count(); }
-		double ElapsedMillis() const noexcept { return Elapsed().count() * 1e3; }
-	};
-
   private:
 	static double ToUnit(Duration d, TimeUnit u) noexcept;
 

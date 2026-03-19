@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Resources/CameraConstantBufferData.hlsli"
+#include "Resources/LightConstantBufferData.hlsli"
+
 // =============================================================================
 // Constant Buffer Definitions
 // =============================================================================
@@ -32,17 +35,8 @@ cbuffer PerViewConstantBufferData : register(b1)
 	row_major float4x4 ProjectionMTX;  // View -> Clip
 	row_major float4x4 ViewProjMTX;    // World -> Clip (precomputed to save GPU work)
 
-	float3 CameraPosition;  // World-space camera position
-	float NearZ;            // Near clip plane
-
-	float FarZ;              // Far clip plane
-	float3 CameraDirection;  // World-space camera forward
-
-	float3 SunDirection;  // World-space sun light direction
-	float SunIntensity;   // Sun light intensity multiplier
-
-	float3 SunColor;     // Sun light color (linear RGB)
-	float _padPerView0;  // Pad to 256-byte boundary
+	PerViewCameraConstantBufferData Camera;
+	PerViewLightingConstantBufferData ViewLighting;
 };
 
 // -----------------------------------------------------------------------------

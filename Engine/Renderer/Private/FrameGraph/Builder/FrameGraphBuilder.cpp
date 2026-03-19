@@ -1,17 +1,14 @@
 #include "PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
+#include "Renderer/Public/CommandContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/Passes/ForwardOpaquePass.h"
 
 #include "UI.h"
 #include "Window.h"
 
-FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept
- : m_dependencies(dependencies) 
-{
-    
-}
+FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept : m_dependencies(dependencies) {}
 
 std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 {
@@ -69,7 +66,7 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    {
 		    (void) frame;
 		    frameGraph.BindRenderTarget(cmd, backBufferHandle);
-		    ui->Render(cmd);
+		    ui->Render(cmd.GetCommandList());
 	    });
 
 	return frameGraph;

@@ -8,6 +8,9 @@
 #include <string_view>
 #include <utility>
 
+class GameCameraController;
+class GameSceneLightingState;
+
 class SPARKLE_ENGINE_API Level final
 {
   public:
@@ -23,11 +26,14 @@ class SPARKLE_ENGINE_API Level final
 
 	LevelDesc BuildDescription() const { return m_levelDesc; }
 	const LevelDesc& GetLevelDesc() const noexcept { return m_levelDesc; }
-	void SetLevelDesc(const LevelDesc& levelDesc) noexcept
-	{
-		m_levelDesc = levelDesc;
-	}
+	const CameraDesc& GetInitialCamera() const noexcept { return m_levelDesc.cameraDesc; }
+	const LevelLightingDesc& GetInitialLighting() const noexcept { return m_levelDesc.lightingDesc; }
+	std::uint32_t GetDirectionalLightCount() const noexcept { return m_levelDesc.lightingDesc.directionalLightCount; }
+	std::uint32_t GetPointLightCount() const noexcept { return m_levelDesc.lightingDesc.pointLightCount; }
+	void SetLevelDesc(const LevelDesc& levelDesc) noexcept { m_levelDesc = levelDesc; }
+	void Initialize(GameCameraController* gameCameraController, GameSceneLightingState* lightingState) const noexcept;
 	void SetInitialCamera(const CameraDesc& cameraDesc) noexcept { m_levelDesc.cameraDesc = cameraDesc; }
+	void SetInitialLighting(const LevelLightingDesc& lightingDesc) noexcept { m_levelDesc.lightingDesc = lightingDesc; }
 
 	const std::filesystem::path& GetSourcePath() const noexcept { return m_sourcePath; }
 	void SetSourcePath(std::filesystem::path sourcePath) noexcept { m_sourcePath = std::move(sourcePath); }

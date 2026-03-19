@@ -362,16 +362,6 @@ namespace Filesystem
 		return GetTypedPath(AssetType::ShaderSymbols, root);
 	}
 
-	const std::filesystem::path& GetTexturePath(PathRoot root) noexcept
-	{
-		return GetTypedPath(AssetType::Texture, root);
-	}
-
-	const std::filesystem::path& GetMeshPath(PathRoot root) noexcept
-	{
-		return GetTypedPath(AssetType::Mesh, root);
-	}
-
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type)
 	{
 		if (inputPath.empty())
@@ -414,15 +404,5 @@ namespace Filesystem
 	const std::filesystem::path& GetShaderSymbolsOutputPath()
 	{
 		return GetAssetPathState().shaderSymbolsOutputPath;
-	}
-
-	bool HasProjectAssets() noexcept
-	{
-		return !GetAssetPathState().projectAssetsPath.empty();
-	}
-
-	bool HasEngineAssets() noexcept
-	{
-		return !GetAssetPathState().engineAssetsPath.empty();
 	}
 }  // namespace Filesystem

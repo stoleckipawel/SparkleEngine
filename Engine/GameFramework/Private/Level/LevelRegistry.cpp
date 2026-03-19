@@ -52,8 +52,9 @@ void LevelRegistry::DiscoverLevels()
 		auto loadedLevel = LevelParser::LoadFromFile(levelFile, errorMessage);
 		if (!loadedLevel)
 		{
-			LOG_WARNING("LevelRegistry: Failed to load level file '" + levelFile.string() + "'" +
-			            (errorMessage.empty() ? std::string() : " - " + errorMessage));
+			LOG_WARNING(
+			    "LevelRegistry: Failed to load level file '" + levelFile.string() + "'" +
+			    (errorMessage.empty() ? std::string() : " - " + errorMessage));
 			continue;
 		}
 
@@ -137,10 +138,9 @@ void LevelRegistry::SetDefaultLevelName(std::string_view name)
 	m_defaultLevelName = std::string(name);
 }
 
-bool LevelRegistry::SaveLevelCameraDefaults(std::string_view levelName, const CameraDesc& cameraDesc, std::string* errorMessage)
+bool LevelRegistry::SaveLevel(const Level& level, std::string* errorMessage) const
 {
-	Level* level = FindLevel(levelName);
-	if (level == nullptr)
+	if (FindLevel(level.GetName()) == nullptr)
 	{
 		if (errorMessage != nullptr)
 		{
@@ -149,8 +149,7 @@ bool LevelRegistry::SaveLevelCameraDefaults(std::string_view levelName, const Ca
 		return false;
 	}
 
-	level->SetInitialCamera(cameraDesc);
-	return LevelParser::SaveToFile(*level, errorMessage);
+	return LevelParser::SaveToFile(level, errorMessage);
 }
 
 std::string_view LevelRegistry::GetDefaultLevelName() const noexcept

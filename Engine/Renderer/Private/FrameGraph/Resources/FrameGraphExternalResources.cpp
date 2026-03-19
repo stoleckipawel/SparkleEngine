@@ -43,7 +43,7 @@ namespace
 		return srvDesc;
 	}
 
-}
+}  // namespace
 
 void FrameGraph::SyncImportedResourceAccesses() const noexcept
 {

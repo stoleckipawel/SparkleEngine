@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
+#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
 #include <filesystem>
 #include <string>
@@ -16,5 +17,6 @@ struct SPARKLE_ENGINE_API LevelDesc
 {
 	std::string name;
 	CameraDesc cameraDesc;
+	LevelLightingDesc lightingDesc;
 	std::vector<ImportedMeshRequest> importedMeshRequests;
 };

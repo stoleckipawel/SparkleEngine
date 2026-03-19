@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "D3D12SwapChain.h"
+#include "RHI/Public/RHICVars.h"
 #include "Window.h"
 #include "D3D12Rhi.h"
 #include "D3D12DescriptorHeapManager.h"
@@ -132,9 +133,10 @@ D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
 }
 void D3D12SwapChain::Present()
 {
-	UINT presentInterval = RHISettings::VSync ? 1u : 0u;
+	const bool bVSync = CVarRhiVSync.Get();
+	UINT presentInterval = bVSync ? 1u : 0u;
 	UINT presentFlags = 0u;
-	if (!RHISettings::VSync)
+	if (!bVSync)
 	{
 		BOOL allowTearing = FALSE;
 		m_rhi.GetDxgiFactory()->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing));

@@ -8,5 +8,10 @@ PitchRadians = -0.491999865
 FovYDegrees = 60
 MoveSpeed = 0.00999999978
 
+[Lighting]
+Direction = 0.0, -1.0, 0.0
+Intensity = 1.0
+Color = 1.0, 1.0, 1.0
+
 [Meshes]
 Asset = ABeautifulGame/ABeautifulGame.gltf

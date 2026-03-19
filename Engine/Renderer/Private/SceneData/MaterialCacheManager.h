@@ -6,10 +6,10 @@
 
 #include <vector>
 
+class GameScene;
 class D3D12DescriptorHeapManager;
-struct SceneView;
+struct RenderSceneView;
 class TextureManager;
-struct RenderSceneSnapshot;
 
 class MaterialCacheManager final
 {
@@ -22,8 +22,8 @@ class MaterialCacheManager final
 	MaterialCacheManager(MaterialCacheManager&&) = delete;
 	MaterialCacheManager& operator=(MaterialCacheManager&&) = delete;
 
-	void PopulateSceneMaterials(const RenderSceneSnapshot& sceneSnapshot, SceneView& view);
-	void Rebuild(const RenderSceneSnapshot& sceneSnapshot);
+	void PopulateSceneMaterials(const GameScene& gameScene, RenderSceneView& renderSceneView);
+	void Rebuild(const GameScene& gameScene);
 	void Reset() noexcept;
 
   private:

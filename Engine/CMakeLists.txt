@@ -11,8 +11,8 @@
 #                ┌──────────────┴──────────────┐
 #                ▼                             ▼
 #   ┌───────────────────────────┐   ┌─────────────────────────────┐
-#   │    SparkleGameFramework   │   │        SparkleUI.dll        │
-#   │   (World, Entities, Assets)  │   │   (Widgets and overlays)   │
+#   │    SparkleGameFramework   │   │      SparkleEditor.dll       │
+#   │   (World, Entities, Assets)  │   │   (Editor panels and UI)    │
 #   └───────────────────────────┘   └─────────────────────────────┘
 #                │                             │
 #                └──────────────┬──────────────┘
@@ -51,7 +51,7 @@ add_subdirectory(RHI)            # SparkleRHI.dll      - D3D12/Vulkan abstractio
 add_subdirectory(Renderer)       # SparkleRenderer.dll - Rendering pipeline
 add_subdirectory(GameFramework)  # SparkleEngine.dll   - World, Entities, Components (NO rendering deps)
 add_subdirectory(Application)    # SparkleApplication  - App class (ties GameFramework + Renderer)
-add_subdirectory(UI)             # SparkleUI.dll       - Widget system, Layout
+add_subdirectory(Editor)         # SparkleEditor.dll   - Editor UI, panels, tools
 
 # ============================================================================
 # MODULE LINKING GUIDE
@@ -64,12 +64,12 @@ add_subdirectory(UI)             # SparkleUI.dll       - Widget system, Layout
 #   SparkleRenderer     - High-level rendering (requires RHI)
 #   SparkleGameFramework - Scene, Camera, Primitives (NO rendering deps)
 #   SparkleApplication  - App class (ties GameFramework + Renderer together)
-#   SparkleUI           - ImGui integration (requires Renderer)
+#   SparkleEditor       - Editor UI and tools
 #
 # Example for a typical game project:
 #   target_link_libraries(MyGame PRIVATE
 #       SparkleApplication  # Brings in GameFramework + Renderer + all deps
-#       SparkleUI
+#       SparkleEditor
 #   )
 #
 # Example for a headless tool (no rendering):

@@ -37,13 +37,8 @@ namespace Filesystem
 	const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root = PathRoot::Any) noexcept;
 	const std::filesystem::path& GetShaderPath(PathRoot root = PathRoot::Any) noexcept;
 	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) noexcept;
-	const std::filesystem::path& GetTexturePath(PathRoot root = PathRoot::Any) noexcept;
-	const std::filesystem::path& GetMeshPath(PathRoot root = PathRoot::Any) noexcept;
 
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type);
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type);
 	const std::filesystem::path& GetShaderSymbolsOutputPath();
-
-	bool HasProjectAssets() noexcept;
-	bool HasEngineAssets() noexcept;
 }  // namespace Filesystem
