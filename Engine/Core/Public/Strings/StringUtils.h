@@ -42,6 +42,10 @@ namespace Engine
 			return std::string(Unquote(TrimAsciiWhitespace(str)));
 		}
 
+		std::string ToLowerCopy(std::string_view str);
+
+		bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept;
+
 		inline bool TryParseFloat(std::string_view str, float& outValue)
 		{
 			const std::string trimmed = TrimCopy(str);

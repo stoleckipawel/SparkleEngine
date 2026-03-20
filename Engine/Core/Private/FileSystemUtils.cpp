@@ -3,11 +3,86 @@
 #include "FileSystemUtils.h"
 
 #include "Core/Public/Diagnostics/Log.h"
+#include "Core/Public/Strings/StringUtils.h"
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <system_error>
+
+#if defined(_WIN32)
+	#define WIN32_LEAN_AND_MEAN
+	#define NOMINMAX
+	#include <Windows.h>
+#endif
 
 namespace
 {
+	std::string GetExecutableStem()
+	{
+#if defined(_WIN32)
+		wchar_t buffer[MAX_PATH];
+		const DWORD len = GetModuleFileNameW(nullptr, buffer, MAX_PATH);
+		if (len > 0 && len < MAX_PATH)
+		{
+			return Engine::Strings::ToLowerCopy(std::filesystem::path(buffer).stem().string());
+		}
+#endif
+		return {};
+	}
+
+	std::optional<std::filesystem::path> DiscoverWorkspaceProjectRoot()
+	{
+		const auto workspaceRoot = Filesystem::DiscoverWorkspaceRoot();
+		if (!workspaceRoot)
+		{
+			return std::nullopt;
+		}
+
+		const std::filesystem::path projectsRoot = *workspaceRoot / "Projects";
+		std::error_code ec;
+		if (!std::filesystem::exists(projectsRoot, ec) || ec)
+		{
+			return std::nullopt;
+		}
+
+		const std::string executableStem = GetExecutableStem();
+		if (executableStem.empty())
+		{
+			return std::nullopt;
+		}
+		for (const auto& entry : std::filesystem::directory_iterator(projectsRoot, ec))
+		{
+			if (ec)
+			{
+				break;
+			}
+
+			if (!entry.is_directory(ec) || ec)
+			{
+				ec.clear();
+				continue;
+			}
+
+			const std::filesystem::path projectRoot = entry.path();
+			if (!std::filesystem::exists(projectRoot / Filesystem::kProjectMarker, ec) || ec)
+			{
+				ec.clear();
+				continue;
+			}
+
+			if (Engine::Strings::EqualsIgnoreCase(projectRoot.filename().string(), executableStem))
+			{
+				return Filesystem::NormalizePath(projectRoot);
+			}
+		}
+
+		return std::nullopt;
+	}
+
 	struct AssetPathState
 	{
 		static constexpr size_t kAssetTypeCount = static_cast<size_t>(AssetType::Count);
@@ -175,12 +250,6 @@ namespace
 	}
 }  // namespace
 
-#if defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#define NOMINMAX
-	#include <Windows.h>
-#endif
-
 namespace Filesystem
 {
 	std::filesystem::path NormalizePath(const std::filesystem::path& path)
@@ -317,10 +386,20 @@ namespace Filesystem
 
 	std::optional<std::filesystem::path> DiscoverProjectRoot()
 	{
+		if (auto fromExe = FindAncestorWithMarker(GetExecutableDirectory(), kProjectMarker))
+		{
+			return NormalizePath(*fromExe);
+		}
+
 		std::error_code ec;
 		if (auto fromCwd = FindAncestorWithMarker(std::filesystem::current_path(ec), kProjectMarker); fromCwd && !ec)
 		{
 			return NormalizePath(*fromCwd);
+		}
+
+		if (auto fromWorkspace = DiscoverWorkspaceProjectRoot())
+		{
+			return NormalizePath(*fromWorkspace);
 		}
 
 		return std::nullopt;
