@@ -45,8 +45,6 @@ void CameraSection::BuildUI()
 	const bool hasActiveLevel = m_levelManager->HasActiveLevel();
 	const ImGuiStyle& style = ImGui::GetStyle();
 
-	UiUtil::DrawSectionHeader("Transform");
-
 	DirectX::XMFLOAT3 position = gameCameraController->GetPosition();
 	float positionValues[3] = {position.x, position.y, position.z};
 	ImGui::PushID("Position");
@@ -75,8 +73,6 @@ void CameraSection::BuildUI()
 	}
 	ImGui::PopID();
 
-	UiUtil::DrawSectionHeader("Lens");
-
 	float fovYDegrees = gameCameraController->GetFovYDegrees();
 	ImGui::PushID("FOV");
 	if (UiUtil::EditFloatSliderWithInput("FOV", fovYDegrees, 1.0f, 179.0f, "%.1f deg", "%.1f"))
@@ -87,8 +83,6 @@ void CameraSection::BuildUI()
 		gameCameraController->SetFovYDegrees(fovYDegrees);
 	}
 	ImGui::PopID();
-
-	UiUtil::DrawSectionHeader("Movement");
 
 	float moveSpeed = gameCameraController->GetMoveSpeed();
 	ImGui::PushID("Speed");

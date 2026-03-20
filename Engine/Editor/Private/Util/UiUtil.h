@@ -23,5 +23,7 @@ namespace UiUtil
 	    const char* sliderFormat,
 	    const char* inputFormat);
 
+	bool EditColor3(const char* label, float values[3]);
+
 	void DrawSectionHeader(const char* title);
 }  // namespace UiUtil

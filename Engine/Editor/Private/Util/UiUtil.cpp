@@ -248,6 +248,42 @@ namespace UiUtil
 		return changedBySlider || changedByInput;
 	}
 
+	bool EditColor3(const char* label, float values[3])
+	{
+		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
+		bool changed = false;
+
+		ImGui::PushID(label);
+		if (ImGui::BeginTable(
+		        "##color3_row",
+		        2,
+		        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+		{
+			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, PropertyLabelWidth);
+			ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableNextRow();
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			PushFontIfAvailable(monoFont);
+			ImGui::TextDisabled("%s", label);
+			PopFontIfAvailable(monoFont);
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(-1.0f);
+			changed = ImGui::ColorEdit3(
+			    "##color",
+			    values,
+			    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+			        ImGuiColorEditFlags_PickerHueBar);
+
+			ImGui::EndTable();
+		}
+		ImGui::PopID();
+
+		return changed;
+	}
+
 	void DrawSectionHeader(const char* title)
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();

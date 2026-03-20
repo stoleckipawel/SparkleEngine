@@ -20,8 +20,6 @@ namespace
 	constexpr float DirectionSliderMax = 1.0f;
 	constexpr float PositionSliderMin = -50.0f;
 	constexpr float PositionSliderMax = 50.0f;
-	constexpr float ColorSliderMin = 0.0f;
-	constexpr float ColorSliderMax = 1.0f;
 	constexpr float IntensitySliderMin = 0.0f;
 	constexpr float IntensitySliderMax = 20.0f;
 	constexpr float RadiusSliderMin = 0.1f;
@@ -108,7 +106,6 @@ void LightingSection::BuildUI()
 		selectionLabels.push_back(entry.label.c_str());
 	}
 
-	UiUtil::DrawSectionHeader("Preview");
 	ImGui::SetNextItemWidth(-1.0f);
 	ImGui::Combo("##SelectedLight", &m_selectedLightIndex, selectionLabels.data(), static_cast<int>(selectionLabels.size()));
 
@@ -117,8 +114,6 @@ void LightingSection::BuildUI()
 	if (selectedEntry.bDirectional)
 	{
 		const std::size_t directionalLightIndex = selectedEntry.lightIndex;
-		std::string header = selectedEntry.label;
-		UiUtil::DrawSectionHeader(header.c_str());
 
 		DirectionalLightDesc directionalLight = lightingState->GetDirectionalLight(directionalLightIndex);
 		DirectX::XMFLOAT3 direction = directionalLight.direction;
@@ -145,7 +140,7 @@ void LightingSection::BuildUI()
 		DirectX::XMFLOAT3 color = directionalLight.color;
 		float colorValues[3] = {color.x, color.y, color.z};
 		ImGui::PushID("DirectionalColor");
-		if (UiUtil::EditFloat3SliderWithInput("Tint", colorValues, ColorSliderMin, ColorSliderMax, "%.2f", "%.3f"))
+		if (UiUtil::EditColor3("Color", colorValues))
 		{
 			DirectX::XMFLOAT3 clampedColor = {colorValues[0], colorValues[1], colorValues[2]};
 			float dummyIntensity = 1.0f;
@@ -158,8 +153,6 @@ void LightingSection::BuildUI()
 	else
 	{
 		const std::size_t pointLightIndex = selectedEntry.lightIndex;
-		std::string header = selectedEntry.label;
-		UiUtil::DrawSectionHeader(header.c_str());
 
 		PointLightDesc pointLight = lightingState->GetPointLight(pointLightIndex);
 
@@ -190,7 +183,7 @@ void LightingSection::BuildUI()
 
 		DirectX::XMFLOAT3 pointColor = pointLight.color;
 		float pointColorValues[3] = {pointColor.x, pointColor.y, pointColor.z};
-		if (UiUtil::EditFloat3SliderWithInput("Color", pointColorValues, ColorSliderMin, ColorSliderMax, "%.2f", "%.3f"))
+		if (UiUtil::EditColor3("Color", pointColorValues))
 		{
 			DirectX::XMFLOAT3 clampedColor = {pointColorValues[0], pointColorValues[1], pointColorValues[2]};
 			float dummyIntensity = pointLight.intensity;
