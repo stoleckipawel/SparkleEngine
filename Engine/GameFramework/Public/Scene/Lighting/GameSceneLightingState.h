@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Core/Public/Rendering/RendererSettings.h"
+#include "RenderConfig.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
@@ -12,8 +12,8 @@
 class SPARKLE_ENGINE_API GameSceneLightingState final
 {
   public:
-	static constexpr std::size_t MaxDirectionalLights = RendererSettings::Lights::MaxDirectionalLights;
-	static constexpr std::size_t MaxPointLights = RendererSettings::Lights::MaxPointLights;
+	static constexpr std::size_t MaxDirectionalLights = RenderConfig::Lights::MaxDirectionalLights;
+	static constexpr std::size_t MaxPointLights = RenderConfig::Lights::MaxPointLights;
 
 	GameSceneLightingState() noexcept = default;
 	~GameSceneLightingState() noexcept = default;

@@ -1,21 +1,10 @@
 #pragma once
 
+#include <cstddef>
+
 #include <dxgi1_6.h>
 
-#if defined(_DEBUG)
-	#define ENGINE_SHADERS_OPTIMIZED 1
-	#define ENGINE_SHADERS_DEBUG 1
-#endif
-
-#if defined(_DEBUG)
-	#define ENGINE_GPU_VALIDATION 1
-#endif
-
-#if defined(_DEBUG)
-	#define ENGINE_REPORT_LIVE_OBJECTS 1
-#endif
-
-namespace RHISettings
+namespace RenderConfig
 {
 	inline constexpr unsigned FramesInFlight = 2u;
 
@@ -25,4 +14,11 @@ namespace RHISettings
 
 	inline constexpr int ShaderModelMajor = 6;
 	inline constexpr int ShaderModelMinor = 0;
-}  // namespace RHISettings
+
+	namespace Lights
+	{
+		inline constexpr std::size_t MaxDirectionalLights = 2;
+		inline constexpr std::size_t MaxLocalLights = 256;
+		inline constexpr std::size_t MaxPointLights = MaxLocalLights;
+	}  // namespace Lights
+}  // namespace RenderConfig

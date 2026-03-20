@@ -11,7 +11,7 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include "D3D12DescriptorHandle.h"
-#include "RHIConfig.h"
+#include "RenderConfig.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -49,13 +49,13 @@ class D3D12SwapChain final
 
 	D3D12_RECT GetDefaultScissorRect() const;
 
-	DXGI_FORMAT GetBackBufferFormat() const { return RHISettings::BackBufferFormat; }
+	DXGI_FORMAT GetBackBufferFormat() const { return RenderConfig::BackBufferFormat; }
 
 	UINT GetAllowTearingFlag() const;
 
 	UINT GetFrameLatencyWaitableFlag() const
 	{
-		return (RHISettings::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
+		return (RenderConfig::FramesInFlight > 1) ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0u;
 	}
 
 	UINT ComputeSwapChainFlags() const;
@@ -69,8 +69,8 @@ class D3D12SwapChain final
 	D3D12Rhi& m_rhi;
 	UINT m_frameInFlightIndex = 0;
 	ComPtr<IDXGISwapChain3> m_swapChain = nullptr;
-	ComPtr<ID3D12Resource2> m_buffers[RHISettings::FramesInFlight];
-	D3D12DescriptorHandle m_rtvHandles[RHISettings::FramesInFlight];
+	ComPtr<ID3D12Resource2> m_buffers[RenderConfig::FramesInFlight];
+	D3D12DescriptorHandle m_rtvHandles[RenderConfig::FramesInFlight];
 	HANDLE m_waitableObject = nullptr;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

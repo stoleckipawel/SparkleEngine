@@ -123,7 +123,7 @@ void D3D12Rhi::CreateCommandQueue()
 
 void D3D12Rhi::CreateCommandAllocators()
 {
-	for (size_t i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (size_t i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(m_cmdAllocator[i].ReleaseAndGetAddressOf())));
 	}
@@ -131,7 +131,7 @@ void D3D12Rhi::CreateCommandAllocators()
 
 void D3D12Rhi::CreateCommandLists()
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		CHECK(m_device->CreateCommandList(
 		    0,
@@ -146,7 +146,7 @@ void D3D12Rhi::CreateCommandLists()
 
 void D3D12Rhi::CreateFenceAndEvent()
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_fenceValues[i] = 0;
 	}
@@ -235,7 +235,7 @@ void D3D12Rhi::Signal(uint32_t frameInFlightIndex) noexcept
 
 void D3D12Rhi::Flush() noexcept
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		Signal(i);
 		WaitForGPU(i);
@@ -244,7 +244,7 @@ void D3D12Rhi::Flush() noexcept
 
 D3D12Rhi::~D3D12Rhi() noexcept
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_cmdList[i].Reset();
 		m_cmdAllocator[i].Reset();

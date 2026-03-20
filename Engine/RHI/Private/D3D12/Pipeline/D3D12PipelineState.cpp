@@ -118,8 +118,8 @@ D3D12PipelineState::D3D12PipelineState(
 	SetStencilTestState(psoDesc, stencilDesc);
 
 	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = RHISettings::BackBufferFormat;
-	psoDesc.DSVFormat = RHISettings::DepthStencilFormat;
+	psoDesc.RTVFormats[0] = RenderConfig::BackBufferFormat;
+	psoDesc.DSVFormat = RenderConfig::DepthStencilFormat;
 
 	psoDesc.NodeMask = 0;
 	psoDesc.CachedPSO = {};

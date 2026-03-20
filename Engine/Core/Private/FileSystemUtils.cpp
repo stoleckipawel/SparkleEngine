@@ -405,4 +405,4 @@ namespace Filesystem
 	{
 		return GetAssetPathState().shaderSymbolsOutputPath;
 	}
-}  // namespace Filesystem
+}  

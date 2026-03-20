@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <array>
 #include <memory>
-#include "RHIConfig.h"
+#include "RenderConfig.h"
 #include "D3D12ConstantBufferData.h"
 #include "D3D12ConstantBuffer.h"
 
@@ -45,9 +45,9 @@ class D3D12ConstantBufferManager final
 	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectPS(const PerObjectPSConstantBufferData& data);
 
   private:
-	std::unique_ptr<D3D12ConstantBuffer<PerFrameConstantBufferData>> m_perFrameCB[RHISettings::FramesInFlight];
+	std::unique_ptr<D3D12ConstantBuffer<PerFrameConstantBufferData>> m_perFrameCB[RenderConfig::FramesInFlight];
 
-	std::unique_ptr<D3D12ConstantBuffer<PerViewConstantBufferData>> m_perViewCB[RHISettings::FramesInFlight];
+	std::unique_ptr<D3D12ConstantBuffer<PerViewConstantBufferData>> m_perViewCB[RenderConfig::FramesInFlight];
 
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;

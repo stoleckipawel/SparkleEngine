@@ -16,7 +16,7 @@ D3D12ConstantBufferManager::D3D12ConstantBufferManager(
     D3D12SwapChain& swapChain) :
     m_timer(&timer), m_window(&window), m_frameResourceManager(&frameResourceManager), m_swapChain(&swapChain)
 {
-	for (uint32_t i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (uint32_t i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_perFrameCB[i] = std::make_unique<D3D12ConstantBuffer<PerFrameConstantBufferData>>(rhi, descriptorHeapManager);
 		m_perViewCB[i] = std::make_unique<D3D12ConstantBuffer<PerViewConstantBufferData>>(rhi, descriptorHeapManager);
@@ -25,7 +25,7 @@ D3D12ConstantBufferManager::D3D12ConstantBufferManager(
 
 D3D12ConstantBufferManager::~D3D12ConstantBufferManager() noexcept
 {
-	for (uint32_t i = 0; i < RHISettings::FramesInFlight; ++i)
+	for (uint32_t i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_perFrameCB[i].reset();
 		m_perViewCB[i].reset();

@@ -45,7 +45,7 @@ target_include_directories(SparkleEditor
         # Core module subdirectories for direct includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
-        # RHI module public headers (for RHIConfig.h)
+        # RHI module public headers (for RenderConfig.h)
         ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public
         # RHI module subdirectories for direct includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12

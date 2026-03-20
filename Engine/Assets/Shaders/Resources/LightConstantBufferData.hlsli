@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources/RendererSettings.hlsli"
+#include "Resources/RenderConfig.hlsli"
 
 struct DirectionalLightConstantBufferData
 {

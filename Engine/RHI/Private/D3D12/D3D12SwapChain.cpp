@@ -11,7 +11,7 @@ D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHea
 	AllocateHandles();
 	Create();
 
-	m_swapChain->SetMaximumFrameLatency(RHISettings::FramesInFlight);
+	m_swapChain->SetMaximumFrameLatency(RenderConfig::FramesInFlight);
 	m_waitableObject = m_swapChain->GetFrameLatencyWaitableObject();
 
 	UpdateFrameInFlightIndex();
@@ -30,12 +30,12 @@ void D3D12SwapChain::Create()
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = m_window->GetWidth();
 	swapChainDesc.Height = m_window->GetHeight();
-	swapChainDesc.Format = RHISettings::BackBufferFormat;
+	swapChainDesc.Format = RenderConfig::BackBufferFormat;
 	swapChainDesc.Stereo = false;
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.SampleDesc.Count = 1;
 	swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.BufferCount = RHISettings::FramesInFlight;
+	swapChainDesc.BufferCount = RenderConfig::FramesInFlight;
 	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
@@ -61,10 +61,10 @@ void D3D12SwapChain::Resize()
 	ReleaseBuffers();
 
 	m_swapChain->ResizeBuffers(
-	    RHISettings::FramesInFlight,
+	    RenderConfig::FramesInFlight,
 	    m_window->GetWidth(),
 	    m_window->GetHeight(),
-	    RHISettings::BackBufferFormat,
+	    RenderConfig::BackBufferFormat,
 	    ComputeSwapChainFlags());
 
 	CreateRenderTargetViews();
@@ -73,20 +73,20 @@ void D3D12SwapChain::Resize()
 }
 void D3D12SwapChain::AllocateHandles()
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
 	{
 		m_rtvHandles[i] = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	}
 }
 void D3D12SwapChain::CreateRenderTargetViews()
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
 	{
 		CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(m_buffers[i].ReleaseAndGetAddressOf())));
 		m_buffers[i]->SetName(L"RHI_BackBuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-		rtvDesc.Format = RHISettings::BackBufferFormat;
+		rtvDesc.Format = RenderConfig::BackBufferFormat;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;
@@ -147,7 +147,7 @@ void D3D12SwapChain::Present()
 
 void D3D12SwapChain::ReleaseBuffers()
 {
-	for (UINT i = 0; i < RHISettings::FramesInFlight; i++)
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
 	{
 		m_buffers[i].Reset();
 		if (m_rtvHandles[i].IsValid())

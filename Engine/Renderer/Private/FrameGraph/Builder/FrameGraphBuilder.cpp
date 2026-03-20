@@ -22,7 +22,7 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    "BackBuffer",
 	    static_cast<std::uint32_t>(m_dependencies.window.GetWidth()),
 	    static_cast<std::uint32_t>(m_dependencies.window.GetHeight()),
-	    RHISettings::BackBufferFormat);
+	    RenderConfig::BackBufferFormat);
 	const TextureHandle backBufferHandle = frameGraph->ImportTexture(backBufferDesc, ResourceState::Present);
 
 	const FrameGraphTextureDesc mainDepthDesc = FrameGraphTextureDesc::CreateDepthStencil(

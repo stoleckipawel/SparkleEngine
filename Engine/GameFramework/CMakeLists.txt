@@ -1,6 +1,6 @@
 # SparkleGameFramework Module (SparkleEngine.dll)
 # Game framework: World, Entities, Components, Scene, Camera, Imported Meshes, Assets
-# Dependencies: SparkleCore, SparklePlatform
+# Dependencies: SparkleCore, SparklePlatform, shared render config from SparkleRHI
 #
 # This corresponds to "SparkleEngine.dll" in the Unreal-style architecture.
 # It contains the high-level game systems .
@@ -62,11 +62,12 @@ target_precompile_headers(SparkleGameFramework PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# GameFramework depends on lower-level modules only (NO Renderer/RHI)
+# GameFramework depends on lower-level modules only and the shared render config owner (NO Renderer)
 target_link_libraries(SparkleGameFramework 
     PUBLIC 
         SparkleCore
         SparklePlatform
+		SparkleRHI
     PRIVATE
         cgltf
 )

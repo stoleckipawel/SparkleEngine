@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Public/Rendering/RendererSettings.h"
+#include "RenderConfig.h"
 
 #include <DirectXMath.h>
 
@@ -31,8 +31,8 @@ struct PointLightConstantBufferData
 
 struct PerViewLightingConstantBufferData
 {
-	static constexpr std::size_t MaxDirectionalLights = RendererSettings::Lights::MaxDirectionalLights;
-	static constexpr std::size_t MaxPointLights = RendererSettings::Lights::MaxPointLights;
+	static constexpr std::size_t MaxDirectionalLights = RenderConfig::Lights::MaxDirectionalLights;
+	static constexpr std::size_t MaxPointLights = RenderConfig::Lights::MaxPointLights;
 
 	std::uint32_t DirectionalLightCount = 0;
 	std::uint32_t PointLightCount = 0;

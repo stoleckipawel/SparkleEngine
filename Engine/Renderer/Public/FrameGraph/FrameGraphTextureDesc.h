@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHIConfig.h"
+#include "RenderConfig.h"
 
 #include <cstdint>
 #include <string>
@@ -17,7 +17,7 @@ struct FrameGraphTextureDesc
 	std::string name;
 	std::uint32_t width = 0;
 	std::uint32_t height = 0;
-	DXGI_FORMAT format = RHISettings::DepthStencilFormat;
+	DXGI_FORMAT format = RenderConfig::DepthStencilFormat;
 	FrameGraphTextureKind kind = FrameGraphTextureKind::Color;
 
 	static FrameGraphTextureDesc CreateDepthStencil(std::string_view name, std::uint32_t width, std::uint32_t height) noexcept
@@ -26,7 +26,7 @@ struct FrameGraphTextureDesc
 		    std::string(name),
 		    width,
 		    height,
-		    RHISettings::DepthStencilFormat,
+		    RenderConfig::DepthStencilFormat,
 		    FrameGraphTextureKind::DepthStencil};
 	}
 

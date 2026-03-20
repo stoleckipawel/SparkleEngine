@@ -4,7 +4,7 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <memory>
-#include "RHIConfig.h"
+#include "RenderConfig.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -76,11 +76,11 @@ class D3D12Rhi final
 	ComPtr<IDXGIAdapter1> m_adapter = nullptr;
 	ComPtr<ID3D12Device10> m_device = nullptr;
 	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
-	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RHISettings::FramesInFlight] = {};
-	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RHISettings::FramesInFlight] = {};
+	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RenderConfig::FramesInFlight] = {};
+	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RenderConfig::FramesInFlight] = {};
 	uint32_t m_currentFrameIndex = 0;
 
-	uint64_t m_fenceValues[RHISettings::FramesInFlight] = {0};
+	uint64_t m_fenceValues[RenderConfig::FramesInFlight] = {0};
 	uint64_t m_nextFenceValue = 1;
 	ComPtr<ID3D12Fence1> m_fence = nullptr;
 	HANDLE m_fenceEvent = nullptr;

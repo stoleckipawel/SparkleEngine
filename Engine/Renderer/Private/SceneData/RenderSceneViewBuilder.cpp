@@ -2,7 +2,7 @@
 
 #include "RenderSceneViewBuilder.h"
 
-#include "Core/Public/Rendering/RendererSettings.h"
+#include "RenderConfig.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "Renderer/Public/SceneData/PointLight.h"
@@ -19,12 +19,12 @@ namespace
 {
 	std::size_t GetUploadedDirectionalLightCount(const RenderSceneView& renderSceneView) noexcept
 	{
-		return std::min(renderSceneView.directionalLights.size(), RendererSettings::Lights::MaxDirectionalLights);
+		return std::min(renderSceneView.directionalLights.size(), RenderConfig::Lights::MaxDirectionalLights);
 	}
 
 	std::size_t GetUploadedPointLightCount(const RenderSceneView& renderSceneView) noexcept
 	{
-		return std::min(renderSceneView.pointLights.size(), RendererSettings::Lights::MaxPointLights);
+		return std::min(renderSceneView.pointLights.size(), RenderConfig::Lights::MaxPointLights);
 	}
 }  // namespace
 
