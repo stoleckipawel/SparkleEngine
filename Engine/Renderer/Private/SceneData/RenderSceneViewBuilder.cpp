@@ -5,7 +5,6 @@
 #include "RenderConfig.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
-#include "Renderer/Public/SceneData/PointLight.h"
 #include "Renderer/Public/SceneData/RenderSceneView.h"
 #include "Scene/GameScene.h"
 #include "Scene/Mesh.h"
@@ -20,11 +19,6 @@ namespace
 	std::size_t GetUploadedDirectionalLightCount(const RenderSceneView& renderSceneView) noexcept
 	{
 		return std::min(renderSceneView.directionalLights.size(), RenderConfig::Lights::MaxDirectionalLights);
-	}
-
-	std::size_t GetUploadedPointLightCount(const RenderSceneView& renderSceneView) noexcept
-	{
-		return std::min(renderSceneView.pointLights.size(), RenderConfig::Lights::MaxPointLights);
 	}
 }  // namespace
 
@@ -61,24 +55,13 @@ void RenderSceneViewBuilder::PopulatePerViewLightingData(const RenderSceneView& 
 {
 	perViewData.ViewLighting = {};
 	const std::size_t directionalLightCount = GetUploadedDirectionalLightCount(renderSceneView);
-	const std::size_t pointLightCount = GetUploadedPointLightCount(renderSceneView);
 	perViewData.ViewLighting.DirectionalLightCount = static_cast<std::uint32_t>(directionalLightCount);
-	perViewData.ViewLighting.PointLightCount = static_cast<std::uint32_t>(pointLightCount);
 
 	for (std::size_t lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		perViewData.ViewLighting.DirectionalLights[lightIndex].Direction = renderSceneView.directionalLights[lightIndex].direction;
 		perViewData.ViewLighting.DirectionalLights[lightIndex].Intensity = renderSceneView.directionalLights[lightIndex].intensity;
 		perViewData.ViewLighting.DirectionalLights[lightIndex].Color = renderSceneView.directionalLights[lightIndex].color;
-	}
-
-	for (std::size_t lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
-	{
-		perViewData.ViewLighting.PointLights[lightIndex].Position = renderSceneView.pointLights[lightIndex].position;
-		perViewData.ViewLighting.PointLights[lightIndex].Intensity = renderSceneView.pointLights[lightIndex].intensity;
-		perViewData.ViewLighting.PointLights[lightIndex].Color = renderSceneView.pointLights[lightIndex].color;
-		perViewData.ViewLighting.PointLights[lightIndex].Radius = renderSceneView.pointLights[lightIndex].radius;
-		perViewData.ViewLighting.PointLights[lightIndex].Enabled = renderSceneView.pointLights[lightIndex].enabled;
 	}
 }
 
@@ -107,9 +90,7 @@ void RenderSceneViewBuilder::BuildLighting(const GameScene& gameScene, RenderSce
 {
 	const auto& lightingState = gameScene.GetLightingState();
 	renderSceneView.directionalLights.clear();
-	renderSceneView.pointLights.clear();
 	renderSceneView.directionalLights.reserve(lightingState.GetDirectionalLightCount());
-	renderSceneView.pointLights.reserve(lightingState.GetPointLightCount());
 
 	for (std::size_t lightIndex = 0; lightIndex < lightingState.GetDirectionalLightCount(); ++lightIndex)
 	{
@@ -119,17 +100,5 @@ void RenderSceneViewBuilder::BuildLighting(const GameScene& gameScene, RenderSce
 		renderLight.intensity = directionalLight.intensity;
 		renderLight.color = directionalLight.color;
 		renderSceneView.directionalLights.push_back(renderLight);
-	}
-
-	for (std::size_t lightIndex = 0; lightIndex < lightingState.GetPointLightCount(); ++lightIndex)
-	{
-		const PointLightDesc& pointLight = lightingState.GetPointLight(lightIndex);
-		PointLight renderLight = {};
-		renderLight.position = pointLight.position;
-		renderLight.intensity = pointLight.intensity;
-		renderLight.color = pointLight.color;
-		renderLight.radius = pointLight.radius;
-		renderLight.enabled = pointLight.enabled ? 1u : 0u;
-		renderSceneView.pointLights.push_back(renderLight);
 	}
 }

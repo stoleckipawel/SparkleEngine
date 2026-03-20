@@ -12,26 +12,6 @@ MoveSpeed = 0.00999999978
 DirectionalDirection = 0.0, -1.0, 0.0
 DirectionalIntensity = 1.0
 DirectionalColor = 1.0, 1.0, 1.0
-PointLight0Enabled = true
-PointLight0Position = -6.0, 3.0, -4.0
-PointLight0Intensity = 8.0
-PointLight0Color = 1.0, 0.85, 0.65
-PointLight0Radius = 12.0
-PointLight1Enabled = true
-PointLight1Position = 6.0, 3.0, -4.0
-PointLight1Intensity = 8.0
-PointLight1Color = 0.65, 0.8, 1.0
-PointLight1Radius = 12.0
-PointLight2Enabled = true
-PointLight2Position = -6.0, 3.0, 4.0
-PointLight2Intensity = 7.5
-PointLight2Color = 1.0, 0.7, 0.55
-PointLight2Radius = 12.0
-PointLight3Enabled = true
-PointLight3Position = 6.0, 3.0, 4.0
-PointLight3Intensity = 7.5
-PointLight3Color = 0.7, 0.9, 1.0
-PointLight3Radius = 12.0
 
 [Meshes]
 Asset = Sponza/Sponza.gltf

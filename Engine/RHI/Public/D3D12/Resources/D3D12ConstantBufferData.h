@@ -38,7 +38,7 @@ struct alignas(256) PerViewConstantBufferData
 	PerViewLightingConstantBufferData ViewLighting = {};
 };
 CBV_CHECK(PerViewConstantBufferData);
-static_assert(sizeof(PerViewConstantBufferData) == 12800, "Per-view constant buffer data must match the shader layout");
+static_assert(sizeof(PerViewConstantBufferData) == 512, "Per-view constant buffer data must match the shader layout");
 
 struct alignas(256) PerObjectVSConstantBufferData
 {

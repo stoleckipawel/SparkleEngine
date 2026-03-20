@@ -67,37 +67,6 @@ namespace LevelParsing
 		return false;
 	}
 
-	inline bool TryParsePointLightFieldKey(std::string_view key, std::size_t& outIndex, std::string_view& outField)
-	{
-		constexpr std::string_view prefix = "PointLight";
-		if (!key.starts_with(prefix))
-		{
-			return false;
-		}
-
-		std::size_t cursor = prefix.size();
-		if (cursor >= key.size() || !std::isdigit(static_cast<unsigned char>(key[cursor])))
-		{
-			return false;
-		}
-
-		std::size_t index = 0;
-		while (cursor < key.size() && std::isdigit(static_cast<unsigned char>(key[cursor])))
-		{
-			index = (index * 10) + static_cast<std::size_t>(key[cursor] - '0');
-			++cursor;
-		}
-
-		if (cursor >= key.size())
-		{
-			return false;
-		}
-
-		outIndex = index;
-		outField = key.substr(cursor);
-		return true;
-	}
-
 	inline bool ParseDirectionalLightField(
 	    std::string_view directionalLightField,
 	    const ParsedLevelLine& parsedLine,
@@ -137,64 +106,6 @@ namespace LevelParsing
 		return false;
 	}
 
-	inline bool ParsePointLightField(
-	    std::string_view pointLightField,
-	    const ParsedLevelLine& parsedLine,
-	    PointLightDesc& pointLightDesc,
-	    std::string& errorMessage)
-	{
-		if (pointLightField == "Enabled")
-		{
-			if (!TryParseBool(parsedLine.value, pointLightDesc.enabled))
-			{
-				errorMessage = "Invalid point light enabled flag";
-				return false;
-			}
-			return true;
-		}
-
-		if (pointLightField == "Position")
-		{
-			if (!Engine::Strings::TryParseFloat3(parsedLine.value, pointLightDesc.position))
-			{
-				errorMessage = "Invalid point light position";
-				return false;
-			}
-			return true;
-		}
-
-		if (pointLightField == "Intensity")
-		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, pointLightDesc.intensity))
-			{
-				errorMessage = "Invalid point light intensity";
-				return false;
-			}
-			return true;
-		}
-
-		if (pointLightField == "Color")
-		{
-			if (!Engine::Strings::TryParseFloat3(parsedLine.value, pointLightDesc.color))
-			{
-				errorMessage = "Invalid point light color";
-				return false;
-			}
-			return true;
-		}
-
-		if (pointLightField == "Radius")
-		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, pointLightDesc.radius))
-			{
-				errorMessage = "Invalid point light radius";
-				return false;
-			}
-			return true;
-		}
-
-		return false;
-	}
 
 	inline bool ParseLightingSectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc, std::string& errorMessage)
 	{
@@ -219,27 +130,6 @@ namespace LevelParsing
 			return true;
 		}
 
-		std::size_t pointLightIndex = 0;
-		std::string_view pointLightField;
-		if (!TryParsePointLightFieldKey(parsedLine.key, pointLightIndex, pointLightField))
-		{
-			return true;
-		}
-
-		if (pointLightIndex >= LevelLightingDesc::MaxPointLights)
-		{
-			errorMessage = "Point light index out of range";
-			return false;
-		}
-
-		PointLightDesc& pointLight = levelDesc.lightingDesc.pointLights[pointLightIndex];
-		if (ParsePointLightField(pointLightField, parsedLine, pointLight, errorMessage))
-		{
-			levelDesc.lightingDesc.pointLightCount =
-			    std::max(levelDesc.lightingDesc.pointLightCount, static_cast<std::uint32_t>(pointLightIndex + 1));
-			return true;
-		}
-
 		return true;
 	}
 
@@ -256,18 +146,6 @@ namespace LevelParsing
 			output << "DirectionalLight" << lightIndex << "Intensity = " << directionalLight.intensity << "\n";
 			output << "DirectionalLight" << lightIndex << "Color = " << directionalLight.color.x << ", " << directionalLight.color.y << ", "
 			       << directionalLight.color.z << "\n";
-		}
-
-		for (std::size_t lightIndex = 0; lightIndex < levelDesc.lightingDesc.pointLightCount; ++lightIndex)
-		{
-			const PointLightDesc& pointLight = levelDesc.lightingDesc.pointLights[lightIndex];
-			output << "PointLight" << lightIndex << "Enabled = " << (pointLight.enabled ? "true" : "false") << "\n";
-			output << "PointLight" << lightIndex << "Position = " << pointLight.position.x << ", " << pointLight.position.y << ", "
-			       << pointLight.position.z << "\n";
-			output << "PointLight" << lightIndex << "Intensity = " << pointLight.intensity << "\n";
-			output << "PointLight" << lightIndex << "Color = " << pointLight.color.x << ", " << pointLight.color.y << ", "
-			       << pointLight.color.z << "\n";
-			output << "PointLight" << lightIndex << "Radius = " << pointLight.radius << "\n";
 		}
 
 		output << "\n";

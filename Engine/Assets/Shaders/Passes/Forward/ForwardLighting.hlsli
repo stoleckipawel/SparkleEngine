@@ -14,7 +14,7 @@ namespace Forward
 	{
 		const float3 viewDir = normalize(Camera.Position - psInput.PositionWorld);
 
-		Lighting::CalculateDirect(psInput.PositionWorld, viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
+		Lighting::CalculateDirect(viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
 
 		const float3 fakeAmbient = float3(0.00f, 0.0f, 0.00f);
 		Lighting::CalculateIndirectIBL(viewDir, matProps, fakeAmbient, fakeAmbient, outIndirectDiffuse, outIndirectSpecular);

@@ -27,7 +27,6 @@ class LightingSection final : public UIRendererSection
   private:
 	struct LightSelectionEntry
 	{
-		bool bDirectional = false;
 		std::size_t lightIndex = 0;
 		std::string label;
 	};

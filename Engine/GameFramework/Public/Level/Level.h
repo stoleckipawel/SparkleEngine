@@ -29,7 +29,6 @@ class SPARKLE_ENGINE_API Level final
 	const CameraDesc& GetInitialCamera() const noexcept { return m_levelDesc.cameraDesc; }
 	const LevelLightingDesc& GetInitialLighting() const noexcept { return m_levelDesc.lightingDesc; }
 	std::uint32_t GetDirectionalLightCount() const noexcept { return m_levelDesc.lightingDesc.directionalLightCount; }
-	std::uint32_t GetPointLightCount() const noexcept { return m_levelDesc.lightingDesc.pointLightCount; }
 	void SetLevelDesc(const LevelDesc& levelDesc) noexcept { m_levelDesc = levelDesc; }
 	void Initialize(GameCameraController* gameCameraController, GameSceneLightingState* lightingState) const noexcept;
 	void SetInitialCamera(const CameraDesc& cameraDesc) noexcept { m_levelDesc.cameraDesc = cameraDesc; }
