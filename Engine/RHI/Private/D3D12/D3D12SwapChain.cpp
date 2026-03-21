@@ -22,14 +22,30 @@ D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHea
 D3D12SwapChain::~D3D12SwapChain() noexcept
 {
 	ReleaseBuffers();
+	ReleaseRenderTargetHandles();
 	m_swapChain.Reset();
+}
+
+UINT D3D12SwapChain::GetWindowWidth() const noexcept
+{
+	return m_window->GetWidth();
+}
+
+UINT D3D12SwapChain::GetWindowHeight() const noexcept
+{
+	return m_window->GetHeight();
+}
+
+bool D3D12SwapChain::HasValidWindowSize() const noexcept
+{
+	return m_window->HasValidSize();
 }
 
 void D3D12SwapChain::Create()
 {
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
-	swapChainDesc.Width = m_window->GetWidth();
-	swapChainDesc.Height = m_window->GetHeight();
+	swapChainDesc.Width = GetWindowWidth();
+	swapChainDesc.Height = GetWindowHeight();
 	swapChainDesc.Format = RenderConfig::BackBufferFormat;
 	swapChainDesc.Stereo = false;
 	swapChainDesc.SampleDesc.Quality = 0;
@@ -58,19 +74,28 @@ void D3D12SwapChain::Create()
 
 void D3D12SwapChain::Resize()
 {
+	if (!HasValidWindowSize())
+	{
+		return;
+	}
+
 	ReleaseBuffers();
-
-	m_swapChain->ResizeBuffers(
-	    RenderConfig::FramesInFlight,
-	    m_window->GetWidth(),
-	    m_window->GetHeight(),
-	    RenderConfig::BackBufferFormat,
-	    ComputeSwapChainFlags());
-
+	ResizeBuffersToWindow();
 	CreateRenderTargetViews();
 
 	UpdateFrameInFlightIndex();
 }
+
+void D3D12SwapChain::ResizeBuffersToWindow()
+{
+	CHECK(m_swapChain->ResizeBuffers(
+	    RenderConfig::FramesInFlight,
+	    GetWindowWidth(),
+	    GetWindowHeight(),
+	    RenderConfig::BackBufferFormat,
+	    ComputeSwapChainFlags()));
+}
+
 void D3D12SwapChain::AllocateHandles()
 {
 	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
@@ -111,26 +136,29 @@ UINT D3D12SwapChain::ComputeSwapChainFlags() const
 	flags |= GetAllowTearingFlag();
 	return flags;
 }
+
 D3D12_VIEWPORT D3D12SwapChain::GetDefaultViewport() const
 {
 	D3D12_VIEWPORT vp;
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
-	vp.Width = float(m_window->GetWidth());
-	vp.Height = float(m_window->GetHeight());
+	vp.Width = float(GetWindowWidth());
+	vp.Height = float(GetWindowHeight());
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 	return vp;
 }
+
 D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
 {
 	D3D12_RECT scissorRect;
 	scissorRect.left = 0;
 	scissorRect.top = 0;
-	scissorRect.right = m_window->GetWidth();
-	scissorRect.bottom = m_window->GetHeight();
+	scissorRect.right = GetWindowWidth();
+	scissorRect.bottom = GetWindowHeight();
 	return scissorRect;
 }
+
 void D3D12SwapChain::Present()
 {
 	const bool bVSync = CVarRhiVSync.Get();
@@ -150,6 +178,13 @@ void D3D12SwapChain::ReleaseBuffers()
 	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
 	{
 		m_buffers[i].Reset();
+	}
+}
+
+void D3D12SwapChain::ReleaseRenderTargetHandles() noexcept
+{
+	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
+	{
 		if (m_rtvHandles[i].IsValid())
 		{
 			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_rtvHandles[i]);

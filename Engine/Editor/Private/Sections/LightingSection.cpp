@@ -77,7 +77,6 @@ void LightingSection::BuildUI()
 		return;
 	}
 
-	const bool hasActiveLevel = m_levelManager->HasActiveLevel();
 	const int maxSelectionIndex = static_cast<int>(selectionEntries.size()) - 1;
 	m_selectedLightIndex = std::clamp(m_selectedLightIndex, 0, maxSelectionIndex);
 
@@ -128,27 +127,4 @@ void LightingSection::BuildUI()
 		lightingState->SetDirectionalLight(directionalLightIndex, directionalLight);
 	}
 	ImGui::PopID();
-
-	if (!m_statusMessage.empty())
-	{
-		const ImVec4 colorValue = m_bLastSaveSucceeded ? ImVec4(0.3f, 0.8f, 0.4f, 1.0f) : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
-		ImGui::TextColored(colorValue, "%s", m_statusMessage.c_str());
-	}
-
-	if (!hasActiveLevel)
-	{
-		ImGui::BeginDisabled();
-	}
-
-	const float buttonWidth = ImGui::GetContentRegionAvail().x;
-	if (ImGui::Button("Save Defaults", ImVec2(buttonWidth, 0.0f)))
-	{
-		m_bLastSaveSucceeded = m_levelManager->SaveActiveLevelLightingDefaults();
-		m_statusMessage = m_bLastSaveSucceeded ? "Saved lighting defaults" : "Failed to save lighting defaults";
-	}
-
-	if (!hasActiveLevel)
-	{
-		ImGui::EndDisabled();
-	}
 }

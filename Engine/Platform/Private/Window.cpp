@@ -3,6 +3,8 @@
 #include "Platform/Public/PlatformCVars.h"
 #include "Diagnostics/Log.h"
 
+#include <dwmapi.h>
+
 Window::Window(std::string_view windowTitle)
 {
 	m_hInstance = GetModuleHandleW(nullptr);
@@ -52,16 +54,13 @@ void Window::RegisterWindowClass()
 
 void Window::CreateWindowHandle(std::string_view title)
 {
-	constexpr DWORD kWindowStyle = WS_OVERLAPPEDWINDOW;
-	constexpr DWORD kWindowExStyle = WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW;
-
 	const std::wstring wideTitle(title.begin(), title.end());
 
 	m_hWnd = CreateWindowExW(
-	    kWindowExStyle,
+	    kWindowedExStyle,
 	    kWindowClassName,
 	    wideTitle.c_str(),
-	    kWindowStyle,
+	    kWindowedStyle,
 	    CW_USEDEFAULT,
 	    CW_USEDEFAULT,
 	    CW_USEDEFAULT,
@@ -75,6 +74,9 @@ void Window::CreateWindowHandle(std::string_view title)
 	{
 		LOG_FATAL("Window: Failed to create window");
 	}
+
+	const MARGINS margins{-1, -1, -1, -1};
+	DwmExtendFrameIntoClientArea(m_hWnd, &margins);
 }
 
 void Window::ApplyInitialWindowState()
@@ -93,37 +95,43 @@ void Window::ApplyInitialWindowState()
 
 void Window::PollEvents() noexcept
 {
+	ApplyPendingShowCommand();
+
 	MSG msg{};
-	while (PeekMessageW(&msg, m_hWnd, 0, 0, PM_REMOVE))
+	while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
 	}
 }
 
-uint32_t Window::GetWidth() const noexcept
+void Window::WaitForEvent() noexcept
 {
-	RECT rect{};
-	if (m_hWnd && GetClientRect(m_hWnd, &rect))
+	if (m_hWnd == nullptr || m_bShouldClose)
 	{
-		return static_cast<uint32_t>(rect.right - rect.left);
+		return;
 	}
-	return 0;
+
+	WaitMessage();
 }
 
-uint32_t Window::GetHeight() const noexcept
+int Window::GetResizeBorderThickness() noexcept
 {
-	RECT rect{};
-	if (m_hWnd && GetClientRect(m_hWnd, &rect))
-	{
-		return static_cast<uint32_t>(rect.bottom - rect.top);
-	}
-	return 0;
+	return GetSystemMetrics(SM_CXFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
+}
+
+MONITORINFO Window::GetCurrentMonitorInfo() const noexcept
+{
+	MONITORINFO monitorInfo{};
+	monitorInfo.cbSize = sizeof(MONITORINFO);
+	HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
+	GetMonitorInfoW(hMonitor, &monitorInfo);
+	return monitorInfo;
 }
 
 void Window::SetFullScreen(bool bFullScreen)
 {
-	if (m_bIsFullScreen == bFullScreen)
+	if (IsFullScreen() == bFullScreen)
 	{
 		return;
 	}
@@ -135,22 +143,17 @@ void Window::SetFullScreen(bool bFullScreen)
 		SetWindowLongW(m_hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 		SetWindowLongW(m_hWnd, GWL_EXSTYLE, WS_EX_APPWINDOW);
 
-		HMONITOR hMonitor = MonitorFromWindow(m_hWnd, MONITOR_DEFAULTTONEAREST);
-		MONITORINFO monitorInfo{};
-		monitorInfo.cbSize = sizeof(MONITORINFO);
+		m_state = State::FullScreen;
 
-		if (GetMonitorInfoW(hMonitor, &monitorInfo))
-		{
-			const RECT& rc = monitorInfo.rcMonitor;
-			SetWindowPos(m_hWnd, HWND_TOP, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED | SWP_NOACTIVATE);
-		}
+		const RECT rc = GetCurrentMonitorInfo().rcMonitor;
+		SetWindowPos(m_hWnd, HWND_TOP, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
 		ShowWindow(m_hWnd, SW_SHOW);
 	}
 	else
 	{
-		SetWindowLongW(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-		SetWindowLongW(m_hWnd, GWL_EXSTYLE, WS_EX_APPWINDOW | WS_EX_OVERLAPPEDWINDOW);
+		SetWindowLongW(m_hWnd, GWL_STYLE, kWindowedStyle | WS_VISIBLE);
+		SetWindowLongW(m_hWnd, GWL_EXSTYLE, kWindowedExStyle);
 
 		SetWindowPos(
 		    m_hWnd,
@@ -161,10 +164,66 @@ void Window::SetFullScreen(bool bFullScreen)
 		    m_windowedRect.bottom - m_windowedRect.top,
 		    SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
+		m_state = State::Normal;
 		ShowWindow(m_hWnd, SW_SHOWMAXIMIZED);
 	}
+}
 
-	m_bIsFullScreen = bFullScreen;
+void Window::ToggleFullScreen()
+{
+	SetFullScreen(!IsFullScreen());
+}
+
+void Window::Minimize() noexcept
+{
+	if (m_hWnd != nullptr)
+	{
+		m_pendingShowCommand = SW_MINIMIZE;
+	}
+}
+
+void Window::Maximize() noexcept
+{
+	if (m_hWnd != nullptr)
+	{
+		m_pendingShowCommand = SW_MAXIMIZE;
+	}
+}
+
+void Window::Restore() noexcept
+{
+	if (m_hWnd != nullptr)
+	{
+		m_pendingShowCommand = SW_RESTORE;
+	}
+}
+
+void Window::ToggleMaximizeRestore() noexcept
+{
+	if (m_hWnd == nullptr || IsFullScreen())
+	{
+		return;
+	}
+
+	if (IsMaximized())
+	{
+		Restore();
+	}
+	else
+	{
+		Maximize();
+	}
+}
+
+void Window::BeginDragMove() noexcept
+{
+	if (m_hWnd == nullptr || IsFullScreen())
+	{
+		return;
+	}
+
+	ReleaseCapture();
+	SendMessageW(m_hWnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
 }
 
 LRESULT CALLBACK Window::WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -204,6 +263,86 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 	switch (msg)
 	{
+		case WM_NCCALCSIZE:
+		{
+			if (wParam == TRUE)
+			{
+				if (IsZoomed(m_hWnd))
+				{
+					auto* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+					params->rgrc[0] = GetCurrentMonitorInfo().rcWork;
+				}
+				return 0;
+			}
+
+			return 0;
+		}
+
+		case WM_NCHITTEST:
+		{
+			if (IsFullScreen() || IsZoomed(m_hWnd))
+			{
+				break;
+			}
+
+			POINT cursorPoint{
+				static_cast<LONG>(static_cast<short>(LOWORD(lParam))),
+				static_cast<LONG>(static_cast<short>(HIWORD(lParam)))};
+			RECT windowRect{};
+			if (!GetWindowRect(m_hWnd, &windowRect))
+			{
+				break;
+			}
+
+			const int border = GetResizeBorderThickness();
+			const bool onLeft = cursorPoint.x >= windowRect.left && cursorPoint.x < windowRect.left + border;
+			const bool onRight = cursorPoint.x <= windowRect.right && cursorPoint.x > windowRect.right - border;
+			const bool onTop = cursorPoint.y >= windowRect.top && cursorPoint.y < windowRect.top + border;
+			const bool onBottom = cursorPoint.y <= windowRect.bottom && cursorPoint.y > windowRect.bottom - border;
+
+			if (onTop && onLeft)
+			{
+				return HTTOPLEFT;
+			}
+
+			if (onTop && onRight)
+			{
+				return HTTOPRIGHT;
+			}
+
+			if (onBottom && onLeft)
+			{
+				return HTBOTTOMLEFT;
+			}
+
+			if (onBottom && onRight)
+			{
+				return HTBOTTOMRIGHT;
+			}
+
+			if (onLeft)
+			{
+				return HTLEFT;
+			}
+
+			if (onRight)
+			{
+				return HTRIGHT;
+			}
+
+			if (onTop)
+			{
+				return HTTOP;
+			}
+
+			if (onBottom)
+			{
+				return HTBOTTOM;
+			}
+
+			break;
+		}
+
 		case WM_SIZE:
 			OnSizeChanged(wParam, LOWORD(lParam), HIWORD(lParam));
 			return 0;
@@ -220,7 +359,7 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 			if (wParam == VK_F11)
 			{
-				SetFullScreen(!m_bIsFullScreen);
+				ToggleFullScreen();
 				return 0;
 			}
 			break;
@@ -229,7 +368,7 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 			if (wParam == VK_RETURN && (lParam & (1 << 29)))
 			{
-				SetFullScreen(!m_bIsFullScreen);
+				ToggleFullScreen();
 				return 0;
 			}
 			break;
@@ -237,35 +376,57 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_GETMINMAXINFO:
 		{
 			auto* minMaxInfo = reinterpret_cast<MINMAXINFO*>(lParam);
-			minMaxInfo->ptMinTrackSize.x = 320;
-			minMaxInfo->ptMinTrackSize.y = 240;
-			return 0;
+			minMaxInfo->ptMinTrackSize.x = kMinWindowWidth;
+			minMaxInfo->ptMinTrackSize.y = kMinWindowHeight;
+			const MONITORINFO mi = GetCurrentMonitorInfo();
+			minMaxInfo->ptMaxPosition.x = mi.rcWork.left - mi.rcMonitor.left;
+			minMaxInfo->ptMaxPosition.y = mi.rcWork.top - mi.rcMonitor.top;
+			minMaxInfo->ptMaxSize.x = mi.rcWork.right - mi.rcWork.left;
+			minMaxInfo->ptMaxSize.y = mi.rcWork.bottom - mi.rcWork.top;
+			break;
 		}
 
-		case WM_ACTIVATEAPP:
-
-			break;
-
 		case WM_ERASEBKGND:
-
 			return 1;
 	}
 
 	return DefWindowProcW(m_hWnd, msg, wParam, lParam);
 }
 
-void Window::OnSizeChanged(WPARAM sizeType, [[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height)
+void Window::OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height)
 {
-	switch (sizeType)
-	{
-		case SIZE_MINIMIZED:
-			m_bIsMinimized = true;
-			break;
+	m_clientWidth = width;
+	m_clientHeight = height;
 
-		case SIZE_RESTORED:
-		case SIZE_MAXIMIZED:
-			m_bIsMinimized = false;
-			OnResized.Broadcast();
-			break;
+	if (m_state != State::FullScreen)
+	{
+		switch (sizeType)
+		{
+			case SIZE_MINIMIZED:
+				m_state = State::Minimized;
+				break;
+
+			case SIZE_RESTORED:
+				m_state = State::Normal;
+				break;
+
+			case SIZE_MAXIMIZED:
+				m_state = State::Maximized;
+				break;
+		}
 	}
+
+	OnResized.Broadcast();
+}
+
+void Window::ApplyPendingShowCommand() noexcept
+{
+	if (m_pendingShowCommand < 0)
+	{
+		return;
+	}
+
+	const int command = m_pendingShowCommand;
+	m_pendingShowCommand = -1;
+	ShowWindow(m_hWnd, command);
 }

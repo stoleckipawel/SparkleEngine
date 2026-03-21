@@ -95,7 +95,7 @@ namespace Lighting
 		}
 	}
 
-	float3 CalculateLighting(
+	float3 Calculate(
 	    PS::Input psInput,
 	    Material::Properties matProps,
 	    out float3 outDirectDiffuse,
@@ -104,6 +104,6 @@ namespace Lighting
 	{
 		const float3 viewDir = normalize(Camera.Position - psInput.PositionWorld);
 		CalculateDirect(viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
-		return (outDirectDiffuse + outIndirectDiffuse) + outDirectSubsurface + matProps.Emissive;
+		return outDirectDiffuse + outDirectSubsurface + matProps.Emissive;
 	}
 }

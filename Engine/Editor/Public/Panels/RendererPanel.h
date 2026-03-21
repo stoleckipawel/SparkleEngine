@@ -17,6 +17,7 @@ class RendererPanel final
 	RendererPanel& operator=(RendererPanel&&) = delete;
 
 	void SetWidth(float widthPixels) noexcept;
+	void SetTopInset(float topInsetPixels) noexcept;
 
 	void SetSection(std::unique_ptr<UIRendererSection> section) noexcept;
 
@@ -29,5 +30,6 @@ class RendererPanel final
 	std::size_t FindSectionIndex(UIRendererSectionId id) const noexcept;
 
 	float m_widthPixels = 456.0f;
+	float m_topInsetPixels = 0.0f;
 	std::vector<std::unique_ptr<UIRendererSection>> m_sections;
 };

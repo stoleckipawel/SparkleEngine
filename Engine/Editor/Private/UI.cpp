@@ -8,11 +8,11 @@
 #include "Runtime/Level/LevelManager.h"
 #include "Timer.h"
 
+#include "Panels/MainMenuBarPanel.h"
 #include "Panels/RendererPanel.h"
 #include "Sections/CameraSection.h"
 #include "Sections/LightingSection.h"
-#include "Sections/SceneSection.h"
-#include "Sections/StatsOverlay.h"
+
 #include "Sections/ViewMode.h"
 #include "Sections/TimeControls.h"
 #include "Style/SparkleUiTheme.h"
@@ -128,13 +128,8 @@ bool UI::InitializeD3D12Backend()
 
 void UI::InitializeDefaultPanels()
 {
+	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	m_rendererPanel = std::make_unique<RendererPanel>();
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Stats))
-		m_rendererPanel->SetSection(std::make_unique<StatsOverlay>(*m_timer));
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Scene) && m_levelManager != nullptr)
-		m_rendererPanel->SetSection(std::make_unique<SceneSection>(*m_levelManager));
 
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::Camera) && m_levelManager != nullptr)
 	{
@@ -177,9 +172,18 @@ void UI::NewFrame()
 void UI::Build()
 {
 	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
+	float mainMenuBarHeight = 0.0f;
+	if (m_mainMenuBar)
+	{
+		m_mainMenuBar->BuildUI();
+		mainMenuBarHeight = m_mainMenuBar->GetHeight();
+	}
 
 	if (m_rendererPanel)
+	{
+		m_rendererPanel->SetTopInset(mainMenuBarHeight);
 		m_rendererPanel->BuildUI(disableInteraction);
+	}
 
 #if USE_IMGUI_DEMO_WINDOW
 	bool showDemoWindow = true;

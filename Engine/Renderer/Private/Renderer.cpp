@@ -22,7 +22,6 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
 #include "PipelineStateManager.h"
-#include "RendererWindowObserver.h"
 #include "SceneData/MaterialCacheManager.h"
 #include "SceneData/SceneRenderStateCoordinator.h"
 #include "SceneData/RenderSceneViewBuilder.h"
@@ -34,7 +33,7 @@ Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelMana
 
 	InitializeSceneSystems(levelManager);
 	InitializeFrameGraph();
-	InitializeWindowObserver();
+	BindWindowResizeEvent();
 
 	PostLoad();
 }
@@ -98,31 +97,32 @@ void Renderer::InitializeFrameGraph() noexcept
 	m_frameGraph = frameGraphBuilder.Build();
 }
 
-void Renderer::InitializeWindowObserver() noexcept
+void Renderer::BindWindowResizeEvent() noexcept
 {
-	m_windowObserver = std::make_unique<RendererWindowObserver>(
-	    *m_window,
-	    [this]()
-	    {
-		    m_rhi->Flush();
-		    m_swapChain->Resize();
-		    RefreshFrameExecution();
-	    });
+	auto handle = m_window->OnResized.Add([this]() { m_bResizePending = true; });
+	m_resizeHandle = ScopedEventHandle(m_window->OnResized, handle);
 }
 
 void Renderer::RefreshFrameExecution() noexcept
 {
-	if (m_rhi)
-	{
-		m_rhi->Flush();
-	}
-
 	m_frameGraph.reset();
 	InitializeFrameGraph();
 }
 
 void Renderer::BeginFrame() noexcept
 {
+	if (m_bResizePending)
+	{
+		m_bResizePending = false;
+
+		if (m_window->HasValidSize())
+		{
+			m_rhi->Flush();
+			m_swapChain->Resize();
+			RefreshFrameExecution();
+		}
+	}
+
 	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
 	m_rhi->SetCurrentFrameIndex(frameIndex);
 	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);

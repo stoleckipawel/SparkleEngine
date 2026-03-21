@@ -16,8 +16,7 @@ void main(in PS::Input Input, out PS::Output Output)
 	float3 DirectDiffuse;
 	float3 DirectSubsurface;
 	float3 DirectSpecular;
-	float3 Lit =
-	    Forward::CalculateLighting(Input, MatProps, DirectDiffuse, DirectSubsurface, DirectSpecular);
+	float3 Lit = Lighting::Calculate(Input, MatProps, DirectDiffuse, DirectSubsurface, DirectSpecular);
 
 
 	const float3 FinalColor = ViewMode::Resolve(Lit, MatProps, DirectDiffuse, DirectSpecular, DirectSubsurface);

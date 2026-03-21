@@ -42,9 +42,6 @@ void CameraSection::BuildUI()
 		return;
 	}
 
-	const bool hasActiveLevel = m_levelManager->HasActiveLevel();
-	const ImGuiStyle& style = ImGui::GetStyle();
-
 	DirectX::XMFLOAT3 position = gameCameraController->GetPosition();
 	float positionValues[3] = {position.x, position.y, position.z};
 	ImGui::PushID("Position");
@@ -94,34 +91,4 @@ void CameraSection::BuildUI()
 		gameCameraController->SetMoveSpeed(moveSpeed);
 	}
 	ImGui::PopID();
-
-	if (!m_statusMessage.empty())
-	{
-		const ImVec4 color = m_bLastSaveSucceeded ? ImVec4(0.3f, 0.8f, 0.4f, 1.0f) : ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
-		ImGui::TextColored(color, "%s", m_statusMessage.c_str());
-	}
-
-	if (!hasActiveLevel)
-	{
-		ImGui::BeginDisabled();
-	}
-
-	const float buttonWidth = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
-	if (ImGui::Button("Reset To Defaults", ImVec2(buttonWidth, 0.0f)))
-	{
-		m_bLastSaveSucceeded = m_levelManager->ResetActiveLevelCamera();
-		m_statusMessage = m_bLastSaveSucceeded ? "Reset camera to level defaults" : "Failed to reset camera";
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Save Defaults", ImVec2(buttonWidth, 0.0f)))
-	{
-		const CameraDesc cameraDesc = gameCameraController->CaptureCurrentCameraDesc();
-		m_bLastSaveSucceeded = m_levelManager->SaveActiveLevelCameraDefaults(cameraDesc);
-		m_statusMessage = m_bLastSaveSucceeded ? "Saved camera defaults" : "Failed to save camera defaults";
-	}
-
-	if (!hasActiveLevel)
-	{
-		ImGui::EndDisabled();
-	}
 }

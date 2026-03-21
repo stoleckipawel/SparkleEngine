@@ -1,8 +1,6 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
-#include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 #include "Level/LevelRegistry.h"
 #include "Runtime/Level/LevelChangeEvents.h"
 
@@ -42,9 +40,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	const Level* GetActiveLevel() const noexcept { return m_activeLevel; }
 	GameSceneLightingState* GetGameSceneLightingState() noexcept;
 	const GameSceneLightingState* GetGameSceneLightingState() const noexcept;
-	bool ResetActiveLevelCamera() noexcept;
-	bool SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept;
-	bool SaveActiveLevelLightingDefaults() noexcept;
+	bool SaveActiveLevel() noexcept;
 
   private:
 	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }

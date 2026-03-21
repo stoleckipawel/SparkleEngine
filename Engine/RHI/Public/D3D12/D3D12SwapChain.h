@@ -61,10 +61,15 @@ class D3D12SwapChain final
 	UINT ComputeSwapChainFlags() const;
 
   private:
+	UINT GetWindowWidth() const noexcept;
+	UINT GetWindowHeight() const noexcept;
+	bool HasValidWindowSize() const noexcept;
+	void ResizeBuffersToWindow();
 	void CreateRenderTargetViews();
 	void AllocateHandles();
 	void Create();
 	void ReleaseBuffers();
+	void ReleaseRenderTargetHandles() noexcept;
 
 	D3D12Rhi& m_rhi;
 	UINT m_frameInFlightIndex = 0;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Core/Public/Math/MathUtils.h"
 #include "RenderConfig.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
@@ -39,7 +38,7 @@ class SPARKLE_ENGINE_API GameSceneLightingState final
 		}
 
 		m_lightingDesc.directionalLightCount = std::max(m_lightingDesc.directionalLightCount, static_cast<std::uint32_t>(index + 1));
-		m_lightingDesc.directionalLights[index] = SanitizeDirectionalLight(directionalLight);
+		m_lightingDesc.directionalLights[index] = DirectionalLightDesc::Sanitize(directionalLight);
 	}
 
 	void ApplyLevelLightingDesc(const LevelLightingDesc& lightingDesc) noexcept
@@ -57,17 +56,6 @@ class SPARKLE_ENGINE_API GameSceneLightingState final
 
 	void Reset() noexcept { m_lightingDesc = {}; }
 
-  private:
-	static DirectionalLightDesc SanitizeDirectionalLight(const DirectionalLightDesc& directionalLight) noexcept
-	{
-		DirectionalLightDesc sanitized = directionalLight;
-		sanitized.direction = MathUtils::Normalize3(sanitized.direction, {0.0f, -1.0f, 0.0f});
-		sanitized.intensity = (std::max) (0.0f, sanitized.intensity);
-		sanitized.color.x = std::clamp(sanitized.color.x, 0.0f, 1.0f);
-		sanitized.color.y = std::clamp(sanitized.color.y, 0.0f, 1.0f);
-		sanitized.color.z = std::clamp(sanitized.color.z, 0.0f, 1.0f);
-		return sanitized;
-	}
-
+	private:
 	LevelLightingDesc m_lightingDesc = {};
 };

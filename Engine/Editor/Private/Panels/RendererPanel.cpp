@@ -19,6 +19,11 @@ void RendererPanel::SetWidth(float widthPixels) noexcept
 	m_widthPixels = widthPixels;
 }
 
+void RendererPanel::SetTopInset(float topInsetPixels) noexcept
+{
+	m_topInsetPixels = topInsetPixels;
+}
+
 std::size_t RendererPanel::FindSectionIndex(UIRendererSectionId id) const noexcept
 {
 	for (std::size_t i = 0; i < m_sections.size(); ++i)
@@ -67,8 +72,8 @@ void RendererPanel::BuildUI(bool disableInteraction)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - m_widthPixels, 0.0f), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, io.DisplaySize.y), ImGuiCond_Always);
+	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - m_widthPixels, m_topInsetPixels), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, io.DisplaySize.y - m_topInsetPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.98f);
 
 	ImGui::Begin(

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
+#include "Events/ScopedEventHandle.h"
 
 #include <memory>
 
@@ -23,7 +24,6 @@ class Window;
 class UI;
 class TextureManager;
 class PipelineStateManager;
-class RendererWindowObserver;
 class SceneRenderStateCoordinator;
 class MaterialCacheManager;
 class RenderSceneViewBuilder;
@@ -46,7 +46,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void InitializeCoreSystems(LevelManager& levelManager) noexcept;
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
 	void InitializeFrameGraph() noexcept;
-	void InitializeWindowObserver() noexcept;
+	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
@@ -74,5 +74,6 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
-	std::unique_ptr<RendererWindowObserver> m_windowObserver;
+	ScopedEventHandle m_resizeHandle;
+	bool m_bResizePending = false;
 };

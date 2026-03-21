@@ -31,26 +31,30 @@ void App::Initialize()
 	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 }
 
-void App::BeginFrame()
-{
-	m_inputSystem->BeginFrame();
-	m_window->PollEvents();
-	m_inputSystem->ProcessDeferredEvents();
-	m_gameCameraController->Update();
-}
-
-void App::EndFrame()
-{
-	m_inputSystem->EndFrame();
-}
-
 void App::EngineLoop()
 {
-	while (!m_window->ShouldClose())
+	while (true)
 	{
-		BeginFrame();
+		m_inputSystem->BeginFrame();
+		m_window->PollEvents();
+		m_inputSystem->ProcessDeferredEvents();
+
+		if (m_window->ShouldClose())
+		{
+			m_inputSystem->EndFrame();
+			return;
+		}
+
+		if (m_window->IsMinimized())
+		{
+			m_inputSystem->EndFrame();
+			m_window->WaitForEvent();
+			continue;
+		}
+
+		m_gameCameraController->Update();
 		m_renderer->OnRender();
-		EndFrame();
+		m_inputSystem->EndFrame();
 	}
 }
 

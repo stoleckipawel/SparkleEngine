@@ -27,8 +27,6 @@ class SPARKLE_APPLICATION_API App
 
   private:
 	void Initialize();
-	void BeginFrame();
-	void EndFrame();
 	void EngineLoop();
 
 	std::unique_ptr<Timer> m_timer;

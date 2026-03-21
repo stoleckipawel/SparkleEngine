@@ -7,11 +7,12 @@
 #include <d3d12.h>
 
 #include <memory>
+#include <string>
 
 class Timer;
+class MainMenuBarPanel;
 class RendererPanel;
 class UIRendererSection;
-class StatsOverlay;
 class LevelManager;
 class Window;
 class D3D12DescriptorHeapManager;
@@ -61,6 +62,7 @@ class SPARKLE_EDITOR_API UI final
 
 	void SetupDPIScaling() noexcept;
 
+	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
 	std::unique_ptr<RendererPanel> m_rendererPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;

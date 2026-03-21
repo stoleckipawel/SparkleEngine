@@ -8,7 +8,7 @@ Level::Level(LevelDesc levelDesc, std::filesystem::path sourcePath) : m_levelDes
 {
 }
 
-void Level::Initialize(GameCameraController* gameCameraController, GameSceneLightingState* lightingState) const noexcept
+void Level::ApplyToRuntime(GameCameraController* gameCameraController, GameSceneLightingState* lightingState) const noexcept
 {
 	if (gameCameraController != nullptr)
 	{
@@ -18,5 +18,18 @@ void Level::Initialize(GameCameraController* gameCameraController, GameSceneLigh
 	if (lightingState != nullptr)
 	{
 		lightingState->ApplyLevelLightingDesc(m_levelDesc.lightingDesc);
+	}
+}
+
+void Level::CaptureFromRuntime(const GameCameraController* gameCameraController, const GameSceneLightingState* lightingState) noexcept
+{
+	if (gameCameraController != nullptr)
+	{
+		m_levelDesc.cameraDesc = gameCameraController->CaptureCurrentCameraDesc();
+	}
+
+	if (lightingState != nullptr)
+	{
+		m_levelDesc.lightingDesc = lightingState->CaptureLevelLightingDesc();
 	}
 }

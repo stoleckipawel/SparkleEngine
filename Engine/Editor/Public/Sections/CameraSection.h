@@ -24,6 +24,4 @@ class CameraSection final : public UIRendererSection
 
   private:
 	LevelManager* m_levelManager = nullptr;
-	std::string m_statusMessage;
-	bool m_bLastSaveSucceeded = false;
 };

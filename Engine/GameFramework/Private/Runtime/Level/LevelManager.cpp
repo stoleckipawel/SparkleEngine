@@ -111,75 +111,26 @@ const GameSceneLightingState* LevelManager::GetGameSceneLightingState() const no
 	return m_gameScene != nullptr ? &m_gameScene->GetLightingState() : nullptr;
 }
 
-bool LevelManager::ResetActiveLevelCamera() noexcept
+bool LevelManager::SaveActiveLevel() noexcept
 {
 	if (m_activeLevel == nullptr)
 	{
-		LOG_WARNING("LevelManager: Cannot reset camera because there is no active level");
+		LOG_WARNING("LevelManager: Cannot save level state because there is no active level");
 		return false;
 	}
 
-	if (m_gameCameraController == nullptr)
-	{
-		LOG_WARNING("LevelManager: Cannot reset camera because no camera controller is registered");
-		return false;
-	}
-
-	InitializeActiveLevel();
-	return true;
-}
-
-bool LevelManager::SaveActiveLevelCameraDefaults(const CameraDesc& cameraDesc) noexcept
-{
-	if (m_activeLevel == nullptr)
-	{
-		LOG_WARNING("LevelManager: Cannot save camera defaults because there is no active level");
-		return false;
-	}
-
-	m_activeLevel->SetInitialCamera(cameraDesc);
+	m_activeLevel->CaptureFromRuntime(m_gameCameraController, GetGameSceneLightingState());
 
 	std::string errorMessage;
 	if (!m_levelRegistry.SaveLevel(*m_activeLevel, &errorMessage))
 	{
 		LOG_WARNING(
-		    "LevelManager: Failed to persist camera defaults for level '" + std::string(m_activeLevel->GetName()) + "'" +
+		    "LevelManager: Failed to persist state for level '" + std::string(m_activeLevel->GetName()) + "'" +
 		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
 		return false;
 	}
 
-	LOG_INFO("LevelManager: Saved camera defaults for level '" + std::string(m_activeLevel->GetName()) + "'");
-	return true;
-}
-
-bool LevelManager::SaveActiveLevelLightingDefaults() noexcept
-{
-	if (m_activeLevel == nullptr)
-	{
-		LOG_WARNING("LevelManager: Cannot save lighting defaults because there is no active level");
-		return false;
-	}
-
-	const GameSceneLightingState* lightingState = GetGameSceneLightingState();
-	if (lightingState == nullptr)
-	{
-		LOG_WARNING("LevelManager: Cannot save lighting defaults because scene lighting state is unavailable");
-		return false;
-	}
-
-	const LevelLightingDesc lightingDesc = lightingState->CaptureLevelLightingDesc();
-	m_activeLevel->SetInitialLighting(lightingDesc);
-
-	std::string errorMessage;
-	if (!m_levelRegistry.SaveLevel(*m_activeLevel, &errorMessage))
-	{
-		LOG_WARNING(
-		    "LevelManager: Failed to persist lighting defaults for level '" + std::string(m_activeLevel->GetName()) + "'" +
-		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
-		return false;
-	}
-
-	LOG_INFO("LevelManager: Saved lighting defaults for level '" + std::string(m_activeLevel->GetName()) + "'");
+	LOG_INFO("LevelManager: Saved all persisted state for level '" + std::string(m_activeLevel->GetName()) + "'");
 	return true;
 }
 
@@ -213,7 +164,7 @@ void LevelManager::InitializeActiveLevel() noexcept
 		return;
 	}
 
-	m_activeLevel->Initialize(m_gameCameraController, GetGameSceneLightingState());
+	m_activeLevel->ApplyToRuntime(m_gameCameraController, GetGameSceneLightingState());
 }
 
 void LevelManager::ProcessLevelChangeRequest(Level& requestedLevel) noexcept
