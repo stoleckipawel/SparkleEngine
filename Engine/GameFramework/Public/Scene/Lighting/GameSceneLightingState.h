@@ -56,6 +56,6 @@ class SPARKLE_ENGINE_API GameSceneLightingState final
 
 	void Reset() noexcept { m_lightingDesc = {}; }
 
-	private:
+  private:
 	LevelLightingDesc m_lightingDesc = {};
 };

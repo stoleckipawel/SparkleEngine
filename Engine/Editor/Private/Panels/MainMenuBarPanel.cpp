@@ -8,6 +8,15 @@
 #include <imgui.h>
 #include <cstdio>
 
+namespace
+{
+	constexpr ImU32 kIconColor = IM_COL32(235, 235, 235, 255);
+
+	constexpr ImVec4 kButtonBase{0.14f, 0.14f, 0.16f, 1.0f};
+	constexpr ImVec4 kButtonHovered{0.22f, 0.22f, 0.25f, 1.0f};
+	constexpr ImVec4 kButtonActive{0.30f, 0.30f, 0.34f, 1.0f};
+} // namespace
+
 MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) noexcept
 {
 	SetLevelManager(levelManager);
@@ -36,8 +45,7 @@ void MainMenuBarPanel::DrawMinimizeIcon() const noexcept
 	const ImVec2 max = ImGui::GetItemRectMax();
 	const float y = min.y + ((max.y - min.y) * 0.68f);
 	const float padding = (max.x - min.x) * 0.30f;
-	const ImU32 color = IM_COL32(235, 235, 235, 255);
-	drawList->AddLine(ImVec2(min.x + padding, y), ImVec2(max.x - padding, y), color, 1.6f);
+	drawList->AddLine(ImVec2(min.x + padding, y), ImVec2(max.x - padding, y), kIconColor, 1.6f);
 }
 
 void MainMenuBarPanel::DrawMaximizeIcon() const noexcept
@@ -49,17 +57,16 @@ void MainMenuBarPanel::DrawMaximizeIcon() const noexcept
 	const float padding = width * 0.28f;
 	const ImVec2 topLeft(min.x + padding, min.y + padding);
 	const ImVec2 bottomRight(max.x - padding, max.y - padding);
-	const ImU32 color = IM_COL32(235, 235, 235, 255);
 
 	if (!m_window->IsMaximized())
 	{
-		drawList->AddRect(topLeft, bottomRight, color, 0.0f, 0, 1.4f);
+		drawList->AddRect(topLeft, bottomRight, kIconColor, 0.0f, 0, 1.4f);
 		return;
 	}
 
 	const float offset = width * 0.14f;
-	drawList->AddRect(ImVec2(topLeft.x + offset, topLeft.y), ImVec2(bottomRight.x, bottomRight.y - offset), color, 0.0f, 0, 1.2f);
-	drawList->AddRect(ImVec2(topLeft.x, topLeft.y + offset), ImVec2(bottomRight.x - offset, bottomRight.y), color, 0.0f, 0, 1.2f);
+	drawList->AddRect(ImVec2(topLeft.x + offset, topLeft.y), ImVec2(bottomRight.x, bottomRight.y - offset), kIconColor, 0.0f, 0, 1.2f);
+	drawList->AddRect(ImVec2(topLeft.x, topLeft.y + offset), ImVec2(bottomRight.x - offset, bottomRight.y), kIconColor, 0.0f, 0, 1.2f);
 }
 
 void MainMenuBarPanel::DrawCloseIcon() const noexcept
@@ -68,9 +75,8 @@ void MainMenuBarPanel::DrawCloseIcon() const noexcept
 	const ImVec2 min = ImGui::GetItemRectMin();
 	const ImVec2 max = ImGui::GetItemRectMax();
 	const float padding = (max.x - min.x) * 0.30f;
-	const ImU32 color = IM_COL32(235, 235, 235, 255);
-	drawList->AddLine(ImVec2(min.x + padding, min.y + padding), ImVec2(max.x - padding, max.y - padding), color, 1.6f);
-	drawList->AddLine(ImVec2(max.x - padding, min.y + padding), ImVec2(min.x + padding, max.y - padding), color, 1.6f);
+	drawList->AddLine(ImVec2(min.x + padding, min.y + padding), ImVec2(max.x - padding, max.y - padding), kIconColor, 1.6f);
+	drawList->AddLine(ImVec2(max.x - padding, min.y + padding), ImVec2(min.x + padding, max.y - padding), kIconColor, 1.6f);
 }
 
 void MainMenuBarPanel::SetLevelManager(LevelManager* levelManager) noexcept
@@ -164,9 +170,9 @@ void MainMenuBarPanel::BuildWindowControls() noexcept
 	if (DrawTitleBarButton(
 	        "##MinimizeWindow",
 	        ImVec2(buttonWidth, buttonHeight),
-	        ImVec4(0.14f, 0.14f, 0.16f, 1.0f),
-	        ImVec4(0.22f, 0.22f, 0.25f, 1.0f),
-	        ImVec4(0.30f, 0.30f, 0.34f, 1.0f)))
+	        kButtonBase,
+	        kButtonHovered,
+	        kButtonActive))
 	{
 		m_window->Minimize();
 	}
@@ -176,9 +182,9 @@ void MainMenuBarPanel::BuildWindowControls() noexcept
 	if (DrawTitleBarButton(
 	        "##ToggleMaximizeWindow",
 	        ImVec2(buttonWidth, buttonHeight),
-	        ImVec4(0.14f, 0.14f, 0.16f, 1.0f),
-	        ImVec4(0.22f, 0.22f, 0.25f, 1.0f),
-	        ImVec4(0.30f, 0.30f, 0.34f, 1.0f)))
+	        kButtonBase,
+	        kButtonHovered,
+	        kButtonActive))
 	{
 		m_window->ToggleMaximizeRestore();
 	}

@@ -383,7 +383,7 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 			minMaxInfo->ptMaxPosition.y = mi.rcWork.top - mi.rcMonitor.top;
 			minMaxInfo->ptMaxSize.x = mi.rcWork.right - mi.rcWork.left;
 			minMaxInfo->ptMaxSize.y = mi.rcWork.bottom - mi.rcWork.top;
-			break;
+			return 0;
 		}
 
 		case WM_ERASEBKGND:
@@ -421,12 +421,12 @@ void Window::OnSizeChanged(WPARAM sizeType, uint32_t width, uint32_t height)
 
 void Window::ApplyPendingShowCommand() noexcept
 {
-	if (m_pendingShowCommand < 0)
+	if (m_pendingShowCommand == kNoShowCommand)
 	{
 		return;
 	}
 
 	const int command = m_pendingShowCommand;
-	m_pendingShowCommand = -1;
+	m_pendingShowCommand = kNoShowCommand;
 	ShowWindow(m_hWnd, command);
 }

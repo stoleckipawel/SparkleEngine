@@ -82,6 +82,7 @@ class SPARKLE_PLATFORM_API Window final
 	static constexpr DWORD kWindowedExStyle = WS_EX_APPWINDOW;
 	static constexpr LONG kMinWindowWidth = 320;
 	static constexpr LONG kMinWindowHeight = 240;
+	static constexpr int kNoShowCommand = -1;
 
 	HINSTANCE m_hInstance = nullptr;
 	HWND m_hWnd = nullptr;
@@ -91,6 +92,6 @@ class SPARKLE_PLATFORM_API Window final
 	uint32_t m_clientWidth = 0;
 	uint32_t m_clientHeight = 0;
 	State m_state = State::Normal;
-	int m_pendingShowCommand = -1;
+	int m_pendingShowCommand = kNoShowCommand;
 	bool m_bShouldClose = false;
 };
