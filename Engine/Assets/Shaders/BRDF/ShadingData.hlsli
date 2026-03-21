@@ -1,35 +1,35 @@
 #pragma once
 
-// =============================================================================
-// BRDF Common Types
-// =============================================================================
-// Shared structures and utilities used across all BRDF components.
-// =============================================================================
+
+
+
+
+
 
 namespace BRDF
 {
-	// =========================================================================
-	// Shading Data
-	// =========================================================================
-	// Pre-computed dot products for BRDF evaluation. Compute once per
-	// light/view pair and reuse across all BRDF terms.
+
+
+
+
+
 
 	struct ShadingData
 	{
-		float3 N;  // Surface normal (normalized)
-		float3 V;  // View direction, surface to camera (normalized)
-		float3 L;  // Light direction, surface to light (normalized)
-		float3 H;  // Half vector between V and L (normalized)
+		float3 N;
+		float3 V;
+		float3 L;
+		float3 H;
 
-		float NoL;  // saturate(dot(N, L)) - diffuse/specular falloff
-		float NoV;  // saturate(dot(N, V)) - Fresnel/geometry term
-		float NoH;  // saturate(dot(N, H)) - specular highlight peak
-		float VoH;  // saturate(dot(V, H)) - Fresnel term input
-		float LoH;  // saturate(dot(L, H)) - same as VoH by symmetry
+		float NoL;
+		float NoV;
+		float NoH;
+		float VoH;
+		float LoH;
 	};
 
-	// Compute all shading vectors and dot products from surface normal,
-	// view direction, and light direction.
+
+
 	ShadingData ComputeShadingData(float3 N, float3 V, float3 L)
 	{
 		ShadingData sd;
@@ -47,4 +47,4 @@ namespace BRDF
 		return sd;
 	}
 
-}  // namespace BRDF
+}

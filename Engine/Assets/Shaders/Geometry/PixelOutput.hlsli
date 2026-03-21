@@ -1,9 +1,9 @@
 #pragma once
 
-// =============================================================================
-// Pixel Shader Output Structure
-// =============================================================================
-// Render target outputs
+
+
+
+
 
 namespace PS
 {
@@ -11,4 +11,4 @@ namespace PS
 	{
 		float4 Color0 : SV_Target0;
 	};
-}  // namespace PS
+}

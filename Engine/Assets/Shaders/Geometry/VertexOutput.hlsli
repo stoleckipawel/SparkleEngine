@@ -1,9 +1,9 @@
 #pragma once
 
-// =============================================================================
-// Vertex Shader Output / Pixel Shader Input
-// =============================================================================
-// Data passed from vertex shader to pixel shader via interpolators
+
+
+
+
 
 namespace VS
 {
@@ -15,6 +15,6 @@ namespace VS
 		float3 NormalWorld : NORMAL;
 		float4 TangentWorld : TANGENT;
 		float3 BitangentWorld : BINORMAL;
-		float4 Position : SV_POSITION;  // Must be last (clip-space position)
+		float4 Position : SV_POSITION;
 	};
-}  // namespace VS
+}

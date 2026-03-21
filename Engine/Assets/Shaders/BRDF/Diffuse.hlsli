@@ -5,35 +5,35 @@
 #include "BRDF/Config.hlsli"
 #include "BRDF/ShadingData.hlsli"
 
-// =============================================================================
-// Diffuse BRDF
-// =============================================================================
-// Models light that enters the surface, scatters internally, and exits.
-// This is the "body" reflection as opposed to the "surface" (specular).
-// =============================================================================
+
+
+
+
+
+
 
 namespace BRDF
 {
 	namespace Diffuse
 	{
-		// -------------------------------------------------------------------------
-		// Lambertian Diffuse
-		// -------------------------------------------------------------------------
-		// Classic energy-conserving diffuse. Assumes uniform scattering in all
-		// directions. Simple but ignores view/roughness effects.
+
+
+
+
+
 		float3 Lambert(float3 albedo)
 		{
 			return albedo * INV_PI;
 		}
 
-		// -------------------------------------------------------------------------
-		// Disney/Burley Diffuse
-		// -------------------------------------------------------------------------
-		// Source: Burley, 2012 - Disney "Principled BRDF"
-		// https://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v2.pdf
-		//
-		// Adds roughness-dependent retro-reflection: rough surfaces appear
-		// brighter at grazing angles due to light bouncing back toward the source.
+
+
+
+
+
+
+
+
 		float3 Burley(float3 albedo, float roughness, float NoV, float NoL, float LoH)
 		{
 			const float f90 = 0.5f + 2.0f * roughness * LoH * LoH;
@@ -42,14 +42,14 @@ namespace BRDF
 			return albedo * INV_PI * lightScatter * viewScatter;
 		}
 
-		// -------------------------------------------------------------------------
-		// Oren-Nayar Diffuse
-		// -------------------------------------------------------------------------
-		// Source: Oren & Nayar, 1994 - "Generalization of Lambert's Reflectance Model"
-		// https://www.cs.cornell.edu/~srm/publications/OranNayar.pdf
-		//
-		// Physically-based rough surface model. Accounts for inter-reflection
-		// between surface facets. Good for cloth, concrete, rough plastics.
+
+
+
+
+
+
+
+
 		float3 OrenNayar(float3 albedo, float roughness, float NoV, float NoL, float3 N, float3 V, float3 L)
 		{
 			const float sigma2 = roughness * roughness;
@@ -68,14 +68,14 @@ namespace BRDF
 			return albedo * INV_PI * (A + B * cosPhiDiff * sinAlpha * tanBeta);
 		}
 
-		// -------------------------------------------------------------------------
-		// Chan Diffuse (Call of Duty: Modern Warfare)
-		// -------------------------------------------------------------------------
-		// Source: Chan, 2020 - "Material Advances in COD:MW"
-		// https://www.activision.com/cdn/research/s2020_materials_cod_notes_v2.pdf
-		//
-		// Blends standard diffuse with a subsurface-like term based on roughness.
-		// Designed for skin and organic materials.
+
+
+
+
+
+
+
+
 		float3 Chan(float3 albedo, float roughness, float NoV, float NoL, float LoH, float NoH)
 		{
 			const float f90 = 0.5f + 2.0f * roughness * LoH * LoH;
@@ -93,9 +93,9 @@ namespace BRDF
 			return albedo * INV_PI * lerp(Fd, ss, saturate(roughness));
 		}
 
-		// -------------------------------------------------------------------------
-		// Dispatchers
-		// -------------------------------------------------------------------------
+
+
+
 
 		float3 EvaluateDirect(float3 albedo, float roughness, ShadingData sd)
 		{
@@ -112,11 +112,11 @@ namespace BRDF
 #endif
 		}
 
-		// For indirect: always Lambert (diffuse IBL is pre-integrated assuming Lambert)
+
 		float3 EvaluateIndirect(float3 albedo)
 		{
 			return Lambert(albedo);
 		}
 
-	}  // namespace Diffuse
-}  // namespace BRDF
+	}
+}

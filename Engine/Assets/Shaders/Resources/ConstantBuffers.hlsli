@@ -3,70 +3,70 @@
 #include "Resources/CameraConstantBufferData.hlsli"
 #include "Resources/LightConstantBufferData.hlsli"
 
-// =============================================================================
-// Constant Buffer Definitions
-// =============================================================================
-// Layout: b0 = PerFrame, b1 = PerView, b2 = PerObject VS, b3 = PerObject PS
 
-// -----------------------------------------------------------------------------
-// Per-Frame CB (b0) — updated once per CPU frame, shared by all draws
-// -----------------------------------------------------------------------------
+
+
+
+
+
+
+
 cbuffer PerFrameConstantBufferData : register(b0)
 {
-	uint FrameIndex;        // Current frame number
-	float TotalTime;        // Seconds since engine start (unscaled)
-	float DeltaTime;        // Seconds since last frame (unscaled)
-	float ScaledTotalTime;  // Seconds of scaled/game time since start (stops when paused)
-	float ScaledDeltaTime;  // Seconds since last frame (scaled, 0 when paused)
-	uint ViewModeIndex;     // Current renderer debug view mode (see Debug/ViewModes.hlsli)
+	uint FrameIndex;
+	float TotalTime;
+	float DeltaTime;
+	float ScaledTotalTime;
+	float ScaledDeltaTime;
+	uint ViewModeIndex;
 
-	float2 ViewportSize;     // Render target width, height
-	float2 ViewportSizeInv;  // 1.0 / width, 1.0 / height
+	float2 ViewportSize;
+	float2 ViewportSizeInv;
 
-	// rest of 256-byte slot is intentionally unused/pad
+
 };
 
-// -----------------------------------------------------------------------------
-// Per-View CB (b1) — updated per camera/view (main, shadow, reflection, etc.)
-// -----------------------------------------------------------------------------
+
+
+
 cbuffer PerViewConstantBufferData : register(b1)
 {
-	row_major float4x4 ViewMTX;        // World -> View
-	row_major float4x4 ProjectionMTX;  // View -> Clip
-	row_major float4x4 ViewProjMTX;    // World -> Clip (precomputed to save GPU work)
+	row_major float4x4 ViewMTX;
+	row_major float4x4 ProjectionMTX;
+	row_major float4x4 ViewProjMTX;
 
 	PerViewCameraConstantBufferData Camera;
 	PerViewLightingConstantBufferData ViewLighting;
 };
 
-// -----------------------------------------------------------------------------
-// Per-Object VS CB (b2) — updated per draw call (transforms)
-// -----------------------------------------------------------------------------
+
+
+
 cbuffer PerObjectVSConstantBufferData : register(b2)
 {
-	row_major float4x4 WorldMTX;              // Local -> World
-	row_major float3x3 WorldInvTransposeMTX;  // Normal transform (3x3) -> correct under non-uniform scale
+	row_major float4x4 WorldMTX;
+	row_major float3x3 WorldInvTransposeMTX;
 
-	// remaining space in the 256-byte slot is reserved for future use
+
 };
 
-// -----------------------------------------------------------------------------
-// Per-Object PS CB (b3) — updated per draw call (material scalars)
-// -----------------------------------------------------------------------------
+
+
+
 cbuffer PerObjectPSConstantBufferData : register(b3)
 {
-	float4 BaseColor;  // RGBA base/albedo color or tint
+	float4 BaseColor;
 
-	float3 EmissiveColor;  // Emissive multiplier/fallback color
-	float Metallic;        // PBR metallic [0,1]
+	float3 EmissiveColor;
+	float Metallic;
 
-	float Roughness;    // PBR roughness [0,1]
-	float F0;           // PBR reflectance at normal incidence
-	float AlphaCutoff;  // Alpha test threshold for masked materials
-	uint AlphaMode;     // Matches MaterialDesc::AlphaMode numeric values
+	float Roughness;
+	float F0;
+	float AlphaCutoff;
+	uint AlphaMode;
 
-	uint TextureFlags;  // Bitmask of authored textures present on the material
+	uint TextureFlags;
 	float3 _padPerObjectPS0;
 
-	// remaining space reserved
+
 };

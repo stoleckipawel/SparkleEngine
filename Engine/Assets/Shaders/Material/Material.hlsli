@@ -5,13 +5,13 @@
 #include "Geometry/PixelInput.hlsli"
 #include "Geometry/Transforms.hlsli"
 
-// =============================================================================
-// Material System
-// =============================================================================
 
-// -----------------------------------------------------------------------------
-// Texture Bindings
-// -----------------------------------------------------------------------------
+
+
+
+
+
+
 
 Texture2D TextureBaseColor : register(t0);
 Texture2D TextureNormal : register(t1);
@@ -19,9 +19,9 @@ Texture2D TextureMetallicRoughness : register(t2);
 Texture2D TextureOcclusion : register(t3);
 Texture2D TextureEmissive : register(t4);
 
-// -----------------------------------------------------------------------------
-// Material Namespace
-// -----------------------------------------------------------------------------
+
+
+
 
 namespace Material
 {
@@ -35,10 +35,10 @@ namespace Material
 	static const uint AlphaModeMask = 1u;
 	static const uint AlphaModeBlend = 2u;
 
-	// We store Dielectric F0 for precision and remap to actual desired F0 dielectric range
+
 	float RemapDielectricF0(float EncodedF0)
 	{
-		// Remap from [0.0, 1.0] to [0.00, 0.08]
+
 		return saturate(EncodedF0) * 0.08f;
 	}
 
@@ -65,33 +65,33 @@ namespace Material
 		}
 	}
 
-	// -------------------------------------------------------------------------
-	// Material Properties Structure
-	// -------------------------------------------------------------------------
+
+
+
 	struct Properties
 	{
-		// Core PBR parameters
-		float3 BaseColor;        // Albedo for dielectrics, reflectance for metals
-		float3 NormalTangent;    // Normal in tangent space (from normal map)
-		float3 NormalWorld;      // Normal in world space (after normal mapping)
-		float Roughness;         // Perceptual roughness [0=smooth, 1=rough]
-		float Metallic;          // Metalness [0=dielectric, 1=metal]
-		float DielectricF0;      // F0 reflectance for dielectrics 0.0 - 1.0 -> remapped[0.00, 0.08]
-		float AmbientOcclusion;  // Baked occlusion [0=occluded, 1=exposed]
 
-		// Subsurface scattering
-		float3 SubsurfaceColor;    // Color tint for subsurface scattering
-		float SubsurfaceStrength;  // Intensity of SSS effect [0=none, 1=full]
+		float3 BaseColor;
+		float3 NormalTangent;
+		float3 NormalWorld;
+		float Roughness;
+		float Metallic;
+		float DielectricF0;
+		float AmbientOcclusion;
 
-		// Emission
-		float3 Emissive;  // Self-illumination (HDR, can exceed 1.0)
+
+		float3 SubsurfaceColor;
+		float SubsurfaceStrength;
+
+
+		float3 Emissive;
 		float Alpha;
 		uint AlphaMode;
 	};
 
-	// -------------------------------------------------------------------------
-	// Default Material
-	// -------------------------------------------------------------------------
+
+
+
 	Properties MakeDefault()
 	{
 		Properties props;
@@ -110,9 +110,9 @@ namespace Material
 		return props;
 	}
 
-	// -------------------------------------------------------------------------
-	// Individual Texture Samplers
-	// -------------------------------------------------------------------------
+
+
+
 
 	float4 SampleBaseColor(float2 UV)
 	{
@@ -181,12 +181,12 @@ namespace Material
 
 	float SampleSubsurfaceStrength(float2 UV)
 	{
-		return 0.0f;  // Disabled by default
+		return 0.0f;
 	}
 
-	// -------------------------------------------------------------------------
-	// Full Material Sampling
-	// -------------------------------------------------------------------------
+
+
+
 
 	Properties Sample(PS::Input Input)
 	{
@@ -207,4 +207,4 @@ namespace Material
 		props.Emissive = SampleEmissive(Input.TexCoord);
 		return props;
 	}
-}  // namespace Material
+}

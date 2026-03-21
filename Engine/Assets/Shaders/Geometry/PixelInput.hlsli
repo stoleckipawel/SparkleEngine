@@ -1,9 +1,9 @@
 #pragma once
 
-// =============================================================================
-// Pixel Shader Input Structure
-// =============================================================================
-// Data received from vertex shader (interpolated)
+
+
+
+
 
 namespace PS
 {
@@ -17,11 +17,11 @@ namespace PS
 		float3 BitangentWorld : BINORMAL;
 	};
 
-	// Prepare PS input (fixes interpolation artifacts)
+
 	void PrepareInput(inout Input input)
 	{
 		input.NormalWorld = normalize(input.NormalWorld);
 		input.TangentWorld = normalize(input.TangentWorld);
 		input.BitangentWorld = normalize(input.BitangentWorld);
 	}
-}  // namespace PS
+}

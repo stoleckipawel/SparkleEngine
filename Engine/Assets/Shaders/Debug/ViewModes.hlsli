@@ -1,9 +1,9 @@
 #pragma once
 
-// =============================================================================
-// Debug View Modes
-// =============================================================================
-// Keep these indices in sync with Engine/Renderer/Public/Debug/RenderViewMode.h.
+
+
+
+
 
 namespace ViewMode
 {
@@ -19,8 +19,6 @@ namespace ViewMode
 	static const uint DirectDiffuse = 9u;
 	static const uint DirectSpecular = 10u;
 	static const uint DirectSubsurface = 11u;
-	static const uint IndirectDiffuse = 12u;
-	static const uint IndirectSpecular = 13u;
 
 	float3 PreviewScalar(float v)
 	{
@@ -29,13 +27,13 @@ namespace ViewMode
 
 	float3 PreviewNormal(float3 n)
 	{
-		// Map [-1, 1] to [0, 1] for visualization.
+
 		return normalize(n) * 0.5f + 0.5f;
 	}
 
 	float3 PreviewHdr(float3 c)
 	{
-		// Simple Reinhard tone-map for inspecting HDR lighting terms.
+
 		const float3 safe = max(c, 0.0f);
 		return safe / (1.0f + safe);
 	}
@@ -45,9 +43,7 @@ namespace ViewMode
 	    Material::Properties matProps,
 	    float3 directDiffuse,
 	    float3 directSpecular,
-	    float3 directSubsurface,
-	    float3 indirectDiffuse,
-	    float3 indirectSpecular)
+	    float3 directSubsurface)
 	{
 		switch (ViewModeIndex)
 		{
@@ -86,15 +82,8 @@ namespace ViewMode
 
 			case DirectSubsurface:
 				return PreviewHdr(directSubsurface);
-
-			case IndirectDiffuse:
-				return PreviewHdr(indirectDiffuse);
-
-			case IndirectSpecular:
-				return PreviewHdr(indirectSpecular);
-
 			default:
 				return lit;
 		}
 	}
-}  // namespace ViewMode
+}

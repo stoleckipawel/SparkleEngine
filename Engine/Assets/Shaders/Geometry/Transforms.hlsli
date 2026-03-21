@@ -2,9 +2,9 @@
 
 #include "Resources/ConstantBuffers.hlsli"
 
-// -----------------------------------------------------------------------------
-// Position Transforms
-// -----------------------------------------------------------------------------
+
+
+
 
 float4 PositionLocalToWorld(float4 localPosition)
 {
@@ -33,39 +33,39 @@ float4 PositionWorldToClip(float4 worldPosition)
 	return mul(worldPosition, ViewProjMTX);
 }
 
-// -----------------------------------------------------------------------------
-// Normal/Tangent Transforms
-// -----------------------------------------------------------------------------
 
-// Transform normal from local to world space (handles non-uniform scale)
+
+
+
+
 float3 NormalLocalToWorld(float3 normalLocal)
 {
 	return normalize(mul(normalLocal, WorldInvTransposeMTX));
 }
 
-// Transform tangent from local to world space (direction only)
+
 float4 TangentLocalToWorld(float4 tangentLocal)
 {
 	const float3 worldTangent = mul(tangentLocal.xyz, (float3x3) WorldMTX);
-	return float4(worldTangent, tangentLocal.w);  // Preserve handedness
+	return float4(worldTangent, tangentLocal.w);
 }
 
-// Compute bitangent from normal and tangent (using handedness)
+
 float3 ComputeBitangent(float3 normalWorld, float4 tangentWorld)
 {
 	return tangentWorld.w * normalize(cross(normalWorld, tangentWorld.xyz));
 }
 
-// TBN Normal Transform
+
 float3 TransformNormalToWorld(float3 normalTangent, float3 vertexNormalWorld, float3 vertexTangentWorld, float3 vertexBitangentWorld)
 {
 	const float3x3 TBN = float3x3(vertexTangentWorld, vertexBitangentWorld, vertexNormalWorld);
 	return mul(normalTangent, TBN);
 }
 
-// -----------------------------------------------------------------------------
-// Rotation Helper
-// -----------------------------------------------------------------------------
+
+
+
 
 float3 Rotate(float3 v, float3 axis, float angle)
 {

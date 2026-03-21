@@ -21,8 +21,6 @@ static constexpr const char* kViewModeNames[] = {
     "Direct Diffuse",
     "Direct Specular",
     "Direct Subsurface",
-    "Indirect Diffuse",
-    "Indirect Specular",
 };
 
 static_assert(

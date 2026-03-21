@@ -4,34 +4,19 @@
 #include "Material/Material.hlsli"
 #include "BRDF/BRDF.hlsli"
 
-// =============================================================================
-// Lighting System
-// =============================================================================
-// High-level lighting calculations using BRDF::Direct and BRDF::Indirect.
-// Bridges the gap between material properties and the BRDF evaluation API.
-// =============================================================================
-
 namespace Lighting
 {
-	// =========================================================================
-	// Light Structures
-	// =========================================================================
-
 	struct DirectionalLight
 	{
-		float3 Direction;  // Normalized, pointing TO the light source
-		float3 Radiance;   // Color * intensity (can be HDR)
+		float3 Direction;
+		float3 Radiance;
 	};
-
-	// =========================================================================
-	// Directional Lights (from PerView constant buffer)
-	// =========================================================================
 
 	DirectionalLight GetDirectionalLight(uint lightIndex)
 	{
 		DirectionalLight light;
 		light.Direction =
-		    normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);  // CB stores direction toward surface; negate for "toward light"
+		    normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
 		light.Radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
 		return light;
 	}
@@ -77,11 +62,6 @@ namespace Lighting
 		outSubsurface = subsurfaceBRDF * lightRadiance;
 	}
 
-	// =========================================================================
-	// Direct Lighting
-	// =========================================================================
-	// Evaluates contribution from analytical directional lights.
-
 	void CalculateDirect(
 	    float3 viewDirWorld,
 	    Material::Properties matProps,
@@ -115,42 +95,15 @@ namespace Lighting
 		}
 	}
 
-	// =========================================================================
-	// Indirect Lighting (IBL)
-	// =========================================================================
-	// Uses prefiltered environment maps for image-based lighting.
-	//
-	// Inputs:
-	//   irradiance:     Diffuse irradiance (cosine-weighted hemisphere integral)
-	//   prefilteredEnv: Specular radiance at reflection direction, mip-selected by roughness
-
-	void CalculateIndirectIBL(
-	    float3 viewDirWorld,
+	float3 CalculateLighting(
+	    PS::Input psInput,
 	    Material::Properties matProps,
-	    float3 irradiance,
-	    float3 prefilteredEnv,
-	    out float3 outDiffuse,
-	    out float3 outSpecular)
+	    out float3 outDirectDiffuse,
+	    out float3 outDirectSubsurface,
+	    out float3 outDirectSpecular)
 	{
-		const float3 N = normalize(matProps.NormalWorld);
-		const float3 V = normalize(viewDirWorld);
-		const float NoV = saturate(dot(N, V));
-
-		const float roughness = max(matProps.Roughness, 0.01f);
-		const float metallic = matProps.Metallic;
-
-		const float3 F0 = lerp(matProps.DielectricF0.xxx, matProps.BaseColor, metallic);
-
-		BRDF::Indirect::Evaluate(
-		    NoV,
-		    matProps.BaseColor,
-		    roughness,
-		    metallic,
-		    F0,
-		    irradiance,
-		    prefilteredEnv,
-		    matProps.AmbientOcclusion,
-		    outDiffuse,
-		    outSpecular);
+		const float3 viewDir = normalize(Camera.Position - psInput.PositionWorld);
+		CalculateDirect(viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
+		return (outDirectDiffuse + outIndirectDiffuse) + outDirectSubsurface + matProps.Emissive;
 	}
-}  // namespace Lighting
+}
