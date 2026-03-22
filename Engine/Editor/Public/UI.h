@@ -2,17 +2,17 @@
 
 #include "EditorAPI.h"
 #include "Events/ScopedEventHandle.h"
+#include "Scene/SceneObjectSelection.h"
 
 #include <Windows.h>
 #include <d3d12.h>
 
 #include <memory>
-#include <string>
 
 class Timer;
 class MainMenuBarPanel;
-class RendererPanel;
-class UIRendererSection;
+class SceneOutlinerPanel;
+class SceneInspectorPanel;
 class LevelManager;
 class GameScene;
 class Window;
@@ -65,7 +65,8 @@ class SPARKLE_EDITOR_API UI final
 	void SetupDPIScaling() noexcept;
 
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
-	std::unique_ptr<RendererPanel> m_rendererPanel;
+	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
+	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
@@ -73,6 +74,7 @@ class SPARKLE_EDITOR_API UI final
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
+	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
 
 	ScopedEventHandle m_windowMessageHandle;
 };

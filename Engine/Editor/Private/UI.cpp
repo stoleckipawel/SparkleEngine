@@ -10,12 +10,8 @@
 #include "Timer.h"
 
 #include "Panels/MainMenuBarPanel.h"
-#include "Panels/RendererPanel.h"
-#include "Sections/CameraSection.h"
-#include "Sections/LightingSection.h"
-
-#include "Sections/ViewMode.h"
-#include "Sections/TimeControls.h"
+#include "Panels/SceneInspectorPanel.h"
+#include "Panels/SceneOutlinerPanel.h"
 #include "Style/SparkleUiTheme.h"
 
 #include <imgui.h>
@@ -132,25 +128,12 @@ bool UI::InitializeD3D12Backend()
 void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
-	m_rendererPanel = std::make_unique<RendererPanel>();
-	SceneCamera* sceneCamera = m_gameScene != nullptr ? &m_gameScene->GetSceneCamera() : nullptr;
-	SceneLighting* sceneLighting = m_gameScene != nullptr ? &m_gameScene->GetLighting() : nullptr;
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Camera) && sceneCamera != nullptr)
+	if (m_gameScene != nullptr)
 	{
-		m_rendererPanel->SetSection(std::make_unique<CameraSection>(*sceneCamera));
+		m_sceneSelection = SceneObjectSelection::Camera();
+		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection);
+		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection);
 	}
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Lighting) && m_levelManager != nullptr && sceneLighting != nullptr)
-	{
-		m_rendererPanel->SetSection(std::make_unique<LightingSection>(*m_levelManager, *sceneLighting));
-	}
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::ViewMode))
-		m_rendererPanel->SetSection(std::make_unique<ViewMode>());
-
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Time))
-		m_rendererPanel->SetSection(std::make_unique<TimeControls>(*m_timer));
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -184,10 +167,16 @@ void UI::Build()
 		mainMenuBarHeight = m_mainMenuBar->GetHeight();
 	}
 
-	if (m_rendererPanel)
+	if (m_sceneOutlinerPanel)
 	{
-		m_rendererPanel->SetTopInset(mainMenuBarHeight);
-		m_rendererPanel->BuildUI(disableInteraction);
+		m_sceneOutlinerPanel->SetTopInset(mainMenuBarHeight);
+		m_sceneOutlinerPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_sceneInspectorPanel)
+	{
+		m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
+		m_sceneInspectorPanel->BuildUI(disableInteraction);
 	}
 
 #if USE_IMGUI_DEMO_WINDOW
