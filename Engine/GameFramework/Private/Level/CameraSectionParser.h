@@ -13,12 +13,6 @@ namespace LevelParsing
 {
 	inline bool ParseCameraSectionField(const ParsedLevelLine& parsedLine, LevelDesc& levelDesc, std::string& errorMessage)
 	{
-		if (parsedLine.key == "Name")
-		{
-			levelDesc.cameraDesc.name = Engine::Strings::UnquoteCopy(parsedLine.value);
-			return true;
-		}
-
 		if (parsedLine.key == "Position")
 		{
 			if (!Engine::Strings::TryParseFloat3(parsedLine.value, levelDesc.cameraDesc.position))
@@ -75,7 +69,6 @@ namespace LevelParsing
 	{
 		output << std::setprecision(9);
 		output << "[Camera]\n";
-		output << "Name = " << std::quoted(levelDesc.cameraDesc.name) << "\n";
 		output << "Position = " << levelDesc.cameraDesc.position.x << ", " << levelDesc.cameraDesc.position.y << ", "
 		       << levelDesc.cameraDesc.position.z << "\n";
 		output << "YawRadians = " << levelDesc.cameraDesc.yawRadians << "\n";

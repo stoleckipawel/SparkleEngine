@@ -64,13 +64,6 @@ namespace LevelParsing
 			return true;
 		}
 
-		if (key == "Name" || key == "DirectionalName")
-		{
-			outIndex = 0;
-			outField = "Name";
-			return true;
-		}
-
 		return false;
 	}
 
@@ -107,12 +100,6 @@ namespace LevelParsing
 				errorMessage = "Invalid directional light color";
 				return false;
 			}
-			return true;
-		}
-
-		if (directionalLightField == "Name")
-		{
-			directionalLightDesc.name = Engine::Strings::UnquoteCopy(parsedLine.value);
 			return true;
 		}
 
@@ -157,7 +144,6 @@ namespace LevelParsing
 			output << "DirectionalLight" << lightIndex << "Direction = " << directionalLight.direction.x << ", "
 			       << directionalLight.direction.y << ", " << directionalLight.direction.z << "\n";
 			output << "DirectionalLight" << lightIndex << "Intensity = " << directionalLight.intensity << "\n";
-			output << "DirectionalLight" << lightIndex << "Name = " << std::quoted(directionalLight.name) << "\n";
 			output << "DirectionalLight" << lightIndex << "Color = " << directionalLight.color.x << ", " << directionalLight.color.y << ", "
 			       << directionalLight.color.z << "\n";
 		}

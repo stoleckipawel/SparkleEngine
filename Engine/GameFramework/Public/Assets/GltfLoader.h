@@ -19,7 +19,6 @@ class SPARKLE_ENGINE_API GltfLoader final
 		std::vector<std::filesystem::path> texturePaths;
 		std::vector<DirectX::XMFLOAT4X4> transforms;
 		std::vector<std::uint32_t> materialIndices;
-		std::vector<std::string> meshNames;
 
 		bool bSuccess = false;
 		std::string errorMessage;
