@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RHI/Public/RenderConfig.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "Renderer/Public/Frame/RenderViewContext.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
@@ -9,7 +10,7 @@
 
 struct SPARKLE_RENDERER_API FrameContext
 {
-	static constexpr std::size_t MaxShadowViews = RenderConfig::Lights::MaxDirectionalLights;
+	static constexpr std::size_t MaxShadowViews = RenderConfig::Shadows::MaxShadowMaps;
 
 	RenderSceneData sceneData = {};
 	RenderViewContext mainView = {};

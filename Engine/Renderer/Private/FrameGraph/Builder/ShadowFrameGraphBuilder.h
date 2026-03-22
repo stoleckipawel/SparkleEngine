@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RHI/Public/RenderConfig.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
 #include <array>
@@ -12,7 +13,7 @@ class FrameGraph;
 
 struct ShadowFrameGraphResources
 {
-	static constexpr std::size_t MaxShadowMaps = 2;
+	static constexpr std::size_t MaxShadowMaps = RenderConfig::Shadows::MaxShadowMaps;
 	std::array<TextureHandle, MaxShadowMaps> shadowMapHandles = {};
 };
 

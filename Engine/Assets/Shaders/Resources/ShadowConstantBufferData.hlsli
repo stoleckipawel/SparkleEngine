@@ -6,5 +6,5 @@ struct ShadowConstantBufferData
 	float ShadowMapSize;
 	float DepthBias;
 	float NormalBias;
-	float _pad0;
+	float CascadeFarDepth;
 };

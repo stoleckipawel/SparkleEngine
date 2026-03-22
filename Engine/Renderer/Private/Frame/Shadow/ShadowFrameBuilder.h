@@ -1,7 +1,8 @@
 #pragma once
 
-#include "RHI/Public/D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
+#include "RHI/Public/RenderConfig.h"
 #include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
+#include "RHI/Public/D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
 #include "Renderer/Public/Frame/RenderViewContext.h"
 
 #include <array>
@@ -15,7 +16,8 @@ struct RenderSceneData;
 
 struct ShadowFrameBuildResult
 {
-	static constexpr std::size_t MaxShadowedLights = RenderConfig::Lights::MaxDirectionalLights;
+	static constexpr std::size_t MaxShadowedLights = RenderConfig::Shadows::MaxShadowMaps;
+	static constexpr std::size_t MaxShadowCascades = RenderConfig::Shadows::MaxCascades;
 
 	PerViewLightingConstantBufferData mainViewLighting = {};
 	std::array<RenderViewContext, MaxShadowedLights> shadowViews = {};
@@ -40,4 +42,13 @@ class ShadowFrameBuilder final
 	    D3D12ConstantBufferManager& constantBufferManager,
 	    const PerViewDataBuilder& perViewDataBuilder,
 	    ShadowBuilder& shadowBuilder) const;
+
+  private:
+	struct CascadeRange
+	{
+		float nearZ = 0.0f;
+		float farZ = 0.0f;
+	};
+
+	static std::array<CascadeRange, ShadowFrameBuildResult::MaxShadowCascades> BuildCascadeRanges(const CameraSnapshot& mainCamera) noexcept;
 };

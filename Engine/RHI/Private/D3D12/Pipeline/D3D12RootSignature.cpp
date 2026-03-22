@@ -25,6 +25,12 @@ void D3D12RootSignature::Create()
 	CD3DX12_DESCRIPTOR_RANGE shadowMap1Range = {};
 	shadowMap1Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap1);
 
+	CD3DX12_DESCRIPTOR_RANGE shadowMap2Range = {};
+	shadowMap2Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap2);
+
+	CD3DX12_DESCRIPTOR_RANGE shadowMap3Range = {};
+	shadowMap3Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap3);
+
 	CD3DX12_DESCRIPTOR_RANGE samplerRange = {};
 
 	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, RootBindings::SamplerRegister::Count, 0);
@@ -52,6 +58,8 @@ void D3D12RootSignature::Create()
 	rootParameters[RootBindings::RootParam::TextureSRV].InitAsDescriptorTable(1, &srvRange, RootBindings::Visibility::TextureSRV);
 	rootParameters[RootBindings::RootParam::ShadowMap0].InitAsDescriptorTable(1, &shadowMapRange, RootBindings::Visibility::ShadowMap0);
 	rootParameters[RootBindings::RootParam::ShadowMap1].InitAsDescriptorTable(1, &shadowMap1Range, RootBindings::Visibility::ShadowMap1);
+	rootParameters[RootBindings::RootParam::ShadowMap2].InitAsDescriptorTable(1, &shadowMap2Range, RootBindings::Visibility::ShadowMap2);
+	rootParameters[RootBindings::RootParam::ShadowMap3].InitAsDescriptorTable(1, &shadowMap3Range, RootBindings::Visibility::ShadowMap3);
 
 	rootParameters[RootBindings::RootParam::SamplerTable].InitAsDescriptorTable(1, &samplerRange, RootBindings::Visibility::SamplerTable);
 

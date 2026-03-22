@@ -2,6 +2,7 @@
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
+#include "RHI/Public/RenderConfig.h"
 #include <array>
 
 class D3D12ConstantBufferManager;
@@ -18,6 +19,8 @@ class TextureManager;
 class ForwardOpaquePass final
 {
   public:
+	static constexpr std::size_t MaxShadowMaps = RenderConfig::Shadows::MaxShadowMaps;
+
 	ForwardOpaquePass(
 	    D3D12RootSignature& rootSignature,
 	    D3D12PipelineState& pipelineState,
@@ -25,7 +28,7 @@ class ForwardOpaquePass final
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    TextureManager& textureManager,
 	    D3D12SamplerLibrary& samplerLibrary,
-	    std::array<TextureHandle, 2> shadowMapHandles,
+	    std::array<TextureHandle, MaxShadowMaps> shadowMapHandles,
 	    TextureHandle backBufferHandle,
 	    TextureHandle depthBufferHandle) noexcept;
 
@@ -46,7 +49,7 @@ class ForwardOpaquePass final
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	D3D12SamplerLibrary* m_samplerLibrary = nullptr;
-	std::array<TextureHandle, 2> m_shadowMaps = {};
+	std::array<TextureHandle, MaxShadowMaps> m_shadowMaps = {};
 
 	TextureHandle m_backBuffer;
 	TextureHandle m_depthBuffer;

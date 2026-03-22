@@ -23,8 +23,8 @@
 
 #include "Frame/BuildFrameContext.h"
 #include "Frame/PerViewDataBuilder.h"
-#include "Frame/ShadowBuilder.h"
-#include "Frame/ShadowFrameBuilder.h"
+#include "Frame/Shadow/ShadowBuilder.h"
+#include "Frame/Shadow/ShadowFrameBuilder.h"
 #include "Frame/ViewLightingBuilder.h"
 #include "PipelineStateManager.h"
 #include "SceneData/MaterialCacheManager.h"

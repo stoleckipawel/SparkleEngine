@@ -4,7 +4,6 @@
 #include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
 #include "RHI/Public/D3D12/Resources/D3D12ViewCameraConstantBufferData.h"
 
-#include <array>
 #include <d3d12.h>
 
 struct ShadowBuildResult
@@ -26,12 +25,16 @@ class ShadowBuilder final
 	ShadowBuilder(ShadowBuilder&&) = delete;
 	ShadowBuilder& operator=(ShadowBuilder&&) = delete;
 
-	ShadowBuildResult Build(const CameraSnapshot& mainCamera, const DirectX::XMFLOAT3& lightDirection) const noexcept;
+	ShadowBuildResult Build(
+	    const CameraSnapshot& mainCamera,
+	    const DirectX::XMFLOAT3& lightDirection,
+	    float cascadeNearZ,
+	    float cascadeFarZ) const noexcept;
 
   private:
-	static std::array<DirectX::XMFLOAT3, 8> BuildFrustumCorners(const CameraSnapshot& camera, float nearZ, float farZ) noexcept;
-	static PerViewCameraConstantBufferData BuildLightCamera(
-	    const std::array<DirectX::XMFLOAT3, 8>& frustumCorners,
+	static PerViewCameraConstantBufferData BuildLightCameraForSphere(
+	    const DirectX::XMFLOAT3& sphereCenter,
+	    float sphereRadius,
 	    const DirectX::XMFLOAT3& lightDirection) noexcept;
 	static DirectX::XMVECTOR SelectUpVector(DirectX::FXMVECTOR forward) noexcept;
 };

@@ -23,10 +23,13 @@ namespace RenderConfig
 
 	namespace Shadows
 	{
-		inline constexpr std::uint32_t ShadowMapResolution = 4096;
+		inline constexpr std::size_t MaxCascades = 2;
+		inline constexpr std::size_t MaxShadowMaps = Lights::MaxDirectionalLights * MaxCascades;
+		inline constexpr std::uint32_t ShadowMapResolution = 2048;
 		inline constexpr float DepthBias = 0.00045f;
 		inline constexpr float NormalBias = 0.00125f;
 		inline constexpr float ShadowDistance = 60.0f;
+		inline constexpr float NearCascadeFraction = 0.2f;
 		inline constexpr float LightPadding = 20.0f;
 		inline constexpr DXGI_FORMAT ShadowMapFormat = DXGI_FORMAT_R32_FLOAT;
 	} 

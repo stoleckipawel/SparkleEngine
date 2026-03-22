@@ -27,7 +27,7 @@ ForwardOpaquePass::ForwardOpaquePass(
     D3D12DescriptorHeapManager& descriptorHeapManager,
     TextureManager& textureManager,
     D3D12SamplerLibrary& samplerLibrary,
-	std::array<TextureHandle, 2> shadowMapHandles,
+	std::array<TextureHandle, ForwardOpaquePass::MaxShadowMaps> shadowMapHandles,
     TextureHandle backBufferHandle,
     TextureHandle depthBufferHandle) noexcept :
     m_rootSignature(&rootSignature),
@@ -92,6 +92,12 @@ void ForwardOpaquePass::BindGlobalResources(const FrameGraph& frameGraph, Comman
 
 	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap1Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[1]);
 	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap1, shadowMap1Srv);
+
+	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap2Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[2]);
+	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap2, shadowMap2Srv);
+
+	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap3Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[3]);
+	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap3, shadowMap3Srv);
 
 	if (m_samplerLibrary->IsInitialized())
 	{
