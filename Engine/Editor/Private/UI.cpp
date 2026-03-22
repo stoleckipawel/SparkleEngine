@@ -6,6 +6,7 @@
 #include "D3D12SwapChain.h"
 #include "RenderConfig.h"
 #include "Runtime/Level/LevelManager.h"
+#include "Scene/GameScene.h"
 #include "Timer.h"
 
 #include "Panels/MainMenuBarPanel.h"
@@ -54,12 +55,14 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 UI::UI(
     Timer& timer,
     LevelManager* levelManager,
+	GameScene* gameScene,
     D3D12Rhi& rhi,
     Window& window,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain) :
     m_timer(&timer),
     m_levelManager(levelManager),
+	m_gameScene(gameScene),
     m_rhi(&rhi),
     m_window(&window),
     m_descriptorHeapManager(&descriptorHeapManager),
@@ -130,15 +133,17 @@ void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	m_rendererPanel = std::make_unique<RendererPanel>();
+	SceneCamera* sceneCamera = m_gameScene != nullptr ? &m_gameScene->GetSceneCamera() : nullptr;
+	SceneLighting* sceneLighting = m_gameScene != nullptr ? &m_gameScene->GetLighting() : nullptr;
 
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Camera) && m_levelManager != nullptr)
+	if (!m_rendererPanel->HasSection(UIRendererSectionId::Camera) && sceneCamera != nullptr)
 	{
-		m_rendererPanel->SetSection(std::make_unique<CameraSection>(*m_levelManager));
+		m_rendererPanel->SetSection(std::make_unique<CameraSection>(*sceneCamera));
 	}
 
-	if (!m_rendererPanel->HasSection(UIRendererSectionId::Lighting) && m_levelManager != nullptr)
+	if (!m_rendererPanel->HasSection(UIRendererSectionId::Lighting) && m_levelManager != nullptr && sceneLighting != nullptr)
 	{
-		m_rendererPanel->SetSection(std::make_unique<LightingSection>(*m_levelManager));
+		m_rendererPanel->SetSection(std::make_unique<LightingSection>(*m_levelManager, *sceneLighting));
 	}
 
 	if (!m_rendererPanel->HasSection(UIRendererSectionId::ViewMode))

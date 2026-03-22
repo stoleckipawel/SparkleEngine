@@ -58,6 +58,17 @@ XMMATRIX DepthConvention::CreatePerspectiveFovLH(float fovY, float aspect, float
 	return XMMatrixPerspectiveFovLH(fovY, aspect, nearZ, farZ);
 }
 
+XMMATRIX DepthConvention::CreateOrthographicOffCenterLH(float left, float right, float bottom, float top, float nearZ, float farZ)
+	noexcept
+{
+	if (DepthConvention::IsReversedZ())
+	{
+		return XMMatrixOrthographicOffCenterLH(left, right, bottom, top, farZ, nearZ);
+	}
+
+	return XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearZ, farZ);
+}
+
 float DepthConvention::LinearizeDepth(float ndcDepth, float nearZ, float farZ) noexcept
 {
 	if (DepthConvention::IsReversedZ())

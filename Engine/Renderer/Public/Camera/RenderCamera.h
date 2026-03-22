@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
+#include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
 
 #include "D3D12ConstantBufferData.h"
 #include "Math/Frustum.h"
 #include <DirectXMath.h>
 
-class GameCamera;
-
 class SPARKLE_RENDERER_API RenderCamera final
 {
   public:
-	explicit RenderCamera(GameCamera& gameCamera) noexcept;
+	RenderCamera() noexcept;
 	~RenderCamera() noexcept = default;
 
 	RenderCamera(const RenderCamera&) = delete;
@@ -19,9 +18,9 @@ class SPARKLE_RENDERER_API RenderCamera final
 	RenderCamera(RenderCamera&&) = delete;
 	RenderCamera& operator=(RenderCamera&&) = delete;
 
-	void Update() noexcept;
+	void Update(const CameraSnapshot& snapshot) noexcept;
 
-	void ForceUpdate() noexcept;
+	void ForceUpdate(const CameraSnapshot& snapshot) noexcept;
 
 	DirectX::XMMATRIX GetViewMatrix() const noexcept;
 	DirectX::XMMATRIX GetProjectionMatrix() const noexcept;
@@ -29,18 +28,12 @@ class SPARKLE_RENDERER_API RenderCamera final
 
 	const Frustum& GetFrustum() const noexcept { return m_frustum; }
 
-	DirectX::XMFLOAT3 GetPosition() const noexcept;
-	DirectX::XMFLOAT3 GetDirection() const noexcept;
-	float GetNearZ() const noexcept;
-	float GetFarZ() const noexcept;
-
-	PerViewConstantBufferData GetViewConstantBufferData() const noexcept;
+	PerViewCameraConstantBufferData GetCameraConstantBufferData() const noexcept;
 
   private:
-	void RebuildMatrices() noexcept;
+	void RebuildMatrices(const CameraSnapshot& snapshot) noexcept;
 
-	GameCamera& m_gameCamera;
-
+	CameraSnapshot m_snapshot;
 	DirectX::XMFLOAT4X4 m_viewMatrix;
 	DirectX::XMFLOAT4X4 m_projectionMatrix;
 	DirectX::XMFLOAT4X4 m_viewProjMatrix;

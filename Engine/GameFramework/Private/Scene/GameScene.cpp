@@ -10,21 +10,11 @@
 #include "Level/LevelDesc.h"
 #include "Core/Public/Diagnostics/Log.h"
 
-GameScene::GameScene() : m_gameCamera(std::make_unique<GameCamera>()) {}
+GameScene::GameScene() = default;
 
 GameScene::~GameScene() noexcept = default;
 
-GameCamera& GameScene::GetCamera() noexcept
-{
-	return *m_gameCamera;
-}
-
-const GameCamera& GameScene::GetCamera() const noexcept
-{
-	return *m_gameCamera;
-}
-
-GameSceneLoadResult GameScene::LoadLevel(const Level& level)
+GameSceneLoadResult GameScene::LoadLevel(const LevelAsset& level)
 {
 	return LoadLevel(level.BuildDescription());
 }
@@ -86,9 +76,10 @@ bool GameScene::LoadImportedMeshRequest(const ImportedMeshRequest& request, std:
 
 void GameScene::Clear()
 {
-	m_lightingState.Reset();
-	m_meshes.clear();
-	m_loadedMaterials.clear();
+	m_lighting.Reset();
+	m_materials.Reset();
+	m_meshes.Reset();
+	m_textures.Reset();
 }
 
 bool GameScene::LoadGltf(const std::filesystem::path& assetPath)
@@ -117,18 +108,20 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 		return false;
 	}
 
-	const std::size_t materialOffset = m_loadedMaterials.size();
+	const std::size_t materialOffset = m_materials.GetMaterialCount();
 
 	if (!result.materials.empty())
 	{
-		m_loadedMaterials.reserve(m_loadedMaterials.size() + result.materials.size());
-		for (auto& material : result.materials)
-		{
-			m_loadedMaterials.push_back(std::move(material));
-		}
+		m_materials.AppendMaterials(std::move(result.materials));
 	}
 
-	m_meshes.reserve(m_meshes.size() + result.meshes.size());
+	if (!result.texturePaths.empty())
+	{
+		m_textures.AppendTexturePaths(result.texturePaths);
+	}
+
+	std::vector<std::unique_ptr<Mesh>> importedMeshes;
+	importedMeshes.reserve(result.meshes.size());
 	for (std::size_t i = 0; i < result.meshes.size(); ++i)
 	{
 		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]), result.transforms[i]);
@@ -138,10 +131,12 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 			mesh->SetMaterialId(static_cast<uint32_t>(materialOffset) + result.materialIndices[i]);
 		}
 
-		m_meshes.push_back(std::move(mesh));
+		importedMeshes.push_back(std::move(mesh));
 	}
 
-	LOG_INFO("Scene: Loaded " + std::to_string(m_meshes.size()) + " meshes, " + std::to_string(m_loadedMaterials.size()) + " materials");
+	m_meshes.AppendMeshes(std::move(importedMeshes));
+
+	LOG_INFO("Scene: Loaded " + std::to_string(m_meshes.GetMeshCount()) + " meshes, " + std::to_string(m_materials.GetMaterialCount()) + " materials");
 
 	return true;
 }

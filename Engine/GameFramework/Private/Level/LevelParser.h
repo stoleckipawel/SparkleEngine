@@ -4,13 +4,13 @@
 #include <memory>
 #include <string>
 
-class Level;
+class LevelAsset;
 
 class LevelParser final
 {
   public:
-	static std::unique_ptr<Level> LoadFromFile(const std::filesystem::path& filePath, std::string& errorMessage);
-	static bool SaveToFile(const Level& level, std::string* errorMessage = nullptr);
+	static std::unique_ptr<LevelAsset> LoadFromFile(const std::filesystem::path& filePath, std::string& errorMessage);
+	static bool SaveToFile(const LevelAsset& level, std::string* errorMessage = nullptr);
 
 	LevelParser() = delete;
 	~LevelParser() = delete;

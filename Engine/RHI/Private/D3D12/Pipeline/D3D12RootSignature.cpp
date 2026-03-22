@@ -19,6 +19,9 @@ void D3D12RootSignature::Create()
 	    RootBindings::SRVRegister::MaterialTextureCount,
 	    RootBindings::SRVRegister::MaterialTableBase);
 
+	CD3DX12_DESCRIPTOR_RANGE shadowMapRange = {};
+	shadowMapRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap0);
+
 	CD3DX12_DESCRIPTOR_RANGE samplerRange = {};
 
 	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, RootBindings::SamplerRegister::Count, 0);
@@ -44,6 +47,7 @@ void D3D12RootSignature::Create()
 	    RootBindings::Visibility::PerObjectPS);
 
 	rootParameters[RootBindings::RootParam::TextureSRV].InitAsDescriptorTable(1, &srvRange, RootBindings::Visibility::TextureSRV);
+	rootParameters[RootBindings::RootParam::ShadowMap0].InitAsDescriptorTable(1, &shadowMapRange, RootBindings::Visibility::ShadowMap0);
 
 	rootParameters[RootBindings::RootParam::SamplerTable].InitAsDescriptorTable(1, &samplerRange, RootBindings::Visibility::SamplerTable);
 

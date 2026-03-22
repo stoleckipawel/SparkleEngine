@@ -63,7 +63,7 @@ namespace
 		}
 	}
 
-	void WriteLevelSection(std::ofstream& output, const Level& level)
+	void WriteLevelSection(std::ofstream& output, const LevelAsset& level)
 	{
 		output << "[Level]\n";
 		output << "Name = " << level.GetName() << "\n\n";
@@ -79,7 +79,7 @@ namespace
 	}
 }  // namespace
 
-std::unique_ptr<Level> LevelParser::LoadFromFile(const std::filesystem::path& filePath, std::string& errorMessage)
+std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::path& filePath, std::string& errorMessage)
 {
 	std::ifstream input(filePath);
 	if (!input.is_open())
@@ -122,10 +122,10 @@ std::unique_ptr<Level> LevelParser::LoadFromFile(const std::filesystem::path& fi
 		levelDesc.name = filePath.stem().string();
 	}
 
-	return std::make_unique<Level>(levelDesc, filePath);
+	return std::make_unique<LevelAsset>(levelDesc, filePath);
 }
 
-bool LevelParser::SaveToFile(const Level& level, std::string* errorMessage)
+bool LevelParser::SaveToFile(const LevelAsset& level, std::string* errorMessage)
 {
 	const std::filesystem::path& sourcePath = level.GetSourcePath();
 	if (sourcePath.empty())

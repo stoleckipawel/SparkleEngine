@@ -21,10 +21,16 @@
 #include "Scene/Camera/GameCamera.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
+#include "Frame/BuildFrameContext.h"
+#include "Frame/PerViewDataBuilder.h"
+#include "Frame/ShadowBuilder.h"
+#include "Frame/ShadowFrameBuilder.h"
+#include "Frame/ViewLightingBuilder.h"
 #include "PipelineStateManager.h"
 #include "SceneData/MaterialCacheManager.h"
+#include "SceneData/RenderSceneDataBuilder.h"
+#include "SceneData/RenderSceneSnapshot.h"
 #include "SceneData/SceneRenderStateCoordinator.h"
-#include "SceneData/RenderSceneViewBuilder.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -47,7 +53,14 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
 
-	m_editor = std::make_unique<UI>(*m_timer, &levelManager, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
+	m_editor = std::make_unique<UI>(
+	    *m_timer,
+	    &levelManager,
+	    m_gameScene,
+	    *m_rhi,
+	    *m_window,
+	    *m_descriptorHeapManager,
+	    *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -65,15 +78,22 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
 	m_textureManager = std::make_unique<TextureManager>(*m_rhi, *m_descriptorHeapManager);
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, *m_descriptorHeapManager);
-	m_renderSceneViewBuilder = std::make_unique<RenderSceneViewBuilder>(*m_materialCacheManager);
+	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
+	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
+	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
+	m_sceneSnapshot = std::make_unique<RenderSceneSnapshot>();
+	m_shadowBuilder = std::make_unique<ShadowBuilder>();
+	m_shadowFrameBuilder = std::make_unique<ShadowFrameBuilder>();
 
-	m_renderCamera = std::make_unique<RenderCamera>(m_gameScene->GetCamera());
+	m_renderCamera = std::make_unique<RenderCamera>();
+	
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
 	    *m_gameScene,
 	    *m_rhi,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
+	    *m_sceneSnapshot,
 	    *m_renderCamera,
 	    *m_materialCacheManager);
 }
@@ -84,11 +104,11 @@ void Renderer::InitializeFrameGraph() noexcept
 	    *m_rhi,
 	    *m_window,
 	    m_pipelineStateManager->GetRootSignature(),
-	    m_pipelineStateManager->GetPipelineState(),
+	    m_pipelineStateManager->GetForwardPipelineState(),
+	    m_pipelineStateManager->GetShadowPipelineState(),
 	    *m_constantBufferManager,
 	    *m_textureManager,
 	    *m_samplerLibrary,
-	    *m_gpuMeshCache,
 	    *m_swapChain,
 	    *m_descriptorHeapManager,
 	    *m_editor};
@@ -133,18 +153,28 @@ void Renderer::BeginFrame() noexcept
 
 void Renderer::SetupFrame() noexcept
 {
-	m_renderCamera->Update();
-
 	m_timer->Tick();
 	m_editor->Update();
+
+	m_sceneSnapshot->Capture(*m_gameScene);
+	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
+	m_renderCamera->Update(m_sceneSnapshot->camera);
+
 	m_constantBufferManager->UpdatePerFrame();
 }
 
 void Renderer::RecordFrame() noexcept
 {
-	FrameContext frame = FrameContext::Build(*m_gameScene, *m_window, *m_swapChain, *m_renderCamera, *m_renderSceneViewBuilder);
-
-	m_constantBufferManager->UpdatePerView(frame.perViewData);
+	FrameContext frame = BuildFrameContext(
+	    *m_sceneSnapshot,
+	    *m_swapChain,
+	    *m_constantBufferManager,
+	    *m_renderCamera,
+	    *m_renderSceneDataBuilder,
+	    *m_perViewDataBuilder,
+	    *m_viewLightingBuilder,
+	    *m_shadowFrameBuilder,
+	    *m_shadowBuilder);
 
 	m_frameGraph->Setup(frame);
 	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();

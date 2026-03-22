@@ -104,7 +104,7 @@ void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 		return;
 	}
 
-	const Level* activeLevel = m_levelManager->GetActiveLevel();
+	const LevelAsset* activeLevel = m_levelManager->GetActiveLevel();
 	const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string();
 
 	for (const std::string& levelName : levelNames)
@@ -222,7 +222,7 @@ void MainMenuBarPanel::BuildUI() noexcept
 
 	if (m_levelManager != nullptr)
 	{
-		const Level* activeLevel = m_levelManager->GetActiveLevel();
+		const LevelAsset* activeLevel = m_levelManager->GetActiveLevel();
 		const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string("<None>");
 
 		ImGui::Separator();

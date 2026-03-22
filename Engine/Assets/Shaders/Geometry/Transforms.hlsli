@@ -13,12 +13,12 @@ float4 PositionLocalToWorld(float4 localPosition)
 
 float4 PositionWorldToView(float4 worldPosition)
 {
-	return mul(worldPosition, ViewMTX);
+	return mul(worldPosition, Camera.ViewMTX);
 }
 
 float4 PositionViewToClip(float4 viewPosition)
 {
-	return mul(viewPosition, ProjectionMTX);
+	return mul(viewPosition, Camera.ProjectionMTX);
 }
 
 float4 PositionLocalToClip(float4 localPosition)
@@ -30,7 +30,7 @@ float4 PositionLocalToClip(float4 localPosition)
 
 float4 PositionWorldToClip(float4 worldPosition)
 {
-	return mul(worldPosition, ViewProjMTX);
+	return mul(worldPosition, Camera.ViewProjMTX);
 }
 
 

@@ -76,20 +76,42 @@ D3D12PipelineState::D3D12PipelineState(
     ShaderBytecode pixelShader) :
     m_rhi(rhi)
 {
+	GraphicsPipelineStateDesc desc{};
+	desc.VertexLayout = vertexLayout;
+	desc.RootSignature = &rootSignature;
+	desc.VertexShader = vertexShader;
+	desc.PixelShader = pixelShader;
+	desc.HasPixelShader = true;
+	desc.RenderTargetFormats[0] = RenderConfig::BackBufferFormat;
+	desc.RenderTargetCount = 1;
+	desc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
+	desc.DepthTest.DepthEnable = true;
+	desc.DepthTest.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	desc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
+	Create(desc);
+}
+
+D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStateDesc& desc) : m_rhi(rhi)
+{
+	Create(desc);
+}
+
+void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
+{
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
-	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
-	psoDesc.InputLayout.pInputElementDescs = vertexLayout.data();
+	psoDesc.InputLayout.NumElements = static_cast<UINT>(desc.VertexLayout.size());
+	psoDesc.InputLayout.pInputElementDescs = desc.VertexLayout.data();
 	psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
-	psoDesc.pRootSignature = rootSignature.GetRaw();
+	psoDesc.pRootSignature = desc.RootSignature != nullptr ? desc.RootSignature->GetRaw() : nullptr;
 
-	psoDesc.VS.pShaderBytecode = vertexShader.Data;
-	psoDesc.VS.BytecodeLength = vertexShader.Size;
-	psoDesc.PS.pShaderBytecode = pixelShader.Data;
-	psoDesc.PS.BytecodeLength = pixelShader.Size;
+	psoDesc.VS.pShaderBytecode = desc.VertexShader.Data;
+	psoDesc.VS.BytecodeLength = desc.VertexShader.Size;
+	psoDesc.PS.pShaderBytecode = desc.HasPixelShader ? desc.PixelShader.Data : nullptr;
+	psoDesc.PS.BytecodeLength = desc.HasPixelShader ? desc.PixelShader.Size : 0;
 
-	SetRasterizerState(psoDesc, false, D3D12_CULL_MODE_BACK);
+	SetRasterizerState(psoDesc, desc.RenderWireframe, desc.CullMode);
 
 	SetStreamOutput(psoDesc);
 
@@ -108,18 +130,15 @@ D3D12PipelineState::D3D12PipelineState(
 	rtBlend.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	SetRenderTargetBlendState(psoDesc, rtBlend);
 
-	DepthTestDesc depthTestDesc = {};
-	depthTestDesc.DepthEnable = true;
-	depthTestDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	depthTestDesc.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
-	SetDepthTestState(psoDesc, depthTestDesc);
+	SetDepthTestState(psoDesc, desc.DepthTest);
+	SetStencilTestState(psoDesc, desc.StencilTest);
 
-	StencilTestDesc stencilDesc = {};
-	SetStencilTestState(psoDesc, stencilDesc);
-
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = RenderConfig::BackBufferFormat;
-	psoDesc.DSVFormat = RenderConfig::DepthStencilFormat;
+	psoDesc.NumRenderTargets = desc.RenderTargetCount;
+	for (std::uint32_t renderTargetIndex = 0; renderTargetIndex < desc.RenderTargetCount; ++renderTargetIndex)
+	{
+		psoDesc.RTVFormats[renderTargetIndex] = desc.RenderTargetFormats[renderTargetIndex];
+	}
+	psoDesc.DSVFormat = desc.DepthStencilFormat;
 
 	psoDesc.NodeMask = 0;
 	psoDesc.CachedPSO = {};

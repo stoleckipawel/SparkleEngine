@@ -25,7 +25,6 @@ class GameCamera final
 
 	void Rotate(float yawDelta, float pitchDelta) noexcept;
 
-	DirectX::XMFLOAT3 GetPosition() const noexcept { return m_transform.GetTranslation(); }
 	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
 	const Transform& GetTransform() const noexcept { return m_transform; }
 
@@ -33,8 +32,6 @@ class GameCamera final
 	DirectX::XMFLOAT3 GetRight() const noexcept;
 
 	void SetYawPitch(float yawRadians, float pitchRadians) noexcept;
-	float GetYaw() const noexcept { return m_transform.GetRotationEuler().y; }
-	float GetPitch() const noexcept { return m_transform.GetRotationEuler().x; }
 
 	bool IsDirty() const noexcept { return m_dirty; }
 

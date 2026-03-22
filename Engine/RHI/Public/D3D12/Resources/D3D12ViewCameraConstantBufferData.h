@@ -4,6 +4,10 @@
 
 struct PerViewCameraConstantBufferData
 {
+	DirectX::XMFLOAT4X4 ViewMTX;
+	DirectX::XMFLOAT4X4 ProjectionMTX;
+	DirectX::XMFLOAT4X4 ViewProjMTX;
+
 	DirectX::XMFLOAT3 Position;
 	float NearZ;
 
@@ -11,4 +15,4 @@ struct PerViewCameraConstantBufferData
 	DirectX::XMFLOAT3 Direction;
 };
 
-static_assert(sizeof(PerViewCameraConstantBufferData) == 32, "Per-view camera constant buffer data must be 32 bytes");
+static_assert(sizeof(PerViewCameraConstantBufferData) == 224, "Per-view camera constant buffer data must match the shader layout");

@@ -9,9 +9,9 @@ class D3D12RootSignature;
 class D3D12SamplerLibrary;
 class CommandContext;
 class FrameGraph;
-class GPUMeshCache;
+struct RenderSceneData;
+struct RenderViewContext;
 class TextureManager;
-struct FrameContext;
 
 class ForwardOpaquePass final
 {
@@ -23,20 +23,20 @@ class ForwardOpaquePass final
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    TextureManager& textureManager,
 	    D3D12SamplerLibrary& samplerLibrary,
-	    GPUMeshCache& gpuMeshCache,
+	    TextureHandle shadowMapHandle,
 	    TextureHandle backBufferHandle,
 	    TextureHandle depthBufferHandle) noexcept;
 
 	~ForwardOpaquePass() noexcept = default;
 
-	void Execute(const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame);
+	void Execute(const FrameGraph& frameGraph, CommandContext& cmd, const RenderSceneData& sceneData, const RenderViewContext& viewContext);
 
   private:
 	void PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd);
-	void ConfigurePipeline(CommandContext& cmd, const FrameContext& frame);
-	void BindFrameResources(CommandContext& cmd);
-	void BindGlobalResources(CommandContext& cmd);
-	void DrawOpaqueMeshes(CommandContext& cmd, const FrameContext& frame);
+	void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
+	void BindFrameResources(CommandContext& cmd, const RenderViewContext& viewContext);
+	void BindGlobalResources(const FrameGraph& frameGraph, CommandContext& cmd);
+	void DrawOpaqueMeshes(CommandContext& cmd, const RenderSceneData& sceneData);
 
 	D3D12RootSignature* m_rootSignature = nullptr;
 	D3D12PipelineState* m_pipelineState = nullptr;
@@ -44,7 +44,7 @@ class ForwardOpaquePass final
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	D3D12SamplerLibrary* m_samplerLibrary = nullptr;
-	GPUMeshCache* m_gpuMeshCache = nullptr;
+	TextureHandle m_shadowMap;
 
 	TextureHandle m_backBuffer;
 	TextureHandle m_depthBuffer;

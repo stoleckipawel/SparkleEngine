@@ -8,21 +8,6 @@ Mesh::Mesh(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotati
 {
 }
 
-void Mesh::SetTranslation(const DirectX::XMFLOAT3& t) noexcept
-{
-	m_transform.SetTranslation(t);
-}
-
-void Mesh::SetRotationEuler(const DirectX::XMFLOAT3& r) noexcept
-{
-	m_transform.SetRotationEuler(r);
-}
-
-void Mesh::SetScale(const DirectX::XMFLOAT3& s) noexcept
-{
-	m_transform.SetScale(s);
-}
-
 DirectX::XMMATRIX Mesh::GetWorldMatrix() const noexcept
 {
 	return m_transform.GetWorldMatrix();

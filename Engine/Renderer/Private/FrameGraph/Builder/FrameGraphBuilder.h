@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <array>
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
@@ -12,7 +13,6 @@ class D3D12RootSignature;
 class D3D12SamplerLibrary;
 class D3D12SwapChain;
 class FrameGraph;
-class GPUMeshCache;
 class TextureManager;
 class UI;
 class Window;
@@ -22,11 +22,11 @@ struct FrameGraphDependencies
 	D3D12Rhi& rhi;
 	Window& window;
 	D3D12RootSignature& rootSignature;
-	D3D12PipelineState& pipelineState;
+	D3D12PipelineState& forwardPipelineState;
+	D3D12PipelineState& shadowPipelineState;
 	D3D12ConstantBufferManager& constantBufferManager;
 	TextureManager& textureManager;
 	D3D12SamplerLibrary& samplerLibrary;
-	GPUMeshCache& gpuMeshCache;
 	D3D12SwapChain& swapChain;
 	D3D12DescriptorHeapManager& descriptorHeapManager;
 	UI& ui;

@@ -4,10 +4,14 @@
 namespace
 {
 	constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
-	    {"White", "Defaults/white.png"},
-	    {"Black", "Defaults/black.jpg"},
-	    {"FlatNormal", "Defaults/flat_normal.jpg"},
-	    {"DefaultMetallicRoughness", "Defaults/default_metallic_roughness.jpg"}};
+	    {"Checkerboard", "Defaults/default_checkerboard.png"},
+	    {"White", "Defaults/default_white.png"},
+	    {"Black", "Defaults/default_black.png"},
+	    {"Red", "Defaults/default_red.png"},
+	    {"Green", "Defaults/default_green.png"},
+	    {"Blue", "Defaults/default_blue.png"},
+	    {"Normal", "Defaults/default_normal.png"},
+	    {"Cubemap", "Defaults/default_cubemap.png"}};
 
 	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
 }  // namespace

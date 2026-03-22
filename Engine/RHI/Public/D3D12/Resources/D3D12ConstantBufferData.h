@@ -30,15 +30,12 @@ CBV_CHECK(PerFrameConstantBufferData);
 
 struct alignas(256) PerViewConstantBufferData
 {
-	DirectX::XMFLOAT4X4 ViewMTX;
-	DirectX::XMFLOAT4X4 ProjectionMTX;
-	DirectX::XMFLOAT4X4 ViewProjMTX;
-
 	PerViewCameraConstantBufferData Camera = {};
 	PerViewLightingConstantBufferData ViewLighting = {};
 };
 CBV_CHECK(PerViewConstantBufferData);
-static_assert(sizeof(PerViewConstantBufferData) == 512, "Per-view constant buffer data must match the shader layout");
+static_assert(offsetof(PerViewConstantBufferData, Camera) == 0, "PerViewConstantBufferData::Camera must start at c0");
+static_assert(offsetof(PerViewConstantBufferData, ViewLighting) == 224, "PerViewConstantBufferData::ViewLighting must start after camera data");
 
 struct alignas(256) PerObjectVSConstantBufferData
 {

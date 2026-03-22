@@ -14,6 +14,7 @@ class MainMenuBarPanel;
 class RendererPanel;
 class UIRendererSection;
 class LevelManager;
+class GameScene;
 class Window;
 class D3D12DescriptorHeapManager;
 class D3D12SwapChain;
@@ -25,6 +26,7 @@ class SPARKLE_EDITOR_API UI final
   public:
 	UI(Timer& timer,
 	   LevelManager* levelManager,
+	   GameScene* gameScene,
 	   D3D12Rhi& rhi,
 	   Window& window,
 	   D3D12DescriptorHeapManager& descriptorHeapManager,
@@ -66,6 +68,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<RendererPanel> m_rendererPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
+	GameScene* m_gameScene = nullptr;
 	D3D12Rhi* m_rhi = nullptr;
 	Window* m_window = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

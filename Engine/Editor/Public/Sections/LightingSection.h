@@ -6,12 +6,15 @@
 #include <string>
 #include <vector>
 
+#include <DirectXMath.h>
+
 class LevelManager;
+class SceneLighting;
 
 class LightingSection final : public UIRendererSection
 {
   public:
-	explicit LightingSection(LevelManager& levelManager) noexcept;
+	LightingSection(LevelManager& levelManager, SceneLighting& sceneLighting) noexcept;
 	~LightingSection() = default;
 
 	LightingSection(const LightingSection&) = delete;
@@ -32,7 +35,14 @@ class LightingSection final : public UIRendererSection
 	};
 
 	std::vector<LightSelectionEntry> BuildSelectionEntries() const;
+	static void ClampLightingUiValues(DirectX::XMFLOAT3& color, float& intensity) noexcept;
+
+	static constexpr float kDirectionSliderMin = -1.0f;
+	static constexpr float kDirectionSliderMax = 1.0f;
+	static constexpr float kIntensitySliderMin = 0.0f;
+	static constexpr float kIntensitySliderMax = 20.0f;
 
 	LevelManager* m_levelManager = nullptr;
+	SceneLighting* m_sceneLighting = nullptr;
 	int m_selectedLightIndex = 0;
 };

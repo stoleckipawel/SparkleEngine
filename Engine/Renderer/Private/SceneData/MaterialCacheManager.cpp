@@ -3,13 +3,13 @@
 #include "MaterialCacheManager.h"
 
 #include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorHeapManager.h"
 #include "D3D12RootBindings.h"
 #include "D3D12Texture.h"
-#include "Renderer/Public/SceneData/RenderSceneView.h"
-#include "Renderer/Public/Textures/MaterialFallbackTextures.h"
-#include "Scene/GameScene.h"
+#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "Renderer/Public/Textures/DefaultTextures.h"
 #include "SceneData/MaterialCacheUtils.h"
 #include "TextureManager.h"
 
@@ -23,27 +23,26 @@ MaterialCacheManager::~MaterialCacheManager() noexcept
 	Reset();
 }
 
-void MaterialCacheManager::PopulateSceneMaterials(const GameScene& gameScene, RenderSceneView& renderSceneView)
+void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapshot, RenderSceneData& sceneData)
 {
-	const auto& loadedMaterials = gameScene.GetLoadedMaterials();
-	const bool shouldUseLoadedMaterials = !loadedMaterials.empty();
+	const bool shouldUseSceneMaterials = materialSnapshot.HasMaterials();
 	const bool materialSetChanged =
-	    shouldUseLoadedMaterials
-	        ? (!m_materialCacheUsesLoadedMaterials || !MaterialCacheUtils::MaterialDescSetEquals(m_cachedMaterialDescs, loadedMaterials))
-	        : m_materialCacheUsesLoadedMaterials;
+	    shouldUseSceneMaterials
+	        ? (!m_cachedFromSceneMaterials || !MaterialCacheUtils::MaterialSnapshotEquals(m_cachedMaterialSnapshot, materialSnapshot))
+	        : m_cachedFromSceneMaterials;
 
 	if (!m_materialCacheBuilt || materialSetChanged)
 	{
-		Rebuild(gameScene);
+		Rebuild(materialSnapshot);
 	}
 
 	if (!m_cachedMaterialData.empty())
 	{
-		renderSceneView.materials = m_cachedMaterialData;
+		sceneData.materials = m_cachedMaterialData;
 	}
 }
 
-void MaterialCacheManager::Rebuild(const GameScene& gameScene)
+void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 {
 	if (!m_textureManager || !m_descriptorHeapManager)
 	{
@@ -51,13 +50,11 @@ void MaterialCacheManager::Rebuild(const GameScene& gameScene)
 		return;
 	}
 
-	const auto& loadedMaterials = gameScene.GetLoadedMaterials();
-
 	ReleaseMaterialTextureTables();
 	m_cachedMaterialData.clear();
-	m_cachedMaterialDescs.clear();
+	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
-	m_materialCacheUsesLoadedMaterials = !loadedMaterials.empty();
+	m_cachedFromSceneMaterials = materialSnapshot.HasMaterials();
 
 	const auto* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	if (!srvHeap)
@@ -71,14 +68,21 @@ void MaterialCacheManager::Rebuild(const GameScene& gameScene)
 		MaterialData material = MaterialData::FromDesc(desc);
 
 		const D3D12Texture* textures[RootBindings::SRVRegister::MaterialTextureCount] = {
-		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.albedoTexture, MaterialFallbackTexture::Albedo),
-		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.normalTexture, MaterialFallbackTexture::Normal),
-		    MaterialCacheUtils::ResolveMaterialTexture(
-		        *m_textureManager,
+		    m_textureManager->ResolveTextureOrDefault(
+		        desc.albedoTexture,
+		        DefaultTexture::White),
+		    m_textureManager->ResolveTextureOrDefault(
+		        desc.normalTexture,
+		        DefaultTexture::Normal),
+		    m_textureManager->ResolveTextureOrDefault(
 		        desc.metallicRoughnessTexture,
-		        MaterialFallbackTexture::MetallicRoughness),
-		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.occlusionTexture, MaterialFallbackTexture::Occlusion),
-		    MaterialCacheUtils::ResolveMaterialTexture(*m_textureManager, desc.emissiveTexture, MaterialFallbackTexture::Emissive)};
+		        DefaultTexture::Black),
+		    m_textureManager->ResolveTextureOrDefault(
+		        desc.occlusionTexture,
+		        DefaultTexture::White),
+		    m_textureManager->ResolveTextureOrDefault(
+		        desc.emissiveTexture,
+		        DefaultTexture::Black)};
 
 		const D3D12DescriptorHandle tableHandle = m_descriptorHeapManager->AllocateContiguous(
 		    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
@@ -100,13 +104,13 @@ void MaterialCacheManager::Rebuild(const GameScene& gameScene)
 		m_cachedMaterialData.push_back(material);
 	};
 
-	if (!loadedMaterials.empty())
+	if (materialSnapshot.HasMaterials())
 	{
-		m_cachedMaterialDescs = loadedMaterials;
-		m_cachedMaterialData.reserve(loadedMaterials.size());
-		m_materialTextureTables.reserve(loadedMaterials.size());
+		m_cachedMaterialSnapshot = materialSnapshot;
+		m_cachedMaterialData.reserve(materialSnapshot.materialDescs.size());
+		m_materialTextureTables.reserve(materialSnapshot.materialDescs.size());
 
-		for (const auto& desc : loadedMaterials)
+		for (const auto& desc : materialSnapshot.materialDescs)
 		{
 			buildMaterialTable(desc);
 		}
@@ -128,9 +132,9 @@ void MaterialCacheManager::Reset() noexcept
 {
 	ReleaseMaterialTextureTables();
 	m_cachedMaterialData.clear();
-	m_cachedMaterialDescs.clear();
+	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
-	m_materialCacheUsesLoadedMaterials = false;
+	m_cachedFromSceneMaterials = false;
 }
 
 void MaterialCacheManager::ReleaseMaterialTextureTables() noexcept

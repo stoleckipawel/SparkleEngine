@@ -63,11 +63,19 @@ TextureManager::~TextureManager() noexcept
 
 void TextureManager::LoadDefaults()
 {
-	LoadTexture(TextureId::Checker, "ColorCheckerBoard.png");
-	LoadTexture(TextureId::SkyCubemap, "SkyCubemap.png");
+	LoadTexture(TextureId::Checker, DefaultTextures::GetPath(DefaultTexture::Checkerboard));
+	LoadTexture(TextureId::SkyCubemap, DefaultTextures::GetPath(DefaultTexture::Cubemap));
 	LoadDefaultTextures();
 
 	LOG_INFO(std::format("TextureManager: Loaded {} default textures", GetLoadedCount()));
+}
+
+void TextureManager::LoadSceneTextures(const TextureSnapshot& textureSnapshot)
+{
+	for (const std::filesystem::path& texturePath : textureSnapshot.texturePaths)
+	{
+		LoadFromPath(texturePath);
+	}
 }
 
 void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& relativePath)
@@ -174,20 +182,35 @@ const D3D12Texture* TextureManager::GetTexture(TextureId id) const noexcept
 	return (index < kTextureCount) ? m_textures[index].get() : nullptr;
 }
 
-D3D12Texture* TextureManager::GetDefaultTexture(DefaultTexture type)
+D3D12Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
 {
-	if (D3D12Texture* texture = LoadFromPath(DefaultTextures::GetPath(type)))
+	return const_cast<D3D12Texture*>(std::as_const(*this).GetSceneTexture(texturePath));
+}
+
+const D3D12Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) const noexcept
+{
+	return FindPathTexture(texturePath);
+}
+
+const D3D12Texture* TextureManager::ResolveTextureOrDefault(
+	const std::optional<std::filesystem::path>& texturePath,
+	DefaultTexture fallbackType) const
+{
+	if (texturePath)
+	{
+		if (const D3D12Texture* texture = GetSceneTexture(*texturePath))
+		{
+			return texture;
+		}
+	}
+
+	if (const D3D12Texture* texture = FindPathTexture(DefaultTextures::GetPath(fallbackType)))
 	{
 		return texture;
 	}
 
-	LOG_WARNING(std::format("TextureManager: Falling back to checker for {} default texture", DefaultTextures::GetName(type)));
-	return GetTexture(TextureId::Checker);
-}
-
-const D3D12Texture* TextureManager::GetDefaultTexture(DefaultTexture type) const
-{
-	if (const D3D12Texture* texture = FindPathTexture(DefaultTextures::GetPath(type)))
+	LOG_WARNING(std::format("TextureManager: Falling back to checkerboard for {} default texture", DefaultTextures::GetName(fallbackType)));
+	if (const D3D12Texture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
 	{
 		return texture;
 	}

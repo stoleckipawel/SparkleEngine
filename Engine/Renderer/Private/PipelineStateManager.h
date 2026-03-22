@@ -19,7 +19,8 @@ class PipelineStateManager final
 	PipelineStateManager& operator=(PipelineStateManager&&) = delete;
 
 	D3D12RootSignature& GetRootSignature() const noexcept;
-	D3D12PipelineState& GetPipelineState() const noexcept;
+	D3D12PipelineState& GetForwardPipelineState() const noexcept;
+	D3D12PipelineState& GetShadowPipelineState() const noexcept;
 
   private:
 	void CreateRootSignature();
@@ -30,5 +31,8 @@ class PipelineStateManager final
 	std::unique_ptr<D3D12RootSignature> m_rootSignature;
 	std::unique_ptr<ShaderCompileResult> m_vertexShader;
 	std::unique_ptr<ShaderCompileResult> m_pixelShader;
-	std::unique_ptr<D3D12PipelineState> m_pipelineState;
+	std::unique_ptr<ShaderCompileResult> m_shadowVertexShader;
+	std::unique_ptr<ShaderCompileResult> m_shadowPixelShader;
+	std::unique_ptr<D3D12PipelineState> m_forwardPipelineState;
+	std::unique_ptr<D3D12PipelineState> m_shadowPipelineState;
 };

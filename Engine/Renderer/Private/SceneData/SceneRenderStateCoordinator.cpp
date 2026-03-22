@@ -8,6 +8,7 @@
 #include "Runtime/Level/LevelChangeEvents.h"
 #include "Scene/GameScene.h"
 #include "SceneData/MaterialCacheManager.h"
+#include "SceneData/RenderSceneSnapshot.h"
 #include "TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
@@ -16,12 +17,14 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     D3D12Rhi& rhi,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
+	RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
     m_gameScene(&gameScene),
     m_rhi(&rhi),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
+	m_sceneSnapshot(&sceneSnapshot),
     m_renderCamera(&renderCamera),
     m_materialCache(&materialCache)
 {
@@ -67,19 +70,34 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 		m_gpuMeshCache->Clear();
 	}
 
+	if (m_sceneSnapshot)
+	{
+		m_sceneSnapshot->Reset();
+	}
+
 	ReleaseSceneScopedMaterialResources();
 }
 
 void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 {
-	if (m_renderCamera)
+	if (m_gameScene && m_sceneSnapshot)
 	{
-		m_renderCamera->ForceUpdate();
+		m_sceneSnapshot->Capture(*m_gameScene);
 	}
 
-	if (m_gameScene && m_materialCache)
+	if (m_renderCamera && m_sceneSnapshot)
 	{
-		m_materialCache->Rebuild(*m_gameScene);
+		m_renderCamera->ForceUpdate(m_sceneSnapshot->camera);
+	}
+
+	if (m_sceneSnapshot && m_textureManager)
+	{
+		m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
+	}
+
+	if (m_sceneSnapshot && m_materialCache)
+	{
+		m_materialCache->Rebuild(m_sceneSnapshot->materials);
 	}
 }
 

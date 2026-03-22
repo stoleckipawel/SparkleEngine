@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-class Level;
+class LevelAsset;
 
 class SPARKLE_ENGINE_API LevelRegistry final
 {
@@ -24,24 +24,24 @@ class SPARKLE_ENGINE_API LevelRegistry final
 	LevelRegistry(LevelRegistry&&) = delete;
 	LevelRegistry& operator=(LevelRegistry&&) = delete;
 
-	Level* FindLevel(std::string_view name) const;
+	LevelAsset* FindLevel(std::string_view name) const;
 
-	Level* FindLevelOrDefault(std::string_view name) const;
+	LevelAsset* FindLevelOrDefault(std::string_view name) const;
 
-	const std::unordered_map<std::string, std::unique_ptr<Level>>& GetAllLevels() const noexcept;
+	const std::unordered_map<std::string, std::unique_ptr<LevelAsset>>& GetAllLevels() const noexcept;
 
 	std::size_t GetLevelCount() const noexcept;
 
 	void SetDefaultLevelName(std::string_view name);
-	bool SaveLevel(const Level& level, std::string* errorMessage = nullptr) const;
+	bool SaveLevel(const LevelAsset& level, std::string* errorMessage = nullptr) const;
 
 	std::string_view GetDefaultLevelName() const noexcept;
-	Level* GetDefaultLevel() const;
+	LevelAsset* GetDefaultLevel() const;
 
   private:
 	void DiscoverLevels();
-	void Register(std::unique_ptr<Level> level);
+	void Register(std::unique_ptr<LevelAsset> level);
 
-	std::unordered_map<std::string, std::unique_ptr<Level>> m_levels;
+	std::unordered_map<std::string, std::unique_ptr<LevelAsset>> m_levels;
 	std::string m_defaultLevelName;
 };

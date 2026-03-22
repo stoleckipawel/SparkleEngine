@@ -1,10 +1,6 @@
 #include "PCH.h"
 #include "SceneData/MaterialCacheUtils.h"
 
-#include "D3D12Texture.h"
-#include "TextureManager.h"
-#include "Renderer/Public/Textures/MaterialFallbackTextures.h"
-
 namespace
 {
 	bool OptionalPathEquals(const std::optional<std::filesystem::path>& left, const std::optional<std::filesystem::path>& right)
@@ -46,36 +42,20 @@ std::uint32_t MaterialCacheUtils::ResolveMaterialId(std::uint32_t materialId, st
 	return 0;
 }
 
-bool MaterialCacheUtils::MaterialDescSetEquals(const std::vector<MaterialDesc>& left, const std::vector<MaterialDesc>& right)
+bool MaterialCacheUtils::MaterialSnapshotEquals(const MaterialSnapshot& left, const MaterialSnapshot& right)
 {
-	if (left.size() != right.size())
+	if (left.materialDescs.size() != right.materialDescs.size())
 	{
 		return false;
 	}
 
-	for (std::size_t index = 0; index < left.size(); ++index)
+	for (std::size_t index = 0; index < left.materialDescs.size(); ++index)
 	{
-		if (!MaterialDescEquals(left[index], right[index]))
+		if (!MaterialDescEquals(left.materialDescs[index], right.materialDescs[index]))
 		{
 			return false;
 		}
 	}
 
 	return true;
-}
-
-const D3D12Texture* MaterialCacheUtils::ResolveMaterialTexture(
-    TextureManager& textureManager,
-    const std::optional<std::filesystem::path>& texturePath,
-    MaterialFallbackTexture fallbackType)
-{
-	if (texturePath)
-	{
-		if (D3D12Texture* texture = textureManager.LoadFromPath(*texturePath))
-		{
-			return texture;
-		}
-	}
-
-	return textureManager.GetDefaultTexture(MaterialFallbackTextures::GetDefaultTexture(fallbackType));
 }

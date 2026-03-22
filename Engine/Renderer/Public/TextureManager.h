@@ -2,11 +2,13 @@
 
 #include "Renderer/Public/Textures/DefaultTextures.h"
 #include "Renderer/Public/RendererAPI.h"
+#include "GameFramework/Public/Scene/Textures/TextureSnapshot.h"
 
 #include <array>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
@@ -36,10 +38,9 @@ class SPARKLE_RENDERER_API TextureManager final
 	TextureManager& operator=(TextureManager&&) = delete;
 
 	void LoadDefaults();
+	void LoadSceneTextures(const TextureSnapshot& textureSnapshot);
 
 	void LoadTexture(TextureId id, const std::filesystem::path& relativePath);
-
-	D3D12Texture* LoadFromPath(const std::filesystem::path& texturePath);
 
 	void UnloadTexture(TextureId id) noexcept;
 	void UnloadSceneTextures() noexcept;
@@ -48,16 +49,11 @@ class SPARKLE_RENDERER_API TextureManager final
 
 	D3D12Texture* GetTexture(TextureId id) noexcept;
 	const D3D12Texture* GetTexture(TextureId id) const noexcept;
-	D3D12Texture* GetDefaultTexture(DefaultTexture type);
-	const D3D12Texture* GetDefaultTexture(DefaultTexture type) const;
-	D3D12Texture* GetDefaultWhiteTexture() { return GetDefaultTexture(DefaultTexture::White); }
-	const D3D12Texture* GetDefaultWhiteTexture() const { return GetDefaultTexture(DefaultTexture::White); }
-	D3D12Texture* GetDefaultBlackTexture() { return GetDefaultTexture(DefaultTexture::Black); }
-	const D3D12Texture* GetDefaultBlackTexture() const { return GetDefaultTexture(DefaultTexture::Black); }
-	D3D12Texture* GetDefaultFlatNormalTexture() { return GetDefaultTexture(DefaultTexture::FlatNormal); }
-	const D3D12Texture* GetDefaultFlatNormalTexture() const { return GetDefaultTexture(DefaultTexture::FlatNormal); }
-	D3D12Texture* GetDefaultMetallicRoughnessTexture() { return GetDefaultTexture(DefaultTexture::DefaultMetallicRoughness); }
-	const D3D12Texture* GetDefaultMetallicRoughnessTexture() const { return GetDefaultTexture(DefaultTexture::DefaultMetallicRoughness); }
+	D3D12Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
+	const D3D12Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
+	const D3D12Texture* ResolveTextureOrDefault(
+	    const std::optional<std::filesystem::path>& texturePath,
+	    DefaultTexture fallbackType) const;
 
 	bool IsLoaded(TextureId id) const noexcept;
 
@@ -74,6 +70,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
 
 	void LoadDefaultTextures();
+	D3D12Texture* LoadFromPath(const std::filesystem::path& texturePath);
 	std::unique_ptr<D3D12Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
 	const D3D12Texture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	std::filesystem::path ResolveTexturePath(const std::filesystem::path& texturePath) const;

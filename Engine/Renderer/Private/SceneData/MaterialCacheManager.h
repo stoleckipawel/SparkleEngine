@@ -1,14 +1,13 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "D3D12DescriptorHandle.h"
 #include "Renderer/Public/SceneData/MaterialData.h"
 
 #include <vector>
 
-class GameScene;
 class D3D12DescriptorHeapManager;
-struct RenderSceneView;
+struct RenderSceneData;
 class TextureManager;
 
 class MaterialCacheManager final
@@ -22,8 +21,8 @@ class MaterialCacheManager final
 	MaterialCacheManager(MaterialCacheManager&&) = delete;
 	MaterialCacheManager& operator=(MaterialCacheManager&&) = delete;
 
-	void PopulateSceneMaterials(const GameScene& gameScene, RenderSceneView& renderSceneView);
-	void Rebuild(const GameScene& gameScene);
+	void BuildMaterials(const MaterialSnapshot& materialSnapshot, RenderSceneData& sceneData);
+	void Rebuild(const MaterialSnapshot& materialSnapshot);
 	void Reset() noexcept;
 
   private:
@@ -31,9 +30,9 @@ class MaterialCacheManager final
 
 	TextureManager* m_textureManager = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-	std::vector<MaterialDesc> m_cachedMaterialDescs;
+	MaterialSnapshot m_cachedMaterialSnapshot;
 	std::vector<MaterialData> m_cachedMaterialData;
 	std::vector<D3D12DescriptorHandle> m_materialTextureTables;
 	bool m_materialCacheBuilt = false;
-	bool m_materialCacheUsesLoadedMaterials = false;
+	bool m_cachedFromSceneMaterials = false;
 };

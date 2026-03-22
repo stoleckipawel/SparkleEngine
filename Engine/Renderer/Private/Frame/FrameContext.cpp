@@ -1,31 +1,47 @@
 #include "PCH.h"
+#include "BuildFrameContext.h"
 #include "Renderer/Public/FrameContext.h"
 
+#include "D3D12ConstantBufferManager.h"
 #include "D3D12SwapChain.h"
+#include "D3D12ViewLightingConstantBufferData.h"
+#include "Frame/PerViewDataBuilder.h"
+#include "Frame/ShadowBuilder.h"
+#include "Frame/ShadowFrameBuilder.h"
+#include "Frame/ViewLightingBuilder.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
-#include "Scene/GameScene.h"
-#include "SceneData/RenderSceneViewBuilder.h"
-#include "Window.h"
+#include "Core/Public/Diagnostics/Log.h"
+#include "SceneData/RenderSceneDataBuilder.h"
+#include "SceneData/RenderSceneSnapshot.h"
 
-FrameContext FrameContext::Build(
-    const GameScene& gameScene,
-    const Window& window,
+#include <cstdio>
+#include <utility>
+
+FrameContext BuildFrameContext(
+	const RenderSceneSnapshot& sceneSnapshot,
     const D3D12SwapChain& swapChain,
+    D3D12ConstantBufferManager& constantBufferManager,
     const RenderCamera& renderCamera,
-    RenderSceneViewBuilder& renderSceneViewBuilder)
+    RenderSceneDataBuilder& renderSceneDataBuilder,
+	PerViewDataBuilder& perViewDataBuilder,
+	ViewLightingBuilder& viewLightingBuilder,
+	ShadowFrameBuilder& shadowFrameBuilder,
+	ShadowBuilder& shadowBuilder)
 {
 	FrameContext frame{};
-	const RenderSceneViewportDesc viewportDesc{
-	    .camera = &renderCamera,
-	    .width = window.GetWidth(),
-	    .height = window.GetHeight(),
-	};
-	frame.renderSceneView = renderSceneViewBuilder.BuildViewport(gameScene, viewportDesc);
+	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
+	const PerViewLightingConstantBufferData baseLighting = viewLightingBuilder.Build(frame.sceneData);
+	ShadowFrameBuildResult shadowFrame = shadowFrameBuilder.Build(
+	    sceneSnapshot.camera,
+	    frame.sceneData,
+	    baseLighting,
+	    constantBufferManager,
+	    perViewDataBuilder,
+	    shadowBuilder);
+	frame.shadowView = std::move(shadowFrame.shadowView);
+	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, swapChain);
 
-	frame.perViewData = renderCamera.GetViewConstantBufferData();
-	renderSceneViewBuilder.PopulatePerViewLightingData(frame.renderSceneView, frame.perViewData);
-	frame.viewport = swapChain.GetDefaultViewport();
-	frame.scissorRect = swapChain.GetDefaultScissorRect();
+	frame.mainView.perViewGpuAddress = constantBufferManager.AllocatePerView(frame.mainView.perViewData);
 
 	return frame;
 }

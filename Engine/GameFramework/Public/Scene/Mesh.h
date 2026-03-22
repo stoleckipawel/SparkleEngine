@@ -22,15 +22,6 @@ class SPARKLE_ENGINE_API Mesh
 	Mesh(Mesh&&) noexcept = default;
 	Mesh& operator=(Mesh&&) noexcept = default;
 
-	void SetTranslation(const DirectX::XMFLOAT3& t) noexcept;
-	DirectX::XMFLOAT3 GetTranslation() const noexcept { return m_transform.GetTranslation(); }
-
-	void SetRotationEuler(const DirectX::XMFLOAT3& r) noexcept;
-	DirectX::XMFLOAT3 GetRotationEuler() const noexcept { return m_transform.GetRotationEuler(); }
-
-	void SetScale(const DirectX::XMFLOAT3& s) noexcept;
-	DirectX::XMFLOAT3 GetScale() const noexcept { return m_transform.GetScale(); }
-
 	void SetTransform(const Transform& transform) noexcept { m_transform = transform; }
 	Transform& GetTransform() noexcept { return m_transform; }
 	const Transform& GetTransform() const noexcept { return m_transform; }
@@ -41,8 +32,6 @@ class SPARKLE_ENGINE_API Mesh
 
 	void RebuildGeometry();
 	const MeshData& GetMeshData() const;
-
-	uint32 GetIndexCount() const noexcept { return m_meshData.GetIndexCount(); }
 
 	void SetMaterialId(uint32 id) noexcept { m_materialId = id; }
 	uint32 GetMaterialId() const noexcept { return m_materialId; }

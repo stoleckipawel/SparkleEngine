@@ -26,7 +26,12 @@ class TextureManager;
 class PipelineStateManager;
 class SceneRenderStateCoordinator;
 class MaterialCacheManager;
-class RenderSceneViewBuilder;
+class PerViewDataBuilder;
+class RenderSceneDataBuilder;
+class ShadowBuilder;
+class ShadowFrameBuilder;
+class ViewLightingBuilder;
+struct RenderSceneSnapshot;
 
 class SPARKLE_RENDERER_API Renderer final
 {
@@ -70,10 +75,15 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;
-	std::unique_ptr<RenderSceneViewBuilder> m_renderSceneViewBuilder;
+	std::unique_ptr<RenderSceneDataBuilder> m_renderSceneDataBuilder;
+	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
+	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;
+	std::unique_ptr<ShadowBuilder> m_shadowBuilder;
+	std::unique_ptr<ShadowFrameBuilder> m_shadowFrameBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
+	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

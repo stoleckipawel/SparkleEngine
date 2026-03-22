@@ -3,6 +3,7 @@
 #include "Resources/ConstantBuffers.hlsli"
 #include "Material/Material.hlsli"
 #include "BRDF/BRDF.hlsli"
+#include "Lighting/Shadow/ShadowEvaluation.hlsli"
 
 namespace Lighting
 {
@@ -17,7 +18,8 @@ namespace Lighting
 		DirectionalLight light;
 		light.Direction =
 		    normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
-		light.Radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
+		light.Radiance =
+		    ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
 		return light;
 	}
 
@@ -64,6 +66,7 @@ namespace Lighting
 
 	void CalculateDirect(
 	    float3 viewDirWorld,
+	    float3 positionWorld,
 	    Material::Properties matProps,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
@@ -80,6 +83,8 @@ namespace Lighting
 		for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 		{
 			DirectionalLight light = GetDirectionalLight(lightIndex);
+			const float shadowFactor =
+			    lightIndex == 0 ? Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction) : 1.0f;
 
 			AccumulateDirectLight(
 			    viewDirWorld,
@@ -89,9 +94,9 @@ namespace Lighting
 			    diffuseContribution,
 			    specularContribution,
 			    subsurfaceContribution);
-			outDiffuse += diffuseContribution;
-			outSpecular += specularContribution;
-			outSubsurface += subsurfaceContribution;
+			outDiffuse += diffuseContribution * shadowFactor;
+			outSpecular += specularContribution * shadowFactor;
+			outSubsurface += subsurfaceContribution * shadowFactor;
 		}
 	}
 
@@ -103,7 +108,7 @@ namespace Lighting
 	    out float3 outDirectSpecular)
 	{
 		const float3 viewDir = normalize(Camera.Position - psInput.PositionWorld);
-		CalculateDirect(viewDir, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
+		CalculateDirect(viewDir, psInput.PositionWorld, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
 		return outDirectDiffuse + outDirectSpecular + outDirectSubsurface + matProps.Emissive;
 	}
 }

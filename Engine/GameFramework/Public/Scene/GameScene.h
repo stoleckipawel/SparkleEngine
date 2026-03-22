@@ -1,9 +1,12 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Assets/MaterialDesc.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
-#include "GameFramework/Public/Scene/Lighting/GameSceneLightingState.h"
+#include "GameFramework/Public/Scene/Camera/SceneCamera.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
+#include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
+#include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
+#include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -13,8 +16,7 @@
 #include <vector>
 
 class Mesh;
-class GameCamera;
-class Level;
+class LevelAsset;
 struct ImportedMeshRequest;
 
 enum class GameSceneLoadStatus : std::uint8_t
@@ -42,31 +44,33 @@ class SPARKLE_ENGINE_API GameScene final
 	GameScene(GameScene&&) = delete;
 	GameScene& operator=(GameScene&&) = delete;
 
-	GameCamera& GetCamera() noexcept;
-	const GameCamera& GetCamera() const noexcept;
-	GameSceneLightingState& GetLightingState() noexcept { return m_lightingState; }
-	const GameSceneLightingState& GetLightingState() const noexcept { return m_lightingState; }
+	SceneCamera& GetSceneCamera() noexcept { return m_sceneCamera; }
+	const SceneCamera& GetSceneCamera() const noexcept { return m_sceneCamera; }
+	SceneLighting& GetLighting() noexcept { return m_lighting; }
+	const SceneLighting& GetLighting() const noexcept { return m_lighting; }
 
-	GameSceneLoadResult LoadLevel(const Level& level);
+	GameSceneLoadResult LoadLevel(const LevelAsset& level);
 	GameSceneLoadResult LoadLevel(const LevelDesc& desc);
 
 	void Clear();
 
 	bool LoadGltf(const std::filesystem::path& assetPath);
 
-	const std::vector<MaterialDesc>& GetLoadedMaterials() const noexcept { return m_loadedMaterials; }
-
-	const std::vector<std::unique_ptr<Mesh>>& GetMeshes() const noexcept { return m_meshes; }
-	bool HasMeshes() const noexcept { return !m_meshes.empty(); }
+	SceneMaterials& GetMaterials() noexcept { return m_materials; }
+	const SceneMaterials& GetMaterials() const noexcept { return m_materials; }
+	SceneMeshes& GetMeshes() noexcept { return m_meshes; }
+	const SceneMeshes& GetMeshes() const noexcept { return m_meshes; }
+	SceneTextures& GetTextures() noexcept { return m_textures; }
+	const SceneTextures& GetTextures() const noexcept { return m_textures; }
 
   private:
 	bool LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage);
 	bool LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage);
 	bool AppendResolvedGltf(const std::filesystem::path& resolvedPath);
 
-	std::unique_ptr<GameCamera> m_gameCamera;
-	GameSceneLightingState m_lightingState;
-
-	std::vector<std::unique_ptr<Mesh>> m_meshes;
-	std::vector<MaterialDesc> m_loadedMaterials;
+	SceneCamera m_sceneCamera;
+	SceneLighting m_lighting;
+	SceneMaterials m_materials;
+	SceneMeshes m_meshes;
+	SceneTextures m_textures;
 };

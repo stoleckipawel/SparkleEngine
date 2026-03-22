@@ -8,6 +8,7 @@ class LevelChangeEvents;
 class MaterialCacheManager;
 class RenderCamera;
 class GameScene;
+struct RenderSceneSnapshot;
 class TextureManager;
 
 class SceneRenderStateCoordinator final
@@ -19,6 +20,7 @@ class SceneRenderStateCoordinator final
 	    D3D12Rhi& rhi,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
+	    RenderSceneSnapshot& sceneSnapshot,
 	    RenderCamera& renderCamera,
 	    MaterialCacheManager& materialCache) noexcept;
 	~SceneRenderStateCoordinator() noexcept = default;
@@ -40,6 +42,7 @@ class SceneRenderStateCoordinator final
 	D3D12Rhi* m_rhi = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;
+	RenderSceneSnapshot* m_sceneSnapshot = nullptr;
 	RenderCamera* m_renderCamera = nullptr;
 	MaterialCacheManager* m_materialCache = nullptr;
 	ScopedEventHandle m_levelWillUnloadHandle;

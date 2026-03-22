@@ -7,10 +7,14 @@
 
 enum class DefaultTexture : std::uint8_t
 {
+	Checkerboard,
 	White,
 	Black,
-	FlatNormal,
-	DefaultMetallicRoughness,
+	Red,
+	Green,
+	Blue,
+	Normal,
+	Cubemap,
 
 	Count
 };

@@ -1,34 +1,30 @@
 #include "PCH.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
-#include "Scene/Camera/GameCamera.h"
 #include "DepthConvention.h"
 
 using namespace DirectX;
 
-RenderCamera::RenderCamera(GameCamera& gameCamera) noexcept : m_gameCamera(gameCamera)
+RenderCamera::RenderCamera() noexcept
 {
-	RebuildMatrices();
+	RebuildMatrices(m_snapshot);
 }
 
-void RenderCamera::Update() noexcept
+void RenderCamera::Update(const CameraSnapshot& snapshot) noexcept
 {
-	if (m_gameCamera.IsDirty())
-	{
-		RebuildMatrices();
-		m_gameCamera.ClearDirty();
-	}
+	RebuildMatrices(snapshot);
 }
 
-void RenderCamera::ForceUpdate() noexcept
+void RenderCamera::ForceUpdate(const CameraSnapshot& snapshot) noexcept
 {
-	RebuildMatrices();
-	m_gameCamera.ClearDirty();
+	RebuildMatrices(snapshot);
 }
 
-void RenderCamera::RebuildMatrices() noexcept
+void RenderCamera::RebuildMatrices(const CameraSnapshot& snapshot) noexcept
 {
-	const XMFLOAT3 position = m_gameCamera.GetPosition();
-	const XMFLOAT3& direction = m_gameCamera.GetDirection();
+	m_snapshot = snapshot;
+
+	const XMFLOAT3 position = m_snapshot.position;
+	const XMFLOAT3& direction = m_snapshot.direction;
 
 	const XMVECTOR positionVec = XMLoadFloat3(&position);
 	const XMVECTOR directionVec = XMLoadFloat3(&direction);
@@ -39,10 +35,10 @@ void RenderCamera::RebuildMatrices() noexcept
 	const XMMATRIX view = XMMatrixLookAtLH(positionVec, targetVec, worldUp);
 	XMStoreFloat4x4(&m_viewMatrix, view);
 
-	const float fovRadians = XMConvertToRadians(m_gameCamera.GetFovYDegrees());
-	const float aspect = m_gameCamera.GetAspectRatio();
-	const float nearZ = m_gameCamera.GetNearZ();
-	const float farZ = m_gameCamera.GetFarZ();
+	const float fovRadians = XMConvertToRadians(m_snapshot.fovYDegrees);
+	const float aspect = m_snapshot.aspectRatio;
+	const float nearZ = m_snapshot.nearZ;
+	const float farZ = m_snapshot.farZ;
 
 	const XMMATRIX proj = DepthConvention::CreatePerspectiveFovLH(fovRadians, aspect, nearZ, farZ);
 	XMStoreFloat4x4(&m_projectionMatrix, proj);
@@ -68,38 +64,18 @@ XMMATRIX RenderCamera::GetViewProjectionMatrix() const noexcept
 	return XMLoadFloat4x4(&m_viewProjMatrix);
 }
 
-XMFLOAT3 RenderCamera::GetPosition() const noexcept
+PerViewCameraConstantBufferData RenderCamera::GetCameraConstantBufferData() const noexcept
 {
-	return m_gameCamera.GetPosition();
-}
-
-XMFLOAT3 RenderCamera::GetDirection() const noexcept
-{
-	return m_gameCamera.GetDirection();
-}
-
-float RenderCamera::GetNearZ() const noexcept
-{
-	return m_gameCamera.GetNearZ();
-}
-
-float RenderCamera::GetFarZ() const noexcept
-{
-	return m_gameCamera.GetFarZ();
-}
-
-PerViewConstantBufferData RenderCamera::GetViewConstantBufferData() const noexcept
-{
-	PerViewConstantBufferData data = {};
+	PerViewCameraConstantBufferData data = {};
 
 	data.ViewMTX = m_viewMatrix;
 	data.ProjectionMTX = m_projectionMatrix;
 	data.ViewProjMTX = m_viewProjMatrix;
 
-	data.Camera.Position = m_gameCamera.GetPosition();
-	data.Camera.Direction = m_gameCamera.GetDirection();
-	data.Camera.NearZ = m_gameCamera.GetNearZ();
-	data.Camera.FarZ = m_gameCamera.GetFarZ();
+	data.Position = m_snapshot.position;
+	data.Direction = m_snapshot.direction;
+	data.NearZ = m_snapshot.nearZ;
+	data.FarZ = m_snapshot.farZ;
 
 	return data;
 }

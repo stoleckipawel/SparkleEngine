@@ -9,10 +9,8 @@
 #include <string_view>
 #include <vector>
 
-class Level;
+class LevelAsset;
 class GameScene;
-class GameCameraController;
-class GameSceneLightingState;
 struct GameSceneLoadResult;
 
 class SPARKLE_ENGINE_API LevelManager final
@@ -33,28 +31,24 @@ class SPARKLE_ENGINE_API LevelManager final
 	const LevelChangeEvents& GetLevelChangeEvents() const noexcept { return m_levelChangeEvents; }
 
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
-	void RegisterGameCameraController(GameCameraController& gameCameraController) noexcept;
-	GameCameraController* GetGameCameraController() noexcept { return m_gameCameraController; }
-	const GameCameraController* GetGameCameraController() const noexcept { return m_gameCameraController; }
-	Level* GetActiveLevel() noexcept { return m_activeLevel; }
-	const Level* GetActiveLevel() const noexcept { return m_activeLevel; }
-	GameSceneLightingState* GetGameSceneLightingState() noexcept;
-	const GameSceneLightingState* GetGameSceneLightingState() const noexcept;
+
+	LevelAsset* GetActiveLevel() noexcept { return m_activeLevel; }
+	const LevelAsset* GetActiveLevel() const noexcept { return m_activeLevel; }
 	bool SaveActiveLevel() noexcept;
 
   private:
 	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
 	static constexpr std::string_view GetStartupLevelName() noexcept { return "Sponza"; }
 
-	void InitializeActiveLevel() noexcept;
+	void ApplyLevelToScene() noexcept;
+	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
-	GameSceneLoadResult LoadLevelFromUnloadedState(const Level& level) noexcept;
-	void ProcessLevelChangeRequest(Level& requestedLevel) noexcept;
+	GameSceneLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
+	void ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept;
 
 	GameScene* m_gameScene = nullptr;
-	GameCameraController* m_gameCameraController = nullptr;
 	LevelRegistry m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
-	Level* m_activeLevel = nullptr;
+	LevelAsset* m_activeLevel = nullptr;
 	bool m_bLevelChangeInProgress = false;
 };

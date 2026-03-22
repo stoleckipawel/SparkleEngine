@@ -1,7 +1,10 @@
 #include "PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
+#include "FrameGraph/Builder/ShadowFrameGraphBuilder.h"
+
 #include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/Passes/ForwardOpaquePass.h"
 
@@ -31,28 +34,39 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    static_cast<std::uint32_t>(m_dependencies.window.GetHeight()));
 	const TextureHandle mainDepthHandle = frameGraph->CreateTexture(mainDepthDesc);
 
+	ShadowFrameGraphBuilder shadowFrameGraphBuilder(
+	    m_dependencies.rootSignature,
+	    m_dependencies.shadowPipelineState,
+	    m_dependencies.constantBufferManager);
+	const ShadowFrameGraphResources shadowResources = shadowFrameGraphBuilder.Build(*frameGraph);
+
 	auto forwardOpaquePass = std::make_shared<ForwardOpaquePass>(
 	    m_dependencies.rootSignature,
-	    m_dependencies.pipelineState,
+	    m_dependencies.forwardPipelineState,
 	    m_dependencies.constantBufferManager,
 	    m_dependencies.descriptorHeapManager,
 	    m_dependencies.textureManager,
 	    m_dependencies.samplerLibrary,
-	    m_dependencies.gpuMeshCache,
+	    shadowResources.shadowMapHandle,
 	    backBufferHandle,
 	    mainDepthHandle);
 
 	frameGraph->AddPass(
 	    "ForwardOpaque",
 	    FrameGraphPassFlags::Raster,
-	    [backBufferHandle, mainDepthHandle](PassBuilder& builder)
+	    [backBufferHandle, mainDepthHandle, shadowMapHandle = shadowResources.shadowMapHandle](PassBuilder& builder)
 	    {
 		    builder.Write(backBufferHandle, ResourceUsage::RenderTarget);
 		    builder.Write(mainDepthHandle, ResourceUsage::DepthWrite);
+
+		    if (shadowMapHandle.IsValid())
+		    {
+			    builder.Read(shadowMapHandle, ResourceUsage::ShaderRead);
+		    }
 	    },
 	    [forwardOpaquePass](const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame)
 	    {
-		    forwardOpaquePass->Execute(frameGraph, cmd, frame);
+		    forwardOpaquePass->Execute(frameGraph, cmd, frame.sceneData, frame.mainView);
 	    });
 
 	frameGraph->AddPass(

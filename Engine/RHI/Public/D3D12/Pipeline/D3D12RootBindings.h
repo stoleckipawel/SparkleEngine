@@ -12,9 +12,10 @@ namespace RootBindings
 		constexpr uint32_t PerObjectVS = 2;
 		constexpr uint32_t PerObjectPS = 3;
 		constexpr uint32_t TextureSRV = 4;
-		constexpr uint32_t SamplerTable = 5;
+		constexpr uint32_t ShadowMap0 = 5;
+		constexpr uint32_t SamplerTable = 6;
 
-		constexpr uint32_t Count = 6;
+		constexpr uint32_t Count = 7;
 	}  // namespace RootParam
 
 	namespace CBRegister
@@ -35,6 +36,8 @@ namespace RootBindings
 
 		constexpr uint32_t MaterialTableBase = BaseColor;
 		constexpr uint32_t MaterialTextureCount = 5;
+
+		constexpr uint32_t ShadowMap0 = 5;
 	}  // namespace SRVRegister
 
 	namespace SamplerRegister
@@ -85,6 +88,7 @@ namespace RootBindings
 		constexpr D3D12_SHADER_VISIBILITY PerObjectVS = D3D12_SHADER_VISIBILITY_VERTEX;
 		constexpr D3D12_SHADER_VISIBILITY PerObjectPS = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY TextureSRV = D3D12_SHADER_VISIBILITY_PIXEL;
+		constexpr D3D12_SHADER_VISIBILITY ShadowMap0 = D3D12_SHADER_VISIBILITY_PIXEL;
 		constexpr D3D12_SHADER_VISIBILITY SamplerTable = D3D12_SHADER_VISIBILITY_PIXEL;
 	}  // namespace Visibility
 }  // namespace RootBindings

@@ -205,7 +205,7 @@ namespace GltfLoaderInternal
 	    const cgltf_data* data,
 	    const std::filesystem::path& gltfDirectory,
 	    std::vector<MaterialDesc>& outMaterials,
-	    std::vector<std::string>& outTexturePaths)
+	    std::vector<std::filesystem::path>& outTexturePaths)
 	{
 		outMaterials.reserve(data->materials_count);
 
@@ -234,10 +234,9 @@ namespace GltfLoaderInternal
 
 			auto addUniqueTexturePath = [&outTexturePaths](const std::filesystem::path& path)
 			{
-				auto pathStr = path.string();
-				if (std::ranges::find(outTexturePaths, pathStr) == outTexturePaths.end())
+				if (std::ranges::find(outTexturePaths, path) == outTexturePaths.end())
 				{
-					outTexturePaths.push_back(std::move(pathStr));
+					outTexturePaths.push_back(path);
 				}
 			};
 

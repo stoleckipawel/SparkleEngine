@@ -25,8 +25,7 @@ void App::Initialize()
 	m_gameScene = std::make_unique<GameScene>();
 	m_levelManager = std::make_unique<LevelManager>(*m_gameScene);
 
-	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetCamera());
-	m_levelManager->RegisterGameCameraController(*m_gameCameraController);
+	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
 
 	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 }

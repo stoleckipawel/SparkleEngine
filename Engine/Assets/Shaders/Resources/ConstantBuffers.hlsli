@@ -31,10 +31,6 @@ cbuffer PerFrameConstantBufferData : register(b0)
 
 cbuffer PerViewConstantBufferData : register(b1)
 {
-	row_major float4x4 ViewMTX;
-	row_major float4x4 ProjectionMTX;
-	row_major float4x4 ViewProjMTX;
-
 	PerViewCameraConstantBufferData Camera;
 	PerViewLightingConstantBufferData ViewLighting;
 };

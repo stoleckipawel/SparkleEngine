@@ -71,7 +71,7 @@ void LevelRegistry::DiscoverLevels()
 	}
 }
 
-void LevelRegistry::Register(std::unique_ptr<Level> level)
+void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 {
 	if (!level)
 	{
@@ -92,7 +92,7 @@ void LevelRegistry::Register(std::unique_ptr<Level> level)
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
 
-Level* LevelRegistry::FindLevel(std::string_view name) const
+LevelAsset* LevelRegistry::FindLevel(std::string_view name) const
 {
 	if (name.empty())
 	{
@@ -103,7 +103,7 @@ Level* LevelRegistry::FindLevel(std::string_view name) const
 	return it != m_levels.end() ? it->second.get() : nullptr;
 }
 
-Level* LevelRegistry::FindLevelOrDefault(std::string_view name) const
+LevelAsset* LevelRegistry::FindLevelOrDefault(std::string_view name) const
 {
 	if (!name.empty())
 	{
@@ -123,7 +123,7 @@ Level* LevelRegistry::FindLevelOrDefault(std::string_view name) const
 	return nullptr;
 }
 
-const std::unordered_map<std::string, std::unique_ptr<Level>>& LevelRegistry::GetAllLevels() const noexcept
+const std::unordered_map<std::string, std::unique_ptr<LevelAsset>>& LevelRegistry::GetAllLevels() const noexcept
 {
 	return m_levels;
 }
@@ -138,7 +138,7 @@ void LevelRegistry::SetDefaultLevelName(std::string_view name)
 	m_defaultLevelName = std::string(name);
 }
 
-bool LevelRegistry::SaveLevel(const Level& level, std::string* errorMessage) const
+bool LevelRegistry::SaveLevel(const LevelAsset& level, std::string* errorMessage) const
 {
 	if (FindLevel(level.GetName()) == nullptr)
 	{
@@ -157,7 +157,7 @@ std::string_view LevelRegistry::GetDefaultLevelName() const noexcept
 	return m_defaultLevelName;
 }
 
-Level* LevelRegistry::GetDefaultLevel() const
+LevelAsset* LevelRegistry::GetDefaultLevel() const
 {
 	return FindLevel(m_defaultLevelName);
 }

@@ -4,12 +4,12 @@
 
 #include <string>
 
-class LevelManager;
+class SceneCamera;
 
 class CameraSection final : public UIRendererSection
 {
   public:
-	explicit CameraSection(LevelManager& levelManager) noexcept;
+	explicit CameraSection(SceneCamera& sceneCamera) noexcept;
 	~CameraSection() = default;
 
 	CameraSection(const CameraSection&) = delete;
@@ -23,5 +23,12 @@ class CameraSection final : public UIRendererSection
 	void BuildUI() override;
 
   private:
-	LevelManager* m_levelManager = nullptr;
+	static void ClampCameraUiValues(float& pitchDegrees, float& fovYDegrees, float& moveSpeed) noexcept;
+
+	static constexpr float kPositionSliderMin = -500.0f;
+	static constexpr float kPositionSliderMax = 500.0f;
+	static constexpr float kYawSliderMin = -360.0f;
+	static constexpr float kYawSliderMax = 360.0f;
+
+	SceneCamera* m_sceneCamera = nullptr;
 };

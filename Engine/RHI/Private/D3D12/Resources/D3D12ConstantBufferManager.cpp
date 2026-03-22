@@ -19,7 +19,6 @@ D3D12ConstantBufferManager::D3D12ConstantBufferManager(
 	for (uint32_t i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_perFrameCB[i] = std::make_unique<D3D12ConstantBuffer<PerFrameConstantBufferData>>(rhi, descriptorHeapManager);
-		m_perViewCB[i] = std::make_unique<D3D12ConstantBuffer<PerViewConstantBufferData>>(rhi, descriptorHeapManager);
 	}
 }
 
@@ -28,18 +27,12 @@ D3D12ConstantBufferManager::~D3D12ConstantBufferManager() noexcept
 	for (uint32_t i = 0; i < RenderConfig::FramesInFlight; ++i)
 	{
 		m_perFrameCB[i].reset();
-		m_perViewCB[i].reset();
 	}
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::GetPerFrameGpuAddress() const
 {
 	return m_perFrameCB[m_swapChain->GetFrameInFlightIndex()]->GetGPUVirtualAddress();
-}
-
-D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::GetPerViewGpuAddress() const
-{
-	return m_perViewCB[m_swapChain->GetFrameInFlightIndex()]->GetGPUVirtualAddress();
 }
 
 void D3D12ConstantBufferManager::UpdatePerFrame()
@@ -59,11 +52,9 @@ void D3D12ConstantBufferManager::UpdatePerFrame()
 	const uint32_t frameInFlightIndex = m_swapChain->GetFrameInFlightIndex();
 	m_perFrameCB[frameInFlightIndex]->Update(data);
 }
-
-void D3D12ConstantBufferManager::UpdatePerView(const PerViewConstantBufferData& data)
+D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::AllocatePerView(const PerViewConstantBufferData& data)
 {
-	const uint32_t frameInFlightIndex = m_swapChain->GetFrameInFlightIndex();
-	m_perViewCB[frameInFlightIndex]->Update(data);
+	return m_frameResourceManager->AllocateConstantBuffer(data);
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::UpdatePerObjectVS(const PerObjectVSConstantBufferData& data)
