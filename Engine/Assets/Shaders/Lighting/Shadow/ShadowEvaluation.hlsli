@@ -20,7 +20,7 @@ namespace Lighting
 			const float biasedReceiverDepth = lightNdc.z + ViewLighting.Shadow.DepthBias + normalBias;
 			const float shadowDepth = SampleShadowDepth(uv);
 
-			return biasedReceiverDepth <= shadowDepth ? 1.0f : 0.0f;
+			return biasedReceiverDepth >= shadowDepth ? 1.0f : 0.0f;
 		}
 	}
 }

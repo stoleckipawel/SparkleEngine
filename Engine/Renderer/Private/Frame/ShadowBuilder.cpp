@@ -107,23 +107,30 @@ PerViewCameraConstantBufferData ShadowBuilder::BuildLightCamera(
 	const XMVECTOR lightPosition = center - lightForward * lightDistance;
 	const XMMATRIX lightView = XMMatrixLookAtLH(lightPosition, center, lightUp);
 
-	XMVECTOR minBounds = XMVectorSet(FLT_MAX, FLT_MAX, FLT_MAX, 1.0f);
-	XMVECTOR maxBounds = XMVectorSet(-FLT_MAX, -FLT_MAX, -FLT_MAX, 1.0f);
+	float minZ = FLT_MAX;
+	float maxZ = -FLT_MAX;
 	for (std::size_t i = 0; i < frustumCorners.size(); ++i)
 	{
-		const XMVECTOR lsCorner = XMVector3TransformCoord(XMLoadFloat3(&frustumCorners[i]), lightView);
-		minBounds = XMVectorMin(minBounds, lsCorner);
-		maxBounds = XMVectorMax(maxBounds, lsCorner);
+		const float z = XMVectorGetZ(XMVector3TransformCoord(XMLoadFloat3(&frustumCorners[i]), lightView));
+		minZ = std::min(minZ, z);
+		maxZ = std::max(maxZ, z);
 	}
 
-	const float left = XMVectorGetX(minBounds);
-	const float right = XMVectorGetX(maxBounds);
-	const float bottom = XMVectorGetY(minBounds);
-	const float top = XMVectorGetY(maxBounds);
-	const float nearZ = std::max(0.1f, XMVectorGetZ(minBounds) - RenderConfig::Shadows::LightPadding);
-	const float farZ = XMVectorGetZ(maxBounds) + RenderConfig::Shadows::LightPadding;
-	const XMMATRIX lightProjection = DepthConvention::CreateOrthographicOffCenterLH(left, right, bottom, top, nearZ, farZ);
-	const XMMATRIX lightViewProjection = XMMatrixMultiply(lightView, lightProjection);
+	const float nearZ = std::max(0.1f, minZ - RenderConfig::Shadows::LightPadding);
+	const float farZ = maxZ + RenderConfig::Shadows::LightPadding;
+	XMMATRIX lightProjection = DepthConvention::CreateOrthographicOffCenterLH(
+	    -radius, radius, -radius, radius, nearZ, farZ);
+
+	const float shadowMapSize = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution);
+	XMMATRIX lightViewProjection = XMMatrixMultiply(lightView, lightProjection);
+	XMVECTOR shadowOrigin = XMVector4Transform(XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f), lightViewProjection);
+	shadowOrigin = XMVectorScale(shadowOrigin, shadowMapSize * 0.5f);
+	const XMVECTOR roundedOrigin = XMVectorRound(shadowOrigin);
+	XMVECTOR offset = XMVectorSubtract(roundedOrigin, shadowOrigin);
+	offset = XMVectorScale(offset, 2.0f / shadowMapSize);
+	offset = XMVectorSetZ(XMVectorSetW(offset, 0.0f), 0.0f);
+	lightProjection.r[3] = XMVectorAdd(lightProjection.r[3], offset);
+	lightViewProjection = XMMatrixMultiply(lightView, lightProjection);
 
 	PerViewCameraConstantBufferData cameraData{};
 	XMStoreFloat4x4(&cameraData.ViewMTX, lightView);
