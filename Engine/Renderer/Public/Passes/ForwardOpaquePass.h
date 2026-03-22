@@ -2,6 +2,8 @@
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
+#include <array>
+
 class D3D12ConstantBufferManager;
 class D3D12DescriptorHeapManager;
 class D3D12PipelineState;
@@ -23,7 +25,7 @@ class ForwardOpaquePass final
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    TextureManager& textureManager,
 	    D3D12SamplerLibrary& samplerLibrary,
-	    TextureHandle shadowMapHandle,
+	    std::array<TextureHandle, 2> shadowMapHandles,
 	    TextureHandle backBufferHandle,
 	    TextureHandle depthBufferHandle) noexcept;
 
@@ -44,7 +46,7 @@ class ForwardOpaquePass final
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	D3D12SamplerLibrary* m_samplerLibrary = nullptr;
-	TextureHandle m_shadowMap;
+	std::array<TextureHandle, 2> m_shadowMaps = {};
 
 	TextureHandle m_backBuffer;
 	TextureHandle m_depthBuffer;

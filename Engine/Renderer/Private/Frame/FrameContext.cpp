@@ -38,7 +38,8 @@ FrameContext BuildFrameContext(
 	    constantBufferManager,
 	    perViewDataBuilder,
 	    shadowBuilder);
-	frame.shadowView = std::move(shadowFrame.shadowView);
+	frame.shadowViews = shadowFrame.shadowViews;
+	frame.shadowViewCount = shadowFrame.shadowViewCount;
 	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, swapChain);
 
 	frame.mainView.perViewGpuAddress = constantBufferManager.AllocatePerView(frame.mainView.perViewData);

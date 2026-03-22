@@ -7,8 +7,6 @@
 #include <array>
 #include <d3d12.h>
 
-struct RenderSceneData;
-
 struct ShadowBuildResult
 {
 	ShadowConstantBufferData shadow = {};
@@ -28,7 +26,7 @@ class ShadowBuilder final
 	ShadowBuilder(ShadowBuilder&&) = delete;
 	ShadowBuilder& operator=(ShadowBuilder&&) = delete;
 
-	ShadowBuildResult Build(const CameraSnapshot& mainCamera, const RenderSceneData& sceneData) const noexcept;
+	ShadowBuildResult Build(const CameraSnapshot& mainCamera, const DirectX::XMFLOAT3& lightDirection) const noexcept;
 
   private:
 	static std::array<DirectX::XMFLOAT3, 8> BuildFrustumCorners(const CameraSnapshot& camera, float nearZ, float farZ) noexcept;

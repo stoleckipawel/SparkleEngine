@@ -47,21 +47,24 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    m_dependencies.descriptorHeapManager,
 	    m_dependencies.textureManager,
 	    m_dependencies.samplerLibrary,
-	    shadowResources.shadowMapHandle,
+	    shadowResources.shadowMapHandles,
 	    backBufferHandle,
 	    mainDepthHandle);
 
 	frameGraph->AddPass(
 	    "ForwardOpaque",
 	    FrameGraphPassFlags::Raster,
-	    [backBufferHandle, mainDepthHandle, shadowMapHandle = shadowResources.shadowMapHandle](PassBuilder& builder)
+	    [backBufferHandle, mainDepthHandle, shadowMapHandles = shadowResources.shadowMapHandles](PassBuilder& builder)
 	    {
 		    builder.Write(backBufferHandle, ResourceUsage::RenderTarget);
 		    builder.Write(mainDepthHandle, ResourceUsage::DepthWrite);
 
-		    if (shadowMapHandle.IsValid())
+		    for (const auto& handle : shadowMapHandles)
 		    {
-			    builder.Read(shadowMapHandle, ResourceUsage::ShaderRead);
+			    if (handle.IsValid())
+			    {
+				    builder.Read(handle, ResourceUsage::ShaderRead);
+			    }
 		    }
 	    },
 	    [forwardOpaquePass](const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame)

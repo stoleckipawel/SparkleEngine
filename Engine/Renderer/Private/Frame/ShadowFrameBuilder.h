@@ -4,6 +4,9 @@
 #include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
 #include "Renderer/Public/Frame/RenderViewContext.h"
 
+#include <array>
+#include <cstddef>
+
 class D3D12ConstantBufferManager;
 class PerViewDataBuilder;
 class ShadowBuilder;
@@ -12,8 +15,11 @@ struct RenderSceneData;
 
 struct ShadowFrameBuildResult
 {
+	static constexpr std::size_t MaxShadowedLights = RenderConfig::Lights::MaxDirectionalLights;
+
 	PerViewLightingConstantBufferData mainViewLighting = {};
-	RenderViewContext shadowView = {};
+	std::array<RenderViewContext, MaxShadowedLights> shadowViews = {};
+	std::size_t shadowViewCount = 0;
 };
 
 class ShadowFrameBuilder final
@@ -34,9 +40,4 @@ class ShadowFrameBuilder final
 	    D3D12ConstantBufferManager& constantBufferManager,
 	    const PerViewDataBuilder& perViewDataBuilder,
 	    ShadowBuilder& shadowBuilder) const;
-
-  private:
-	static PerViewLightingConstantBufferData BuildMainViewLighting(
-	    const PerViewLightingConstantBufferData& baseLighting,
-	    const ShadowConstantBufferData& shadowData) noexcept;
 };

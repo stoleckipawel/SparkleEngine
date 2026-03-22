@@ -83,7 +83,7 @@ namespace Lighting
 		for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 		{
 			DirectionalLight light = GetDirectionalLight(lightIndex);
-			const float shadowFactor = lightIndex == 0 ? Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction) : 1.0f;
+			const float shadowFactor = Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction, lightIndex);
 
 			AccumulateDirectLight(
 			    viewDirWorld,

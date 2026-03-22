@@ -5,15 +5,7 @@
 #include "D3D12ConstantBufferManager.h"
 #include "Frame/PerViewDataBuilder.h"
 #include "Frame/ShadowBuilder.h"
-
-PerViewLightingConstantBufferData ShadowFrameBuilder::BuildMainViewLighting(
-	const PerViewLightingConstantBufferData& baseLighting,
-	const ShadowConstantBufferData& shadowData) noexcept
-{
-	PerViewLightingConstantBufferData lighting = baseLighting;
-	lighting.Shadow = shadowData;
-	return lighting;
-}
+#include "Renderer/Public/SceneData/RenderSceneData.h"
 
 ShadowFrameBuildResult ShadowFrameBuilder::Build(
 	const CameraSnapshot& mainCamera,
@@ -24,16 +16,26 @@ ShadowFrameBuildResult ShadowFrameBuilder::Build(
 	ShadowBuilder& shadowBuilder) const
 {
 	ShadowFrameBuildResult result{};
-	const ShadowBuildResult shadowData = shadowBuilder.Build(mainCamera, sceneData);
-	result.mainViewLighting = BuildMainViewLighting(baseLighting, shadowData.shadow);
+	result.mainViewLighting = baseLighting;
 
-	RenderViewContext shadowView = perViewDataBuilder.BuildView(
-	    shadowData.cameraData,
-	    baseLighting,
-	    shadowData.viewport,
-	    shadowData.scissorRect);
-	shadowView.perViewGpuAddress = constantBufferManager.AllocatePerView(shadowView.perViewData);
-	result.shadowView = shadowView;
+	const std::size_t lightCount = std::min(
+	    sceneData.directionalLights.size(),
+	    ShadowFrameBuildResult::MaxShadowedLights);
+
+	for (std::size_t i = 0; i < lightCount; ++i)
+	{
+		const ShadowBuildResult shadowData = shadowBuilder.Build(mainCamera, sceneData.directionalLights[i].direction);
+		result.mainViewLighting.Shadows[i] = shadowData.shadow;
+
+		RenderViewContext shadowView = perViewDataBuilder.BuildView(
+		    shadowData.cameraData,
+		    baseLighting,
+		    shadowData.viewport,
+		    shadowData.scissorRect);
+		shadowView.perViewGpuAddress = constantBufferManager.AllocatePerView(shadowView.perViewData);
+		result.shadowViews[i] = shadowView;
+	}
+	result.shadowViewCount = lightCount;
 
 	return result;
 }

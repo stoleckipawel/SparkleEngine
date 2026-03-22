@@ -25,7 +25,7 @@ struct PerViewLightingConstantBufferData
 	std::uint32_t PaddingCounts[3] = {};
 
 	DirectionalLightConstantBufferData DirectionalLights[MaxDirectionalLights] = {};
-	ShadowConstantBufferData Shadow = {};
+	ShadowConstantBufferData Shadows[MaxDirectionalLights] = {};
 };
 
 static_assert(sizeof(DirectionalLightConstantBufferData) == 32, "Directional light constant buffer data must be 32 bytes");
@@ -33,7 +33,7 @@ static_assert(offsetof(DirectionalLightConstantBufferData, Direction) == 0, "Dir
 static_assert(offsetof(DirectionalLightConstantBufferData, Intensity) == 12, "DirectionalLightConstantBufferData::Intensity must be at c0.w");
 static_assert(offsetof(DirectionalLightConstantBufferData, Color) == 16, "DirectionalLightConstantBufferData::Color must start at c1.xyz");
 static_assert(offsetof(DirectionalLightConstantBufferData, _pad0) == 28, "DirectionalLightConstantBufferData::_pad0 must be at c1.w");
-static_assert(sizeof(PerViewLightingConstantBufferData) == 160, "Per-view lighting constant buffer data must match the shader layout");
+static_assert(sizeof(PerViewLightingConstantBufferData) == 240, "Per-view lighting constant buffer data must match the shader layout");
 static_assert(offsetof(PerViewLightingConstantBufferData, DirectionalLightCount) == 0, "PerViewLightingConstantBufferData::DirectionalLightCount must start at c0.x");
 static_assert(offsetof(PerViewLightingConstantBufferData, DirectionalLights) == 16, "PerViewLightingConstantBufferData::DirectionalLights must start at c1");
-static_assert(offsetof(PerViewLightingConstantBufferData, Shadow) == 80, "PerViewLightingConstantBufferData::Shadow must start after the directional light array");
+static_assert(offsetof(PerViewLightingConstantBufferData, Shadows) == 80, "PerViewLightingConstantBufferData::Shadows must start after the directional light array");

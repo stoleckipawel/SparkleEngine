@@ -9,9 +9,12 @@ FovYDegrees = 60
 MoveSpeed = 0.00999999978
 
 [Lighting]
-Direction = 0.0, -1.0, 0.0
-Intensity = 1.0
-Color = 1.0, 1.0, 1.0
+DirectionalLight0Direction = 0.42, -0.82, 0.39
+DirectionalLight0Intensity = 2.35
+DirectionalLight0Color = 1.0, 0.93, 0.82
+DirectionalLight1Direction = -0.24, -0.66, -0.71
+DirectionalLight1Intensity = 0.2
+DirectionalLight1Color = 0.42, 0.5, 0.72
 
 [Meshes]
 Asset = DamagedHelmet/DamagedHelmet.gltf

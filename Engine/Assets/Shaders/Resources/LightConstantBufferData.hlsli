@@ -18,5 +18,5 @@ struct PerViewLightingConstantBufferData
 	uint3 PaddingCounts;
 
 	DirectionalLightConstantBufferData DirectionalLights[MAX_DIRECTIONAL_LIGHTS];
-	ShadowConstantBufferData Shadow;
+	ShadowConstantBufferData Shadows[MAX_DIRECTIONAL_LIGHTS];
 };

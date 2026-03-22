@@ -2,6 +2,9 @@
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
+#include <array>
+#include <cstddef>
+
 class D3D12ConstantBufferManager;
 class D3D12PipelineState;
 class D3D12RootSignature;
@@ -9,7 +12,8 @@ class FrameGraph;
 
 struct ShadowFrameGraphResources
 {
-	TextureHandle shadowMapHandle;
+	static constexpr std::size_t MaxShadowMaps = 2;
+	std::array<TextureHandle, MaxShadowMaps> shadowMapHandles = {};
 };
 
 class ShadowFrameGraphBuilder final

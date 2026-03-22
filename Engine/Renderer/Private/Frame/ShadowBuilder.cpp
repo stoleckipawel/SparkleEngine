@@ -3,8 +3,7 @@
 #include "Frame/ShadowBuilder.h"
 
 #include "Renderer/Public/DepthConvention.h"
-#include "Renderer/Public/SceneData/DirectionalLight.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "RHI/Public/RenderConfig.h"
 
 #include <algorithm>
 #include <cfloat>
@@ -12,7 +11,7 @@
 
 using namespace DirectX;
 
-ShadowBuildResult ShadowBuilder::Build(const CameraSnapshot& mainCamera, const RenderSceneData& sceneData) const noexcept
+ShadowBuildResult ShadowBuilder::Build(const CameraSnapshot& mainCamera, const XMFLOAT3& lightDirection) const noexcept
 {
 	ShadowBuildResult result{};
 	result.shadow.ShadowMapSize = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution);
@@ -28,14 +27,9 @@ ShadowBuildResult ShadowBuilder::Build(const CameraSnapshot& mainCamera, const R
 	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution),
 	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution)};
 
-	if (sceneData.directionalLights.empty())
-	{
-		return result;
-	}
-
 	const float shadowDistance = std::min(mainCamera.farZ, RenderConfig::Shadows::ShadowDistance);
 	const std::array<XMFLOAT3, 8> frustumCorners = BuildFrustumCorners(mainCamera, mainCamera.nearZ, shadowDistance);
-	result.cameraData = BuildLightCamera(frustumCorners, sceneData.directionalLights[0].direction);
+	result.cameraData = BuildLightCamera(frustumCorners, lightDirection);
 	result.shadow.ViewProjMTX = result.cameraData.ViewProjMTX;
 
 	return result;
