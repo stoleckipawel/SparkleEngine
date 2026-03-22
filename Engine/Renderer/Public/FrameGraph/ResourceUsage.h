@@ -8,6 +8,7 @@ enum class ResourceUsage : std::uint8_t
 	DepthRead,
 	DepthWrite,
 	ShaderRead,
+	UnorderedAccess,
 	Present,
 };
 
@@ -23,10 +24,23 @@ constexpr const char* ResourceUsageToString(ResourceUsage usage) noexcept
 			return "DepthWrite";
 		case ResourceUsage::ShaderRead:
 			return "ShaderRead";
+		case ResourceUsage::UnorderedAccess:
+			return "UnorderedAccess";
 		case ResourceUsage::Present:
 			return "Present";
 		default:
 			return "Unknown";
+	}
+}
+
+constexpr bool IsReadWriteUsage(ResourceUsage usage) noexcept
+{
+	switch (usage)
+	{
+		case ResourceUsage::UnorderedAccess:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -53,4 +67,19 @@ constexpr bool IsWriteOnlyUsage(ResourceUsage usage) noexcept
 		default:
 			return false;
 	}
+}
+
+constexpr bool ReadsFromUsage(ResourceUsage usage) noexcept
+{
+	return IsReadOnlyUsage(usage) || IsReadWriteUsage(usage);
+}
+
+constexpr bool WritesToUsage(ResourceUsage usage) noexcept
+{
+	return IsWriteOnlyUsage(usage) || IsReadWriteUsage(usage);
+}
+
+constexpr bool UsesUnorderedAccess(ResourceUsage usage) noexcept
+{
+	return usage == ResourceUsage::UnorderedAccess;
 }

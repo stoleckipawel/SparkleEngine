@@ -28,7 +28,23 @@ namespace
 		return label;
 	}
 
-	D3D12_RESOURCE_DESC BuildTransientBufferDesc(const FrameGraphBufferDesc& desc) noexcept
+	bool RequiresUnorderedAccess(const FrameGraph::CompiledPlan& plan, ResourceHandle handle) noexcept
+	{
+		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
+		{
+			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			{
+				if (declaration.handle == handle && UsesUnorderedAccess(declaration.usage))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	D3D12_RESOURCE_DESC BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
 	{
 		D3D12_RESOURCE_DESC resourceDesc = {};
 		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -41,24 +57,29 @@ namespace
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		resourceDesc.Flags = requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		return resourceDesc;
 	}
 
-	D3D12_RESOURCE_FLAGS ResolveTransientResourceFlags(FrameGraphResourceKind kind) noexcept
+	D3D12_RESOURCE_FLAGS ResolveTransientResourceFlags(FrameGraphResourceKind kind, bool requiresUnorderedAccess) noexcept
 	{
 		switch (kind)
 		{
 			case FrameGraphResourceKind::DepthStencil:
 				return D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 			case FrameGraphResourceKind::ColorRenderTarget:
-				return D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+				return requiresUnorderedAccess
+				           ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
+				           : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			default:
-				return D3D12_RESOURCE_FLAG_NONE;
+				return requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		}
 	}
 
-	D3D12_RESOURCE_DESC BuildTransientResourceDesc(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
+	D3D12_RESOURCE_DESC BuildTransientResourceDesc(
+	    const FrameGraphTextureDesc& desc,
+	    FrameGraphResourceKind kind,
+	    bool requiresUnorderedAccess) noexcept
 	{
 		D3D12_RESOURCE_DESC resourceDesc = {};
 		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -71,7 +92,7 @@ namespace
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resourceDesc.Flags = ResolveTransientResourceFlags(kind);
+		resourceDesc.Flags = ResolveTransientResourceFlags(kind, requiresUnorderedAccess);
 		return resourceDesc;
 	}
 
@@ -125,10 +146,14 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 			continue;
 		}
 
+		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
 		const D3D12_RESOURCE_DESC resourceDesc = isBuffer
-		                                             ? BuildTransientBufferDesc(transientResource.bufferDesc)
-		                                             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind);
+		                                             ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
+		                                             : BuildTransientResourceDesc(
+		                                                   transientResource.textureDesc,
+		                                                   resourceMetadata.kind,
+		                                                   requiresUnorderedAccess);
 		const D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = m_rhi->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(

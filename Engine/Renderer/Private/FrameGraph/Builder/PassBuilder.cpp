@@ -21,6 +21,13 @@ ResourceHandle PassBuilder::Write(ResourceHandle handle, ResourceUsage usage) no
 	return m_frameGraph->Write(handle, usage);
 }
 
+ResourceHandle PassBuilder::Use(ResourceHandle handle, ResourceUsage usage) noexcept
+{
+	assert(m_frameGraph != nullptr);
+	assert(IsReadWriteUsage(usage));
+	return m_frameGraph->Use(handle, usage);
+}
+
 TextureHandle PassBuilder::Read(TextureHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
@@ -33,6 +40,12 @@ TextureHandle PassBuilder::Write(TextureHandle handle, ResourceUsage usage) noex
 	return TextureHandle{Write(handle.GetResourceHandle(), usage)};
 }
 
+TextureHandle PassBuilder::Use(TextureHandle handle, ResourceUsage usage) noexcept
+{
+	assert(handle.IsValid());
+	return TextureHandle{Use(handle.GetResourceHandle(), usage)};
+}
+
 BufferHandle PassBuilder::Read(BufferHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
@@ -43,4 +56,10 @@ BufferHandle PassBuilder::Write(BufferHandle handle, ResourceUsage usage) noexce
 {
 	assert(handle.IsValid());
 	return BufferHandle{Write(handle.GetResourceHandle(), usage)};
+}
+
+BufferHandle PassBuilder::Use(BufferHandle handle, ResourceUsage usage) noexcept
+{
+	assert(handle.IsValid());
+	return BufferHandle{Use(handle.GetResourceHandle(), usage)};
 }

@@ -5,10 +5,28 @@
 
 #include "D3D12DescriptorHeapManager.h"
 
+#include "Core/Public/Diagnostics/Log.h"
+
 #include <cassert>
 
 namespace
 {
+	bool RequiresUnorderedAccessView(const FrameGraph::CompiledPlan& plan, ResourceHandle handle) noexcept
+	{
+		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
+		{
+			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			{
+				if (declaration.handle == handle && UsesUnorderedAccess(declaration.usage))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	D3D12_SHADER_RESOURCE_VIEW_DESC BuildTextureShaderResourceViewDesc(const FrameGraphTextureDesc& desc) noexcept
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -18,6 +36,16 @@ namespace
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = 1;
 		return srvDesc;
+	}
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC BuildTextureUnorderedAccessViewDesc(const FrameGraphTextureDesc& desc) noexcept
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.Format = desc.format;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uavDesc.Texture2D.MipSlice = 0;
+		uavDesc.Texture2D.PlaneSlice = 0;
+		return uavDesc;
 	}
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC BuildBufferShaderResourceViewDesc(const FrameGraphBufferDesc& desc) noexcept
@@ -41,6 +69,33 @@ namespace
 		srvDesc.Buffer.StructureByteStride = 0;
 		srvDesc.Buffer.NumElements = static_cast<UINT>(desc.sizeInBytes / sizeof(std::uint32_t));
 		return srvDesc;
+	}
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC BuildBufferUnorderedAccessViewDesc(const FrameGraphBufferDesc& desc) noexcept
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+
+		if (desc.strideInBytes > 0)
+		{
+			uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+			uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+			uavDesc.Buffer.StructureByteStride = desc.strideInBytes;
+			uavDesc.Buffer.NumElements = static_cast<UINT>(desc.sizeInBytes / desc.strideInBytes);
+			return uavDesc;
+		}
+
+		assert(desc.sizeInBytes % sizeof(std::uint32_t) == 0);
+		uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+		uavDesc.Buffer.StructureByteStride = 0;
+		uavDesc.Buffer.NumElements = static_cast<UINT>(desc.sizeInBytes / sizeof(std::uint32_t));
+		return uavDesc;
+	}
+
+	bool ResourceSupportsUnorderedAccess(ID3D12Resource& resource) noexcept
+	{
+		return (resource.GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
 	}
 
 }  // namespace
@@ -80,6 +135,27 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 			const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildTextureShaderResourceViewDesc(metadata.textureDesc);
 			m_rhi->GetDevice()->CreateShaderResourceView(access.externalResource, &srvDesc, access.shaderResourceView.GetCPU());
+
+			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
+			{
+				if (!ResourceSupportsUnorderedAccess(*access.externalResource))
+				{
+					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported texture is missing ALLOW_UNORDERED_ACCESS.");
+					assert(false);
+				}
+
+				if (!access.unorderedAccessView.IsValid())
+				{
+					access.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				}
+
+				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildTextureUnorderedAccessViewDesc(metadata.textureDesc);
+				m_rhi->GetDevice()->CreateUnorderedAccessView(
+				    access.externalResource,
+				    nullptr,
+				    &uavDesc,
+				    access.unorderedAccessView.GetCPU());
+			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::DepthStencil)
 		{
@@ -103,6 +179,27 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 			const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildBufferShaderResourceViewDesc(metadata.bufferDesc);
 			m_rhi->GetDevice()->CreateShaderResourceView(access.externalResource, &srvDesc, access.shaderResourceView.GetCPU());
+
+			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
+			{
+				if (!ResourceSupportsUnorderedAccess(*access.externalResource))
+				{
+					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported buffer is missing ALLOW_UNORDERED_ACCESS.");
+					assert(false);
+				}
+
+				if (!access.unorderedAccessView.IsValid())
+				{
+					access.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				}
+
+				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildBufferUnorderedAccessViewDesc(metadata.bufferDesc);
+				m_rhi->GetDevice()->CreateUnorderedAccessView(
+				    access.externalResource,
+				    nullptr,
+				    &uavDesc,
+				    access.unorderedAccessView.GetCPU());
+			}
 		}
 	}
 }
@@ -133,6 +230,12 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		{
 			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, access.shaderResourceView);
 			access.shaderResourceView = {};
+		}
+
+		if (access.unorderedAccessView.IsValid())
+		{
+			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, access.unorderedAccessView);
+			access.unorderedAccessView = {};
 		}
 	}
 }

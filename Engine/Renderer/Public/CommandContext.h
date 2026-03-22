@@ -68,6 +68,7 @@ class SPARKLE_RENDERER_API CommandContext final
 
 	void AliasResource(ID3D12Resource* beforeResource, ID3D12Resource* afterResource) noexcept;
 	void TransitionResource(ID3D12Resource* resource, ResourceState before, ResourceState after) noexcept;
+	void UnorderedAccessBarrier(ID3D12Resource* resource) noexcept;
 
 	ID3D12GraphicsCommandList* GetCommandList() const noexcept { return m_cmdList; }
 

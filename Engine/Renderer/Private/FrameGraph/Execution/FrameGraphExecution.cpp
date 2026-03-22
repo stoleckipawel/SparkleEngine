@@ -47,6 +47,18 @@ D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(BufferHandle h
 	return ResolveShaderResourceView(handle.GetResourceHandle());
 }
 
+D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(TextureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveUnorderedAccessView(handle.GetResourceHandle());
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(BufferHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveUnorderedAccessView(handle.GetResourceHandle());
+}
+
 void FrameGraph::CopyTexture(CommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());

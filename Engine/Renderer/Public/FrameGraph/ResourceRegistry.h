@@ -42,6 +42,7 @@ struct FrameGraphResourceAccess
 	D3D12DescriptorHandle renderTargetView;
 	D3D12DescriptorHandle depthStencilView;
 	D3D12DescriptorHandle shaderResourceView;
+	D3D12DescriptorHandle unorderedAccessView;
 
 	bool IsResolved() const noexcept { return swapChain != nullptr || externalResource != nullptr; }
 };

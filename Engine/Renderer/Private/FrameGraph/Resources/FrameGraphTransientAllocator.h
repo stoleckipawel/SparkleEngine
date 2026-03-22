@@ -29,7 +29,9 @@ class FrameGraphTransientAllocator final
 		D3D12DescriptorHandle renderTargetView;
 		D3D12DescriptorHandle depthStencilView;
 		D3D12DescriptorHandle shaderResourceView;
+		D3D12DescriptorHandle unorderedAccessView;
 		bool hasShaderResourceView = false;
+		bool hasUnorderedAccessView = false;
 		ComPtr<ID3D12Resource> depthStencilResource;
 		ComPtr<ID3D12Resource> renderTargetResource;
 		ComPtr<ID3D12Resource> buffer;

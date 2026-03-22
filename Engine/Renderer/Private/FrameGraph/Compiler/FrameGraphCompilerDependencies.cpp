@@ -139,7 +139,7 @@ bool FrameGraphCompiler::WritesBackBuffer(const CompilePassRecord& passRecord) c
 {
 	for (const PassResourceDeclaration& declaration : passRecord.declarations)
 	{
-		if (!declaration.handle.IsValid() || !IsWriteOnlyUsage(declaration.usage))
+		if (!declaration.handle.IsValid() || !WritesToUsage(declaration.usage))
 		{
 			continue;
 		}
@@ -283,6 +283,11 @@ void FrameGraphCompiler::BuildPassResourceVersionDependencies(CompilePassRecord&
 		if (IsReadOnlyUsage(declaration.usage))
 		{
 			RegisterReadDependency(passRecord, resource);
+		}
+		else if (IsReadWriteUsage(declaration.usage))
+		{
+			RegisterReadDependency(passRecord, resource);
+			RegisterWriteDependency(passRecord, resource);
 		}
 		else if (IsWriteOnlyUsage(declaration.usage))
 		{

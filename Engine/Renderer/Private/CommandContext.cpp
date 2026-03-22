@@ -138,6 +138,16 @@ void CommandContext::TransitionResource(ID3D12Resource* resource, ResourceState 
 	m_cmdList->ResourceBarrier(1, &barrier);
 }
 
+void CommandContext::UnorderedAccessBarrier(ID3D12Resource* resource) noexcept
+{
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.UAV.pResource = resource;
+
+	m_cmdList->ResourceBarrier(1, &barrier);
+}
+
 D3D12_RESOURCE_STATES CommandContext::MapToD3D12State(ResourceState state) noexcept
 {
 	return MapToD3D12ResourceState(state);

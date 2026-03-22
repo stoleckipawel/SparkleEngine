@@ -20,6 +20,13 @@ namespace
 		           transientPlan.requiredStates.end();
 	}
 
+	bool RequiresUnorderedAccessView(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	{
+		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
+		       std::find(transientPlan.requiredStates.begin(), transientPlan.requiredStates.end(), ResourceState::UnorderedAccess) !=
+		           transientPlan.requiredStates.end();
+	}
+
 	std::wstring BuildWideDebugName(const std::string& name, const wchar_t* fallbackName)
 	{
 		if (name.empty())
@@ -163,6 +170,38 @@ namespace
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 		return srvDesc;
 	}
+
+	D3D12_UNORDERED_ACCESS_VIEW_DESC BuildUnorderedAccessViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+
+		if (transientPlan.resourceClass == FrameGraphResourceClass::Buffer)
+		{
+			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			if (transientPlan.bufferDesc.strideInBytes > 0)
+			{
+				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+				uavDesc.Buffer.StructureByteStride = transientPlan.bufferDesc.strideInBytes;
+				uavDesc.Buffer.NumElements =
+				    static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / transientPlan.bufferDesc.strideInBytes);
+				return uavDesc;
+			}
+
+			assert(transientPlan.bufferDesc.sizeInBytes % sizeof(std::uint32_t) == 0);
+			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+			uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+			uavDesc.Buffer.StructureByteStride = 0;
+			uavDesc.Buffer.NumElements = static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / sizeof(std::uint32_t));
+			return uavDesc;
+		}
+
+		uavDesc.Format = transientPlan.textureDesc.format;
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uavDesc.Texture2D.MipSlice = 0;
+		uavDesc.Texture2D.PlaneSlice = 0;
+		return uavDesc;
+	}
 }  // namespace
 
 FrameGraphTransientAllocator::FrameGraphTransientAllocator(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
@@ -209,6 +248,13 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, allocation.shaderResourceView);
 			allocation.shaderResourceView = {};
 			allocation.hasShaderResourceView = false;
+		}
+
+		if (allocation.unorderedAccessView.IsValid())
+		{
+			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, allocation.unorderedAccessView);
+			allocation.unorderedAccessView = {};
+			allocation.hasUnorderedAccessView = false;
 		}
 	}
 }
@@ -447,6 +493,18 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 				    allocation.shaderResourceView.GetCPU());
 				allocation.hasShaderResourceView = true;
 			}
+
+			if (RequiresUnorderedAccessView(transientPlan))
+			{
+				allocation.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildUnorderedAccessViewDesc(transientPlan);
+				m_rhi->GetDevice()->CreateUnorderedAccessView(
+				    allocation.renderTargetResource.Get(),
+				    nullptr,
+				    &uavDesc,
+				    allocation.unorderedAccessView.GetCPU());
+				allocation.hasUnorderedAccessView = true;
+			}
 			break;
 		}
 
@@ -468,6 +526,18 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 				const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildShaderResourceViewDesc(transientPlan);
 				m_rhi->GetDevice()->CreateShaderResourceView(allocation.buffer.Get(), &srvDesc, allocation.shaderResourceView.GetCPU());
 				allocation.hasShaderResourceView = true;
+			}
+
+			if (RequiresUnorderedAccessView(transientPlan))
+			{
+				allocation.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildUnorderedAccessViewDesc(transientPlan);
+				m_rhi->GetDevice()->CreateUnorderedAccessView(
+				    allocation.buffer.Get(),
+				    nullptr,
+				    &uavDesc,
+				    allocation.unorderedAccessView.GetCPU());
+				allocation.hasUnorderedAccessView = true;
 			}
 			break;
 		}

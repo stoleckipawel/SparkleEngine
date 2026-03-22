@@ -35,7 +35,7 @@ namespace
 
 		for (const PassResourceDeclaration& declaration : declarations)
 		{
-			if (IsReadOnlyUsage(declaration.usage) || IsWriteOnlyUsage(declaration.usage))
+			if (ReadsFromUsage(declaration.usage) || WritesToUsage(declaration.usage))
 			{
 				continue;
 			}
@@ -116,6 +116,14 @@ ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage) noe
 {
 	assert(m_isSettingUpPass);
 	assert(IsWriteOnlyUsage(usage));
+	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage});
+	return handle;
+}
+
+ResourceHandle FrameGraph::Use(ResourceHandle handle, ResourceUsage usage) noexcept
+{
+	assert(m_isSettingUpPass);
+	assert(IsReadWriteUsage(usage));
 	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage});
 	return handle;
 }

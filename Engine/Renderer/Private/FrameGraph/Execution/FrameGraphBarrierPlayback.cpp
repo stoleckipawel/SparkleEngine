@@ -53,6 +53,17 @@ void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, std::string_view pass
 			continue;
 		}
 
-		cmd.TransitionResource(resource, barrier.before, barrier.after);
+		switch (barrier.type)
+		{
+			case CompiledBarrier::Type::Transition:
+				cmd.TransitionResource(resource, barrier.before, barrier.after);
+				break;
+			case CompiledBarrier::Type::UnorderedAccess:
+				cmd.UnorderedAccessBarrier(resource);
+				break;
+			default:
+				assert(false);
+				break;
+		}
 	}
 }

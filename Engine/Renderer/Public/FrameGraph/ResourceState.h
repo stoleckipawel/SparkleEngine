@@ -58,7 +58,7 @@ constexpr D3D12_RESOURCE_STATES MapToD3D12ResourceState(ResourceState state) noe
 		case ResourceState::DepthRead:
 			return D3D12_RESOURCE_STATE_DEPTH_READ;
 		case ResourceState::ShaderResource:
-			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 		case ResourceState::UnorderedAccess:
 			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 		case ResourceState::CopySource:

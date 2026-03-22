@@ -21,10 +21,13 @@ class SPARKLE_RENDERER_API PassBuilder final
 
 	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage) noexcept;
 	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage) noexcept;
+	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage) noexcept;
 	TextureHandle Read(TextureHandle handle, ResourceUsage usage) noexcept;
 	TextureHandle Write(TextureHandle handle, ResourceUsage usage) noexcept;
+	TextureHandle Use(TextureHandle handle, ResourceUsage usage) noexcept;
 	BufferHandle Read(BufferHandle handle, ResourceUsage usage) noexcept;
 	BufferHandle Write(BufferHandle handle, ResourceUsage usage) noexcept;
+	BufferHandle Use(BufferHandle handle, ResourceUsage usage) noexcept;
 
   private:
 	FrameGraph* m_frameGraph = nullptr;

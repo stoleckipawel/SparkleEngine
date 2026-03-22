@@ -60,6 +60,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(ResourceHandle
 	return access.shaderResourceView.GetGPU();
 }
 
+D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(ResourceHandle handle) const noexcept
+{
+	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
+	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
+	assert(metadata.kind != FrameGraphResourceKind::BackBuffer);
+	assert(metadata.kind != FrameGraphResourceKind::DepthStencil);
+
+	if (metadata.ownership == FrameGraphResourceOwnership::Transient)
+	{
+		return ResolveTransientUnorderedAccessView(handle);
+	}
+
+	assert(access.unorderedAccessView.IsValid());
+	return access.unorderedAccessView.GetGPU();
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
@@ -92,6 +108,22 @@ D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientShaderResourceView(Resou
 	assert(bufferAllocation != nullptr);
 	assert(bufferAllocation->shaderResourceView.IsValid());
 	return bufferAllocation->shaderResourceView.GetGPU();
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept
+{
+	assert(m_transientAllocator != nullptr);
+
+	if (const FrameGraphTransientAllocator::AllocationRecord* colorAllocation = m_transientAllocator->FindColorAllocation(handle))
+	{
+		assert(colorAllocation->unorderedAccessView.IsValid());
+		return colorAllocation->unorderedAccessView.GetGPU();
+	}
+
+	const FrameGraphTransientAllocator::AllocationRecord* bufferAllocation = m_transientAllocator->FindBufferAllocation(handle);
+	assert(bufferAllocation != nullptr);
+	assert(bufferAllocation->unorderedAccessView.IsValid());
+	return bufferAllocation->unorderedAccessView.GetGPU();
 }
 
 std::array<float, 4> FrameGraph::GetClearColor(ResourceHandle handle) const noexcept

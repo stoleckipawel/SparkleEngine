@@ -7,6 +7,22 @@
 
 namespace
 {
+	bool HasCompiledBarrier(
+	    const FrameGraph::CompilePassRecord& passRecord,
+	    ResourceHandle handle,
+	    FrameGraph::CompiledBarrier::Type type) noexcept
+	{
+		const auto it = std::find_if(
+		    passRecord.compiledBarriers.begin(),
+		    passRecord.compiledBarriers.end(),
+		    [handle, type](const FrameGraph::CompiledBarrier& barrier)
+		    {
+			    return barrier.handle == handle && barrier.type == type;
+		    });
+
+		return it != passRecord.compiledBarriers.end();
+	}
+
 	std::string BuildResourceDisplayLabel(ResourceHandle handle, const std::string& debugName)
 	{
 		const std::string& name = debugName.empty() ? std::string{"Resource"} : debugName;
@@ -98,9 +114,23 @@ void FrameGraphCompiler::Compile() noexcept
 			if (compiledResource.currentState != requiredState)
 			{
 				passRecord.compiledBarriers.push_back(
-				    CompiledBarrier{.handle = declaration.handle, .before = compiledResource.currentState, .after = requiredState});
+				    CompiledBarrier{
+				        .handle = declaration.handle,
+				        .type = CompiledBarrier::Type::Transition,
+				        .before = compiledResource.currentState,
+				        .after = requiredState});
 				compiledResource.currentState = requiredState;
 				runtimeState.currentState = requiredState;
+			}
+			else if (requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
+			         !HasCompiledBarrier(passRecord, declaration.handle, CompiledBarrier::Type::UnorderedAccess))
+			{
+				passRecord.compiledBarriers.push_back(
+				    CompiledBarrier{
+				        .handle = declaration.handle,
+				        .type = CompiledBarrier::Type::UnorderedAccess,
+				        .before = requiredState,
+				        .after = requiredState});
 			}
 		}
 	}
@@ -120,7 +150,11 @@ void FrameGraphCompiler::Compile() noexcept
 		}
 
 		m_plan.finalBarriers.push_back(
-		    CompiledBarrier{.handle = entry.handle, .before = compiledResource.currentState, .after = compiledResource.finalState});
+		    CompiledBarrier{
+		        .handle = entry.handle,
+		        .type = CompiledBarrier::Type::Transition,
+		        .before = compiledResource.currentState,
+		        .after = compiledResource.finalState});
 		compiledResource.currentState = compiledResource.finalState;
 		runtimeState.currentState = entry.finalState;
 	}
@@ -202,6 +236,14 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 				assert(false);
 				return ResourceState::Common;
 		}
+	}
+
+	if (IsReadWriteUsage(declaration.usage))
+	{
+		assert(UsesUnorderedAccess(declaration.usage));
+		assert(resource.kind != FrameGraphResourceKind::BackBuffer);
+		assert(resource.kind != FrameGraphResourceKind::DepthStencil);
+		return ResourceState::UnorderedAccess;
 	}
 
 	assert(false);

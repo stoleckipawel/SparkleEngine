@@ -75,6 +75,8 @@ class SPARKLE_RENDERER_API FrameGraph
 	void ClearDepthStencil(CommandContext& cmd, TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(BufferHandle handle) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
 
 	using PassIndex = std::uint32_t;
 	using ResourceIndex = std::uint32_t;
@@ -83,7 +85,14 @@ class SPARKLE_RENDERER_API FrameGraph
 
 	struct CompiledBarrier
 	{
+		enum class Type : std::uint8_t
+		{
+			Transition,
+			UnorderedAccess
+		};
+
 		ResourceHandle handle = ResourceHandle::Invalid();
+		Type type = Type::Transition;
 		ResourceState before = ResourceState::Common;
 		ResourceState after = ResourceState::Common;
 	};
@@ -305,13 +314,16 @@ class SPARKLE_RENDERER_API FrameGraph
 	void RecordDeclaration(PassResourceDeclaration declaration) noexcept;
 	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage) noexcept;
 	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage) noexcept;
+	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage) noexcept;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveRenderTargetView(ResourceHandle handle) const noexcept;
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDepthStencilView(ResourceHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(ResourceHandle handle) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(ResourceHandle handle) const noexcept;
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept;
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(ResourceHandle handle) const noexcept;
 	float GetClearDepth(ResourceHandle handle) const noexcept;
 	ID3D12Resource* ResolveResource(ResourceHandle handle) const noexcept;
