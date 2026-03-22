@@ -97,7 +97,8 @@ PerViewCameraConstantBufferData ShadowBuilder::BuildLightCamera(
 		radius = std::max(radius, dist);
 	}
 
-	const float lightDistance = radius + RenderConfig::Shadows::LightPadding;
+	const float lightPadding = std::max(10.0f, radius * 0.15f);
+	const float lightDistance = radius + lightPadding;
 	const XMVECTOR lightPosition = center - lightForward * lightDistance;
 	const XMMATRIX lightView = XMMatrixLookAtLH(lightPosition, center, lightUp);
 
@@ -110,8 +111,8 @@ PerViewCameraConstantBufferData ShadowBuilder::BuildLightCamera(
 		maxZ = std::max(maxZ, z);
 	}
 
-	const float nearZ = std::max(0.1f, minZ - RenderConfig::Shadows::LightPadding);
-	const float farZ = maxZ + RenderConfig::Shadows::LightPadding;
+	const float nearZ = std::max(0.1f, minZ - lightPadding);
+	const float farZ = maxZ + lightPadding;
 	XMMATRIX lightProjection = DepthConvention::CreateOrthographicOffCenterLH(
 	    -radius, radius, -radius, radius, nearZ, farZ);
 

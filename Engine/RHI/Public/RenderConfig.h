@@ -24,10 +24,10 @@ namespace RenderConfig
 	namespace Shadows
 	{
 		inline constexpr std::uint32_t ShadowMapResolution = 4096;
-		inline constexpr float DepthBias = 0.0015f;
-		inline constexpr float NormalBias = 0.0035f;
-		inline constexpr float ShadowDistance = 100.0f;
-		inline constexpr float LightPadding = 100.0f;
+		inline constexpr float DepthBias = 0.00045f;
+		inline constexpr float NormalBias = 0.00125f;
+		inline constexpr float ShadowDistance = 60.0f;
+		inline constexpr float LightPadding = 20.0f;
 		inline constexpr DXGI_FORMAT ShadowMapFormat = DXGI_FORMAT_R32_FLOAT;
 	} 
 }  

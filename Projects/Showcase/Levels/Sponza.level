@@ -2,19 +2,19 @@
 Name = Sponza
 
 [Camera]
-Position = 6.59380865, 4.73201418, -0.0687320083
-YawRadians = 4.74119043
-PitchRadians = 0.0547033325
+Position = 4.71188259, 2.31712008, -0.22036922
+YawRadians = 4.73744774
+PitchRadians = -0.0652962625
 FovYDegrees = 66.9000015
 MoveSpeed = 0.00999999978
 
 [Lighting]
-DirectionalLight0Direction = 0.42, -0.82, 0.39
-DirectionalLight0Intensity = 2.35
-DirectionalLight0Color = 1.0, 0.93, 0.82
-DirectionalLight1Direction = -0.24, -0.66, -0.71
-DirectionalLight1Intensity = 0.2
-DirectionalLight1Color = 0.42, 0.5, 0.72
+DirectionalLight0Direction = -0.44096005, -0.885823965, 0.144465685
+DirectionalLight0Intensity = 11.220294
+DirectionalLight0Color = 1, 0.930000007, 0.819999993
+DirectionalLight1Direction = -0.0154964291, -0.893393636, -0.449007571
+DirectionalLight1Intensity = 0.200000003
+DirectionalLight1Color = 0.419999987, 0.5, 0.720000029
 
 [Meshes]
 Asset = Sponza/Sponza.gltf

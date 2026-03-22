@@ -17,11 +17,10 @@ namespace Lighting
 			}
 
 			const float2 uv = float2(lightNdc.x * 0.5f + 0.5f, 0.5f - lightNdc.y * 0.5f);
-			const float normalBias = (1.0f - saturate(dot(normalWorld, lightDirection))) * shadowData.NormalBias;
-			const float biasedReceiverDepth = lightNdc.z + shadowData.DepthBias + normalBias;
-			const float shadowDepth = SampleShadowDepth(uv, lightIndex);
+			const float normalBias = (1.0f - saturate(dot(normalize(normalWorld), lightDirection))) * shadowData.NormalBias;
+			const float biasedReceiverDepth = saturate(lightNdc.z + shadowData.DepthBias + normalBias);
 
-			return biasedReceiverDepth >= shadowDepth ? 1.0f : 0.0f;
+			return SampleShadowVisibility(uv, biasedReceiverDepth, shadowData.ShadowMapSize, lightIndex);
 		}
 	}
 }
