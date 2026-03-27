@@ -34,7 +34,7 @@
 // Sampler Declarations
 // =============================================================================
 // Contiguous descriptor table bound at runtime.
-// Register slots must match D3D12RootBindings.h::SamplerRegister.
+// Register slots must match D3D12SamplerLibrary::Slot.
 //
 // Naming: Sampler<MinMag><Mip><Address>
 //   MinMag:  Point, Linear

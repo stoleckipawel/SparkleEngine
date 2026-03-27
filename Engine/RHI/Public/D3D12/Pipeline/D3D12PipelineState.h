@@ -50,12 +50,21 @@ struct GraphicsPipelineStateDesc
 	std::array<DXGI_FORMAT, 8> RenderTargetFormats = {};
 	std::uint32_t RenderTargetCount = 1;
 	DXGI_FORMAT DepthStencilFormat = RenderConfig::DepthStencilFormat;
+	const wchar_t* DebugName = L"RHI_GraphicsPipelineState";
+};
+
+struct ComputePipelineStateDesc
+{
+	D3D12RootSignature* RootSignature = nullptr;
+	ShaderBytecode ComputeShader = {};
+	const wchar_t* DebugName = L"RHI_ComputePipelineState";
 };
 
 class D3D12PipelineState
 {
   public:
 	D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStateDesc& desc);
+	D3D12PipelineState(D3D12Rhi& rhi, const ComputePipelineStateDesc& desc);
 
 	D3D12PipelineState(
 	    D3D12Rhi& rhi,
@@ -80,6 +89,7 @@ class D3D12PipelineState
 	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, DepthTestDesc depthDesc) noexcept;
 	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, StencilTestDesc stencilDesc) noexcept;
 	void Create(const GraphicsPipelineStateDesc& desc);
+	void Create(const ComputePipelineStateDesc& desc);
 
   private:
 	D3D12Rhi& m_rhi;

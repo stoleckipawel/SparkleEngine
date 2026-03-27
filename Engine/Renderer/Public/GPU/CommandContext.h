@@ -23,6 +23,7 @@ class SPARKLE_RENDERER_API CommandContext final
 	void SetPipelineState(ID3D12PipelineState* pso) noexcept;
 
 	void SetRootSignature(ID3D12RootSignature* rootSig) noexcept;
+	void SetComputeRootSignature(ID3D12RootSignature* rootSig) noexcept;
 
 	void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) noexcept;
 
@@ -31,8 +32,24 @@ class SPARKLE_RENDERER_API CommandContext final
 	void BindIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& view) noexcept;
 
 	void BindConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void SetRoot32BitConstants(
+	    std::uint32_t rootParameterIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void BindRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
 
 	void BindDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept;
+	void BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept;
+	void SetComputeRoot32BitConstants(
+	    std::uint32_t rootParameterIndex,
+	    std::uint32_t num32BitValues,
+	    const void* data,
+	    std::uint32_t destOffsetIn32BitValues) noexcept;
+	void BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
 
 	void SetDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept;
 
@@ -63,6 +80,8 @@ class SPARKLE_RENDERER_API CommandContext final
 	    std::uint32_t instanceCount,
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept;
+
+	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
 
 	void CopyResource(ID3D12Resource* destinationResource, ID3D12Resource* sourceResource) noexcept;
 

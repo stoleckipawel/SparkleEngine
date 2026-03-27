@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "BuildFrameContext.h"
-#include "Renderer/Public/FrameContext.h"
+#include "Renderer/Public/Frame/FrameContext.h"
 
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12SwapChain.h"

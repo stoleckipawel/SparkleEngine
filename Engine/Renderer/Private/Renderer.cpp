@@ -6,7 +6,7 @@
 #include "D3D12Rhi.h"
 #include "D3D12SwapChain.h"
 #include "Window.h"
-#include "TextureManager.h"
+#include "Renderer/Public/Textures/TextureManager.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Scene/GameScene.h"
 #include "D3D12ConstantBufferManager.h"
@@ -15,9 +15,11 @@
 #include "UI.h"
 #include "Time/Timer.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
-#include "Renderer/Public/CommandContext.h"
-#include "Renderer/Public/FrameContext.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
+#include "Renderer/Public/GPU/CommandContext.h"
+#include "Renderer/Public/Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "Renderer/Public/FrameGraph/RenderPassContext.h"
 #include "Scene/Camera/GameCamera.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
@@ -26,7 +28,7 @@
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"
 #include "Frame/ViewLightingBuilder.h"
-#include "PipelineStateManager.h"
+#include "Pipeline/PipelineStateManager.h"
 #include "SceneData/MaterialCacheManager.h"
 #include "SceneData/RenderSceneDataBuilder.h"
 #include "SceneData/RenderSceneSnapshot.h"
@@ -103,12 +105,6 @@ void Renderer::InitializeFrameGraph() noexcept
 	const FrameGraphDependencies dependencies{
 	    *m_rhi,
 	    *m_window,
-	    m_pipelineStateManager->GetRootSignature(),
-	    m_pipelineStateManager->GetForwardPipelineState(),
-	    m_pipelineStateManager->GetShadowPipelineState(),
-	    *m_constantBufferManager,
-	    *m_textureManager,
-	    *m_samplerLibrary,
 	    *m_swapChain,
 	    *m_descriptorHeapManager,
 	    *m_editor};
@@ -160,7 +156,7 @@ void Renderer::SetupFrame() noexcept
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 
-	m_constantBufferManager->UpdatePerFrame();
+	m_constantBufferManager->UpdatePerFrame(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
 }
 
 void Renderer::RecordFrame() noexcept
@@ -178,10 +174,15 @@ void Renderer::RecordFrame() noexcept
 
 	m_frameGraph->Setup(frame);
 	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
+	const RenderPassContext renderPassContext{
+	    .DescriptorHeapManager = *m_descriptorHeapManager,
+	    .ConstantBufferManager = *m_constantBufferManager,
+	    .SamplerLibrary = *m_samplerLibrary,
+	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
 
 	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
 	CommandContext cmd(m_rhi->GetCommandList(frameIndex).Get());
-	m_frameGraph->Execute(compiledPlan, cmd, frame);
+	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext);
 }
 
 void Renderer::SubmitFrame() noexcept

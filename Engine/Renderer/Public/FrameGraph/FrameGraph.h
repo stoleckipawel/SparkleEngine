@@ -8,8 +8,11 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
 #include "Renderer/Public/FrameGraph/ResourceRegistry.h"
+#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/Passes/ShaderPass.h"
+#include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include <d3d12.h>
 #include <array>
@@ -18,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -28,6 +32,7 @@ class D3D12SwapChain;
 class CommandContext;
 class D3D12Texture;
 class FrameGraphTransientAllocator;
+struct RenderPassContext;
 class Window;
 struct FrameContext;
 
@@ -35,6 +40,14 @@ class SPARKLE_RENDERER_API FrameGraph
 {
   public:
 	struct CompiledPlan;
+
+	private:
+	struct AllocatedParameterInstanceBase
+	{
+		virtual ~AllocatedParameterInstanceBase() noexcept = default;
+	};
+
+	public:
 
 	FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager* descriptorHeapManager, D3D12SwapChain* swapChain);
 	~FrameGraph();
@@ -47,18 +60,144 @@ class SPARKLE_RENDERER_API FrameGraph
 	template <typename SetupFn, typename ExecuteFn>
 	void AddPass(std::string_view name, FrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
-		AddLambdaPass(
+		using SetupFnType = std::decay_t<SetupFn>;
+		using ExecuteFnType = std::decay_t<ExecuteFn>;
+
+		static_assert(
+		    std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassBuilder&>,
+		    "FrameGraph setup lambda must accept (PassBuilder&, const FrameContext&) or (PassBuilder&).\n");
+		static_assert(
+		    std::is_invocable_v<ExecuteFnType&, RenderGraphPassContext&>,
+		    "FrameGraph execute lambda must accept (RenderGraphPassContext&). ");
+
+		SetupFnType normalizedSetup(std::forward<SetupFn>(setupFn));
+		ExecuteFnType normalizedExecute(std::forward<ExecuteFn>(executeFn));
+
+		m_passes.push_back(
+		    RegisteredPass{
+		        std::string(name),
+		        flags,
+		        [setup = std::move(normalizedSetup)](PassBuilder& builder, const FrameContext& frame) mutable
+		        {
+			        if constexpr (std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&>)
+			        {
+				        setup(builder, frame);
+			        }
+			        else
+			        {
+				        setup(builder);
+			        }
+		        },
+		        [execute = std::move(normalizedExecute)](RenderGraphPassContext& context) mutable
+		        {
+			        execute(context);
+		        }});
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+		requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		AddTypedShaderPass(
 		    name,
-		    flags,
-		    MakeSetupCallback(std::forward<SetupFn>(setupFn)),
-		    MakeExecuteCallback(std::forward<ExecuteFn>(executeFn)));
+		    FrameGraphPassFlags::Raster,
+		    parameters,
+		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
+		requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	void AddRasterPass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
+	{
+		AddTypedShaderPass(
+		    name,
+		    FrameGraphPassFlags::Raster,
+		    parameters,
+		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    MakeDirectPassExecuteCallback<TPass, TParameterBindings>(std::forward<TExecuteArgs>(executeArgs)...));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
+		requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
+	{
+		AddTypedShaderPass(
+		    name,
+		    FrameGraphPassFlags::Compute,
+		    parameters,
+		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    std::forward<ExecuteFn>(executeFn));
+	}
+
+	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
+		requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	void AddComputePass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
+	{
+		AddTypedShaderPass(
+		    name,
+		    FrameGraphPassFlags::Compute,
+		    parameters,
+		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    {
+			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
+		    },
+		    MakeDirectPassExecuteCallback<TPass, TParameterBindings>(std::forward<TExecuteArgs>(executeArgs)...));
 	}
 
 	void Setup(const FrameContext& frame);
 
 	CompiledPlan Compile();
 
-	void Execute(const CompiledPlan& plan, CommandContext& cmd, const FrameContext& frame) const;
+	void Execute(const CompiledPlan& plan, CommandContext& cmd, const FrameContext& frame, const RenderPassContext& renderPassContext)
+	    const;
+	template <typename TParameters>
+	TypedPassParameterInstance<TParameters>& AllocParameters()
+	{
+		struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
+		{
+			explicit AllocatedParameterInstance(const ShaderParameterStructMetadata<TParameters>& metadata) : Instance(metadata) {}
+
+			TypedPassParameterInstance<TParameters> Instance;
+		};
+
+		static const ShaderParameterStructMetadata<TParameters> metadata =
+		    ShaderParameterStructBuilder<TParameters>::BuildMetadata("FrameGraphParameters");
+
+		auto allocation = std::make_unique<AllocatedParameterInstance>(metadata);
+		TypedPassParameterInstance<TParameters>& instance = allocation->Instance;
+		m_allocatedParameterInstances.push_back(std::unique_ptr<AllocatedParameterInstanceBase>(std::move(allocation)));
+		return instance;
+	}
+
+	template <typename TPass>
+	typename TPass::ParameterInstance& AllocPassParameters()
+	{
+		using Parameters = typename TPass::Parameters;
+		using ParameterInstance = typename TPass::ParameterInstance;
+
+		struct AllocatedPassParameterInstance final : AllocatedParameterInstanceBase
+		{
+			explicit AllocatedPassParameterInstance(const ShaderParameterStructMetadata<Parameters>& metadata) : Instance(metadata) {}
+
+			ParameterInstance Instance;
+		};
+
+		auto allocation = std::make_unique<AllocatedPassParameterInstance>(TPass::GetParameterMetadata());
+		ParameterInstance& instance = allocation->Instance;
+		m_allocatedParameterInstances.push_back(std::unique_ptr<AllocatedParameterInstanceBase>(std::move(allocation)));
+		return instance;
+	}
+
 	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ID3D12Resource& resource, ResourceState initialState) noexcept;
 	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, D3D12Texture& texture, ResourceState initialState) noexcept;
@@ -77,6 +216,60 @@ class SPARKLE_RENDERER_API FrameGraph
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(BufferHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
+
+	template <typename TValue = void>
+	ShaderTexture2D<TValue> Read(TextureHandle handle) const noexcept
+	{
+		ShaderTexture2D<TValue> field;
+		field = handle;
+		return field;
+	}
+
+	template <typename TValue = void>
+	ShaderBuffer<TValue> Read(BufferHandle handle) const noexcept
+	{
+		ShaderBuffer<TValue> field;
+		field = handle;
+		return field;
+	}
+
+	template <typename TValue = void>
+	ShaderRWTexture2D<TValue> CreateUAV(TextureHandle handle) const noexcept
+	{
+		ShaderRWTexture2D<TValue> field;
+		field = handle;
+		return field;
+	}
+
+	template <typename TValue = void>
+	ShaderRWBuffer<TValue> CreateUAV(BufferHandle handle) const noexcept
+	{
+		ShaderRWBuffer<TValue> field;
+		field = handle;
+		return field;
+	}
+
+	ShaderRenderTarget CreateRenderTarget(TextureHandle handle) const noexcept
+	{
+		ShaderRenderTarget field;
+		field = handle;
+		return field;
+	}
+
+	ShaderDepthTarget CreateDepthTarget(TextureHandle handle) const noexcept
+	{
+		ShaderDepthTarget field;
+		field = handle;
+		return field;
+	}
+
+	template <typename TValue>
+	ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
+	{
+		ShaderUniform<TValue> field;
+		field = value;
+		return field;
+	}
 
 	using PassIndex = std::uint32_t;
 	using ResourceIndex = std::uint32_t;
@@ -233,88 +426,82 @@ class SPARKLE_RENDERER_API FrameGraph
 	friend class PassBuilder;
 
 	using SetupCallback = std::function<void(PassBuilder&, const FrameContext&)>;
-	using ExecuteCallback = std::function<void(const FrameGraph&, CommandContext&, const FrameContext&)>;
+	using ExecuteCallback = std::function<void(RenderGraphPassContext&)>;
 
-	template <typename SetupFn> static SetupCallback MakeSetupCallback(SetupFn&& setupFn)
+	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
+	static auto MakeDirectPassExecuteCallback(TExecuteArgs&&... executeArgs)
 	{
-		using SetupFnType = std::decay_t<SetupFn>;
-		static_assert(
-		    std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassBuilder&>,
-		    "FrameGraph setup lambda must accept (PassBuilder&, const FrameContext&) or (PassBuilder&).\n");
-
-		SetupFnType callback(std::forward<SetupFn>(setupFn));
-		if constexpr (std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&>)
+		using ExecuteArgsTuple = std::tuple<std::decay_t<TExecuteArgs>...>;
+		return [executeArgsTuple = ExecuteArgsTuple(std::forward<TExecuteArgs>(executeArgs)...)](
+		           RenderGraphPassContext& context,
+		           TParameterBindings& typedParameters) mutable
 		{
-			return [callback = std::move(callback)](PassBuilder& builder, const FrameContext& frame) mutable
-			{
-				callback(builder, frame);
-			};
-		}
-		else
-		{
-			return [callback = std::move(callback)](PassBuilder& builder, const FrameContext&) mutable
-			{
-				callback(builder);
-			};
-		}
+			std::apply(
+			    [&](auto&... capturedExecuteArgs)
+			    {
+				    TPass::Execute(context, typedParameters, capturedExecuteArgs...);
+			    },
+			    executeArgsTuple);
+		};
 	}
 
-	template <typename ExecuteFn> static ExecuteCallback MakeExecuteCallback(ExecuteFn&& executeFn)
+	template <typename TParameterBindings, typename ExecuteFn>
+	static ExecuteCallback MakeParameterizedExecuteCallback(TParameterBindings* parameters, ExecuteFn&& executeFn)
 	{
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 		static_assert(
-		    std::is_invocable_v<ExecuteFnType&, const FrameGraph&, CommandContext&, const FrameContext&> ||
-		        std::is_invocable_v<ExecuteFnType&, CommandContext&, const FrameContext&> ||
-		        std::is_invocable_v<ExecuteFnType&, CommandContext&> || std::is_invocable_v<ExecuteFnType&, const FrameContext&> ||
-		        std::is_invocable_v<ExecuteFnType&>,
-		    "FrameGraph execute lambda must accept (const FrameGraph&, CommandContext&, const FrameContext&), (CommandContext&, const "
-		    "FrameContext&), (CommandContext&), (const FrameContext&), or ().");
+		    std::is_invocable_v<ExecuteFnType&, RenderGraphPassContext&, TParameterBindings&>,
+		    "Typed pass execute lambda must accept (RenderGraphPassContext&, Parameters&). ");
 
 		ExecuteFnType callback(std::forward<ExecuteFn>(executeFn));
-		if constexpr (std::is_invocable_v<ExecuteFnType&, const FrameGraph&, CommandContext&, const FrameContext&>)
+		return [parameters, callback = std::move(callback)](RenderGraphPassContext& context) mutable
 		{
-			return [callback = std::move(callback)](const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame) mutable
-			{
-				callback(frameGraph, cmd, frame);
-			};
-		}
-		else if constexpr (std::is_invocable_v<ExecuteFnType&, CommandContext&, const FrameContext&>)
-		{
-			return [callback = std::move(callback)](const FrameGraph&, CommandContext& cmd, const FrameContext& frame) mutable
-			{
-				callback(cmd, frame);
-			};
-		}
-		else if constexpr (std::is_invocable_v<ExecuteFnType&, CommandContext&>)
-		{
-			return [callback = std::move(callback)](const FrameGraph&, CommandContext& cmd, const FrameContext&) mutable
-			{
-				callback(cmd);
-			};
-		}
-		else if constexpr (std::is_invocable_v<ExecuteFnType&, const FrameContext&>)
-		{
-			return [callback = std::move(callback)](const FrameGraph&, CommandContext&, const FrameContext& frame) mutable
-			{
-				callback(frame);
-			};
-		}
-		else
-		{
-			return [callback = std::move(callback)](const FrameGraph&, CommandContext&, const FrameContext&) mutable
-			{
-				callback();
-			};
-		}
+			callback(context, *parameters);
+		};
 	}
 
-	void AddLambdaPass(std::string_view name, FrameGraphPassFlags flags, SetupCallback setupCallback, ExecuteCallback executeCallback);
+	template <typename TParameterBindings, typename SetupFn, typename ExecuteFn>
+	void AddTypedShaderPass(
+	    std::string_view name,
+	    FrameGraphPassFlags flags,
+	    TParameterBindings& parameters,
+	    SetupFn&& setupFn,
+	    ExecuteFn&& executeFn)
+	{
+		auto* parameterBindings = &parameters;
+		auto setupValid = std::make_shared<bool>(true);
+		std::string passName(name);
+
+		m_passes.push_back(
+		    RegisteredPass{
+		        std::string(name),
+		        flags,
+		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](PassBuilder& builder, const FrameContext&) mutable
+		        {
+			        *setupValid = setupFn(builder, *parameterBindings, passName.c_str());
+		        },
+		        MakeParameterizedExecuteCallback(parameterBindings, [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
+		                                                            RenderGraphPassContext& context,
+		                                                            TParameterBindings& typedParameters) mutable
+		        {
+			        if (!*setupValid)
+			        {
+				        return;
+			        }
+
+			        executeFn(context, typedParameters);
+		        })});
+	}
+
 	void BeginPassSetup() noexcept;
 	void EndPassSetup() noexcept;
 	void RecordDeclaration(PassResourceDeclaration declaration) noexcept;
 	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage) noexcept;
 	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage) noexcept;
 	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage) noexcept;
+	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveRenderTargetView(ResourceHandle handle) const noexcept;
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDepthStencilView(ResourceHandle handle) const noexcept;
@@ -366,6 +553,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;
 	mutable std::unique_ptr<FrameGraphTransientAllocator> m_transientAllocator;
+	std::vector<std::unique_ptr<AllocatedParameterInstanceBase>> m_allocatedParameterInstances;
 	std::vector<PassResourceDeclaration> m_activePassDeclarations;
 	bool m_isSettingUpPass = false;
 };

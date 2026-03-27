@@ -1,56 +1,92 @@
-#include "PCH.h"
+#include "../PCH.h"
 
 #include "Renderer/Public/Passes/ShadowOpaquePass.h"
 
-#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/GPU/CommandContext.h"
 #include "Renderer/Public/Frame/RenderViewContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "Renderer/Public/FrameGraph/RenderPassContext.h"
+#include "Renderer/Public/Passes/PassUtilities.h"
+#include "Renderer/Public/Passes/ShaderPass.h"
 #include "Renderer/Public/GPU/GPUMesh.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
+#include "D3D12BindingLayout.h"
 #include "D3D12ConstantBufferData.h"
 #include "D3D12ConstantBufferManager.h"
+#include "D3D12PassBinder.h"
 #include "D3D12PipelineState.h"
-#include "D3D12RootBindings.h"
-#include "D3D12RootSignature.h"
+#include "Pipeline/RenderPassPipelineTraits.h"
 
-ShadowOpaquePass::ShadowOpaquePass(
-	D3D12RootSignature& rootSignature,
-	D3D12PipelineState& pipelineState,
-	D3D12ConstantBufferManager& constantBufferManager,
-	TextureHandle shadowMapHandle,
-	TextureHandle depthBufferHandle) noexcept :
-	m_rootSignature(&rootSignature),
-	m_pipelineState(&pipelineState),
-	m_constantBufferManager(&constantBufferManager),
-	m_shadowMap(shadowMapHandle),
-	m_depthBuffer(depthBufferHandle)
+#include <cassert>
+
+const ShadowOpaquePass::ParameterMetadata& ShadowOpaquePass::GetParameterMetadata() noexcept
 {
+	static const ParameterMetadata metadata = []
+	{
+		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
+		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Raster, PassName);
+		assert(valid);
+		return localMetadata;
+	}();
+
+	return metadata;
+}
+
+ShaderSourceDefinition ShadowOpaquePass::DescribeShadowViewVertexShader() noexcept
+{
+	return ShaderSourceDefinition::FromAsset("Passes/Shadow/ShadowDepthVS.hlsl", "main", ShaderStage::Vertex);
+}
+
+ShaderSourceDefinition ShadowOpaquePass::DescribeShadowViewPixelShader() noexcept
+{
+	return ShaderSourceDefinition::FromAsset("Passes/Shadow/ShadowDepthPS.hlsl", "main", ShaderStage::Pixel);
 }
 
 void ShadowOpaquePass::Execute(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const RenderSceneData& sceneData,
-	const RenderViewContext& viewContext)
+	RenderGraphPassContext& context,
+	ParameterInstance& parameters,
+	std::size_t lightIndex)
 {
-	PrepareTargets(frameGraph, cmd);
-	ConfigurePipeline(cmd, viewContext);
-	BindFrameResources(cmd, viewContext);
-	DrawMeshes(cmd, sceneData);
+	if (lightIndex >= context.Frame.shadowViewCount)
+	{
+		return;
+	}
+
+	const ShadowOpaquePassRuntime& runtime = context.Runtime.GetPassRuntime<ShadowOpaquePass>();
+	const RenderViewContext& viewContext = context.Frame.shadowViews[lightIndex];
+	PreparePassParameters(parameters, viewContext, context.Runtime);
+	PrepareTargets(context, parameters.GetFields());
+	ConfigurePipeline(context.Commands, viewContext);
+	BindPassResources(context.Graph, context.Commands, parameters, runtime, context.Runtime, viewContext.perViewGpuAddress);
+	DrawMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
 }
 
-void ShadowOpaquePass::PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd)
+void ShadowOpaquePass::PrepareTargets(
+	RenderGraphPassContext& context,
+	const ShadowOpaquePass::Parameters& parameters)
 {
-	frameGraph.BindRenderTarget(cmd, m_shadowMap, m_depthBuffer);
-	frameGraph.ClearRenderTarget(cmd, m_shadowMap);
-	frameGraph.ClearDepthStencil(cmd, m_depthBuffer);
+	context.Graph.BindRenderTarget(context.Commands, parameters.ShadowColor[0], parameters.ShadowDepth[0]);
+	context.Graph.ClearRenderTarget(context.Commands, parameters.ShadowColor[0]);
+	context.Graph.ClearDepthStencil(context.Commands, parameters.ShadowDepth[0]);
+}
+
+void ShadowOpaquePass::PreparePassParameters(
+	ParameterInstance& parameters,
+	const RenderViewContext& viewContext,
+	const RenderPassContext& renderPassContext)
+{
+	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
+	parameters->PerView = viewContext.perViewData;
+	const bool valid = parameters.Sync();
+	assert(valid);
 }
 
 void ShadowOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)
 {
-	cmd.SetRootSignature(m_rootSignature->GetRaw());
 	cmd.SetViewport(
 	    viewContext.viewport.TopLeftX,
 	    viewContext.viewport.TopLeftY,
@@ -63,18 +99,43 @@ void ShadowOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewCo
 	    viewContext.scissorRect.top,
 	    viewContext.scissorRect.right,
 	    viewContext.scissorRect.bottom);
-	cmd.SetPipelineState(m_pipelineState->Get().Get());
 	cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void ShadowOpaquePass::BindFrameResources(CommandContext& cmd, const RenderViewContext& viewContext)
+void ShadowOpaquePass::BindPassResources(
+	const FrameGraph& frameGraph,
+	CommandContext& cmd,
+	const ParameterInstance& parameters,
+	const ShadowOpaquePassRuntime& runtime,
+	const RenderPassContext& renderPassContext,
+	D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
 {
-	cmd.BindConstantBuffer(RootBindings::RootParam::PerFrame, m_constantBufferManager->GetPerFrameGpuAddress());
-	cmd.BindConstantBuffer(RootBindings::RootParam::PerView, viewContext.perViewGpuAddress);
+	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
+	D3D12PassBindingOverrides overrides;
+	overrides.SetConstantBufferView("PerFrame", constantBufferManager.GetPerFrameGpuAddress());
+	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
+	const bool bound = PassUtilities::BindRasterPassWithRuntime(
+	    frameGraph,
+	    cmd,
+	    nullptr,
+	    runtime,
+	    parameters.GetPassParameterSet(),
+	    RenderPassPipelineTraits<ShadowOpaquePass>::StableBindingNames.data(),
+	    static_cast<std::uint32_t>(RenderPassPipelineTraits<ShadowOpaquePass>::StableBindingNames.size()),
+	    &overrides,
+	    PassName);
+	assert(bound);
 }
 
-void ShadowOpaquePass::DrawMeshes(CommandContext& cmd, const RenderSceneData& sceneData)
+void ShadowOpaquePass::DrawMeshes(
+	const FrameGraph& frameGraph,
+	CommandContext& cmd,
+	const RenderSceneData& sceneData,
+	const ShadowOpaquePassRuntime& runtime,
+	const RenderPassContext& renderPassContext)
 {
+	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
+
 	for (const MeshDraw& draw : sceneData.meshDraws)
 	{
 		const GPUMesh* gpuMesh = draw.gpuMesh;
@@ -89,7 +150,17 @@ void ShadowOpaquePass::DrawMeshes(CommandContext& cmd, const RenderSceneData& sc
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
-		cmd.BindConstantBuffer(RootBindings::RootParam::PerObjectVS, m_constantBufferManager->UpdatePerObjectVS(perObjectVS));
+		D3D12PassBindingOverrides overrides;
+		overrides.SetConstantBufferView("PerObjectVS", constantBufferManager.UpdatePerObjectVS(perObjectVS));
+		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
+		    frameGraph,
+		    cmd,
+		    nullptr,
+		    runtime,
+		    RenderPassPipelineTraits<ShadowOpaquePass>::DrawBindingNames,
+		    overrides,
+		    PassName);
+		assert(bound);
 
 		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
 	}

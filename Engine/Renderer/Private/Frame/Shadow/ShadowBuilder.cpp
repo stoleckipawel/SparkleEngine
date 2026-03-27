@@ -2,7 +2,7 @@
 
 #include "Frame/Shadow/ShadowBuilder.h"
 
-#include "Renderer/Public/DepthConvention.h"
+#include "Renderer/Public/GPU/DepthConvention.h"
 #include "RHI/Public/RenderConfig.h"
 
 #include <algorithm>

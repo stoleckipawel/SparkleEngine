@@ -1,71 +1,22 @@
 #include "PCH.h"
 #include "D3D12RootSignature.h"
 #include "D3D12Rhi.h"
-#include "D3D12RootBindings.h"
 #include "Log.h"
 
-D3D12RootSignature::D3D12RootSignature(D3D12Rhi& rhi) : m_rhi(rhi)
+D3D12RootSignature::D3D12RootSignature(D3D12Rhi& rhi, const RootSignatureDesc& desc) : m_rhi(rhi)
 {
-	Create();
+	Create(desc);
 }
 
-void D3D12RootSignature::Create()
+void D3D12RootSignature::Create(const RootSignatureDesc& desc)
 {
-	CD3DX12_ROOT_PARAMETER rootParameters[RootBindings::RootParam::Count] = {};
-
-	CD3DX12_DESCRIPTOR_RANGE srvRange = {};
-	srvRange.Init(
-	    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-	    RootBindings::SRVRegister::MaterialTextureCount,
-	    RootBindings::SRVRegister::MaterialTableBase);
-
-	CD3DX12_DESCRIPTOR_RANGE shadowMapRange = {};
-	shadowMapRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap0);
-
-	CD3DX12_DESCRIPTOR_RANGE shadowMap1Range = {};
-	shadowMap1Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap1);
-
-	CD3DX12_DESCRIPTOR_RANGE shadowMap2Range = {};
-	shadowMap2Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap2);
-
-	CD3DX12_DESCRIPTOR_RANGE shadowMap3Range = {};
-	shadowMap3Range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RootBindings::SRVRegister::ShadowMap3);
-
-	CD3DX12_DESCRIPTOR_RANGE samplerRange = {};
-
-	samplerRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, RootBindings::SamplerRegister::Count, 0);
-
-	rootParameters[RootBindings::RootParam::PerFrame].InitAsConstantBufferView(
-	    RootBindings::CBRegister::PerFrame,
-	    0,
-	    RootBindings::Visibility::PerFrame);
-
-	rootParameters[RootBindings::RootParam::PerView].InitAsConstantBufferView(
-	    RootBindings::CBRegister::PerView,
-	    0,
-	    RootBindings::Visibility::PerView);
-
-	rootParameters[RootBindings::RootParam::PerObjectVS].InitAsConstantBufferView(
-	    RootBindings::CBRegister::PerObjectVS,
-	    0,
-	    RootBindings::Visibility::PerObjectVS);
-
-	rootParameters[RootBindings::RootParam::PerObjectPS].InitAsConstantBufferView(
-	    RootBindings::CBRegister::PerObjectPS,
-	    0,
-	    RootBindings::Visibility::PerObjectPS);
-
-	rootParameters[RootBindings::RootParam::TextureSRV].InitAsDescriptorTable(1, &srvRange, RootBindings::Visibility::TextureSRV);
-	rootParameters[RootBindings::RootParam::ShadowMap0].InitAsDescriptorTable(1, &shadowMapRange, RootBindings::Visibility::ShadowMap0);
-	rootParameters[RootBindings::RootParam::ShadowMap1].InitAsDescriptorTable(1, &shadowMap1Range, RootBindings::Visibility::ShadowMap1);
-	rootParameters[RootBindings::RootParam::ShadowMap2].InitAsDescriptorTable(1, &shadowMap2Range, RootBindings::Visibility::ShadowMap2);
-	rootParameters[RootBindings::RootParam::ShadowMap3].InitAsDescriptorTable(1, &shadowMap3Range, RootBindings::Visibility::ShadowMap3);
-
-	rootParameters[RootBindings::RootParam::SamplerTable].InitAsDescriptorTable(1, &samplerRange, RootBindings::Visibility::SamplerTable);
-
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
-	rootSignatureDesc
-	    .Init(RootBindings::RootParam::Count, rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+	rootSignatureDesc.Init(
+	    desc.ParameterCount,
+	    desc.Parameters,
+	    desc.StaticSamplerCount,
+	    desc.StaticSamplers,
+	    desc.Flags);
 
 	ID3DBlob* signature = nullptr;
 	ID3DBlob* error = nullptr;
@@ -75,7 +26,7 @@ void D3D12RootSignature::Create()
 	    signature->GetBufferPointer(),
 	    signature->GetBufferSize(),
 	    IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
-	m_rootSignature->SetName(L"RHI_RootSignature");
+	m_rootSignature->SetName(desc.DebugName);
 }
 
 D3D12RootSignature::~D3D12RootSignature() noexcept

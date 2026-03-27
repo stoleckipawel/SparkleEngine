@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "Renderer/Public/DepthConvention.h"
+#include "Renderer/Public/GPU/DepthConvention.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
 
 #include "D3D12DescriptorHeapManager.h"
@@ -111,6 +111,10 @@ namespace
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (RequiresUnorderedAccessView(transientPlan))
+		{
+			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		}
 		return resourceDesc;
 	}
 

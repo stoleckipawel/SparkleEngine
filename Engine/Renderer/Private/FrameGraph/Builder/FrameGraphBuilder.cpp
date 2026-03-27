@@ -1,14 +1,12 @@
-#include "PCH.h"
+#include "../../PCH.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-#include "FrameGraph/Builder/ShadowFrameGraphBuilder.h"
+#include "FrameGraph/Features/ComputeShowcasePasses.h"
+#include "FrameGraph/Features/ForwardPasses.h"
+#include "FrameGraph/Features/PresentationPasses.h"
+#include "FrameGraph/Features/ShadowPasses.h"
 
-#include "Renderer/Public/CommandContext.h"
-#include "Renderer/Public/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/Passes/ForwardOpaquePass.h"
-
-#include "UI.h"
 #include "Window.h"
 
 FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept : m_dependencies(dependencies) {}
@@ -21,70 +19,11 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    &m_dependencies.descriptorHeapManager,
 	    &m_dependencies.swapChain);
 
-	const FrameGraphTextureDesc backBufferDesc = FrameGraphTextureDesc::CreateColor(
-	    "BackBuffer",
-	    static_cast<std::uint32_t>(m_dependencies.window.GetWidth()),
-	    static_cast<std::uint32_t>(m_dependencies.window.GetHeight()),
-	    RenderConfig::BackBufferFormat);
-	const TextureHandle backBufferHandle = frameGraph->ImportTexture(backBufferDesc, ResourceState::Present);
-
-	const FrameGraphTextureDesc mainDepthDesc = FrameGraphTextureDesc::CreateDepthStencil(
-	    "MainDepth",
-	    static_cast<std::uint32_t>(m_dependencies.window.GetWidth()),
-	    static_cast<std::uint32_t>(m_dependencies.window.GetHeight()));
-	const TextureHandle mainDepthHandle = frameGraph->CreateTexture(mainDepthDesc);
-
-	ShadowFrameGraphBuilder shadowFrameGraphBuilder(
-	    m_dependencies.rootSignature,
-	    m_dependencies.shadowPipelineState,
-	    m_dependencies.constantBufferManager);
-	const ShadowFrameGraphResources shadowResources = shadowFrameGraphBuilder.Build(*frameGraph);
-
-	auto forwardOpaquePass = std::make_shared<ForwardOpaquePass>(
-	    m_dependencies.rootSignature,
-	    m_dependencies.forwardPipelineState,
-	    m_dependencies.constantBufferManager,
-	    m_dependencies.descriptorHeapManager,
-	    m_dependencies.textureManager,
-	    m_dependencies.samplerLibrary,
-	    shadowResources.shadowMapHandles,
-	    backBufferHandle,
-	    mainDepthHandle);
-
-	frameGraph->AddPass(
-	    "ForwardOpaque",
-	    FrameGraphPassFlags::Raster,
-	    [backBufferHandle, mainDepthHandle, shadowMapHandles = shadowResources.shadowMapHandles](PassBuilder& builder)
-	    {
-		    builder.Write(backBufferHandle, ResourceUsage::RenderTarget);
-		    builder.Write(mainDepthHandle, ResourceUsage::DepthWrite);
-
-		    for (const auto& handle : shadowMapHandles)
-		    {
-			    if (handle.IsValid())
-			    {
-				    builder.Read(handle, ResourceUsage::ShaderRead);
-			    }
-		    }
-	    },
-	    [forwardOpaquePass](const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame)
-	    {
-		    forwardOpaquePass->Execute(frameGraph, cmd, frame.sceneData, frame.mainView);
-	    });
-
-	frameGraph->AddPass(
-	    "UIComposition",
-	    FrameGraphPassFlags::Raster,
-	    [backBufferHandle](PassBuilder& builder)
-	    {
-		    builder.Write(backBufferHandle, ResourceUsage::RenderTarget);
-	    },
-	    [ui = &m_dependencies.ui, backBufferHandle](const FrameGraph& frameGraph, CommandContext& cmd, const FrameContext& frame)
-	    {
-		    (void) frame;
-		    frameGraph.BindRenderTarget(cmd, backBufferHandle);
-		    ui->Render(cmd.GetCommandList());
-	    });
+	const FrameGraphSceneTargets sceneTargets = FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window);
+	const FrameGraphPresentationInputs presentationInputs{.BackBuffer = sceneTargets.BackBuffer};
+	const FrameGraphShadowOutputs shadowOutputs = FrameGraphFeatures::AddShadowPasses(*frameGraph);
+	FrameGraphFeatures::AddForwardOpaquePass(*frameGraph, sceneTargets, shadowOutputs);
+	FrameGraphFeatures::AddUiCompositionPass(*frameGraph, m_dependencies.ui, presentationInputs);
 
 	return frameGraph;
 }

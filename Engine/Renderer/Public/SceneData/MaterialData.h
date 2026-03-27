@@ -18,6 +18,11 @@ namespace MaterialTextureFlags
 	constexpr std::uint32_t Emissive = 0x10;
 }  // namespace MaterialTextureFlags
 
+namespace MaterialTextureSlots
+{
+	constexpr std::uint32_t Count = 5;
+}
+
 struct SPARKLE_RENDERER_API MaterialData
 {
 	DirectX::XMFLOAT4 baseColor = {1.0f, 1.0f, 1.0f, 1.0f};

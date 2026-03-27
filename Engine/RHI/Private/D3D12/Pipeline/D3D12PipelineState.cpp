@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12PipelineState.h"
 #include "D3D12Rhi.h"
-#include "DepthConvention.h"
+#include "Renderer/Public/GPU/DepthConvention.h"
 
 #include <cstdio>
 #include <vector>
@@ -96,6 +96,11 @@ D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStat
 	Create(desc);
 }
 
+D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const ComputePipelineStateDesc& desc) : m_rhi(rhi)
+{
+	Create(desc);
+}
+
 void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -153,7 +158,26 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 		HandlePsoCreateFailure(hr);
 	}
 
-	m_pso->SetName(L"RHI_PipelineState");
+	m_pso->SetName(desc.DebugName);
+}
+
+void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
+{
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+	psoDesc.pRootSignature = desc.RootSignature != nullptr ? desc.RootSignature->GetRaw() : nullptr;
+	psoDesc.CS.pShaderBytecode = desc.ComputeShader.Data;
+	psoDesc.CS.BytecodeLength = desc.ComputeShader.Size;
+	psoDesc.NodeMask = 0;
+	psoDesc.CachedPSO = {};
+	psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+	HRESULT hr = m_rhi.GetDevice()->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(m_pso.ReleaseAndGetAddressOf()));
+	if (FAILED(hr))
+	{
+		HandlePsoCreateFailure(hr);
+	}
+
+	m_pso->SetName(desc.DebugName);
 }
 
 void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept

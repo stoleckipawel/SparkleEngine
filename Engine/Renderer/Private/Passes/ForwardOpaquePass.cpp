@@ -1,112 +1,139 @@
-#include "PCH.h"
+#include "../PCH.h"
 #include "Renderer/Public/Passes/ForwardOpaquePass.h"
 
-#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/GPU/CommandContext.h"
 #include "Renderer/Public/Frame/RenderViewContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "Renderer/Public/FrameGraph/RenderPassContext.h"
+#include "Renderer/Public/Passes/PassUtilities.h"
+#include "Renderer/Public/Passes/ShaderPass.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "Renderer/Public/SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
 #include "Renderer/Public/GPU/GPUMesh.h"
-#include "Renderer/Public/TextureManager.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "D3D12RootSignature.h"
+#include "D3D12BindingLayout.h"
 #include "D3D12PipelineState.h"
+#include "D3D12PassBinder.h"
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12ConstantBufferData.h"
-#include "D3D12RootBindings.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "D3D12Texture.h"
+#include "Pipeline/RenderPassPipelineTraits.h"
 #include "Samplers/D3D12SamplerLibrary.h"
 
 #include "Core/Public/Diagnostics/Log.h"
+#include <cassert>
 
-ForwardOpaquePass::ForwardOpaquePass(
-    D3D12RootSignature& rootSignature,
-    D3D12PipelineState& pipelineState,
-    D3D12ConstantBufferManager& constantBufferManager,
-    D3D12DescriptorHeapManager& descriptorHeapManager,
-    TextureManager& textureManager,
-    D3D12SamplerLibrary& samplerLibrary,
-	std::array<TextureHandle, ForwardOpaquePass::MaxShadowMaps> shadowMapHandles,
-    TextureHandle backBufferHandle,
-    TextureHandle depthBufferHandle) noexcept :
-    m_rootSignature(&rootSignature),
-    m_pipelineState(&pipelineState),
-    m_constantBufferManager(&constantBufferManager),
-    m_descriptorHeapManager(&descriptorHeapManager),
-    m_textureManager(&textureManager),
-    m_samplerLibrary(&samplerLibrary),
-	m_shadowMaps(shadowMapHandles),
-    m_backBuffer(backBufferHandle),
-    m_depthBuffer(depthBufferHandle)
+const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetadata() noexcept
 {
-	LOG_INFO("ForwardOpaquePass: Created");
+	static const ParameterMetadata metadata = []
+	{
+		const ParameterMetadata localMetadata = ShaderParameterStructBuilder<Parameters>::BuildMetadata(PassName);
+		const bool valid = ValidateShaderPassLayout(localMetadata.GetLayout(), ShaderPassKind::Raster, PassName);
+		assert(valid);
+		return localMetadata;
+	}();
+
+	return metadata;
 }
 
-void ForwardOpaquePass::Execute(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const RenderSceneData& sceneData,
-	const RenderViewContext& viewContext)
+ShaderSourceDefinition ForwardOpaquePass::DescribePrimaryViewVertexShader() noexcept
 {
-	PrepareTargets(frameGraph, cmd);
-	ConfigurePipeline(cmd, viewContext);
-	BindFrameResources(cmd, viewContext);
-	BindGlobalResources(frameGraph, cmd);
-	DrawOpaqueMeshes(cmd, sceneData);
+	return ShaderSourceDefinition::FromAsset("Passes/Forward/ForwardLitVS.hlsl", "main", ShaderStage::Vertex);
 }
 
-void ForwardOpaquePass::PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd)
+ShaderSourceDefinition ForwardOpaquePass::DescribePrimaryViewPixelShader() noexcept
 {
-	frameGraph.BindRenderTarget(cmd, m_backBuffer, m_depthBuffer);
-	frameGraph.ClearRenderTarget(cmd, m_backBuffer);
-	frameGraph.ClearDepthStencil(cmd, m_depthBuffer);
+	return ShaderSourceDefinition::FromAsset("Passes/Forward/ForwardLitPS.hlsl", "main", ShaderStage::Pixel);
+}
+
+void ForwardOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)
+{
+	const ForwardOpaquePassRuntime& runtime = context.Runtime.GetPassRuntime<ForwardOpaquePass>();
+	PreparePassParameters(parameters, context.Frame.mainView, context.Runtime);
+	PrepareTargets(context, parameters.GetFields());
+	ConfigurePipeline(context.Commands, context.Frame.mainView);
+	BindPassResources(
+	    context.Graph,
+	    context.Commands,
+	    parameters,
+	    runtime,
+	    context.Runtime,
+	    context.Frame.mainView.perViewGpuAddress);
+	DrawOpaqueMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
+}
+
+void ForwardOpaquePass::PrepareTargets(
+	RenderGraphPassContext& context,
+	const ForwardOpaquePass::Parameters& parameters)
+{
+	context.Graph.BindRenderTarget(context.Commands, parameters.BackBuffer[0], parameters.MainDepth[0]);
+	context.Graph.ClearRenderTarget(context.Commands, parameters.BackBuffer[0]);
+	context.Graph.ClearDepthStencil(context.Commands, parameters.MainDepth[0]);
+}
+
+void ForwardOpaquePass::PreparePassParameters(
+	ParameterInstance& parameters,
+	const RenderViewContext& viewContext,
+	const RenderPassContext& renderPassContext)
+{
+	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
+	parameters->PerView = viewContext.perViewData;
+	const bool valid = parameters.Sync();
+	assert(valid);
 }
 
 void ForwardOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)
 {
-	cmd.SetRootSignature(m_rootSignature->GetRaw());
-
 	const D3D12_VIEWPORT viewport = viewContext.viewport;
 	cmd.SetViewport(viewport.TopLeftX, viewport.TopLeftY, viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
 
 	const D3D12_RECT scissor = viewContext.scissorRect;
 	cmd.SetScissorRect(scissor.left, scissor.top, scissor.right, scissor.bottom);
-
-	cmd.SetPipelineState(m_pipelineState->Get().Get());
 	cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void ForwardOpaquePass::BindFrameResources(CommandContext& cmd, const RenderViewContext& viewContext)
+void ForwardOpaquePass::BindPassResources(
+	const FrameGraph& frameGraph,
+	CommandContext& cmd,
+	const ParameterInstance& parameters,
+	const ForwardOpaquePassRuntime& runtime,
+	const RenderPassContext& renderPassContext,
+	D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
 {
-	cmd.BindConstantBuffer(RootBindings::RootParam::PerFrame, m_constantBufferManager->GetPerFrameGpuAddress());
-	cmd.BindConstantBuffer(RootBindings::RootParam::PerView, viewContext.perViewGpuAddress);
+	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
+	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
+	D3D12SamplerLibrary& samplerLibrary = renderPassContext.SamplerLibrary;
+	D3D12PassBindingOverrides overrides;
+	overrides.SetConstantBufferView("PerFrame", constantBufferManager.GetPerFrameGpuAddress());
+	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
+	assert(samplerLibrary.IsInitialized());
+	overrides.SetDescriptorTable("SamplerTable", samplerLibrary.GetTableGPUHandle());
+	const bool bound = PassUtilities::BindRasterPassWithRuntime(
+	    frameGraph,
+	    cmd,
+	    &descriptorHeapManager,
+	    runtime,
+	    parameters.GetPassParameterSet(),
+	    RenderPassPipelineTraits<ForwardOpaquePass>::StableBindingNames.data(),
+	    static_cast<std::uint32_t>(RenderPassPipelineTraits<ForwardOpaquePass>::StableBindingNames.size()),
+	    &overrides,
+	    PassName);
+	assert(bound);
 }
 
-void ForwardOpaquePass::BindGlobalResources(const FrameGraph& frameGraph, CommandContext& cmd)
+void ForwardOpaquePass::DrawOpaqueMeshes(
+	const FrameGraph& frameGraph,
+	CommandContext& cmd,
+	const RenderSceneData& sceneData,
+	const ForwardOpaquePassRuntime& runtime,
+	const RenderPassContext& renderPassContext)
 {
-	m_descriptorHeapManager->SetShaderVisibleHeaps(cmd);
+	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
+	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
 
-	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap0Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[0]);
-	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap0, shadowMap0Srv);
-
-	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap1Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[1]);
-	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap1, shadowMap1Srv);
-
-	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap2Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[2]);
-	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap2, shadowMap2Srv);
-
-	const D3D12_GPU_DESCRIPTOR_HANDLE shadowMap3Srv = frameGraph.ResolveShaderResourceView(m_shadowMaps[3]);
-	cmd.BindDescriptorTable(RootBindings::RootParam::ShadowMap3, shadowMap3Srv);
-
-	if (m_samplerLibrary->IsInitialized())
-	{
-		cmd.BindDescriptorTable(RootBindings::RootParam::SamplerTable, m_samplerLibrary->GetTableGPUHandle());
-	}
-}
-
-void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const RenderSceneData& sceneData)
-{
 	for (const auto& draw : sceneData.meshDraws)
 	{
 		const GPUMesh* gpuMesh = draw.gpuMesh;
@@ -122,12 +149,7 @@ void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const RenderSceneD
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
-
-		cmd.BindConstantBuffer(RootBindings::RootParam::PerObjectVS, m_constantBufferManager->UpdatePerObjectVS(perObjectVS));
-
-		cmd.BindConstantBuffer(
-		    RootBindings::RootParam::PerObjectPS,
-		    m_constantBufferManager->UpdatePerObjectPS(sceneData.materials[draw.materialId].ToPerObjectPSData()));
+		const PerObjectPSConstantBufferData perObjectPS = sceneData.materials[draw.materialId].ToPerObjectPSData();
 
 		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = sceneData.materials[draw.materialId].textureTableGpuHandle;
 		if (materialTextureTable.ptr == 0)
@@ -136,7 +158,19 @@ void ForwardOpaquePass::DrawOpaqueMeshes(CommandContext& cmd, const RenderSceneD
 			continue;
 		}
 
-		cmd.BindDescriptorTable(RootBindings::RootParam::TextureSRV, materialTextureTable);
+		D3D12PassBindingOverrides overrides;
+		overrides.SetConstantBufferView("PerObjectVS", constantBufferManager.UpdatePerObjectVS(perObjectVS));
+		overrides.SetConstantBufferView("PerObjectPS", constantBufferManager.UpdatePerObjectPS(perObjectPS));
+		overrides.SetDescriptorTable("MaterialTextures", materialTextureTable);
+		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
+		    frameGraph,
+		    cmd,
+		    &descriptorHeapManager,
+		    runtime,
+		    RenderPassPipelineTraits<ForwardOpaquePass>::DrawBindingNames,
+		    overrides,
+		    PassName);
+		assert(bound);
 
 		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
 	}

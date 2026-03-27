@@ -1,11 +1,9 @@
 #include "PCH.h"
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12FrameResource.h"
-#include "Renderer/Public/RendererCVars.h"
 #include "Timer.h"
 #include "Window.h"
 #include "D3D12SwapChain.h"
-#include <cmath>
 
 D3D12ConstantBufferManager::D3D12ConstantBufferManager(
     Timer& timer,
@@ -35,7 +33,12 @@ D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::GetPerFrameGpuAddress() co
 	return m_perFrameCB[m_swapChain->GetFrameInFlightIndex()]->GetGPUVirtualAddress();
 }
 
-void D3D12ConstantBufferManager::UpdatePerFrame()
+const PerFrameConstantBufferData& D3D12ConstantBufferManager::GetPerFrameData() const noexcept
+{
+	return m_perFrameData[m_swapChain->GetFrameInFlightIndex()];
+}
+
+void D3D12ConstantBufferManager::UpdatePerFrame(std::uint32_t viewModeIndex)
 {
 	PerFrameConstantBufferData data = {};
 	data.FrameIndex = m_timer->GetFrameCount();
@@ -47,9 +50,10 @@ void D3D12ConstantBufferManager::UpdatePerFrame()
 	const float height = static_cast<float>(m_window->GetHeight());
 	data.ViewportSize = DirectX::XMFLOAT2(width, height);
 	data.ViewportSizeInv = DirectX::XMFLOAT2(width != 0.0f ? 1.0f / width : 0.0f, height != 0.0f ? 1.0f / height : 0.0f);
-	data.ViewModeIndex = static_cast<std::uint32_t>(CVarRenderViewMode.Get());
+	data.ViewModeIndex = viewModeIndex;
 
 	const uint32_t frameInFlightIndex = m_swapChain->GetFrameInFlightIndex();
+	m_perFrameData[frameInFlightIndex] = data;
 	m_perFrameCB[frameInFlightIndex]->Update(data);
 }
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::AllocatePerView(const PerViewConstantBufferData& data)

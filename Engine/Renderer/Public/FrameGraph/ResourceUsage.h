@@ -9,6 +9,8 @@ enum class ResourceUsage : std::uint8_t
 	DepthWrite,
 	ShaderRead,
 	UnorderedAccess,
+	CopySource,
+	CopyDest,
 	Present,
 };
 
@@ -26,6 +28,10 @@ constexpr const char* ResourceUsageToString(ResourceUsage usage) noexcept
 			return "ShaderRead";
 		case ResourceUsage::UnorderedAccess:
 			return "UnorderedAccess";
+		case ResourceUsage::CopySource:
+			return "CopySource";
+		case ResourceUsage::CopyDest:
+			return "CopyDest";
 		case ResourceUsage::Present:
 			return "Present";
 		default:
@@ -50,6 +56,7 @@ constexpr bool IsReadOnlyUsage(ResourceUsage usage) noexcept
 	{
 		case ResourceUsage::DepthRead:
 		case ResourceUsage::ShaderRead:
+		case ResourceUsage::CopySource:
 		case ResourceUsage::Present:
 			return true;
 		default:
@@ -63,6 +70,7 @@ constexpr bool IsWriteOnlyUsage(ResourceUsage usage) noexcept
 	{
 		case ResourceUsage::RenderTarget:
 		case ResourceUsage::DepthWrite:
+		case ResourceUsage::CopyDest:
 			return true;
 		default:
 			return false;

@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12DescriptorHeapManager.h"
 
-#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/GPU/CommandContext.h"
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {

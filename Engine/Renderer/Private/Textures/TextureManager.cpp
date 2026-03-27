@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "TextureManager.h"
+#include "Renderer/Public/Textures/TextureManager.h"
 #include "FileSystemUtils.h"
 #include "D3D12Texture.h"
 #include "TextureLoader.h"

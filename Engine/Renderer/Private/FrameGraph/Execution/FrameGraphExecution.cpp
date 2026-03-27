@@ -1,12 +1,16 @@
 #include "PCH.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 
-#include "Renderer/Public/CommandContext.h"
-#include "Renderer/Public/FrameContext.h"
+#include "Renderer/Public/GPU/CommandContext.h"
+#include "Renderer/Public/Frame/FrameContext.h"
 
 #include <cassert>
 
-void FrameGraph::Execute(const CompiledPlan& plan, CommandContext& cmd, const FrameContext& frame) const
+void FrameGraph::Execute(
+	const CompiledPlan& plan,
+	CommandContext& cmd,
+	const FrameContext& frame,
+	const RenderPassContext& renderPassContext) const
 {
 	EnsureTransientResourcesMaterialized(plan);
 
@@ -15,7 +19,8 @@ void FrameGraph::Execute(const CompiledPlan& plan, CommandContext& cmd, const Fr
 		const CompilePassRecord& passRecord = plan.passes[passIndex];
 		EmitCompiledAliasingBarriers(cmd, passRecord.passName, passRecord.compiledAliasingBarriers);
 		EmitCompiledBarriers(cmd, passRecord.passName, passRecord.compiledBarriers);
-		m_passes[passIndex].executeCallback(*this, cmd, frame);
+		RenderGraphPassContext passContext{cmd, frame, renderPassContext, *this};
+		m_passes[passIndex].executeCallback(passContext);
 	}
 
 	EmitCompiledAliasingBarriers(cmd, "FrameEnd", plan.finalAliasingBarriers);

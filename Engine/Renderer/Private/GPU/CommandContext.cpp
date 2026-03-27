@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/CommandContext.h"
+#include "Renderer/Public/GPU/CommandContext.h"
 
 CommandContext::CommandContext(ID3D12GraphicsCommandList* cmdList) noexcept : m_cmdList(cmdList) {}
 
@@ -11,6 +11,11 @@ void CommandContext::SetPipelineState(ID3D12PipelineState* pso) noexcept
 void CommandContext::SetRootSignature(ID3D12RootSignature* rootSig) noexcept
 {
 	m_cmdList->SetGraphicsRootSignature(rootSig);
+}
+
+void CommandContext::SetComputeRootSignature(ID3D12RootSignature* rootSig) noexcept
+{
+	m_cmdList->SetComputeRootSignature(rootSig);
 }
 
 void CommandContext::SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) noexcept
@@ -33,9 +38,57 @@ void CommandContext::BindConstantBuffer(std::uint32_t rootParameterIndex, D3D12_
 	m_cmdList->SetGraphicsRootConstantBufferView(rootParameterIndex, gpuAddress);
 }
 
+void CommandContext::SetRoot32BitConstants(
+    std::uint32_t rootParameterIndex,
+    std::uint32_t num32BitValues,
+    const void* data,
+    std::uint32_t destOffsetIn32BitValues) noexcept
+{
+	m_cmdList->SetGraphicsRoot32BitConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
+}
+
+void CommandContext::BindRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
+{
+	m_cmdList->SetGraphicsRootShaderResourceView(rootParameterIndex, gpuAddress);
+}
+
+void CommandContext::BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
+{
+	m_cmdList->SetGraphicsRootUnorderedAccessView(rootParameterIndex, gpuAddress);
+}
+
 void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept
 {
 	m_cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex, baseDescriptor);
+}
+
+void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
+{
+	m_cmdList->SetComputeRootConstantBufferView(rootParameterIndex, gpuAddress);
+}
+
+void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept
+{
+	m_cmdList->SetComputeRootDescriptorTable(rootParameterIndex, baseDescriptor);
+}
+
+void CommandContext::SetComputeRoot32BitConstants(
+    std::uint32_t rootParameterIndex,
+    std::uint32_t num32BitValues,
+    const void* data,
+    std::uint32_t destOffsetIn32BitValues) noexcept
+{
+	m_cmdList->SetComputeRoot32BitConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
+}
+
+void CommandContext::BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
+{
+	m_cmdList->SetComputeRootShaderResourceView(rootParameterIndex, gpuAddress);
+}
+
+void CommandContext::BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
+{
+	m_cmdList->SetComputeRootUnorderedAccessView(rootParameterIndex, gpuAddress);
 }
 
 void CommandContext::SetDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept
@@ -107,6 +160,11 @@ void CommandContext::DrawInstanced(
     std::uint32_t startInstanceLocation) noexcept
 {
 	m_cmdList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
+}
+
+void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
+{
+	m_cmdList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
 void CommandContext::CopyResource(ID3D12Resource* destinationResource, ID3D12Resource* sourceResource) noexcept

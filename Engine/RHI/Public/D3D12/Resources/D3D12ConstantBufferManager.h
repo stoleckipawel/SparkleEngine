@@ -33,8 +33,9 @@ class D3D12ConstantBufferManager final
 	D3D12ConstantBufferManager& operator=(D3D12ConstantBufferManager&&) = delete;
 
 	D3D12_GPU_VIRTUAL_ADDRESS GetPerFrameGpuAddress() const;
+	const PerFrameConstantBufferData& GetPerFrameData() const noexcept;
 
-	void UpdatePerFrame();
+	void UpdatePerFrame(std::uint32_t viewModeIndex);
 	D3D12_GPU_VIRTUAL_ADDRESS AllocatePerView(const PerViewConstantBufferData& data);
 
 	D3D12_GPU_VIRTUAL_ADDRESS UpdatePerObjectVS(const PerObjectVSConstantBufferData& data);
@@ -43,6 +44,7 @@ class D3D12ConstantBufferManager final
 
   private:
 	std::unique_ptr<D3D12ConstantBuffer<PerFrameConstantBufferData>> m_perFrameCB[RenderConfig::FramesInFlight];
+	PerFrameConstantBufferData m_perFrameData[RenderConfig::FramesInFlight] = {};
 
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;

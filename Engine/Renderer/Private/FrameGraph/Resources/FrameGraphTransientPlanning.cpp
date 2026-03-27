@@ -3,7 +3,7 @@
 
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "Renderer/Public/DepthConvention.h"
+#include "Renderer/Public/GPU/DepthConvention.h"
 
 #include "D3D12Rhi.h"
 

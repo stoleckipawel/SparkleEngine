@@ -9,7 +9,7 @@
 #include "Scene/GameScene.h"
 #include "SceneData/MaterialCacheManager.h"
 #include "SceneData/RenderSceneSnapshot.h"
-#include "TextureManager.h"
+#include "Renderer/Public/Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,

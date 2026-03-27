@@ -6,9 +6,9 @@
 
 struct ResourceHandle
 {
-	std::uint32_t index = std::numeric_limits<std::uint32_t>::max();
+	std::uint32_t index = (std::numeric_limits<std::uint32_t>::max)();
 
-	static constexpr std::uint32_t INVALID_INDEX = std::numeric_limits<std::uint32_t>::max();
+	static constexpr std::uint32_t INVALID_INDEX = (std::numeric_limits<std::uint32_t>::max)();
 
 	static constexpr ResourceHandle Invalid() noexcept { return ResourceHandle{INVALID_INDEX}; }
 

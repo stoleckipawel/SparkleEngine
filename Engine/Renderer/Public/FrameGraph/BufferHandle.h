@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/ResourceHandle.h"
+#include "ResourceHandle.h"
 
 #include <compare>
 

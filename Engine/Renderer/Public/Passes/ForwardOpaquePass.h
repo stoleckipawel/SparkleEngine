@@ -1,56 +1,79 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/Passes/ShaderSourceDefinition.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "RHI/Public/RenderConfig.h"
-#include <array>
+#include "D3D12/Resources/D3D12ConstantBufferData.h"
 
-class D3D12ConstantBufferManager;
-class D3D12DescriptorHeapManager;
-class D3D12PipelineState;
-class D3D12RootSignature;
-class D3D12SamplerLibrary;
+#include <d3d12.h>
+
 class CommandContext;
+struct ForwardOpaquePassRuntime;
 class FrameGraph;
+class PassParameterLayout;
+struct RenderGraphPassContext;
 struct RenderSceneData;
+struct RenderPassContext;
 struct RenderViewContext;
-class TextureManager;
+
+struct ForwardOpaquePassParameters
+{
+	ShaderRenderTarget BackBuffer;
+	ShaderDepthTarget MainDepth;
+	ShaderTexture2D<void> ShadowMap0;
+	ShaderTexture2D<void> ShadowMap1;
+	ShaderTexture2D<void> ShadowMap2;
+	ShaderTexture2D<void> ShadowMap3;
+	ShaderUniform<PerFrameConstantBufferData> PerFrame;
+	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderSamplerSet SamplerTable;
+
+	static void Describe(ShaderParameterStructBuilder<ForwardOpaquePassParameters>& builder)
+	{
+		builder.RenderTarget("BackBuffer", &ForwardOpaquePassParameters::BackBuffer, ShaderStageVisibility::AllGraphics);
+		builder.DepthTarget("MainDepth", &ForwardOpaquePassParameters::MainDepth, ShaderStageVisibility::AllGraphics);
+		builder.ReadTexture("ShadowMap0", &ForwardOpaquePassParameters::ShadowMap0, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("ShadowMap1", &ForwardOpaquePassParameters::ShadowMap1, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("ShadowMap2", &ForwardOpaquePassParameters::ShadowMap2, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("ShadowMap3", &ForwardOpaquePassParameters::ShadowMap3, ShaderStageVisibility::Pixel);
+		builder.Uniform("PerFrame", &ForwardOpaquePassParameters::PerFrame, ShaderStageVisibility::AllGraphics);
+		builder.Uniform("PerView", &ForwardOpaquePassParameters::PerView, ShaderStageVisibility::AllGraphics);
+		builder.Sampler("SamplerTable", &ForwardOpaquePassParameters::SamplerTable, ShaderStageVisibility::Pixel);
+	}
+};
 
 class ForwardOpaquePass final
 {
   public:
-	static constexpr std::size_t MaxShadowMaps = RenderConfig::Shadows::MaxShadowMaps;
+	static constexpr const char* PassName = "ForwardOpaque";
+	using Parameters = ForwardOpaquePassParameters;
 
-	ForwardOpaquePass(
-	    D3D12RootSignature& rootSignature,
-	    D3D12PipelineState& pipelineState,
-	    D3D12ConstantBufferManager& constantBufferManager,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    TextureManager& textureManager,
-	    D3D12SamplerLibrary& samplerLibrary,
-	    std::array<TextureHandle, MaxShadowMaps> shadowMapHandles,
-	    TextureHandle backBufferHandle,
-	    TextureHandle depthBufferHandle) noexcept;
+	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
+	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
-	~ForwardOpaquePass() noexcept = default;
-
-	void Execute(const FrameGraph& frameGraph, CommandContext& cmd, const RenderSceneData& sceneData, const RenderViewContext& viewContext);
+	static const ParameterMetadata& GetParameterMetadata() noexcept;
+	static ShaderSourceDefinition DescribePrimaryViewVertexShader() noexcept;
+	static ShaderSourceDefinition DescribePrimaryViewPixelShader() noexcept;
+	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 
   private:
-	void PrepareTargets(const FrameGraph& frameGraph, CommandContext& cmd);
-	void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
-	void BindFrameResources(CommandContext& cmd, const RenderViewContext& viewContext);
-	void BindGlobalResources(const FrameGraph& frameGraph, CommandContext& cmd);
-	void DrawOpaqueMeshes(CommandContext& cmd, const RenderSceneData& sceneData);
-
-	D3D12RootSignature* m_rootSignature = nullptr;
-	D3D12PipelineState* m_pipelineState = nullptr;
-	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-	TextureManager* m_textureManager = nullptr;
-	D3D12SamplerLibrary* m_samplerLibrary = nullptr;
-	std::array<TextureHandle, MaxShadowMaps> m_shadowMaps = {};
-
-	TextureHandle m_backBuffer;
-	TextureHandle m_depthBuffer;
+	static void PrepareTargets(RenderGraphPassContext& context, const Parameters& parameters);
+	static void PreparePassParameters(ParameterInstance& parameters, const RenderViewContext& viewContext, const RenderPassContext& renderPassContext);
+	static void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
+	static void BindPassResources(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    const ParameterInstance& parameters,
+	    const ForwardOpaquePassRuntime& runtime,
+	    const RenderPassContext& renderPassContext,
+	    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress);
+	static void DrawOpaqueMeshes(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    const RenderSceneData& sceneData,
+	    const ForwardOpaquePassRuntime& runtime,
+	    const RenderPassContext& renderPassContext);
 };

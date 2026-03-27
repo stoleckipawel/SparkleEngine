@@ -6,12 +6,12 @@
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorHeapManager.h"
-#include "D3D12RootBindings.h"
 #include "D3D12Texture.h"
+#include "Renderer/Public/SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Renderer/Public/Textures/DefaultTextures.h"
 #include "SceneData/MaterialCacheUtils.h"
-#include "TextureManager.h"
+#include "Renderer/Public/Textures/TextureManager.h"
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
     m_textureManager(&textureManager), m_descriptorHeapManager(&descriptorHeapManager)
@@ -67,7 +67,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	{
 		MaterialData material = MaterialData::FromDesc(desc);
 
-		const D3D12Texture* textures[RootBindings::SRVRegister::MaterialTextureCount] = {
+		const D3D12Texture* textures[MaterialTextureSlots::Count] = {
 		    m_textureManager->ResolveTextureOrDefault(
 		        desc.albedoTexture,
 		        DefaultTexture::White),
@@ -86,9 +86,9 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 
 		const D3D12DescriptorHandle tableHandle = m_descriptorHeapManager->AllocateContiguous(
 		    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		    RootBindings::SRVRegister::MaterialTextureCount);
+		    MaterialTextureSlots::Count);
 
-		for (std::uint32_t slot = 0; slot < RootBindings::SRVRegister::MaterialTextureCount; ++slot)
+		for (std::uint32_t slot = 0; slot < MaterialTextureSlots::Count; ++slot)
 		{
 			if (!textures[slot])
 			{
@@ -151,7 +151,7 @@ void MaterialCacheManager::ReleaseMaterialTextureTables() noexcept
 			m_descriptorHeapManager->FreeContiguous(
 			    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 			    tableHandle,
-			    RootBindings::SRVRegister::MaterialTextureCount);
+			    MaterialTextureSlots::Count);
 		}
 	}
 

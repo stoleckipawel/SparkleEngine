@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 
-#include "Renderer/Public/FrameContext.h"
+#include "Renderer/Public/Frame/FrameContext.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 
@@ -31,7 +31,7 @@ namespace
 	    FrameGraphPassFlags flags,
 	    const std::vector<PassResourceDeclaration>& declarations) noexcept
 	{
-		assert(HasAnyPassFlags(flags, FrameGraphPassFlags::Raster));
+		assert(HasExactlyOnePassKind(flags));
 
 		for (const PassResourceDeclaration& declaration : declarations)
 		{
@@ -42,6 +42,11 @@ namespace
 
 			std::string message{"FrameGraph pass '"};
 			message.append(passName.begin(), passName.end());
+			if (!declaration.label.empty())
+			{
+				message += "' parameter '";
+				message += declaration.label;
+			}
 			message += "' uses unsupported resource usage ";
 			message += ResourceUsageToString(declaration.usage);
 			message += ".";
@@ -50,16 +55,6 @@ namespace
 		}
 	}
 }  // namespace
-
-void FrameGraph::AddLambdaPass(
-    std::string_view name,
-    FrameGraphPassFlags flags,
-    SetupCallback setupCallback,
-    ExecuteCallback executeCallback)
-{
-	assert(HasExactlyOnePassKind(flags));
-	m_passes.push_back(RegisteredPass{std::string(name), flags, std::move(setupCallback), std::move(executeCallback)});
-}
 
 void FrameGraph::BeginPassSetup() noexcept
 {
@@ -106,24 +101,39 @@ void FrameGraph::Setup(const FrameContext& frame)
 
 ResourceHandle FrameGraph::Read(ResourceHandle handle, ResourceUsage usage) noexcept
 {
+	return Read(handle, usage, {});
+}
+
+ResourceHandle FrameGraph::Read(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+{
 	assert(m_isSettingUpPass);
 	assert(IsReadOnlyUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage});
+	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
 	return handle;
 }
 
 ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage) noexcept
 {
+	return Write(handle, usage, {});
+}
+
+ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+{
 	assert(m_isSettingUpPass);
 	assert(IsWriteOnlyUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage});
+	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
 	return handle;
 }
 
 ResourceHandle FrameGraph::Use(ResourceHandle handle, ResourceUsage usage) noexcept
 {
+	return Use(handle, usage, {});
+}
+
+ResourceHandle FrameGraph::Use(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+{
 	assert(m_isSettingUpPass);
 	assert(IsReadWriteUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage});
+	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
 	return handle;
 }
