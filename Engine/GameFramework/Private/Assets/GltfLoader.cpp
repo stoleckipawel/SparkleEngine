@@ -186,7 +186,7 @@ namespace GltfLoaderInternal
 			float localMatrix[16];
 			cgltf_node_transform_local(chain[i], localMatrix);
 
-			XMMATRIX local = XMMatrixTranspose(XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix)));
+			XMMATRIX local = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix));
 			world = XMMatrixMultiply(world, local);
 		}
 
