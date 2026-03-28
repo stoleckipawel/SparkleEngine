@@ -7,26 +7,10 @@
 #include "BRDF/Distribution.hlsli"
 #include "BRDF/Geometry.hlsli"
 
-
-
-
-
-
-
-
-
-
-
-
 namespace BRDF
 {
 	namespace Specular
 	{
-
-
-
-
-
 		float3 CookTorrance(float D, float3 F, float G, float NoV, float NoL)
 		{
 #if BRDF_GEOMETRY_MODEL == BRDF_GEOMETRY_SMITH_GGX_CORRELATED || BRDF_GEOMETRY_MODEL == BRDF_GEOMETRY_SMITH_GGX_CORRELATED_FAST
@@ -38,11 +22,6 @@ namespace BRDF
 #endif
 		}
 
-
-
-
-
-
 		float3 EvaluateDirect(ShadingData sd, float roughness, float3 F)
 		{
 			const float alpha = roughness * roughness;
@@ -53,17 +32,6 @@ namespace BRDF
 			return CookTorrance(D, F, G, sd.NoV, sd.NoL);
 		}
 
-
-
-
-
-
-
-
-
-
-
-
 		float2 ApproximateBRDFIntegration(float NoV, float roughness)
 		{
 			const float4 c0 = float4(-1.0f, -0.0275f, -0.572f, 0.022f);
@@ -73,21 +41,11 @@ namespace BRDF
 			return float2(-1.04f, 1.04f) * a004 + r.zw;
 		}
 
-
-
-
-
-
-
-
-
-
 		float3 EvaluateIndirectWithLUT(float NoV, float3 F0, float roughness, float3 prefilteredEnv, float2 brdfLUT)
 		{
 			const float3 F = Fresnel::EvaluateIndirect(NoV, F0, roughness);
 			return prefilteredEnv * (F * brdfLUT.x + brdfLUT.y);
 		}
-
 
 		float3 EvaluateIndirect(float NoV, float3 F0, float roughness, float3 prefilteredEnv)
 		{
@@ -95,6 +53,5 @@ namespace BRDF
 			const float3 F = Fresnel::EvaluateIndirect(NoV, F0, roughness);
 			return prefilteredEnv * (F * brdf.x + brdf.y);
 		}
-
 	}
 }

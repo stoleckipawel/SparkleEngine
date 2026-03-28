@@ -5,41 +5,16 @@
 #include "BRDF/Config.hlsli"
 #include "BRDF/ShadingData.hlsli"
 
-
-
-
-
-
-
-
-
 namespace BRDF
 {
 	namespace Subsurface
 	{
-
-
-
-
-
-
-
-
 		float3 WrapLighting(float3 albedo, float3 subsurfaceColor, float NoL, float wrap)
 		{
 			const float wrappedNoL = (NoL + wrap) / (1.0f + wrap);
 			const float scatterWidth = saturate(wrappedNoL);
 			return albedo * subsurfaceColor * scatterWidth * INV_PI;
 		}
-
-
-
-
-
-
-
-
-
 
 		float3 Disney(float3 albedo, float3 subsurfaceColor, float roughness, float NoV, float NoL, float LoH)
 		{
@@ -53,10 +28,6 @@ namespace BRDF
 			return albedo * subsurfaceColor * INV_PI * ss;
 		}
 
-
-
-
-
 		float3 EvaluateDirect(float3 albedo, float3 subsurfaceColor, float roughness, float subsurfaceStrength, ShadingData sd)
 		{
 #if BRDF_SUBSURFACE_MODEL == BRDF_SUBSURFACE_NONE
@@ -69,6 +40,5 @@ namespace BRDF
 			return float3(0.0f, 0.0f, 0.0f);
 #endif
 		}
-
 	}
 }

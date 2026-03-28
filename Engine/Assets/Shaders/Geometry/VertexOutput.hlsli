@@ -1,10 +1,5 @@
 #pragma once
 
-
-
-
-
-
 namespace VS
 {
 	struct Output

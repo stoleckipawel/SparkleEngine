@@ -1,10 +1,5 @@
 #pragma once
 
-
-
-
-
-
 namespace ViewMode
 {
 	static const uint Lit = 0u;

@@ -2,31 +2,10 @@
 
 #include "BRDF/Config.hlsli"
 
-
-
-
-
-
-
 namespace BRDF
 {
 	namespace Occlusion
 	{
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		float3 MultibounceAO_Jimenez(float ao, float3 albedo)
 		{
 			const float3 a = 2.0404f * albedo - 0.3324f;
@@ -34,7 +13,6 @@ namespace BRDF
 			const float3 c = 2.7552f * albedo + 0.6903f;
 			return max(ao.xxx, ((ao * a + b) * ao + c) * ao);
 		}
-
 
 		float3 MultibounceAO(float ao, float3 albedo)
 		{
@@ -45,42 +23,15 @@ namespace BRDF
 #endif
 		}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		float SpecularOcclusion_Lagarde(float NoV, float ao)
 		{
 			return saturate(pow(NoV + ao, 2.0f) - 1.0f + ao);
 		}
 
-
-
-
-
-
-
 		float SpecularOcclusion_LagardeApprox(float NoV, float ao, float roughness)
 		{
 			return saturate(pow(NoV + ao, exp2(-16.0f * roughness - 1.0f)) - 1.0f + ao);
 		}
-
-
-
-
-
-
 
 		float SpecularOcclusion_GTAO(float NoV, float ao, float roughness)
 		{
@@ -100,6 +51,5 @@ namespace BRDF
 			return SpecularOcclusion_GTAO(NoV, ao, roughness);
 #endif
 		}
-
 	}
 }

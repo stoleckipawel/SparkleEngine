@@ -5,34 +5,14 @@
 #include "BRDF/Config.hlsli"
 #include "BRDF/ShadingData.hlsli"
 
-
-
-
-
-
-
-
 namespace BRDF
 {
 	namespace Diffuse
 	{
-
-
-
-
-
 		float3 Lambert(float3 albedo)
 		{
 			return albedo * INV_PI;
 		}
-
-
-
-
-
-
-
-
 
 		float3 Burley(float3 albedo, float roughness, float NoV, float NoL, float LoH)
 		{
@@ -41,14 +21,6 @@ namespace BRDF
 			const float viewScatter = 1.0f + (f90 - 1.0f) * Pow5(1.0f - NoV);
 			return albedo * INV_PI * lightScatter * viewScatter;
 		}
-
-
-
-
-
-
-
-
 
 		float3 OrenNayar(float3 albedo, float roughness, float NoV, float NoL, float3 N, float3 V, float3 L)
 		{
@@ -68,14 +40,6 @@ namespace BRDF
 			return albedo * INV_PI * (A + B * cosPhiDiff * sinAlpha * tanBeta);
 		}
 
-
-
-
-
-
-
-
-
 		float3 Chan(float3 albedo, float roughness, float NoV, float NoL, float LoH, float NoH)
 		{
 			const float f90 = 0.5f + 2.0f * roughness * LoH * LoH;
@@ -93,10 +57,6 @@ namespace BRDF
 			return albedo * INV_PI * lerp(Fd, ss, saturate(roughness));
 		}
 
-
-
-
-
 		float3 EvaluateDirect(float3 albedo, float roughness, ShadingData sd)
 		{
 #if BRDF_DIFFUSE_MODEL == BRDF_DIFFUSE_LAMBERT
@@ -112,11 +72,9 @@ namespace BRDF
 #endif
 		}
 
-
 		float3 EvaluateIndirect(float3 albedo)
 		{
 			return Lambert(albedo);
 		}
-
 	}
 }

@@ -5,23 +5,11 @@
 #include "Geometry/PixelInput.hlsli"
 #include "Geometry/Transforms.hlsli"
 
-
-
-
-
-
-
-
-
 Texture2D TextureBaseColor : register(t0);
 Texture2D TextureNormal : register(t1);
 Texture2D TextureMetallicRoughness : register(t2);
 Texture2D TextureOcclusion : register(t3);
 Texture2D TextureEmissive : register(t4);
-
-
-
-
 
 namespace Material
 {
@@ -65,9 +53,6 @@ namespace Material
 		}
 	}
 
-
-
-
 	struct Properties
 	{
 
@@ -89,9 +74,6 @@ namespace Material
 		uint AlphaMode;
 	};
 
-
-
-
 	Properties MakeDefault()
 	{
 		Properties props;
@@ -109,10 +91,6 @@ namespace Material
 		props.AlphaMode = AlphaModeOpaque;
 		return props;
 	}
-
-
-
-
 
 	float4 SampleBaseColor(float2 UV)
 	{
@@ -183,10 +161,6 @@ namespace Material
 	{
 		return 0.0f;
 	}
-
-
-
-
 
 	Properties Sample(PS::Input Input)
 	{

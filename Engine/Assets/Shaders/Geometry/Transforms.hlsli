@@ -2,10 +2,6 @@
 
 #include "Resources/ConstantBuffers.hlsli"
 
-
-
-
-
 float4 PositionLocalToWorld(float4 localPosition)
 {
 	return mul(localPosition, WorldMTX);

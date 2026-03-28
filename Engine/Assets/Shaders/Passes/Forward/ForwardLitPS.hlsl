@@ -1,8 +1,3 @@
-
-
-
-
-
 #include "CommonPS.hlsli"
 
 void main(in PS::Input Input, out PS::Output Output)

@@ -3,26 +3,10 @@
 #include "Common/Constants.hlsli"
 #include "BRDF/Config.hlsli"
 
-
-
-
-
-
-
-
-
 namespace BRDF
 {
 	namespace Geometry
 	{
-
-
-
-
-
-
-
-
 		float Lambda_GGX(float NdotX, float alpha)
 		{
 			const float a2 = alpha * alpha;
@@ -30,23 +14,15 @@ namespace BRDF
 			return (-1.0f + sqrt(1.0f + a2 * (1.0f - NdotX2) / NdotX2)) * 0.5f;
 		}
 
-
 		float SmithG1_SchlickGGX(float NdotX, float k)
 		{
 			return NdotX / (NdotX * (1.0f - k) + k);
 		}
 
-
 		float SmithG1_GGX(float NdotX, float alpha)
 		{
 			return 1.0f / (1.0f + Lambda_GGX(NdotX, alpha));
 		}
-
-
-
-
-
-
 
 		float Smith_Uncorrelated_SchlickGGX(float NoV, float NoL, float roughness)
 		{
@@ -60,14 +36,6 @@ namespace BRDF
 			return SmithG1_GGX(NoV, alpha) * SmithG1_GGX(NoL, alpha);
 		}
 
-
-
-
-
-
-
-
-
 		float Smith_HeightCorrelated_GGX(float NoV, float NoL, float alpha)
 		{
 			const float a2 = alpha * alpha;
@@ -75,8 +43,6 @@ namespace BRDF
 			const float GGXL = NoV * sqrt(NoL * NoL * (1.0f - a2) + a2);
 			return 0.5f / (GGXV + GGXL);
 		}
-
-
 
 		float Smith_HeightCorrelated_GGX_Fast(float NoV, float NoL, float roughness)
 		{
@@ -86,27 +52,15 @@ namespace BRDF
 			return 0.5f / (GGXV + GGXL);
 		}
 
-
-
-
-
-
-
 		float Kelemen(float VoH)
 		{
 			return 1.0f / (4.0f * VoH * VoH + EPSILON);
 		}
 
-
-
 		float Neumann(float NoV, float NoL)
 		{
 			return (NoV * NoL) / max(NoV, NoL);
 		}
-
-
-
-
 
 		float EvaluateDirect(float NoV, float NoL, float VoH, float roughness, float alpha)
 		{
@@ -124,7 +78,6 @@ namespace BRDF
 			return Smith_HeightCorrelated_GGX(NoV, NoL, alpha);
 #endif
 		}
-
 
 		float EvaluateIndirect(float NoV, float NoL, float alpha)
 		{

@@ -1,10 +1,5 @@
 #pragma once
 
-
-
-
-
-
 namespace PS
 {
 	struct Input

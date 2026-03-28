@@ -3,14 +3,6 @@
 #include "Resources/CameraConstantBufferData.hlsli"
 #include "Resources/LightConstantBufferData.hlsli"
 
-
-
-
-
-
-
-
-
 cbuffer PerFrameConstantBufferData : register(b0)
 {
 	uint FrameIndex;
@@ -26,17 +18,11 @@ cbuffer PerFrameConstantBufferData : register(b0)
 
 };
 
-
-
-
 cbuffer PerViewConstantBufferData : register(b1)
 {
 	PerViewCameraConstantBufferData Camera;
 	PerViewLightingConstantBufferData ViewLighting;
 };
-
-
-
 
 cbuffer PerObjectVSConstantBufferData : register(b2)
 {
@@ -45,9 +31,6 @@ cbuffer PerObjectVSConstantBufferData : register(b2)
 
 
 };
-
-
-
 
 cbuffer PerObjectPSConstantBufferData : register(b3)
 {
@@ -63,6 +46,4 @@ cbuffer PerObjectPSConstantBufferData : register(b3)
 
 	uint TextureFlags;
 	float3 _padPerObjectPS0;
-
-
 };

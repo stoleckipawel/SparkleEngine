@@ -1,27 +1,5 @@
 #pragma once
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "BRDF/ShadingData.hlsli"
 #include "BRDF/Fresnel.hlsli"
 #include "BRDF/Distribution.hlsli"
@@ -31,16 +9,8 @@
 #include "BRDF/Specular.hlsli"
 #include "BRDF/Occlusion.hlsli"
 
-
-
-
-
 namespace BRDF
 {
-
-
-
-
 	namespace Direct
 	{
 		void Evaluate(
@@ -55,16 +25,12 @@ namespace BRDF
 		    out float3 outSpecular,
 		    out float3 outSubsurface)
 		{
-
 			const float3 F = Fresnel::EvaluateDirect(sd.VoH, F0);
 
-
 			outSpecular = Specular::EvaluateDirect(sd, roughness, F);
-
-
+			
 			const float3 kD = (1.0f - F) * (1.0f - metallic);
 			outDiffuse = Diffuse::EvaluateDirect(albedo, roughness, sd) * kD;
-
 
 			outSubsurface = Subsurface::EvaluateDirect(albedo, subsurfaceColor, roughness, subsurfaceStrength, sd) * (1.0f - metallic);
 		}

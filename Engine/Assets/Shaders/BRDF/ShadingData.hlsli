@@ -1,19 +1,7 @@
 #pragma once
 
-
-
-
-
-
-
 namespace BRDF
 {
-
-
-
-
-
-
 	struct ShadingData
 	{
 		float3 N;
@@ -27,8 +15,6 @@ namespace BRDF
 		float VoH;
 		float LoH;
 	};
-
-
 
 	ShadingData ComputeShadingData(float3 N, float3 V, float3 L)
 	{
@@ -46,5 +32,4 @@ namespace BRDF
 
 		return sd;
 	}
-
 }

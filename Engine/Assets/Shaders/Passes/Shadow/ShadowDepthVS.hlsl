@@ -1,9 +1,3 @@
-
-
-
-
-
-
 #include "CommonVS.hlsli"
 
 struct ShadowVSOutput

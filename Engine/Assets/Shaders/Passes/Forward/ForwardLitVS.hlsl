@@ -1,8 +1,3 @@
-
-
-
-
-
 #include "CommonVS.hlsli"
 
 void main(in VS::Input Input, out VS::Output Output)
