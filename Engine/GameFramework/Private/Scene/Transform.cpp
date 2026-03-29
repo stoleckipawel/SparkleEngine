@@ -1,15 +1,34 @@
 #include "PCH.h"
 
-#include "Scene/TransformComponent.h"
+#include "Scene/Transform.h"
+
+#include "Core/Public/Math/MathUtils.h"
 
 #include <algorithm>
 #include <cmath>
 
-TransformComponent::TransformComponent() noexcept = default;
+Transform::Transform() noexcept = default;
 
-TransformComponent::~TransformComponent() = default;
+Transform::Transform(const DirectX::XMMATRIX& worldTransform) noexcept
+{
+	DirectX::XMVECTOR scaleVector;
+	DirectX::XMVECTOR rotationQuaternion;
+	DirectX::XMVECTOR translationVector;
 
-TransformComponent::TransformComponent(
+	if (!DirectX::XMMatrixDecompose(&scaleVector, &rotationQuaternion, &translationVector, worldTransform))
+	{
+		return;
+	}
+
+	DirectX::XMStoreFloat3(&m_translation, translationVector);
+	DirectX::XMStoreFloat3(&m_scale, scaleVector);
+
+	DirectX::XMFLOAT4X4 rotationMatrix;
+	DirectX::XMStoreFloat4x4(&rotationMatrix, DirectX::XMMatrixRotationQuaternion(rotationQuaternion));
+	m_rotationEuler = MathUtils::ExtractEulerRadians(rotationMatrix);
+}
+
+Transform::Transform(
 	const DirectX::XMFLOAT3& translation,
 	const DirectX::XMFLOAT3& rotationEuler,
 	const DirectX::XMFLOAT3& scale) noexcept
@@ -17,18 +36,18 @@ TransformComponent::TransformComponent(
 {
 }
 
-void TransformComponent::SetTranslation(const DirectX::XMFLOAT3& translation) noexcept
+void Transform::SetTranslation(const DirectX::XMFLOAT3& translation) noexcept
 {
 	m_translation = translation;
 	InvalidateCache();
 }
 
-DirectX::XMFLOAT3 TransformComponent::GetTranslation() const noexcept
+DirectX::XMFLOAT3 Transform::GetTranslation() const noexcept
 {
 	return m_translation;
 }
 
-void TransformComponent::Translate(const DirectX::XMFLOAT3& delta) noexcept
+void Transform::Translate(const DirectX::XMFLOAT3& delta) noexcept
 {
 	m_translation.x += delta.x;
 	m_translation.y += delta.y;
@@ -36,7 +55,7 @@ void TransformComponent::Translate(const DirectX::XMFLOAT3& delta) noexcept
 	InvalidateCache();
 }
 
-void TransformComponent::TranslateScaled(const DirectX::XMFLOAT3& direction, float distance) noexcept
+void Transform::TranslateScaled(const DirectX::XMFLOAT3& direction, float distance) noexcept
 {
 	DirectX::XMFLOAT3 position = m_translation;
 	DirectX::XMVECTOR pos = DirectX::XMLoadFloat3(&position);
@@ -46,18 +65,18 @@ void TransformComponent::TranslateScaled(const DirectX::XMFLOAT3& direction, flo
 	SetTranslation(position);
 }
 
-void TransformComponent::SetRotationEuler(const DirectX::XMFLOAT3& rotationEuler) noexcept
+void Transform::SetRotationEuler(const DirectX::XMFLOAT3& rotationEuler) noexcept
 {
 	m_rotationEuler = rotationEuler;
 	InvalidateCache();
 }
 
-DirectX::XMFLOAT3 TransformComponent::GetRotationEuler() const noexcept
+DirectX::XMFLOAT3 Transform::GetRotationEuler() const noexcept
 {
 	return m_rotationEuler;
 }
 
-void TransformComponent::RotateEuler(const DirectX::XMFLOAT3& deltaEuler) noexcept
+void Transform::RotateEuler(const DirectX::XMFLOAT3& deltaEuler) noexcept
 {
 	m_rotationEuler.x += deltaEuler.x;
 	m_rotationEuler.y += deltaEuler.y;
@@ -65,7 +84,7 @@ void TransformComponent::RotateEuler(const DirectX::XMFLOAT3& deltaEuler) noexce
 	InvalidateCache();
 }
 
-void TransformComponent::RotateYawPitch(float yawDelta, float pitchDelta, float minPitch, float maxPitch) noexcept
+void Transform::RotateYawPitch(float yawDelta, float pitchDelta, float minPitch, float maxPitch) noexcept
 {
 	DirectX::XMFLOAT3 rotationEuler = m_rotationEuler;
 	rotationEuler.y += yawDelta;
@@ -73,7 +92,7 @@ void TransformComponent::RotateYawPitch(float yawDelta, float pitchDelta, float 
 	SetYawPitch(rotationEuler.y, rotationEuler.x, minPitch, maxPitch);
 }
 
-void TransformComponent::SetYawPitch(float yaw, float pitch, float minPitch, float maxPitch) noexcept
+void Transform::SetYawPitch(float yaw, float pitch, float minPitch, float maxPitch) noexcept
 {
 	DirectX::XMFLOAT3 rotationEuler = m_rotationEuler;
 	rotationEuler.x = std::clamp(pitch, minPitch, maxPitch);
@@ -86,35 +105,35 @@ void TransformComponent::SetYawPitch(float yaw, float pitch, float minPitch, flo
 	SetRotationEuler(rotationEuler);
 }
 
-void TransformComponent::SetScale(const DirectX::XMFLOAT3& scale) noexcept
+void Transform::SetScale(const DirectX::XMFLOAT3& scale) noexcept
 {
 	m_scale = scale;
 	InvalidateCache();
 }
 
-DirectX::XMFLOAT3 TransformComponent::GetScale() const noexcept
+DirectX::XMFLOAT3 Transform::GetScale() const noexcept
 {
 	return m_scale;
 }
 
-void TransformComponent::InvalidateCache() noexcept
+void Transform::InvalidateCache() noexcept
 {
 	m_bWorldDirty = true;
 }
 
-DirectX::XMMATRIX TransformComponent::GetWorldMatrix() const noexcept
+DirectX::XMMATRIX Transform::GetWorldMatrix() const noexcept
 {
 	RebuildWorldIfNeeded();
 	return DirectX::XMLoadFloat4x4(&m_worldMatrixCache);
 }
 
-DirectX::XMMATRIX TransformComponent::GetWorldInverseTransposeMatrix() const noexcept
+DirectX::XMMATRIX Transform::GetWorldInverseTransposeMatrix() const noexcept
 {
 	const DirectX::XMMATRIX world = GetWorldMatrix();
 	return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, world));
 }
 
-DirectX::XMFLOAT3X3 TransformComponent::GetRotationMatrix3x3() const noexcept
+DirectX::XMFLOAT3X3 Transform::GetRotationMatrix3x3() const noexcept
 {
 	const DirectX::XMFLOAT3 rotationEuler = m_rotationEuler;
 	const DirectX::XMMATRIX rotation = DirectX::XMMatrixRotationRollPitchYaw(rotationEuler.x, rotationEuler.y, rotationEuler.z);
@@ -124,13 +143,13 @@ DirectX::XMFLOAT3X3 TransformComponent::GetRotationMatrix3x3() const noexcept
 	return rotation3x3;
 }
 
-const DirectX::XMFLOAT4X4& TransformComponent::GetWorldMatrix4x4() const noexcept
+const DirectX::XMFLOAT4X4& Transform::GetWorldMatrix4x4() const noexcept
 {
 	RebuildWorldIfNeeded();
 	return m_worldMatrixCache;
 }
 
-void TransformComponent::RebuildWorldIfNeeded() const noexcept
+void Transform::RebuildWorldIfNeeded() const noexcept
 {
 	if (!m_bWorldDirty)
 	{

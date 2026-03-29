@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-class Mesh;
+class MeshComponent;
 
 class SPARKLE_ENGINE_API SceneMeshes final
 {
@@ -23,13 +23,13 @@ class SPARKLE_ENGINE_API SceneMeshes final
 	std::size_t GetMeshCount() const noexcept { return m_meshes.size(); }
 	bool HasMeshes() const noexcept { return !m_meshes.empty(); }
 
-	const Mesh* GetMesh(std::size_t index) const noexcept { return m_meshes[index].get(); }
-	Mesh* GetMesh(std::size_t index) noexcept { return m_meshes[index].get(); }
+	const MeshComponent* GetMeshComponent(std::size_t index) const noexcept { return m_meshes[index].get(); }
+	MeshComponent* GetMeshComponent(std::size_t index) noexcept { return m_meshes[index].get(); }
 
-	void AppendMeshes(std::vector<std::unique_ptr<Mesh>>&& meshes);
+	void AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent>>&& meshes);
 	MeshSnapshot CaptureSnapshot() const;
 	void Reset() noexcept;
 
   private:
-	std::vector<std::unique_ptr<Mesh>> m_meshes;
+	std::vector<std::unique_ptr<MeshComponent>> m_meshes;
 };

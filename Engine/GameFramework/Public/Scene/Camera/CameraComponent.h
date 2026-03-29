@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/Scene/Component.h"
-#include "GameFramework/Public/Scene/TransformComponent.h"
+#include "GameFramework/Public/Scene/Transform.h"
 
 #include <DirectXMath.h>
 
@@ -27,7 +27,8 @@ class CameraComponent final : public Component
 	void Rotate(float yawDelta, float pitchDelta) noexcept;
 
 	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
-	const TransformComponent& GetTransform() const noexcept { return m_transform; }
+	Transform& GetTransform() noexcept { return m_transform; }
+	const Transform& GetTransform() const noexcept { return m_transform; }
 
 	const DirectX::XMFLOAT3& GetDirection() const noexcept;
 	DirectX::XMFLOAT3 GetRight() const noexcept;
@@ -57,7 +58,7 @@ class CameraComponent final : public Component
 
 	void MarkDirty() noexcept { m_dirty = true; }
 
-	TransformComponent m_transform{{0.0f, 0.0f, -4.0f}};
+	Transform m_transform{{0.0f, 0.0f, -4.0f}};
 
 	mutable DirectX::XMFLOAT3 m_cachedDirection = {0.0f, 0.0f, 1.0f};
 	mutable bool m_directionDirty = true;

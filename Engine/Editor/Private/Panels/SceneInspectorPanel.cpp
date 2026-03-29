@@ -9,9 +9,10 @@
 #include "Scene/ImportedMesh.h"
 #include "Scene/Lighting/GameDirectionalLight.h"
 #include "Scene/Lighting/SceneLighting.h"
+#include "Scene/MeshComponent.h"
 #include "Scene/Mesh.h"
 #include "Scene/Meshes/SceneMeshes.h"
-#include "Scene/TransformComponent.h"
+#include "Scene/Transform.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -208,9 +209,9 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 	UiUtil::EndSectionCard();
 }
 
-void SceneInspectorPanel::BuildEditableMeshTransform(Mesh& mesh) noexcept
+void SceneInspectorPanel::BuildEditableMeshTransform(MeshComponent& meshComponent) noexcept
 {
-	TransformComponent& transform = mesh.GetTransform();
+	Transform& transform = meshComponent.GetTransform();
 	DirectX::XMFLOAT3 translation = transform.GetTranslation();
 	float translationValues[3] = {translation.x, translation.y, translation.z};
 	if (UiUtil::EditFloat3SliderWithInput("Position", translationValues, kPositionSliderMin, kPositionSliderMax, "%.2f", "%.3f"))
@@ -247,7 +248,14 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 		return;
 	}
 
-	Mesh* mesh = m_gameScene->GetMeshes().GetMesh(meshIndex);
+	MeshComponent* meshComponent = m_gameScene->GetMeshes().GetMeshComponent(meshIndex);
+	if (meshComponent == nullptr)
+	{
+		BuildEmptyState();
+		return;
+	}
+
+	Mesh* mesh = meshComponent->GetMesh();
 	if (mesh == nullptr)
 	{
 		BuildEmptyState();
@@ -260,7 +268,7 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 	UiUtil::DrawKeyValueRow("Type", isImportedMesh ? "Imported" : "Procedural");
 
 	char buffer[64] = {};
-	std::snprintf(buffer, sizeof(buffer), "%u", mesh->GetMaterialId());
+	std::snprintf(buffer, sizeof(buffer), "%u", meshComponent->GetMaterialId());
 	UiUtil::DrawKeyValueRow("Material", buffer);
 
 	const MeshData& meshData = mesh->GetMeshData();
@@ -269,15 +277,7 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetIndexCount());
 	UiUtil::DrawKeyValueRow("Indices", buffer);
 
-	if (isImportedMesh)
-	{
-		ImGui::Spacing();
-		ImGui::TextDisabled("Transform editing unavailable for imported meshes with baked world transforms.");
-	}
-	else
-	{
-		BuildEditableMeshTransform(*mesh);
-	}
+	BuildEditableMeshTransform(*meshComponent);
 	UiUtil::EndSectionCard();
 }
 

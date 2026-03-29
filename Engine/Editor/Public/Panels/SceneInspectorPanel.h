@@ -8,6 +8,7 @@
 
 class GameScene;
 class Mesh;
+class MeshComponent;
 struct SceneObjectSelection;
 
 class SceneInspectorPanel final
@@ -35,7 +36,7 @@ class SceneInspectorPanel final
 	void BuildCameraInspector() noexcept;
 	void BuildDirectionalLightInspector(std::size_t lightIndex) noexcept;
 	void BuildMeshInspector(std::size_t meshIndex) noexcept;
-	void BuildEditableMeshTransform(Mesh& mesh) noexcept;
+	void BuildEditableMeshTransform(MeshComponent& meshComponent) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;
 	static constexpr float kPositionSliderMax = 500.0f;

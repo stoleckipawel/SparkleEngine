@@ -4,12 +4,12 @@
 
 #include <vector>
 
-class Mesh;
+class MeshComponent;
 
 struct SPARKLE_ENGINE_API MeshSnapshot
 {
-	std::vector<const Mesh*> meshPointers;
+	std::vector<const MeshComponent*> meshComponents;
 
-	bool HasMeshes() const noexcept { return !meshPointers.empty(); }
-	void Reset() noexcept { meshPointers.clear(); }
+	bool HasMeshes() const noexcept { return !meshComponents.empty(); }
+	void Reset() noexcept { meshComponents.clear(); }
 };

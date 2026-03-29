@@ -2,6 +2,7 @@
 #include "GameScene.h"
 
 #include "FileSystemUtils.h"
+#include "Scene/MeshComponent.h"
 #include "Scene/Mesh.h"
 #include "Scene/ImportedMesh.h"
 #include "Camera/CameraComponent.h"
@@ -115,19 +116,20 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 
 	const std::uint32_t materialBaseId = m_materials.AppendMaterials(std::move(result.materials));
 
-	std::vector<std::unique_ptr<Mesh>> importedMeshes;
+	std::vector<std::unique_ptr<MeshComponent>> importedMeshes;
 	importedMeshes.reserve(result.meshes.size());
 	for (std::size_t i = 0; i < result.meshes.size(); ++i)
 	{
-		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]), result.transforms[i]);
+		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]));
 		const std::uint32_t localMaterialId =
 		    i < result.materialIndices.size() ? result.materialIndices[i] : 0;
-		mesh->SetMaterialId(materialBaseId + localMaterialId);
-
-		importedMeshes.push_back(std::move(mesh));
+		const Transform importedTransform =
+		    i < result.transforms.size() ? result.transforms[i] : Transform();
+		importedMeshes.push_back(
+		    std::make_unique<MeshComponent>(std::move(mesh), importedTransform, materialBaseId + localMaterialId));
 	}
 
-	m_meshes.AppendMeshes(std::move(importedMeshes));
+	m_meshes.AppendMeshComponents(std::move(importedMeshes));
 
 	LOG_INFO(
 	    "Scene: Loaded " + std::to_string(m_meshes.GetMeshCount()) + " meshes, " + std::to_string(m_materials.GetMaterialCount()) +

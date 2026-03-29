@@ -2,13 +2,13 @@
 
 #include "Scene/Meshes/SceneMeshes.h"
 
-#include "Scene/Mesh.h"
+#include "Scene/MeshComponent.h"
 
 SceneMeshes::SceneMeshes() noexcept = default;
 
 SceneMeshes::~SceneMeshes() noexcept = default;
 
-void SceneMeshes::AppendMeshes(std::vector<std::unique_ptr<Mesh>>&& meshes)
+void SceneMeshes::AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent>>&& meshes)
 {
 	if (meshes.empty())
 	{
@@ -16,7 +16,7 @@ void SceneMeshes::AppendMeshes(std::vector<std::unique_ptr<Mesh>>&& meshes)
 	}
 
 	m_meshes.reserve(m_meshes.size() + meshes.size());
-	for (std::unique_ptr<Mesh>& mesh : meshes)
+	for (std::unique_ptr<MeshComponent>& mesh : meshes)
 	{
 		if (!mesh)
 		{
@@ -35,16 +35,16 @@ void SceneMeshes::Reset() noexcept
 MeshSnapshot SceneMeshes::CaptureSnapshot() const
 {
 	MeshSnapshot snapshot;
-	snapshot.meshPointers.reserve(m_meshes.size());
+	snapshot.meshComponents.reserve(m_meshes.size());
 
-	for (const std::unique_ptr<Mesh>& mesh : m_meshes)
+	for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
 	{
 		if (!mesh)
 		{
 			continue;
 		}
 
-		snapshot.meshPointers.push_back(mesh.get());
+		snapshot.meshComponents.push_back(mesh.get());
 	}
 
 	return snapshot;

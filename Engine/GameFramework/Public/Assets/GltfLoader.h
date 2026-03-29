@@ -3,6 +3,7 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Assets/MaterialDesc.h"
 #include "GameFramework/Public/Scene/MeshData.h"
+#include "GameFramework/Public/Scene/Transform.h"
 
 #include <DirectXMath.h>
 #include <filesystem>
@@ -23,7 +24,7 @@ class SPARKLE_ENGINE_API GltfLoader final
 	{
 		std::vector<MeshData> meshes;
 		std::vector<MaterialDesc> materials;
-		std::vector<DirectX::XMFLOAT4X4> transforms;
+		std::vector<Transform> transforms;
 		std::vector<std::uint32_t> materialIndices;
 
 		bool bSuccess = false;

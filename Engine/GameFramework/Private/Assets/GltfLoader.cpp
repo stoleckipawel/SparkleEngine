@@ -5,6 +5,7 @@
 #include <cgltf.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <format>
 #include <span>
@@ -91,9 +92,6 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& resu
 
 		const XMMATRIX worldTransform = ComputeNodeWorldTransform(&node);
 
-		XMFLOAT4X4 worldMatrix;
-		XMStoreFloat4x4(&worldMatrix, worldTransform);
-
 		for (cgltf_size p = 0; p < node.mesh->primitives_count; ++p)
 		{
 			const cgltf_primitive& primitive = node.mesh->primitives[p];
@@ -110,7 +108,7 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& resu
 			}
 
 			result.materialIndices.push_back(ResolveMaterialIndex(primitive, data));
-			result.transforms.push_back(worldMatrix);
+			result.transforms.emplace_back(worldTransform);
 			result.meshes.push_back(std::move(meshData));
 		}
 	}

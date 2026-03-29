@@ -29,4 +29,24 @@ namespace MathUtils
 	{
 		return DirectX::XMConvertToRadians(degrees);
 	}
+
+	inline DirectX::XMFLOAT3 ExtractEulerRadians(const DirectX::XMFLOAT4X4& rotationMatrix) noexcept
+	{
+		const float sinPitch = (std::max)(-1.0f, (std::min)(1.0f, -rotationMatrix._23));
+		const float pitch = std::asin(sinPitch);
+
+		float yaw = 0.0f;
+		float roll = 0.0f;
+		if (std::abs(std::cos(pitch)) > 0.0001f)
+		{
+			yaw = std::atan2(rotationMatrix._13, rotationMatrix._33);
+			roll = std::atan2(rotationMatrix._21, rotationMatrix._22);
+		}
+		else
+		{
+			yaw = std::atan2(-rotationMatrix._31, rotationMatrix._11);
+		}
+
+		return {pitch, yaw, roll};
+	}
 }  // namespace MathUtils
