@@ -4,7 +4,7 @@
 #include "FileSystemUtils.h"
 #include "Scene/Mesh.h"
 #include "Scene/ImportedMesh.h"
-#include "Camera/GameCamera.h"
+#include "Camera/CameraComponent.h"
 #include "Assets/GltfLoader.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"

@@ -20,7 +20,7 @@
 #include "Renderer/Public/Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderPassContext.h"
-#include "Scene/Camera/GameCamera.h"
+#include "Scene/Camera/CameraComponent.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
 #include "Frame/BuildFrameContext.h"

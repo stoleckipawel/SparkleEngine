@@ -4,7 +4,7 @@
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Camera/CameraMovementSettings.h"
 #include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
-#include "GameFramework/Public/Scene/Camera/GameCamera.h"
+#include "GameFramework/Public/Scene/Camera/CameraComponent.h"
 
 class SPARKLE_ENGINE_API SceneCamera final
 {
@@ -17,8 +17,8 @@ class SPARKLE_ENGINE_API SceneCamera final
 	SceneCamera(SceneCamera&&) = delete;
 	SceneCamera& operator=(SceneCamera&&) = delete;
 
-	GameCamera& GetGameCamera() noexcept { return m_camera; }
-	const GameCamera& GetGameCamera() const noexcept { return m_camera; }
+	CameraComponent& GetCameraComponent() noexcept { return m_camera; }
+	const CameraComponent& GetCameraComponent() const noexcept { return m_camera; }
 
 	const CameraMovementSettings& GetSettings() const noexcept { return m_settings; }
 	void SetSettings(const CameraMovementSettings& settings) noexcept;
@@ -30,6 +30,6 @@ class SPARKLE_ENGINE_API SceneCamera final
   private:
 	float ClampMoveSpeed(float speed) const noexcept;
 
-	GameCamera m_camera;
+	CameraComponent m_camera;
 	CameraMovementSettings m_settings;
 };

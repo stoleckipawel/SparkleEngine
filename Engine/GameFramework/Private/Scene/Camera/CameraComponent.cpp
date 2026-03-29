@@ -1,38 +1,38 @@
 #include "PCH.h"
-#include "GameCamera.h"
+#include "CameraComponent.h"
 #include <algorithm>
 #include <cmath>
 
 using namespace DirectX;
 
-GameCamera::GameCamera() noexcept
+CameraComponent::CameraComponent() noexcept
 {
 	UpdateCachedDirection();
 }
 
-void GameCamera::Move(const XMFLOAT3& direction, float distance) noexcept
+void CameraComponent::Move(const XMFLOAT3& direction, float distance) noexcept
 {
 	m_transform.TranslateScaled(direction, distance);
 	MarkDirty();
 }
 
-void GameCamera::MoveForward(float distance) noexcept
+void CameraComponent::MoveForward(float distance) noexcept
 {
 	Move(GetDirection(), distance);
 }
 
-void GameCamera::MoveRight(float distance) noexcept
+void CameraComponent::MoveRight(float distance) noexcept
 {
 	Move(GetRight(), distance);
 }
 
-void GameCamera::MoveUp(float distance) noexcept
+void CameraComponent::MoveUp(float distance) noexcept
 {
 	const XMFLOAT3 worldUp = {0.0f, 1.0f, 0.0f};
 	Move(worldUp, distance);
 }
 
-void GameCamera::Rotate(float yawDelta, float pitchDelta) noexcept
+void CameraComponent::Rotate(float yawDelta, float pitchDelta) noexcept
 {
 	constexpr float maxPitch = XM_PIDIV2 - 0.001f;
 	m_transform.RotateYawPitch(yawDelta, pitchDelta, -maxPitch, maxPitch);
@@ -40,25 +40,25 @@ void GameCamera::Rotate(float yawDelta, float pitchDelta) noexcept
 	MarkDirty();
 }
 
-void GameCamera::SetPosition(const XMFLOAT3& position) noexcept
+void CameraComponent::SetPosition(const XMFLOAT3& position) noexcept
 {
 	m_transform.SetTranslation(position);
 	MarkDirty();
 }
 
-void GameCamera::SetAspectRatio(float aspectRatio) noexcept
+void CameraComponent::SetAspectRatio(float aspectRatio) noexcept
 {
 	m_aspectRatio = aspectRatio;
 	MarkDirty();
 }
 
-void GameCamera::SetFovYDegrees(float fovDegrees) noexcept
+void CameraComponent::SetFovYDegrees(float fovDegrees) noexcept
 {
 	m_fovYDegrees = std::clamp(fovDegrees, 1.0f, 179.0f);
 	MarkDirty();
 }
 
-void GameCamera::UpdateCachedDirection() const noexcept
+void CameraComponent::UpdateCachedDirection() const noexcept
 {
 	const XMFLOAT3 rotationEuler = m_transform.GetRotationEuler();
 	const float pitch = rotationEuler.x;
@@ -68,7 +68,7 @@ void GameCamera::UpdateCachedDirection() const noexcept
 	m_directionDirty = false;
 }
 
-const XMFLOAT3& GameCamera::GetDirection() const noexcept
+const XMFLOAT3& CameraComponent::GetDirection() const noexcept
 {
 	if (m_directionDirty)
 	{
@@ -77,13 +77,13 @@ const XMFLOAT3& GameCamera::GetDirection() const noexcept
 	return m_cachedDirection;
 }
 
-XMFLOAT3 GameCamera::GetRight() const noexcept
+XMFLOAT3 CameraComponent::GetRight() const noexcept
 {
 	const float yaw = m_transform.GetRotationEuler().y;
 	return XMFLOAT3{std::cos(yaw), 0.0f, -std::sin(yaw)};
 }
 
-void GameCamera::SetYawPitch(float yawRadians, float pitchRadians) noexcept
+void CameraComponent::SetYawPitch(float yawRadians, float pitchRadians) noexcept
 {
 	constexpr float maxPitch = XM_PIDIV2 - 0.01f;
 	m_transform.SetYawPitch(yawRadians, pitchRadians, -maxPitch, maxPitch);

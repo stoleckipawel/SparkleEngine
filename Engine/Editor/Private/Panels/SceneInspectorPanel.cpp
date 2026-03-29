@@ -3,7 +3,7 @@
 
 #include "Core/Public/Math/MathUtils.h"
 #include "Scene/SceneObjectSelection.h"
-#include "Scene/Camera/GameCamera.h"
+#include "Scene/Camera/CameraComponent.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/GameScene.h"
 #include "Scene/ImportedMesh.h"
@@ -111,22 +111,22 @@ void SceneInspectorPanel::BuildEmptyState() noexcept
 void SceneInspectorPanel::BuildCameraInspector() noexcept
 {
 	SceneCamera& sceneCamera = m_gameScene->GetSceneCamera();
-	GameCamera& gameCamera = sceneCamera.GetGameCamera();
+	CameraComponent& cameraComponent = sceneCamera.GetCameraComponent();
 	CameraMovementSettings settings = sceneCamera.GetSettings();
-	const DirectX::XMFLOAT3 rotationEuler = gameCamera.GetTransform().GetRotationEuler();
+	const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
 
 	UiUtil::BeginSectionCard("Camera");
-	DirectX::XMFLOAT3 position = gameCamera.GetTransform().GetTranslation();
+	DirectX::XMFLOAT3 position = cameraComponent.GetTransform().GetTranslation();
 	float positionValues[3] = {position.x, position.y, position.z};
 	if (UiUtil::EditFloat3SliderWithInput("Position", positionValues, kPositionSliderMin, kPositionSliderMax, "%.2f", "%.3f"))
 	{
-		gameCamera.SetPosition({positionValues[0], positionValues[1], positionValues[2]});
+		cameraComponent.SetPosition({positionValues[0], positionValues[1], positionValues[2]});
 	}
 
 	float yawDegrees = MathUtils::RadiansToDegrees(rotationEuler.y);
 	if (UiUtil::EditFloatSliderWithInput("Yaw", yawDegrees, kYawSliderMin, kYawSliderMax, "%.1f deg", "%.2f"))
 	{
-		gameCamera.SetYawPitch(MathUtils::DegreesToRadians(yawDegrees), rotationEuler.x);
+		cameraComponent.SetYawPitch(MathUtils::DegreesToRadians(yawDegrees), rotationEuler.x);
 	}
 
 	float pitchDegrees = MathUtils::RadiansToDegrees(rotationEuler.x);
@@ -135,16 +135,16 @@ void SceneInspectorPanel::BuildCameraInspector() noexcept
 		float dummyFov = 60.0f;
 		float dummySpeed = 0.15f;
 		ClampCameraUiValues(pitchDegrees, dummyFov, dummySpeed);
-		gameCamera.SetYawPitch(rotationEuler.y, MathUtils::DegreesToRadians(pitchDegrees));
+		cameraComponent.SetYawPitch(rotationEuler.y, MathUtils::DegreesToRadians(pitchDegrees));
 	}
 
-	float fovYDegrees = gameCamera.GetFovYDegrees();
+	float fovYDegrees = cameraComponent.GetFovYDegrees();
 	if (UiUtil::EditFloatSliderWithInput("FOV", fovYDegrees, 1.0f, 179.0f, "%.1f deg", "%.1f"))
 	{
 		float dummyPitch = 0.0f;
 		float dummySpeed = 0.0f;
 		ClampCameraUiValues(dummyPitch, fovYDegrees, dummySpeed);
-		gameCamera.SetFovYDegrees(fovYDegrees);
+		cameraComponent.SetFovYDegrees(fovYDegrees);
 	}
 
 	float moveSpeed = settings.moveSpeed;
@@ -158,11 +158,11 @@ void SceneInspectorPanel::BuildCameraInspector() noexcept
 	}
 
 	char buffer[64] = {};
-	std::snprintf(buffer, sizeof(buffer), "%.3f", gameCamera.GetNearZ());
+	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetNearZ());
 	UiUtil::DrawKeyValueRow("Near", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%.3f", gameCamera.GetFarZ());
+	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetFarZ());
 	UiUtil::DrawKeyValueRow("Far", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%.3f", gameCamera.GetAspectRatio());
+	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetAspectRatio());
 	UiUtil::DrawKeyValueRow("Aspect", buffer);
 	UiUtil::EndSectionCard();
 }

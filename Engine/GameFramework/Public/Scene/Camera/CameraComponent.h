@@ -1,19 +1,20 @@
 #pragma once
 
-#include "Scene/TransformComponent.h"
+#include "GameFramework/Public/Scene/Component.h"
+#include "GameFramework/Public/Scene/TransformComponent.h"
 
 #include <DirectXMath.h>
 
-class GameCamera final
+class CameraComponent final : public Component
 {
   public:
-	GameCamera() noexcept;
-	~GameCamera() noexcept = default;
+	CameraComponent() noexcept;
+	~CameraComponent() override = default;
 
-	GameCamera(const GameCamera&) = delete;
-	GameCamera& operator=(const GameCamera&) = delete;
-	GameCamera(GameCamera&&) = delete;
-	GameCamera& operator=(GameCamera&&) = delete;
+	CameraComponent(const CameraComponent&) = delete;
+	CameraComponent& operator=(const CameraComponent&) = delete;
+	CameraComponent(CameraComponent&&) = delete;
+	CameraComponent& operator=(CameraComponent&&) = delete;
 
 	void Move(const DirectX::XMFLOAT3& direction, float distance) noexcept;
 

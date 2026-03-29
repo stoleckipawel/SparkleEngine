@@ -66,20 +66,20 @@ void GameCameraController::Update() noexcept
 {
 	const InputState& input = m_inputSystem.GetState();
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
-	GameCamera& gameCamera = m_camera.GetGameCamera();
+	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
 	const CameraMovementSettings& settings = m_camera.GetSettings();
 
 	if (m_bMouseLookActive)
 	{
 		const MousePosition mouseDelta = input.GetMouseDelta();
-		const DirectX::XMFLOAT3 rotationEuler = gameCamera.GetTransform().GetRotationEuler();
+		const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
 
 		const float ySign = settings.invertY ? 1.0f : -1.0f;
 
 		const float yawDelta = static_cast<float>(mouseDelta.X) * settings.mouseSensitivity;
 		const float pitchDelta = ySign * static_cast<float>(mouseDelta.Y) * settings.mouseSensitivity;
 
-		gameCamera.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta);
+		cameraComponent.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta);
 
 		m_inputSystem.CenterCursor(m_window.GetHWND());
 	}
@@ -98,17 +98,17 @@ void GameCameraController::Update() noexcept
 	const float distance = speed * deltaTime;
 
 	if (input.IsKeyDown(Key::W))
-		gameCamera.MoveForward(distance);
+		cameraComponent.MoveForward(distance);
 	if (input.IsKeyDown(Key::S))
-		gameCamera.MoveForward(-distance);
+		cameraComponent.MoveForward(-distance);
 	if (input.IsKeyDown(Key::D))
-		gameCamera.MoveRight(distance);
+		cameraComponent.MoveRight(distance);
 	if (input.IsKeyDown(Key::A))
-		gameCamera.MoveRight(-distance);
+		cameraComponent.MoveRight(-distance);
 	if (input.IsKeyDown(Key::E) || input.IsKeyDown(Key::Space))
-		gameCamera.MoveUp(distance);
+		cameraComponent.MoveUp(distance);
 	if (input.IsKeyDown(Key::Q) || input.IsKeyDown(Key::C))
-		gameCamera.MoveUp(-distance);
+		cameraComponent.MoveUp(-distance);
 }
 
 void GameCameraController::OnMouseButtonPressed(const MouseButtonEvent& event) noexcept
@@ -147,7 +147,7 @@ void GameCameraController::OnWindowResized() noexcept
 	const float height = static_cast<float>(m_window.GetHeight());
 	if (width > 0.0f && height > 0.0f)
 	{
-		m_camera.GetGameCamera().SetAspectRatio(width / height);
+		m_camera.GetCameraComponent().SetAspectRatio(width / height);
 	}
 }
 
