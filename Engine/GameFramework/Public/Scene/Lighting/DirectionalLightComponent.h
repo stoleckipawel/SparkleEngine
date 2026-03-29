@@ -1,18 +1,17 @@
 #pragma once
 
-#include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/Component.h"
 #include "GameFramework/Public/Scene/Lighting/DirectionalLightDesc.h"
 
-#include <DirectXMath.h>
-
-class SPARKLE_ENGINE_API GameDirectionalLight final
+class SPARKLE_ENGINE_API DirectionalLightComponent final : public Component
 {
   public:
-	GameDirectionalLight() noexcept = default;
+	DirectionalLightComponent() noexcept = default;
+	~DirectionalLightComponent() override = default;
 
 	static DirectionalLightDesc SanitizeDesc(const DirectionalLightDesc& desc) noexcept;
 
-	explicit GameDirectionalLight(const DirectionalLightDesc& desc) noexcept : m_desc(SanitizeDesc(desc)) {}
+	explicit DirectionalLightComponent(const DirectionalLightDesc& desc) noexcept : m_desc(SanitizeDesc(desc)) {}
 
 	const DirectionalLightDesc& GetDesc() const noexcept { return m_desc; }
 

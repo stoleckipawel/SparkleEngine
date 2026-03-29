@@ -7,7 +7,7 @@
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/GameScene.h"
 #include "Scene/ImportedMesh.h"
-#include "Scene/Lighting/GameDirectionalLight.h"
+#include "Scene/Lighting/DirectionalLightComponent.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/MeshComponent.h"
 #include "Scene/Mesh.h"
@@ -176,7 +176,7 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 		return;
 	}
 
-	GameDirectionalLight& light = m_gameScene->GetLighting().GetGameDirectionalLight(lightIndex);
+	DirectionalLightComponent& light = m_gameScene->GetLighting().GetDirectionalLightComponent(lightIndex);
 	DirectionalLightDesc lightDesc = light.GetDesc();
 	const std::string cardTitle = "Directional Light " + std::to_string(lightIndex + 1);
 

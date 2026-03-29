@@ -2,7 +2,7 @@
 
 #include "RenderConfig.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Lighting/GameDirectionalLight.h"
+#include "GameFramework/Public/Scene/Lighting/DirectionalLightComponent.h"
 #include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
 #include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
@@ -23,19 +23,19 @@ class SPARKLE_ENGINE_API SceneLighting final
 	SceneLighting(SceneLighting&&) = delete;
 	SceneLighting& operator=(SceneLighting&&) = delete;
 
-	std::size_t GetDirectionalLightCount() const noexcept { return m_gameDirectionalLights.size(); }
+	std::size_t GetDirectionalLightCount() const noexcept { return m_directionalLightComponents.size(); }
 
-	const GameDirectionalLight& GetGameDirectionalLight(std::size_t index) const noexcept { return m_gameDirectionalLights[index]; }
-	GameDirectionalLight& GetGameDirectionalLight(std::size_t index) noexcept { return m_gameDirectionalLights[index]; }
+	const DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) const noexcept { return m_directionalLightComponents[index]; }
+	DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) noexcept { return m_directionalLightComponents[index]; }
 
-	const std::vector<GameDirectionalLight>& GetGameDirectionalLights() const noexcept { return m_gameDirectionalLights; }
+	const std::vector<DirectionalLightComponent>& GetDirectionalLightComponents() const noexcept { return m_directionalLightComponents; }
 
 	void ApplyFromDesc(const LevelLightingDesc& desc) noexcept;
 	LevelLightingDesc CaptureToDesc() const noexcept;
 	LightingSnapshot CaptureSnapshot() const noexcept;
 
-	void Reset() noexcept { m_gameDirectionalLights.clear(); }
+	void Reset() noexcept { m_directionalLightComponents.clear(); }
 
   private:
-	std::vector<GameDirectionalLight> m_gameDirectionalLights;
+	std::vector<DirectionalLightComponent> m_directionalLightComponents;
 };

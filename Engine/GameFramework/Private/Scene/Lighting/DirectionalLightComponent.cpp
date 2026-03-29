@@ -1,11 +1,11 @@
 #include "PCH.h"
-#include "Scene/Lighting/GameDirectionalLight.h"
+#include "Scene/Lighting/DirectionalLightComponent.h"
 
 #include "Core/Public/Math/MathUtils.h"
 
 #include <algorithm>
 
-DirectionalLightDesc GameDirectionalLight::SanitizeDesc(const DirectionalLightDesc& desc) noexcept
+DirectionalLightDesc DirectionalLightComponent::SanitizeDesc(const DirectionalLightDesc& desc) noexcept
 {
 	DirectionalLightDesc sanitized = desc;
 	sanitized.direction = MathUtils::Normalize3(sanitized.direction, {0.0f, -1.0f, 0.0f});
