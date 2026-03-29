@@ -2,7 +2,6 @@
 #include "Panels/SceneInspectorPanel.h"
 
 #include "Core/Public/Math/MathUtils.h"
-#include "Core/Public/Math/Transform.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/Camera/GameCamera.h"
 #include "Scene/Camera/SceneCamera.h"
@@ -12,6 +11,7 @@
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Mesh.h"
 #include "Scene/Meshes/SceneMeshes.h"
+#include "Scene/TransformComponent.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -210,7 +210,7 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 
 void SceneInspectorPanel::BuildEditableMeshTransform(Mesh& mesh) noexcept
 {
-	Transform& transform = mesh.GetTransform();
+	TransformComponent& transform = mesh.GetTransform();
 	DirectX::XMFLOAT3 translation = transform.GetTranslation();
 	float translationValues[3] = {translation.x, translation.y, translation.z};
 	if (UiUtil::EditFloat3SliderWithInput("Position", translationValues, kPositionSliderMin, kPositionSliderMax, "%.2f", "%.3f"))

@@ -1,15 +1,17 @@
 #pragma once
 
-#include "Core/Public/CoreAPI.h"
+#include "GameFramework/Public/GameFrameworkAPI.h"
+#include "Scene/Component.h"
 
 #include <DirectXMath.h>
 
-class SPARKLE_CORE_API Transform
+class SPARKLE_ENGINE_API TransformComponent : public Component
 {
   public:
-	Transform() noexcept;
+	TransformComponent() noexcept;
+	~TransformComponent() override;
 
-	Transform(
+	TransformComponent(
 	    const DirectX::XMFLOAT3& translation,
 	    const DirectX::XMFLOAT3& rotationEuler = {0.0f, 0.0f, 0.0f},
 	    const DirectX::XMFLOAT3& scale = {1.0f, 1.0f, 1.0f}) noexcept;

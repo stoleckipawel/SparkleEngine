@@ -20,7 +20,7 @@ void SceneCamera::ApplyFromDesc(const CameraDesc& desc) noexcept
 CameraDesc SceneCamera::CaptureToDesc() const noexcept
 {
 	CameraDesc desc;
-	const Transform& cameraTransform = m_camera.GetTransform();
+	const TransformComponent& cameraTransform = m_camera.GetTransform();
 	const DirectX::XMFLOAT3 rotationEuler = cameraTransform.GetRotationEuler();
 	desc.position = cameraTransform.GetTranslation();
 	desc.yawRadians = rotationEuler.y;

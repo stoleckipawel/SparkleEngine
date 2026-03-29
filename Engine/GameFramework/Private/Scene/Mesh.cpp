@@ -1,10 +1,10 @@
 #include "PCH.h"
 #include "Mesh.h"
 
-Mesh::Mesh(const Transform& transform) noexcept : m_transform(transform) {}
+Mesh::Mesh(const TransformComponent& transform) noexcept : m_transform(transform) {}
 
 Mesh::Mesh(const DirectX::XMFLOAT3& translation, const DirectX::XMFLOAT3& rotation, const DirectX::XMFLOAT3& scale) noexcept :
-    Mesh(Transform(translation, rotation, scale))
+	Mesh(TransformComponent(translation, rotation, scale))
 {
 }
 
