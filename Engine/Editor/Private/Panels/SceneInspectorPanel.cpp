@@ -268,7 +268,8 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 	UiUtil::DrawKeyValueRow("Type", isImportedMesh ? "Imported" : "Procedural");
 
 	char buffer[64] = {};
-	std::snprintf(buffer, sizeof(buffer), "%u", meshComponent->GetMaterialId());
+	const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
+	std::snprintf(buffer, sizeof(buffer), "%u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
 	UiUtil::DrawKeyValueRow("Material", buffer);
 
 	const MeshData& meshData = mesh->GetMeshData();

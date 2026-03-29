@@ -75,9 +75,8 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 		MeshDraw draw = {};
 		DirectX::XMStoreFloat4x4(&draw.worldMatrix, meshComponent->GetWorldMatrix());
 		DirectX::XMStoreFloat3x4(&draw.worldInvTranspose, meshComponent->GetWorldInverseTransposeMatrix());
-		draw.materialId = meshComponent->GetMaterialId();
+		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshComponent->GetMaterialHandle(), sceneData.materials.size());
 		draw.gpuMesh = gpuMesh;
-		draw.materialId = MaterialCacheUtils::ResolveMaterialId(draw.materialId, sceneData.materials.size());
 		sceneData.meshDraws.push_back(draw);
 	}
 }

@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Component.h"
+#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <DirectXMath.h>
@@ -14,7 +15,10 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 {
   public:
 	explicit MeshComponent(std::unique_ptr<Mesh>&& mesh) noexcept;
-	MeshComponent(std::unique_ptr<Mesh>&& mesh, const Transform& transform, std::uint32_t materialId = 0) noexcept;
+	MeshComponent(
+	    std::unique_ptr<Mesh>&& mesh,
+	    const Transform& transform,
+	    MaterialHandle materialHandle = MaterialHandle::Invalid()) noexcept;
 	~MeshComponent() override;
 
 	MeshComponent(const MeshComponent&) = delete;
@@ -30,8 +34,8 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	Transform& GetTransform() noexcept { return m_transform; }
 	const Transform& GetTransform() const noexcept { return m_transform; }
 
-	void SetMaterialId(std::uint32_t materialId) noexcept { m_materialId = materialId; }
-	std::uint32_t GetMaterialId() const noexcept { return m_materialId; }
+	void SetMaterialHandle(MaterialHandle materialHandle) noexcept { m_materialHandle = materialHandle; }
+	MaterialHandle GetMaterialHandle() const noexcept { return m_materialHandle; }
 
 	DirectX::XMMATRIX GetWorldMatrix() const noexcept;
 	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
@@ -39,5 +43,5 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
   private:
 	std::unique_ptr<Mesh> m_mesh;
 	Transform m_transform;
-	std::uint32_t m_materialId = 0;
+	MaterialHandle m_materialHandle = MaterialHandle::Invalid();
 };

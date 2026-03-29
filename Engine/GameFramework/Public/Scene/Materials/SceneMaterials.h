@@ -2,11 +2,10 @@
 
 #include "GameFramework/Public/Assets/MaterialDesc.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 
-#include <cstdint>
 #include <cstddef>
-#include <optional>
 #include <vector>
 
 class SPARKLE_ENGINE_API SceneMaterials final
@@ -25,8 +24,8 @@ class SPARKLE_ENGINE_API SceneMaterials final
 	const MaterialDesc& GetMaterialDesc(std::size_t index) const noexcept { return m_materialDescs[index]; }
 	MaterialDesc& GetMaterialDesc(std::size_t index) noexcept { return m_materialDescs[index]; }
 
-	std::uint32_t AppendMaterials(std::vector<MaterialDesc>&& materialDescs);
-	std::uint32_t GetOrCreateDefaultMaterialId();
+	MaterialHandle AppendMaterials(std::vector<MaterialDesc>&& materialDescs);
+	MaterialHandle GetOrCreateDefaultMaterialHandle();
 	MaterialSnapshot CaptureSnapshot() const;
 	void Reset() noexcept;
 
@@ -34,5 +33,5 @@ class SPARKLE_ENGINE_API SceneMaterials final
 	static MaterialDesc CreateDefaultMaterial();
 
 	std::vector<MaterialDesc> m_materialDescs;
-	std::optional<std::uint32_t> m_defaultMaterialId;
+	MaterialHandle m_defaultMaterialHandle = MaterialHandle::Invalid();
 };

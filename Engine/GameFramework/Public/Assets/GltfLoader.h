@@ -25,7 +25,7 @@ class SPARKLE_ENGINE_API GltfLoader final
 		std::vector<MeshData> meshes;
 		std::vector<MaterialDesc> materials;
 		std::vector<Transform> transforms;
-		std::vector<std::uint32_t> materialIndices;
+		std::vector<std::uint32_t> materialOffsets;
 
 		bool bSuccess = false;
 		std::string errorMessage;
@@ -64,6 +64,6 @@ class SPARKLE_ENGINE_API GltfLoader final
 	    const std::filesystem::path& gltfDirectory,
 	    std::vector<MaterialDesc>& outMaterials);
 		
-	static std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data);
+	static std::uint32_t ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data);
 	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);
 };

@@ -9,32 +9,32 @@ MaterialDesc SceneMaterials::CreateDefaultMaterial()
 	return defaultMaterial;
 }
 
-std::uint32_t SceneMaterials::AppendMaterials(std::vector<MaterialDesc>&& materialDescs)
+MaterialHandle SceneMaterials::AppendMaterials(std::vector<MaterialDesc>&& materialDescs)
 {
 	if (materialDescs.empty())
 	{
-		return GetOrCreateDefaultMaterialId();
+		return GetOrCreateDefaultMaterialHandle();
 	}
 
-	const std::uint32_t materialBaseId = static_cast<std::uint32_t>(m_materialDescs.size());
+	const MaterialHandle materialBaseHandle(static_cast<std::uint32_t>(m_materialDescs.size()));
 	m_materialDescs.reserve(m_materialDescs.size() + materialDescs.size());
 	for (MaterialDesc& materialDesc : materialDescs)
 	{
 		m_materialDescs.push_back(std::move(materialDesc));
 	}
 
-	return materialBaseId;
+	return materialBaseHandle;
 }
 
-std::uint32_t SceneMaterials::GetOrCreateDefaultMaterialId()
+MaterialHandle SceneMaterials::GetOrCreateDefaultMaterialHandle()
 {
-	if (!m_defaultMaterialId.has_value())
+	if (!m_defaultMaterialHandle.IsValid())
 	{
-		m_defaultMaterialId = static_cast<std::uint32_t>(m_materialDescs.size());
+		m_defaultMaterialHandle = MaterialHandle(static_cast<std::uint32_t>(m_materialDescs.size()));
 		m_materialDescs.push_back(CreateDefaultMaterial());
 	}
 
-	return *m_defaultMaterialId;
+	return m_defaultMaterialHandle;
 }
 
 MaterialSnapshot SceneMaterials::CaptureSnapshot() const
@@ -47,5 +47,5 @@ MaterialSnapshot SceneMaterials::CaptureSnapshot() const
 void SceneMaterials::Reset() noexcept
 {
 	m_materialDescs.clear();
-	m_defaultMaterialId.reset();
+	m_defaultMaterialHandle = MaterialHandle::Invalid();
 }

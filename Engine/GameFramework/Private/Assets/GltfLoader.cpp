@@ -107,7 +107,7 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& resu
 				continue;
 			}
 
-			result.materialIndices.push_back(ResolveMaterialIndex(primitive, data));
+			result.materialOffsets.push_back(ResolveMaterialOffset(primitive, data));
 			result.transforms.emplace_back(worldTransform);
 			result.meshes.push_back(std::move(meshData));
 		}
@@ -270,7 +270,7 @@ void GltfLoader::ExtractMaterials(
 	}
 }
 
-std::uint32_t GltfLoader::ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data)
+std::uint32_t GltfLoader::ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data)
 {
 	if (!primitive.material)
 		return 0;
@@ -360,7 +360,7 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 
 	result.meshes.reserve(totalPrimitives);
 	result.transforms.reserve(totalPrimitives);
-	result.materialIndices.reserve(totalPrimitives);
+	result.materialOffsets.reserve(totalPrimitives);
 
 	ExtractMeshesFromNodes(data, result);
 

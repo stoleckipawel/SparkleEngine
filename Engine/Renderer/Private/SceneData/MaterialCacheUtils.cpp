@@ -26,18 +26,19 @@ namespace
 		       OptionalPathEquals(left.emissiveTexture, right.emissiveTexture);
 	}
 }  // namespace
-
-std::uint32_t MaterialCacheUtils::ResolveMaterialId(std::uint32_t materialId, std::size_t materialCount)
+std::uint32_t MaterialCacheUtils::ResolveMaterialSlot(MaterialHandle materialHandle, std::size_t materialCount)
 {
-	if (materialId < materialCount)
+	const std::uint32_t materialSlot = materialHandle.IsValid() ? materialHandle.GetIndex() : 0;
+
+	if (materialSlot < materialCount)
 	{
-		return materialId;
+		return materialSlot;
 	}
 
 	LOG_WARNING(
 	    std::format(
-	        "MaterialCacheUtils::ResolveMaterialId: Material {} is out of range ({} materials); falling back to material 0",
-	        materialId,
+	        "MaterialCacheUtils::ResolveMaterialSlot: Material {} is out of range ({} materials); falling back to material 0",
+	        materialSlot,
 	        materialCount));
 	return 0;
 }
