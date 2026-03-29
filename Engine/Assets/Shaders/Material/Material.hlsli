@@ -92,7 +92,7 @@ namespace Material
 
 	float4 SampleBaseColor(float2 UV)
 	{
-		return HasTexture(TextureFlagAlbedo) ? SampleBaseColorTexture(UV) : BaseColor;
+		return HasTexture(TextureFlagAlbedo) ? SampleBaseColorTexture(UV) * BaseColor : BaseColor;
 	}
 
 	float3 SampleNormalTangent(float2 UV)
@@ -112,7 +112,7 @@ namespace Material
 			return Roughness;
 		}
 
-		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).g;
+		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).g * Roughness;
 	}
 
 	float3 SampleEmissive(float2 UV)
@@ -132,7 +132,7 @@ namespace Material
 			return Metallic;
 		}
 
-		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).b;
+		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).b * Metallic;
 	}
 
 	float SampleDielectricF0(float2 UV)
