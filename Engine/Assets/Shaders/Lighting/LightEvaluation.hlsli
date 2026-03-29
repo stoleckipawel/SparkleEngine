@@ -16,10 +16,8 @@ namespace Lighting
 	DirectionalLight GetDirectionalLight(uint lightIndex)
 	{
 		DirectionalLight light;
-		light.Direction =
-		    normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
-		light.Radiance =
-		    ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
+		light.Direction = normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
+		light.Radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
 		return light;
 	}
 
@@ -79,8 +77,7 @@ namespace Lighting
 		float3 diffuseContribution, specularContribution, subsurfaceContribution;
 		const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
 
-		[loop]
-		for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
+		[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 		{
 			DirectionalLight light = GetDirectionalLight(lightIndex);
 			const float shadowFactor = Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction, lightIndex);
@@ -110,5 +107,4 @@ namespace Lighting
 		CalculateDirect(viewDir, psInput.PositionWorld, matProps, outDirectDiffuse, outDirectSpecular, outDirectSubsurface);
 		return outDirectDiffuse + outDirectSpecular + outDirectSubsurface + matProps.Emissive;
 	}
-}
-
+}  // namespace Lighting

@@ -11,9 +11,14 @@ namespace Engine
 		std::string ToLowerCopy(std::string_view str)
 		{
 			std::string lowered(str);
-			std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char ch) {
-				return static_cast<char>(std::tolower(ch));
-			});
+			std::transform(
+			    lowered.begin(),
+			    lowered.end(),
+			    lowered.begin(),
+			    [](unsigned char ch)
+			    {
+				    return static_cast<char>(std::tolower(ch));
+			    });
 			return lowered;
 		}
 

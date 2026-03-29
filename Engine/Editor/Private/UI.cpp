@@ -51,14 +51,14 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 UI::UI(
     Timer& timer,
     LevelManager* levelManager,
-	GameScene* gameScene,
+    GameScene* gameScene,
     D3D12Rhi& rhi,
     Window& window,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain) :
     m_timer(&timer),
     m_levelManager(levelManager),
-	m_gameScene(gameScene),
+    m_gameScene(gameScene),
     m_rhi(&rhi),
     m_window(&window),
     m_descriptorHeapManager(&descriptorHeapManager),

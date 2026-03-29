@@ -41,14 +41,13 @@ class SPARKLE_RENDERER_API FrameGraph
   public:
 	struct CompiledPlan;
 
-	private:
+  private:
 	struct AllocatedParameterInstanceBase
 	{
 		virtual ~AllocatedParameterInstanceBase() noexcept = default;
 	};
 
-	public:
-
+  public:
 	FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager* descriptorHeapManager, D3D12SwapChain* swapChain);
 	~FrameGraph();
 
@@ -95,7 +94,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-		requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -110,7 +109,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-		requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	    requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
 	{
 		AddTypedShaderPass(
@@ -125,7 +124,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-		requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -140,7 +139,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-		requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	    requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
 	{
 		AddTypedShaderPass(
@@ -160,8 +159,7 @@ class SPARKLE_RENDERER_API FrameGraph
 
 	void Execute(const CompiledPlan& plan, CommandContext& cmd, const FrameContext& frame, const RenderPassContext& renderPassContext)
 	    const;
-	template <typename TParameters>
-	TypedPassParameterInstance<TParameters>& AllocParameters()
+	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
 		{
@@ -179,8 +177,7 @@ class SPARKLE_RENDERER_API FrameGraph
 		return instance;
 	}
 
-	template <typename TPass>
-	typename TPass::ParameterInstance& AllocPassParameters()
+	template <typename TPass> typename TPass::ParameterInstance& AllocPassParameters()
 	{
 		using Parameters = typename TPass::Parameters;
 		using ParameterInstance = typename TPass::ParameterInstance;
@@ -217,32 +214,28 @@ class SPARKLE_RENDERER_API FrameGraph
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
 
-	template <typename TValue = void>
-	ShaderTexture2D<TValue> Read(TextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderTexture2D<TValue> Read(TextureHandle handle) const noexcept
 	{
 		ShaderTexture2D<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void>
-	ShaderBuffer<TValue> Read(BufferHandle handle) const noexcept
+	template <typename TValue = void> ShaderBuffer<TValue> Read(BufferHandle handle) const noexcept
 	{
 		ShaderBuffer<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void>
-	ShaderRWTexture2D<TValue> CreateUAV(TextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(TextureHandle handle) const noexcept
 	{
 		ShaderRWTexture2D<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void>
-	ShaderRWBuffer<TValue> CreateUAV(BufferHandle handle) const noexcept
+	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(BufferHandle handle) const noexcept
 	{
 		ShaderRWBuffer<TValue> field;
 		field = handle;
@@ -263,8 +256,7 @@ class SPARKLE_RENDERER_API FrameGraph
 		return field;
 	}
 
-	template <typename TValue>
-	ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
+	template <typename TValue> ShaderUniform<TValue> Uniform(const TValue& value) const noexcept
 	{
 		ShaderUniform<TValue> field;
 		field = value;
@@ -476,21 +468,25 @@ class SPARKLE_RENDERER_API FrameGraph
 		    RegisteredPass{
 		        std::string(name),
 		        flags,
-		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](PassBuilder& builder, const FrameContext&) mutable
+		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](
+		            PassBuilder& builder,
+		            const FrameContext&) mutable
 		        {
 			        *setupValid = setupFn(builder, *parameterBindings, passName.c_str());
 		        },
-		        MakeParameterizedExecuteCallback(parameterBindings, [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
-		                                                            RenderGraphPassContext& context,
-		                                                            TParameterBindings& typedParameters) mutable
-		        {
-			        if (!*setupValid)
-			        {
-				        return;
-			        }
+		        MakeParameterizedExecuteCallback(
+		            parameterBindings,
+		            [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
+		                RenderGraphPassContext& context,
+		                TParameterBindings& typedParameters) mutable
+		            {
+			            if (!*setupValid)
+			            {
+				            return;
+			            }
 
-			        executeFn(context, typedParameters);
-		        })});
+			            executeFn(context, typedParameters);
+		            })});
 	}
 
 	void BeginPassSetup() noexcept;

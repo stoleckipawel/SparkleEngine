@@ -7,10 +7,10 @@
 #include <cassert>
 
 void FrameGraph::Execute(
-	const CompiledPlan& plan,
-	CommandContext& cmd,
-	const FrameContext& frame,
-	const RenderPassContext& renderPassContext) const
+    const CompiledPlan& plan,
+    CommandContext& cmd,
+    const FrameContext& frame,
+    const RenderPassContext& renderPassContext) const
 {
 	EnsureTransientResourcesMaterialized(plan);
 

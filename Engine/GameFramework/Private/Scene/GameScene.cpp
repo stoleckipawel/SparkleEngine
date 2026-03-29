@@ -136,7 +136,9 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 
 	m_meshes.AppendMeshes(std::move(importedMeshes));
 
-	LOG_INFO("Scene: Loaded " + std::to_string(m_meshes.GetMeshCount()) + " meshes, " + std::to_string(m_materials.GetMaterialCount()) + " materials");
+	LOG_INFO(
+	    "Scene: Loaded " + std::to_string(m_meshes.GetMeshCount()) + " meshes, " + std::to_string(m_materials.GetMaterialCount()) +
+	    " materials");
 
 	return true;
 }

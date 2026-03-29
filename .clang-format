@@ -133,6 +133,7 @@ AllowShortLambdasOnASingleLine: None
 ReflowComments: true
 AlignTrailingComments: true
 SpacesBeforeTrailingComments: 2
+FixNamespaceComments: false
 
 # ---------------------------------------------------------------------------
 # Misc engine-friendly behavior

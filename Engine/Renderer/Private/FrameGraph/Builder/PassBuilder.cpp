@@ -171,10 +171,10 @@ void PassBuilder::DeclareBufferBinding(const PassParameterDesc& parameter, const
 }
 
 void PassBuilder::DeclareResourceHandle(
-	ResourceHandle handle,
-	ResourceUsage usage,
-	const PassParameterDesc& parameter,
-	std::uint32_t arrayIndex) noexcept
+    ResourceHandle handle,
+    ResourceUsage usage,
+    const PassParameterDesc& parameter,
+    std::uint32_t arrayIndex) noexcept
 {
 	assert(handle.IsValid());
 	assert(m_frameGraph != nullptr);

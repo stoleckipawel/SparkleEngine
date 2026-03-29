@@ -15,27 +15,18 @@ namespace Shadow
 
 		const float4 gatheredDepths = GatherShadowDepth(gatherUv, mapIndex, int2(0, 0));
 		const float4 visibility = float4(
-			receiverDepth >= gatheredDepths.x ? 1.0f : 0.0f,
-			receiverDepth >= gatheredDepths.y ? 1.0f : 0.0f,
-			receiverDepth >= gatheredDepths.z ? 1.0f : 0.0f,
-			receiverDepth >= gatheredDepths.w ? 1.0f : 0.0f);
+		    receiverDepth >= gatheredDepths.x ? 1.0f : 0.0f,
+		    receiverDepth >= gatheredDepths.y ? 1.0f : 0.0f,
+		    receiverDepth >= gatheredDepths.z ? 1.0f : 0.0f,
+		    receiverDepth >= gatheredDepths.w ? 1.0f : 0.0f);
 
 		const float topRow = lerp(visibility.w, visibility.z, bilinearWeights.x);
 		const float bottomRow = lerp(visibility.x, visibility.y, bilinearWeights.x);
 		return lerp(topRow, bottomRow, bilinearWeights.y);
 	}
 
-	float SampleDirectionalShadowVisibility(
-		float2 uv,
-		float receiverDepth,
-		float shadowMapSize,
-		uint lightIndex,
-		uint cascadeIndex)
+	float SampleDirectionalShadowVisibility(float2 uv, float receiverDepth, float shadowMapSize, uint lightIndex, uint cascadeIndex)
 	{
-		return SampleShadowMapVisibility(
-			uv,
-			receiverDepth,
-			shadowMapSize,
-			GetShadowMapIndex(lightIndex, cascadeIndex));
+		return SampleShadowMapVisibility(uv, receiverDepth, shadowMapSize, GetShadowMapIndex(lightIndex, cascadeIndex));
 	}
-}
+}  // namespace Shadow

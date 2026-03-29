@@ -8,15 +8,12 @@ class Window;
 
 namespace FrameGraphFeatures
 {
-FrameGraphSceneTargets CreateSceneTargets(FrameGraph& frameGraph, const Window& window);
+	FrameGraphSceneTargets CreateSceneTargets(FrameGraph& frameGraph, const Window& window);
 
-void AddCopyToBackBufferPass(
-    FrameGraph& frameGraph,
-    const FrameGraphPresentationInputs& presentation,
-    const FrameGraphComputeShowcaseOutputs& computeOutputs);
+	void AddCopyToBackBufferPass(
+	    FrameGraph& frameGraph,
+	    const FrameGraphPresentationInputs& presentation,
+	    const FrameGraphComputeShowcaseOutputs& computeOutputs);
 
-void AddUiCompositionPass(
-    FrameGraph& frameGraph,
-    UI& ui,
-    const FrameGraphPresentationInputs& presentation);
-}
+	void AddUiCompositionPass(FrameGraph& frameGraph, UI& ui, const FrameGraphPresentationInputs& presentation);
+}  // namespace FrameGraphFeatures

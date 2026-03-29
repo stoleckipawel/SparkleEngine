@@ -50,25 +50,17 @@ struct PassParameterDesc
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
 
-	bool IsArray() const noexcept
-	{
-		return ArrayCount > 1;
-	}
+	bool IsArray() const noexcept { return ArrayCount > 1; }
 
-	bool IsUniformData() const noexcept
-	{
-		return Kind == ShaderParameterSemanticKind::UniformData;
-	}
+	bool IsUniformData() const noexcept { return Kind == ShaderParameterSemanticKind::UniformData; }
 };
 
-template <typename T>
-struct PassParameterValueSize
+template <typename T> struct PassParameterValueSize
 {
 	static constexpr std::uint32_t Value = 0;
 };
 
-template <typename T>
-struct PassParameterValueSize<UniformData<T>>
+template <typename T> struct PassParameterValueSize<UniformData<T>>
 {
 	static constexpr std::uint32_t Value = static_cast<std::uint32_t>(sizeof(T));
 };
@@ -79,30 +71,15 @@ class PassParameterLayout final
 	PassParameterLayout() = default;
 	explicit PassParameterLayout(const char* debugName) : m_debugName(debugName != nullptr ? debugName : "") {}
 
-	const std::string& GetDebugName() const noexcept
-	{
-		return m_debugName;
-	}
+	const std::string& GetDebugName() const noexcept { return m_debugName; }
 
-	void SetDebugName(const char* debugName)
-	{
-		m_debugName = debugName != nullptr ? debugName : "";
-	}
+	void SetDebugName(const char* debugName) { m_debugName = debugName != nullptr ? debugName : ""; }
 
-	bool IsEmpty() const noexcept
-	{
-		return m_parameters.empty();
-	}
+	bool IsEmpty() const noexcept { return m_parameters.empty(); }
 
-	std::size_t GetParameterCount() const noexcept
-	{
-		return m_parameters.size();
-	}
+	std::size_t GetParameterCount() const noexcept { return m_parameters.size(); }
 
-	const std::vector<PassParameterDesc>& GetParameters() const noexcept
-	{
-		return m_parameters;
-	}
+	const std::vector<PassParameterDesc>& GetParameters() const noexcept { return m_parameters; }
 
 	const PassParameterDesc* FindParameter(const char* name) const noexcept
 	{
@@ -122,10 +99,7 @@ class PassParameterLayout final
 		return it != m_parameters.end() ? &(*it) : nullptr;
 	}
 
-	bool HasParameter(const char* name) const noexcept
-	{
-		return FindParameter(name) != nullptr;
-	}
+	bool HasParameter(const char* name) const noexcept { return FindParameter(name) != nullptr; }
 
 	std::uint32_t AddParameter(PassParameterDesc parameter)
 	{

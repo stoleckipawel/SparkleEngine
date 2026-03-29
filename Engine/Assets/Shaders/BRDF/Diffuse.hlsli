@@ -76,5 +76,5 @@ namespace BRDF
 		{
 			return Lambert(albedo);
 		}
-	}
-}
+	}  // namespace Diffuse
+}  // namespace BRDF

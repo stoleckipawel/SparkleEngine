@@ -51,9 +51,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	const D3D12Texture* GetTexture(TextureId id) const noexcept;
 	D3D12Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
 	const D3D12Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
-	const D3D12Texture* ResolveTextureOrDefault(
-	    const std::optional<std::filesystem::path>& texturePath,
-	    DefaultTexture fallbackType) const;
+	const D3D12Texture* ResolveTextureOrDefault(const std::optional<std::filesystem::path>& texturePath, DefaultTexture fallbackType) const;
 
 	bool IsLoaded(TextureId id) const noexcept;
 

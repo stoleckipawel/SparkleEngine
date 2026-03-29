@@ -6,8 +6,8 @@ class FrameGraph;
 
 namespace FrameGraphFeatures
 {
-void AddForwardOpaquePass(
-    FrameGraph& frameGraph,
-    const FrameGraphSceneTargets& sceneTargets,
-    const FrameGraphShadowOutputs& shadowOutputs);
+	void AddForwardOpaquePass(
+	    FrameGraph& frameGraph,
+	    const FrameGraphSceneTargets& sceneTargets,
+	    const FrameGraphShadowOutputs& shadowOutputs);
 }

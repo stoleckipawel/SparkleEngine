@@ -2,7 +2,6 @@
 
 void main(in VS::Input Input, out VS::Output Output)
 {
-
 	const float4 positionWorld = PositionLocalToWorld(float4(Input.Position, 1.0f));
 	const float3 normalWorld = NormalLocalToWorld(Input.Normal);
 	const float4 tangentWorld = TangentLocalToWorld(Input.Tangent);

@@ -12,4 +12,4 @@ namespace VS
 		float3 BitangentWorld : BINORMAL;
 		float4 Position : SV_POSITION;
 	};
-}
+}  // namespace VS

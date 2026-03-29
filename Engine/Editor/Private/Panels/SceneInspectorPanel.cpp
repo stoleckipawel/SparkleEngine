@@ -21,7 +21,7 @@
 #include <imgui.h>
 
 SceneInspectorPanel::SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
-	m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
+    m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -34,15 +34,15 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 
 	switch (m_selection->type)
 	{
-	case SceneObjectType::Camera:
-		return "Scene Camera";
-	case SceneObjectType::DirectionalLight:
-		return "Directional Light " + std::to_string(m_selection->index + 1);
-	case SceneObjectType::Mesh:
-		return "Mesh " + std::to_string(m_selection->index + 1);
-	case SceneObjectType::None:
-	default:
-		return "No Selection";
+		case SceneObjectType::Camera:
+			return "Scene Camera";
+		case SceneObjectType::DirectionalLight:
+			return "Directional Light " + std::to_string(m_selection->index + 1);
+		case SceneObjectType::Mesh:
+			return "Mesh " + std::to_string(m_selection->index + 1);
+		case SceneObjectType::None:
+		default:
+			return "No Selection";
 	}
 }
 
@@ -55,15 +55,15 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 
 	switch (m_selection->type)
 	{
-	case SceneObjectType::Camera:
-		return "Camera";
-	case SceneObjectType::DirectionalLight:
-		return "Directional Light";
-	case SceneObjectType::Mesh:
-		return "Static Mesh";
-	case SceneObjectType::None:
-	default:
-		return "Object";
+		case SceneObjectType::Camera:
+			return "Camera";
+		case SceneObjectType::DirectionalLight:
+			return "Directional Light";
+		case SceneObjectType::Mesh:
+			return "Static Mesh";
+		case SceneObjectType::None:
+		default:
+			return "Object";
 	}
 }
 
@@ -98,7 +98,7 @@ void SceneInspectorPanel::ClampLightingUiValues(DirectX::XMFLOAT3& color, float&
 	color.x = std::clamp(color.x, 0.0f, 1.0f);
 	color.y = std::clamp(color.y, 0.0f, 1.0f);
 	color.z = std::clamp(color.z, 0.0f, 1.0f);
-	intensity = (std::max)(0.0f, intensity);
+	intensity = (std::max) (0.0f, intensity);
 }
 
 void SceneInspectorPanel::BuildEmptyState() noexcept
@@ -220,15 +220,15 @@ void SceneInspectorPanel::BuildEditableMeshTransform(Mesh& mesh) noexcept
 
 	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
 	float rotationValues[3] = {
-		MathUtils::RadiansToDegrees(rotationEuler.x),
-		MathUtils::RadiansToDegrees(rotationEuler.y),
-		MathUtils::RadiansToDegrees(rotationEuler.z)};
+	    MathUtils::RadiansToDegrees(rotationEuler.x),
+	    MathUtils::RadiansToDegrees(rotationEuler.y),
+	    MathUtils::RadiansToDegrees(rotationEuler.z)};
 	if (UiUtil::EditFloat3SliderWithInput("Rotation", rotationValues, -360.0f, 360.0f, "%.1f", "%.2f"))
 	{
-		transform.SetRotationEuler({
-			MathUtils::DegreesToRadians(rotationValues[0]),
-			MathUtils::DegreesToRadians(rotationValues[1]),
-			MathUtils::DegreesToRadians(rotationValues[2])});
+		transform.SetRotationEuler(
+		    {MathUtils::DegreesToRadians(rotationValues[0]),
+		     MathUtils::DegreesToRadians(rotationValues[1]),
+		     MathUtils::DegreesToRadians(rotationValues[2])});
 	}
 
 	DirectX::XMFLOAT3 scale = transform.GetScale();
@@ -306,19 +306,19 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 	BuildSelectionHeader();
 	switch (m_selection->type)
 	{
-	case SceneObjectType::Camera:
-		BuildCameraInspector();
-		break;
-	case SceneObjectType::DirectionalLight:
-		BuildDirectionalLightInspector(m_selection->index);
-		break;
-	case SceneObjectType::Mesh:
-		BuildMeshInspector(m_selection->index);
-		break;
-	case SceneObjectType::None:
-	default:
-		BuildEmptyState();
-		break;
+		case SceneObjectType::Camera:
+			BuildCameraInspector();
+			break;
+		case SceneObjectType::DirectionalLight:
+			BuildDirectionalLightInspector(m_selection->index);
+			break;
+		case SceneObjectType::Mesh:
+			BuildMeshInspector(m_selection->index);
+			break;
+		case SceneObjectType::None:
+		default:
+			BuildEmptyState();
+			break;
 	}
 	ImGui::EndDisabled();
 

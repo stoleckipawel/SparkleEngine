@@ -6,4 +6,4 @@ namespace PS
 	{
 		float4 Color0 : SV_Target0;
 	};
-}
+}  // namespace PS

@@ -11,22 +11,38 @@
 
 void D3D12PassBindingOverrides::SetConstantBufferView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress)
 {
-	m_overrides.push_back(D3D12BindingOverride{.Name = name != nullptr ? name : "", .Type = D3D12BindingOverrideType::ConstantBufferView, .GpuAddress = gpuAddress});
+	m_overrides.push_back(
+	    D3D12BindingOverride{
+	        .Name = name != nullptr ? name : "",
+	        .Type = D3D12BindingOverrideType::ConstantBufferView,
+	        .GpuAddress = gpuAddress});
 }
 
 void D3D12PassBindingOverrides::SetShaderResourceView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress)
 {
-	m_overrides.push_back(D3D12BindingOverride{.Name = name != nullptr ? name : "", .Type = D3D12BindingOverrideType::ShaderResourceView, .GpuAddress = gpuAddress});
+	m_overrides.push_back(
+	    D3D12BindingOverride{
+	        .Name = name != nullptr ? name : "",
+	        .Type = D3D12BindingOverrideType::ShaderResourceView,
+	        .GpuAddress = gpuAddress});
 }
 
 void D3D12PassBindingOverrides::SetUnorderedAccessView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress)
 {
-	m_overrides.push_back(D3D12BindingOverride{.Name = name != nullptr ? name : "", .Type = D3D12BindingOverrideType::UnorderedAccessView, .GpuAddress = gpuAddress});
+	m_overrides.push_back(
+	    D3D12BindingOverride{
+	        .Name = name != nullptr ? name : "",
+	        .Type = D3D12BindingOverrideType::UnorderedAccessView,
+	        .GpuAddress = gpuAddress});
 }
 
 void D3D12PassBindingOverrides::SetDescriptorTable(const char* name, D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable)
 {
-	m_overrides.push_back(D3D12BindingOverride{.Name = name != nullptr ? name : "", .Type = D3D12BindingOverrideType::DescriptorTable, .DescriptorTable = descriptorTable});
+	m_overrides.push_back(
+	    D3D12BindingOverride{
+	        .Name = name != nullptr ? name : "",
+	        .Type = D3D12BindingOverrideType::DescriptorTable,
+	        .DescriptorTable = descriptorTable});
 }
 
 void D3D12PassBindingOverrides::SetRootConstants(const char* name, const void* data, std::uint32_t constantCount)
@@ -58,35 +74,35 @@ const D3D12BindingOverride* D3D12PassBindingOverrides::Find(const char* name, D3
 }
 
 void D3D12PassBinder::BindGraphics(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	const D3D12BindingLayout& layout,
-	const PassParameterSet& parameterSet,
-	std::span<const char* const> bindingNames,
-	const D3D12PassBindingOverrides* overrides)
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    const D3D12BindingLayout& layout,
+    const PassParameterSet& parameterSet,
+    std::span<const char* const> bindingNames,
+    const D3D12PassBindingOverrides* overrides)
 {
 	BindImpl(cmd, frameGraph, layout, parameterSet, bindingNames, overrides, false);
 }
 
 void D3D12PassBinder::BindCompute(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	const D3D12BindingLayout& layout,
-	const PassParameterSet& parameterSet,
-	std::span<const char* const> bindingNames,
-	const D3D12PassBindingOverrides* overrides)
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    const D3D12BindingLayout& layout,
+    const PassParameterSet& parameterSet,
+    std::span<const char* const> bindingNames,
+    const D3D12PassBindingOverrides* overrides)
 {
 	BindImpl(cmd, frameGraph, layout, parameterSet, bindingNames, overrides, true);
 }
 
 void D3D12PassBinder::BindImpl(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	const D3D12BindingLayout& layout,
-	const PassParameterSet& parameterSet,
-	std::span<const char* const> bindingNames,
-	const D3D12PassBindingOverrides* overrides,
-	bool isCompute)
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    const D3D12BindingLayout& layout,
+    const PassParameterSet& parameterSet,
+    std::span<const char* const> bindingNames,
+    const D3D12PassBindingOverrides* overrides,
+    bool isCompute)
 {
 	assert(parameterSet.HasLayout());
 	if (bindingNames.empty())
@@ -107,7 +123,13 @@ void D3D12PassBinder::BindImpl(
 	{
 		for (const D3D12CompiledBinding& compiledBinding : layout.GetBindings())
 		{
-			BindCompiledBinding(cmd, frameGraph, compiledBinding, parameterSet.FindBinding(compiledBinding.Name.c_str()), overrides, isCompute);
+			BindCompiledBinding(
+			    cmd,
+			    frameGraph,
+			    compiledBinding,
+			    parameterSet.FindBinding(compiledBinding.Name.c_str()),
+			    overrides,
+			    isCompute);
 		}
 		return;
 	}
@@ -121,19 +143,20 @@ void D3D12PassBinder::BindImpl(
 }
 
 void D3D12PassBinder::BindCompiledBinding(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	const D3D12CompiledBinding& compiledBinding,
-	const PassParameterBinding* parameterBinding,
-	const D3D12PassBindingOverrides* overrides,
-	bool isCompute)
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    const D3D12CompiledBinding& compiledBinding,
+    const PassParameterBinding* parameterBinding,
+    const D3D12PassBindingOverrides* overrides,
+    bool isCompute)
 {
 	switch (compiledBinding.Type)
 	{
 		case D3D12CompiledBindingType::RootConstantBufferView:
 		{
 			assert(overrides != nullptr);
-			const D3D12BindingOverride* bindingOverride = overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::ConstantBufferView);
+			const D3D12BindingOverride* bindingOverride =
+			    overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::ConstantBufferView);
 			assert(bindingOverride != nullptr);
 			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
@@ -141,7 +164,8 @@ void D3D12PassBinder::BindCompiledBinding(
 		case D3D12CompiledBindingType::RootShaderResourceView:
 		{
 			assert(overrides != nullptr);
-			const D3D12BindingOverride* bindingOverride = overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::ShaderResourceView);
+			const D3D12BindingOverride* bindingOverride =
+			    overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::ShaderResourceView);
 			assert(bindingOverride != nullptr);
 			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
@@ -149,16 +173,16 @@ void D3D12PassBinder::BindCompiledBinding(
 		case D3D12CompiledBindingType::RootUnorderedAccessView:
 		{
 			assert(overrides != nullptr);
-			const D3D12BindingOverride* bindingOverride = overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::UnorderedAccessView);
+			const D3D12BindingOverride* bindingOverride =
+			    overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::UnorderedAccessView);
 			assert(bindingOverride != nullptr);
 			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
 		}
 		case D3D12CompiledBindingType::DescriptorTableShaderResourceView:
 		{
-			const D3D12BindingOverride* bindingOverride = overrides != nullptr
-			    ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable)
-			    : nullptr;
+			const D3D12BindingOverride* bindingOverride =
+			    overrides != nullptr ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable) : nullptr;
 			if (bindingOverride != nullptr)
 			{
 				BindDescriptorTable(cmd, compiledBinding, bindingOverride->DescriptorTable, isCompute);
@@ -180,9 +204,8 @@ void D3D12PassBinder::BindCompiledBinding(
 		}
 		case D3D12CompiledBindingType::DescriptorTableUnorderedAccessView:
 		{
-			const D3D12BindingOverride* bindingOverride = overrides != nullptr
-			    ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable)
-			    : nullptr;
+			const D3D12BindingOverride* bindingOverride =
+			    overrides != nullptr ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable) : nullptr;
 			if (bindingOverride != nullptr)
 			{
 				BindDescriptorTable(cmd, compiledBinding, bindingOverride->DescriptorTable, isCompute);
@@ -205,16 +228,16 @@ void D3D12PassBinder::BindCompiledBinding(
 		case D3D12CompiledBindingType::DescriptorTableSampler:
 		{
 			assert(overrides != nullptr);
-			const D3D12BindingOverride* bindingOverride = overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable);
+			const D3D12BindingOverride* bindingOverride =
+			    overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::DescriptorTable);
 			assert(bindingOverride != nullptr);
 			BindDescriptorTable(cmd, compiledBinding, bindingOverride->DescriptorTable, isCompute);
 			return;
 		}
 		case D3D12CompiledBindingType::RootConstants:
 		{
-			const D3D12BindingOverride* bindingOverride = overrides != nullptr
-			    ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::RootConstants)
-			    : nullptr;
+			const D3D12BindingOverride* bindingOverride =
+			    overrides != nullptr ? overrides->Find(compiledBinding.Name.c_str(), D3D12BindingOverrideType::RootConstants) : nullptr;
 			if (bindingOverride != nullptr)
 			{
 				BindRootConstants(cmd, compiledBinding, bindingOverride->ConstantsData, bindingOverride->ConstantCount, isCompute);
@@ -238,10 +261,10 @@ void D3D12PassBinder::BindCompiledBinding(
 }
 
 void D3D12PassBinder::BindRootGpuAddress(
-	CommandContext& cmd,
-	const D3D12CompiledBinding& compiledBinding,
-	D3D12_GPU_VIRTUAL_ADDRESS gpuAddress,
-	bool isCompute)
+    CommandContext& cmd,
+    const D3D12CompiledBinding& compiledBinding,
+    D3D12_GPU_VIRTUAL_ADDRESS gpuAddress,
+    bool isCompute)
 {
 	assert(gpuAddress != 0);
 
@@ -284,10 +307,10 @@ void D3D12PassBinder::BindRootGpuAddress(
 }
 
 void D3D12PassBinder::BindDescriptorTable(
-	CommandContext& cmd,
-	const D3D12CompiledBinding& compiledBinding,
-	D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable,
-	bool isCompute)
+    CommandContext& cmd,
+    const D3D12CompiledBinding& compiledBinding,
+    D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable,
+    bool isCompute)
 {
 	assert(descriptorTable.ptr != 0);
 	if (isCompute)
@@ -301,11 +324,11 @@ void D3D12PassBinder::BindDescriptorTable(
 }
 
 void D3D12PassBinder::BindRootConstants(
-	CommandContext& cmd,
-	const D3D12CompiledBinding& compiledBinding,
-	const void* data,
-	std::uint32_t constantCount,
-	bool isCompute)
+    CommandContext& cmd,
+    const D3D12CompiledBinding& compiledBinding,
+    const void* data,
+    std::uint32_t constantCount,
+    bool isCompute)
 {
 	assert(data != nullptr);
 	assert(constantCount > 0);

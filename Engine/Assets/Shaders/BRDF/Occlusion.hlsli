@@ -51,5 +51,5 @@ namespace BRDF
 			return SpecularOcclusion_GTAO(NoV, ao, roughness);
 #endif
 		}
-	}
-}
+	}  // namespace Occlusion
+}  // namespace BRDF

@@ -15,10 +15,7 @@ struct SamplerReference
 {
 	std::string Name;
 
-	bool IsValid() const noexcept
-	{
-		return !Name.empty();
-	}
+	bool IsValid() const noexcept { return !Name.empty(); }
 };
 
 enum class PassParameterValueKind : std::uint8_t
@@ -71,10 +68,7 @@ class PassParameterSet final
 {
   public:
 	PassParameterSet() = default;
-	explicit PassParameterSet(const PassParameterLayout& layout)
-	{
-		Reset(layout);
-	}
+	explicit PassParameterSet(const PassParameterLayout& layout) { Reset(layout); }
 
 	void Reset(const PassParameterLayout& layout)
 	{
@@ -91,20 +85,11 @@ class PassParameterSet final
 		}
 	}
 
-	const PassParameterLayout* GetLayout() const noexcept
-	{
-		return m_layout;
-	}
+	const PassParameterLayout* GetLayout() const noexcept { return m_layout; }
 
-	bool HasLayout() const noexcept
-	{
-		return m_layout != nullptr;
-	}
+	bool HasLayout() const noexcept { return m_layout != nullptr; }
 
-	std::size_t GetBindingCount() const noexcept
-	{
-		return m_bindings.size();
-	}
+	std::size_t GetBindingCount() const noexcept { return m_bindings.size(); }
 
 	const PassParameterBinding* FindBinding(const char* name) const noexcept
 	{
@@ -179,8 +164,7 @@ class PassParameterSet final
 		return ValidateBufferBinding(binding.Buffers, *parameter);
 	}
 
-	template <typename T>
-	bool SetUniformDataReference(const char* name, const T& value)
+	template <typename T> bool SetUniformDataReference(const char* name, const T& value)
 	{
 		static_assert(std::is_trivially_copyable_v<T>, "Uniform data must be trivially copyable.");
 		static_assert(std::is_standard_layout_v<T>, "Uniform data must be standard layout.");

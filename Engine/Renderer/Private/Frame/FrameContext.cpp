@@ -18,26 +18,22 @@
 #include <utility>
 
 FrameContext BuildFrameContext(
-	const RenderSceneSnapshot& sceneSnapshot,
+    const RenderSceneSnapshot& sceneSnapshot,
     const D3D12SwapChain& swapChain,
     D3D12ConstantBufferManager& constantBufferManager,
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
-	PerViewDataBuilder& perViewDataBuilder,
-	ViewLightingBuilder& viewLightingBuilder,
-	ShadowFrameBuilder& shadowFrameBuilder,
-	ShadowBuilder& shadowBuilder)
+    PerViewDataBuilder& perViewDataBuilder,
+    ViewLightingBuilder& viewLightingBuilder,
+    ShadowFrameBuilder& shadowFrameBuilder,
+    ShadowBuilder& shadowBuilder)
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
 	const PerViewLightingConstantBufferData baseLighting = viewLightingBuilder.Build(frame.sceneData);
-	ShadowFrameBuildResult shadowFrame = shadowFrameBuilder.Build(
-	    sceneSnapshot.camera,
-	    frame.sceneData,
-	    baseLighting,
-	    constantBufferManager,
-	    perViewDataBuilder,
-	    shadowBuilder);
+	ShadowFrameBuildResult shadowFrame =
+	    shadowFrameBuilder
+	        .Build(sceneSnapshot.camera, frame.sceneData, baseLighting, constantBufferManager, perViewDataBuilder, shadowBuilder);
 	frame.shadowViews = shadowFrame.shadowViews;
 	frame.shadowViewCount = shadowFrame.shadowViewCount;
 	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, swapChain);

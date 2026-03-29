@@ -53,5 +53,5 @@ namespace BRDF
 			const float3 F = Fresnel::EvaluateIndirect(NoV, F0, roughness);
 			return prefilteredEnv * (F * brdf.x + brdf.y);
 		}
-	}
-}
+	}  // namespace Specular
+}  // namespace BRDF

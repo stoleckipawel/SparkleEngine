@@ -6,5 +6,5 @@ class FrameGraph;
 
 namespace FrameGraphFeatures
 {
-FrameGraphShadowOutputs AddShadowPasses(FrameGraph& frameGraph);
+	FrameGraphShadowOutputs AddShadowPasses(FrameGraph& frameGraph);
 }

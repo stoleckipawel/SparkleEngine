@@ -55,19 +55,11 @@ void ForwardOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstan
 	PreparePassParameters(parameters, context.Frame.mainView, context.Runtime);
 	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
-	BindPassResources(
-	    context.Graph,
-	    context.Commands,
-	    parameters,
-	    runtime,
-	    context.Runtime,
-	    context.Frame.mainView.perViewGpuAddress);
+	BindPassResources(context.Graph, context.Commands, parameters, runtime, context.Runtime, context.Frame.mainView.perViewGpuAddress);
 	DrawOpaqueMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
 }
 
-void ForwardOpaquePass::PrepareTargets(
-	RenderGraphPassContext& context,
-	const ForwardOpaquePass::Parameters& parameters)
+void ForwardOpaquePass::PrepareTargets(RenderGraphPassContext& context, const ForwardOpaquePass::Parameters& parameters)
 {
 	context.Graph.BindRenderTarget(context.Commands, parameters.BackBuffer[0], parameters.MainDepth[0]);
 	context.Graph.ClearRenderTarget(context.Commands, parameters.BackBuffer[0]);
@@ -75,9 +67,9 @@ void ForwardOpaquePass::PrepareTargets(
 }
 
 void ForwardOpaquePass::PreparePassParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
 	parameters->PerView = viewContext.perViewData;
@@ -96,12 +88,12 @@ void ForwardOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewC
 }
 
 void ForwardOpaquePass::BindPassResources(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const ParameterInstance& parameters,
-	const ForwardOpaquePassRuntime& runtime,
-	const RenderPassContext& renderPassContext,
-	D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
+    const FrameGraph& frameGraph,
+    CommandContext& cmd,
+    const ParameterInstance& parameters,
+    const ForwardOpaquePassRuntime& runtime,
+    const RenderPassContext& renderPassContext,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
 {
 	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
 	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
@@ -125,11 +117,11 @@ void ForwardOpaquePass::BindPassResources(
 }
 
 void ForwardOpaquePass::DrawOpaqueMeshes(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const RenderSceneData& sceneData,
-	const ForwardOpaquePassRuntime& runtime,
-	const RenderPassContext& renderPassContext)
+    const FrameGraph& frameGraph,
+    CommandContext& cmd,
+    const RenderSceneData& sceneData,
+    const ForwardOpaquePassRuntime& runtime,
+    const RenderPassContext& renderPassContext)
 {
 	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
 	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;

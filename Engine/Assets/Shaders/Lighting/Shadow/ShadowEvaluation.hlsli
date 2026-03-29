@@ -4,12 +4,7 @@
 
 namespace Shadow
 {
-	float ComputeCascadeShadowFactor(
-		float3 positionWorld,
-		float3 normalWorld,
-		float3 lightDirection,
-		uint lightIndex,
-		uint cascadeIndex)
+	float ComputeCascadeShadowFactor(float3 positionWorld, float3 normalWorld, float3 lightDirection, uint lightIndex, uint cascadeIndex)
 	{
 		const ShadowConstantBufferData shadowData = GetDirectionalShadowCascade(lightIndex, cascadeIndex);
 		const float4 lightClipPosition = mul(float4(positionWorld, 1.0f), shadowData.ViewProjMTX);
@@ -23,12 +18,7 @@ namespace Shadow
 		const float normalBias = (1.0f - saturate(dot(normalize(normalWorld), lightDirection))) * shadowData.NormalBias;
 		const float biasedReceiverDepth = saturate(lightNdc.z + shadowData.DepthBias + normalBias);
 
-		return SampleDirectionalShadowVisibility(
-			uv,
-			biasedReceiverDepth,
-			shadowData.ShadowMapSize,
-			lightIndex,
-			cascadeIndex);
+		return SampleDirectionalShadowVisibility(uv, biasedReceiverDepth, shadowData.ShadowMapSize, lightIndex, cascadeIndex);
 	}
 
 	float ComputeShadowFactor(float3 positionWorld, float3 normalWorld, float3 lightDirection, uint lightIndex)
@@ -36,12 +26,7 @@ namespace Shadow
 		const float cameraDistance = length(positionWorld - Camera.Position);
 		const ShadowConstantBufferData nearCascade = GetDirectionalShadowCascade(lightIndex, 0);
 
-		const float nearFactor = ComputeCascadeShadowFactor(
-			positionWorld,
-			normalWorld,
-			lightDirection,
-			lightIndex,
-			0);
+		const float nearFactor = ComputeCascadeShadowFactor(positionWorld, normalWorld, lightDirection, lightIndex, 0);
 		const float splitDepth = nearCascade.CascadeFarDepth;
 		const float blendWeight = GetCascadeBlendWeight(cameraDistance, splitDepth);
 
@@ -50,12 +35,7 @@ namespace Shadow
 			return nearFactor;
 		}
 
-		const float farFactor = ComputeCascadeShadowFactor(
-			positionWorld,
-			normalWorld,
-			lightDirection,
-			lightIndex,
-			1);
+		const float farFactor = ComputeCascadeShadowFactor(positionWorld, normalWorld, lightDirection, lightIndex, 1);
 		return lerp(nearFactor, farFactor, blendWeight);
 	}
-}
+}  // namespace Shadow

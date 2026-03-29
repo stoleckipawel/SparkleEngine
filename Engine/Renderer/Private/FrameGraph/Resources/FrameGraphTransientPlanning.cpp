@@ -68,9 +68,8 @@ namespace
 			case FrameGraphResourceKind::DepthStencil:
 				return D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 			case FrameGraphResourceKind::ColorRenderTarget:
-				return requiresUnorderedAccess
-				           ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
-				           : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+				return requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
+				                               : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 			default:
 				return requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
 		}
@@ -148,12 +147,9 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 
 		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
-		const D3D12_RESOURCE_DESC resourceDesc = isBuffer
-		                                             ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
-		                                             : BuildTransientResourceDesc(
-		                                                   transientResource.textureDesc,
-		                                                   resourceMetadata.kind,
-		                                                   requiresUnorderedAccess);
+		const D3D12_RESOURCE_DESC resourceDesc =
+		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
+		             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresUnorderedAccess);
 		const D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = m_rhi->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(

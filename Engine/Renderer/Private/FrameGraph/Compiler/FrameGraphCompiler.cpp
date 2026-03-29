@@ -122,8 +122,9 @@ void FrameGraphCompiler::Compile() noexcept
 				compiledResource.currentState = requiredState;
 				runtimeState.currentState = requiredState;
 			}
-			else if (requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
-			         !HasCompiledBarrier(passRecord, declaration.handle, CompiledBarrier::Type::UnorderedAccess))
+			else if (
+			    requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
+			    !HasCompiledBarrier(passRecord, declaration.handle, CompiledBarrier::Type::UnorderedAccess))
 			{
 				passRecord.compiledBarriers.push_back(
 				    CompiledBarrier{
@@ -213,8 +214,8 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 			case ResourceUsage::ShaderRead:
 				assert(resource.kind != FrameGraphResourceKind::BackBuffer);
 				return ResourceState::ShaderResource;
-				case ResourceUsage::CopySource:
-					return ResourceState::CopySource;
+			case ResourceUsage::CopySource:
+				return ResourceState::CopySource;
 			case ResourceUsage::Present:
 				assert(resource.kind == FrameGraphResourceKind::BackBuffer);
 				return ResourceState::Present;
@@ -234,8 +235,8 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 			case ResourceUsage::DepthWrite:
 				assert(resource.kind == FrameGraphResourceKind::DepthStencil);
 				return ResourceState::DepthWrite;
-				case ResourceUsage::CopyDest:
-					return ResourceState::CopyDest;
+			case ResourceUsage::CopyDest:
+				return ResourceState::CopyDest;
 			default:
 				assert(false);
 				return ResourceState::Common;

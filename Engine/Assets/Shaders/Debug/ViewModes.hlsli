@@ -22,23 +22,16 @@ namespace ViewMode
 
 	float3 PreviewNormal(float3 n)
 	{
-
 		return normalize(n) * 0.5f + 0.5f;
 	}
 
 	float3 PreviewHdr(float3 c)
 	{
-
 		const float3 safe = max(c, 0.0f);
 		return safe / (1.0f + safe);
 	}
 
-	float3 Resolve(
-	    float3 lit,
-	    Material::Properties matProps,
-	    float3 directDiffuse,
-	    float3 directSpecular,
-	    float3 directSubsurface)
+	float3 Resolve(float3 lit, Material::Properties matProps, float3 directDiffuse, float3 directSpecular, float3 directSubsurface)
 	{
 		switch (ViewModeIndex)
 		{
@@ -81,4 +74,4 @@ namespace ViewMode
 				return lit;
 		}
 	}
-}
+}  // namespace ViewMode

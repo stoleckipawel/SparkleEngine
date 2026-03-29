@@ -10,4 +10,4 @@ namespace ComputeUtils
 		assert(divisor > 0);
 		return (value + divisor - 1) / divisor;
 	}
-}  
+}  // namespace ComputeUtils

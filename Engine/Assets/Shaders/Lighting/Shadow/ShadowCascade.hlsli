@@ -18,4 +18,4 @@ namespace Shadow
 		const float blendStart = max(0.0f, splitDepth - blendRange);
 		return saturate((cameraDistance - blendStart) / blendRange);
 	}
-}
+}  // namespace Shadow

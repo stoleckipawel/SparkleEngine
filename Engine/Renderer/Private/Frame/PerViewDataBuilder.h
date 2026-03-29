@@ -26,8 +26,7 @@ class PerViewDataBuilder final
 	RenderViewContext BuildMainView(
 	    const RenderCamera& renderCamera,
 	    const PerViewLightingConstantBufferData& lightingData,
-	    const D3D12SwapChain& swapChain)
-	    const noexcept;
+	    const D3D12SwapChain& swapChain) const noexcept;
 
   private:
 	static PerViewConstantBufferData BuildPerViewData(

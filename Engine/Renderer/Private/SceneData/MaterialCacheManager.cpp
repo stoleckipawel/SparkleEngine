@@ -68,25 +68,14 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		MaterialData material = MaterialData::FromDesc(desc);
 
 		const D3D12Texture* textures[MaterialTextureSlots::Count] = {
-		    m_textureManager->ResolveTextureOrDefault(
-		        desc.albedoTexture,
-		        DefaultTexture::White),
-		    m_textureManager->ResolveTextureOrDefault(
-		        desc.normalTexture,
-		        DefaultTexture::Normal),
-		    m_textureManager->ResolveTextureOrDefault(
-		        desc.metallicRoughnessTexture,
-		        DefaultTexture::Black),
-		    m_textureManager->ResolveTextureOrDefault(
-		        desc.occlusionTexture,
-		        DefaultTexture::White),
-		    m_textureManager->ResolveTextureOrDefault(
-		        desc.emissiveTexture,
-		        DefaultTexture::Black)};
+		    m_textureManager->ResolveTextureOrDefault(desc.albedoTexture, DefaultTexture::White),
+		    m_textureManager->ResolveTextureOrDefault(desc.normalTexture, DefaultTexture::Normal),
+		    m_textureManager->ResolveTextureOrDefault(desc.metallicRoughnessTexture, DefaultTexture::Black),
+		    m_textureManager->ResolveTextureOrDefault(desc.occlusionTexture, DefaultTexture::White),
+		    m_textureManager->ResolveTextureOrDefault(desc.emissiveTexture, DefaultTexture::Black)};
 
-		const D3D12DescriptorHandle tableHandle = m_descriptorHeapManager->AllocateContiguous(
-		    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		    MaterialTextureSlots::Count);
+		const D3D12DescriptorHandle tableHandle =
+		    m_descriptorHeapManager->AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaterialTextureSlots::Count);
 
 		for (std::uint32_t slot = 0; slot < MaterialTextureSlots::Count; ++slot)
 		{
@@ -148,10 +137,7 @@ void MaterialCacheManager::ReleaseMaterialTextureTables() noexcept
 	{
 		if (tableHandle.IsValid())
 		{
-			m_descriptorHeapManager->FreeContiguous(
-			    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-			    tableHandle,
-			    MaterialTextureSlots::Count);
+			m_descriptorHeapManager->FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tableHandle, MaterialTextureSlots::Count);
 		}
 	}
 

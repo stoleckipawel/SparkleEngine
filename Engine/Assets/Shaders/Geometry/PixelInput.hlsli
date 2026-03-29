@@ -19,4 +19,4 @@ namespace PS
 		input.TangentWorld = normalize(input.TangentWorld);
 		input.BitangentWorld = normalize(input.BitangentWorld);
 	}
-}
+}  // namespace PS

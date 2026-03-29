@@ -30,10 +30,6 @@ float4 PositionWorldToClip(float4 worldPosition)
 }
 
 
-
-
-
-
 float3 NormalLocalToWorld(float3 normalLocal)
 {
 	return normalize(mul(normalLocal, WorldInvTransposeMTX));
@@ -58,9 +54,6 @@ float3 TransformNormalToWorld(float3 normalTangent, float3 vertexNormalWorld, fl
 	const float3x3 TBN = float3x3(vertexTangentWorld, vertexBitangentWorld, vertexNormalWorld);
 	return mul(normalTangent, TBN);
 }
-
-
-
 
 
 float3 Rotate(float3 v, float3 axis, float angle)

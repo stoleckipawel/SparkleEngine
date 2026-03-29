@@ -17,7 +17,7 @@ FrameContext BuildFrameContext(
     D3D12ConstantBufferManager& constantBufferManager,
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
-	PerViewDataBuilder& perViewDataBuilder,
+    PerViewDataBuilder& perViewDataBuilder,
     ViewLightingBuilder& viewLightingBuilder,
     ShadowFrameBuilder& shadowFrameBuilder,
     ShadowBuilder& shadowBuilder);

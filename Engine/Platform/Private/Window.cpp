@@ -285,9 +285,7 @@ LRESULT Window::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 
-			POINT cursorPoint{
-				static_cast<LONG>(static_cast<short>(LOWORD(lParam))),
-				static_cast<LONG>(static_cast<short>(HIWORD(lParam)))};
+			POINT cursorPoint{static_cast<LONG>(static_cast<short>(LOWORD(lParam))), static_cast<LONG>(static_cast<short>(HIWORD(lParam)))};
 			RECT windowRect{};
 			if (!GetWindowRect(m_hWnd, &windowRect))
 			{

@@ -21,8 +21,7 @@ struct SPARKLE_RENDERER_API RenderPassContext
 	D3D12SamplerLibrary& SamplerLibrary;
 	const RenderPassRuntimeRegistry& RuntimeRegistry;
 
-	template <typename TPass>
-	const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
 		return RuntimeRegistry.GetPassRuntime<TPass>();
 	}

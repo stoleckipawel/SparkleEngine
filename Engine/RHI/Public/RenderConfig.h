@@ -19,7 +19,7 @@ namespace RenderConfig
 	namespace Lights
 	{
 		inline constexpr std::size_t MaxDirectionalLights = 2;
-	}  
+	}
 
 	namespace Shadows
 	{
@@ -32,5 +32,5 @@ namespace RenderConfig
 		inline constexpr float NearCascadeFraction = 0.2f;
 		inline constexpr float LightPadding = 20.0f;
 		inline constexpr DXGI_FORMAT ShadowMapFormat = DXGI_FORMAT_R32_FLOAT;
-	} 
-}  
+	}  // namespace Shadows
+}  // namespace RenderConfig

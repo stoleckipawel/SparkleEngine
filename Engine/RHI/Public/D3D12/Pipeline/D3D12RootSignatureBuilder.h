@@ -11,20 +11,11 @@ class D3D12RootSignature;
 class D3D12RootSignatureBuilder final
 {
   public:
-	std::uint32_t AddConstantBufferView(
-	    std::uint32_t shaderRegister,
-	    std::uint32_t registerSpace,
-	    D3D12_SHADER_VISIBILITY visibility);
+	std::uint32_t AddConstantBufferView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
 
-	std::uint32_t AddShaderResourceView(
-	    std::uint32_t shaderRegister,
-	    std::uint32_t registerSpace,
-	    D3D12_SHADER_VISIBILITY visibility);
+	std::uint32_t AddShaderResourceView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
 
-	std::uint32_t AddUnorderedAccessView(
-	    std::uint32_t shaderRegister,
-	    std::uint32_t registerSpace,
-	    D3D12_SHADER_VISIBILITY visibility);
+	std::uint32_t AddUnorderedAccessView(std::uint32_t shaderRegister, std::uint32_t registerSpace, D3D12_SHADER_VISIBILITY visibility);
 
 	std::uint32_t AddDescriptorTable(
 	    D3D12_DESCRIPTOR_RANGE_TYPE rangeType,

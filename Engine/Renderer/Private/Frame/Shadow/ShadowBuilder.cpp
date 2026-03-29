@@ -11,10 +11,10 @@
 using namespace DirectX;
 
 ShadowBuildResult ShadowBuilder::Build(
-	const CameraSnapshot& mainCamera,
-	const XMFLOAT3& lightDirection,
-	float cascadeNearZ,
-	float cascadeFarZ) const noexcept
+    const CameraSnapshot& mainCamera,
+    const XMFLOAT3& lightDirection,
+    float cascadeNearZ,
+    float cascadeFarZ) const noexcept
 {
 	ShadowBuildResult result{};
 	result.shadow.ShadowMapSize = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution);
@@ -22,12 +22,15 @@ ShadowBuildResult ShadowBuilder::Build(
 	result.shadow.NormalBias = RenderConfig::Shadows::NormalBias;
 	result.shadow.CascadeFarDepth = cascadeFarZ;
 	result.viewport = D3D12_VIEWPORT{
-	    0.0f, 0.0f,
+	    0.0f,
+	    0.0f,
 	    static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
 	    static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
-	    0.0f, 1.0f};
+	    0.0f,
+	    1.0f};
 	result.scissorRect = D3D12_RECT{
-	    0, 0,
+	    0,
+	    0,
 	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution),
 	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution)};
 
@@ -35,7 +38,7 @@ ShadowBuildResult ShadowBuilder::Build(
 	const float nearZ = std::clamp(cascadeNearZ, mainCamera.nearZ, shadowDistance);
 	const float farZ = std::clamp(cascadeFarZ, nearZ + 0.001f, shadowDistance);
 	const float cascadeRadius = farZ;
-	(void)nearZ;
+	(void) nearZ;
 	result.cameraData = BuildLightCameraForSphere(mainCamera.position, cascadeRadius, lightDirection);
 	result.shadow.ViewProjMTX = result.cameraData.ViewProjMTX;
 
@@ -43,9 +46,9 @@ ShadowBuildResult ShadowBuilder::Build(
 }
 
 PerViewCameraConstantBufferData ShadowBuilder::BuildLightCameraForSphere(
-	const XMFLOAT3& sphereCenter,
-	float sphereRadius,
-	const XMFLOAT3& lightDirection) noexcept
+    const XMFLOAT3& sphereCenter,
+    float sphereRadius,
+    const XMFLOAT3& lightDirection) noexcept
 {
 	const XMVECTOR center = XMLoadFloat3(&sphereCenter);
 
@@ -63,13 +66,8 @@ PerViewCameraConstantBufferData ShadowBuilder::BuildLightCameraForSphere(
 
 	const float nearZ = std::max(0.1f, lightPadding);
 	const float farZ = (sphereRadius * 2.0f) + lightPadding;
-	XMMATRIX lightProjection = DepthConvention::CreateOrthographicOffCenterLH(
-	    -sphereRadius,
-	    sphereRadius,
-	    -sphereRadius,
-	    sphereRadius,
-	    nearZ,
-	    farZ);
+	XMMATRIX lightProjection =
+	    DepthConvention::CreateOrthographicOffCenterLH(-sphereRadius, sphereRadius, -sphereRadius, sphereRadius, nearZ, farZ);
 
 	const float shadowMapSize = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution);
 	XMMATRIX lightViewProjection = XMMatrixMultiply(lightView, lightProjection);

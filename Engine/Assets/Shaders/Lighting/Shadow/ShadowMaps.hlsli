@@ -24,4 +24,4 @@ namespace Shadow
 	{
 		return GatherShadowDepth(uv, GetShadowMapIndex(lightIndex, cascadeIndex), offset);
 	}
-}
+}  // namespace Shadow

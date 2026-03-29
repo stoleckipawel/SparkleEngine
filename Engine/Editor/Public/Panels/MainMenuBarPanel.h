@@ -26,7 +26,12 @@ class MainMenuBarPanel final
 	void BuildFileMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;
 	void BuildWindowControls() noexcept;
-	bool DrawTitleBarButton(const char* id, const ImVec2& size, const ImVec4& baseColor, const ImVec4& hoveredColor, const ImVec4& activeColor) noexcept;
+	bool DrawTitleBarButton(
+	    const char* id,
+	    const ImVec2& size,
+	    const ImVec4& baseColor,
+	    const ImVec4& hoveredColor,
+	    const ImVec4& activeColor) noexcept;
 	void DrawMinimizeIcon() const noexcept;
 	void DrawMaximizeIcon() const noexcept;
 	void DrawCloseIcon() const noexcept;

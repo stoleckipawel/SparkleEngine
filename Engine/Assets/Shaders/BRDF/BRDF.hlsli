@@ -28,20 +28,13 @@ namespace BRDF
 			const float3 F = Fresnel::EvaluateDirect(sd.VoH, F0);
 
 			outSpecular = Specular::EvaluateDirect(sd, roughness, F);
-			
+
 			const float3 kD = (1.0f - F) * (1.0f - metallic);
 			outDiffuse = Diffuse::EvaluateDirect(albedo, roughness, sd) * kD;
 
 			outSubsurface = Subsurface::EvaluateDirect(albedo, subsurfaceColor, roughness, subsurfaceStrength, sd) * (1.0f - metallic);
 		}
-	}
-
-
-
-
-
-
-
+	}  // namespace Direct
 
 
 	namespace Indirect
@@ -58,7 +51,6 @@ namespace BRDF
 		    out float3 outDiffuse,
 		    out float3 outSpecular)
 		{
-
 			const float3 F = Fresnel::EvaluateIndirect(NoV, F0, roughness);
 
 
@@ -72,6 +64,6 @@ namespace BRDF
 			outDiffuse *= Occlusion::MultibounceAO(ambientOcclusion, albedo);
 			outSpecular *= Occlusion::SpecularOcclusion(NoV, ambientOcclusion, roughness);
 		}
-	}
+	}  // namespace Indirect
 
-}
+}  // namespace BRDF

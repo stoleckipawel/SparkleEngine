@@ -11,12 +11,7 @@ D3D12RootSignature::D3D12RootSignature(D3D12Rhi& rhi, const RootSignatureDesc& d
 void D3D12RootSignature::Create(const RootSignatureDesc& desc)
 {
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
-	rootSignatureDesc.Init(
-	    desc.ParameterCount,
-	    desc.Parameters,
-	    desc.StaticSamplerCount,
-	    desc.StaticSamplers,
-	    desc.Flags);
+	rootSignatureDesc.Init(desc.ParameterCount, desc.Parameters, desc.StaticSamplerCount, desc.StaticSamplers, desc.Flags);
 
 	ID3DBlob* signature = nullptr;
 	ID3DBlob* error = nullptr;

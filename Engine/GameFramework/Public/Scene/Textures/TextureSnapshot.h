@@ -11,8 +11,5 @@ struct SPARKLE_ENGINE_API TextureSnapshot
 
 	bool HasTextures() const noexcept { return !texturePaths.empty(); }
 
-	void Reset() noexcept
-	{
-		texturePaths.clear();
-	}
+	void Reset() noexcept { texturePaths.clear(); }
 };

@@ -5,18 +5,13 @@
 #include <string>
 #include <vector>
 
-template <typename TParameters>
-class TypedPassParameterInstance final : public TParameters
+template <typename TParameters> class TypedPassParameterInstance final : public TParameters
 {
   public:
 	using Parameters = TParameters;
 	using Metadata = ShaderParameterStructMetadata<TParameters>;
 
-	explicit TypedPassParameterInstance(const Metadata& metadata) :
-		m_metadata(&metadata),
-		m_parameterSet(metadata.GetLayout())
-	{
-	}
+	explicit TypedPassParameterInstance(const Metadata& metadata) : m_metadata(&metadata), m_parameterSet(metadata.GetLayout()) {}
 
 	TParameters& GetFields() noexcept
 	{
@@ -24,10 +19,7 @@ class TypedPassParameterInstance final : public TParameters
 		return static_cast<TParameters&>(*this);
 	}
 
-	const TParameters& GetFields() const noexcept
-	{
-		return static_cast<const TParameters&>(*this);
-	}
+	const TParameters& GetFields() const noexcept { return static_cast<const TParameters&>(*this); }
 
 	TParameters* operator->() noexcept
 	{
@@ -35,10 +27,7 @@ class TypedPassParameterInstance final : public TParameters
 		return &static_cast<TParameters&>(*this);
 	}
 
-	const TParameters* operator->() const noexcept
-	{
-		return &static_cast<const TParameters&>(*this);
-	}
+	const TParameters* operator->() const noexcept { return &static_cast<const TParameters&>(*this); }
 
 	TParameters& operator*() noexcept
 	{
@@ -46,20 +35,11 @@ class TypedPassParameterInstance final : public TParameters
 		return static_cast<TParameters&>(*this);
 	}
 
-	const TParameters& operator*() const noexcept
-	{
-		return static_cast<const TParameters&>(*this);
-	}
+	const TParameters& operator*() const noexcept { return static_cast<const TParameters&>(*this); }
 
-	bool Sync() const
-	{
-		return SyncIfNeeded();
-	}
+	bool Sync() const { return SyncIfNeeded(); }
 
-	bool HasAllRequiredBindings() const
-	{
-		return SyncIfNeeded();
-	}
+	bool HasAllRequiredBindings() const { return SyncIfNeeded(); }
 
 	const std::vector<std::string>& GetMissingBindings() const
 	{

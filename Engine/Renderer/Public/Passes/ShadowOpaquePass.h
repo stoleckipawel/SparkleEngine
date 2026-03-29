@@ -48,14 +48,14 @@ class ShadowOpaquePass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderSourceDefinition DescribeShadowViewVertexShader() noexcept;
 	static ShaderSourceDefinition DescribeShadowViewPixelShader() noexcept;
-	static void Execute(
-	    RenderGraphPassContext& context,
-	    ParameterInstance& parameters,
-	    std::size_t lightIndex);
+	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex);
 
   private:
 	static void PrepareTargets(RenderGraphPassContext& context, const Parameters& parameters);
-	static void PreparePassParameters(ParameterInstance& parameters, const RenderViewContext& viewContext, const RenderPassContext& renderPassContext);
+	static void PreparePassParameters(
+	    ParameterInstance& parameters,
+	    const RenderViewContext& viewContext,
+	    const RenderPassContext& renderPassContext);
 	static void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
 	static void BindPassResources(
 	    const FrameGraph& frameGraph,

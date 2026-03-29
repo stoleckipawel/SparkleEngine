@@ -39,10 +39,6 @@
 #endif
 
 
-
-
-
-
 #define BRDF_SO_NONE 0
 #define BRDF_SO_LAGARDE 1
 #define BRDF_SO_LAGARDE_APPROX 2
@@ -50,10 +46,6 @@
 #ifndef BRDF_SO_MODEL
 	#define BRDF_SO_MODEL BRDF_SO_NONE
 #endif
-
-
-
-
 
 
 #define BRDF_MULTIBOUNCE_AO_NONE 0

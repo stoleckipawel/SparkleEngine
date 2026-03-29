@@ -37,33 +37,33 @@ struct ComputeDispatchDesc
 SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept;
 SPARKLE_RENDERER_API void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderSourceDefinition(
-	const ShaderSourceDefinition& sourceDefinition,
-	ShaderStage expectedStage,
-	const char* passName,
-	const char* shaderLabel) noexcept;
+    const ShaderSourceDefinition& sourceDefinition,
+    ShaderStage expectedStage,
+    const char* passName,
+    const char* shaderLabel) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
-	const PassParameterLayout& layout,
-	ShaderPassKind passKind,
-	const char* passName) noexcept;
+    const PassParameterLayout& layout,
+    ShaderPassKind passKind,
+    const char* passName) noexcept;
 SPARKLE_RENDERER_API void BindComputeShaderPass(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	D3D12DescriptorHeapManager* descriptorHeapManager,
-	const D3D12BindingLayout& bindingLayout,
-	const D3D12PipelineState& pipelineState,
-	const PassParameterSet& parameterSet) noexcept;
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    D3D12DescriptorHeapManager* descriptorHeapManager,
+    const D3D12BindingLayout& bindingLayout,
+    const D3D12PipelineState& pipelineState,
+    const PassParameterSet& parameterSet) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	D3D12DescriptorHeapManager* descriptorHeapManager,
-	const D3D12BindingLayout& bindingLayout,
-	const D3D12PipelineState& pipelineState,
-	const PassParameterSet& parameterSet,
-	const char* const* bindingNames = nullptr,
-	std::uint32_t bindingNameCount = 0,
-	const D3D12PassBindingOverrides* overrides = nullptr) noexcept;
-    
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    D3D12DescriptorHeapManager* descriptorHeapManager,
+    const D3D12BindingLayout& bindingLayout,
+    const D3D12PipelineState& pipelineState,
+    const PassParameterSet& parameterSet,
+    const char* const* bindingNames = nullptr,
+    std::uint32_t bindingNameCount = 0,
+    const D3D12PassBindingOverrides* overrides = nullptr) noexcept;
+
 SPARKLE_RENDERER_API void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 
 class SPARKLE_RENDERER_API ShaderPass
@@ -75,28 +75,29 @@ class SPARKLE_RENDERER_API ShaderPass
 	virtual ShaderPassKind GetPassKind() const noexcept = 0;
 
   protected:
-	template <typename T>
-	struct AlwaysFalse : std::false_type
-	{};
+	template <typename T> struct AlwaysFalse : std::false_type
+	{
+	};
 
-	template <typename T>
-	struct RemoveCvRef
+	template <typename T> struct RemoveCvRef
 	{
 		using Type = typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 	};
 
-	template <typename T, typename = void>
-	struct HasPassParameterSetAccessor : std::false_type
-	{};
+	template <typename T, typename = void> struct HasPassParameterSetAccessor : std::false_type
+	{
+	};
 
 	template <typename T>
 	struct HasPassParameterSetAccessor<T, std::void_t<decltype(std::declval<const T&>().GetPassParameterSet())>> : std::true_type
-	{};
-
-	template <typename TParameterBindings>
-	static const PassParameterSet& GetPassParameterSet(const TParameterBindings& parameters) noexcept
 	{
-		return GetPassParameterSetImpl(parameters, typename std::is_same<typename RemoveCvRef<TParameterBindings>::Type, PassParameterSet>::type{});
+	};
+
+	template <typename TParameterBindings> static const PassParameterSet& GetPassParameterSet(const TParameterBindings& parameters) noexcept
+	{
+		return GetPassParameterSetImpl(
+		    parameters,
+		    typename std::is_same<typename RemoveCvRef<TParameterBindings>::Type, PassParameterSet>::type{});
 	}
 
 	template <typename TParameterBindings>
@@ -236,24 +237,20 @@ class SPARKLE_RENDERER_API ShaderPass
 		static_assert(
 		    AlwaysFalse<TParameterBindings>::value,
 		    "Shader pass parameters must expose GetPassParameterSet() or be PassParameterSet.");
-	#if defined(_MSC_VER)
+#if defined(_MSC_VER)
 		__assume(false);
-	#else
+#else
 		__builtin_unreachable();
-	#endif
+#endif
 	}
 };
 
-template <typename TParameters>
-class ComputeShaderPass : public ShaderPass
+template <typename TParameters> class ComputeShaderPass : public ShaderPass
 {
   public:
 	using Parameters = TParameters;
 
-	ShaderPassKind GetPassKind() const noexcept final
-	{
-		return ShaderPassKind::Compute;
-	}
+	ShaderPassKind GetPassKind() const noexcept final { return ShaderPassKind::Compute; }
 
 	template <typename TParameterBindings>
 	static bool Setup(PassBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
@@ -282,22 +279,15 @@ class ComputeShaderPass : public ShaderPass
 		return true;
 	}
 
-	void Dispatch(CommandContext& cmd, const ComputeDispatchDesc& dispatch) const noexcept
-	{
-		DispatchComputeShaderPass(cmd, dispatch);
-	}
+	void Dispatch(CommandContext& cmd, const ComputeDispatchDesc& dispatch) const noexcept { DispatchComputeShaderPass(cmd, dispatch); }
 };
 
-template <typename TParameters>
-class RasterShaderPass : public ShaderPass
+template <typename TParameters> class RasterShaderPass : public ShaderPass
 {
   public:
 	using Parameters = TParameters;
 
-	ShaderPassKind GetPassKind() const noexcept final
-	{
-		return ShaderPassKind::Raster;
-	}
+	ShaderPassKind GetPassKind() const noexcept final { return ShaderPassKind::Raster; }
 
 	template <typename TParameterBindings>
 	static bool Setup(PassBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
@@ -336,7 +326,5 @@ class RasterShaderPass : public ShaderPass
 		return true;
 	}
 
-	virtual void Draw(
-	    RenderGraphPassContext& context,
-	    const Parameters& parameters) = 0;
+	virtual void Draw(RenderGraphPassContext& context, const Parameters& parameters) = 0;
 };

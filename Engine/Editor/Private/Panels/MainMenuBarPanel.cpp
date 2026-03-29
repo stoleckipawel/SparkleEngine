@@ -15,7 +15,7 @@ namespace
 	constexpr ImVec4 kButtonBase{0.14f, 0.14f, 0.16f, 1.0f};
 	constexpr ImVec4 kButtonHovered{0.22f, 0.22f, 0.25f, 1.0f};
 	constexpr ImVec4 kButtonActive{0.30f, 0.30f, 0.34f, 1.0f};
-} // namespace
+}  // namespace
 
 MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) noexcept
 {
@@ -24,11 +24,11 @@ MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) n
 }
 
 bool MainMenuBarPanel::DrawTitleBarButton(
-	const char* id,
-	const ImVec2& size,
-	const ImVec4& baseColor,
-	const ImVec4& hoveredColor,
-	const ImVec4& activeColor) noexcept
+    const char* id,
+    const ImVec2& size,
+    const ImVec4& baseColor,
+    const ImVec4& hoveredColor,
+    const ImVec4& activeColor) noexcept
 {
 	ImGui::PushStyleColor(ImGuiCol_Button, baseColor);
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
@@ -167,24 +167,14 @@ void MainMenuBarPanel::BuildWindowControls() noexcept
 	}
 
 	ImGui::SameLine(0.0f, style.ItemSpacing.x);
-	if (DrawTitleBarButton(
-	        "##MinimizeWindow",
-	        ImVec2(buttonWidth, buttonHeight),
-	        kButtonBase,
-	        kButtonHovered,
-	        kButtonActive))
+	if (DrawTitleBarButton("##MinimizeWindow", ImVec2(buttonWidth, buttonHeight), kButtonBase, kButtonHovered, kButtonActive))
 	{
 		m_window->Minimize();
 	}
 	DrawMinimizeIcon();
 
 	ImGui::SameLine(0.0f, style.ItemSpacing.x);
-	if (DrawTitleBarButton(
-	        "##ToggleMaximizeWindow",
-	        ImVec2(buttonWidth, buttonHeight),
-	        kButtonBase,
-	        kButtonHovered,
-	        kButtonActive))
+	if (DrawTitleBarButton("##ToggleMaximizeWindow", ImVec2(buttonWidth, buttonHeight), kButtonBase, kButtonHovered, kButtonActive))
 	{
 		m_window->ToggleMaximizeRestore();
 	}

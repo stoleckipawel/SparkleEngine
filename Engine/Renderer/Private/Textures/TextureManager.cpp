@@ -193,8 +193,8 @@ const D3D12Texture* TextureManager::GetSceneTexture(const std::filesystem::path&
 }
 
 const D3D12Texture* TextureManager::ResolveTextureOrDefault(
-	const std::optional<std::filesystem::path>& texturePath,
-	DefaultTexture fallbackType) const
+    const std::optional<std::filesystem::path>& texturePath,
+    DefaultTexture fallbackType) const
 {
 	if (texturePath)
 	{

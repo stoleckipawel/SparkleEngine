@@ -34,7 +34,7 @@ namespace
 		assert(false);
 		return false;
 	}
-}
+}  // namespace
 
 void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept
 {
@@ -50,10 +50,10 @@ void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& d
 }
 
 bool ValidateShaderSourceDefinition(
-	const ShaderSourceDefinition& sourceDefinition,
-	ShaderStage expectedStage,
-	const char* passName,
-	const char* shaderLabel) noexcept
+    const ShaderSourceDefinition& sourceDefinition,
+    ShaderStage expectedStage,
+    const char* passName,
+    const char* shaderLabel) noexcept
 {
 	if (!sourceDefinition.IsValid())
 	{
@@ -86,10 +86,7 @@ bool ValidateShaderSourceDefinition(
 	return true;
 }
 
-bool ValidateShaderPassLayout(
-	const PassParameterLayout& layout,
-	ShaderPassKind passKind,
-	const char* passName) noexcept
+bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind passKind, const char* passName) noexcept
 {
 	for (const PassParameterDesc& parameter : layout.GetParameters())
 	{
@@ -134,12 +131,12 @@ bool ValidateShaderPassLayout(
 }
 
 void BindComputeShaderPass(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	D3D12DescriptorHeapManager* descriptorHeapManager,
-	const D3D12BindingLayout& bindingLayout,
-	const D3D12PipelineState& pipelineState,
-	const PassParameterSet& parameterSet) noexcept
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    D3D12DescriptorHeapManager* descriptorHeapManager,
+    const D3D12BindingLayout& bindingLayout,
+    const D3D12PipelineState& pipelineState,
+    const PassParameterSet& parameterSet) noexcept
 {
 	if (descriptorHeapManager != nullptr)
 	{
@@ -151,15 +148,15 @@ void BindComputeShaderPass(
 }
 
 void BindRasterShaderPass(
-	CommandContext& cmd,
-	const FrameGraph& frameGraph,
-	D3D12DescriptorHeapManager* descriptorHeapManager,
-	const D3D12BindingLayout& bindingLayout,
-	const D3D12PipelineState& pipelineState,
-	const PassParameterSet& parameterSet,
-	const char* const* bindingNames,
-	std::uint32_t bindingNameCount,
-	const D3D12PassBindingOverrides* overrides) noexcept
+    CommandContext& cmd,
+    const FrameGraph& frameGraph,
+    D3D12DescriptorHeapManager* descriptorHeapManager,
+    const D3D12BindingLayout& bindingLayout,
+    const D3D12PipelineState& pipelineState,
+    const PassParameterSet& parameterSet,
+    const char* const* bindingNames,
+    std::uint32_t bindingNameCount,
+    const D3D12PassBindingOverrides* overrides) noexcept
 {
 	if (descriptorHeapManager != nullptr)
 	{

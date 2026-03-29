@@ -46,10 +46,7 @@ ShaderSourceDefinition ShadowOpaquePass::DescribeShadowViewPixelShader() noexcep
 	return ShaderSourceDefinition::FromAsset("Passes/Shadow/ShadowDepthPS.hlsl", "main", ShaderStage::Pixel);
 }
 
-void ShadowOpaquePass::Execute(
-	RenderGraphPassContext& context,
-	ParameterInstance& parameters,
-	std::size_t lightIndex)
+void ShadowOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex)
 {
 	if (lightIndex >= context.Frame.shadowViewCount)
 	{
@@ -65,9 +62,7 @@ void ShadowOpaquePass::Execute(
 	DrawMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
 }
 
-void ShadowOpaquePass::PrepareTargets(
-	RenderGraphPassContext& context,
-	const ShadowOpaquePass::Parameters& parameters)
+void ShadowOpaquePass::PrepareTargets(RenderGraphPassContext& context, const ShadowOpaquePass::Parameters& parameters)
 {
 	context.Graph.BindRenderTarget(context.Commands, parameters.ShadowColor[0], parameters.ShadowDepth[0]);
 	context.Graph.ClearRenderTarget(context.Commands, parameters.ShadowColor[0]);
@@ -75,9 +70,9 @@ void ShadowOpaquePass::PrepareTargets(
 }
 
 void ShadowOpaquePass::PreparePassParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
 	parameters->PerView = viewContext.perViewData;
@@ -103,12 +98,12 @@ void ShadowOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewCo
 }
 
 void ShadowOpaquePass::BindPassResources(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const ParameterInstance& parameters,
-	const ShadowOpaquePassRuntime& runtime,
-	const RenderPassContext& renderPassContext,
-	D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
+    const FrameGraph& frameGraph,
+    CommandContext& cmd,
+    const ParameterInstance& parameters,
+    const ShadowOpaquePassRuntime& runtime,
+    const RenderPassContext& renderPassContext,
+    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
 {
 	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
 	D3D12PassBindingOverrides overrides;
@@ -128,11 +123,11 @@ void ShadowOpaquePass::BindPassResources(
 }
 
 void ShadowOpaquePass::DrawMeshes(
-	const FrameGraph& frameGraph,
-	CommandContext& cmd,
-	const RenderSceneData& sceneData,
-	const ShadowOpaquePassRuntime& runtime,
-	const RenderPassContext& renderPassContext)
+    const FrameGraph& frameGraph,
+    CommandContext& cmd,
+    const RenderSceneData& sceneData,
+    const ShadowOpaquePassRuntime& runtime,
+    const RenderPassContext& renderPassContext)
 {
 	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
 

@@ -150,11 +150,8 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				}
 
 				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildTextureUnorderedAccessViewDesc(metadata.textureDesc);
-				m_rhi->GetDevice()->CreateUnorderedAccessView(
-				    access.externalResource,
-				    nullptr,
-				    &uavDesc,
-				    access.unorderedAccessView.GetCPU());
+				m_rhi->GetDevice()
+				    ->CreateUnorderedAccessView(access.externalResource, nullptr, &uavDesc, access.unorderedAccessView.GetCPU());
 			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::DepthStencil)
@@ -194,11 +191,8 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				}
 
 				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildBufferUnorderedAccessViewDesc(metadata.bufferDesc);
-				m_rhi->GetDevice()->CreateUnorderedAccessView(
-				    access.externalResource,
-				    nullptr,
-				    &uavDesc,
-				    access.unorderedAccessView.GetCPU());
+				m_rhi->GetDevice()
+				    ->CreateUnorderedAccessView(access.externalResource, nullptr, &uavDesc, access.unorderedAccessView.GetCPU());
 			}
 		}
 	}

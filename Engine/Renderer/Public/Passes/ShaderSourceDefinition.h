@@ -10,10 +10,7 @@ class ShaderSourceDefinition final
   public:
 	ShaderSourceDefinition() = default;
 
-	static ShaderSourceDefinition FromAsset(
-	    std::filesystem::path sourcePath,
-	    std::string entryPoint,
-	    ShaderStage stage)
+	static ShaderSourceDefinition FromAsset(std::filesystem::path sourcePath, std::string entryPoint, ShaderStage stage)
 	{
 		ShaderSourceDefinition definition;
 		definition.m_sourcePath = std::move(sourcePath);
@@ -22,30 +19,15 @@ class ShaderSourceDefinition final
 		return definition;
 	}
 
-	const std::filesystem::path& GetSourcePath() const noexcept
-	{
-		return m_sourcePath;
-	}
+	const std::filesystem::path& GetSourcePath() const noexcept { return m_sourcePath; }
 
-	const std::string& GetEntryPoint() const noexcept
-	{
-		return m_entryPoint;
-	}
+	const std::string& GetEntryPoint() const noexcept { return m_entryPoint; }
 
-	ShaderStage GetStage() const noexcept
-	{
-		return m_stage;
-	}
+	ShaderStage GetStage() const noexcept { return m_stage; }
 
-	bool IsValid() const noexcept
-	{
-		return !m_sourcePath.empty() && !m_entryPoint.empty() && m_stage != ShaderStage::Count;
-	}
+	bool IsValid() const noexcept { return !m_sourcePath.empty() && !m_entryPoint.empty() && m_stage != ShaderStage::Count; }
 
-	explicit operator bool() const noexcept
-	{
-		return IsValid();
-	}
+	explicit operator bool() const noexcept { return IsValid(); }
 
   private:
 	std::filesystem::path m_sourcePath;

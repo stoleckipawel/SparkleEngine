@@ -11,8 +11,5 @@ struct SPARKLE_ENGINE_API MaterialSnapshot
 
 	bool HasMaterials() const noexcept { return !materialDescs.empty(); }
 
-	void Reset() noexcept
-	{
-		materialDescs.clear();
-	}
+	void Reset() noexcept { materialDescs.clear(); }
 };

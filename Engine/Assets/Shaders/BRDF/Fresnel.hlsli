@@ -27,5 +27,5 @@ namespace BRDF
 		{
 			return SchlickRoughness(NoV, F0, roughness);
 		}
-	}
-}
+	}  // namespace Fresnel
+}  // namespace BRDF

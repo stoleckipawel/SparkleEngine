@@ -14,7 +14,7 @@
 #include <imgui.h>
 
 SceneOutlinerPanel::SceneOutlinerPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
-	m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
+    m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -31,16 +31,24 @@ bool SceneOutlinerPanel::MatchesFilter(const std::string& filter, const char* la
 	}
 
 	std::string normalizedLabel(label);
-	std::transform(normalizedLabel.begin(), normalizedLabel.end(), normalizedLabel.begin(), [](unsigned char value)
-	{
-		return static_cast<char>(std::tolower(value));
-	});
+	std::transform(
+	    normalizedLabel.begin(),
+	    normalizedLabel.end(),
+	    normalizedLabel.begin(),
+	    [](unsigned char value)
+	    {
+		    return static_cast<char>(std::tolower(value));
+	    });
 
 	std::string normalizedFilter = filter;
-	std::transform(normalizedFilter.begin(), normalizedFilter.end(), normalizedFilter.begin(), [](unsigned char value)
-	{
-		return static_cast<char>(std::tolower(value));
-	});
+	std::transform(
+	    normalizedFilter.begin(),
+	    normalizedFilter.end(),
+	    normalizedFilter.begin(),
+	    [](unsigned char value)
+	    {
+		    return static_cast<char>(std::tolower(value));
+	    });
 
 	return normalizedLabel.find(normalizedFilter) != std::string::npos;
 }
@@ -58,7 +66,7 @@ void SceneOutlinerPanel::SetTopInset(float topInsetPixels) noexcept
 void SceneOutlinerPanel::BuildToolbar() noexcept
 {
 	char filterBuffer[128] = {};
-	const std::size_t copyLength = (std::min)(m_filterText.size(), sizeof(filterBuffer) - 1);
+	const std::size_t copyLength = (std::min) (m_filterText.size(), sizeof(filterBuffer) - 1);
 	if (copyLength > 0)
 	{
 		std::copy_n(m_filterText.data(), copyLength, filterBuffer);
@@ -71,7 +79,8 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 	}
 
 	ImGui::Spacing();
-	const std::string objectCount = std::to_string(1 + m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount());
+	const std::string objectCount =
+	    std::to_string(1 + m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount());
 	UiUtil::DrawKeyValueRow("Objects", objectCount.c_str());
 }
 
@@ -84,15 +93,15 @@ bool SceneOutlinerPanel::IsSelectionValid() const noexcept
 
 	switch (m_selection->type)
 	{
-	case SceneObjectType::Camera:
-		return true;
-	case SceneObjectType::DirectionalLight:
-		return m_selection->index < m_gameScene->GetLighting().GetDirectionalLightCount();
-	case SceneObjectType::Mesh:
-		return m_selection->index < m_gameScene->GetMeshes().GetMeshCount();
-	case SceneObjectType::None:
-	default:
-		return false;
+		case SceneObjectType::Camera:
+			return true;
+		case SceneObjectType::DirectionalLight:
+			return m_selection->index < m_gameScene->GetLighting().GetDirectionalLightCount();
+		case SceneObjectType::Mesh:
+			return m_selection->index < m_gameScene->GetMeshes().GetMeshCount();
+		case SceneObjectType::None:
+		default:
+			return false;
 	}
 }
 

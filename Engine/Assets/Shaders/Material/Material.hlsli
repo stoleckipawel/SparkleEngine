@@ -26,7 +26,6 @@ namespace Material
 
 	float RemapDielectricF0(float EncodedF0)
 	{
-
 		return saturate(EncodedF0) * 0.08f;
 	}
 
@@ -55,7 +54,6 @@ namespace Material
 
 	struct Properties
 	{
-
 		float3 BaseColor;
 		float3 NormalTangent;
 		float3 NormalWorld;
@@ -181,4 +179,4 @@ namespace Material
 		props.Emissive = SampleEmissive(Input.TexCoord);
 		return props;
 	}
-}
+}  // namespace Material

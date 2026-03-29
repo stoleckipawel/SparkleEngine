@@ -536,11 +536,8 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			{
 				allocation.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildUnorderedAccessViewDesc(transientPlan);
-				m_rhi->GetDevice()->CreateUnorderedAccessView(
-				    allocation.buffer.Get(),
-				    nullptr,
-				    &uavDesc,
-				    allocation.unorderedAccessView.GetCPU());
+				m_rhi->GetDevice()
+				    ->CreateUnorderedAccessView(allocation.buffer.Get(), nullptr, &uavDesc, allocation.unorderedAccessView.GetCPU());
 				allocation.hasUnorderedAccessView = true;
 			}
 			break;

@@ -14,8 +14,6 @@ cbuffer PerFrameConstantBufferData : register(b0)
 
 	float2 ViewportSize;
 	float2 ViewportSizeInv;
-
-
 };
 
 cbuffer PerViewConstantBufferData : register(b1)
@@ -28,8 +26,6 @@ cbuffer PerObjectVSConstantBufferData : register(b2)
 {
 	row_major float4x4 WorldMTX;
 	row_major float3x3 WorldInvTransposeMTX;
-
-
 };
 
 cbuffer PerObjectPSConstantBufferData : register(b3)

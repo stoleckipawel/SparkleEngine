@@ -3,19 +3,19 @@
 
 namespace
 {
-template <typename... TPasses>
-void InitializeRuntimeStorage(D3D12Rhi& rhi, std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
-{
-	(RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(rhi, std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage)), ...);
-}
+	template <typename... TPasses>
+	void InitializeRuntimeStorage(D3D12Rhi& rhi, std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
+	{
+		(RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(rhi, std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage)), ...);
+	}
 
-template <typename... TPasses>
-RenderPassRuntimeRegistry BuildRuntimeRegistry(const std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
-{
-	return RenderPassRuntimeRegistry(
-	    RenderPassPipelineTraits<TPasses>::MakeRuntime(std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage))...);
-}
-}
+	template <typename... TPasses>
+	RenderPassRuntimeRegistry BuildRuntimeRegistry(const std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
+	{
+		return RenderPassRuntimeRegistry(
+		    RenderPassPipelineTraits<TPasses>::MakeRuntime(std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage))...);
+	}
+}  // namespace
 
 PipelineStateManager::PipelineStateManager(D3D12Rhi& rhi) noexcept : m_rhi(&rhi)
 {

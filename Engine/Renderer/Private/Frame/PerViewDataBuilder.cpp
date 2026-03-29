@@ -6,8 +6,8 @@
 #include "Renderer/Public/Camera/RenderCamera.h"
 
 PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
-	const PerViewCameraConstantBufferData& cameraData,
-	const PerViewLightingConstantBufferData& lightingData) noexcept
+    const PerViewCameraConstantBufferData& cameraData,
+    const PerViewLightingConstantBufferData& lightingData) noexcept
 {
 	PerViewConstantBufferData perViewData{};
 	perViewData.Camera = cameraData;
@@ -16,10 +16,10 @@ PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
 }
 
 RenderViewContext PerViewDataBuilder::BuildView(
-	const PerViewCameraConstantBufferData& cameraData,
-	const PerViewLightingConstantBufferData& lightingData,
-	const D3D12_VIEWPORT& viewport,
-	const D3D12_RECT& scissorRect) const noexcept
+    const PerViewCameraConstantBufferData& cameraData,
+    const PerViewLightingConstantBufferData& lightingData,
+    const D3D12_VIEWPORT& viewport,
+    const D3D12_RECT& scissorRect) const noexcept
 {
 	RenderViewContext viewContext{};
 	viewContext.perViewData = BuildPerViewData(cameraData, lightingData);
@@ -30,8 +30,8 @@ RenderViewContext PerViewDataBuilder::BuildView(
 
 RenderViewContext PerViewDataBuilder::BuildMainView(
     const RenderCamera& renderCamera,
-	    const PerViewLightingConstantBufferData& lightingData,
-	const D3D12SwapChain& swapChain) const noexcept
+    const PerViewLightingConstantBufferData& lightingData,
+    const D3D12SwapChain& swapChain) const noexcept
 {
 	return BuildView(
 	    renderCamera.GetCameraConstantBufferData(),

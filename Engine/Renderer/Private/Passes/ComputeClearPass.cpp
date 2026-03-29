@@ -35,10 +35,10 @@ ShaderSourceDefinition ComputeClearPass::DescribeShader() noexcept
 }
 
 void ComputeClearPass::Execute(
-	RenderGraphPassContext& context,
-	const ComputeClearPass::ParameterInstance& parameters,
-	std::uint32_t width,
-	std::uint32_t height) noexcept
+    RenderGraphPassContext& context,
+    const ComputeClearPass::ParameterInstance& parameters,
+    std::uint32_t width,
+    std::uint32_t height) noexcept
 {
 	const ComputeDispatchDesc dispatch{
 	    ComputeUtils::DivideRoundUp(width, ThreadGroupSizeX),

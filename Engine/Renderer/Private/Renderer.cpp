@@ -55,14 +55,7 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
 
-	m_editor = std::make_unique<UI>(
-	    *m_timer,
-	    &levelManager,
-	    m_gameScene,
-	    *m_rhi,
-	    *m_window,
-	    *m_descriptorHeapManager,
-	    *m_swapChain);
+	m_editor = std::make_unique<UI>(*m_timer, &levelManager, m_gameScene, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -88,7 +81,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	m_shadowFrameBuilder = std::make_unique<ShadowFrameBuilder>();
 
 	m_renderCamera = std::make_unique<RenderCamera>();
-	
+
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
 	    *m_gameScene,
@@ -102,12 +95,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
-	const FrameGraphDependencies dependencies{
-	    *m_rhi,
-	    *m_window,
-	    *m_swapChain,
-	    *m_descriptorHeapManager,
-	    *m_editor};
+	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager, *m_editor};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	m_frameGraph = frameGraphBuilder.Build();
@@ -115,7 +103,11 @@ void Renderer::InitializeFrameGraph() noexcept
 
 void Renderer::BindWindowResizeEvent() noexcept
 {
-	auto handle = m_window->OnResized.Add([this]() { m_bResizePending = true; });
+	auto handle = m_window->OnResized.Add(
+	    [this]()
+	    {
+		    m_bResizePending = true;
+	    });
 	m_resizeHandle = ScopedEventHandle(m_window->OnResized, handle);
 }
 

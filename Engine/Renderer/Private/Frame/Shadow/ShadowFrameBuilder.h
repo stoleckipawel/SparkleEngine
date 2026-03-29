@@ -50,5 +50,6 @@ class ShadowFrameBuilder final
 		float farZ = 0.0f;
 	};
 
-	static std::array<CascadeRange, ShadowFrameBuildResult::MaxShadowCascades> BuildCascadeRanges(const CameraSnapshot& mainCamera) noexcept;
+	static std::array<CascadeRange, ShadowFrameBuildResult::MaxShadowCascades> BuildCascadeRanges(
+	    const CameraSnapshot& mainCamera) noexcept;
 };

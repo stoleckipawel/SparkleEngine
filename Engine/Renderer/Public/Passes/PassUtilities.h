@@ -101,7 +101,11 @@ namespace PassUtilities
 		    passName);
 	}
 
-	inline void AddCopyTexturePass(FrameGraph& frameGraph, std::string_view name, TextureHandle destinationHandle, TextureHandle sourceHandle)
+	inline void AddCopyTexturePass(
+	    FrameGraph& frameGraph,
+	    std::string_view name,
+	    TextureHandle destinationHandle,
+	    TextureHandle sourceHandle)
 	{
 		frameGraph.AddPass(
 		    name,
@@ -111,8 +115,7 @@ namespace PassUtilities
 			    builder.Read(sourceHandle, ResourceUsage::CopySource);
 			    builder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
-		    [destinationHandle, sourceHandle](
-		        RenderGraphPassContext& context)
+		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
 		    {
 			    context.Graph.CopyTexture(context.Commands, destinationHandle, sourceHandle);
 		    });
@@ -128,10 +131,9 @@ namespace PassUtilities
 			    builder.Read(sourceHandle, ResourceUsage::CopySource);
 			    builder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
-		    [destinationHandle, sourceHandle](
-		        RenderGraphPassContext& context)
+		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
 		    {
 			    context.Graph.CopyBuffer(context.Commands, destinationHandle, sourceHandle);
 		    });
 	}
-}
+}  // namespace PassUtilities

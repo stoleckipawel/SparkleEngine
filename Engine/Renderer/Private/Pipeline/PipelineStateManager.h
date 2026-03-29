@@ -23,8 +23,7 @@ class PipelineStateManager final
 
 	const RenderPassRuntimeRegistry& GetRuntimeRegistry() const noexcept;
 
-	template <typename TPass>
-	const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
 		assert(m_runtimeRegistry.has_value());
 		return m_runtimeRegistry->GetPassRuntime<TPass>();
@@ -36,14 +35,12 @@ class PipelineStateManager final
 	    RenderPassRuntimeStorage<ShadowOpaquePass>,
 	    RenderPassRuntimeStorage<ComputeClearPass>>;
 
-	template <typename TPass>
-	RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() noexcept
+	template <typename TPass> RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() noexcept
 	{
 		return std::get<RenderPassRuntimeStorage<TPass>>(m_runtimeStorage);
 	}
 
-	template <typename TPass>
-	const RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() const noexcept
+	template <typename TPass> const RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() const noexcept
 	{
 		return std::get<RenderPassRuntimeStorage<TPass>>(m_runtimeStorage);
 	}

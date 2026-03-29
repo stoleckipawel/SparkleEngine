@@ -52,8 +52,7 @@ inline PassParameterLayout BuildForwardOpaqueBindingLayout()
 	return layout;
 }
 
-template <typename TPass>
-struct RenderPassRuntimeStorage
+template <typename TPass> struct RenderPassRuntimeStorage
 {
 	std::unique_ptr<D3D12BindingLayout> BindingLayout;
 	std::unique_ptr<D3D12PipelineState> PipelineState;
@@ -70,22 +69,14 @@ inline ShaderCompileResult CompileRenderPassShader(const ShaderSourceDefinition&
 	    sourceDefinition.GetEntryPoint());
 }
 
-template <typename TPass>
-struct RenderPassPipelineTraits;
+template <typename TPass> struct RenderPassPipelineTraits;
 
-template <>
-struct RenderPassPipelineTraits<ForwardOpaquePass>
+template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
 {
 	using RuntimeType = RenderPassRuntimeTraits<ForwardOpaquePass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ForwardOpaquePass>;
-	static constexpr std::array<const char*, 7> StableBindingNames = {
-	    "PerFrame",
-	    "PerView",
-	    "ShadowMap0",
-	    "ShadowMap1",
-	    "ShadowMap2",
-	    "ShadowMap3",
-	    "SamplerTable"};
+	static constexpr std::array<const char*, 7> StableBindingNames =
+	    {"PerFrame", "PerView", "ShadowMap0", "ShadowMap1", "ShadowMap2", "ShadowMap3", "SamplerTable"};
 	static constexpr std::array<const char*, 3> DrawBindingNames = {"PerObjectVS", "PerObjectPS", "MaterialTextures"};
 
 	static void CreateRuntimeStorage(D3D12Rhi& rhi, StorageType& storage)
@@ -118,8 +109,7 @@ struct RenderPassPipelineTraits<ForwardOpaquePass>
 	}
 };
 
-template <>
-struct RenderPassPipelineTraits<ShadowOpaquePass>
+template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
 {
 	using RuntimeType = RenderPassRuntimeTraits<ShadowOpaquePass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ShadowOpaquePass>;
@@ -165,8 +155,7 @@ struct RenderPassPipelineTraits<ShadowOpaquePass>
 	}
 };
 
-template <>
-struct RenderPassPipelineTraits<ComputeClearPass>
+template <> struct RenderPassPipelineTraits<ComputeClearPass>
 {
 	using RuntimeType = RenderPassRuntimeTraits<ComputeClearPass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ComputeClearPass>;

@@ -36,7 +36,11 @@ class SPARKLE_RENDERER_API PassBuilder final
 	static ResourceUsage GetFrameGraphUsage(const PassParameterDesc& parameter) noexcept;
 	void DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 	void DeclareBufferBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
-	void DeclareResourceHandle(ResourceHandle handle, ResourceUsage usage, const PassParameterDesc& parameter, std::uint32_t arrayIndex) noexcept;
+	void DeclareResourceHandle(
+	    ResourceHandle handle,
+	    ResourceUsage usage,
+	    const PassParameterDesc& parameter,
+	    std::uint32_t arrayIndex) noexcept;
 
 	FrameGraph* m_frameGraph = nullptr;
 };

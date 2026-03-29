@@ -12,8 +12,9 @@
 #include <cstddef>
 
 RenderSceneDataBuilder::RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache) noexcept :
-	m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache)
-{}
+    m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache)
+{
+}
 
 RenderSceneData RenderSceneDataBuilder::Build(const RenderSceneSnapshot& sceneSnapshot)
 {

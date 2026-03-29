@@ -10,4 +10,4 @@ namespace VS
 		float3 Normal : NORMAL;
 		float4 Tangent : TANGENT;
 	};
-}
+}  // namespace VS

@@ -81,12 +81,12 @@ class D3D12BindingLayoutCompilerImpl final
 
   private:
 	static void CompileUniformBinding(
-		D3D12RootSignatureBuilder& builder,
-		std::vector<D3D12CompiledBinding>& bindings,
-		const PassParameterDesc& parameter,
-		const D3D12BindingLayoutCompileDesc& desc,
-		std::uint32_t& cbvRegister,
-		D3D12_SHADER_VISIBILITY visibility)
+	    D3D12RootSignatureBuilder& builder,
+	    std::vector<D3D12CompiledBinding>& bindings,
+	    const PassParameterDesc& parameter,
+	    const D3D12BindingLayoutCompileDesc& desc,
+	    std::uint32_t& cbvRegister,
+	    D3D12_SHADER_VISIBILITY visibility)
 	{
 		assert(parameter.ValueSizeInBytes > 0);
 
@@ -125,19 +125,16 @@ class D3D12BindingLayoutCompilerImpl final
 	}
 
 	static void CompileDescriptorTableBinding(
-		D3D12RootSignatureBuilder& builder,
-		std::vector<D3D12CompiledBinding>& bindings,
-		const PassParameterDesc& parameter,
-		D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
-		D3D12CompiledBindingType bindingType,
-		std::uint32_t& nextShaderRegister,
-		D3D12_SHADER_VISIBILITY visibility)
+	    D3D12RootSignatureBuilder& builder,
+	    std::vector<D3D12CompiledBinding>& bindings,
+	    const PassParameterDesc& parameter,
+	    D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
+	    D3D12CompiledBindingType bindingType,
+	    std::uint32_t& nextShaderRegister,
+	    D3D12_SHADER_VISIBILITY visibility)
 	{
-		const std::uint32_t rootParameterIndex = builder.AddDescriptorTable(
-		    rangeType,
-		    GetDescriptorCount(parameter, rangeType),
-		    nextShaderRegister,
-		    visibility);
+		const std::uint32_t rootParameterIndex =
+		    builder.AddDescriptorTable(rangeType, GetDescriptorCount(parameter, rangeType), nextShaderRegister, visibility);
 		bindings.push_back(
 		    D3D12CompiledBinding{
 		        .Name = parameter.Name,
@@ -177,12 +174,10 @@ class D3D12BindingLayoutCompilerImpl final
 };
 
 D3D12BindingLayout::D3D12BindingLayout(
-	const PassParameterLayout& parameterLayout,
-	std::unique_ptr<D3D12RootSignature> rootSignature,
-	std::vector<D3D12CompiledBinding> bindings) noexcept :
-	m_parameterLayout(&parameterLayout),
-	m_rootSignature(std::move(rootSignature)),
-	m_bindings(std::move(bindings))
+    const PassParameterLayout& parameterLayout,
+    std::unique_ptr<D3D12RootSignature> rootSignature,
+    std::vector<D3D12CompiledBinding> bindings) noexcept :
+    m_parameterLayout(&parameterLayout), m_rootSignature(std::move(rootSignature)), m_bindings(std::move(bindings))
 {
 	assert(m_parameterLayout != nullptr);
 	assert(m_rootSignature != nullptr);

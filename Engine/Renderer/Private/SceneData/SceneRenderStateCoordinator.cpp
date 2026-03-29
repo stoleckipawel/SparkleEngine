@@ -17,14 +17,14 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     D3D12Rhi& rhi,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
-	RenderSceneSnapshot& sceneSnapshot,
+    RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
     m_gameScene(&gameScene),
     m_rhi(&rhi),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
-	m_sceneSnapshot(&sceneSnapshot),
+    m_sceneSnapshot(&sceneSnapshot),
     m_renderCamera(&renderCamera),
     m_materialCache(&materialCache)
 {

@@ -18,12 +18,12 @@ struct SceneObjectSelection final
 
 	static SceneObjectSelection None() noexcept { return {}; }
 	static SceneObjectSelection Camera() noexcept { return {SceneObjectType::Camera, 0}; }
-	static SceneObjectSelection DirectionalLight(std::size_t lightIndex) noexcept { return {SceneObjectType::DirectionalLight, lightIndex}; }
+	static SceneObjectSelection DirectionalLight(std::size_t lightIndex) noexcept
+	{
+		return {SceneObjectType::DirectionalLight, lightIndex};
+	}
 	static SceneObjectSelection Mesh(std::size_t meshIndex) noexcept { return {SceneObjectType::Mesh, meshIndex}; }
 
 	bool IsNone() const noexcept { return type == SceneObjectType::None; }
-	bool operator==(const SceneObjectSelection& other) const noexcept
-	{
-		return type == other.type && index == other.index;
-	}
+	bool operator==(const SceneObjectSelection& other) const noexcept { return type == other.type && index == other.index; }
 };

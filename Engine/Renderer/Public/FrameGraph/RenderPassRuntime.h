@@ -10,8 +10,7 @@ class ComputeClearPass;
 class ForwardOpaquePass;
 class ShadowOpaquePass;
 
-template <typename TPass>
-struct RenderPassRuntimeTraits;
+template <typename TPass> struct RenderPassRuntimeTraits;
 
 struct SPARKLE_RENDERER_API ForwardOpaquePassRuntime
 {
@@ -31,35 +30,30 @@ struct SPARKLE_RENDERER_API ComputeClearPassRuntime
 	D3D12PipelineState& PipelineState;
 };
 
-template <>
-struct RenderPassRuntimeTraits<ForwardOpaquePass>
+template <> struct RenderPassRuntimeTraits<ForwardOpaquePass>
 {
 	using RuntimeType = ForwardOpaquePassRuntime;
 };
 
-template <>
-struct RenderPassRuntimeTraits<ShadowOpaquePass>
+template <> struct RenderPassRuntimeTraits<ShadowOpaquePass>
 {
 	using RuntimeType = ShadowOpaquePassRuntime;
 };
 
-template <>
-struct RenderPassRuntimeTraits<ComputeClearPass>
+template <> struct RenderPassRuntimeTraits<ComputeClearPass>
 {
 	using RuntimeType = ComputeClearPassRuntime;
 };
 
-template <typename... TPasses>
-class TypedRenderPassRuntimeRegistry
+template <typename... TPasses> class TypedRenderPassRuntimeRegistry
 {
   public:
 	explicit TypedRenderPassRuntimeRegistry(typename RenderPassRuntimeTraits<TPasses>::RuntimeType... runtimes) noexcept :
-		m_runtimes(runtimes...)
+	    m_runtimes(runtimes...)
 	{
 	}
 
-	template <typename TPass>
-	const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
 		return std::get<typename RenderPassRuntimeTraits<TPass>::RuntimeType>(m_runtimes);
 	}

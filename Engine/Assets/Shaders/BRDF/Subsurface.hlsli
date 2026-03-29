@@ -40,5 +40,5 @@ namespace BRDF
 			return float3(0.0f, 0.0f, 0.0f);
 #endif
 		}
-	}
-}
+	}  // namespace Subsurface
+}  // namespace BRDF

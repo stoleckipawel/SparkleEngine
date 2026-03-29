@@ -61,7 +61,10 @@ class ForwardOpaquePass final
 
   private:
 	static void PrepareTargets(RenderGraphPassContext& context, const Parameters& parameters);
-	static void PreparePassParameters(ParameterInstance& parameters, const RenderViewContext& viewContext, const RenderPassContext& renderPassContext);
+	static void PreparePassParameters(
+	    ParameterInstance& parameters,
+	    const RenderViewContext& viewContext,
+	    const RenderPassContext& renderPassContext);
 	static void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
 	static void BindPassResources(
 	    const FrameGraph& frameGraph,
