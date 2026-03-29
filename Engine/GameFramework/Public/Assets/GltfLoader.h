@@ -57,10 +57,12 @@ class SPARKLE_ENGINE_API GltfLoader final
 	static void ReadIndices(const cgltf_accessor* accessor, std::vector<std::uint32_t>& outIndices);
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
 	static std::filesystem::path ResolveImagePath(const cgltf_image* image, const std::filesystem::path& gltfDirectory);
+
 	static void ExtractMaterials(
 	    const cgltf_data* data,
 	    const std::filesystem::path& gltfDirectory,
 	    std::vector<MaterialDesc>& outMaterials);
+		
 	static std::uint32_t ResolveMaterialIndex(const cgltf_primitive& primitive, const cgltf_data* data);
 	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);
 };
