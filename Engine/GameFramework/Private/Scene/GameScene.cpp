@@ -108,24 +108,21 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 		return false;
 	}
 
-	const std::size_t materialOffset = m_materials.GetMaterialCount();
-
 	if (!result.materials.empty())
 	{
 		m_textures.AppendMaterialTextureReferences(result.materials);
-		m_materials.AppendMaterials(std::move(result.materials));
 	}
+
+	const std::uint32_t materialBaseId = m_materials.AppendMaterials(std::move(result.materials));
 
 	std::vector<std::unique_ptr<Mesh>> importedMeshes;
 	importedMeshes.reserve(result.meshes.size());
 	for (std::size_t i = 0; i < result.meshes.size(); ++i)
 	{
 		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]), result.transforms[i]);
-
-		if (i < result.materialIndices.size())
-		{
-			mesh->SetMaterialId(static_cast<uint32_t>(materialOffset) + result.materialIndices[i]);
-		}
+		const std::uint32_t localMaterialId =
+		    i < result.materialIndices.size() ? result.materialIndices[i] : 0;
+		mesh->SetMaterialId(materialBaseId + localMaterialId);
 
 		importedMeshes.push_back(std::move(mesh));
 	}

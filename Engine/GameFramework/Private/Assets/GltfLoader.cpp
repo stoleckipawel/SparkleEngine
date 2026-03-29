@@ -65,18 +65,6 @@ void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr)
 	}
 }
 
-void GltfLoader::EnsureDefaultMaterial(LoadResult& result)
-{
-	if (!result.materials.empty())
-	{
-		return;
-	}
-
-	MaterialDesc defaultMat;
-	defaultMat.name = "Default";
-	result.materials.push_back(std::move(defaultMat));
-}
-
 std::size_t GltfLoader::CountTotalPrimitives(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
@@ -369,8 +357,6 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 	ValidateGltf(data, pathStr);
 
 	ExtractMaterials(data, gltfDirectory, result.materials);
-
-	EnsureDefaultMaterial(result);
 
 	const std::size_t totalPrimitives = CountTotalPrimitives(data);
 

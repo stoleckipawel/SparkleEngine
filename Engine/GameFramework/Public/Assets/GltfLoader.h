@@ -50,7 +50,6 @@ class SPARKLE_ENGINE_API GltfLoader final
 	static bool ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, LoadResult& result);
 	static bool LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, LoadResult& result);
 	static void ValidateGltf(cgltf_data* data, const std::string& pathStr);
-	static void EnsureDefaultMaterial(LoadResult& result);
 	static std::size_t CountTotalPrimitives(const cgltf_data* data);
 	static void ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& result);
 	template <typename T> static T ReadAccessorElement(const cgltf_accessor* accessor, std::size_t index);
