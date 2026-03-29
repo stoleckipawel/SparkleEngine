@@ -112,12 +112,8 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 
 	if (!result.materials.empty())
 	{
+		m_textures.AppendMaterialTextureReferences(result.materials);
 		m_materials.AppendMaterials(std::move(result.materials));
-	}
-
-	if (!result.texturePaths.empty())
-	{
-		m_textures.AppendTexturePaths(result.texturePaths);
 	}
 
 	std::vector<std::unique_ptr<Mesh>> importedMeshes;

@@ -197,8 +197,7 @@ std::filesystem::path GltfLoader::ResolveImagePath(const cgltf_image* image, con
 void GltfLoader::ExtractMaterials(
     const cgltf_data* data,
     const std::filesystem::path& gltfDirectory,
-    std::vector<MaterialDesc>& outMaterials,
-    std::vector<std::filesystem::path>& outTexturePaths)
+	std::vector<MaterialDesc>& outMaterials)
 {
 	outMaterials.reserve(data->materials_count);
 
@@ -225,14 +224,6 @@ void GltfLoader::ExtractMaterials(
 				break;
 		}
 
-		auto addUniqueTexturePath = [&outTexturePaths](const std::filesystem::path& path)
-		{
-			if (std::ranges::find(outTexturePaths, path) == outTexturePaths.end())
-			{
-				outTexturePaths.push_back(path);
-			}
-		};
-
 		if (mat.has_pbr_metallic_roughness)
 		{
 			const auto& pbr = mat.pbr_metallic_roughness;
@@ -249,7 +240,6 @@ void GltfLoader::ExtractMaterials(
 				if (!path.empty())
 				{
 					desc.albedoTexture = path;
-					addUniqueTexturePath(path);
 				}
 			}
 
@@ -259,7 +249,6 @@ void GltfLoader::ExtractMaterials(
 				if (!path.empty())
 				{
 					desc.metallicRoughnessTexture = path;
-					addUniqueTexturePath(path);
 				}
 			}
 		}
@@ -270,7 +259,6 @@ void GltfLoader::ExtractMaterials(
 			if (!path.empty())
 			{
 				desc.normalTexture = path;
-				addUniqueTexturePath(path);
 			}
 		}
 
@@ -280,7 +268,6 @@ void GltfLoader::ExtractMaterials(
 			if (!path.empty())
 			{
 				desc.occlusionTexture = path;
-				addUniqueTexturePath(path);
 			}
 		}
 
@@ -290,7 +277,6 @@ void GltfLoader::ExtractMaterials(
 			if (!path.empty())
 			{
 				desc.emissiveTexture = path;
-				addUniqueTexturePath(path);
 			}
 		}
 
@@ -382,7 +368,7 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 
 	ValidateGltf(data, pathStr);
 
-	ExtractMaterials(data, gltfDirectory, result.materials, result.texturePaths);
+	ExtractMaterials(data, gltfDirectory, result.materials);
 
 	EnsureDefaultMaterial(result);
 
@@ -398,11 +384,10 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 
 	LOG_INFO(
 	    std::format(
-	        "GltfLoader: Loaded '{}' — {} meshes, {} materials, {} textures",
+	        "GltfLoader: Loaded '{}' — {} meshes, {} materials",
 	        filePath.filename().string(),
 	        result.meshes.size(),
-	        result.materials.size(),
-	        result.texturePaths.size()));
+	        result.materials.size()));
 
 	return result;
 }
