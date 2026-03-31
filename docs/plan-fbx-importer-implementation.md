@@ -11,12 +11,7 @@ The target is not "parse FBX directly into renderer data." The target is:
 - existing `GameScene` integration path
 - renderer continuing to consume scene snapshots instead of importer-owned data
 
-This follows the same broad shape used in NVIDIA and AMD sample engines:
-
-- NVIDIA-style pattern: importer builds engine scene data first, renderer consumes engine scene state later
-- AMD-style pattern: format loader builds an API-agnostic scene representation first, GPU upload and pass-specific rendering happen after that
-
-For Sparkle, the AMD `GLTFCommon -> GPU upload` split and the NVIDIA `scene/import -> runtime scene ownership -> renderer extraction` split are the right ideas to copy. The exact implementation should stay Sparkle-native.
+This follows the MiniEngine offline converter pattern: a tool imports source formats offline and writes engine-native cooked content. The runtime engine only loads cooked data.
 
 ## Recommendation
 
@@ -39,34 +34,24 @@ Reasoning:
 
 If Bistro import becomes a product requirement and Assimp proves insufficient, revisit a specialized FBX path later. Do not start there.
 
-## Importer Pattern Comparison
+## Chosen Pattern: Offline Converter to Engine-Native Cooked Asset
 
-The table below compares the main importer patterns used in game engines and sample engines. This is the decision surface Sparkle should evaluate against, not just "FBX SDK vs Assimp."
+This is the MiniEngine pattern: a standalone tool imports FBX or other source formats offline using Assimp, normalizes into engine-owned structures, and writes cooked engine-native assets. The runtime engine only loads cooked data.
 
-| Pattern | Common engine examples | Core idea | Strengths | Weaknesses | Best fit | Worst fit | Sparkle assessment |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Direct runtime source import | Small tools, prototypes, editor-only test paths | Engine loads source files like FBX or glTF directly at runtime | Fast to start, minimal toolchain, easy iteration for early experiments | Slow loads, large runtime dependencies, weak reproducibility, importer bugs leak into runtime, hard to optimize or validate once | Prototype engine, debug-only import, very small scene scope | Production scene loading, large scenes, stable shipping pipeline | Not recommended as the long-term Sparkle architecture |
-| Runtime importer with engine-common scene result | Many sample engines in simplified form, Sparkle current glTF path moving toward this | Format parser converts source data into engine-owned scene import data, then runtime scene consumes that | Cleaner than direct renderer import, format parsing separated from runtime scene logic, good stepping stone | Still keeps source-format cost in runtime, harder to cook/optimize, source parser remains a shipping dependency | Mid-stage engine, tools still immature, small-to-medium content scale | Mature shipping asset pipeline with many scenes and platforms | Good transitional step for Sparkle before offline cooking |
-| Offline converter to engine-native cooked asset | MiniEngine pattern, many custom engines | Tool imports FBX or other formats offline and writes engine-native cooked content | Fast runtime load, stable reproducible data, importer isolated to tools, easier optimization and validation, best separation of concerns | More tooling work up front, requires asset build path, iteration loop needs tool support | Medium-to-large projects, Bistro-scale scenes, long-term maintainable engine pipeline | Very early prototype where tool investment is premature | Strongest long-term target for Sparkle |
-| Dual-format pipeline with canonical intermediate scene result | Modern engines with importer front-ends and shared scene build steps | Multiple source importers normalize into one engine-common intermediate before cooking or runtime scene creation | Reuse across glTF/FBX/USD/etc., importer code stays format-local, strong validation boundary | Requires up-front schema design, more abstraction work before visible results | Engines expecting multiple content formats | Tiny engine that only ever loads one simple format | Best architectural target once Sparkle adds FBX |
-| Third-party library in runtime, thin wrapper only | Simple Assimp integrations, game jam engines | Use Assimp or similar almost directly, little normalization | Fastest path to "it loads" across many formats | Data model mismatch, unstable semantics across exporters, hard to control quality, third-party types tend to leak everywhere | Throwaway utilities, early experiments | Serious engine architecture, predictable materials and transforms | Acceptable only for experimentation, not as a stable Sparkle boundary |
-| Third-party library in offline tool, private wrapper | MiniEngine ModelConverter, many custom pipelines | Use Assimp privately in tools, translate into engine-owned structures and write cooked assets | Keeps external dependency out of runtime, easier upgrades, strong ownership boundary | Requires converter tool and asset build steps | Best balance for engines growing beyond prototype | Overkill for a tiny one-week prototype | Very attractive for Sparkle if Bistro import becomes real scope |
-| Autodesk FBX SDK in offline conversion only | Proprietary studio pipelines, DCC-heavy content workflows | Use official FBX SDK in tools for maximum FBX fidelity, then convert to engine-native data | Best control over tricky FBX features, more faithful DCC transform/material interpretation | Licensing/distribution friction, more build complexity, still need translation into engine semantics | Studios with strong FBX dependency and controlled toolchain | Open-source-friendly runtime path, lightweight build setup | Possible fallback later, not a good first move |
-| Autodesk FBX SDK directly in runtime | Rare outside internal tools or highly specialized pipelines | Runtime directly parses FBX via official SDK | Maximum raw FBX access in shipped runtime | Heavy dependency, hard deployment story, poor runtime architecture, weak separation of authored vs runtime data | Almost never the best default | Sparkle current stage and scope | Do not do this |
-| JSON or text scene description plus imported asset references | Sample engines, editor-friendly pipelines, Sparkle current level desc file pattern | Level file stores scene-specific authored setup while mesh/material assets are imported separately | Human-readable, easy diff/merge, great for level-specific metadata, good with descs | Not sufficient alone for heavy mesh import, needs imported asset pipeline underneath | Level data, camera/light setup, asset references, debug workflows | Raw heavy mesh data or final cooked geometry storage | Good for level descs in Sparkle, not a substitute for FBX asset conversion |
-| Binary cooked package with reflection/editor source retained separately | Unreal-like production pattern in spirit | Editable source assets stay in editor/tool world, runtime loads cooked binary packages | Best runtime performance, scalable, platform-specific cooking possible | Highest tooling investment, harder to inspect without tools | Production engine at scale | Very early engine prototype | Long-term production direction, too early for Sparkle to fully build now |
+Strengths:
 
-## Pattern Arguments
+- fast runtime load, no source-format parsing at startup
+- stable reproducible data, importer isolated to tools
+- easier optimization and validation
+- best separation of concerns
+- keeps external dependency (Assimp) out of runtime
+- easier upgrades, strong ownership boundary
 
-The broad options above reduce to a smaller set of arguments that matter most for Sparkle.
+Tradeoffs:
 
-| Option | Arguments for | Arguments against | Sparkle fit now |
-| --- | --- | --- | --- |
-| Keep direct runtime import | Lowest initial implementation cost, useful for quick validation, easiest way to prove Bistro can be parsed at all | Locks source-format complexity into runtime, weak content validation boundary, makes renderer/runtime loading harder to stabilize | Acceptable only as a temporary proving step |
-| Add generic runtime importer boundary first | Cleans up current glTF path, makes FBX addition technically sane, preserves current desc and scene ownership model | Still leaves heavy import cost in runtime, does not by itself solve shipping-scale asset loading | Strong near-term step |
-| Build offline conversion pipeline | Mirrors MiniEngine's strongest pattern, isolates Assimp/FBX complexity, gives best long-term runtime behavior | Requires tool investment before visible user-facing wins | Best long-term answer |
-| Use Assimp first | Fastest realistic multi-format path, lower friction than FBX SDK, good enough for static-scene first pass | Material and transform fidelity can vary, not ideal for advanced FBX edge cases | Best first implementation choice |
-| Use Autodesk FBX SDK first | Better control over FBX-specific semantics, fewer Assimp interpretation surprises | Higher build, licensing, and maintenance cost, encourages over-committing to FBX too early | Not the best starting point |
+- more tooling work up front
+- requires asset build path
+- iteration loop needs tool support
 
 ## MiniEngine-Specific Takeaway
 
@@ -91,32 +76,6 @@ For Sparkle, the MiniEngine-inspired path should be:
 2. normalize glTF and FBX into that result
 3. add an offline converter when content scale justifies it
 4. keep `GameScene` and renderer consuming Sparkle-owned data only
-
-## Upstream Pattern To Follow
-
-### AMD-style pattern
-
-AMD Cauldron keeps file-format parsing in a common scene loader and keeps GPU upload and render-pass data construction in later layers.
-
-The important behavior to copy is:
-
-- common scene structures are API-agnostic
-- loader owns JSON or asset parsing concerns
-- renderer-side systems translate common scene data into GPU buffers, material tables, and pass data
-
-For Sparkle, that means FBX parsing should not allocate renderer objects or build render-pass structs.
-
-### NVIDIA-style pattern
-
-NVIDIA sample engines generally keep importer output in engine-owned scene types, then let runtime scene and renderer systems consume that stable representation.
-
-The important behavior to copy is:
-
-- importer creates engine-owned scene content
-- scene ownership stays in runtime scene systems
-- renderer reads snapshots or extracted scene data, not importer internals
-
-For Sparkle, that means the importer should not bypass `GameScene`, `SceneMaterials`, `SceneTextures`, or mesh snapshot capture.
 
 ## Current Sparkle Constraints
 
@@ -440,11 +399,11 @@ Bring FBX in only if the real goal is broader DCC interoperability.
 
 If the real goal is specifically Bistro, first check whether an offline conversion path to glTF or a Sparkle-native intermediate format is cheaper and more stable.
 
-For Sparkle's current state, the correct NVIDIA/AMD-style move is:
+For Sparkle's current state, the correct move is the MiniEngine pattern:
 
-- importer front-end stays format-specific
-- imported scene result becomes engine-common
-- runtime scene owns the loaded data
+- offline converter tool imports source formats using Assimp
+- converter writes engine-native cooked assets
+- runtime engine loads cooked data only
 - renderer remains downstream of runtime scene extraction
 
 That is the shape that keeps FBX from becoming a permanent architectural shortcut.
