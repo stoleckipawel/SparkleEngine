@@ -6,8 +6,8 @@
 #include "Scene/Mesh.h"
 #include "Scene/ImportedMesh.h"
 #include "Camera/CameraComponent.h"
-#include "Assets/GltfLoader.h"
 #include "Assets/SceneImportResult.h"
+#include "Assets/SceneImporter.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "Core/Public/Diagnostics/Log.h"
@@ -62,7 +62,7 @@ bool GameScene::LoadImportedMeshRequest(const ImportedMeshRequest& request, std:
 	auto resolved = Filesystem::ResolveAssetPath(request.assetPath, AssetType::Mesh);
 	if (resolved)
 	{
-		if (AppendResolvedGltf(*resolved))
+		if (AppendResolvedImportedAsset(*resolved))
 		{
 			return true;
 		}
@@ -95,18 +95,18 @@ bool GameScene::LoadGltf(const std::filesystem::path& assetPath)
 		return false;
 	}
 
-	return AppendResolvedGltf(*resolvedPath);
+	return AppendResolvedImportedAsset(*resolvedPath);
 }
 
-bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
+bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolvedPath)
 {
-	LOG_INFO("Scene: Loading glTF from " + resolvedPath.string());
+	LOG_INFO("Scene: Loading imported asset from " + resolvedPath.string());
 
-	SceneImportResult result = GltfLoader::Load(resolvedPath);
+	SceneImportResult result = SceneImporter::Load(resolvedPath);
 
 	if (!result.IsValid())
 	{
-		LOG_ERROR("Scene: Failed to load glTF — " + result.errorMessage);
+		LOG_ERROR("Scene: Failed to load imported asset — " + result.errorMessage);
 		return false;
 	}
 

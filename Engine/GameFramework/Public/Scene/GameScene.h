@@ -67,7 +67,7 @@ class SPARKLE_ENGINE_API GameScene final
   private:
 	bool LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage);
 	bool LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage);
-	bool AppendResolvedGltf(const std::filesystem::path& resolvedPath);
+	bool AppendResolvedImportedAsset(const std::filesystem::path& resolvedPath);
 	bool AppendImportedScene(SceneImportResult&& result);
 
 	SceneCamera m_sceneCamera;
