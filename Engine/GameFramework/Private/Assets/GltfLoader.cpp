@@ -17,7 +17,7 @@ GltfLoader::CgltfGuard::~CgltfGuard()
 	cgltf_free(ptr);
 }
 
-bool GltfLoader::ValidateInputPath(const std::filesystem::path& filePath, LoadResult& result)
+bool GltfLoader::ValidateInputPath(const std::filesystem::path& filePath, SceneImportResult& result)
 {
 	if (std::filesystem::exists(filePath))
 	{
@@ -29,7 +29,11 @@ bool GltfLoader::ValidateInputPath(const std::filesystem::path& filePath, LoadRe
 	return false;
 }
 
-bool GltfLoader::ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, LoadResult& result)
+bool GltfLoader::ParseGltfFile(
+	cgltf_options& options,
+	const std::string& pathStr,
+	cgltf_data*& outData,
+	SceneImportResult& result)
 {
 	cgltf_result parseResult = cgltf_parse_file(&options, pathStr.c_str(), &outData);
 	if (parseResult == cgltf_result_success)
@@ -42,7 +46,11 @@ bool GltfLoader::ParseGltfFile(cgltf_options& options, const std::string& pathSt
 	return false;
 }
 
-bool GltfLoader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, LoadResult& result)
+bool GltfLoader::LoadGltfBuffers(
+	cgltf_options& options,
+	cgltf_data* data,
+	const std::string& pathStr,
+	SceneImportResult& result)
 {
 	cgltf_result bufferResult = cgltf_load_buffers(&options, data, pathStr.c_str());
 	if (bufferResult == cgltf_result_success)
@@ -56,13 +64,15 @@ bool GltfLoader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const
 	return false;
 }
 
-
-void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr)
+void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr, SceneImportResult& result)
 {
 	cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
-		LOG_WARNING(std::format("GltfLoader: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
+		result.AddWarning(std::format(
+		    "GltfLoader: Validation warnings for '{}' (cgltf error {})",
+		    pathStr,
+		    static_cast<int>(validateResult)));
 	}
 }
 
@@ -80,7 +90,13 @@ std::size_t GltfLoader::CountTotalPrimitives(const cgltf_data* data)
 	return totalPrimitives;
 }
 
-void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& result)
+std::string GltfLoader::BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex)
+{
+	const std::string nodeName = node.name ? node.name : std::string("<unnamed-node>");
+	return std::format("node '{}' primitive {}", nodeName, primitiveIndex);
+}
+
+void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResult& result)
 {
 	for (cgltf_size n = 0; n < data->nodes_count; ++n)
 	{
@@ -95,15 +111,22 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& resu
 		for (cgltf_size p = 0; p < node.mesh->primitives_count; ++p)
 		{
 			const cgltf_primitive& primitive = node.mesh->primitives[p];
+			const std::string primitiveLabel = BuildPrimitiveLabel(node, p);
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
+				result.AddWarning(std::format(
+				    "GltfLoader: Skipping {} because only triangle primitives are supported",
+				    primitiveLabel));
 				continue;
 			}
 
 			MeshData meshData = ExtractPrimitive(primitive);
 			if (!meshData.IsValid())
 			{
+				result.AddWarning(std::format(
+				    "GltfLoader: Skipping {} because vertex or index data is incomplete",
+				    primitiveLabel));
 				continue;
 			}
 
@@ -325,9 +348,9 @@ MeshData GltfLoader::ExtractPrimitive(const cgltf_primitive& primitive)
 	return meshData;
 }
 
-GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
+SceneImportResult GltfLoader::Load(const std::filesystem::path& filePath)
 {
-	LoadResult result;
+	SceneImportResult result;
 
 	if (!ValidateInputPath(filePath, result))
 	{
@@ -352,15 +375,12 @@ GltfLoader::LoadResult GltfLoader::Load(const std::filesystem::path& filePath)
 		return result;
 	}
 
-	ValidateGltf(data, pathStr);
+	ValidateGltf(data, pathStr, result);
 
 	ExtractMaterials(data, gltfDirectory, result.materials);
 
 	const std::size_t totalPrimitives = CountTotalPrimitives(data);
-
-	result.meshes.reserve(totalPrimitives);
-	result.transforms.reserve(totalPrimitives);
-	result.materialOffsets.reserve(totalPrimitives);
+	result.Reserve(totalPrimitives);
 
 	ExtractMeshesFromNodes(data, result);
 

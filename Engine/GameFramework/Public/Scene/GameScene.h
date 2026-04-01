@@ -18,6 +18,7 @@
 class Mesh;
 class LevelAsset;
 struct ImportedMeshRequest;
+struct SceneImportResult;
 
 enum class GameSceneLoadStatus : std::uint8_t
 {
@@ -67,6 +68,7 @@ class SPARKLE_ENGINE_API GameScene final
 	bool LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage);
 	bool LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage);
 	bool AppendResolvedGltf(const std::filesystem::path& resolvedPath);
+	bool AppendImportedScene(SceneImportResult&& result);
 
 	SceneCamera m_sceneCamera;
 	SceneLighting m_lighting;

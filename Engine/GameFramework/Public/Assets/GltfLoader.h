@@ -1,9 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Assets/MaterialDesc.h"
-#include "GameFramework/Public/Scene/MeshData.h"
-#include "GameFramework/Public/Scene/Transform.h"
+#include "GameFramework/Public/Assets/SceneImportResult.h"
 
 #include <DirectXMath.h>
 #include <filesystem>
@@ -20,22 +18,7 @@ struct cgltf_primitive;
 class SPARKLE_ENGINE_API GltfLoader final
 {
   public:
-	struct LoadResult
-	{
-		std::vector<MeshData> meshes;
-		std::vector<MaterialDesc> materials;
-		std::vector<Transform> transforms;
-		std::vector<std::uint32_t> materialOffsets;
-
-		bool bSuccess = false;
-		std::string errorMessage;
-
-		bool IsValid() const noexcept { return bSuccess && !meshes.empty(); }
-		std::size_t GetMeshCount() const noexcept { return meshes.size(); }
-		std::size_t GetMaterialCount() const noexcept { return materials.size(); }
-	};
-
-	static LoadResult Load(const std::filesystem::path& filePath);
+	static SceneImportResult Load(const std::filesystem::path& filePath);
 
 	GltfLoader() = delete;
 	~GltfLoader() = delete;
@@ -47,12 +30,20 @@ class SPARKLE_ENGINE_API GltfLoader final
 		~CgltfGuard();
 	};
 
-	static bool ValidateInputPath(const std::filesystem::path& filePath, LoadResult& result);
-	static bool ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, LoadResult& result);
-	static bool LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, LoadResult& result);
-	static void ValidateGltf(cgltf_data* data, const std::string& pathStr);
+	static bool ValidateInputPath(const std::filesystem::path& filePath, SceneImportResult& result);
+	static bool ParseGltfFile(
+	    cgltf_options& options,
+	    const std::string& pathStr,
+	    cgltf_data*& outData,
+	    SceneImportResult& result);
+	static bool LoadGltfBuffers(
+	    cgltf_options& options,
+	    cgltf_data* data,
+	    const std::string& pathStr,
+	    SceneImportResult& result);
+	static void ValidateGltf(cgltf_data* data, const std::string& pathStr, SceneImportResult& result);
 	static std::size_t CountTotalPrimitives(const cgltf_data* data);
-	static void ExtractMeshesFromNodes(const cgltf_data* data, LoadResult& result);
+	static void ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResult& result);
 	template <typename T> static T ReadAccessorElement(const cgltf_accessor* accessor, std::size_t index);
 	static const cgltf_accessor* FindAttribute(const cgltf_primitive& primitive, int type);
 	static void ReadIndices(const cgltf_accessor* accessor, std::vector<std::uint32_t>& outIndices);
@@ -66,4 +57,5 @@ class SPARKLE_ENGINE_API GltfLoader final
 		
 	static std::uint32_t ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data);
 	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);
+	static std::string BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex);
 };

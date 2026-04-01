@@ -7,6 +7,7 @@
 #include "Scene/ImportedMesh.h"
 #include "Camera/CameraComponent.h"
 #include "Assets/GltfLoader.h"
+#include "Assets/SceneImportResult.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "Core/Public/Diagnostics/Log.h"
@@ -101,13 +102,24 @@ bool GameScene::AppendResolvedGltf(const std::filesystem::path& resolvedPath)
 {
 	LOG_INFO("Scene: Loading glTF from " + resolvedPath.string());
 
-	GltfLoader::LoadResult result = GltfLoader::Load(resolvedPath);
+	SceneImportResult result = GltfLoader::Load(resolvedPath);
 
 	if (!result.IsValid())
 	{
 		LOG_ERROR("Scene: Failed to load glTF — " + result.errorMessage);
 		return false;
 	}
+
+	for (const SceneImportWarning& warning : result.warnings)
+	{
+		LOG_WARNING("Scene: Import warning — " + warning.message);
+	}
+
+	return AppendImportedScene(std::move(result));
+}
+
+bool GameScene::AppendImportedScene(SceneImportResult&& result)
+{
 
 	if (!result.materials.empty())
 	{

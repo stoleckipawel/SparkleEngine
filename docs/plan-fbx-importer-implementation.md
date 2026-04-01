@@ -2,26 +2,40 @@
 
 ## Goal
 
-Add FBX scene import to Sparkle in a way that scales beyond a one-off Bistro bring-up.
+Reach the FBX pipeline end state defined in the architecture document, not merely "get FBX loading somehow."
 
-The target is not "parse FBX directly into renderer data." The target is:
+That final state is:
 
-- format-specific import front-end
-- engine-common scene import result
-- existing `GameScene` integration path
-- renderer continuing to consume scene snapshots instead of importer-owned data
+- source-format import lives outside the runtime engine
+- FBX and glTF both normalize into one engine-owned `SceneImportResult`
+- a standalone converter writes cooked Sparkle-native assets
+- runtime loads only cooked assets through `CookedAssetLoader`
+- `GameScene` remains the runtime owner of meshes, materials, and textures
+- renderer continues to consume scene snapshots and never depends on importer code
 
-This follows the MiniEngine offline converter pattern: a tool imports source formats offline and writes engine-native cooked content. The runtime engine only loads cooked data.
+The implementation plan should still allow a practical transitional phase where FBX and glTF import run inside the engine first. That temporary runtime path is acceptable because it accelerates bring-up and debugging, but every stage must be structured so it can be extracted cleanly into the final offline pipeline.
+
+## Planning Principle
+
+Use a two-step architecture strategy:
+
+1. first make importers work together through one runtime abstraction
+2. then move that abstraction and both importers behind a dedicated offline converter boundary
+
+This preserves momentum without locking Sparkle into a permanent raw-source runtime import path.
 
 ## Recommendation
 
-Do not add a raw FBX runtime path directly into `GameScene`.
+Do not build a one-off FBX path that writes directly into `GameScene` or renderer-facing structures.
 
-Implement FBX in three layers:
+Instead, build FBX in layers:
 
-1. `SceneImportResult` as a format-agnostic import result
-2. `FbxImporter` as one front-end that fills that result
-3. `GameScene` integration that consumes the shared result exactly once
+1. `SceneImportResult` as the importer-neutral contract
+2. `SceneImporter` dispatch as the shared entry point
+3. `FbxImporter` and `GltfImporter` as sibling front-ends
+4. `GameScene` integration that consumes the shared result
+5. later extraction of the same importer stack into `SparkleAssetConverter`
+6. final replacement of runtime source import with cooked asset loading
 
 Use Assimp first, not Autodesk FBX SDK.
 
@@ -29,57 +43,81 @@ Reasoning:
 
 - lower integration friction in CMake and CI
 - easier redistribution story for an open repo
-- allows FBX now, and gives OBJ and other fallback formats later if needed
-- keeps Sparkle from binding its asset pipeline to Autodesk-specific SDK behavior too early
+- enough capability to validate Sparkle's importer abstraction and Bistro-scale content
+- keeps Sparkle from committing to Autodesk-specific behavior before the pipeline shape is proven
 
-If Bistro import becomes a product requirement and Assimp proves insufficient, revisit a specialized FBX path later. Do not start there.
+If Bistro fidelity later proves Assimp-insufficient, revisit a specialized offline FBX path. Do not change the engine-side architecture to compensate.
 
-## Chosen Pattern: Offline Converter to Engine-Native Cooked Asset
+## Final Architecture Target
 
-This is the MiniEngine pattern: a standalone tool imports FBX or other source formats offline using Assimp, normalizes into engine-owned structures, and writes cooked engine-native assets. The runtime engine only loads cooked data.
+The end state must match [architecture-fbx-pipeline.md](c:/Users/stole/Documents/GitHub/SparkleEngine/docs/architecture-fbx-pipeline.md):
 
-Strengths:
+- `SparkleAssetConverter` owns raw-format import
+- `FbxImporter` and `GltfImporter` both live behind tool-side dispatch
+- `SceneImportResult` remains the shared normalized intermediate
+- `CookedAssetWriter` emits `.sasset`, `.smesh`, `.smat`, and `.stex`
+- runtime engine replaces raw import with `CookedAssetLoader`
+- `LevelDesc` points at cooked assets, not `.fbx` or `.gltf`
+- runtime no longer links Assimp or cgltf for scene import
 
-- fast runtime load, no source-format parsing at startup
-- stable reproducible data, importer isolated to tools
-- easier optimization and validation
-- best separation of concerns
-- keeps external dependency (Assimp) out of runtime
-- easier upgrades, strong ownership boundary
+Anything added during transitional runtime bring-up should be evaluated by one question:
 
-Tradeoffs:
+"Does this make extraction into the converter easier, or does it deepen runtime-only coupling?"
 
-- more tooling work up front
-- requires asset build path
-- iteration loop needs tool support
+If it deepens runtime-only coupling, it is the wrong move.
+
+## Transitional Development Strategy
+
+Starting by implementing `FbxImporter` and then introducing the abstraction is a valid execution order, as long as the concrete importer is immediately shaped around the final shared contract.
+
+That means the temporary runtime phase may include:
+
+- `FbxImporter` in engine code
+- `GltfImporter` or adapted `GltfLoader` in engine code
+- `SceneImporter::Load()` dispatch inside the engine
+- `GameScene` consuming `SceneImportResult`
+
+But it must not include:
+
+- FBX-specific data structures leaking into public engine APIs
+- direct importer mutation of renderer state
+- Assimp types escaping `.cpp` implementation files
+- runtime-only shortcuts that bypass `SceneImportResult`
+- content formats or material mappings that cannot be serialized into the final cooked pipeline
+
+This is the key distinction:
+
+- temporary runtime location is acceptable
+- temporary runtime architecture is not
 
 ## MiniEngine-Specific Takeaway
 
-MiniEngine is a useful reference specifically because it does not make Assimp the runtime model loader.
+MiniEngine is a useful reference because it treats format parsing as a conversion problem, not a runtime rendering-system responsibility.
 
-The pattern to mirror from MiniEngine is:
+The pattern to mirror is:
 
-1. import with Assimp in a separate tool boundary
+1. import in a separate boundary
 2. normalize into engine-owned model data
-3. optimize and convert there
+3. validate and optimize there
 4. load engine-native data at runtime
 
 The parts not to mirror literally are:
 
 - MiniEngine's exact `.mini` format
 - MiniEngine's exact mesh and material structs
-- MiniEngine's runtime renderer-specific model layout
+- MiniEngine's renderer-specific model layout
 
-For Sparkle, the MiniEngine-inspired path should be:
+For Sparkle, the correct interpretation is:
 
 1. define `SceneImportResult`
 2. normalize glTF and FBX into that result
-3. add an offline converter when content scale justifies it
-4. keep `GameScene` and renderer consuming Sparkle-owned data only
+3. use a temporary runtime importer phase only to prove correctness
+4. then extract that importer stack into the offline converter
+5. finish by removing runtime raw-format loading
 
 ## Current Sparkle Constraints
 
-Current Sparkle import is a small glTF-specific path:
+Current Sparkle import is still a small glTF-specific path:
 
 - `GltfLoader` parses one format directly
 - `LoadResult` is glTF-shaped, not importer-agnostic
@@ -93,9 +131,9 @@ Current limitations that matter for FBX:
 - material model is simple PBR-oriented `MaterialDesc`
 - no dedicated offline asset conversion pipeline yet
 
-Because of that, a direct FBX adapter inside the current `GltfLoader` style would be the wrong shape.
+These constraints justify a staged migration. They do not justify stopping at runtime source import.
 
-## Proposed Architecture
+## Proposed Architecture During Migration
 
 ### New import abstraction
 
@@ -113,18 +151,14 @@ Suggested contents:
 - optional warnings
 - optional source metadata
 
-This should replace the idea that `LoadResult` is glTF-specific engine API.
-
-`GltfLoader` can then become one producer of `SceneImportResult`.
-
-`FbxImporter` becomes another producer of `SceneImportResult`.
+This replaces the idea that `LoadResult` is a glTF-specific engine contract.
 
 ### New importer boundary
 
-Add an importer front-end boundary:
+Add a shared importer front-end boundary:
 
 - `SceneImporter`
-- `SceneImporterRegistry` or simple extension dispatch helper
+- simple extension dispatch first, registry only if later justified
 
 Responsibilities:
 
@@ -141,7 +175,7 @@ Non-responsibilities:
 
 ### Keep runtime ownership where it already belongs
 
-`GameScene` remains the owner of runtime scene content.
+`GameScene` remains the owner of runtime scene content throughout every stage.
 
 That means:
 
@@ -150,13 +184,13 @@ That means:
 - `SceneMeshes` still owns mesh components
 - renderer still extracts snapshots from the scene
 
-This avoids the common mistake of turning the importer into a second scene system.
+This avoids turning the importer into a second scene system during bring-up.
 
 ## Dependency Choice
 
-### Phase 1 dependency
+### Transitional dependency
 
-Use Assimp for FBX import.
+Use Assimp for FBX import during the runtime bring-up phase and keep it private to importer implementation files.
 
 Scope of Assimp usage:
 
@@ -166,36 +200,49 @@ Scope of Assimp usage:
 - texture path extraction
 - optional camera and light extraction if needed later
 
-Do not expose Assimp types outside the importer implementation.
+Do not expose Assimp types outside importer implementation.
 
-### Phase 2 fallback decision
+### Final dependency placement
 
-If Bistro material fidelity or transform fidelity is not acceptable through Assimp, evaluate one of these:
+Once `SparkleAssetConverter` exists, Assimp should move out of runtime engine linkage and live only in the tool.
 
-1. offline FBX-to-Sparkle conversion tool using Assimp plus custom post-processing
-2. Autodesk FBX SDK only for offline conversion, not runtime engine loading
-
-This keeps the runtime engine on a single canonical import result shape.
+cgltf should follow the same pattern when the glTF importer is extracted.
 
 ## Implementation Stages
 
-### Stage 0: Refactor current glTF path to the right abstraction
+### Stage 0: Lock the target and transitional rules
+
+Before code movement, align the plan around explicit target invariants:
+
+- `SceneImportResult` is the only importer output contract
+- `GameScene` stays the sole runtime scene owner
+- renderer remains unchanged
+- Assimp and cgltf stay private behind importer implementations
+- the runtime importer phase is temporary and will be deleted
+
+Exit criteria:
+
+- the team agrees the architecture destination is the offline converter document
+- temporary runtime stages are documented as migration steps, not the end state
+
+### Stage 1: Refactor current glTF path to the shared result
 
 Before adding FBX, do this cleanup:
 
 - introduce `SceneImportResult`
-- make `GltfLoader` fill `SceneImportResult`
-- move shared import helpers out of `GltfLoader` where reasonable
+- make `GltfLoader` or a renamed `GltfImporter` fill `SceneImportResult`
+- move shared import helpers out of glTF-specific code where reasonable
 - add importer warnings collection to the result
 
 Exit criteria:
 
 - `GameScene` no longer depends on a glTF-specific result type
 - the glTF path still works with no behavior regression
+- importer output is already shaped for later serialization
 
-### Stage 1: Introduce importer dispatch
+### Stage 2: Add runtime importer dispatch
 
-Add a small importer entry point:
+Add a small importer entry point inside the engine:
 
 - `SceneImporter::Load(path)`
 
@@ -204,11 +251,14 @@ Dispatch rules:
 - `.gltf` and `.glb` route to glTF importer
 - `.fbx` routes to FBX importer
 
+This is the stage where both formats can be imported through one runtime-only abstraction, which is the workflow you prefer for early productivity.
+
 Exit criteria:
 
-- `GameScene` calls a generic importer entry point instead of calling `GltfLoader` directly
+- `GameScene` calls a generic importer entry point instead of `GltfLoader` directly
+- both glTF and FBX now share the same runtime import contract
 
-### Stage 2: Add Assimp-backed `FbxImporter`
+### Stage 3: Add Assimp-backed `FbxImporter`
 
 Implement first-pass static import only.
 
@@ -217,7 +267,7 @@ Supported in MVP:
 - static meshes
 - node transforms
 - material names
-- diffuse/base color texture path extraction where available
+- diffuse or base-color texture path extraction where available
 - basic scalar material properties where mapping is reasonable
 - warning collection for unsupported features
 
@@ -234,68 +284,115 @@ Exit criteria:
 - simple FBX scenes load into `GameScene`
 - imported meshes appear with correct transforms
 - missing or unsupported material data degrades predictably
+- no FBX-specific types leak past the importer boundary
 
-### Stage 3: Material translation hardening
+### Stage 4: Runtime hardening on the shared abstraction
 
-FBX materials are not a clean PBR contract. Add a translation layer that maps source materials into Sparkle material policy.
-
-Rules:
-
-- prefer stable fallback mapping over trying to preserve every DCC feature
-- map to `MaterialDesc` only where semantics are well understood
-- report unsupported material features as warnings
-
-Recommended MVP mapping:
-
-- material name
-- base color or diffuse color
-- opacity if clearly provided
-- normal texture if clearly provided
-- emissive color and emissive texture if clearly provided
-
-Deferred features:
-
-- layered materials
-- specular workflow nuance
-- clearcoat, anisotropy, subsurface, transmission
-- DCC shader graph semantics
-
-Exit criteria:
-
-- Bistro-class scenes do not crash on materials
-- fallback materials look predictable even if not fully faithful
-
-### Stage 4: Scene scale hardening for Bistro
-
-This stage is about practical Bistro import, not just correctness.
+This stage is deliberately still runtime-based so correctness problems are easier to debug before extraction.
 
 Add:
 
+- material translation hardening into `MaterialDesc`
 - import timing and warning summary
 - duplicate texture-path normalization
 - material dedup review where safe
 - large-scene memory checks
 - explicit logging for unsupported nodes and material models
 
+This is also the point to validate Bistro-scale content using the same shared import result that will later be serialized.
+
 Exit criteria:
 
-- Bistro import completes
+- Bistro-scale scenes complete import through `SceneImporter`
 - scene loads without importer crashes
 - logs make unsupported content obvious
+- the shared result contains enough stable data to define cooked formats confidently
+
+### Stage 5: Define cooked asset formats from the proven shared result
+
+After the runtime abstraction is stable, define the engine-native cooked boundary:
+
+- `CookedAssetFormat` headers and versioning
+- `.sasset` for scene graph and references
+- `.smesh` for mesh data
+- `.smat` for material payloads
+- `.stex` for texture manifest and cooked texture references
+
+Do not invent cooked formats before the shared runtime importer has proven which data is actually required.
+
+Exit criteria:
+
+- cooked formats map directly from `SceneImportResult` plus validated derived data
+- format definitions support both glTF and FBX without format-specific exceptions
+
+### Stage 6: Extract the importer stack into `SparkleAssetConverter`
+
+Move the now-proven shared importer pipeline into a standalone tool:
+
+- move `FbxImporter` out of runtime engine code
+- move `GltfImporter` out of runtime engine code
+- keep `SceneImportResult` as the normalized intermediate, shared where appropriate
+- add `CookedAssetWriter`
+- add converter CLI entry point and output directory handling
+
+At this stage the tool may coexist briefly with the old runtime source-import path during migration, but the runtime path should already be treated as deprecated.
+
+Exit criteria:
+
+- the converter can import FBX and glTF and emit Sparkle cooked assets
+- Assimp no longer needs to be part of runtime scene loading
+- importer code has one home: the converter pipeline
+
+### Stage 7: Switch runtime to cooked asset loading
+
+Replace source-format runtime import with engine-native cooked loading:
+
+- add `CookedAssetLoader`
+- update `LevelDesc` and imported asset references to point at cooked assets
+- route scene creation through cooked asset loading instead of source parsing
+- keep `GameScene` ownership and renderer extraction unchanged
+
+Exit criteria:
+
+- runtime scene load no longer parses `.fbx`, `.gltf`, or `.glb`
+- `GameScene` populates from cooked assets only
+- renderer behavior remains unchanged
+
+### Stage 8: Remove transitional runtime source import
+
+Finish the migration completely:
+
+- remove or retire runtime-only source import entry points
+- remove raw-format loader calls from level loading
+- remove Assimp and cgltf from the runtime asset import path
+- keep only cooked-data loading in the shipped engine path
+
+Exit criteria:
+
+- the codebase matches the offline converter architecture precisely
+- raw import remains only in tooling
+- model baking and cooked-content generation are the canonical path forward
 
 ## Data Model Changes Needed In Sparkle
 
-### Required now
+### Required early
 
 - add `SceneImportResult`
 - add importer warning collection type
 - add generic scene importer dispatch
 
-### Strongly recommended soon after
+### Strongly recommended during runtime hardening
 
 - move mesh/material binding toward mesh sections or imported primitives instead of a single per-mesh binding
 - preserve imported node names for debugging and inspection
 - separate importer-local material offsets from runtime material handles explicitly in the shared result
+
+### Required for final pipeline completion
+
+- define cooked asset format structures and versioning
+- add `CookedAssetWriter`
+- add `CookedAssetLoader`
+- move level references from source assets to cooked assets
 
 ### Explicitly defer for MVP
 
@@ -305,21 +402,31 @@ Exit criteria:
 - authored light and camera import
 - full hierarchy editing support in editor
 
-## File Layout Proposal
+## File Layout Proposal By Phase
+
+### Transitional runtime phase
 
 Suggested additions under GameFramework:
 
 - `Public/Assets/SceneImportResult.h`
 - `Public/Assets/SceneImporter.h`
 - `Private/Assets/SceneImporter.cpp`
-- `Public/Assets/FbxImporter.h`
+- `Public/Assets/FbxImporter.h` only if a public declaration is unavoidable, otherwise keep private
 - `Private/Assets/FbxImporter.cpp`
 - `Private/Assets/ImportWarnings.h`
 
 Suggested dependency additions:
 
 - Assimp fetched in `Scripts/FetchDependencies.cmake`
-- linked privately in `Engine/GameFramework/CMakeLists.txt`
+- linked privately during the temporary runtime phase only
+
+### Final offline pipeline phase
+
+Target layout should converge to the architecture document:
+
+- `Tools/AssetConverter/` owns `SceneImporter`, `FbxImporter`, `GltfImporter`, `ImportValidator`, `TextureCooker`, and `CookedAssetWriter`
+- runtime owns `CookedAssetLoader` and cooked format definitions only
+- raw-format loaders leave the runtime engine
 
 ## Risks
 
@@ -332,6 +439,7 @@ Mitigation:
 - keep MVP material mapping intentionally narrow
 - warn aggressively for unsupported semantics
 - use default material fallback predictably
+- avoid encoding source-format quirks into runtime-facing material APIs
 
 ### Transform correctness risk
 
@@ -342,6 +450,7 @@ Mitigation:
 - normalize transforms inside the importer only
 - keep `Transform` as the engine-side output contract
 - validate against known reference scenes early
+- ensure the normalized transform representation is the same one serialized into cooked assets later
 
 ### Dependency and build risk
 
@@ -349,27 +458,29 @@ Assimp is much heavier than cgltf.
 
 Mitigation:
 
-- keep it private to GameFramework
-- wrap all third-party types in `.cpp` files only
-- avoid exposing Assimp headers in public Sparkle headers
+- keep it private to importer implementation files
+- keep all third-party types in `.cpp` files only
+- remove it from runtime linkage once converter extraction is done
 
 ### Architecture drift risk
 
-It is easy to let FBX import bypass the engine scene model because Bistro pressure will encourage shortcuts.
+The highest-risk failure mode is shipping the transitional runtime importer shape as if it were the finished pipeline.
 
 Mitigation:
 
 - require all importers to return `SceneImportResult`
-- keep `GameScene` as the only runtime scene owner
-- keep renderer extraction unchanged
+- require all importer improvements to remain serializable into cooked formats
+- schedule converter extraction and cooked loading as mandatory stages, not optional cleanup
+- declare runtime raw import deprecated as soon as the converter path exists
 
 ## Acceptance Criteria
 
-### Architecture acceptance
+### Transitional architecture acceptance
 
 - no renderer code depends on Assimp or FBX SDK
 - no public engine API exposes third-party FBX types
-- glTF and FBX both flow through one importer-neutral result
+- glTF and FBX both flow through one importer-neutral runtime result
+- runtime bring-up remains structurally extractable into a converter
 
 ### MVP feature acceptance
 
@@ -378,26 +489,37 @@ Mitigation:
 - import a usable subset of materials and textures
 - unsupported features produce warnings, not crashes
 
-### Bistro acceptance
+### Final pipeline acceptance
 
-- Bistro scene can be ingested through the FBX path or an offline FBX conversion path
-- importer completes without fatal parse failures on valid source data
-- runtime scene loads and renders with predictable fallback behavior where fidelity is incomplete
+- `SparkleAssetConverter` owns raw FBX and glTF import
+- runtime scene loading uses `CookedAssetLoader` only
+- `LevelDesc` points to cooked content
+- Assimp and cgltf are no longer required for shipped runtime scene import
+- the codebase structure matches the offline converter architecture document
 
 ## Recommended Execution Order
 
-1. Introduce `SceneImportResult` and refactor current glTF import to use it
-2. Introduce `SceneImporter` dispatch and keep glTF behavior stable
-3. Integrate Assimp privately and add `FbxImporter` static-mesh MVP
-4. Add importer warnings and reporting
-5. Harden material mapping for Bistro
-6. Revisit mesh-section material binding after MVP import succeeds
+1. Lock the final target and transitional invariants
+2. Introduce `SceneImportResult` and refactor glTF import to use it
+3. Introduce runtime `SceneImporter` dispatch and stabilize both formats there
+4. Integrate Assimp privately and add `FbxImporter` static-mesh MVP
+5. Harden materials, transforms, warnings, and Bistro-scale import on the shared runtime abstraction
+6. Define cooked asset formats from the proven shared result
+7. Extract importers into `SparkleAssetConverter` and add `CookedAssetWriter`
+8. Add `CookedAssetLoader` and move runtime loading to cooked assets
+9. Remove transitional runtime raw import paths
 
 ## Final Recommendation
 
-Bring FBX in only if the real goal is broader DCC interoperability.
+Your preferred path is sound:
 
-If the real goal is specifically Bistro, first check whether an offline conversion path to glTF or a Sparkle-native intermediate format is cheaper and more stable.
+- start with FBX import working inside the engine
+- quickly introduce the shared importer abstraction so glTF and FBX import the same way
+- use that runtime path to stabilize transforms, materials, warnings, and Bistro-scale behavior
+- then move the importer stack into the dedicated offline converter
+- finish by removing runtime raw import entirely and relying on cooked assets plus model baking
+
+That path keeps implementation practical early while still finishing at the precise FBX pipeline architecture you want, rather than stopping at a halfway design.
 
 For Sparkle's current state, the correct move is the MiniEngine pattern:
 
