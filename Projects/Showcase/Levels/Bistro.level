@@ -1,0 +1,20 @@
+[Level]
+Name = Bistro
+
+[Camera]
+Position = 8.0, 3.2, -14.0
+YawRadians = 0.58
+PitchRadians = -0.18
+FovYDegrees = 60.0
+MoveSpeed = 0.03
+
+[Lighting]
+DirectionalLight0Direction = -0.44, -0.88, 0.14
+DirectionalLight0Intensity = 11.2
+DirectionalLight0Color = 1.0, 0.93, 0.82
+DirectionalLight1Direction = -0.02, -0.89, -0.45
+DirectionalLight1Intensity = 0.2
+DirectionalLight1Color = 0.42, 0.50, 0.72
+
+[Meshes]
+Asset = Bistro/BistroExterior.fbx

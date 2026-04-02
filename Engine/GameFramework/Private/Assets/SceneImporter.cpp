@@ -4,13 +4,20 @@
 
 #include "Assets/FbxImporter.h"
 #include "Assets/GltfLoader.h"
+#include "Assets/SceneImportPostProcessor.h"
 
 #include <algorithm>
+#include <chrono>
+#include <cctype>
 #include <format>
 #include <string>
 
 SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 {
+	const auto startTime = std::chrono::steady_clock::now();
+	std::string importerName;
+	SceneImportResult result;
+
 	std::string extension = filePath.extension().string();
 	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char character) {
 		return static_cast<char>(std::tolower(character));
@@ -18,18 +25,34 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 
 	if (extension == ".gltf" || extension == ".glb")
 	{
-		return GltfLoader::Load(filePath);
+		importerName = "GltfLoader";
+		result = GltfLoader::Load(filePath);
 	}
-
-	if (extension == ".fbx")
+	else if (extension == ".fbx")
 	{
-		return FbxImporter::Load(filePath);
+		importerName = "FbxImporter";
+		result = FbxImporter::Load(filePath);
+	}
+	else
+	{
+		importerName = "SceneImporter";
+		result.errorMessage = std::format(
+		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
+		    extension.empty() ? std::string("<none>") : extension,
+		    filePath.string());
 	}
 
-	SceneImportResult result;
-	result.errorMessage = std::format(
-	    "SceneImporter: Unsupported asset extension '{}' for '{}'",
-	    extension.empty() ? std::string("<none>") : extension,
-	    filePath.string());
+	result.stats.importerName = std::move(importerName);
+	result.stats.sourcePath = filePath;
+
+	if (result.bSuccess)
+	{
+		SceneImportPostProcessor::Finalize(result);
+	}
+
+	const auto endTime = std::chrono::steady_clock::now();
+	result.stats.importDurationMs =
+	    std::chrono::duration<double, std::milli>(endTime - startTime).count();
+
 	return result;
 }

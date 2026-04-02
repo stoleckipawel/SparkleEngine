@@ -1,14 +1,13 @@
 #define CGLTF_IMPLEMENTATION
 #include "PCH.h"
+
 #include "GameFramework/Public/Assets/GltfLoader.h"
+
+#include "Assets/SceneImportUtilities.h"
 
 #include <cgltf.h>
 
-#include <algorithm>
-#include <cmath>
-#include <cstring>
 #include <format>
-#include <span>
 
 using namespace DirectX;
 
@@ -35,13 +34,16 @@ bool GltfLoader::ParseGltfFile(
 	cgltf_data*& outData,
 	SceneImportResult& result)
 {
-	cgltf_result parseResult = cgltf_parse_file(&options, pathStr.c_str(), &outData);
+	const cgltf_result parseResult = cgltf_parse_file(&options, pathStr.c_str(), &outData);
 	if (parseResult == cgltf_result_success)
 	{
 		return true;
 	}
 
-	result.errorMessage = std::format("GltfLoader: Failed to parse '{}' (cgltf error {})", pathStr, static_cast<int>(parseResult));
+	result.errorMessage = std::format(
+	    "GltfLoader: Failed to parse '{}' (cgltf error {})",
+	    pathStr,
+	    static_cast<int>(parseResult));
 	LOG_ERROR(result.errorMessage);
 	return false;
 }
@@ -52,21 +54,23 @@ bool GltfLoader::LoadGltfBuffers(
 	const std::string& pathStr,
 	SceneImportResult& result)
 {
-	cgltf_result bufferResult = cgltf_load_buffers(&options, data, pathStr.c_str());
+	const cgltf_result bufferResult = cgltf_load_buffers(&options, data, pathStr.c_str());
 	if (bufferResult == cgltf_result_success)
 	{
 		return true;
 	}
 
-	result.errorMessage =
-	    std::format("GltfLoader: Failed to load buffers for '{}' (cgltf error {})", pathStr, static_cast<int>(bufferResult));
+	result.errorMessage = std::format(
+	    "GltfLoader: Failed to load buffers for '{}' (cgltf error {})",
+	    pathStr,
+	    static_cast<int>(bufferResult));
 	LOG_ERROR(result.errorMessage);
 	return false;
 }
 
 void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr, SceneImportResult& result)
 {
-	cgltf_result validateResult = cgltf_validate(data);
+	const cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
 		result.AddWarning(std::format(
@@ -76,17 +80,86 @@ void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr, Scen
 	}
 }
 
+void GltfLoader::CollectSceneWarnings(const cgltf_data* data, SceneImportResult& result)
+{
+	if (data->animations_count > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} animations are present and will be ignored",
+		    data->animations_count));
+	}
+
+	if (data->variants_count > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} material variants are present and will be ignored",
+		    data->variants_count));
+	}
+
+	std::size_t cameraNodeCount = 0;
+	std::size_t lightNodeCount = 0;
+	std::size_t skinnedNodeCount = 0;
+	std::size_t weightedNodeCount = 0;
+	std::size_t instancedNodeCount = 0;
+
+	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
+	{
+		const cgltf_node& node = data->nodes[nodeIndex];
+		cameraNodeCount += node.camera != nullptr ? 1u : 0u;
+		lightNodeCount += node.light != nullptr ? 1u : 0u;
+		skinnedNodeCount += node.skin != nullptr ? 1u : 0u;
+		weightedNodeCount += node.weights_count > 0 ? 1u : 0u;
+		instancedNodeCount += node.has_mesh_gpu_instancing ? 1u : 0u;
+	}
+
+	if (cameraNodeCount > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} nodes contain cameras and they will be ignored",
+		    cameraNodeCount));
+	}
+
+	if (lightNodeCount > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} nodes contain lights and they will be ignored",
+		    lightNodeCount));
+	}
+
+	if (skinnedNodeCount > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} skinned nodes are present and will be imported as static data only",
+		    skinnedNodeCount));
+	}
+
+	if (weightedNodeCount > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} weighted nodes are present and morph weights will be ignored",
+		    weightedNodeCount));
+	}
+
+	if (instancedNodeCount > 0)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: {} nodes use mesh GPU instancing and will be flattened to regular mesh instances",
+		    instancedNodeCount));
+	}
+}
+
 std::size_t GltfLoader::CountTotalPrimitives(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
-	for (cgltf_size n = 0; n < data->nodes_count; ++n)
+	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
 	{
-		const cgltf_node& node = data->nodes[n];
+		const cgltf_node& node = data->nodes[nodeIndex];
 		if (node.mesh)
 		{
 			totalPrimitives += node.mesh->primitives_count;
 		}
 	}
+
 	return totalPrimitives;
 }
 
@@ -98,9 +171,9 @@ std::string GltfLoader::BuildPrimitiveLabel(const cgltf_node& node, std::size_t 
 
 void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResult& result)
 {
-	for (cgltf_size n = 0; n < data->nodes_count; ++n)
+	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
 	{
-		const cgltf_node& node = data->nodes[n];
+		const cgltf_node& node = data->nodes[nodeIndex];
 		if (!node.mesh)
 		{
 			continue;
@@ -108,10 +181,10 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResul
 
 		const XMMATRIX worldTransform = ComputeNodeWorldTransform(&node);
 
-		for (cgltf_size p = 0; p < node.mesh->primitives_count; ++p)
+		for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
 		{
-			const cgltf_primitive& primitive = node.mesh->primitives[p];
-			const std::string primitiveLabel = BuildPrimitiveLabel(node, p);
+			const cgltf_primitive& primitive = node.mesh->primitives[primitiveIndex];
+			const std::string primitiveLabel = BuildPrimitiveLabel(node, primitiveIndex);
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
@@ -119,6 +192,28 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResul
 				    "GltfLoader: Skipping {} because only triangle primitives are supported",
 				    primitiveLabel));
 				continue;
+			}
+
+			if (primitive.targets_count > 0)
+			{
+				result.AddWarning(std::format(
+				    "GltfLoader: {} contains morph targets which will be ignored",
+				    primitiveLabel));
+			}
+
+			if (primitive.has_draco_mesh_compression)
+			{
+				result.AddWarning(std::format(
+				    "GltfLoader: Skipping {} because Draco-compressed primitives are not supported yet",
+				    primitiveLabel));
+				continue;
+			}
+
+			if (primitive.mappings_count > 0)
+			{
+				result.AddWarning(std::format(
+				    "GltfLoader: {} contains material variant mappings which will be ignored",
+				    primitiveLabel));
 			}
 
 			MeshData meshData = ExtractPrimitive(primitive);
@@ -139,167 +234,322 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResul
 
 template <typename T> T GltfLoader::ReadAccessorElement(const cgltf_accessor* accessor, std::size_t index)
 {
-	T result{};
+	T element{};
 	if (accessor && index < accessor->count)
 	{
-		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&result), sizeof(T) / sizeof(float));
+		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(T) / sizeof(float));
 	}
-	return result;
+
+	return element;
 }
 
 const cgltf_accessor* GltfLoader::FindAttribute(const cgltf_primitive& primitive, int type)
 {
-	for (cgltf_size i = 0; i < primitive.attributes_count; ++i)
+	for (cgltf_size attributeIndex = 0; attributeIndex < primitive.attributes_count; ++attributeIndex)
 	{
-		if (primitive.attributes[i].type == static_cast<cgltf_attribute_type>(type))
+		if (primitive.attributes[attributeIndex].type == static_cast<cgltf_attribute_type>(type))
 		{
-			return primitive.attributes[i].data;
+			return primitive.attributes[attributeIndex].data;
 		}
 	}
+
 	return nullptr;
 }
 
-void GltfLoader::ReadIndices(const cgltf_accessor* accessor, std::vector<uint32_t>& outIndices)
+void GltfLoader::ReadIndices(const cgltf_accessor* accessor, std::vector<std::uint32_t>& outIndices)
 {
 	if (!accessor)
+	{
 		return;
+	}
 
 	outIndices.resize(accessor->count);
-	for (cgltf_size i = 0; i < accessor->count; ++i)
+	for (cgltf_size index = 0; index < accessor->count; ++index)
 	{
-		outIndices[i] = static_cast<uint32_t>(cgltf_accessor_read_index(accessor, i));
+		outIndices[index] = static_cast<std::uint32_t>(cgltf_accessor_read_index(accessor, index));
 	}
 }
 
 XMMATRIX GltfLoader::ComputeNodeWorldTransform(const cgltf_node* node)
 {
-	XMMATRIX world = XMMatrixIdentity();
+	XMMATRIX worldTransform = XMMatrixIdentity();
 
-	const cgltf_node* chain[64];
+	const cgltf_node* nodeChain[64];
 	int depth = 0;
-
-	for (const cgltf_node* n = node; n != nullptr && depth < 64; n = n->parent)
+	for (const cgltf_node* currentNode = node; currentNode != nullptr && depth < 64; currentNode = currentNode->parent)
 	{
-		chain[depth++] = n;
+		nodeChain[depth++] = currentNode;
 	}
 
-	for (int i = depth - 1; i >= 0; --i)
+	for (int chainIndex = depth - 1; chainIndex >= 0; --chainIndex)
 	{
 		float localMatrix[16];
-		cgltf_node_transform_local(chain[i], localMatrix);
-
-		XMMATRIX local = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix));
-		world = XMMatrixMultiply(world, local);
+		cgltf_node_transform_local(nodeChain[chainIndex], localMatrix);
+		const XMMATRIX localTransform = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix));
+		worldTransform = XMMatrixMultiply(worldTransform, localTransform);
 	}
 
-	return world;
+	return worldTransform;
 }
 
-std::filesystem::path GltfLoader::ResolveImagePath(const cgltf_image* image, const std::filesystem::path& gltfDirectory)
+std::optional<std::filesystem::path> GltfLoader::ResolveTexturePath(
+	const cgltf_texture_view& textureView,
+	const std::filesystem::path& gltfDirectory,
+	std::string_view materialName,
+	std::string_view slotName,
+	SceneImportResult& result)
 {
-	if (!image || !image->uri)
-		return {};
+	if (!textureView.texture)
+	{
+		return std::nullopt;
+	}
 
-	return gltfDirectory / image->uri;
+	const cgltf_texture& texture = *textureView.texture;
+	if (texture.image && texture.image->uri)
+	{
+		return SceneImportUtilities::NormalizeImportedTexturePath(gltfDirectory, std::filesystem::path(texture.image->uri));
+	}
+
+	if (texture.image && texture.image->buffer_view)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: Material '{}' uses an embedded {} texture which is not supported yet",
+		    materialName,
+		    slotName));
+		return std::nullopt;
+	}
+
+	if (texture.has_basisu || texture.has_webp)
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: Material '{}' uses {} texture sources that are not supported by the runtime importer yet",
+		    materialName,
+		    slotName));
+	}
+
+	return std::nullopt;
+}
+
+void GltfLoader::AppendUnsupportedMaterialWarnings(
+	const cgltf_material& material,
+	std::string_view materialName,
+	SceneImportResult& result)
+{
+	std::string unsupportedFeatures;
+	auto appendFeature = [&unsupportedFeatures](std::string_view featureName)
+	{
+		if (!unsupportedFeatures.empty())
+		{
+			unsupportedFeatures += ", ";
+		}
+
+		unsupportedFeatures += featureName;
+	};
+
+	if (material.has_pbr_specular_glossiness)
+	{
+		appendFeature("KHR_materials_pbrSpecularGlossiness");
+	}
+
+	if (material.unlit)
+	{
+		appendFeature("KHR_materials_unlit");
+	}
+
+	if (material.has_clearcoat)
+	{
+		appendFeature("KHR_materials_clearcoat");
+	}
+
+	if (material.has_transmission)
+	{
+		appendFeature("KHR_materials_transmission");
+	}
+
+	if (material.has_volume)
+	{
+		appendFeature("KHR_materials_volume");
+	}
+
+	if (material.has_ior)
+	{
+		appendFeature("KHR_materials_ior");
+	}
+
+	if (material.has_specular)
+	{
+		appendFeature("KHR_materials_specular");
+	}
+
+	if (material.has_sheen)
+	{
+		appendFeature("KHR_materials_sheen");
+	}
+
+	if (material.has_emissive_strength)
+	{
+		appendFeature("KHR_materials_emissive_strength");
+	}
+
+	if (material.has_iridescence)
+	{
+		appendFeature("KHR_materials_iridescence");
+	}
+
+	if (material.has_diffuse_transmission)
+	{
+		appendFeature("KHR_materials_diffuse_transmission");
+	}
+
+	if (material.has_anisotropy)
+	{
+		appendFeature("KHR_materials_anisotropy");
+	}
+
+	if (material.has_dispersion)
+	{
+		appendFeature("KHR_materials_dispersion");
+	}
+
+	if (!unsupportedFeatures.empty())
+	{
+		result.AddWarning(std::format(
+		    "GltfLoader: Material '{}' uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR defaults",
+		    materialName,
+		    unsupportedFeatures));
+	}
 }
 
 void GltfLoader::ExtractMaterials(
-    const cgltf_data* data,
-    const std::filesystem::path& gltfDirectory,
-	std::vector<MaterialDesc>& outMaterials)
+	const cgltf_data* data,
+	const std::filesystem::path& gltfDirectory,
+	SceneImportResult& result)
 {
-	outMaterials.reserve(data->materials_count);
+	result.materials.reserve(data->materials_count);
 
-	for (cgltf_size i = 0; i < data->materials_count; ++i)
+	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
-		const cgltf_material& mat = data->materials[i];
+		const cgltf_material& material = data->materials[materialIndex];
+		MaterialDesc materialDesc = SceneImportUtilities::CreateMaterialDesc(
+		    material.name ? material.name : std::format("Material_{}", materialIndex));
 
-		MaterialDesc desc;
-		desc.name = mat.name ? mat.name : std::format("Material_{}", i);
-		desc.emissiveColor = XMFLOAT3(mat.emissive_factor[0], mat.emissive_factor[1], mat.emissive_factor[2]);
-		desc.alphaCutoff = mat.alpha_cutoff;
+		materialDesc.emissiveColor = XMFLOAT3(
+		    material.emissive_factor[0],
+		    material.emissive_factor[1],
+		    material.emissive_factor[2]);
+		materialDesc.alphaCutoff = material.alpha_cutoff;
 
-		switch (mat.alpha_mode)
+		switch (material.alpha_mode)
 		{
 			case cgltf_alpha_mode_mask:
-				desc.alphaMode = AlphaMode::Mask;
+				materialDesc.alphaMode = AlphaMode::Mask;
 				break;
 			case cgltf_alpha_mode_blend:
-				desc.alphaMode = AlphaMode::Blend;
+				materialDesc.alphaMode = AlphaMode::Blend;
 				break;
 			case cgltf_alpha_mode_opaque:
 			default:
-				desc.alphaMode = AlphaMode::Opaque;
+				materialDesc.alphaMode = AlphaMode::Opaque;
 				break;
 		}
 
-		if (mat.has_pbr_metallic_roughness)
+		AppendUnsupportedMaterialWarnings(material, materialDesc.name, result);
+
+		if (material.has_pbr_metallic_roughness)
 		{
-			const auto& pbr = mat.pbr_metallic_roughness;
+			const cgltf_pbr_metallic_roughness& pbr = material.pbr_metallic_roughness;
+			materialDesc.baseColor = XMFLOAT4(
+			    pbr.base_color_factor[0],
+			    pbr.base_color_factor[1],
+			    pbr.base_color_factor[2],
+			    pbr.base_color_factor[3]);
+			materialDesc.metallic = pbr.metallic_factor;
+			materialDesc.roughness = pbr.roughness_factor;
 
-			desc.baseColor =
-			    XMFLOAT4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
+			SceneImportUtilities::SetMaterialTexture(
+			    materialDesc,
+			    ImportedTextureSemantic::Albedo,
+			    ResolveTexturePath(
+			        pbr.base_color_texture,
+			        gltfDirectory,
+			        materialDesc.name,
+			        "base-color",
+			        result));
 
-			desc.metallic = pbr.metallic_factor;
-			desc.roughness = pbr.roughness_factor;
+			SceneImportUtilities::SetMaterialTexture(
+			    materialDesc,
+			    ImportedTextureSemantic::MetallicRoughness,
+			    ResolveTexturePath(
+			        pbr.metallic_roughness_texture,
+			        gltfDirectory,
+			        materialDesc.name,
+			        "metallic-roughness",
+			        result));
+		}
+		else if (material.has_pbr_specular_glossiness)
+		{
+			const cgltf_pbr_specular_glossiness& specGloss = material.pbr_specular_glossiness;
+			materialDesc.baseColor = XMFLOAT4(
+			    specGloss.diffuse_factor[0],
+			    specGloss.diffuse_factor[1],
+			    specGloss.diffuse_factor[2],
+			    specGloss.diffuse_factor[3]);
+			materialDesc.metallic = 0.0f;
+			materialDesc.roughness = 1.0f - specGloss.glossiness_factor;
 
-			if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image)
-			{
-				auto path = ResolveImagePath(pbr.base_color_texture.texture->image, gltfDirectory);
-				if (!path.empty())
-				{
-					desc.albedoTexture = path;
-				}
-			}
-
-			if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image)
-			{
-				auto path = ResolveImagePath(pbr.metallic_roughness_texture.texture->image, gltfDirectory);
-				if (!path.empty())
-				{
-					desc.metallicRoughnessTexture = path;
-				}
-			}
+			SceneImportUtilities::SetMaterialTexture(
+			    materialDesc,
+			    ImportedTextureSemantic::Albedo,
+			    ResolveTexturePath(
+			        specGloss.diffuse_texture,
+			        gltfDirectory,
+			        materialDesc.name,
+			        "diffuse",
+			        result));
 		}
 
-		if (mat.normal_texture.texture && mat.normal_texture.texture->image)
-		{
-			auto path = ResolveImagePath(mat.normal_texture.texture->image, gltfDirectory);
-			if (!path.empty())
-			{
-				desc.normalTexture = path;
-			}
-		}
+		SceneImportUtilities::SetMaterialTexture(
+		    materialDesc,
+		    ImportedTextureSemantic::Normal,
+		    ResolveTexturePath(
+		        material.normal_texture,
+		        gltfDirectory,
+		        materialDesc.name,
+		        "normal",
+		        result));
 
-		if (mat.occlusion_texture.texture && mat.occlusion_texture.texture->image)
-		{
-			auto path = ResolveImagePath(mat.occlusion_texture.texture->image, gltfDirectory);
-			if (!path.empty())
-			{
-				desc.occlusionTexture = path;
-			}
-		}
+		SceneImportUtilities::SetMaterialTexture(
+		    materialDesc,
+		    ImportedTextureSemantic::Occlusion,
+		    ResolveTexturePath(
+		        material.occlusion_texture,
+		        gltfDirectory,
+		        materialDesc.name,
+		        "occlusion",
+		        result));
 
-		if (mat.emissive_texture.texture && mat.emissive_texture.texture->image)
-		{
-			auto path = ResolveImagePath(mat.emissive_texture.texture->image, gltfDirectory);
-			if (!path.empty())
-			{
-				desc.emissiveTexture = path;
-			}
-		}
+		SceneImportUtilities::SetMaterialTexture(
+		    materialDesc,
+		    ImportedTextureSemantic::Emissive,
+		    ResolveTexturePath(
+		        material.emissive_texture,
+		        gltfDirectory,
+		        materialDesc.name,
+		        "emissive",
+		        result));
 
-		outMaterials.push_back(std::move(desc));
+		result.materials.push_back(std::move(materialDesc));
 	}
 }
 
 std::uint32_t GltfLoader::ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data)
 {
 	if (!primitive.material)
+	{
 		return 0;
+	}
 
-	auto index = static_cast<std::uint32_t>(primitive.material - data->materials);
-	return index;
+	return static_cast<std::uint32_t>(primitive.material - data->materials);
 }
 
 MeshData GltfLoader::ExtractPrimitive(const cgltf_primitive& primitive)
@@ -310,41 +560,38 @@ MeshData GltfLoader::ExtractPrimitive(const cgltf_primitive& primitive)
 	const cgltf_accessor* tangents = FindAttribute(primitive, cgltf_attribute_type_tangent);
 
 	if (!positions)
+	{
 		return {};
+	}
 
-	const auto vertexCount = static_cast<uint32_t>(positions->count);
-
+	const std::uint32_t vertexCount = static_cast<std::uint32_t>(positions->count);
 	MeshData meshData;
-	meshData.Reserve(vertexCount, primitive.indices ? static_cast<uint32_t>(primitive.indices->count) : 0);
-
+	meshData.Reserve(vertexCount, primitive.indices ? static_cast<std::uint32_t>(primitive.indices->count) : 0);
 	meshData.vertices.resize(vertexCount);
 
-	for (uint32_t v = 0; v < vertexCount; ++v)
+	for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
-		VertexData& vertex = meshData.vertices[v];
-
-		vertex.position = ReadAccessorElement<XMFLOAT3>(positions, v);
+		VertexData& vertex = meshData.vertices[vertexIndex];
+		vertex.position = ReadAccessorElement<XMFLOAT3>(positions, vertexIndex);
+		vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 
 		if (normals)
 		{
-			vertex.normal = ReadAccessorElement<XMFLOAT3>(normals, v);
+			vertex.normal = ReadAccessorElement<XMFLOAT3>(normals, vertexIndex);
 		}
 
 		if (texcoords)
 		{
-			vertex.uv = ReadAccessorElement<XMFLOAT2>(texcoords, v);
+			vertex.uv = ReadAccessorElement<XMFLOAT2>(texcoords, vertexIndex);
 		}
 
 		if (tangents)
 		{
-			vertex.tangent = ReadAccessorElement<XMFLOAT4>(tangents, v);
+			vertex.tangent = ReadAccessorElement<XMFLOAT4>(tangents, vertexIndex);
 		}
-
-		vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 	}
 
 	ReadIndices(primitive.indices, meshData.indices);
-
 	return meshData;
 }
 
@@ -362,36 +609,40 @@ SceneImportResult GltfLoader::Load(const std::filesystem::path& filePath)
 
 	cgltf_options options{};
 	cgltf_data* data = nullptr;
-
 	if (!ParseGltfFile(options, pathStr, data, result))
 	{
 		return result;
 	}
 
 	CgltfGuard guard{data};
-
 	if (!LoadGltfBuffers(options, data, pathStr, result))
 	{
 		return result;
 	}
 
 	ValidateGltf(data, pathStr, result);
-
-	ExtractMaterials(data, gltfDirectory, result.materials);
+	CollectSceneWarnings(data, result);
+	ExtractMaterials(data, gltfDirectory, result);
 
 	const std::size_t totalPrimitives = CountTotalPrimitives(data);
 	result.Reserve(totalPrimitives);
-
 	ExtractMeshesFromNodes(data, result);
+
+	if (result.meshes.empty())
+	{
+		result.errorMessage = std::format(
+		    "GltfLoader: No supported mesh primitives found in '{}'",
+		    filePath.string());
+		return result;
+	}
 
 	result.bSuccess = true;
 
-	LOG_INFO(
-	    std::format(
-	        "GltfLoader: Loaded '{}' — {} meshes, {} materials",
-	        filePath.filename().string(),
-	        result.meshes.size(),
-	        result.materials.size()));
+	LOG_INFO(std::format(
+	    "GltfLoader: Loaded '{}' — {} meshes, {} materials",
+	    filePath.filename().string(),
+	    result.meshes.size(),
+	    result.materials.size()));
 
 	return result;
 }

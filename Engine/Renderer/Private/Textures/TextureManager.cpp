@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "Renderer/Public/Textures/TextureManager.h"
+#include "DdsTextureLoader.h"
 #include "FileSystemUtils.h"
 #include "D3D12Texture.h"
 #include "TextureLoader.h"
@@ -34,6 +35,16 @@ namespace
 
 	TexturePayload LoadTexturePayload(const std::filesystem::path& filePath)
 	{
+		std::wstring extension = filePath.extension().wstring();
+		std::transform(extension.begin(), extension.end(), extension.begin(), [](wchar_t character) {
+			return static_cast<wchar_t>(std::towlower(character));
+		});
+
+		if (extension == L".dds")
+		{
+			return DdsTextureLoader::Load(filePath);
+		}
+
 		const TextureLoader loader(filePath);
 		return CreateTexturePayloadFromLoadedData(loader.GetData());
 	}

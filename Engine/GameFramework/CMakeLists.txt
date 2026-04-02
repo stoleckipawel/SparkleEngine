@@ -70,6 +70,7 @@ target_link_libraries(SparkleGameFramework
 		SparkleRHI
     PRIVATE
         cgltf
+		assimp::assimp
 )
 
 set_target_properties(SparkleGameFramework PROPERTIES
