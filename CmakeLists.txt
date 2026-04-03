@@ -87,6 +87,9 @@ endif()
 # Add subdirectories
 # ---------------------------
 add_subdirectory(Engine)
+if(EXISTS "${CMAKE_SOURCE_DIR}/Tools/CMakeLists.txt")
+    add_subdirectory(Tools)
+endif()
 
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
