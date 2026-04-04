@@ -1,6 +1,5 @@
 #include "PCH.h"
 #include "Window/Window.h"
-#include "CVars/PlatformCVars.h"
 #include "Diagnostics/Log.h"
 
 #include <dwmapi.h>
@@ -83,7 +82,7 @@ void Window::ApplyInitialWindowState()
 {
 	GetWindowRect(m_hWnd, &m_windowedRect);
 
-	if (CVarPlatformStartFullscreen.Get())
+	if (ShouldStartFullscreen())
 	{
 		SetFullScreen(true);
 	}

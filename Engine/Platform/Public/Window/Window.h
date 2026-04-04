@@ -70,6 +70,7 @@ class SPARKLE_PLATFORM_API Window final
 	void RegisterWindowClass();
 	void CreateWindowHandle(std::string_view title);
 	void ApplyInitialWindowState();
+	static bool ShouldStartFullscreen() noexcept { return false; }
 	static int GetResizeBorderThickness() noexcept;
 	MONITORINFO GetCurrentMonitorInfo() const noexcept;
 
