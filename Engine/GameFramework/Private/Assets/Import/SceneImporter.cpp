@@ -5,10 +5,9 @@
 #include "Assets/Importers/FbxImporter.h"
 #include "Assets/Importers/GltfLoader.h"
 #include "Assets/Import/SceneImportPostProcessor.h"
+#include "Core/Public/Strings/StringUtils.h"
 
-#include <algorithm>
 #include <chrono>
-#include <cctype>
 #include <format>
 #include <string>
 
@@ -18,15 +17,7 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 	std::string importerName;
 	SceneImportResult result;
 
-	std::string extension = filePath.extension().string();
-	std::transform(
-	    extension.begin(),
-	    extension.end(),
-	    extension.begin(),
-	    [](unsigned char character)
-	    {
-		    return static_cast<char>(std::tolower(character));
-	    });
+	std::string extension = Engine::Strings::ToLowerCopy(filePath.extension().string());
 
 	if (extension == ".gltf" || extension == ".glb")
 	{
@@ -40,7 +31,8 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 	}
 	else
 	{
-		importerName = "SceneImporter";
+		importerName = "Unsupported";
+
 		result.errorMessage = std::format(
 		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
 		    extension.empty() ? std::string("<none>") : extension,

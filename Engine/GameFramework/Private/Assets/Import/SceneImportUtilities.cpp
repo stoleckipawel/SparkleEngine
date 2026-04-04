@@ -6,7 +6,6 @@
 
 #include <format>
 
-#include <algorithm>
 MaterialDesc SceneImportUtilities::CreateMaterialDesc(std::string name)
 {
 	MaterialDesc materialDesc;

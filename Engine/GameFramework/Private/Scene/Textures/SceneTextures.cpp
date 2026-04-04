@@ -4,8 +4,6 @@
 
 #include "FileSystemUtils.h"
 
-#include <algorithm>
-
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {
 	std::vector<std::filesystem::path> referencedTexturePaths;
@@ -48,11 +46,6 @@ void SceneTextures::AppendTexturePaths(const std::vector<std::filesystem::path>&
 		}
 
 		if (normalizedPath.empty())
-		{
-			continue;
-		}
-
-		if (std::ranges::find(m_texturePaths, normalizedPath) != m_texturePaths.end())
 		{
 			continue;
 		}

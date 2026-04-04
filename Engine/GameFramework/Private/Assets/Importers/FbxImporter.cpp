@@ -54,7 +54,7 @@ SceneImportResult FbxImporter::Load(const std::filesystem::path& filePath)
 
 constexpr unsigned int FbxImporter::GetPostProcessFlags() noexcept
 {
-	return aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+	return aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
 	       aiProcess_SortByPType | aiProcess_ValidateDataStructure | aiProcess_ImproveCacheLocality | aiProcess_ConvertToLeftHanded;
 }
 

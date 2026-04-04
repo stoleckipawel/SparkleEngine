@@ -38,7 +38,7 @@ class SPARKLE_ENGINE_API LevelManager final
 
   private:
 	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
-	static constexpr std::string_view GetStartupLevelName() noexcept { return "Bistro"; }
+	static constexpr std::string_view GetStartupLevelName() noexcept { return "Sponza"; }
 
 	void ApplyLevelToScene() noexcept;
 	void CaptureSceneToLevel() noexcept;

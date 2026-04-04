@@ -25,9 +25,6 @@ struct SPARKLE_ENGINE_API SceneImportStats
 	std::size_t totalVertices = 0;
 	std::size_t totalIndices = 0;
 	std::size_t estimatedMeshBytes = 0;
-	std::size_t uniqueTexturePathCount = 0;
-	std::size_t duplicateTexturePathCount = 0;
-	std::size_t deduplicatedMaterialCount = 0;
 };
 
 struct SPARKLE_ENGINE_API SceneImportResult

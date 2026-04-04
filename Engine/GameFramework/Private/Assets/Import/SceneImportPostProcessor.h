@@ -14,15 +14,14 @@ class SceneImportPostProcessor final
 	~SceneImportPostProcessor() = delete;
 
   private:
-	static void NormalizeResultShape(SceneImportResult& result);
-	static void NormalizeMaterialNamesAndTextures(SceneImportResult& result);
-	static void DeduplicateMaterials(SceneImportResult& result);
+	static void NormalizeTransformCount(SceneImportResult& result);
+	static void NormalizeMaterialOffsetCount(SceneImportResult& result);
+	static void NormalizeMaterialTextures(SceneImportResult& result);
+	static void EnsureMaterialNames(SceneImportResult& result);
 	static void SanitizeMaterialOffsets(SceneImportResult& result);
 	static void AccumulateStats(SceneImportResult& result);
-	static bool AreMaterialsEquivalent(const MaterialDesc& lhs, const MaterialDesc& rhs) noexcept;
 	static void NormalizeOptionalTexturePath(
 	    std::optional<std::filesystem::path>& texturePath,
-	    std::string_view importerName,
 	    std::string_view materialName,
 	    std::string_view slotName,
 	    SceneImportResult& result);

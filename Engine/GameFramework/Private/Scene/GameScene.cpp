@@ -114,17 +114,13 @@ bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolve
 
 	LOG_INFO(
 	    std::format(
-	        "Scene: Import summary [{}] '{}' took {:.2f} ms — {} meshes, {} materials, {} warnings, {} unique textures, {} duplicate "
-	        "texture refs, {} material duplicates removed, {:.2f} MiB mesh data",
+	        "Scene: Import summary [{}] '{}' took {:.2f} ms — {} meshes, {} materials, {} warnings, {:.2f} MiB mesh data",
 	        result.stats.importerName,
 	        result.stats.sourcePath.filename().string(),
 	        result.stats.importDurationMs,
 	        result.meshes.size(),
 	        result.materials.size(),
 	        result.warnings.size(),
-	        result.stats.uniqueTexturePathCount,
-	        result.stats.duplicateTexturePathCount,
-	        result.stats.deduplicatedMaterialCount,
 	        static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
 
 	for (const SceneImportWarning& warning : result.warnings)
