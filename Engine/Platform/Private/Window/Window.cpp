@@ -1,6 +1,6 @@
 #include "PCH.h"
-#include "Window.h"
-#include "Platform/Public/PlatformCVars.h"
+#include "Window/Window.h"
+#include "CVars/PlatformCVars.h"
 #include "Diagnostics/Log.h"
 
 #include <dwmapi.h>

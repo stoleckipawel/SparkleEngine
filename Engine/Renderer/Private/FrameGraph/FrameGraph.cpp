@@ -6,7 +6,7 @@
 
 #include "D3D12DescriptorHeapManager.h"
 #include "D3D12SwapChain.h"
-#include "Window.h"
+#include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 

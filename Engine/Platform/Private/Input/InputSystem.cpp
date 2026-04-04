@@ -1,7 +1,7 @@
 #include "PCH.h"
-#include "InputSystem.h"
-#include "Win32InputBackend.h"
-#include "Window.h"
+#include "Input/InputSystem.h"
+#include "Input/Backends/Win32InputBackend.h"
+#include "Window/Window.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN

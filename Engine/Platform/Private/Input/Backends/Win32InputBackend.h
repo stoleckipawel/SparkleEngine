@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IInputBackend.h"
+#include "Input/IInputBackend.h"
 #include "Input/Keyboard/Key.h"
 
 #ifndef WIN32_LEAN_AND_MEAN

@@ -46,7 +46,6 @@ target_include_directories(SparkleApplication
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
         # Platform module subdirectories
         ${CMAKE_CURRENT_SOURCE_DIR}/../Platform/Public
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Platform/Public/Input
         # GameFramework module subdirectories
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public/Scene

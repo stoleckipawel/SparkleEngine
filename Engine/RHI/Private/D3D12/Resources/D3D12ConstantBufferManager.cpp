@@ -2,7 +2,7 @@
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12FrameResource.h"
 #include "Timer.h"
-#include "Window.h"
+#include "Window/Window.h"
 #include "D3D12SwapChain.h"
 
 D3D12ConstantBufferManager::D3D12ConstantBufferManager(

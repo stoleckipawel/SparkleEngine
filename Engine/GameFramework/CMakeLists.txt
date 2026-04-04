@@ -47,8 +47,6 @@ target_include_directories(SparkleGameFramework
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Math
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
-        # Platform module subdirectories for InputSystem.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Platform/Public/Input
         # Subdirectories for internal includes
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Camera

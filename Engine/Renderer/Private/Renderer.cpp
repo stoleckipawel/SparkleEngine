@@ -5,7 +5,7 @@
 #include "D3D12DebugLayer.h"
 #include "D3D12Rhi.h"
 #include "D3D12SwapChain.h"
-#include "Window.h"
+#include "Window/Window.h"
 #include "Renderer/Public/Textures/TextureManager.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Scene/GameScene.h"

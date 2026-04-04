@@ -3,7 +3,7 @@
 
 #include "D3D12SwapChain.h"
 #include "D3D12Texture.h"
-#include "Window.h"
+#include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 
