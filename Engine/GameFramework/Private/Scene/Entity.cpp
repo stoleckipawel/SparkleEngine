@@ -1,9 +1,7 @@
 #include "PCH.h"
 #include "Entity.h"
 
-Entity::Entity(const std::string& entityName) : name(entityName)
-{
-}
+Entity::Entity(const std::string& entityName) : name(entityName) {}
 
 Entity::~Entity() = default;
 

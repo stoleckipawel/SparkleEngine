@@ -15,9 +15,9 @@ MaterialDesc SceneImportUtilities::CreateMaterialDesc(std::string name)
 }
 
 void SceneImportUtilities::SetMaterialTexture(
-	MaterialDesc& materialDesc,
-	ImportedTextureSemantic semantic,
-	const std::optional<std::filesystem::path>& texturePath)
+    MaterialDesc& materialDesc,
+    ImportedTextureSemantic semantic,
+    const std::optional<std::filesystem::path>& texturePath)
 {
 	if (!texturePath)
 	{
@@ -45,8 +45,8 @@ void SceneImportUtilities::SetMaterialTexture(
 }
 
 std::optional<std::filesystem::path> SceneImportUtilities::NormalizeImportedTexturePath(
-	const std::filesystem::path& sourceDirectory,
-	const std::filesystem::path& importedTexturePath)
+    const std::filesystem::path& sourceDirectory,
+    const std::filesystem::path& importedTexturePath)
 {
 	if (importedTexturePath.empty())
 	{
@@ -69,11 +69,11 @@ std::optional<std::filesystem::path> SceneImportUtilities::NormalizeImportedText
 }
 
 std::uint32_t SceneImportUtilities::SanitizeMaterialOffset(
-	std::uint32_t requestedOffset,
-	std::size_t materialCount,
-	std::string_view importerName,
-	std::string_view meshLabel,
-	SceneImportResult& result)
+    std::uint32_t requestedOffset,
+    std::size_t materialCount,
+    std::string_view importerName,
+    std::string_view meshLabel,
+    SceneImportResult& result)
 {
 	if (materialCount == 0)
 	{
@@ -85,11 +85,12 @@ std::uint32_t SceneImportUtilities::SanitizeMaterialOffset(
 		return requestedOffset;
 	}
 
-	result.AddWarning(std::format(
-	    "{}: '{}' references invalid material index {} and will use the default material",
-	    importerName,
-	    meshLabel,
-	    requestedOffset));
+	result.AddWarning(
+	    std::format(
+	        "{}: '{}' references invalid material index {} and will use the default material",
+	        importerName,
+	        meshLabel,
+	        requestedOffset));
 	return 0;
 }
 

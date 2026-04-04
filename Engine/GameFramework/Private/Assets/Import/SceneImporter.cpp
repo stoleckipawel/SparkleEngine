@@ -19,9 +19,14 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 	SceneImportResult result;
 
 	std::string extension = filePath.extension().string();
-	std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char character) {
-		return static_cast<char>(std::tolower(character));
-	});
+	std::transform(
+	    extension.begin(),
+	    extension.end(),
+	    extension.begin(),
+	    [](unsigned char character)
+	    {
+		    return static_cast<char>(std::tolower(character));
+	    });
 
 	if (extension == ".gltf" || extension == ".glb")
 	{
@@ -51,8 +56,7 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 	}
 
 	const auto endTime = std::chrono::steady_clock::now();
-	result.stats.importDurationMs =
-	    std::chrono::duration<double, std::milli>(endTime - startTime).count();
+	result.stats.importDurationMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
 	return result;
 }

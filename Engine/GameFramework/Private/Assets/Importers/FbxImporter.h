@@ -31,7 +31,7 @@ class FbxImporter final
 	static void ConfigureImporter(Assimp::Importer& importer);
 
 	static bool ValidateInputPath(const std::filesystem::path& filePath, SceneImportResult& result);
-    
+
 	static bool TryReadScene(
 	    Assimp::Importer& importer,
 	    const std::filesystem::path& filePath,
@@ -43,10 +43,7 @@ class FbxImporter final
 	static void CollectSceneWarnings(const aiScene& scene, SceneImportResult& result);
 	static void CollectMaterialWarnings(const aiMaterial& material, std::string_view materialName, SceneImportResult& result);
 
-	static void ExtractMaterials(
-	    const aiScene& scene,
-	    const std::filesystem::path& sourceDirectory,
-	    SceneImportResult& result);
+	static void ExtractMaterials(const aiScene& scene, const std::filesystem::path& sourceDirectory, SceneImportResult& result);
 
 	static MaterialDesc ExtractMaterial(
 	    const aiMaterial& material,
@@ -72,17 +69,9 @@ class FbxImporter final
 
 	static std::string GetMaterialName(const aiMaterial& material, unsigned int materialIndex);
 
-	static void ExtractNodeMeshes(
-	    const aiScene& scene,
-	    const aiNode& node,
-	    const aiMatrix4x4& parentTransform,
-	    SceneImportResult& result);
+	static void ExtractNodeMeshes(const aiScene& scene, const aiNode& node, const aiMatrix4x4& parentTransform, SceneImportResult& result);
 
-	static void AppendMeshInstance(
-	    const aiNode& node,
-	    const aiMesh& mesh,
-	    const aiMatrix4x4& worldTransform,
-	    SceneImportResult& result);
+	static void AppendMeshInstance(const aiNode& node, const aiMesh& mesh, const aiMatrix4x4& worldTransform, SceneImportResult& result);
 
 	static MeshData ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SceneImportResult& result);
 

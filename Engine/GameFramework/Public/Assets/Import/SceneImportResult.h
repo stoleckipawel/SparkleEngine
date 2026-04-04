@@ -47,11 +47,8 @@ struct SPARKLE_ENGINE_API SceneImportResult
 	std::size_t GetMeshCount() const noexcept { return meshes.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
 
-	void AddWarning(std::string warningMessage)
-	{
-		warnings.push_back({std::move(warningMessage)});
-	}
-	
+	void AddWarning(std::string warningMessage) { warnings.push_back({std::move(warningMessage)}); }
+
 	void Reserve(std::size_t primitiveCount)
 	{
 		meshes.reserve(primitiveCount);

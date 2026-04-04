@@ -25,7 +25,10 @@ class SPARKLE_ENGINE_API SceneLighting final
 
 	std::size_t GetDirectionalLightCount() const noexcept { return m_directionalLightComponents.size(); }
 
-	const DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) const noexcept { return m_directionalLightComponents[index]; }
+	const DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) const noexcept
+	{
+		return m_directionalLightComponents[index];
+	}
 	DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) noexcept { return m_directionalLightComponents[index]; }
 
 	const std::vector<DirectionalLightComponent>& GetDirectionalLightComponents() const noexcept { return m_directionalLightComponents; }

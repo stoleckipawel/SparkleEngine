@@ -112,18 +112,20 @@ bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolve
 		return false;
 	}
 
-	LOG_INFO(std::format(
-	    "Scene: Import summary [{}] '{}' took {:.2f} ms — {} meshes, {} materials, {} warnings, {} unique textures, {} duplicate texture refs, {} material duplicates removed, {:.2f} MiB mesh data",
-	    result.stats.importerName,
-	    result.stats.sourcePath.filename().string(),
-	    result.stats.importDurationMs,
-	    result.meshes.size(),
-	    result.materials.size(),
-	    result.warnings.size(),
-	    result.stats.uniqueTexturePathCount,
-	    result.stats.duplicateTexturePathCount,
-	    result.stats.deduplicatedMaterialCount,
-	    static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
+	LOG_INFO(
+	    std::format(
+	        "Scene: Import summary [{}] '{}' took {:.2f} ms — {} meshes, {} materials, {} warnings, {} unique textures, {} duplicate "
+	        "texture refs, {} material duplicates removed, {:.2f} MiB mesh data",
+	        result.stats.importerName,
+	        result.stats.sourcePath.filename().string(),
+	        result.stats.importDurationMs,
+	        result.meshes.size(),
+	        result.materials.size(),
+	        result.warnings.size(),
+	        result.stats.uniqueTexturePathCount,
+	        result.stats.duplicateTexturePathCount,
+	        result.stats.deduplicatedMaterialCount,
+	        static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
 
 	for (const SceneImportWarning& warning : result.warnings)
 	{
@@ -135,7 +137,6 @@ bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolve
 
 bool GameScene::AppendImportedScene(SceneImportResult&& result)
 {
-
 	if (!result.materials.empty())
 	{
 		m_textures.AppendMaterialTextureReferences(result.materials);
@@ -148,13 +149,10 @@ bool GameScene::AppendImportedScene(SceneImportResult&& result)
 	for (std::size_t i = 0; i < result.meshes.size(); ++i)
 	{
 		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]));
-		const std::uint32_t localMaterialOffset =
-		    i < result.materialOffsets.size() ? result.materialOffsets[i] : 0;
-		const Transform importedTransform =
-		    i < result.transforms.size() ? result.transforms[i] : Transform();
+		const std::uint32_t localMaterialOffset = i < result.materialOffsets.size() ? result.materialOffsets[i] : 0;
+		const Transform importedTransform = i < result.transforms.size() ? result.transforms[i] : Transform();
 		const MaterialHandle materialHandle(materialBaseHandle.GetIndex() + localMaterialOffset);
-		importedMeshes.push_back(
-		    std::make_unique<MeshComponent>(std::move(mesh), importedTransform, materialHandle));
+		importedMeshes.push_back(std::make_unique<MeshComponent>(std::move(mesh), importedTransform, materialHandle));
 	}
 
 	m_meshes.AppendMeshComponents(std::move(importedMeshes));

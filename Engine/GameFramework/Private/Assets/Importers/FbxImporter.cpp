@@ -36,9 +36,7 @@ SceneImportResult FbxImporter::Load(const std::filesystem::path& filePath)
 
 	if (result.meshes.empty())
 	{
-		result.errorMessage = std::format(
-		    "FbxImporter: No supported static meshes found in '{}'",
-		    filePath.string());
+		result.errorMessage = std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string());
 		return result;
 	}
 
@@ -56,14 +54,8 @@ SceneImportResult FbxImporter::Load(const std::filesystem::path& filePath)
 
 constexpr unsigned int FbxImporter::GetPostProcessFlags() noexcept
 {
-	return aiProcess_Triangulate |
-	       aiProcess_JoinIdenticalVertices |
-	       aiProcess_GenSmoothNormals |
-	       aiProcess_CalcTangentSpace |
-	       aiProcess_SortByPType |
-	       aiProcess_ValidateDataStructure |
-	       aiProcess_ImproveCacheLocality |
-	       aiProcess_ConvertToLeftHanded;
+	return aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+	       aiProcess_SortByPType | aiProcess_ValidateDataStructure | aiProcess_ImproveCacheLocality | aiProcess_ConvertToLeftHanded;
 }
 
 void FbxImporter::ConfigureImporter(Assimp::Importer& importer)
@@ -83,10 +75,10 @@ bool FbxImporter::ValidateInputPath(const std::filesystem::path& filePath, Scene
 }
 
 bool FbxImporter::TryReadScene(
-	Assimp::Importer& importer,
-	const std::filesystem::path& filePath,
-	const aiScene*& scene,
-	SceneImportResult& result)
+    Assimp::Importer& importer,
+    const std::filesystem::path& filePath,
+    const aiScene*& scene,
+    SceneImportResult& result)
 {
 	scene = importer.ReadFile(filePath.string(), GetPostProcessFlags());
 	if (scene != nullptr && scene->mRootNode != nullptr)
@@ -94,10 +86,7 @@ bool FbxImporter::TryReadScene(
 		return true;
 	}
 
-	result.errorMessage = std::format(
-	    "FbxImporter: Failed to parse '{}' ({})",
-	    filePath.string(),
-	    importer.GetErrorString());
+	result.errorMessage = std::format("FbxImporter: Failed to parse '{}' ({})", filePath.string(), importer.GetErrorString());
 	return false;
 }
 
@@ -122,30 +111,22 @@ void FbxImporter::CollectSceneWarnings(const aiScene& scene, SceneImportResult& 
 {
 	if (scene.HasAnimations())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: {} animations are present and will be ignored",
-		    scene.mNumAnimations));
+		result.AddWarning(std::format("FbxImporter: {} animations are present and will be ignored", scene.mNumAnimations));
 	}
 
 	if (scene.HasTextures())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: {} embedded textures are present and will be ignored",
-		    scene.mNumTextures));
+		result.AddWarning(std::format("FbxImporter: {} embedded textures are present and will be ignored", scene.mNumTextures));
 	}
 
 	if (scene.HasCameras())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: {} cameras are present and will be ignored",
-		    scene.mNumCameras));
+		result.AddWarning(std::format("FbxImporter: {} cameras are present and will be ignored", scene.mNumCameras));
 	}
 
 	if (scene.HasLights())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: {} lights are present and will be ignored",
-		    scene.mNumLights));
+		result.AddWarning(std::format("FbxImporter: {} lights are present and will be ignored", scene.mNumLights));
 	}
 }
 
@@ -158,27 +139,21 @@ void FbxImporter::CollectMaterialWarnings(const aiMaterial& material, std::strin
 	}
 
 	const aiShadingMode shadingMode = static_cast<aiShadingMode>(shadingModel);
-	if (shadingMode == aiShadingMode_NoShading ||
-	    shadingMode == aiShadingMode_Flat ||
-	    shadingMode == aiShadingMode_Gouraud ||
-	    shadingMode == aiShadingMode_Phong ||
-	    shadingMode == aiShadingMode_Blinn ||
-	    shadingMode == aiShadingMode_Unlit ||
+	if (shadingMode == aiShadingMode_NoShading || shadingMode == aiShadingMode_Flat || shadingMode == aiShadingMode_Gouraud ||
+	    shadingMode == aiShadingMode_Phong || shadingMode == aiShadingMode_Blinn || shadingMode == aiShadingMode_Unlit ||
 	    shadingMode == aiShadingMode_PBR_BRDF)
 	{
 		return;
 	}
 
-	result.AddWarning(std::format(
-	    "FbxImporter: Material '{}' uses unsupported shading model {} and will be approximated with Sparkle PBR defaults",
-	    materialName,
-	    shadingModel));
+	result.AddWarning(
+	    std::format(
+	        "FbxImporter: Material '{}' uses unsupported shading model {} and will be approximated with Sparkle PBR defaults",
+	        materialName,
+	        shadingModel));
 }
 
-void FbxImporter::ExtractMaterials(
-	const aiScene& scene,
-	const std::filesystem::path& sourceDirectory,
-	SceneImportResult& result)
+void FbxImporter::ExtractMaterials(const aiScene& scene, const std::filesystem::path& sourceDirectory, SceneImportResult& result)
 {
 	for (unsigned int materialIndex = 0; materialIndex < scene.mNumMaterials; ++materialIndex)
 	{
@@ -187,10 +162,10 @@ void FbxImporter::ExtractMaterials(
 }
 
 MaterialDesc FbxImporter::ExtractMaterial(
-	const aiMaterial& material,
-	unsigned int materialIndex,
-	const std::filesystem::path& sourceDirectory,
-	SceneImportResult& result)
+    const aiMaterial& material,
+    unsigned int materialIndex,
+    const std::filesystem::path& sourceDirectory,
+    SceneImportResult& result)
 {
 	MaterialDesc materialDesc = SceneImportUtilities::CreateMaterialDesc(GetMaterialName(material, materialIndex));
 	CollectMaterialWarnings(material, materialDesc.name, result);
@@ -238,109 +213,68 @@ void FbxImporter::ApplyMaterialProperties(const aiMaterial& material, MaterialDe
 }
 
 void FbxImporter::ApplyTextureMappings(
-	const aiMaterial& material,
-	const std::filesystem::path& sourceDirectory,
-	MaterialDesc& materialDesc,
-	SceneImportResult& result)
+    const aiMaterial& material,
+    const std::filesystem::path& sourceDirectory,
+    MaterialDesc& materialDesc,
+    SceneImportResult& result)
 {
 	SceneImportUtilities::SetMaterialTexture(
 	    materialDesc,
 	    ImportedTextureSemantic::Albedo,
-	    ResolveTexturePath(
-	        material,
-	        sourceDirectory,
-	        aiTextureType_BASE_COLOR,
-	        "base-color",
-	        materialDesc.name,
-	        result));
+	    ResolveTexturePath(material, sourceDirectory, aiTextureType_BASE_COLOR, "base-color", materialDesc.name, result));
 
 	if (!materialDesc.albedoTexture)
 	{
 		SceneImportUtilities::SetMaterialTexture(
 		    materialDesc,
 		    ImportedTextureSemantic::Albedo,
-		    ResolveTexturePath(
-		        material,
-		        sourceDirectory,
-		        aiTextureType_DIFFUSE,
-		        "diffuse",
-		        materialDesc.name,
-		        result));
+		    ResolveTexturePath(material, sourceDirectory, aiTextureType_DIFFUSE, "diffuse", materialDesc.name, result));
 	}
 
 	SceneImportUtilities::SetMaterialTexture(
 	    materialDesc,
 	    ImportedTextureSemantic::Normal,
-	    ResolveTexturePath(
-	        material,
-	        sourceDirectory,
-	        aiTextureType_NORMALS,
-	        "normal",
-	        materialDesc.name,
-	        result));
+	    ResolveTexturePath(material, sourceDirectory, aiTextureType_NORMALS, "normal", materialDesc.name, result));
 
 	if (!materialDesc.normalTexture)
 	{
 		SceneImportUtilities::SetMaterialTexture(
 		    materialDesc,
 		    ImportedTextureSemantic::Normal,
-		    ResolveTexturePath(
-		        material,
-		        sourceDirectory,
-		        aiTextureType_HEIGHT,
-		        "height",
-		        materialDesc.name,
-		        result));
+		    ResolveTexturePath(material, sourceDirectory, aiTextureType_HEIGHT, "height", materialDesc.name, result));
 	}
 
-	const std::optional<std::filesystem::path> specularTexturePath = ResolveTexturePath(
-	    material,
-	    sourceDirectory,
-	    aiTextureType_SPECULAR,
-	    "specular",
-	    materialDesc.name,
-	    result);
+	const std::optional<std::filesystem::path> specularTexturePath =
+	    ResolveTexturePath(material, sourceDirectory, aiTextureType_SPECULAR, "specular", materialDesc.name, result);
 
 	if (specularTexturePath)
 	{
 		if (!materialDesc.metallicRoughnessTexture)
 		{
-			SceneImportUtilities::SetMaterialTexture(
-			    materialDesc,
-			    ImportedTextureSemantic::MetallicRoughness,
-			    specularTexturePath);
+			SceneImportUtilities::SetMaterialTexture(materialDesc, ImportedTextureSemantic::MetallicRoughness, specularTexturePath);
 			materialDesc.metallic = 1.0f;
 			materialDesc.roughness = 1.0f;
 		}
 
 		if (!materialDesc.occlusionTexture)
 		{
-			SceneImportUtilities::SetMaterialTexture(
-			    materialDesc,
-			    ImportedTextureSemantic::Occlusion,
-			    specularTexturePath);
+			SceneImportUtilities::SetMaterialTexture(materialDesc, ImportedTextureSemantic::Occlusion, specularTexturePath);
 		}
 	}
 
 	SceneImportUtilities::SetMaterialTexture(
 	    materialDesc,
 	    ImportedTextureSemantic::Emissive,
-	    ResolveTexturePath(
-	        material,
-	        sourceDirectory,
-	        aiTextureType_EMISSIVE,
-	        "emissive",
-	        materialDesc.name,
-	        result));
+	    ResolveTexturePath(material, sourceDirectory, aiTextureType_EMISSIVE, "emissive", materialDesc.name, result));
 }
 
 std::optional<std::filesystem::path> FbxImporter::ResolveTexturePath(
-	const aiMaterial& material,
-	const std::filesystem::path& sourceDirectory,
-	aiTextureType textureType,
-	std::string_view slotName,
-	const std::string& materialName,
-	SceneImportResult& result)
+    const aiMaterial& material,
+    const std::filesystem::path& sourceDirectory,
+    aiTextureType textureType,
+    std::string_view slotName,
+    const std::string& materialName,
+    SceneImportResult& result)
 {
 	const unsigned int textureCount = material.GetTextureCount(textureType);
 	if (textureCount == 0)
@@ -350,10 +284,8 @@ std::optional<std::filesystem::path> FbxImporter::ResolveTexturePath(
 
 	if (textureCount > 1)
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Material '{}' has multiple {} textures and only the first will be used",
-		    materialName,
-		    slotName));
+		result.AddWarning(
+		    std::format("FbxImporter: Material '{}' has multiple {} textures and only the first will be used", materialName, slotName));
 	}
 
 	aiString texturePath;
@@ -370,11 +302,12 @@ std::optional<std::filesystem::path> FbxImporter::ResolveTexturePath(
 
 	if (texturePathString[0] == '*')
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Material '{}' uses embedded {} texture '{}' which is not supported yet",
-		    materialName,
-		    slotName,
-		    texturePathString));
+		result.AddWarning(
+		    std::format(
+		        "FbxImporter: Material '{}' uses embedded {} texture '{}' which is not supported yet",
+		        materialName,
+		        slotName,
+		        texturePathString));
 		return std::nullopt;
 	}
 
@@ -392,11 +325,7 @@ std::string FbxImporter::GetMaterialName(const aiMaterial& material, unsigned in
 	return std::format("FBXMaterial_{}", materialIndex);
 }
 
-void FbxImporter::ExtractNodeMeshes(
-	const aiScene& scene,
-	const aiNode& node,
-	const aiMatrix4x4& parentTransform,
-	SceneImportResult& result)
+void FbxImporter::ExtractNodeMeshes(const aiScene& scene, const aiNode& node, const aiMatrix4x4& parentTransform, SceneImportResult& result)
 {
 	const aiMatrix4x4 worldTransform = parentTransform * node.mTransformation;
 
@@ -405,10 +334,7 @@ void FbxImporter::ExtractNodeMeshes(
 		const unsigned int sceneMeshIndex = node.mMeshes[meshReferenceIndex];
 		if (sceneMeshIndex >= scene.mNumMeshes)
 		{
-			result.AddWarning(std::format(
-			    "FbxImporter: Node '{}' references invalid mesh index {}",
-			    GetNodeName(node),
-			    sceneMeshIndex));
+			result.AddWarning(std::format("FbxImporter: Node '{}' references invalid mesh index {}", GetNodeName(node), sceneMeshIndex));
 			continue;
 		}
 
@@ -421,11 +347,7 @@ void FbxImporter::ExtractNodeMeshes(
 	}
 }
 
-void FbxImporter::AppendMeshInstance(
-	const aiNode& node,
-	const aiMesh& mesh,
-	const aiMatrix4x4& worldTransform,
-	SceneImportResult& result)
+void FbxImporter::AppendMeshInstance(const aiNode& node, const aiMesh& mesh, const aiMatrix4x4& worldTransform, SceneImportResult& result)
 {
 	MeshData meshData = ExtractMeshGeometry(mesh, node, result);
 	if (!meshData.IsValid())
@@ -442,25 +364,23 @@ MeshData FbxImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node
 {
 	if (!mesh.HasPositions())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Skipping mesh '{}' on node '{}' because it has no vertex positions",
-		    GetMeshName(mesh),
-		    GetNodeName(node)));
+		result.AddWarning(
+		    std::format(
+		        "FbxImporter: Skipping mesh '{}' on node '{}' because it has no vertex positions",
+		        GetMeshName(mesh),
+		        GetNodeName(node)));
 		return {};
 	}
 
 	if (mesh.HasBones())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Mesh '{}' contains bones and will be imported as static geometry only",
-		    GetMeshName(mesh)));
+		result.AddWarning(
+		    std::format("FbxImporter: Mesh '{}' contains bones and will be imported as static geometry only", GetMeshName(mesh)));
 	}
 
 	if (mesh.mNumAnimMeshes > 0)
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Mesh '{}' contains morph targets which will be ignored",
-		    GetMeshName(mesh)));
+		result.AddWarning(std::format("FbxImporter: Mesh '{}' contains morph targets which will be ignored", GetMeshName(mesh)));
 	}
 
 	MeshData meshData;
@@ -471,9 +391,7 @@ MeshData FbxImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node
 
 	if (!meshData.IsValid())
 	{
-		result.AddWarning(std::format(
-		    "FbxImporter: Mesh '{}' did not produce valid triangle geometry",
-		    GetMeshName(mesh)));
+		result.AddWarning(std::format("FbxImporter: Mesh '{}' did not produce valid triangle geometry", GetMeshName(mesh)));
 	}
 
 	return meshData;
@@ -484,17 +402,11 @@ void FbxImporter::PopulateVertices(const aiMesh& mesh, MeshData& meshData)
 	for (unsigned int vertexIndex = 0; vertexIndex < mesh.mNumVertices; ++vertexIndex)
 	{
 		VertexData& vertex = meshData.vertices[vertexIndex];
-		vertex.position = XMFLOAT3(
-		    mesh.mVertices[vertexIndex].x,
-		    mesh.mVertices[vertexIndex].y,
-		    mesh.mVertices[vertexIndex].z);
+		vertex.position = XMFLOAT3(mesh.mVertices[vertexIndex].x, mesh.mVertices[vertexIndex].y, mesh.mVertices[vertexIndex].z);
 
 		if (mesh.HasNormals())
 		{
-			vertex.normal = XMFLOAT3(
-			    mesh.mNormals[vertexIndex].x,
-			    mesh.mNormals[vertexIndex].y,
-			    mesh.mNormals[vertexIndex].z);
+			vertex.normal = XMFLOAT3(mesh.mNormals[vertexIndex].x, mesh.mNormals[vertexIndex].y, mesh.mNormals[vertexIndex].z);
 		}
 
 		if (mesh.HasTextureCoords(0))
@@ -504,11 +416,7 @@ void FbxImporter::PopulateVertices(const aiMesh& mesh, MeshData& meshData)
 
 		if (mesh.HasTangentsAndBitangents())
 		{
-			vertex.tangent = XMFLOAT4(
-			    mesh.mTangents[vertexIndex].x,
-			    mesh.mTangents[vertexIndex].y,
-			    mesh.mTangents[vertexIndex].z,
-			    1.0f);
+			vertex.tangent = XMFLOAT4(mesh.mTangents[vertexIndex].x, mesh.mTangents[vertexIndex].y, mesh.mTangents[vertexIndex].z, 1.0f);
 		}
 
 		if (mesh.HasVertexColors(0))
@@ -529,10 +437,7 @@ void FbxImporter::AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, 
 		const aiFace& face = mesh.mFaces[faceIndex];
 		if (face.mNumIndices != 3)
 		{
-			result.AddWarning(std::format(
-			    "FbxImporter: Skipping non-triangle face {} in mesh '{}'",
-			    faceIndex,
-			    GetMeshName(mesh)));
+			result.AddWarning(std::format("FbxImporter: Skipping non-triangle face {} in mesh '{}'", faceIndex, GetMeshName(mesh)));
 			continue;
 		}
 
@@ -575,8 +480,20 @@ std::string FbxImporter::GetMeshName(const aiMesh& mesh)
 Transform FbxImporter::ConvertTransform(const aiMatrix4x4& matrix) noexcept
 {
 	return SceneImportUtilities::BuildImportedTransform(XMMATRIX(
-	    matrix.a1, matrix.a2, matrix.a3, matrix.a4,
-	    matrix.b1, matrix.b2, matrix.b3, matrix.b4,
-	    matrix.c1, matrix.c2, matrix.c3, matrix.c4,
-	    matrix.d1, matrix.d2, matrix.d3, matrix.d4));
+	    matrix.a1,
+	    matrix.a2,
+	    matrix.a3,
+	    matrix.a4,
+	    matrix.b1,
+	    matrix.b2,
+	    matrix.b3,
+	    matrix.b4,
+	    matrix.c1,
+	    matrix.c2,
+	    matrix.c3,
+	    matrix.c4,
+	    matrix.d1,
+	    matrix.d2,
+	    matrix.d3,
+	    matrix.d4));
 }

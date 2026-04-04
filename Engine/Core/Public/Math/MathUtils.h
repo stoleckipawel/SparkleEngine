@@ -32,7 +32,7 @@ namespace MathUtils
 
 	inline DirectX::XMFLOAT3 ExtractEulerRadians(const DirectX::XMFLOAT4X4& rotationMatrix) noexcept
 	{
-		const float sinPitch = (std::max)(-1.0f, (std::min)(1.0f, -rotationMatrix._23));
+		const float sinPitch = (std::max) (-1.0f, (std::min) (1.0f, -rotationMatrix._23));
 		const float pitch = std::asin(sinPitch);
 
 		float yaw = 0.0f;

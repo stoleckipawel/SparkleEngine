@@ -81,8 +81,7 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 
 bool DdsTextureLoader::HasDx10Header(const DdsHeader& header) noexcept
 {
-	return (header.pixelFormat.flags & kPixelFormatFlagFourCc) != 0 &&
-	       header.pixelFormat.fourCC == MakeFourCc('D', 'X', '1', '0');
+	return (header.pixelFormat.flags & kPixelFormatFlagFourCc) != 0 && header.pixelFormat.fourCC == MakeFourCc('D', 'X', '1', '0');
 }
 
 DdsTextureLoader::DdsHeaderDx10 DdsTextureLoader::ReadDx10Header(const std::vector<std::uint8_t>& fileBytes)
@@ -94,17 +93,11 @@ DdsTextureLoader::DdsHeaderDx10 DdsTextureLoader::ReadDx10Header(const std::vect
 	}
 
 	DdsHeaderDx10 dx10Header;
-	std::memcpy(
-	    &dx10Header,
-	    fileBytes.data() + sizeof(kDdsMagic) + sizeof(DdsHeader),
-	    sizeof(dx10Header));
+	std::memcpy(&dx10Header, fileBytes.data() + sizeof(kDdsMagic) + sizeof(DdsHeader), sizeof(dx10Header));
 	return dx10Header;
 }
 
-void DdsTextureLoader::ValidateHeader(
-	const DdsHeader& header,
-	const DdsHeaderDx10* dx10Header,
-	const std::filesystem::path& resolvedPath)
+void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath)
 {
 	if (header.size != sizeof(DdsHeader) || header.pixelFormat.size != sizeof(DdsPixelFormat))
 	{
@@ -141,9 +134,9 @@ void DdsTextureLoader::ValidateHeader(
 }
 
 DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
-	const DdsHeader& header,
-	const DdsHeaderDx10* dx10Header,
-	const std::filesystem::path& resolvedPath)
+    const DdsHeader& header,
+    const DdsHeaderDx10* dx10Header,
+    const std::filesystem::path& resolvedPath)
 {
 	if (dx10Header != nullptr)
 	{
@@ -179,33 +172,30 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 			case MakeFourCc('B', 'C', '5', 'S'):
 				return DXGI_FORMAT_BC5_SNORM;
 			default:
-				LOG_FATAL(std::format(
-				    "DdsTextureLoader: Unsupported DDS FourCC '{}' in '{}'",
-				    std::string({
-				        static_cast<char>(header.pixelFormat.fourCC & 0xFFu),
-				        static_cast<char>((header.pixelFormat.fourCC >> 8u) & 0xFFu),
-				        static_cast<char>((header.pixelFormat.fourCC >> 16u) & 0xFFu),
-				        static_cast<char>((header.pixelFormat.fourCC >> 24u) & 0xFFu)}),
-				    resolvedPath.string()));
+				LOG_FATAL(
+				    std::format(
+				        "DdsTextureLoader: Unsupported DDS FourCC '{}' in '{}'",
+				        std::string(
+				            {static_cast<char>(header.pixelFormat.fourCC & 0xFFu),
+				             static_cast<char>((header.pixelFormat.fourCC >> 8u) & 0xFFu),
+				             static_cast<char>((header.pixelFormat.fourCC >> 16u) & 0xFFu),
+				             static_cast<char>((header.pixelFormat.fourCC >> 24u) & 0xFFu)}),
+				        resolvedPath.string()));
 				return DXGI_FORMAT_UNKNOWN;
 		}
 	}
 
 	if ((header.pixelFormat.flags & kPixelFormatFlagRgb) != 0)
 	{
-		if (header.pixelFormat.rgbBitCount == 32 &&
-		    header.pixelFormat.rBitMask == 0x000000ffu &&
-		    header.pixelFormat.gBitMask == 0x0000ff00u &&
-		    header.pixelFormat.bBitMask == 0x00ff0000u &&
+		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x000000ffu &&
+		    header.pixelFormat.gBitMask == 0x0000ff00u && header.pixelFormat.bBitMask == 0x00ff0000u &&
 		    header.pixelFormat.aBitMask == 0xff000000u)
 		{
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 
-		if (header.pixelFormat.rgbBitCount == 32 &&
-		    header.pixelFormat.rBitMask == 0x00ff0000u &&
-		    header.pixelFormat.gBitMask == 0x0000ff00u &&
-		    header.pixelFormat.bBitMask == 0x000000ffu &&
+		if (header.pixelFormat.rgbBitCount == 32 && header.pixelFormat.rBitMask == 0x00ff0000u &&
+		    header.pixelFormat.gBitMask == 0x0000ff00u && header.pixelFormat.bBitMask == 0x000000ffu &&
 		    header.pixelFormat.aBitMask == 0xff000000u)
 		{
 			return DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -224,10 +214,11 @@ std::uint32_t DdsTextureLoader::ResolveBitsPerPixel(DXGI_FORMAT format, const st
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
 			return 32;
 		default:
-			LOG_FATAL(std::format(
-			    "DdsTextureLoader: Uncompressed bit-depth query is unsupported for format {} in '{}'",
-			    static_cast<int>(format),
-			    resolvedPath.string()));
+			LOG_FATAL(
+			    std::format(
+			        "DdsTextureLoader: Uncompressed bit-depth query is unsupported for format {} in '{}'",
+			        static_cast<int>(format),
+			        resolvedPath.string()));
 			return 0;
 	}
 }
@@ -246,17 +237,18 @@ std::uint32_t DdsTextureLoader::ResolveBlockSize(DXGI_FORMAT format, const std::
 		case DXGI_FORMAT_BC5_SNORM:
 			return 16;
 		default:
-			LOG_FATAL(std::format(
-			    "DdsTextureLoader: Block-size query is unsupported for format {} in '{}'",
-			    static_cast<int>(format),
-			    resolvedPath.string()));
+			LOG_FATAL(
+			    std::format(
+			        "DdsTextureLoader: Block-size query is unsupported for format {} in '{}'",
+			        static_cast<int>(format),
+			        resolvedPath.string()));
 			return 0;
 	}
 }
 
 std::uint32_t DdsTextureLoader::ResolveMipCount(const DdsHeader& header) noexcept
 {
-	return (std::max)(1u, header.mipMapCount);
+	return (std::max) (1u, header.mipMapCount);
 }
 
 bool DdsTextureLoader::IsBlockCompressed(DXGI_FORMAT format) noexcept
@@ -276,14 +268,11 @@ bool DdsTextureLoader::IsBlockCompressed(DXGI_FORMAT format) noexcept
 	}
 }
 
-std::uint32_t DdsTextureLoader::ComputeRowPitch(
-	DXGI_FORMAT format,
-	std::uint32_t width,
-	const std::filesystem::path& resolvedPath)
+std::uint32_t DdsTextureLoader::ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, const std::filesystem::path& resolvedPath)
 {
 	if (IsBlockCompressed(format))
 	{
-		const std::uint32_t blockCountX = (std::max)(1u, (width + 3u) / 4u);
+		const std::uint32_t blockCountX = (std::max) (1u, (width + 3u) / 4u);
 		return blockCountX * ResolveBlockSize(format, resolvedPath);
 	}
 
@@ -291,14 +280,14 @@ std::uint32_t DdsTextureLoader::ComputeRowPitch(
 }
 
 std::uint32_t DdsTextureLoader::ComputeSlicePitch(
-	DXGI_FORMAT format,
-	std::uint32_t width,
-	std::uint32_t height,
-	const std::filesystem::path& resolvedPath)
+    DXGI_FORMAT format,
+    std::uint32_t width,
+    std::uint32_t height,
+    const std::filesystem::path& resolvedPath)
 {
 	if (IsBlockCompressed(format))
 	{
-		const std::uint32_t blockCountY = (std::max)(1u, (height + 3u) / 4u);
+		const std::uint32_t blockCountY = (std::max) (1u, (height + 3u) / 4u);
 		return ComputeRowPitch(format, width, resolvedPath) * blockCountY;
 	}
 
@@ -311,10 +300,10 @@ std::size_t DdsTextureLoader::ResolvePixelDataOffset(const DdsHeader& header) no
 }
 
 TexturePayload DdsTextureLoader::BuildPayload(
-	const std::vector<std::uint8_t>& fileBytes,
-	const DdsHeader& header,
-	DXGI_FORMAT dxgiFormat,
-	const std::filesystem::path& resolvedPath)
+    const std::vector<std::uint8_t>& fileBytes,
+    const DdsHeader& header,
+    DXGI_FORMAT dxgiFormat,
+    const std::filesystem::path& resolvedPath)
 {
 	TexturePayload payload;
 	payload.width = header.width;
@@ -330,17 +319,14 @@ TexturePayload DdsTextureLoader::BuildPayload(
 	for (std::uint32_t mipIndex = 0; mipIndex < ResolveMipCount(header); ++mipIndex)
 	{
 		TextureMipLevelData mipLevel;
-		mipLevel.width = (std::max)(1u, mipWidth);
-		mipLevel.height = (std::max)(1u, mipHeight);
+		mipLevel.width = (std::max) (1u, mipWidth);
+		mipLevel.height = (std::max) (1u, mipHeight);
 		mipLevel.rowPitch = ComputeRowPitch(dxgiFormat, mipLevel.width, resolvedPath);
 		mipLevel.slicePitch = ComputeSlicePitch(dxgiFormat, mipLevel.width, mipLevel.height, resolvedPath);
 
 		if (byteOffset + mipLevel.slicePitch > fileBytes.size())
 		{
-			LOG_FATAL(std::format(
-			    "DdsTextureLoader: '{}' ended before mip {} could be read",
-			    resolvedPath.string(),
-			    mipIndex));
+			LOG_FATAL(std::format("DdsTextureLoader: '{}' ended before mip {} could be read", resolvedPath.string(), mipIndex));
 			return {};
 		}
 
@@ -350,8 +336,8 @@ TexturePayload DdsTextureLoader::BuildPayload(
 		payload.mipLevels.push_back(std::move(mipLevel));
 
 		byteOffset += payload.mipLevels.back().slicePitch;
-		mipWidth = (std::max)(1u, mipWidth >> 1u);
-		mipHeight = (std::max)(1u, mipHeight >> 1u);
+		mipWidth = (std::max) (1u, mipWidth >> 1u);
+		mipHeight = (std::max) (1u, mipHeight >> 1u);
 	}
 
 	return payload;

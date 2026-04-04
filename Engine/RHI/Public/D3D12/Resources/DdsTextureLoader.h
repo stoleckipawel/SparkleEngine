@@ -79,13 +79,20 @@ class SPARKLE_RHI_API DdsTextureLoader final
 	static bool HasDx10Header(const DdsHeader& header) noexcept;
 	static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes);
 	static void ValidateHeader(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath);
-	static DXGI_FORMAT ResolveDxgiFormat(const DdsHeader& header, const DdsHeaderDx10* dx10Header, const std::filesystem::path& resolvedPath);
+	static DXGI_FORMAT ResolveDxgiFormat(
+	    const DdsHeader& header,
+	    const DdsHeaderDx10* dx10Header,
+	    const std::filesystem::path& resolvedPath);
 	static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath);
 	static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath);
 	static std::uint32_t ResolveMipCount(const DdsHeader& header) noexcept;
 	static bool IsBlockCompressed(DXGI_FORMAT format) noexcept;
 	static std::uint32_t ComputeRowPitch(DXGI_FORMAT format, std::uint32_t width, const std::filesystem::path& resolvedPath);
-	static std::uint32_t ComputeSlicePitch(DXGI_FORMAT format, std::uint32_t width, std::uint32_t height, const std::filesystem::path& resolvedPath);
+	static std::uint32_t ComputeSlicePitch(
+	    DXGI_FORMAT format,
+	    std::uint32_t width,
+	    std::uint32_t height,
+	    const std::filesystem::path& resolvedPath);
 	static std::size_t ResolvePixelDataOffset(const DdsHeader& header) noexcept;
 	static TexturePayload BuildPayload(
 	    const std::vector<std::uint8_t>& fileBytes,

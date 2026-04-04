@@ -35,16 +35,8 @@ class GltfLoader final
 	};
 
 	static bool ValidateInputPath(const std::filesystem::path& filePath, SceneImportResult& result);
-	static bool ParseGltfFile(
-	    cgltf_options& options,
-	    const std::string& pathStr,
-	    cgltf_data*& outData,
-	    SceneImportResult& result);
-	static bool LoadGltfBuffers(
-	    cgltf_options& options,
-	    cgltf_data* data,
-	    const std::string& pathStr,
-	    SceneImportResult& result);
+	static bool ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, SceneImportResult& result);
+	static bool LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, SceneImportResult& result);
 	static void ValidateGltf(cgltf_data* data, const std::string& pathStr, SceneImportResult& result);
 	static void CollectSceneWarnings(const cgltf_data* data, SceneImportResult& result);
 	static std::size_t CountTotalPrimitives(const cgltf_data* data);
@@ -59,15 +51,9 @@ class GltfLoader final
 	    std::string_view materialName,
 	    std::string_view slotName,
 	    SceneImportResult& result);
-	static void AppendUnsupportedMaterialWarnings(
-	    const cgltf_material& material,
-	    std::string_view materialName,
-	    SceneImportResult& result);
+	static void AppendUnsupportedMaterialWarnings(const cgltf_material& material, std::string_view materialName, SceneImportResult& result);
 
-	static void ExtractMaterials(
-	    const cgltf_data* data,
-	    const std::filesystem::path& gltfDirectory,
-	    SceneImportResult& result);
+	static void ExtractMaterials(const cgltf_data* data, const std::filesystem::path& gltfDirectory, SceneImportResult& result);
 
 	static std::uint32_t ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data);
 	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);

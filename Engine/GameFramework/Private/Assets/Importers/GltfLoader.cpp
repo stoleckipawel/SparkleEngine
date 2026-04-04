@@ -28,11 +28,7 @@ bool GltfLoader::ValidateInputPath(const std::filesystem::path& filePath, SceneI
 	return false;
 }
 
-bool GltfLoader::ParseGltfFile(
-	cgltf_options& options,
-	const std::string& pathStr,
-	cgltf_data*& outData,
-	SceneImportResult& result)
+bool GltfLoader::ParseGltfFile(cgltf_options& options, const std::string& pathStr, cgltf_data*& outData, SceneImportResult& result)
 {
 	const cgltf_result parseResult = cgltf_parse_file(&options, pathStr.c_str(), &outData);
 	if (parseResult == cgltf_result_success)
@@ -40,19 +36,12 @@ bool GltfLoader::ParseGltfFile(
 		return true;
 	}
 
-	result.errorMessage = std::format(
-	    "GltfLoader: Failed to parse '{}' (cgltf error {})",
-	    pathStr,
-	    static_cast<int>(parseResult));
+	result.errorMessage = std::format("GltfLoader: Failed to parse '{}' (cgltf error {})", pathStr, static_cast<int>(parseResult));
 	LOG_ERROR(result.errorMessage);
 	return false;
 }
 
-bool GltfLoader::LoadGltfBuffers(
-	cgltf_options& options,
-	cgltf_data* data,
-	const std::string& pathStr,
-	SceneImportResult& result)
+bool GltfLoader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, const std::string& pathStr, SceneImportResult& result)
 {
 	const cgltf_result bufferResult = cgltf_load_buffers(&options, data, pathStr.c_str());
 	if (bufferResult == cgltf_result_success)
@@ -60,10 +49,8 @@ bool GltfLoader::LoadGltfBuffers(
 		return true;
 	}
 
-	result.errorMessage = std::format(
-	    "GltfLoader: Failed to load buffers for '{}' (cgltf error {})",
-	    pathStr,
-	    static_cast<int>(bufferResult));
+	result.errorMessage =
+	    std::format("GltfLoader: Failed to load buffers for '{}' (cgltf error {})", pathStr, static_cast<int>(bufferResult));
 	LOG_ERROR(result.errorMessage);
 	return false;
 }
@@ -73,10 +60,8 @@ void GltfLoader::ValidateGltf(cgltf_data* data, const std::string& pathStr, Scen
 	const cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: Validation warnings for '{}' (cgltf error {})",
-		    pathStr,
-		    static_cast<int>(validateResult)));
+		result.AddWarning(
+		    std::format("GltfLoader: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
 	}
 }
 
@@ -84,16 +69,12 @@ void GltfLoader::CollectSceneWarnings(const cgltf_data* data, SceneImportResult&
 {
 	if (data->animations_count > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} animations are present and will be ignored",
-		    data->animations_count));
+		result.AddWarning(std::format("GltfLoader: {} animations are present and will be ignored", data->animations_count));
 	}
 
 	if (data->variants_count > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} material variants are present and will be ignored",
-		    data->variants_count));
+		result.AddWarning(std::format("GltfLoader: {} material variants are present and will be ignored", data->variants_count));
 	}
 
 	std::size_t cameraNodeCount = 0;
@@ -114,37 +95,31 @@ void GltfLoader::CollectSceneWarnings(const cgltf_data* data, SceneImportResult&
 
 	if (cameraNodeCount > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} nodes contain cameras and they will be ignored",
-		    cameraNodeCount));
+		result.AddWarning(std::format("GltfLoader: {} nodes contain cameras and they will be ignored", cameraNodeCount));
 	}
 
 	if (lightNodeCount > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} nodes contain lights and they will be ignored",
-		    lightNodeCount));
+		result.AddWarning(std::format("GltfLoader: {} nodes contain lights and they will be ignored", lightNodeCount));
 	}
 
 	if (skinnedNodeCount > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} skinned nodes are present and will be imported as static data only",
-		    skinnedNodeCount));
+		result.AddWarning(
+		    std::format("GltfLoader: {} skinned nodes are present and will be imported as static data only", skinnedNodeCount));
 	}
 
 	if (weightedNodeCount > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} weighted nodes are present and morph weights will be ignored",
-		    weightedNodeCount));
+		result.AddWarning(std::format("GltfLoader: {} weighted nodes are present and morph weights will be ignored", weightedNodeCount));
 	}
 
 	if (instancedNodeCount > 0)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: {} nodes use mesh GPU instancing and will be flattened to regular mesh instances",
-		    instancedNodeCount));
+		result.AddWarning(
+		    std::format(
+		        "GltfLoader: {} nodes use mesh GPU instancing and will be flattened to regular mesh instances",
+		        instancedNodeCount));
 	}
 }
 
@@ -188,40 +163,31 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResul
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
-				result.AddWarning(std::format(
-				    "GltfLoader: Skipping {} because only triangle primitives are supported",
-				    primitiveLabel));
+				result.AddWarning(std::format("GltfLoader: Skipping {} because only triangle primitives are supported", primitiveLabel));
 				continue;
 			}
 
 			if (primitive.targets_count > 0)
 			{
-				result.AddWarning(std::format(
-				    "GltfLoader: {} contains morph targets which will be ignored",
-				    primitiveLabel));
+				result.AddWarning(std::format("GltfLoader: {} contains morph targets which will be ignored", primitiveLabel));
 			}
 
 			if (primitive.has_draco_mesh_compression)
 			{
-				result.AddWarning(std::format(
-				    "GltfLoader: Skipping {} because Draco-compressed primitives are not supported yet",
-				    primitiveLabel));
+				result.AddWarning(
+				    std::format("GltfLoader: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
 				continue;
 			}
 
 			if (primitive.mappings_count > 0)
 			{
-				result.AddWarning(std::format(
-				    "GltfLoader: {} contains material variant mappings which will be ignored",
-				    primitiveLabel));
+				result.AddWarning(std::format("GltfLoader: {} contains material variant mappings which will be ignored", primitiveLabel));
 			}
 
 			MeshData meshData = ExtractPrimitive(primitive);
 			if (!meshData.IsValid())
 			{
-				result.AddWarning(std::format(
-				    "GltfLoader: Skipping {} because vertex or index data is incomplete",
-				    primitiveLabel));
+				result.AddWarning(std::format("GltfLoader: Skipping {} because vertex or index data is incomplete", primitiveLabel));
 				continue;
 			}
 
@@ -293,11 +259,11 @@ XMMATRIX GltfLoader::ComputeNodeWorldTransform(const cgltf_node* node)
 }
 
 std::optional<std::filesystem::path> GltfLoader::ResolveTexturePath(
-	const cgltf_texture_view& textureView,
-	const std::filesystem::path& gltfDirectory,
-	std::string_view materialName,
-	std::string_view slotName,
-	SceneImportResult& result)
+    const cgltf_texture_view& textureView,
+    const std::filesystem::path& gltfDirectory,
+    std::string_view materialName,
+    std::string_view slotName,
+    SceneImportResult& result)
 {
 	if (!textureView.texture)
 	{
@@ -312,28 +278,24 @@ std::optional<std::filesystem::path> GltfLoader::ResolveTexturePath(
 
 	if (texture.image && texture.image->buffer_view)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: Material '{}' uses an embedded {} texture which is not supported yet",
-		    materialName,
-		    slotName));
+		result.AddWarning(
+		    std::format("GltfLoader: Material '{}' uses an embedded {} texture which is not supported yet", materialName, slotName));
 		return std::nullopt;
 	}
 
 	if (texture.has_basisu || texture.has_webp)
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: Material '{}' uses {} texture sources that are not supported by the runtime importer yet",
-		    materialName,
-		    slotName));
+		result.AddWarning(
+		    std::format(
+		        "GltfLoader: Material '{}' uses {} texture sources that are not supported by the runtime importer yet",
+		        materialName,
+		        slotName));
 	}
 
 	return std::nullopt;
 }
 
-void GltfLoader::AppendUnsupportedMaterialWarnings(
-	const cgltf_material& material,
-	std::string_view materialName,
-	SceneImportResult& result)
+void GltfLoader::AppendUnsupportedMaterialWarnings(const cgltf_material& material, std::string_view materialName, SceneImportResult& result)
 {
 	std::string unsupportedFeatures;
 	auto appendFeature = [&unsupportedFeatures](std::string_view featureName)
@@ -413,30 +375,25 @@ void GltfLoader::AppendUnsupportedMaterialWarnings(
 
 	if (!unsupportedFeatures.empty())
 	{
-		result.AddWarning(std::format(
-		    "GltfLoader: Material '{}' uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR defaults",
-		    materialName,
-		    unsupportedFeatures));
+		result.AddWarning(
+		    std::format(
+		        "GltfLoader: Material '{}' uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR defaults",
+		        materialName,
+		        unsupportedFeatures));
 	}
 }
 
-void GltfLoader::ExtractMaterials(
-	const cgltf_data* data,
-	const std::filesystem::path& gltfDirectory,
-	SceneImportResult& result)
+void GltfLoader::ExtractMaterials(const cgltf_data* data, const std::filesystem::path& gltfDirectory, SceneImportResult& result)
 {
 	result.materials.reserve(data->materials_count);
 
 	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
 		const cgltf_material& material = data->materials[materialIndex];
-		MaterialDesc materialDesc = SceneImportUtilities::CreateMaterialDesc(
-		    material.name ? material.name : std::format("Material_{}", materialIndex));
+		MaterialDesc materialDesc =
+		    SceneImportUtilities::CreateMaterialDesc(material.name ? material.name : std::format("Material_{}", materialIndex));
 
-		materialDesc.emissiveColor = XMFLOAT3(
-		    material.emissive_factor[0],
-		    material.emissive_factor[1],
-		    material.emissive_factor[2]);
+		materialDesc.emissiveColor = XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
 		materialDesc.alphaCutoff = material.alpha_cutoff;
 
 		switch (material.alpha_mode)
@@ -458,33 +415,20 @@ void GltfLoader::ExtractMaterials(
 		if (material.has_pbr_metallic_roughness)
 		{
 			const cgltf_pbr_metallic_roughness& pbr = material.pbr_metallic_roughness;
-			materialDesc.baseColor = XMFLOAT4(
-			    pbr.base_color_factor[0],
-			    pbr.base_color_factor[1],
-			    pbr.base_color_factor[2],
-			    pbr.base_color_factor[3]);
+			materialDesc.baseColor =
+			    XMFLOAT4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
 			materialDesc.metallic = pbr.metallic_factor;
 			materialDesc.roughness = pbr.roughness_factor;
 
 			SceneImportUtilities::SetMaterialTexture(
 			    materialDesc,
 			    ImportedTextureSemantic::Albedo,
-			    ResolveTexturePath(
-			        pbr.base_color_texture,
-			        gltfDirectory,
-			        materialDesc.name,
-			        "base-color",
-			        result));
+			    ResolveTexturePath(pbr.base_color_texture, gltfDirectory, materialDesc.name, "base-color", result));
 
 			SceneImportUtilities::SetMaterialTexture(
 			    materialDesc,
 			    ImportedTextureSemantic::MetallicRoughness,
-			    ResolveTexturePath(
-			        pbr.metallic_roughness_texture,
-			        gltfDirectory,
-			        materialDesc.name,
-			        "metallic-roughness",
-			        result));
+			    ResolveTexturePath(pbr.metallic_roughness_texture, gltfDirectory, materialDesc.name, "metallic-roughness", result));
 		}
 		else if (material.has_pbr_specular_glossiness)
 		{
@@ -500,43 +444,23 @@ void GltfLoader::ExtractMaterials(
 			SceneImportUtilities::SetMaterialTexture(
 			    materialDesc,
 			    ImportedTextureSemantic::Albedo,
-			    ResolveTexturePath(
-			        specGloss.diffuse_texture,
-			        gltfDirectory,
-			        materialDesc.name,
-			        "diffuse",
-			        result));
+			    ResolveTexturePath(specGloss.diffuse_texture, gltfDirectory, materialDesc.name, "diffuse", result));
 		}
 
 		SceneImportUtilities::SetMaterialTexture(
 		    materialDesc,
 		    ImportedTextureSemantic::Normal,
-		    ResolveTexturePath(
-		        material.normal_texture,
-		        gltfDirectory,
-		        materialDesc.name,
-		        "normal",
-		        result));
+		    ResolveTexturePath(material.normal_texture, gltfDirectory, materialDesc.name, "normal", result));
 
 		SceneImportUtilities::SetMaterialTexture(
 		    materialDesc,
 		    ImportedTextureSemantic::Occlusion,
-		    ResolveTexturePath(
-		        material.occlusion_texture,
-		        gltfDirectory,
-		        materialDesc.name,
-		        "occlusion",
-		        result));
+		    ResolveTexturePath(material.occlusion_texture, gltfDirectory, materialDesc.name, "occlusion", result));
 
 		SceneImportUtilities::SetMaterialTexture(
 		    materialDesc,
 		    ImportedTextureSemantic::Emissive,
-		    ResolveTexturePath(
-		        material.emissive_texture,
-		        gltfDirectory,
-		        materialDesc.name,
-		        "emissive",
-		        result));
+		    ResolveTexturePath(material.emissive_texture, gltfDirectory, materialDesc.name, "emissive", result));
 
 		result.materials.push_back(std::move(materialDesc));
 	}
@@ -630,19 +554,18 @@ SceneImportResult GltfLoader::Load(const std::filesystem::path& filePath)
 
 	if (result.meshes.empty())
 	{
-		result.errorMessage = std::format(
-		    "GltfLoader: No supported mesh primitives found in '{}'",
-		    filePath.string());
+		result.errorMessage = std::format("GltfLoader: No supported mesh primitives found in '{}'", filePath.string());
 		return result;
 	}
 
 	result.bSuccess = true;
 
-	LOG_INFO(std::format(
-	    "GltfLoader: Loaded '{}' — {} meshes, {} materials",
-	    filePath.filename().string(),
-	    result.meshes.size(),
-	    result.materials.size()));
+	LOG_INFO(
+	    std::format(
+	        "GltfLoader: Loaded '{}' — {} meshes, {} materials",
+	        filePath.filename().string(),
+	        result.meshes.size(),
+	        result.materials.size()));
 
 	return result;
 }

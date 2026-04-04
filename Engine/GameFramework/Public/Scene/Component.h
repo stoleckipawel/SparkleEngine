@@ -4,18 +4,18 @@
 
 class Entity;
 
-class SPARKLE_ENGINE_API Component 
+class SPARKLE_ENGINE_API Component
 {
-protected:
-    Entity* owner = nullptr;
+  protected:
+	Entity* owner = nullptr;
 
-public:
-    virtual ~Component();
+  public:
+	virtual ~Component();
 
-    virtual void Initialize();
-    virtual void Update(float deltaTime);
-    virtual void Render();
+	virtual void Initialize();
+	virtual void Update(float deltaTime);
+	virtual void Render();
 
-    void SetOwner(Entity* entity);
-    Entity* GetOwner() const;
+	void SetOwner(Entity* entity);
+	Entity* GetOwner() const;
 };

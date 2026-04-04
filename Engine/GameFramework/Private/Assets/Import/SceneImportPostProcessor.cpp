@@ -23,39 +23,43 @@ void SceneImportPostProcessor::NormalizeResultShape(SceneImportResult& result)
 
 	if (result.transforms.size() < result.meshes.size())
 	{
-		result.AddWarning(std::format(
-		    "{}: Import result contained {} transforms for {} meshes; missing transforms will use identity",
-		    importerName,
-		    result.transforms.size(),
-		    result.meshes.size()));
+		result.AddWarning(
+		    std::format(
+		        "{}: Import result contained {} transforms for {} meshes; missing transforms will use identity",
+		        importerName,
+		        result.transforms.size(),
+		        result.meshes.size()));
 		result.transforms.resize(result.meshes.size());
 	}
 	else if (result.transforms.size() > result.meshes.size())
 	{
-		result.AddWarning(std::format(
-		    "{}: Import result contained {} transforms for {} meshes; extra transforms will be discarded",
-		    importerName,
-		    result.transforms.size(),
-		    result.meshes.size()));
+		result.AddWarning(
+		    std::format(
+		        "{}: Import result contained {} transforms for {} meshes; extra transforms will be discarded",
+		        importerName,
+		        result.transforms.size(),
+		        result.meshes.size()));
 		result.transforms.resize(result.meshes.size());
 	}
 
 	if (result.materialOffsets.size() < result.meshes.size())
 	{
-		result.AddWarning(std::format(
-		    "{}: Import result contained {} material offsets for {} meshes; missing offsets will use the default material",
-		    importerName,
-		    result.materialOffsets.size(),
-		    result.meshes.size()));
+		result.AddWarning(
+		    std::format(
+		        "{}: Import result contained {} material offsets for {} meshes; missing offsets will use the default material",
+		        importerName,
+		        result.materialOffsets.size(),
+		        result.meshes.size()));
 		result.materialOffsets.resize(result.meshes.size(), 0);
 	}
 	else if (result.materialOffsets.size() > result.meshes.size())
 	{
-		result.AddWarning(std::format(
-		    "{}: Import result contained {} material offsets for {} meshes; extra offsets will be discarded",
-		    importerName,
-		    result.materialOffsets.size(),
-		    result.meshes.size()));
+		result.AddWarning(
+		    std::format(
+		        "{}: Import result contained {} material offsets for {} meshes; extra offsets will be discarded",
+		        importerName,
+		        result.materialOffsets.size(),
+		        result.meshes.size()));
 		result.materialOffsets.resize(result.meshes.size());
 	}
 }
@@ -70,11 +74,8 @@ void SceneImportPostProcessor::NormalizeMaterialNamesAndTextures(SceneImportResu
 		if (materialDesc.name.empty())
 		{
 			materialDesc.name = std::format("ImportedMaterial_{}", materialIndex);
-			result.AddWarning(std::format(
-			    "{}: Material {} was unnamed and has been renamed to '{}'",
-			    importerName,
-			    materialIndex,
-			    materialDesc.name));
+			result.AddWarning(
+			    std::format("{}: Material {} was unnamed and has been renamed to '{}'", importerName, materialIndex, materialDesc.name));
 		}
 
 		NormalizeOptionalTexturePath(materialDesc.albedoTexture, importerName, materialDesc.name, "albedo", result);
@@ -99,7 +100,7 @@ void SceneImportPostProcessor::DeduplicateMaterials(SceneImportResult& result)
 		    deduplicatedMaterials.end(),
 		    [&materialDesc](const MaterialDesc& existingMaterial)
 		    {
-			return AreMaterialsEquivalent(existingMaterial, materialDesc);
+			    return AreMaterialsEquivalent(existingMaterial, materialDesc);
 		    });
 
 		if (existingIt == deduplicatedMaterials.end())
@@ -143,11 +144,12 @@ void SceneImportPostProcessor::SanitizeMaterialOffsets(SceneImportResult& result
 
 		if (result.materialOffsets[meshIndex] >= result.materials.size())
 		{
-			result.AddWarning(std::format(
-			    "{}: Mesh {} references invalid material index {} and will use the default material",
-			    importerName,
-			    meshIndex,
-			    result.materialOffsets[meshIndex]));
+			result.AddWarning(
+			    std::format(
+			        "{}: Mesh {} references invalid material index {} and will use the default material",
+			        importerName,
+			        meshIndex,
+			        result.materialOffsets[meshIndex]));
 			result.materialOffsets[meshIndex] = 0;
 		}
 	}
@@ -191,41 +193,31 @@ void SceneImportPostProcessor::AccumulateStats(SceneImportResult& result)
 	if (result.stats.estimatedMeshBytes >= kLargeSceneMeshDataWarningBytes)
 	{
 		const std::string importerName = result.stats.importerName.empty() ? std::string("SceneImporter") : result.stats.importerName;
-		result.AddWarning(std::format(
-		    "{}: Imported mesh data consumes {:.2f} MiB before runtime upload; validate large-scene memory pressure",
-		    importerName,
-		    static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
+		result.AddWarning(
+		    std::format(
+		        "{}: Imported mesh data consumes {:.2f} MiB before runtime upload; validate large-scene memory pressure",
+		        importerName,
+		        static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
 	}
 }
 
 bool SceneImportPostProcessor::AreMaterialsEquivalent(const MaterialDesc& lhs, const MaterialDesc& rhs) noexcept
 {
-	return lhs.name == rhs.name &&
-	       lhs.baseColor.x == rhs.baseColor.x &&
-	       lhs.baseColor.y == rhs.baseColor.y &&
-	       lhs.baseColor.z == rhs.baseColor.z &&
-	       lhs.baseColor.w == rhs.baseColor.w &&
-	       lhs.metallic == rhs.metallic &&
-	       lhs.roughness == rhs.roughness &&
-	       lhs.f0 == rhs.f0 &&
-	       lhs.emissiveColor.x == rhs.emissiveColor.x &&
-	       lhs.emissiveColor.y == rhs.emissiveColor.y &&
-	       lhs.emissiveColor.z == rhs.emissiveColor.z &&
-	       lhs.alphaMode == rhs.alphaMode &&
-	       lhs.alphaCutoff == rhs.alphaCutoff &&
-	       lhs.albedoTexture == rhs.albedoTexture &&
-	       lhs.normalTexture == rhs.normalTexture &&
-	       lhs.metallicRoughnessTexture == rhs.metallicRoughnessTexture &&
-	       lhs.occlusionTexture == rhs.occlusionTexture &&
+	return lhs.name == rhs.name && lhs.baseColor.x == rhs.baseColor.x && lhs.baseColor.y == rhs.baseColor.y &&
+	       lhs.baseColor.z == rhs.baseColor.z && lhs.baseColor.w == rhs.baseColor.w && lhs.metallic == rhs.metallic &&
+	       lhs.roughness == rhs.roughness && lhs.f0 == rhs.f0 && lhs.emissiveColor.x == rhs.emissiveColor.x &&
+	       lhs.emissiveColor.y == rhs.emissiveColor.y && lhs.emissiveColor.z == rhs.emissiveColor.z && lhs.alphaMode == rhs.alphaMode &&
+	       lhs.alphaCutoff == rhs.alphaCutoff && lhs.albedoTexture == rhs.albedoTexture && lhs.normalTexture == rhs.normalTexture &&
+	       lhs.metallicRoughnessTexture == rhs.metallicRoughnessTexture && lhs.occlusionTexture == rhs.occlusionTexture &&
 	       lhs.emissiveTexture == rhs.emissiveTexture;
 }
 
 void SceneImportPostProcessor::NormalizeOptionalTexturePath(
-	std::optional<std::filesystem::path>& texturePath,
-	std::string_view importerName,
-	std::string_view materialName,
-	std::string_view slotName,
-	SceneImportResult& result)
+    std::optional<std::filesystem::path>& texturePath,
+    std::string_view importerName,
+    std::string_view materialName,
+    std::string_view slotName,
+    SceneImportResult& result)
 {
 	if (!texturePath)
 	{
@@ -235,12 +227,13 @@ void SceneImportPostProcessor::NormalizeOptionalTexturePath(
 	const std::filesystem::path normalizedPath = Filesystem::NormalizePath(*texturePath);
 	if (normalizedPath.empty())
 	{
-		result.AddWarning(std::format(
-		    "{}: Material '{}' has an invalid {} texture path '{}' and it will be ignored",
-		    importerName,
-		    materialName,
-		    slotName,
-		    texturePath->string()));
+		result.AddWarning(
+		    std::format(
+		        "{}: Material '{}' has an invalid {} texture path '{}' and it will be ignored",
+		        importerName,
+		        materialName,
+		        slotName,
+		        texturePath->string()));
 		texturePath.reset();
 		return;
 	}

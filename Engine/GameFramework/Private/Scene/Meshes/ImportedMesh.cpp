@@ -1,9 +1,7 @@
 #include "PCH.h"
 #include "ImportedMesh.h"
 
-ImportedMesh::ImportedMesh(MeshData&& meshData) noexcept : m_importedData(std::move(meshData))
-{
-}
+ImportedMesh::ImportedMesh(MeshData&& meshData) noexcept : m_importedData(std::move(meshData)) {}
 
 void ImportedMesh::GenerateGeometry(MeshData& outMeshData) const
 {

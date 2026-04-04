@@ -39,6 +39,6 @@ namespace SceneImportUtilities
 	    std::string_view importerName,
 	    std::string_view meshLabel,
 	    SceneImportResult& result);
-        
+
 	Transform BuildImportedTransform(const DirectX::XMMATRIX& worldTransform) noexcept;
 }

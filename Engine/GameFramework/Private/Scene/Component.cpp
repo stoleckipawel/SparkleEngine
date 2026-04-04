@@ -3,18 +3,14 @@
 
 Component::~Component() = default;
 
-void Component::Initialize()
-{
-}
+void Component::Initialize() {}
 
 void Component::Update(float deltaTime)
 {
 	static_cast<void>(deltaTime);
 }
 
-void Component::Render()
-{
-}
+void Component::Render() {}
 
 void Component::SetOwner(Entity* entity)
 {
