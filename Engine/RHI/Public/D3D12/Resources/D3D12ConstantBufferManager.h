@@ -4,7 +4,8 @@
 #include <cstdint>
 #include <array>
 #include <memory>
-#include "RenderConfig.h"
+
+#include "Config/RenderConfig.h"
 #include "D3D12ConstantBufferData.h"
 #include "D3D12ConstantBuffer.h"
 

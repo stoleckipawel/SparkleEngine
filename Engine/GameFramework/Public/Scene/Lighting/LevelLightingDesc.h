@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderConfig.h"
+#include "Config/RenderConfig.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Lighting/DirectionalLightDesc.h"
 

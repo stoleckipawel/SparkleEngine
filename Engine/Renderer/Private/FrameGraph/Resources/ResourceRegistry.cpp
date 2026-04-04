@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Public/FrameGraph/ResourceRegistry.h"
 
-#include "D3D12SwapChain.h"
+#include "D3D12/D3D12SwapChain.h"
 
 #include <cassert>
 

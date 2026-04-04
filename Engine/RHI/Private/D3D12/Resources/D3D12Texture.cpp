@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12Texture.h"
-#include "D3D12Rhi.h"
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "Log.h"
 
 #include <vector>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "D3D12ShadowConstantBufferData.h"
-#include "RenderConfig.h"
+#include "Config/RenderConfig.h"
 
 #include <DirectXMath.h>
 

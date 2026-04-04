@@ -10,8 +10,9 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
-#include "D3D12DescriptorHandle.h"
-#include "RenderConfig.h"
+
+#include "Config/RenderConfig.h"
+#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 
 using Microsoft::WRL::ComPtr;
 

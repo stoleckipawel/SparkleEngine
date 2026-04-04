@@ -3,7 +3,7 @@
 
 #include "Renderer/Public/GPU/CommandContext.h"
 
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 

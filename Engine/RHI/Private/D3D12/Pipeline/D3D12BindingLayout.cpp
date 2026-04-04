@@ -3,7 +3,7 @@
 
 #include "D3D12RootSignatureBuilder.h"
 
-#include "D3D12SamplerLibrary.h"
+#include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
 #include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
 

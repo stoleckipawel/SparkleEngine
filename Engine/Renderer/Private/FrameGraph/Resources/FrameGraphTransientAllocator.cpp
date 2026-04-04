@@ -4,8 +4,8 @@
 #include "Renderer/Public/GPU/DepthConvention.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
 
-#include "D3D12DescriptorHeapManager.h"
-#include "D3D12Rhi.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/D3D12Rhi.h"
 
 #include <algorithm>
 #include <cassert>

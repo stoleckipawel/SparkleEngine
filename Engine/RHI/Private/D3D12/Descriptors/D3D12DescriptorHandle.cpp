@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "D3D12DescriptorHandle.h"
-#include "D3D12Rhi.h"
+#include "D3D12/D3D12Rhi.h"
 
 D3D12DescriptorHandle::D3D12DescriptorHandle(
     D3D12Rhi& rhi,

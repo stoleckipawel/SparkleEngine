@@ -6,7 +6,7 @@
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
 
-#include "D3D12DescriptorHandle.h"
+#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 
 #include <d3d12.h>
 #include <string>

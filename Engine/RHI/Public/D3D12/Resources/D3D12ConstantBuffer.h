@@ -1,7 +1,7 @@
 #pragma once
 
-#include "D3D12DescriptorHeap.h"
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeap.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include <cstring>
 #include <d3d12.h>
 #include <wrl/client.h>

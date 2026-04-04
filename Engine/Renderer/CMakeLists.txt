@@ -40,12 +40,6 @@ target_include_directories(SparkleRenderer
         # Core module subdirectories for direct includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
-        # RHI module subdirectories for direct includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12
-        ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12/Descriptors
-        ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12/Pipeline
-        ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12/Resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/../RHI/Public/D3D12/Shaders
         # GameFramework module for Scene/Camera includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
         # Editor module for UI.h include

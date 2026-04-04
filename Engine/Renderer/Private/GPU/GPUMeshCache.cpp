@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 
-#include "D3D12Rhi.h"
+#include "D3D12/D3D12Rhi.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Log.h"
 

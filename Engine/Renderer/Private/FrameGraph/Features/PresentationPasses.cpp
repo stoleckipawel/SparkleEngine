@@ -6,7 +6,7 @@
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/Passes/PassUtilities.h"
 
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include "UI.h"
 #include "Window/Window.h"

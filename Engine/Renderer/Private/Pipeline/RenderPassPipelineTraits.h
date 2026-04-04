@@ -2,13 +2,13 @@
 
 #include "FrameGraph/RenderPassRuntime.h"
 
-#include "D3D12BindingLayout.h"
-#include "D3D12PipelineState.h"
-#include "D3D12Rhi.h"
-#include "D3D12VertexLayout.h"
-#include "DxcShaderCompiler.h"
-#include "RenderConfig.h"
-#include "ShaderCompileResult.h"
+#include "Config/RenderConfig.h"
+#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
+#include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "D3D12/Pipeline/D3D12VertexLayout.h"
+#include "D3D12/Shaders/DxcShaderCompiler.h"
+#include "D3D12/Shaders/ShaderCompileResult.h"
 
 #include "Renderer/Public/GPU/DepthConvention.h"
 #include "Renderer/Public/Passes/ComputeClearPass.h"

@@ -14,14 +14,14 @@
 #include "Renderer/Public/GPU/GPUMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "D3D12BindingLayout.h"
-#include "D3D12PipelineState.h"
-#include "D3D12PassBinder.h"
-#include "D3D12ConstantBufferManager.h"
-#include "D3D12ConstantBufferData.h"
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
+#include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "D3D12/Pipeline/D3D12PassBinder.h"
+#include "D3D12/Resources/D3D12ConstantBufferManager.h"
+#include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "Samplers/D3D12SamplerLibrary.h"
+#include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 #include <cassert>

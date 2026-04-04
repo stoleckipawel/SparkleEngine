@@ -5,7 +5,7 @@
 
 #include "Renderer/Public/GPU/DepthConvention.h"
 
-#include "D3D12Rhi.h"
+#include "D3D12/D3D12Rhi.h"
 
 #include <cassert>
 #include <string>

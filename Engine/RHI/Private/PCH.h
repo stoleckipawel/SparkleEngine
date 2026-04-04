@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderConfig.h"
+#include "Config/RenderConfig.h"
 
 #define NOMINMAX
 #ifndef WIN32_LEAN_AND_MEAN

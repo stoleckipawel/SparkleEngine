@@ -45,20 +45,6 @@ target_include_directories(SparkleRHI
         ${CMAKE_CURRENT_SOURCE_DIR}/../Renderer/Public
         # GameFramework module for AssetTypes.h and PathRoot.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
-        # D3D12 subdirectories for internal includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Descriptors
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Pipeline
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Samplers
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12/Shaders
-        # Public D3D12 headers
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12/Descriptors
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12/Pipeline
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12/Resources
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12/Samplers
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/D3D12/Shaders
         # Third-party (d3dx12.h)
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )

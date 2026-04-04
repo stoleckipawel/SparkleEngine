@@ -1,9 +1,9 @@
 #include "PCH.h"
 #include "D3D12SwapChain.h"
-#include "RHI/Public/RHICVars.h"
+#include "CVars/RHICVars.h"
 #include "Window/Window.h"
 #include "D3D12Rhi.h"
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi), m_window(&window), m_descriptorHeapManager(&descriptorHeapManager)

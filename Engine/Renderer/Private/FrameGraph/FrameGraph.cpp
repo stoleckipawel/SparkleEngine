@@ -4,8 +4,8 @@
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "D3D12DescriptorHeapManager.h"
-#include "D3D12SwapChain.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/D3D12SwapChain.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"

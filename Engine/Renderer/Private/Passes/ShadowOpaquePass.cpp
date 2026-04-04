@@ -14,11 +14,11 @@
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "D3D12BindingLayout.h"
-#include "D3D12ConstantBufferData.h"
-#include "D3D12ConstantBufferManager.h"
-#include "D3D12PassBinder.h"
-#include "D3D12PipelineState.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
+#include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "D3D12/Resources/D3D12ConstantBufferManager.h"
+#include "D3D12/Pipeline/D3D12PassBinder.h"
+#include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
 
 #include <cassert>

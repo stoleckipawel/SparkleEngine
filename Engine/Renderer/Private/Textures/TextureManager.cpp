@@ -1,11 +1,11 @@
 #include "PCH.h"
 #include "Renderer/Public/Textures/TextureManager.h"
-#include "DdsTextureLoader.h"
+#include "D3D12/Resources/DdsTextureLoader.h"
 #include "FileSystemUtils.h"
-#include "D3D12Texture.h"
-#include "TextureLoader.h"
-#include "D3D12Rhi.h"
-#include "D3D12DescriptorHeapManager.h"
+#include "D3D12/Resources/D3D12Texture.h"
+#include "D3D12/Resources/TextureLoader.h"
+#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include <algorithm>
 #include <cwctype>

@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12Rhi.h"
 #include "D3D12DebugLayer.h"
-#include "RHI/Public/RHICVars.h"
+#include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept

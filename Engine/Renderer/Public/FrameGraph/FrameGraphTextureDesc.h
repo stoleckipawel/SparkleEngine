@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderConfig.h"
+#include "Config/RenderConfig.h"
 
 #include <cstdint>
 #include <string>

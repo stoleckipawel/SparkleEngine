@@ -5,7 +5,7 @@
 
 #include "Renderer/Public/GPU/DepthConvention.h"
 
-#include "D3D12SwapChain.h"
+#include "D3D12/D3D12SwapChain.h"
 
 #include <cassert>
 

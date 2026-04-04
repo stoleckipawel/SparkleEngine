@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "RHI/Public/RHICVars.h"
+#include "CVars/RHICVars.h"
 
 ConsoleVariable<bool> CVarRhiVSync("r.VSync", true, "Enable vertical sync during swap chain present.");
 

@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12SamplerLibrary.h"
-#include "D3D12DescriptorHeapManager.h"
-#include "D3D12Rhi.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/D3D12Rhi.h"
 
 D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)

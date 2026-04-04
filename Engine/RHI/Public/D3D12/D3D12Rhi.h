@@ -4,7 +4,8 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <memory>
-#include "RenderConfig.h"
+
+#include "Config/RenderConfig.h"
 
 using Microsoft::WRL::ComPtr;
 

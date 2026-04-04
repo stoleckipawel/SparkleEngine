@@ -4,9 +4,9 @@
 
 #include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
-#include "D3D12DescriptorHeap.h"
-#include "D3D12DescriptorHeapManager.h"
-#include "D3D12Texture.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeap.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/Resources/D3D12Texture.h"
 #include "Renderer/Public/SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Renderer/Public/Textures/DefaultTextures.h"

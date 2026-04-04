@@ -2,9 +2,9 @@
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Renderer/Public/Frame/FrameContext.h"
 
-#include "D3D12ConstantBufferManager.h"
-#include "D3D12SwapChain.h"
-#include "D3D12ViewLightingConstantBufferData.h"
+#include "D3D12/Resources/D3D12ConstantBufferManager.h"
+#include "D3D12/D3D12SwapChain.h"
+#include "D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"

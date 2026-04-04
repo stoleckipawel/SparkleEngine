@@ -2,7 +2,7 @@
 
 #include "D3D12/Shaders/ShaderCompileResult.h"
 #include "D3D12RootSignature.h"
-#include "RenderConfig.h"
+#include "Config/RenderConfig.h"
 
 #include <span>
 #include <array>
