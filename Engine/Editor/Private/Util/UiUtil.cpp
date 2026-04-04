@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Util/UiUtil.h"
 
+#include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
 
 #include <algorithm>
@@ -85,8 +86,8 @@ namespace UiUtil
 		    title,
 		    subtitle,
 		    24.0f,
-		    IM_COL32(34, 34, 37, 255),
-		    IM_COL32(72, 72, 78, 255),
+		    SparkleUiPalette::PanelHeaderBackground(),
+		    SparkleUiPalette::PanelHeaderBorder(),
 		    headingFont,
 		    monoFont,
 		    ImVec2(8.0f, 3.0f));
@@ -292,8 +293,8 @@ namespace UiUtil
 		    title,
 		    nullptr,
 		    22.0f,
-		    IM_COL32(44, 46, 50, 255),
-		    IM_COL32(70, 74, 80, 255),
+		    SparkleUiPalette::SectionHeaderBackground(),
+		    SparkleUiPalette::SectionHeaderBorder(),
 		    headingFont,
 		    nullptr,
 		    ImVec2(6.0f, 3.0f));

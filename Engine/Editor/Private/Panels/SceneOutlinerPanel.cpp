@@ -5,6 +5,7 @@
 #include "Scene/GameScene.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Meshes/SceneMeshes.h"
+#include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -196,8 +197,8 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 		const ImVec2 badgeMin(rectMax.x - badgeWidth - 8.0f, rectMin.y + 3.0f);
 		const ImVec2 badgeMax(rectMax.x - 8.0f, rectMax.y - 3.0f);
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
-		drawList->AddRectFilled(badgeMin, badgeMax, IM_COL32(58, 64, 74, 220), 3.0f);
-		drawList->AddText(ImVec2(badgeMin.x + 6.0f, badgeMin.y + 2.0f), IM_COL32(220, 224, 230, 255), typeLabel);
+		drawList->AddRectFilled(badgeMin, badgeMax, SparkleUiPalette::SceneOutlinerBadgeBackground(), 3.0f);
+		drawList->AddText(ImVec2(badgeMin.x + 6.0f, badgeMin.y + 2.0f), SparkleUiPalette::SceneOutlinerBadgeText(), typeLabel);
 	}
 	ImGui::Unindent(12.0f);
 	ImGui::PopID();

@@ -1,4 +1,5 @@
 #include "PCH.h"
+#include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
 
 #include <array>
@@ -63,31 +64,31 @@ namespace SparkleUiTheme
 		style.ScrollbarSize = 12.0f;
 
 		ImVec4* colors = style.Colors;
-		colors[ImGuiCol_Text] = ImVec4(0.86f, 0.88f, 0.91f, 1.0f);
-		colors[ImGuiCol_TextDisabled] = ImVec4(0.56f, 0.59f, 0.64f, 1.0f);
-		colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.11f, 0.12f, 0.99f);
-		colors[ImGuiCol_ChildBg] = ImVec4(0.14f, 0.14f, 0.15f, 1.0f);
-		colors[ImGuiCol_PopupBg] = ImVec4(0.13f, 0.13f, 0.14f, 0.99f);
-		colors[ImGuiCol_Border] = ImVec4(0.23f, 0.24f, 0.27f, 1.0f);
-		colors[ImGuiCol_FrameBg] = ImVec4(0.19f, 0.20f, 0.22f, 1.0f);
-		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.23f, 0.25f, 0.28f, 1.0f);
-		colors[ImGuiCol_FrameBgActive] = ImVec4(0.19f, 0.30f, 0.46f, 1.0f);
-		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.10f, 1.0f);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.09f, 0.09f, 0.10f, 1.0f);
-		colors[ImGuiCol_Header] = ImVec4(0.17f, 0.18f, 0.20f, 1.0f);
-		colors[ImGuiCol_HeaderHovered] = ImVec4(0.21f, 0.23f, 0.27f, 1.0f);
-		colors[ImGuiCol_HeaderActive] = ImVec4(0.23f, 0.32f, 0.46f, 1.0f);
-		colors[ImGuiCol_Button] = ImVec4(0.21f, 0.22f, 0.24f, 1.0f);
-		colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.27f, 0.30f, 1.0f);
-		colors[ImGuiCol_ButtonActive] = ImVec4(0.16f, 0.32f, 0.52f, 1.0f);
-		colors[ImGuiCol_Separator] = ImVec4(0.25f, 0.26f, 0.29f, 1.0f);
-		colors[ImGuiCol_Tab] = ImVec4(0.14f, 0.14f, 0.16f, 1.0f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.20f, 0.21f, 0.24f, 1.0f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.28f, 0.41f, 1.0f);
-		colors[ImGuiCol_CheckMark] = ImVec4(0.33f, 0.60f, 0.95f, 1.0f);
-		colors[ImGuiCol_SliderGrab] = ImVec4(0.33f, 0.60f, 0.95f, 1.0f);
-		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.46f, 0.71f, 1.0f, 1.0f);
-		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.18f, 0.36f, 0.60f, 0.35f);
+		colors[ImGuiCol_Text] = SparkleUiPalette::TextPrimary();
+		colors[ImGuiCol_TextDisabled] = SparkleUiPalette::TextMuted();
+		colors[ImGuiCol_WindowBg] = SparkleUiPalette::WindowBackground();
+		colors[ImGuiCol_ChildBg] = SparkleUiPalette::SurfaceBackground();
+		colors[ImGuiCol_PopupBg] = SparkleUiPalette::PopupBackground();
+		colors[ImGuiCol_Border] = SparkleUiPalette::Border();
+		colors[ImGuiCol_FrameBg] = SparkleUiPalette::FrameBackground();
+		colors[ImGuiCol_FrameBgHovered] = SparkleUiPalette::FrameBackgroundHovered();
+		colors[ImGuiCol_FrameBgActive] = SparkleUiPalette::FrameBackgroundActive();
+		colors[ImGuiCol_TitleBg] = SparkleUiPalette::TitleBarBackground();
+		colors[ImGuiCol_TitleBgActive] = SparkleUiPalette::TitleBarBackground();
+		colors[ImGuiCol_Header] = SparkleUiPalette::HeaderBackground();
+		colors[ImGuiCol_HeaderHovered] = SparkleUiPalette::HeaderBackgroundHovered();
+		colors[ImGuiCol_HeaderActive] = SparkleUiPalette::HeaderBackgroundActive();
+		colors[ImGuiCol_Button] = SparkleUiPalette::ButtonBackground();
+		colors[ImGuiCol_ButtonHovered] = SparkleUiPalette::ButtonBackgroundHovered();
+		colors[ImGuiCol_ButtonActive] = SparkleUiPalette::ButtonBackgroundActive();
+		colors[ImGuiCol_Separator] = SparkleUiPalette::Separator();
+		colors[ImGuiCol_Tab] = SparkleUiPalette::TabBackground();
+		colors[ImGuiCol_TabHovered] = SparkleUiPalette::TabBackgroundHovered();
+		colors[ImGuiCol_TabActive] = SparkleUiPalette::TabBackgroundActive();
+		colors[ImGuiCol_CheckMark] = SparkleUiPalette::Accent();
+		colors[ImGuiCol_SliderGrab] = SparkleUiPalette::Accent();
+		colors[ImGuiCol_SliderGrabActive] = SparkleUiPalette::AccentStrong();
+		colors[ImGuiCol_TextSelectedBg] = SparkleUiPalette::SelectionOverlay();
 	}
 
 	void ConfigureTypography(float dpiScale)
