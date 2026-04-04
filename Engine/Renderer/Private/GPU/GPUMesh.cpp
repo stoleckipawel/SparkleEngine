@@ -2,7 +2,7 @@
 #include "Renderer/Public/GPU/GPUMesh.h"
 
 #include "D3D12Rhi.h"
-#include "Scene/MeshData.h"
+#include "Scene/Meshes/MeshData.h"
 #include "Log.h"
 
 #include <d3dx12.h>

@@ -6,7 +6,7 @@
 #include "Input/InputSystem.h"
 #include "Scene/GameScene.h"
 #include "Scene/Camera/GameCameraController.h"
-#include "Runtime/Level/LevelManager.h"
+#include "Level/LevelManager.h"
 #include "Time/Timer.h"
 
 App::App() = default;

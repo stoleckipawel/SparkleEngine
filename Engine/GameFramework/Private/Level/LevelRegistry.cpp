@@ -4,7 +4,7 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
-#include "Level/LevelParser.h"
+#include "Level/Parsing/LevelParser.h"
 
 #include <algorithm>
 

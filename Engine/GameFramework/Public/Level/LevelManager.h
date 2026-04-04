@@ -2,7 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Level/LevelRegistry.h"
-#include "Runtime/Level/LevelChangeEvents.h"
+#include "Level/LevelChangeEvents.h"
 
 #include <cstdint>
 #include <string>

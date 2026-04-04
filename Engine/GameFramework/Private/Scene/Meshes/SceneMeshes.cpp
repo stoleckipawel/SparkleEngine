@@ -2,7 +2,7 @@
 
 #include "Scene/Meshes/SceneMeshes.h"
 
-#include "Scene/MeshComponent.h"
+#include "Scene/Meshes/MeshComponent.h"
 
 SceneMeshes::SceneMeshes() noexcept = default;
 

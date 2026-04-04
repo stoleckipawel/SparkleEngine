@@ -1,7 +1,7 @@
 #include "PCH.h"
 
-#include "Scene/MeshComponent.h"
-#include "Scene/Mesh.h"
+#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/Mesh.h"
 
 MeshComponent::MeshComponent(std::unique_ptr<Mesh>&& mesh) noexcept : m_mesh(std::move(mesh))
 {

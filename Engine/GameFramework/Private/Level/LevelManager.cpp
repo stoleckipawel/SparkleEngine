@@ -1,10 +1,10 @@
 #include "PCH.h"
-#include "Runtime/Level/LevelManager.h"
+#include "Level/LevelManager.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
-#include "Runtime/Level/LevelChangeEvents.h"
+#include "Level/LevelChangeEvents.h"
 #include "Scene/GameScene.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/Lighting/SceneLighting.h"

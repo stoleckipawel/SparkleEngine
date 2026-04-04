@@ -1,9 +1,9 @@
 #include "PCH.h"
-#include "Level/LevelParser.h"
+#include "Level/Parsing/LevelParser.h"
 
-#include "Level/CameraSectionParser.h"
-#include "Level/LevelParserCommon.h"
-#include "Level/LightingSectionParser.h"
+#include "Level/Parsing/CameraSectionParser.h"
+#include "Level/Parsing/LevelParserCommon.h"
+#include "Level/Parsing/LightingSectionParser.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Level/Level.h"
 

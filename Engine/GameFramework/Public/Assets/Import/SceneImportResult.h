@@ -2,7 +2,7 @@
 
 #include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/MeshData.h"
+#include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstddef>

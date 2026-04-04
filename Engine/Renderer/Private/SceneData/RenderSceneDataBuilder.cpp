@@ -5,8 +5,8 @@
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
-#include "Scene/MeshComponent.h"
-#include "Scene/Mesh.h"
+#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/Mesh.h"
 #include "SceneData/MaterialCacheManager.h"
 #include "SceneData/MaterialCacheUtils.h"
 

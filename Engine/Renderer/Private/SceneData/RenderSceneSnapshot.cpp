@@ -3,7 +3,7 @@
 #include "SceneData/RenderSceneSnapshot.h"
 
 #include "Scene/GameScene.h"
-#include "Scene/Mesh.h"
+#include "Scene/Meshes/Mesh.h"
 
 void RenderSceneSnapshot::Capture(const GameScene& gameScene)
 {

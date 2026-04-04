@@ -5,7 +5,7 @@
 #include "D3D12Rhi.h"
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
-#include "Runtime/Level/LevelChangeEvents.h"
+#include "Level/LevelChangeEvents.h"
 #include "Scene/GameScene.h"
 #include "SceneData/MaterialCacheManager.h"
 #include "SceneData/RenderSceneSnapshot.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/Level/LevelDesc.h"
-#include "Level/LevelParserCommon.h"
+#include "Level/Parsing/LevelParserCommon.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 

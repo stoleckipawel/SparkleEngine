@@ -2,7 +2,7 @@
 #include "Renderer/Public/GPU/GPUMeshCache.h"
 
 #include "D3D12Rhi.h"
-#include "Scene/Mesh.h"
+#include "Scene/Meshes/Mesh.h"
 #include "Log.h"
 
 GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}

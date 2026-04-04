@@ -2,9 +2,9 @@
 #include "GameScene.h"
 
 #include "FileSystemUtils.h"
-#include "Scene/MeshComponent.h"
-#include "Scene/Mesh.h"
-#include "Scene/ImportedMesh.h"
+#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/Mesh.h"
+#include "Scene/Meshes/ImportedMesh.h"
 #include "Camera/CameraComponent.h"
 #include "Assets/Import/SceneImportResult.h"
 #include "Assets/Import/SceneImporter.h"
