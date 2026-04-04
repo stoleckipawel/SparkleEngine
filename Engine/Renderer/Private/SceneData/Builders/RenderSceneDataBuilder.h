@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SceneData/RenderSceneSnapshot.h"
+#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 
 class GPUMeshCache;
 class MaterialCacheManager;

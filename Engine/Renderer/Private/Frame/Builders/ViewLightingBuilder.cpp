@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Frame/ViewLightingBuilder.h"
+#include "ViewLightingBuilder.h"
 
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 

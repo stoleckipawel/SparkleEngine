@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "SceneData/RenderSceneSnapshot.h"
+#include "RenderSceneSnapshot.h"
 
 #include "Scene/GameScene.h"
 #include "Scene/Meshes/Mesh.h"

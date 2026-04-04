@@ -7,8 +7,8 @@
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
 #include "Scene/GameScene.h"
-#include "SceneData/MaterialCacheManager.h"
-#include "SceneData/RenderSceneSnapshot.h"
+#include "SceneData/Caching/MaterialCacheManager.h"
+#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "Renderer/Public/Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(

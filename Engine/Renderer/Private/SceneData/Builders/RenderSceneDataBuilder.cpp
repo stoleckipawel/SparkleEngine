@@ -7,8 +7,8 @@
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/Mesh.h"
-#include "SceneData/MaterialCacheManager.h"
-#include "SceneData/MaterialCacheUtils.h"
+#include "SceneData/Caching/MaterialCacheManager.h"
+#include "SceneData/Caching/MaterialCacheUtils.h"
 
 #include <cstddef>
 

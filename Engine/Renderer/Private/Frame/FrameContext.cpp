@@ -1,18 +1,18 @@
 #include "PCH.h"
-#include "BuildFrameContext.h"
+#include "Frame/Builders/BuildFrameContext.h"
 #include "Renderer/Public/Frame/FrameContext.h"
 
 #include "D3D12ConstantBufferManager.h"
 #include "D3D12SwapChain.h"
 #include "D3D12ViewLightingConstantBufferData.h"
-#include "Frame/PerViewDataBuilder.h"
+#include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"
-#include "Frame/ViewLightingBuilder.h"
+#include "Frame/Builders/ViewLightingBuilder.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Core/Public/Diagnostics/Log.h"
-#include "SceneData/RenderSceneDataBuilder.h"
-#include "SceneData/RenderSceneSnapshot.h"
+#include "SceneData/Builders/RenderSceneDataBuilder.h"
+#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 
 #include <cstdio>
 #include <utility>

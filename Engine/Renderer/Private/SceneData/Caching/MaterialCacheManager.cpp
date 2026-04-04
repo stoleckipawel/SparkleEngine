@@ -10,7 +10,7 @@
 #include "Renderer/Public/SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Renderer/Public/Textures/DefaultTextures.h"
-#include "SceneData/MaterialCacheUtils.h"
+#include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Renderer/Public/Textures/TextureManager.h"
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :

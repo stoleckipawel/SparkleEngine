@@ -3,7 +3,7 @@
 #include "Frame/Shadow/ShadowFrameBuilder.h"
 
 #include "D3D12ConstantBufferManager.h"
-#include "Frame/PerViewDataBuilder.h"
+#include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 

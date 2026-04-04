@@ -23,16 +23,16 @@
 #include "Scene/Camera/CameraComponent.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
-#include "Frame/BuildFrameContext.h"
-#include "Frame/PerViewDataBuilder.h"
+#include "Frame/Builders/BuildFrameContext.h"
+#include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"
-#include "Frame/ViewLightingBuilder.h"
+#include "Frame/Builders/ViewLightingBuilder.h"
 #include "Pipeline/PipelineStateManager.h"
-#include "SceneData/MaterialCacheManager.h"
-#include "SceneData/RenderSceneDataBuilder.h"
-#include "SceneData/RenderSceneSnapshot.h"
-#include "SceneData/SceneRenderStateCoordinator.h"
+#include "SceneData/Builders/RenderSceneDataBuilder.h"
+#include "SceneData/Caching/MaterialCacheManager.h"
+#include "SceneData/Lifecycle/RenderSceneSnapshot.h"
+#include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)

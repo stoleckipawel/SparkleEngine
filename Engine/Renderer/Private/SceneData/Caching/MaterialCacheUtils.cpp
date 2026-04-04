@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "SceneData/MaterialCacheUtils.h"
+#include "MaterialCacheUtils.h"
 
 namespace
 {
