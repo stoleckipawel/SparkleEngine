@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Assets/SceneImportResult.h"
+#include "Assets/Import/SceneImportResult.h"
 
 #include <optional>
 #include <string_view>

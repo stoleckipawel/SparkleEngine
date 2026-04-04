@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Assets/SceneImportUtilities.h"
+#include "Assets/Import/SceneImportUtilities.h"
 
 #include "FileSystemUtils.h"
 

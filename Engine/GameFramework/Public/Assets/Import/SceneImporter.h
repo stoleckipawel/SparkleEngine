@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/SceneImportResult.h"
+#include "GameFramework/Public/Assets/Import/SceneImportResult.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <filesystem>

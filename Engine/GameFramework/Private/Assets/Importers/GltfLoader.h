@@ -1,7 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Assets/SceneImportResult.h"
+#include "Assets/Import/SceneImportResult.h"
 
 #include <DirectXMath.h>
 
@@ -20,7 +19,7 @@ struct cgltf_options;
 struct cgltf_primitive;
 struct cgltf_texture_view;
 
-class SPARKLE_ENGINE_API GltfLoader final
+class GltfLoader final
 {
   public:
 	static SceneImportResult Load(const std::filesystem::path& filePath);

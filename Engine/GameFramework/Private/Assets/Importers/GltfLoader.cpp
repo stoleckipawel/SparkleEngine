@@ -1,9 +1,9 @@
 #define CGLTF_IMPLEMENTATION
 #include "PCH.h"
 
-#include "GameFramework/Public/Assets/GltfLoader.h"
+#include "Assets/Importers/GltfLoader.h"
 
-#include "Assets/SceneImportUtilities.h"
+#include "Assets/Import/SceneImportUtilities.h"
 
 #include <cgltf.h>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Assets/SceneImportResult.h"
+#include "Assets/Import/SceneImportResult.h"
 
 #include <assimp/material.h>
 #include <assimp/scene.h>

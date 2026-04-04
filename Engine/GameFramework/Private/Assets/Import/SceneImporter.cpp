@@ -1,10 +1,10 @@
 #include "PCH.h"
 
-#include "GameFramework/Public/Assets/SceneImporter.h"
+#include "GameFramework/Public/Assets/Import/SceneImporter.h"
 
-#include "Assets/FbxImporter.h"
-#include "Assets/GltfLoader.h"
-#include "Assets/SceneImportPostProcessor.h"
+#include "Assets/Importers/FbxImporter.h"
+#include "Assets/Importers/GltfLoader.h"
+#include "Assets/Import/SceneImportPostProcessor.h"
 
 #include <algorithm>
 #include <chrono>

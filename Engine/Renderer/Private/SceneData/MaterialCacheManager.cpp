@@ -2,7 +2,7 @@
 
 #include "MaterialCacheManager.h"
 
-#include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorHeapManager.h"

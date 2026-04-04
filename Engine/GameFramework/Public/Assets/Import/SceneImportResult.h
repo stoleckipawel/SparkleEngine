@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/MeshData.h"
 #include "GameFramework/Public/Scene/Transform.h"

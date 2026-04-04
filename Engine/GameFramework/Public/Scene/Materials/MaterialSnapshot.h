@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/MaterialDesc.h"
+#include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <vector>

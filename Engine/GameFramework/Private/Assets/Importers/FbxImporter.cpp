@@ -1,7 +1,7 @@
 #include "PCH.h"
 
-#include "Assets/FbxImporter.h"
-#include "Assets/SceneImportUtilities.h"
+#include "Assets/Importers/FbxImporter.h"
+#include "Assets/Import/SceneImportUtilities.h"
 
 #include <assimp/config.h>
 #include <assimp/Importer.hpp>
