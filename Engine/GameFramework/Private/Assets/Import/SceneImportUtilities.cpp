@@ -2,7 +2,7 @@
 
 #include "Assets/Import/SceneImportUtilities.h"
 
-#include "FileSystemUtils.h"
+#include "Core/Public/FileSystemUtils.h"
 
 #include <format>
 
@@ -67,8 +67,8 @@ std::optional<std::filesystem::path> SceneImportUtilities::NormalizeImportedText
 	return resolvedTexturePath;
 }
 
-std::uint32_t SceneImportUtilities::SanitizeMaterialOffset(
-    std::uint32_t requestedOffset,
+MaterialHandle SceneImportUtilities::SanitizeMaterialHandle(
+	std::uint32_t requestedIndex,
     std::size_t materialCount,
     std::string_view importerName,
     std::string_view meshLabel,
@@ -76,12 +76,12 @@ std::uint32_t SceneImportUtilities::SanitizeMaterialOffset(
 {
 	if (materialCount == 0)
 	{
-		return 0;
+		return MaterialHandle::Invalid();
 	}
 
-	if (requestedOffset < materialCount)
+	if (requestedIndex < materialCount)
 	{
-		return requestedOffset;
+		return MaterialHandle(requestedIndex);
 	}
 
 	result.AddWarning(
@@ -89,8 +89,8 @@ std::uint32_t SceneImportUtilities::SanitizeMaterialOffset(
 	        "{}: '{}' references invalid material index {} and will use the default material",
 	        importerName,
 	        meshLabel,
-	        requestedOffset));
-	return 0;
+	        requestedIndex));
+	return MaterialHandle::Invalid();
 }
 
 Transform SceneImportUtilities::BuildImportedTransform(const DirectX::XMMATRIX& worldTransform) noexcept

@@ -1,6 +1,6 @@
 #include "PCH.h"
-#include "TextureLoader.h"
-#include "FileSystemUtils.h"
+#include "D3D12/Resources/TextureLoader.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Log.h"
 #include <cstring>
 #include <limits>

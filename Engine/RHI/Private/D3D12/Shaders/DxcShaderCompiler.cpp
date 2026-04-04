@@ -1,7 +1,7 @@
 #include "PCH.h"
-#include "DxcShaderCompiler.h"
-#include "DxcContext.h"
-#include "FileSystemUtils.h"
+#include "D3D12/Shaders/DxcShaderCompiler.h"
+#include "D3D12/Shaders/DxcContext.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Strings/StringUtils.h"
 
 ShaderCompileResult DxcShaderCompiler::CompileFromAsset(

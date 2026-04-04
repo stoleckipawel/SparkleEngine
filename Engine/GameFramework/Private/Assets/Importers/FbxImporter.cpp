@@ -14,6 +14,7 @@ using namespace DirectX;
 SceneImportResult FbxImporter::Load(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
+	result.importerName = "FbxImporter";
 
 	if (!ValidateInputPath(filePath, result))
 	{
@@ -355,7 +356,7 @@ void FbxImporter::AppendMeshInstance(const aiNode& node, const aiMesh& mesh, con
 		return;
 	}
 
-	result.materialOffsets.push_back(ResolveMaterialOffset(mesh, result));
+	result.materialHandles.push_back(ResolveMaterialHandle(mesh, result));
 	result.transforms.push_back(ConvertTransform(worldTransform));
 	result.meshes.push_back(std::move(meshData));
 }
@@ -447,9 +448,9 @@ void FbxImporter::AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, 
 	}
 }
 
-std::uint32_t FbxImporter::ResolveMaterialOffset(const aiMesh& mesh, SceneImportResult& result) noexcept
+MaterialHandle FbxImporter::ResolveMaterialHandle(const aiMesh& mesh, SceneImportResult& result) noexcept
 {
-	return SceneImportUtilities::SanitizeMaterialOffset(
+	return SceneImportUtilities::SanitizeMaterialHandle(
 	    mesh.mMaterialIndex,
 	    result.materials.size(),
 	    "FbxImporter",

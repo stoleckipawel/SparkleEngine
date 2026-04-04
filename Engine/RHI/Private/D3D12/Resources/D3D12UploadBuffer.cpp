@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "D3D12UploadBuffer.h"
+#include "D3D12/Resources/D3D12UploadBuffer.h"
 #include "D3D12/D3D12Rhi.h"
 #include "Log.h"
 #include <cstring>

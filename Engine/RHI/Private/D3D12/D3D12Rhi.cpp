@@ -1,6 +1,6 @@
 #include "PCH.h"
-#include "D3D12Rhi.h"
-#include "D3D12DebugLayer.h"
+#include "D3D12/D3D12Rhi.h"
+#include "D3D12/D3D12DebugLayer.h"
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 

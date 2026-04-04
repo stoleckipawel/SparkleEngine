@@ -55,7 +55,7 @@ class GltfLoader final
 
 	static void ExtractMaterials(const cgltf_data* data, const std::filesystem::path& gltfDirectory, SceneImportResult& result);
 
-	static std::uint32_t ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data);
+	static MaterialHandle ResolveMaterialHandle(const cgltf_primitive& primitive, const cgltf_data* data);
 	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);
 	static std::string BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex);
 };

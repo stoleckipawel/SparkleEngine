@@ -8,7 +8,7 @@
 #include "Input/Mouse/MouseButton.h"
 #include "Input/Mouse/MousePosition.h"
 #include "Input/Events/MouseWheelEvent.h"
-#include "Timer.h"
+#include "Core/Public/Time/Timer.h"
 
 #include <DirectXMath.h>
 

@@ -2,12 +2,12 @@
 
 #include "GameFramework/Public/Assets/Import/MaterialDesc.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <utility>
 #include <vector>
@@ -17,24 +17,14 @@ struct SPARKLE_ENGINE_API SceneImportWarning
 	std::string message;
 };
 
-struct SPARKLE_ENGINE_API SceneImportStats
-{
-	std::string importerName;
-	std::filesystem::path sourcePath;
-	double importDurationMs = 0.0;
-	std::size_t totalVertices = 0;
-	std::size_t totalIndices = 0;
-	std::size_t estimatedMeshBytes = 0;
-};
-
 struct SPARKLE_ENGINE_API SceneImportResult
 {
 	std::vector<MeshData> meshes;
 	std::vector<MaterialDesc> materials;
 	std::vector<Transform> transforms;
-	std::vector<std::uint32_t> materialOffsets;
+	std::vector<MaterialHandle> materialHandles;
 	std::vector<SceneImportWarning> warnings;
-	SceneImportStats stats;
+	std::string importerName;
 
 	bool bSuccess = false;
 	std::string errorMessage;
@@ -50,6 +40,6 @@ struct SPARKLE_ENGINE_API SceneImportResult
 	{
 		meshes.reserve(primitiveCount);
 		transforms.reserve(primitiveCount);
-		materialOffsets.reserve(primitiveCount);
+		materialHandles.reserve(primitiveCount);
 	}
 };

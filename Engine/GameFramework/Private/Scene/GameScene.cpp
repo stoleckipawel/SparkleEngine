@@ -1,18 +1,16 @@
 #include "PCH.h"
-#include "GameScene.h"
+#include "Scene/GameScene.h"
 
-#include "FileSystemUtils.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/ImportedMesh.h"
-#include "Camera/CameraComponent.h"
+#include "Scene/Camera/CameraComponent.h"
 #include "Assets/Import/SceneImportResult.h"
 #include "Assets/Import/SceneImporter.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 #include "Core/Public/Diagnostics/Log.h"
-
-#include <format>
 
 GameScene::GameScene() = default;
 
@@ -112,17 +110,6 @@ bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolve
 		return false;
 	}
 
-	LOG_INFO(
-	    std::format(
-	        "Scene: Import summary [{}] '{}' took {:.2f} ms — {} meshes, {} materials, {} warnings, {:.2f} MiB mesh data",
-	        result.stats.importerName,
-	        result.stats.sourcePath.filename().string(),
-	        result.stats.importDurationMs,
-	        result.meshes.size(),
-	        result.materials.size(),
-	        result.warnings.size(),
-	        static_cast<double>(result.stats.estimatedMeshBytes) / (1024.0 * 1024.0)));
-
 	for (const SceneImportWarning& warning : result.warnings)
 	{
 		LOG_WARNING("Scene: Import warning — " + warning.message);
@@ -138,16 +125,19 @@ bool GameScene::AppendImportedScene(SceneImportResult&& result)
 		m_textures.AppendMaterialTextureReferences(result.materials);
 	}
 
-	const MaterialHandle materialBaseHandle = m_materials.AppendMaterials(std::move(result.materials));
+	const MaterialHandle materialBaseHandle = result.materials.empty() ? MaterialHandle::Invalid() : m_materials.AppendMaterials(std::move(result.materials));
 
 	std::vector<std::unique_ptr<MeshComponent>> importedMeshes;
 	importedMeshes.reserve(result.meshes.size());
 	for (std::size_t i = 0; i < result.meshes.size(); ++i)
 	{
 		auto mesh = std::make_unique<ImportedMesh>(std::move(result.meshes[i]));
-		const std::uint32_t localMaterialOffset = i < result.materialOffsets.size() ? result.materialOffsets[i] : 0;
+		const MaterialHandle localMaterialHandle = i < result.materialHandles.size() ? result.materialHandles[i] : MaterialHandle::Invalid();
 		const Transform importedTransform = i < result.transforms.size() ? result.transforms[i] : Transform();
-		const MaterialHandle materialHandle(materialBaseHandle.GetIndex() + localMaterialOffset);
+		const MaterialHandle materialHandle =
+		    localMaterialHandle.IsValid() && materialBaseHandle.IsValid()
+		        ? MaterialHandle(materialBaseHandle.GetIndex() + localMaterialHandle.GetIndex())
+		        : m_materials.GetOrCreateDefaultMaterialHandle();
 		importedMeshes.push_back(std::make_unique<MeshComponent>(std::move(mesh), importedTransform, materialHandle));
 	}
 

@@ -191,7 +191,7 @@ void GltfLoader::ExtractMeshesFromNodes(const cgltf_data* data, SceneImportResul
 				continue;
 			}
 
-			result.materialOffsets.push_back(ResolveMaterialOffset(primitive, data));
+			result.materialHandles.push_back(ResolveMaterialHandle(primitive, data));
 			result.transforms.emplace_back(worldTransform);
 			result.meshes.push_back(std::move(meshData));
 		}
@@ -466,14 +466,14 @@ void GltfLoader::ExtractMaterials(const cgltf_data* data, const std::filesystem:
 	}
 }
 
-std::uint32_t GltfLoader::ResolveMaterialOffset(const cgltf_primitive& primitive, const cgltf_data* data)
+MaterialHandle GltfLoader::ResolveMaterialHandle(const cgltf_primitive& primitive, const cgltf_data* data)
 {
 	if (!primitive.material)
 	{
-		return 0;
+		return MaterialHandle::Invalid();
 	}
 
-	return static_cast<std::uint32_t>(primitive.material - data->materials);
+	return MaterialHandle(static_cast<std::uint32_t>(primitive.material - data->materials));
 }
 
 MeshData GltfLoader::ExtractPrimitive(const cgltf_primitive& primitive)
@@ -522,6 +522,7 @@ MeshData GltfLoader::ExtractPrimitive(const cgltf_primitive& primitive)
 SceneImportResult GltfLoader::Load(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
+	result.importerName = "GltfLoader";
 
 	if (!ValidateInputPath(filePath, result))
 	{

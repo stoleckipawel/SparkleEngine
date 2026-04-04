@@ -33,8 +33,8 @@ namespace SceneImportUtilities
 	    const std::filesystem::path& sourceDirectory,
 	    const std::filesystem::path& importedTexturePath);
 
-	std::uint32_t SanitizeMaterialOffset(
-	    std::uint32_t requestedOffset,
+	MaterialHandle SanitizeMaterialHandle(
+	    std::uint32_t requestedIndex,
 	    std::size_t materialCount,
 	    std::string_view importerName,
 	    std::string_view meshLabel,

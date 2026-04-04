@@ -169,8 +169,9 @@ FetchContent_Populate(cgltf)
 add_library(cgltf INTERFACE)
 target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
 
-# Silence common warnings in third-party C code when included
+# Silence MSVC CRT deprecation warnings in cgltf implementation code.
 if(MSVC)
+    target_compile_definitions(cgltf INTERFACE _CRT_SECURE_NO_WARNINGS)
     target_compile_options(cgltf INTERFACE /wd4996)
 endif()
 

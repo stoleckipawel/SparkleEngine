@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Component.h"
+#include "Scene/Component.h"
 
 Component::~Component() = default;
 

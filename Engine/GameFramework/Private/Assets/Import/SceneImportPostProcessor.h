@@ -15,11 +15,9 @@ class SceneImportPostProcessor final
 
   private:
 	static void NormalizeTransformCount(SceneImportResult& result);
-	static void NormalizeMaterialOffsetCount(SceneImportResult& result);
+	static void NormalizeMaterialHandleCount(SceneImportResult& result);
 	static void NormalizeMaterialTextures(SceneImportResult& result);
-	static void EnsureMaterialNames(SceneImportResult& result);
-	static void SanitizeMaterialOffsets(SceneImportResult& result);
-	static void AccumulateStats(SceneImportResult& result);
+	static void SanitizeMaterialHandles(SceneImportResult& result);
 	static void NormalizeOptionalTexturePath(
 	    std::optional<std::filesystem::path>& texturePath,
 	    std::string_view materialName,

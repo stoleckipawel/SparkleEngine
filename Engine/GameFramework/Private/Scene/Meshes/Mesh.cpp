@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Mesh.h"
+#include "Scene/Meshes/Mesh.h"
 
 void Mesh::RebuildGeometry()
 {

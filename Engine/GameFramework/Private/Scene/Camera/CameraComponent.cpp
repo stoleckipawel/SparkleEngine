@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "CameraComponent.h"
+#include "Scene/Camera/CameraComponent.h"
 #include <algorithm>
 #include <cmath>
 

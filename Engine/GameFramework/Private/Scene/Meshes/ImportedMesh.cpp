@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "ImportedMesh.h"
+#include "Scene/Meshes/ImportedMesh.h"
 
 ImportedMesh::ImportedMesh(MeshData&& meshData) noexcept : m_importedData(std::move(meshData)) {}
 

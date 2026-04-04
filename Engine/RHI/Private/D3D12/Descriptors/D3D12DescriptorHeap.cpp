@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "D3D12DescriptorHeap.h"
+#include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 
 D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name) :
     m_rhi(&rhi)

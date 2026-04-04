@@ -1,8 +1,8 @@
 #include "PCH.h"
 
-#include "DdsTextureLoader.h"
+#include "D3D12/Resources/DdsTextureLoader.h"
 
-#include "FileSystemUtils.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Log.h"
 
 #include <algorithm>

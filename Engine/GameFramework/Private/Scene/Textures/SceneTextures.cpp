@@ -2,7 +2,7 @@
 
 #include "Scene/Textures/SceneTextures.h"
 
-#include "FileSystemUtils.h"
+#include "Core/Public/FileSystemUtils.h"
 
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {

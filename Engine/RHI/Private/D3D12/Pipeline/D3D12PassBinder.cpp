@@ -1,7 +1,7 @@
 #include "PCH.h"
-#include "D3D12PassBinder.h"
+#include "D3D12/Pipeline/D3D12PassBinder.h"
 
-#include "D3D12BindingLayout.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
 
 #include "Renderer/Public/GPU/CommandContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraph.h"

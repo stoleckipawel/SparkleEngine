@@ -1,6 +1,6 @@
 #include "PCH.h"
-#include "D3D12ConstantBufferManager.h"
-#include "D3D12FrameResource.h"
+#include "D3D12/Resources/D3D12ConstantBufferManager.h"
+#include "D3D12/Resources/D3D12FrameResource.h"
 #include "Timer.h"
 #include "Window/Window.h"
 #include "D3D12/D3D12SwapChain.h"

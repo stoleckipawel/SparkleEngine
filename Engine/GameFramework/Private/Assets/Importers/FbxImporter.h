@@ -79,7 +79,7 @@ class FbxImporter final
 
 	static void AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, SceneImportResult& result);
 
-	static std::uint32_t ResolveMaterialOffset(const aiMesh& mesh, SceneImportResult& result) noexcept;
+	static MaterialHandle ResolveMaterialHandle(const aiMesh& mesh, SceneImportResult& result) noexcept;
 
 	static std::string GetNodeName(const aiNode& node);
 

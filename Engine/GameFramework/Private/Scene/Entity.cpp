@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Entity.h"
+#include "Scene/Entity.h"
 
 Entity::Entity(const std::string& entityName) : name(entityName) {}
 
