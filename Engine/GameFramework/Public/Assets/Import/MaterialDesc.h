@@ -15,6 +15,15 @@ enum class AlphaMode : std::uint32_t
 	Blend = 2,
 };
 
+enum class MaterialTextureType : std::uint8_t
+{
+	Albedo,
+	Normal,
+	MetallicRoughness,
+	Occlusion,
+	Emissive
+};
+
 struct SPARKLE_ENGINE_API MaterialDesc
 {
 	std::string name;
@@ -32,4 +41,8 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	std::optional<std::filesystem::path> metallicRoughnessTexture;
 	std::optional<std::filesystem::path> occlusionTexture;
 	std::optional<std::filesystem::path> emissiveTexture;
+
+	void SetTexturePath(
+	    MaterialTextureType textureType,
+	    const std::optional<std::filesystem::path>& texturePath);
 };

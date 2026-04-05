@@ -8,7 +8,7 @@
 class SPARKLE_ENGINE_API SceneImporter final
 {
   public:
-	static SceneImportResult Load(const std::filesystem::path& filePath);
+	static SceneImportResult Import(const std::filesystem::path& filePath);
 
 	SceneImporter() = delete;
 	~SceneImporter() = delete;

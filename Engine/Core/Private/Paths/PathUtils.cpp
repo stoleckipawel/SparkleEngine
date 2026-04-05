@@ -39,6 +39,30 @@ namespace Engine::Paths
 		return normalized;
 	}
 
+	std::optional<std::filesystem::path> ResolveRelativePath(
+	    const std::filesystem::path& baseDirectory,
+	    const std::filesystem::path& path)
+	{
+		if (path.empty())
+		{
+			return std::nullopt;
+		}
+
+		std::filesystem::path resolvedPath = path;
+		if (!resolvedPath.is_absolute())
+		{
+			resolvedPath = baseDirectory / resolvedPath;
+		}
+
+		resolvedPath = Normalize(resolvedPath);
+		if (resolvedPath.empty())
+		{
+			return std::nullopt;
+		}
+
+		return resolvedPath;
+	}
+
 	std::wstring MakePathKey(const std::filesystem::path& path)
 	{
 		const std::filesystem::path normalizedPath = Normalize(path);

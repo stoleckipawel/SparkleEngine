@@ -2,33 +2,43 @@
 
 #include "GameFramework/Public/Assets/Import/SceneImporter.h"
 
-#include "Assets/Importers/FbxImporter.h"
-#include "Assets/Importers/GltfLoader.h"
+#include "Assets/Importers/AssetImporter.h"
+#include "Assets/Importers/Fbx/FbxImporter.h"
+#include "Assets/Importers/Gltf/GltfImporter.h"
 #include "Assets/Import/SceneImportPostProcessor.h"
 #include "Core/Public/Paths/PathUtils.h"
 
+#include <array>
 #include <format>
 
-SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
+SceneImportResult SceneImporter::Import(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
+	bool handledByImporter = false;
 
 	const std::wstring extension = Engine::Paths::GetLowercaseExtension(filePath);
+	static const GltfImporter gltfImporter;
+	static const FbxImporter fbxImporter;
+	const std::array<const AssetImporter*, 2> importers = {&gltfImporter, &fbxImporter};
 
-	if (extension == L".gltf" || extension == L".glb")
+	for (const AssetImporter* importer : importers)
 	{
-		result = GltfLoader::Load(filePath);
+		if (!importer->SupportsExtension(extension))
+		{
+			continue;
+		}
+
+		result = importer->Import(filePath);
+		handledByImporter = true;
+		break;
 	}
-	else if (extension == L".fbx")
+
+	if (!handledByImporter)
 	{
-		result = FbxImporter::Load(filePath);
-	}
-	else
-	{
-		result.errorMessage = std::format(
+		LOG_ERROR(std::format(
 		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
 		    extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
-		    filePath.string());
+		    filePath.string()));
 	}
 
 	if (result.bSuccess)

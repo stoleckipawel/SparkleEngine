@@ -16,25 +16,25 @@ void SceneImportPostProcessor::Finalize(SceneImportResult& result)
 
 void SceneImportPostProcessor::NormalizeTransformCount(SceneImportResult& result)
 {
+	const std::string_view importerName = GetSceneImporterTypeName(result.importerType);
+
 	if (result.transforms.size() < result.meshes.size())
 	{
-		result.AddWarning(
-		    std::format(
-		        "{}: Import result contained {} transforms for {} meshes; missing transforms will use identity",
-		        result.importerName,
-		        result.transforms.size(),
-		        result.meshes.size()));
+		LOG_WARNING(std::format(
+		    "{}: Import result contained {} transforms for {} meshes; missing transforms will use identity",
+		    importerName,
+		    result.transforms.size(),
+		    result.meshes.size()));
 
 		result.transforms.resize(result.meshes.size());
 	}
 	else if (result.transforms.size() > result.meshes.size())
 	{
-		result.AddWarning(
-		    std::format(
-		        "{}: Import result contained {} transforms for {} meshes; extra transforms will be discarded",
-		        result.importerName,
-		        result.transforms.size(),
-		        result.meshes.size()));
+		LOG_WARNING(std::format(
+		    "{}: Import result contained {} transforms for {} meshes; extra transforms will be discarded",
+		    importerName,
+		    result.transforms.size(),
+		    result.meshes.size()));
 
 		result.transforms.resize(result.meshes.size());
 	}
@@ -42,25 +42,25 @@ void SceneImportPostProcessor::NormalizeTransformCount(SceneImportResult& result
 
 void SceneImportPostProcessor::NormalizeMaterialHandleCount(SceneImportResult& result)
 {
+	const std::string_view importerName = GetSceneImporterTypeName(result.importerType);
+
 	if (result.materialHandles.size() < result.meshes.size())
 	{
-		result.AddWarning(
-		    std::format(
-		        "{}: Import result contained {} material handles for {} meshes; missing handles will use the default material",
-		        result.importerName,
-		        result.materialHandles.size(),
-		        result.meshes.size()));
+		LOG_WARNING(std::format(
+		    "{}: Import result contained {} material handles for {} meshes; missing handles will use the default material",
+		    importerName,
+		    result.materialHandles.size(),
+		    result.meshes.size()));
 
 		result.materialHandles.resize(result.meshes.size(), MaterialHandle::Invalid());
 	}
 	else if (result.materialHandles.size() > result.meshes.size())
 	{
-		result.AddWarning(
-		    std::format(
-		        "{}: Import result contained {} material handles for {} meshes; extra handles will be discarded",
-		        result.importerName,
-		        result.materialHandles.size(),
-		        result.meshes.size()));
+		LOG_WARNING(std::format(
+		    "{}: Import result contained {} material handles for {} meshes; extra handles will be discarded",
+		    importerName,
+		    result.materialHandles.size(),
+		    result.meshes.size()));
 
 		result.materialHandles.resize(result.meshes.size());
 	}
@@ -82,6 +82,8 @@ void SceneImportPostProcessor::NormalizeMaterialTextures(SceneImportResult& resu
 
 void SceneImportPostProcessor::SanitizeMaterialHandles(SceneImportResult& result)
 {
+	const std::string_view importerName = GetSceneImporterTypeName(result.importerType);
+
 	for (std::size_t meshIndex = 0; meshIndex < result.materialHandles.size(); ++meshIndex)
 	{
 		if (result.materials.empty())
@@ -98,12 +100,11 @@ void SceneImportPostProcessor::SanitizeMaterialHandles(SceneImportResult& result
 
 		if (materialHandle.GetIndex() >= result.materials.size())
 		{
-			result.AddWarning(
-			    std::format(
-			        "{}: Mesh {} references invalid material handle {} and will use the default material",
-			        result.importerName,
-			        meshIndex,
-			        materialHandle.GetIndex()));
+			LOG_WARNING(std::format(
+			    "{}: Mesh {} references invalid material handle {} and will use the default material",
+			    importerName,
+			    meshIndex,
+			    materialHandle.GetIndex()));
 			result.materialHandles[meshIndex] = MaterialHandle::Invalid();
 		}
 	}
@@ -115,6 +116,8 @@ void SceneImportPostProcessor::NormalizeOptionalTexturePath(
     std::string_view slotName,
     SceneImportResult& result)
 {
+	const std::string_view importerName = GetSceneImporterTypeName(result.importerType);
+
 	if (!texturePath)
 	{
 		return;
@@ -123,13 +126,12 @@ void SceneImportPostProcessor::NormalizeOptionalTexturePath(
 	const std::filesystem::path normalizedPath = Engine::Paths::Normalize(*texturePath);
 	if (normalizedPath.empty())
 	{
-		result.AddWarning(
-		    std::format(
-		        "{}: Material '{}' has an invalid {} texture path '{}' and it will be ignored",
-		        result.importerName,
-		        materialName,
-		        slotName,
-		        texturePath->string()));
+		LOG_WARNING(std::format(
+		    "{}: Material '{}' has an invalid {} texture path '{}' and it will be ignored",
+		    importerName,
+		    materialName,
+		    slotName,
+		    texturePath->string()));
 				
 		texturePath.reset();
 		return;

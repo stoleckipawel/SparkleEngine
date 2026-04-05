@@ -8,14 +8,29 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <string>
-#include <utility>
+#include <string_view>
 #include <vector>
 
-struct SPARKLE_ENGINE_API SceneImportWarning
+enum class SceneImporterType : std::uint8_t
 {
-	std::string message;
+	None = 0,
+	Fbx,
+	Gltf
 };
+
+constexpr std::string_view GetSceneImporterTypeName(SceneImporterType importerType) noexcept
+{
+	switch (importerType)
+	{
+		case SceneImporterType::Fbx:
+			return "FbxImporter";
+		case SceneImporterType::Gltf:
+			return "GltfImporter";
+		case SceneImporterType::None:
+		default:
+			return "SceneImporter";
+	}
+}
 
 struct SPARKLE_ENGINE_API SceneImportResult
 {
@@ -23,18 +38,13 @@ struct SPARKLE_ENGINE_API SceneImportResult
 	std::vector<MaterialDesc> materials;
 	std::vector<Transform> transforms;
 	std::vector<MaterialHandle> materialHandles;
-	std::vector<SceneImportWarning> warnings;
-	std::string importerName;
+	SceneImporterType importerType = SceneImporterType::None;
 
 	bool bSuccess = false;
-	std::string errorMessage;
 
 	bool IsValid() const noexcept { return bSuccess && !meshes.empty(); }
-	bool HasWarnings() const noexcept { return !warnings.empty(); }
 	std::size_t GetMeshCount() const noexcept { return meshes.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
-
-	void AddWarning(std::string warningMessage) { warnings.push_back({std::move(warningMessage)}); }
 
 	void Reserve(std::size_t primitiveCount)
 	{

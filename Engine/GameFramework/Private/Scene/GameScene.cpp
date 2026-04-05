@@ -100,19 +100,11 @@ bool GameScene::LoadGltf(const std::filesystem::path& assetPath)
 
 bool GameScene::AppendResolvedImportedAsset(const std::filesystem::path& resolvedPath)
 {
-	LOG_INFO("Scene: Loading imported asset from " + resolvedPath.string());
-
-	SceneImportResult result = SceneImporter::Load(resolvedPath);
+	SceneImportResult result = SceneImporter::Import(resolvedPath);
 
 	if (!result.IsValid())
 	{
-		LOG_ERROR("Scene: Failed to load imported asset — " + result.errorMessage);
 		return false;
-	}
-
-	for (const SceneImportWarning& warning : result.warnings)
-	{
-		LOG_WARNING("Scene: Import warning — " + warning.message);
 	}
 
 	return AppendImportedScene(std::move(result));
