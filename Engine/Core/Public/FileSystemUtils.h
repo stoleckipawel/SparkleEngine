@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace Filesystem
@@ -13,8 +14,6 @@ namespace Filesystem
 	inline constexpr std::string_view kWorkspaceMarker = ".sparkle";
 	inline constexpr std::string_view kEngineMarker = ".sparkle-engine";
 	inline constexpr std::string_view kProjectMarker = ".sparkle-project";
-
-	std::filesystem::path NormalizePath(const std::filesystem::path& path);
 
 	const std::filesystem::path& GetWorkingDirectory();
 	std::filesystem::path GetExecutableDirectory();
@@ -38,6 +37,7 @@ namespace Filesystem
 	const std::filesystem::path& GetShaderPath(PathRoot root = PathRoot::Any) noexcept;
 	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) noexcept;
 
+	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type);
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type);
 	std::filesystem::path ResolveAssetPathValidated(const std::filesystem::path& inputPath, AssetType type);
 	const std::filesystem::path& GetShaderSymbolsOutputPath();

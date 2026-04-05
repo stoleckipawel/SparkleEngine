@@ -2,7 +2,7 @@
 
 #include "Assets/Import/SceneImportPostProcessor.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 #include <format>
 
@@ -120,7 +120,7 @@ void SceneImportPostProcessor::NormalizeOptionalTexturePath(
 		return;
 	}
 
-	const std::filesystem::path normalizedPath = Filesystem::NormalizePath(*texturePath);
+	const std::filesystem::path normalizedPath = Engine::Paths::Normalize(*texturePath);
 	if (normalizedPath.empty())
 	{
 		result.AddWarning(

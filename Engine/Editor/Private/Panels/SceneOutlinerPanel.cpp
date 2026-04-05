@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Panels/SceneOutlinerPanel.h"
 
+#include "Core/Public/Strings/StringUtils.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/GameScene.h"
 #include "Scene/Lighting/SceneLighting.h"
@@ -9,7 +10,6 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
-#include <cctype>
 #include <string>
 
 #include <imgui.h>
@@ -22,36 +22,6 @@ SceneOutlinerPanel::SceneOutlinerPanel(GameScene& gameScene, SceneObjectSelectio
 std::string SceneOutlinerPanel::BuildMeshLabel(std::size_t meshIndex)
 {
 	return "Mesh " + std::to_string(meshIndex + 1);
-}
-
-bool SceneOutlinerPanel::MatchesFilter(const std::string& filter, const char* label)
-{
-	if (filter.empty() || label == nullptr)
-	{
-		return true;
-	}
-
-	std::string normalizedLabel(label);
-	std::transform(
-	    normalizedLabel.begin(),
-	    normalizedLabel.end(),
-	    normalizedLabel.begin(),
-	    [](unsigned char value)
-	    {
-		    return static_cast<char>(std::tolower(value));
-	    });
-
-	std::string normalizedFilter = filter;
-	std::transform(
-	    normalizedFilter.begin(),
-	    normalizedFilter.end(),
-	    normalizedFilter.begin(),
-	    [](unsigned char value)
-	    {
-		    return static_cast<char>(std::tolower(value));
-	    });
-
-	return normalizedLabel.find(normalizedFilter) != std::string::npos;
 }
 
 void SceneOutlinerPanel::SetWidth(float widthPixels) noexcept
@@ -124,7 +94,7 @@ void SceneOutlinerPanel::BuildCameraSection() noexcept
 	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 	if (ImGui::TreeNodeEx("Camera", flags, "Camera (1)"))
 	{
-		if (MatchesFilter(m_filterText, "Scene Camera"))
+		if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase("Scene Camera", m_filterText))
 		{
 			DrawSelectionEntry("Scene Camera", "CAM", SceneObjectSelection::Camera());
 		}
@@ -147,7 +117,7 @@ void SceneOutlinerPanel::BuildLightSection() noexcept
 		for (std::size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
 		{
 			const std::string label = "Directional Light " + std::to_string(lightIndex + 1);
-			if (MatchesFilter(m_filterText, label.c_str()))
+			if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase(label, m_filterText))
 			{
 				DrawSelectionEntry(label.c_str(), "LGT", SceneObjectSelection::DirectionalLight(lightIndex));
 			}
@@ -171,7 +141,7 @@ void SceneOutlinerPanel::BuildMeshSection() noexcept
 		for (std::size_t meshIndex = 0; meshIndex < meshCount; ++meshIndex)
 		{
 			const std::string label = BuildMeshLabel(meshIndex);
-			if (MatchesFilter(m_filterText, label.c_str()))
+			if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase(label, m_filterText))
 			{
 				DrawSelectionEntry(label.c_str(), "SM", SceneObjectSelection::Mesh(meshIndex));
 			}

@@ -8,6 +8,9 @@
 
 namespace MathUtils
 {
+	std::uint32_t DivideRoundUp(std::uint32_t value, std::uint32_t divisor) noexcept;
+	std::uint64_t AlignUp(std::uint64_t value, std::uint64_t alignment) noexcept;
+
 	inline DirectX::XMFLOAT3 Normalize3(
 	    const DirectX::XMFLOAT3& v,
 	    const DirectX::XMFLOAT3& fallback = {0.0f, 1.0f, 0.0f},

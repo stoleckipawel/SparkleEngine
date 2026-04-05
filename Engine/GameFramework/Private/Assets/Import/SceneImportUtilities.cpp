@@ -2,7 +2,7 @@
 
 #include "Assets/Import/SceneImportUtilities.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 #include <format>
 
@@ -58,7 +58,7 @@ std::optional<std::filesystem::path> SceneImportUtilities::NormalizeImportedText
 		resolvedTexturePath = sourceDirectory / resolvedTexturePath;
 	}
 
-	resolvedTexturePath = Filesystem::NormalizePath(resolvedTexturePath);
+	resolvedTexturePath = Engine::Paths::Normalize(resolvedTexturePath);
 	if (resolvedTexturePath.empty())
 	{
 		return std::nullopt;

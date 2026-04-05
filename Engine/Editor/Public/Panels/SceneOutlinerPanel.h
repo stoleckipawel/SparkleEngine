@@ -24,7 +24,6 @@ class SceneOutlinerPanel final
 
   private:
 	static std::string BuildMeshLabel(std::size_t meshIndex);
-	static bool MatchesFilter(const std::string& filter, const char* label);
 	void BuildToolbar() noexcept;
 	bool IsSelectionValid() const noexcept;
 	void EnsureValidSelection() noexcept;

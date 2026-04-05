@@ -6,9 +6,9 @@
 
 #include <vector>
 
-D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TexturePayload texturePayload, D3D12DescriptorHeapManager& descriptorHeapManager) :
+D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
-    m_texturePayload(std::move(texturePayload)),
+	m_textureLoadResult(std::move(textureLoadResult)),
     m_srvHandle(descriptorHeapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
     m_descriptorHeapManager(&descriptorHeapManager)
 {
@@ -17,9 +17,9 @@ D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TexturePayload texturePayload, D3D12De
 		LOG_FATAL("D3D12Texture: failed to allocate SRV descriptor.");
 	}
 
-	if (!m_texturePayload.IsValid())
+	if (!m_textureLoadResult.IsValid())
 	{
-		LOG_FATAL("D3D12Texture: runtime texture payload is invalid.");
+		LOG_FATAL("D3D12Texture: runtime texture load result is invalid.");
 	}
 
 	CreateResource();
@@ -31,11 +31,11 @@ void D3D12Texture::CreateResource()
 {
 	m_texResourceDesc = {};
 	m_texResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	m_texResourceDesc.Width = static_cast<UINT64>(m_texturePayload.width);
-	m_texResourceDesc.Height = static_cast<UINT>(m_texturePayload.height);
+	m_texResourceDesc.Width = static_cast<UINT64>(m_textureLoadResult.width);
+	m_texResourceDesc.Height = static_cast<UINT>(m_textureLoadResult.height);
 	m_texResourceDesc.DepthOrArraySize = 1;
-	m_texResourceDesc.MipLevels = m_texturePayload.GetMipCount();
-	m_texResourceDesc.Format = m_texturePayload.dxgiFormat;
+	m_texResourceDesc.MipLevels = m_textureLoadResult.GetMipCount();
+	m_texResourceDesc.Format = m_textureLoadResult.dxgiFormat;
 	m_texResourceDesc.SampleDesc.Count = 1;
 	m_texResourceDesc.SampleDesc.Quality = 0;
 	m_texResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -51,7 +51,7 @@ void D3D12Texture::CreateResource()
 	    IID_PPV_ARGS(m_textureResource.ReleaseAndGetAddressOf())));
 	m_textureResource->SetName(L"RHI_D3D12Texture");
 
-	const UINT subresourceCount = static_cast<UINT>(m_texturePayload.mipLevels.size());
+	const UINT subresourceCount = static_cast<UINT>(m_textureLoadResult.mipLevels.size());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);
 
 	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
@@ -68,9 +68,9 @@ void D3D12Texture::CreateResource()
 void D3D12Texture::UploadToGPU()
 {
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	subresources.reserve(m_texturePayload.mipLevels.size());
+	subresources.reserve(m_textureLoadResult.mipLevels.size());
 
-	for (const auto& mipLevel : m_texturePayload.mipLevels)
+	for (const auto& mipLevel : m_textureLoadResult.mipLevels)
 	{
 		D3D12_SUBRESOURCE_DATA subresource = {};
 		subresource.pData = mipLevel.data.empty() ? nullptr : mipLevel.data.data();
@@ -103,11 +103,11 @@ void D3D12Texture::CreateShaderResourceView()
 D3D12_SHADER_RESOURCE_VIEW_DESC D3D12Texture::BuildShaderResourceViewDesc() const noexcept
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = m_texturePayload.dxgiFormat;
+	srvDesc.Format = m_textureLoadResult.dxgiFormat;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = m_texturePayload.GetMipCount();
+	srvDesc.Texture2D.MipLevels = m_textureLoadResult.GetMipCount();
 	return srvDesc;
 }
 

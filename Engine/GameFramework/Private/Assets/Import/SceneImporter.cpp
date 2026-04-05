@@ -5,22 +5,21 @@
 #include "Assets/Importers/FbxImporter.h"
 #include "Assets/Importers/GltfLoader.h"
 #include "Assets/Import/SceneImportPostProcessor.h"
-#include "Core/Public/Strings/StringUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 #include <format>
-#include <string>
 
 SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
 
-	std::string extension = Engine::Strings::ToLowerCopy(filePath.extension().string());
+	const std::wstring extension = Engine::Paths::GetLowercaseExtension(filePath);
 
-	if (extension == ".gltf" || extension == ".glb")
+	if (extension == L".gltf" || extension == L".glb")
 	{
 		result = GltfLoader::Load(filePath);
 	}
-	else if (extension == ".fbx")
+	else if (extension == L".fbx")
 	{
 		result = FbxImporter::Load(filePath);
 	}
@@ -28,7 +27,7 @@ SceneImportResult SceneImporter::Load(const std::filesystem::path& filePath)
 	{
 		result.errorMessage = std::format(
 		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
-		    extension.empty() ? std::string("<none>") : extension,
+		    extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
 		    filePath.string());
 	}
 

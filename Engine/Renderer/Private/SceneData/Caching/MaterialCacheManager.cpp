@@ -6,7 +6,7 @@
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "D3D12/Resources/D3D12Texture.h"
+#include "Resources/Texture.h"
 #include "Renderer/Public/SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/RenderSceneData.h"
 #include "Renderer/Public/Textures/DefaultTextures.h"
@@ -67,7 +67,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	{
 		MaterialData material = MaterialData::FromDesc(desc);
 
-		const D3D12Texture* textures[MaterialTextureSlots::Count] = {
+		const Texture* textures[MaterialTextureSlots::Count] = {
 		    m_textureManager->ResolveTextureOrDefault(desc.albedoTexture, DefaultTexture::White),
 		    m_textureManager->ResolveTextureOrDefault(desc.normalTexture, DefaultTexture::Normal),
 		    m_textureManager->ResolveTextureOrDefault(desc.metallicRoughnessTexture, DefaultTexture::Black),

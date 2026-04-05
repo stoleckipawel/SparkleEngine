@@ -5,7 +5,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/RenderPassContext.h"
-#include "Renderer/Public/GPU/ComputeUtils.h"
+#include "Core/Public/Math/MathUtils.h"
 #include "Renderer/Public/Passes/PassUtilities.h"
 #include "Renderer/Public/Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
@@ -41,8 +41,8 @@ void ComputeClearPass::Execute(
     std::uint32_t height) noexcept
 {
 	const ComputeDispatchDesc dispatch{
-	    ComputeUtils::DivideRoundUp(width, ThreadGroupSizeX),
-	    ComputeUtils::DivideRoundUp(height, ThreadGroupSizeY),
+	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),
 	    1};
 	const ComputeClearPassRuntime& runtime = context.Runtime.GetPassRuntime<ComputeClearPass>();
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ComputeClearPass>(

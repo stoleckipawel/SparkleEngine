@@ -21,7 +21,7 @@ struct TextureMipLevelData
 	std::vector<std::uint8_t> data;
 };
 
-struct TexturePayload
+struct TextureLoadResult
 {
 	std::uint32_t width = 1;
 	std::uint32_t height = 1;

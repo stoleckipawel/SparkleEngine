@@ -3,6 +3,7 @@
 #include "Scene/Textures/SceneTextures.h"
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {
@@ -38,11 +39,11 @@ void SceneTextures::AppendTexturePaths(const std::vector<std::filesystem::path>&
 		std::filesystem::path normalizedPath;
 		if (auto resolvedPath = Filesystem::ResolveAssetPath(texturePath, AssetType::Texture))
 		{
-			normalizedPath = Filesystem::NormalizePath(*resolvedPath);
+			normalizedPath = Engine::Paths::Normalize(*resolvedPath);
 		}
 		else
 		{
-			normalizedPath = Filesystem::NormalizePath(texturePath);
+			normalizedPath = Engine::Paths::Normalize(texturePath);
 		}
 
 		if (normalizedPath.empty())

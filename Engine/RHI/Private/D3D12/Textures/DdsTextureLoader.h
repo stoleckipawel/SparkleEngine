@@ -1,19 +1,18 @@
 #pragma once
 
-#include "../../RHIAPI.h"
-#include "TexturePayload.h"
+#include "D3D12/Textures/TextureLoaderBackend.h"
 
 #include <cstdint>
 #include <filesystem>
 #include <vector>
 
-class SPARKLE_RHI_API DdsTextureLoader final
+#include <dxgiformat.h>
+
+class DdsTextureLoader final : public TextureLoaderBackend
 {
   public:
-	static TexturePayload Load(const std::filesystem::path& fileName);
-
-	DdsTextureLoader() = delete;
-	~DdsTextureLoader() = delete;
+	bool SupportsExtension(std::wstring_view extension) const noexcept override;
+	TextureLoadResult Load(const std::filesystem::path& fileName) const override;
 
   private:
 	struct DdsPixelFormat
@@ -74,7 +73,6 @@ class SPARKLE_RHI_API DdsTextureLoader final
 		       (static_cast<std::uint32_t>(static_cast<unsigned char>(d)) << 24u);
 	}
 
-	static std::vector<std::uint8_t> ReadFileBytes(const std::filesystem::path& resolvedPath);
 	static DdsHeader ReadHeader(const std::vector<std::uint8_t>& fileBytes);
 	static bool HasDx10Header(const DdsHeader& header) noexcept;
 	static DdsHeaderDx10 ReadDx10Header(const std::vector<std::uint8_t>& fileBytes);
@@ -94,7 +92,7 @@ class SPARKLE_RHI_API DdsTextureLoader final
 	    std::uint32_t height,
 	    const std::filesystem::path& resolvedPath);
 	static std::size_t ResolvePixelDataOffset(const DdsHeader& header) noexcept;
-	static TexturePayload BuildPayload(
+	static TextureLoadResult BuildLoadResult(
 	    const std::vector<std::uint8_t>& fileBytes,
 	    const DdsHeader& header,
 	    DXGI_FORMAT dxgiFormat,

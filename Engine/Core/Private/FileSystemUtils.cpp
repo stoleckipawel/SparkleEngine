@@ -3,10 +3,12 @@
 #include "FileSystemUtils.h"
 
 #include "Core/Public/Diagnostics/Log.h"
+#include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
 #include <array>
+#include <cwctype>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -76,7 +78,7 @@ namespace
 
 			if (Engine::Strings::EqualsIgnoreCase(projectRoot.filename().string(), executableStem))
 			{
-				return Filesystem::NormalizePath(projectRoot);
+				return Engine::Paths::Normalize(projectRoot);
 			}
 		}
 
@@ -232,10 +234,10 @@ namespace
 			state.projectAssetsPath = state.projectPath / "Assets";
 		}
 
-		state.projectPath = Filesystem::NormalizePath(state.projectPath);
-		state.projectAssetsPath = Filesystem::NormalizePath(state.projectAssetsPath);
-		state.enginePath = Filesystem::NormalizePath(state.enginePath);
-		state.engineAssetsPath = Filesystem::NormalizePath(state.engineAssetsPath);
+		state.projectPath = Engine::Paths::Normalize(state.projectPath);
+		state.projectAssetsPath = Engine::Paths::Normalize(state.projectAssetsPath);
+		state.enginePath = Engine::Paths::Normalize(state.enginePath);
+		state.engineAssetsPath = Engine::Paths::Normalize(state.engineAssetsPath);
 
 		InitializeTypedPaths(state);
 		InitializeOutputPaths(state);
@@ -268,6 +270,40 @@ namespace Filesystem
 			return canonical;
 		}
 		return normalized;
+	}
+
+	std::wstring MakePathKey(const std::filesystem::path& path)
+	{
+		const std::filesystem::path normalizedPath = NormalizePath(path);
+		if (normalizedPath.empty())
+		{
+			return {};
+		}
+
+		std::wstring key = normalizedPath.generic_wstring();
+		std::transform(
+		    key.begin(),
+		    key.end(),
+		    key.begin(),
+		    [](wchar_t value)
+		    {
+			    return static_cast<wchar_t>(std::towlower(value));
+		    });
+		return key;
+	}
+
+	std::wstring GetLowercaseExtension(const std::filesystem::path& path)
+	{
+		std::wstring extension = path.extension().wstring();
+		std::transform(
+		    extension.begin(),
+		    extension.end(),
+		    extension.begin(),
+		    [](wchar_t value)
+		    {
+			    return static_cast<wchar_t>(std::towlower(value));
+		    });
+		return extension;
 	}
 
 	const std::filesystem::path& GetWorkingDirectory()
@@ -439,6 +475,16 @@ namespace Filesystem
 	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root) noexcept
 	{
 		return GetTypedPath(AssetType::ShaderSymbols, root);
+	}
+
+	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type)
+	{
+		if (auto resolved = ResolveAssetPath(inputPath, type))
+		{
+			return NormalizePath(*resolved);
+		}
+
+		return std::nullopt;
 	}
 
 	std::optional<std::filesystem::path> ResolveAssetPath(const std::filesystem::path& inputPath, AssetType type)

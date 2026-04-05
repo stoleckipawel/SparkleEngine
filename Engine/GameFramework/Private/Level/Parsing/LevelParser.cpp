@@ -106,10 +106,14 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 		}
 
 		LevelParsing::ParsedLevelLine parsedLine;
-		if (!LevelParsing::TryParseKeyValueLine(line, parsedLine))
+		std::string_view key;
+		std::string_view value;
+		if (!Engine::Strings::TrySplitKeyValue(line, '=', key, value))
 		{
 			continue;
 		}
+		parsedLine.key = std::string(key);
+		parsedLine.value = std::string(value);
 
 		if (!ParseField(currentSection, parsedLine, levelDesc, errorMessage))
 		{

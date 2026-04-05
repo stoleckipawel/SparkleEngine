@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/Diagnostics/Log.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 #include <string_view>
 
@@ -13,16 +14,7 @@ namespace Logging
 			return {};
 		}
 
-		std::string_view text(path);
-		for (std::size_t index = text.size(); index > 0; --index)
-		{
-			if (text[index - 1] == '/' || text[index - 1] == '\\')
-			{
-				return text.substr(index);
-			}
-		}
-
-		return text;
+		return Engine::Paths::GetFileName(path);
 	}
 
 	inline const char* LevelTag(LogLevel level) noexcept

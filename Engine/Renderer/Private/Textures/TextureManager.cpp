@@ -1,73 +1,28 @@
 #include "PCH.h"
+
 #include "Renderer/Public/Textures/TextureManager.h"
-#include "D3D12/Resources/DdsTextureLoader.h"
-#include "FileSystemUtils.h"
-#include "D3D12/Resources/D3D12Texture.h"
-#include "D3D12/Resources/TextureLoader.h"
-#include "D3D12/D3D12Rhi.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include <algorithm>
-#include <cwctype>
+#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
+#include "D3D12/Textures/TextureFactory.h"
+#include "D3D12/Textures/TextureLoader.h"
+#include "Resources/Texture.h"
+
 #include <format>
-#include <utility>
 
-namespace
+std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
-	TexturePayload CreateTexturePayloadFromLoadedData(const TextureLoader::Data& loadedData)
+	if (!m_textureFactory)
 	{
-		TexturePayload payload;
-		payload.width = loadedData.width;
-		payload.height = loadedData.height;
-		payload.dxgiFormat = loadedData.dxgiPixelFormat;
-		payload.formatIntent = TextureFormatIntent::Unknown;
-
-		TextureMipLevelData baseMip;
-		baseMip.width = loadedData.width;
-		baseMip.height = loadedData.height;
-		baseMip.rowPitch = loadedData.stride;
-		baseMip.slicePitch = loadedData.slicePitch;
-		baseMip.data = loadedData.data;
-		payload.mipLevels.push_back(std::move(baseMip));
-
-		return payload;
-	}
-
-	TexturePayload LoadTexturePayload(const std::filesystem::path& filePath)
-	{
-		std::wstring extension = filePath.extension().wstring();
-		std::transform(
-		    extension.begin(),
-		    extension.end(),
-		    extension.begin(),
-		    [](wchar_t character)
-		    {
-			    return static_cast<wchar_t>(std::towlower(character));
-		    });
-
-		if (extension == L".dds")
-		{
-			return DdsTextureLoader::Load(filePath);
-		}
-
-		const TextureLoader loader(filePath);
-		return CreateTexturePayloadFromLoadedData(loader.GetData());
-	}
-}  // namespace
-
-std::unique_ptr<D3D12Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
-{
-	if (!m_rhi || !m_descriptorHeapManager)
-	{
-		LOG_FATAL("TextureManager::CreateTextureFromPath: manager dependencies are unavailable.");
+		LOG_FATAL("TextureManager::CreateTextureFromPath: texture factory is unavailable.");
 		return nullptr;
 	}
 
-	return std::make_unique<D3D12Texture>(*m_rhi, LoadTexturePayload(texturePath), *m_descriptorHeapManager);
+	return m_textureFactory->CreateTexture(TextureLoader::Load(texturePath));
 }
 
 TextureManager::TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
+	 m_textureFactory(TextureFactory::Create(rhi, descriptorHeapManager))
 {
 	LoadDefaults();
 }
@@ -119,16 +74,18 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 	LOG_DEBUG(std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
 }
 
-D3D12Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
+Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 {
-	const std::filesystem::path resolvedPath = ResolveTexturePath(texturePath);
-	if (resolvedPath.empty())
+	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
+	if (!resolvedPathResult)
 	{
 		LOG_WARNING(std::format("TextureManager::LoadFromPath: Failed to resolve '{}'", texturePath.string()));
 		return nullptr;
 	}
 
-	const TextureCacheKey cacheKey = MakeCacheKey(resolvedPath);
+	const std::filesystem::path& resolvedPath = *resolvedPathResult;
+
+	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(resolvedPath);
 	if (cacheKey.empty())
 	{
 		LOG_WARNING(std::format("TextureManager::LoadFromPath: Failed to canonicalize '{}'", resolvedPath.string()));
@@ -147,7 +104,7 @@ D3D12Texture* TextureManager::LoadFromPath(const std::filesystem::path& textureP
 		return nullptr;
 	}
 
-	D3D12Texture* texturePtr = texture.get();
+	Texture* texturePtr = texture.get();
 	m_pathTextures.emplace(cacheKey, std::move(texture));
 
 	LOG_DEBUG(std::format("TextureManager: Cached '{}'", resolvedPath.string()));
@@ -187,46 +144,46 @@ void TextureManager::UnloadAll() noexcept
 	}
 }
 
-D3D12Texture* TextureManager::GetTexture(TextureId id) noexcept
+Texture* TextureManager::GetTexture(TextureId id) noexcept
 {
-	return const_cast<D3D12Texture*>(std::as_const(*this).GetTexture(id));
+	return const_cast<Texture*>(std::as_const(*this).GetTexture(id));
 }
 
-const D3D12Texture* TextureManager::GetTexture(TextureId id) const noexcept
+const Texture* TextureManager::GetTexture(TextureId id) const noexcept
 {
 	const auto index = static_cast<std::size_t>(id);
 	return (index < kTextureCount) ? m_textures[index].get() : nullptr;
 }
 
-D3D12Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
+Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) noexcept
 {
-	return const_cast<D3D12Texture*>(std::as_const(*this).GetSceneTexture(texturePath));
+	return const_cast<Texture*>(std::as_const(*this).GetSceneTexture(texturePath));
 }
 
-const D3D12Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) const noexcept
+const Texture* TextureManager::GetSceneTexture(const std::filesystem::path& texturePath) const noexcept
 {
 	return FindPathTexture(texturePath);
 }
 
-const D3D12Texture* TextureManager::ResolveTextureOrDefault(
-    const std::optional<std::filesystem::path>& texturePath,
-    DefaultTexture fallbackType) const
+const Texture* TextureManager::ResolveTextureOrDefault(
+	const std::optional<std::filesystem::path>& texturePath,
+	DefaultTexture fallbackType) const
 {
 	if (texturePath)
 	{
-		if (const D3D12Texture* texture = GetSceneTexture(*texturePath))
+		if (const Texture* texture = GetSceneTexture(*texturePath))
 		{
 			return texture;
 		}
 	}
 
-	if (const D3D12Texture* texture = FindPathTexture(DefaultTextures::GetPath(fallbackType)))
+	if (const Texture* texture = FindPathTexture(DefaultTextures::GetPath(fallbackType)))
 	{
 		return texture;
 	}
 
 	LOG_WARNING(std::format("TextureManager: Falling back to checkerboard for {} default texture", DefaultTextures::GetName(fallbackType)));
-	if (const D3D12Texture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
+	if (const Texture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
 	{
 		return texture;
 	}
@@ -246,8 +203,11 @@ std::size_t TextureManager::GetLoadedCount() const noexcept
 	for (const auto& texture : m_textures)
 	{
 		if (texture)
+		{
 			++count;
+		}
 	}
+
 	return count + m_pathTextures.size();
 }
 
@@ -260,22 +220,22 @@ void TextureManager::LoadDefaultTextures()
 		if (!LoadFromPath(DefaultTextures::GetPath(type)))
 		{
 			LOG_WARNING(
-			    std::format(
-			        "TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
-			        DefaultTextures::GetName(type)));
+				std::format(
+					"TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
+					DefaultTextures::GetName(type)));
 		}
 	}
 }
 
 void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& texturePath)
 {
-	const std::filesystem::path resolvedPath = ResolveTexturePath(texturePath);
-	if (resolvedPath.empty())
+	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
+	if (!resolvedPath)
 	{
 		return;
 	}
 
-	const TextureCacheKey cacheKey = MakeCacheKey(resolvedPath);
+	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(*resolvedPath);
 	if (cacheKey.empty())
 	{
 		return;
@@ -284,15 +244,15 @@ void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& tex
 	m_defaultPathTextureKeys.insert(cacheKey);
 }
 
-const D3D12Texture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
+const Texture* TextureManager::FindPathTexture(const std::filesystem::path& texturePath) const noexcept
 {
-	const std::filesystem::path resolvedPath = ResolveTexturePath(texturePath);
-	if (resolvedPath.empty())
+	const auto resolvedPath = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
+	if (!resolvedPath)
 	{
 		return nullptr;
 	}
 
-	const TextureCacheKey cacheKey = MakeCacheKey(resolvedPath);
+	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(*resolvedPath);
 	if (cacheKey.empty())
 	{
 		return nullptr;
@@ -304,33 +264,4 @@ const D3D12Texture* TextureManager::FindPathTexture(const std::filesystem::path&
 	}
 
 	return nullptr;
-}
-
-std::filesystem::path TextureManager::ResolveTexturePath(const std::filesystem::path& texturePath) const
-{
-	if (auto resolved = Filesystem::ResolveAssetPath(texturePath, AssetType::Texture))
-	{
-		return Filesystem::NormalizePath(*resolved);
-	}
-
-	return {};
-}
-
-TextureManager::TextureCacheKey TextureManager::MakeCacheKey(const std::filesystem::path& resolvedPath) const
-{
-	if (resolvedPath.empty())
-	{
-		return {};
-	}
-
-	std::wstring key = resolvedPath.generic_wstring();
-	std::transform(
-	    key.begin(),
-	    key.end(),
-	    key.begin(),
-	    [](wchar_t value)
-	    {
-		    return static_cast<wchar_t>(std::towlower(value));
-	    });
-	return key;
 }

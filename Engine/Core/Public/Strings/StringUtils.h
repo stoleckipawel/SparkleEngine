@@ -45,6 +45,13 @@ namespace Engine
 		std::string ToLowerCopy(std::string_view str);
 
 		bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept;
+		bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept;
+		bool TryParseBool(std::string_view str, bool& outValue);
+		bool TrySplitKeyValue(
+		    std::string_view str,
+		    char separator,
+		    std::string_view& outKey,
+		    std::string_view& outValue) noexcept;
 
 		inline bool TryParseFloat(std::string_view str, float& outValue)
 		{

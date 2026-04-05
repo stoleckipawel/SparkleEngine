@@ -82,7 +82,7 @@ D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t ali
 	assert(size > 0 && "Cannot allocate zero bytes");
 	assert((alignment & (alignment - 1)) == 0 && "Alignment must be power of 2");
 
-	const uint64_t alignedSize = AlignUp(size, alignment);
+	const uint64_t alignedSize = MathUtils::AlignUp(size, alignment);
 
 	uint64_t currentOffset;
 	uint64_t alignedOffset;
@@ -91,7 +91,7 @@ D3D12LinearAllocation D3D12LinearAllocator::Allocate(uint64_t size, uint64_t ali
 	do
 	{
 		currentOffset = m_Offset.load(std::memory_order_acquire);
-		alignedOffset = AlignUp(currentOffset, alignment);
+		alignedOffset = MathUtils::AlignUp(currentOffset, alignment);
 		newOffset = alignedOffset + alignedSize;
 
 		if (newOffset > m_Capacity)

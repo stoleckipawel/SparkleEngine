@@ -1,20 +1,32 @@
 #include "PCH.h"
 
-#include "D3D12/Resources/DdsTextureLoader.h"
+#include "D3D12/Textures/DdsTextureLoader.h"
 
+#include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Log.h"
 
 #include <algorithm>
 #include <cstring>
 #include <format>
-#include <fstream>
 #include <limits>
 
-TexturePayload DdsTextureLoader::Load(const std::filesystem::path& fileName)
+bool DdsTextureLoader::SupportsExtension(std::wstring_view extension) const noexcept
+{
+	return extension == L".dds";
+}
+
+TextureLoadResult DdsTextureLoader::Load(const std::filesystem::path& fileName) const
 {
 	const std::filesystem::path resolvedPath = Filesystem::ResolveAssetPathValidated(fileName, AssetType::Texture);
-	const std::vector<std::uint8_t> fileBytes = ReadFileBytes(resolvedPath);
+	std::vector<std::uint8_t> fileBytes;
+	std::string readErrorMessage;
+	if (!Engine::Files::TryReadAllBytes(resolvedPath, fileBytes, readErrorMessage))
+	{
+		LOG_FATAL(std::format("DdsTextureLoader: {}", readErrorMessage));
+		return {};
+	}
+
 	const DdsHeader header = ReadHeader(fileBytes);
 	const bool hasDx10Header = HasDx10Header(header);
 	const DdsHeaderDx10 dx10Header = hasDx10Header ? ReadDx10Header(fileBytes) : DdsHeaderDx10{};
@@ -22,40 +34,7 @@ TexturePayload DdsTextureLoader::Load(const std::filesystem::path& fileName)
 
 	ValidateHeader(header, dx10HeaderPtr, resolvedPath);
 	const DXGI_FORMAT dxgiFormat = ResolveDxgiFormat(header, dx10HeaderPtr, resolvedPath);
-	return BuildPayload(fileBytes, header, dxgiFormat, resolvedPath);
-}
-
-std::vector<std::uint8_t> DdsTextureLoader::ReadFileBytes(const std::filesystem::path& resolvedPath)
-{
-	std::ifstream input(resolvedPath, std::ios::binary | std::ios::ate);
-	if (!input)
-	{
-		LOG_FATAL(std::format("DdsTextureLoader: Failed to open '{}'", resolvedPath.string()));
-		return {};
-	}
-
-	const std::ifstream::pos_type fileSize = input.tellg();
-	if (fileSize <= 0)
-	{
-		LOG_FATAL(std::format("DdsTextureLoader: '{}' is empty", resolvedPath.string()));
-		return {};
-	}
-
-	if (static_cast<std::uint64_t>(fileSize) > (std::numeric_limits<std::size_t>::max)())
-	{
-		LOG_FATAL(std::format("DdsTextureLoader: '{}' is too large to load", resolvedPath.string()));
-		return {};
-	}
-
-	std::vector<std::uint8_t> fileBytes(static_cast<std::size_t>(fileSize));
-	input.seekg(0, std::ios::beg);
-	if (!input.read(reinterpret_cast<char*>(fileBytes.data()), fileSize))
-	{
-		LOG_FATAL(std::format("DdsTextureLoader: Failed to read '{}'", resolvedPath.string()));
-		return {};
-	}
-
-	return fileBytes;
+	return BuildLoadResult(fileBytes, header, dxgiFormat, resolvedPath);
 }
 
 DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::uint8_t>& fileBytes)
@@ -299,18 +278,18 @@ std::size_t DdsTextureLoader::ResolvePixelDataOffset(const DdsHeader& header) no
 	return sizeof(kDdsMagic) + sizeof(DdsHeader) + (HasDx10Header(header) ? sizeof(DdsHeaderDx10) : 0u);
 }
 
-TexturePayload DdsTextureLoader::BuildPayload(
+TextureLoadResult DdsTextureLoader::BuildLoadResult(
     const std::vector<std::uint8_t>& fileBytes,
     const DdsHeader& header,
     DXGI_FORMAT dxgiFormat,
     const std::filesystem::path& resolvedPath)
 {
-	TexturePayload payload;
-	payload.width = header.width;
-	payload.height = header.height;
-	payload.dxgiFormat = dxgiFormat;
-	payload.formatIntent = TextureFormatIntent::Unknown;
-	payload.mipLevels.reserve(ResolveMipCount(header));
+	TextureLoadResult loadResult;
+	loadResult.width = header.width;
+	loadResult.height = header.height;
+	loadResult.dxgiFormat = dxgiFormat;
+	loadResult.formatIntent = TextureFormatIntent::Unknown;
+	loadResult.mipLevels.reserve(ResolveMipCount(header));
 
 	std::size_t byteOffset = ResolvePixelDataOffset(header);
 	std::uint32_t mipWidth = header.width;
@@ -333,12 +312,12 @@ TexturePayload DdsTextureLoader::BuildPayload(
 		mipLevel.data.assign(
 		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
 		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
-		payload.mipLevels.push_back(std::move(mipLevel));
+		loadResult.mipLevels.push_back(std::move(mipLevel));
 
-		byteOffset += payload.mipLevels.back().slicePitch;
+		byteOffset += loadResult.mipLevels.back().slicePitch;
 		mipWidth = (std::max) (1u, mipWidth >> 1u);
 		mipHeight = (std::max) (1u, mipHeight >> 1u);
 	}
 
-	return payload;
+	return loadResult;
 }
