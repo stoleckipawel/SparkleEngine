@@ -223,5 +223,27 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 		return std::nullopt;
 	}
 
-	return Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
+	return NormalizeTexturePath(
+	    Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString)),
+	    materialHandle,
+	    slotName);
+}
+
+std::optional<std::filesystem::path> FbxMaterialImporter::NormalizeTexturePath(
+	std::filesystem::path texturePath,
+	MaterialHandle materialHandle,
+	std::string_view slotName)
+{
+	const std::filesystem::path normalizedTexturePath = Engine::Paths::Normalize(texturePath);
+	if (normalizedTexturePath.empty())
+	{
+		LOG_WARNING(std::format(
+		    "FbxImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
+		    materialHandle.GetIndex(),
+		    slotName,
+		    texturePath.string()));
+		return std::nullopt;
+	}
+
+	return normalizedTexturePath;
 }

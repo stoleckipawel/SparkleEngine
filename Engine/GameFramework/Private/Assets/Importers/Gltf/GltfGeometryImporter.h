@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct cgltf_accessor;
@@ -17,7 +18,7 @@ struct cgltf_primitive;
 class GltfGeometryImporter final
 {
   public:
-	static std::size_t CountTotalPrimitives(const cgltf_data* data);
+	static std::size_t CountImportedMeshInstances(const cgltf_data* data);
 	static void ImportGeometry(const cgltf_data* data, SceneImportResult& result);
 
   private:
@@ -27,7 +28,11 @@ class GltfGeometryImporter final
 	static DirectX::XMFLOAT3 ReadFloat3(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMFLOAT4 ReadFloat4(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
-	static MaterialHandle ResolveMaterialHandle(const cgltf_primitive& primitive, const cgltf_data* data);
-	static MeshData ExtractPrimitive(const cgltf_primitive& primitive);
+	static MaterialHandle ResolveMaterialHandle(
+	    const cgltf_primitive& primitive,
+	    const cgltf_data* data,
+	    std::string_view primitiveLabel,
+	    SceneImportResult& result);
+	static MeshData ExtractMeshGeometry(const cgltf_primitive& primitive);
 	static std::string BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex);
 };

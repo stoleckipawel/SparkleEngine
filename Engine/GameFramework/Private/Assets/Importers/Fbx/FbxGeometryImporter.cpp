@@ -8,12 +8,12 @@
 
 using namespace DirectX;
 
-std::size_t FbxGeometryImporter::CountMeshInstances(const aiNode& node) noexcept
+std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) noexcept
 {
 	std::size_t meshInstanceCount = node.mNumMeshes;
 	for (unsigned int childIndex = 0; childIndex < node.mNumChildren; ++childIndex)
 	{
-		meshInstanceCount += CountMeshInstances(*node.mChildren[childIndex]);
+		meshInstanceCount += CountImportedMeshInstances(*node.mChildren[childIndex]);
 	}
 
 	return meshInstanceCount;

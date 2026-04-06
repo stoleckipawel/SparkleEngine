@@ -28,11 +28,12 @@ SceneImportResult GltfImporter::Import(const std::filesystem::path& filePath) co
 
 	GltfSceneReader::CollectSceneWarnings(scene.data, result);
 
+	const std::filesystem::path sourceDirectory = filePath.parent_path();
 	result.materials.reserve(scene.data->materials_count);
-	GltfMaterialImporter::ImportMaterials(scene.data, filePath.parent_path(), result);
+	GltfMaterialImporter::ImportMaterials(scene.data, sourceDirectory, result);
 
-	const std::size_t totalPrimitives = GltfGeometryImporter::CountTotalPrimitives(scene.data);
-	result.Reserve(totalPrimitives);
+	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
+	result.Reserve(importedMeshInstanceCount);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 
 	if (result.meshes.empty())

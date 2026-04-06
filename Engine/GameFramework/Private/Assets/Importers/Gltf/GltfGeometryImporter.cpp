@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 
-std::size_t GltfGeometryImporter::CountTotalPrimitives(const cgltf_data* data)
+std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
 	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
@@ -68,14 +68,14 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SceneImportRes
 				LOG_WARNING(std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
 			}
 
-			MeshData meshData = ExtractPrimitive(primitive);
+			MeshData meshData = ExtractMeshGeometry(primitive);
 			if (!meshData.IsValid())
 			{
 				LOG_WARNING(std::format("GltfImporter: Skipping {} because vertex or index data is incomplete", primitiveLabel));
 				continue;
 			}
 
-			result.materialHandles.push_back(ResolveMaterialHandle(primitive, data));
+			result.materialHandles.push_back(ResolveMaterialHandle(primitive, data, primitiveLabel, result));
 			result.transforms.emplace_back(worldTransform);
 			result.meshes.push_back(std::move(meshData));
 		}
@@ -164,17 +164,31 @@ XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_node* node)
 	return worldTransform;
 }
 
-MaterialHandle GltfGeometryImporter::ResolveMaterialHandle(const cgltf_primitive& primitive, const cgltf_data* data)
+MaterialHandle GltfGeometryImporter::ResolveMaterialHandle(
+	const cgltf_primitive& primitive,
+	const cgltf_data* data,
+	std::string_view primitiveLabel,
+	SceneImportResult& result)
 {
-	if (!primitive.material)
+	if (!primitive.material || result.materials.empty())
 	{
 		return MaterialHandle::Invalid();
 	}
 
-	return MaterialHandle(static_cast<std::uint32_t>(primitive.material - data->materials));
+	const std::uint32_t materialIndex = static_cast<std::uint32_t>(primitive.material - data->materials);
+	if (materialIndex < result.materials.size())
+	{
+		return MaterialHandle(materialIndex);
+	}
+
+	LOG_WARNING(std::format(
+	    "GltfImporter: {} references invalid material index {} and will use the default material",
+	    primitiveLabel,
+	    materialIndex));
+	return MaterialHandle::Invalid();
 }
 
-MeshData GltfGeometryImporter::ExtractPrimitive(const cgltf_primitive& primitive)
+MeshData GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primitive& primitive)
 {
 	const cgltf_accessor* positions = FindAttribute(primitive, cgltf_attribute_type_position);
 	const cgltf_accessor* normals = FindAttribute(primitive, cgltf_attribute_type_normal);

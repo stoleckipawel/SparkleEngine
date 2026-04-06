@@ -28,7 +28,7 @@ SceneImportResult FbxImporter::Import(const std::filesystem::path& filePath) con
 	}
 
 	result.materials.reserve(scene->mNumMaterials);
-	result.Reserve(FbxGeometryImporter::CountMeshInstances(*scene->mRootNode));
+	result.Reserve(FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode));
 
 	FbxSceneReader::CollectSceneWarnings(*scene, result);
 	FbxMaterialImporter::ImportMaterials(*scene, filePath.parent_path(), result);

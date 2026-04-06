@@ -5,7 +5,6 @@
 #include "Assets/Importers/AssetImporter.h"
 #include "Assets/Importers/Fbx/FbxImporter.h"
 #include "Assets/Importers/Gltf/GltfImporter.h"
-#include "Assets/Import/SceneImportPostProcessor.h"
 #include "Core/Public/Paths/PathUtils.h"
 
 #include <array>
@@ -39,11 +38,6 @@ SceneImportResult SceneImporter::Import(const std::filesystem::path& filePath)
 		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
 		    extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
 		    filePath.string()));
-	}
-
-	if (result.bSuccess)
-	{
-		SceneImportPostProcessor::Finalize(result);
 	}
 
 	return result;

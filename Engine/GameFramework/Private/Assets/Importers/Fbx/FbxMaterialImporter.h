@@ -42,4 +42,8 @@ class FbxMaterialImporter final
 	    aiTextureType textureType,
 	    std::string_view slotName,
 	    SceneImportResult& result);
+	static std::optional<std::filesystem::path> NormalizeTexturePath(
+	    std::filesystem::path texturePath,
+	    MaterialHandle materialHandle,
+	    std::string_view slotName);
 };
