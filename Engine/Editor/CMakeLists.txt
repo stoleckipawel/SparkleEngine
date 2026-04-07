@@ -54,14 +54,16 @@ target_precompile_headers(SparkleEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Editor depends on Core, Platform, and RHI.
+# Editor depends on GameFramework plus editor-only import/UI dependencies.
 target_link_libraries(SparkleEditor 
     PUBLIC 
+        SparkleGameFramework
         SparkleCore
         SparklePlatform
         SparkleRHI
     PRIVATE
-        SparkleGameFramework
+        cgltf
+		assimp::assimp
         imgui
 )
 

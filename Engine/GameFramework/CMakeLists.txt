@@ -50,7 +50,6 @@ target_include_directories(SparkleGameFramework
         # Subdirectories for internal includes
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Camera
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Assets
 )
 
 target_compile_features(SparkleGameFramework PUBLIC cxx_std_20)
@@ -66,9 +65,6 @@ target_link_libraries(SparkleGameFramework
         SparkleCore
         SparklePlatform
 		SparkleRHI
-    PRIVATE
-        cgltf
-		assimp::assimp
 )
 
 set_target_properties(SparkleGameFramework PROPERTIES

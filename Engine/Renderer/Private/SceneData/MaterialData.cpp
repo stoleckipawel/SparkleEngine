@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "Renderer/Public/SceneData/MaterialData.h"
-#include "Assets/Import/MaterialDesc.h"
+#include "Scene/Materials/MaterialDesc.h"
 
 MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 {

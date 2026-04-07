@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/Import/MaterialDesc.h"
-#include "GameFramework/Public/GameFrameworkAPI.h"
+#include "Editor/Public/EditorAPI.h"
+#include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Transform.h"
@@ -32,7 +32,7 @@ constexpr std::string_view GetSceneImporterTypeName(SceneImporterType importerTy
 	}
 }
 
-struct SPARKLE_ENGINE_API SceneImportResult
+struct SPARKLE_EDITOR_API SceneImportResult
 {
 	std::vector<MeshData> meshes;
 	std::vector<MaterialDesc> materials;

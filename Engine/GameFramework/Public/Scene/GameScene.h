@@ -9,16 +9,9 @@
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 
 #include <cstdint>
-#include <filesystem>
-#include <memory>
 #include <string>
-#include <string_view>
-#include <vector>
 
-class Mesh;
 class LevelAsset;
-struct ImportedMeshRequest;
-struct SceneImportResult;
 
 enum class GameSceneLoadStatus : std::uint8_t
 {
@@ -55,8 +48,6 @@ class SPARKLE_ENGINE_API GameScene final
 
 	void Clear();
 
-	bool LoadGltf(const std::filesystem::path& assetPath);
-
 	SceneMaterials& GetMaterials() noexcept { return m_materials; }
 	const SceneMaterials& GetMaterials() const noexcept { return m_materials; }
 	SceneMeshes& GetMeshes() noexcept { return m_meshes; }
@@ -65,11 +56,6 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneTextures& GetTextures() const noexcept { return m_textures; }
 
   private:
-	bool LoadImportedMeshRequests(const LevelDesc& desc, std::string& errorMessage);
-	bool LoadImportedMeshRequest(const ImportedMeshRequest& request, std::string& errorMessage);
-	bool AppendResolvedImportedAsset(const std::filesystem::path& resolvedPath);
-	bool AppendImportedScene(SceneImportResult&& result);
-
 	SceneCamera m_sceneCamera;
 	SceneLighting m_lighting;
 	SceneMaterials m_materials;

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/Import/SceneImportResult.h"
-#include "GameFramework/Public/GameFrameworkAPI.h"
+#include "Assets/Import/SceneImportResult.h"
+#include "Editor/Public/EditorAPI.h"
 
 #include <filesystem>
 
-class SPARKLE_ENGINE_API SceneImporter final
+class SPARKLE_EDITOR_API SceneImporter final
 {
   public:
 	static SceneImportResult Import(const std::filesystem::path& filePath);

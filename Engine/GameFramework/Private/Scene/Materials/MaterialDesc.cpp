@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Assets/Import/MaterialDesc.h"
+#include "Scene/Materials/MaterialDesc.h"
 
 void MaterialDesc::SetTexturePath(
 	MaterialTextureType textureType,

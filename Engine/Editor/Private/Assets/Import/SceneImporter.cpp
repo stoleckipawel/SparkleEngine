@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "GameFramework/Public/Assets/Import/SceneImporter.h"
+#include "Assets/Import/SceneImporter.h"
 
 #include "Assets/Importers/AssetImporter.h"
 #include "Assets/Importers/Fbx/FbxImporter.h"
