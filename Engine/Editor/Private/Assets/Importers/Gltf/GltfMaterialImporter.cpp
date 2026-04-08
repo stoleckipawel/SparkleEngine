@@ -55,10 +55,19 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 			return std::nullopt;
 		}
 
-		return NormalizeTexturePath(
-		    Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString)),
-		    materialHandle,
-		    slotName);
+		const std::optional<std::filesystem::path> resolvedTexturePath =
+		    Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
+		if (!resolvedTexturePath)
+		{
+			LOG_WARNING(std::format(
+			    "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
+			    materialHandle.GetIndex(),
+			    slotName,
+			    texturePathString));
+			return std::nullopt;
+		}
+
+		return NormalizeTexturePath(*resolvedTexturePath, materialHandle, slotName);
 	}
 
 	if (texture.image && texture.image->buffer_view)
