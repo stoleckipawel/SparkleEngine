@@ -11,6 +11,7 @@ class GameScene;
 class GameCameraController;
 class Renderer;
 class LevelManager;
+class LevelSceneImporter;
 
 class SPARKLE_APPLICATION_API App
 {
@@ -34,6 +35,7 @@ class SPARKLE_APPLICATION_API App
 	std::unique_ptr<InputSystem> m_inputSystem;
 	std::unique_ptr<GameScene> m_gameScene;
 	std::unique_ptr<LevelManager> m_levelManager;
+	std::unique_ptr<LevelSceneImporter> m_levelSceneImporter;
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
 };
