@@ -62,8 +62,6 @@ target_link_libraries(SparkleEditor
         SparklePlatform
         SparkleRHI
     PRIVATE
-        cgltf
-		assimp::assimp
         imgui
 )
 

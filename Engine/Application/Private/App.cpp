@@ -3,7 +3,7 @@
 
 #include "Window/Window.h"
 #include "Renderer.h"
-#include "Assets/Import/LevelSceneImporter.h"
+#include "Assets/SceneAssetManager.h"
 #include "Input/InputSystem.h"
 #include "Scene/GameScene.h"
 #include "Scene/Camera/GameCameraController.h"
@@ -24,8 +24,8 @@ void App::Initialize()
 	m_inputSystem->SubscribeToWindow(*m_window);
 
 	m_gameScene = std::make_unique<GameScene>();
-	m_levelManager = std::make_unique<LevelManager>(*m_gameScene);
-	m_levelSceneImporter = std::make_unique<LevelSceneImporter>(*m_levelManager, *m_gameScene);
+	m_sceneAssetManager = std::make_unique<Engine::Assets::SceneAssetManager>();
+	m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
 
 	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
 

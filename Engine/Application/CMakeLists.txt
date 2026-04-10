@@ -68,7 +68,6 @@ target_link_libraries(SparkleApplication
         SparklePlatform
         SparkleGameFramework
         SparkleRenderer
-    SparkleEditor
 )
 
 set_target_properties(SparkleApplication PROPERTIES

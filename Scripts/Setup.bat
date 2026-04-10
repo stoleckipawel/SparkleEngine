@@ -124,6 +124,8 @@ echo.
 echo   Useful scripts:
 echo     GenerateProjectFiles.bat  - Regenerate VS solution
 echo     BuildProjects.bat         - Build from command line
+echo     CookAll.bat               - Build and run the converter for all scenes
+echo     CookScene.bat             - Build and run the scene converter
 echo     CreateNewProject.bat      - Create a new project
 echo     Clean.bat                 - Clean build artifacts
 echo.

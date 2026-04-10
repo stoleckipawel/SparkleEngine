@@ -16,5 +16,5 @@ DirectionalLight1Direction = -0.24, -0.66, -0.71
 DirectionalLight1Intensity = 0.2
 DirectionalLight1Color = 0.42, 0.5, 0.72
 
-[Meshes]
+[SceneAssets]
 Asset = DamagedHelmet/DamagedHelmet.gltf

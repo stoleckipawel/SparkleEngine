@@ -32,30 +32,30 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 	return result;
 }
 
-bool GameScene::AppendImportedSceneData(ImportedSceneData&& importedSceneData)
+bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayload)
 {
-	if (!importedSceneData.HasMeshes())
+	if (!runtimeScenePayload.HasMeshes())
 	{
 		return false;
 	}
 
-	if (!importedSceneData.materials.empty())
+	if (!runtimeScenePayload.materials.empty())
 	{
-		m_textures.AppendMaterialTextureReferences(importedSceneData.materials);
+		m_textures.AppendMaterialTextureReferences(runtimeScenePayload.materials);
 	}
 
 	const MaterialHandle materialBaseHandle =
-	    importedSceneData.materials.empty() ? MaterialHandle::Invalid() : m_materials.AppendMaterials(std::move(importedSceneData.materials));
+	    runtimeScenePayload.materials.empty() ? MaterialHandle::Invalid() : m_materials.AppendMaterials(std::move(runtimeScenePayload.materials));
 
 	std::vector<std::unique_ptr<MeshComponent>> importedMeshes;
-	importedMeshes.reserve(importedSceneData.meshes.size());
-	for (std::size_t meshIndex = 0; meshIndex < importedSceneData.meshes.size(); ++meshIndex)
+	importedMeshes.reserve(runtimeScenePayload.meshes.size());
+	for (std::size_t meshIndex = 0; meshIndex < runtimeScenePayload.meshes.size(); ++meshIndex)
 	{
-		auto mesh = std::make_unique<ImportedMesh>(std::move(importedSceneData.meshes[meshIndex]));
+		auto mesh = std::make_unique<ImportedMesh>(std::move(runtimeScenePayload.meshes[meshIndex]));
 		const MaterialHandle localMaterialHandle =
-		    meshIndex < importedSceneData.materialHandles.size() ? importedSceneData.materialHandles[meshIndex] : MaterialHandle::Invalid();
+		    meshIndex < runtimeScenePayload.materialHandles.size() ? runtimeScenePayload.materialHandles[meshIndex] : MaterialHandle::Invalid();
 		const Transform importedTransform =
-		    meshIndex < importedSceneData.transforms.size() ? importedSceneData.transforms[meshIndex] : Transform();
+		    meshIndex < runtimeScenePayload.transforms.size() ? runtimeScenePayload.transforms[meshIndex] : Transform();
 		const MaterialHandle materialHandle =
 		    localMaterialHandle.IsValid() && materialBaseHandle.IsValid()
 		        ? MaterialHandle(materialBaseHandle.GetIndex() + localMaterialHandle.GetIndex())

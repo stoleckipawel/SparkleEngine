@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "Level/LevelManager.h"
 
+#include "Assets/SceneAssetManager.h"
 #include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
@@ -11,7 +12,9 @@
 
 #include <algorithm>
 
-LevelManager::LevelManager(GameScene& scene) noexcept : m_gameScene(&scene)
+LevelManager::LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept :
+	m_gameScene(&scene),
+	m_sceneAssetManager(&sceneAssetManager)
 {
 	InitializeStartupLevel();
 }
@@ -34,7 +37,7 @@ void LevelManager::InitializeStartupLevel() noexcept
 
 	const std::string startupLevelName(startupLevel->GetName());
 
-	const GameSceneLoadResult loadResult = m_gameScene->LoadLevel(*startupLevel);
+	const GameSceneLoadResult loadResult = LoadLevelFromUnloadedState(*startupLevel);
 	if (!loadResult.Succeeded())
 	{
 		m_activeLevel = nullptr;
@@ -120,7 +123,7 @@ bool LevelManager::SaveActiveLevel() noexcept
 
 GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& level) noexcept
 {
-	if (!m_gameScene)
+	if (!m_gameScene || !m_sceneAssetManager)
 	{
 		GameSceneLoadResult unavailableResult;
 		unavailableResult.errorMessage = "Required runtime services are unavailable";
@@ -131,7 +134,32 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 	willLoadArgs.targetLevelName = std::string(level.GetName());
 	m_levelChangeEvents.OnLevelWillLoad.Broadcast(willLoadArgs);
 
-	return m_gameScene->LoadLevel(level);
+	m_sceneAssetManager->UnloadAll();
+
+	const LevelDesc& levelDesc = level.GetLevelDesc();
+	GameSceneLoadResult loadResult = m_gameScene->LoadLevel(levelDesc);
+	if (!loadResult.Succeeded())
+	{
+		return loadResult;
+	}
+
+	Engine::Assets::SceneAssetLoadResult sceneAssetLoadResult = m_sceneAssetManager->LoadSceneAssets(levelDesc.sceneAssetIds);
+	if (!sceneAssetLoadResult.Succeeded())
+	{
+		loadResult.status = GameSceneLoadStatus::Failed;
+		loadResult.errorMessage = std::move(sceneAssetLoadResult.errorMessage);
+		return loadResult;
+	}
+
+	if (sceneAssetLoadResult.payload.HasMeshes() &&
+	    !m_gameScene->AppendRuntimeScenePayload(std::move(sceneAssetLoadResult.payload)))
+	{
+		loadResult.status = GameSceneLoadStatus::Failed;
+		loadResult.errorMessage = "GameScene rejected the loaded runtime scene payload";
+		return loadResult;
+	}
+
+	return loadResult;
 }
 
 void LevelManager::ApplyLevelToScene() noexcept

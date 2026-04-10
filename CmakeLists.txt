@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Sparkle LANGUAGES CXX)
+project(Sparkle LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -87,6 +87,9 @@ endif()
 # Add subdirectories
 # ---------------------------
 add_subdirectory(Engine)
+add_subdirectory(Tools)
+
+target_link_libraries(SparkleEditor PUBLIC SparkleAssetAuthoring)
 
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker

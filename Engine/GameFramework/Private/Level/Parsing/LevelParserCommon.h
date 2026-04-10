@@ -14,7 +14,7 @@ namespace LevelParsing
 		Level,
 		Camera,
 		Lighting,
-		Meshes
+		SceneAssets
 	};
 
 	struct ParsedLevelLine
@@ -38,9 +38,9 @@ namespace LevelParsing
 		{
 			return LevelFileSection::Lighting;
 		}
-		if (sectionName == "Meshes")
+		if (sectionName == "SceneAssets")
 		{
-			return LevelFileSection::Meshes;
+			return LevelFileSection::SceneAssets;
 		}
 
 		return LevelFileSection::None;

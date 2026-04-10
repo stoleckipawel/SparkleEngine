@@ -5,7 +5,9 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "D3D12/Textures/TextureFactory.h"
+#include "D3D12/Textures/KtxTextureLoader.h"
 #include "D3D12/Textures/TextureLoader.h"
+#include "D3D12/Textures/TextureLoadResult.h"
 #include "Resources/Texture.h"
 
 #include <format>
@@ -18,7 +20,15 @@ std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesy
 		return nullptr;
 	}
 
-	return m_textureFactory->CreateTexture(TextureLoader::Load(texturePath));
+	TextureLoadResult loadResult =
+	    IsCookedKtxTexturePath(texturePath) ? KtxTextureLoader::Load(texturePath) : TextureLoader::Load(texturePath);
+	if (!loadResult.IsValid())
+	{
+		LOG_ERROR(std::format("TextureManager::CreateTextureFromPath: Failed to load '{}'", texturePath.string()));
+		return nullptr;
+	}
+
+	return m_textureFactory->CreateTexture(std::move(loadResult));
 }
 
 TextureManager::TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
@@ -109,6 +119,11 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 
 	LOG_DEBUG(std::format("TextureManager: Cached '{}'", resolvedPath.string()));
 	return texturePtr;
+}
+
+bool TextureManager::IsCookedKtxTexturePath(const std::filesystem::path& texturePath) noexcept
+{
+	return KtxTextureLoader::SupportsExtension(Engine::Paths::GetLowercaseExtension(texturePath));
 }
 
 void TextureManager::UnloadTexture(TextureId id) noexcept

@@ -4,13 +4,14 @@
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
 
-#include <filesystem>
 #include <string>
 #include <vector>
 
-struct SPARKLE_ENGINE_API ImportedMeshRequest
+struct SPARKLE_ENGINE_API SceneAssetId
 {
-	std::filesystem::path assetPath;
+	std::string value;
+
+	bool IsEmpty() const noexcept { return value.empty(); }
 };
 
 struct SPARKLE_ENGINE_API LevelDesc
@@ -18,5 +19,5 @@ struct SPARKLE_ENGINE_API LevelDesc
 	std::string name;
 	CameraDesc cameraDesc;
 	LevelLightingDesc lightingDesc;
-	std::vector<ImportedMeshRequest> importedMeshRequests;
+	std::vector<SceneAssetId> sceneAssetIds;
 };

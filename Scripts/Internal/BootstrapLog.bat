@@ -78,9 +78,10 @@ set "LOGFILE=%LOG_DIR%\logTools_%TS%.txt"
 :: Re-invoke caller under PowerShell Tee-Object for output capture
 :: ---------------------------------------------------------------------------
 :: Exports LOG_CAPTURED and LOGFILE so the re-invoked script skips bootstrap.
-:: Use double-double quotes for CMD-safe escaping within PowerShell string.
+:: Use cmd.exe's standard batch invocation quoting form:
+::   cmd /c ""path\to\script.bat" arg1 arg2"
 :: REMAINING_ARGS is used instead of %* to avoid passing the caller path as %1.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:LOG_CAPTURED='1'; $env:LOGFILE='!LOGFILE!'; & cmd /c '\"\"!CALLER!\"\"!REMAINING_ARGS!' 2>&1 | Tee-Object -FilePath '!LOGFILE!'; exit $LASTEXITCODE"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:LOG_CAPTURED='1'; $env:LOGFILE='!LOGFILE!'; & cmd /c '""!CALLER!"!REMAINING_ARGS!"' 2>&1 | Tee-Object -FilePath '!LOGFILE!'; exit $LASTEXITCODE"
 set "RC=%ERRORLEVEL%"
 
 :: Copy to a stable "latest" log for easy access

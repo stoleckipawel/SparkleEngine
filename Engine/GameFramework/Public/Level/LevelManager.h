@@ -12,11 +12,15 @@
 class LevelAsset;
 class GameScene;
 struct GameSceneLoadResult;
+namespace Engine::Assets
+{
+	class SceneAssetManager;
+}
 
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	explicit LevelManager(GameScene& scene) noexcept;
+	LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept;
 	~LevelManager() noexcept = default;
 
 	LevelManager(const LevelManager&) = delete;
@@ -47,6 +51,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	void ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept;
 
 	GameScene* m_gameScene = nullptr;
+	Engine::Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
 	LevelRegistry m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
 	LevelAsset* m_activeLevel = nullptr;

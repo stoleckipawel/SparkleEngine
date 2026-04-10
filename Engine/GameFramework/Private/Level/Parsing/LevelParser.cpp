@@ -27,11 +27,11 @@ namespace
 		return true;
 	}
 
-	bool ParseMeshesSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
+	bool ParseSceneAssetsSectionField(const LevelParsing::ParsedLevelLine& parsedLine, LevelDesc& levelDesc)
 	{
 		if (parsedLine.key == "Asset")
 		{
-			levelDesc.importedMeshRequests.push_back({Engine::Strings::UnquoteCopy(parsedLine.value)});
+			levelDesc.sceneAssetIds.push_back({Engine::Strings::UnquoteCopy(parsedLine.value)});
 		}
 
 		return true;
@@ -54,8 +54,8 @@ namespace
 			case LevelParsing::LevelFileSection::Lighting:
 				return LevelParsing::ParseLightingSectionField(parsedLine, levelDesc, errorMessage);
 
-			case LevelParsing::LevelFileSection::Meshes:
-				return ParseMeshesSectionField(parsedLine, levelDesc);
+			case LevelParsing::LevelFileSection::SceneAssets:
+				return ParseSceneAssetsSectionField(parsedLine, levelDesc);
 
 			case LevelParsing::LevelFileSection::None:
 			default:
@@ -69,12 +69,12 @@ namespace
 		output << "Name = " << level.GetName() << "\n\n";
 	}
 
-	void WriteMeshesSection(std::ofstream& output, const LevelDesc& levelDesc)
+	void WriteSceneAssetsSection(std::ofstream& output, const LevelDesc& levelDesc)
 	{
-		output << "[Meshes]\n";
-		for (const ImportedMeshRequest& request : levelDesc.importedMeshRequests)
+		output << "[SceneAssets]\n";
+		for (const SceneAssetId& sceneAssetId : levelDesc.sceneAssetIds)
 		{
-			output << "Asset = " << request.assetPath.generic_string() << "\n";
+			output << "Asset = " << sceneAssetId.value << "\n";
 		}
 	}
 }  // namespace
@@ -166,7 +166,7 @@ bool LevelParser::SaveToFile(const LevelAsset& level, std::string* errorMessage)
 	WriteLevelSection(output, level);
 	LevelParsing::WriteCameraSection(output, levelDesc);
 	LevelParsing::WriteLightingSection(output, levelDesc);
-	WriteMeshesSection(output, levelDesc);
+	WriteSceneAssetsSection(output, levelDesc);
 
 	if (!output.good())
 	{
