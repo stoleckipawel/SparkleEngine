@@ -6,9 +6,10 @@
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/Passes/PassUtilities.h"
 
+#include "Renderer/Public/Overlays/RendererOverlay.h"
+
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include "UI.h"
 #include "Window/Window.h"
 
 namespace FrameGraphFeatures
@@ -36,7 +37,10 @@ namespace FrameGraphFeatures
 		PassUtilities::AddCopyTexturePass(frameGraph, "CopyComputeClearToBackBuffer", presentation.BackBuffer, computeOutputs.Color);
 	}
 
-	void AddUiCompositionPass(FrameGraph& frameGraph, UI& ui, const FrameGraphPresentationInputs& presentation)
+	void AddUiCompositionPass(
+	    FrameGraph& frameGraph,
+	    IRendererOverlay& overlay,
+	    const FrameGraphPresentationInputs& presentation)
 	{
 		frameGraph.AddPass(
 		    "UIComposition",
@@ -45,11 +49,11 @@ namespace FrameGraphFeatures
 		    {
 			    builder.Write(backBuffer, ResourceUsage::RenderTarget);
 		    },
-		    [&ui, backBuffer = presentation.BackBuffer](RenderGraphPassContext& context)
+		    [&overlay, backBuffer = presentation.BackBuffer](RenderGraphPassContext& context)
 		    {
 			    context.Runtime.DescriptorHeapManager.SetShaderVisibleHeaps(context.Commands);
 			    context.Graph.BindRenderTarget(context.Commands, backBuffer);
-			    ui.Render(context.Commands.GetCommandList());
+			    overlay.Render(context.Commands.GetCommandList());
 		    });
 	}
 }  // namespace FrameGraphFeatures

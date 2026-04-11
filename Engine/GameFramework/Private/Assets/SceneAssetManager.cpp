@@ -3,6 +3,7 @@
 #include "Assets/SceneAssetManager.h"
 
 #include "Assets/MaterialAssetTranslator.h"
+#include "Assets/SceneAssetRegistry.h"
 #include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Assets/Loaders/MaterialAssetLoader.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
@@ -16,14 +17,27 @@ namespace Engine::Assets
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAsset(const SceneAssetId& sceneAssetId)
 	{
 		SceneAssetLoadResult result;
+		if (!EnsureRegistryLoaded(result.errorMessage))
+		{
+			return result;
+		}
+
 		std::uint32_t materialBaseIndex = 0;
-		AppendSceneAssetToPayload(sceneAssetId, result.payload, materialBaseIndex, result.errorMessage);
+		if (AppendSceneAssetToPayload(sceneAssetId, result.payload, materialBaseIndex, result.errorMessage))
+		{
+			m_loadedSceneAssetIds.push_back(sceneAssetId.value);
+		}
 		return result;
 	}
 
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAssets(std::span<const SceneAssetId> sceneAssetIds)
 	{
 		SceneAssetLoadResult result;
+		if (!EnsureRegistryLoaded(result.errorMessage))
+		{
+			return result;
+		}
+
 		std::uint32_t materialBaseIndex = 0;
 
 		for (const SceneAssetId& sceneAssetId : sceneAssetIds)
@@ -32,12 +46,50 @@ namespace Engine::Assets
 			{
 				return result;
 			}
+
+			m_loadedSceneAssetIds.push_back(sceneAssetId.value);
 		}
 
 		return result;
 	}
 
-	void SceneAssetManager::UnloadAll() noexcept {}
+	void SceneAssetManager::UnloadAll() noexcept
+	{
+		m_loadedSceneAssetIds.clear();
+	}
+
+	bool SceneAssetManager::EnsureRegistryLoaded(std::string& errorMessage)
+	{
+		if (m_sceneAssetRegistryLoaded)
+		{
+			errorMessage.clear();
+			return true;
+		}
+
+		if (!m_sceneAssetRegistry.Load(errorMessage))
+		{
+			errorMessage = std::format(
+			    "Failed to load scene asset registry from '{}' - {}",
+			    SceneAssetRegistry::GetRegistryPath().string(),
+			    errorMessage);
+			return false;
+		}
+
+		m_sceneAssetRegistryLoaded = true;
+		errorMessage.clear();
+		return true;
+	}
+
+	std::optional<std::filesystem::path> SceneAssetManager::ResolveSceneManifestPath(const SceneAssetId& sceneAssetId) const
+	{
+		const auto manifestRelativePath = m_sceneAssetRegistry.Resolve(sceneAssetId.value);
+		if (!manifestRelativePath)
+		{
+			return std::nullopt;
+		}
+
+		return GetCookedAssetRootPath() / "SceneManifests" / *manifestRelativePath;
+	}
 
 	bool SceneAssetManager::AppendSceneAssetToPayload(
 	    const SceneAssetId& sceneAssetId,
@@ -52,13 +104,19 @@ namespace Engine::Assets
 
 		SceneManifestLoader sceneManifestLoader;
 		LoadedSceneManifest sceneManifest;
-		const std::filesystem::path sceneManifestPath = BuildSceneManifestPath(sceneAssetId);
-		if (!sceneManifestLoader.Load(sceneManifestPath, sceneManifest, errorMessage))
+		const auto sceneManifestPath = ResolveSceneManifestPath(sceneAssetId);
+		if (!sceneManifestPath)
+		{
+			errorMessage = std::format("Scene asset id '{}' is not registered in the cooked scene asset registry", sceneAssetId.value);
+			return false;
+		}
+
+		if (!sceneManifestLoader.Load(*sceneManifestPath, sceneManifest, errorMessage))
 		{
 			errorMessage = std::format(
 			    "Failed to load cooked scene manifest for '{}' from '{}' - {}",
 			    sceneAssetId.value,
-			    sceneManifestPath.string(),
+			    sceneManifestPath->string(),
 			    errorMessage);
 			return false;
 		}
@@ -157,13 +215,6 @@ namespace Engine::Assets
 	std::filesystem::path SceneAssetManager::GetCookedAssetRootPath()
 	{
 		return Filesystem::GetProjectAssetsPath() / "Cooked";
-	}
-
-	std::filesystem::path SceneAssetManager::BuildSceneManifestPath(const SceneAssetId& sceneAssetId)
-	{
-		std::filesystem::path relativeScenePath(sceneAssetId.value);
-		relativeScenePath.replace_extension(".sscn");
-		return GetCookedAssetRootPath() / "SceneManifests" / relativeScenePath;
 	}
 
 	std::filesystem::path SceneAssetManager::BuildMeshAssetPath(CookedAssetId meshAssetId)

@@ -106,20 +106,18 @@ if "!TP_RC!" NEQ "0" (
 )
 
 echo.
-echo [LOG] Step 3/4: Ensuring the build files exist...
-if not exist "!SOLUTION_FILE!" (
-    set "PARENT_BATCH=1"
-    call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
-    set "GEN_RC=!ERRORLEVEL!"
-    set "PARENT_BATCH="
-    if "!GEN_RC!" NEQ "0" (
-        echo [ERROR] Solution generation failed.
-        set "EXIT_RC=1"
-        goto :FINISH
-    )
-) else (
-    echo [LOG] Using existing solution: !SOLUTION_FILE!
+echo [LOG] Step 3/4: Refreshing the build files...
+set "PARENT_BATCH=1"
+call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
+set "GEN_RC=!ERRORLEVEL!"
+set "PARENT_BATCH="
+if "!GEN_RC!" NEQ "0" (
+    echo [ERROR] Solution generation failed.
+    set "EXIT_RC=1"
+    goto :FINISH
 )
+
+echo [LOG] Using solution: !SOLUTION_FILE!
 
 echo.
 echo [LOG] Step 4/4: Building AssetConverter and cooking the scene...

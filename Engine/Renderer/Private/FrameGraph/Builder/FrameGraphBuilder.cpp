@@ -23,7 +23,10 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	const FrameGraphPresentationInputs presentationInputs{.BackBuffer = sceneTargets.BackBuffer};
 	const FrameGraphShadowOutputs shadowOutputs = FrameGraphFeatures::AddShadowPasses(*frameGraph);
 	FrameGraphFeatures::AddForwardOpaquePass(*frameGraph, sceneTargets, shadowOutputs);
-	FrameGraphFeatures::AddUiCompositionPass(*frameGraph, m_dependencies.ui, presentationInputs);
+	if (m_dependencies.overlay != nullptr)
+	{
+		FrameGraphFeatures::AddUiCompositionPass(*frameGraph, *m_dependencies.overlay, presentationInputs);
+	}
 
 	return frameGraph;
 }

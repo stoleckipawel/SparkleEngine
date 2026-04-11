@@ -2,8 +2,9 @@
 
 #include "FrameGraphProducts.h"
 
+#include "Renderer/Public/Overlays/RendererOverlay.h"
+
 class FrameGraph;
-class UI;
 class Window;
 
 namespace FrameGraphFeatures
@@ -15,5 +16,8 @@ namespace FrameGraphFeatures
 	    const FrameGraphPresentationInputs& presentation,
 	    const FrameGraphComputeShowcaseOutputs& computeOutputs);
 
-	void AddUiCompositionPass(FrameGraph& frameGraph, UI& ui, const FrameGraphPresentationInputs& presentation);
+	void AddUiCompositionPass(
+	    FrameGraph& frameGraph,
+	    IRendererOverlay& overlay,
+	    const FrameGraphPresentationInputs& presentation);
 }  // namespace FrameGraphFeatures

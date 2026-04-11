@@ -5,6 +5,7 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "Assets/SceneAssetRegistry.h"
 
 #include <format>
 #include <fstream>
@@ -162,6 +163,9 @@ namespace Engine::AssetAuthoring
 		}
 
 		outSceneAssetId = relativePath.generic_string();
+		std::filesystem::path sceneAssetPath(outSceneAssetId);
+		sceneAssetPath.replace_extension();
+		outSceneAssetId = sceneAssetPath.generic_string();
 		outErrorMessage.clear();
 		return true;
 	}
@@ -433,6 +437,39 @@ namespace Engine::AssetAuthoring
 		    !WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
 		    !WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
 		    !WriteArray(manifestOutput, build.instances, outErrorMessage))
+		{
+			return false;
+		}
+
+		if (!UpdateSceneAssetRegistry(build, outErrorMessage))
+		{
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
+
+	bool CookedSceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
+	{
+		std::error_code errorCode;
+		const std::filesystem::path manifestRoot = Filesystem::GetProjectAssetsPath() / "Cooked" / "SceneManifests";
+		const std::filesystem::path manifestRelativePath = std::filesystem::relative(build.sceneManifestPath, manifestRoot, errorCode);
+		const std::string manifestRelativePathString = manifestRelativePath.generic_string();
+		if (errorCode || manifestRelativePathString.empty() || manifestRelativePathString.starts_with(".."))
+		{
+			outErrorMessage = "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.sceneAssetId + "'";
+			return false;
+		}
+
+		Engine::Assets::SceneAssetRegistry sceneAssetRegistry;
+		if (!sceneAssetRegistry.Load(outErrorMessage))
+		{
+			return false;
+		}
+
+		sceneAssetRegistry.Upsert(build.sceneAssetId, manifestRelativePath);
+		if (!sceneAssetRegistry.Save(outErrorMessage))
 		{
 			return false;
 		}

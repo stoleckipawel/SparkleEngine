@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
+#include "Renderer/Public/Overlays/RendererOverlay.h"
 #include "Events/ScopedEventHandle.h"
 
 #include <memory>
@@ -21,7 +22,6 @@ class LevelManager;
 class RenderCamera;
 class GameScene;
 class Window;
-class UI;
 class TextureManager;
 class PipelineStateManager;
 class SceneRenderStateCoordinator;
@@ -36,7 +36,12 @@ struct RenderSceneSnapshot;
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept;
+	Renderer(
+	    Timer& timer,
+	    GameScene& gameScene,
+	    Window& window,
+	    LevelManager& levelManager,
+	    RendererOverlayFactory overlayFactory = {}) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -67,7 +72,8 @@ class SPARKLE_RENDERER_API Renderer final
 
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
 	std::unique_ptr<D3D12SwapChain> m_swapChain;
-	std::unique_ptr<UI> m_editor;
+	RendererOverlayFactory m_overlayFactory;
+	std::unique_ptr<IRendererOverlay> m_overlay;
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
 	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;

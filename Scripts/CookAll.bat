@@ -37,7 +37,8 @@ set "CONFIG=%~2"
 set "FAILED_SCENES="
 set "FAILED_COUNT=0"
 set "COOKED_COUNT=0"
-set "DISCOVERED_COUNT=0"
+set "SCENE_COUNT=0"
+set "SCENE_LIST_FILE=%TEMP%\sparkle-cookall-%RANDOM%%RANDOM%.txt"
 
 if /I "%TARGET_PROJECT%"=="/h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="-h" goto :USAGE
@@ -73,8 +74,16 @@ if not exist "!SCENE_MESH_ROOT!" (
     goto :FINISH
 )
 
-call :COUNT_SCENES
-set "SCENE_COUNT=!DISCOVERED_COUNT!"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -Path '!SCENE_MESH_ROOT!' -Recurse -File -Include *.gltf,*.glb,*.fbx | ForEach-Object { $_.FullName }" > "!SCENE_LIST_FILE!"
+if errorlevel 1 (
+    echo [ERROR] Failed to enumerate scene source files under '!SCENE_MESH_ROOT!'.
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
+for /f "usebackq delims=" %%F in ("!SCENE_LIST_FILE!") do (
+    set /A SCENE_COUNT+=1
+)
 
 if "!SCENE_COUNT!"=="0" (
     echo [ERROR] No supported scene source files were found under '!SCENE_MESH_ROOT!'.
@@ -113,20 +122,18 @@ if "!TP_RC!" NEQ "0" (
 )
 
 echo.
-echo [LOG] Step 3/4: Ensuring the build files exist...
-if not exist "!SOLUTION_FILE!" (
-    set "PARENT_BATCH=1"
-    call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
-    set "GEN_RC=!ERRORLEVEL!"
-    set "PARENT_BATCH="
-    if "!GEN_RC!" NEQ "0" (
-        echo [ERROR] Solution generation failed.
-        set "EXIT_RC=1"
-        goto :FINISH
-    )
-) else (
-    echo [LOG] Using existing solution: !SOLUTION_FILE!
+echo [LOG] Step 3/4: Refreshing the build files...
+set "PARENT_BATCH=1"
+call "!SCRIPTS_DIR!\GenerateProjectFiles.bat" CONTINUE
+set "GEN_RC=!ERRORLEVEL!"
+set "PARENT_BATCH="
+if "!GEN_RC!" NEQ "0" (
+    echo [ERROR] Solution generation failed.
+    set "EXIT_RC=1"
+    goto :FINISH
 )
+
+echo [LOG] Using solution: !SOLUTION_FILE!
 
 echo.
 echo [LOG] Step 4/4: Building AssetConverter and cooking all scenes...
@@ -156,9 +163,21 @@ if not defined ASSET_CONVERTER_EXE (
 )
 
 pushd "!PROJECT_ROOT!"
-call :COOK_EXTENSION .gltf
-call :COOK_EXTENSION .glb
-call :COOK_EXTENSION .fbx
+for /f "usebackq delims=" %%F in ("!SCENE_LIST_FILE!") do (
+    set "CURRENT_SCENE_PATH=%%~fF"
+    set "CURRENT_SCENE_REL=!CURRENT_SCENE_PATH:%SCENE_MESH_ROOT%\=!"
+    echo.
+    echo [LOG] Cooking [!COOKED_COUNT!/!SCENE_COUNT!]: !CURRENT_SCENE_REL!
+    "!ASSET_CONVERTER_EXE!" "!CURRENT_SCENE_PATH!"
+    set "COOK_RC=!ERRORLEVEL!"
+    if "!COOK_RC!" NEQ "0" (
+        echo [ERROR] Failed to cook '!CURRENT_SCENE_REL!'.
+        set /A FAILED_COUNT+=1
+        set "FAILED_SCENES=!FAILED_SCENES!!CURRENT_SCENE_REL!;"
+    ) else (
+        set /A COOKED_COUNT+=1
+    )
+)
 popd
 
 if "!FAILED_COUNT!" NEQ "0" (
@@ -180,37 +199,6 @@ echo [LOG] Texture assets:     Projects\!TARGET_PROJECT!\Assets\Cooked\Textures\
 
 set "EXIT_RC=0"
 goto :FINISH
-
-:COUNT_SCENES
-set "DISCOVERED_COUNT=0"
-call :COUNT_EXTENSION .gltf
-call :COUNT_EXTENSION .glb
-call :COUNT_EXTENSION .fbx
-exit /B 0
-
-:COUNT_EXTENSION
-for /R "!SCENE_MESH_ROOT!" %%F in (*%~1) do (
-    set /A DISCOVERED_COUNT+=1
-)
-exit /B 0
-
-:COOK_EXTENSION
-for /R "!SCENE_MESH_ROOT!" %%F in (*%~1) do (
-    set "CURRENT_SCENE_PATH=%%~fF"
-    set "CURRENT_SCENE_REL=!CURRENT_SCENE_PATH:%SCENE_MESH_ROOT%\=!"
-    echo.
-    echo [LOG] Cooking [!COOKED_COUNT!/!SCENE_COUNT!]: !CURRENT_SCENE_REL!
-    "!ASSET_CONVERTER_EXE!" "!CURRENT_SCENE_PATH!"
-    set "COOK_RC=!ERRORLEVEL!"
-    if "!COOK_RC!" NEQ "0" (
-        echo [ERROR] Failed to cook '!CURRENT_SCENE_REL!'.
-        set /A FAILED_COUNT+=1
-        set "FAILED_SCENES=!FAILED_SCENES!!CURRENT_SCENE_REL!;"
-    ) else (
-        set /A COOKED_COUNT+=1
-    )
-)
-exit /B 0
 
 :MISSING_ARGS
 echo [ERROR] Missing required arguments.
@@ -234,4 +222,17 @@ echo.
 set "EXIT_RC=1"
 
 :FINISH
-set "_TMP_LOGFILE=%LOGFIL
+if exist "%SCENE_LIST_FILE%" del /Q "%SCENE_LIST_FILE%" >nul 2>&1
+set "_TMP_LOGFILE=%LOGFILE%"
+set "_TMP_RC=%EXIT_RC%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
+
+echo.
+if "%EXIT_RC%"=="0" (
+    echo [LOG] CookAll workflow completed successfully.
+) else (
+    echo [ERROR] CookAll workflow failed.
+)
+echo [LOG] Logs: %LOGFILE%
+if not defined PARENT_BATCH pause
+exit /B %EXIT_RC%

@@ -42,8 +42,6 @@ target_include_directories(SparkleRenderer
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
         # GameFramework module for Scene/Camera includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
-        # Editor module for UI.h include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Editor/Public
         # Third-party (d3dx12.h)
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
@@ -55,14 +53,12 @@ target_precompile_headers(SparkleRenderer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Renderer depends on Core, Platform, RHI, and the editor surface it composes.
+# Renderer depends on Core, Platform, and RHI only.
 target_link_libraries(SparkleRenderer 
     PUBLIC 
         SparkleCore
         SparklePlatform
         SparkleRHI
-    PRIVATE
-        SparkleEditor
 )
 
 set_target_properties(SparkleRenderer PROPERTIES

@@ -8,6 +8,7 @@ target_compile_features(Showcase PRIVATE cxx_std_20)
 
 target_link_libraries(Showcase PRIVATE
     SparkleApplication
+    SparkleEditor
 )
 
 target_include_directories(Showcase PRIVATE

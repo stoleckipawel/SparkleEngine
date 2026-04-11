@@ -10,7 +10,7 @@
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 
-App::App() = default;
+App::App(RendererOverlayFactory overlayFactory) : m_overlayFactory(std::move(overlayFactory)) {}
 
 App::~App() = default;
 
@@ -29,7 +29,7 @@ void App::Initialize()
 
 	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
 
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager, m_overlayFactory);
 }
 
 void App::EngineLoop()

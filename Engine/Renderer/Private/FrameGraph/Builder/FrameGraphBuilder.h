@@ -3,12 +3,12 @@
 #include <memory>
 
 #include "FrameGraph/TextureHandle.h"
+#include "Renderer/Public/Overlays/RendererOverlay.h"
 
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 class D3D12SwapChain;
 class FrameGraph;
-class UI;
 class Window;
 
 struct FrameGraphDependencies
@@ -17,7 +17,7 @@ struct FrameGraphDependencies
 	Window& window;
 	D3D12SwapChain& swapChain;
 	D3D12DescriptorHeapManager& descriptorHeapManager;
-	UI& ui;
+	IRendererOverlay* overlay = nullptr;
 };
 
 class FrameGraphBuilder final

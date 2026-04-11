@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Scene/GameScene.h"
 
-#include "Scene/Meshes/ImportedMesh.h"
+#include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
@@ -51,7 +51,7 @@ bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayl
 	importedMeshes.reserve(runtimeScenePayload.meshes.size());
 	for (std::size_t meshIndex = 0; meshIndex < runtimeScenePayload.meshes.size(); ++meshIndex)
 	{
-		auto mesh = std::make_unique<ImportedMesh>(std::move(runtimeScenePayload.meshes[meshIndex]));
+		auto mesh = std::make_unique<CookedMesh>(std::move(runtimeScenePayload.meshes[meshIndex]));
 		const MaterialHandle localMaterialHandle =
 		    meshIndex < runtimeScenePayload.materialHandles.size() ? runtimeScenePayload.materialHandles[meshIndex] : MaterialHandle::Invalid();
 		const Transform importedTransform =

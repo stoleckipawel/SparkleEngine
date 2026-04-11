@@ -2,6 +2,7 @@
 
 #include "EditorAPI.h"
 #include "Events/ScopedEventHandle.h"
+#include "Renderer/Public/Overlays/RendererOverlay.h"
 #include "Scene/SceneObjectSelection.h"
 
 #include <Windows.h>
@@ -21,7 +22,7 @@ class D3D12SwapChain;
 class D3D12Rhi;
 struct WindowMessageEvent;
 
-class SPARKLE_EDITOR_API UI final
+class SPARKLE_EDITOR_API UI final : public IRendererOverlay
 {
   public:
 	UI(Timer& timer,
@@ -43,9 +44,9 @@ class SPARKLE_EDITOR_API UI final
 
 	bool ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
-	void Update();
+	void Update() override;
 
-	void Render(ID3D12GraphicsCommandList* commandList) noexcept;
+	void Render(ID3D12GraphicsCommandList* commandList) noexcept override;
 
   private:
 	void NewFrame();
@@ -78,3 +79,5 @@ class SPARKLE_EDITOR_API UI final
 
 	ScopedEventHandle m_windowMessageHandle;
 };
+
+SPARKLE_EDITOR_API std::unique_ptr<IRendererOverlay> CreateEditorOverlay(RendererOverlayContext& context);

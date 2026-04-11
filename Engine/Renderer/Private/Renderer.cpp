@@ -12,7 +12,6 @@
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/Resources/D3D12FrameResource.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
-#include "UI.h"
 #include "Time/Timer.h"
 #include "Renderer/Public/Camera/RenderCamera.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
@@ -34,8 +33,13 @@
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 
-Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
-    m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
+Renderer::Renderer(
+	Timer& timer,
+	GameScene& gameScene,
+	Window& window,
+	LevelManager& levelManager,
+	RendererOverlayFactory overlayFactory) noexcept :
+	m_timer(&timer), m_gameScene(&gameScene), m_window(&window), m_overlayFactory(std::move(overlayFactory))
 {
 	InitializeCoreSystems(levelManager);
 
@@ -55,7 +59,18 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
 
-	m_editor = std::make_unique<UI>(*m_timer, &levelManager, m_gameScene, *m_rhi, *m_window, *m_descriptorHeapManager, *m_swapChain);
+	if (m_overlayFactory)
+	{
+		RendererOverlayContext overlayContext{
+		    *m_timer,
+		    levelManager,
+		    *m_gameScene,
+		    *m_rhi,
+		    *m_window,
+		    *m_descriptorHeapManager,
+		    *m_swapChain};
+		m_overlay = m_overlayFactory(overlayContext);
+	}
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -95,7 +110,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
-	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager, *m_editor};
+	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager, m_overlay.get()};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	m_frameGraph = frameGraphBuilder.Build();
@@ -142,7 +157,10 @@ void Renderer::BeginFrame() noexcept
 void Renderer::SetupFrame() noexcept
 {
 	m_timer->Tick();
-	m_editor->Update();
+	if (m_overlay)
+	{
+		m_overlay->Update();
+	}
 
 	m_sceneSnapshot->Capture(*m_gameScene);
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);

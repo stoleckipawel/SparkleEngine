@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"
+#include "Renderer/Public/Overlays/RendererOverlay.h"
 
 #include <memory>
 
@@ -19,7 +20,7 @@ namespace Engine::Assets
 class SPARKLE_APPLICATION_API App
 {
   public:
-	App();
+	explicit App(RendererOverlayFactory overlayFactory = {});
 	~App();
 
 	App(const App&) = delete;
@@ -41,4 +42,5 @@ class SPARKLE_APPLICATION_API App
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
+	RendererOverlayFactory m_overlayFactory;
 };

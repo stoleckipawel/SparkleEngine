@@ -1,19 +1,19 @@
 # SparkleGameFramework Module (SparkleEngine.dll)
-# Game framework: World, Entities, Components, Scene, Camera, Imported Meshes, Assets
+# Game framework: World, Entities, Components, Scene, Camera, Cooked Meshes, Assets
 # Dependencies: SparkleCore, SparklePlatform, shared render config from SparkleRHI
 #
 # This corresponds to "SparkleEngine.dll" in the Unreal-style architecture.
 # It contains the high-level game systems .
 
-file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PUBLIC_HEADERS
+file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PUBLIC_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
 )
 
-file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PRIVATE_SOURCES
+file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PRIVATE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.cpp
 )
 
-file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PRIVATE_HEADERS
+file(GLOB_RECURSE SPARKLE_GAMEFRAMEWORK_PRIVATE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
@@ -74,4 +74,4 @@ set_target_properties(SparkleGameFramework PROPERTIES
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_GAMEFRAMEWORK_PUBLIC_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_RUNTIME_PRIVATE_SOURCES} ${SPARKLE_RUNTIME_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_GAMEFRAMEWORK_PRIVATE_SOURCES} ${SPARKLE_GAMEFRAMEWORK_PRIVATE_HEADERS})

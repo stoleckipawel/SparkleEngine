@@ -6,7 +6,7 @@
 #include "Scene/Camera/CameraComponent.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/GameScene.h"
-#include "Scene/Meshes/ImportedMesh.h"
+#include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Lighting/DirectionalLightComponent.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Meshes/MeshComponent.h"
@@ -264,8 +264,8 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 
 	const std::string cardTitle = "Mesh " + std::to_string(meshIndex + 1);
 	UiUtil::BeginSectionCard(cardTitle.c_str());
-	const bool isImportedMesh = dynamic_cast<const ImportedMesh*>(mesh) != nullptr;
-	UiUtil::DrawKeyValueRow("Type", isImportedMesh ? "Imported" : "Procedural");
+	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(mesh) != nullptr;
+	UiUtil::DrawKeyValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
 
 	char buffer[64] = {};
 	const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();

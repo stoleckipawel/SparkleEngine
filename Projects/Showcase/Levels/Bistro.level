@@ -17,4 +17,4 @@ DirectionalLight1Intensity = 0.2
 DirectionalLight1Color = 0.42, 0.50, 0.72
 
 [SceneAssets]
-Asset = Bistro/BistroExterior.fbx
+Asset = Bistro/BistroExterior

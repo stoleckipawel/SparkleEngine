@@ -17,4 +17,4 @@ DirectionalLight1Intensity = 0.200000003
 DirectionalLight1Color = 0.419999987, 0.5, 0.720000029
 
 [SceneAssets]
-Asset = Sponza/Sponza.gltf
+Asset = Sponza/Sponza

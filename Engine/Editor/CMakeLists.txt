@@ -57,6 +57,7 @@ target_precompile_headers(SparkleEditor PRIVATE
 # Editor depends on GameFramework plus editor-only import/UI dependencies.
 target_link_libraries(SparkleEditor 
     PUBLIC 
+        SparkleAssetAuthoring
         SparkleGameFramework
         SparkleCore
         SparklePlatform

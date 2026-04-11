@@ -215,3 +215,15 @@ void UI::SetupDPIScaling() noexcept
 
 	style.ScaleAllSizes(mainScale);
 }
+
+std::unique_ptr<IRendererOverlay> CreateEditorOverlay(RendererOverlayContext& context)
+{
+	return std::make_unique<UI>(
+	    context.timer,
+	    &context.levelManager,
+	    &context.gameScene,
+	    context.rhi,
+	    context.window,
+	    context.descriptorHeapManager,
+	    context.swapChain);
+}

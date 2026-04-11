@@ -70,6 +70,7 @@ namespace Engine::AssetAuthoring
 		    CookedSceneBuild& outBuild,
 		    std::string& outErrorMessage);
 		static bool BuildManifest(const SceneImportResult& importResult, CookedSceneBuild& outBuild, std::string& outErrorMessage);
+		static bool UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage);
 		static bool WriteBuildOutputs(const CookedSceneBuild& build, std::string& outErrorMessage);
 	};
 }
