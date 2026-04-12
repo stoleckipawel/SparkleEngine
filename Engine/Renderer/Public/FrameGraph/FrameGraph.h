@@ -209,6 +209,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	void CopyBuffer(CommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(CommandContext& cmd, TextureHandle handle) const noexcept;
 	void ClearDepthStencil(CommandContext& cmd, TextureHandle handle) const noexcept;
+	ID3D12Resource* ResolveResource(TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(TextureHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(BufferHandle handle) const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(TextureHandle handle) const noexcept;

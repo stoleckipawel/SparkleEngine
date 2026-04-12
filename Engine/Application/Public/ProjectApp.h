@@ -3,6 +3,7 @@
 #include "Application/Public/ApplicationAPI.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
+#include <cstdint>
 #include <memory>
 
 class Timer;
@@ -17,6 +18,13 @@ namespace Engine::Assets
 	class SceneAssetManager;
 }
 
+enum class ProjectAppFrameResult : std::uint8_t
+{
+	Exit = 0,
+	SkipRender = 1,
+	Ready = 2,
+};
+
 class SPARKLE_APPLICATION_API ProjectApp
 {
   public:
@@ -29,8 +37,16 @@ class SPARKLE_APPLICATION_API ProjectApp
 	ProjectApp& operator=(ProjectApp&&) = delete;
 
 	void Initialize();
+	ProjectAppFrameResult BeginFrame();
+	void UpdateRuntime() noexcept;
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
+	void EndFrame() noexcept;
+	Timer& GetTimer() noexcept;
+	Window& GetWindow() noexcept;
+	GameScene* GetGameScene() const noexcept;
+	LevelManager* GetLevelManager() const noexcept;
+	Renderer& GetRenderer() noexcept;
 	bool Tick();
 	void Shutdown();
 	void Run();

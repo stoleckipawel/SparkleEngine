@@ -90,7 +90,14 @@ void FrameGraphCompiler::CullDeadPasses() noexcept
 		}
 	}
 
-	assert(m_plan.passes.empty() || !rootPasses.empty());
+	if (!m_plan.passes.empty() && rootPasses.empty())
+	{
+		for (CompilePassRecord& passRecord : m_plan.passes)
+		{
+			passRecord.alive = true;
+		}
+		return;
+	}
 
 	for (const PassIndex rootPass : rootPasses)
 	{

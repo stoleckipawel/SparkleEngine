@@ -14,6 +14,31 @@ ProjectApp::ProjectApp() = default;
 
 ProjectApp::~ProjectApp() = default;
 
+Timer& ProjectApp::GetTimer() noexcept
+{
+	return *m_timer;
+}
+
+Window& ProjectApp::GetWindow() noexcept
+{
+	return *m_window;
+}
+
+GameScene* ProjectApp::GetGameScene() const noexcept
+{
+	return m_gameScene.get();
+}
+
+LevelManager* ProjectApp::GetLevelManager() const noexcept
+{
+	return m_levelManager.get();
+}
+
+Renderer& ProjectApp::GetRenderer() noexcept
+{
+	return *m_renderer;
+}
+
 void ProjectApp::Initialize()
 {
 	if (m_isInitialized)
@@ -38,6 +63,41 @@ void ProjectApp::Initialize()
 	m_isInitialized = true;
 }
 
+ProjectAppFrameResult ProjectApp::BeginFrame()
+{
+	if (!m_isInitialized)
+	{
+		return ProjectAppFrameResult::Exit;
+	}
+
+	m_inputSystem->BeginFrame();
+	m_window->PollEvents();
+	m_inputSystem->ProcessDeferredEvents();
+
+	if (m_window->ShouldClose())
+	{
+		m_inputSystem->EndFrame();
+		return ProjectAppFrameResult::Exit;
+	}
+
+	if (m_window->IsMinimized())
+	{
+		m_inputSystem->EndFrame();
+		m_window->WaitForEvent();
+		return ProjectAppFrameResult::SkipRender;
+	}
+
+	return ProjectAppFrameResult::Ready;
+}
+
+void ProjectApp::UpdateRuntime() noexcept
+{
+	if (m_gameCameraController)
+	{
+		m_gameCameraController->Update();
+	}
+}
+
 void ProjectApp::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
 {
 	if (m_renderer)
@@ -57,33 +117,30 @@ const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noex
 	return m_renderer->GetViewportRenderProducts();
 }
 
+void ProjectApp::EndFrame() noexcept
+{
+	if (m_inputSystem)
+	{
+		m_inputSystem->EndFrame();
+	}
+}
+
 bool ProjectApp::Tick()
 {
-	if (!m_isInitialized)
+	switch (BeginFrame())
 	{
-		return false;
+		case ProjectAppFrameResult::Exit:
+			return false;
+		case ProjectAppFrameResult::SkipRender:
+			return true;
+		case ProjectAppFrameResult::Ready:
+		default:
+			break;
 	}
 
-	m_inputSystem->BeginFrame();
-	m_window->PollEvents();
-	m_inputSystem->ProcessDeferredEvents();
-
-	if (m_window->ShouldClose())
-	{
-		m_inputSystem->EndFrame();
-		return false;
-	}
-
-	if (m_window->IsMinimized())
-	{
-		m_inputSystem->EndFrame();
-		m_window->WaitForEvent();
-		return true;
-	}
-
-	m_gameCameraController->Update();
+	UpdateRuntime();
 	m_renderer->OnRender();
-	m_inputSystem->EndFrame();
+	EndFrame();
 	return true;
 }
 

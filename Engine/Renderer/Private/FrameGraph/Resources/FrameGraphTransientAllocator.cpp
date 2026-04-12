@@ -15,6 +15,11 @@ namespace
 {
 	bool RequiresShaderResourceView(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
+		if (transientPlan.kind == FrameGraphResourceKind::ColorRenderTarget)
+		{
+			return true;
+		}
+
 		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
 		       std::find(transientPlan.requiredStates.begin(), transientPlan.requiredStates.end(), ResourceState::ShaderResource) !=
 		           transientPlan.requiredStates.end();

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
@@ -16,6 +17,8 @@ struct FrameGraphDependencies
 	Window& window;
 	D3D12SwapChain& swapChain;
 	D3D12DescriptorHeapManager& descriptorHeapManager;
+	RenderViewportExtent sceneExtent;
+	bool presentSceneToBackBuffer = true;
 };
 
 struct FrameGraphBuildResult

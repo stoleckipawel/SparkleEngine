@@ -1,16 +1,16 @@
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
 
 #include <memory>
 
 class ProjectApp;
+class UI;
 
 class SPARKLE_APPLICATION_API EditorApp
 {
   public:
-	explicit EditorApp(RendererOverlayFactory overlayFactory = {});
+	EditorApp();
 	~EditorApp();
 
 	EditorApp(const EditorApp&) = delete;
@@ -25,6 +25,6 @@ class SPARKLE_APPLICATION_API EditorApp
 
   private:
 	std::unique_ptr<ProjectApp> m_projectApp;
-	RendererOverlayFactory m_overlayFactory;
+	std::unique_ptr<UI> m_ui;
 	bool m_isEditorSessionActive = false;
 };

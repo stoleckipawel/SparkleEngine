@@ -19,12 +19,16 @@ FrameGraphBuildResult FrameGraphBuilder::Build() const
 	    &m_dependencies.descriptorHeapManager,
 	    &m_dependencies.swapChain);
 
-	const FrameGraphSceneTargets sceneTargets = FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window);
+	const FrameGraphSceneTargets sceneTargets = FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window, m_dependencies.sceneExtent);
 	const FrameGraphShadowOutputs shadowOutputs = FrameGraphFeatures::AddShadowPasses(*frameGraph);
 	FrameGraphFeatures::AddForwardOpaquePass(*frameGraph, sceneTargets, shadowOutputs);
+	if (m_dependencies.presentSceneToBackBuffer)
+	{
+		FrameGraphFeatures::AddCopyToBackBufferPass(*frameGraph, sceneTargets);
+	}
 
 	FrameGraphBuildResult result{};
-	result.SceneColor = sceneTargets.BackBuffer;
+	result.SceneColor = sceneTargets.SceneColor;
 	result.SceneDepth = sceneTargets.MainDepth;
 	result.Graph = std::move(frameGraph);
 	return result;

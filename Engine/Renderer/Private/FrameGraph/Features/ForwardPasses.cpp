@@ -13,7 +13,7 @@ namespace FrameGraphFeatures
 	    const FrameGraphShadowOutputs& shadowOutputs)
 	{
 		auto& parameters = frameGraph.AllocPassParameters<ForwardOpaquePass>();
-		parameters->BackBuffer = frameGraph.CreateRenderTarget(sceneTargets.BackBuffer);
+		parameters->BackBuffer = frameGraph.CreateRenderTarget(sceneTargets.SceneColor);
 		parameters->MainDepth = frameGraph.CreateDepthTarget(sceneTargets.MainDepth);
 		parameters->ShadowMap0 = frameGraph.Read(shadowOutputs.ShadowMaps[0]);
 		parameters->ShadowMap1 = frameGraph.Read(shadowOutputs.ShadowMaps[1]);

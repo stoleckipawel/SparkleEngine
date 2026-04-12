@@ -49,6 +49,66 @@ Renderer::Renderer(
 	PostLoad();
 }
 
+D3D12Rhi& Renderer::GetRhi() noexcept
+{
+	return *m_rhi;
+}
+
+D3D12DescriptorHeapManager& Renderer::GetDescriptorHeapManager() noexcept
+{
+	return *m_descriptorHeapManager;
+}
+
+D3D12SwapChain& Renderer::GetSwapChain() noexcept
+{
+	return *m_swapChain;
+}
+
+void Renderer::PrepareHostFrame() noexcept
+{
+	BeginFrame();
+	SetupFrame();
+}
+
+void Renderer::RecordHostFrame() noexcept
+{
+	RecordFrame();
+}
+
+void Renderer::SubmitHostFrame() noexcept
+{
+	SubmitFrame();
+	EndFrame();
+}
+
+std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept
+{
+	if (!handle || !m_frameGraph)
+	{
+		return 0;
+	}
+
+	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).ptr;
+}
+
+void Renderer::TransitionRenderProduct(CommandContext& cmd, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept
+{
+	if (!handle || !m_frameGraph || before == after)
+	{
+		return;
+	}
+
+	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	ID3D12Resource* resource = m_frameGraph->ResolveResource(TextureHandle{resourceHandle});
+	if (resource == nullptr)
+	{
+		return;
+	}
+
+	cmd.TransitionResource(resource, before, after);
+}
+
 void Renderer::InitializeCoreSystems() noexcept
 {
 	m_rhi = std::make_unique<D3D12Rhi>();
@@ -94,12 +154,36 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	    *m_materialCacheManager);
 }
 
+RenderViewportExtent Renderer::ResolveSceneExtent() const noexcept
+{
+	if (m_viewportRenderRequest.Extent.IsValid())
+	{
+		return m_viewportRenderRequest.Extent;
+	}
+
+	return RenderViewportExtent{
+	    static_cast<std::uint32_t>(m_window->GetWidth()),
+	    static_cast<std::uint32_t>(m_window->GetHeight())};
+}
+
+bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
+{
+	return m_viewportRenderRequest.ViewportId == 0;
+}
+
 void Renderer::InitializeFrameGraph() noexcept
 {
-	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager};
+	const FrameGraphDependencies dependencies{
+	    *m_rhi,
+	    *m_window,
+	    *m_swapChain,
+	    *m_descriptorHeapManager,
+	    ResolveSceneExtent(),
+	    ShouldPresentSceneToBackBuffer()};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
+	m_frameGraphSceneExtent = dependencies.sceneExtent;
 
 	m_viewportRenderProducts.SceneColor.Handle = buildResult.SceneColor.IsValid()
 	    ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
@@ -122,6 +206,11 @@ void Renderer::BindWindowResizeEvent() noexcept
 
 void Renderer::RefreshFrameExecution() noexcept
 {
+	if (m_rhi)
+	{
+		m_rhi->Flush();
+	}
+
 	m_frameGraph.reset();
 	InitializeFrameGraph();
 }
@@ -138,6 +227,12 @@ void Renderer::BeginFrame() noexcept
 			m_swapChain->Resize();
 			RefreshFrameExecution();
 		}
+	}
+
+	const RenderViewportExtent sceneExtent = ResolveSceneExtent();
+	if (sceneExtent.Width != m_frameGraphSceneExtent.Width || sceneExtent.Height != m_frameGraphSceneExtent.Height)
+	{
+		RefreshFrameExecution();
 	}
 
 	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
@@ -164,9 +259,7 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 {
 	const RenderProductHandle sceneColorHandle = m_viewportRenderProducts.SceneColor.Handle;
 	const RenderProductHandle sceneDepthHandle = m_viewportRenderProducts.SceneDepth.Handle;
-	const RenderViewportExtent extent{
-	    static_cast<std::uint32_t>(m_window->GetWidth()),
-	    static_cast<std::uint32_t>(m_window->GetHeight())};
+	const RenderViewportExtent extent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
 
 	m_viewportRenderProducts = {};
 	m_viewportRenderProducts.AvailableOutputs = RenderOutputFlags::SceneColor;
@@ -239,11 +332,9 @@ void Renderer::PostLoad() noexcept
 
 void Renderer::OnRender() noexcept
 {
-	BeginFrame();
-	SetupFrame();
-	RecordFrame();
-	SubmitFrame();
-	EndFrame();
+	PrepareHostFrame();
+	RecordHostFrame();
+	SubmitHostFrame();
 }
 
 Renderer::~Renderer() noexcept

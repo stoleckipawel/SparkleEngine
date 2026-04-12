@@ -91,6 +91,12 @@ void FrameGraph::ClearDepthStencil(CommandContext& cmd, TextureHandle handle) co
 	cmd.ClearDepthStencil(ResolveDepthStencilView(resourceHandle), GetClearDepth(resourceHandle));
 }
 
+ID3D12Resource* FrameGraph::ResolveResource(TextureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveResource(handle.GetResourceHandle());
+}
+
 void FrameGraph::CopyResource(CommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());

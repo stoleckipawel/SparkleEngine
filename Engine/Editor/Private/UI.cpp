@@ -12,6 +12,7 @@
 #include "Panels/MainMenuBarPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
+#include "Panels/ViewportPanel.h"
 #include "Style/SparkleUiTheme.h"
 
 #include <imgui.h>
@@ -19,6 +20,12 @@
 #include <backends/imgui_impl_dx12.h>
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+namespace
+{
+	constexpr float SceneOutlinerWidth = 320.0f;
+	constexpr float SceneInspectorWidth = 456.0f;
+}
 
 static void AllocSRV(
     ImGui_ImplDX12_InitInfo* info,
@@ -46,6 +53,36 @@ void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
 bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	return ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam);
+}
+
+const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
+{
+	static const ViewportRenderRequest defaultRequest = []
+	{
+		ViewportRenderRequest request{};
+		request.ViewportId = 1;
+		request.ViewKind = RenderViewKind::Game;
+		request.RequestedOutputs = RenderOutputFlags::SceneColor | RenderOutputFlags::SceneDepth;
+		return request;
+	}();
+
+	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
+}
+
+void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
+{
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetRenderProducts(products);
+	}
+}
+
+void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
+{
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetSceneColorTextureId(textureId);
+	}
 }
 
 UI::UI(
@@ -128,11 +165,20 @@ bool UI::InitializeD3D12Backend()
 void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
+	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
+	if (m_window != nullptr && m_viewportPanel)
+	{
+		const RenderViewportExtent initialExtent{
+		    static_cast<std::uint32_t>((std::max) (1.0f, static_cast<float>(m_window->GetWidth()) - SceneOutlinerWidth - SceneInspectorWidth)),
+		    (std::max) (1u, m_window->GetHeight())};
+		m_viewportPanel->SetRequestedExtent(initialExtent);
+	}
+
 	if (m_gameScene != nullptr)
 	{
 		m_sceneSelection = SceneObjectSelection::Camera();
-		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection);
-		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection);
+		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection, SceneOutlinerWidth);
+		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, SceneInspectorWidth);
 	}
 }
 
@@ -171,6 +217,12 @@ void UI::Build()
 	{
 		m_sceneOutlinerPanel->SetTopInset(mainMenuBarHeight);
 		m_sceneOutlinerPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_viewportPanel)
+	{
+		m_viewportPanel->SetTopInset(mainMenuBarHeight);
+		m_viewportPanel->BuildUI(disableInteraction);
 	}
 
 	if (m_sceneInspectorPanel)
@@ -214,16 +266,4 @@ void UI::SetupDPIScaling() noexcept
 	style.FontSizeBase = 16.0f * mainScale;
 
 	style.ScaleAllSizes(mainScale);
-}
-
-std::unique_ptr<IRendererOverlay> CreateEditorOverlay(RendererOverlayContext& context)
-{
-	return std::make_unique<UI>(
-	    context.timer,
-	    &context.levelManager,
-	    &context.gameScene,
-	    context.rhi,
-	    context.window,
-	    context.descriptorHeapManager,
-	    context.swapChain);
 }

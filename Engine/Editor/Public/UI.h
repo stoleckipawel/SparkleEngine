@@ -2,7 +2,7 @@
 
 #include "EditorAPI.h"
 #include "Events/ScopedEventHandle.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 
 #include <Windows.h>
@@ -14,6 +14,7 @@ class Timer;
 class MainMenuBarPanel;
 class SceneOutlinerPanel;
 class SceneInspectorPanel;
+class ViewportPanel;
 class LevelManager;
 class GameScene;
 class Window;
@@ -22,7 +23,7 @@ class D3D12SwapChain;
 class D3D12Rhi;
 struct WindowMessageEvent;
 
-class SPARKLE_EDITOR_API UI final : public IRendererOverlay
+class SPARKLE_EDITOR_API UI final
 {
   public:
 	UI(Timer& timer,
@@ -44,9 +45,13 @@ class SPARKLE_EDITOR_API UI final : public IRendererOverlay
 
 	bool ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
-	void Update() override;
+	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
+	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
+	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 
-	void Render(ID3D12GraphicsCommandList* commandList) noexcept override;
+	void Update();
+
+	void Render(ID3D12GraphicsCommandList* commandList) noexcept;
 
   private:
 	void NewFrame();
@@ -68,6 +73,7 @@ class SPARKLE_EDITOR_API UI final : public IRendererOverlay
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
+	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
@@ -79,5 +85,3 @@ class SPARKLE_EDITOR_API UI final : public IRendererOverlay
 
 	ScopedEventHandle m_windowMessageHandle;
 };
-
-SPARKLE_EDITOR_API std::unique_ptr<IRendererOverlay> CreateEditorOverlay(RendererOverlayContext& context);

@@ -1,9 +1,8 @@
 #include "EditorApp.h"
-#include "UI.h"
 
 int main()
 {
-	EditorApp app(CreateEditorOverlay);
+	EditorApp app;
 	app.Run();
 	return 0;
 }

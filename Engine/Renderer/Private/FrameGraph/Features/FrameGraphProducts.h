@@ -8,6 +8,7 @@
 
 struct FrameGraphSceneTargets
 {
+	TextureHandle SceneColor;
 	TextureHandle BackBuffer;
 	TextureHandle MainDepth;
 };

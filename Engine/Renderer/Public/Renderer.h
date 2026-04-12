@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
+#include "Renderer/Public/FrameGraph/ResourceState.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Events/ScopedEventHandle.h"
 
 #include <memory>
 
 class Timer;
+class CommandContext;
 
 class D3D12Rhi;
 class D3D12PipelineState;
@@ -58,6 +60,15 @@ class SPARKLE_RENDERER_API Renderer final
 		return m_viewportRenderProducts;
 	}
 
+	D3D12Rhi& GetRhi() noexcept;
+	D3D12DescriptorHeapManager& GetDescriptorHeapManager() noexcept;
+	D3D12SwapChain& GetSwapChain() noexcept;
+	void PrepareHostFrame() noexcept;
+	void RecordHostFrame() noexcept;
+	void SubmitHostFrame() noexcept;
+	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept;
+	void TransitionRenderProduct(CommandContext& cmd, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept;
+
 	void OnRender() noexcept;
 
   private:
@@ -67,6 +78,8 @@ class SPARKLE_RENDERER_API Renderer final
 	void InitializeFrameGraph() noexcept;
 	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
+	bool ShouldPresentSceneToBackBuffer() const noexcept;
+	RenderViewportExtent ResolveSceneExtent() const noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
 	void RefreshViewportRenderProducts() noexcept;
@@ -98,6 +111,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
+	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	ScopedEventHandle m_resizeHandle;
