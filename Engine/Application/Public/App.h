@@ -5,17 +5,7 @@
 
 #include <memory>
 
-class Timer;
-class Window;
-class InputSystem;
-class GameScene;
-class GameCameraController;
-class Renderer;
-class LevelManager;
-namespace Engine::Assets
-{
-	class SceneAssetManager;
-}
+class ProjectApp;
 
 class SPARKLE_APPLICATION_API App
 {
@@ -31,16 +21,5 @@ class SPARKLE_APPLICATION_API App
 	void Run();
 
   private:
-	void Initialize();
-	void EngineLoop();
-
-	std::unique_ptr<Timer> m_timer;
-	std::unique_ptr<Window> m_window;
-	std::unique_ptr<InputSystem> m_inputSystem;
-	std::unique_ptr<GameScene> m_gameScene;
-	std::unique_ptr<Engine::Assets::SceneAssetManager> m_sceneAssetManager;
-	std::unique_ptr<LevelManager> m_levelManager;
-	std::unique_ptr<GameCameraController> m_gameCameraController;
-	std::unique_ptr<Renderer> m_renderer;
-	RendererOverlayFactory m_overlayFactory;
+	std::unique_ptr<ProjectApp> m_projectApp;
 };
