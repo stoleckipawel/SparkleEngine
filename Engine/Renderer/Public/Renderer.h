@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Events/ScopedEventHandle.h"
 
 #include <memory>
@@ -40,8 +40,7 @@ class SPARKLE_RENDERER_API Renderer final
 	    Timer& timer,
 	    GameScene& gameScene,
 	    Window& window,
-	    LevelManager& levelManager,
-	    RendererOverlayFactory overlayFactory = {}) noexcept;
+	    LevelManager& levelManager) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -49,17 +48,28 @@ class SPARKLE_RENDERER_API Renderer final
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
+	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
+	{
+		m_viewportRenderRequest = request;
+	}
+
+	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept
+	{
+		return m_viewportRenderProducts;
+	}
+
 	void OnRender() noexcept;
 
   private:
 	void PostLoad() noexcept;
-	void InitializeCoreSystems(LevelManager& levelManager) noexcept;
+	void InitializeCoreSystems() noexcept;
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
 	void InitializeFrameGraph() noexcept;
 	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
 	void BeginFrame() noexcept;
 	void SetupFrame() noexcept;
+	void RefreshViewportRenderProducts() noexcept;
 	void RecordFrame() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
@@ -72,8 +82,6 @@ class SPARKLE_RENDERER_API Renderer final
 
 	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
 	std::unique_ptr<D3D12SwapChain> m_swapChain;
-	RendererOverlayFactory m_overlayFactory;
-	std::unique_ptr<IRendererOverlay> m_overlay;
 	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
 	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
 	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
@@ -90,6 +98,8 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
+	ViewportRenderRequest m_viewportRenderRequest = {};
+	ViewportRenderProducts m_viewportRenderProducts = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

@@ -10,7 +10,7 @@
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 
-ProjectApp::ProjectApp(RendererOverlayFactory overlayFactory) : m_overlayFactory(std::move(overlayFactory)) {}
+ProjectApp::ProjectApp() = default;
 
 ProjectApp::~ProjectApp() = default;
 
@@ -34,8 +34,27 @@ void ProjectApp::Initialize()
 
 	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
 
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager, m_overlayFactory);
+	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 	m_isInitialized = true;
+}
+
+void ProjectApp::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
+{
+	if (m_renderer)
+	{
+		m_renderer->SubmitViewportRenderRequest(request);
+	}
+}
+
+const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noexcept
+{
+	static const ViewportRenderProducts emptyProducts{};
+	if (!m_renderer)
+	{
+		return emptyProducts;
+	}
+
+	return m_renderer->GetViewportRenderProducts();
 }
 
 bool ProjectApp::Tick()

@@ -3,7 +3,7 @@
 
 #include "ProjectApp.h"
 
-App::App(RendererOverlayFactory overlayFactory) : m_projectApp(std::make_unique<ProjectApp>(std::move(overlayFactory))) {}
+App::App() : m_projectApp(std::make_unique<ProjectApp>()) {}
 
 App::~App() = default;
 

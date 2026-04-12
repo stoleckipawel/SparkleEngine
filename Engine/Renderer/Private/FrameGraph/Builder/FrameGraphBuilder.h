@@ -2,8 +2,7 @@
 
 #include <memory>
 
-#include "FrameGraph/TextureHandle.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
+#include "Renderer/Public/FrameGraph/TextureHandle.h"
 
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
@@ -17,7 +16,13 @@ struct FrameGraphDependencies
 	Window& window;
 	D3D12SwapChain& swapChain;
 	D3D12DescriptorHeapManager& descriptorHeapManager;
-	IRendererOverlay* overlay = nullptr;
+};
+
+struct FrameGraphBuildResult
+{
+	std::unique_ptr<FrameGraph> Graph;
+	TextureHandle SceneColor;
+	TextureHandle SceneDepth;
 };
 
 class FrameGraphBuilder final
@@ -25,7 +30,7 @@ class FrameGraphBuilder final
   public:
 	explicit FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept;
 
-	std::unique_ptr<FrameGraph> Build() const;
+	FrameGraphBuildResult Build() const;
 
   private:
 	FrameGraphDependencies m_dependencies;

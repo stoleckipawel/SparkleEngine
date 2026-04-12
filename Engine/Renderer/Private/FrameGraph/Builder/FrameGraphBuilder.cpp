@@ -11,7 +11,7 @@
 
 FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept : m_dependencies(dependencies) {}
 
-std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
+FrameGraphBuildResult FrameGraphBuilder::Build() const
 {
 	auto frameGraph = std::make_unique<FrameGraph>(
 	    &m_dependencies.rhi,
@@ -20,13 +20,12 @@ std::unique_ptr<FrameGraph> FrameGraphBuilder::Build() const
 	    &m_dependencies.swapChain);
 
 	const FrameGraphSceneTargets sceneTargets = FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window);
-	const FrameGraphPresentationInputs presentationInputs{.BackBuffer = sceneTargets.BackBuffer};
 	const FrameGraphShadowOutputs shadowOutputs = FrameGraphFeatures::AddShadowPasses(*frameGraph);
 	FrameGraphFeatures::AddForwardOpaquePass(*frameGraph, sceneTargets, shadowOutputs);
-	if (m_dependencies.overlay != nullptr)
-	{
-		FrameGraphFeatures::AddUiCompositionPass(*frameGraph, *m_dependencies.overlay, presentationInputs);
-	}
 
-	return frameGraph;
+	FrameGraphBuildResult result{};
+	result.SceneColor = sceneTargets.BackBuffer;
+	result.SceneDepth = sceneTargets.MainDepth;
+	result.Graph = std::move(frameGraph);
+	return result;
 }

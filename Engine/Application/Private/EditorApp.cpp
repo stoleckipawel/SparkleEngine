@@ -16,7 +16,7 @@ void EditorApp::Initialize()
 
 	if (!m_projectApp)
 	{
-		m_projectApp = std::make_unique<ProjectApp>(m_overlayFactory);
+		m_projectApp = std::make_unique<ProjectApp>();
 	}
 
 	m_projectApp->Initialize();

@@ -37,11 +37,10 @@ Renderer::Renderer(
 	Timer& timer,
 	GameScene& gameScene,
 	Window& window,
-	LevelManager& levelManager,
-	RendererOverlayFactory overlayFactory) noexcept :
-	m_timer(&timer), m_gameScene(&gameScene), m_window(&window), m_overlayFactory(std::move(overlayFactory))
+	LevelManager& levelManager) noexcept :
+	m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
 {
-	InitializeCoreSystems(levelManager);
+	InitializeCoreSystems();
 
 	InitializeSceneSystems(levelManager);
 	InitializeFrameGraph();
@@ -50,7 +49,7 @@ Renderer::Renderer(
 	PostLoad();
 }
 
-void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
+void Renderer::InitializeCoreSystems() noexcept
 {
 	m_rhi = std::make_unique<D3D12Rhi>();
 
@@ -58,19 +57,6 @@ void Renderer::InitializeCoreSystems(LevelManager& levelManager) noexcept
 	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, *m_window, *m_descriptorHeapManager);
 	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
-
-	if (m_overlayFactory)
-	{
-		RendererOverlayContext overlayContext{
-		    *m_timer,
-		    levelManager,
-		    *m_gameScene,
-		    *m_rhi,
-		    *m_window,
-		    *m_descriptorHeapManager,
-		    *m_swapChain};
-		m_overlay = m_overlayFactory(overlayContext);
-	}
 
 	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    *m_timer,
@@ -110,10 +96,18 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
-	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager, m_overlay.get()};
+	const FrameGraphDependencies dependencies{*m_rhi, *m_window, *m_swapChain, *m_descriptorHeapManager};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
-	m_frameGraph = frameGraphBuilder.Build();
+	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
+
+	m_viewportRenderProducts.SceneColor.Handle = buildResult.SceneColor.IsValid()
+	    ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
+	    : RenderProductHandle{};
+	m_viewportRenderProducts.SceneDepth.Handle = buildResult.SceneDepth.IsValid()
+	    ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
+	    : RenderProductHandle{};
+	m_frameGraph = std::move(buildResult.Graph);
 }
 
 void Renderer::BindWindowResizeEvent() noexcept
@@ -157,16 +151,40 @@ void Renderer::BeginFrame() noexcept
 void Renderer::SetupFrame() noexcept
 {
 	m_timer->Tick();
-	if (m_overlay)
-	{
-		m_overlay->Update();
-	}
+	RefreshViewportRenderProducts();
 
 	m_sceneSnapshot->Capture(*m_gameScene);
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 
 	m_constantBufferManager->UpdatePerFrame(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
+}
+
+void Renderer::RefreshViewportRenderProducts() noexcept
+{
+	const RenderProductHandle sceneColorHandle = m_viewportRenderProducts.SceneColor.Handle;
+	const RenderProductHandle sceneDepthHandle = m_viewportRenderProducts.SceneDepth.Handle;
+	const RenderViewportExtent extent{
+	    static_cast<std::uint32_t>(m_window->GetWidth()),
+	    static_cast<std::uint32_t>(m_window->GetHeight())};
+
+	m_viewportRenderProducts = {};
+	m_viewportRenderProducts.AvailableOutputs = RenderOutputFlags::SceneColor;
+	m_viewportRenderProducts.SceneColor.Handle = sceneColorHandle;
+	m_viewportRenderProducts.SceneColor.Extent = extent;
+	m_viewportRenderProducts.SceneColor.Format = RenderProductFormat::ColorLdr;
+
+	if (sceneDepthHandle)
+	{
+		m_viewportRenderProducts.SceneDepth.Handle = sceneDepthHandle;
+		m_viewportRenderProducts.SceneDepth.Extent = extent;
+		m_viewportRenderProducts.SceneDepth.Format = RenderProductFormat::DepthStencil;
+
+		if (HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
+		{
+			m_viewportRenderProducts.AvailableOutputs |= RenderOutputFlags::SceneDepth;
+		}
+	}
 }
 
 void Renderer::RecordFrame() noexcept

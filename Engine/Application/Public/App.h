@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
 
 #include <memory>
 
@@ -10,7 +9,7 @@ class ProjectApp;
 class SPARKLE_APPLICATION_API App
 {
   public:
-	explicit App(RendererOverlayFactory overlayFactory = {});
+	App();
 	~App();
 
 	App(const App&) = delete;

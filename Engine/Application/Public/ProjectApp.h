@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Application/Public/ApplicationAPI.h"
-#include "Renderer/Public/Overlays/RendererOverlay.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <memory>
 
@@ -20,7 +20,7 @@ namespace Engine::Assets
 class SPARKLE_APPLICATION_API ProjectApp
 {
   public:
-	explicit ProjectApp(RendererOverlayFactory overlayFactory = {});
+	ProjectApp();
 	~ProjectApp();
 
 	ProjectApp(const ProjectApp&) = delete;
@@ -29,6 +29,8 @@ class SPARKLE_APPLICATION_API ProjectApp
 	ProjectApp& operator=(ProjectApp&&) = delete;
 
 	void Initialize();
+	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
+	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
 	bool Tick();
 	void Shutdown();
 	void Run();
@@ -42,6 +44,5 @@ class SPARKLE_APPLICATION_API ProjectApp
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
-	RendererOverlayFactory m_overlayFactory;
 	bool m_isInitialized = false;
 };

@@ -1,5 +1,14 @@
 #pragma once
 
+// Transitional legacy shim only.
+//
+// New host and renderer integration must use the generic viewport request and
+// render product contracts instead of extending this overlay path.
+//
+// This header remains temporarily to support the still-migrating editor UI
+// bootstrap and will be removed once the presentation flow no longer routes UI
+// through renderer-owned overlay hooks.
+
 #include <d3d12.h>
 
 #include <functional>
