@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../RendererAPI.h"
-#include "../ShaderParameters/PassParameterSet.h"
+#include "RendererAPI.h"
+#include "ShaderParameters/PassParameterSet.h"
 
 #include <cstdint>
 #include <type_traits>

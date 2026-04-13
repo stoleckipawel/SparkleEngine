@@ -5,7 +5,7 @@
 	#pragma clang diagnostic ignored "-Wswitch"
 #endif
 
-#include <d3dx12.h>
+#include "d3dx12.h"
 
 #if defined(__clang__)
 	#pragma clang diagnostic pop
