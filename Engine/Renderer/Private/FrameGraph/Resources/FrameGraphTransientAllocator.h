@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 

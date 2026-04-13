@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
 #include "D3D12/D3D12SwapChain.h"
 #include "D3D12/Resources/D3D12Texture.h"

@@ -1,25 +1,25 @@
 #include "../PCH.h"
 
-#include "Renderer/Public/Passes/ShadowOpaquePass.h"
+#include "Passes/ShadowOpaquePass.h"
 
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/Frame/RenderViewContext.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "GPU/CommandContext.h"
+#include "Frame/RenderViewContext.h"
+#include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
-#include "Renderer/Public/FrameGraph/RenderPassContext.h"
-#include "Renderer/Public/Passes/PassUtilities.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
-#include "Renderer/Public/GPU/GPUMesh.h"
+#include "FrameGraph/RenderPassContext.h"
+#include "Passes/PassUtilities.h"
+#include "Passes/ShaderPass.h"
+#include "GPU/GPUMesh.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Resources/D3D12ConstantBufferData.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
-#include "D3D12/Pipeline/D3D12PassBinder.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
+#include "Pipeline/D3D12PassBinder.h"
 
 #include <cassert>
 

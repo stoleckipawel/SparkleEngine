@@ -1,9 +1,11 @@
 #pragma once
 
+#include "RHIAPI.h"
+
 #include <DirectXMath.h>
 #include <d3d12.h>
 
-class DepthConvention
+class SPARKLE_RHI_API DepthConvention
 {
   public:
 	static float GetClearDepth() noexcept;

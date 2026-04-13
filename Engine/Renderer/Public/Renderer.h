@@ -3,21 +3,14 @@
 #include "Renderer/Public/RendererAPI.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Events/ScopedEventHandle.h"
 
 #include <memory>
 
 class Timer;
-class CommandContext;
+class RendererBackendServices;
 
-class D3D12Rhi;
-class D3D12PipelineState;
-class D3D12RootSignature;
-class D3D12SamplerLibrary;
-class D3D12ConstantBufferManager;
-class D3D12DescriptorHeapManager;
-class D3D12FrameResourceManager;
-class D3D12SwapChain;
 class FrameGraph;
 class GPUMeshCache;
 class LevelManager;
@@ -60,14 +53,13 @@ class SPARKLE_RENDERER_API Renderer final
 		return m_viewportRenderProducts;
 	}
 
-	D3D12Rhi& GetRhi() noexcept;
-	D3D12DescriptorHeapManager& GetDescriptorHeapManager() noexcept;
-	D3D12SwapChain& GetSwapChain() noexcept;
+	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
+	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
 	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept;
-	void TransitionRenderProduct(CommandContext& cmd, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept;
+	void TransitionRenderProduct(NativeGraphicsCommandListHandle commandList, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept;
 
 	void OnRender() noexcept;
 
@@ -91,13 +83,7 @@ class SPARKLE_RENDERER_API Renderer final
 	GameScene* m_gameScene = nullptr;
 	Window* m_window = nullptr;
 
-	std::unique_ptr<D3D12Rhi> m_rhi;
-
-	std::unique_ptr<D3D12DescriptorHeapManager> m_descriptorHeapManager;
-	std::unique_ptr<D3D12SwapChain> m_swapChain;
-	std::unique_ptr<D3D12FrameResourceManager> m_frameResourceManager;
-	std::unique_ptr<D3D12ConstantBufferManager> m_constantBufferManager;
-	std::unique_ptr<D3D12SamplerLibrary> m_samplerLibrary;
+	std::unique_ptr<RendererBackendServices> m_backend;
 	std::unique_ptr<PipelineStateManager> m_pipelineStateManager;
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;

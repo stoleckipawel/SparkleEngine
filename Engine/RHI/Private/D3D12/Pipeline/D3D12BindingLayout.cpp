@@ -5,7 +5,7 @@
 
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
-#include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
+#include "ShaderParameters/PassParameterLayout.h"
 
 #include <cassert>
 

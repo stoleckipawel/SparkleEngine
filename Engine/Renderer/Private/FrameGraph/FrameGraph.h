@@ -7,11 +7,11 @@
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
-#include "Renderer/Public/FrameGraph/ResourceRegistry.h"
+#include "FrameGraph/ResourceRegistry.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
+#include "Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include <d3d12.h>

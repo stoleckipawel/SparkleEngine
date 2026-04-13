@@ -3,10 +3,10 @@
 #include "FrameGraph/Features/PresentationPasses.h"
 
 #include "Config/RenderConfig.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
-#include "Renderer/Public/Passes/PassUtilities.h"
+#include "Passes/PassUtilities.h"
 
 #include "Window/Window.h"
 

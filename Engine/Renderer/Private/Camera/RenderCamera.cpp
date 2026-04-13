@@ -1,6 +1,6 @@
 #include "PCH.h"
-#include "Renderer/Public/Camera/RenderCamera.h"
-#include "Renderer/Public/GPU/DepthConvention.h"
+#include "Camera/RenderCamera.h"
+#include "Config/DepthConvention.h"
 
 using namespace DirectX;
 

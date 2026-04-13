@@ -1,6 +1,6 @@
 # SparkleRenderer Module
 # High-level rendering: Camera, Materials, Render passes, Texture management
-# Dependencies: SparkleCore, SparklePlatform, SparkleRHI
+# Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework runtime scene types
 
 file(GLOB_RECURSE SPARKLE_RENDERER_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
@@ -40,10 +40,6 @@ target_include_directories(SparkleRenderer
         # Core module subdirectories for direct includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
-        # GameFramework module for Scene/Camera includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
-        # Third-party (d3dx12.h)
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 
 target_compile_features(SparkleRenderer PUBLIC cxx_std_20)
@@ -53,12 +49,13 @@ target_precompile_headers(SparkleRenderer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Renderer depends on Core, Platform, and RHI only.
+# Renderer depends on lower modules plus runtime scene types from GameFramework.
 target_link_libraries(SparkleRenderer 
     PUBLIC 
         SparkleCore
         SparklePlatform
         SparkleRHI
+        SparkleGameFramework
 )
 
 set_target_properties(SparkleRenderer PROPERTIES

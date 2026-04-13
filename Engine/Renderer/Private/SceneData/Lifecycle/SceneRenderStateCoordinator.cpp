@@ -3,13 +3,13 @@
 #include "SceneRenderStateCoordinator.h"
 
 #include "D3D12/D3D12Rhi.h"
-#include "Renderer/Public/GPU/GPUMeshCache.h"
-#include "Renderer/Public/Camera/RenderCamera.h"
+#include "GPU/GPUMeshCache.h"
+#include "Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
-#include "Renderer/Public/Textures/TextureManager.h"
+#include "Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,

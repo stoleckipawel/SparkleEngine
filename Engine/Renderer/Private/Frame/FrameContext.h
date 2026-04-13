@@ -2,8 +2,8 @@
 
 #include "Config/RenderConfig.h"
 #include "Renderer/Public/RendererAPI.h"
-#include "Renderer/Public/Frame/RenderViewContext.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "Frame/RenderViewContext.h"
+#include "SceneData/RenderSceneData.h"
 
 #include <array>
 #include <cstddef>

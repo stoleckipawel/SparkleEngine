@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Frame/RenderViewContext.h"
+#include "Frame/RenderViewContext.h"
 
 class D3D12SwapChain;
 class RenderCamera;

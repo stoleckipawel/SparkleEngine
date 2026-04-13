@@ -1,7 +1,7 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
-#include "Renderer/Public/GPU/CommandContext.h"
+#include "GPU/CommandContext.h"
 
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 

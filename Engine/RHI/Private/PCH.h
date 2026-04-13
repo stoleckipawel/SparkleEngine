@@ -25,7 +25,7 @@
 #include <dxgi1_6.h>
 #include <DirectXMath.h>
 
-#include <d3dx12.h>
+#include "D3DX12Includes.h"
 
 #ifdef ENGINE_GPU_VALIDATION
 	#include <d3d12sdklayers.h>

@@ -6,7 +6,7 @@
 #include "FrameGraph/Features/PresentationPasses.h"
 #include "FrameGraph/Features/ShadowPasses.h"
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 #include "Window/Window.h"
 
 FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies) noexcept : m_dependencies(dependencies) {}

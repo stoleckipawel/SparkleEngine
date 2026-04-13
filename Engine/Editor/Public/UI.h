@@ -2,11 +2,11 @@
 
 #include "EditorAPI.h"
 #include "Events/ScopedEventHandle.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 
 #include <Windows.h>
-#include <d3d12.h>
 
 #include <memory>
 
@@ -18,9 +18,6 @@ class ViewportPanel;
 class LevelManager;
 class GameScene;
 class Window;
-class D3D12DescriptorHeapManager;
-class D3D12SwapChain;
-class D3D12Rhi;
 struct WindowMessageEvent;
 
 class SPARKLE_EDITOR_API UI final
@@ -29,10 +26,8 @@ class SPARKLE_EDITOR_API UI final
 	UI(Timer& timer,
 	   LevelManager* levelManager,
 	   GameScene* gameScene,
-	   D3D12Rhi& rhi,
-	   Window& window,
-	   D3D12DescriptorHeapManager& descriptorHeapManager,
-	   D3D12SwapChain& swapChain);
+	   RenderHardwareInterface& renderHardware,
+	   Window& window);
 
 	~UI() noexcept;
 
@@ -51,16 +46,18 @@ class SPARKLE_EDITOR_API UI final
 
 	void Update();
 
-	void Render(ID3D12GraphicsCommandList* commandList) noexcept;
+	void Render(NativeGraphicsCommandListHandle commandList) noexcept;
 
   private:
 	void NewFrame();
 
 	void Build();
+	bool IsReady() const noexcept;
 
 	void InitializeImGuiContext();
 
 	bool InitializeWin32Backend();
+	bool InitializeGraphicsBackend();
 
 	bool InitializeD3D12Backend();
 
@@ -77,11 +74,12 @@ class SPARKLE_EDITOR_API UI final
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
-	D3D12Rhi* m_rhi = nullptr;
+	RenderHardwareInterface* m_renderHardware = nullptr;
 	Window* m_window = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-	D3D12SwapChain* m_swapChain = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
+	bool m_isImGuiContextInitialized = false;
+	bool m_isWin32BackendInitialized = false;
+	bool m_isGraphicsBackendInitialized = false;
 
 	ScopedEventHandle m_windowMessageHandle;
 };

@@ -1,9 +1,9 @@
 #include "PCH.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "Renderer/Public/GPU/DepthConvention.h"
-#include "Renderer/Public/FrameGraph/ResourceState.h"
+#include "GPU/ResourceStateD3D12.h"
 
+#include "Config/DepthConvention.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/D3D12Rhi.h"
 

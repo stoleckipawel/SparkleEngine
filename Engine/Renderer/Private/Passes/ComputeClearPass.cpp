@@ -1,14 +1,14 @@
 #include "../PCH.h"
-#include "Renderer/Public/Passes/ComputeClearPass.h"
+#include "Passes/ComputeClearPass.h"
 
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "GPU/CommandContext.h"
+#include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
-#include "Renderer/Public/FrameGraph/RenderPassContext.h"
+#include "FrameGraph/RenderPassContext.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "Renderer/Public/Passes/PassUtilities.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
-#include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
+#include "Passes/PassUtilities.h"
+#include "Passes/ShaderPass.h"
+#include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <cassert>
 

@@ -3,7 +3,7 @@
 #include "PerViewDataBuilder.h"
 
 #include "D3D12/D3D12SwapChain.h"
-#include "Renderer/Public/Camera/RenderCamera.h"
+#include "Camera/RenderCamera.h"
 
 PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
     const PerViewCameraConstantBufferData& cameraData,

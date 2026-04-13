@@ -2,7 +2,7 @@
 
 #include "ViewLightingBuilder.h"
 
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "SceneData/RenderSceneData.h"
 
 #include <algorithm>
 

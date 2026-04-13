@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"

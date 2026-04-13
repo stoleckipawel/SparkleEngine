@@ -1,6 +1,7 @@
 # SparkleRHI Module
 # Graphics API abstraction: D3D12 backend
 # Dependencies: SparkleCore, SparklePlatform
+# Shared shader-parameter layout types live here so RHI does not reach upward into Renderer/GameFramework.
 
 file(GLOB_RECURSE SPARKLE_RHI_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
@@ -41,10 +42,6 @@ target_include_directories(SparkleRHI
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
-        # Renderer module for DepthConvention.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Renderer/Public
-        # GameFramework module for AssetTypes.h and PathRoot.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../GameFramework/Public
         # Third-party (d3dx12.h)
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )

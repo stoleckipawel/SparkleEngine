@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Renderer/Public/Textures/TextureManager.h"
+#include "Textures/TextureManager.h"
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"

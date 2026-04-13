@@ -2,8 +2,8 @@
 
 #include "FrameGraph/Features/ShadowPasses.h"
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/Passes/ShadowOpaquePass.h"
+#include "FrameGraph/FrameGraph.h"
+#include "Passes/ShadowOpaquePass.h"
 
 #include <string>
 

@@ -10,14 +10,14 @@
 #include "D3D12/Shaders/DxcShaderCompiler.h"
 #include "D3D12/Shaders/ShaderCompileResult.h"
 
-#include "Renderer/Public/GPU/DepthConvention.h"
-#include "Renderer/Public/Passes/ComputeClearPass.h"
-#include "Renderer/Public/Passes/ForwardOpaquePass.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
-#include "Renderer/Public/Passes/ShadowOpaquePass.h"
-#include "Renderer/Public/Passes/ShaderSourceDefinition.h"
-#include "Renderer/Public/SceneData/MaterialData.h"
-#include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
+#include "Config/DepthConvention.h"
+#include "Passes/ComputeClearPass.h"
+#include "Passes/ForwardOpaquePass.h"
+#include "Passes/ShaderPass.h"
+#include "Passes/ShadowOpaquePass.h"
+#include "Passes/ShaderSourceDefinition.h"
+#include "SceneData/MaterialData.h"
+#include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <array>
 #include <memory>

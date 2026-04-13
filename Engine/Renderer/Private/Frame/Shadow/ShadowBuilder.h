@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
+#include "Scene/Camera/CameraSnapshot.h"
 #include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
 #include "RHI/Public/D3D12/Resources/D3D12ViewCameraConstantBufferData.h"
 

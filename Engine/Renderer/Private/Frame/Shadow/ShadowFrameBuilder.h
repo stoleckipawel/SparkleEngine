@@ -3,7 +3,7 @@
 #include "Config/RenderConfig.h"
 #include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
 #include "RHI/Public/D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
-#include "Renderer/Public/Frame/RenderViewContext.h"
+#include "Frame/RenderViewContext.h"
 
 #include <array>
 #include <cstddef>

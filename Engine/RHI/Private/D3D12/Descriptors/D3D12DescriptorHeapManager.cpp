@@ -1,8 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include "Renderer/Public/GPU/CommandContext.h"
-
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
 	m_HeapSRV = std::make_unique<D3D12DescriptorHeap>(
@@ -34,10 +32,15 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 
 D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
 
-void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(CommandContext& cmd) const
+void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(ID3D12GraphicsCommandList* commandList) const
 {
+	if (commandList == nullptr)
+	{
+		return;
+	}
+
 	ID3D12DescriptorHeap* heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
-	cmd.SetDescriptorHeaps(_countof(heaps), heaps);
+	commandList->SetDescriptorHeaps(_countof(heaps), heaps);
 }
 
 void D3D12DescriptorHeapManager::FreeHandle(

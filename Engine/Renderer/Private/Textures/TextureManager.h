@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/Textures/DefaultTextures.h"
 #include "Renderer/Public/RendererAPI.h"
-#include "GameFramework/Public/Scene/Textures/TextureSnapshot.h"
+#include "Scene/Textures/TextureSnapshot.h"
 
 #include <array>
 #include <cstdint>

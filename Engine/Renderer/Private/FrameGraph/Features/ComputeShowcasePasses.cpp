@@ -2,8 +2,8 @@
 
 #include "FrameGraph/Features/ComputeShowcasePasses.h"
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/Passes/ComputeClearPass.h"
+#include "FrameGraph/FrameGraph.h"
+#include "Passes/ComputeClearPass.h"
 
 namespace FrameGraphFeatures
 {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
+#include "Scene/Materials/MaterialSnapshot.h"
 #include "D3D12/Descriptors/D3D12DescriptorHandle.h"
-#include "Renderer/Public/SceneData/MaterialData.h"
+#include "SceneData/MaterialData.h"
 
 #include <vector>
 

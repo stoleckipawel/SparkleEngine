@@ -1,5 +1,6 @@
 #include "PCH.h"
-#include "Renderer/Public/GPU/DepthConvention.h"
+
+#include "Config/DepthConvention.h"
 
 #include <cmath>
 

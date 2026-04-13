@@ -1,9 +1,9 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "Renderer/Public/GPU/DepthConvention.h"
+#include "Config/DepthConvention.h"
 
 #include "D3D12/D3D12SwapChain.h"
 

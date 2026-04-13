@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
 #include <cassert>
 #include <string>

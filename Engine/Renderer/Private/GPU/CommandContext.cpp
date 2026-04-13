@@ -1,5 +1,7 @@
 #include "PCH.h"
-#include "Renderer/Public/GPU/CommandContext.h"
+#include "GPU/CommandContext.h"
+
+#include "GPU/ResourceStateD3D12.h"
 
 CommandContext::CommandContext(ID3D12GraphicsCommandList* cmdList) noexcept : m_cmdList(cmdList) {}
 

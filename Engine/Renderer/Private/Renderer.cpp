@@ -2,23 +2,19 @@
 #include "Renderer.h"
 
 #include "Level/LevelManager.h"
-#include "D3D12/D3D12DebugLayer.h"
-#include "D3D12/D3D12Rhi.h"
-#include "D3D12/D3D12SwapChain.h"
+#include "RHI/Public/Interop/Internal/RendererBackendServicesAccess.h"
+#include "RHI/Public/Interop/RendererBackendServices.h"
 #include "Window/Window.h"
-#include "Renderer/Public/Textures/TextureManager.h"
-#include "Renderer/Public/GPU/GPUMeshCache.h"
+#include "Textures/TextureManager.h"
+#include "GPU/GPUMeshCache.h"
 #include "Scene/GameScene.h"
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
-#include "D3D12/Resources/D3D12FrameResource.h"
-#include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "Time/Timer.h"
-#include "Renderer/Public/Camera/RenderCamera.h"
+#include "Camera/RenderCamera.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/Frame/FrameContext.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/FrameGraph/RenderPassContext.h"
+#include "GPU/CommandContext.h"
+#include "Frame/FrameContext.h"
+#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/RenderPassContext.h"
 #include "Scene/Camera/CameraComponent.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 
@@ -49,19 +45,14 @@ Renderer::Renderer(
 	PostLoad();
 }
 
-D3D12Rhi& Renderer::GetRhi() noexcept
+RenderHardwareInterface& Renderer::GetRenderHardwareInterface() noexcept
 {
-	return *m_rhi;
+	return m_backend->GetRenderHardwareInterface();
 }
 
-D3D12DescriptorHeapManager& Renderer::GetDescriptorHeapManager() noexcept
+const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noexcept
 {
-	return *m_descriptorHeapManager;
-}
-
-D3D12SwapChain& Renderer::GetSwapChain() noexcept
-{
-	return *m_swapChain;
+	return m_backend->GetRenderHardwareInterface();
 }
 
 void Renderer::PrepareHostFrame() noexcept
@@ -92,9 +83,19 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).ptr;
 }
 
-void Renderer::TransitionRenderProduct(CommandContext& cmd, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept
+void Renderer::TransitionRenderProduct(
+	NativeGraphicsCommandListHandle commandList,
+	RenderProductHandle handle,
+	ResourceState before,
+	ResourceState after) const noexcept
 {
-	if (!handle || !m_frameGraph || before == after)
+	if (!commandList || !handle || !m_frameGraph || before == after)
+	{
+		return;
+	}
+
+	auto* nativeCommandList = static_cast<ID3D12GraphicsCommandList*>(commandList.Value);
+	if (nativeCommandList == nullptr)
 	{
 		return;
 	}
@@ -106,34 +107,24 @@ void Renderer::TransitionRenderProduct(CommandContext& cmd, RenderProductHandle 
 		return;
 	}
 
+	CommandContext cmd(nativeCommandList);
 	cmd.TransitionResource(resource, before, after);
 }
 
 void Renderer::InitializeCoreSystems() noexcept
 {
-	m_rhi = std::make_unique<D3D12Rhi>();
-
-	m_descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*m_rhi);
-	m_swapChain = std::make_unique<D3D12SwapChain>(*m_rhi, *m_window, *m_descriptorHeapManager);
-	m_frameResourceManager = std::make_unique<D3D12FrameResourceManager>(*m_rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
-	m_pipelineStateManager = std::make_unique<PipelineStateManager>(*m_rhi);
-
-	m_constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
-	    *m_timer,
-	    *m_rhi,
-	    *m_window,
-	    *m_descriptorHeapManager,
-	    *m_frameResourceManager,
-	    *m_swapChain);
-
-	m_samplerLibrary = std::make_unique<D3D12SamplerLibrary>(*m_rhi, *m_descriptorHeapManager);
-	m_gpuMeshCache = std::make_unique<GPUMeshCache>(*m_rhi);
+	m_backend = RendererBackendServices::Create(*m_timer, *m_window);
+	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
+	m_pipelineStateManager = std::make_unique<PipelineStateManager>(rhi);
+	m_gpuMeshCache = std::make_unique<GPUMeshCache>(rhi);
 }
 
 void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
-	m_textureManager = std::make_unique<TextureManager>(*m_rhi, *m_descriptorHeapManager);
-	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, *m_descriptorHeapManager);
+	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
+	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
+	m_textureManager = std::make_unique<TextureManager>(rhi, descriptorHeapManager);
+	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, descriptorHeapManager);
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
@@ -146,7 +137,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
 	    *m_gameScene,
-	    *m_rhi,
+	    rhi,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
 	    *m_sceneSnapshot,
@@ -173,11 +164,14 @@ bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
+	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
+	auto& swapChain = Rhi::Internal::RendererBackendServicesAccess::GetSwapChain(*m_backend);
+	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
 	const FrameGraphDependencies dependencies{
-	    *m_rhi,
+	    rhi,
 	    *m_window,
-	    *m_swapChain,
-	    *m_descriptorHeapManager,
+	    swapChain,
+	    descriptorHeapManager,
 	    ResolveSceneExtent(),
 	    ShouldPresentSceneToBackBuffer()};
 
@@ -206,9 +200,9 @@ void Renderer::BindWindowResizeEvent() noexcept
 
 void Renderer::RefreshFrameExecution() noexcept
 {
-	if (m_rhi)
+	if (m_backend)
 	{
-		m_rhi->Flush();
+		m_backend->Flush();
 	}
 
 	m_frameGraph.reset();
@@ -223,8 +217,8 @@ void Renderer::BeginFrame() noexcept
 
 		if (m_window->HasValidSize())
 		{
-			m_rhi->Flush();
-			m_swapChain->Resize();
+			m_backend->Flush();
+			m_backend->ResizeSwapChain();
 			RefreshFrameExecution();
 		}
 	}
@@ -235,12 +229,7 @@ void Renderer::BeginFrame() noexcept
 		RefreshFrameExecution();
 	}
 
-	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
-	m_rhi->SetCurrentFrameIndex(frameIndex);
-	m_frameResourceManager->BeginFrame(m_rhi->GetFence().Get(), m_rhi->GetFenceEvent(), frameIndex);
-	m_rhi->WaitForGPU(frameIndex);
-	m_rhi->ResetCommandAllocator(frameIndex);
-	m_rhi->ResetCommandList(frameIndex);
+	m_backend->BeginFrame();
 }
 
 void Renderer::SetupFrame() noexcept
@@ -252,7 +241,7 @@ void Renderer::SetupFrame() noexcept
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 
-	m_constantBufferManager->UpdatePerFrame(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
+	m_backend->UpdatePerFrameConstants(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
 }
 
 void Renderer::RefreshViewportRenderProducts() noexcept
@@ -282,10 +271,14 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 
 void Renderer::RecordFrame() noexcept
 {
+	auto& swapChain = Rhi::Internal::RendererBackendServicesAccess::GetSwapChain(*m_backend);
+	auto& constantBufferManager = Rhi::Internal::RendererBackendServicesAccess::GetConstantBufferManager(*m_backend);
+	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
+	auto& samplerLibrary = Rhi::Internal::RendererBackendServicesAccess::GetSamplerLibrary(*m_backend);
 	FrameContext frame = BuildFrameContext(
 	    *m_sceneSnapshot,
-	    *m_swapChain,
-	    *m_constantBufferManager,
+	    swapChain,
+	    constantBufferManager,
 	    *m_renderCamera,
 	    *m_renderSceneDataBuilder,
 	    *m_perViewDataBuilder,
@@ -296,38 +289,29 @@ void Renderer::RecordFrame() noexcept
 	m_frameGraph->Setup(frame);
 	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
 	const RenderPassContext renderPassContext{
-	    .DescriptorHeapManager = *m_descriptorHeapManager,
-	    .ConstantBufferManager = *m_constantBufferManager,
-	    .SamplerLibrary = *m_samplerLibrary,
+	    .DescriptorHeapManager = descriptorHeapManager,
+	    .ConstantBufferManager = constantBufferManager,
+	    .SamplerLibrary = samplerLibrary,
 	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
 
-	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
-	CommandContext cmd(m_rhi->GetCommandList(frameIndex).Get());
+	const NativeGraphicsCommandListHandle commandListHandle = m_backend->GetCurrentGraphicsCommandListHandle();
+	CommandContext cmd(static_cast<ID3D12GraphicsCommandList*>(commandListHandle.Value));
 	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext);
 }
 
 void Renderer::SubmitFrame() noexcept
 {
-	const UINT frameIndex = m_swapChain->GetFrameInFlightIndex();
-	m_rhi->CloseCommandList(frameIndex);
-	m_rhi->ExecuteCommandList(frameIndex);
-	m_rhi->Signal(frameIndex);
-
-	m_frameResourceManager->EndFrame(m_rhi->GetNextFenceValue() - 1);
-	m_swapChain->Present();
+	m_backend->SubmitFrame();
 }
 
 void Renderer::EndFrame() noexcept
 {
-	m_swapChain->UpdateFrameInFlightIndex();
+	m_backend->AdvanceFrameInFlight();
 }
 
 void Renderer::PostLoad() noexcept
 {
-	const uint32_t frameIndex = m_rhi->GetCurrentFrameIndex();
-	m_rhi->CloseCommandList(frameIndex);
-	m_rhi->ExecuteCommandList(frameIndex);
-	m_rhi->Flush();
+	m_backend->CloseExecuteAndFlushCurrentFrame();
 }
 
 void Renderer::OnRender() noexcept
@@ -339,8 +323,8 @@ void Renderer::OnRender() noexcept
 
 Renderer::~Renderer() noexcept
 {
-	if (m_rhi)
+	if (m_backend)
 	{
-		m_rhi->Flush();
+		m_backend->Flush();
 	}
 }

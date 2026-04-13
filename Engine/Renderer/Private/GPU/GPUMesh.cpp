@@ -1,11 +1,11 @@
 #include "PCH.h"
-#include "Renderer/Public/GPU/GPUMesh.h"
+#include "GPU/GPUMesh.h"
 
+#include "third_party/D3DX12Includes.h"
 #include "D3D12/D3D12Rhi.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Log.h"
 
-#include <d3dx12.h>
 #include <cstring>
 
 bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)

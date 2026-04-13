@@ -1,8 +1,8 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/Frame/FrameContext.h"
+#include "GPU/CommandContext.h"
+#include "Frame/FrameContext.h"
 
 #include <cassert>
 

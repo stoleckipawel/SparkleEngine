@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "Frame/Builders/BuildFrameContext.h"
-#include "Renderer/Public/Frame/FrameContext.h"
+#include "Frame/FrameContext.h"
 
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/D3D12SwapChain.h"
@@ -9,7 +9,7 @@
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
-#include "Renderer/Public/Camera/RenderCamera.h"
+#include "Camera/RenderCamera.h"
 #include "Core/Public/Diagnostics/Log.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"

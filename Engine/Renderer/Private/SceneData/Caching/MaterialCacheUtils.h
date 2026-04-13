@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
-#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
-#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
+#include "Scene/Materials/MaterialDesc.h"
+#include "Scene/Materials/MaterialHandle.h"
+#include "Scene/Materials/MaterialSnapshot.h"
 
 #include <cstddef>
 #include <vector>

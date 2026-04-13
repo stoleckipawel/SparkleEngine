@@ -2,8 +2,8 @@
 
 #include "FrameGraph/Features/ForwardPasses.h"
 
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
-#include "Renderer/Public/Passes/ForwardOpaquePass.h"
+#include "FrameGraph/FrameGraph.h"
+#include "Passes/ForwardOpaquePass.h"
 
 namespace FrameGraphFeatures
 {

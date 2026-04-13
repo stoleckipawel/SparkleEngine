@@ -2,9 +2,9 @@
 
 #include "RenderSceneDataBuilder.h"
 
-#include "Renderer/Public/GPU/GPUMeshCache.h"
+#include "GPU/GPUMeshCache.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "SceneData/RenderSceneData.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/Mesh.h"
 #include "SceneData/Caching/MaterialCacheManager.h"

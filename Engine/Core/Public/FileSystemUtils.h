@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/AssetTypes.h"
-#include "GameFramework/Public/Paths/PathRoot.h"
+#include "Assets/AssetTypes.h"
+#include "Paths/PathRoot.h"
 
 #include <cstdint>
 #include <filesystem>

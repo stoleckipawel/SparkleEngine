@@ -6,11 +6,6 @@
 #include "ProjectApp.h"
 #include "Renderer.h"
 
-#include "RHI/Public/D3D12/D3D12Rhi.h"
-#include "RHI/Public/D3D12/D3D12SwapChain.h"
-#include "RHI/Public/D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "Renderer/Public/GPU/CommandContext.h"
-
 EditorApp::EditorApp() = default;
 
 EditorApp::~EditorApp() = default;
@@ -31,14 +26,13 @@ void EditorApp::Initialize()
 	if (!m_ui)
 	{
 		Renderer& renderer = m_projectApp->GetRenderer();
+		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
 		m_ui = std::make_unique<UI>(
 		    m_projectApp->GetTimer(),
 		    m_projectApp->GetLevelManager(),
 		    m_projectApp->GetGameScene(),
-		    renderer.GetRhi(),
-		    m_projectApp->GetWindow(),
-		    renderer.GetDescriptorHeapManager(),
-		    renderer.GetSwapChain());
+		    renderHardware,
+		    m_projectApp->GetWindow());
 	}
 	m_isEditorSessionActive = true;
 }
@@ -73,22 +67,20 @@ bool EditorApp::Tick()
 	m_ui->SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.SceneColor.Handle));
 	m_ui->Update();
 
-	ID3D12GraphicsCommandList* commandList = renderer.GetRhi().GetCommandList(renderer.GetRhi().GetCurrentFrameIndex()).Get();
-	CommandContext uiCommandContext(commandList);
+	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
+	const NativeGraphicsCommandListHandle commandListHandle =
+	    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
 	renderer.TransitionRenderProduct(
-	    uiCommandContext,
+	    commandListHandle,
 	    viewportProducts.SceneColor.Handle,
 	    ResourceState::RenderTarget,
 	    ResourceState::ShaderResource);
-	uiCommandContext.TransitionResource(renderer.GetSwapChain().GetCurrentResource(), ResourceState::Present, ResourceState::RenderTarget);
-	renderer.GetDescriptorHeapManager().SetShaderVisibleHeaps(uiCommandContext);
-	uiCommandContext.SetRenderTarget(renderer.GetSwapChain().GetCPUHandle());
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	uiCommandContext.ClearRenderTarget(renderer.GetSwapChain().GetCPUHandle(), editorClearColor);
-	m_ui->Render(commandList);
-	uiCommandContext.TransitionResource(renderer.GetSwapChain().GetCurrentResource(), ResourceState::RenderTarget, ResourceState::Present);
+	renderHardware.BeginPresentRenderPass(commandListHandle, editorClearColor);
+	m_ui->Render(commandListHandle);
+	renderHardware.EndPresentRenderPass(commandListHandle);
 	renderer.TransitionRenderProduct(
-	    uiCommandContext,
+	    commandListHandle,
 	    viewportProducts.SceneColor.Handle,
 	    ResourceState::ShaderResource,
 	    ResourceState::Common);

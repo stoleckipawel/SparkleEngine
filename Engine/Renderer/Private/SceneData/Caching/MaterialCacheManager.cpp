@@ -2,16 +2,16 @@
 
 #include "MaterialCacheManager.h"
 
-#include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
-#include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
+#include "Scene/Materials/MaterialDesc.h"
+#include "Scene/Materials/MaterialSnapshot.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "Resources/Texture.h"
-#include "Renderer/Public/SceneData/MaterialData.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "SceneData/MaterialData.h"
+#include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Textures/DefaultTextures.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
-#include "Renderer/Public/Textures/TextureManager.h"
+#include "Textures/TextureManager.h"
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
     m_textureManager(&textureManager), m_descriptorHeapManager(&descriptorHeapManager)

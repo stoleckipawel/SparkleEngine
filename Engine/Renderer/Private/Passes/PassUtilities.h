@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Renderer/Public/Frame/FrameContext.h"
+#include "Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
-#include "Renderer/Public/FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
-#include "Renderer/Public/FrameGraph/RenderPassContext.h"
+#include "FrameGraph/RenderPassContext.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
-#include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
+#include "GPU/CommandContext.h"
+#include "Passes/ShaderPass.h"
+#include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <d3d12.h>
 #include <array>

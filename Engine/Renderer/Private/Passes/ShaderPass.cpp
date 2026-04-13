@@ -1,18 +1,18 @@
 #include "../PCH.h"
-#include "Renderer/Public/Passes/ShaderPass.h"
+#include "Passes/ShaderPass.h"
 
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
-#include "Renderer/Public/GPU/CommandContext.h"
-#include "Renderer/Public/Passes/ShaderSourceDefinition.h"
-#include "Renderer/Public/ShaderParameters/PassParameterLayout.h"
+#include "GPU/CommandContext.h"
+#include "Passes/ShaderSourceDefinition.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 #include "RHI/Public/D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "RHI/Public/D3D12/Pipeline/D3D12BindingLayout.h"
-#include "RHI/Public/D3D12/Pipeline/D3D12PassBinder.h"
 #include "RHI/Public/D3D12/Pipeline/D3D12PipelineState.h"
+#include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include "Core/Public/Diagnostics/Log.h"
+#include "Pipeline/D3D12PassBinder.h"
 
 #include <cassert>
 #include <string>
@@ -140,7 +140,7 @@ void BindComputeShaderPass(
 {
 	if (descriptorHeapManager != nullptr)
 	{
-		descriptorHeapManager->SetShaderVisibleHeaps(cmd);
+		descriptorHeapManager->SetShaderVisibleHeaps(cmd.GetCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState.Get().Get());
@@ -160,7 +160,7 @@ void BindRasterShaderPass(
 {
 	if (descriptorHeapManager != nullptr)
 	{
-		descriptorHeapManager->SetShaderVisibleHeaps(cmd);
+		descriptorHeapManager->SetShaderVisibleHeaps(cmd.GetCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState.Get().Get());

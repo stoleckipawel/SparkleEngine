@@ -5,7 +5,7 @@
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
-#include "Renderer/Public/SceneData/RenderSceneData.h"
+#include "SceneData/RenderSceneData.h"
 
 std::array<ShadowFrameBuilder::CascadeRange, ShadowFrameBuildResult::MaxShadowCascades> ShadowFrameBuilder::BuildCascadeRanges(
     const CameraSnapshot& mainCamera) noexcept
