@@ -8,7 +8,7 @@
 
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
-	m_textureLoadResult(std::move(textureLoadResult)),
+    m_textureLoadResult(std::move(textureLoadResult)),
     m_srvHandle(descriptorHeapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
     m_descriptorHeapManager(&descriptorHeapManager)
 {

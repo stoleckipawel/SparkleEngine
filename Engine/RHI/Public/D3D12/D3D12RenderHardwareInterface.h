@@ -9,10 +9,7 @@ class D3D12SwapChain;
 class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardwareInterface
 {
   public:
-	D3D12RenderHardwareInterface(
-	    D3D12Rhi& rhi,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    D3D12SwapChain& swapChain) noexcept;
+	D3D12RenderHardwareInterface(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager, D3D12SwapChain& swapChain) noexcept;
 	~D3D12RenderHardwareInterface() noexcept override = default;
 
 	D3D12RenderHardwareInterface(const D3D12RenderHardwareInterface&) = delete;

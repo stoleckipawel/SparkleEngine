@@ -32,9 +32,7 @@ namespace Engine::Assets
 
 		template <typename T> bool ReadArray(std::size_t elementCount, std::vector<T>& outValues, std::string& outErrorMessage)
 		{
-			static_assert(
-			    std::is_trivially_copyable_v<T>,
-			    "CookedAssetByteReader::ReadArray requires trivially copyable element types.");
+			static_assert(std::is_trivially_copyable_v<T>, "CookedAssetByteReader::ReadArray requires trivially copyable element types.");
 
 			const std::size_t byteCount = sizeof(T) * elementCount;
 			if (!CanRead(byteCount))

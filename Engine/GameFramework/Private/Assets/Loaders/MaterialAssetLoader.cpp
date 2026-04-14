@@ -8,10 +8,8 @@
 
 namespace Engine::Assets
 {
-	bool MaterialAssetLoader::Load(
-	    const std::filesystem::path& path,
-	    LoadedMaterialAsset& outMaterialAsset,
-	    std::string& outErrorMessage) const
+	bool MaterialAssetLoader::Load(const std::filesystem::path& path, LoadedMaterialAsset& outMaterialAsset, std::string& outErrorMessage)
+	    const
 	{
 		std::vector<std::uint8_t> fileBytes;
 		if (!Engine::Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
@@ -32,10 +30,7 @@ namespace Engine::Assets
 		}
 
 		if (!reader.ReadString(outMaterialAsset.header.nameByteCount, outMaterialAsset.name, outErrorMessage) ||
-		    !reader.ReadArray(
-		        outMaterialAsset.header.textureReferenceCount,
-		        outMaterialAsset.textureReferences,
-		        outErrorMessage))
+		    !reader.ReadArray(outMaterialAsset.header.textureReferenceCount, outMaterialAsset.textureReferences, outErrorMessage))
 		{
 			return false;
 		}

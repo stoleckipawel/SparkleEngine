@@ -8,10 +8,7 @@
 
 namespace Engine::Assets
 {
-	bool SceneManifestLoader::Load(
-	    const std::filesystem::path& path,
-	    LoadedSceneManifest& outManifest,
-	    std::string& outErrorMessage) const
+	bool SceneManifestLoader::Load(const std::filesystem::path& path, LoadedSceneManifest& outManifest, std::string& outErrorMessage) const
 	{
 		std::vector<std::uint8_t> fileBytes;
 		if (!Engine::Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
@@ -32,10 +29,7 @@ namespace Engine::Assets
 		}
 
 		if (!reader.ReadArray(outManifest.header.meshAssetReferenceCount, outManifest.meshAssetReferences, outErrorMessage) ||
-		    !reader.ReadArray(
-		        outManifest.header.materialAssetReferenceCount,
-		        outManifest.materialAssetReferences,
-		        outErrorMessage) ||
+		    !reader.ReadArray(outManifest.header.materialAssetReferenceCount, outManifest.materialAssetReferences, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.instanceCount, outManifest.instances, outErrorMessage))
 		{
 			return false;

@@ -3,10 +3,10 @@
 :: Clean.bat - Unified build artifact cleanup utility
 :: ============================================================================
 :: Removes generated build artifacts with fine-grained control:
-::   1) Build artifacts only — build/ (except _deps/), bin/, .vs/
-::   2) Third-party deps only — build/_deps/
-::   3) Everything — full clean (build/, bin/, .vs/ including _deps/)
-::   4) Pristine — nuclear option (build/, bin/, .vs/, logs/)
+::   1) Build artifacts only - build/ (except _deps/), bin/, .vs/
+::   2) Third-party deps only - build/_deps/
+::   3) Everything - full clean (build/, bin/, .vs/ including _deps/)
+::   4) Pristine - nuclear option (build/, bin/, .vs/, logs/)
 ::
 :: Usage: Clean.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
@@ -70,7 +70,7 @@ echo   3^) Everything             ^(build + deps + bin^)
 echo      Full rebuild required after this.
 echo.
 echo   4^) Pristine               ^(returns to freshly-cloned state^)
-echo      Removes build/, bin/, .vs/, logs/ — everything generated.
+echo      Removes build/, bin/, .vs/, logs/ - everything generated.
 echo.
 echo ============================================================
 
@@ -218,7 +218,7 @@ call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
 
 :: ---------------------------------------------------------------------------
-:: Mode: Pristine (nuclear — returns to freshly-cloned state)
+:: Mode: Pristine (nuclear - returns to freshly-cloned state)
 :: ---------------------------------------------------------------------------
 :CLEAN_PRISTINE
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
@@ -290,15 +290,15 @@ if "!CLEAN_ERRORS!" NEQ "0" (
 echo.
 if "!CLEAN_MODE!"=="BUILD" (
     echo   Third-party deps preserved in build\_deps\.
-    echo   Run GenerateProjectFiles.bat to regenerate the solution.
+    echo   Run GenerateSolution.bat to regenerate the build files.
 ) else if "!CLEAN_MODE!"=="DEPS" (
-    echo   Run CheckThirdParty.bat or GenerateProjectFiles.bat
+    echo   Run SyncThirdParty.bat or GenerateSolution.bat
     echo   to re-download dependencies ^(~64 MB, 1-3 min^).
 ) else if "!CLEAN_MODE!"=="ALL" (
-    echo   Run Setup.bat or GenerateProjectFiles.bat to start fresh.
+    echo   Run Setup.bat or GenerateSolution.bat to start fresh.
 ) else (
     echo   Project is now in a pristine state ^(as if freshly cloned^).
-    echo   Run Setup.bat or GenerateProjectFiles.bat to rebuild from scratch.
+    echo   Run Setup.bat or GenerateSolution.bat to rebuild from scratch.
 )
 
 goto :FINISH

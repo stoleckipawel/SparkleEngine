@@ -2,9 +2,7 @@
 
 #include "Scene/Materials/MaterialDesc.h"
 
-void MaterialDesc::SetTexturePath(
-	MaterialTextureType textureType,
-	const std::optional<std::filesystem::path>& texturePath)
+void MaterialDesc::SetTexturePath(MaterialTextureType textureType, const std::optional<std::filesystem::path>& texturePath)
 {
 	if (!texturePath)
 	{

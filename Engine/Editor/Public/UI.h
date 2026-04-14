@@ -23,11 +23,7 @@ struct WindowMessageEvent;
 class SPARKLE_EDITOR_API UI final
 {
   public:
-	UI(Timer& timer,
-	   LevelManager* levelManager,
-	   GameScene* gameScene,
-	   RenderHardwareInterface& renderHardware,
-	   Window& window);
+	UI(Timer& timer, LevelManager* levelManager, GameScene* gameScene, RenderHardwareInterface& renderHardware, Window& window);
 
 	~UI() noexcept;
 

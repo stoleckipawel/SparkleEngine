@@ -8,12 +8,10 @@
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
-	D3D12Rhi& rhi,
-	D3D12DescriptorHeapManager& descriptorHeapManager,
-	D3D12SwapChain& swapChain) noexcept :
-	m_rhi(&rhi),
-	m_descriptorHeapManager(&descriptorHeapManager),
-	m_swapChain(&swapChain)
+    D3D12Rhi& rhi,
+    D3D12DescriptorHeapManager& descriptorHeapManager,
+    D3D12SwapChain& swapChain) noexcept :
+    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain)
 {
 }
 
@@ -54,8 +52,8 @@ NativeDescriptorHeapHandle D3D12RenderHardwareInterface::GetShaderResourceHeapHa
 }
 
 void D3D12RenderHardwareInterface::AllocateShaderResourceDescriptor(
-	RhiCpuDescriptorHandle& outCpuHandle,
-	RhiGpuDescriptorHandle& outGpuHandle)
+    RhiCpuDescriptorHandle& outCpuHandle,
+    RhiGpuDescriptorHandle& outGpuHandle)
 {
 	outCpuHandle = {};
 	outGpuHandle = {};
@@ -72,8 +70,8 @@ void D3D12RenderHardwareInterface::AllocateShaderResourceDescriptor(
 }
 
 void D3D12RenderHardwareInterface::ReleaseShaderResourceDescriptor(
-	RhiCpuDescriptorHandle cpuHandle,
-	RhiGpuDescriptorHandle gpuHandle) noexcept
+    RhiCpuDescriptorHandle cpuHandle,
+    RhiGpuDescriptorHandle gpuHandle) noexcept
 {
 	if (m_descriptorHeapManager == nullptr || !cpuHandle)
 	{
@@ -87,9 +85,8 @@ void D3D12RenderHardwareInterface::ReleaseShaderResourceDescriptor(
 	m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, nativeCpuHandle, nativeGpuHandle);
 }
 
-void D3D12RenderHardwareInterface::BeginPresentRenderPass(
-	NativeGraphicsCommandListHandle commandList,
-	const float clearColor[4]) const noexcept
+void D3D12RenderHardwareInterface::BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4])
+    const noexcept
 {
 	if (m_swapChain == nullptr || !commandList)
 	{

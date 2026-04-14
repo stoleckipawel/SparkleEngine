@@ -31,11 +31,7 @@ struct RenderSceneSnapshot;
 class SPARKLE_RENDERER_API Renderer final
 {
   public:
-	Renderer(
-	    Timer& timer,
-	    GameScene& gameScene,
-	    Window& window,
-	    LevelManager& levelManager) noexcept;
+	Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept;
 	~Renderer() noexcept;
 
 	Renderer(const Renderer&) = delete;
@@ -43,15 +39,9 @@ class SPARKLE_RENDERER_API Renderer final
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
-	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
-	{
-		m_viewportRenderRequest = request;
-	}
+	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept { m_viewportRenderRequest = request; }
 
-	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept
-	{
-		return m_viewportRenderProducts;
-	}
+	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept { return m_viewportRenderProducts; }
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
@@ -59,7 +49,11 @@ class SPARKLE_RENDERER_API Renderer final
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
 	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept;
-	void TransitionRenderProduct(NativeGraphicsCommandListHandle commandList, RenderProductHandle handle, ResourceState before, ResourceState after) const noexcept;
+	void TransitionRenderProduct(
+	    NativeGraphicsCommandListHandle commandList,
+	    RenderProductHandle handle,
+	    ResourceState before,
+	    ResourceState after) const noexcept;
 
 	void OnRender() noexcept;
 

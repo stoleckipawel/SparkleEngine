@@ -26,6 +26,4 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedTextureReference>,
-	"CookedTextureReference must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedTextureReference>, "CookedTextureReference must stay trivially copyable.");

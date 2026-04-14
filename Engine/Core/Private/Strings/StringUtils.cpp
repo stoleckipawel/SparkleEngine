@@ -72,11 +72,7 @@ namespace Engine
 			return false;
 		}
 
-		bool TrySplitKeyValue(
-		    std::string_view str,
-		    char separator,
-		    std::string_view& outKey,
-		    std::string_view& outValue) noexcept
+		bool TrySplitKeyValue(std::string_view str, char separator, std::string_view& outKey, std::string_view& outValue) noexcept
 		{
 			const std::size_t separatorIndex = str.find(separator);
 			if (separatorIndex == std::string::npos)

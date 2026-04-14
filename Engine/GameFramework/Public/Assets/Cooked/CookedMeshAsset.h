@@ -31,9 +31,5 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedMeshVertex>,
-	"CookedMeshVertex must stay trivially copyable.");
-static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedMeshAssetHeader>,
-	"CookedMeshAssetHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedMeshVertex>, "CookedMeshVertex must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedMeshAssetHeader>, "CookedMeshAssetHeader must stay trivially copyable.");

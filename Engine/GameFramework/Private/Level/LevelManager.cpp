@@ -13,8 +13,7 @@
 #include <algorithm>
 
 LevelManager::LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept :
-	m_gameScene(&scene),
-	m_sceneAssetManager(&sceneAssetManager)
+    m_gameScene(&scene), m_sceneAssetManager(&sceneAssetManager)
 {
 	InitializeStartupLevel();
 }
@@ -151,8 +150,7 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	if (sceneAssetLoadResult.payload.HasMeshes() &&
-	    !m_gameScene->AppendRuntimeScenePayload(std::move(sceneAssetLoadResult.payload)))
+	if (sceneAssetLoadResult.payload.HasMeshes() && !m_gameScene->AppendRuntimeScenePayload(std::move(sceneAssetLoadResult.payload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;
 		loadResult.errorMessage = "GameScene rejected the loaded runtime scene payload";

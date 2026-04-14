@@ -25,16 +25,12 @@ enum class RenderFeatureFlags : std::uint16_t
 
 constexpr RenderFeatureFlags operator|(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
 {
-	return static_cast<RenderFeatureFlags>(
-	    static_cast<std::uint16_t>(lhs) |
-	    static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderFeatureFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
 }
 
 constexpr RenderFeatureFlags operator&(RenderFeatureFlags lhs, RenderFeatureFlags rhs) noexcept
 {
-	return static_cast<RenderFeatureFlags>(
-	    static_cast<std::uint16_t>(lhs) &
-	    static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderFeatureFlags>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
 }
 
 constexpr RenderFeatureFlags& operator|=(RenderFeatureFlags& lhs, RenderFeatureFlags rhs) noexcept
@@ -60,16 +56,12 @@ enum class RenderOutputFlags : std::uint16_t
 
 constexpr RenderOutputFlags operator|(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
 {
-	return static_cast<RenderOutputFlags>(
-	    static_cast<std::uint16_t>(lhs) |
-	    static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) | static_cast<std::uint16_t>(rhs));
 }
 
 constexpr RenderOutputFlags operator&(RenderOutputFlags lhs, RenderOutputFlags rhs) noexcept
 {
-	return static_cast<RenderOutputFlags>(
-	    static_cast<std::uint16_t>(lhs) &
-	    static_cast<std::uint16_t>(rhs));
+	return static_cast<RenderOutputFlags>(static_cast<std::uint16_t>(lhs) & static_cast<std::uint16_t>(rhs));
 }
 
 constexpr RenderOutputFlags& operator|=(RenderOutputFlags& lhs, RenderOutputFlags rhs) noexcept
@@ -88,30 +80,21 @@ struct RenderViewportExtent
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 
-	constexpr bool IsValid() const noexcept
-	{
-		return Width > 0 && Height > 0;
-	}
+	constexpr bool IsValid() const noexcept { return Width > 0 && Height > 0; }
 };
 
 struct RenderViewSelectionToken
 {
 	std::uint64_t Value = 0;
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return Value != 0;
-	}
+	constexpr explicit operator bool() const noexcept { return Value != 0; }
 };
 
 struct RenderProductHandle
 {
 	std::uint64_t Value = 0;
 
-	constexpr explicit operator bool() const noexcept
-	{
-		return Value != 0;
-	}
+	constexpr explicit operator bool() const noexcept { return Value != 0; }
 };
 
 enum class RenderProductFormat : std::uint8_t

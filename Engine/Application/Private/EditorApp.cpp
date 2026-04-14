@@ -23,6 +23,7 @@ void EditorApp::Initialize()
 	}
 
 	m_projectApp->Initialize();
+
 	if (!m_ui)
 	{
 		Renderer& renderer = m_projectApp->GetRenderer();
@@ -34,6 +35,7 @@ void EditorApp::Initialize()
 		    renderHardware,
 		    m_projectApp->GetWindow());
 	}
+
 	m_isEditorSessionActive = true;
 }
 
@@ -68,17 +70,22 @@ bool EditorApp::Tick()
 	m_ui->Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
+
 	const NativeGraphicsCommandListHandle commandListHandle =
 	    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
+
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
 	    viewportProducts.SceneColor.Handle,
 	    ResourceState::RenderTarget,
 	    ResourceState::ShaderResource);
+
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
 	renderHardware.BeginPresentRenderPass(commandListHandle, editorClearColor);
 	m_ui->Render(commandListHandle);
+
 	renderHardware.EndPresentRenderPass(commandListHandle);
+
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
 	    viewportProducts.SceneColor.Handle,

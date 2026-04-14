@@ -43,4 +43,3 @@ constexpr const char* ResourceStateToString(ResourceState state) noexcept
 			return "Unknown";
 	}
 }
-

@@ -42,14 +42,14 @@ namespace Engine::Assets
 }
 
 static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedSceneMeshAssetRef>,
-	"CookedSceneMeshAssetRef must stay trivially copyable.");
+    std::is_trivially_copyable_v<Engine::Assets::CookedSceneMeshAssetRef>,
+    "CookedSceneMeshAssetRef must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedSceneMaterialAssetRef>,
-	"CookedSceneMaterialAssetRef must stay trivially copyable.");
+    std::is_trivially_copyable_v<Engine::Assets::CookedSceneMaterialAssetRef>,
+    "CookedSceneMaterialAssetRef must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedSceneInstanceRecord>,
-	"CookedSceneInstanceRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<Engine::Assets::CookedSceneInstanceRecord>,
+    "CookedSceneInstanceRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedSceneManifestHeader>,
-	"CookedSceneManifestHeader must stay trivially copyable.");
+    std::is_trivially_copyable_v<Engine::Assets::CookedSceneManifestHeader>,
+    "CookedSceneManifestHeader must stay trivially copyable.");

@@ -17,6 +17,7 @@
 ::   DEPS_DIR      - FetchContent dependencies (BUILD_DIR\_deps)
 ::   ENGINE_DIR    - Engine source (ROOT_DIR\Engine)
 ::   SCRIPTS_DIR   - Scripts directory (ROOT_DIR\Scripts)
+::   CMAKE_DIR     - Repo CMake modules root (ROOT_DIR\CMake)
 ::   GENERATOR     - CMake generator (Visual Studio 17 2022)
 ::   ARCH          - Target architecture (x64)
 ::   USE_CLANG     - 1 if Clang available, 0 otherwise
@@ -39,6 +40,9 @@ set "PROJECTS_DIR=!ROOT_DIR!\Projects"
 set "DEPS_DIR=!BUILD_DIR!\_deps"
 set "ENGINE_DIR=!ROOT_DIR!\Engine"
 set "SCRIPTS_DIR=!ROOT_DIR!\Scripts"
+set "CMAKE_DIR=!ROOT_DIR!\CMake"
+set "CMAKE_DEPENDENCIES_DIR=!CMAKE_DIR!\Dependencies"
+set "CMAKE_VALIDATION_DIR=!CMAKE_DIR!\Validation"
 
 :: ---------------------------------------------------------------------------
 :: Build settings

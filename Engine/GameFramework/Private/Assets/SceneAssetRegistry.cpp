@@ -12,10 +12,7 @@ namespace
 	constexpr std::string_view kRegistryHeader = "[SceneAssetRegistry]";
 	constexpr std::string_view kEntriesHeader = "[Entries]";
 
-	bool TryParseRegistryEntry(
-		std::string_view entryValue,
-		std::string& outSceneAssetId,
-		std::filesystem::path& outManifestRelativePath)
+	bool TryParseRegistryEntry(std::string_view entryValue, std::string& outSceneAssetId, std::filesystem::path& outManifestRelativePath)
 	{
 		const std::size_t separatorIndex = entryValue.find('|');
 		if (separatorIndex == std::string_view::npos)

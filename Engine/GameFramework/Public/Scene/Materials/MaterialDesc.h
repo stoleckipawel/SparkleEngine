@@ -42,7 +42,5 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	std::optional<std::filesystem::path> occlusionTexture;
 	std::optional<std::filesystem::path> emissiveTexture;
 
-	void SetTexturePath(
-	    MaterialTextureType textureType,
-	    const std::optional<std::filesystem::path>& texturePath);
+	void SetTexturePath(MaterialTextureType textureType, const std::optional<std::filesystem::path>& texturePath);
 };

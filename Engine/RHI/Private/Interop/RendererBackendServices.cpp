@@ -35,13 +35,10 @@ std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& 
 	services->m_impl = std::make_unique<Impl>();
 	services->m_impl->rhi = std::make_unique<D3D12Rhi>();
 	services->m_impl->descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*services->m_impl->rhi);
-	services->m_impl->swapChain = std::make_unique<D3D12SwapChain>(
-	    *services->m_impl->rhi,
-	    window,
-	    *services->m_impl->descriptorHeapManager);
-	services->m_impl->frameResourceManager = std::make_unique<D3D12FrameResourceManager>(
-	    *services->m_impl->rhi,
-	    D3D12FrameResourceManager::DefaultCapacityPerFrame);
+	services->m_impl->swapChain =
+	    std::make_unique<D3D12SwapChain>(*services->m_impl->rhi, window, *services->m_impl->descriptorHeapManager);
+	services->m_impl->frameResourceManager =
+	    std::make_unique<D3D12FrameResourceManager>(*services->m_impl->rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
 	services->m_impl->constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
 	    timer,
 	    *services->m_impl->rhi,
@@ -49,9 +46,8 @@ std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& 
 	    *services->m_impl->descriptorHeapManager,
 	    *services->m_impl->frameResourceManager,
 	    *services->m_impl->swapChain);
-	services->m_impl->samplerLibrary = std::make_unique<D3D12SamplerLibrary>(
-	    *services->m_impl->rhi,
-	    *services->m_impl->descriptorHeapManager);
+	services->m_impl->samplerLibrary =
+	    std::make_unique<D3D12SamplerLibrary>(*services->m_impl->rhi, *services->m_impl->descriptorHeapManager);
 	services->m_impl->renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
 	    *services->m_impl->rhi,
 	    *services->m_impl->descriptorHeapManager,

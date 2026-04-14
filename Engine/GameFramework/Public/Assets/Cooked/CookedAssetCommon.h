@@ -13,8 +13,7 @@ namespace Engine::Assets
 
 	constexpr std::uint32_t MakeCookedAssetMagic(char a, char b, char c, char d) noexcept
 	{
-		return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) |
-		       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u) |
+		return static_cast<std::uint32_t>(static_cast<std::uint8_t>(a)) | (static_cast<std::uint32_t>(static_cast<std::uint8_t>(b)) << 8u) |
 		       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(c)) << 16u) |
 		       (static_cast<std::uint32_t>(static_cast<std::uint8_t>(d)) << 24u);
 	}
@@ -31,6 +30,4 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(
-	std::is_trivially_copyable_v<Engine::Assets::CookedAssetHeader>,
-	"CookedAssetHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedAssetHeader>, "CookedAssetHeader must stay trivially copyable.");

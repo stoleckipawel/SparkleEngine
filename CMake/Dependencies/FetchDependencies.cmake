@@ -1,26 +1,26 @@
 # ============================================================================
-# FetchDependencies.cmake — Unified Third-Party Dependency Management
+# FetchDependencies.cmake - Unified Third-Party Dependency Management
 # ============================================================================
 #
 # All third-party libraries are downloaded automatically at CMake configure
-# time via FetchContent. Users just run cmake — no manual steps needed.
+# time via FetchContent. Users just run cmake - no manual steps needed.
 #
 # Sources are cached in build/_deps/ (gitignored) and pinned to specific
 # versions for reproducible builds.
 #
 # Managed dependencies:
-#   - Dear ImGui     (v1.92.5)  — Immediate-mode GUI (DX12 + Win32 backends)
-#   - cgltf          (v1.15)    — Single-header glTF 2.0 parser
-#   - stb            (master)   — stb_image + stb_image_resize2 (header-only)
-#   - Assimp         (v5.4.3)   — FBX and general 3D asset import
-#   - Compressonator (master)   — AMD BC1-BC7 block compression (CMP_Core only)
-#   - KTX-Software   (v4.3.2)  — KTX2 texture container read/write
+#   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI (DX12 + Win32 backends)
+#   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
+#   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
+#   - Assimp         (v5.4.3)   - FBX and general 3D asset import
+#   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
+#   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
 #
 # ============================================================================
 
 include(FetchContent)
 
-# Suppress the CMP0169 warning in CMake 4.x — we need FetchContent_Populate()
+# Suppress the CMP0169 warning in CMake 4.x - we need FetchContent_Populate()
 # because several deps have no usable top-level CMakeLists.txt.
 if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
@@ -28,18 +28,18 @@ endif()
 
 set(FETCHCONTENT_QUIET OFF)
 
-# Skip Git LFS entirely — we only need source code, not test assets.
+# Skip Git LFS entirely - we only need source code, not test assets.
 # Prevents multi-GB LFS pulls from compressonator and KTX repos.
 # GIT_LFS_SKIP_SMUDGE prevents downloading LFS blobs.
 # GIT_CONFIG_PARAMETERS overrides the LFS filter commands with empty strings
 # so checkouts succeed even when git-lfs was previously configured but the
 # binary is no longer in PATH (prevents "git-lfs: command not found").
 # CMake's set(ENV{...} "") unsets variables, so GIT_CONFIG_COUNT can't set
-# empty values — GIT_CONFIG_PARAMETERS uses a format that supports them.
+# empty values - GIT_CONFIG_PARAMETERS uses a format that supports them.
 set(ENV{GIT_LFS_SKIP_SMUDGE} 1)
 set(ENV{GIT_CONFIG_PARAMETERS} "'filter.lfs.process=' 'filter.lfs.smudge=' 'filter.lfs.clean=' 'filter.lfs.required=false'")
 
-# Locate git once — used by recovery loop and compressonator sparse checkout.
+# Locate git once - used by recovery loop and compressonator sparse checkout.
 find_program(_git_exe git REQUIRED)
 
 message(STATUS "")
@@ -53,14 +53,14 @@ message(STATUS "    imgui            ~7 MB")
 message(STATUS "    cgltf            ~1 MB")
 message(STATUS "    stb              ~5 MB")
 message(STATUS "    assimp          ~15 MB")
-message(STATUS "    Compressonator   ~5 MB  (sparse checkout — cmp_core only)")
+message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
 message(STATUS "    KTX-Software    ~46 MB  (largest)")
 message(STATUS "")
 
 # ---------------------------------------------------------------------------
 # Recovery: Remove partial/corrupt clones from interrupted downloads.
 # If someone kills the process mid-clone, the src dir may exist but not be a
-# valid git repo. FetchContent won't re-clone in that state — it tries an
+# valid git repo. FetchContent won't re-clone in that state - it tries an
 # update step on a broken repo and fails with a confusing error.
 # We detect this and nuke the broken directory + stamp files so the clone
 # starts fresh.
@@ -79,7 +79,7 @@ foreach(_dep imgui cgltf stb assimp ktx)
         file(REMOVE_RECURSE "${_src_dir}")
         file(REMOVE_RECURSE "${_subbuild_dir}")
     elseif(EXISTS "${_src_dir}/.git")
-        # Valid clone exists — tell FetchContent to reuse it instead of re-cloning.
+        # Valid clone exists - tell FetchContent to reuse it instead of re-cloning.
         # FetchContent creates empty FETCHCONTENT_SOURCE_DIR_<NAME> cache entries
         # by default, so we must check the value, not just DEFINED.
         string(TOUPPER "${_dep}" _dep_upper)
@@ -98,7 +98,7 @@ foreach(_dep imgui cgltf stb assimp ktx)
 endforeach()
 
 # ============================================================================
-# Dear ImGui — Immediate-mode GUI library
+# Dear ImGui - Immediate-mode GUI library
 # https://github.com/ocornut/imgui
 #
 # Target:  imgui (STATIC)
@@ -148,7 +148,7 @@ set_target_properties(imgui PROPERTIES FOLDER "ThirdParty")
 message(STATUS "  imgui:          ${imgui_SOURCE_DIR} (~7 MB)")
 
 # ============================================================================
-# cgltf — Single-header glTF 2.0 parser
+# cgltf - Single-header glTF 2.0 parser
 # https://github.com/jkuhlmann/cgltf
 #
 # Header-only library. Define CGLTF_IMPLEMENTATION in exactly one .cpp file
@@ -178,7 +178,7 @@ endif()
 message(STATUS "  cgltf:          ${cgltf_SOURCE_DIR} (~1 MB)")
 
 # ============================================================================
-# stb — Header-only image loading and resizing
+# stb - Header-only image loading and resizing
 # https://github.com/nothings/stb
 #
 # Provides: stb_image.h (image loading), stb_image_resize2.h (mip generation)
@@ -202,7 +202,7 @@ target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 message(STATUS "  stb:            ${stb_SOURCE_DIR} (~5 MB)")
 
 # ============================================================================
-# Assimp — Open Asset Import Library
+# Assimp - Open Asset Import Library
 # https://github.com/assimp/assimp
 #
 # Provides FBX and other DCC format import for the transitional runtime path.
@@ -239,10 +239,10 @@ endif()
 message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
 
 # ============================================================================
-# AMD Compressonator — BC1-BC7 texture block compression
+# AMD Compressonator - BC1-BC7 texture block compression
 # https://github.com/GPUOpen-Tools/compressonator
 #
-# We build ONLY CMP_Core — the self-contained block compression library.
+# We build ONLY CMP_Core - the self-contained block compression library.
 # The full Compressonator project pollutes global CMake state with
 # add_compile_options(), global output dirs, etc. so we avoid their
 # top-level CMakeLists.txt and build CMP_Core from source ourselves.
@@ -262,7 +262,7 @@ message(STATUS "  [5/6] Fetching Compressonator (sparse checkout, ~5 MB)...")
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
 if(NOT EXISTS "${_comp_src}/cmp_core/source/cmp_core.cpp")
-    # Fresh clone or incomplete checkout — (re)clone with sparse checkout.
+    # Fresh clone or incomplete checkout - (re)clone with sparse checkout.
     # --filter=blob:none  = partial clone (download trees only, fetch blobs on demand)
     # --sparse            = enable sparse checkout (only materialize listed paths)
     # --depth=1           = shallow (single commit, no history)
@@ -349,7 +349,7 @@ target_include_directories(CMP_Core_AVX512 PRIVATE
 
 # Architecture-specific compiler flags
 if(MSVC)
-    # SSE2 is default on x64 MSVC — no flag needed
+    # SSE2 is default on x64 MSVC - no flag needed
     target_compile_options(CMP_Core_AVX    PRIVATE /arch:AVX2)
     target_compile_options(CMP_Core_AVX512 PRIVATE /arch:AVX512)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -380,7 +380,7 @@ set_target_properties(CMP_Core CMP_Core_SSE CMP_Core_AVX CMP_Core_AVX512
 message(STATUS "  Compressonator: ${compressonator_SOURCE_DIR}/cmp_core (~5 MB, sparse)")
 
 # ============================================================================
-# KTX-Software — KTX2 texture container read/write
+# KTX-Software - KTX2 texture container read/write
 # https://github.com/KhronosGroup/KTX-Software
 #
 # v4.3.2 builds the ktx target from its root CMakeLists.txt. We disable
@@ -399,7 +399,7 @@ FetchContent_Declare(ktx
     GIT_SUBMODULES ""
 )
 message(STATUS "")
-message(STATUS "  [6/6] Fetching KTX-Software v4.3.2 (~46 MB) — largest dependency...")
+message(STATUS "  [6/6] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need

@@ -22,14 +22,6 @@ target_link_libraries(ShowcaseRuntime PRIVATE
     SparkleApplication
 )
 
-target_include_directories(ShowcaseEditor PRIVATE
-    ${CMAKE_SOURCE_DIR}/Engine/third_party
-)
-
-target_include_directories(ShowcaseRuntime PRIVATE
-    ${CMAKE_SOURCE_DIR}/Engine/third_party
-)
-
 if(MSVC)
     set_target_properties(ShowcaseEditor PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

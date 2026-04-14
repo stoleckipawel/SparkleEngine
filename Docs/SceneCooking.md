@@ -1,59 +1,50 @@
-# Scene Cooking Workflow
+# Asset Cooking Workflow
 
-Use the repo scripts below as the normal way to cook authored scenes into Sparkle cooked outputs.
+Use the repo script below as the normal way to prepare authored engine and project scene assets into Sparkle cooked outputs.
 
 Run it from the repository root.
 
-## Cook One Scene
+## Cook Assets
 
 ```bat
-Scripts\CookScene.bat <ProjectName> <ScenePath> [Debug|Release|RelWithDebInfo]
+Scripts\CookAssets.bat <ProjectName> [Debug|Release|RelWithDebInfo]
 ```
 
 Examples:
 
 ```bat
-Scripts\CookScene.bat Showcase Sponza\Sponza.gltf
-Scripts\CookScene.bat Showcase Bistro\BistroExterior.fbx Release
+Scripts\CookAssets.bat Showcase
+Scripts\CookAssets.bat Showcase Release
 ```
 
-If you run `CookScene.bat` without `ProjectName` and `ScenePath`, it will fail intentionally and print the required usage.
+`CookAssets.bat` recursively cooks every supported scene under both of these roots:
 
-## Cook All Scenes In A Project
+- `Engine\Assets\Meshes\`
+- `Projects\<ProjectName>\Assets\Meshes\`
 
-```bat
-Scripts\CookAll.bat <ProjectName> [Debug|Release|RelWithDebInfo]
-```
-
-Example:
-
-```bat
-Scripts\CookAll.bat Showcase Debug
-```
-
-`CookAll.bat` recursively cooks every supported scene under `Projects\<ProjectName>\Assets\Meshes\`.
 Supported source scene extensions are `.gltf`, `.glb`, and `.fbx`.
+If the same relative scene path exists in both roots, the project scene overrides the engine scene.
 
 ## Inputs
 
 - `ProjectName` is the project directory under `Projects\`.
-- `ScenePath` is relative to `Projects\<ProjectName>\Assets\Meshes\`.
+- Source scenes are discovered automatically under the engine and project mesh roots.
 - Source textures are resolved from the project or engine asset roots during conversion.
 
 Typical source locations:
 
+- `Engine\Assets\Meshes\...`
 - `Projects\<ProjectName>\Assets\Meshes\...`
 - `Projects\<ProjectName>\Assets\Textures\...`
 
 ## What The Script Does
 
 - Validates required build tools.
-- Confirms third-party dependencies are available.
-- Generates the solution if it does not exist yet.
+- Refreshes the build files and syncs missing third-party dependencies through the configure flow.
 - Builds the `AssetConverter` target.
 - Runs `AssetConverter` from the selected project root so project asset discovery works correctly.
-- `CookScene.bat` cooks one selected scene.
-- `CookAll.bat` recursively cooks every supported scene in the project mesh root.
+- Recursively cooks every supported scene in the engine and selected project mesh roots.
+- Writes all cooked outputs into the selected project's cooked asset tree.
 
 ## Outputs
 
@@ -70,7 +61,8 @@ Asset families are emitted to:
 - `Projects\<ProjectName>\Assets\Cooked\Materials\`
 - `Projects\<ProjectName>\Assets\Cooked\Textures\`
 
-The scene manifest path mirrors the source scene path under `SceneManifests` with the `.sscn` extension.
+The scene manifest path mirrors the cooked scene asset id under `SceneManifests` with the `.sscn` extension.
+That asset id is derived from the scene's relative path under either the engine mesh root or the project mesh root.
 
 Example:
 
@@ -82,5 +74,5 @@ Cooked manifest: Projects\Showcase\Assets\Cooked\SceneManifests\Sponza\Sponza.ss
 ## Notes
 
 - This workflow is explicit and manual by design. Runtime does not auto-cook.
-- `CookScene.bat` and `CookAll.bat` are the intended contributor entry points for scene cooking in v1.
+- `CookAssets.bat` is the intended contributor entry point for cooking scene assets in v1.
 - If configure fails before the converter builds, fix the repo's normal CMake/dependency issues first and rerun the same command.

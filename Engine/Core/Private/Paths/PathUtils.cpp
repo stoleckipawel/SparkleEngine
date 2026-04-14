@@ -39,9 +39,7 @@ namespace Engine::Paths
 		return normalized;
 	}
 
-	std::optional<std::filesystem::path> ResolveRelativePath(
-	    const std::filesystem::path& baseDirectory,
-	    const std::filesystem::path& path)
+	std::optional<std::filesystem::path> ResolveRelativePath(const std::filesystem::path& baseDirectory, const std::filesystem::path& path)
 	{
 		if (path.empty())
 		{

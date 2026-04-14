@@ -32,7 +32,7 @@ std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesy
 }
 
 TextureManager::TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-	 m_textureFactory(TextureFactory::Create(rhi, descriptorHeapManager))
+    m_textureFactory(TextureFactory::Create(rhi, descriptorHeapManager))
 {
 	LoadDefaults();
 }
@@ -180,9 +180,8 @@ const Texture* TextureManager::GetSceneTexture(const std::filesystem::path& text
 	return FindPathTexture(texturePath);
 }
 
-const Texture* TextureManager::ResolveTextureOrDefault(
-	const std::optional<std::filesystem::path>& texturePath,
-	DefaultTexture fallbackType) const
+const Texture* TextureManager::ResolveTextureOrDefault(const std::optional<std::filesystem::path>& texturePath, DefaultTexture fallbackType)
+    const
 {
 	if (texturePath)
 	{
@@ -235,9 +234,9 @@ void TextureManager::LoadDefaultTextures()
 		if (!LoadFromPath(DefaultTextures::GetPath(type)))
 		{
 			LOG_WARNING(
-				std::format(
-					"TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
-					DefaultTextures::GetName(type)));
+			    std::format(
+			        "TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
+			        DefaultTextures::GetName(type)));
 		}
 	}
 }

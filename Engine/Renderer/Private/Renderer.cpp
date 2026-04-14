@@ -29,12 +29,8 @@
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 
-Renderer::Renderer(
-	Timer& timer,
-	GameScene& gameScene,
-	Window& window,
-	LevelManager& levelManager) noexcept :
-	m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
+Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
+    m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
 {
 	InitializeCoreSystems();
 
@@ -84,10 +80,10 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 }
 
 void Renderer::TransitionRenderProduct(
-	NativeGraphicsCommandListHandle commandList,
-	RenderProductHandle handle,
-	ResourceState before,
-	ResourceState after) const noexcept
+    NativeGraphicsCommandListHandle commandList,
+    RenderProductHandle handle,
+    ResourceState before,
+    ResourceState after) const noexcept
 {
 	if (!commandList || !handle || !m_frameGraph || before == after)
 	{
@@ -152,9 +148,7 @@ RenderViewportExtent Renderer::ResolveSceneExtent() const noexcept
 		return m_viewportRenderRequest.Extent;
 	}
 
-	return RenderViewportExtent{
-	    static_cast<std::uint32_t>(m_window->GetWidth()),
-	    static_cast<std::uint32_t>(m_window->GetHeight())};
+	return RenderViewportExtent{static_cast<std::uint32_t>(m_window->GetWidth()), static_cast<std::uint32_t>(m_window->GetHeight())};
 }
 
 bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
@@ -167,24 +161,21 @@ void Renderer::InitializeFrameGraph() noexcept
 	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
 	auto& swapChain = Rhi::Internal::RendererBackendServicesAccess::GetSwapChain(*m_backend);
 	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
-	const FrameGraphDependencies dependencies{
-	    rhi,
-	    *m_window,
-	    swapChain,
-	    descriptorHeapManager,
-	    ResolveSceneExtent(),
-	    ShouldPresentSceneToBackBuffer()};
+	const FrameGraphDependencies
+	    dependencies{rhi, *m_window, swapChain, descriptorHeapManager, ResolveSceneExtent(), ShouldPresentSceneToBackBuffer()};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 
-	m_viewportRenderProducts.SceneColor.Handle = buildResult.SceneColor.IsValid()
-	    ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
-	    : RenderProductHandle{};
-	m_viewportRenderProducts.SceneDepth.Handle = buildResult.SceneDepth.IsValid()
-	    ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
-	    : RenderProductHandle{};
+	m_viewportRenderProducts.SceneColor.Handle =
+	    buildResult.SceneColor.IsValid()
+	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
+	        : RenderProductHandle{};
+	m_viewportRenderProducts.SceneDepth.Handle =
+	    buildResult.SceneDepth.IsValid()
+	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
+	        : RenderProductHandle{};
 	m_frameGraph = std::move(buildResult.Graph);
 }
 

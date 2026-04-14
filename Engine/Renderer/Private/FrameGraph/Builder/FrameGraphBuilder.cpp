@@ -19,7 +19,8 @@ FrameGraphBuildResult FrameGraphBuilder::Build() const
 	    &m_dependencies.descriptorHeapManager,
 	    &m_dependencies.swapChain);
 
-	const FrameGraphSceneTargets sceneTargets = FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window, m_dependencies.sceneExtent);
+	const FrameGraphSceneTargets sceneTargets =
+	    FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window, m_dependencies.sceneExtent);
 	const FrameGraphShadowOutputs shadowOutputs = FrameGraphFeatures::AddShadowPasses(*frameGraph);
 	FrameGraphFeatures::AddForwardOpaquePass(*frameGraph, sceneTargets, shadowOutputs);
 	if (m_dependencies.presentSceneToBackBuffer)

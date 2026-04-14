@@ -93,7 +93,7 @@ add_custom_target(
     runtime_cooked_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DRUNTIME_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-        -P ${CMAKE_SOURCE_DIR}/Scripts/ValidateRuntimeCookedBoundary.cmake
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateRuntimeCookedBoundary.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Validating cooked-only runtime boundaries for Application, GameFramework, and Renderer..."
 )
@@ -132,7 +132,7 @@ foreach(SEARCH_DIR ${PROJECT_SEARCH_DIRS})
 endforeach()
 
 if(NOT DISCOVERED_PROJECTS)
-    message(WARNING "No projects discovered. Create a project using CreateNewProject.bat")
+    message(WARNING "No projects discovered. Create a project using CreateProject.bat")
 endif()
 
 # ---------------------------

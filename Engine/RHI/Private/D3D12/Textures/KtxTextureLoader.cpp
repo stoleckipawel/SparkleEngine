@@ -36,22 +36,19 @@ TextureLoadResult KtxTextureLoader::Load(const std::filesystem::path& fileName)
 	std::unique_ptr<ktxTexture2, decltype(destroyTexture)> texture(rawTexture, destroyTexture);
 	if (createResult != KTX_SUCCESS || !texture)
 	{
-		LOG_ERROR(std::format(
-		    "KtxTextureLoader: Failed to parse '{}' ({})",
-		    resolvedPath.string(),
-		    ktxErrorString(createResult)));
+		LOG_ERROR(std::format("KtxTextureLoader: Failed to parse '{}' ({})", resolvedPath.string(), ktxErrorString(createResult)));
 		return result;
 	}
 
 	std::string errorMessage;
 	if (!ValidateTextureShape(
-		        texture->numDimensions,
-		        texture->isArray == KTX_TRUE,
-		        texture->isCubemap == KTX_TRUE,
-		        texture->numLayers,
-		        texture->numFaces,
-		        resolvedPath,
-		        errorMessage))
+	        texture->numDimensions,
+	        texture->isArray == KTX_TRUE,
+	        texture->isCubemap == KTX_TRUE,
+	        texture->numLayers,
+	        texture->numFaces,
+	        resolvedPath,
+	        errorMessage))
 	{
 		LOG_ERROR("KtxTextureLoader: " + errorMessage);
 		return {};
@@ -83,11 +80,12 @@ TextureLoadResult KtxTextureLoader::Load(const std::filesystem::path& fileName)
 		    ktxTexture_GetImageOffset(reinterpret_cast<ktxTexture*>(texture.get()), mipIndex, 0, 0, &imageOffset);
 		if (offsetResult != KTX_SUCCESS)
 		{
-			LOG_ERROR(std::format(
-			    "KtxTextureLoader: Failed to query mip {} offset for '{}' ({})",
-			    mipIndex,
-			    resolvedPath.string(),
-			    ktxErrorString(offsetResult)));
+			LOG_ERROR(
+			    std::format(
+			        "KtxTextureLoader: Failed to query mip {} offset for '{}' ({})",
+			        mipIndex,
+			        resolvedPath.string(),
+			        ktxErrorString(offsetResult)));
 			return {};
 		}
 
@@ -104,23 +102,22 @@ TextureLoadResult KtxTextureLoader::Load(const std::filesystem::path& fileName)
 		}
 
 		TextureMipLevelData mipLevel;
-		mipLevel.width = (std::max)(1u, texture->baseWidth >> mipIndex);
-		mipLevel.height = (std::max)(1u, texture->baseHeight >> mipIndex);
+		mipLevel.width = (std::max) (1u, texture->baseWidth >> mipIndex);
+		mipLevel.height = (std::max) (1u, texture->baseHeight >> mipIndex);
 		mipLevel.rowPitch = ResolveRowPitch(result.dxgiFormat, mipLevel.width);
 		mipLevel.slicePitch = ResolveSlicePitch(result.dxgiFormat, mipLevel.width, mipLevel.height);
-		mipLevel.data.assign(
-		    texture->pData + imageOffset,
-		    texture->pData + imageOffset + imageSize);
+		mipLevel.data.assign(texture->pData + imageOffset, texture->pData + imageOffset + imageSize);
 
 		if (mipLevel.slicePitch != imageSize)
 		{
-			LOG_ERROR(std::format(
-			    "KtxTextureLoader: Mip {} for '{}' reported {} bytes but Sparkle expected {} bytes for format {}",
-			    mipIndex,
-			    resolvedPath.string(),
-			    static_cast<std::size_t>(imageSize),
-			    mipLevel.slicePitch,
-			    static_cast<int>(result.dxgiFormat)));
+			LOG_ERROR(
+			    std::format(
+			        "KtxTextureLoader: Mip {} for '{}' reported {} bytes but Sparkle expected {} bytes for format {}",
+			        mipIndex,
+			        resolvedPath.string(),
+			        static_cast<std::size_t>(imageSize),
+			        mipLevel.slicePitch,
+			        static_cast<int>(result.dxgiFormat)));
 			return {};
 		}
 
@@ -136,10 +133,10 @@ bool KtxTextureLoader::SupportsExtension(std::wstring_view extension) noexcept
 }
 
 bool KtxTextureLoader::ResolveDxgiFormat(
-	std::uint32_t vkFormat,
-	DXGI_FORMAT& outDxgiFormat,
-	TextureFormatIntent& outFormatIntent,
-	std::string& outErrorMessage)
+    std::uint32_t vkFormat,
+    DXGI_FORMAT& outDxgiFormat,
+    TextureFormatIntent& outFormatIntent,
+    std::string& outErrorMessage)
 {
 	switch (vkFormat)
 	{
@@ -234,13 +231,13 @@ bool KtxTextureLoader::ResolveDxgiFormat(
 }
 
 bool KtxTextureLoader::ValidateTextureShape(
-	std::uint32_t numDimensions,
-	bool isArray,
-	bool isCubemap,
-	std::uint32_t numLayers,
-	std::uint32_t numFaces,
-	const std::filesystem::path& resolvedPath,
-	std::string& outErrorMessage)
+    std::uint32_t numDimensions,
+    bool isArray,
+    bool isCubemap,
+    std::uint32_t numLayers,
+    std::uint32_t numFaces,
+    const std::filesystem::path& resolvedPath,
+    std::string& outErrorMessage)
 {
 	if (numDimensions != 2)
 	{
@@ -253,9 +250,8 @@ bool KtxTextureLoader::ValidateTextureShape(
 
 	if (isArray || numLayers != 1)
 	{
-		outErrorMessage = std::format(
-		    "'{}' is a texture array, which is unsupported in the runtime cooked KTX2 path",
-		    resolvedPath.string());
+		outErrorMessage =
+		    std::format("'{}' is a texture array, which is unsupported in the runtime cooked KTX2 path", resolvedPath.string());
 		return false;
 	}
 
@@ -272,17 +268,15 @@ bool KtxTextureLoader::ValidateTextureShape(
 }
 
 bool KtxTextureLoader::ValidateMipPayloadRange(
-	std::size_t byteOffset,
-	std::size_t byteCount,
-	std::size_t dataSize,
-	const std::filesystem::path& resolvedPath,
-	std::string& outErrorMessage)
+    std::size_t byteOffset,
+    std::size_t byteCount,
+    std::size_t dataSize,
+    const std::filesystem::path& resolvedPath,
+    std::string& outErrorMessage)
 {
 	if (byteOffset > dataSize || byteCount > dataSize - byteOffset)
 	{
-		outErrorMessage = std::format(
-		    "'{}' contains a KTX2 mip payload outside the loaded image data range",
-		    resolvedPath.string());
+		outErrorMessage = std::format("'{}' contains a KTX2 mip payload outside the loaded image data range", resolvedPath.string());
 		return false;
 	}
 
@@ -294,7 +288,7 @@ std::uint32_t KtxTextureLoader::ResolveRowPitch(DXGI_FORMAT dxgiFormat, std::uin
 {
 	if (IsBlockCompressed(dxgiFormat))
 	{
-		return (std::max)(1u, (width + 3u) / 4u) * ResolveBlockSize(dxgiFormat);
+		return (std::max) (1u, (width + 3u) / 4u) * ResolveBlockSize(dxgiFormat);
 	}
 
 	return width * ResolveBytesPerPixel(dxgiFormat);
@@ -304,7 +298,7 @@ std::uint32_t KtxTextureLoader::ResolveSlicePitch(DXGI_FORMAT dxgiFormat, std::u
 {
 	if (IsBlockCompressed(dxgiFormat))
 	{
-		return ResolveRowPitch(dxgiFormat, width) * (std::max)(1u, (height + 3u) / 4u);
+		return ResolveRowPitch(dxgiFormat, width) * (std::max) (1u, (height + 3u) / 4u);
 	}
 
 	return ResolveRowPitch(dxgiFormat, width) * height;

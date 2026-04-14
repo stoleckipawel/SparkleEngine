@@ -47,12 +47,8 @@ namespace Engine::Assets
 		for (std::size_t vertexIndex = 0; vertexIndex < cookedVertices.size(); ++vertexIndex)
 		{
 			const CookedMeshVertex& cookedVertex = cookedVertices[vertexIndex];
-			outMeshData.vertices[vertexIndex] = VertexData(
-			    cookedVertex.position,
-			    cookedVertex.uv,
-			    cookedVertex.color,
-			    cookedVertex.normal,
-			    cookedVertex.tangent);
+			outMeshData.vertices[vertexIndex] =
+			    VertexData(cookedVertex.position, cookedVertex.uv, cookedVertex.color, cookedVertex.normal, cookedVertex.tangent);
 		}
 
 		outErrorMessage.clear();

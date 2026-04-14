@@ -25,15 +25,6 @@ target_link_libraries(__PROJECT_NAME__Runtime PRIVATE
     SparkleApplication
 )
 
-# Include third-party headers if needed directly.
-target_include_directories(__PROJECT_NAME__Editor PRIVATE
-    ${CMAKE_SOURCE_DIR}/Engine/third_party
-)
-
-target_include_directories(__PROJECT_NAME__Runtime PRIVATE
-    ${CMAKE_SOURCE_DIR}/Engine/third_party
-)
-
 # Configure Visual Studio debugger to launch from project directory.
 # Path discovery uses marker files, so we just need the working directory set correctly.
 if(MSVC)

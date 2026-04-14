@@ -90,7 +90,7 @@ namespace
 }
 
 ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noexcept :
-	 m_leftInsetPixels(leftInsetPixels), m_rightInsetPixels(rightInsetPixels)
+    m_leftInsetPixels(leftInsetPixels), m_rightInsetPixels(rightInsetPixels)
 {
 	m_renderRequest.ViewportId = 1;
 	m_renderRequest.ViewKind = RenderViewKind::Game;
@@ -136,9 +136,7 @@ void ViewportPanel::UpdateRequestedExtent(float availableWidth, float availableH
 {
 	const float clampedWidth = (std::max) (MinimumViewportExtent, availableWidth);
 	const float clampedHeight = (std::max) (MinimumViewportExtent, availableHeight);
-	m_renderRequest.Extent = RenderViewportExtent{
-	    static_cast<std::uint32_t>(clampedWidth),
-	    static_cast<std::uint32_t>(clampedHeight)};
+	m_renderRequest.Extent = RenderViewportExtent{static_cast<std::uint32_t>(clampedWidth), static_cast<std::uint32_t>(clampedHeight)};
 }
 
 void ViewportPanel::BuildEmptyState() noexcept
@@ -205,12 +203,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	UiUtil::DrawKeyValueRow("Color", buffer);
 	std::snprintf(buffer, sizeof(buffer), "%ux%u", m_renderRequest.Extent.Width, m_renderRequest.Extent.Height);
 	UiUtil::DrawKeyValueRow("Request", buffer);
-	std::snprintf(
-	    buffer,
-	    sizeof(buffer),
-	    "%ux%u",
-	    m_renderProducts.SceneColor.Extent.Width,
-	    m_renderProducts.SceneColor.Extent.Height);
+	std::snprintf(buffer, sizeof(buffer), "%ux%u", m_renderProducts.SceneColor.Extent.Width, m_renderProducts.SceneColor.Extent.Height);
 	UiUtil::DrawKeyValueRow("Rendered", buffer);
 	UiUtil::DrawKeyValueRow("Format", ToProductFormatLabel(m_renderProducts.SceneColor.Format));
 	UiUtil::DrawKeyValueRow("Outputs", ToRequestedOutputsLabel(m_renderProducts.AvailableOutputs));

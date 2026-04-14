@@ -32,7 +32,7 @@ set "CALLER=%~1"
 :: ---------------------------------------------------------------------------
 :: Build remaining arguments (everything after the caller path)
 :: ---------------------------------------------------------------------------
-:: CRITICAL: In batch, %* does NOT update after shift — it always contains
+:: CRITICAL: In batch, %* does NOT update after shift - it always contains
 :: the full original argument list including %1. We must rebuild the remaining
 :: args manually to avoid passing the caller path as %1 to the re-invoked script.
 set "REMAINING_ARGS="

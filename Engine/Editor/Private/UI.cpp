@@ -76,9 +76,7 @@ static void AllocSRV(
 static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
 {
 	auto* renderHardware = static_cast<RenderHardwareInterface*>(info->UserData);
-	renderHardware->ReleaseShaderResourceDescriptor(
-	    RhiCpuDescriptorHandle{cpu_handle.ptr},
-	    RhiGpuDescriptorHandle{gpu_handle.ptr});
+	renderHardware->ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle{cpu_handle.ptr}, RhiGpuDescriptorHandle{gpu_handle.ptr});
 }
 
 void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
@@ -129,18 +127,13 @@ void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
 	}
 }
 
-UI::UI(
-    Timer& timer,
-    LevelManager* levelManager,
-    GameScene* gameScene,
-	RenderHardwareInterface& renderHardware,
-	Window& window) :
+UI::UI(Timer& timer, LevelManager* levelManager, GameScene* gameScene, RenderHardwareInterface& renderHardware, Window& window) :
     m_timer(&timer),
     m_levelManager(levelManager),
     m_gameScene(gameScene),
-	m_renderHardware(&renderHardware),
+    m_renderHardware(&renderHardware),
     m_window(&window),
-	m_sceneSelection(SceneObjectSelection::None())
+    m_sceneSelection(SceneObjectSelection::None())
 {
 	InitializeImGuiContext();
 	SetupDPIScaling();
@@ -237,7 +230,8 @@ void UI::InitializeDefaultPanels()
 	if (m_window != nullptr && m_viewportPanel)
 	{
 		const RenderViewportExtent initialExtent{
-		    static_cast<std::uint32_t>((std::max) (1.0f, static_cast<float>(m_window->GetWidth()) - SceneOutlinerWidth - SceneInspectorWidth)),
+		    static_cast<std::uint32_t>(
+		        (std::max) (1.0f, static_cast<float>(m_window->GetWidth()) - SceneOutlinerWidth - SceneInspectorWidth)),
 		    (std::max) (1u, m_window->GetHeight())};
 		m_viewportPanel->SetRequestedExtent(initialExtent);
 	}

@@ -1,38 +1,19 @@
 @echo off
 :: ============================================================================
-:: RunClangFormat.bat - Code formatting utility
+:: Format.bat - Code formatting utility
 :: ============================================================================
 :: Runs clang-format on all source files under Engine/ and Projects/.
-:: Displays progress, tracks modifications, and generates a summary log.
 ::
-:: Supported extensions: .cpp, .h, .hpp, .hxx, .hlsl, .hlsli
-:: Output log: logs/LogClangFormat.txt
-::
-:: Usage: RunClangFormat.bat
-::
-:: Environment:
-::   PARENT_BATCH  - When set, suppresses pause on completion
-::   LOG_CAPTURED  - Indicates logging is already active
-::   LOGFILE       - Path to current log file
-::
-:: Exit Codes:
-::   0 - Formatting completed successfully
-::   1 - clang-format not found or errors occurred
+:: Usage: Format.bat
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
-:: ---------------------------------------------------------------------------
-:: Logging bootstrap
-:: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
     exit /B %ERRORLEVEL%
 )
 
-:: ---------------------------------------------------------------------------
-:: Load shared configuration
-:: ---------------------------------------------------------------------------
 call "%~dp0Internal\Config.bat"
 
 set /A TOTAL=0
@@ -46,28 +27,18 @@ if not exist "!ENGINE_DIR!" (
     goto :FINISH
 )
 
-:: ---------------------------------------------------------------------------
-:: Validate clang-format is available
-:: ---------------------------------------------------------------------------
 where clang-format >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] clang-format not found. Install clang-format and add to PATH.
+    echo [ERROR] clang-format not found. Install clang-format and add it to PATH.
     set "EXIT_RC=1"
     goto :FINISH
 )
 
-:: ---------------------------------------------------------------------------
-:: Prepare format-specific log file
-:: ---------------------------------------------------------------------------
 set "LOG_DIR=!ROOT_DIR!\logs"
 if not exist "!LOG_DIR!" mkdir "!LOG_DIR!"
 set "FORMAT_LOG=!LOG_DIR!\LogClangFormat.txt"
 
-echo [LOG] ClangFormat started: %DATE% %TIME% > "!FORMAT_LOG!"
-
-:: ---------------------------------------------------------------------------
-:: Count total files to process (for progress display)
-:: ---------------------------------------------------------------------------
+echo [LOG] Format started: %DATE% %TIME% > "!FORMAT_LOG!"
 echo [LOG] Scanning for source files...
 
 for %%E in (cpp h hpp hxx hlsl hlsli) do (
@@ -84,9 +55,6 @@ if !TOTAL! EQU 0 (
 echo [LOG] Found !TOTAL! files to process.
 echo.
 
-:: ---------------------------------------------------------------------------
-:: Process each file
-:: ---------------------------------------------------------------------------
 for %%E in (cpp h hpp hxx hlsl hlsli) do (
 	call :PROCESS_DIR "!ENGINE_DIR!" %%E 1
 	if exist "!PROJECTS_DIR!" call :PROCESS_DIR "!PROJECTS_DIR!" %%E 0
@@ -94,9 +62,6 @@ for %%E in (cpp h hpp hxx hlsl hlsli) do (
 
 goto :SUMMARY
 
-:: ---------------------------------------------------------------------------
-:: Subroutine: Count files of given extension in directory tree
-:: ---------------------------------------------------------------------------
 :COUNT_DIR
 set "SCAN_DIR=%~1"
 set "EXT=%~2"
@@ -114,9 +79,6 @@ for /R "%SCAN_DIR%" %%F in (*.%EXT%) do (
 )
 goto :EOF
 
-:: ---------------------------------------------------------------------------
-:: Subroutine: Process all files of given extension in directory tree
-:: ---------------------------------------------------------------------------
 :PROCESS_DIR
 set "SCAN_DIR=%~1"
 set "EXT=%~2"
@@ -134,9 +96,6 @@ for /R "%SCAN_DIR%" %%F in (*.%EXT%) do (
 )
 goto :EOF
 
-:: ---------------------------------------------------------------------------
-:: Subroutine: Format a single file and track changes
-:: ---------------------------------------------------------------------------
 :FORMAT_FILE
 set "FILE=%~1"
 set /A IDX+=1
@@ -167,13 +126,10 @@ if not "!HASH_BEFORE!"=="!HASH_AFTER!" (
 )
 goto :EOF
 
-:: ---------------------------------------------------------------------------
-:: Summary
-:: ---------------------------------------------------------------------------
 :SUMMARY
 echo.
 echo ============================================================
-echo   ClangFormat Summary
+echo   Format Summary
 echo ============================================================
 echo.
 echo   Scanned:  !IDX! files
@@ -185,7 +141,7 @@ echo.
 echo ============================================================
 
 echo [LOG] Summary: Scanned=!IDX! Modified=!MODIFIED! Errors=!FORMAT_ERRORS! >> "!FORMAT_LOG!"
-echo [LOG] ClangFormat finished: %DATE% %TIME% >> "!FORMAT_LOG!"
+echo [LOG] Format finished: %DATE% %TIME% >> "!FORMAT_LOG!"
 
 if "!FORMAT_ERRORS!" NEQ "0" (
     set "EXIT_RC=1"
@@ -194,9 +150,6 @@ if "!FORMAT_ERRORS!" NEQ "0" (
 )
 goto :FINISH
 
-:: ============================================================================
-:: Clean exit with proper endlocal handling
-:: ============================================================================
 :FINISH
 set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_RC=%EXIT_RC%"
@@ -210,4 +163,3 @@ echo.
 echo [LOG] Logs: %LOGFILE%
 pause
 exit /B %EXIT_RC%
-
