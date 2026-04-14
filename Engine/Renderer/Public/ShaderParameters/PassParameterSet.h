@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "../FrameGraph/BufferHandle.h"
 #include "../FrameGraph/TextureHandle.h"
 

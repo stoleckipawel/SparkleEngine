@@ -1,9 +1,9 @@
 #pragma once
 
 #include "EditorAPI.h"
-#include "Events/ScopedEventHandle.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "../../Core/Public/Events/ScopedEventHandle.h"
+#include "../../RHI/Public/Interop/RenderHardwareInterface.h"
+#include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 
 #include <Windows.h>

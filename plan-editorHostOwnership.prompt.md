@@ -2,6 +2,14 @@
 
 Replace the renderer-owned overlay abstraction with an explicit Unreal-style split: an editorless `ProjectApp` as the runtime/game application layer, and a separate `EditorApp` above it that owns editor UI, editor frame policy, and editor-specific launch behavior. Renderer should go back to being purely runtime-facing. Editor code should stop being injected downward through Renderer or through `App` constructor plumbing. The architecture should read clearly as `ProjectApp` for game/runtime and `EditorApp` for tools/editor.
 
+**Closeout Snapshot — 2026-04-14**
+- Implemented host split: `SparkleApplication` now exposes `ProjectApp` and `EditorApp`; the legacy `App` compatibility wrapper has been removed.
+- Implemented renderer/editor split: the old overlay seam is gone from the live engine and project sources; there are no remaining `IRendererOverlay`, `RendererOverlayFactory`, `CreateEditorOverlay`, or `AddUiCompositionPass` references in `Engine/**` or `Projects/**`.
+- Implemented launch split: `Projects/Showcase` and `Projects/TemplateProject` now provide explicit editor/runtime entrypoints and split launch targets.
+- Implemented runtime boundary guardrail: `runtime_cooked_boundary_check` validates `Engine/Application`, `Engine/GameFramework`, and `Engine/Renderer` against source-import and authoring leakage.
+- Validation status: build, launch smoke tests, and cooked-runtime checks passed. Visual pixel inspection of the in-editor viewport remains a manual follow-up when a human needs to confirm layout or image correctness on screen.
+- Remaining follow-up scope is discrete rather than architectural: the main renderer debt still worth pursuing is private D3D12-specific implementation under `Engine/Renderer/Private`, not host ownership or overlay coupling.
+
 **Target Shape**
 - `ProjectApp`: editorless runtime application. Owns timer, window, input, game scene, scene asset manager, level manager, camera controller, and renderer.
 - `EditorApp`: higher-level tools host. Owns `ProjectApp`, owns `UI`, orchestrates the high-level editor host loop, and issues editor viewport and tooling requests through generic renderer-facing APIs.
@@ -79,9 +87,9 @@ Replace the renderer-owned overlay abstraction with an explicit Unreal-style spl
 	- Owns levels, game scene state, runtime camera state, cooked scene asset resolution, scene asset manager, and runtime-facing simulation state.
 	- Must remain free of editor UI and source import workflows.
 - `SparkleApplication`
-	- Runtime host layer today.
-	- Best candidate to evolve into or host `ProjectApp`.
-	- Owns runtime loop orchestration across Platform, GameFramework, and Renderer.
+	- Host layer that now contains the explicit `ProjectApp` runtime host and `EditorApp` editor host.
+	- Owns high-level host orchestration across Platform, GameFramework, Renderer, and editor UI coordination.
+	- Keeps runtime-only flow in `ProjectApp` and editor policy/orchestration in `EditorApp`.
 - `SparkleEditor`
 	- Editor tools layer.
 	- Owns panels, viewport widgets, menuing, selection, inspectors, editor commands, editor camera behavior, asset tools, and tool-mode policy.
@@ -329,7 +337,10 @@ SparklePlatform
 - A game viewport inside the editor is not special because of where it appears on screen. It is special because the editor chooses to host a runtime-produced view inside editor chrome.
 - That means the viewport is editor-owned as UX, runtime-owned as scene source, and renderer-owned as rendering execution.
 
-**Implementation Phases**
+**Implementation Phases (Historical Execution Plan)**
+
+Current repo-state truth now lives in the Closeout Snapshot, Relevant Files, and Final Validation Results sections. The phase notes below are kept as historical execution context.
+
 1. Phase 0 — Freeze the target architecture and block further drift.
 	- Goal:
 		- lock the host split, renderer/RHI split, cooked-runtime-only rule, and `AssetConverter` tool boundary before code refactors begin
@@ -676,36 +687,23 @@ SparklePlatform
 8. Phase 7 — Final cleanup, validation, and prompt-ready closeout.
 	- Goal:
 		- leave a clean architectural base that future implementation prompts can extend without ambiguity
-	- Current repo state to account for:
-		- transitional overlay files and old app entry assumptions still exist today
-		- docs, comments, and target descriptions still mention the older mixed-host and overlay-driven model in places
-	- Suggested implementation prompt count:
-		- 2 prompts
-	- Prompt 7.1 — Remove transitional compatibility code and dead seams.
-		- Files to touch:
-			- `Engine/Renderer/Public/Overlays/RendererOverlay.h`
-			- any obsolete `App` compatibility layer left after `ProjectApp` adoption
-			- any remaining `CreateEditorOverlay` or overlay-driven framegraph code
-		- Concrete actions:
-			- delete dead files, dead constructors, dead compatibility wrappers, and stale terminology once replacement paths are proven
-		- Validation:
-			- the old overlay path no longer exists in public API or runtime/editor orchestration
-	- Prompt 7.2 — Perform final architecture validation and documentation closeout.
-		- Files to touch:
-			- this prompt file and any other architecture docs that need to reflect implemented reality
-			- repo memory or notes if they are being used to track established boundaries
-		- Concrete actions:
-			- run build and architecture validation passes
-			- update docs and memory to match the implemented structure rather than the transitional one
-			- confirm future prompts can target isolated improvements without reopening the base architecture
-		- Validation:
-			- editor viewport still works
-			- runtime-only launch remains editorless
-			- renderer remains API-agnostic
-			- cooked-runtime boundaries remain intact
+	- Closeout status:
+		- Prompt 7.1 completed: removed the obsolete `App` compatibility layer, removed the empty renderer `Public/Overlays` seam, and verified the old overlay path is absent from live engine/project sources.
+		- Prompt 7.2 completed: ran final validation passes and updated prompt/memory state to match the implemented repository.
+	- Current repo state after closeout:
+		- `Engine/Application/Public` now exposes `ApplicationAPI.h`, `ProjectApp.h`, and `EditorApp.h`.
+		- `Projects/Showcase` and `Projects/TemplateProject` use explicit `EditorMain.cpp` and `RuntimeMain.cpp` entrypoints plus split editor/runtime targets.
+		- `runtime_cooked_boundary_check` passes for `Engine/Application`, `Engine/GameFramework`, and `Engine/Renderer`.
+		- `Engine/Renderer/Public/**` and the renderer-facing target graph no longer carry direct D3D12 linkage, while private renderer implementation still contains backend-specific debt that can be addressed as a discrete follow-up.
+	- Validation summary:
+		- `cmake --build build --config Debug --target SparkleApplication SparkleRenderer SparkleEditor ShowcaseEditor ShowcaseRuntime` completed successfully after reconfigure.
+		- `cmake --build build --config Debug --target runtime_cooked_boundary_check` passed.
+		- `ShowcaseRuntime.exe` and `ShowcaseEditor.exe` both launched successfully from `Projects/Showcase` in smoke tests and stayed alive until terminated.
+		- Live engine/project source contains no `IRendererOverlay`, `RendererOverlayFactory`, `CreateEditorOverlay`, or `AddUiCompositionPass` references.
+		- Manual on-screen inspection remains the last mile for viewport pixel/layout confirmation, but the editor host/UI/render path now boots cleanly.
 	- Completion gate:
-		- the codebase matches the plan closely enough that future prompts can target discrete improvements instead of reopening base architecture
-		- validation passes show the editor viewport still works, runtime-only launch remains editorless, renderer remains API-agnostic, and cooked-runtime boundaries remain intact
+		- satisfied for the host split, launch split, public/runtime boundary cleanup, and cooked-runtime validation
+		- future prompts can now target isolated follow-up work such as deeper private renderer backend cleanup, viewport polish, or editor tooling improvements without reopening base ownership decisions
 
 **Prompt Authoring Guidance For Future Implementation Prompts**
 - Prefer one phase per implementation prompt unless a tiny follow-up is needed to finish a coherent boundary.
@@ -717,34 +715,30 @@ SparklePlatform
 - Do not combine host split, renderer/RHI cleanup, viewport contract design, and tool-boundary cleanup into one implementation prompt unless the change is genuinely trivial.
 
 **Relevant files**
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Public\App.h` — split or rename this runtime app type into `ProjectApp`, removing editor-factory constructor shape.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Private\App.cpp` — restore editor-free runtime initialization and convert it toward `ProjectApp` implementation.
-- New runtime app files such as `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Public\ProjectApp.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Private\ProjectApp.cpp` if you choose a hard rename instead of evolving `App` in place.
-- New editor host files such as `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Public\EditorApp.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Private\EditorApp.cpp`, or editor-owned equivalents if you decide `EditorApp` should live under Editor.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Public\Overlays\RendererOverlay.h` — delete after replacing it with an app-level composition seam.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Public\Renderer.h` — restore a runtime-oriented constructor and remove editor overlay abstractions.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\Renderer.cpp` — remove overlay creation/update ownership and keep only runtime render work.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Builder\FrameGraphBuilder.h` — remove editor overlay references from framegraph dependencies.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Builder\FrameGraphBuilder.cpp` — replace explicit UI composition wiring with runtime viewport output creation.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Features\PresentationPasses.h` — remove renderer-owned editor interface references and separate runtime scene output from swapchain presentation concerns.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Features\PresentationPasses.cpp` — keep only generic runtime presentation and viewport-surface behavior.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Public\UI.h` — stop implementing the renderer-owned overlay interface.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Private\UI.cpp` — delete `CreateEditorOverlay`, move construction assumptions to `EditorApp`, and host the runtime scene texture inside an explicit viewport panel.
-- New editor viewport panel files such as `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Public\Panels\ViewportPanel.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Private\Panels\ViewportPanel.cpp` if the current monolithic `UI` needs a dedicated viewport surface owner.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\CMakeLists.txt` — make editor and runtime launch targets explicit at the project boundary.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Src\main.cpp` — construct `EditorApp` explicitly instead of routing editor UI through `App`.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\TemplateProject\CMakeLists.txt` — mirror Showcase target split.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\TemplateProject\Src\main.cpp` — mirror Showcase entry-point split.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Public\ProjectApp.h` — explicit runtime host public API.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Private\ProjectApp.cpp` — runtime host loop, subsystem creation, and editorless launch behavior.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Public\EditorApp.h` — explicit editor host public API.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Application\Private\EditorApp.cpp` — editor host sequencing, viewport request handoff, and editor present path.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Public\Viewport\ViewportContracts.h` — generic viewport request/output contract used by runtime and editor hosts.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Public\Renderer.h` — runtime-oriented renderer surface with no overlay seam in public API.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\Renderer.cpp` — runtime render execution and host-frame orchestration.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Builder\FrameGraphBuilder.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Builder\FrameGraphBuilder.cpp` — framegraph dependencies after overlay removal.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Features\PresentationPasses.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\FrameGraph\Features\PresentationPasses.cpp` — generic runtime presentation and scene-target setup.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Public\UI.h` — editor-owned UI surface with no renderer-owned overlay inheritance.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Private\UI.cpp` — editor-owned ImGui/backend submission and viewport presentation.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Public\Panels\ViewportPanel.h` and `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Private\Panels\ViewportPanel.cpp` — explicit editor viewport panel abstraction.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\CMakeLists.txt`, `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Src\EditorMain.cpp`, and `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Src\RuntimeMain.cpp` — explicit sample launch targets and entrypoints.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\TemplateProject\CMakeLists.txt`, `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\TemplateProject\Src\EditorMain.cpp`, and `c:\Users\stole\Documents\GitHub\SparkleEngine\Projects\TemplateProject\Src\RuntimeMain.cpp` — template launch split for future projects.
 
-**Verification**
-1. Build the editor target and confirm Renderer public compilation no longer depends on editor headers or editor-owned public interfaces.
-2. Confirm the runtime app layer is explicit and editorless: `ProjectApp` can be constructed without editor-specific factories, interfaces, or service bags.
-3. Confirm `EditorApp` owns editor UI lifetime, viewport layout, and high-level host-loop sequencing rather than Renderer.
-4. Launch the editor-enabled Showcase path from the project directory and verify the in-editor game viewport renders the runtime scene inside editor UI rather than as a renderer-owned overlay on the backbuffer.
-5. Verify viewport resize behavior: resizing the editor viewport should resize the runtime scene surface without forcing editor concepts into Renderer public API.
-6. Build or stub the separate editorless project launch path and confirm it depends only on runtime modules plus `ProjectApp`.
-7. Re-run the cooked-scene-boundary audit and confirm Application, GameFramework, and Renderer still contain no `SceneImporter`, `SceneImportResult`, `cgltf`, or `assimp` references.
-8. Confirm `SparkleEditor` stays above runtime modules: linked by the editor executable or `EditorApp`, not by Renderer, GameFramework, or `ProjectApp`.
+**Final Validation Results**
+1. Renderer public/API-facing validation passed: there are no direct `D3D12`, `d3d12`, `dx12`, or `D3DX12` matches under `Engine/Renderer/Public/**`, and the renderer/application/editor CMake files do not link D3D12 system libraries directly.
+2. Runtime host validation passed: `Engine/Application/Public` now exposes only `ApplicationAPI.h`, `ProjectApp.h`, and `EditorApp.h`; the old `App` compatibility wrapper has been removed.
+3. Editor host validation passed: `EditorApp.cpp` owns `UI` lifetime, viewport product handoff, and editor present-pass sequencing above `Renderer`.
+4. Editor launch smoke test passed from `Projects/Showcase`: `ShowcaseEditor.exe` started successfully from the project working directory and stayed alive until explicitly terminated.
+5. Runtime launch smoke test passed from `Projects/Showcase`: `ShowcaseRuntime.exe` started successfully from the project working directory and stayed alive until explicitly terminated.
+6. Cooked-runtime boundary validation passed: `runtime_cooked_boundary_check` succeeded for `Engine/Application`, `Engine/GameFramework`, and `Engine/Renderer`.
+7. Overlay seam removal validation passed: live `Engine/**` and `Projects/**` sources contain no `IRendererOverlay`, `RendererOverlayFactory`, `CreateEditorOverlay`, or `AddUiCompositionPass` references.
+8. Residual risk is explicit rather than ambiguous: private renderer implementation still contains backend-specific D3D12 debt under `Engine/Renderer/Private`, but that work is now isolated from host ownership and overlay architecture.
 
 **Decisions**
 - Preferred target: explicit `EditorApp` over explicit editorless `ProjectApp`, matching the Unreal-style editor-versus-game split more directly than a generic host abstraction.
@@ -759,6 +753,6 @@ SparklePlatform
 - Preferred tool boundary: `AssetConverter` should remain the explicit separate asset-processing module/tool. Authoring and conversion code should not stay exposed as a first-class standalone engine module in the long-term target architecture unless a narrower, clearly justified boundary emerges.
 
 **Further Considerations**
-1. Recommendation: do the hard type split early. An explicit `ProjectApp` plus `EditorApp` will be clearer than leaving the current `App` name in place and retrofitting meaning around it.
-2. Recommendation: if a full target split is too much for one patch, first land the code-level split (`ProjectApp` and `EditorApp` types) and then add separate project targets in a follow-up change.
-3. Recommendation: keep `EditorApp` close to Application at first if that lowers refactor cost, then revisit whether it should move under Editor once the ownership model is stable.
+1. The highest-value remaining renderer cleanup is deeper backend-neutralization inside `Engine/Renderer/Private`, especially private D3D12 utility, pipeline, and resource code.
+2. If executable-level editor/runtime separation later needs to become module-level separation as well, `SparkleApplication` can be split further so `EditorApp` lives in an editor-only target rather than sharing the host module.
+3. Viewport UX, multi-viewport support, picking, preview rendering, and editor tooling can now be pursued as isolated follow-up prompts on top of the established host and viewport contracts.

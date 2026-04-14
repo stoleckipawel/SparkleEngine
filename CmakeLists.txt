@@ -182,14 +182,21 @@ endif()
 # ---------------------------
 # Default startup project for VS
 # ---------------------------
-# Prefer Showcase as the startup sample when it is present in the repo.
+# Prefer the editor-enabled Showcase launch target when it is present.
 if(DISCOVERED_PROJECTS)
     set(STARTUP_PROJECT "")
-    list(FIND DISCOVERED_PROJECTS "Showcase" SHOWCASE_PROJECT_INDEX)
-    if(NOT SHOWCASE_PROJECT_INDEX EQUAL -1)
-        set(STARTUP_PROJECT "Showcase")
+
+    if(TARGET ShowcaseEditor)
+        set(STARTUP_PROJECT "ShowcaseEditor")
     else()
-        list(GET DISCOVERED_PROJECTS 0 STARTUP_PROJECT)
+        list(GET DISCOVERED_PROJECTS 0 FIRST_DISCOVERED_PROJECT)
+        if(TARGET "${FIRST_DISCOVERED_PROJECT}Editor")
+            set(STARTUP_PROJECT "${FIRST_DISCOVERED_PROJECT}Editor")
+        elseif(TARGET "${FIRST_DISCOVERED_PROJECT}")
+            set(STARTUP_PROJECT "${FIRST_DISCOVERED_PROJECT}")
+        else()
+            set(STARTUP_PROJECT "${FIRST_DISCOVERED_PROJECT}")
+        endif()
     endif()
 
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${STARTUP_PROJECT})

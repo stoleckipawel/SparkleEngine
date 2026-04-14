@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RHIAPI.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "../RHIAPI.h"
+#include "RenderHardwareInterface.h"
 
 #include <memory>
 

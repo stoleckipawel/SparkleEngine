@@ -1,5 +1,5 @@
 # SparkleEditor Module
-# Editor UI system: overlays, panels, tools, and editor-facing controls.
+# Editor UI system: panels, tools, viewport chrome, and editor-facing controls.
 # Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework
 # Editor stays above runtime but should not depend on the broad tool-side
 # authoring module by default. Source import and cooking remain under AssetConverter.
@@ -35,8 +35,6 @@ endif()
 target_include_directories(SparkleEditor
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/Panels
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/Sections
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/ImGui
@@ -56,14 +54,16 @@ target_precompile_headers(SparkleEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Editor depends on runtime/editor-facing engine modules only.
+# Editor publicly exposes Core utilities plus the renderer and RHI contracts used
+# by its UI surface. Runtime scene and window types remain forward-declared.
 target_link_libraries(SparkleEditor 
-    PUBLIC 
-        SparkleGameFramework
+    PUBLIC
         SparkleCore
-        SparklePlatform
         SparkleRHI
+        SparkleRenderer
     PRIVATE
+        SparkleGameFramework
+        SparklePlatform
         imgui
 )
 

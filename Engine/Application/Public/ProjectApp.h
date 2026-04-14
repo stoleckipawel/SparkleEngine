@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Application/Public/ApplicationAPI.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "ApplicationAPI.h"
+#include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
 #include <memory>

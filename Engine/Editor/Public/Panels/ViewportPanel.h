@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EditorAPI.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
+#include "../EditorAPI.h"
+#include "../../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
 

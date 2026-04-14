@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
+#include "../RendererAPI.h"
 
 #include <DirectXMath.h>
 #include <cstdint>

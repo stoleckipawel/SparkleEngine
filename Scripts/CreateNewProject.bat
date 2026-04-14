@@ -130,15 +130,27 @@ if not exist "!PROJECT_DIR!\.sparkle-project" (
 :: ---------------------------------------------------------------------------
 :: Replace __PROJECT_NAME__ placeholder in all project files
 :: ---------------------------------------------------------------------------
-:: Recursively process all text files so adding new template files
-:: with placeholders "just works" without updating this script.
+:: Recursively process all supported text files in one PowerShell pass so
+:: adding new template files with placeholders "just works" without updating
+:: this script or depending on fragile per-file batch expansion.
 echo [LOG] Configuring project files ^(replacing __PROJECT_NAME__^)...
 
-for /R "!PROJECT_DIR!" %%F in (*.txt *.cmake *.cpp *.h *.hlsl *.hlsli *.json *.md) do (
-    findstr /M /C:"__PROJECT_NAME__" "%%F" >nul 2>&1
-    if not errorlevel 1 (
-        call :REPLACE_PLACEHOLDER "%%F"
-    )
+powershell -NoProfile -Command ^
+    "$projectRoot = '!PROJECT_DIR!'; " ^
+    "$projectName = '!PROJECT_NAME!'; " ^
+    "$extensions = @('.txt', '.cmake', '.cpp', '.h', '.hlsl', '.hlsli', '.json', '.md'); " ^
+    "Get-ChildItem -Path $projectRoot -Recurse -File | Where-Object { $extensions -contains $_.Extension } | ForEach-Object { " ^
+    "    $content = Get-Content -Path $_.FullName -Raw; " ^
+    "    if ($content.Contains('__PROJECT_NAME__')) { " ^
+    "        $updated = $content.Replace('__PROJECT_NAME__', $projectName); " ^
+    "        Set-Content -Path $_.FullName -Value $updated -NoNewline; " ^
+    "    } " ^
+    "}"
+
+if errorlevel 1 (
+    echo [ERROR] Failed to configure project files.
+    set "EXIT_RC=1"
+    goto :FINISH
 )
 
 :: ---------------------------------------------------------------------------
@@ -155,7 +167,7 @@ echo.
 echo   Next steps:
 echo   1. Run GenerateProjectFiles.bat to regenerate VS solution
 echo   2. Open build\Sparkle.sln in Visual Studio
-echo   3. Set !PROJECT_NAME! as startup project
+echo   3. Set !PROJECT_NAME!Editor as startup project
 echo.
 echo ============================================================
 
@@ -216,24 +228,3 @@ echo.
 echo [LOG] Logs: %LOGFILE%
 pause
 exit /B %EXIT_RC%
-
-:: ---------------------------------------------------------------------------
-:: Subroutine: Replace __PROJECT_NAME__ in a file using PowerShell
-:: ---------------------------------------------------------------------------
-:REPLACE_PLACEHOLDER
-set "TARGET_FILE=%~1"
-if not exist "%TARGET_FILE%" (
-    echo [WARN] File not found for substitution: %TARGET_FILE%
-    exit /B 0
-)
-
-:: Use PowerShell for reliable text replacement
-powershell -NoProfile -Command ^
-    "$content = Get-Content -Path '%TARGET_FILE%' -Raw; " ^
-    "$content = $content -replace '__PROJECT_NAME__', '%PROJECT_NAME%'; " ^
-    "Set-Content -Path '%TARGET_FILE%' -Value $content -NoNewline"
-
-if errorlevel 1 (
-    echo [WARN] Failed to process: %TARGET_FILE%
-)
-exit /B 0

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12/Shaders/ShaderCompileResult.h"
+#include "../Shaders/ShaderCompileResult.h"
 #include "D3D12RootSignature.h"
 #include "Config/RenderConfig.h"
 

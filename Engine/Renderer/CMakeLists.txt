@@ -39,8 +39,6 @@ target_include_directories(SparkleRenderer
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         # Engine root for module-prefixed includes
         ${CMAKE_CURRENT_SOURCE_DIR}/..
-        # Core module subdirectories for direct includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
 )
 
@@ -51,12 +49,14 @@ target_precompile_headers(SparkleRenderer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# Renderer depends on lower modules plus runtime scene types from GameFramework.
+# Renderer publicly exposes Core event handles and the RHI-facing render seam.
+# Platform and runtime scene modules remain implementation-only.
 target_link_libraries(SparkleRenderer 
-    PUBLIC 
+    PUBLIC
         SparkleCore
-        SparklePlatform
         SparkleRHI
+    PRIVATE
+        SparklePlatform
         SparkleGameFramework
 )
 

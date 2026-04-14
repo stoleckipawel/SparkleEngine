@@ -38,12 +38,8 @@ target_include_directories(SparkleRHI
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         # Engine root for module-prefixed includes
         ${CMAKE_CURRENT_SOURCE_DIR}/..
-        # Core module subdirectories for direct includes
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
-        # Third-party (d3dx12.h)
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 
 target_compile_features(SparkleRHI PUBLIC cxx_std_20)
@@ -53,12 +49,13 @@ target_precompile_headers(SparkleRHI PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 
-# RHI depends on Core and Platform
+# RHI publicly exposes Core-backed utility types only. Platform remains an
+# implementation detail behind forward-declared window/timer types.
 target_link_libraries(SparkleRHI 
-    PUBLIC 
+    PUBLIC
         SparkleCore
-        SparklePlatform
     PRIVATE
+        SparklePlatform
         ktx
         # D3D12 system libraries
         d3d12

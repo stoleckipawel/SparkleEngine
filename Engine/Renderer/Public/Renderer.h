@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
-#include "Renderer/Public/FrameGraph/ResourceState.h"
-#include "Renderer/Public/Viewport/ViewportContracts.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
-#include "Events/ScopedEventHandle.h"
+#include "RendererAPI.h"
+#include "FrameGraph/ResourceState.h"
+#include "Viewport/ViewportContracts.h"
+#include "../../RHI/Public/Interop/RenderHardwareInterface.h"
+#include "../../Core/Public/Events/ScopedEventHandle.h"
 
 #include <memory>
 

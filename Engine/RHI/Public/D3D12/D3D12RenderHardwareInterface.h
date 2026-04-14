@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interop/RenderHardwareInterface.h"
+#include "../Interop/RenderHardwareInterface.h"
 
 class D3D12DescriptorHeapManager;
 class D3D12Rhi;
