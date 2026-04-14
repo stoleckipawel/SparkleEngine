@@ -89,6 +89,19 @@ endif()
 add_subdirectory(Engine)
 add_subdirectory(Tools)
 
+add_custom_target(
+    runtime_cooked_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DRUNTIME_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/Scripts/ValidateRuntimeCookedBoundary.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating cooked-only runtime boundaries for Application, GameFramework, and Renderer..."
+)
+
+add_dependencies(SparkleApplication runtime_cooked_boundary_check)
+add_dependencies(SparkleGameFramework runtime_cooked_boundary_check)
+add_dependencies(SparkleRenderer runtime_cooked_boundary_check)
+
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
 # ---------------------------
@@ -160,7 +173,9 @@ if(CLANG_FORMAT_EXE)
     # Make all targets depend on clang_format_check
     get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(t ${all_targets})
-        add_dependencies(${t} clang_format_check)
+        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check")
+            add_dependencies(${t} clang_format_check)
+        endif()
     endforeach()
 endif()
 

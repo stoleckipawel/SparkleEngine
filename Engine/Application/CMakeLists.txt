@@ -1,6 +1,8 @@
 # SparkleApplication Module
 # Top-level application framework that ties together GameFramework and Renderer
 # Dependencies: SparkleCore, SparklePlatform, SparkleGameFramework, SparkleRenderer
+# Runtime host code must stay cooked-only. Source import, conversion, and authoring
+# workflows belong to tool-side modules and validation should fail if they leak here.
 #
 # This module contains App and related classes that need both game logic and rendering.
 # It sits at the top of the dependency hierarchy.

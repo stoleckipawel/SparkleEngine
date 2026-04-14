@@ -1,6 +1,8 @@
 # SparkleRenderer Module
 # High-level rendering: Camera, Materials, Render passes, Texture management
 # Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework runtime scene types
+# Renderer consumes runtime scene/material data only. Source import, conversion,
+# and authoring-side dependencies must stay out of this module.
 
 file(GLOB_RECURSE SPARKLE_RENDERER_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h

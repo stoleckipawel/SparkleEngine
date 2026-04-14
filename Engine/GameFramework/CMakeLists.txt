@@ -1,6 +1,8 @@
 # SparkleGameFramework Module (SparkleEngine.dll)
 # Game framework: World, Entities, Components, Scene, Camera, Cooked Meshes, Assets
 # Dependencies: SparkleCore, SparklePlatform, shared render config from SparkleRHI
+# Runtime scene loading here is cooked-data only. Source import and authoring
+# workflows must remain outside runtime modules and under tool-side ownership.
 #
 # This corresponds to "SparkleEngine.dll" in the Unreal-style architecture.
 # It contains the high-level game systems .
