@@ -29,19 +29,6 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - Format source files: run `Scripts\Format.bat`
 - Clean generated artifacts: run `Scripts\Clean.bat`
 
-## Normal Mental Model
-
-- Most contributors should think in terms of `Setup.bat`, `Build.bat`, `CreateProject.bat`, and `CookAssets.bat`.
-- `GenerateSolution.bat` is mostly an advanced or recovery command.
-- In normal use, `Build.bat`, `CreateProject.bat`, `CookAssets.bat`, and `Setup.bat` already run solution-generation work for you when needed.
-
-## When To Use GenerateSolution
-
-- You changed CMake files and want to refresh the solution/build tree without building anything yet.
-- You created a project and want to regenerate the solution manually.
-- You cleaned the build tree and want to rebuild the generated files without running the full first-time setup path.
-- You are debugging configure-time dependency or generator issues.
-
 ## Structure
 
 - `Scripts/` contains user-facing workflow commands.
