@@ -6,13 +6,13 @@
 ::   1) Build artifacts only - build/ (except _deps/), bin/, .vs/
 ::   2) Third-party deps only - build/_deps/
 ::   3) Everything - full clean (build/, bin/, .vs/ including _deps/)
-::   4) Pristine - nuclear option (build/, bin/, .vs/, logs/)
+::   4) Pristine - tracked repo state (build/, bin/, .vs/, logs/)
 ::
 :: Usage: Clean.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
 ::   DEPS     - Remove third-party dependencies only
 ::   ALL      - Remove everything (build + deps + bin)
-::   PRISTINE - Remove absolutely everything (returns to freshly-cloned state)
+::   PRISTINE - Remove generated outputs and return to tracked repo state
 ::   (no arg) - Show interactive menu
 ::
 :: Environment:
@@ -69,8 +69,8 @@ echo.
 echo   3^) Everything             ^(build + deps + bin^)
 echo      Full rebuild required after this.
 echo.
-echo   4^) Pristine               ^(returns to freshly-cloned state^)
-echo      Removes build/, bin/, .vs/, logs/ - everything generated.
+echo   4^) Pristine               ^(tracked repo state^)
+echo      Removes build/, bin/, .vs/, logs/ and keeps tracked project assets.
 echo.
 echo ============================================================
 
@@ -106,9 +106,9 @@ if "!CLEAN_MODE!"=="BUILD" (
     echo       Will remove: build/, bin/, .vs/
     echo       Includes all third-party deps ^(~64 MB re-download^)
 ) else (
-    echo [LOG] Selected: Pristine ^(nuclear option^)
+    echo [LOG] Selected: Pristine ^(tracked repo state^)
     echo       Will remove: build/, bin/, .vs/, logs/
-    echo       Returns project to freshly-cloned state.
+    echo       Will keep tracked project assets, including committed cooked content.
 )
 
 echo.
@@ -218,7 +218,7 @@ call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
 
 :: ---------------------------------------------------------------------------
-:: Mode: Pristine (nuclear - returns to freshly-cloned state)
+:: Mode: Pristine (generated outputs only - returns to tracked repo state)
 :: ---------------------------------------------------------------------------
 :CLEAN_PRISTINE
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
@@ -297,7 +297,8 @@ if "!CLEAN_MODE!"=="BUILD" (
 ) else if "!CLEAN_MODE!"=="ALL" (
     echo   Run Setup.bat or GenerateSolution.bat to start fresh.
 ) else (
-    echo   Project is now in a pristine state ^(as if freshly cloned^).
+    echo   Project is now back to the tracked repo state.
+    echo   Tracked project assets, including committed cooked content, were preserved.
     echo   Run Setup.bat or GenerateSolution.bat to rebuild from scratch.
 )
 

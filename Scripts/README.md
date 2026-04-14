@@ -16,7 +16,7 @@ If you are trying to figure out what to run for what, start here. If a file is u
 | `SyncThirdParty.bat` | Inspect and repair `build/_deps` | Re-fetch missing or corrupt third-party dependencies |
 | `CookAssets.bat` | Cook all engine and project scene assets for a project | Batch-convert all supported scenes under the engine and selected project mesh roots |
 | `Format.bat` | Run `clang-format` | Apply repo formatting to `Engine/` and `Projects/` sources |
-| `Clean.bat` | Remove generated artifacts | Clear build outputs, third-party cache, or return to a pristine state |
+| `Clean.bat` | Remove generated artifacts | Clear build outputs, third-party cache, or return to the tracked repo state |
 
 ## Quick Workflow Guide
 
@@ -42,4 +42,5 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior, but most users will reach it indirectly through the higher-level commands.
 - Third-party dependency fetch is part of the configure flow, but `SyncThirdParty.bat` is the explicit repair/status command when you want to inspect or repair `build/_deps` directly.
 - `CookAssets.bat` cooks all supported scene sources under `Engine\Assets\Meshes` and `Projects\<Project>\Assets\Meshes` into the selected project's cooked asset output, with project scenes overriding engine scenes on path collisions.
+- `Clean.bat PRISTINE` removes generated outputs only. It does not delete tracked project assets such as committed Showcase cooked content under `Projects/Showcase/Assets/Cooked`.
 - Runtime boundary validation is a CMake target, not a user-run batch command. It lives under `CMake/Validation/` and runs as part of the engine build wiring.
