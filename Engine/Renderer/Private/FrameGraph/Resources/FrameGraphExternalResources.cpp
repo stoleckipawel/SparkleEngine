@@ -99,6 +99,21 @@ namespace
 		return (resource.GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
 	}
 
+	ID3D12Resource* ToD3D12Resource(NativeResourceHandle handle) noexcept
+	{
+		return static_cast<ID3D12Resource*>(handle.Value);
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
+	{
+		return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept
+	{
+		return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
+	}
+
 }  // namespace
 
 void FrameGraph::SyncImportedResourceAccesses() const noexcept
@@ -112,88 +127,107 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			continue;
 		}
 
-		if (access.externalResource == nullptr || m_descriptorHeapManager == nullptr || m_rhi == nullptr)
+		ID3D12Resource* const externalResource = ToD3D12Resource(access.externalResource);
+		if (externalResource == nullptr || m_descriptorHeapManager == nullptr || m_rhi == nullptr)
 		{
 			continue;
 		}
 
 		if (metadata.kind == FrameGraphResourceKind::ColorRenderTarget)
 		{
-			if (!access.renderTargetView.IsValid())
+			if (!access.renderTargetView)
 			{
-				access.renderTargetView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+				const D3D12DescriptorHandle handle = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+				access.renderTargetView = RhiCpuDescriptorHandle{handle.GetCPU().ptr};
 			}
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 			rtvDesc.Format = D3D12TypeConversions::ToDxgiFormat(metadata.textureDesc.format);
 			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			m_rhi->GetDevice()->CreateRenderTargetView(access.externalResource, &rtvDesc, access.renderTargetView.GetCPU());
+			m_rhi->GetDevice()->CreateRenderTargetView(externalResource, &rtvDesc, ToD3D12CpuDescriptor(access.renderTargetView));
 
-			if (!access.shaderResourceView.IsValid())
+			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
-				access.shaderResourceView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+				D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {};
+				m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cpuHandle, gpuHandle);
+				access.shaderResourceViewCpu = RhiCpuDescriptorHandle{cpuHandle.ptr};
+				access.shaderResourceViewGpu = RhiGpuDescriptorHandle{gpuHandle.ptr};
 			}
 
 			const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildTextureShaderResourceViewDesc(metadata.textureDesc);
-			m_rhi->GetDevice()->CreateShaderResourceView(access.externalResource, &srvDesc, access.shaderResourceView.GetCPU());
+			m_rhi->GetDevice()->CreateShaderResourceView(externalResource, &srvDesc, ToD3D12CpuDescriptor(access.shaderResourceViewCpu));
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!ResourceSupportsUnorderedAccess(*access.externalResource))
+				if (!ResourceSupportsUnorderedAccess(*externalResource))
 				{
 					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported texture is missing ALLOW_UNORDERED_ACCESS.");
 					assert(false);
 				}
 
-				if (!access.unorderedAccessView.IsValid())
+				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
-					access.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+					D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {};
+					m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cpuHandle, gpuHandle);
+					access.unorderedAccessViewCpu = RhiCpuDescriptorHandle{cpuHandle.ptr};
+					access.unorderedAccessViewGpu = RhiGpuDescriptorHandle{gpuHandle.ptr};
 				}
 
 				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildTextureUnorderedAccessViewDesc(metadata.textureDesc);
 				m_rhi->GetDevice()
-				    ->CreateUnorderedAccessView(access.externalResource, nullptr, &uavDesc, access.unorderedAccessView.GetCPU());
+				    ->CreateUnorderedAccessView(externalResource, nullptr, &uavDesc, ToD3D12CpuDescriptor(access.unorderedAccessViewCpu));
 			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::DepthStencil)
 		{
-			if (!access.depthStencilView.IsValid())
+			if (!access.depthStencilView)
 			{
-				access.depthStencilView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+				const D3D12DescriptorHandle handle = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+				access.depthStencilView = RhiCpuDescriptorHandle{handle.GetCPU().ptr};
 			}
 
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 			dsvDesc.Format = D3D12TypeConversions::ToDxgiFormat(metadata.textureDesc.format);
 			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 			dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-			m_rhi->GetDevice()->CreateDepthStencilView(access.externalResource, &dsvDesc, access.depthStencilView.GetCPU());
+			m_rhi->GetDevice()->CreateDepthStencilView(externalResource, &dsvDesc, ToD3D12CpuDescriptor(access.depthStencilView));
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{
-			if (!access.shaderResourceView.IsValid())
+			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
-				access.shaderResourceView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+				D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {};
+				m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cpuHandle, gpuHandle);
+				access.shaderResourceViewCpu = RhiCpuDescriptorHandle{cpuHandle.ptr};
+				access.shaderResourceViewGpu = RhiGpuDescriptorHandle{gpuHandle.ptr};
 			}
 
 			const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildBufferShaderResourceViewDesc(metadata.bufferDesc);
-			m_rhi->GetDevice()->CreateShaderResourceView(access.externalResource, &srvDesc, access.shaderResourceView.GetCPU());
+			m_rhi->GetDevice()->CreateShaderResourceView(externalResource, &srvDesc, ToD3D12CpuDescriptor(access.shaderResourceViewCpu));
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!ResourceSupportsUnorderedAccess(*access.externalResource))
+				if (!ResourceSupportsUnorderedAccess(*externalResource))
 				{
 					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported buffer is missing ALLOW_UNORDERED_ACCESS.");
 					assert(false);
 				}
 
-				if (!access.unorderedAccessView.IsValid())
+				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
-					access.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+					D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = {};
+					D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {};
+					m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, cpuHandle, gpuHandle);
+					access.unorderedAccessViewCpu = RhiCpuDescriptorHandle{cpuHandle.ptr};
+					access.unorderedAccessViewGpu = RhiGpuDescriptorHandle{gpuHandle.ptr};
 				}
 
 				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildBufferUnorderedAccessViewDesc(metadata.bufferDesc);
 				m_rhi->GetDevice()
-				    ->CreateUnorderedAccessView(access.externalResource, nullptr, &uavDesc, access.unorderedAccessView.GetCPU());
+				    ->CreateUnorderedAccessView(externalResource, nullptr, &uavDesc, ToD3D12CpuDescriptor(access.unorderedAccessViewCpu));
 			}
 		}
 	}
@@ -209,28 +243,42 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 	for (const ResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
 		FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
-		if (access.renderTargetView.IsValid())
+		if (access.renderTargetView)
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, access.renderTargetView);
+			m_descriptorHeapManager->FreeHandle(
+			    D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+			    ToD3D12CpuDescriptor(access.renderTargetView),
+			    D3D12_GPU_DESCRIPTOR_HANDLE{});
 			access.renderTargetView = {};
 		}
 
-		if (access.depthStencilView.IsValid())
+		if (access.depthStencilView)
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, access.depthStencilView);
+			m_descriptorHeapManager->FreeHandle(
+			    D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+			    ToD3D12CpuDescriptor(access.depthStencilView),
+			    D3D12_GPU_DESCRIPTOR_HANDLE{});
 			access.depthStencilView = {};
 		}
 
-		if (access.shaderResourceView.IsValid())
+		if (access.shaderResourceViewCpu || access.shaderResourceViewGpu)
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, access.shaderResourceView);
-			access.shaderResourceView = {};
+			m_descriptorHeapManager->FreeHandle(
+			    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			    ToD3D12CpuDescriptor(access.shaderResourceViewCpu),
+			    ToD3D12GpuDescriptor(access.shaderResourceViewGpu));
+			access.shaderResourceViewCpu = {};
+			access.shaderResourceViewGpu = {};
 		}
 
-		if (access.unorderedAccessView.IsValid())
+		if (access.unorderedAccessViewCpu || access.unorderedAccessViewGpu)
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, access.unorderedAccessView);
-			access.unorderedAccessView = {};
+			m_descriptorHeapManager->FreeHandle(
+			    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			    ToD3D12CpuDescriptor(access.unorderedAccessViewCpu),
+			    ToD3D12GpuDescriptor(access.unorderedAccessViewGpu));
+			access.unorderedAccessViewCpu = {};
+			access.unorderedAccessViewGpu = {};
 		}
 	}
 }

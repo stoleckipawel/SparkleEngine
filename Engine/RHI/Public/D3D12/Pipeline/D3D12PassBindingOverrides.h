@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../RHIAPI.h"
+#include "../../Interop/RenderHardwareInterface.h"
 
 #include <cstdint>
 #include <d3d12.h>
@@ -33,6 +34,7 @@ class SPARKLE_RHI_API D3D12PassBindingOverrides final
 	void SetShaderResourceView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress);
 	void SetUnorderedAccessView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress);
 	void SetDescriptorTable(const char* name, D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable);
+	void SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable);
 	void SetRootConstants(const char* name, const void* data, std::uint32_t constantCount);
 
 	const D3D12BindingOverride* Find(const char* name, D3D12BindingOverrideType type) const noexcept;

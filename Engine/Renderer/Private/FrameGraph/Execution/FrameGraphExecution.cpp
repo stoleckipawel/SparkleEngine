@@ -29,36 +29,36 @@ void FrameGraph::Execute(
 
 void FrameGraph::BindRenderTarget(CommandContext& cmd, TextureHandle renderTargetHandle, TextureHandle depthStencilHandle) const noexcept
 {
-	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
+	const RhiCpuDescriptorHandle renderTargetView = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
 	if (!depthStencilHandle.IsValid())
 	{
 		cmd.SetRenderTarget(renderTargetView, nullptr);
 		return;
 	}
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
+	const RhiCpuDescriptorHandle depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
 	cmd.SetRenderTarget(renderTargetView, &depthStencilView);
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(TextureHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(TextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveShaderResourceView(handle.GetResourceHandle());
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(BufferHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(BufferHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveShaderResourceView(handle.GetResourceHandle());
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(TextureHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(TextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(BufferHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(BufferHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
@@ -91,7 +91,7 @@ void FrameGraph::ClearDepthStencil(CommandContext& cmd, TextureHandle handle) co
 	cmd.ClearDepthStencil(ResolveDepthStencilView(resourceHandle), GetClearDepth(resourceHandle));
 }
 
-ID3D12Resource* FrameGraph::ResolveResource(TextureHandle handle) const noexcept
+NativeResourceHandle FrameGraph::ResolveResource(TextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveResource(handle.GetResourceHandle());
@@ -109,9 +109,9 @@ void FrameGraph::CopyResource(CommandContext& cmd, ResourceHandle destinationHan
 	    destinationMetadata.kind == sourceMetadata.kind || (destinationMetadata.resourceClass == FrameGraphResourceClass::Texture &&
 	                                                        sourceMetadata.resourceClass == FrameGraphResourceClass::Texture));
 
-	ID3D12Resource* destinationResource = ResolveResource(destinationHandle);
-	ID3D12Resource* sourceResource = ResolveResource(sourceHandle);
-	assert(destinationResource != nullptr);
-	assert(sourceResource != nullptr);
+	const NativeResourceHandle destinationResource = ResolveResource(destinationHandle);
+	const NativeResourceHandle sourceResource = ResolveResource(sourceHandle);
+	assert(destinationResource);
+	assert(sourceResource);
 	cmd.CopyResource(destinationResource, sourceResource);
 }

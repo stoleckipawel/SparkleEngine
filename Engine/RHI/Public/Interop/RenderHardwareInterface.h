@@ -40,12 +40,14 @@ struct NativeDescriptorHeapHandle
 	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
 };
 
-struct NativeTextureHandle
+struct NativeResourceHandle
 {
 	void* Value = nullptr;
 
 	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
 };
+
+using NativeTextureHandle = NativeResourceHandle;
 
 struct RhiCpuDescriptorHandle
 {

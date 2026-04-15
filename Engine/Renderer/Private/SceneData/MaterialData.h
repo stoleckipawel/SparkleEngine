@@ -2,10 +2,10 @@
 
 #include "Renderer/Public/RendererAPI.h"
 #include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <DirectXMath.h>
 #include <cstdint>
-#include <d3d12.h>
 
 struct MaterialDesc;
 
@@ -34,7 +34,7 @@ struct SPARKLE_RENDERER_API MaterialData
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
 
-	D3D12_GPU_DESCRIPTOR_HANDLE textureTableGpuHandle = {};
+	RhiGpuDescriptorHandle textureTableGpuHandle = {};
 
 	static MaterialData FromDesc(const MaterialDesc& desc);
 

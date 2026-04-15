@@ -6,9 +6,8 @@
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/ResourceState.h"
 
-#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
-#include <d3d12.h>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -38,13 +37,15 @@ enum class FrameGraphResourceOwnership : std::uint8_t
 struct FrameGraphResourceAccess
 {
 	D3D12SwapChain* swapChain = nullptr;
-	ID3D12Resource* externalResource = nullptr;
-	D3D12DescriptorHandle renderTargetView;
-	D3D12DescriptorHandle depthStencilView;
-	D3D12DescriptorHandle shaderResourceView;
-	D3D12DescriptorHandle unorderedAccessView;
+	NativeResourceHandle externalResource = {};
+	RhiCpuDescriptorHandle renderTargetView = {};
+	RhiCpuDescriptorHandle depthStencilView = {};
+	RhiCpuDescriptorHandle shaderResourceViewCpu = {};
+	RhiGpuDescriptorHandle shaderResourceViewGpu = {};
+	RhiCpuDescriptorHandle unorderedAccessViewCpu = {};
+	RhiGpuDescriptorHandle unorderedAccessViewGpu = {};
 
-	bool IsResolved() const noexcept { return swapChain != nullptr || externalResource != nullptr; }
+	bool IsResolved() const noexcept { return swapChain != nullptr || static_cast<bool>(externalResource); }
 };
 
 struct FrameGraphResourceMetadata
@@ -92,13 +93,13 @@ class SPARKLE_RENDERER_API ResourceRegistry final
 	    ResourceHandle handle,
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
-	    ID3D12Resource& resource,
+	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
 	void RegisterTransientBuffer(ResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
 	void RegisterImportedBuffer(
 	    ResourceHandle handle,
 	    const FrameGraphBufferDesc& desc,
-	    ID3D12Resource& resource,
+	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
 	void SetBoundaryStates(ResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
 	void ClearResolvedAccess(ResourceHandle handle) noexcept;

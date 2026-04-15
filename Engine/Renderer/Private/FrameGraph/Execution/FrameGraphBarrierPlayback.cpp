@@ -26,17 +26,17 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 		assert(barrier.beforeHandle.IsValid());
 		assert(barrier.afterHandle.IsValid());
 
-		const ID3D12Resource* beforeResource = ResolveResource(barrier.beforeHandle);
-		const ID3D12Resource* afterResource = ResolveResource(barrier.afterHandle);
+		const NativeResourceHandle beforeResource = ResolveResource(barrier.beforeHandle);
+		const NativeResourceHandle afterResource = ResolveResource(barrier.afterHandle);
 
-		if (beforeResource == nullptr || afterResource == nullptr)
+		if (!beforeResource || !afterResource)
 		{
 			assert(false);
 			LOG_WARNING("FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
 			continue;
 		}
 
-		cmd.AliasResource(const_cast<ID3D12Resource*>(beforeResource), const_cast<ID3D12Resource*>(afterResource));
+		cmd.AliasResource(beforeResource, afterResource);
 	}
 }
 
@@ -45,8 +45,8 @@ void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, std::string_view pass
 {
 	for (const CompiledBarrier& barrier : barriers)
 	{
-		ID3D12Resource* resource = ResolveResource(barrier.handle);
-		if (resource == nullptr)
+		const NativeResourceHandle resource = ResolveResource(barrier.handle);
+		if (!resource)
 		{
 			assert(false);
 			LOG_WARNING("FrameGraph::EmitCompiledBarriers: unresolved resource handle.");

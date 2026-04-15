@@ -9,7 +9,7 @@
 
 #include <cassert>
 
-D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveRenderTargetView(ResourceHandle handle) const noexcept
+RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(ResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -22,14 +22,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveRenderTargetView(ResourceHandle h
 
 	if (access.swapChain != nullptr)
 	{
-		return access.swapChain->GetCPUHandle();
+		return RhiCpuDescriptorHandle{access.swapChain->GetCPUHandle().ptr};
 	}
 
-	assert(access.renderTargetView.IsValid());
-	return access.renderTargetView.GetCPU();
+	assert(access.renderTargetView);
+	return access.renderTargetView;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveDepthStencilView(ResourceHandle handle) const noexcept
+RhiCpuDescriptorHandle FrameGraph::ResolveDepthStencilView(ResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -40,11 +40,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveDepthStencilView(ResourceHandle h
 		return ResolveTransientDepthStencilView(handle);
 	}
 
-	assert(access.depthStencilView.IsValid());
-	return access.depthStencilView.GetCPU();
+	assert(access.depthStencilView);
+	return access.depthStencilView;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(ResourceHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(ResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -56,11 +56,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveShaderResourceView(ResourceHandle
 		return ResolveTransientShaderResourceView(handle);
 	}
 
-	assert(access.shaderResourceView.IsValid());
-	return access.shaderResourceView.GetGPU();
+	assert(access.shaderResourceViewGpu);
+	return access.shaderResourceViewGpu;
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(ResourceHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(ResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -72,58 +72,58 @@ D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveUnorderedAccessView(ResourceHandl
 		return ResolveTransientUnorderedAccessView(handle);
 	}
 
-	assert(access.unorderedAccessView.IsValid());
-	return access.unorderedAccessView.GetGPU();
+	assert(access.unorderedAccessViewGpu);
+	return access.unorderedAccessViewGpu;
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept
+RhiCpuDescriptorHandle FrameGraph::ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 	const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindColorAllocation(handle);
 	assert(allocation != nullptr);
 	assert(allocation->renderTargetView.IsValid());
-	return allocation->renderTargetView.GetCPU();
+	return RhiCpuDescriptorHandle{allocation->renderTargetView.GetCPU().ptr};
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept
+RhiCpuDescriptorHandle FrameGraph::ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 	const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindDepthAllocation(handle);
 	assert(allocation != nullptr);
 	assert(allocation->depthStencilView.IsValid());
-	return allocation->depthStencilView.GetCPU();
+	return RhiCpuDescriptorHandle{allocation->depthStencilView.GetCPU().ptr};
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 
 	if (const FrameGraphTransientAllocator::AllocationRecord* colorAllocation = m_transientAllocator->FindColorAllocation(handle))
 	{
 		assert(colorAllocation->shaderResourceView.IsValid());
-		return colorAllocation->shaderResourceView.GetGPU();
+		return RhiGpuDescriptorHandle{colorAllocation->shaderResourceView.GetGPU().ptr};
 	}
 
 	const FrameGraphTransientAllocator::AllocationRecord* bufferAllocation = m_transientAllocator->FindBufferAllocation(handle);
 	assert(bufferAllocation != nullptr);
 	assert(bufferAllocation->shaderResourceView.IsValid());
-	return bufferAllocation->shaderResourceView.GetGPU();
+	return RhiGpuDescriptorHandle{bufferAllocation->shaderResourceView.GetGPU().ptr};
 }
 
-D3D12_GPU_DESCRIPTOR_HANDLE FrameGraph::ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 
 	if (const FrameGraphTransientAllocator::AllocationRecord* colorAllocation = m_transientAllocator->FindColorAllocation(handle))
 	{
 		assert(colorAllocation->unorderedAccessView.IsValid());
-		return colorAllocation->unorderedAccessView.GetGPU();
+		return RhiGpuDescriptorHandle{colorAllocation->unorderedAccessView.GetGPU().ptr};
 	}
 
 	const FrameGraphTransientAllocator::AllocationRecord* bufferAllocation = m_transientAllocator->FindBufferAllocation(handle);
 	assert(bufferAllocation != nullptr);
 	assert(bufferAllocation->unorderedAccessView.IsValid());
-	return bufferAllocation->unorderedAccessView.GetGPU();
+	return RhiGpuDescriptorHandle{bufferAllocation->unorderedAccessView.GetGPU().ptr};
 }
 
 std::array<float, 4> FrameGraph::GetClearColor(ResourceHandle handle) const noexcept
@@ -140,7 +140,7 @@ float FrameGraph::GetClearDepth(ResourceHandle handle) const noexcept
 	return DepthConvention::GetClearDepth();
 }
 
-ID3D12Resource* FrameGraph::ResolveResource(ResourceHandle handle) const noexcept
+NativeResourceHandle FrameGraph::ResolveResource(ResourceHandle handle) const noexcept
 {
 	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 	const FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -150,7 +150,7 @@ ID3D12Resource* FrameGraph::ResolveResource(ResourceHandle handle) const noexcep
 		return ResolveTransientResource(handle, metadata.kind);
 	}
 
-	if (access.externalResource != nullptr)
+	if (access.externalResource)
 	{
 		return access.externalResource;
 	}
@@ -158,17 +158,17 @@ ID3D12Resource* FrameGraph::ResolveResource(ResourceHandle handle) const noexcep
 	switch (metadata.kind)
 	{
 		case FrameGraphResourceKind::BackBuffer:
-			return access.swapChain != nullptr ? access.swapChain->GetCurrentResource() : nullptr;
+			return access.swapChain != nullptr ? NativeResourceHandle{access.swapChain->GetCurrentResource()} : NativeResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
 			return access.externalResource;
 		default:
-			return nullptr;
+			return {};
 	}
 }
 
-ID3D12Resource* FrameGraph::ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept
+NativeResourceHandle FrameGraph::ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 
@@ -177,19 +177,19 @@ ID3D12Resource* FrameGraph::ResolveTransientResource(ResourceHandle handle, Fram
 		case FrameGraphResourceKind::DepthStencil:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindDepthAllocation(handle);
-			return allocation != nullptr ? allocation->depthStencilResource.Get() : nullptr;
+			return allocation != nullptr ? NativeResourceHandle{allocation->depthStencilResource.Get()} : NativeResourceHandle{};
 		}
 		case FrameGraphResourceKind::ColorRenderTarget:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindColorAllocation(handle);
-			return allocation != nullptr ? allocation->renderTargetResource.Get() : nullptr;
+			return allocation != nullptr ? NativeResourceHandle{allocation->renderTargetResource.Get()} : NativeResourceHandle{};
 		}
 		case FrameGraphResourceKind::Buffer:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindBufferAllocation(handle);
-			return allocation != nullptr ? allocation->buffer.Get() : nullptr;
+			return allocation != nullptr ? NativeResourceHandle{allocation->buffer.Get()} : NativeResourceHandle{};
 		}
 		default:
-			return nullptr;
+			return {};
 	}
 }

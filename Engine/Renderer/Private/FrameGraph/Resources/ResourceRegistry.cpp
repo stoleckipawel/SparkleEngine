@@ -66,7 +66,7 @@ void ResourceRegistry::RegisterImportedTexture(
     ResourceHandle handle,
     const FrameGraphTextureDesc& desc,
     FrameGraphResourceKind kind,
-    ID3D12Resource& resource,
+	NativeResourceHandle resource,
     ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
@@ -81,7 +81,7 @@ void ResourceRegistry::RegisterImportedTexture(
 	metadata.bufferDesc = {};
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
 	access = {};
-	access.externalResource = &resource;
+	access.externalResource = resource;
 }
 
 void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
@@ -102,7 +102,7 @@ void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const Fram
 void ResourceRegistry::RegisterImportedBuffer(
     ResourceHandle handle,
     const FrameGraphBufferDesc& desc,
-    ID3D12Resource& resource,
+	NativeResourceHandle resource,
     ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
@@ -117,7 +117,7 @@ void ResourceRegistry::RegisterImportedBuffer(
 	metadata.bufferDesc = desc;
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
 	access = {};
-	access.externalResource = &resource;
+	access.externalResource = resource;
 }
 
 void ResourceRegistry::SetBoundaryStates(ResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept

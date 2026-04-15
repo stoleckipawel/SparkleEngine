@@ -76,7 +76,7 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	}
 
 	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).ptr;
+	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).Value;
 }
 
 void Renderer::TransitionRenderProduct(
@@ -97,8 +97,8 @@ void Renderer::TransitionRenderProduct(
 	}
 
 	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	ID3D12Resource* resource = m_frameGraph->ResolveResource(TextureHandle{resourceHandle});
-	if (resource == nullptr)
+	const NativeResourceHandle resource = m_frameGraph->ResolveResource(TextureHandle{resourceHandle});
+	if (!resource)
 	{
 		return;
 	}

@@ -2,7 +2,6 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "D3D12/D3D12SwapChain.h"
-#include "D3D12/Resources/D3D12Texture.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
@@ -43,24 +42,18 @@ TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, Resou
 	return TextureHandle{handle};
 }
 
-TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ID3D12Resource& resource, ResourceState initialState) noexcept
+TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
 {
-	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "ImportedTexture");
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), resource, initialState);
-	return TextureHandle{handle};
-}
-
-TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, D3D12Texture& texture, ResourceState initialState) noexcept
-{
-	ID3D12Resource* resource = texture.GetResource().Get();
-	if (resource == nullptr)
+	if (!resource)
 	{
 		LOG_WARNING("FrameGraph::ImportTexture: imported texture has no backing resource.");
 		return TextureHandle::Invalid();
 	}
 
-	return ImportTexture(desc, *resource, initialState);
+	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "ImportedTexture");
+	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), resource, initialState);
+	return TextureHandle{handle};
 }
 
 TextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
@@ -78,8 +71,14 @@ TextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexc
 	return TextureHandle{handle};
 }
 
-BufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, ID3D12Resource& resource, ResourceState initialState) noexcept
+BufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
 {
+	if (!resource)
+	{
+		LOG_WARNING("FrameGraph::ImportBuffer: imported buffer has no backing resource.");
+		return BufferHandle::Invalid();
+	}
+
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "ImportedBuffer");
 	const ResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterImportedBuffer(handle, resolvedDesc, resource, initialState);

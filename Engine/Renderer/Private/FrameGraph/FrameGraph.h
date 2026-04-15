@@ -14,6 +14,8 @@
 #include "Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
+
 #include <d3d12.h>
 #include <array>
 #include <cstdint>
@@ -30,7 +32,6 @@ class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 class D3D12SwapChain;
 class CommandContext;
-class D3D12Texture;
 class FrameGraphTransientAllocator;
 struct RenderPassContext;
 class Window;
@@ -196,10 +197,9 @@ class SPARKLE_RENDERER_API FrameGraph
 	}
 
 	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
-	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ID3D12Resource& resource, ResourceState initialState) noexcept;
-	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, D3D12Texture& texture, ResourceState initialState) noexcept;
+	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
 	TextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
-	BufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, ID3D12Resource& resource, ResourceState initialState) noexcept;
+	BufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
 	BufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
 	void BindRenderTarget(
 	    CommandContext& cmd,
@@ -209,11 +209,11 @@ class SPARKLE_RENDERER_API FrameGraph
 	void CopyBuffer(CommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
 	void ClearRenderTarget(CommandContext& cmd, TextureHandle handle) const noexcept;
 	void ClearDepthStencil(CommandContext& cmd, TextureHandle handle) const noexcept;
-	ID3D12Resource* ResolveResource(TextureHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(TextureHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(BufferHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
+	NativeResourceHandle ResolveResource(TextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(TextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(BufferHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(TextureHandle handle) const noexcept
 	{
@@ -500,18 +500,18 @@ class SPARKLE_RENDERER_API FrameGraph
 	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveRenderTargetView(ResourceHandle handle) const noexcept;
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDepthStencilView(ResourceHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveShaderResourceView(ResourceHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveUnorderedAccessView(ResourceHandle handle) const noexcept;
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept;
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveRenderTargetView(ResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveDepthStencilView(ResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(ResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(ResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(ResourceHandle handle) const noexcept;
 	float GetClearDepth(ResourceHandle handle) const noexcept;
-	ID3D12Resource* ResolveResource(ResourceHandle handle) const noexcept;
-	ID3D12Resource* ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
+	NativeResourceHandle ResolveResource(ResourceHandle handle) const noexcept;
+	NativeResourceHandle ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
 	void CopyResource(CommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept;

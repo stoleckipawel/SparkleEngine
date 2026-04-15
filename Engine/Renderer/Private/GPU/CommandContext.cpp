@@ -3,6 +3,30 @@
 
 #include "GPU/ResourceStateD3D12.h"
 
+#include <vector>
+
+namespace
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE nativeHandle{};
+		nativeHandle.ptr = handle.Value;
+		return nativeHandle;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE nativeHandle{};
+		nativeHandle.ptr = handle.Value;
+		return nativeHandle;
+	}
+
+	ID3D12Resource* ToD3D12Resource(NativeResourceHandle handle) noexcept
+	{
+		return static_cast<ID3D12Resource*>(handle.Value);
+	}
+}  // namespace
+
 CommandContext::CommandContext(ID3D12GraphicsCommandList* cmdList) noexcept : m_cmdList(cmdList) {}
 
 void CommandContext::SetPipelineState(ID3D12PipelineState* pso) noexcept
@@ -59,9 +83,9 @@ void CommandContext::BindRootUnorderedAccessView(std::uint32_t rootParameterInde
 	m_cmdList->SetGraphicsRootUnorderedAccessView(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept
+void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
-	m_cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex, baseDescriptor);
+	m_cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex, ToD3D12GpuDescriptor(baseDescriptor));
 }
 
 void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept
@@ -69,9 +93,9 @@ void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIn
 	m_cmdList->SetComputeRootConstantBufferView(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor) noexcept
+void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
-	m_cmdList->SetComputeRootDescriptorTable(rootParameterIndex, baseDescriptor);
+	m_cmdList->SetComputeRootDescriptorTable(rootParameterIndex, ToD3D12GpuDescriptor(baseDescriptor));
 }
 
 void CommandContext::SetComputeRoot32BitConstants(
@@ -98,27 +122,42 @@ void CommandContext::SetDescriptorHeaps(std::uint32_t heapCount, ID3D12Descripto
 	m_cmdList->SetDescriptorHeaps(heapCount, heaps);
 }
 
-void CommandContext::SetRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const D3D12_CPU_DESCRIPTOR_HANDLE* dsv) noexcept
+void CommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
 {
-	m_cmdList->OMSetRenderTargets(1, &rtv, FALSE, dsv);
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeRtv = ToD3D12CpuDescriptor(rtv);
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = dsv != nullptr ? ToD3D12CpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	m_cmdList->OMSetRenderTargets(1, &nativeRtv, FALSE, dsv != nullptr ? &nativeDsv : nullptr);
 }
 
 void CommandContext::SetRenderTargets(
     std::uint32_t numRTVs,
-    const D3D12_CPU_DESCRIPTOR_HANDLE* rtvs,
-    const D3D12_CPU_DESCRIPTOR_HANDLE* dsv) noexcept
+    const RhiCpuDescriptorHandle* rtvs,
+    const RhiCpuDescriptorHandle* dsv) noexcept
 {
-	m_cmdList->OMSetRenderTargets(numRTVs, rtvs, FALSE, dsv);
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> nativeRtvs(numRTVs);
+	for (std::uint32_t index = 0; index < numRTVs; ++index)
+	{
+		nativeRtvs[index] = ToD3D12CpuDescriptor(rtvs[index]);
+	}
+
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = dsv != nullptr ? ToD3D12CpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	m_cmdList->OMSetRenderTargets(numRTVs, nativeRtvs.data(), FALSE, dsv != nullptr ? &nativeDsv : nullptr);
 }
 
-void CommandContext::ClearRenderTarget(D3D12_CPU_DESCRIPTOR_HANDLE rtv, const float color[4]) noexcept
+void CommandContext::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
 {
-	m_cmdList->ClearRenderTargetView(rtv, color, 0, nullptr);
+	m_cmdList->ClearRenderTargetView(ToD3D12CpuDescriptor(rtv), color, 0, nullptr);
 }
 
-void CommandContext::ClearDepthStencil(D3D12_CPU_DESCRIPTOR_HANDLE dsv, float depth, std::uint8_t stencil) noexcept
+void CommandContext::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
 {
-	m_cmdList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, depth, stencil, 0, nullptr);
+	m_cmdList->ClearDepthStencilView(
+	    ToD3D12CpuDescriptor(dsv),
+	    D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+	    depth,
+	    stencil,
+	    0,
+	    nullptr);
 }
 
 void CommandContext::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) noexcept
@@ -169,28 +208,28 @@ void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCoun
 	m_cmdList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
-void CommandContext::CopyResource(ID3D12Resource* destinationResource, ID3D12Resource* sourceResource) noexcept
+void CommandContext::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
 {
-	m_cmdList->CopyResource(destinationResource, sourceResource);
+	m_cmdList->CopyResource(ToD3D12Resource(destinationResource), ToD3D12Resource(sourceResource));
 }
 
-void CommandContext::AliasResource(ID3D12Resource* beforeResource, ID3D12Resource* afterResource) noexcept
+void CommandContext::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
 {
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Aliasing.pResourceBefore = beforeResource;
-	barrier.Aliasing.pResourceAfter = afterResource;
+	barrier.Aliasing.pResourceBefore = ToD3D12Resource(beforeResource);
+	barrier.Aliasing.pResourceAfter = ToD3D12Resource(afterResource);
 
 	m_cmdList->ResourceBarrier(1, &barrier);
 }
 
-void CommandContext::TransitionResource(ID3D12Resource* resource, ResourceState before, ResourceState after) noexcept
+void CommandContext::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = resource;
+	barrier.Transition.pResource = ToD3D12Resource(resource);
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barrier.Transition.StateBefore = MapToD3D12State(before);
 	barrier.Transition.StateAfter = MapToD3D12State(after);
@@ -198,12 +237,12 @@ void CommandContext::TransitionResource(ID3D12Resource* resource, ResourceState 
 	m_cmdList->ResourceBarrier(1, &barrier);
 }
 
-void CommandContext::UnorderedAccessBarrier(ID3D12Resource* resource) noexcept
+void CommandContext::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
 {
 	D3D12_RESOURCE_BARRIER barrier{};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.UAV.pResource = resource;
+	barrier.UAV.pResource = ToD3D12Resource(resource);
 
 	m_cmdList->ResourceBarrier(1, &barrier);
 }

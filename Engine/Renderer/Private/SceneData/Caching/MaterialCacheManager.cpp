@@ -88,7 +88,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 			textures[slot]->WriteShaderResourceView(RhiCpuDescriptorHandle{destination.ptr});
 		}
 
-		material.textureTableGpuHandle = tableHandle.GetGPU();
+		material.textureTableGpuHandle = RhiGpuDescriptorHandle{tableHandle.GetGPU().ptr};
 		m_materialTextureTables.push_back(tableHandle);
 		m_cachedMaterialData.push_back(material);
 	};

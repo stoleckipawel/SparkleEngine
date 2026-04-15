@@ -143,8 +143,8 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
 		const PerObjectPSConstantBufferData perObjectPS = sceneData.materials[draw.materialSlot].ToPerObjectPSData();
 
-		const D3D12_GPU_DESCRIPTOR_HANDLE materialTextureTable = sceneData.materials[draw.materialSlot].textureTableGpuHandle;
-		if (materialTextureTable.ptr == 0)
+		const RhiGpuDescriptorHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableGpuHandle;
+		if (!materialTextureTable)
 		{
 			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;

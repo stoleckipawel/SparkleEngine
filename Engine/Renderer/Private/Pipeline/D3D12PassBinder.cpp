@@ -9,6 +9,16 @@
 
 #include <cassert>
 
+namespace
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE nativeHandle{};
+		nativeHandle.ptr = handle.Value;
+		return nativeHandle;
+	}
+}  // namespace
+
 void D3D12PassBindingOverrides::SetConstantBufferView(const char* name, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress)
 {
 	m_overrides.push_back(
@@ -43,6 +53,11 @@ void D3D12PassBindingOverrides::SetDescriptorTable(const char* name, D3D12_GPU_D
 	        .Name = name != nullptr ? name : "",
 	        .Type = D3D12BindingOverrideType::DescriptorTable,
 	        .DescriptorTable = descriptorTable});
+}
+
+void D3D12PassBindingOverrides::SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable)
+{
+	SetDescriptorTable(name, ToD3D12GpuDescriptor(descriptorTable));
 }
 
 void D3D12PassBindingOverrides::SetRootConstants(const char* name, const void* data, std::uint32_t constantCount)
@@ -193,13 +208,21 @@ void D3D12PassBinder::BindCompiledBinding(
 			if (parameterBinding->Kind == PassParameterValueKind::Texture)
 			{
 				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Textures[0]), isCompute);
+				BindDescriptorTable(
+				    cmd,
+				    compiledBinding,
+				    ToD3D12GpuDescriptor(frameGraph.ResolveShaderResourceView(parameterBinding->Textures[0])),
+				    isCompute);
 				return;
 			}
 
 			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
 			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Buffers[0]), isCompute);
+			BindDescriptorTable(
+			    cmd,
+			    compiledBinding,
+			    ToD3D12GpuDescriptor(frameGraph.ResolveShaderResourceView(parameterBinding->Buffers[0])),
+			    isCompute);
 			return;
 		}
 		case D3D12CompiledBindingType::DescriptorTableUnorderedAccessView:
@@ -216,13 +239,21 @@ void D3D12PassBinder::BindCompiledBinding(
 			if (parameterBinding->Kind == PassParameterValueKind::Texture)
 			{
 				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Textures[0]), isCompute);
+				BindDescriptorTable(
+				    cmd,
+				    compiledBinding,
+				    ToD3D12GpuDescriptor(frameGraph.ResolveUnorderedAccessView(parameterBinding->Textures[0])),
+				    isCompute);
 				return;
 			}
 
 			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
 			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Buffers[0]), isCompute);
+			BindDescriptorTable(
+			    cmd,
+			    compiledBinding,
+			    ToD3D12GpuDescriptor(frameGraph.ResolveUnorderedAccessView(parameterBinding->Buffers[0])),
+			    isCompute);
 			return;
 		}
 		case D3D12CompiledBindingType::DescriptorTableSampler:
@@ -308,13 +339,15 @@ void D3D12PassBinder::BindDescriptorTable(
     D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable,
     bool isCompute)
 {
+	const RhiGpuDescriptorHandle rhiDescriptorTable{descriptorTable.ptr};
+
 	if (isCompute)
 	{
-		cmd.BindComputeDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+		cmd.BindComputeDescriptorTable(compiledBinding.RootParameterIndex, rhiDescriptorTable);
 		return;
 	}
 
-	cmd.BindDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+	cmd.BindDescriptorTable(compiledBinding.RootParameterIndex, rhiDescriptorTable);
 }
 
 void D3D12PassBinder::BindRootConstants(
