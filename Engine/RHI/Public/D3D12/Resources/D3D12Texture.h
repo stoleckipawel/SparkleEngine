@@ -28,7 +28,7 @@ class D3D12Texture final : public Texture
 
 	const ComPtr<ID3D12Resource2>& GetResource() const noexcept { return m_textureResource; }
 
-	void WriteShaderResourceView(D3D12_CPU_DESCRIPTOR_HANDLE destination) const override;
+	void WriteShaderResourceView(RhiCpuDescriptorHandle destination) const override;
 
   private:
 	void CreateResource();

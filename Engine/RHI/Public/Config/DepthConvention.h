@@ -1,18 +1,18 @@
 #pragma once
 
 #include "../RHIAPI.h"
+#include "../Formats/CompareOp.h"
 
 #include <DirectXMath.h>
-#include <d3d12.h>
 
 class SPARKLE_RHI_API DepthConvention
 {
   public:
 	static float GetClearDepth() noexcept;
 
-	static D3D12_COMPARISON_FUNC GetDepthComparisonLessEqualFunc() noexcept;
+	static CompareOp GetDepthComparisonLessEqualFunc() noexcept;
 
-	static D3D12_COMPARISON_FUNC GetDepthComparisonFuncEqual() noexcept;
+	static CompareOp GetDepthComparisonFuncEqual() noexcept;
 
 	static DirectX::XMMATRIX CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept;
 	static DirectX::XMMATRIX CreateOrthographicOffCenterLH(

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "../Formats/PixelFormat.h"
 #include "../RHIAPI.h"
 
-#include <cstddef>
 #include <cstdint>
 
 enum class RhiBackendApi : std::uint8_t
@@ -76,5 +76,5 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept = 0;
 	virtual void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept = 0;
 	virtual void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept = 0;
-	virtual std::uint32_t GetPresentColorFormat() const noexcept = 0;
+	virtual PixelFormat GetPresentColorFormat() const noexcept = 0;
 };

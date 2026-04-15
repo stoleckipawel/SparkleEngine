@@ -11,6 +11,7 @@
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Style/SparkleUiTheme.h"
+#include "D3D12/D3D12TypeConversions.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -204,8 +205,8 @@ bool UI::InitializeD3D12Backend()
 	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
 	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
-	initInfo.RTVFormat = static_cast<DXGI_FORMAT>(m_renderHardware->GetPresentColorFormat());
-	initInfo.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
+	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(RenderConfig::DepthStencilFormat);
 	initInfo.SrvDescriptorHeap = ToD3D12DescriptorHeap(m_renderHardware->GetShaderResourceHeapHandle());
 	initInfo.SrvDescriptorAllocFn = &AllocSRV;
 	initInfo.SrvDescriptorFreeFn = &FreeSRV;

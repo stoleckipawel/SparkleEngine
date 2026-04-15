@@ -16,24 +16,24 @@ float DepthConvention::GetClearDepth() noexcept
 	return 1.0f;
 }
 
-D3D12_COMPARISON_FUNC DepthConvention::GetDepthComparisonLessEqualFunc() noexcept
+CompareOp DepthConvention::GetDepthComparisonLessEqualFunc() noexcept
 {
 	if (DepthConvention::IsReversedZ())
 	{
-		return D3D12_COMPARISON_FUNC_GREATER;
+		return CompareOp::Greater;
 	}
 
-	return D3D12_COMPARISON_FUNC_LESS;
+	return CompareOp::Less;
 }
 
-D3D12_COMPARISON_FUNC DepthConvention::GetDepthComparisonFuncEqual() noexcept
+CompareOp DepthConvention::GetDepthComparisonFuncEqual() noexcept
 {
 	if (DepthConvention::IsReversedZ())
 	{
-		return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		return CompareOp::GreaterOrEqual;
 	}
 
-	return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	return CompareOp::LessOrEqual;
 }
 
 XMMATRIX DepthConvention::CreatePerspectiveFovLH(float fovY, float aspect, float nearZ, float farZ) noexcept

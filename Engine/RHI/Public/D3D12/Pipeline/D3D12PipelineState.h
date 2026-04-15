@@ -1,8 +1,10 @@
 #pragma once
 
+#include "../../Config/RenderConfig.h"
+#include "../../Formats/CompareOp.h"
+#include "../../Formats/PixelFormat.h"
 #include "../Shaders/ShaderCompileResult.h"
 #include "D3D12RootSignature.h"
-#include "Config/RenderConfig.h"
 
 #include <span>
 #include <array>
@@ -18,7 +20,7 @@ struct DepthTestDesc
 {
 	bool DepthEnable = true;
 	D3D12_DEPTH_WRITE_MASK DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	D3D12_COMPARISON_FUNC DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	CompareOp DepthFunc = CompareOp::Less;
 };
 
 struct StencilTestDesc
@@ -26,11 +28,11 @@ struct StencilTestDesc
 	bool StencilEnable = false;
 	uint8_t StencilReadMask = 0xFF;
 	uint8_t StencilWriteMask = 0xFF;
-	D3D12_COMPARISON_FUNC FrontFaceStencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	CompareOp FrontFaceStencilFunc = CompareOp::Always;
 	D3D12_STENCIL_OP FrontFaceStencilFailOp = D3D12_STENCIL_OP_KEEP;
 	D3D12_STENCIL_OP FrontFaceStencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	D3D12_STENCIL_OP FrontFaceStencilPassOp = D3D12_STENCIL_OP_KEEP;
-	D3D12_COMPARISON_FUNC BackFaceStencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	CompareOp BackFaceStencilFunc = CompareOp::Always;
 	D3D12_STENCIL_OP BackFaceStencilFailOp = D3D12_STENCIL_OP_KEEP;
 	D3D12_STENCIL_OP BackFaceStencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
 	D3D12_STENCIL_OP BackFaceStencilPassOp = D3D12_STENCIL_OP_KEEP;
@@ -47,9 +49,9 @@ struct GraphicsPipelineStateDesc
 	D3D12_CULL_MODE CullMode = D3D12_CULL_MODE_BACK;
 	DepthTestDesc DepthTest = {};
 	StencilTestDesc StencilTest = {};
-	std::array<DXGI_FORMAT, 8> RenderTargetFormats = {};
+	std::array<PixelFormat, 8> RenderTargetFormats = {};
 	std::uint32_t RenderTargetCount = 1;
-	DXGI_FORMAT DepthStencilFormat = RenderConfig::DepthStencilFormat;
+	PixelFormat DepthStencilFormat = RenderConfig::DepthStencilFormat;
 	const wchar_t* DebugName = L"RHI_GraphicsPipelineState";
 };
 

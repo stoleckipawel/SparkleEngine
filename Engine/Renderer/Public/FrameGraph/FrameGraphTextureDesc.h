@@ -17,7 +17,7 @@ struct FrameGraphTextureDesc
 	std::string name;
 	std::uint32_t width = 0;
 	std::uint32_t height = 0;
-	DXGI_FORMAT format = RenderConfig::DepthStencilFormat;
+	PixelFormat format = RenderConfig::DepthStencilFormat;
 	FrameGraphTextureKind kind = FrameGraphTextureKind::Color;
 
 	static FrameGraphTextureDesc CreateDepthStencil(std::string_view name, std::uint32_t width, std::uint32_t height) noexcept
@@ -30,7 +30,7 @@ struct FrameGraphTextureDesc
 		    FrameGraphTextureKind::DepthStencil};
 	}
 
-	static FrameGraphTextureDesc CreateColor(std::string_view name, std::uint32_t width, std::uint32_t height, DXGI_FORMAT format) noexcept
+	static FrameGraphTextureDesc CreateColor(std::string_view name, std::uint32_t width, std::uint32_t height, PixelFormat format) noexcept
 	{
 		return FrameGraphTextureDesc{std::string(name), width, height, format, FrameGraphTextureKind::Color};
 	}

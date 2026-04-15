@@ -5,6 +5,7 @@
 
 #include "Config/DepthConvention.h"
 
+#include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/D3D12Rhi.h"
 
 #include <cassert>
@@ -87,7 +88,7 @@ namespace
 		resourceDesc.Height = static_cast<UINT>(desc.height);
 		resourceDesc.DepthOrArraySize = 1;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = desc.format;
+		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -98,7 +99,7 @@ namespace
 	D3D12_CLEAR_VALUE BuildTransientOptimizedClearValue(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
 	{
 		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = desc.format;
+		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
 
 		if (kind == FrameGraphResourceKind::DepthStencil)
 		{

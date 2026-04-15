@@ -50,7 +50,7 @@ class D3D12SwapChain final
 
 	D3D12_RECT GetDefaultScissorRect() const;
 
-	DXGI_FORMAT GetBackBufferFormat() const { return RenderConfig::BackBufferFormat; }
+	PixelFormat GetBackBufferFormat() const { return RenderConfig::BackBufferFormat; }
 
 	UINT GetAllowTearingFlag() const;
 

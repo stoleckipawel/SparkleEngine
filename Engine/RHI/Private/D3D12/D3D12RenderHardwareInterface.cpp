@@ -160,7 +160,7 @@ void D3D12RenderHardwareInterface::EndPresentRenderPass(NativeGraphicsCommandLis
 	nativeCommandList->ResourceBarrier(1, &transitionToPresent);
 }
 
-std::uint32_t D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
+PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
 {
-	return m_swapChain != nullptr ? static_cast<std::uint32_t>(m_swapChain->GetBackBufferFormat()) : 0u;
+	return m_swapChain != nullptr ? m_swapChain->GetBackBufferFormat() : PixelFormat::Unknown;
 }

@@ -4,6 +4,7 @@
 #include "GPU/ResourceStateD3D12.h"
 
 #include "Config/DepthConvention.h"
+#include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/D3D12Rhi.h"
 
@@ -76,7 +77,7 @@ namespace
 		resourceDesc.Height = transientPlan.textureDesc.height;
 		resourceDesc.DepthOrArraySize = 1;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = transientPlan.textureDesc.format;
+		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -87,7 +88,7 @@ namespace
 	D3D12_DEPTH_STENCIL_VIEW_DESC BuildDepthStencilViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
 		D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc = {};
-		viewDesc.Format = transientPlan.textureDesc.format;
+		viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		viewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		viewDesc.Flags = D3D12_DSV_FLAG_NONE;
 		return viewDesc;
@@ -96,7 +97,7 @@ namespace
 	D3D12_CLEAR_VALUE BuildDepthStencilClearValue(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
 		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = transientPlan.textureDesc.format;
+		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		clearValue.DepthStencil.Depth = DepthConvention::GetClearDepth();
 		clearValue.DepthStencil.Stencil = 0;
 		return clearValue;
@@ -111,7 +112,7 @@ namespace
 		resourceDesc.Height = transientPlan.textureDesc.height;
 		resourceDesc.DepthOrArraySize = 1;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = transientPlan.textureDesc.format;
+		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -126,7 +127,7 @@ namespace
 	D3D12_RENDER_TARGET_VIEW_DESC BuildRenderTargetViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
 		D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {};
-		viewDesc.Format = transientPlan.textureDesc.format;
+		viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		viewDesc.Texture2D.MipSlice = 0;
 		viewDesc.Texture2D.PlaneSlice = 0;
@@ -136,7 +137,7 @@ namespace
 	D3D12_CLEAR_VALUE BuildRenderTargetClearValue(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
 	{
 		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = transientPlan.textureDesc.format;
+		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		clearValue.Color[0] = 0.0f;
 		clearValue.Color[1] = 0.0f;
 		clearValue.Color[2] = 0.0f;
@@ -171,7 +172,7 @@ namespace
 			return srvDesc;
 		}
 
-		srvDesc.Format = transientPlan.textureDesc.format;
+		srvDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
 		srvDesc.Texture2D.MostDetailedMip = 0;
@@ -205,7 +206,7 @@ namespace
 			return uavDesc;
 		}
 
-		uavDesc.Format = transientPlan.textureDesc.format;
+		uavDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Texture2D.MipSlice = 0;
 		uavDesc.Texture2D.PlaneSlice = 0;

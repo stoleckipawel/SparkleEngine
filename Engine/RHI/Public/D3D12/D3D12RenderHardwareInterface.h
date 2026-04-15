@@ -27,7 +27,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
 	void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept override;
 	void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept override;
-	std::uint32_t GetPresentColorFormat() const noexcept override;
+	PixelFormat GetPresentColorFormat() const noexcept override;
 
   private:
 	D3D12Rhi* m_rhi = nullptr;

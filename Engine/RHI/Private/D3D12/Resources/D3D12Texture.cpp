@@ -97,7 +97,7 @@ void D3D12Texture::UploadToGPU()
 
 void D3D12Texture::CreateShaderResourceView()
 {
-	WriteShaderResourceView(GetCPUHandle());
+	WriteShaderResourceView(RhiCpuDescriptorHandle{GetCPUHandle().ptr});
 }
 
 D3D12_SHADER_RESOURCE_VIEW_DESC D3D12Texture::BuildShaderResourceViewDesc() const noexcept
@@ -111,10 +111,12 @@ D3D12_SHADER_RESOURCE_VIEW_DESC D3D12Texture::BuildShaderResourceViewDesc() cons
 	return srvDesc;
 }
 
-void D3D12Texture::WriteShaderResourceView(D3D12_CPU_DESCRIPTOR_HANDLE destination) const
+void D3D12Texture::WriteShaderResourceView(RhiCpuDescriptorHandle destination) const
 {
+	D3D12_CPU_DESCRIPTOR_HANDLE nativeDestination{};
+	nativeDestination.ptr = destination.Value;
 	const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildShaderResourceViewDesc();
-	m_rhi.GetDevice()->CreateShaderResourceView(m_textureResource.Get(), &srvDesc, destination);
+	m_rhi.GetDevice()->CreateShaderResourceView(m_textureResource.Get(), &srvDesc, nativeDestination);
 }
 
 D3D12Texture::~D3D12Texture() noexcept

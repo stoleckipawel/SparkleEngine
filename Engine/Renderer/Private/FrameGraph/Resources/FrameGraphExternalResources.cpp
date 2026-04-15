@@ -3,6 +3,7 @@
 
 #include "GPU/CommandContext.h"
 
+#include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include "Core/Public/Diagnostics/Log.h"
@@ -30,7 +31,7 @@ namespace
 	D3D12_SHADER_RESOURCE_VIEW_DESC BuildTextureShaderResourceViewDesc(const FrameGraphTextureDesc& desc) noexcept
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = desc.format;
+		srvDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Texture2D.MostDetailedMip = 0;
@@ -41,7 +42,7 @@ namespace
 	D3D12_UNORDERED_ACCESS_VIEW_DESC BuildTextureUnorderedAccessViewDesc(const FrameGraphTextureDesc& desc) noexcept
 	{
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-		uavDesc.Format = desc.format;
+		uavDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Texture2D.MipSlice = 0;
 		uavDesc.Texture2D.PlaneSlice = 0;
@@ -124,7 +125,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-			rtvDesc.Format = metadata.textureDesc.format;
+			rtvDesc.Format = D3D12TypeConversions::ToDxgiFormat(metadata.textureDesc.format);
 			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 			m_rhi->GetDevice()->CreateRenderTargetView(access.externalResource, &rtvDesc, access.renderTargetView.GetCPU());
 
@@ -162,7 +163,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-			dsvDesc.Format = metadata.textureDesc.format;
+			dsvDesc.Format = D3D12TypeConversions::ToDxgiFormat(metadata.textureDesc.format);
 			dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 			dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 			m_rhi->GetDevice()->CreateDepthStencilView(access.externalResource, &dsvDesc, access.depthStencilView.GetCPU());

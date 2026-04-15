@@ -3,6 +3,7 @@
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 #include "D3D12/D3D12Rhi.h"
+#include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 D3D12SwapChain::D3D12SwapChain(D3D12Rhi& rhi, Window& window, D3D12DescriptorHeapManager& descriptorHeapManager) :
@@ -46,7 +47,7 @@ void D3D12SwapChain::Create()
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	swapChainDesc.Width = GetWindowWidth();
 	swapChainDesc.Height = GetWindowHeight();
-	swapChainDesc.Format = RenderConfig::BackBufferFormat;
+	swapChainDesc.Format = D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat);
 	swapChainDesc.Stereo = false;
 	swapChainDesc.SampleDesc.Quality = 0;
 	swapChainDesc.SampleDesc.Count = 1;
@@ -92,7 +93,7 @@ void D3D12SwapChain::ResizeBuffersToWindow()
 	    RenderConfig::FramesInFlight,
 	    GetWindowWidth(),
 	    GetWindowHeight(),
-	    RenderConfig::BackBufferFormat,
+	    D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat),
 	    ComputeSwapChainFlags()));
 }
 
@@ -111,7 +112,7 @@ void D3D12SwapChain::CreateRenderTargetViews()
 		m_buffers[i]->SetName(L"RHI_BackBuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
-		rtvDesc.Format = RenderConfig::BackBufferFormat;
+		rtvDesc.Format = D3D12TypeConversions::ToDxgiFormat(RenderConfig::BackBufferFormat);
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		rtvDesc.Texture2D.PlaneSlice = 0;

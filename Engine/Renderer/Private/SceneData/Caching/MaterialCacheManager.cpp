@@ -85,7 +85,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 			}
 
 			const D3D12_CPU_DESCRIPTOR_HANDLE destination = srvHeap->GetHandleAt(tableHandle.GetIndex() + slot).GetCPU();
-			textures[slot]->WriteShaderResourceView(destination);
+			textures[slot]->WriteShaderResourceView(RhiCpuDescriptorHandle{destination.ptr});
 		}
 
 		material.textureTableGpuHandle = tableHandle.GetGPU();

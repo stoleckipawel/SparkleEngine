@@ -1,13 +1,11 @@
 #pragma once
 
-#include "../RHIAPI.h"
-
-#include <d3d12.h>
+#include "../Interop/RenderHardwareInterface.h"
 
 class SPARKLE_RHI_API Texture
 {
   public:
 	virtual ~Texture() noexcept = default;
 
-	virtual void WriteShaderResourceView(D3D12_CPU_DESCRIPTOR_HANDLE destination) const = 0;
+	virtual void WriteShaderResourceView(RhiCpuDescriptorHandle destination) const = 0;
 };

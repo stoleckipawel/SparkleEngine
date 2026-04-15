@@ -1,6 +1,7 @@
 #include "PCH.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/D3D12Rhi.h"
+#include "D3D12/D3D12TypeConversions.h"
 #include "Config/DepthConvention.h"
 
 #include <cstdio>
@@ -47,7 +48,7 @@ void D3D12PipelineState::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& p
 	ds = {};
 	ds.DepthEnable = depthDesc.DepthEnable ? TRUE : FALSE;
 	ds.DepthWriteMask = depthDesc.DepthWriteMask;
-	ds.DepthFunc = depthDesc.DepthFunc;
+	ds.DepthFunc = D3D12TypeConversions::ToComparisonFunc(depthDesc.DepthFunc);
 }
 
 void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, StencilTestDesc stencilDesc) noexcept
@@ -57,12 +58,12 @@ void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC&
 	ds.StencilReadMask = stencilDesc.StencilReadMask;
 	ds.StencilWriteMask = stencilDesc.StencilWriteMask;
 
-	ds.FrontFace.StencilFunc = stencilDesc.FrontFaceStencilFunc;
+	ds.FrontFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.FrontFaceStencilFunc);
 	ds.FrontFace.StencilFailOp = stencilDesc.FrontFaceStencilFailOp;
 	ds.FrontFace.StencilDepthFailOp = stencilDesc.FrontFaceStencilDepthFailOp;
 	ds.FrontFace.StencilPassOp = stencilDesc.FrontFaceStencilPassOp;
 
-	ds.BackFace.StencilFunc = stencilDesc.BackFaceStencilFunc;
+	ds.BackFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.BackFaceStencilFunc);
 	ds.BackFace.StencilFailOp = stencilDesc.BackFaceStencilFailOp;
 	ds.BackFace.StencilDepthFailOp = stencilDesc.BackFaceStencilDepthFailOp;
 	ds.BackFace.StencilPassOp = stencilDesc.BackFaceStencilPassOp;
@@ -141,9 +142,9 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 	psoDesc.NumRenderTargets = desc.RenderTargetCount;
 	for (std::uint32_t renderTargetIndex = 0; renderTargetIndex < desc.RenderTargetCount; ++renderTargetIndex)
 	{
-		psoDesc.RTVFormats[renderTargetIndex] = desc.RenderTargetFormats[renderTargetIndex];
+		psoDesc.RTVFormats[renderTargetIndex] = D3D12TypeConversions::ToDxgiFormat(desc.RenderTargetFormats[renderTargetIndex]);
 	}
-	psoDesc.DSVFormat = desc.DepthStencilFormat;
+	psoDesc.DSVFormat = D3D12TypeConversions::ToDxgiFormat(desc.DepthStencilFormat);
 
 	psoDesc.NodeMask = 0;
 	psoDesc.CachedPSO = {};

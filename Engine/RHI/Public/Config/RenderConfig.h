@@ -1,17 +1,17 @@
 #pragma once
 
+#include "../Formats/PixelFormat.h"
+
 #include <cstddef>
 #include <cstdint>
-
-#include <dxgi1_6.h>
 
 namespace RenderConfig
 {
 	inline constexpr unsigned FramesInFlight = 2u;
 
-	inline constexpr DXGI_FORMAT BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	inline constexpr PixelFormat BackBufferFormat = PixelFormat::R8G8B8A8_UNorm;
 
-	inline constexpr DXGI_FORMAT DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	inline constexpr PixelFormat DepthStencilFormat = PixelFormat::D24_UNorm_S8_UInt;
 
 	inline constexpr int ShaderModelMajor = 6;
 	inline constexpr int ShaderModelMinor = 0;
@@ -31,6 +31,6 @@ namespace RenderConfig
 		inline constexpr float ShadowDistance = 60.0f;
 		inline constexpr float NearCascadeFraction = 0.2f;
 		inline constexpr float LightPadding = 20.0f;
-		inline constexpr DXGI_FORMAT ShadowMapFormat = DXGI_FORMAT_R32_FLOAT;
+		inline constexpr PixelFormat ShadowMapFormat = PixelFormat::R32_Float;
 	}  // namespace Shadows
 }  // namespace RenderConfig
