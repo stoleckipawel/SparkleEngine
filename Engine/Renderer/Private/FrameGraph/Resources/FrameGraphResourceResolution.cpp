@@ -5,8 +5,6 @@
 
 #include "Config/DepthConvention.h"
 
-#include "D3D12/D3D12SwapChain.h"
-
 #include <cassert>
 
 RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(ResourceHandle handle) const noexcept
@@ -20,9 +18,9 @@ RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(ResourceHandle handle
 		return ResolveTransientRenderTargetView(handle);
 	}
 
-	if (access.swapChain != nullptr)
+	if (metadata.kind == FrameGraphResourceKind::BackBuffer)
 	{
-		return RhiCpuDescriptorHandle{access.swapChain->GetCPUHandle().ptr};
+		return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetBackBufferRenderTargetView() : RhiCpuDescriptorHandle{};
 	}
 
 	assert(access.renderTargetView);
@@ -82,7 +80,7 @@ RhiCpuDescriptorHandle FrameGraph::ResolveTransientRenderTargetView(ResourceHand
 	const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindColorAllocation(handle);
 	assert(allocation != nullptr);
 	assert(allocation->renderTargetView.IsValid());
-	return RhiCpuDescriptorHandle{allocation->renderTargetView.GetCPU().ptr};
+	return allocation->renderTargetView.CpuHandle;
 }
 
 RhiCpuDescriptorHandle FrameGraph::ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept
@@ -91,7 +89,7 @@ RhiCpuDescriptorHandle FrameGraph::ResolveTransientDepthStencilView(ResourceHand
 	const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindDepthAllocation(handle);
 	assert(allocation != nullptr);
 	assert(allocation->depthStencilView.IsValid());
-	return RhiCpuDescriptorHandle{allocation->depthStencilView.GetCPU().ptr};
+	return allocation->depthStencilView.CpuHandle;
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept
@@ -101,13 +99,13 @@ RhiGpuDescriptorHandle FrameGraph::ResolveTransientShaderResourceView(ResourceHa
 	if (const FrameGraphTransientAllocator::AllocationRecord* colorAllocation = m_transientAllocator->FindColorAllocation(handle))
 	{
 		assert(colorAllocation->shaderResourceView.IsValid());
-		return RhiGpuDescriptorHandle{colorAllocation->shaderResourceView.GetGPU().ptr};
+		return colorAllocation->shaderResourceView.GpuHandle;
 	}
 
 	const FrameGraphTransientAllocator::AllocationRecord* bufferAllocation = m_transientAllocator->FindBufferAllocation(handle);
 	assert(bufferAllocation != nullptr);
 	assert(bufferAllocation->shaderResourceView.IsValid());
-	return RhiGpuDescriptorHandle{bufferAllocation->shaderResourceView.GetGPU().ptr};
+	return bufferAllocation->shaderResourceView.GpuHandle;
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept
@@ -117,13 +115,13 @@ RhiGpuDescriptorHandle FrameGraph::ResolveTransientUnorderedAccessView(ResourceH
 	if (const FrameGraphTransientAllocator::AllocationRecord* colorAllocation = m_transientAllocator->FindColorAllocation(handle))
 	{
 		assert(colorAllocation->unorderedAccessView.IsValid());
-		return RhiGpuDescriptorHandle{colorAllocation->unorderedAccessView.GetGPU().ptr};
+		return colorAllocation->unorderedAccessView.GpuHandle;
 	}
 
 	const FrameGraphTransientAllocator::AllocationRecord* bufferAllocation = m_transientAllocator->FindBufferAllocation(handle);
 	assert(bufferAllocation != nullptr);
 	assert(bufferAllocation->unorderedAccessView.IsValid());
-	return RhiGpuDescriptorHandle{bufferAllocation->unorderedAccessView.GetGPU().ptr};
+	return bufferAllocation->unorderedAccessView.GpuHandle;
 }
 
 std::array<float, 4> FrameGraph::GetClearColor(ResourceHandle handle) const noexcept
@@ -158,7 +156,7 @@ NativeResourceHandle FrameGraph::ResolveResource(ResourceHandle handle) const no
 	switch (metadata.kind)
 	{
 		case FrameGraphResourceKind::BackBuffer:
-			return access.swapChain != nullptr ? NativeResourceHandle{access.swapChain->GetCurrentResource()} : NativeResourceHandle{};
+			return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetBackBufferResource() : NativeResourceHandle{};
 		case FrameGraphResourceKind::DepthStencil:
 		case FrameGraphResourceKind::ColorRenderTarget:
 		case FrameGraphResourceKind::Buffer:
@@ -177,17 +175,17 @@ NativeResourceHandle FrameGraph::ResolveTransientResource(ResourceHandle handle,
 		case FrameGraphResourceKind::DepthStencil:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindDepthAllocation(handle);
-			return allocation != nullptr ? NativeResourceHandle{allocation->depthStencilResource.Get()} : NativeResourceHandle{};
+			return allocation != nullptr ? allocation->depthStencilResource : NativeResourceHandle{};
 		}
 		case FrameGraphResourceKind::ColorRenderTarget:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindColorAllocation(handle);
-			return allocation != nullptr ? NativeResourceHandle{allocation->renderTargetResource.Get()} : NativeResourceHandle{};
+			return allocation != nullptr ? allocation->renderTargetResource : NativeResourceHandle{};
 		}
 		case FrameGraphResourceKind::Buffer:
 		{
 			const FrameGraphTransientAllocator::AllocationRecord* allocation = m_transientAllocator->FindBufferAllocation(handle);
-			return allocation != nullptr ? NativeResourceHandle{allocation->buffer.Get()} : NativeResourceHandle{};
+			return allocation != nullptr ? allocation->buffer : NativeResourceHandle{};
 		}
 		default:
 			return {};

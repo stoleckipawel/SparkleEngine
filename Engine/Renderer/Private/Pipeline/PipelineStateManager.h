@@ -8,12 +8,12 @@
 #include <optional>
 #include <tuple>
 
-class D3D12Rhi;
+class RenderHardwareInterface;
 
 class PipelineStateManager final
 {
   public:
-	explicit PipelineStateManager(D3D12Rhi& rhi) noexcept;
+	explicit PipelineStateManager(RenderHardwareInterface& rhi) noexcept;
 	~PipelineStateManager() noexcept;
 
 	PipelineStateManager(const PipelineStateManager&) = delete;
@@ -47,7 +47,7 @@ class PipelineStateManager final
 
 	void InitializePassRuntimes();
 
-	D3D12Rhi* m_rhi = nullptr;
+	RenderHardwareInterface* m_rhi = nullptr;
 	PassRuntimeStorageTuple m_runtimeStorage;
 	std::optional<RenderPassRuntimeRegistry> m_runtimeRegistry;
 };

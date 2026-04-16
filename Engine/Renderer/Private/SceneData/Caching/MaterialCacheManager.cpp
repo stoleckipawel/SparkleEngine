@@ -4,8 +4,6 @@
 
 #include "Scene/Materials/MaterialDesc.h"
 #include "Scene/Materials/MaterialSnapshot.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeap.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "Resources/Texture.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
@@ -13,8 +11,8 @@
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
 
-MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-    m_textureManager(&textureManager), m_descriptorHeapManager(&descriptorHeapManager)
+MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept :
+	m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 
@@ -44,7 +42,7 @@ void MaterialCacheManager::BuildMaterials(const MaterialSnapshot& materialSnapsh
 
 void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 {
-	if (!m_textureManager || !m_descriptorHeapManager)
+	if (!m_textureManager || !m_renderHardwareInterface)
 	{
 		LOG_FATAL("MaterialCacheManager::Rebuild: required renderer dependencies are unavailable.");
 		return;
@@ -56,14 +54,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	m_materialCacheBuilt = false;
 	m_cachedFromSceneMaterials = materialSnapshot.HasMaterials();
 
-	const auto* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	if (!srvHeap)
-	{
-		LOG_FATAL("MaterialCacheManager::Rebuild: SRV heap is unavailable.");
-		return;
-	}
-
-	auto buildMaterialTable = [this, srvHeap](const MaterialDesc& desc)
+	auto buildMaterialTable = [this](const MaterialDesc& desc)
 	{
 		MaterialData material = MaterialData::FromDesc(desc);
 
@@ -74,8 +65,13 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_textureManager->ResolveTextureOrDefault(desc.occlusionTexture, DefaultTexture::White),
 		    m_textureManager->ResolveTextureOrDefault(desc.emissiveTexture, DefaultTexture::Black)};
 
-		const D3D12DescriptorHandle tableHandle =
-		    m_descriptorHeapManager->AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MaterialTextureSlots::Count);
+		const RhiDescriptorTableHandle tableHandle =
+		    m_renderHardwareInterface->AllocateDescriptorTable(RhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
+		if (!tableHandle)
+		{
+			LOG_FATAL("MaterialCacheManager::Rebuild: failed to allocate material descriptor table.");
+			return;
+		}
 
 		for (std::uint32_t slot = 0; slot < MaterialTextureSlots::Count; ++slot)
 		{
@@ -84,11 +80,10 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 				LOG_FATAL(std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
 			}
 
-			const D3D12_CPU_DESCRIPTOR_HANDLE destination = srvHeap->GetHandleAt(tableHandle.GetIndex() + slot).GetCPU();
-			textures[slot]->WriteShaderResourceView(RhiCpuDescriptorHandle{destination.ptr});
+			textures[slot]->WriteShaderResourceView(m_renderHardwareInterface->GetDescriptorTableCpuHandle(tableHandle, slot));
 		}
 
-		material.textureTableGpuHandle = RhiGpuDescriptorHandle{tableHandle.GetGPU().ptr};
+		material.textureTableHandle = tableHandle;
 		m_materialTextureTables.push_back(tableHandle);
 		m_cachedMaterialData.push_back(material);
 	};
@@ -128,16 +123,16 @@ void MaterialCacheManager::Reset() noexcept
 
 void MaterialCacheManager::ReleaseMaterialTextureTables() noexcept
 {
-	if (!m_descriptorHeapManager)
+	if (!m_renderHardwareInterface)
 	{
 		return;
 	}
 
-	for (const D3D12DescriptorHandle& tableHandle : m_materialTextureTables)
+	for (const RhiDescriptorTableHandle tableHandle : m_materialTextureTables)
 	{
-		if (tableHandle.IsValid())
+		if (tableHandle)
 		{
-			m_descriptorHeapManager->FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, tableHandle, MaterialTextureSlots::Count);
+			m_renderHardwareInterface->ReleaseDescriptorTable(tableHandle);
 		}
 	}
 

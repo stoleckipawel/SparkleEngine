@@ -2,9 +2,9 @@
 
 #include "Frame/Shadow/ShadowFrameBuilder.h"
 
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 std::array<ShadowFrameBuilder::CascadeRange, ShadowFrameBuildResult::MaxShadowCascades> ShadowFrameBuilder::BuildCascadeRanges(
@@ -25,7 +25,7 @@ ShadowFrameBuildResult ShadowFrameBuilder::Build(
     const CameraSnapshot& mainCamera,
     const RenderSceneData& sceneData,
     const PerViewLightingConstantBufferData& baseLighting,
-    D3D12ConstantBufferManager& constantBufferManager,
+	RenderHardwareInterface& renderHardwareInterface,
     const PerViewDataBuilder& perViewDataBuilder,
     ShadowBuilder& shadowBuilder) const
 {
@@ -49,7 +49,7 @@ ShadowFrameBuildResult ShadowFrameBuilder::Build(
 
 			RenderViewContext shadowView =
 			    perViewDataBuilder.BuildView(shadowData.cameraData, baseLighting, shadowData.viewport, shadowData.scissorRect);
-			shadowView.perViewGpuAddress = constantBufferManager.AllocatePerView(shadowView.perViewData);
+			shadowView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(shadowView.perViewData);
 			result.shadowViews[shadowIndex] = shadowView;
 		}
 	}

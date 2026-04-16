@@ -1,19 +1,19 @@
 #pragma once
 
 #include "Scene/Materials/MaterialSnapshot.h"
-#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "SceneData/MaterialData.h"
 
+#include <cstdint>
 #include <vector>
 
-class D3D12DescriptorHeapManager;
+class RenderHardwareInterface;
 struct RenderSceneData;
 class TextureManager;
 
 class MaterialCacheManager final
 {
   public:
-	MaterialCacheManager(TextureManager& textureManager, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
+	MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept;
 	~MaterialCacheManager() noexcept;
 
 	MaterialCacheManager(const MaterialCacheManager&) = delete;
@@ -29,10 +29,10 @@ class MaterialCacheManager final
 	void ReleaseMaterialTextureTables() noexcept;
 
 	TextureManager* m_textureManager = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	MaterialSnapshot m_cachedMaterialSnapshot;
 	std::vector<MaterialData> m_cachedMaterialData;
-	std::vector<D3D12DescriptorHandle> m_materialTextureTables;
+	std::vector<RhiDescriptorTableHandle> m_materialTextureTables;
 	bool m_materialCacheBuilt = false;
 	bool m_cachedFromSceneMaterials = false;
 };

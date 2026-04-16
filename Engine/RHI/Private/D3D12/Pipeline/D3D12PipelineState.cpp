@@ -2,6 +2,8 @@
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
+#include "D3D12/Pipeline/D3D12BindingLayout.h"
+#include "D3D12/Pipeline/D3D12VertexLayout.h"
 #include "Config/DepthConvention.h"
 
 #include <cstdio>
@@ -13,16 +15,67 @@ void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pso
 	psoDesc.StreamOutput = {};
 }
 
+namespace
+{
+	D3D12_CULL_MODE ToD3D12CullMode(RhiCullMode cullMode) noexcept
+	{
+		switch (cullMode)
+		{
+			case RhiCullMode::None:
+				return D3D12_CULL_MODE_NONE;
+			case RhiCullMode::Front:
+				return D3D12_CULL_MODE_FRONT;
+			case RhiCullMode::Back:
+			default:
+				return D3D12_CULL_MODE_BACK;
+		}
+	}
+
+	D3D12_STENCIL_OP ToD3D12StencilOp(RhiStencilOp op) noexcept
+	{
+		switch (op)
+		{
+			case RhiStencilOp::Zero:
+				return D3D12_STENCIL_OP_ZERO;
+			case RhiStencilOp::Replace:
+				return D3D12_STENCIL_OP_REPLACE;
+			case RhiStencilOp::IncrementClamp:
+				return D3D12_STENCIL_OP_INCR_SAT;
+			case RhiStencilOp::DecrementClamp:
+				return D3D12_STENCIL_OP_DECR_SAT;
+			case RhiStencilOp::Invert:
+				return D3D12_STENCIL_OP_INVERT;
+			case RhiStencilOp::IncrementWrap:
+				return D3D12_STENCIL_OP_INCR;
+			case RhiStencilOp::DecrementWrap:
+				return D3D12_STENCIL_OP_DECR;
+			case RhiStencilOp::Keep:
+			default:
+				return D3D12_STENCIL_OP_KEEP;
+		}
+	}
+
+	std::span<const D3D12_INPUT_ELEMENT_DESC> ResolveVertexLayout(RhiVertexLayoutKind layoutKind) noexcept
+	{
+		switch (layoutKind)
+		{
+			case RhiVertexLayoutKind::StaticMesh:
+			default:
+				return D3D12VertexLayout::GetStaticMeshLayout();
+		}
+	}
+}
+
 void D3D12PipelineState::SetRasterizerState(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
     bool bRenderWireframe,
-    D3D12_CULL_MODE cullMode) noexcept
+    RhiCullMode cullMode) noexcept
 {
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	auto& rs = psoDesc.RasterizerState;
 	rs = {};
 	rs.FillMode = bRenderWireframe ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
-	rs.CullMode = cullMode;
+	rs.CullMode = ToD3D12CullMode(cullMode);
 	rs.FrontCounterClockwise = FALSE;
 	rs.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 	rs.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
@@ -42,16 +95,16 @@ void D3D12PipelineState::SetRenderTargetBlendState(
 	psoDesc.BlendState.RenderTarget[0] = blendDesc;
 }
 
-void D3D12PipelineState::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, DepthTestDesc depthDesc) noexcept
+void D3D12PipelineState::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthTestDesc depthDesc) noexcept
 {
 	auto& ds = psoDesc.DepthStencilState;
 	ds = {};
 	ds.DepthEnable = depthDesc.DepthEnable ? TRUE : FALSE;
-	ds.DepthWriteMask = depthDesc.DepthWriteMask;
+	ds.DepthWriteMask = depthDesc.DepthWriteEnable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 	ds.DepthFunc = D3D12TypeConversions::ToComparisonFunc(depthDesc.DepthFunc);
 }
 
-void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, StencilTestDesc stencilDesc) noexcept
+void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilTestDesc stencilDesc) noexcept
 {
 	auto& ds = psoDesc.DepthStencilState;
 	ds.StencilEnable = stencilDesc.StencilEnable ? TRUE : FALSE;
@@ -59,37 +112,14 @@ void D3D12PipelineState::SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC&
 	ds.StencilWriteMask = stencilDesc.StencilWriteMask;
 
 	ds.FrontFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.FrontFaceStencilFunc);
-	ds.FrontFace.StencilFailOp = stencilDesc.FrontFaceStencilFailOp;
-	ds.FrontFace.StencilDepthFailOp = stencilDesc.FrontFaceStencilDepthFailOp;
-	ds.FrontFace.StencilPassOp = stencilDesc.FrontFaceStencilPassOp;
+	ds.FrontFace.StencilFailOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilFailOp);
+	ds.FrontFace.StencilDepthFailOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilDepthFailOp);
+	ds.FrontFace.StencilPassOp = ToD3D12StencilOp(stencilDesc.FrontFaceStencilPassOp);
 
 	ds.BackFace.StencilFunc = D3D12TypeConversions::ToComparisonFunc(stencilDesc.BackFaceStencilFunc);
-	ds.BackFace.StencilFailOp = stencilDesc.BackFaceStencilFailOp;
-	ds.BackFace.StencilDepthFailOp = stencilDesc.BackFaceStencilDepthFailOp;
-	ds.BackFace.StencilPassOp = stencilDesc.BackFaceStencilPassOp;
-}
-
-D3D12PipelineState::D3D12PipelineState(
-    D3D12Rhi& rhi,
-    std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout,
-    D3D12RootSignature& rootSignature,
-    ShaderBytecode vertexShader,
-    ShaderBytecode pixelShader) :
-    m_rhi(rhi)
-{
-	GraphicsPipelineStateDesc desc{};
-	desc.VertexLayout = vertexLayout;
-	desc.RootSignature = &rootSignature;
-	desc.VertexShader = vertexShader;
-	desc.PixelShader = pixelShader;
-	desc.HasPixelShader = true;
-	desc.RenderTargetFormats[0] = RenderConfig::BackBufferFormat;
-	desc.RenderTargetCount = 1;
-	desc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
-	desc.DepthTest.DepthEnable = true;
-	desc.DepthTest.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	desc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
-	Create(desc);
+	ds.BackFace.StencilFailOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilFailOp);
+	ds.BackFace.StencilDepthFailOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilDepthFailOp);
+	ds.BackFace.StencilPassOp = ToD3D12StencilOp(stencilDesc.BackFaceStencilPassOp);
 }
 
 D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStateDesc& desc) : m_rhi(rhi)
@@ -106,11 +136,13 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
-	psoDesc.InputLayout.NumElements = static_cast<UINT>(desc.VertexLayout.size());
-	psoDesc.InputLayout.pInputElementDescs = desc.VertexLayout.data();
+	const std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout = ResolveVertexLayout(desc.VertexLayout);
+	psoDesc.InputLayout.NumElements = static_cast<UINT>(vertexLayout.size());
+	psoDesc.InputLayout.pInputElementDescs = vertexLayout.data();
 	psoDesc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
-	psoDesc.pRootSignature = desc.RootSignature != nullptr ? desc.RootSignature->GetRaw() : nullptr;
+	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
+	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 
 	psoDesc.VS.pShaderBytecode = desc.VertexShader.Data;
 	psoDesc.VS.BytecodeLength = desc.VertexShader.Size;
@@ -165,7 +197,8 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.pRootSignature = desc.RootSignature != nullptr ? desc.RootSignature->GetRaw() : nullptr;
+	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
+	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
 	psoDesc.CS.pShaderBytecode = desc.ComputeShader.Data;
 	psoDesc.CS.BytecodeLength = desc.ComputeShader.Size;
 	psoDesc.NodeMask = 0;

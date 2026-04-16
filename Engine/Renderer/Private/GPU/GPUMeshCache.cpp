@@ -1,11 +1,11 @@
 #include "PCH.h"
 #include "GPU/GPUMeshCache.h"
 
-#include "D3D12/D3D12Rhi.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Log.h"
 
-GPUMeshCache::GPUMeshCache(D3D12Rhi& rhi) noexcept : m_rhi(&rhi) {}
+GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface) {}
 
 GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 {
@@ -18,7 +18,7 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	}
 
 	auto gpuMesh = std::make_unique<GPUMesh>();
-	if (!gpuMesh->Upload(*m_rhi, cpuMesh.GetMeshData()))
+	if (!gpuMesh->Upload(*m_renderHardwareInterface, cpuMesh.GetMeshData()))
 	{
 		LOG_ERROR("[GPUMeshCache] Failed to upload mesh to GPU");
 		return nullptr;

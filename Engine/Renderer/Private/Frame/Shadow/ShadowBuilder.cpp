@@ -21,18 +21,18 @@ ShadowBuildResult ShadowBuilder::Build(
 	result.shadow.DepthBias = RenderConfig::Shadows::DepthBias;
 	result.shadow.NormalBias = RenderConfig::Shadows::NormalBias;
 	result.shadow.CascadeFarDepth = cascadeFarZ;
-	result.viewport = D3D12_VIEWPORT{
-	    0.0f,
-	    0.0f,
-	    static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
-	    static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
-	    0.0f,
-	    1.0f};
-	result.scissorRect = D3D12_RECT{
-	    0,
-	    0,
-	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution),
-	    static_cast<LONG>(RenderConfig::Shadows::ShadowMapResolution)};
+	result.viewport = RhiViewport{
+	    .X = 0.0f,
+	    .Y = 0.0f,
+	    .Width = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
+	    .Height = static_cast<float>(RenderConfig::Shadows::ShadowMapResolution),
+	    .MinDepth = 0.0f,
+	    .MaxDepth = 1.0f};
+	result.scissorRect = RhiRect{
+	    .Left = 0,
+	    .Top = 0,
+	    .Right = static_cast<std::int32_t>(RenderConfig::Shadows::ShadowMapResolution),
+	    .Bottom = static_cast<std::int32_t>(RenderConfig::Shadows::ShadowMapResolution)};
 
 	const float shadowDistance = std::min(mainCamera.farZ, RenderConfig::Shadows::ShadowDistance);
 	const float nearZ = std::clamp(cascadeNearZ, mainCamera.nearZ, shadowDistance);

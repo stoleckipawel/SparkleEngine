@@ -8,24 +8,29 @@ namespace
 {
 	using AllocationPool = FrameGraph::CompiledTransientResourcePlan::AllocationPool;
 
-	bool AreResourceDescsEqual(const D3D12_RESOURCE_DESC& lhs, const D3D12_RESOURCE_DESC& rhs) noexcept
+	bool AreTextureResourceDescsEqual(const RhiTextureResourceDesc& lhs, const RhiTextureResourceDesc& rhs) noexcept
 	{
-		return lhs.Dimension == rhs.Dimension && lhs.Alignment == rhs.Alignment && lhs.Width == rhs.Width && lhs.Height == rhs.Height &&
-		       lhs.DepthOrArraySize == rhs.DepthOrArraySize && lhs.MipLevels == rhs.MipLevels && lhs.Format == rhs.Format &&
-		       lhs.SampleDesc.Count == rhs.SampleDesc.Count && lhs.SampleDesc.Quality == rhs.SampleDesc.Quality &&
-		       lhs.Layout == rhs.Layout && lhs.Flags == rhs.Flags;
+		return lhs.Width == rhs.Width && lhs.Height == rhs.Height && lhs.Format == rhs.Format && lhs.MipLevels == rhs.MipLevels &&
+		       lhs.AllowRenderTarget == rhs.AllowRenderTarget && lhs.AllowDepthStencil == rhs.AllowDepthStencil &&
+		       lhs.AllowUnorderedAccess == rhs.AllowUnorderedAccess;
 	}
 
-	bool AreClearValuesEqual(const D3D12_CLEAR_VALUE& lhs, const D3D12_CLEAR_VALUE& rhs, FrameGraphResourceKind kind) noexcept
+	bool AreBufferResourceDescsEqual(const RhiBufferResourceDesc& lhs, const RhiBufferResourceDesc& rhs) noexcept
 	{
-		if (lhs.Format != rhs.Format)
+		return lhs.SizeInBytes == rhs.SizeInBytes && lhs.StrideInBytes == rhs.StrideInBytes &&
+		       lhs.AllowUnorderedAccess == rhs.AllowUnorderedAccess;
+	}
+
+	bool AreClearValuesEqual(const RhiOptimizedClearValue& lhs, const RhiOptimizedClearValue& rhs, FrameGraphResourceKind kind) noexcept
+	{
+		if (lhs.ValueType != rhs.ValueType || lhs.Format != rhs.Format)
 		{
 			return false;
 		}
 
 		if (kind == FrameGraphResourceKind::DepthStencil)
 		{
-			return lhs.DepthStencil.Depth == rhs.DepthStencil.Depth && lhs.DepthStencil.Stencil == rhs.DepthStencil.Stencil;
+			return lhs.Depth == rhs.Depth && lhs.Stencil == rhs.Stencil;
 		}
 
 		if (kind == FrameGraphResourceKind::Buffer)
@@ -65,13 +70,20 @@ namespace
 			return false;
 		}
 
-		if (block.heapFlags != physicalPlan.heapFlags || block.alignment != physicalPlan.alignment ||
-		    block.sizeInBytes < physicalPlan.sizeInBytes || block.heapOffset != physicalPlan.heapOffset)
+		if (block.alignment != physicalPlan.alignment || block.sizeInBytes < physicalPlan.sizeInBytes ||
+		    block.heapOffset != physicalPlan.heapOffset)
 		{
 			return false;
 		}
 
-		if (!AreResourceDescsEqual(block.resourceDesc, physicalPlan.resourceDesc))
+		if (block.pool == AllocationPool::Buffer)
+		{
+			if (!AreBufferResourceDescsEqual(block.bufferResourceDesc, physicalPlan.bufferResourceDesc))
+			{
+				return false;
+			}
+		}
+		else if (!AreTextureResourceDescsEqual(block.textureResourceDesc, physicalPlan.textureResourceDesc))
 		{
 			return false;
 		}
@@ -222,8 +234,8 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			        .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
 			        .alignment = transientPlan->physicalAllocation.alignment,
 			        .heapOffset = transientPlan->physicalAllocation.heapOffset,
-			        .heapFlags = transientPlan->physicalAllocation.heapFlags,
-			        .resourceDesc = transientPlan->physicalAllocation.resourceDesc,
+			        .textureResourceDesc = transientPlan->physicalAllocation.textureResourceDesc,
+			        .bufferResourceDesc = transientPlan->physicalAllocation.bufferResourceDesc,
 			        .optimizedClearValue = transientPlan->physicalAllocation.optimizedClearValue,
 			        .hasOptimizedClearValue = transientPlan->physicalAllocation.hasOptimizedClearValue,
 			        .firstExecutionIndex = transientPlan->firstExecutionIndex,

@@ -1,17 +1,16 @@
 #pragma once
 
 #include "Scene/Camera/CameraSnapshot.h"
-#include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
-#include "RHI/Public/D3D12/Resources/D3D12ViewCameraConstantBufferData.h"
-
-#include <d3d12.h>
+#include "RHI/Public/Resources/RenderShadowData.h"
+#include "RHI/Public/Resources/RenderViewCameraData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 struct ShadowBuildResult
 {
 	ShadowConstantBufferData shadow = {};
 	PerViewCameraConstantBufferData cameraData = {};
-	D3D12_VIEWPORT viewport = {};
-	D3D12_RECT scissorRect = {};
+	RhiViewport viewport = {};
+	RhiRect scissorRect = {};
 };
 
 class ShadowBuilder final

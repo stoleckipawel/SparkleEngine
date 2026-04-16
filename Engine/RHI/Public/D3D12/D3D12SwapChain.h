@@ -13,6 +13,7 @@
 
 #include "Config/RenderConfig.h"
 #include "Descriptors/D3D12DescriptorHandle.h"
+#include "Interop/RenderHardwareInterface.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -46,9 +47,9 @@ class D3D12SwapChain final
 
 	void UpdateFrameInFlightIndex() { m_frameInFlightIndex = m_swapChain->GetCurrentBackBufferIndex(); }
 
-	D3D12_VIEWPORT GetDefaultViewport() const;
+	RhiViewport GetDefaultViewport() const;
 
-	D3D12_RECT GetDefaultScissorRect() const;
+	RhiRect GetDefaultScissorRect() const;
 
 	PixelFormat GetBackBufferFormat() const { return RenderConfig::BackBufferFormat; }
 

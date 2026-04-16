@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "D3D12/Shaders/DxcShaderCompiler.h"
+#include "Shaders/DxcShaderCompiler.h"
 #include "D3D12/Shaders/DxcContext.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Strings/StringUtils.h"

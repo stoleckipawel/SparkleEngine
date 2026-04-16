@@ -6,13 +6,11 @@
 #include "Passes/ShaderSourceDefinition.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
-#include "RHI/Public/D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "RHI/Public/D3D12/Pipeline/D3D12BindingLayout.h"
-#include "RHI/Public/D3D12/Pipeline/D3D12PipelineState.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include "Core/Public/Diagnostics/Log.h"
-#include "Pipeline/D3D12PassBinder.h"
+#include "Pipeline/PassBinder.h"
 
 #include <cassert>
 #include <string>
@@ -133,38 +131,38 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 void BindComputeShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-    D3D12DescriptorHeapManager* descriptorHeapManager,
-    const D3D12BindingLayout& bindingLayout,
-    const D3D12PipelineState& pipelineState,
+	RenderHardwareInterface* renderHardwareInterface,
+	const RenderBindingLayout& bindingLayout,
+	const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet) noexcept
 {
-	if (descriptorHeapManager != nullptr)
+	if (renderHardwareInterface != nullptr)
 	{
-		descriptorHeapManager->SetShaderVisibleHeaps(cmd.GetCommandList());
+		renderHardwareInterface->SetShaderVisibleDescriptorHeaps(cmd.GetRenderCommandList());
 	}
 
-	cmd.SetPipelineState(pipelineState.Get().Get());
-	D3D12PassBinder::BindCompute(cmd, frameGraph, bindingLayout, parameterSet);
+	cmd.SetPipelineState(pipelineState);
+	PassBinder::BindCompute(cmd, frameGraph, bindingLayout, parameterSet);
 }
 
 void BindRasterShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-    D3D12DescriptorHeapManager* descriptorHeapManager,
-    const D3D12BindingLayout& bindingLayout,
-    const D3D12PipelineState& pipelineState,
+	RenderHardwareInterface* renderHardwareInterface,
+	const RenderBindingLayout& bindingLayout,
+	const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,
-    const D3D12PassBindingOverrides* overrides) noexcept
+    const PassBindingOverrides* overrides) noexcept
 {
-	if (descriptorHeapManager != nullptr)
+	if (renderHardwareInterface != nullptr)
 	{
-		descriptorHeapManager->SetShaderVisibleHeaps(cmd.GetCommandList());
+		renderHardwareInterface->SetShaderVisibleDescriptorHeaps(cmd.GetRenderCommandList());
 	}
 
-	cmd.SetPipelineState(pipelineState.Get().Get());
-	D3D12PassBinder::BindGraphics(
+	cmd.SetPipelineState(pipelineState);
+	PassBinder::BindGraphics(
 	    cmd,
 	    frameGraph,
 	    bindingLayout,

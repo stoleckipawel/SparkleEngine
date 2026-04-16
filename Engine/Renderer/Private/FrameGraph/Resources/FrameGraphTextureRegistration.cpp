@@ -1,7 +1,6 @@
 #include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
-#include "D3D12/D3D12SwapChain.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
@@ -38,7 +37,7 @@ TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, Resou
 {
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "BackBuffer");
 	const ResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterBackBuffer(handle, resolvedDesc, *m_swapChain, initialState);
+	m_resourceRegistry.RegisterBackBuffer(handle, resolvedDesc, initialState);
 	return TextureHandle{handle};
 }
 

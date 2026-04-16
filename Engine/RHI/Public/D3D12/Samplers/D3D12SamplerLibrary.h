@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../Descriptors/D3D12DescriptorHandle.h"
+#include "Interop/RenderHardwareInterface.h"
 #include <d3d12.h>
 
-class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 
 class D3D12SamplerLibrary
@@ -70,7 +69,7 @@ class D3D12SamplerLibrary
 		Count
 	};
 
-	D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager);
+	D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface& renderHardwareInterface);
 	~D3D12SamplerLibrary() noexcept;
 
 	D3D12SamplerLibrary(const D3D12SamplerLibrary&) = delete;
@@ -79,7 +78,7 @@ class D3D12SamplerLibrary
 	D3D12SamplerLibrary& operator=(D3D12SamplerLibrary&&) = delete;
 
 	bool IsInitialized() const noexcept { return m_bInitialized; }
-	D3D12_GPU_DESCRIPTOR_HANDLE GetTableGPUHandle() const noexcept { return m_tableHandle.GetGPU(); }
+	RhiDescriptorTableHandle GetTableHandle() const noexcept { return m_tableHandle; }
 	static constexpr uint32_t GetSamplerCount() noexcept { return static_cast<uint32_t>(Slot::Count); }
 
   private:
@@ -94,10 +93,11 @@ class D3D12SamplerLibrary
 	void CreateSampler(Slot slot, const SamplerConfig& config);
 	static D3D12_FILTER ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic);
 	static D3D12_TEXTURE_ADDRESS_MODE ToD3D12Address(AddressMode address);
+	static D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
 
 	bool m_bInitialized = false;
 	D3D12Rhi* m_rhi = nullptr;
-	D3D12DescriptorHandle m_tableHandle;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
+	RhiDescriptorTableHandle m_tableHandle = {};
 	uint32_t m_descriptorSize = 0;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 };

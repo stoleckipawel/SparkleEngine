@@ -1,8 +1,6 @@
 #include "PCH.h"
 #include "FrameGraph/ResourceRegistry.h"
 
-#include "D3D12/D3D12SwapChain.h"
-
 #include <cassert>
 
 void ResourceRegistry::Clear() noexcept
@@ -22,11 +20,7 @@ void ResourceRegistry::ResetCurrentStates() noexcept
 	}
 }
 
-void ResourceRegistry::RegisterBackBuffer(
-    ResourceHandle handle,
-    const FrameGraphTextureDesc& desc,
-    D3D12SwapChain& swapChain,
-    ResourceState initialState) noexcept
+void ResourceRegistry::RegisterBackBuffer(ResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
 	    handle,
@@ -38,9 +32,7 @@ void ResourceRegistry::RegisterBackBuffer(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
-	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
-	access = {};
-	access.swapChain = &swapChain;
+	ClearResolvedAccess(handle);
 }
 
 void ResourceRegistry::RegisterTransientTexture(

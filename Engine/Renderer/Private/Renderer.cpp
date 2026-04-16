@@ -2,8 +2,8 @@
 #include "Renderer.h"
 
 #include "Level/LevelManager.h"
-#include "RHI/Public/Interop/Internal/RendererBackendServicesAccess.h"
 #include "RHI/Public/Interop/RendererBackendServices.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Window/Window.h"
 #include "Textures/TextureManager.h"
 #include "GPU/GPUMeshCache.h"
@@ -90,12 +90,6 @@ void Renderer::TransitionRenderProduct(
 		return;
 	}
 
-	auto* nativeCommandList = static_cast<ID3D12GraphicsCommandList*>(commandList.Value);
-	if (nativeCommandList == nullptr)
-	{
-		return;
-	}
-
 	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
 	const NativeResourceHandle resource = m_frameGraph->ResolveResource(TextureHandle{resourceHandle});
 	if (!resource)
@@ -103,24 +97,20 @@ void Renderer::TransitionRenderProduct(
 		return;
 	}
 
-	CommandContext cmd(nativeCommandList);
-	cmd.TransitionResource(resource, before, after);
+	GetRenderHardwareInterface().TransitionResource(commandList, resource, before, after);
 }
 
 void Renderer::InitializeCoreSystems() noexcept
 {
 	m_backend = RendererBackendServices::Create(*m_timer, *m_window);
-	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
-	m_pipelineStateManager = std::make_unique<PipelineStateManager>(rhi);
-	m_gpuMeshCache = std::make_unique<GPUMeshCache>(rhi);
+	m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
+	m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
 }
 
 void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
-	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
-	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
-	m_textureManager = std::make_unique<TextureManager>(rhi, descriptorHeapManager);
-	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, descriptorHeapManager);
+	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
+	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
@@ -133,7 +123,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	m_sceneRenderStateCoordinator = std::make_unique<SceneRenderStateCoordinator>(
 	    levelManager.GetLevelChangeEvents(),
 	    *m_gameScene,
-	    rhi,
+	    *m_backend,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
 	    *m_sceneSnapshot,
@@ -158,11 +148,8 @@ bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
-	auto& rhi = Rhi::Internal::RendererBackendServicesAccess::GetRhi(*m_backend);
-	auto& swapChain = Rhi::Internal::RendererBackendServicesAccess::GetSwapChain(*m_backend);
-	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
 	const FrameGraphDependencies
-	    dependencies{rhi, *m_window, swapChain, descriptorHeapManager, ResolveSceneExtent(), ShouldPresentSceneToBackBuffer()};
+	    dependencies{GetRenderHardwareInterface(), *m_window, ResolveSceneExtent(), ShouldPresentSceneToBackBuffer()};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
@@ -262,14 +249,10 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 
 void Renderer::RecordFrame() noexcept
 {
-	auto& swapChain = Rhi::Internal::RendererBackendServicesAccess::GetSwapChain(*m_backend);
-	auto& constantBufferManager = Rhi::Internal::RendererBackendServicesAccess::GetConstantBufferManager(*m_backend);
-	auto& descriptorHeapManager = Rhi::Internal::RendererBackendServicesAccess::GetDescriptorHeapManager(*m_backend);
-	auto& samplerLibrary = Rhi::Internal::RendererBackendServicesAccess::GetSamplerLibrary(*m_backend);
+	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
 	FrameContext frame = BuildFrameContext(
 	    *m_sceneSnapshot,
-	    swapChain,
-	    constantBufferManager,
+	    renderHardwareInterface,
 	    *m_renderCamera,
 	    *m_renderSceneDataBuilder,
 	    *m_perViewDataBuilder,
@@ -280,13 +263,12 @@ void Renderer::RecordFrame() noexcept
 	m_frameGraph->Setup(frame);
 	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
 	const RenderPassContext renderPassContext{
-	    .DescriptorHeapManager = descriptorHeapManager,
-	    .ConstantBufferManager = constantBufferManager,
-	    .SamplerLibrary = samplerLibrary,
+	    .HardwareInterface = renderHardwareInterface,
+	    .SamplerTableHandle = renderHardwareInterface.GetSamplerTableHandle(),
 	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
 
-	const NativeGraphicsCommandListHandle commandListHandle = m_backend->GetCurrentGraphicsCommandListHandle();
-	CommandContext cmd(static_cast<ID3D12GraphicsCommandList*>(commandListHandle.Value));
+	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
+	CommandContext cmd(commandList);
 	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext);
 }
 

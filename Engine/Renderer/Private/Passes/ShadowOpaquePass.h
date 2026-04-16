@@ -6,11 +6,12 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
-#include <d3d12.h>
 
-class D3D12ConstantBufferManager;
+#include <cstddef>
+
 class CommandContext;
 class FrameGraph;
 class PassParameterLayout;
@@ -63,7 +64,7 @@ class ShadowOpaquePass final
 	    const ParameterInstance& parameters,
 	    const ShadowOpaquePassRuntime& runtime,
 	    const RenderPassContext& renderPassContext,
-	    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress);
+	    RhiGpuVirtualAddress perViewGpuAddress);
 	static void DrawMeshes(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,

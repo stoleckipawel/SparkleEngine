@@ -2,10 +2,10 @@
 
 #include "RendererAPI.h"
 
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
+
 #include <tuple>
 
-class D3D12BindingLayout;
-class D3D12PipelineState;
 class ComputeClearPass;
 class ForwardOpaquePass;
 class ShadowOpaquePass;
@@ -14,20 +14,20 @@ template <typename TPass> struct RenderPassRuntimeTraits;
 
 struct SPARKLE_RENDERER_API ForwardOpaquePassRuntime
 {
-	D3D12BindingLayout& BindingLayout;
-	D3D12PipelineState& PipelineState;
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
 };
 
 struct SPARKLE_RENDERER_API ShadowOpaquePassRuntime
 {
-	D3D12BindingLayout& BindingLayout;
-	D3D12PipelineState& PipelineState;
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
 };
 
 struct SPARKLE_RENDERER_API ComputeClearPassRuntime
 {
-	D3D12BindingLayout& BindingLayout;
-	D3D12PipelineState& PipelineState;
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
 };
 
 template <> struct RenderPassRuntimeTraits<ForwardOpaquePass>

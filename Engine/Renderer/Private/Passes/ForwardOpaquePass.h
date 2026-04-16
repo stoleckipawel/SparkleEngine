@@ -6,9 +6,8 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
-
-#include <d3d12.h>
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 class CommandContext;
 struct ForwardOpaquePassRuntime;
@@ -72,7 +71,7 @@ class ForwardOpaquePass final
 	    const ParameterInstance& parameters,
 	    const ForwardOpaquePassRuntime& runtime,
 	    const RenderPassContext& renderPassContext,
-	    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress);
+	    RhiGpuVirtualAddress perViewGpuAddress);
 	static void DrawOpaqueMeshes(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,

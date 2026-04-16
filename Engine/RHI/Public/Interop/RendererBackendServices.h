@@ -32,6 +32,7 @@ class SPARKLE_RHI_API RendererBackendServices final
 	void Flush() noexcept;
 	void ResizeSwapChain() noexcept;
 	void BeginFrame() noexcept;
+	RenderCommandList& GetCurrentGraphicsCommandList() noexcept;
 	NativeGraphicsCommandListHandle GetCurrentGraphicsCommandListHandle() const noexcept;
 	void SubmitFrame() noexcept;
 	void AdvanceFrameInFlight() noexcept;

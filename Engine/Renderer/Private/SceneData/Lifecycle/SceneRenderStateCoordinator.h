@@ -2,11 +2,11 @@
 
 #include "Events/ScopedEventHandle.h"
 
-class D3D12Rhi;
 class GPUMeshCache;
 class LevelChangeEvents;
 class MaterialCacheManager;
 class RenderCamera;
+class RendererBackendServices;
 class GameScene;
 struct RenderSceneSnapshot;
 class TextureManager;
@@ -17,7 +17,7 @@ class SceneRenderStateCoordinator final
 	SceneRenderStateCoordinator(
 	    LevelChangeEvents& levelChangeEvents,
 	    GameScene& gameScene,
-	    D3D12Rhi& rhi,
+	    RendererBackendServices& backendServices,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
 	    RenderSceneSnapshot& sceneSnapshot,
@@ -39,7 +39,7 @@ class SceneRenderStateCoordinator final
 	void ReleaseSceneScopedMaterialResources() noexcept;
 
 	GameScene* m_gameScene = nullptr;
-	D3D12Rhi* m_rhi = nullptr;
+	RendererBackendServices* m_backendServices = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	RenderSceneSnapshot* m_sceneSnapshot = nullptr;

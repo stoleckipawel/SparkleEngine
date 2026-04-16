@@ -4,35 +4,24 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "D3D12/Textures/TextureFactory.h"
-#include "D3D12/Textures/KtxTextureLoader.h"
-#include "D3D12/Textures/TextureLoader.h"
-#include "D3D12/Textures/TextureLoadResult.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Resources/Texture.h"
 
 #include <format>
 
 std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
-	if (!m_textureFactory)
+	if (m_renderHardwareInterface == nullptr)
 	{
-		LOG_FATAL("TextureManager::CreateTextureFromPath: texture factory is unavailable.");
+		LOG_FATAL("TextureManager::CreateTextureFromPath: render hardware interface is unavailable.");
 		return nullptr;
 	}
 
-	TextureLoadResult loadResult =
-	    IsCookedKtxTexturePath(texturePath) ? KtxTextureLoader::Load(texturePath) : TextureLoader::Load(texturePath);
-	if (!loadResult.IsValid())
-	{
-		LOG_ERROR(std::format("TextureManager::CreateTextureFromPath: Failed to load '{}'", texturePath.string()));
-		return nullptr;
-	}
-
-	return m_textureFactory->CreateTexture(std::move(loadResult));
+	return m_renderHardwareInterface->CreateTextureFromPath(texturePath);
 }
 
-TextureManager::TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-    m_textureFactory(TextureFactory::Create(rhi, descriptorHeapManager))
+TextureManager::TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept :
+    m_renderHardwareInterface(&renderHardwareInterface)
 {
 	LoadDefaults();
 }
@@ -123,7 +112,8 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 
 bool TextureManager::IsCookedKtxTexturePath(const std::filesystem::path& texturePath) noexcept
 {
-	return KtxTextureLoader::SupportsExtension(Engine::Paths::GetLowercaseExtension(texturePath));
+	const std::wstring extension = Engine::Paths::GetLowercaseExtension(texturePath);
+	return extension == L".ktx" || extension == L".ktx2";
 }
 
 void TextureManager::UnloadTexture(TextureId id) noexcept

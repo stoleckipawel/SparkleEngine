@@ -5,7 +5,7 @@
 #include "Config/RenderConfig.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
-#include "Renderer/Public/FrameGraph/ResourceState.h"
+#include "RHI/Public/Interop/ResourceState.h"
 #include "Passes/PassUtilities.h"
 
 #include "Window/Window.h"

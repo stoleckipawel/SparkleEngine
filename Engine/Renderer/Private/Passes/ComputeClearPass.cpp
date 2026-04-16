@@ -48,7 +48,7 @@ void ComputeClearPass::Execute(
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ComputeClearPass>(
 	    context.Graph,
 	    context.Commands,
-	    context.Runtime.DescriptorHeapManager,
+	    context.Runtime.HardwareInterface,
 	    runtime,
 	    parameters,
 	    dispatch,

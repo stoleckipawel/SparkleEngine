@@ -1,20 +1,15 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "Renderer/Public/FrameGraph/ResourceState.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
-#include <d3d12.h>
 #include <cstdint>
-
-class D3D12PipelineState;
-class D3D12RootSignature;
 
 class SPARKLE_RENDERER_API CommandContext final
 {
   public:
-	explicit CommandContext(ID3D12GraphicsCommandList* cmdList) noexcept;
+	explicit CommandContext(RenderCommandList& commandList) noexcept;
 	~CommandContext() noexcept = default;
 
 	CommandContext(const CommandContext&) = delete;
@@ -22,38 +17,39 @@ class SPARKLE_RENDERER_API CommandContext final
 	CommandContext(CommandContext&&) = delete;
 	CommandContext& operator=(CommandContext&&) = delete;
 
-	void SetPipelineState(ID3D12PipelineState* pso) noexcept;
+	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept;
+	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
+	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
 
-	void SetRootSignature(ID3D12RootSignature* rootSig) noexcept;
-	void SetComputeRootSignature(ID3D12RootSignature* rootSig) noexcept;
+	void SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept;
 
-	void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) noexcept;
+	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept;
 
-	void BindVertexBuffer(const D3D12_VERTEX_BUFFER_VIEW& view) noexcept;
+	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept;
 
-	void BindIndexBuffer(const D3D12_INDEX_BUFFER_VIEW& view) noexcept;
-
-	void BindConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void SetRoot32BitConstants(
 	    std::uint32_t rootParameterIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
-	void BindRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
-	void BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 
 	void BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
-	void BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept;
+	void BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept;
 	void SetComputeRoot32BitConstants(
 	    std::uint32_t rootParameterIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
-	void BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
-	void BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, D3D12_GPU_VIRTUAL_ADDRESS gpuAddress) noexcept;
+	void BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 
-	void SetDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept;
+	void SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept;
 
 	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
 
@@ -65,8 +61,10 @@ class SPARKLE_RENDERER_API CommandContext final
 	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept;
 
 	void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil = 0) noexcept;
+	void SetViewport(const RhiViewport& viewport) noexcept;
 
 	void SetViewport(float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f) noexcept;
+	void SetScissorRect(const RhiRect& scissorRect) noexcept;
 
 	void SetScissorRect(std::int32_t left, std::int32_t top, std::int32_t right, std::int32_t bottom) noexcept;
 
@@ -91,10 +89,8 @@ class SPARKLE_RENDERER_API CommandContext final
 	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept;
 	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept;
 
-	ID3D12GraphicsCommandList* GetCommandList() const noexcept { return m_cmdList; }
+	RenderCommandList& GetRenderCommandList() const noexcept { return *m_commandList; }
 
   private:
-	static D3D12_RESOURCE_STATES MapToD3D12State(ResourceState state) noexcept;
-
-	ID3D12GraphicsCommandList* m_cmdList = nullptr;
+	RenderCommandList* m_commandList = nullptr;
 };

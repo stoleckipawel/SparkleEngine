@@ -6,13 +6,13 @@
 #include <memory>
 #include <unordered_map>
 
-class D3D12Rhi;
 class Mesh;
+class RenderHardwareInterface;
 
 class SPARKLE_RENDERER_API GPUMeshCache final
 {
   public:
-	explicit GPUMeshCache(D3D12Rhi& rhi) noexcept;
+	explicit GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept;
 	~GPUMeshCache() = default;
 
 	GPUMeshCache(const GPUMeshCache&) = delete;
@@ -28,6 +28,6 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	bool Contains(const Mesh& cpuMesh) const noexcept;
 
   private:
-	D3D12Rhi* m_rhi;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	std::unordered_map<const Mesh*, std::unique_ptr<GPUMesh>> m_cache;
 };

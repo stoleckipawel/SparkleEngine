@@ -138,26 +138,24 @@ UINT D3D12SwapChain::ComputeSwapChainFlags() const
 	return flags;
 }
 
-D3D12_VIEWPORT D3D12SwapChain::GetDefaultViewport() const
+RhiViewport D3D12SwapChain::GetDefaultViewport() const
 {
-	D3D12_VIEWPORT vp;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
-	vp.Width = float(GetWindowWidth());
-	vp.Height = float(GetWindowHeight());
-	vp.MinDepth = 0.0f;
-	vp.MaxDepth = 1.0f;
-	return vp;
+	return RhiViewport{
+	    .X = 0.0f,
+	    .Y = 0.0f,
+	    .Width = static_cast<float>(GetWindowWidth()),
+	    .Height = static_cast<float>(GetWindowHeight()),
+	    .MinDepth = 0.0f,
+	    .MaxDepth = 1.0f};
 }
 
-D3D12_RECT D3D12SwapChain::GetDefaultScissorRect() const
+RhiRect D3D12SwapChain::GetDefaultScissorRect() const
 {
-	D3D12_RECT scissorRect;
-	scissorRect.left = 0;
-	scissorRect.top = 0;
-	scissorRect.right = GetWindowWidth();
-	scissorRect.bottom = GetWindowHeight();
-	return scissorRect;
+	return RhiRect{
+	    .Left = 0,
+	    .Top = 0,
+	    .Right = static_cast<std::int32_t>(GetWindowWidth()),
+	    .Bottom = static_cast<std::int32_t>(GetWindowHeight())};
 }
 
 void D3D12SwapChain::Present()

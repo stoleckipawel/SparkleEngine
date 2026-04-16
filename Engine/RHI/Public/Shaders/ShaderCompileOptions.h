@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Config/RenderConfig.h"
+
 #include <filesystem>
-#include <vector>
 #include <string>
+#include <vector>
 
 enum class ShaderStage : uint8_t
 {

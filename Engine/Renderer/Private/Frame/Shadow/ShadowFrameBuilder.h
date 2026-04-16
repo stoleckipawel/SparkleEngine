@@ -1,15 +1,15 @@
 #pragma once
 
 #include "Config/RenderConfig.h"
-#include "RHI/Public/D3D12/Resources/D3D12ShadowConstantBufferData.h"
-#include "RHI/Public/D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
+#include "RHI/Public/Resources/RenderShadowData.h"
+#include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/RenderViewContext.h"
 
 #include <array>
 #include <cstddef>
 
-class D3D12ConstantBufferManager;
 class PerViewDataBuilder;
+class RenderHardwareInterface;
 class ShadowBuilder;
 struct CameraSnapshot;
 struct RenderSceneData;
@@ -39,7 +39,7 @@ class ShadowFrameBuilder final
 	    const CameraSnapshot& mainCamera,
 	    const RenderSceneData& sceneData,
 	    const PerViewLightingConstantBufferData& baseLighting,
-	    D3D12ConstantBufferManager& constantBufferManager,
+	    RenderHardwareInterface& renderHardwareInterface,
 	    const PerViewDataBuilder& perViewDataBuilder,
 	    ShadowBuilder& shadowBuilder) const;
 

@@ -46,12 +46,14 @@ std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& 
 	    *services->m_impl->descriptorHeapManager,
 	    *services->m_impl->frameResourceManager,
 	    *services->m_impl->swapChain);
-	services->m_impl->samplerLibrary =
-	    std::make_unique<D3D12SamplerLibrary>(*services->m_impl->rhi, *services->m_impl->descriptorHeapManager);
 	services->m_impl->renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
 	    *services->m_impl->rhi,
 	    *services->m_impl->descriptorHeapManager,
-	    *services->m_impl->swapChain);
+	    *services->m_impl->swapChain,
+	    *services->m_impl->constantBufferManager);
+	services->m_impl->samplerLibrary =
+	    std::make_unique<D3D12SamplerLibrary>(*services->m_impl->rhi, *services->m_impl->renderHardwareInterface);
+	services->m_impl->renderHardwareInterface->SetSamplerTableHandle(services->m_impl->samplerLibrary->GetTableHandle());
 	return services;
 }
 
@@ -83,6 +85,11 @@ void RendererBackendServices::BeginFrame() noexcept
 	m_impl->rhi->WaitForGPU(frameIndex);
 	m_impl->rhi->ResetCommandAllocator(frameIndex);
 	m_impl->rhi->ResetCommandList(frameIndex);
+}
+
+RenderCommandList& RendererBackendServices::GetCurrentGraphicsCommandList() noexcept
+{
+	return m_impl->renderHardwareInterface->GetGraphicsCommandList(m_impl->rhi->GetCurrentFrameIndex());
 }
 
 NativeGraphicsCommandListHandle RendererBackendServices::GetCurrentGraphicsCommandListHandle() const noexcept

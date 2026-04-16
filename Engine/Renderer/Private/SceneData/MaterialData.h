@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <DirectXMath.h>
@@ -34,7 +34,7 @@ struct SPARKLE_RENDERER_API MaterialData
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
 
-	RhiGpuDescriptorHandle textureTableGpuHandle = {};
+	RhiDescriptorTableHandle textureTableHandle = {};
 
 	static MaterialData FromDesc(const MaterialDesc& desc);
 

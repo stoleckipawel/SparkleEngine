@@ -1,9 +1,8 @@
 #pragma once
 
-class D3D12SwapChain;
-class D3D12ConstantBufferManager;
 class PerViewDataBuilder;
 class RenderCamera;
+class RenderHardwareInterface;
 class RenderSceneDataBuilder;
 class ShadowBuilder;
 class ShadowFrameBuilder;
@@ -13,8 +12,7 @@ struct RenderSceneSnapshot;
 
 FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
-    const D3D12SwapChain& swapChain,
-    D3D12ConstantBufferManager& constantBufferManager,
+    RenderHardwareInterface& renderHardwareInterface,
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,

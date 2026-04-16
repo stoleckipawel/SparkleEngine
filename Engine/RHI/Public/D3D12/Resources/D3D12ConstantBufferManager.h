@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "Config/RenderConfig.h"
-#include "D3D12ConstantBufferData.h"
+#include "Resources/RenderConstantBufferData.h"
 #include "D3D12ConstantBuffer.h"
 
 class Timer;

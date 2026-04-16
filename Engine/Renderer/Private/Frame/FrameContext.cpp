@@ -2,9 +2,8 @@
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/FrameContext.h"
 
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
-#include "D3D12/D3D12SwapChain.h"
-#include "D3D12/Resources/D3D12ViewLightingConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Shadow/ShadowBuilder.h"
 #include "Frame/Shadow/ShadowFrameBuilder.h"
@@ -19,8 +18,7 @@
 
 FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
-    const D3D12SwapChain& swapChain,
-    D3D12ConstantBufferManager& constantBufferManager,
+	RenderHardwareInterface& renderHardwareInterface,
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
@@ -33,12 +31,12 @@ FrameContext BuildFrameContext(
 	const PerViewLightingConstantBufferData baseLighting = viewLightingBuilder.Build(frame.sceneData);
 	ShadowFrameBuildResult shadowFrame =
 	    shadowFrameBuilder
-	        .Build(sceneSnapshot.camera, frame.sceneData, baseLighting, constantBufferManager, perViewDataBuilder, shadowBuilder);
+	        .Build(sceneSnapshot.camera, frame.sceneData, baseLighting, renderHardwareInterface, perViewDataBuilder, shadowBuilder);
 	frame.shadowViews = shadowFrame.shadowViews;
 	frame.shadowViewCount = shadowFrame.shadowViewCount;
-	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, swapChain);
+	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, renderHardwareInterface);
 
-	frame.mainView.perViewGpuAddress = constantBufferManager.AllocatePerView(frame.mainView.perViewData);
+	frame.mainView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(frame.mainView.perViewData);
 
 	return frame;
 }

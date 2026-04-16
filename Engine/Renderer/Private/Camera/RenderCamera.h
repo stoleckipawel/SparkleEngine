@@ -3,7 +3,7 @@
 #include "Renderer/Public/RendererAPI.h"
 #include "Scene/Camera/CameraSnapshot.h"
 
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "Math/Frustum.h"
 #include <DirectXMath.h>
 

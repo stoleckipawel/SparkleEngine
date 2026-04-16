@@ -8,9 +8,9 @@
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 #include "GPU/CommandContext.h"
 #include "Passes/ShaderPass.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
-#include <d3d12.h>
 #include <array>
 #include <string_view>
 #include <type_traits>
@@ -20,7 +20,7 @@ namespace PassUtilities
 {
 	inline void DrawFullscreenTriangle(CommandContext& cmd) noexcept
 	{
-		cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 		cmd.DrawInstanced(3, 1, 0, 0);
 	}
 
@@ -35,18 +35,18 @@ namespace PassUtilities
 	bool BindRasterPassWithRuntime(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
-	    D3D12DescriptorHeapManager* descriptorHeapManager,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
-	    const D3D12PassBindingOverrides* overrides = nullptr,
+	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
 		return RasterShaderPass<PassParameterSet>::Bind(
 		    frameGraph,
 		    cmd,
-		    descriptorHeapManager,
+		    renderHardwareInterface,
 		    runtime.BindingLayout,
 		    runtime.PipelineState,
 		    parameters,
@@ -60,16 +60,16 @@ namespace PassUtilities
 	bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
-	    D3D12DescriptorHeapManager* descriptorHeapManager,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const std::array<const char*, N>& bindingNames,
-	    const D3D12PassBindingOverrides& overrides,
+	    const PassBindingOverrides& overrides,
 	    const char* passName = nullptr) noexcept
 	{
 		return BindRasterPassWithRuntime(
 		    frameGraph,
 		    cmd,
-		    descriptorHeapManager,
+		    renderHardwareInterface,
 		    runtime,
 		    GetEmptyPassParameterSet(),
 		    bindingNames.data(),
@@ -82,7 +82,7 @@ namespace PassUtilities
 	bool DispatchComputePassWithRuntime(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
+	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
@@ -93,7 +93,7 @@ namespace PassUtilities
 		return ComputeShaderPass<Parameters>::Dispatch(
 		    frameGraph,
 		    cmd,
-		    descriptorHeapManager,
+		    renderHardwareInterface,
 		    runtime.BindingLayout,
 		    runtime.PipelineState,
 		    parameters,

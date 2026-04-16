@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../D3D12Rhi.h"
+#include "../../Interop/RenderHardwareInterface.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"
 
@@ -15,7 +16,7 @@ class D3D12DescriptorHeapManager final
 	D3D12DescriptorHeapManager(D3D12DescriptorHeapManager&&) = delete;
 	D3D12DescriptorHeapManager& operator=(D3D12DescriptorHeapManager&&) = delete;
 
-	void SetShaderVisibleHeaps(ID3D12GraphicsCommandList* commandList) const;
+	void SetShaderVisibleHeaps(RenderCommandList& commandList) const;
 
 	D3D12DescriptorHandle AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type) { return GetAllocator(type)->Allocate(); }
 	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle) { GetAllocator(type)->Free(handle); }
@@ -31,6 +32,7 @@ class D3D12DescriptorHeapManager final
 	{
 		return GetAllocator(type)->AllocateContiguous(count);
 	}
+	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle, uint32_t count);
 	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle, uint32_t count)
 	{
 		GetAllocator(type)->FreeContiguous(handle, count);

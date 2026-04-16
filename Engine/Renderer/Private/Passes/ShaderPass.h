@@ -8,13 +8,13 @@
 #include <utility>
 
 class CommandContext;
-class D3D12BindingLayout;
-class D3D12DescriptorHeapManager;
-class D3D12PipelineState;
-class D3D12PassBindingOverrides;
 class FrameGraph;
 class PassBuilder;
 class PassParameterLayout;
+class PassBindingOverrides;
+class RenderHardwareInterface;
+class RenderBindingLayout;
+class RenderPipelineState;
 struct RenderGraphPassContext;
 class ShaderSourceDefinition;
 struct FrameContext;
@@ -48,21 +48,21 @@ SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
 SPARKLE_RENDERER_API void BindComputeShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-    D3D12DescriptorHeapManager* descriptorHeapManager,
-    const D3D12BindingLayout& bindingLayout,
-    const D3D12PipelineState& pipelineState,
+	RenderHardwareInterface* renderHardwareInterface,
+	const RenderBindingLayout& bindingLayout,
+	const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-    D3D12DescriptorHeapManager* descriptorHeapManager,
-    const D3D12BindingLayout& bindingLayout,
-    const D3D12PipelineState& pipelineState,
+	RenderHardwareInterface* renderHardwareInterface,
+	const RenderBindingLayout& bindingLayout,
+	const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
-    const D3D12PassBindingOverrides* overrides = nullptr) noexcept;
+	const PassBindingOverrides* overrides = nullptr) noexcept;
 
 SPARKLE_RENDERER_API void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 
@@ -262,9 +262,9 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	static bool Dispatch(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
-	    D3D12DescriptorHeapManager& descriptorHeapManager,
-	    const D3D12BindingLayout& bindingLayout,
-	    const D3D12PipelineState& pipelineState,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const RenderBindingLayout& bindingLayout,
+	    const RenderPipelineState& pipelineState,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
 	    const char* passName = nullptr) noexcept
@@ -274,7 +274,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 			return false;
 		}
 
-		BindComputeShaderPass(cmd, frameGraph, &descriptorHeapManager, bindingLayout, pipelineState, GetPassParameterSet(parameters));
+		BindComputeShaderPass(cmd, frameGraph, &renderHardwareInterface, bindingLayout, pipelineState, GetPassParameterSet(parameters));
 		DispatchComputeShaderPass(cmd, dispatch);
 		return true;
 	}
@@ -299,13 +299,13 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	static bool Bind(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
-	    D3D12DescriptorHeapManager* descriptorHeapManager,
-	    const D3D12BindingLayout& bindingLayout,
-	    const D3D12PipelineState& pipelineState,
+	    RenderHardwareInterface* renderHardwareInterface,
+	    const RenderBindingLayout& bindingLayout,
+	    const RenderPipelineState& pipelineState,
 	    const TParameterBindings& parameters,
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
-	    const D3D12PassBindingOverrides* overrides = nullptr,
+	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
 		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount))
@@ -316,7 +316,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 		BindRasterShaderPass(
 		    cmd,
 		    frameGraph,
-		    descriptorHeapManager,
+		    renderHardwareInterface,
 		    bindingLayout,
 		    pipelineState,
 		    GetPassParameterSet(parameters),

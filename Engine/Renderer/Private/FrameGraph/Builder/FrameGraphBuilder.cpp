@@ -13,11 +13,7 @@ FrameGraphBuilder::FrameGraphBuilder(const FrameGraphDependencies& dependencies)
 
 FrameGraphBuildResult FrameGraphBuilder::Build() const
 {
-	auto frameGraph = std::make_unique<FrameGraph>(
-	    &m_dependencies.rhi,
-	    &m_dependencies.window,
-	    &m_dependencies.descriptorHeapManager,
-	    &m_dependencies.swapChain);
+	auto frameGraph = std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window, m_dependencies.sceneExtent);
 
 	const FrameGraphSceneTargets sceneTargets =
 	    FrameGraphFeatures::CreateSceneTargets(*frameGraph, m_dependencies.window, m_dependencies.sceneExtent);

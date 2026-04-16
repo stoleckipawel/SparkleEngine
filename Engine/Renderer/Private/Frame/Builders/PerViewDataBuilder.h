@@ -2,8 +2,8 @@
 
 #include "Frame/RenderViewContext.h"
 
-class D3D12SwapChain;
 class RenderCamera;
+class RenderHardwareInterface;
 struct PerViewLightingConstantBufferData;
 
 class PerViewDataBuilder final
@@ -20,13 +20,13 @@ class PerViewDataBuilder final
 	RenderViewContext BuildView(
 	    const PerViewCameraConstantBufferData& cameraData,
 	    const PerViewLightingConstantBufferData& lightingData,
-	    const D3D12_VIEWPORT& viewport,
-	    const D3D12_RECT& scissorRect) const noexcept;
+	    const RhiViewport& viewport,
+	    const RhiRect& scissorRect) const noexcept;
 
 	RenderViewContext BuildMainView(
 	    const RenderCamera& renderCamera,
 	    const PerViewLightingConstantBufferData& lightingData,
-	    const D3D12SwapChain& swapChain) const noexcept;
+	    const RenderHardwareInterface& renderHardwareInterface) const noexcept;
 
   private:
 	static PerViewConstantBufferData BuildPerViewData(

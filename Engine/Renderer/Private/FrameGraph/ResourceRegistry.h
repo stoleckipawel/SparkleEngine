@@ -4,15 +4,13 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
-#include "Renderer/Public/FrameGraph/ResourceState.h"
+#include "RHI/Public/Interop/ResourceState.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <string>
 #include <string_view>
 #include <vector>
-
-class D3D12SwapChain;
 
 enum class FrameGraphResourceClass : std::uint8_t
 {
@@ -36,7 +34,6 @@ enum class FrameGraphResourceOwnership : std::uint8_t
 
 struct FrameGraphResourceAccess
 {
-	D3D12SwapChain* swapChain = nullptr;
 	NativeResourceHandle externalResource = {};
 	RhiCpuDescriptorHandle renderTargetView = {};
 	RhiCpuDescriptorHandle depthStencilView = {};
@@ -45,7 +42,7 @@ struct FrameGraphResourceAccess
 	RhiCpuDescriptorHandle unorderedAccessViewCpu = {};
 	RhiGpuDescriptorHandle unorderedAccessViewGpu = {};
 
-	bool IsResolved() const noexcept { return swapChain != nullptr || static_cast<bool>(externalResource); }
+	bool IsResolved() const noexcept { return static_cast<bool>(externalResource); }
 };
 
 struct FrameGraphResourceMetadata
@@ -79,11 +76,7 @@ class SPARKLE_RENDERER_API ResourceRegistry final
 
 	void Clear() noexcept;
 	void ResetCurrentStates() noexcept;
-	void RegisterBackBuffer(
-	    ResourceHandle handle,
-	    const FrameGraphTextureDesc& desc,
-	    D3D12SwapChain& swapChain,
-	    ResourceState initialState) noexcept;
+	void RegisterBackBuffer(ResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	void RegisterTransientTexture(
 	    ResourceHandle handle,
 	    const FrameGraphTextureDesc& desc,

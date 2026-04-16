@@ -14,12 +14,10 @@
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "D3D12/Pipeline/D3D12BindingLayout.h"
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
-#include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "Pipeline/D3D12PassBinder.h"
+#include "Pipeline/PassBinder.h"
 
 #include <cassert>
 
@@ -74,7 +72,7 @@ void ShadowOpaquePass::PreparePassParameters(
     const RenderViewContext& viewContext,
     const RenderPassContext& renderPassContext)
 {
-	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
+	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -82,19 +80,9 @@ void ShadowOpaquePass::PreparePassParameters(
 
 void ShadowOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)
 {
-	cmd.SetViewport(
-	    viewContext.viewport.TopLeftX,
-	    viewContext.viewport.TopLeftY,
-	    viewContext.viewport.Width,
-	    viewContext.viewport.Height,
-	    viewContext.viewport.MinDepth,
-	    viewContext.viewport.MaxDepth);
-	cmd.SetScissorRect(
-	    viewContext.scissorRect.left,
-	    viewContext.scissorRect.top,
-	    viewContext.scissorRect.right,
-	    viewContext.scissorRect.bottom);
-	cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmd.SetViewport(viewContext.viewport);
+	cmd.SetScissorRect(viewContext.scissorRect);
+	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 }
 
 void ShadowOpaquePass::BindPassResources(
@@ -103,11 +91,11 @@ void ShadowOpaquePass::BindPassResources(
     const ParameterInstance& parameters,
     const ShadowOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
+	RhiGpuVirtualAddress perViewGpuAddress)
 {
-	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
-	D3D12PassBindingOverrides overrides;
-	overrides.SetConstantBufferView("PerFrame", constantBufferManager.GetPerFrameGpuAddress());
+	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
+	PassBindingOverrides overrides;
+	overrides.SetConstantBufferView("PerFrame", renderHardwareInterface.GetPerFrameConstantGpuAddress());
 	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
 	const bool bound = PassUtilities::BindRasterPassWithRuntime(
 	    frameGraph,
@@ -129,7 +117,7 @@ void ShadowOpaquePass::DrawMeshes(
     const ShadowOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
-	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
+	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
 
 	for (const MeshDraw& draw : sceneData.meshDraws)
 	{
@@ -145,8 +133,8 @@ void ShadowOpaquePass::DrawMeshes(
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
-		D3D12PassBindingOverrides overrides;
-		overrides.SetConstantBufferView("PerObjectVS", constantBufferManager.UpdatePerObjectVS(perObjectVS));
+		PassBindingOverrides overrides;
+		overrides.SetConstantBufferView("PerObjectVS", renderHardwareInterface.AllocatePerObjectVertexConstants(perObjectVS));
 		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
 		    frameGraph,
 		    cmd,

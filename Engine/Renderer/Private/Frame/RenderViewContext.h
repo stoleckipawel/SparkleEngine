@@ -1,13 +1,12 @@
 #pragma once
 
-#include "RHI/Public/D3D12/Resources/D3D12ConstantBufferData.h"
-
-#include <d3d12.h>
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 struct RenderViewContext
 {
 	PerViewConstantBufferData perViewData = {};
-	D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress = 0;
-	D3D12_VIEWPORT viewport = {};
-	D3D12_RECT scissorRect = {};
+	RhiGpuVirtualAddress perViewGpuAddress = 0;
+	RhiViewport viewport = {};
+	RhiRect scissorRect = {};
 };

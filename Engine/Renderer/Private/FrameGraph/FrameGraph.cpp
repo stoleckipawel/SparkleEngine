@@ -4,20 +4,17 @@
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "D3D12/D3D12SwapChain.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 
-FrameGraph::FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager* descriptorHeapManager, D3D12SwapChain* swapChain) :
-    m_rhi(rhi),
-    m_window(window),
-    m_descriptorHeapManager(descriptorHeapManager),
-    m_swapChain(swapChain),
-    m_transientAllocator(
-        rhi != nullptr && descriptorHeapManager != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*rhi, *descriptorHeapManager)
-                                                           : nullptr)
+FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
+	m_renderHardwareInterface(renderHardwareInterface),
+	m_window(window),
+	m_sceneExtent(sceneExtent),
+	m_transientAllocator(renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface)
+															: nullptr)
 {
 	LOG_INFO("FrameGraph created");
 }

@@ -1,12 +1,7 @@
 #include "PCH.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "GPU/ResourceStateD3D12.h"
-
-#include "Config/DepthConvention.h"
-#include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "D3D12/D3D12Rhi.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <algorithm>
 #include <cassert>
@@ -53,169 +48,10 @@ namespace
 		heapName += L"_Heap";
 		return heapName;
 	}
+}
 
-	D3D12_HEAP_DESC BuildHeapDesc(const FrameGraph::CompiledTransientResourcePlan::PhysicalAllocationPlan& physicalPlan) noexcept
-	{
-		D3D12_HEAP_DESC heapDesc = {};
-		heapDesc.SizeInBytes = physicalPlan.sizeInBytes;
-		heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-		heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		heapDesc.Properties.CreationNodeMask = 0;
-		heapDesc.Properties.VisibleNodeMask = 0;
-		heapDesc.Alignment = physicalPlan.alignment;
-		heapDesc.Flags = physicalPlan.heapFlags;
-		return heapDesc;
-	}
-
-	D3D12_RESOURCE_DESC BuildDepthStencilResourceDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-		resourceDesc.Width = transientPlan.textureDesc.width;
-		resourceDesc.Height = transientPlan.textureDesc.height;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		return resourceDesc;
-	}
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC BuildDepthStencilViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc = {};
-		viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		viewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		viewDesc.Flags = D3D12_DSV_FLAG_NONE;
-		return viewDesc;
-	}
-
-	D3D12_CLEAR_VALUE BuildDepthStencilClearValue(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		clearValue.DepthStencil.Depth = DepthConvention::GetClearDepth();
-		clearValue.DepthStencil.Stencil = 0;
-		return clearValue;
-	}
-
-	D3D12_RESOURCE_DESC BuildRenderTargetResourceDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-		resourceDesc.Width = transientPlan.textureDesc.width;
-		resourceDesc.Height = transientPlan.textureDesc.height;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (RequiresUnorderedAccessView(transientPlan))
-		{
-			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		}
-		return resourceDesc;
-	}
-
-	D3D12_RENDER_TARGET_VIEW_DESC BuildRenderTargetViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {};
-		viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		viewDesc.Texture2D.MipSlice = 0;
-		viewDesc.Texture2D.PlaneSlice = 0;
-		return viewDesc;
-	}
-
-	D3D12_CLEAR_VALUE BuildRenderTargetClearValue(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		clearValue.Color[0] = 0.0f;
-		clearValue.Color[1] = 0.0f;
-		clearValue.Color[2] = 0.0f;
-		clearValue.Color[3] = 1.0f;
-		return clearValue;
-	}
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC BuildShaderResourceViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-
-		if (transientPlan.resourceClass == FrameGraphResourceClass::Buffer)
-		{
-			if (transientPlan.bufferDesc.strideInBytes > 0)
-			{
-				srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-				srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-				srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-				srvDesc.Buffer.StructureByteStride = transientPlan.bufferDesc.strideInBytes;
-				srvDesc.Buffer.NumElements =
-				    static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / transientPlan.bufferDesc.strideInBytes);
-				return srvDesc;
-			}
-
-			assert(transientPlan.bufferDesc.sizeInBytes % sizeof(std::uint32_t) == 0);
-			srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-			srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
-			srvDesc.Buffer.StructureByteStride = 0;
-			srvDesc.Buffer.NumElements = static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / sizeof(std::uint32_t));
-			return srvDesc;
-		}
-
-		srvDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
-		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.PlaneSlice = 0;
-		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-		return srvDesc;
-	}
-
-	D3D12_UNORDERED_ACCESS_VIEW_DESC BuildUnorderedAccessViewDesc(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
-	{
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-
-		if (transientPlan.resourceClass == FrameGraphResourceClass::Buffer)
-		{
-			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-			if (transientPlan.bufferDesc.strideInBytes > 0)
-			{
-				uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-				uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-				uavDesc.Buffer.StructureByteStride = transientPlan.bufferDesc.strideInBytes;
-				uavDesc.Buffer.NumElements =
-				    static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / transientPlan.bufferDesc.strideInBytes);
-				return uavDesc;
-			}
-
-			assert(transientPlan.bufferDesc.sizeInBytes % sizeof(std::uint32_t) == 0);
-			uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-			uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
-			uavDesc.Buffer.StructureByteStride = 0;
-			uavDesc.Buffer.NumElements = static_cast<UINT>(transientPlan.bufferDesc.sizeInBytes / sizeof(std::uint32_t));
-			return uavDesc;
-		}
-
-		uavDesc.Format = D3D12TypeConversions::ToDxgiFormat(transientPlan.textureDesc.format);
-		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-		uavDesc.Texture2D.MipSlice = 0;
-		uavDesc.Texture2D.PlaneSlice = 0;
-		return uavDesc;
-	}
-}  // namespace
-
-FrameGraphTransientAllocator::FrameGraphTransientAllocator(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept :
-    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
+FrameGraphTransientAllocator::FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept :
+	 m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 
@@ -234,7 +70,7 @@ void FrameGraphTransientAllocator::Reset() noexcept
 
 void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& allocations) noexcept
 {
-	if (m_descriptorHeapManager == nullptr)
+	if (m_renderHardwareInterface == nullptr)
 	{
 		return;
 	}
@@ -243,34 +79,83 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 	{
 		if (allocation.renderTargetView.IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, allocation.renderTargetView);
+			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::RenderTarget, allocation.renderTargetView);
 			allocation.renderTargetView = {};
 		}
 
 		if (allocation.depthStencilView.IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, allocation.depthStencilView);
+			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::DepthStencil, allocation.depthStencilView);
 			allocation.depthStencilView = {};
 		}
 
 		if (allocation.shaderResourceView.IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, allocation.shaderResourceView);
+			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::ShaderResource, allocation.shaderResourceView);
 			allocation.shaderResourceView = {};
 			allocation.hasShaderResourceView = false;
 		}
 
 		if (allocation.unorderedAccessView.IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, allocation.unorderedAccessView);
+			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::ShaderResource, allocation.unorderedAccessView);
 			allocation.unorderedAccessView = {};
 			allocation.hasUnorderedAccessView = false;
+		}
+
+		if (allocation.ownedDepthStencilResource)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(allocation.ownedDepthStencilResource);
+			allocation.ownedDepthStencilResource = {};
+		}
+
+		if (allocation.ownedRenderTargetResource)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(allocation.ownedRenderTargetResource);
+			allocation.ownedRenderTargetResource = {};
+		}
+
+		if (allocation.ownedBuffer)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(allocation.ownedBuffer);
+			allocation.ownedBuffer = {};
+		}
+
+		allocation.depthStencilResource = {};
+		allocation.renderTargetResource = {};
+		allocation.buffer = {};
+	}
+
+	for (PhysicalBlockRecord& block : m_colorBlocks)
+	{
+		if (block.ownedHeap)
+		{
+			m_renderHardwareInterface->ReleaseOwnedHeap(block.ownedHeap);
+			block.ownedHeap = {};
+		}
+	}
+
+	for (PhysicalBlockRecord& block : m_depthBlocks)
+	{
+		if (block.ownedHeap)
+		{
+			m_renderHardwareInterface->ReleaseOwnedHeap(block.ownedHeap);
+			block.ownedHeap = {};
+		}
+	}
+
+	for (PhysicalBlockRecord& block : m_bufferBlocks)
+	{
+		if (block.ownedHeap)
+		{
+			m_renderHardwareInterface->ReleaseOwnedHeap(block.ownedHeap);
+			block.ownedHeap = {};
 		}
 	}
 }
 
 FrameGraphTransientAllocator::AllocationRecord& FrameGraphTransientAllocator::Materialize(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
 	AllocationList& allocations = GetAllocationList(transientPlan.physicalAllocation.pool);
 	if (AllocationRecord* existingAllocation = const_cast<AllocationRecord*>(FindAllocationInList(allocations, transientPlan.handle)))
@@ -297,26 +182,23 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 	return FindColorAllocation(handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(
-    ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_depthAllocations, handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(
-    ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_colorAllocations, handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(
-    ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_bufferAllocations, handle);
 }
 
 FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
@@ -330,7 +212,7 @@ FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockL
 }
 
 const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
@@ -344,7 +226,7 @@ const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::Get
 }
 
 FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
@@ -358,7 +240,7 @@ FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetA
 }
 
 const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
@@ -372,8 +254,8 @@ const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocationInList(
-    const AllocationList& allocations,
-    ResourceHandle handle) const noexcept
+	const AllocationList& allocations,
+	ResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    allocations.begin(),
@@ -387,8 +269,8 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 }
 
 FrameGraphTransientAllocator::PhysicalBlockRecord* FrameGraphTransientAllocator::FindPhysicalBlock(
-    BlockList& blocks,
-    std::uint32_t physicalBlockIndex) noexcept
+	BlockList& blocks,
+	std::uint32_t physicalBlockIndex) noexcept
 {
 	const auto it = std::find_if(
 	    blocks.begin(),
@@ -402,8 +284,9 @@ FrameGraphTransientAllocator::PhysicalBlockRecord* FrameGraphTransientAllocator:
 }
 
 FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator::GetOrCreatePhysicalBlock(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
+	assert(m_renderHardwareInterface != nullptr);
 	assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
 	BlockList& blocks = GetBlockList(transientPlan.physicalAllocation.pool);
 	if (PhysicalBlockRecord* existingBlock = FindPhysicalBlock(blocks, transientPlan.physicalAllocation.physicalBlockIndex))
@@ -417,20 +300,24 @@ FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator:
 	block.sizeInBytes = transientPlan.physicalAllocation.sizeInBytes;
 	block.alignment = transientPlan.physicalAllocation.alignment;
 	block.heapOffset = transientPlan.physicalAllocation.heapOffset;
-
-	const D3D12_HEAP_DESC heapDesc = BuildHeapDesc(transientPlan.physicalAllocation);
-	CHECK(m_rhi->GetDevice()->CreateHeap(&heapDesc, IID_PPV_ARGS(block.heap.ReleaseAndGetAddressOf())));
-	block.heap->SetName(BuildHeapDebugName(transientPlan).c_str());
+	block.ownedHeap = m_renderHardwareInterface->CreateOwnedHeap(
+	    block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer ? RhiTransientAllocationPool::Buffer
+	                                                                         : (block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth
+	                                                                                ? RhiTransientAllocationPool::Depth
+	                                                                                : RhiTransientAllocationPool::Color),
+	    block.sizeInBytes,
+	    block.alignment,
+	    BuildHeapDebugName(transientPlan));
+	assert(block.ownedHeap);
 
 	blocks.push_back(std::move(block));
 	return blocks.back();
 }
 
 FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::CreateAllocationRecord(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
-	assert(m_rhi != nullptr);
-	assert(m_descriptorHeapManager != nullptr);
+	assert(m_renderHardwareInterface != nullptr);
 	assert(transientPlan.handle.IsValid());
 	assert(transientPlan.physicalAllocation.allocationIndex != FrameGraph::INVALID_RESOURCE_INDEX);
 	assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
@@ -447,72 +334,65 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 	allocation.heapOffset = transientPlan.physicalAllocation.heapOffset;
 
 	PhysicalBlockRecord& block = GetOrCreatePhysicalBlock(transientPlan);
-	allocation.heap = block.heap;
+	assert(block.ownedHeap);
 
 	switch (transientPlan.kind)
 	{
 		case FrameGraphResourceKind::DepthStencil:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_DepthTransient");
-			const D3D12_RESOURCE_DESC resourceDesc = BuildDepthStencilResourceDesc(transientPlan);
-			const D3D12_CLEAR_VALUE clearValue = BuildDepthStencilClearValue(transientPlan);
-			CHECK(m_rhi->GetDevice()->CreatePlacedResource(
-			    block.heap.Get(),
+			allocation.ownedDepthStencilResource = m_renderHardwareInterface->CreatePlacedTextureResource(
+			    block.ownedHeap,
 			    allocation.heapOffset,
-			    &resourceDesc,
-			    D3D12_RESOURCE_STATE_DEPTH_READ,
-			    &clearValue,
-			    IID_PPV_ARGS(allocation.depthStencilResource.ReleaseAndGetAddressOf())));
-			allocation.depthStencilResource->SetName(debugName.c_str());
-			allocation.depthStencilView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-			const D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc = BuildDepthStencilViewDesc(transientPlan);
-			m_rhi->GetDevice()->CreateDepthStencilView(
-			    allocation.depthStencilResource.Get(),
-			    &viewDesc,
-			    allocation.depthStencilView.GetCPU());
+			    RhiTransientTextureAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.textureResourceDesc,
+			        .ClearValue = transientPlan.physicalAllocation.optimizedClearValue,
+			        .InitialState = transientPlan.physicalAllocation.initialState},
+			    debugName);
+			allocation.depthStencilResource = m_renderHardwareInterface->GetNativeResource(allocation.ownedDepthStencilResource);
+			allocation.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::DepthStencil);
+			m_renderHardwareInterface->CreateDepthStencilView(
+			    allocation.depthStencilResource,
+			    transientPlan.textureDesc.format,
+			    allocation.depthStencilView.CpuHandle);
 			break;
 		}
 
 		case FrameGraphResourceKind::ColorRenderTarget:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.textureDesc.name, L"FG_ColorTransient");
-			const D3D12_RESOURCE_DESC resourceDesc = BuildRenderTargetResourceDesc(transientPlan);
-			const D3D12_CLEAR_VALUE clearValue = BuildRenderTargetClearValue(transientPlan);
-			CHECK(m_rhi->GetDevice()->CreatePlacedResource(
-			    block.heap.Get(),
+			allocation.ownedRenderTargetResource = m_renderHardwareInterface->CreatePlacedTextureResource(
+			    block.ownedHeap,
 			    allocation.heapOffset,
-			    &resourceDesc,
-			    MapToD3D12ResourceState(transientPlan.physicalAllocation.initialState),
-			    &clearValue,
-			    IID_PPV_ARGS(allocation.renderTargetResource.ReleaseAndGetAddressOf())));
-			allocation.renderTargetResource->SetName(debugName.c_str());
-			allocation.renderTargetView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			const D3D12_RENDER_TARGET_VIEW_DESC viewDesc = BuildRenderTargetViewDesc(transientPlan);
-			m_rhi->GetDevice()->CreateRenderTargetView(
-			    allocation.renderTargetResource.Get(),
-			    &viewDesc,
-			    allocation.renderTargetView.GetCPU());
+			    RhiTransientTextureAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.textureResourceDesc,
+			        .ClearValue = transientPlan.physicalAllocation.optimizedClearValue,
+			        .InitialState = transientPlan.physicalAllocation.initialState},
+			    debugName);
+			allocation.renderTargetResource = m_renderHardwareInterface->GetNativeResource(allocation.ownedRenderTargetResource);
+			allocation.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::RenderTarget);
+			m_renderHardwareInterface->CreateRenderTargetView(
+			    allocation.renderTargetResource,
+			    transientPlan.textureDesc.format,
+			    allocation.renderTargetView.CpuHandle);
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
-				allocation.shaderResourceView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildShaderResourceViewDesc(transientPlan);
-				m_rhi->GetDevice()->CreateShaderResourceView(
-				    allocation.renderTargetResource.Get(),
-				    &srvDesc,
-				    allocation.shaderResourceView.GetCPU());
+				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				m_renderHardwareInterface->CreateTextureShaderResourceView(
+				    allocation.renderTargetResource,
+				    transientPlan.textureDesc.format,
+				    allocation.shaderResourceView.CpuHandle);
 				allocation.hasShaderResourceView = true;
 			}
 
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
-				allocation.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildUnorderedAccessViewDesc(transientPlan);
-				m_rhi->GetDevice()->CreateUnorderedAccessView(
-				    allocation.renderTargetResource.Get(),
-				    nullptr,
-				    &uavDesc,
-				    allocation.unorderedAccessView.GetCPU());
+				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				m_renderHardwareInterface->CreateTextureUnorderedAccessView(
+				    allocation.renderTargetResource,
+				    transientPlan.textureDesc.format,
+				    allocation.unorderedAccessView.CpuHandle);
 				allocation.hasUnorderedAccessView = true;
 			}
 			break;
@@ -521,29 +401,34 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		case FrameGraphResourceKind::Buffer:
 		{
 			const std::wstring debugName = BuildWideDebugName(transientPlan.bufferDesc.name, L"FG_BufferTransient");
-			CHECK(m_rhi->GetDevice()->CreatePlacedResource(
-			    block.heap.Get(),
+			allocation.ownedBuffer = m_renderHardwareInterface->CreatePlacedBufferResource(
+			    block.ownedHeap,
 			    allocation.heapOffset,
-			    &transientPlan.physicalAllocation.resourceDesc,
-			    MapToD3D12ResourceState(transientPlan.physicalAllocation.initialState),
-			    nullptr,
-			    IID_PPV_ARGS(allocation.buffer.ReleaseAndGetAddressOf())));
-			allocation.buffer->SetName(debugName.c_str());
+			    RhiTransientBufferAllocationDesc{
+			        .ResourceDesc = transientPlan.physicalAllocation.bufferResourceDesc,
+			        .InitialState = transientPlan.physicalAllocation.initialState},
+			    debugName);
+			allocation.buffer = m_renderHardwareInterface->GetNativeResource(allocation.ownedBuffer);
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
-				allocation.shaderResourceView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildShaderResourceViewDesc(transientPlan);
-				m_rhi->GetDevice()->CreateShaderResourceView(allocation.buffer.Get(), &srvDesc, allocation.shaderResourceView.GetCPU());
+				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				m_renderHardwareInterface->CreateBufferShaderResourceView(
+				    allocation.buffer,
+				    transientPlan.bufferDesc.sizeInBytes,
+				    transientPlan.bufferDesc.strideInBytes,
+				    allocation.shaderResourceView.CpuHandle);
 				allocation.hasShaderResourceView = true;
 			}
 
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
-				allocation.unorderedAccessView = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-				const D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = BuildUnorderedAccessViewDesc(transientPlan);
-				m_rhi->GetDevice()
-				    ->CreateUnorderedAccessView(allocation.buffer.Get(), nullptr, &uavDesc, allocation.unorderedAccessView.GetCPU());
+				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				m_renderHardwareInterface->CreateBufferUnorderedAccessView(
+				    allocation.buffer,
+				    transientPlan.bufferDesc.sizeInBytes,
+				    transientPlan.bufferDesc.strideInBytes,
+				    allocation.unorderedAccessView.CpuHandle);
 				allocation.hasUnorderedAccessView = true;
 			}
 			break;

@@ -1,14 +1,29 @@
 #include "PCH.h"
 #include "GPU/GPUMesh.h"
 
-#include "third_party/D3DX12Includes.h"
-#include "D3D12/D3D12Rhi.h"
+#include "GPU/CommandContext.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Log.h"
 
-#include <cstring>
+GPUMesh::~GPUMesh() noexcept
+{
+	if (m_renderHardwareInterface != nullptr)
+	{
+		if (m_vertexBuffer)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(m_vertexBuffer);
+			m_vertexBuffer = {};
+		}
 
-bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)
+		if (m_indexBuffer)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(m_indexBuffer);
+			m_indexBuffer = {};
+		}
+	}
+}
+
+bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const MeshData& meshData)
 {
 	if (!meshData.IsValid())
 	{
@@ -16,92 +31,31 @@ bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)
 		return false;
 	}
 
-	const auto vertexBufferSize = static_cast<UINT64>(meshData.GetVertexBufferSize());
-	const auto indexBufferSize = static_cast<UINT64>(meshData.GetIndexBufferSize());
-
-	D3D12_RESOURCE_DESC vertexDesc{};
-	vertexDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	vertexDesc.Width = vertexBufferSize;
-	vertexDesc.Height = 1;
-	vertexDesc.DepthOrArraySize = 1;
-	vertexDesc.MipLevels = 1;
-	vertexDesc.Format = DXGI_FORMAT_UNKNOWN;
-	vertexDesc.SampleDesc.Count = 1;
-	vertexDesc.SampleDesc.Quality = 0;
-	vertexDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	vertexDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
-
-	HRESULT hr = rhi.GetDevice()->CreateCommittedResource(
-	    &heapProps,
-	    D3D12_HEAP_FLAG_NONE,
-	    &vertexDesc,
-	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    nullptr,
-	    IID_PPV_ARGS(m_vertexBuffer.ReleaseAndGetAddressOf()));
-
-	if (FAILED(hr))
+	m_renderHardwareInterface = &renderHardwareInterface;
+	if (!m_renderHardwareInterface->CreateVertexBuffer(
+	        meshData.GetVertexData(),
+	        meshData.GetVertexBufferSize(),
+	        static_cast<std::uint32_t>(sizeof(VertexData)),
+	        L"GPUMesh_VertexBuffer",
+	        m_vertexBuffer,
+	        m_vertexBufferView))
 	{
 		LOG_ERROR("[GPUMesh] Failed to create vertex buffer");
 		return false;
 	}
-
-	m_vertexBuffer->SetName(L"GPUMesh_VertexBuffer");
-
-	void* mappedVertex = nullptr;
-	D3D12_RANGE readRange{0, 0};
-	hr = m_vertexBuffer->Map(0, &readRange, &mappedVertex);
-	if (FAILED(hr))
-	{
-		LOG_ERROR("[GPUMesh] Failed to map vertex buffer");
-		return false;
-	}
-
-	std::memcpy(mappedVertex, meshData.GetVertexData(), meshData.GetVertexBufferSize());
-	m_vertexBuffer->Unmap(0, nullptr);
-
-	D3D12_RESOURCE_DESC indexDesc = vertexDesc;
-	indexDesc.Width = indexBufferSize;
-
-	hr = rhi.GetDevice()->CreateCommittedResource(
-	    &heapProps,
-	    D3D12_HEAP_FLAG_NONE,
-	    &indexDesc,
-	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    nullptr,
-	    IID_PPV_ARGS(m_indexBuffer.ReleaseAndGetAddressOf()));
-
-	if (FAILED(hr))
+	if (!m_renderHardwareInterface->CreateIndexBuffer(
+	        meshData.GetIndexData(),
+	        meshData.GetIndexBufferSize(),
+	        RhiIndexFormat::UInt32,
+	        L"GPUMesh_IndexBuffer",
+	        m_indexBuffer,
+	        m_indexBufferView))
 	{
 		LOG_ERROR("[GPUMesh] Failed to create index buffer");
-		m_vertexBuffer.Reset();
+		m_renderHardwareInterface->ReleaseOwnedResource(m_vertexBuffer);
+		m_vertexBuffer = {};
 		return false;
 	}
-
-	m_indexBuffer->SetName(L"GPUMesh_IndexBuffer");
-
-	void* mappedIndex = nullptr;
-	hr = m_indexBuffer->Map(0, &readRange, &mappedIndex);
-	if (FAILED(hr))
-	{
-		LOG_ERROR("[GPUMesh] Failed to map index buffer");
-		m_vertexBuffer.Reset();
-		m_indexBuffer.Reset();
-		return false;
-	}
-
-	std::memcpy(mappedIndex, meshData.GetIndexData(), meshData.GetIndexBufferSize());
-	m_indexBuffer->Unmap(0, nullptr);
-
-	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-	m_vertexBufferView.SizeInBytes = static_cast<UINT>(vertexBufferSize);
-	m_vertexBufferView.StrideInBytes = static_cast<UINT>(sizeof(VertexData));
-
-	m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-	m_indexBufferView.SizeInBytes = static_cast<UINT>(indexBufferSize);
-	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
@@ -111,9 +65,19 @@ bool GPUMesh::Upload(D3D12Rhi& rhi, const MeshData& meshData)
 	return true;
 }
 
-void GPUMesh::Bind(ID3D12GraphicsCommandList* cmdList) const noexcept
+void GPUMesh::Bind(CommandContext& cmd) const noexcept
 {
-	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	cmdList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-	cmdList->IASetIndexBuffer(&m_indexBufferView);
+	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
+	cmd.BindVertexBuffer(GetVertexBufferView());
+	cmd.BindIndexBuffer(GetIndexBufferView());
+}
+
+RhiVertexBufferView GPUMesh::GetVertexBufferView() const noexcept
+{
+	return m_vertexBufferView;
+}
+
+RhiIndexBufferView GPUMesh::GetIndexBufferView() const noexcept
+{
+	return m_indexBufferView;
 }

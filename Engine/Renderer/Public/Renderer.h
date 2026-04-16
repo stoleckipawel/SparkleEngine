@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
-#include "FrameGraph/ResourceState.h"
+#include "../../RHI/Public/Interop/ResourceState.h"
 #include "Viewport/ViewportContracts.h"
 #include "../../RHI/Public/Interop/RenderHardwareInterface.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"

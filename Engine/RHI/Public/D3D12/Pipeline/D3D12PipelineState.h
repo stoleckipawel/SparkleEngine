@@ -1,14 +1,9 @@
 #pragma once
 
 #include "../../Config/RenderConfig.h"
-#include "../../Formats/CompareOp.h"
-#include "../../Formats/PixelFormat.h"
-#include "../Shaders/ShaderCompileResult.h"
+#include "../../Interop/RenderHardwareInterface.h"
 #include "D3D12RootSignature.h"
 
-#include <span>
-#include <array>
-#include <cstdint>
 #include <d3d12.h>
 #include <wrl/client.h>
 
@@ -16,64 +11,11 @@ using Microsoft::WRL::ComPtr;
 
 class D3D12Rhi;
 
-struct DepthTestDesc
-{
-	bool DepthEnable = true;
-	D3D12_DEPTH_WRITE_MASK DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	CompareOp DepthFunc = CompareOp::Less;
-};
-
-struct StencilTestDesc
-{
-	bool StencilEnable = false;
-	uint8_t StencilReadMask = 0xFF;
-	uint8_t StencilWriteMask = 0xFF;
-	CompareOp FrontFaceStencilFunc = CompareOp::Always;
-	D3D12_STENCIL_OP FrontFaceStencilFailOp = D3D12_STENCIL_OP_KEEP;
-	D3D12_STENCIL_OP FrontFaceStencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	D3D12_STENCIL_OP FrontFaceStencilPassOp = D3D12_STENCIL_OP_KEEP;
-	CompareOp BackFaceStencilFunc = CompareOp::Always;
-	D3D12_STENCIL_OP BackFaceStencilFailOp = D3D12_STENCIL_OP_KEEP;
-	D3D12_STENCIL_OP BackFaceStencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
-	D3D12_STENCIL_OP BackFaceStencilPassOp = D3D12_STENCIL_OP_KEEP;
-};
-
-struct GraphicsPipelineStateDesc
-{
-	std::span<const D3D12_INPUT_ELEMENT_DESC> VertexLayout;
-	D3D12RootSignature* RootSignature = nullptr;
-	ShaderBytecode VertexShader = {};
-	ShaderBytecode PixelShader = {};
-	bool HasPixelShader = true;
-	bool RenderWireframe = false;
-	D3D12_CULL_MODE CullMode = D3D12_CULL_MODE_BACK;
-	DepthTestDesc DepthTest = {};
-	StencilTestDesc StencilTest = {};
-	std::array<PixelFormat, 8> RenderTargetFormats = {};
-	std::uint32_t RenderTargetCount = 1;
-	PixelFormat DepthStencilFormat = RenderConfig::DepthStencilFormat;
-	const wchar_t* DebugName = L"RHI_GraphicsPipelineState";
-};
-
-struct ComputePipelineStateDesc
-{
-	D3D12RootSignature* RootSignature = nullptr;
-	ShaderBytecode ComputeShader = {};
-	const wchar_t* DebugName = L"RHI_ComputePipelineState";
-};
-
-class D3D12PipelineState
+class D3D12PipelineState final : public RenderPipelineState
 {
   public:
 	D3D12PipelineState(D3D12Rhi& rhi, const GraphicsPipelineStateDesc& desc);
 	D3D12PipelineState(D3D12Rhi& rhi, const ComputePipelineStateDesc& desc);
-
-	D3D12PipelineState(
-	    D3D12Rhi& rhi,
-	    std::span<const D3D12_INPUT_ELEMENT_DESC> vertexLayout,
-	    D3D12RootSignature& rootSignature,
-	    ShaderBytecode vertexShader,
-	    ShaderBytecode pixelShader);
 
 	~D3D12PipelineState() noexcept;
 
@@ -86,10 +28,10 @@ class D3D12PipelineState
 	void HandlePsoCreateFailure(HRESULT hr) const noexcept;
 
 	void SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept;
-	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, bool bRenderWireframe, D3D12_CULL_MODE cullMode) noexcept;
+	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, bool bRenderWireframe, RhiCullMode cullMode) noexcept;
 	void SetRenderTargetBlendState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, D3D12_RENDER_TARGET_BLEND_DESC blendDesc) noexcept;
-	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, DepthTestDesc depthDesc) noexcept;
-	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, StencilTestDesc stencilDesc) noexcept;
+	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthTestDesc depthDesc) noexcept;
+	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilTestDesc stencilDesc) noexcept;
 	void Create(const GraphicsPipelineStateDesc& desc);
 	void Create(const ComputePipelineStateDesc& desc);
 

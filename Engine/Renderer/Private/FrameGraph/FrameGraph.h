@@ -11,12 +11,12 @@
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
-#include <d3d12.h>
 #include <array>
 #include <cstdint>
 #include <functional>
@@ -28,9 +28,6 @@
 #include <utility>
 #include <vector>
 
-class D3D12DescriptorHeapManager;
-class D3D12Rhi;
-class D3D12SwapChain;
 class CommandContext;
 class FrameGraphTransientAllocator;
 struct RenderPassContext;
@@ -49,7 +46,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	};
 
   public:
-	FrameGraph(D3D12Rhi* rhi, Window* window, D3D12DescriptorHeapManager* descriptorHeapManager, D3D12SwapChain* swapChain);
+	FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent);
 	~FrameGraph();
 
 	FrameGraph(const FrameGraph&) = delete;
@@ -348,12 +345,12 @@ class SPARKLE_RENDERER_API FrameGraph
 			std::uint32_t allocationIndex = INVALID_RESOURCE_INDEX;
 			std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
 			AllocationPool pool = AllocationPool::Color;
-			UINT64 sizeInBytes = 0;
-			UINT64 alignment = 0;
-			UINT64 heapOffset = 0;
-			D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
-			D3D12_RESOURCE_DESC resourceDesc{};
-			D3D12_CLEAR_VALUE optimizedClearValue{};
+			std::uint64_t sizeInBytes = 0;
+			std::uint64_t alignment = 0;
+			std::uint64_t heapOffset = 0;
+			RhiTextureResourceDesc textureResourceDesc{};
+			RhiBufferResourceDesc bufferResourceDesc{};
+			RhiOptimizedClearValue optimizedClearValue{};
 			bool hasOptimizedClearValue = false;
 			ResourceState initialState = ResourceState::Common;
 		};
@@ -379,12 +376,12 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
 		CompiledTransientResourcePlan::AllocationPool pool = CompiledTransientResourcePlan::AllocationPool::Color;
-		UINT64 sizeInBytes = 0;
-		UINT64 alignment = 0;
-		UINT64 heapOffset = 0;
-		D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE;
-		D3D12_RESOURCE_DESC resourceDesc{};
-		D3D12_CLEAR_VALUE optimizedClearValue{};
+		std::uint64_t sizeInBytes = 0;
+		std::uint64_t alignment = 0;
+		std::uint64_t heapOffset = 0;
+		RhiTextureResourceDesc textureResourceDesc{};
+		RhiBufferResourceDesc bufferResourceDesc{};
+		RhiOptimizedClearValue optimizedClearValue{};
 		bool hasOptimizedClearValue = false;
 		PassIndex firstExecutionIndex = INVALID_PASS_INDEX;
 		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
@@ -541,10 +538,9 @@ class SPARKLE_RENDERER_API FrameGraph
 	};
 
 	std::vector<RegisteredPass> m_passes;
-	D3D12Rhi* m_rhi = nullptr;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
-	D3D12SwapChain* m_swapChain = nullptr;
+	RenderViewportExtent m_sceneExtent = {};
 	mutable ResourceRegistry m_resourceRegistry;
 	CompiledPlan m_compiledPlan;
 	std::uint32_t m_nextDynamicResourceIndex = 0;

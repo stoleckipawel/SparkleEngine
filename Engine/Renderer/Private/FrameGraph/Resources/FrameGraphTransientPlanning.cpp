@@ -5,9 +5,6 @@
 
 #include "Config/DepthConvention.h"
 
-#include "D3D12/D3D12TypeConversions.h"
-#include "D3D12/D3D12Rhi.h"
-
 #include <cassert>
 #include <string>
 
@@ -45,73 +42,42 @@ namespace
 		return false;
 	}
 
-	D3D12_RESOURCE_DESC BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
+	RhiBufferResourceDesc BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
 	{
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-		resourceDesc.Width = desc.sizeInBytes;
-		resourceDesc.Height = 1;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		resourceDesc.Flags = requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
-		return resourceDesc;
+		return RhiBufferResourceDesc{.SizeInBytes = desc.sizeInBytes, .StrideInBytes = desc.strideInBytes, .AllowUnorderedAccess = requiresUnorderedAccess};
 	}
 
-	D3D12_RESOURCE_FLAGS ResolveTransientResourceFlags(FrameGraphResourceKind kind, bool requiresUnorderedAccess) noexcept
-	{
-		switch (kind)
-		{
-			case FrameGraphResourceKind::DepthStencil:
-				return D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-			case FrameGraphResourceKind::ColorRenderTarget:
-				return requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS
-				                               : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-			default:
-				return requiresUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
-		}
-	}
-
-	D3D12_RESOURCE_DESC BuildTransientResourceDesc(
+	RhiTextureResourceDesc BuildTransientResourceDesc(
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
 	    bool requiresUnorderedAccess) noexcept
 	{
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-		resourceDesc.Width = static_cast<UINT64>(desc.width);
-		resourceDesc.Height = static_cast<UINT>(desc.height);
-		resourceDesc.DepthOrArraySize = 1;
+		RhiTextureResourceDesc resourceDesc{};
+		resourceDesc.Width = desc.width;
+		resourceDesc.Height = desc.height;
+		resourceDesc.Format = desc.format;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		resourceDesc.Flags = ResolveTransientResourceFlags(kind, requiresUnorderedAccess);
+		resourceDesc.AllowRenderTarget = kind == FrameGraphResourceKind::ColorRenderTarget;
+		resourceDesc.AllowDepthStencil = kind == FrameGraphResourceKind::DepthStencil;
+		resourceDesc.AllowUnorderedAccess = requiresUnorderedAccess;
 		return resourceDesc;
 	}
 
-	D3D12_CLEAR_VALUE BuildTransientOptimizedClearValue(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
+	RhiOptimizedClearValue BuildTransientOptimizedClearValue(const FrameGraphTextureDesc& desc, FrameGraphResourceKind kind) noexcept
 	{
-		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = D3D12TypeConversions::ToDxgiFormat(desc.format);
+		RhiOptimizedClearValue clearValue{};
+		clearValue.Format = desc.format;
 
 		if (kind == FrameGraphResourceKind::DepthStencil)
 		{
-			clearValue.DepthStencil.Depth = DepthConvention::GetClearDepth();
-			clearValue.DepthStencil.Stencil = 0;
+			clearValue.ValueType = RhiOptimizedClearValue::Type::DepthStencil;
+			clearValue.Depth = DepthConvention::GetClearDepth();
+			clearValue.Stencil = 0;
 			return clearValue;
 		}
 
-		clearValue.Color[0] = 0.0f;
-		clearValue.Color[1] = 0.0f;
-		clearValue.Color[2] = 0.0f;
-		clearValue.Color[3] = 1.0f;
+		clearValue.ValueType = RhiOptimizedClearValue::Type::Color;
+		clearValue.Color = {0.0f, 0.0f, 0.0f, 1.0f};
 		return clearValue;
 	}
 
@@ -133,7 +99,7 @@ namespace
 
 void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept
 {
-	assert(m_rhi != nullptr);
+	assert(m_renderHardwareInterface != nullptr);
 
 	plan.transientResources.clear();
 	plan.transientResources.reserve(m_virtualTransientResources.size());
@@ -148,10 +114,15 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 
 		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
-		const D3D12_RESOURCE_DESC resourceDesc =
+		const RhiBufferResourceDesc bufferResourceDesc =
 		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
+		             : RhiBufferResourceDesc{};
+		const RhiTextureResourceDesc textureResourceDesc =
+		    isBuffer ? RhiTextureResourceDesc{}
 		             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresUnorderedAccess);
-		const D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = m_rhi->GetDevice()->GetResourceAllocationInfo(0, 1, &resourceDesc);
+		const RhiResourceAllocationInfo allocationInfo =
+		    isBuffer ? m_renderHardwareInterface->GetBufferAllocationInfo(bufferResourceDesc)
+		             : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(
 		    CompiledTransientResourcePlan{
@@ -168,11 +139,12 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		                .sizeInBytes = allocationInfo.SizeInBytes,
 		                .alignment = allocationInfo.Alignment,
 		                .heapOffset = 0,
-		                .heapFlags = isBuffer ? D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS : D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES,
-		                .resourceDesc = resourceDesc,
-		                .optimizedClearValue =
-		                    isBuffer ? D3D12_CLEAR_VALUE{}
-		                             : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
+		                .textureResourceDesc = textureResourceDesc,
+		                .bufferResourceDesc = bufferResourceDesc,
+		                .optimizedClearValue = isBuffer ? RhiOptimizedClearValue{}
+		                                                    : BuildTransientOptimizedClearValue(
+		                                                          transientResource.textureDesc,
+		                                                          resourceMetadata.kind),
 		                .hasOptimizedClearValue = !isBuffer,
 		                .initialState = resourceMetadata.initialState},
 		        .displayLabel = BuildTransientDisplayLabel(transientResource.handle, resourceMetadata),

@@ -2,10 +2,10 @@
 
 #include "SceneRenderStateCoordinator.h"
 
-#include "D3D12/D3D12Rhi.h"
 #include "GPU/GPUMeshCache.h"
 #include "Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
+#include "RHI/Public/Interop/RendererBackendServices.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -14,14 +14,14 @@
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,
     GameScene& gameScene,
-    D3D12Rhi& rhi,
+	RendererBackendServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
     m_gameScene(&gameScene),
-    m_rhi(&rhi),
+	m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
     m_sceneSnapshot(&sceneSnapshot),
@@ -60,9 +60,9 @@ void SceneRenderStateCoordinator::OnLevelChanged() noexcept
 
 void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 {
-	if (m_rhi)
+	if (m_backendServices)
 	{
-		m_rhi->Flush();
+		m_backendServices->Flush();
 	}
 
 	if (m_gpuMeshCache)

@@ -1,15 +1,14 @@
 #include "PCH.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/D3D12Rhi.h"
 
-D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) :
-    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager)
+D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface& renderHardwareInterface) :
+    m_rhi(&rhi), m_renderHardwareInterface(&renderHardwareInterface)
 {
 	constexpr uint32_t samplerCount = static_cast<uint32_t>(Slot::Count);
 
-	m_tableHandle = m_descriptorHeapManager->AllocateContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, samplerCount);
-	if (!m_tableHandle.IsValid())
+	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(RhiDescriptorHeapType::Sampler, samplerCount);
+	if (!m_tableHandle)
 	{
 		LOG_FATAL("Failed to allocate sampler descriptor table.");
 		return;
@@ -58,10 +57,10 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, D3D12DescriptorHeapManag
 
 D3D12SamplerLibrary::~D3D12SamplerLibrary() noexcept
 {
-	if (m_tableHandle.IsValid() && m_descriptorHeapManager)
+	if (m_tableHandle && m_renderHardwareInterface)
 	{
-		m_descriptorHeapManager->FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, m_tableHandle, static_cast<uint32_t>(Slot::Count));
-		m_tableHandle = D3D12DescriptorHandle{};
+		m_renderHardwareInterface->ReleaseDescriptorTable(m_tableHandle);
+		m_tableHandle = {};
 	}
 	m_bInitialized = false;
 }
@@ -81,10 +80,15 @@ void D3D12SamplerLibrary::CreateSampler(Slot slot, const SamplerConfig& config)
 	desc.MinLOD = 0.0f;
 	desc.MaxLOD = (config.mip == MipFilter::None) ? 0.0f : D3D12_FLOAT32_MAX;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = m_tableHandle.GetCPU();
-	cpuHandle.ptr += static_cast<SIZE_T>(static_cast<uint32_t>(slot)) * m_descriptorSize;
+	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle =
+	    ToD3D12CpuDescriptor(m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
 
 	m_rhi->GetDevice()->CreateSampler(&desc, cpuHandle);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3D12SamplerLibrary::ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
+{
+	return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
 D3D12_FILTER D3D12SamplerLibrary::ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic)

@@ -14,14 +14,10 @@
 #include "GPU/GPUMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
-#include "D3D12/Pipeline/D3D12BindingLayout.h"
-#include "D3D12/Pipeline/D3D12PipelineState.h"
-#include "D3D12/Resources/D3D12ConstantBufferManager.h"
-#include "D3D12/Resources/D3D12ConstantBufferData.h"
-#include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "Pipeline/D3D12PassBinder.h"
-#include "D3D12/Samplers/D3D12SamplerLibrary.h"
+#include "Pipeline/PassBinder.h"
 
 #include "Core/Public/Diagnostics/Log.h"
 #include <cassert>
@@ -71,7 +67,7 @@ void ForwardOpaquePass::PreparePassParameters(
     const RenderViewContext& viewContext,
     const RenderPassContext& renderPassContext)
 {
-	parameters->PerFrame = renderPassContext.ConstantBufferManager.GetPerFrameData();
+	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -79,12 +75,9 @@ void ForwardOpaquePass::PreparePassParameters(
 
 void ForwardOpaquePass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)
 {
-	const D3D12_VIEWPORT viewport = viewContext.viewport;
-	cmd.SetViewport(viewport.TopLeftX, viewport.TopLeftY, viewport.Width, viewport.Height, viewport.MinDepth, viewport.MaxDepth);
-
-	const D3D12_RECT scissor = viewContext.scissorRect;
-	cmd.SetScissorRect(scissor.left, scissor.top, scissor.right, scissor.bottom);
-	cmd.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	cmd.SetViewport(viewContext.viewport);
+	cmd.SetScissorRect(viewContext.scissorRect);
+	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 }
 
 void ForwardOpaquePass::BindPassResources(
@@ -93,20 +86,18 @@ void ForwardOpaquePass::BindPassResources(
     const ParameterInstance& parameters,
     const ForwardOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext,
-    D3D12_GPU_VIRTUAL_ADDRESS perViewGpuAddress)
+	RhiGpuVirtualAddress perViewGpuAddress)
 {
-	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
-	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
-	D3D12SamplerLibrary& samplerLibrary = renderPassContext.SamplerLibrary;
-	D3D12PassBindingOverrides overrides;
-	overrides.SetConstantBufferView("PerFrame", constantBufferManager.GetPerFrameGpuAddress());
+	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
+	PassBindingOverrides overrides;
+	overrides.SetConstantBufferView("PerFrame", renderHardwareInterface.GetPerFrameConstantGpuAddress());
 	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
-	assert(samplerLibrary.IsInitialized());
-	overrides.SetDescriptorTable("SamplerTable", samplerLibrary.GetTableGPUHandle());
+	assert(renderPassContext.SamplerTableHandle);
+	overrides.SetDescriptorTable("SamplerTable", renderPassContext.SamplerTableHandle);
 	const bool bound = PassUtilities::BindRasterPassWithRuntime(
 	    frameGraph,
 	    cmd,
-	    &descriptorHeapManager,
+	    &renderHardwareInterface,
 	    runtime,
 	    parameters.GetPassParameterSet(),
 	    RenderPassPipelineTraits<ForwardOpaquePass>::StableBindingNames.data(),
@@ -123,8 +114,7 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
     const ForwardOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
-	D3D12DescriptorHeapManager& descriptorHeapManager = renderPassContext.DescriptorHeapManager;
-	D3D12ConstantBufferManager& constantBufferManager = renderPassContext.ConstantBufferManager;
+	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
 
 	for (const auto& draw : sceneData.meshDraws)
 	{
@@ -143,21 +133,21 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
 		const PerObjectPSConstantBufferData perObjectPS = sceneData.materials[draw.materialSlot].ToPerObjectPSData();
 
-		const RhiGpuDescriptorHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableGpuHandle;
+		const RhiDescriptorTableHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableHandle;
 		if (!materialTextureTable)
 		{
 			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;
 		}
 
-		D3D12PassBindingOverrides overrides;
-		overrides.SetConstantBufferView("PerObjectVS", constantBufferManager.UpdatePerObjectVS(perObjectVS));
-		overrides.SetConstantBufferView("PerObjectPS", constantBufferManager.UpdatePerObjectPS(perObjectPS));
+		PassBindingOverrides overrides;
+		overrides.SetConstantBufferView("PerObjectVS", renderHardwareInterface.AllocatePerObjectVertexConstants(perObjectVS));
+		overrides.SetConstantBufferView("PerObjectPS", renderHardwareInterface.AllocatePerObjectPixelConstants(perObjectPS));
 		overrides.SetDescriptorTable("MaterialTextures", materialTextureTable);
 		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
 		    frameGraph,
 		    cmd,
-		    &descriptorHeapManager,
+		    &renderHardwareInterface,
 		    runtime,
 		    RenderPassPipelineTraits<ForwardOpaquePass>::DrawBindingNames,
 		    overrides,

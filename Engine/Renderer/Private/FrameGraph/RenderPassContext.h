@@ -3,9 +3,7 @@
 #include "RendererAPI.h"
 #include "FrameGraph/RenderPassRuntime.h"
 
-class D3D12ConstantBufferManager;
-class D3D12DescriptorHeapManager;
-class D3D12SamplerLibrary;
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 // Stable execute-time runtime services exposed to authored render passes.
 //
@@ -16,9 +14,8 @@ class D3D12SamplerLibrary;
 // genuinely stable execute-time services shared across authored passes.
 struct SPARKLE_RENDERER_API RenderPassContext
 {
-	D3D12DescriptorHeapManager& DescriptorHeapManager;
-	D3D12ConstantBufferManager& ConstantBufferManager;
-	D3D12SamplerLibrary& SamplerLibrary;
+	RenderHardwareInterface& HardwareInterface;
+	RhiDescriptorTableHandle SamplerTableHandle;
 	const RenderPassRuntimeRegistry& RuntimeRegistry;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept

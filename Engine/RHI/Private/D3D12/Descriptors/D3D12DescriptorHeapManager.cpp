@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
+#include "Interop/RenderHardwareInterface.h"
+
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
 	m_HeapSRV = std::make_unique<D3D12DescriptorHeap>(
@@ -32,15 +34,12 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 
 D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
 
-void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(ID3D12GraphicsCommandList* commandList) const
+void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(RenderCommandList& commandList) const
 {
-	if (commandList == nullptr)
-	{
-		return;
-	}
-
-	ID3D12DescriptorHeap* heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
-	commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+	const NativeDescriptorHeapHandle heaps[] = {
+	    NativeDescriptorHeapHandle{m_HeapSRV->GetRaw()},
+	    NativeDescriptorHeapHandle{m_HeapSampler->GetRaw()}};
+	commandList.SetDescriptorHeaps(static_cast<std::uint32_t>(_countof(heaps)), heaps);
 }
 
 void D3D12DescriptorHeapManager::FreeHandle(
@@ -66,6 +65,42 @@ void D3D12DescriptorHeapManager::FreeHandle(
 	const SIZE_T byteOffset = cpuHandle.ptr - firstHandle.GetCPU().ptr;
 	const UINT index = static_cast<UINT>(byteOffset / incrementSize);
 	FreeHandle(type, heap->GetHandleAt(index));
+}
+
+void D3D12DescriptorHeapManager::FreeContiguous(
+	D3D12_DESCRIPTOR_HEAP_TYPE type,
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
+	uint32_t count)
+{
+	(void) gpuHandle;
+
+	if (count == 0)
+	{
+		return;
+	}
+
+	D3D12DescriptorHeap* heap = GetHeap(type);
+	if (heap == nullptr || m_rhi == nullptr)
+	{
+		return;
+	}
+
+	const D3D12DescriptorHandle firstHandle = heap->GetHandleAt(0);
+	const UINT incrementSize = firstHandle.GetIncrementSize();
+	if (incrementSize == 0 || cpuHandle.ptr < firstHandle.GetCPU().ptr)
+	{
+		return;
+	}
+
+	const SIZE_T byteOffset = cpuHandle.ptr - firstHandle.GetCPU().ptr;
+	if ((byteOffset % incrementSize) != 0)
+	{
+		return;
+	}
+
+	const UINT index = static_cast<UINT>(byteOffset / incrementSize);
+	FreeContiguous(type, heap->GetHandleAt(index), count);
 }
 
 D3D12DescriptorHeap* D3D12DescriptorHeapManager::GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) const noexcept

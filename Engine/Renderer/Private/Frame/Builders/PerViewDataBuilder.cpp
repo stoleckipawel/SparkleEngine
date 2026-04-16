@@ -2,8 +2,8 @@
 
 #include "PerViewDataBuilder.h"
 
-#include "D3D12/D3D12SwapChain.h"
 #include "Camera/RenderCamera.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
     const PerViewCameraConstantBufferData& cameraData,
@@ -18,8 +18,8 @@ PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
 RenderViewContext PerViewDataBuilder::BuildView(
     const PerViewCameraConstantBufferData& cameraData,
     const PerViewLightingConstantBufferData& lightingData,
-    const D3D12_VIEWPORT& viewport,
-    const D3D12_RECT& scissorRect) const noexcept
+	const RhiViewport& viewport,
+	const RhiRect& scissorRect) const noexcept
 {
 	RenderViewContext viewContext{};
 	viewContext.perViewData = BuildPerViewData(cameraData, lightingData);
@@ -31,11 +31,11 @@ RenderViewContext PerViewDataBuilder::BuildView(
 RenderViewContext PerViewDataBuilder::BuildMainView(
     const RenderCamera& renderCamera,
     const PerViewLightingConstantBufferData& lightingData,
-    const D3D12SwapChain& swapChain) const noexcept
+    const RenderHardwareInterface& renderHardwareInterface) const noexcept
 {
 	return BuildView(
 	    renderCamera.GetCameraConstantBufferData(),
 	    lightingData,
-	    swapChain.GetDefaultViewport(),
-	    swapChain.GetDefaultScissorRect());
+	    renderHardwareInterface.GetBackBufferViewport(),
+	    renderHardwareInterface.GetBackBufferScissorRect());
 }

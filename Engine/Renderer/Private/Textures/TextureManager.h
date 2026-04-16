@@ -13,10 +13,8 @@
 #include <unordered_map>
 #include <string>
 
-class D3D12DescriptorHeapManager;
-class D3D12Rhi;
+class RenderHardwareInterface;
 class Texture;
-class TextureFactory;
 
 enum class TextureId : uint8_t
 {
@@ -29,7 +27,7 @@ enum class TextureId : uint8_t
 class SPARKLE_RENDERER_API TextureManager final
 {
   public:
-	TextureManager(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
+	explicit TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept;
 
 	~TextureManager() noexcept;
 
@@ -59,7 +57,7 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::size_t GetLoadedCount() const noexcept;
 
   private:
-	std::unique_ptr<TextureFactory> m_textureFactory;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;

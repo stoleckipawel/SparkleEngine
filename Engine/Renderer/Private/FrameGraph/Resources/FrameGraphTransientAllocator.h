@@ -2,16 +2,10 @@
 
 #include "FrameGraph/FrameGraph.h"
 
-#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
-
-#include <d3d12.h>
+#include <memory>
 #include <vector>
-#include <wrl/client.h>
 
-using Microsoft::WRL::ComPtr;
-
-class D3D12DescriptorHeapManager;
-class D3D12Rhi;
+class RenderHardwareInterface;
 
 class FrameGraphTransientAllocator final
 {
@@ -22,32 +16,34 @@ class FrameGraphTransientAllocator final
 		FrameGraphResourceKind kind = FrameGraphResourceKind::ColorRenderTarget;
 		std::uint32_t allocationIndex = FrameGraph::INVALID_RESOURCE_INDEX;
 		std::uint32_t physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
-		UINT64 sizeInBytes = 0;
-		UINT64 alignment = 0;
-		UINT64 heapOffset = 0;
-		ComPtr<ID3D12Heap> heap;
-		D3D12DescriptorHandle renderTargetView;
-		D3D12DescriptorHandle depthStencilView;
-		D3D12DescriptorHandle shaderResourceView;
-		D3D12DescriptorHandle unorderedAccessView;
+		std::uint64_t sizeInBytes = 0;
+		std::uint64_t alignment = 0;
+		std::uint64_t heapOffset = 0;
+		RhiDescriptorAllocation renderTargetView = {};
+		RhiDescriptorAllocation depthStencilView = {};
+		RhiDescriptorAllocation shaderResourceView = {};
+		RhiDescriptorAllocation unorderedAccessView = {};
 		bool hasShaderResourceView = false;
 		bool hasUnorderedAccessView = false;
-		ComPtr<ID3D12Resource> depthStencilResource;
-		ComPtr<ID3D12Resource> renderTargetResource;
-		ComPtr<ID3D12Resource> buffer;
+		RhiOwnedResourceHandle ownedDepthStencilResource = {};
+		RhiOwnedResourceHandle ownedRenderTargetResource = {};
+		RhiOwnedResourceHandle ownedBuffer = {};
+		NativeResourceHandle depthStencilResource;
+		NativeResourceHandle renderTargetResource;
+		NativeResourceHandle buffer;
 	};
 
 	struct PhysicalBlockRecord
 	{
 		std::uint32_t physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
 		FrameGraph::CompiledTransientResourcePlan::AllocationPool pool = FrameGraph::CompiledTransientResourcePlan::AllocationPool::Color;
-		UINT64 sizeInBytes = 0;
-		UINT64 alignment = 0;
-		UINT64 heapOffset = 0;
-		ComPtr<ID3D12Heap> heap;
+		std::uint64_t sizeInBytes = 0;
+		std::uint64_t alignment = 0;
+		std::uint64_t heapOffset = 0;
+		RhiOwnedHeapHandle ownedHeap = {};
 	};
 
-	FrameGraphTransientAllocator(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) noexcept;
+	explicit FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept;
 	~FrameGraphTransientAllocator() = default;
 
 	FrameGraphTransientAllocator(const FrameGraphTransientAllocator&) = delete;
@@ -76,8 +72,7 @@ class FrameGraphTransientAllocator final
 	const AllocationRecord* FindAllocationInList(const AllocationList& allocations, ResourceHandle handle) const noexcept;
 	PhysicalBlockRecord* FindPhysicalBlock(BlockList& blocks, std::uint32_t physicalBlockIndex) noexcept;
 
-	D3D12Rhi* m_rhi = nullptr;
-	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	AllocationList m_colorAllocations;
 	AllocationList m_depthAllocations;
 	AllocationList m_bufferAllocations;
