@@ -186,18 +186,18 @@ bool UI::InitializeGraphicsBackend()
 	switch (m_renderHardware->GetBackendApi())
 	{
 		case RhiBackendApi::D3D12:
-			return InitializeD3D12Backend();
+			return InitializeNativeGraphicsBackend();
 		default:
 			LOG_FATAL("UI::InitializeGraphicsBackend: editor UI backend is only implemented for D3D12");
 			return false;
 	}
 }
 
-bool UI::InitializeD3D12Backend()
+bool UI::InitializeNativeGraphicsBackend()
 {
 	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != RhiBackendApi::D3D12)
 	{
-		LOG_FATAL("UI::InitializeD3D12Backend: invalid render backend for D3D12 editor UI initialization");
+		LOG_FATAL("UI::InitializeNativeGraphicsBackend: invalid render backend for current editor UI initialization");
 		return false;
 	}
 
@@ -214,7 +214,7 @@ bool UI::InitializeD3D12Backend()
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
-		LOG_FATAL("UI::InitializeD3D12Backend: missing DX12 device/queue/descriptor-heap");
+		LOG_FATAL("UI::InitializeNativeGraphicsBackend: missing native device/queue/descriptor-heap");
 		return false;
 	}
 

@@ -1,7 +1,6 @@
 #include "PCH.h"
 
 #include "Interop/RendererBackendServices.h"
-#include "Interop/Internal/RendererBackendServicesAccess.h"
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12Rhi.h"
@@ -123,32 +122,4 @@ void RendererBackendServices::CloseExecuteAndFlushCurrentFrame() noexcept
 	m_impl->rhi->CloseCommandList(frameIndex);
 	m_impl->rhi->ExecuteCommandList(frameIndex);
 	m_impl->rhi->Flush();
-}
-
-namespace Rhi::Internal
-{
-	D3D12Rhi& RendererBackendServicesAccess::GetRhi(RendererBackendServices& services) noexcept
-	{
-		return *services.m_impl->rhi;
-	}
-
-	D3D12DescriptorHeapManager& RendererBackendServicesAccess::GetDescriptorHeapManager(RendererBackendServices& services) noexcept
-	{
-		return *services.m_impl->descriptorHeapManager;
-	}
-
-	D3D12SwapChain& RendererBackendServicesAccess::GetSwapChain(RendererBackendServices& services) noexcept
-	{
-		return *services.m_impl->swapChain;
-	}
-
-	D3D12ConstantBufferManager& RendererBackendServicesAccess::GetConstantBufferManager(RendererBackendServices& services) noexcept
-	{
-		return *services.m_impl->constantBufferManager;
-	}
-
-	D3D12SamplerLibrary& RendererBackendServicesAccess::GetSamplerLibrary(RendererBackendServices& services) noexcept
-	{
-		return *services.m_impl->samplerLibrary;
-	}
 }

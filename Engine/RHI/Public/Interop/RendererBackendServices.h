@@ -8,16 +8,10 @@
 class Timer;
 class Window;
 
-namespace Rhi::Internal
-{
-	struct RendererBackendServicesAccess;
-}
-
 class SPARKLE_RHI_API RendererBackendServices final
 {
   public:
 	// Keep the public seam focused on orchestration and backend-neutral handles.
-	// Renderer-private backend detail access lives behind Interop/Internal helpers.
 	static std::unique_ptr<RendererBackendServices> Create(Timer& timer, Window& window) noexcept;
 
 	~RendererBackendServices() noexcept;
@@ -41,8 +35,6 @@ class SPARKLE_RHI_API RendererBackendServices final
 
   private:
 	RendererBackendServices() noexcept;
-
-	friend struct Rhi::Internal::RendererBackendServicesAccess;
 
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;
