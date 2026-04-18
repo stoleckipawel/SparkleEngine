@@ -1,8 +1,9 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorAllocator.h"
-#include "Log.h"
 
 #include <algorithm>
+
+static const auto g_descriptorAllocatorLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
 
 std::optional<UINT> D3D12DescriptorAllocator::TryAllocateContiguousFromFreeListLocked(uint32_t count)
 {
@@ -42,7 +43,11 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::AllocateContiguousFromLinearRang
 {
 	if (m_currentOffset + count > m_heap->GetNumDescriptors())
 	{
-		LOG_FATAL("Descriptor heap cannot allocate contiguous block (insufficient space).");
+		Engine::Diagnostics::Fail(
+		    g_descriptorAllocatorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "Descriptor heap cannot allocate contiguous block (insufficient space).");
 		return D3D12DescriptorHandle{};
 	}
 
@@ -68,12 +73,12 @@ D3D12DescriptorHandle D3D12DescriptorAllocator::Allocate()
 	}
 	else
 	{
-		LOG_FATAL("Descriptor heap is full.");
+		Engine::Diagnostics::Fail(g_descriptorAllocatorLogger, __FILE__, __LINE__, "Descriptor heap is full.");
 	}
 
 	if (index == ~0u)
 	{
-		LOG_FATAL("Invalid descriptor index.");
+		Engine::Diagnostics::Fail(g_descriptorAllocatorLogger, __FILE__, __LINE__, "Invalid descriptor index.");
 	}
 
 	return m_heap->GetHandleAt(index);

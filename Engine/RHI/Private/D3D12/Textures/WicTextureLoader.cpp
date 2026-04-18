@@ -1,12 +1,13 @@
 #include "PCH.h"
 #include "D3D12/Textures/WicTextureLoader.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Log.h"
 
 #include <algorithm>
 #include <cstring>
 #include <limits>
 #include <utility>
+
+static const auto g_wicTextureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
 
 bool WicTextureLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -105,7 +106,10 @@ void WicTextureLoader::MapToDxgiFormat(const std::filesystem::path& resolvedPath
 	m_requiresFormatConversion = true;
 	m_result.dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-	LOG_WARNING(std::string("WicTextureLoader: converting unsupported pixel format to 32bpp RGBA for file: ") + resolvedPath.string());
+	SPDLOG_LOGGER_WARN(
+	    g_wicTextureLoaderLogger,
+	    "WicTextureLoader: converting unsupported pixel format to 32bpp RGBA for file: {}",
+	    resolvedPath.string());
 }
 
 void WicTextureLoader::CalculateBufferLayout()
@@ -116,7 +120,7 @@ void WicTextureLoader::CalculateBufferLayout()
 
 	if (stride64 > (std::numeric_limits<uint32_t>::max)() || slicePitch64 > (std::numeric_limits<size_t>::max)())
 	{
-		LOG_FATAL("Texture too large or stride overflow");
+		Engine::Diagnostics::Fail(g_wicTextureLoaderLogger, __FILE__, __LINE__, "Texture too large or stride overflow");
 	}
 
 	TextureMipLevelData baseMip;
@@ -147,7 +151,11 @@ void WicTextureLoader::CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapF
 	CHECK(formatConverter->CanConvert(m_sourceWicPixelFormat, m_targetWicPixelFormat, &canConvert));
 	if (!canConvert)
 	{
-		LOG_FATAL("WicTextureLoader: WIC cannot convert source pixel format to 32bpp RGBA.");
+		Engine::Diagnostics::Fail(
+		    g_wicTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "WicTextureLoader: WIC cannot convert source pixel format to 32bpp RGBA.");
 	}
 
 	CHECK(

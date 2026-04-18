@@ -2,7 +2,6 @@
 #include "Level/LevelManager.h"
 
 #include "Assets/SceneAssetManager.h"
-#include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
 #include "Level/LevelRegistry.h"
 #include "Level/LevelChangeEvents.h"
@@ -11,6 +10,8 @@
 #include "Scene/Lighting/SceneLighting.h"
 
 #include <algorithm>
+
+static const auto g_levelManagerLogger = Engine::Logging::GetOrCreateLogger("GameFramework.LevelManager");
 
 LevelManager::LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept :
     m_gameScene(&scene), m_sceneAssetManager(&sceneAssetManager)
@@ -22,14 +23,16 @@ void LevelManager::InitializeStartupLevel() noexcept
 {
 	if (!m_gameScene)
 	{
-		LOG_WARNING("LevelManager: Cannot initialize startup level because required services are unavailable");
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot initialize startup level because required services are unavailable");
 		return;
 	}
 
 	LevelAsset* startupLevel = m_levelRegistry.FindLevelOrDefault(GetStartupLevelName());
 	if (!startupLevel)
 	{
-		LOG_WARNING("LevelManager: Startup level initialization failed because no registered level could be resolved");
+		SPDLOG_LOGGER_WARN(
+		    g_levelManagerLogger,
+		    "LevelManager: Startup level initialization failed because no registered level could be resolved");
 		m_activeLevel = nullptr;
 		return;
 	}
@@ -40,16 +43,18 @@ void LevelManager::InitializeStartupLevel() noexcept
 	if (!loadResult.Succeeded())
 	{
 		m_activeLevel = nullptr;
-		LOG_WARNING(
-		    "LevelManager: Startup level initialization failed for '" + startupLevelName + "'" +
-		    (loadResult.errorMessage.empty() ? std::string() : " - " + loadResult.errorMessage));
+		SPDLOG_LOGGER_WARN(
+		    g_levelManagerLogger,
+		    "LevelManager: Startup level initialization failed for '{}'{}",
+		    startupLevelName,
+		    loadResult.errorMessage.empty() ? std::string() : std::string{" - "} + loadResult.errorMessage);
 		return;
 	}
 
 	m_activeLevel = startupLevel;
 	ApplyLevelToScene();
 
-	LOG_INFO("LevelManager: Startup level initialized to '" + std::string(startupLevel->GetName()) + "'");
+	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Startup level initialized to '{}'", std::string(startupLevel->GetName()));
 }
 
 std::vector<std::string> LevelManager::GetRegisteredLevelNames() const
@@ -75,25 +80,27 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 
 	if (m_bLevelChangeInProgress)
 	{
-		LOG_DEBUG("LevelManager: Ignoring level change request while another change is already in progress");
+		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Ignoring level change request while another change is already in progress");
 		return;
 	}
 
 	if (m_activeLevel != nullptr && requestedLevelName == m_activeLevel->GetName())
 	{
-		LOG_DEBUG(
-		    "LevelManager: Ignoring level change request for the already active level '" + std::string(m_activeLevel->GetName()) + "'");
+		SPDLOG_LOGGER_DEBUG(
+		    g_levelManagerLogger,
+		    "LevelManager: Ignoring level change request for the already active level '{}'",
+		    std::string(m_activeLevel->GetName()));
 		return;
 	}
 
 	LevelAsset* requestedLevel = m_levelRegistry.FindLevel(requestedLevelName);
 	if (!requestedLevel)
 	{
-		LOG_WARNING("LevelManager: Requested level '" + std::string(requestedLevelName) + "' is not registered");
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Requested level '{}' is not registered", std::string(requestedLevelName));
 		return;
 	}
 
-	LOG_INFO("LevelManager: Accepted level change request to '" + std::string(requestedLevelName) + "'");
+	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Accepted level change request to '{}'", std::string(requestedLevelName));
 	ProcessLevelChangeRequest(*requestedLevel);
 }
 
@@ -101,7 +108,7 @@ bool LevelManager::SaveActiveLevel() noexcept
 {
 	if (m_activeLevel == nullptr)
 	{
-		LOG_WARNING("LevelManager: Cannot save level state because there is no active level");
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot save level state because there is no active level");
 		return false;
 	}
 
@@ -110,13 +117,15 @@ bool LevelManager::SaveActiveLevel() noexcept
 	std::string errorMessage;
 	if (!m_levelRegistry.SaveLevel(*m_activeLevel, &errorMessage))
 	{
-		LOG_WARNING(
-		    "LevelManager: Failed to persist state for level '" + std::string(m_activeLevel->GetName()) + "'" +
-		    (errorMessage.empty() ? std::string() : " - " + errorMessage));
+		SPDLOG_LOGGER_WARN(
+		    g_levelManagerLogger,
+		    "LevelManager: Failed to persist state for level '{}'{}",
+		    std::string(m_activeLevel->GetName()),
+		    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
 		return false;
 	}
 
-	LOG_INFO("LevelManager: Saved all persisted state for level '" + std::string(m_activeLevel->GetName()) + "'");
+	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Saved all persisted state for level '{}'", std::string(m_activeLevel->GetName()));
 	return true;
 }
 
@@ -164,13 +173,13 @@ void LevelManager::ApplyLevelToScene() noexcept
 {
 	if (m_activeLevel == nullptr)
 	{
-		LOG_DEBUG("LevelManager: Skipping level apply because there is no active level");
+		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Skipping level apply because there is no active level");
 		return;
 	}
 
 	if (!m_gameScene)
 	{
-		LOG_DEBUG("LevelManager: Skipping level apply because the scene is unavailable");
+		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Skipping level apply because the scene is unavailable");
 		return;
 	}
 
@@ -199,7 +208,7 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 {
 	if (!m_gameScene)
 	{
-		LOG_WARNING("LevelManager: Cannot process level change because required services are unavailable");
+		SPDLOG_LOGGER_WARN(g_levelManagerLogger, "LevelManager: Cannot process level change because required services are unavailable");
 		return;
 	}
 
@@ -228,9 +237,11 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 	GameSceneLoadResult loadResult = LoadLevelFromUnloadedState(requestedLevel);
 	if (!loadResult.Succeeded())
 	{
-		LOG_WARNING(
-		    "LevelManager: Level change load failed for '" + requestedLevelName + "'" +
-		    (loadResult.errorMessage.empty() ? std::string() : " - " + loadResult.errorMessage));
+		SPDLOG_LOGGER_WARN(
+		    g_levelManagerLogger,
+		    "LevelManager: Level change load failed for '{}'{}",
+		    requestedLevelName,
+		    loadResult.errorMessage.empty() ? std::string() : std::string{" - "} + loadResult.errorMessage);
 
 		LevelLoadFailedEventArgs failedArgs;
 		failedArgs.failedLevelName = requestedLevelName;
@@ -240,7 +251,7 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 		LevelAsset* fallbackLevel = m_levelRegistry.FindLevel(GetEmptyLevelName());
 		if (!fallbackLevel)
 		{
-			LOG_ERROR("LevelManager: Fallback level 'Empty' is not registered");
+			SPDLOG_LOGGER_ERROR(g_levelManagerLogger, "LevelManager: Fallback level 'Empty' is not registered");
 			m_bLevelChangeInProgress = false;
 			return;
 		}
@@ -250,9 +261,11 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 		loadResult = LoadLevelFromUnloadedState(*fallbackLevel);
 		if (!loadResult.Succeeded())
 		{
-			LOG_ERROR(
-			    "LevelManager: Fallback level '" + fallbackLevelName + "' failed to load" +
-			    (loadResult.errorMessage.empty() ? std::string() : " - " + loadResult.errorMessage));
+			SPDLOG_LOGGER_ERROR(
+			    g_levelManagerLogger,
+			    "LevelManager: Fallback level '{}' failed to load{}",
+			    fallbackLevelName,
+			    loadResult.errorMessage.empty() ? std::string() : std::string{" - "} + loadResult.errorMessage);
 			m_bLevelChangeInProgress = false;
 			return;
 		}
@@ -273,7 +286,9 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 
 	m_bLevelChangeInProgress = false;
 
-	LOG_INFO(
-	    "LevelManager: Level change completed from '" + previousLevelName + "' to '" +
-	    (m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string()) + "'");
+	SPDLOG_LOGGER_INFO(
+	    g_levelManagerLogger,
+	    "LevelManager: Level change completed from '{}' to '{}'",
+	    previousLevelName,
+	    m_activeLevel != nullptr ? std::string(m_activeLevel->GetName()) : std::string());
 }

@@ -14,6 +14,23 @@ file(GLOB_RECURSE SPARKLE_CORE_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
+set(SPARKLE_CORE_FORBIDDEN_LOGGING_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/Diagnostics/Log.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/Log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/Logging/LogBuffer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/Logging/LogSink.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/Logging/LogSink.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Diagnostics/Logging/LogFormatting.h
+)
+
+foreach(forbidden_logging_file IN LISTS SPARKLE_CORE_FORBIDDEN_LOGGING_FILES)
+    if(EXISTS "${forbidden_logging_file}")
+        cmake_path(RELATIVE_PATH forbidden_logging_file BASE_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE forbidden_logging_relative_path)
+        message(FATAL_ERROR
+            "Legacy logging facade file '${forbidden_logging_relative_path}' was reintroduced. Keep Sparkle logging on Diagnostics/Logger.h and Diagnostics/Verify.h instead.")
+    endif()
+endforeach()
+
 # Create the library (SHARED for DLL, STATIC for static lib)
 # Use BUILD_SHARED_LIBS option or explicit SHARED/STATIC
 if(SPARKLE_BUILD_SHARED)
@@ -66,6 +83,17 @@ target_precompile_headers(SparkleCore PRIVATE
 
 # Core module has no engine dependencies (it's the base)
 # Add any system dependencies here if needed
+# SparkleCore owns spdlog bootstrap, sink policy, and named logger lifetime.
+target_link_libraries(SparkleCore
+    PUBLIC
+        spdlog::spdlog_header_only
+)
+
+target_compile_definitions(SparkleCore
+    PUBLIC
+        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE>
+        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+)
 
 # Set output directories
 set_target_properties(SparkleCore PROPERTIES

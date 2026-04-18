@@ -3,7 +3,8 @@
 
 #include "GPU/CommandContext.h"
 #include "Scene/Meshes/MeshData.h"
-#include "Log.h"
+
+static const auto g_gpuMeshLogger = Engine::Logging::GetOrCreateLogger("Renderer.GPUMesh");
 
 GPUMesh::~GPUMesh() noexcept
 {
@@ -27,7 +28,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 {
 	if (!meshData.IsValid())
 	{
-		LOG_ERROR("[GPUMesh] Cannot upload invalid MeshData (empty vertices or indices)");
+		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Cannot upload invalid MeshData (empty vertices or indices)");
 		return false;
 	}
 
@@ -40,7 +41,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 	        m_vertexBuffer,
 	        m_vertexBufferView))
 	{
-		LOG_ERROR("[GPUMesh] Failed to create vertex buffer");
+		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create vertex buffer");
 		return false;
 	}
 	if (!m_renderHardwareInterface->CreateIndexBuffer(
@@ -51,7 +52,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 	        m_indexBuffer,
 	        m_indexBufferView))
 	{
-		LOG_ERROR("[GPUMesh] Failed to create index buffer");
+		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create index buffer");
 		m_renderHardwareInterface->ReleaseOwnedResource(m_vertexBuffer);
 		m_vertexBuffer = {};
 		return false;
@@ -60,7 +61,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
 
-	LOG_TRACE("[GPUMesh] Uploaded mesh buffers");
+	SPDLOG_LOGGER_TRACE(g_gpuMeshLogger, "[GPUMesh] Uploaded mesh buffers");
 
 	return true;
 }

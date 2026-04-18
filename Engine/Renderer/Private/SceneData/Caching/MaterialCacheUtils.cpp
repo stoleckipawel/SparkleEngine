@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "MaterialCacheUtils.h"
 
+static const auto g_materialCacheUtilsLogger = Engine::Logging::GetOrCreateLogger("Renderer.MaterialCache");
+
 namespace MaterialCacheUtils
 {
 	static bool OptionalPathEquals(const std::optional<std::filesystem::path>& left, const std::optional<std::filesystem::path>& right)
@@ -35,7 +37,9 @@ namespace MaterialCacheUtils
 			return materialSlot;
 		}
 
-		LOG_WARNING(
+		SPDLOG_LOGGER_WARN(
+		    g_materialCacheUtilsLogger,
+		    "{}",
 		    std::format(
 		        "MaterialCacheUtils::ResolveMaterialSlot: Material {} is out of range ({} materials); falling back to material 0",
 		        materialSlot,

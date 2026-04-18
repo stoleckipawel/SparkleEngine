@@ -3,7 +3,8 @@
 #include "FrameGraph/RenderPassRuntime.h"
 
 #include "Config/RenderConfig.h"
-#include "Core/Public/Diagnostics/Log.h"
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
 #include "Config/DepthConvention.h"
 #include "Passes/ComputeClearPass.h"
@@ -18,6 +19,12 @@
 #include <cassert>
 #include <format>
 #include <memory>
+
+inline const std::shared_ptr<spdlog::logger>& GetRendererPipelineLogger() noexcept
+{
+	static std::shared_ptr<spdlog::logger> logger = Engine::Logging::GetOrCreateLogger("Renderer");
+	return logger;
+}
 
 inline void AppendPassParameterLayout(PassParameterLayout& destination, const PassParameterLayout& source)
 {
@@ -36,11 +43,11 @@ inline PassParameterLayout BuildKnownShaderPackageBindingLayout(
 	std::string errorMessage;
 	if (!ShaderPackageLayouts::TryBuild(bindingLayoutId, layout, errorMessage))
 	{
-		LOG_FATAL(std::format(
-		    "Failed to build known binding layout '{}' for pass '{}' - {}",
-		    bindingLayoutId,
-		    passName,
-		    errorMessage));
+		Engine::Diagnostics::Fail(
+		    GetRendererPipelineLogger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format("Failed to build known binding layout '{}' for pass '{}' - {}", bindingLayoutId, passName, errorMessage));
 	}
 
 	const bool valid = ValidateShaderPassLayout(layout, passKind, passName);
@@ -74,23 +81,28 @@ inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
 {
 	if (!definition.IsValid())
 	{
-		LOG_FATAL(std::format(
-		    "Render pass '{}' declares an invalid cooked shader package for '{}'",
-		    passName,
-		    declarationName));
+		Engine::Diagnostics::Fail(
+		    GetRendererPipelineLogger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format("Render pass '{}' declares an invalid cooked shader package for '{}'", passName, declarationName));
 	}
 
 	const LoadedShaderPackage* loadedPackage = nullptr;
 	std::string errorMessage;
 	if (!shaderPackageCache.LoadPackage(definition, bindingLayout, errorMessage, loadedPackage))
 	{
-		LOG_FATAL(std::format(
-		    "Failed to load cooked shader package '{}' variant '{}' for pass '{}' ({}) - {}",
-		    definition.PackageId != nullptr ? definition.PackageId : "<null>",
-		    definition.VariantId != nullptr ? definition.VariantId : "<null>",
-		    passName,
-		    declarationName,
-		    errorMessage));
+		Engine::Diagnostics::Fail(
+		    GetRendererPipelineLogger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "Failed to load cooked shader package '{}' variant '{}' for pass '{}' ({}) - {}",
+		        definition.PackageId != nullptr ? definition.PackageId : "<null>",
+		        definition.VariantId != nullptr ? definition.VariantId : "<null>",
+		        passName,
+		        declarationName,
+		        errorMessage));
 	}
 
 	assert(loadedPackage != nullptr);

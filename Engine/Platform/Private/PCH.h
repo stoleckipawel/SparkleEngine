@@ -14,4 +14,5 @@
 
 #include <Windows.h>
 
-#include "Diagnostics/Log.h"
+#include "Diagnostics/Logger.h"
+#include "Diagnostics/Verify.h"

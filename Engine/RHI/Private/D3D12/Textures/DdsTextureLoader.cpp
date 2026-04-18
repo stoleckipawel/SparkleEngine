@@ -4,12 +4,13 @@
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Log.h"
 
 #include <algorithm>
 #include <cstring>
 #include <format>
 #include <limits>
+
+static const auto g_ddsTextureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
 
 bool DdsTextureLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -23,7 +24,7 @@ TextureLoadResult DdsTextureLoader::Load(const std::filesystem::path& fileName) 
 	std::string readErrorMessage;
 	if (!Engine::Files::TryReadAllBytes(resolvedPath, fileBytes, readErrorMessage))
 	{
-		LOG_FATAL(std::format("DdsTextureLoader: {}", readErrorMessage));
+		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, std::format("DdsTextureLoader: {}", readErrorMessage));
 		return {};
 	}
 
@@ -41,7 +42,7 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader))
 	{
-		LOG_FATAL("DdsTextureLoader: DDS file is too small to contain a valid header.");
+		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: DDS file is too small to contain a valid header.");
 		return {};
 	}
 
@@ -49,7 +50,7 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 	std::memcpy(&magic, fileBytes.data(), sizeof(magic));
 	if (magic != kDdsMagic)
 	{
-		LOG_FATAL("DdsTextureLoader: File does not contain a DDS magic header.");
+		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: File does not contain a DDS magic header.");
 		return {};
 	}
 
@@ -67,7 +68,7 @@ DdsTextureLoader::DdsHeaderDx10 DdsTextureLoader::ReadDx10Header(const std::vect
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader) + sizeof(DdsHeaderDx10))
 	{
-		LOG_FATAL("DdsTextureLoader: DDS file is missing the required DX10 header.");
+		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: DDS file is missing the required DX10 header.");
 		return {};
 	}
 
@@ -80,19 +81,31 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 {
 	if (header.size != sizeof(DdsHeader) || header.pixelFormat.size != sizeof(DdsPixelFormat))
 	{
-		LOG_FATAL(std::format("DdsTextureLoader: '{}' has an invalid DDS header layout", resolvedPath.string()));
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("DdsTextureLoader: '{}' has an invalid DDS header layout", resolvedPath.string()));
 		return;
 	}
 
 	if (header.width == 0 || header.height == 0)
 	{
-		LOG_FATAL(std::format("DdsTextureLoader: '{}' has invalid dimensions", resolvedPath.string()));
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("DdsTextureLoader: '{}' has invalid dimensions", resolvedPath.string()));
 		return;
 	}
 
 	if ((header.caps2 & kCaps2Cubemap) != 0)
 	{
-		LOG_FATAL(std::format("DdsTextureLoader: Cubemap DDS textures are not supported yet: '{}'", resolvedPath.string()));
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("DdsTextureLoader: Cubemap DDS textures are not supported yet: '{}'", resolvedPath.string()));
 		return;
 	}
 
@@ -100,13 +113,21 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 	{
 		if (dx10Header->resourceDimension != kResourceDimensionTexture2D)
 		{
-			LOG_FATAL(std::format("DdsTextureLoader: Only 2D DDS textures are supported: '{}'", resolvedPath.string()));
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format("DdsTextureLoader: Only 2D DDS textures are supported: '{}'", resolvedPath.string()));
 			return;
 		}
 
 		if (dx10Header->arraySize != 1)
 		{
-			LOG_FATAL(std::format("DdsTextureLoader: DDS texture arrays are not supported yet: '{}'", resolvedPath.string()));
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format("DdsTextureLoader: DDS texture arrays are not supported yet: '{}'", resolvedPath.string()));
 			return;
 		}
 	}
@@ -121,7 +142,11 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 	{
 		if (dx10Header->dxgiFormat == DXGI_FORMAT_UNKNOWN)
 		{
-			LOG_FATAL(std::format("DdsTextureLoader: '{}' declares an unknown DXGI format", resolvedPath.string()));
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format("DdsTextureLoader: '{}' declares an unknown DXGI format", resolvedPath.string()));
 			return DXGI_FORMAT_UNKNOWN;
 		}
 
@@ -151,7 +176,10 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 			case MakeFourCc('B', 'C', '5', 'S'):
 				return DXGI_FORMAT_BC5_SNORM;
 			default:
-				LOG_FATAL(
+				Engine::Diagnostics::Fail(
+				    g_ddsTextureLoaderLogger,
+				    __FILE__,
+				    __LINE__,
 				    std::format(
 				        "DdsTextureLoader: Unsupported DDS FourCC '{}' in '{}'",
 				        std::string(
@@ -181,7 +209,11 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 		}
 	}
 
-	LOG_FATAL(std::format("DdsTextureLoader: Unsupported DDS pixel format in '{}'", resolvedPath.string()));
+	Engine::Diagnostics::Fail(
+	    g_ddsTextureLoaderLogger,
+	    __FILE__,
+	    __LINE__,
+	    std::format("DdsTextureLoader: Unsupported DDS pixel format in '{}'", resolvedPath.string()));
 	return DXGI_FORMAT_UNKNOWN;
 }
 
@@ -193,7 +225,10 @@ std::uint32_t DdsTextureLoader::ResolveBitsPerPixel(DXGI_FORMAT format, const st
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
 			return 32;
 		default:
-			LOG_FATAL(
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
 			    std::format(
 			        "DdsTextureLoader: Uncompressed bit-depth query is unsupported for format {} in '{}'",
 			        static_cast<int>(format),
@@ -216,7 +251,10 @@ std::uint32_t DdsTextureLoader::ResolveBlockSize(DXGI_FORMAT format, const std::
 		case DXGI_FORMAT_BC5_SNORM:
 			return 16;
 		default:
-			LOG_FATAL(
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
 			    std::format(
 			        "DdsTextureLoader: Block-size query is unsupported for format {} in '{}'",
 			        static_cast<int>(format),
@@ -305,7 +343,11 @@ TextureLoadResult DdsTextureLoader::BuildLoadResult(
 
 		if (byteOffset + mipLevel.slicePitch > fileBytes.size())
 		{
-			LOG_FATAL(std::format("DdsTextureLoader: '{}' ended before mip {} could be read", resolvedPath.string(), mipIndex));
+			Engine::Diagnostics::Fail(
+			    g_ddsTextureLoaderLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format("DdsTextureLoader: '{}' ended before mip {} could be read", resolvedPath.string(), mipIndex));
 			return {};
 		}
 

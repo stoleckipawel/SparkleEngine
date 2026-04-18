@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 
+static const auto g_descriptorHeapLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
+
 D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name) :
     m_rhi(&rhi)
 {
@@ -21,7 +23,7 @@ D3D12DescriptorHandle D3D12DescriptorHeap::GetHandleAt(UINT index) const
 {
 	if (index >= m_desc.NumDescriptors)
 	{
-		LOG_FATAL("Index out of range");
+		Engine::Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Index out of range");
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {0};

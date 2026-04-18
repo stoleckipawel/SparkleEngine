@@ -19,7 +19,6 @@
 #include "Pipeline/RenderPassPipelineTraits.h"
 #include "Pipeline/PassBinder.h"
 
-#include "Core/Public/Diagnostics/Log.h"
 #include <cassert>
 
 const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetadata() noexcept
@@ -135,7 +134,9 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 		const RhiDescriptorTableHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableHandle;
 		if (!materialTextureTable)
 		{
-			LOG_WARNING("ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
+			SPDLOG_LOGGER_WARN(
+			    g_shaderPassLogger,
+			    "ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;
 		}
 

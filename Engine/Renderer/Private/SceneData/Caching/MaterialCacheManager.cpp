@@ -11,6 +11,8 @@
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
 
+static const auto g_materialCacheManagerLogger = Engine::Logging::GetOrCreateLogger("Renderer.MaterialCache");
+
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept :
 	m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
 {
@@ -44,7 +46,11 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 {
 	if (!m_textureManager || !m_renderHardwareInterface)
 	{
-		LOG_FATAL("MaterialCacheManager::Rebuild: required renderer dependencies are unavailable.");
+		Engine::Diagnostics::Fail(
+		    g_materialCacheManagerLogger,
+		    __FILE__,
+		    __LINE__,
+		    "MaterialCacheManager::Rebuild: required renderer dependencies are unavailable.");
 		return;
 	}
 
@@ -69,7 +75,11 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_renderHardwareInterface->AllocateDescriptorTable(RhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
 		if (!tableHandle)
 		{
-			LOG_FATAL("MaterialCacheManager::Rebuild: failed to allocate material descriptor table.");
+			Engine::Diagnostics::Fail(
+			    g_materialCacheManagerLogger,
+			    __FILE__,
+			    __LINE__,
+			    "MaterialCacheManager::Rebuild: failed to allocate material descriptor table.");
 			return;
 		}
 
@@ -77,7 +87,11 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		{
 			if (!textures[slot])
 			{
-				LOG_FATAL(std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
+				Engine::Diagnostics::Fail(
+				    g_materialCacheManagerLogger,
+				    __FILE__,
+				    __LINE__,
+				    std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
 			}
 
 			textures[slot]->WriteShaderResourceView(m_renderHardwareInterface->GetDescriptorTableCpuHandle(tableHandle, slot));

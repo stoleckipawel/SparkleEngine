@@ -10,6 +10,8 @@
 
 #include <format>
 
+static const auto g_fbxImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+
 bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
 	return extension == L".fbx";
@@ -36,13 +38,15 @@ SceneImportResult FbxImporter::Import(const std::filesystem::path& filePath) con
 
 	if (result.meshes.empty())
 	{
-		LOG_ERROR(std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string()));
+		SPDLOG_LOGGER_ERROR(g_fbxImporterLogger, "{}", std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string()));
 		return result;
 	}
 
 	result.bSuccess = true;
 
-	LOG_INFO(
+	SPDLOG_LOGGER_INFO(
+	    g_fbxImporterLogger,
+	    "{}",
 	    std::format(
 	        "FbxImporter: Loaded '{}' — {} meshes, {} materials",
 	        filePath.filename().string(),

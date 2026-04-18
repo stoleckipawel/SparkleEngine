@@ -26,6 +26,11 @@ goto :FINISH
 :CONFIGURE
 call "%~dp0Config.bat"
 
+set "DESIRED_GENERATOR=!GENERATOR!"
+set "DESIRED_PLATFORM=!ARCH!"
+set "DESIRED_TOOLSET="
+if "!USE_CLANG!"=="1" set "DESIRED_TOOLSET=ClangCL"
+
 if not exist "!BUILD_DIR!" (
     echo [LOG] Creating build directory: !BUILD_DIR!
     mkdir "!BUILD_DIR!"
@@ -35,6 +40,36 @@ if not exist "!BUILD_DIR!" (
         goto :FINISH
     )
 )
+
+if exist "!BUILD_DIR!\CMakeCache.txt" (
+    set "CACHE_GENERATOR="
+    set "CACHE_PLATFORM="
+    set "CACHE_TOOLSET="
+    set "RESET_BUILD_CACHE=0"
+
+    for /f "tokens=2 delims==" %%A in ('findstr /b /c:"CMAKE_GENERATOR:INTERNAL=" "!BUILD_DIR!\CMakeCache.txt"') do set "CACHE_GENERATOR=%%A"
+    for /f "tokens=2 delims==" %%A in ('findstr /b /c:"CMAKE_GENERATOR_PLATFORM:INTERNAL=" "!BUILD_DIR!\CMakeCache.txt"') do set "CACHE_PLATFORM=%%A"
+    for /f "tokens=2 delims==" %%A in ('findstr /b /c:"CMAKE_GENERATOR_TOOLSET:INTERNAL=" "!BUILD_DIR!\CMakeCache.txt"') do set "CACHE_TOOLSET=%%A"
+
+    if /I not "!CACHE_GENERATOR!"=="!DESIRED_GENERATOR!" set "RESET_BUILD_CACHE=1"
+    if /I not "!CACHE_PLATFORM!"=="!DESIRED_PLATFORM!" set "RESET_BUILD_CACHE=1"
+    if /I not "!CACHE_TOOLSET!"=="!DESIRED_TOOLSET!" set "RESET_BUILD_CACHE=1"
+
+    if "!RESET_BUILD_CACHE!"=="1" (
+        echo [LOG] Detected stale CMake cache settings.
+        echo [LOG] Existing: generator='!CACHE_GENERATOR!' platform='!CACHE_PLATFORM!' toolset='!CACHE_TOOLSET!'
+        echo [LOG] Desired:  generator='!DESIRED_GENERATOR!' platform='!DESIRED_PLATFORM!' toolset='!DESIRED_TOOLSET!'
+        echo [LOG] Clearing CMake cache and generator files before reconfigure...
+
+        if exist "!BUILD_DIR!\CMakeCache.txt" del /q "!BUILD_DIR!\CMakeCache.txt"
+        if exist "!BUILD_DIR!\CMakeFiles" rmdir /s /q "!BUILD_DIR!\CMakeFiles"
+        if exist "!BUILD_DIR!\*.sln" del /q "!BUILD_DIR!\*.sln"
+        if exist "!BUILD_DIR!\*.vcxproj" del /q "!BUILD_DIR!\*.vcxproj"
+        if exist "!BUILD_DIR!\*.vcxproj.filters" del /q "!BUILD_DIR!\*.vcxproj.filters"
+        if exist "!BUILD_DIR!\ZERO_CHECK.vcxproj" del /q "!BUILD_DIR!\ZERO_CHECK.vcxproj"
+        if exist "!BUILD_DIR!\ZERO_CHECK.vcxproj.filters" del /q "!BUILD_DIR!\ZERO_CHECK.vcxproj.filters"
+    )
+}
 
 pushd "!BUILD_DIR!"
 if "!USE_CLANG!"=="1" (

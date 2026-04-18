@@ -8,6 +8,8 @@
 
 using namespace DirectX;
 
+static const auto g_fbxGeometryImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+
 std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) noexcept
 {
 	std::size_t meshInstanceCount = node.mNumMeshes;
@@ -37,7 +39,10 @@ void FbxGeometryImporter::ExtractNodeMeshes(
 		const unsigned int sceneMeshIndex = node.mMeshes[meshReferenceIndex];
 		if (sceneMeshIndex >= scene.mNumMeshes)
 		{
-			LOG_WARNING(std::format("FbxImporter: Node '{}' references invalid mesh index {}", GetNodeName(node), sceneMeshIndex));
+			SPDLOG_LOGGER_WARN(
+			    g_fbxGeometryImporterLogger,
+			    "{}",
+			    std::format("FbxImporter: Node '{}' references invalid mesh index {}", GetNodeName(node), sceneMeshIndex));
 			continue;
 		}
 
@@ -71,21 +76,30 @@ MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNo
 {
 	if (!mesh.HasPositions())
 	{
-		LOG_WARNING(std::format(
-		    "FbxImporter: Skipping mesh '{}' on node '{}' because it has no vertex positions",
-		    GetMeshName(mesh),
-		    GetNodeName(node)));
+		SPDLOG_LOGGER_WARN(
+		    g_fbxGeometryImporterLogger,
+		    "{}",
+		    std::format(
+		        "FbxImporter: Skipping mesh '{}' on node '{}' because it has no vertex positions",
+		        GetMeshName(mesh),
+		        GetNodeName(node)));
 		return {};
 	}
 
 	if (mesh.HasBones())
 	{
-		LOG_WARNING(std::format("FbxImporter: Mesh '{}' contains bones and will be imported as static geometry only", GetMeshName(mesh)));
+		SPDLOG_LOGGER_WARN(
+		    g_fbxGeometryImporterLogger,
+		    "{}",
+		    std::format("FbxImporter: Mesh '{}' contains bones and will be imported as static geometry only", GetMeshName(mesh)));
 	}
 
 	if (mesh.mNumAnimMeshes > 0)
 	{
-		LOG_WARNING(std::format("FbxImporter: Mesh '{}' contains morph targets which will be ignored", GetMeshName(mesh)));
+		SPDLOG_LOGGER_WARN(
+		    g_fbxGeometryImporterLogger,
+		    "{}",
+		    std::format("FbxImporter: Mesh '{}' contains morph targets which will be ignored", GetMeshName(mesh)));
 	}
 
 	MeshData meshData;
@@ -96,7 +110,10 @@ MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNo
 
 	if (!meshData.IsValid())
 	{
-		LOG_WARNING(std::format("FbxImporter: Mesh '{}' did not produce valid triangle geometry", GetMeshName(mesh)));
+		SPDLOG_LOGGER_WARN(
+		    g_fbxGeometryImporterLogger,
+		    "{}",
+		    std::format("FbxImporter: Mesh '{}' did not produce valid triangle geometry", GetMeshName(mesh)));
 	}
 
 	return meshData;
@@ -142,7 +159,10 @@ void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, MeshData& me
 		const aiFace& face = mesh.mFaces[faceIndex];
 		if (face.mNumIndices != 3)
 		{
-			LOG_WARNING(std::format("FbxImporter: Skipping non-triangle face {} in mesh '{}'", faceIndex, GetMeshName(mesh)));
+			SPDLOG_LOGGER_WARN(
+			    g_fbxGeometryImporterLogger,
+			    "{}",
+			    std::format("FbxImporter: Skipping non-triangle face {} in mesh '{}'", faceIndex, GetMeshName(mesh)));
 			continue;
 		}
 
@@ -164,10 +184,13 @@ MaterialHandle FbxGeometryImporter::ResolveMaterialHandle(const aiMesh& mesh, Sc
 		return MaterialHandle(mesh.mMaterialIndex);
 	}
 
-	LOG_WARNING(std::format(
-	    "FbxImporter: '{}' references invalid material index {} and will use the default material",
-	    GetMeshName(mesh),
-	    mesh.mMaterialIndex));
+	SPDLOG_LOGGER_WARN(
+	    g_fbxGeometryImporterLogger,
+	    "{}",
+	    std::format(
+	        "FbxImporter: '{}' references invalid material index {} and will use the default material",
+	        GetMeshName(mesh),
+	        mesh.mMaterialIndex));
 	return MaterialHandle::Invalid();
 }
 

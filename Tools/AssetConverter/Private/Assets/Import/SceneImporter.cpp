@@ -10,6 +10,8 @@
 #include <array>
 #include <format>
 
+static const auto g_sceneImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter");
+
 SceneImportResult SceneImporter::Import(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
@@ -34,10 +36,13 @@ SceneImportResult SceneImporter::Import(const std::filesystem::path& filePath)
 
 	if (!handledByImporter)
 	{
-		LOG_ERROR(std::format(
-		    "SceneImporter: Unsupported asset extension '{}' for '{}'",
-		    extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
-		    filePath.string()));
+		SPDLOG_LOGGER_ERROR(
+		    g_sceneImporterLogger,
+		    "{}",
+		    std::format(
+		        "SceneImporter: Unsupported asset extension '{}' for '{}'",
+		        extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
+		        filePath.string()));
 	}
 
 	return result;

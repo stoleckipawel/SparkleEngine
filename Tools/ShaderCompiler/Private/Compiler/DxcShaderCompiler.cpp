@@ -7,6 +7,8 @@
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
+static const auto g_dxcShaderCompilerLogger = Engine::Logging::GetOrCreateLogger("Tools.ShaderCompiler");
+
 namespace
 {
 	std::filesystem::path BuildShaderDebugArtifactPath(std::wstring_view pdbName)
@@ -67,13 +69,13 @@ ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& optio
 	{
 		if (errorMsg.empty())
 			errorMsg = "Compilation failed with no error message";
-		LOG_ERROR("Shader compilation failed: " + errorMsg);
+		SPDLOG_LOGGER_ERROR(g_dxcShaderCompilerLogger, "Shader compilation failed: {}", errorMsg);
 		return ShaderCompileResult::Failure(std::move(errorMsg));
 	}
 
 	if (!errorMsg.empty())
 	{
-		LOG_WARNING("Shader warnings: " + errorMsg);
+		SPDLOG_LOGGER_WARN(g_dxcShaderCompilerLogger, "Shader warnings: {}", errorMsg);
 	}
 
 	std::vector<uint8_t> bytecode = ExtractBytecode(result.Get());
@@ -84,7 +86,7 @@ ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& optio
 
 	const std::filesystem::path debugArtifactPath = SaveShaderSymbols(result.Get(), options.SourcePath);
 
-	LOG_INFO("Shader compiled successfully: " + options.SourcePath.filename().string());
+	SPDLOG_LOGGER_INFO(g_dxcShaderCompilerLogger, "Shader compiled successfully: {}", options.SourcePath.filename().string());
 	return ShaderCompileResult::Success(std::move(bytecode), debugArtifactPath);
 }
 
@@ -211,6 +213,6 @@ std::filesystem::path DxcShaderCompiler::SaveShaderSymbols(IDxcResult* result, c
 		return pdbPath;
 	}
 
-	LOG_WARNING("Failed to save shader symbols for '" + sourcePath.string() + "'");
+	SPDLOG_LOGGER_WARN(g_dxcShaderCompilerLogger, "Failed to save shader symbols for '{}'", sourcePath.string());
 	return {};
 }

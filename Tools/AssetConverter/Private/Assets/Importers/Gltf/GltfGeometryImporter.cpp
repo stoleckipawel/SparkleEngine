@@ -8,6 +8,8 @@
 
 using namespace DirectX;
 
+static const auto g_gltfGeometryImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
@@ -48,30 +50,39 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SceneImportRes
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
-				LOG_WARNING(std::format("GltfImporter: Skipping {} because only triangle primitives are supported", primitiveLabel));
+				SPDLOG_LOGGER_WARN(g_gltfGeometryImporterLogger, "{}", std::format("GltfImporter: Skipping {} because only triangle primitives are supported", primitiveLabel));
 				continue;
 			}
 
 			if (primitive.targets_count > 0)
 			{
-				LOG_WARNING(std::format("GltfImporter: {} contains morph targets which will be ignored", primitiveLabel));
+				SPDLOG_LOGGER_WARN(g_gltfGeometryImporterLogger, "{}", std::format("GltfImporter: {} contains morph targets which will be ignored", primitiveLabel));
 			}
 
 			if (primitive.has_draco_mesh_compression)
 			{
-				LOG_WARNING(std::format("GltfImporter: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
+				SPDLOG_LOGGER_WARN(
+				    g_gltfGeometryImporterLogger,
+				    "{}",
+				    std::format("GltfImporter: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
 				continue;
 			}
 
 			if (primitive.mappings_count > 0)
 			{
-				LOG_WARNING(std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
+				SPDLOG_LOGGER_WARN(
+				    g_gltfGeometryImporterLogger,
+				    "{}",
+				    std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
 			}
 
 			MeshData meshData = ExtractMeshGeometry(primitive);
 			if (!meshData.IsValid())
 			{
-				LOG_WARNING(std::format("GltfImporter: Skipping {} because vertex or index data is incomplete", primitiveLabel));
+				SPDLOG_LOGGER_WARN(
+				    g_gltfGeometryImporterLogger,
+				    "{}",
+				    std::format("GltfImporter: Skipping {} because vertex or index data is incomplete", primitiveLabel));
 				continue;
 			}
 
@@ -181,10 +192,13 @@ MaterialHandle GltfGeometryImporter::ResolveMaterialHandle(
 		return MaterialHandle(materialIndex);
 	}
 
-	LOG_WARNING(std::format(
-	    "GltfImporter: {} references invalid material index {} and will use the default material",
-	    primitiveLabel,
-	    materialIndex));
+	SPDLOG_LOGGER_WARN(
+	    g_gltfGeometryImporterLogger,
+	    "{}",
+	    std::format(
+	        "GltfImporter: {} references invalid material index {} and will use the default material",
+	        primitiveLabel,
+	        materialIndex));
 	return MaterialHandle::Invalid();
 }
 

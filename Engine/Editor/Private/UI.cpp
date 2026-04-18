@@ -162,11 +162,13 @@ void UI::InitializeImGuiContext()
 	SparkleUiTheme::ApplyEditorialDarkTheme();
 }
 
+static std::shared_ptr<spdlog::logger> g_editorLogger = Engine::Logging::GetOrCreateLogger("Editor");
+
 bool UI::InitializeWin32Backend()
 {
 	if (!m_window->GetHWND())
 	{
-		LOG_FATAL("UI::InitializeWin32Backend: invalid window handle");
+		Engine::Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
 		return false;
 	}
 
@@ -179,7 +181,7 @@ bool UI::InitializeGraphicsBackend()
 {
 	if (m_renderHardware == nullptr)
 	{
-		LOG_FATAL("UI::InitializeGraphicsBackend: missing render hardware interface");
+		Engine::Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing render hardware interface");
 		return false;
 	}
 
@@ -188,7 +190,11 @@ bool UI::InitializeGraphicsBackend()
 		case RhiBackendApi::D3D12:
 			return InitializeNativeGraphicsBackend();
 		default:
-			LOG_FATAL("UI::InitializeGraphicsBackend: editor UI backend is only implemented for D3D12");
+			Engine::Diagnostics::Fail(
+			    g_editorLogger,
+			    __FILE__,
+			    __LINE__,
+			    "UI::InitializeGraphicsBackend: editor UI backend is only implemented for D3D12");
 			return false;
 	}
 }
@@ -197,7 +203,11 @@ bool UI::InitializeNativeGraphicsBackend()
 {
 	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != RhiBackendApi::D3D12)
 	{
-		LOG_FATAL("UI::InitializeNativeGraphicsBackend: invalid render backend for current editor UI initialization");
+		Engine::Diagnostics::Fail(
+		    g_editorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "UI::InitializeNativeGraphicsBackend: invalid render backend for current editor UI initialization");
 		return false;
 	}
 
@@ -214,7 +224,11 @@ bool UI::InitializeNativeGraphicsBackend()
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
-		LOG_FATAL("UI::InitializeNativeGraphicsBackend: missing native device/queue/descriptor-heap");
+		Engine::Diagnostics::Fail(
+		    g_editorLogger,
+		    __FILE__,
+		    __LINE__,
+		    "UI::InitializeNativeGraphicsBackend: missing native device/queue/descriptor-heap");
 		return false;
 	}
 

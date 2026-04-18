@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Diagnostics/Verify.h"
+
 #include "../Descriptors/D3D12DescriptorHeap.h"
 #include "../Descriptors/D3D12DescriptorHeapManager.h"
 #include <cstring>

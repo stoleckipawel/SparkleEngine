@@ -5,9 +5,10 @@
 #include "Scene/Meshes/MeshComponent.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
-#include "Core/Public/Diagnostics/Log.h"
 
 #include <memory>
+
+static const auto g_gameSceneLogger = Engine::Logging::GetOrCreateLogger("GameFramework.GameScene");
 
 GameScene::GameScene() = default;
 
@@ -22,13 +23,13 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 {
 	GameSceneLoadResult result;
 
-	LOG_INFO("Scene: Loading level '" + desc.name + "'");
+	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loading level '{}'", desc.name);
 
 	Clear();
 
 	result.status = GameSceneLoadStatus::Succeeded;
 
-	LOG_INFO("Scene: Level '" + desc.name + "' loaded");
+	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Level '{}' loaded", desc.name);
 	return result;
 }
 
@@ -66,9 +67,11 @@ bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayl
 
 	m_meshes.AppendMeshComponents(std::move(importedMeshes));
 
-	LOG_INFO(
-	    "Scene: Loaded " + std::to_string(m_meshes.GetMeshCount()) + " meshes, " + std::to_string(m_materials.GetMaterialCount()) +
-	    " materials");
+	SPDLOG_LOGGER_INFO(
+	    g_gameSceneLogger,
+	    "Scene: Loaded {} meshes, {} materials",
+	    m_meshes.GetMeshCount(),
+	    m_materials.GetMaterialCount());
 
 	return true;
 }

@@ -3,9 +3,9 @@
 
 #include "GPU/CommandContext.h"
 
-#include "Core/Public/Diagnostics/Log.h"
-
 #include <cassert>
+
+static const auto g_frameGraphExternalLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
@@ -69,7 +69,9 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.externalResource))
 				{
-					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported texture is missing unordered-access support.");
+					SPDLOG_LOGGER_WARN(
+					    g_frameGraphExternalLogger,
+					    "FrameGraph::SyncImportedResourceAccesses: imported texture is missing unordered-access support.");
 					assert(false);
 				}
 
@@ -114,7 +116,9 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			{
 				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.externalResource))
 				{
-					LOG_WARNING("FrameGraph::SyncImportedResourceAccesses: imported buffer is missing unordered-access support.");
+					SPDLOG_LOGGER_WARN(
+					    g_frameGraphExternalLogger,
+					    "FrameGraph::SyncImportedResourceAccesses: imported buffer is missing unordered-access support.");
 					assert(false);
 				}
 

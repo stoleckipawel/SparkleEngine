@@ -134,6 +134,33 @@ add_dependencies(AssetConverter texture_cooker_boundary_check)
 add_dependencies(TextureCookShared texture_cooker_boundary_check)
 add_dependencies(TextureCooker texture_cooker_boundary_check)
 
+add_custom_target(
+    logging_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DLOGGING_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateLoggingBoundary.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating repo-wide logging ownership, logger acquisition, and legacy logging removal..."
+)
+
+function(add_logging_boundary_dependency_if_target target_name)
+    if(TARGET ${target_name})
+        add_dependencies(${target_name} logging_boundary_check)
+    endif()
+endfunction()
+
+add_logging_boundary_dependency_if_target(SparkleCore)
+add_logging_boundary_dependency_if_target(SparkleApplication)
+add_logging_boundary_dependency_if_target(SparkleGameFramework)
+add_logging_boundary_dependency_if_target(SparkleRenderer)
+add_logging_boundary_dependency_if_target(SparkleRHI)
+add_logging_boundary_dependency_if_target(SparkleEditor)
+add_logging_boundary_dependency_if_target(SparklePlatform)
+add_logging_boundary_dependency_if_target(AssetConverter)
+add_logging_boundary_dependency_if_target(TextureCookShared)
+add_logging_boundary_dependency_if_target(TextureCooker)
+add_logging_boundary_dependency_if_target(ShaderCompiler)
+
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
 # ---------------------------
@@ -157,6 +184,9 @@ foreach(SEARCH_DIR ${PROJECT_SEARCH_DIRS})
                     message(STATUS "Discovered project: ${PROJECT_NAME}")
                     add_subdirectory("${CANDIDATE}")
                     list(APPEND DISCOVERED_PROJECTS "${PROJECT_NAME}")
+                    add_logging_boundary_dependency_if_target(${PROJECT_NAME})
+                    add_logging_boundary_dependency_if_target(${PROJECT_NAME}Runtime)
+                    add_logging_boundary_dependency_if_target(${PROJECT_NAME}Editor)
                 endif()
             endif()
         endforeach()
@@ -205,7 +235,7 @@ if(CLANG_FORMAT_EXE)
     # Make all targets depend on clang_format_check
     get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(t ${all_targets})
-        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "texture_cooker_boundary_check")
+        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "texture_cooker_boundary_check" AND NOT t STREQUAL "logging_boundary_check")
             add_dependencies(${t} clang_format_check)
         endif()
     endforeach()

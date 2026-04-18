@@ -10,6 +10,8 @@
 
 #include <format>
 
+static const auto g_gltfImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+
 bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
 	return extension == L".gltf" || extension == L".glb";
@@ -38,13 +40,15 @@ SceneImportResult GltfImporter::Import(const std::filesystem::path& filePath) co
 
 	if (result.meshes.empty())
 	{
-		LOG_ERROR(std::format("GltfImporter: No supported mesh primitives found in '{}'", filePath.string()));
+		SPDLOG_LOGGER_ERROR(g_gltfImporterLogger, "{}", std::format("GltfImporter: No supported mesh primitives found in '{}'", filePath.string()));
 		return result;
 	}
 
 	result.bSuccess = true;
 
-	LOG_INFO(
+	SPDLOG_LOGGER_INFO(
+	    g_gltfImporterLogger,
+	    "{}",
 	    std::format(
 	        "GltfImporter: Loaded '{}' — {} meshes, {} materials",
 	        filePath.filename().string(),

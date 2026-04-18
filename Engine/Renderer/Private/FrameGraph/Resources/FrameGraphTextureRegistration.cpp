@@ -3,7 +3,7 @@
 
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Log.h"
+static const auto g_frameGraphTextureLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
@@ -45,7 +45,7 @@ TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, Nativ
 {
 	if (!resource)
 	{
-		LOG_WARNING("FrameGraph::ImportTexture: imported texture has no backing resource.");
+		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportTexture: imported texture has no backing resource.");
 		return TextureHandle::Invalid();
 	}
 
@@ -74,7 +74,7 @@ BufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, NativeRe
 {
 	if (!resource)
 	{
-		LOG_WARNING("FrameGraph::ImportBuffer: imported buffer has no backing resource.");
+		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportBuffer: imported buffer has no backing resource.");
 		return BufferHandle::Invalid();
 	}
 

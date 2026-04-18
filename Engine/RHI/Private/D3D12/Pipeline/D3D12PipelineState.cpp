@@ -12,6 +12,8 @@
 #include <vector>
 #include <string>
 
+static const auto g_pipelineStateLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Pipeline");
+
 void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept
 {
 	psoDesc.StreamOutput = {};
@@ -82,7 +84,11 @@ namespace
 		{
 			if (required)
 			{
-				LOG_FATAL(std::format("Pipeline '{}' is missing a required cooked shader stage descriptor", pipelineName));
+				Engine::Diagnostics::Fail(
+				    g_pipelineStateLogger,
+				    __FILE__,
+				    __LINE__,
+				    std::format("Pipeline '{}' is missing a required cooked shader stage descriptor", pipelineName));
 			}
 
 			return {};
@@ -92,19 +98,27 @@ namespace
 		const CookedShaderBinaryRecord* shaderBinary = shaderPackage.FindBinaryRecord(shaderDesc.Stage, CookedShaderBinaryFormat::Dxil);
 		if (shaderBinary == nullptr)
 		{
-			LOG_FATAL(std::format(
-			    "Pipeline '{}' is missing a cooked DXIL binary for shader stage '{}'",
-			    pipelineName,
-			    GetShaderStagePrefix(shaderDesc.Stage)));
+			Engine::Diagnostics::Fail(
+			    g_pipelineStateLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format(
+			        "Pipeline '{}' is missing a cooked DXIL binary for shader stage '{}'",
+			        pipelineName,
+			        GetShaderStagePrefix(shaderDesc.Stage)));
 		}
 
 		const ShaderBytecode bytecode = shaderPackage.GetBytecode(*shaderBinary);
 		if (!bytecode.IsValid())
 		{
-			LOG_FATAL(std::format(
-			    "Pipeline '{}' has invalid cooked shader bytecode for stage '{}'",
-			    pipelineName,
-			    GetShaderStagePrefix(shaderDesc.Stage)));
+			Engine::Diagnostics::Fail(
+			    g_pipelineStateLogger,
+			    __FILE__,
+			    __LINE__,
+			    std::format(
+			        "Pipeline '{}' has invalid cooked shader bytecode for stage '{}'",
+			        pipelineName,
+			        GetShaderStagePrefix(shaderDesc.Stage)));
 		}
 
 		ResolvedD3D12ShaderStage resolved{};
@@ -118,7 +132,7 @@ namespace
 	{
 		if (!debugArtifact.empty())
 		{
-			LOG_ERROR(std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
+			SPDLOG_LOGGER_ERROR(g_pipelineStateLogger, "{}", std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
 		}
 	}
 }
@@ -293,7 +307,7 @@ void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 			D3D12_MESSAGE* message = reinterpret_cast<D3D12_MESSAGE*>(messageData.data());
 			if (SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength)) && message->pDescription)
 			{
-				LOG_ERROR(std::string("D3D12 InfoQueue: ") + message->pDescription);
+				SPDLOG_LOGGER_ERROR(g_pipelineStateLogger, "D3D12 InfoQueue: {}", message->pDescription);
 			}
 		}
 
@@ -303,7 +317,7 @@ void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 
 	char buf[256];
 	std::snprintf(buf, sizeof(buf), "Failed To Create PSO. HRESULT: 0x%08X", static_cast<unsigned int>(hr));
-	LOG_FATAL(buf);
+	Engine::Diagnostics::Fail(g_pipelineStateLogger, __FILE__, __LINE__, buf);
 }
 
 D3D12PipelineState::~D3D12PipelineState() noexcept

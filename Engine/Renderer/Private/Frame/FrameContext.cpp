@@ -9,7 +9,6 @@
 #include "Frame/Shadow/ShadowFrameBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Camera/RenderCamera.h"
-#include "Core/Public/Diagnostics/Log.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 

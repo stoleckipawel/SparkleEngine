@@ -19,7 +19,8 @@
 #include <Windows.h>
 #include <wrl/client.h>
 
-#include "Log.h"
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>

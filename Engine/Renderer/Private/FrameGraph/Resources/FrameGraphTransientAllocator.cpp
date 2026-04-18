@@ -435,7 +435,11 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		}
 
 		default:
-			LOG_FATAL("FrameGraphTransientAllocator: unsupported transient resource kind for heap-backed allocation");
+			Engine::Diagnostics::Fail(
+			    Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph"),
+			    __FILE__,
+			    __LINE__,
+			    "FrameGraphTransientAllocator: unsupported transient resource kind for heap-backed allocation");
 			break;
 	}
 

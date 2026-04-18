@@ -10,4 +10,5 @@
 #include <string>
 #include <utility>
 
-#include "Log.h"
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"

@@ -2,11 +2,12 @@
 #include "Level/LevelRegistry.h"
 
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Diagnostics/Log.h"
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
 
 #include <algorithm>
+
+static const auto g_levelRegistryLogger = Engine::Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
 
 LevelRegistry::LevelRegistry()
 {
@@ -21,7 +22,7 @@ void LevelRegistry::DiscoverLevels()
 	std::error_code errorCode;
 	if (!std::filesystem::exists(levelsPath, errorCode))
 	{
-		LOG_WARNING("LevelRegistry: Levels directory not found at '" + levelsPath.string() + "'");
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Levels directory not found at '{}'", levelsPath.string());
 		return;
 	}
 
@@ -30,7 +31,7 @@ void LevelRegistry::DiscoverLevels()
 	{
 		if (errorCode)
 		{
-			LOG_WARNING("LevelRegistry: Failed while scanning levels directory '" + levelsPath.string() + "'");
+			SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Failed while scanning levels directory '{}'", levelsPath.string());
 			break;
 		}
 
@@ -52,9 +53,11 @@ void LevelRegistry::DiscoverLevels()
 		auto loadedLevel = LevelParser::LoadFromFile(levelFile, errorMessage);
 		if (!loadedLevel)
 		{
-			LOG_WARNING(
-			    "LevelRegistry: Failed to load level file '" + levelFile.string() + "'" +
-			    (errorMessage.empty() ? std::string() : " - " + errorMessage));
+			SPDLOG_LOGGER_WARN(
+			    g_levelRegistryLogger,
+			    "LevelRegistry: Failed to load level file '{}'{}",
+			    levelFile.string(),
+			    errorMessage.empty() ? std::string() : std::string{" - "} + errorMessage);
 			continue;
 		}
 
@@ -75,7 +78,7 @@ void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 {
 	if (!level)
 	{
-		LOG_WARNING("LevelRegistry: Attempted to register a null level");
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Attempted to register a null level");
 		return;
 	}
 
@@ -84,11 +87,11 @@ void LevelRegistry::Register(std::unique_ptr<LevelAsset> level)
 
 	if (m_levels.contains(nameKey))
 	{
-		LOG_WARNING("LevelRegistry: Duplicate level name '" + nameKey + "' — skipping");
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Duplicate level name '{}' - skipping", nameKey);
 		return;
 	}
 
-	LOG_INFO("LevelRegistry: Registered level '" + nameKey + "'");
+	SPDLOG_LOGGER_INFO(g_levelRegistryLogger, "LevelRegistry: Registered level '{}'", nameKey);
 	m_levels.emplace(std::move(nameKey), std::move(level));
 }
 
@@ -111,7 +114,7 @@ LevelAsset* LevelRegistry::FindLevelOrDefault(std::string_view name) const
 		{
 			return level;
 		}
-		LOG_WARNING("LevelRegistry: Level '" + std::string(name) + "' not found — falling back to default");
+		SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: Level '{}' not found - falling back to default", std::string(name));
 	}
 
 	if (auto* level = GetDefaultLevel())
@@ -119,7 +122,7 @@ LevelAsset* LevelRegistry::FindLevelOrDefault(std::string_view name) const
 		return level;
 	}
 
-	LOG_WARNING("LevelRegistry: No default level available");
+	SPDLOG_LOGGER_WARN(g_levelRegistryLogger, "LevelRegistry: No default level available");
 	return nullptr;
 }
 

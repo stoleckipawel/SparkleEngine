@@ -8,7 +8,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
-#include "Core/Public/Diagnostics/Log.h"
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Pipeline/PassBinder.h"
 
 #include <cassert>
@@ -16,6 +16,8 @@
 
 namespace
 {
+	std::shared_ptr<spdlog::logger> g_rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+
 	const char* GetShaderPassName(const char* passName) noexcept
 	{
 		return passName != nullptr && passName[0] != '\0' ? passName : "<unnamed>";
@@ -27,7 +29,7 @@ namespace
 		logMessage += GetShaderPassName(passName);
 		logMessage += "': ";
 		logMessage += message;
-		LOG_ERROR(logMessage);
+		SPDLOG_LOGGER_ERROR(g_rendererLogger, "{}", logMessage);
 		assert(false);
 		return false;
 	}
@@ -146,7 +148,7 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 	if (!parameterSet.HasLayout())
 	{
 		message += ": missing parameter layout.";
-		LOG_ERROR(message);
+		SPDLOG_LOGGER_ERROR(g_rendererLogger, "{}", message);
 		assert(false);
 		return;
 	}
@@ -155,7 +157,7 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 	if (missingBindings.empty())
 	{
 		message += ": parameter bindings are incomplete.";
-		LOG_ERROR(message);
+		SPDLOG_LOGGER_ERROR(g_rendererLogger, "{}", message);
 		assert(false);
 		return;
 	}
@@ -171,6 +173,6 @@ void ReportInvalidShaderPassParameterSet(const char* passName, const PassParamet
 		message += missingBindings[index];
 	}
 	message += ".";
-	LOG_ERROR(message);
+	SPDLOG_LOGGER_ERROR(g_rendererLogger, "{}", message);
 	assert(false);
 }

@@ -4,12 +4,13 @@
 #include "D3D12/Textures/TextureLoader.h"
 
 #include "Core/Public/Paths/PathUtils.h"
-#include "Log.h"
 #include "D3D12/Textures/DdsTextureLoader.h"
 #include "D3D12/Textures/WicTextureLoader.h"
 
 #include <array>
 #include <format>
+
+static const auto g_textureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
 
 TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 {
@@ -30,6 +31,10 @@ TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 		}
 	}
 
-	LOG_FATAL(std::format("TextureLoader: No registered texture loader supports '{}'", fileName.string()));
+	Engine::Diagnostics::Fail(
+	    g_textureLoaderLogger,
+	    __FILE__,
+	    __LINE__,
+	    std::format("TextureLoader: No registered texture loader supports '{}'", fileName.string()));
 	return textureLoaderBackends.back()->Load(fileName);
 }

@@ -9,11 +9,17 @@
 
 #include <format>
 
+static const auto g_textureManagerLogger = Engine::Logging::GetOrCreateLogger("Renderer.TextureManager");
+
 std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
-		LOG_FATAL("TextureManager::CreateTextureFromPath: render hardware interface is unavailable.");
+		Engine::Diagnostics::Fail(
+		    g_textureManagerLogger,
+		    __FILE__,
+		    __LINE__,
+		    "TextureManager::CreateTextureFromPath: render hardware interface is unavailable.");
 		return nullptr;
 	}
 
@@ -37,7 +43,7 @@ void TextureManager::LoadDefaults()
 	LoadTexture(TextureId::SkyCubemap, DefaultTextures::GetPath(DefaultTexture::Cubemap));
 	LoadDefaultTextures();
 
-	LOG_INFO(std::format("TextureManager: Loaded {} default textures", GetLoadedCount()));
+	SPDLOG_LOGGER_INFO(g_textureManagerLogger, "{}", std::format("TextureManager: Loaded {} default textures", GetLoadedCount()));
 }
 
 void TextureManager::LoadSceneTextures(const TextureSnapshot& textureSnapshot)
@@ -53,24 +59,30 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 	const auto index = static_cast<std::size_t>(id);
 	if (index >= kTextureCount)
 	{
-		LOG_ERROR(std::format("TextureManager::LoadTexture: Invalid texture ID {}", index));
+		SPDLOG_LOGGER_ERROR(g_textureManagerLogger, "{}", std::format("TextureManager::LoadTexture: Invalid texture ID {}", index));
 		return;
 	}
 
 	if (m_textures[index])
 	{
-		LOG_DEBUG(std::format("TextureManager: Replacing texture at slot {}", index));
+		SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Replacing texture at slot {}", index));
 		m_textures[index].reset();
 	}
 
 	m_textures[index] = CreateTextureFromPath(relativePath);
 	if (!m_textures[index])
 	{
-		LOG_ERROR(std::format("TextureManager::LoadTexture: Failed to load '{}' into slot {}", relativePath.string(), index));
+		SPDLOG_LOGGER_ERROR(
+		    g_textureManagerLogger,
+		    "{}",
+		    std::format("TextureManager::LoadTexture: Failed to load '{}' into slot {}", relativePath.string(), index));
 		return;
 	}
 
-	LOG_DEBUG(std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
+	SPDLOG_LOGGER_DEBUG(
+	    g_textureManagerLogger,
+	    "{}",
+	    std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
 }
 
 Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
@@ -78,7 +90,7 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
 	if (!resolvedPathResult)
 	{
-		LOG_WARNING(std::format("TextureManager::LoadFromPath: Failed to resolve '{}'", texturePath.string()));
+		SPDLOG_LOGGER_WARN(g_textureManagerLogger, "{}", std::format("TextureManager::LoadFromPath: Failed to resolve '{}'", texturePath.string()));
 		return nullptr;
 	}
 
@@ -87,7 +99,10 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(resolvedPath);
 	if (cacheKey.empty())
 	{
-		LOG_WARNING(std::format("TextureManager::LoadFromPath: Failed to canonicalize '{}'", resolvedPath.string()));
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "{}",
+		    std::format("TextureManager::LoadFromPath: Failed to canonicalize '{}'", resolvedPath.string()));
 		return nullptr;
 	}
 
@@ -99,14 +114,17 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	auto texture = CreateTextureFromPath(resolvedPath);
 	if (!texture)
 	{
-		LOG_WARNING(std::format("TextureManager::LoadFromPath: Failed to create texture for '{}'", resolvedPath.string()));
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "{}",
+		    std::format("TextureManager::LoadFromPath: Failed to create texture for '{}'", resolvedPath.string()));
 		return nullptr;
 	}
 
 	Texture* texturePtr = texture.get();
 	m_pathTextures.emplace(cacheKey, std::move(texture));
 
-	LOG_DEBUG(std::format("TextureManager: Cached '{}'", resolvedPath.string()));
+	SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Cached '{}'", resolvedPath.string()));
 	return texturePtr;
 }
 void TextureManager::UnloadTexture(TextureId id) noexcept
@@ -179,7 +197,10 @@ const Texture* TextureManager::ResolveTextureOrDefault(const std::optional<std::
 		return texture;
 	}
 
-	LOG_WARNING(std::format("TextureManager: Falling back to checkerboard for {} default texture", DefaultTextures::GetName(fallbackType)));
+	SPDLOG_LOGGER_WARN(
+	    g_textureManagerLogger,
+	    "{}",
+	    std::format("TextureManager: Falling back to checkerboard for {} default texture", DefaultTextures::GetName(fallbackType)));
 	if (const Texture* texture = FindPathTexture(DefaultTextures::GetPath(DefaultTexture::Checkerboard)))
 	{
 		return texture;
@@ -216,7 +237,9 @@ void TextureManager::LoadDefaultTextures()
 		RegisterDefaultPathTexture(DefaultTextures::GetPath(type));
 		if (!LoadFromPath(DefaultTextures::GetPath(type)))
 		{
-			LOG_WARNING(
+			SPDLOG_LOGGER_WARN(
+			    g_textureManagerLogger,
+			    "{}",
 			    std::format(
 			        "TextureManager: Could not preload {} default texture; checker remains the emergency fallback",
 			        DefaultTextures::GetName(type)));

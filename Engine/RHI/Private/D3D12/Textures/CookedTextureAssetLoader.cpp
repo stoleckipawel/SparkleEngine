@@ -4,10 +4,11 @@
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Log.h"
 
 #include <cstring>
 #include <format>
+
+static const auto g_cookedTextureAssetLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
 
 bool CookedTextureAssetLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -21,7 +22,11 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	std::string errorMessage;
 	if (!Engine::Files::TryReadAllBytes(resolvedPath, fileBytes, errorMessage))
 	{
-		LOG_FATAL(std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -30,24 +35,36 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	if (!ReadBytes(fileBytes, byteOffset, &header, sizeof(header), errorMessage) ||
 	    !ValidateHeader(header, resolvedPath, errorMessage))
 	{
-		LOG_FATAL(std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
 	TextureFormatIntent formatIntent = TextureFormatIntent::Unknown;
 	if (!TryResolveFormatIntent(header.formatIntent, formatIntent))
 	{
-		LOG_FATAL(std::format(
-		    "CookedTextureAssetLoader: '{}' stores an invalid texture format intent {}",
-		    resolvedPath.string(),
-		    header.formatIntent));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "CookedTextureAssetLoader: '{}' stores an invalid texture format intent {}",
+		        resolvedPath.string(),
+		        header.formatIntent));
 		return {};
 	}
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	if (!ReadMipHeaders(fileBytes, byteOffset, header.mipCount, resolvedPath, mipHeaders, errorMessage))
 	{
-		LOG_FATAL(std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -58,16 +75,24 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	loadResult.formatIntent = formatIntent;
 	if (!ReadMipPayloads(fileBytes, byteOffset, mipHeaders, resolvedPath, loadResult, errorMessage))
 	{
-		LOG_FATAL(std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
 	if (byteOffset != fileBytes.size())
 	{
-		LOG_FATAL(std::format(
-		    "CookedTextureAssetLoader: '{}' contains {} unexpected trailing byte(s)",
-		    resolvedPath.string(),
-		    fileBytes.size() - byteOffset));
+		Engine::Diagnostics::Fail(
+		    g_cookedTextureAssetLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "CookedTextureAssetLoader: '{}' contains {} unexpected trailing byte(s)",
+		        resolvedPath.string(),
+		        fileBytes.size() - byteOffset));
 		return {};
 	}
 

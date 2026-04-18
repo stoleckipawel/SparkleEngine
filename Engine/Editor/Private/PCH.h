@@ -12,4 +12,5 @@
 #include <string>
 #include <functional>
 
-#include "Log.h"
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"

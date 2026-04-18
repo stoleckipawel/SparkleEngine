@@ -81,13 +81,13 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      What: decide exactly which tool builds shader artifacts, when it runs, how outputs are stored, and how the runtime discovers them.
      Why: without clear ownership, runtime code will grow fallback compilation paths again and the build pipeline will become ambiguous for editor, game, and CI flows.
      How: place shader compilation in the asset-cooking toolchain, define manifest naming and output layout, and make runtime loading consume artifact references instead of source-file paths.
-    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAssets.bat`, `Engine/RHI/CMakeLists.txt`, and the runtime asset-loading path that currently resolves shader sources indirectly through pass traits.
+    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAll.bat`, `Engine/RHI/CMakeLists.txt`, and the runtime asset-loading path that currently resolves shader sources indirectly through pass traits.
      Guardrails: do not let the renderer own offline cooking logic; do not require the editor to invoke DXC directly during normal runtime startup.
      Concrete ownership snapshot:
     - Tool owner: offline shader-package ownership now lives under `Tools/ShaderCompiler/Private/Cooking/ShaderCookManifest.h` and `.cpp`. ShaderCompiler, not AssetConverter or Renderer, is the seam that discovers package definitions, validates them, and decides cooked output locations.
      - Source manifest contract: engine-owned package declarations now live in `Engine/Assets/Shaders/ShaderPackages.ini`. The tool also looks for a project-side `Assets/Shaders/ShaderPackages.ini` and merges both manifests by logical `packageId`, with the project manifest overriding the engine definition when both declare the same package.
      - Initial package inventory: the first manifest captures the exact runtime-compiled set from Prompt 1: `ForwardOpaque`, `ShadowOpaque`, and `ComputeClear`, each with an explicit binding-layout id, logical variant id, per-stage HLSL path, and entry point.
-    - Build entrypoints: `ShaderCompiler` now exposes `inspect-manifest` and `cook` for standalone shader validation and emission, while `AssetConverter` keeps the explicit `cook-scene <source-scene-path>` scene-cook command. `Scripts/CookAssets.bat` builds both tools, runs shader-manifest validation and shader cooking through ShaderCompiler before any scene cooking, and `Scripts/Internal/InvokeCookSceneList.ps1` now uses the explicit AssetConverter scene subcommand instead of the older implicit single-argument mode.
+    - Build entrypoints: `ShaderCompiler` now exposes `inspect-manifest` and `cook` for standalone shader validation and emission, while `AssetConverter` keeps the explicit `cook-scene <source-scene-path>` scene-cook command. `Scripts/CookAll.bat` is now the single top-level full cook entrypoint: it runs the shader, texture, and scene cook stages in order by delegating to the narrower `Scripts/Cook/CookShaders.bat`, `Scripts/Cook/CookTextures.bat`, and `Scripts/Cook/CookAssets.bat` commands. `Scripts/Internal/InvokeCookSceneList.ps1` continues to use the explicit AssetConverter scene subcommand instead of the older implicit single-argument mode.
      - Cooked output layout: shader artifacts are reserved under `Projects/<Project>/Assets/Cooked/Shaders`, with package payloads under `Projects/<Project>/Assets/Cooked/Shaders/Packages` and the future registry at `Projects/<Project>/Assets/Cooked/Shaders/ShaderPackageRegistry.sreg`.
      - Runtime discovery rule: cooked package paths are keyed by a stable FNV-1a hash over logical `packageId` plus `variantId`, not by raw source file path. That keeps runtime lookup aligned to logical shader identity and leaves room for one package id to eventually carry both DXIL and SPIR-V payloads.
      - Scope boundary: Prompt 3 stops at ownership, manifest discovery, validation, and output conventions. Actual package emission, registry writing, and runtime cooked-shader loading remain Phase 1D work.
@@ -126,18 +126,71 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      What: delete the code paths that compile pass shaders during renderer startup or pipeline setup, leaving only explicit offline or developer-only workflows if still needed.
      Why: as long as the normal runtime still compiles shaders, the asset ABI is optional and future Vulkan work will drift back toward the old model.
      How: change pass registration to reference cooked shader identities, keep error messages focused on missing or stale cooked artifacts, and move any remaining development-only compile helpers out of the shipping frame setup path.
-    Where: `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, `Engine/Renderer/Private/Passes/ShaderSourceDefinition.h`, `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.h`, `Scripts/CookAssets.bat`.
+    Where: `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, `Engine/Renderer/Private/Passes/ShaderSourceDefinition.h`, `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.h`, `Scripts/CookAll.bat`.
      Guardrails: do not leave a hidden runtime compile fallback for convenience; do not make asset cooking optional for the shipping execution path.
      Concrete normal-path removal snapshot:
      - `RenderPassPipelineTraits` no longer carries any shader-source declaration validation or DXC compile work. Startup only loads cooked packages, builds binding layouts from cooked metadata, and creates backend PSOs from cooked stage identities.
      - The old renderer-owned `ShaderSourceDefinition` surface has been removed, and `ShaderPass` no longer exposes `ValidateShaderSourceDefinition(...)`. That removes the last renderer-private abstraction that implied source-HLSL compilation during normal pass registration.
     - `DxcShaderCompiler` now lives only inside the standalone `ShaderCompiler` tool as the explicit DXC wrapper for offline or developer-initiated compilation work. The asset-path convenience API that matched the old runtime model has been removed, runtime no longer owns the DXC wrapper, and normal startup must consume cooked artifacts instead of compiling source.
-    - `Scripts/CookAssets.bat` now makes the cooked shader requirement explicit by validating the shader cook manifest, invoking `ShaderCompiler inspect-manifest` plus `ShaderCompiler cook`, and documenting that normal runtime startup expects cooked shader outputs under `Projects/<Project>/Assets/Cooked/Shaders/Packages`.
+    - `Scripts/CookAll.bat` now makes the cooked shader requirement explicit by validating the shader cook manifest, invoking `ShaderCompiler inspect-manifest` plus `ShaderCompiler cook`, and documenting that normal runtime startup expects cooked shader outputs under `Projects/<Project>/Assets/Cooked/Shaders/Packages`.
    - Phase exit snapshot:
     Completed: D3D12 pipelines are created from cooked shader artifacts plus neutral metadata; ShaderCompiler emits cooked `.sshd` payloads and the shader registry during the public cook flow; renderer startup no longer depends on runtime DXC compilation.
      WIP: dev-facing artifact authoring and diagnostics may still need polish.
-     Todo: generic GPU diagnostics surface and D3D12 tooling integration.
-5. Milestone 1 / Phase 1E: Design the neutral GPU diagnostics surface.
+       Todo: repo-wide spdlog migration, generic GPU diagnostics surface, and D3D12 tooling integration.
+  5. Milestone 1 / Phase 1E: Replace the repo logging stack with spdlog and delete the legacy logging surface.
+     - What this phase brings: Sparkle stops carrying `Log.h`, `Log.cpp`, and the custom buffer or sink logger internals. The repo either uses `spdlog` directly or through a very small engine-owned access pattern, but the old Sparkle logging API does not survive as a compatibility layer. Later diagnostics, tooling, and Vulkan bring-up can then rely on the final logging route instead of a temporary bridge.
+     - Prompt 1: inventory the current logging contract and choose the permanent spdlog access model.
+       What: identify every macro, fatal-path behavior, sink, level-control path, and formatting assumption the current logger provides, then decide how repo code will reach `spdlog` once `Log.h` and `Log.cpp` are gone.
+       Why: deleting the old logging surface cleanly requires an explicit decision about access shape first; otherwise the repo will replace one ad hoc API with another.
+       How: trace `LOG_TRACE` through `LOG_FATAL`, `CHECK(...)`, `Logger::SetLevel/GetLevel/IsEnabled`, stderr/debugger output, file:line tagging, and fatal abort behavior; then choose one of three models and write the decision down before migrating callsites:
+       - Option A: direct `spdlog` calls everywhere. Lowest ceremony and common in smaller codebases, but it spreads third-party ownership across the repo.
+      - Option B: central logger registry plus direct `spdlog` API at callsites. SparkleCore owns bootstrap and named loggers, while engine code retrieves a logger and then uses native `spdlog` methods. This is the selected option.
+       - Option C: thin access wrapper around `spdlog`. SparkleCore exposes helper accessors or macros, but not a full custom formatting surface. This keeps some insulation, but it risks recreating the old facade if it grows unchecked.
+       Where: `Engine/Core/Public/Diagnostics/Log.h`, `Engine/Core/Private/Diagnostics/Log.cpp`, `Engine/Core/Private/Diagnostics/Logging/LogSink.cpp`, `Engine/Core/Private/Diagnostics/Logging/LogFormatting.h`, and representative callsites in Engine and Tools.
+       Guardrails: do not keep `Log.h` or `Log.cpp` alive as compatibility shims after the decision is made; do not weaken fatal-path behavior while migrating; do not leave `CHECK(...)` trapped inside a logging header that is supposed to be deleted.
+       Current logging surface snapshot:
+       - Public surface today: `LogLevel`, `Logger::SetLevel/GetLevel/IsEnabled`, `LogWrite(...)`, `CheckHR(...)`, and macros `LOG_TRACE` through `LOG_FATAL` plus `CHECK`.
+       - Current sink behavior: messages are written to `stderr` and mirrored to `OutputDebugStringA` on Windows under a global sink mutex.
+       - Current formatting constraint: most callsites preformat strings before logging, because the existing macros only accept a final message string rather than typed format arguments.
+      - Selected usage decision: adopt a central SparkleCore-owned logger registry and use `spdlog` APIs directly at callsites after logger lookup, instead of preserving a custom Sparkle logging facade.
+      - Clarification: this snapshot records the legacy contract being migrated and deleted. Later prompts may already replace the active backend implementation underneath that surface while Prompt 3 is still pending.
+     - Prompt 2: add spdlog as a fetched dependency, define bootstrap ownership, and split non-logging diagnostics from the old logging header.
+       What: bring `spdlog` into the build, make SparkleCore own logger bootstrap and named logger registration, and move any surviving non-logging helpers such as HRESULT or fatal verification into a separate diagnostics utility if they still belong in the engine.
+       Why: once `Log.h` is scheduled for deletion, anything in it that is not really logging must either move or die explicitly.
+       How: fetch `spdlog` through the existing dependency pipeline, link it where needed, stand up startup or bootstrap code for the chosen logger-access model, configure console/debugger/file sinks, and create a separate assert or verify seam for `CHECK(...)`-style behavior if the project still wants it.
+       Where: `CMake/Dependencies/FetchDependencies.cmake`, `Engine/Core/CMakeLists.txt`, `Engine/Core/Public/Diagnostics/Log.h`, `Engine/Core/Private/Diagnostics/Log.cpp`, and any new SparkleCore-private logger bootstrap or diagnostics utility files.
+       Guardrails: do not make every module configure its own logger independently; do not leave HRESULT checking permanently coupled to a deleted logging API; do not drop static/shared build support or Windows debugger output in the migration.
+       Preferred backend snapshot:
+       - `SparkleCore` still owns logger bootstrap, sink setup, and named logger lifetime.
+       - Default sinks should cover at least stderr and the Windows debugger path; a rotating file sink is acceptable if kept optional for tools/runtime.
+      - The selected callsite model is native `spdlog` usage after retrieving an engine-owned named logger, not a reimplementation of `LOG_*` macros.
+      - Implementation note: `Engine/Core/Public/Diagnostics/Logger.h` now owns the public named-logger registry surface and `Engine/Core/Public/Diagnostics/Verify.h` owns surviving `CHECK(...)` semantics.
+     - Prompt 3: migrate repo callsites to the chosen spdlog usage model and delete the custom logger internals.
+       What: update engine and tool callsites to the chosen `spdlog` access model, then delete `Log.h`, `Log.cpp`, `LogBuffer`, old sink glue, and old formatting helpers once nothing depends on them.
+       Why: the migration is not complete while the repo still compiles the old logging surface or while large areas still depend on its macros.
+       How: replace `LOG_*` callsites consistently, update any `CHECK(...)` usages to the new verify or assert home if that helper survives, keep fatal diagnostics explicit and readable, and remove the legacy logging files entirely instead of leaving dormant compatibility code.
+       Where: repo-wide `LOG_*` and `CHECK(...)` callsites, `Engine/Core/Public/Diagnostics/Log.h`, `Engine/Core/Private/Diagnostics/Log.cpp`, `Engine/Core/Private/Diagnostics/Logging/LogBuffer.h`, `Engine/Core/Private/Diagnostics/Logging/LogSink.h`, `Engine/Core/Private/Diagnostics/Logging/LogSink.cpp`, `Engine/Core/Private/Diagnostics/Logging/LogFormatting.h`, and tool code such as `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.cpp`.
+       Guardrails: do not leave two logger implementations alive; do not keep the old macros around as a permanent alias layer; do not mix unrelated access styles arbitrarily once the choice is made.
+       Completion snapshot:
+       - Repo callsites now use named engine-owned loggers with native `spdlog` logging macros.
+       - Fatal and HRESULT paths now route through `Engine/Core/Public/Diagnostics/Verify.h`.
+       - `Log.h`, `Log.cpp`, `LogBuffer.h`, `LogSink.h`, `LogSink.cpp`, and `LogFormatting.h` have been deleted.
+       - Final repo-wide searches over `Engine/**` and `Tools/**` found no remaining legacy `LOG_*`, `Log.h`, `LogLevel`, or `LE_LOG` usage in active source.
+     - Prompt 4: add guardrails so the chosen spdlog usage model remains the repo-wide answer.
+       What: enforce who is allowed to bootstrap loggers, how named loggers are acquired, and ensure the deleted Sparkle logging API does not quietly return.
+       Why: without explicit boundary rules, future code will either bypass shared logger ownership or recreate the old API in a different file.
+       How: add CMake or validation scripts that reject the old logging files, reject legacy macro reintroduction, and document the chosen access pattern so new code follows it consistently.
+       Where: `CMake/Validation`, `Engine/Core/CMakeLists.txt`, and any repo-wide validation target wiring alongside existing boundary checks.
+       Guardrails: do not permit renderer, game, or backend modules to invent parallel logger bootstrap paths; do not keep stale custom logging files as dormant fallback code.
+       Completion snapshot:
+       - `CMake/Validation/ValidateLoggingBoundary.cmake` rejects deleted logging headers or macros, default-logger `spdlog` usage, and ad hoc sink or bootstrap code outside SparkleCore logging internals.
+       - The `logging_boundary_check` target is wired into engine, tool, and discovered project targets alongside the existing boundary checks.
+       - `Engine/Core/CMakeLists.txt` now fails configure immediately if the deleted legacy logging facade files are reintroduced.
+     - Phase exit snapshot:
+       Completed: `Log.h`, `Log.cpp`, and the custom logging internals are gone; the repo uses the chosen spdlog access model consistently; any surviving `CHECK(...)`-style behavior lives outside the deleted logging surface.
+       WIP: diagnostics and profiling phases still need to layer GPU-oriented services on top of the stabilized logging path.
+       Todo: design the neutral GPU diagnostics surface and map it to D3D12 tooling.
+  6. Milestone 1 / Phase 1F: Design the neutral GPU diagnostics surface.
    - What this phase brings: diagnostics stop being a pile of D3D12 helpers and become an engine-level contract that any backend can implement.
    - Prompt 1: define the diagnostics API surface the renderer is allowed to use.
      What: specify neutral calls for resource naming, scoped GPU markers, debug annotations, timestamp queries, message routing, and optional crash or leak diagnostics.
@@ -161,7 +214,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: the engine has a backend-neutral diagnostics contract and a clean ownership model for markers, timers, messages, and capture hooks.
      WIP: D3D12 still needs to implement the contract end to end.
      Todo: D3D12 mapping, validation, and milestone hardening.
-6. Milestone 1 / Phase 1F: Wire D3D12 diagnostics, timing, and capture support.
+7. Milestone 1 / Phase 1G: Wire D3D12 diagnostics, timing, and capture support.
    - What this phase brings: D3D12 becomes the fully instrumented control backend used to debug both the abstraction and the later Vulkan bring-up.
    - Prompt 1: map the neutral diagnostics API onto D3D12 tooling.
      What: implement naming, markers, debug messages, live-object reporting, and optional crash diagnostics using the new neutral surface.
@@ -185,13 +238,13 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: D3D12 has first-class diagnostics, timing, and capture support behind the neutral API.
      WIP: milestone hardening and explicit gate coverage may still be incomplete.
      Todo: close Milestone 1 with regression checks and an architecture audit.
-7. Milestone 1 / Phase 1G: Prove the D3D12 control backend is production-ready.
+8. Milestone 1 / Phase 1H: Prove the D3D12 control backend is production-ready.
    - What this phase brings: Milestone 1 stops being a code-change milestone and becomes an evidence-backed acceptance gate.
    - Prompt 1: add shader artifact regression checks.
      What: verify cooked shader generation, stale-artifact detection, and pipeline creation from cooked metadata.
      Why: the shader ABI is now a core engine contract and needs regression coverage before Vulkan depends on it.
      How: add validation around artifact generation, loading, and compatibility checks, and make build or smoke flows fail when cooked shader expectations drift.
-    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAssets.bat`, runtime shader-loading code, and milestone validation scripts or project smoke targets.
+    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAll.bat`, runtime shader-loading code, and milestone validation scripts or project smoke targets.
      Guardrails: do not test only artifact existence; also test that the runtime consumes the artifacts successfully.
    - Prompt 2: add D3D12 diagnostics smoke validation.
      What: validate markers, timing scopes, debug messages, and capture-friendly labeling in a repeatable smoke workflow.
@@ -209,7 +262,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: D3D12 is fully hosted behind the abstraction, consumes cooked shaders, exposes diagnostics through neutral contracts, and passes milestone acceptance checks.
      WIP: none inside Milestone 1 beyond explicitly documented deferred work.
      Todo: Vulkan implementation against the stabilized architecture.
-8. Milestone 2 / Phase 2A: Stand up Vulkan build, loader, and backend bootstrap.
+9. Milestone 2 / Phase 2A: Stand up Vulkan build, loader, and backend bootstrap.
    - What this phase brings: Vulkan becomes a real backend target in the build and startup pipeline instead of a placeholder enum.
    - Prompt 1: wire Vulkan dependencies and backend selection.
      What: add Vulkan SDK linkage, allocator dependency wiring, and backend-selection plumbing so the build can produce a Vulkan-capable RHI path.
@@ -233,7 +286,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: Vulkan can build, initialize, create a device, and present a minimal frame while exposing validation and basic naming hooks.
      WIP: memory ownership, command submission depth, and shader or pipeline translation are still incomplete.
      Todo: resource lifetime, submission, and shader translation.
-9. Milestone 2 / Phase 2B: Implement Vulkan memory ownership and frame submission.
+10. Milestone 2 / Phase 2B: Implement Vulkan memory ownership and frame submission.
    - What this phase brings: Vulkan stops being a boot stub and starts owning the same resource lifetime responsibilities D3D12 already carries.
    - Prompt 1: implement allocator-backed buffer and image lifetime management.
      What: add Vulkan buffer, image, staging, and allocation ownership behind the neutral resource creation APIs.
@@ -257,7 +310,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: Vulkan owns real buffer and image lifetime, command submission, frame pacing, and resource-state translation.
      WIP: cooked shader consumption, binding translation, and full renderer-pass support are still pending.
      Todo: SPIR-V output and Vulkan pipeline or descriptor translation.
-10. Milestone 2 / Phase 2C: Extend the cooker to emit SPIR-V from the same shader source pipeline.
+11. Milestone 2 / Phase 2C: Extend the cooker to emit SPIR-V from the same shader source pipeline.
    - What this phase brings: the shader asset contract becomes genuinely dual-backend instead of being a DXIL format with Vulkan aspirations.
    - Prompt 1: emit SPIR-V alongside DXIL from the same logical shader definition.
      What: extend the offline shader pipeline so one source definition can produce both DXIL and SPIR-V payloads under the same cooked shader identity.
@@ -281,7 +334,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: the cooker can emit DXIL and SPIR-V from the same source definition, and the cooked metadata contract remains shared.
      WIP: Vulkan still needs to consume the cooked data through descriptors and pipelines.
      Todo: descriptor translation, pipeline layout creation, and pass coverage.
-11. Milestone 2 / Phase 2D: Translate cooked bindings and pipelines into Vulkan objects.
+12. Milestone 2 / Phase 2D: Translate cooked bindings and pipelines into Vulkan objects.
    - What this phase brings: Vulkan can finally consume the same logical shader and binding model already proven on D3D12.
    - Prompt 1: translate logical binding layouts into Vulkan descriptor set and pipeline layouts.
      What: map the neutral binding layout model to Vulkan descriptor set layouts, pipeline layouts, and any supporting descriptor allocation policy.
@@ -305,7 +358,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: Vulkan can translate logical bindings, descriptors, and pipeline state from the shared cooked metadata model.
      WIP: renderer pass coverage and editor or tooling parity are still incomplete.
      Todo: vertical-slice renderer bring-up.
-12. Milestone 2 / Phase 2E: Port renderer features in vertical slices.
+13. Milestone 2 / Phase 2E: Port renderer features in vertical slices.
    - What this phase brings: Vulkan becomes visually meaningful and debuggable feature by feature instead of through one risky parity push.
    - Prompt 1: bring up the basic frame slice first.
      What: validate clear, present, viewport output, and the minimal framegraph path needed to display a stable frame.
@@ -329,7 +382,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: Vulkan renders real scene content with materials, textures, shadows, and transient resources through the shared renderer path.
      WIP: editor integration, texture cooking parity, profiling depth, and residual pass gaps may still remain.
      Todo: tooling and asset-pipeline parity.
-13. Milestone 2 / Phase 2F: Close editor, tooling, and asset-pipeline parity gaps.
+14. Milestone 2 / Phase 2F: Close editor, tooling, and asset-pipeline parity gaps.
    - What this phase brings: Vulkan stops being runtime-only and becomes usable in the same day-to-day workflows as D3D12.
    - Prompt 1: validate editor viewport and overlay integration on Vulkan.
      What: make the editor host path, viewport rendering, and overlays behave correctly when Vulkan is the active backend.
@@ -353,7 +406,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      Completed: Vulkan participates in editor workflows, texture asset flows, and practical profiling or capture workflows.
      WIP: only formal parity proof and final leak cleanup remain.
      Todo: close the transition with a documented acceptance pass.
-14. Milestone 2 / Phase 2G: Run the parity closeout and lock the architecture.
+15. Milestone 2 / Phase 2G: Run the parity closeout and lock the architecture.
    - What this phase brings: D3D12 and Vulkan become supported peer backends instead of a control path and a tech demo.
    - Prompt 1: run a formal parity matrix.
      What: verify scene output, shadows, textures, transient resources, resize handling, editor overlays, shader loading, diagnostics, and capture workflows on both backends.
@@ -389,6 +442,12 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\ShaderCompileResult.h` - public compile result contract that should evolve into cooked artifact metadata rather than a runtime compile return type.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\ShaderCompiler\Private\Compiler\DxcShaderCompiler.h` - tool-owned DXC wrapper used only by the standalone shader cook path.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\ShaderCompiler\Private\Compiler\DxcShaderCompiler.cpp` - tool-owned DXC compile path that stays outside normal runtime execution.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Core\Public\Diagnostics\Logger.h` - public logger registry surface for the chosen central-registry plus native `spdlog` access model.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Core\Public\Diagnostics\Verify.h` - surviving fatal and HRESULT diagnostics seam after the legacy logging facade removal.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Core\Private\Diagnostics\Logger.cpp` - SparkleCore-owned bootstrap, shared sink configuration, and named logger lifetime.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Core\Private\Diagnostics\Verify.cpp` - fatal, HRESULT, and debugger-break behavior that now stands apart from the deleted logger facade.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Core\CMakeLists.txt` - SparkleCore linkage point for the new logging dependency.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\CMake\Dependencies\FetchDependencies.cmake` - existing dependency fetch pipeline where spdlog should be pinned and added.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12RenderHardwareInterface.cpp` - D3D12 backend translation point for cooked shader loading, diagnostics, timing, and backend service wiring.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12Rhi.cpp` - D3D12 device and backend bootstrap path, including debug and diagnostics ownership.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12DebugLayer.cpp` - D3D12 validation, InfoQueue, and live-object baseline to extend into the new diagnostics surface.
@@ -401,18 +460,20 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 **Verification**
 1. Phase 1C gate: the current runtime shader path has been inventoried fully enough that the cooked shader schema contains every field required for runtime consumption.
 2. Phase 1D gate: renderer startup no longer compiles pass shaders during normal execution; D3D12 consumes cooked shader artifacts plus neutral metadata.
-3. Phase 1E and 1F gate: the renderer can request names, markers, timings, and debug messages through a backend-neutral API, and D3D12 implements that API with real tool-visible results.
-4. Milestone 1 gate: D3D12 still renders runtime scenes and editor viewport or overlays correctly through the abstraction while exposing robust diagnostics, GPU timing, and capture markers.
-5. Phase 2A and 2B gate: Vulkan can initialize, allocate resources, record and submit work, present, and expose validation or naming hooks without changing shared renderer code.
-6. Phase 2C and 2D gate: the same shader source and cooked metadata pipeline produces DXIL for D3D12 and SPIR-V for Vulkan without backend-specific asset divergence by default.
-7. Phase 2E and 2F gate: parity checklist passes for scene color, depth, shadows, material textures, transient resources, viewport resize, editor overlays, and texture loading or cooking on both APIs.
-8. Final architecture gate: only RHI backend folders and explicit interop seams name native D3D12 or Vulkan types; renderer, game, and most editor code remain API-neutral.
+3. Phase 1E gate: `Log.h`, `Log.cpp`, and the legacy custom logging internals are removed; engine and tool code use the chosen spdlog access model consistently; and any surviving verify or HRESULT helpers no longer depend on the deleted logging API.
+4. Phase 1F and 1G gate: the renderer can request names, markers, timings, and debug messages through a backend-neutral API, and D3D12 implements that API with real tool-visible results.
+5. Milestone 1 gate: D3D12 still renders runtime scenes and editor viewport or overlays correctly through the abstraction while exposing robust diagnostics, GPU timing, and capture markers.
+6. Phase 2A and 2B gate: Vulkan can initialize, allocate resources, record and submit work, present, and expose validation or naming hooks without changing shared renderer code.
+7. Phase 2C and 2D gate: the same shader source and cooked metadata pipeline produces DXIL for D3D12 and SPIR-V for Vulkan without backend-specific asset divergence by default.
+8. Phase 2E and 2F gate: parity checklist passes for scene color, depth, shadows, material textures, transient resources, viewport resize, editor overlays, and texture loading or cooking on both APIs.
+9. Final architecture gate: only RHI backend folders and explicit interop seams name native D3D12 or Vulkan types; renderer, game, and most editor code remain API-neutral.
 
 **Decisions**
 - Milestone structure is now explicit: Milestone 1 is abstraction-ready D3D12-only; Milestone 2 is Vulkan implementation to D3D12 parity.
-- The new breakdown separates contract-definition phases from implementation phases on purpose: first define the shader or diagnostics ABI, then prove it on D3D12, then consume it from Vulkan.
+- The new breakdown separates contract-definition phases from implementation phases on purpose: first define the shader, logging, or diagnostics ABI, then prove it on D3D12, then consume it from Vulkan.
 - Recommended shader timing: switch to the precompiled workflow in late Milestone 1, after neutral binding and resource contracts stabilize and before serious Vulkan pipeline work begins.
-- Recommended tooling timing: define the generic diagnostics and profiling API in Milestone 1; implement D3D12 support in Milestone 1 with PIX and RenderDoc-friendly behavior; implement Vulkan RenderDoc and Nsight workflows only after Vulkan command recording is stable.
+- Recommended logging timing: replace the custom logger immediately after the shader compiler cutover, delete `Log.h` and `Log.cpp` as part of that phase, and settle the permanent spdlog access model before diagnostics surface work so later backend diagnostics build on the final route instead of a temporary bridge.
+- Recommended tooling timing: define the generic diagnostics and profiling API only after the spdlog migration stabilizes repo-wide message routing; implement D3D12 support in Milestone 1 with PIX and RenderDoc-friendly behavior; implement Vulkan RenderDoc and Nsight workflows only after Vulkan command recording is stable.
 - Keep the renderer bindful for the parity effort; bindless is explicitly not part of the transition scope.
 - Keep the existing framegraph direction and make execution backend-neutral rather than using Vulkan as a reason for a full render-graph rewrite.
 - Prefer VMA as the default Vulkan allocator unless concrete residency or allocator-policy requirements later justify custom raw-Vulkan allocation.
@@ -421,14 +482,17 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 1. Why shader work comes before Vulkan pipeline work:
    - If Vulkan bring-up starts before the cooked shader ABI exists, the new backend will inherit the old runtime-compile model and both backends will need to be cleaned up later.
    - Doing the shader contract too early would also be risky, which is why the plan waits until Phases 1A and 1B stabilize the logical binding and command model first.
-2. Why diagnostics are split into design first and implementation second:
+2. Why logging replacement comes before diagnostics design:
+  - GPU diagnostics, validation, shader loading failures, and capture workflows all need a stable repo-wide message route before backend-specific tooling work starts.
+  - Replacing the logger after the diagnostics API lands would churn error routing, sink behavior, and fatal handling across the exact milestone that is supposed to make tooling trustworthy.
+3. Why diagnostics are split into design first and implementation second:
    - A neutral diagnostics API is architecture work.
    - PIX, InfoQueue, DRED, RenderDoc labels, and GPU timestamps are backend work.
    - Combining both in one step makes it harder to see whether a bug comes from a bad abstraction or a bad D3D12 implementation.
-3. Why Vulkan is brought up in layers instead of in one big phase:
+4. Why Vulkan is brought up in layers instead of in one big phase:
    - Boot, memory, submission, shaders, descriptors, pipelines, passes, editor workflows, and parity proof fail for different reasons and require different debugging tools.
    - Small phases keep defects local and make it much clearer which abstraction assumption was wrong if something breaks.
-4. Why vertical slices matter before the final parity audit:
+5. Why vertical slices matter before the final parity audit:
    - A backend that can boot and compile is still not a renderer backend.
    - Basic frame output, shadowed opaque rendering, texture sampling, transients, resize, and editor overlays together exercise the important architectural seams much better than a late all-at-once parity test.
 
@@ -511,5 +575,6 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 
 - The renderer is the policy layer. It decides what to render, how passes depend on each other, and which logical resources or bindings are needed.
 - The RHI is the translation layer. It owns native resource identity, native pipelines, diagnostics integration, and backend-specific submission details.
+- SparkleCore should still own logger bootstrap, sink setup, and named logger lifetime, and the selected direction is a central logger registry with direct `spdlog` API usage at callsites after logger acquisition.
 - ShaderCompiler is the offline shader boundary, while AssetConverter remains the offline scene and texture boundary. Runtime execution should be about loading and translating prepared data, not compiling or inventing metadata on the fly.
 - D3D12 remains the control backend until Milestone 2 closes. Vulkan should match the same contracts rather than forcing the renderer to learn a second execution model.

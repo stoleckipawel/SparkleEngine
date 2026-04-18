@@ -4,7 +4,7 @@
 
 #include <cassert>
 
-#include "Core/Public/Diagnostics/Log.h"
+static const auto g_frameGraphBarrierLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept
 {
@@ -32,7 +32,7 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 		if (!beforeResource || !afterResource)
 		{
 			assert(false);
-			LOG_WARNING("FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
+			SPDLOG_LOGGER_WARN(g_frameGraphBarrierLogger, "FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
 			continue;
 		}
 
@@ -49,7 +49,7 @@ void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, std::string_view pass
 		if (!resource)
 		{
 			assert(false);
-			LOG_WARNING("FrameGraph::EmitCompiledBarriers: unresolved resource handle.");
+			SPDLOG_LOGGER_WARN(g_frameGraphBarrierLogger, "FrameGraph::EmitCompiledBarriers: unresolved resource handle.");
 			continue;
 		}
 

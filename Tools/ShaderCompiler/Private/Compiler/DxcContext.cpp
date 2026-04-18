@@ -2,19 +2,21 @@
 
 #include "Compiler/DxcContext.h"
 
+static std::shared_ptr<spdlog::logger> g_shaderCompilerLogger = Engine::Logging::GetOrCreateLogger("ShaderCompiler");
+
 DxcContext::DxcContext()
 {
 	HRESULT hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_compiler.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		LOG_FATAL("Failed to create DXC compiler instance");
+		Engine::Diagnostics::Fail(g_shaderCompilerLogger, __FILE__, __LINE__, "Failed to create DXC compiler instance");
 		return;
 	}
 
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(m_utils.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		LOG_FATAL("Failed to create DXC utils instance");
+		Engine::Diagnostics::Fail(g_shaderCompilerLogger, __FILE__, __LINE__, "Failed to create DXC utils instance");
 		m_compiler.Reset();
 		return;
 	}

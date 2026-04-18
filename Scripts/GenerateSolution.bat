@@ -5,7 +5,8 @@
 :: Runs the repository CMake configure step. This is the single public owner
 :: of generator/toolset selection and solution generation.
 :: Most contributors will not run this directly every day because Setup.bat,
-:: Build.bat, CreateProject.bat, and CookAssets.bat already call it when needed.
+:: Build.bat, CreateProject.bat, and the Scripts\Cook entrypoints already call
+:: it when needed.
 ::
 :: Usage: GenerateSolution.bat [CONTINUE]
 ::   CONTINUE - Suppress interactive prompts (used by parent scripts)

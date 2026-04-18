@@ -3,10 +3,10 @@
 
 #include "Frame/FrameContext.h"
 
-#include "Core/Public/Diagnostics/Log.h"
-
 #include <cassert>
 #include <string>
+
+static const auto g_frameGraphDeclarationLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
@@ -50,7 +50,7 @@ namespace
 			message += "' uses unsupported resource usage ";
 			message += ResourceUsageToString(declaration.usage);
 			message += ".";
-			LOG_WARNING(message);
+			SPDLOG_LOGGER_WARN(g_frameGraphDeclarationLogger, "{}", message);
 			assert(false);
 		}
 	}

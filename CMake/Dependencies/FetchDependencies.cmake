@@ -12,6 +12,7 @@
 #   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI (DX12 + Win32 backends)
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
+#   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
 #   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
@@ -45,13 +46,14 @@ find_program(_git_exe git REQUIRED)
 message(STATUS "")
 message(STATUS "=== Fetching Third-Party Dependencies ===")
 message(STATUS "")
-message(STATUS "  Total download: ~79 MB (shallow clones, LFS skipped)")
+message(STATUS "  Total download: ~82 MB (shallow clones, LFS skipped)")
 message(STATUS "  Expected time:  1-3 minutes depending on connection")
 message(STATUS "")
 message(STATUS "  Dependency sizes:")
 message(STATUS "    imgui            ~7 MB")
 message(STATUS "    cgltf            ~1 MB")
 message(STATUS "    stb              ~5 MB")
+message(STATUS "    spdlog           ~3 MB")
 message(STATUS "    assimp          ~15 MB")
 message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
 message(STATUS "    KTX-Software    ~46 MB  (largest)")
@@ -71,7 +73,7 @@ message(STATUS "")
 # directory, which fails on Windows with "Error removing directory".
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
-foreach(_dep imgui cgltf stb assimp ktx)
+foreach(_dep imgui cgltf stb spdlog assimp ktx)
     set(_src_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-src")
     set(_subbuild_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-subbuild")
     if(EXISTS "${_src_dir}" AND NOT EXISTS "${_src_dir}/.git")
@@ -110,7 +112,7 @@ FetchContent_Declare(imgui
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [1/5] Fetching Dear ImGui v1.92.5 (~7 MB)...")
+message(STATUS "  [1/7] Fetching Dear ImGui v1.92.5 (~7 MB)...")
 FetchContent_Populate(imgui)
 
 add_library(imgui STATIC
@@ -163,7 +165,7 @@ FetchContent_Declare(cgltf
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [2/5] Fetching cgltf v1.15 (~1 MB)...")
+message(STATUS "  [2/7] Fetching cgltf v1.15 (~1 MB)...")
 FetchContent_Populate(cgltf)
 
 add_library(cgltf INTERFACE)
@@ -193,13 +195,59 @@ FetchContent_Declare(stb
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [3/6] Fetching stb (~5 MB)...")
+message(STATUS "  [3/7] Fetching stb (~5 MB)...")
 FetchContent_Populate(stb)
 
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
 message(STATUS "  stb:            ${stb_SOURCE_DIR} (~5 MB)")
+
+# ============================================================================
+# spdlog - Repo-owned logging backend
+# https://github.com/gabime/spdlog
+#
+# SparkleCore owns logger bootstrap and named logger lifetime, while repo
+# callsites gradually migrate toward direct spdlog usage after logger lookup.
+# That means SparkleCore now exposes spdlog-backed public logging headers.
+#
+# Target:  spdlog::spdlog_header_only
+# Usage:   target_link_libraries(YourTarget PRIVATE spdlog::spdlog_header_only)
+# ============================================================================
+FetchContent_Declare(spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.14.1
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+)
+message(STATUS "  [4/7] Fetching spdlog v1.14.1 (~3 MB)...")
+FetchContent_Populate(spdlog)
+
+set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_EXAMPLE_HO OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_TESTS_HO OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_BENCH_HO OFF CACHE BOOL "" FORCE)
+set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
+
+if(TARGET spdlog_header_only AND NOT TARGET spdlog::spdlog_header_only)
+    add_library(spdlog::spdlog_header_only ALIAS spdlog_header_only)
+endif()
+
+if(TARGET spdlog)
+    set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
+endif()
+
+if(TARGET spdlog_header_only)
+    set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
+endif()
+
+message(STATUS "  spdlog:         ${spdlog_SOURCE_DIR} (~3 MB)")
 
 # ============================================================================
 # Assimp - Open Asset Import Library
@@ -218,7 +266,7 @@ FetchContent_Declare(assimp
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [4/6] Fetching Assimp v5.4.3 (~15 MB)...")
+message(STATUS "  [5/7] Fetching Assimp v5.4.3 (~15 MB)...")
 FetchContent_Populate(assimp)
 
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -257,7 +305,7 @@ message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
 # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
 # ============================================================================
 message(STATUS "")
-message(STATUS "  [5/6] Fetching Compressonator (sparse checkout, ~5 MB)...")
+message(STATUS "  [6/7] Fetching Compressonator (sparse checkout, ~5 MB)...")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -399,7 +447,7 @@ FetchContent_Declare(ktx
     GIT_SUBMODULES ""
 )
 message(STATUS "")
-message(STATUS "  [6/6] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
+message(STATUS "  [7/7] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need

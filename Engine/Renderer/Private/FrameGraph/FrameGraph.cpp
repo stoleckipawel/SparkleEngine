@@ -7,7 +7,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-#include "Core/Public/Diagnostics/Log.h"
+static const auto g_frameGraphLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
 	m_renderHardwareInterface(renderHardwareInterface),
@@ -16,7 +16,7 @@ FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window*
 	m_transientAllocator(renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface)
 															: nullptr)
 {
-	LOG_INFO("FrameGraph created");
+	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph created");
 }
 
 FrameGraph::~FrameGraph()
@@ -27,7 +27,7 @@ FrameGraph::~FrameGraph()
 	}
 
 	ReleaseExternalViewDescriptors();
-	LOG_INFO("FrameGraph destroyed");
+	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph destroyed");
 }
 
 FrameGraph::CompiledPlan FrameGraph::Compile()

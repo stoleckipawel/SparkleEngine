@@ -4,6 +4,8 @@
 
 #include <string>
 
+static const auto g_cvarRegistryLogger = Engine::Logging::GetOrCreateLogger("Core.Console");
+
 ConsoleVariableBase::ConsoleVariableBase(std::string_view name, std::string_view description, std::type_index valueType) noexcept :
     m_name(name), m_description(description), m_valueType(valueType)
 {
@@ -20,7 +22,11 @@ void ConsoleVariableRegistry::Register(ConsoleVariableBase& variable) noexcept
 	const auto [iterator, inserted] = m_variablesByName.emplace(variable.GetName(), &variable);
 	if (!inserted)
 	{
-		LOG_FATAL("ConsoleVariableRegistry: Duplicate cvar registration for '" + std::string(variable.GetName()) + "'");
+		Engine::Diagnostics::Fail(
+		    g_cvarRegistryLogger,
+		    __FILE__,
+		    __LINE__,
+		    "ConsoleVariableRegistry: Duplicate cvar registration for '" + std::string(variable.GetName()) + "'");
 		return;
 	}
 

@@ -98,7 +98,10 @@ echo   Useful scripts:
 echo     GenerateSolution.bat      - Generate or refresh build files
 echo     Build.bat                 - Build editor/runtime targets
 echo     SyncThirdParty.bat        - Repair third-party dependency cache
-echo     CookAssets.bat            - Cook all engine/project scenes for a project
+echo     CookAll.bat               - Run the full shader, texture, and scene cook flow
+echo     Cook\CookShaders.bat      - Cook shader packages for a project
+echo     Cook\CookTextures.bat     - Cook texture assets for a project
+echo     Cook\CookAssets.bat       - Cook scene, mesh, and material assets for a project
 echo     CreateProject.bat         - Create a new project
 echo     Format.bat                - Run clang-format
 echo     Clean.bat                 - Clean build artifacts

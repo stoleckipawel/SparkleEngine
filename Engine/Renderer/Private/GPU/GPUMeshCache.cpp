@@ -3,7 +3,8 @@
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
-#include "Log.h"
+
+static const auto g_gpuMeshCacheLogger = Engine::Logging::GetOrCreateLogger("Renderer.GPUMeshCache");
 
 GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface) {}
 
@@ -20,7 +21,7 @@ GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 	auto gpuMesh = std::make_unique<GPUMesh>();
 	if (!gpuMesh->Upload(*m_renderHardwareInterface, cpuMesh.GetMeshData()))
 	{
-		LOG_ERROR("[GPUMeshCache] Failed to upload mesh to GPU");
+		SPDLOG_LOGGER_ERROR(g_gpuMeshCacheLogger, "[GPUMeshCache] Failed to upload mesh to GPU");
 		return nullptr;
 	}
 

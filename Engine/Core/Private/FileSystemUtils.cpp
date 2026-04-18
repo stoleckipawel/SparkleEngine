@@ -2,7 +2,6 @@
 
 #include "FileSystemUtils.h"
 
-#include "Core/Public/Diagnostics/Log.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
@@ -139,6 +138,7 @@ namespace
 	void ValidatePaths(const AssetPathState& state)
 	{
 		std::error_code ec;
+		auto logger = Engine::Logging::GetOrCreateLogger("Core");
 
 		auto logPath = [&](const char* label, const std::filesystem::path& path, bool required)
 		{
@@ -149,11 +149,11 @@ namespace
 			{
 				if (required)
 				{
-					LOG_FATAL("[MISSING]  " + paddedLabel + ": (not configured)");
+					Engine::Diagnostics::Fail(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": (not configured)");
 				}
 				else
 				{
-					LOG_INFO("[--]       " + paddedLabel + ": (not configured)");
+					SPDLOG_LOGGER_INFO(logger, "[--]       {}: (not configured)", paddedLabel);
 				}
 				return;
 			}
@@ -161,21 +161,21 @@ namespace
 			const bool exists = std::filesystem::exists(path, ec);
 			if (exists)
 			{
-				LOG_INFO("[OK]       " + paddedLabel + ": " + path.string());
+				SPDLOG_LOGGER_INFO(logger, "[OK]       {}: {}", paddedLabel, path.string());
 				return;
 			}
 
 			if (required)
 			{
-				LOG_FATAL("[MISSING]  " + paddedLabel + ": " + path.string());
+				Engine::Diagnostics::Fail(logger, __FILE__, __LINE__, "[MISSING]  " + paddedLabel + ": " + path.string());
 			}
 			else
 			{
-				LOG_WARNING("[MISSING]  " + paddedLabel + ": " + path.string());
+				SPDLOG_LOGGER_WARN(logger, "[MISSING]  {}: {}", paddedLabel, path.string());
 			}
 		};
 
-		LOG_INFO("========== Asset Paths Configuration ==========");
+		SPDLOG_LOGGER_INFO(logger, "========== Asset Paths Configuration ==========");
 		logPath("Working Directory", state.workingDirectory, true);
 		logPath("Executable Directory", state.executableDirectory, true);
 		logPath("Engine", state.enginePath, true);
@@ -183,7 +183,7 @@ namespace
 		logPath("Project", state.projectPath, false);
 		logPath("Project Assets", state.projectAssetsPath, false);
 		logPath("Shader Symbols Output", state.shaderSymbolsOutputPath, false);
-		LOG_INFO("===============================================");
+		SPDLOG_LOGGER_INFO(logger, "===============================================");
 	}
 
 	std::optional<std::filesystem::path> TryResolveIn(
@@ -522,7 +522,11 @@ namespace Filesystem
 			return *resolved;
 		}
 
-		LOG_FATAL(std::string(GetAssetTypeName(type)) + " asset not found: " + inputPath.string());
+		Engine::Diagnostics::Fail(
+		    Engine::Logging::GetOrCreateLogger("Core.FileSystem"),
+		    __FILE__,
+		    __LINE__,
+		    std::string(GetAssetTypeName(type)) + " asset not found: " + inputPath.string());
 		return {};
 	}
 
