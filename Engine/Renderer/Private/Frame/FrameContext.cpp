@@ -17,7 +17,7 @@
 
 FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
-	RenderHardwareInterface& renderHardwareInterface,
+    RenderHardwareInterface& renderHardwareInterface,
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,

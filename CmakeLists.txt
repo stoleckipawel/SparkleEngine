@@ -194,7 +194,7 @@ foreach(SEARCH_DIR ${PROJECT_SEARCH_DIRS})
 endforeach()
 
 if(NOT DISCOVERED_PROJECTS)
-    message(WARNING "No projects discovered. Create a project using CreateProject.bat")
+    message(WARNING "No projects discovered. Add a runnable project under Projects/ with a .sparkle-project marker")
 endif()
 
 # ---------------------------

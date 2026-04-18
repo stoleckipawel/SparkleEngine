@@ -203,11 +203,7 @@ void D3D12Rhi::ExecuteCommandList(uint32_t frameInFlightIndex) noexcept
 {
 	if (!m_cmdList[frameInFlightIndex] || !m_cmdQueue)
 	{
-		Engine::Diagnostics::Fail(
-		    g_d3d12RhiLogger,
-		    __FILE__,
-		    __LINE__,
-		    "ExecuteCommandList called without valid command list or queue");
+		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ExecuteCommandList called without valid command list or queue");
 	}
 
 	ID3D12CommandList* ppcommandLists[] = {m_cmdList[frameInFlightIndex].Get()};

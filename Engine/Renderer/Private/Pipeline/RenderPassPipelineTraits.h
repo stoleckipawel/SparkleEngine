@@ -35,9 +35,9 @@ inline void AppendPassParameterLayout(PassParameterLayout& destination, const Pa
 }
 
 inline PassParameterLayout BuildKnownShaderPackageBindingLayout(
-	std::string_view bindingLayoutId,
-	ShaderPassKind passKind,
-	const char* passName)
+    std::string_view bindingLayoutId,
+    ShaderPassKind passKind,
+    const char* passName)
 {
 	PassParameterLayout layout;
 	std::string errorMessage;
@@ -73,11 +73,11 @@ template <typename TPass> struct RenderPassRuntimeStorage
 };
 
 inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
-	CookedShaderPackageCache& shaderPackageCache,
-	const ShaderPackageDefinition& definition,
-	const PassParameterLayout& bindingLayout,
-	std::string_view passName,
-	std::string_view declarationName)
+    CookedShaderPackageCache& shaderPackageCache,
+    const ShaderPackageDefinition& definition,
+    const PassParameterLayout& bindingLayout,
+    std::string_view passName,
+    std::string_view declarationName)
 {
 	if (!definition.IsValid())
 	{

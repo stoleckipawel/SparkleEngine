@@ -75,10 +75,7 @@ namespace
 		std::string_view DebugArtifact = {};
 	};
 
-	ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(
-		const RhiShaderStageDesc& shaderDesc,
-		std::string_view pipelineName,
-		bool required)
+	ResolvedD3D12ShaderStage ResolveD3D12ShaderStage(const RhiShaderStageDesc& shaderDesc, std::string_view pipelineName, bool required)
 	{
 		if (!shaderDesc.IsValid())
 		{
@@ -132,7 +129,10 @@ namespace
 	{
 		if (!debugArtifact.empty())
 		{
-			SPDLOG_LOGGER_ERROR(g_pipelineStateLogger, "{}", std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
+			SPDLOG_LOGGER_ERROR(
+			    g_pipelineStateLogger,
+			    "{}",
+			    std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
 		}
 	}
 }

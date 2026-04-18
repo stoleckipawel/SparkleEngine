@@ -423,9 +423,8 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiDescriptorAllocation AllocateDescriptor(RhiDescriptorHeapType heapType) = 0;
 	virtual void ReleaseDescriptor(RhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept = 0;
 	virtual RhiDescriptorTableHandle AllocateDescriptorTable(RhiDescriptorHeapType heapType, std::uint32_t descriptorCount) = 0;
-	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept = 0;
+	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
+	    const noexcept = 0;
 	virtual void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept = 0;
 	virtual void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) = 0;
 	virtual void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept = 0;
@@ -477,7 +476,10 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual void CreateRenderTargetView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
 	virtual void CreateDepthStencilView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
 	virtual void CreateTextureShaderResourceView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateTextureUnorderedAccessView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
+	virtual void CreateTextureUnorderedAccessView(
+	    NativeResourceHandle resource,
+	    PixelFormat format,
+	    RhiCpuDescriptorHandle destination) = 0;
 	virtual void CreateBufferShaderResourceView(
 	    NativeResourceHandle resource,
 	    std::uint64_t sizeInBytes,

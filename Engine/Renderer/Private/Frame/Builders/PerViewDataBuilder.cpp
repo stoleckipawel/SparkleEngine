@@ -18,8 +18,8 @@ PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
 RenderViewContext PerViewDataBuilder::BuildView(
     const PerViewCameraConstantBufferData& cameraData,
     const PerViewLightingConstantBufferData& lightingData,
-	const RhiViewport& viewport,
-	const RhiRect& scissorRect) const noexcept
+    const RhiViewport& viewport,
+    const RhiRect& scissorRect) const noexcept
 {
 	RenderViewContext viewContext{};
 	viewContext.perViewData = BuildPerViewData(cameraData, lightingData);

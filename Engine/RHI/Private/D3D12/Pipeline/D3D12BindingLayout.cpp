@@ -23,8 +23,9 @@ class D3D12BindingLayoutCompilerImpl final
 		const std::vector<CookedShaderBindingRecord>& bindingRecords = shaderPackage.GetBindingRecords();
 
 		D3D12RootSignatureBuilder builder;
-		builder.SetFlags(desc.AllowInputAssemblerInputLayout ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-		                                                    : D3D12_ROOT_SIGNATURE_FLAG_NONE);
+		builder.SetFlags(
+		    desc.AllowInputAssemblerInputLayout ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+		                                        : D3D12_ROOT_SIGNATURE_FLAG_NONE);
 
 		std::vector<CompiledBinding> bindings;
 		std::vector<std::string> bindingNames;
@@ -156,8 +157,7 @@ class D3D12BindingLayoutCompilerImpl final
 		const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(bindingRecord.VisibilityMask);
 		bindingNames.emplace_back(bindingName);
 		const std::uint32_t descriptorCount = GetDescriptorCount(bindingRecord, rangeType);
-		const std::uint32_t rootParameterIndex =
-		    builder.AddDescriptorTable(rangeType, descriptorCount, nextShaderRegister, visibility);
+		const std::uint32_t rootParameterIndex = builder.AddDescriptorTable(rangeType, descriptorCount, nextShaderRegister, visibility);
 		bindings.push_back(
 		    CompiledBinding{
 		        .Name = bindingNames.back().c_str(),
@@ -204,12 +204,12 @@ class D3D12BindingLayoutCompilerImpl final
 D3D12BindingLayout::D3D12BindingLayout(
     const PassParameterLayout& parameterLayout,
     std::unique_ptr<D3D12RootSignature> rootSignature,
-	std::vector<CompiledBinding> bindings,
-	std::vector<std::string> bindingNames) noexcept :
-	m_parameterLayout(&parameterLayout),
-	m_rootSignature(std::move(rootSignature)),
-	m_bindings(std::move(bindings)),
-	m_bindingNames(std::move(bindingNames))
+    std::vector<CompiledBinding> bindings,
+    std::vector<std::string> bindingNames) noexcept :
+    m_parameterLayout(&parameterLayout),
+    m_rootSignature(std::move(rootSignature)),
+    m_bindings(std::move(bindings)),
+    m_bindingNames(std::move(bindingNames))
 {
 	assert(m_parameterLayout != nullptr);
 	assert(m_rootSignature != nullptr);

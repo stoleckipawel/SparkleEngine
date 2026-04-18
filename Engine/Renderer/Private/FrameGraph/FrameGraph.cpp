@@ -10,11 +10,11 @@
 static const auto g_frameGraphLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
-	m_renderHardwareInterface(renderHardwareInterface),
-	m_window(window),
-	m_sceneExtent(sceneExtent),
-	m_transientAllocator(renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface)
-															: nullptr)
+    m_renderHardwareInterface(renderHardwareInterface),
+    m_window(window),
+    m_sceneExtent(sceneExtent),
+    m_transientAllocator(
+        renderHardwareInterface != nullptr ? std::make_unique<FrameGraphTransientAllocator>(*renderHardwareInterface) : nullptr)
 {
 	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph created");
 }

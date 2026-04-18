@@ -32,7 +32,9 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 		if (!beforeResource || !afterResource)
 		{
 			assert(false);
-			SPDLOG_LOGGER_WARN(g_frameGraphBarrierLogger, "FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
+			SPDLOG_LOGGER_WARN(
+			    g_frameGraphBarrierLogger,
+			    "FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
 			continue;
 		}
 

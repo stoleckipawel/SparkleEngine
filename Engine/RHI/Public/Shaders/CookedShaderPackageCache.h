@@ -30,9 +30,8 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	const std::vector<CookedShaderBindingRecord>& GetBindingRecords() const noexcept { return m_bindingRecords; }
 	const std::vector<CookedShaderSpecializationInputRecord>& GetSpecializationInputs() const noexcept { return m_specializationInputs; }
 
-	const CookedShaderBinaryRecord* FindBinaryRecord(
-	    ShaderStage stage,
-	    CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil) const noexcept;
+	const CookedShaderBinaryRecord* FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil)
+	    const noexcept;
 	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderBinaryRecord& record) const noexcept;
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
@@ -62,10 +61,7 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	    const LoadedShaderPackage*& outPackage);
 
   private:
-	static bool LoadPackageFromFile(
-	    const std::filesystem::path& path,
-	    LoadedShaderPackage& outPackage,
-	    std::string& outErrorMessage);
+	static bool LoadPackageFromFile(const std::filesystem::path& path, LoadedShaderPackage& outPackage, std::string& outErrorMessage);
 	static bool ValidatePackage(
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,

@@ -111,10 +111,7 @@ void CommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDes
 	m_commandList->SetRenderTarget(rtv, dsv);
 }
 
-void CommandContext::SetRenderTargets(
-    std::uint32_t numRTVs,
-    const RhiCpuDescriptorHandle* rtvs,
-    const RhiCpuDescriptorHandle* dsv) noexcept
+void CommandContext::SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept
 {
 	m_commandList->SetRenderTargets(numRTVs, rtvs, dsv);
 }
@@ -156,7 +153,8 @@ void CommandContext::DrawIndexedInstanced(
     std::int32_t baseVertexLocation,
     std::uint32_t startInstanceLocation) noexcept
 {
-	m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+	m_commandList
+	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
 void CommandContext::DrawInstanced(

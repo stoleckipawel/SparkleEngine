@@ -19,7 +19,7 @@ namespace Engine::Diagnostics
 {
 	namespace Detail
 	{
-			void WriteFallback(std::string_view record) noexcept;
+		void WriteFallback(std::string_view record) noexcept;
 
 		std::string TrimTrailingWhitespace(std::string_view text)
 		{
@@ -85,11 +85,11 @@ namespace Engine::Diagnostics
 		}
 
 		void WriteRecord(
-			const std::shared_ptr<spdlog::logger>& logger,
-			const char* file,
-			std::uint32_t line,
-			std::string_view message,
-			spdlog::level::level_enum level) noexcept
+		    const std::shared_ptr<spdlog::logger>& logger,
+		    const char* file,
+		    std::uint32_t line,
+		    std::string_view message,
+		    spdlog::level::level_enum level) noexcept
 		{
 			if (logger)
 			{
@@ -159,10 +159,10 @@ namespace Engine::Diagnostics
 	}  // namespace Detail
 
 	[[noreturn]] void Fail(
-		const std::shared_ptr<spdlog::logger>& logger,
-		const char* file,
-		std::uint32_t line,
-		std::string_view message) noexcept
+	    const std::shared_ptr<spdlog::logger>& logger,
+	    const char* file,
+	    std::uint32_t line,
+	    std::string_view message) noexcept
 	{
 		Detail::WriteRecord(logger, file, line, message, spdlog::level::critical);
 		Detail::BreakInDebuggerIfAttached();

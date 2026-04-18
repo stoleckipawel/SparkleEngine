@@ -44,7 +44,10 @@ namespace
 
 	RhiBufferResourceDesc BuildTransientBufferDesc(const FrameGraphBufferDesc& desc, bool requiresUnorderedAccess) noexcept
 	{
-		return RhiBufferResourceDesc{.SizeInBytes = desc.sizeInBytes, .StrideInBytes = desc.strideInBytes, .AllowUnorderedAccess = requiresUnorderedAccess};
+		return RhiBufferResourceDesc{
+		    .SizeInBytes = desc.sizeInBytes,
+		    .StrideInBytes = desc.strideInBytes,
+		    .AllowUnorderedAccess = requiresUnorderedAccess};
 	}
 
 	RhiTextureResourceDesc BuildTransientResourceDesc(
@@ -115,14 +118,13 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		const bool requiresUnorderedAccess = RequiresUnorderedAccess(plan, transientResource.handle);
 		const bool isBuffer = resourceMetadata.resourceClass == FrameGraphResourceClass::Buffer;
 		const RhiBufferResourceDesc bufferResourceDesc =
-		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess)
-		             : RhiBufferResourceDesc{};
+		    isBuffer ? BuildTransientBufferDesc(transientResource.bufferDesc, requiresUnorderedAccess) : RhiBufferResourceDesc{};
 		const RhiTextureResourceDesc textureResourceDesc =
 		    isBuffer ? RhiTextureResourceDesc{}
 		             : BuildTransientResourceDesc(transientResource.textureDesc, resourceMetadata.kind, requiresUnorderedAccess);
-		const RhiResourceAllocationInfo allocationInfo =
-		    isBuffer ? m_renderHardwareInterface->GetBufferAllocationInfo(bufferResourceDesc)
-		             : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
+		const RhiResourceAllocationInfo allocationInfo = isBuffer
+		                                                     ? m_renderHardwareInterface->GetBufferAllocationInfo(bufferResourceDesc)
+		                                                     : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(
 		    CompiledTransientResourcePlan{
@@ -141,10 +143,9 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		                .heapOffset = 0,
 		                .textureResourceDesc = textureResourceDesc,
 		                .bufferResourceDesc = bufferResourceDesc,
-		                .optimizedClearValue = isBuffer ? RhiOptimizedClearValue{}
-		                                                    : BuildTransientOptimizedClearValue(
-		                                                          transientResource.textureDesc,
-		                                                          resourceMetadata.kind),
+		                .optimizedClearValue =
+		                    isBuffer ? RhiOptimizedClearValue{}
+		                             : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
 		                .hasOptimizedClearValue = !isBuffer,
 		                .initialState = resourceMetadata.initialState},
 		        .displayLabel = BuildTransientDisplayLabel(transientResource.handle, resourceMetadata),

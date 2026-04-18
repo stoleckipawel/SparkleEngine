@@ -14,6 +14,8 @@
 
 setlocal enabledelayedexpansion
 
+for %%I in ("%~f0") do set "SELF_DIR=%%~dpI"
+
 :: Guard: Already capturing - nothing to do
 if defined LOG_CAPTURED (
     endlocal
@@ -53,7 +55,7 @@ for %%F in ("%CALLER%") do set "CALLER_DIR=%%~dpF"
 
 set "ROOT_DIR="
 if exist "%CALLER_DIR%LICENSE.txt" set "ROOT_DIR=%CALLER_DIR%"
-if not defined ROOT_DIR set "ROOT_DIR=%~dp0..\.."
+if not defined ROOT_DIR set "ROOT_DIR=!SELF_DIR!..\.."
 :: Normalize to absolute path with trailing backslash
 pushd "%ROOT_DIR%" >nul 2>&1
 set "ROOT_DIR=%CD%\"
@@ -75,17 +77,17 @@ set "TS=%TS: =_%"
 set "LOGFILE=%LOG_DIR%\logTools_%TS%.txt"
 
 :: ---------------------------------------------------------------------------
-:: Re-invoke caller under PowerShell Tee-Object for output capture
+:: Re-invoke caller under the PowerShell logging helper for output capture
 :: ---------------------------------------------------------------------------
 :: Exports LOG_CAPTURED and LOGFILE so the re-invoked script skips bootstrap.
 :: Use cmd.exe's standard batch invocation quoting form:
 ::   cmd /c ""path\to\script.bat" arg1 arg2"
 :: REMAINING_ARGS is used instead of %* to avoid passing the caller path as %1.
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:LOG_CAPTURED='1'; $env:LOGFILE='!LOGFILE!'; & cmd /c '""!CALLER!"!REMAINING_ARGS!"' 2>&1 | Tee-Object -FilePath '!LOGFILE!'; exit $LASTEXITCODE"
+set "BOOTSTRAP_HELPER=!SELF_DIR!BootstrapLog.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "!BOOTSTRAP_HELPER!" -Caller "!CALLER!" -RemainingArgs "!REMAINING_ARGS!" -LogFile "!LOGFILE!"
 set "RC=%ERRORLEVEL%"
 
 :: Copy to a stable "latest" log for easy access
 copy /Y "%LOGFILE%" "%LOG_DIR%\logTools.txt" >nul 2>&1
 
-endlocal
-exit /B %RC%
+endlocal & exit /B %RC%

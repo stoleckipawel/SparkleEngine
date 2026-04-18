@@ -51,7 +51,7 @@ namespace
 }
 
 FrameGraphTransientAllocator::FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept :
-	 m_renderHardwareInterface(&renderHardwareInterface)
+    m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 
@@ -155,7 +155,7 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 }
 
 FrameGraphTransientAllocator::AllocationRecord& FrameGraphTransientAllocator::Materialize(
-	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
 	AllocationList& allocations = GetAllocationList(transientPlan.physicalAllocation.pool);
 	if (AllocationRecord* existingAllocation = const_cast<AllocationRecord*>(FindAllocationInList(allocations, transientPlan.handle)))
@@ -182,23 +182,26 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 	return FindColorAllocation(handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(
+    ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_depthAllocations, handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(
+    ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_colorAllocations, handle);
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(
+    ResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_bufferAllocations, handle);
 }
 
 FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
@@ -212,7 +215,7 @@ FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockL
 }
 
 const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
@@ -226,7 +229,7 @@ const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::Get
 }
 
 FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
@@ -240,7 +243,7 @@ FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetA
 }
 
 const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-	FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
@@ -254,8 +257,8 @@ const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocationInList(
-	const AllocationList& allocations,
-	ResourceHandle handle) const noexcept
+    const AllocationList& allocations,
+    ResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    allocations.begin(),
@@ -269,8 +272,8 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 }
 
 FrameGraphTransientAllocator::PhysicalBlockRecord* FrameGraphTransientAllocator::FindPhysicalBlock(
-	BlockList& blocks,
-	std::uint32_t physicalBlockIndex) noexcept
+    BlockList& blocks,
+    std::uint32_t physicalBlockIndex) noexcept
 {
 	const auto it = std::find_if(
 	    blocks.begin(),
@@ -284,7 +287,7 @@ FrameGraphTransientAllocator::PhysicalBlockRecord* FrameGraphTransientAllocator:
 }
 
 FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator::GetOrCreatePhysicalBlock(
-	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
 	assert(m_renderHardwareInterface != nullptr);
 	assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
@@ -301,10 +304,10 @@ FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator:
 	block.alignment = transientPlan.physicalAllocation.alignment;
 	block.heapOffset = transientPlan.physicalAllocation.heapOffset;
 	block.ownedHeap = m_renderHardwareInterface->CreateOwnedHeap(
-	    block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer ? RhiTransientAllocationPool::Buffer
-	                                                                         : (block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth
-	                                                                                ? RhiTransientAllocationPool::Depth
-	                                                                                : RhiTransientAllocationPool::Color),
+	    block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer
+	        ? RhiTransientAllocationPool::Buffer
+	        : (block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth ? RhiTransientAllocationPool::Depth
+	                                                                                          : RhiTransientAllocationPool::Color),
 	    block.sizeInBytes,
 	    block.alignment,
 	    BuildHeapDebugName(transientPlan));
@@ -315,7 +318,7 @@ FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator:
 }
 
 FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::CreateAllocationRecord(
-	const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
 {
 	assert(m_renderHardwareInterface != nullptr);
 	assert(transientPlan.handle.IsValid());

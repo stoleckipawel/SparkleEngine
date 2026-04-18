@@ -67,11 +67,7 @@ bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayl
 
 	m_meshes.AppendMeshComponents(std::move(importedMeshes));
 
-	SPDLOG_LOGGER_INFO(
-	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials",
-	    m_meshes.GetMeshCount(),
-	    m_materials.GetMaterialCount());
+	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loaded {} meshes, {} materials", m_meshes.GetMeshCount(), m_materials.GetMaterialCount());
 
 	return true;
 }

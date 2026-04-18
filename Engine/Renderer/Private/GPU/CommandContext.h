@@ -53,10 +53,7 @@ class SPARKLE_RENDERER_API CommandContext final
 
 	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
 
-	void SetRenderTargets(
-	    std::uint32_t numRTVs,
-	    const RhiCpuDescriptorHandle* rtvs,
-	    const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
+	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
 
 	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept;
 

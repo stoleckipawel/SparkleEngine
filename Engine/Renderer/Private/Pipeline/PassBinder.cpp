@@ -85,7 +85,7 @@ const PassBindingOverride* PassBindingOverrides::Find(const char* name, PassBind
 void PassBinder::BindGraphics(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	const RenderBindingLayout& layout,
+    const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides)
@@ -96,7 +96,7 @@ void PassBinder::BindGraphics(
 void PassBinder::BindCompute(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	const RenderBindingLayout& layout,
+    const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides)
@@ -107,7 +107,7 @@ void PassBinder::BindCompute(
 void PassBinder::BindImpl(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	const RenderBindingLayout& layout,
+    const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides,
@@ -133,13 +133,7 @@ void PassBinder::BindImpl(
 		for (std::size_t bindingIndex = 0; bindingIndex < layout.GetBindingCount(); ++bindingIndex)
 		{
 			const CompiledBinding& compiledBinding = layout.GetBindings()[bindingIndex];
-			BindCompiledBinding(
-			    cmd,
-			    frameGraph,
-			    compiledBinding,
-			    parameterSet.FindBinding(compiledBinding.Name),
-			    overrides,
-			    isCompute);
+			BindCompiledBinding(cmd, frameGraph, compiledBinding, parameterSet.FindBinding(compiledBinding.Name), overrides, isCompute);
 		}
 		return;
 	}
@@ -155,7 +149,7 @@ void PassBinder::BindImpl(
 void PassBinder::BindCompiledBinding(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	const CompiledBinding& compiledBinding,
+    const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
     const PassBindingOverrides* overrides,
     bool isCompute)
@@ -165,8 +159,7 @@ void PassBinder::BindCompiledBinding(
 		case CompiledBindingType::RootConstantBufferView:
 		{
 			assert(overrides != nullptr);
-			const PassBindingOverride* bindingOverride =
-			    overrides->Find(compiledBinding.Name, PassBindingOverrideType::ConstantBufferView);
+			const PassBindingOverride* bindingOverride = overrides->Find(compiledBinding.Name, PassBindingOverrideType::ConstantBufferView);
 			assert(bindingOverride != nullptr);
 			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
@@ -174,8 +167,7 @@ void PassBinder::BindCompiledBinding(
 		case CompiledBindingType::RootShaderResourceView:
 		{
 			assert(overrides != nullptr);
-			const PassBindingOverride* bindingOverride =
-			    overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView);
+			const PassBindingOverride* bindingOverride = overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView);
 			assert(bindingOverride != nullptr);
 			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
@@ -210,21 +202,13 @@ void PassBinder::BindCompiledBinding(
 			if (parameterBinding->Kind == PassParameterValueKind::Texture)
 			{
 				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(
-				    cmd,
-				    compiledBinding,
-				    frameGraph.ResolveShaderResourceView(parameterBinding->Textures[0]),
-				    isCompute);
+				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Textures[0]), isCompute);
 				return;
 			}
 
 			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
 			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(
-			    cmd,
-			    compiledBinding,
-			    frameGraph.ResolveShaderResourceView(parameterBinding->Buffers[0]),
-			    isCompute);
+			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Buffers[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableUnorderedAccessView:
@@ -248,28 +232,19 @@ void PassBinder::BindCompiledBinding(
 			if (parameterBinding->Kind == PassParameterValueKind::Texture)
 			{
 				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(
-				    cmd,
-				    compiledBinding,
-				    frameGraph.ResolveUnorderedAccessView(parameterBinding->Textures[0]),
-				    isCompute);
+				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Textures[0]), isCompute);
 				return;
 			}
 
 			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
 			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(
-			    cmd,
-			    compiledBinding,
-			    frameGraph.ResolveUnorderedAccessView(parameterBinding->Buffers[0]),
-			    isCompute);
+			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Buffers[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableSampler:
 		{
 			assert(overrides != nullptr);
-			const PassBindingOverride* bindingOverride =
-			    overrides->Find(compiledBinding.Name, PassBindingOverrideType::DescriptorTable);
+			const PassBindingOverride* bindingOverride = overrides->Find(compiledBinding.Name, PassBindingOverrideType::DescriptorTable);
 			assert(bindingOverride != nullptr);
 			if (bindingOverride->DescriptorTableKind == DescriptorTableOverrideKind::LogicalTable)
 			{
@@ -309,8 +284,8 @@ void PassBinder::BindCompiledBinding(
 
 void PassBinder::BindRootGpuAddress(
     CommandContext& cmd,
-	const CompiledBinding& compiledBinding,
-	RhiGpuVirtualAddress gpuAddress,
+    const CompiledBinding& compiledBinding,
+    RhiGpuVirtualAddress gpuAddress,
     bool isCompute)
 {
 	if (isCompute)
@@ -351,8 +326,8 @@ void PassBinder::BindRootGpuAddress(
 
 void PassBinder::BindDescriptorTable(
     CommandContext& cmd,
-	const CompiledBinding& compiledBinding,
-	RhiGpuDescriptorHandle descriptorTable,
+    const CompiledBinding& compiledBinding,
+    RhiGpuDescriptorHandle descriptorTable,
     bool isCompute)
 {
 	if (isCompute)
@@ -365,10 +340,10 @@ void PassBinder::BindDescriptorTable(
 }
 
 void PassBinder::BindDescriptorTable(
-	CommandContext& cmd,
-	const CompiledBinding& compiledBinding,
-	RhiDescriptorTableHandle descriptorTable,
-	bool isCompute)
+    CommandContext& cmd,
+    const CompiledBinding& compiledBinding,
+    RhiDescriptorTableHandle descriptorTable,
+    bool isCompute)
 {
 	if (isCompute)
 	{
@@ -381,7 +356,7 @@ void PassBinder::BindDescriptorTable(
 
 void PassBinder::BindRootConstants(
     CommandContext& cmd,
-	const CompiledBinding& compiledBinding,
+    const CompiledBinding& compiledBinding,
     const void* data,
     std::uint32_t constantCount,
     bool isCompute)

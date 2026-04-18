@@ -79,10 +79,7 @@ void TextureManager::LoadTexture(TextureId id, const std::filesystem::path& rela
 		return;
 	}
 
-	SPDLOG_LOGGER_DEBUG(
-	    g_textureManagerLogger,
-	    "{}",
-	    std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
+	SPDLOG_LOGGER_DEBUG(g_textureManagerLogger, "{}", std::format("TextureManager: Loaded '{}' at slot {}", relativePath.string(), index));
 }
 
 Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
@@ -90,7 +87,10 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	const auto resolvedPathResult = Filesystem::ResolveAssetPathNormalized(texturePath, AssetType::Texture);
 	if (!resolvedPathResult)
 	{
-		SPDLOG_LOGGER_WARN(g_textureManagerLogger, "{}", std::format("TextureManager::LoadFromPath: Failed to resolve '{}'", texturePath.string()));
+		SPDLOG_LOGGER_WARN(
+		    g_textureManagerLogger,
+		    "{}",
+		    std::format("TextureManager::LoadFromPath: Failed to resolve '{}'", texturePath.string()));
 		return nullptr;
 	}
 

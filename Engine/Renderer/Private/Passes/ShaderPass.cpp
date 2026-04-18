@@ -95,9 +95,9 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 void BindComputeShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
-	const RenderBindingLayout& bindingLayout,
-	const RenderPipelineState& pipelineState,
+    RenderHardwareInterface* renderHardwareInterface,
+    const RenderBindingLayout& bindingLayout,
+    const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet) noexcept
 {
 	if (renderHardwareInterface != nullptr)
@@ -112,9 +112,9 @@ void BindComputeShaderPass(
 void BindRasterShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
-	const RenderBindingLayout& bindingLayout,
-	const RenderPipelineState& pipelineState,
+    RenderHardwareInterface* renderHardwareInterface,
+    const RenderBindingLayout& bindingLayout,
+    const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,

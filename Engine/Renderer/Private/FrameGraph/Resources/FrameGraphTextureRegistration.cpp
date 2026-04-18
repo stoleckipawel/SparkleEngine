@@ -41,7 +41,10 @@ TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, Resou
 	return TextureHandle{handle};
 }
 
-TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
+TextureHandle FrameGraph::ImportTexture(
+    const FrameGraphTextureDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
 {
 	if (!resource)
 	{

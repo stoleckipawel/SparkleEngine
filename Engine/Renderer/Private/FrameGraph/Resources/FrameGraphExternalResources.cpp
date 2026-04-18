@@ -51,11 +51,15 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				access.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::RenderTarget).CpuHandle;
 			}
 
-			m_renderHardwareInterface->CreateRenderTargetView(access.externalResource, metadata.textureDesc.format, access.renderTargetView);
+			m_renderHardwareInterface->CreateRenderTargetView(
+			    access.externalResource,
+			    metadata.textureDesc.format,
+			    access.renderTargetView);
 
 			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
-				const RhiDescriptorAllocation allocation = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				const RhiDescriptorAllocation allocation =
+				    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
 				access.shaderResourceViewCpu = allocation.CpuHandle;
 				access.shaderResourceViewGpu = allocation.GpuHandle;
 			}
@@ -77,7 +81,8 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
-					const RhiDescriptorAllocation allocation = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+					const RhiDescriptorAllocation allocation =
+					    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
 					access.unorderedAccessViewCpu = allocation.CpuHandle;
 					access.unorderedAccessViewGpu = allocation.GpuHandle;
 				}
@@ -95,13 +100,17 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				access.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::DepthStencil).CpuHandle;
 			}
 
-			m_renderHardwareInterface->CreateDepthStencilView(access.externalResource, metadata.textureDesc.format, access.depthStencilView);
+			m_renderHardwareInterface->CreateDepthStencilView(
+			    access.externalResource,
+			    metadata.textureDesc.format,
+			    access.depthStencilView);
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{
 			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
-				const RhiDescriptorAllocation allocation = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				const RhiDescriptorAllocation allocation =
+				    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
 				access.shaderResourceViewCpu = allocation.CpuHandle;
 				access.shaderResourceViewGpu = allocation.GpuHandle;
 			}
@@ -124,7 +133,8 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
-					const RhiDescriptorAllocation allocation = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+					const RhiDescriptorAllocation allocation =
+					    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
 					access.unorderedAccessViewCpu = allocation.CpuHandle;
 					access.unorderedAccessViewGpu = allocation.GpuHandle;
 				}

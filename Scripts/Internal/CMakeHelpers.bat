@@ -69,7 +69,7 @@ if exist "!BUILD_DIR!\CMakeCache.txt" (
         if exist "!BUILD_DIR!\ZERO_CHECK.vcxproj" del /q "!BUILD_DIR!\ZERO_CHECK.vcxproj"
         if exist "!BUILD_DIR!\ZERO_CHECK.vcxproj.filters" del /q "!BUILD_DIR!\ZERO_CHECK.vcxproj.filters"
     )
-}
+)
 
 pushd "!BUILD_DIR!"
 if "!USE_CLANG!"=="1" (

@@ -68,10 +68,10 @@ void D3D12DescriptorHeapManager::FreeHandle(
 }
 
 void D3D12DescriptorHeapManager::FreeContiguous(
-	D3D12_DESCRIPTOR_HEAP_TYPE type,
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
-	uint32_t count)
+    D3D12_DESCRIPTOR_HEAP_TYPE type,
+    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
+    uint32_t count)
 {
 	(void) gpuHandle;
 

@@ -447,10 +447,7 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 		m_commandList->OMSetRenderTargets(1, &nativeRtv, FALSE, dsv != nullptr ? &nativeDsv : nullptr);
 	}
 
-	void SetRenderTargets(
-	    std::uint32_t numRTVs,
-	    const RhiCpuDescriptorHandle* rtvs,
-	    const RhiCpuDescriptorHandle* dsv) noexcept override
+	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept override
 	{
 		if (m_commandList == nullptr)
 		{
@@ -513,11 +510,7 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 			return;
 		}
 
-		const D3D12_RECT nativeRect{
-		    .left = rect.Left,
-		    .top = rect.Top,
-		    .right = rect.Right,
-		    .bottom = rect.Bottom};
+		const D3D12_RECT nativeRect{.left = rect.Left, .top = rect.Top, .right = rect.Right, .bottom = rect.Bottom};
 		m_commandList->RSSetScissorRects(1, &nativeRect);
 	}
 
@@ -530,12 +523,8 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 	{
 		if (m_commandList != nullptr)
 		{
-			m_commandList->DrawIndexedInstanced(
-			    indexCountPerInstance,
-			    instanceCount,
-			    startIndexLocation,
-			    baseVertexLocation,
-			    startInstanceLocation);
+			m_commandList
+			    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 		}
 	}
 
@@ -621,9 +610,9 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12Rhi& rhi,
     D3D12DescriptorHeapManager& descriptorHeapManager,
-	D3D12SwapChain& swapChain,
-	D3D12ConstantBufferManager& constantBufferManager) noexcept :
-	m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_constantBufferManager(&constantBufferManager)
+    D3D12SwapChain& swapChain,
+    D3D12ConstantBufferManager& constantBufferManager) noexcept :
+    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_constantBufferManager(&constantBufferManager)
 {
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
 	{
@@ -741,8 +730,8 @@ void D3D12RenderHardwareInterface::ReleaseDescriptor(RhiDescriptorHeapType heapT
 }
 
 RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
-	RhiDescriptorHeapType heapType,
-	std::uint32_t descriptorCount)
+    RhiDescriptorHeapType heapType,
+    std::uint32_t descriptorCount)
 {
 	if (m_descriptorHeapManager == nullptr || descriptorCount == 0)
 	{
@@ -774,8 +763,8 @@ RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
 }
 
 RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetDescriptorTableCpuHandle(
-	RhiDescriptorTableHandle tableHandle,
-	std::uint32_t descriptorIndex) const noexcept
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex) const noexcept
 {
 	return RhiCpuDescriptorHandle{ResolveDescriptorTableCpuHandle(tableHandle, descriptorIndex).ptr};
 }
@@ -788,10 +777,7 @@ void D3D12RenderHardwareInterface::ReleaseDescriptorTable(RhiDescriptorTableHand
 		return;
 	}
 
-	m_descriptorHeapManager->FreeContiguous(
-	    ToD3D12DescriptorHeapType(record->heapType),
-	    record->nativeHandle,
-	    record->descriptorCount);
+	m_descriptorHeapManager->FreeContiguous(ToD3D12DescriptorHeapType(record->heapType), record->nativeHandle, record->descriptorCount);
 	*record = DescriptorTableRecord{};
 	m_freeDescriptorTableIndices.push_back(tableHandle.Value - 1u);
 }
@@ -888,8 +874,7 @@ std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTextureFromPath(con
 		return {};
 	}
 
-	TextureLoadResult loadResult =
-	    TextureLoader::Load(texturePath);
+	TextureLoadResult loadResult = TextureLoader::Load(texturePath);
 	if (!loadResult.IsValid())
 	{
 		return {};
@@ -900,12 +885,12 @@ std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTextureFromPath(con
 }
 
 bool D3D12RenderHardwareInterface::CreateVertexBuffer(
-	const void* data,
-	std::size_t sizeInBytes,
-	std::uint32_t strideInBytes,
-	std::wstring_view debugName,
-	RhiOwnedResourceHandle& outResource,
-	RhiVertexBufferView& outView)
+    const void* data,
+    std::size_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource,
+    RhiVertexBufferView& outView)
 {
 	outResource = {};
 	outView = {};
@@ -948,12 +933,12 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 }
 
 bool D3D12RenderHardwareInterface::CreateIndexBuffer(
-	const void* data,
-	std::size_t sizeInBytes,
-	RhiIndexFormat format,
-	std::wstring_view debugName,
-	RhiOwnedResourceHandle& outResource,
-	RhiIndexBufferView& outView)
+    const void* data,
+    std::size_t sizeInBytes,
+    RhiIndexFormat format,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource,
+    RhiIndexBufferView& outView)
 {
 	outResource = {};
 	outView = {};
@@ -1031,10 +1016,10 @@ RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetBufferAllocationInfo(
 }
 
 RhiOwnedHeapHandle D3D12RenderHardwareInterface::CreateOwnedHeap(
-	RhiTransientAllocationPool pool,
-	std::uint64_t sizeInBytes,
-	std::uint64_t alignment,
-	std::wstring_view debugName)
+    RhiTransientAllocationPool pool,
+    std::uint64_t sizeInBytes,
+    std::uint64_t alignment,
+    std::wstring_view debugName)
 {
 	if (m_rhi == nullptr || sizeInBytes == 0)
 	{
@@ -1066,10 +1051,10 @@ void D3D12RenderHardwareInterface::ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noe
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource(
-	RhiOwnedHeapHandle heap,
-	std::uint64_t heapOffset,
-	const RhiTransientTextureAllocationDesc& desc,
-	std::wstring_view debugName)
+    RhiOwnedHeapHandle heap,
+    std::uint64_t heapOffset,
+    const RhiTransientTextureAllocationDesc& desc,
+    std::wstring_view debugName)
 {
 	OwnedHeapState* ownedHeap = ToOwnedHeapState(heap);
 	if (m_rhi == nullptr || ownedHeap == nullptr || ownedHeap->Heap == nullptr)
@@ -1080,8 +1065,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
 	auto ownedResource = std::make_unique<OwnedResourceState>();
 	const D3D12_RESOURCE_DESC resourceDesc = BuildTextureResourceDesc(desc.ResourceDesc);
 	const D3D12_CLEAR_VALUE clearValue = BuildClearValue(desc.ClearValue);
-	const D3D12_CLEAR_VALUE* clearValuePtr =
-	    desc.ClearValue.ValueType == RhiOptimizedClearValue::Type::None ? nullptr : &clearValue;
+	const D3D12_CLEAR_VALUE* clearValuePtr = desc.ClearValue.ValueType == RhiOptimizedClearValue::Type::None ? nullptr : &clearValue;
 	if (FAILED(m_rhi->GetDevice()->CreatePlacedResource(
 	        ownedHeap->Heap.Get(),
 	        heapOffset,
@@ -1098,10 +1082,10 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
-	RhiOwnedHeapHandle heap,
-	std::uint64_t heapOffset,
-	const RhiTransientBufferAllocationDesc& desc,
-	std::wstring_view debugName)
+    RhiOwnedHeapHandle heap,
+    std::uint64_t heapOffset,
+    const RhiTransientBufferAllocationDesc& desc,
+    std::wstring_view debugName)
 {
 	OwnedHeapState* ownedHeap = ToOwnedHeapState(heap);
 	if (m_rhi == nullptr || ownedHeap == nullptr || ownedHeap->Heap == nullptr)
@@ -1126,7 +1110,10 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
 	return RhiOwnedResourceHandle{ownedResource.release()};
 }
 
-void D3D12RenderHardwareInterface::CreateRenderTargetView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination)
+void D3D12RenderHardwareInterface::CreateRenderTargetView(
+    NativeResourceHandle resource,
+    PixelFormat format,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination)
 	{
@@ -1139,7 +1126,10 @@ void D3D12RenderHardwareInterface::CreateRenderTargetView(NativeResourceHandle r
 	m_rhi->GetDevice()->CreateRenderTargetView(ToD3D12Resource(resource), &viewDesc, ToD3D12CpuDescriptor(destination));
 }
 
-void D3D12RenderHardwareInterface::CreateDepthStencilView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination)
+void D3D12RenderHardwareInterface::CreateDepthStencilView(
+    NativeResourceHandle resource,
+    PixelFormat format,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination)
 	{
@@ -1154,9 +1144,9 @@ void D3D12RenderHardwareInterface::CreateDepthStencilView(NativeResourceHandle r
 }
 
 void D3D12RenderHardwareInterface::CreateTextureShaderResourceView(
-	NativeResourceHandle resource,
-	PixelFormat format,
-	RhiCpuDescriptorHandle destination)
+    NativeResourceHandle resource,
+    PixelFormat format,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination)
 	{
@@ -1173,9 +1163,9 @@ void D3D12RenderHardwareInterface::CreateTextureShaderResourceView(
 }
 
 void D3D12RenderHardwareInterface::CreateTextureUnorderedAccessView(
-	NativeResourceHandle resource,
-	PixelFormat format,
-	RhiCpuDescriptorHandle destination)
+    NativeResourceHandle resource,
+    PixelFormat format,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination)
 	{
@@ -1191,10 +1181,10 @@ void D3D12RenderHardwareInterface::CreateTextureUnorderedAccessView(
 }
 
 void D3D12RenderHardwareInterface::CreateBufferShaderResourceView(
-	NativeResourceHandle resource,
-	std::uint64_t sizeInBytes,
-	std::uint32_t strideInBytes,
-	RhiCpuDescriptorHandle destination)
+    NativeResourceHandle resource,
+    std::uint64_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination || sizeInBytes == 0)
 	{
@@ -1222,10 +1212,10 @@ void D3D12RenderHardwareInterface::CreateBufferShaderResourceView(
 }
 
 void D3D12RenderHardwareInterface::CreateBufferUnorderedAccessView(
-	NativeResourceHandle resource,
-	std::uint64_t sizeInBytes,
-	std::uint32_t strideInBytes,
-	RhiCpuDescriptorHandle destination)
+    NativeResourceHandle resource,
+    std::uint64_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    RhiCpuDescriptorHandle destination)
 {
 	if (m_rhi == nullptr || !resource || !destination || sizeInBytes == 0)
 	{
@@ -1257,10 +1247,10 @@ bool D3D12RenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle 
 }
 
 void D3D12RenderHardwareInterface::TransitionResource(
-	NativeGraphicsCommandListHandle commandList,
-	NativeResourceHandle resource,
-	ResourceState before,
-	ResourceState after) const noexcept
+    NativeGraphicsCommandListHandle commandList,
+    NativeResourceHandle resource,
+    ResourceState before,
+    ResourceState after) const noexcept
 {
 	ID3D12GraphicsCommandList* const nativeCommandList = ToD3D12GraphicsCommandList(commandList);
 	ID3D12Resource* const nativeResource = ToD3D12Resource(resource);
@@ -1365,7 +1355,7 @@ void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandl
 }
 
 D3D12RenderHardwareInterface::DescriptorTableRecord* D3D12RenderHardwareInterface::FindDescriptorTableRecord(
-	RhiDescriptorTableHandle tableHandle) noexcept
+    RhiDescriptorTableHandle tableHandle) noexcept
 {
 	if (!tableHandle || tableHandle.Value == 0 || tableHandle.Value > m_descriptorTableRecords.size())
 	{
@@ -1377,7 +1367,7 @@ D3D12RenderHardwareInterface::DescriptorTableRecord* D3D12RenderHardwareInterfac
 }
 
 const D3D12RenderHardwareInterface::DescriptorTableRecord* D3D12RenderHardwareInterface::FindDescriptorTableRecord(
-	RhiDescriptorTableHandle tableHandle) const noexcept
+    RhiDescriptorTableHandle tableHandle) const noexcept
 {
 	if (!tableHandle || tableHandle.Value == 0 || tableHandle.Value > m_descriptorTableRecords.size())
 	{
@@ -1389,8 +1379,8 @@ const D3D12RenderHardwareInterface::DescriptorTableRecord* D3D12RenderHardwareIn
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableCpuHandle(
-	RhiDescriptorTableHandle tableHandle,
-	std::uint32_t descriptorIndex) const noexcept
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex) const noexcept
 {
 	const DescriptorTableRecord* const record = FindDescriptorTableRecord(tableHandle);
 	if (record == nullptr || descriptorIndex >= record->descriptorCount)
@@ -1404,7 +1394,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableGpuHandle(
-	RhiDescriptorTableHandle tableHandle) const noexcept
+    RhiDescriptorTableHandle tableHandle) const noexcept
 {
 	const DescriptorTableRecord* const record = FindDescriptorTableRecord(tableHandle);
 	return record != nullptr ? record->nativeHandle.GetGPU() : D3D12_GPU_DESCRIPTOR_HANDLE{};

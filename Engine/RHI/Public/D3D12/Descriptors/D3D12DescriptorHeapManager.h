@@ -32,7 +32,11 @@ class D3D12DescriptorHeapManager final
 	{
 		return GetAllocator(type)->AllocateContiguous(count);
 	}
-	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle, uint32_t count);
+	void FreeContiguous(
+	    D3D12_DESCRIPTOR_HEAP_TYPE type,
+	    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+	    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle,
+	    uint32_t count);
 	void FreeContiguous(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle, uint32_t count)
 	{
 		GetAllocator(type)->FreeContiguous(handle, count);

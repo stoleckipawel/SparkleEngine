@@ -17,7 +17,8 @@ setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
 	call "%~dp0..\Internal\BootstrapLog.bat" "%~f0" %*
-	exit /B %ERRORLEVEL%
+	set "BOOTSTRAP_RC=!ERRORLEVEL!"
+	exit /B !BOOTSTRAP_RC!
 )
 
 call "%~dp0..\Internal\Config.bat"
@@ -49,7 +50,7 @@ if errorlevel 1 (
 
 if "!PROJECT_COUNT!"=="0" (
 	echo [ERROR] No runnable projects found in Projects\.
-	echo         Restore Projects\Showcase or create one using CreateProject.bat.
+	echo         Restore Projects\Showcase or add a runnable project under Projects\.
 	set "EXIT_RC=1"
 	goto :FINISH
 )

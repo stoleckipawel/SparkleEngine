@@ -66,7 +66,7 @@ if "%CONFIG%"=="" set "CONFIG=Debug"
 echo.
 echo [LOG] Step 1/3: Validating build tools...
 set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\CheckToolchain.bat" CONTINUE
+call "!SCRIPTS_DIR!\Internal\CheckToolchain.bat" CONTINUE
 set "TOOLCHAIN_RC=!ERRORLEVEL!"
 set "PARENT_BATCH="
 if "!TOOLCHAIN_RC!" NEQ "0" (

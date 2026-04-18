@@ -4,9 +4,9 @@
 :: ============================================================================
 :: Runs the repository CMake configure step. This is the single public owner
 :: of generator/toolset selection and solution generation.
-:: Most contributors will not run this directly every day because Setup.bat,
-:: Build.bat, CreateProject.bat, and the Scripts\Cook entrypoints already call
-:: it when needed.
+:: Most contributors will not run this directly every day because
+:: SetupWorkspace.bat, BuildProject.bat, and the Scripts\Cook entrypoints
+:: already call it when needed.
 ::
 :: Usage: GenerateSolution.bat [CONTINUE]
 ::   CONTINUE - Suppress interactive prompts (used by parent scripts)
@@ -20,7 +20,8 @@ if /I "%~1"=="CONTINUE" set "INTERACTIVE=0"
 
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
 call "%~dp0Internal\Config.bat"
@@ -28,10 +29,11 @@ call "%~dp0Internal\Config.bat"
 if "!INTERACTIVE!"=="1" (
     echo [LOG] Checking build toolchain...
     set "PARENT_BATCH=1"
-    call "%~dp0CheckToolchain.bat" CONTINUE
+    call "%~dp0Internal\CheckToolchain.bat" CONTINUE
     if errorlevel 1 (
         set "PARENT_BATCH="
         echo [ERROR] Toolchain validation failed. Install the missing tools above.
+        echo         Re-run SetupWorkspace.bat for the full workspace bootstrap path.
         set "EXIT_RC=1"
         goto :FINISH
     )
@@ -60,9 +62,9 @@ if "!CONFIGURE_RC!" NEQ "0" (
     echo.
     echo [ERROR] CMake configure failed ^(exit code !CONFIGURE_RC!^).
     echo         Common fixes:
-    echo           - Install missing tools: Scripts\CheckToolchain.bat
-    echo           - Clean stale cache:     Scripts\Clean.bat BUILD
-    echo           - Full reset:            Scripts\Clean.bat ALL
+    echo           - Re-run workspace setup: Scripts\SetupWorkspace.bat
+    echo           - Clean stale cache:      Scripts\CleanWorkspace.bat BUILD
+    echo           - Full reset:             Scripts\CleanWorkspace.bat ALL
     set "EXIT_RC=1"
     goto :FINISH
 )

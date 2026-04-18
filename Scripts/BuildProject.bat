@@ -1,24 +1,24 @@
 @echo off
 :: ============================================================================
-:: Build.bat - Build project editor/runtime targets
+:: BuildProject.bat - Build one project editor/runtime targets
 :: ============================================================================
-:: Builds project launch targets using the current split host model:
+:: Builds one project's launch targets using the current split host model:
 ::   <Project>Editor, <Project>Runtime, or both.
 ::
 :: Usage:
-::   Build.bat [ProjectName|ALL] [Editor|Runtime|Both] [Debug|Release|RelWithDebInfo|All]
+::   BuildProject.bat <ProjectName> [Editor|Runtime|Both] [Debug|Release|RelWithDebInfo|All]
 ::
 :: Examples:
-::   Build.bat Showcase Editor Debug
-::   Build.bat Showcase Both Release
-::   Build.bat ALL Runtime RelWithDebInfo
+::   BuildProject.bat Showcase Editor Debug
+::   BuildProject.bat Showcase Both Release
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
 call "%~dp0Internal\Config.bat"
@@ -44,13 +44,12 @@ if errorlevel 1 (
 
 if "!PROJECT_COUNT!"=="0" (
     echo [ERROR] No runnable projects found in Projects\.
-    echo         Restore Projects\Showcase or create one using CreateProject.bat.
+    echo         Restore Projects\Showcase or add a runnable project under Projects\.
     goto :FINISH
 )
 
 if defined PARENT_BATCH if not defined SELECTED_PROJECT goto :USAGE
 if not defined SELECTED_PROJECT goto :PROJECT_MENU
-if /I "!SELECTED_PROJECT!"=="ALL" goto :HOST_MENU
 
 set "PROJECT_FOUND=0"
 for /L %%I in (1,1,!PROJECT_COUNT!) do (
@@ -72,17 +71,15 @@ echo.
 for /L %%I in (1,1,!PROJECT_COUNT!) do (
     call echo   %%I^) %%PROJECT_%%I%%
 )
-set /A "ALL_OPT=PROJECT_COUNT+1"
-echo   !ALL_OPT!^) Build All Projects
 echo.
 echo ============================================================
 
 set "PROJ_SEL="
-set /P "PROJ_SEL=Enter choice [1-!ALL_OPT!]: "
+set /P "PROJ_SEL=Enter choice [1-!PROJECT_COUNT!]: "
 if "!PROJ_SEL!"=="" set "PROJ_SEL=1"
 
 set "VALID_SEL=0"
-for /L %%I in (1,1,!ALL_OPT!) do (
+for /L %%I in (1,1,!PROJECT_COUNT!) do (
     if "!PROJ_SEL!"=="%%I" set "VALID_SEL=1"
 )
 if "!VALID_SEL!"=="0" (
@@ -90,12 +87,8 @@ if "!VALID_SEL!"=="0" (
     goto :PROJECT_MENU
 )
 
-if "!PROJ_SEL!"=="!ALL_OPT!" (
-    set "SELECTED_PROJECT=ALL"
-) else (
-    for /L %%I in (1,1,!PROJECT_COUNT!) do (
-        if "%%I"=="!PROJ_SEL!" set "SELECTED_PROJECT=!PROJECT_%%I!"
-    )
+for /L %%I in (1,1,!PROJECT_COUNT!) do (
+    if "%%I"=="!PROJ_SEL!" set "SELECTED_PROJECT=!PROJECT_%%I!"
 )
 
 :HOST_MENU
@@ -242,7 +235,6 @@ if "!EXIT_RC!"=="0" set "HAS_SUCCESS=1"
 if "!HAS_SUCCESS!" NEQ "1" goto :FINISH
 if defined PARENT_BATCH goto :FINISH
 if "!TARGET_COUNT!" NEQ "1" goto :FINISH
-if /I "!SELECTED_PROJECT!"=="ALL" goto :FINISH
 
 echo.
 echo ============================================================
@@ -297,12 +289,13 @@ goto :FINISH
 
 :USAGE
 echo.
-echo Usage: Scripts\Build.bat [ProjectName^|ALL] [Editor^|Runtime^|Both] [Debug^|Release^|RelWithDebInfo^|All]
+echo Usage: Scripts\BuildProject.bat ^<ProjectName^> [Editor^|Runtime^|Both] [Debug^|Release^|RelWithDebInfo^|All]
 echo.
 echo Examples:
-echo   Scripts\Build.bat Showcase Editor Debug
-echo   Scripts\Build.bat Showcase Both Release
-echo   Scripts\Build.bat ALL Runtime RelWithDebInfo
+echo   Scripts\BuildProject.bat Showcase Editor Debug
+echo   Scripts\BuildProject.bat Showcase Both Release
+echo.
+echo You must provide or select one specific project.
 echo.
 set "EXIT_RC=1"
 

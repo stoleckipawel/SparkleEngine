@@ -14,14 +14,14 @@
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,
     GameScene& gameScene,
-	RendererBackendServices& backendServices,
+    RendererBackendServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
     m_gameScene(&gameScene),
-	m_backendServices(&backendServices),
+    m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
     m_sceneSnapshot(&sceneSnapshot),

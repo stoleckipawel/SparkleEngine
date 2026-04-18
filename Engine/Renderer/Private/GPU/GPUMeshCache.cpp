@@ -6,7 +6,9 @@
 
 static const auto g_gpuMeshCacheLogger = Engine::Logging::GetOrCreateLogger("Renderer.GPUMeshCache");
 
-GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface) {}
+GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface)
+{
+}
 
 GPUMesh* GPUMeshCache::GetOrUpload(const Mesh& cpuMesh)
 {

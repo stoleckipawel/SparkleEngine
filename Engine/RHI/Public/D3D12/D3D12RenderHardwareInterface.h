@@ -43,9 +43,8 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	RhiDescriptorAllocation AllocateDescriptor(RhiDescriptorHeapType heapType) override;
 	void ReleaseDescriptor(RhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept override;
 	RhiDescriptorTableHandle AllocateDescriptorTable(RhiDescriptorHeapType heapType, std::uint32_t descriptorCount) override;
-	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept override;
+	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
+	    const noexcept override;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
 	void AllocateShaderResourceDescriptor(RhiCpuDescriptorHandle& outCpuHandle, RhiGpuDescriptorHandle& outGpuHandle) override;
 	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
@@ -131,9 +130,8 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 		bool IsAllocated() const noexcept { return nativeHandle.IsValid(); }
 	};
 
-	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(
-	    RhiDescriptorTableHandle tableHandle,
-	    std::uint32_t descriptorIndex = 0) const noexcept;
+	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
+	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle) const noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;

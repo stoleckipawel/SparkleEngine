@@ -1,6 +1,6 @@
 @echo off
 :: ============================================================================
-:: Clean.bat - Unified build artifact cleanup utility
+:: CleanWorkspace.bat - Unified build artifact cleanup utility
 :: ============================================================================
 :: Removes generated build artifacts with fine-grained control:
 ::   1) Build artifacts only - build/ (except _deps/), bin/, .vs/
@@ -8,7 +8,7 @@
 ::   3) Everything - full clean (build/, bin/, .vs/ including _deps/)
 ::   4) Pristine - tracked repo state (build/, bin/, .vs/, logs/)
 ::
-:: Usage: Clean.bat [BUILD|DEPS|ALL|PRISTINE]
+:: Usage: CleanWorkspace.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
 ::   DEPS     - Remove third-party dependencies only
 ::   ALL      - Remove everything (build + deps + bin)
@@ -32,7 +32,8 @@ setlocal enabledelayedexpansion
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
 :: ---------------------------------------------------------------------------
@@ -140,7 +141,7 @@ set "CLEAN_ERRORS=0"
 
 echo.
 echo ============================================================
-echo   Cleaning Build Artifacts
+echo   Cleaning Workspace Artifacts
 echo ============================================================
 echo.
 
@@ -240,8 +241,8 @@ echo [CLEAN] Removing: %~2
 rmdir /S /Q "%~1" 2>nul
 if not exist "%~1" goto :EOF
 
-:: Retry with cmd /c for long-path or lock issues on Windows
-cmd /c "rmdir /S /Q "%~1"" 2>nul
+:: Retry with the PowerShell helper for trees that cmd/rmdir fails to remove cleanly.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Internal\RemoveDirectory.ps1" -TargetPath "%~1" >nul 2>&1
 if exist "%~1" (
     echo [ERROR] Failed to remove: %~2  ^(files may be locked^)
     set /A "CLEAN_ERRORS+=1"
@@ -292,14 +293,14 @@ if "!CLEAN_MODE!"=="BUILD" (
     echo   Third-party deps preserved in build\_deps\.
     echo   Run GenerateSolution.bat to regenerate the build files.
 ) else if "!CLEAN_MODE!"=="DEPS" (
-    echo   Run SyncThirdParty.bat or GenerateSolution.bat
+    echo   Run GenerateSolution.bat
     echo   to re-download dependencies ^(~64 MB, 1-3 min^).
 ) else if "!CLEAN_MODE!"=="ALL" (
-    echo   Run Setup.bat or GenerateSolution.bat to start fresh.
+    echo   Run SetupWorkspace.bat or GenerateSolution.bat to start fresh.
 ) else (
     echo   Project is now back to the tracked repo state.
     echo   Tracked project assets, including committed cooked content, were preserved.
-    echo   Run Setup.bat or GenerateSolution.bat to rebuild from scratch.
+    echo   Run SetupWorkspace.bat or GenerateSolution.bat to rebuild from scratch.
 )
 
 goto :FINISH
@@ -329,4 +330,3 @@ echo.
 echo [LOG] Logs: %LOGFILE%
 pause
 exit /B %EXIT_RC%
-

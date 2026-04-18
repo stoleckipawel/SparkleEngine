@@ -80,7 +80,9 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 
 	if (m_bLevelChangeInProgress)
 	{
-		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Ignoring level change request while another change is already in progress");
+		SPDLOG_LOGGER_DEBUG(
+		    g_levelManagerLogger,
+		    "LevelManager: Ignoring level change request while another change is already in progress");
 		return;
 	}
 
@@ -125,7 +127,10 @@ bool LevelManager::SaveActiveLevel() noexcept
 		return false;
 	}
 
-	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Saved all persisted state for level '{}'", std::string(m_activeLevel->GetName()));
+	SPDLOG_LOGGER_INFO(
+	    g_levelManagerLogger,
+	    "LevelManager: Saved all persisted state for level '{}'",
+	    std::string(m_activeLevel->GetName()));
 	return true;
 }
 

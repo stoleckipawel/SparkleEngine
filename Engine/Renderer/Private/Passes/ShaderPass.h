@@ -41,21 +41,21 @@ SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
 SPARKLE_RENDERER_API void BindComputeShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
-	const RenderBindingLayout& bindingLayout,
-	const RenderPipelineState& pipelineState,
+    RenderHardwareInterface* renderHardwareInterface,
+    const RenderBindingLayout& bindingLayout,
+    const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
-	const RenderBindingLayout& bindingLayout,
-	const RenderPipelineState& pipelineState,
+    RenderHardwareInterface* renderHardwareInterface,
+    const RenderBindingLayout& bindingLayout,
+    const RenderPipelineState& pipelineState,
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
-	const PassBindingOverrides* overrides = nullptr) noexcept;
+    const PassBindingOverrides* overrides = nullptr) noexcept;
 
 SPARKLE_RENDERER_API void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 

@@ -42,7 +42,11 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader))
 	{
-		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: DDS file is too small to contain a valid header.");
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "DdsTextureLoader: DDS file is too small to contain a valid header.");
 		return {};
 	}
 
@@ -50,7 +54,11 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 	std::memcpy(&magic, fileBytes.data(), sizeof(magic));
 	if (magic != kDdsMagic)
 	{
-		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: File does not contain a DDS magic header.");
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "DdsTextureLoader: File does not contain a DDS magic header.");
 		return {};
 	}
 
@@ -68,7 +76,11 @@ DdsTextureLoader::DdsHeaderDx10 DdsTextureLoader::ReadDx10Header(const std::vect
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader) + sizeof(DdsHeaderDx10))
 	{
-		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, "DdsTextureLoader: DDS file is missing the required DX10 header.");
+		Engine::Diagnostics::Fail(
+		    g_ddsTextureLoaderLogger,
+		    __FILE__,
+		    __LINE__,
+		    "DdsTextureLoader: DDS file is missing the required DX10 header.");
 		return {};
 	}
 

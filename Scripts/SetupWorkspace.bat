@@ -1,13 +1,13 @@
 @echo off
 :: ============================================================================
-:: Setup.bat - First-time environment setup
+:: SetupWorkspace.bat - First-time environment setup
 :: ============================================================================
 :: One-shot script for getting a working build from a fresh clone.
 :: Validates the host toolchain and refreshes the build files.
 ::
 :: Idempotent - safe to run multiple times. Skips work already done.
 ::
-:: Usage: Setup.bat
+:: Usage: SetupWorkspace.bat
 ::
 :: Flow:
 ::   1. Validate required build tools (CMake, MSBuild, git)
@@ -30,7 +30,8 @@ setlocal enabledelayedexpansion
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
 :: ---------------------------------------------------------------------------
@@ -40,7 +41,7 @@ call "%~dp0Internal\Config.bat"
 
 echo.
 echo ============================================================
-echo   Sparkle Engine - First-Time Setup
+echo   Sparkle Engine - Workspace Setup
 echo ============================================================
 echo.
 
@@ -50,15 +51,15 @@ echo.
 echo [LOG] Step 1/2: Validating build tools...
 echo.
 set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\CheckToolchain.bat" CONTINUE
+call "!SCRIPTS_DIR!\Internal\CheckToolchain.bat" CONTINUE
 set "DEP_RC=!ERRORLEVEL!"
 set "PARENT_BATCH="
 
 if "!DEP_RC!" NEQ "0" (
     echo.
     echo [ERROR] Required build tools are missing.
-    echo         Install the tools marked [ERROR] above, then re-run Setup.bat.
-    echo         For details: Scripts\CheckToolchain.bat
+    echo         Install the tools marked [ERROR] above, then re-run SetupWorkspace.bat.
+    echo         Inspect the validation output above for the missing tool details.
     set "EXIT_RC=1"
     goto :FINISH
 )
@@ -79,9 +80,9 @@ if "!GEN_RC!" NEQ "0" (
     echo [ERROR] GenerateSolution step failed.
     echo         Check the CMake output above for the root cause.
     echo         Possible fixes:
-    echo           - Clean stale cache: Scripts\Clean.bat BUILD
-    echo           - Full reset:        Scripts\Clean.bat ALL
-    echo           - Dependency repair: Scripts\SyncThirdParty.bat
+    echo           - Clean stale cache: Scripts\CleanWorkspace.bat BUILD
+    echo           - Full reset:        Scripts\CleanWorkspace.bat ALL
+    echo           - Re-run bootstrap:  Scripts\SetupWorkspace.bat
     set "EXIT_RC=1"
     goto :FINISH
 )
@@ -91,25 +92,23 @@ if "!GEN_RC!" NEQ "0" (
 :: ---------------------------------------------------------------------------
 echo.
 echo ============================================================
-echo   [SUCCESS] Setup Complete
+echo   [SUCCESS] Workspace Setup Complete
 echo ============================================================
 echo.
 echo   Useful scripts:
 echo     GenerateSolution.bat      - Generate or refresh build files
-echo     Build.bat                 - Build editor/runtime targets
-echo     SyncThirdParty.bat        - Repair third-party dependency cache
-echo     CookAll.bat               - Run the full shader, texture, and scene cook flow
+echo     BuildProject.bat          - Build one project's editor/runtime targets
+echo     CookAllAssets.bat         - Run the full shader, texture, and scene cook flow
 echo     Cook\CookShaders.bat      - Cook shader packages for a project
 echo     Cook\CookTextures.bat     - Cook texture assets for a project
 echo     Cook\CookAssets.bat       - Cook scene, mesh, and material assets for a project
-echo     CreateProject.bat         - Create a new project
-echo     Format.bat                - Run clang-format
-echo     Clean.bat                 - Clean build artifacts
+echo     RunClangFormat.bat        - Run clang-format
+echo     CleanWorkspace.bat        - Clean build artifacts
 echo.
 echo ============================================================
 
 :: ---------------------------------------------------------------------------
-:: Prompt to open VS solution (Setup.bat is always interactive)
+:: Prompt to open VS solution (SetupWorkspace.bat is always interactive)
 :: ---------------------------------------------------------------------------
 echo.
 echo ============================================================
@@ -151,11 +150,10 @@ endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
 
 echo.
 if "%EXIT_RC%"=="0" (
-    echo [LOG] Setup completed successfully.
+    echo [LOG] SetupWorkspace completed successfully.
 ) else (
-    echo [ERROR] Setup failed. See output above for details.
+    echo [ERROR] SetupWorkspace failed. See output above for details.
 )
 echo [LOG] Logs: %LOGFILE%
 pause
 exit /B %EXIT_RC%
-

@@ -25,7 +25,7 @@ ShadowFrameBuildResult ShadowFrameBuilder::Build(
     const CameraSnapshot& mainCamera,
     const RenderSceneData& sceneData,
     const PerViewLightingConstantBufferData& baseLighting,
-	RenderHardwareInterface& renderHardwareInterface,
+    RenderHardwareInterface& renderHardwareInterface,
     const PerViewDataBuilder& perViewDataBuilder,
     ShadowBuilder& shadowBuilder) const
 {

@@ -75,13 +75,8 @@ namespace
 		std::size_t m_offset = 0;
 	};
 
-	constexpr std::array<ShaderStage, 6> kKnownShaderStages = {
-	    ShaderStage::Vertex,
-	    ShaderStage::Pixel,
-	    ShaderStage::Geometry,
-	    ShaderStage::Hull,
-	    ShaderStage::Domain,
-	    ShaderStage::Compute};
+	constexpr std::array<ShaderStage, 6> kKnownShaderStages =
+	    {ShaderStage::Vertex, ShaderStage::Pixel, ShaderStage::Geometry, ShaderStage::Hull, ShaderStage::Domain, ShaderStage::Compute};
 
 	bool HasAllStages(ShaderStageMask value, ShaderStageMask flags) noexcept
 	{
@@ -161,10 +156,10 @@ bool LoadedShaderPackage::ContainsBlobRef(CookedShaderBlobRef ref) const noexcep
 }
 
 bool CookedShaderPackageCache::LoadPackage(
-	const ShaderPackageDefinition& definition,
-	const PassParameterLayout& expectedBindingLayout,
-	std::string& outErrorMessage,
-	const LoadedShaderPackage*& outPackage)
+    const ShaderPackageDefinition& definition,
+    const PassParameterLayout& expectedBindingLayout,
+    std::string& outErrorMessage,
+    const LoadedShaderPackage*& outPackage)
 {
 	outPackage = nullptr;
 	if (!definition.IsValid())
@@ -206,9 +201,9 @@ bool CookedShaderPackageCache::LoadPackage(
 }
 
 bool CookedShaderPackageCache::LoadPackageFromFile(
-	const std::filesystem::path& path,
-	LoadedShaderPackage& outPackage,
-	std::string& outErrorMessage)
+    const std::filesystem::path& path,
+    LoadedShaderPackage& outPackage,
+    std::string& outErrorMessage)
 {
 	std::vector<std::uint8_t> fileBytes;
 	if (!Engine::Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
@@ -255,10 +250,10 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 }
 
 bool CookedShaderPackageCache::ValidatePackage(
-	const LoadedShaderPackage& package,
-	const ShaderPackageDefinition& definition,
-	const PassParameterLayout& expectedBindingLayout,
-	std::string& outErrorMessage)
+    const LoadedShaderPackage& package,
+    const ShaderPackageDefinition& definition,
+    const PassParameterLayout& expectedBindingLayout,
+    std::string& outErrorMessage)
 {
 	if (!package.IsValid())
 	{

@@ -58,7 +58,7 @@ void ResourceRegistry::RegisterImportedTexture(
     ResourceHandle handle,
     const FrameGraphTextureDesc& desc,
     FrameGraphResourceKind kind,
-	NativeResourceHandle resource,
+    NativeResourceHandle resource,
     ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
@@ -94,7 +94,7 @@ void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const Fram
 void ResourceRegistry::RegisterImportedBuffer(
     ResourceHandle handle,
     const FrameGraphBufferDesc& desc,
-	NativeResourceHandle resource,
+    NativeResourceHandle resource,
     ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(

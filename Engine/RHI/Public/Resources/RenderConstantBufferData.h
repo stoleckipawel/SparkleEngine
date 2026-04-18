@@ -38,8 +38,8 @@ struct alignas(256) PerViewConstantBufferData
 CBV_CHECK(PerViewConstantBufferData);
 static_assert(offsetof(PerViewConstantBufferData, Camera) == 0, "PerViewConstantBufferData::Camera must start at c0");
 static_assert(
-	offsetof(PerViewConstantBufferData, ViewLighting) == 224,
-	"PerViewConstantBufferData::ViewLighting must start after camera data");
+    offsetof(PerViewConstantBufferData, ViewLighting) == 224,
+    "PerViewConstantBufferData::ViewLighting must start after camera data");
 static_assert(sizeof(PerViewConstantBufferData) == 768, "PerViewConstantBufferData must fit in aligned CBV slots");
 
 struct alignas(256) PerObjectVSConstantBufferData
@@ -67,13 +67,13 @@ struct alignas(256) PerObjectPSConstantBufferData
 CBV_CHECK(PerObjectPSConstantBufferData);
 static_assert(offsetof(PerObjectPSConstantBufferData, BaseColor) == 0, "PerObjectPSConstantBufferData::BaseColor must start at c0");
 static_assert(
-	offsetof(PerObjectPSConstantBufferData, EmissiveColor) == 16,
-	"PerObjectPSConstantBufferData::EmissiveColor must start at c1");
+    offsetof(PerObjectPSConstantBufferData, EmissiveColor) == 16,
+    "PerObjectPSConstantBufferData::EmissiveColor must start at c1");
 static_assert(offsetof(PerObjectPSConstantBufferData, Metallic) == 28, "PerObjectPSConstantBufferData::Metallic must share c1.w");
 static_assert(offsetof(PerObjectPSConstantBufferData, Roughness) == 32, "PerObjectPSConstantBufferData::Roughness must start at c2.x");
 static_assert(offsetof(PerObjectPSConstantBufferData, F0) == 36, "PerObjectPSConstantBufferData::F0 must start at c2.y");
 static_assert(offsetof(PerObjectPSConstantBufferData, AlphaCutoff) == 40, "PerObjectPSConstantBufferData::AlphaCutoff must start at c2.z");
 static_assert(offsetof(PerObjectPSConstantBufferData, AlphaMode) == 44, "PerObjectPSConstantBufferData::AlphaMode must start at c2.w");
 static_assert(
-	offsetof(PerObjectPSConstantBufferData, TextureFlags) == 48,
-	"PerObjectPSConstantBufferData::TextureFlags must start at c3.x");
+    offsetof(PerObjectPSConstantBufferData, TextureFlags) == 48,
+    "PerObjectPSConstantBufferData::TextureFlags must start at c3.x");

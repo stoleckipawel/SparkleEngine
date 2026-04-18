@@ -84,7 +84,7 @@ void ForwardOpaquePass::BindPassResources(
     const ParameterInstance& parameters,
     const ForwardOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext,
-	RhiGpuVirtualAddress perViewGpuAddress)
+    RhiGpuVirtualAddress perViewGpuAddress)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
 	PassBindingOverrides overrides;
@@ -134,9 +134,7 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 		const RhiDescriptorTableHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableHandle;
 		if (!materialTextureTable)
 		{
-			SPDLOG_LOGGER_WARN(
-			    g_shaderPassLogger,
-			    "ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
+			SPDLOG_LOGGER_WARN(g_shaderPassLogger, "ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;
 		}
 

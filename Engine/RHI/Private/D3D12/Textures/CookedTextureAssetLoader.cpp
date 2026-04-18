@@ -32,8 +32,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 
 	std::size_t byteOffset = 0;
 	CookedTextureAssetHeader header;
-	if (!ReadBytes(fileBytes, byteOffset, &header, sizeof(header), errorMessage) ||
-	    !ValidateHeader(header, resolvedPath, errorMessage))
+	if (!ReadBytes(fileBytes, byteOffset, &header, sizeof(header), errorMessage) || !ValidateHeader(header, resolvedPath, errorMessage))
 	{
 		Engine::Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -100,11 +99,11 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 }
 
 bool CookedTextureAssetLoader::ReadBytes(
-	const std::vector<std::uint8_t>& fileBytes,
-	std::size_t& byteOffset,
-	void* destination,
-	std::size_t byteCount,
-	std::string& outErrorMessage)
+    const std::vector<std::uint8_t>& fileBytes,
+    std::size_t& byteOffset,
+    void* destination,
+    std::size_t byteCount,
+    std::string& outErrorMessage)
 {
 	if (byteOffset + byteCount > fileBytes.size())
 	{
@@ -118,9 +117,9 @@ bool CookedTextureAssetLoader::ReadBytes(
 }
 
 bool CookedTextureAssetLoader::ValidateHeader(
-	const CookedTextureAssetHeader& header,
-	const std::filesystem::path& resolvedPath,
-	std::string& outErrorMessage)
+    const CookedTextureAssetHeader& header,
+    const std::filesystem::path& resolvedPath,
+    std::string& outErrorMessage)
 {
 	if (!header.MatchesExpectedLayout())
 	{
@@ -138,18 +137,14 @@ bool CookedTextureAssetLoader::ValidateHeader(
 }
 
 bool CookedTextureAssetLoader::ValidateMipHeader(
-	const CookedTextureMipHeader& mipHeader,
-	std::uint32_t mipIndex,
-	const std::filesystem::path& resolvedPath,
-	std::string& outErrorMessage)
+    const CookedTextureMipHeader& mipHeader,
+    std::uint32_t mipIndex,
+    const std::filesystem::path& resolvedPath,
+    std::string& outErrorMessage)
 {
-	if (mipHeader.width == 0 || mipHeader.height == 0 || mipHeader.rowPitch == 0 || mipHeader.slicePitch == 0 ||
-	    mipHeader.dataSize == 0)
+	if (mipHeader.width == 0 || mipHeader.height == 0 || mipHeader.rowPitch == 0 || mipHeader.slicePitch == 0 || mipHeader.dataSize == 0)
 	{
-		outErrorMessage = std::format(
-		    "Cooked texture asset '{}' has an invalid mip header at index {}",
-		    resolvedPath.string(),
-		    mipIndex);
+		outErrorMessage = std::format("Cooked texture asset '{}' has an invalid mip header at index {}", resolvedPath.string(), mipIndex);
 		return false;
 	}
 
@@ -168,12 +163,12 @@ bool CookedTextureAssetLoader::ValidateMipHeader(
 }
 
 bool CookedTextureAssetLoader::ReadMipHeaders(
-	const std::vector<std::uint8_t>& fileBytes,
-	std::size_t& byteOffset,
-	std::uint32_t mipCount,
-	const std::filesystem::path& resolvedPath,
-	std::vector<CookedTextureMipHeader>& outMipHeaders,
-	std::string& outErrorMessage)
+    const std::vector<std::uint8_t>& fileBytes,
+    std::size_t& byteOffset,
+    std::uint32_t mipCount,
+    const std::filesystem::path& resolvedPath,
+    std::vector<CookedTextureMipHeader>& outMipHeaders,
+    std::string& outErrorMessage)
 {
 	outMipHeaders.clear();
 	outMipHeaders.resize(mipCount);
@@ -195,12 +190,12 @@ bool CookedTextureAssetLoader::ReadMipHeaders(
 }
 
 bool CookedTextureAssetLoader::ReadMipPayloads(
-	const std::vector<std::uint8_t>& fileBytes,
-	std::size_t& byteOffset,
-	const std::vector<CookedTextureMipHeader>& mipHeaders,
-	const std::filesystem::path& resolvedPath,
-	TextureLoadResult& outLoadResult,
-	std::string& outErrorMessage)
+    const std::vector<std::uint8_t>& fileBytes,
+    std::size_t& byteOffset,
+    const std::vector<CookedTextureMipHeader>& mipHeaders,
+    const std::filesystem::path& resolvedPath,
+    TextureLoadResult& outLoadResult,
+    std::string& outErrorMessage)
 {
 	outLoadResult.mipLevels.clear();
 	outLoadResult.mipLevels.reserve(mipHeaders.size());

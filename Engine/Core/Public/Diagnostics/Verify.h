@@ -9,18 +9,18 @@
 namespace Engine::Diagnostics
 {
 	[[noreturn]] SPARKLE_CORE_API void Fail(
-		const std::shared_ptr<spdlog::logger>& logger,
-		const char* file,
-		std::uint32_t line,
-		std::string_view message) noexcept;
+	    const std::shared_ptr<spdlog::logger>& logger,
+	    const char* file,
+	    std::uint32_t line,
+	    std::string_view message) noexcept;
 	SPARKLE_CORE_API void BreakInDebuggerIfAttached() noexcept;
 	[[noreturn]] SPARKLE_CORE_API void CheckHResult(long hr, const char* expression, const char* file, std::uint32_t line) noexcept;
 }
 
-#define CHECK(hr)                                                                          \
-	do                                                                                      \
-	{                                                                                       \
-		const long _hr = static_cast<long>(hr);                                               \
-		if (_hr < 0)                                                                          \
-			::Engine::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__);                 \
+#define CHECK(hr)                                                              \
+	do                                                                         \
+	{                                                                          \
+		const long _hr = static_cast<long>(hr);                                \
+		if (_hr < 0)                                                           \
+			::Engine::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__); \
 	} while (0)

@@ -115,5 +115,5 @@ static_assert(std::is_trivially_copyable_v<CookedShaderPackageHeader>, "CookedSh
 static_assert(std::is_trivially_copyable_v<CookedShaderBinaryRecord>, "CookedShaderBinaryRecord must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderBindingRecord>, "CookedShaderBindingRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<CookedShaderSpecializationInputRecord>,
-	"CookedShaderSpecializationInputRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<CookedShaderSpecializationInputRecord>,
+    "CookedShaderSpecializationInputRecord must stay trivially copyable.");

@@ -90,7 +90,7 @@ void ShadowOpaquePass::BindPassResources(
     const ParameterInstance& parameters,
     const ShadowOpaquePassRuntime& runtime,
     const RenderPassContext& renderPassContext,
-	RhiGpuVirtualAddress perViewGpuAddress)
+    RhiGpuVirtualAddress perViewGpuAddress)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
 	PassBindingOverrides overrides;

@@ -43,13 +43,9 @@ namespace ShaderPackageLayouts::Details
 	}
 }
 
-bool ShaderPackageLayouts::TryBuild(
-	std::string_view bindingLayoutId,
-	PassParameterLayout& outLayout,
-	std::string& outErrorMessage)
+bool ShaderPackageLayouts::TryBuild(std::string_view bindingLayoutId, PassParameterLayout& outLayout, std::string& outErrorMessage)
 {
-	const std::string normalizedBindingLayoutId =
-	    Engine::Strings::ToLowerCopy(Engine::Strings::TrimAsciiWhitespace(bindingLayoutId));
+	const std::string normalizedBindingLayoutId = Engine::Strings::ToLowerCopy(Engine::Strings::TrimAsciiWhitespace(bindingLayoutId));
 
 	if (normalizedBindingLayoutId == "forwardopaque")
 	{

@@ -3,8 +3,7 @@
 :: CheckToolchain.bat - Build toolchain validator
 :: ============================================================================
 :: Verifies required and optional host build tools are available in PATH.
-:: Third-party dependency sync is intentionally handled separately by
-:: SyncThirdParty.bat.
+:: This is an internal helper used by the user-facing workflow scripts.
 ::
 :: Required: CMake, MSBuild, git
 :: Optional: Clang (for ClangCL), clang-format, clang-tidy, git-lfs
@@ -18,11 +17,12 @@ setlocal enabledelayedexpansion
 if /I "%~1"=="CONTINUE" if not defined PARENT_BATCH set "PARENT_BATCH=1"
 
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    call "%~dp0BootstrapLog.bat" "%~f0" %*
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Internal\Config.bat"
+call "%~dp0Config.bat"
 
 set "RC=0"
 
@@ -115,7 +115,7 @@ if %RC%==0 (
 )
 echo ============================================================
 echo.
-echo [LOG] Third-party dependency sync is handled separately by SyncThirdParty.bat.
+echo [LOG] Third-party dependency sync runs during GenerateSolution.bat.
 
 set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_RC=%RC%"

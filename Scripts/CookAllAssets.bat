@@ -1,23 +1,24 @@
 @echo off
 :: ============================================================================
-:: CookAll.bat - Preferred top-level full asset cook entrypoint
+:: CookAllAssets.bat - Preferred top-level full asset cook entrypoint
 :: ============================================================================
 :: Runs the full offline cook flow for the selected project by invoking the
 :: narrower cook commands under Scripts\Cook in order.
 ::
 :: Usage:
-::   CookAll.bat <ProjectName> [Debug|Release|RelWithDebInfo]
+::   CookAllAssets.bat <ProjectName> [Debug|Release|RelWithDebInfo]
 ::
 :: Examples:
-::   CookAll.bat Showcase
-::   CookAll.bat Showcase Release
+::   CookAllAssets.bat Showcase
+::   CookAllAssets.bat Showcase Release
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
 	call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-	exit /B %ERRORLEVEL%
+	set "BOOTSTRAP_RC=!ERRORLEVEL!"
+	exit /B !BOOTSTRAP_RC!
 )
 
 call "%~dp0Internal\Config.bat"
@@ -42,7 +43,7 @@ if errorlevel 1 (
 
 if "!PROJECT_COUNT!"=="0" (
 	echo [ERROR] No runnable projects found in Projects\.
-	echo         Restore Projects\Showcase or create one using CreateProject.bat.
+	echo         Restore Projects\Showcase or add a runnable project under Projects\.
 	set "EXIT_RC=1"
 	goto :FINISH
 )
@@ -142,17 +143,17 @@ if errorlevel 1 (
 set "PARENT_BATCH="
 
 echo.
-echo [SUCCESS] CookAll completed successfully.
+echo [SUCCESS] CookAllAssets completed successfully.
 set "EXIT_RC=0"
 goto :FINISH
 
 :USAGE
 echo.
-echo Usage: Scripts\CookAll.bat ^<ProjectName^> [Debug^|Release^|RelWithDebInfo]
+echo Usage: Scripts\CookAllAssets.bat ^<ProjectName^> [Debug^|Release^|RelWithDebInfo]
 echo.
 echo Examples:
-echo   Scripts\CookAll.bat Showcase
-echo   Scripts\CookAll.bat Showcase Release
+echo   Scripts\CookAllAssets.bat Showcase
+echo   Scripts\CookAllAssets.bat Showcase Release
 echo.
 echo This is the single top-level full cook entrypoint in Scripts\.
 echo It runs the complete offline cook flow for the selected project:

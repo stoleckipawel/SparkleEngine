@@ -1,17 +1,18 @@
 @echo off
 :: ============================================================================
-:: Format.bat - Code formatting utility
+:: RunClangFormat.bat - Code formatting utility
 :: ============================================================================
 :: Runs clang-format on all source files under Engine/ and Projects/.
 ::
-:: Usage: Format.bat
+:: Usage: RunClangFormat.bat
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
     call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+	set "BOOTSTRAP_RC=!ERRORLEVEL!"
+	exit /B !BOOTSTRAP_RC!
 )
 
 call "%~dp0Internal\Config.bat"

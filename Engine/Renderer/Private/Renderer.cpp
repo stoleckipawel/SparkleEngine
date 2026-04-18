@@ -148,8 +148,11 @@ bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
-	const FrameGraphDependencies
-	    dependencies{GetRenderHardwareInterface(), *m_window, ResolveSceneExtent(), ShouldPresentSceneToBackBuffer()};
+	const FrameGraphDependencies dependencies{
+	    GetRenderHardwareInterface(),
+	    *m_window,
+	    ResolveSceneExtent(),
+	    ShouldPresentSceneToBackBuffer()};
 
 	FrameGraphBuilder frameGraphBuilder(dependencies);
 	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();

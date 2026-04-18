@@ -3,7 +3,7 @@
 :: SyncThirdParty.bat - Third-party dependency sync and repair utility
 :: ============================================================================
 :: Validates the build/_deps cache. When dependencies are missing or corrupt,
-:: this command drives a configure pass to fetch them.
+:: this helper drives a configure pass to fetch them.
 ::
 :: Usage: SyncThirdParty.bat
 ::   When PARENT_BATCH is set, syncs automatically without asking.
@@ -12,11 +12,12 @@
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-    exit /B %ERRORLEVEL%
+    call "%~dp0BootstrapLog.bat" "%~f0" %*
+    set "BOOTSTRAP_RC=!ERRORLEVEL!"
+    exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Internal\Config.bat"
+call "%~dp0Config.bat"
 
 set "AUTO_MODE=0"
 if defined PARENT_BATCH set "AUTO_MODE=1"
@@ -139,7 +140,7 @@ if "!TOOLCHAIN_RC!" NEQ "0" (
 
 echo.
 echo [LOG] Running configure to fetch dependencies...
-call "%~dp0Internal\CMakeHelpers.bat" Configure
+call "%~dp0CMakeHelpers.bat" Configure
 set "CMAKE_RC=!ERRORLEVEL!"
 if "!CMAKE_RC!" NEQ "0" (
     echo.

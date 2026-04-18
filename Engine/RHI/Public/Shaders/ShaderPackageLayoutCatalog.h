@@ -13,8 +13,5 @@ namespace ShaderPackageLayouts
 {
 	inline constexpr std::uint32_t kForwardOpaqueMaterialTextureCount = 5u;
 
-	SPARKLE_RHI_API bool TryBuild(
-	    std::string_view bindingLayoutId,
-	    PassParameterLayout& outLayout,
-	    std::string& outErrorMessage);
+	SPARKLE_RHI_API bool TryBuild(std::string_view bindingLayoutId, PassParameterLayout& outLayout, std::string& outErrorMessage);
 }

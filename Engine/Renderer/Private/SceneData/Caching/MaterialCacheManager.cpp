@@ -14,7 +14,7 @@
 static const auto g_materialCacheManagerLogger = Engine::Logging::GetOrCreateLogger("Renderer.MaterialCache");
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept :
-	m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
+    m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 
