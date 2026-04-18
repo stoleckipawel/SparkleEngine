@@ -2,7 +2,7 @@
 
 #include "Assets/MaterialAssetTranslator.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Assets/Cooked/CookedTextureAssetUtils.h"
 
 #include <format>
 
@@ -77,8 +77,4 @@ namespace Engine::Assets
 		return MaterialTextureType::Albedo;
 	}
 
-	std::filesystem::path MaterialAssetTranslator::BuildCookedTextureAssetPath(CookedAssetId textureAssetId)
-	{
-		return Filesystem::GetProjectAssetsPath() / "Cooked" / "Textures" / std::format("{:016X}.ktx2", textureAssetId);
-	}
 }

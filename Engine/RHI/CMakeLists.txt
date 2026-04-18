@@ -56,7 +56,6 @@ target_link_libraries(SparkleRHI
         SparkleCore
     PRIVATE
         SparklePlatform
-        ktx
         # D3D12 system libraries
         d3d12
         dxgi

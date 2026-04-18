@@ -16,6 +16,5 @@ namespace Engine::Assets
 	  private:
 		static AlphaMode TranslateAlphaMode(CookedAlphaMode alphaMode) noexcept;
 		static MaterialTextureType TranslateTextureType(CookedTextureSemantic semantic) noexcept;
-		static std::filesystem::path BuildCookedTextureAssetPath(CookedAssetId textureAssetId);
 	};
 }

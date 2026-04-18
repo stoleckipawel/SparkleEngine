@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Assets/Import/SceneImportResult.h"
-#include "Cooking/KtxTextureCooker.h"
 #include "GameFramework/Public/Assets/Cooked/CookedMaterialAsset.h"
 #include "GameFramework/Public/Assets/Cooked/CookedMeshAsset.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
+#include "TextureCookRequestList.h"
 
 #include <filesystem>
 #include <string>
@@ -37,7 +37,6 @@ namespace Engine::AssetAuthoring
 		std::vector<Engine::Assets::CookedSceneInstanceRecord> instances;
 		std::vector<CookedMeshAssetBuild> meshAssets;
 		std::vector<CookedMaterialAssetBuild> materialAssets;
-		std::vector<CookedTextureAssetBuild> textureAssets;
 		std::string errorMessage;
 
 		bool Succeeded() const noexcept { return errorMessage.empty(); }
@@ -47,6 +46,10 @@ namespace Engine::AssetAuthoring
 	{
 	  public:
 		CookedSceneBuild Cook(const std::filesystem::path& sourceScenePath, const SceneImportResult& importResult) const;
+		bool CollectTextureCookRequests(
+		    const SceneImportResult& importResult,
+		    std::vector<TextureCookRequest>& outRequests,
+		    std::string& outErrorMessage) const;
 
 	  private:
 		static bool ResolveSourceScenePath(

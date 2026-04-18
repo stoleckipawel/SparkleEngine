@@ -1,40 +1,23 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
+#include "TextureCookRequestList.h"
 
-#include <cstdint>
-#include <dxgiformat.h>
 #include <filesystem>
 #include <string>
 
 namespace Engine::AssetAuthoring
 {
-	struct CookedTextureAssetBuild
-	{
-		Engine::Assets::CookedAssetId assetId = Engine::Assets::InvalidCookedAssetId;
-		std::filesystem::path sourcePath;
-		bool isSrgb = false;
-	};
-
-	class KtxTextureCooker final
+	class TextureCookRequestBuilder final
 	{
 	  public:
-		static bool BuildTextureAsset(
+		static bool Build(
 		    const std::filesystem::path& sourceTexturePath,
 		    Engine::Assets::CookedTextureSemantic semantic,
-		    CookedTextureAssetBuild& outTextureAsset,
+		    TextureCookRequest& outRequest,
 		    std::string& outErrorMessage);
-		static std::filesystem::path BuildTextureAssetPath(Engine::Assets::CookedAssetId textureAssetId);
-
-		bool Cook(const CookedTextureAssetBuild& textureAsset, std::string& outErrorMessage) const;
 
 	  private:
-		enum class TextureColorSpace : std::uint8_t
-		{
-			Linear = 0,
-			Srgb = 1,
-		};
-
 		static TextureColorSpace ResolveColorSpace(Engine::Assets::CookedTextureSemantic semantic) noexcept;
 		static bool NormalizeSourceTexturePath(
 		    const std::filesystem::path& sourceTexturePath,
@@ -44,11 +27,6 @@ namespace Engine::AssetAuthoring
 		    const std::filesystem::path& normalizedSourceTexturePath,
 		    TextureColorSpace colorSpace,
 		    std::string& outTextureSourceKey,
-		    std::string& outErrorMessage);
-		static bool ResolveVkFormat(
-		    DXGI_FORMAT dxgiFormat,
-		    TextureColorSpace colorSpace,
-		    std::uint32_t& outVkFormat,
 		    std::string& outErrorMessage);
 	};
 }

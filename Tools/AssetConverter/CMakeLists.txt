@@ -12,9 +12,9 @@ add_executable(AssetConverter
     ${ASSET_CONVERTER_PRIVATE_HEADERS}
 )
 
-# AssetConverter is the tool-side seam for source import, scene cooking, and
-# texture cooking. Keep authoring implementation and headers private to this
-# executable target.
+# AssetConverter is the tool-side seam for source import and scene cooking.
+# Keep scene-authoring implementation and headers private to this executable
+# target.
 target_include_directories(AssetConverter
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
@@ -31,11 +31,11 @@ target_precompile_headers(AssetConverter PRIVATE
 target_link_libraries(AssetConverter
     PRIVATE
         ole32
+        TextureCookShared
         SparkleCore
         SparkleGameFramework
         cgltf
         assimp::assimp
-        ktx
 )
 
 set_target_properties(AssetConverter PROPERTIES

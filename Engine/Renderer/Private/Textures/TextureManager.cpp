@@ -109,13 +109,6 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 	LOG_DEBUG(std::format("TextureManager: Cached '{}'", resolvedPath.string()));
 	return texturePtr;
 }
-
-bool TextureManager::IsCookedKtxTexturePath(const std::filesystem::path& texturePath) noexcept
-{
-	const std::wstring extension = Engine::Paths::GetLowercaseExtension(texturePath);
-	return extension == L".ktx" || extension == L".ktx2";
-}
-
 void TextureManager::UnloadTexture(TextureId id) noexcept
 {
 	const auto index = static_cast<std::size_t>(id);

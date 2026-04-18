@@ -68,7 +68,6 @@ class SPARKLE_RENDERER_API TextureManager final
 	void LoadDefaultTextures();
 	Texture* LoadFromPath(const std::filesystem::path& texturePath);
 	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
-	static bool IsCookedKtxTexturePath(const std::filesystem::path& texturePath) noexcept;
 	const Texture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
 };

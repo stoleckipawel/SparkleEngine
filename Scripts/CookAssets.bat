@@ -37,6 +37,7 @@ set "PROJECT_SCENE_COUNT=0"
 set "OVERRIDDEN_ENGINE_COUNT=0"
 set "SCENE_LIST_FILE=%TEMP%\sparkle-cookassets-%RANDOM%%RANDOM%.txt"
 set "SCENE_SUMMARY_FILE=%TEMP%\sparkle-cookassets-summary-%RANDOM%%RANDOM%.txt"
+set "TEXTURE_REQUEST_FILE=%TEMP%\sparkle-cookassets-textures-%RANDOM%%RANDOM%.txt"
 
 if /I "%TARGET_PROJECT%"=="/h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="-h" goto :USAGE
@@ -188,6 +189,31 @@ if "!SHADER_COOK_RC!" NEQ "0" (
     goto :FINISH
 )
 
+echo.
+echo [LOG] Collecting and deduplicating texture cook requests for standalone TextureCooker...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Internal\CollectTextureCookRequests.ps1" ^
+    -ProjectRoot "!PROJECT_ROOT!" ^
+    -SceneListFile "!SCENE_LIST_FILE!" ^
+    -AssetConverterExe "!ASSET_CONVERTER_EXE!" ^
+    -OutputRequestFile "!TEXTURE_REQUEST_FILE!" ^
+    -TotalSceneCount !TOTAL_SCENE_COUNT!
+if errorlevel 1 (
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
+echo.
+echo [LOG] Cooking texture assets and metadata through standalone TextureCooker...
+pushd "!PROJECT_ROOT!" >nul
+"!TEXTURE_COOKER_EXE!" cook-request-file "!TEXTURE_REQUEST_FILE!"
+set "TEXTURE_COOK_RC=!ERRORLEVEL!"
+popd >nul
+if "!TEXTURE_COOK_RC!" NEQ "0" (
+    echo [ERROR] Texture asset cooking failed. Runtime startup cannot proceed without cooked texture assets.
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Internal\InvokeCookSceneList.ps1" ^
     -ProjectRoot "!PROJECT_ROOT!" ^
     -SceneListFile "!SCENE_LIST_FILE!" ^
@@ -229,14 +255,15 @@ echo relative path exists in both roots.
 echo.
 echo Normal runtime startup also expects cooked shader artifacts under:
 echo   Projects\^<ProjectName^>\Assets\Cooked\Shaders\Packages\
-echo and this script builds the standalone ShaderCompiler and AssetConverter tools,
-echo validates the shader cook manifest, cooks shader packages, and then cooks scenes.
+echo and this script builds the standalone ShaderCompiler, TextureCooker, and AssetConverter tools,
+echo validates the shader cook manifest, cooks shader packages, cooks texture assets, and then cooks scenes.
 echo.
 set "EXIT_RC=1"
 
 :FINISH
 if exist "%SCENE_LIST_FILE%" del /Q "%SCENE_LIST_FILE%" >nul 2>&1
 if exist "%SCENE_SUMMARY_FILE%" del /Q "%SCENE_SUMMARY_FILE%" >nul 2>&1
+if exist "%TEXTURE_REQUEST_FILE%" del /Q "%TEXTURE_REQUEST_FILE%" >nul 2>&1
 set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_RC=%EXIT_RC%"
 endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"

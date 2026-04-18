@@ -1,5 +1,6 @@
 #include "PCH.h"
 
+#include "D3D12/Textures/CookedTextureAssetLoader.h"
 #include "D3D12/Textures/TextureLoader.h"
 
 #include "Core/Public/Paths/PathUtils.h"
@@ -12,9 +13,13 @@
 
 TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 {
+	static const CookedTextureAssetLoader cookedTextureAssetLoader;
 	static const DdsTextureLoader ddsTextureLoader;
 	static const WicTextureLoader wicTextureLoader;
-	static const std::array<const TextureLoaderBackend*, 2> textureLoaderBackends = {&ddsTextureLoader, &wicTextureLoader};
+	static const std::array<const TextureLoaderBackend*, 3> textureLoaderBackends = {
+	    &cookedTextureAssetLoader,
+	    &ddsTextureLoader,
+	    &wicTextureLoader};
 
 	const std::wstring extension = Engine::Paths::GetLowercaseExtension(fileName);
 	for (const TextureLoaderBackend* textureLoaderBackend : textureLoaderBackends)

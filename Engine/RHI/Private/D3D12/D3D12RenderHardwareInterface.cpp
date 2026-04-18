@@ -11,7 +11,6 @@
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "Resources/Texture.h"
-#include "D3D12/Textures/KtxTextureLoader.h"
 #include "D3D12/Textures/TextureFactory.h"
 #include "D3D12/Textures/TextureLoader.h"
 
@@ -890,7 +889,7 @@ std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTextureFromPath(con
 	}
 
 	TextureLoadResult loadResult =
-	    KtxTextureLoader::SupportsExtension(texturePath.extension().wstring()) ? KtxTextureLoader::Load(texturePath) : TextureLoader::Load(texturePath);
+	    TextureLoader::Load(texturePath);
 	if (!loadResult.IsValid())
 	{
 		return {};

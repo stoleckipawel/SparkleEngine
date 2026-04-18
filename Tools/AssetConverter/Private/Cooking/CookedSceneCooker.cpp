@@ -2,6 +2,8 @@
 
 #include "Cooking/CookedSceneCooker.h"
 
+#include "Cooking/TextureCookRequestBuilder.h"
+
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -106,6 +108,55 @@ namespace Engine::AssetAuthoring
 		}
 
 		return build;
+	}
+
+	bool CookedSceneCooker::CollectTextureCookRequests(
+	    const SceneImportResult& importResult,
+	    std::vector<TextureCookRequest>& outRequests,
+	    std::string& outErrorMessage) const
+	{
+		outRequests.clear();
+		std::unordered_set<TextureAssetId> referencedTextureAssetIds;
+		referencedTextureAssetIds.reserve(importResult.materials.size() * 5);
+
+		auto appendTextureRequest =
+		    [&](const std::optional<std::filesystem::path>& texturePath, Engine::Assets::CookedTextureSemantic semantic) -> bool
+		{
+			if (!texturePath)
+			{
+				return true;
+			}
+
+			TextureCookRequest request;
+			if (!TextureCookRequestBuilder::Build(*texturePath, semantic, request, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (referencedTextureAssetIds.insert(request.assetId).second)
+			{
+				outRequests.push_back(std::move(request));
+			}
+
+			return true;
+		};
+
+		for (const MaterialDesc& materialDesc : importResult.materials)
+		{
+			if (!appendTextureRequest(materialDesc.albedoTexture, Engine::Assets::CookedTextureSemantic::Albedo) ||
+			    !appendTextureRequest(materialDesc.normalTexture, Engine::Assets::CookedTextureSemantic::Normal) ||
+			    !appendTextureRequest(
+			        materialDesc.metallicRoughnessTexture,
+			        Engine::Assets::CookedTextureSemantic::MetallicRoughness) ||
+			    !appendTextureRequest(materialDesc.occlusionTexture, Engine::Assets::CookedTextureSemantic::Occlusion) ||
+			    !appendTextureRequest(materialDesc.emissiveTexture, Engine::Assets::CookedTextureSemantic::Emissive))
+			{
+				return false;
+			}
+		}
+
+		outErrorMessage.clear();
+		return true;
 	}
 
 	bool CookedSceneCooker::ResolveSourceScenePath(
@@ -255,8 +306,6 @@ namespace Engine::AssetAuthoring
 	{
 		outBuild.materialAssets.reserve(importResult.materials.size());
 		outBuild.materialAssetReferences.reserve(importResult.materials.size());
-		std::unordered_set<Engine::Assets::CookedAssetId> referencedTextureAssetIds;
-		referencedTextureAssetIds.reserve(importResult.materials.size() * 5);
 
 		auto appendTextureReference =
 		    [&](const std::optional<std::filesystem::path>& texturePath,
@@ -268,18 +317,14 @@ namespace Engine::AssetAuthoring
 				return true;
 			}
 
-			CookedTextureAssetBuild textureAsset;
-			if (!KtxTextureCooker::BuildTextureAsset(*texturePath, semantic, textureAsset, outErrorMessage))
+			TextureCookRequest request;
+			if (!TextureCookRequestBuilder::Build(*texturePath, semantic, request, outErrorMessage))
 			{
 				return false;
 			}
 
-			materialAsset.textureReferences.push_back({textureAsset.assetId, semantic});
-			if (referencedTextureAssetIds.insert(textureAsset.assetId).second)
-			{
-				outBuild.textureAssets.push_back(std::move(textureAsset));
-			}
-
+			materialAsset.textureReferences.push_back(
+			    {static_cast<Engine::Assets::CookedAssetId>(request.assetId), semantic});
 			return true;
 		};
 
@@ -360,20 +405,6 @@ namespace Engine::AssetAuthoring
 
 	bool CookedSceneCooker::WriteBuildOutputs(const CookedSceneBuild& build, std::string& outErrorMessage)
 	{
-		KtxTextureCooker ktxTextureCooker;
-		for (const CookedTextureAssetBuild& textureAsset : build.textureAssets)
-		{
-			if (!ktxTextureCooker.Cook(textureAsset, outErrorMessage))
-			{
-				outErrorMessage = std::format(
-				    "Failed to cook texture asset {:016X} from '{}' - {}",
-				    textureAsset.assetId,
-				    textureAsset.sourcePath.string(),
-				    outErrorMessage);
-				return false;
-			}
-		}
-
 		for (const CookedMeshAssetBuild& meshAsset : build.meshAssets)
 		{
 			std::ofstream output;
