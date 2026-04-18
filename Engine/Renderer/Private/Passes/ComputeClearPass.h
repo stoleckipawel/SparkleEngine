@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
-#include "Passes/ShaderSourceDefinition.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <cstdint>
 
@@ -35,7 +35,7 @@ class ComputeClearPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
-	static ShaderSourceDefinition DescribeShader() noexcept;
+	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void Execute(
 	    RenderGraphPassContext& context,
 	    const ParameterInstance& parameters,

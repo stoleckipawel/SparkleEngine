@@ -5,6 +5,7 @@
 
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 
+#include "Shaders/CookedShaderPackageCache.h"
 #include "ShaderParameters/PassParameterLayout.h"
 
 #include <cassert>
@@ -16,6 +17,10 @@ class D3D12BindingLayoutCompilerImpl final
 	static std::unique_ptr<D3D12BindingLayout> Compile(D3D12Rhi& rhi, const RenderBindingLayoutCompileDesc& desc)
 	{
 		assert(desc.ParameterLayout != nullptr);
+		assert(desc.ShaderPackage != nullptr);
+
+		const LoadedShaderPackage& shaderPackage = *desc.ShaderPackage;
+		const std::vector<CookedShaderBindingRecord>& bindingRecords = shaderPackage.GetBindingRecords();
 
 		D3D12RootSignatureBuilder builder;
 		builder.SetFlags(desc.AllowInputAssemblerInputLayout ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
@@ -23,20 +28,23 @@ class D3D12BindingLayoutCompilerImpl final
 
 		std::vector<CompiledBinding> bindings;
 		std::vector<std::string> bindingNames;
-		bindings.reserve(desc.ParameterLayout->GetParameterCount());
-		bindingNames.reserve(desc.ParameterLayout->GetParameterCount());
+		bindings.reserve(bindingRecords.size());
+		bindingNames.reserve(bindingRecords.size());
 
 		std::uint32_t cbvRegister = 0;
 		std::uint32_t srvRegister = 0;
 		std::uint32_t uavRegister = 0;
 		std::uint32_t samplerRegister = 0;
 
-		for (const PassParameterDesc& parameter : desc.ParameterLayout->GetParameters())
+		for (const CookedShaderBindingRecord& bindingRecord : bindingRecords)
 		{
-			switch (parameter.Kind)
+			const std::string_view bindingName = shaderPackage.ResolveString(bindingRecord.Name);
+			assert(!bindingName.empty());
+
+			switch (bindingRecord.SemanticKind)
 			{
 				case ShaderParameterSemanticKind::UniformData:
-					CompileUniformBinding(builder, bindings, bindingNames, parameter, desc, cbvRegister);
+					CompileUniformBinding(builder, bindings, bindingNames, bindingRecord, bindingName, desc, cbvRegister);
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
 				case ShaderParameterSemanticKind::ReadBuffer:
@@ -44,7 +52,8 @@ class D3D12BindingLayoutCompilerImpl final
 					    builder,
 					    bindings,
 					    bindingNames,
-					    parameter,
+					    bindingRecord,
+					    bindingName,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 					    CompiledBindingType::DescriptorTableShaderResourceView,
 					    srvRegister);
@@ -55,7 +64,8 @@ class D3D12BindingLayoutCompilerImpl final
 					    builder,
 					    bindings,
 					    bindingNames,
-					    parameter,
+					    bindingRecord,
+					    bindingName,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
 					    CompiledBindingType::DescriptorTableUnorderedAccessView,
 					    uavRegister);
@@ -65,7 +75,8 @@ class D3D12BindingLayoutCompilerImpl final
 					    builder,
 					    bindings,
 					    bindingNames,
-					    parameter,
+					    bindingRecord,
+					    bindingName,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
 					    CompiledBindingType::DescriptorTableSampler,
 					    samplerRegister);
@@ -91,19 +102,20 @@ class D3D12BindingLayoutCompilerImpl final
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
 	    std::vector<std::string>& bindingNames,
-	    const PassParameterDesc& parameter,
+	    const CookedShaderBindingRecord& bindingRecord,
+	    std::string_view bindingName,
 	    const RenderBindingLayoutCompileDesc& desc,
 	    std::uint32_t& cbvRegister)
 	{
-		assert(parameter.ValueSizeInBytes > 0);
-		const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(parameter.Visibility);
-		bindingNames.push_back(parameter.Name);
+		assert(bindingRecord.ValueSizeInBytes > 0);
+		const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(bindingRecord.VisibilityMask);
+		bindingNames.emplace_back(bindingName);
 
 		if (desc.InlineUniformDataAsRootConstants)
 		{
-			assert((parameter.ValueSizeInBytes % sizeof(std::uint32_t)) == 0);
+			assert((bindingRecord.ValueSizeInBytes % sizeof(std::uint32_t)) == 0);
 			const std::uint32_t rootParameterIndex = builder.AddRootConstants(
-			    parameter.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
+			    bindingRecord.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
 			    cbvRegister,
 			    0,
 			    visibility);
@@ -114,7 +126,7 @@ class D3D12BindingLayoutCompilerImpl final
 			        .RootParameterIndex = rootParameterIndex,
 			        .ShaderRegister = cbvRegister,
 			        .RegisterSpace = 0,
-			        .DescriptorCount = parameter.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t))});
+			        .DescriptorCount = bindingRecord.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t))});
 			++cbvRegister;
 			return;
 		}
@@ -135,15 +147,17 @@ class D3D12BindingLayoutCompilerImpl final
 	    D3D12RootSignatureBuilder& builder,
 	    std::vector<CompiledBinding>& bindings,
 	    std::vector<std::string>& bindingNames,
-	    const PassParameterDesc& parameter,
+	    const CookedShaderBindingRecord& bindingRecord,
+	    std::string_view bindingName,
 	    D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
 	    CompiledBindingType bindingType,
 	    std::uint32_t& nextShaderRegister)
 	{
-		const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(parameter.Visibility);
-		bindingNames.push_back(parameter.Name);
+		const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(bindingRecord.VisibilityMask);
+		bindingNames.emplace_back(bindingName);
+		const std::uint32_t descriptorCount = GetDescriptorCount(bindingRecord, rangeType);
 		const std::uint32_t rootParameterIndex =
-		    builder.AddDescriptorTable(rangeType, GetDescriptorCount(parameter, rangeType), nextShaderRegister, visibility);
+		    builder.AddDescriptorTable(rangeType, descriptorCount, nextShaderRegister, visibility);
 		bindings.push_back(
 		    CompiledBinding{
 		        .Name = bindingNames.back().c_str(),
@@ -151,28 +165,34 @@ class D3D12BindingLayoutCompilerImpl final
 		        .RootParameterIndex = rootParameterIndex,
 		        .ShaderRegister = nextShaderRegister,
 		        .RegisterSpace = 0,
-		        .DescriptorCount = GetDescriptorCount(parameter, rangeType)});
-		nextShaderRegister += GetDescriptorCount(parameter, rangeType);
+		        .DescriptorCount = descriptorCount});
+		nextShaderRegister += descriptorCount;
 	}
 
-	static std::uint32_t GetDescriptorCount(const PassParameterDesc& parameter, D3D12_DESCRIPTOR_RANGE_TYPE rangeType) noexcept
+	static std::uint32_t GetDescriptorCount(const CookedShaderBindingRecord& bindingRecord, D3D12_DESCRIPTOR_RANGE_TYPE rangeType) noexcept
 	{
-		if (rangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER && parameter.Kind == ShaderParameterSemanticKind::SamplerSet)
+		if (rangeType == D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER && bindingRecord.SemanticKind == ShaderParameterSemanticKind::SamplerSet)
 		{
 			return D3D12SamplerLibrary::GetSamplerCount();
 		}
 
-		return parameter.ArrayCount;
+		return bindingRecord.ArrayCount;
 	}
 
-	static D3D12_SHADER_VISIBILITY ToD3D12Visibility(ShaderStageVisibility visibility) noexcept
+	static D3D12_SHADER_VISIBILITY ToD3D12Visibility(ShaderStageMask visibilityMask) noexcept
 	{
-		if (visibility == ShaderStageVisibility::Vertex)
+		const bool hasVertex = HasAnyShaderStageMask(visibilityMask, ShaderStageMask::Vertex);
+		const bool hasPixel = HasAnyShaderStageMask(visibilityMask, ShaderStageMask::Pixel);
+		const bool hasOther = HasAnyShaderStageMask(
+		    visibilityMask,
+		    ShaderStageMask::Geometry | ShaderStageMask::Hull | ShaderStageMask::Domain | ShaderStageMask::Compute);
+
+		if (hasVertex && !hasPixel && !hasOther)
 		{
 			return D3D12_SHADER_VISIBILITY_VERTEX;
 		}
 
-		if (visibility == ShaderStageVisibility::Pixel)
+		if (hasPixel && !hasVertex && !hasOther)
 		{
 			return D3D12_SHADER_VISIBILITY_PIXEL;
 		}

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ShaderCompileOptions.h"
-#include "ShaderCompileResult.h"
+#include "RHI/Public/Shaders/ShaderCompileOptions.h"
+#include "RHI/Public/Shaders/ShaderCompileResult.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -13,6 +13,7 @@
 #include <Unknwn.h>
 
 #include <dxcapi.h>
+#include <filesystem>
 #include <string>
 
 #include <vector>
@@ -20,21 +21,14 @@
 
 using Microsoft::WRL::ComPtr;
 
+// Standalone ShaderCompiler owns offline DXC invocation. Runtime startup must
+// consume cooked shader artifacts and stay free of this compile path.
 class DxcShaderCompiler
 {
   public:
 	static ShaderCompileResult Compile(const ShaderCompileOptions& options);
 
-	static ShaderCompileResult CompileFromAsset(
-	    const std::filesystem::path& sourcePath,
-	    ShaderStage stage,
-	    const std::string& entryPoint = "main");
-
   private:
-	static void ConfigureIncludePaths(ShaderCompileOptions& options);
-
-	static void ApplyBuildConfiguration(ShaderCompileOptions& options);
-
 	static void BuildCompileArguments(
 	    const ShaderCompileOptions& options,
 	    const std::wstring& wSourcePath,
@@ -48,5 +42,5 @@ class DxcShaderCompiler
 
 	static std::string ExtractErrorMessage(IDxcResult* result);
 
-	static void SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
+	static std::filesystem::path SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
 };

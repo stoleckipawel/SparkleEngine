@@ -1,1 +1,2 @@
 add_subdirectory(AssetConverter)
+add_subdirectory(ShaderCompiler)

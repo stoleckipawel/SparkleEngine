@@ -3,28 +3,20 @@
 #include "FrameGraph/RenderPassRuntime.h"
 
 #include "Config/RenderConfig.h"
-
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-	#define NOMINMAX
-#endif
-#include <Windows.h>
-
-#include "RHI/Public/Shaders/DxcShaderCompiler.h"
-#include "RHI/Public/Shaders/ShaderCompileResult.h"
+#include "Core/Public/Diagnostics/Log.h"
 
 #include "Config/DepthConvention.h"
 #include "Passes/ComputeClearPass.h"
 #include "Passes/ForwardOpaquePass.h"
 #include "Passes/ShaderPass.h"
 #include "Passes/ShadowOpaquePass.h"
-#include "Passes/ShaderSourceDefinition.h"
-#include "SceneData/MaterialData.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "RHI/Public/Shaders/CookedShaderPackageCache.h"
+#include "RHI/Public/Shaders/ShaderPackageLayoutCatalog.h"
 
 #include <array>
+#include <cassert>
+#include <format>
 #include <memory>
 
 inline void AppendPassParameterLayout(PassParameterLayout& destination, const PassParameterLayout& source)
@@ -35,43 +27,74 @@ inline void AppendPassParameterLayout(PassParameterLayout& destination, const Pa
 	}
 }
 
-inline PassParameterLayout BuildShadowOpaqueBindingLayout()
+inline PassParameterLayout BuildKnownShaderPackageBindingLayout(
+	std::string_view bindingLayoutId,
+	ShaderPassKind passKind,
+	const char* passName)
 {
-	PassParameterLayout layout(ShadowOpaquePass::PassName);
-	AppendPassParameterLayout(layout, ShadowOpaquePass::GetParameterMetadata().GetLayout());
-	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
-	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ShadowOpaquePass::PassName);
+	PassParameterLayout layout;
+	std::string errorMessage;
+	if (!ShaderPackageLayouts::TryBuild(bindingLayoutId, layout, errorMessage))
+	{
+		LOG_FATAL(std::format(
+		    "Failed to build known binding layout '{}' for pass '{}' - {}",
+		    bindingLayoutId,
+		    passName,
+		    errorMessage));
+	}
+
+	const bool valid = ValidateShaderPassLayout(layout, passKind, passName);
 	assert(valid);
 	return layout;
 }
 
+inline PassParameterLayout BuildShadowOpaqueBindingLayout()
+{
+	return BuildKnownShaderPackageBindingLayout(ShadowOpaquePass::PassName, ShaderPassKind::Raster, ShadowOpaquePass::PassName);
+}
+
 inline PassParameterLayout BuildForwardOpaqueBindingLayout()
 {
-	PassParameterLayout layout(ForwardOpaquePass::PassName);
-	layout.Add<ReadTexture>("MaterialTextures", ShaderStageVisibility::Pixel, MaterialTextureSlots::Count);
-	AppendPassParameterLayout(layout, ForwardOpaquePass::GetParameterMetadata().GetLayout());
-	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
-	layout.Add<UniformData<PerObjectPSConstantBufferData>>("PerObjectPS", ShaderStageVisibility::Pixel);
-	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ForwardOpaquePass::PassName);
-	assert(valid);
-	return layout;
+	return BuildKnownShaderPackageBindingLayout(ForwardOpaquePass::PassName, ShaderPassKind::Raster, ForwardOpaquePass::PassName);
 }
 
 template <typename TPass> struct RenderPassRuntimeStorage
 {
 	std::unique_ptr<RenderBindingLayout> BindingLayout;
 	std::unique_ptr<RenderPipelineState> PipelineState;
-	std::unique_ptr<ShaderCompileResult> VertexShader;
-	std::unique_ptr<ShaderCompileResult> PixelShader;
-	std::unique_ptr<ShaderCompileResult> ComputeShader;
+	const LoadedShaderPackage* ShaderPackage = nullptr;
 };
 
-inline ShaderCompileResult CompileRenderPassShader(const ShaderSourceDefinition& sourceDefinition)
+inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
+	CookedShaderPackageCache& shaderPackageCache,
+	const ShaderPackageDefinition& definition,
+	const PassParameterLayout& bindingLayout,
+	std::string_view passName,
+	std::string_view declarationName)
 {
-	return DxcShaderCompiler::CompileFromAsset(
-	    sourceDefinition.GetSourcePath(),
-	    sourceDefinition.GetStage(),
-	    sourceDefinition.GetEntryPoint());
+	if (!definition.IsValid())
+	{
+		LOG_FATAL(std::format(
+		    "Render pass '{}' declares an invalid cooked shader package for '{}'",
+		    passName,
+		    declarationName));
+	}
+
+	const LoadedShaderPackage* loadedPackage = nullptr;
+	std::string errorMessage;
+	if (!shaderPackageCache.LoadPackage(definition, bindingLayout, errorMessage, loadedPackage))
+	{
+		LOG_FATAL(std::format(
+		    "Failed to load cooked shader package '{}' variant '{}' for pass '{}' ({}) - {}",
+		    definition.PackageId != nullptr ? definition.PackageId : "<null>",
+		    definition.VariantId != nullptr ? definition.VariantId : "<null>",
+		    passName,
+		    declarationName,
+		    errorMessage));
+	}
+
+	assert(loadedPackage != nullptr);
+	return *loadedPackage;
 }
 
 template <typename TPass> struct RenderPassPipelineTraits;
@@ -84,28 +107,28 @@ template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
 	    {"PerFrame", "PerView", "ShadowMap0", "ShadowMap1", "ShadowMap2", "ShadowMap3", "SamplerTable"};
 	static constexpr std::array<const char*, 3> DrawBindingNames = {"PerObjectVS", "PerObjectPS", "MaterialTextures"};
 
-	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, StorageType& storage)
+	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
 		static const PassParameterLayout bindingLayout = BuildForwardOpaqueBindingLayout();
+		const ShaderPackageDefinition shaderPackage = ForwardOpaquePass::DescribePrimaryViewShaderPackage();
+		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    shaderPackageCache,
+		    shaderPackage,
+		    bindingLayout,
+		    ForwardOpaquePass::PassName,
+		    "PrimaryViewShaderPackage");
+
 		RenderBindingLayoutCompileDesc bindingDesc{};
 		bindingDesc.ParameterLayout = &bindingLayout;
+		bindingDesc.ShaderPackage = storage.ShaderPackage;
 		bindingDesc.AllowInputAssemblerInputLayout = true;
 		bindingDesc.DebugName = L"ForwardOpaque_RootSignature";
 		storage.BindingLayout = rhi.CreateBindingLayout(bindingDesc);
-
-		const ShaderSourceDefinition vertexShader = ForwardOpaquePass::DescribePrimaryViewVertexShader();
-		const ShaderSourceDefinition pixelShader = ForwardOpaquePass::DescribePrimaryViewPixelShader();
-		ValidateShaderSourceDefinition(vertexShader, ShaderStage::Vertex, ForwardOpaquePass::PassName, "PrimaryViewVertexShader");
-		ValidateShaderSourceDefinition(pixelShader, ShaderStage::Pixel, ForwardOpaquePass::PassName, "PrimaryViewPixelShader");
-
-		storage.VertexShader = std::make_unique<ShaderCompileResult>(CompileRenderPassShader(vertexShader));
-		storage.PixelShader = std::make_unique<ShaderCompileResult>(CompileRenderPassShader(pixelShader));
 		GraphicsPipelineStateDesc pipelineDesc{};
 		pipelineDesc.VertexLayout = RhiVertexLayoutKind::StaticMesh;
 		pipelineDesc.BindingLayout = storage.BindingLayout.get();
-		pipelineDesc.VertexShader = RhiShaderBytecode{storage.VertexShader->GetBytecode().Data, storage.VertexShader->GetBytecode().Size};
-		pipelineDesc.PixelShader = RhiShaderBytecode{storage.PixelShader->GetBytecode().Data, storage.PixelShader->GetBytecode().Size};
-		pipelineDesc.HasPixelShader = true;
+		pipelineDesc.VertexShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Vertex};
+		pipelineDesc.PixelShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Pixel};
 		pipelineDesc.RenderTargetFormats[0] = RenderConfig::BackBufferFormat;
 		pipelineDesc.RenderTargetCount = 1;
 		pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
@@ -129,29 +152,29 @@ template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
 	static constexpr std::array<const char*, 2> StableBindingNames = {"PerFrame", "PerView"};
 	static constexpr std::array<const char*, 1> DrawBindingNames = {"PerObjectVS"};
 
-	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, StorageType& storage)
+	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
 		static const PassParameterLayout bindingLayout = BuildShadowOpaqueBindingLayout();
+		const ShaderPackageDefinition shaderPackage = ShadowOpaquePass::DescribeShadowViewShaderPackage();
+		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    shaderPackageCache,
+		    shaderPackage,
+		    bindingLayout,
+		    ShadowOpaquePass::PassName,
+		    "ShadowViewShaderPackage");
+
 		RenderBindingLayoutCompileDesc bindingDesc{};
 		bindingDesc.ParameterLayout = &bindingLayout;
+		bindingDesc.ShaderPackage = storage.ShaderPackage;
 		bindingDesc.AllowInputAssemblerInputLayout = true;
 		bindingDesc.DebugName = L"ShadowOpaque_RootSignature";
 		storage.BindingLayout = rhi.CreateBindingLayout(bindingDesc);
 
-		const ShaderSourceDefinition vertexShader = ShadowOpaquePass::DescribeShadowViewVertexShader();
-		const ShaderSourceDefinition pixelShader = ShadowOpaquePass::DescribeShadowViewPixelShader();
-		ValidateShaderSourceDefinition(vertexShader, ShaderStage::Vertex, ShadowOpaquePass::PassName, "ShadowViewVertexShader");
-		ValidateShaderSourceDefinition(pixelShader, ShaderStage::Pixel, ShadowOpaquePass::PassName, "ShadowViewPixelShader");
-
-		storage.VertexShader = std::make_unique<ShaderCompileResult>(CompileRenderPassShader(vertexShader));
-		storage.PixelShader = std::make_unique<ShaderCompileResult>(CompileRenderPassShader(pixelShader));
-
 		GraphicsPipelineStateDesc pipelineDesc{};
 		pipelineDesc.VertexLayout = RhiVertexLayoutKind::StaticMesh;
 		pipelineDesc.BindingLayout = storage.BindingLayout.get();
-		pipelineDesc.VertexShader = RhiShaderBytecode{storage.VertexShader->GetBytecode().Data, storage.VertexShader->GetBytecode().Size};
-		pipelineDesc.PixelShader = RhiShaderBytecode{storage.PixelShader->GetBytecode().Data, storage.PixelShader->GetBytecode().Size};
-		pipelineDesc.HasPixelShader = true;
+		pipelineDesc.VertexShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Vertex};
+		pipelineDesc.PixelShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Pixel};
 		pipelineDesc.DepthTest.DepthEnable = true;
 		pipelineDesc.DepthTest.DepthWriteEnable = true;
 		pipelineDesc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc();
@@ -173,20 +196,25 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 	using RuntimeType = RenderPassRuntimeTraits<ComputeClearPass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ComputeClearPass>;
 
-	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, StorageType& storage)
+	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
+		const ShaderPackageDefinition shaderPackage = ComputeClearPass::DescribeShaderPackage();
+		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    shaderPackageCache,
+		    shaderPackage,
+		    ComputeClearPass::GetParameterLayout(),
+		    ComputeClearPass::PassName,
+		    "ComputeShaderPackage");
+
 		RenderBindingLayoutCompileDesc bindingDesc{};
 		bindingDesc.ParameterLayout = &ComputeClearPass::GetParameterLayout();
+		bindingDesc.ShaderPackage = storage.ShaderPackage;
 		bindingDesc.DebugName = L"ComputeClear_RootSignature";
 		storage.BindingLayout = rhi.CreateBindingLayout(bindingDesc);
 
-		const ShaderSourceDefinition computeShader = ComputeClearPass::DescribeShader();
-		ValidateShaderSourceDefinition(computeShader, ShaderStage::Compute, ComputeClearPass::PassName, "ComputeShader");
-		storage.ComputeShader = std::make_unique<ShaderCompileResult>(CompileRenderPassShader(computeShader));
-
 		ComputePipelineStateDesc pipelineDesc{};
 		pipelineDesc.BindingLayout = storage.BindingLayout.get();
-		pipelineDesc.ComputeShader = RhiShaderBytecode{storage.ComputeShader->GetBytecode().Data, storage.ComputeShader->GetBytecode().Size};
+		pipelineDesc.ComputeShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Compute};
 		pipelineDesc.DebugName = L"ComputeClear_PipelineState";
 		storage.PipelineState = rhi.CreateComputePipelineState(pipelineDesc);
 	}

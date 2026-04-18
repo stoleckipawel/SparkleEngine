@@ -3,7 +3,6 @@
 
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
 #include "GPU/CommandContext.h"
-#include "Passes/ShaderSourceDefinition.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
@@ -45,43 +44,6 @@ void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& d
 	assert(dispatch.GroupCountY > 0);
 	assert(dispatch.GroupCountZ > 0);
 	cmd.Dispatch(dispatch.GroupCountX, dispatch.GroupCountY, dispatch.GroupCountZ);
-}
-
-bool ValidateShaderSourceDefinition(
-    const ShaderSourceDefinition& sourceDefinition,
-    ShaderStage expectedStage,
-    const char* passName,
-    const char* shaderLabel) noexcept
-{
-	if (!sourceDefinition.IsValid())
-	{
-		std::string message = "Shader pass '";
-		message += GetShaderPassName(passName);
-		message += "' is missing a valid shader declaration for '";
-		message += shaderLabel != nullptr && shaderLabel[0] != '\0' ? shaderLabel : "<unnamed shader>";
-		message += "'.";
-		LOG_ERROR(message);
-		assert(false);
-		return false;
-	}
-
-	if (sourceDefinition.GetStage() != expectedStage)
-	{
-		std::string message = "Shader pass '";
-		message += GetShaderPassName(passName);
-		message += "' declared shader '";
-		message += shaderLabel != nullptr && shaderLabel[0] != '\0' ? shaderLabel : sourceDefinition.GetEntryPoint().c_str();
-		message += "' with stage ";
-		message += std::to_string(static_cast<int>(sourceDefinition.GetStage()));
-		message += " but expected stage ";
-		message += std::to_string(static_cast<int>(expectedStage));
-		message += ".";
-		LOG_ERROR(message);
-		assert(false);
-		return false;
-	}
-
-	return true;
 }
 
 bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind passKind, const char* passName) noexcept

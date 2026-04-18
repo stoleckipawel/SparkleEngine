@@ -1,28 +1,11 @@
 #pragma once
 
 #include "Config/RenderConfig.h"
+#include "ShaderStage.h"
 
 #include <filesystem>
 #include <string>
 #include <vector>
-
-enum class ShaderStage : uint8_t
-{
-	Vertex,
-	Pixel,
-	Geometry,
-	Hull,
-	Domain,
-	Compute,
-	Count
-};
-
-inline const char* GetShaderStagePrefix(ShaderStage stage)
-{
-	static constexpr const char* kPrefixes[] = {"vs", "ps", "gs", "hs", "ds", "cs"};
-	static_assert(std::size(kPrefixes) == static_cast<size_t>(ShaderStage::Count));
-	return kPrefixes[static_cast<size_t>(stage)];
-}
 
 struct ShaderCompileOptions
 {

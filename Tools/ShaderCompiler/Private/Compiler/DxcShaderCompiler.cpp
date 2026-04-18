@@ -1,54 +1,18 @@
 #include "PCH.h"
-#include "Shaders/DxcShaderCompiler.h"
-#include "D3D12/Shaders/DxcContext.h"
+
+#include "Compiler/DxcShaderCompiler.h"
+
+#include "Compiler/DxcContext.h"
+
 #include "Core/Public/FileSystemUtils.h"
-#include "Strings/StringUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 
-ShaderCompileResult DxcShaderCompiler::CompileFromAsset(
-    const std::filesystem::path& sourcePath,
-    ShaderStage stage,
-    const std::string& entryPoint)
+namespace
 {
-	const auto resolvedPath = Filesystem::ResolveAssetPathValidated(sourcePath, AssetType::Shader);
-
-	ShaderCompileOptions options;
-	options.SourcePath = resolvedPath;
-	options.EntryPoint = entryPoint;
-	options.Stage = stage;
-
-	ConfigureIncludePaths(options);
-	ApplyBuildConfiguration(options);
-
-	LOG_INFO("Compiling shader: " + resolvedPath.string());
-	return Compile(options);
-}
-
-void DxcShaderCompiler::ConfigureIncludePaths(ShaderCompileOptions& options)
-{
-	options.AdditionalIncludeDirs.clear();
-
-	const auto& projectShaders = Filesystem::GetTypedPath(AssetType::Shader, PathRoot::Project);
-	const auto& engineShaders = Filesystem::GetTypedPath(AssetType::Shader, PathRoot::Engine);
-
-	options.IncludeDir = !projectShaders.empty() ? projectShaders : engineShaders;
-
-	if (!projectShaders.empty() && !engineShaders.empty())
+	std::filesystem::path BuildShaderDebugArtifactPath(std::wstring_view pdbName)
 	{
-		options.AdditionalIncludeDirs.push_back(engineShaders);
+		return Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
 	}
-}
-
-void DxcShaderCompiler::ApplyBuildConfiguration(ShaderCompileOptions& options)
-{
-#if defined(ENGINE_SHADERS_DEBUG)
-	options.EnableDebugInfo = true;
-#endif
-
-#if defined(ENGINE_SHADERS_OPTIMIZED)
-	options.EnableOptimizations = true;
-#else
-	options.EnableOptimizations = false;
-#endif
 }
 
 ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& options)
@@ -103,7 +67,7 @@ ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& optio
 	{
 		if (errorMsg.empty())
 			errorMsg = "Compilation failed with no error message";
-		LOG_FATAL("Shader compilation failed: " + errorMsg);
+		LOG_ERROR("Shader compilation failed: " + errorMsg);
 		return ShaderCompileResult::Failure(std::move(errorMsg));
 	}
 
@@ -118,20 +82,20 @@ ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& optio
 		return ShaderCompileResult::Failure("Failed to extract shader bytecode");
 	}
 
-	SaveShaderSymbols(result.Get(), options.SourcePath);
+	const std::filesystem::path debugArtifactPath = SaveShaderSymbols(result.Get(), options.SourcePath);
 
 	LOG_INFO("Shader compiled successfully: " + options.SourcePath.filename().string());
-	return ShaderCompileResult::Success(std::move(bytecode));
+	return ShaderCompileResult::Success(std::move(bytecode), debugArtifactPath);
 }
 
 void DxcShaderCompiler::BuildCompileArguments(
-    const ShaderCompileOptions& options,
-    const std::wstring& wSourcePath,
-    const std::wstring& wEntryPoint,
-    const std::wstring& wTargetProfile,
-    std::vector<std::wstring>& wIncludeDirs,
-    std::vector<std::wstring>& wDefines,
-    std::vector<LPCWSTR>& outArgs)
+	const ShaderCompileOptions& options,
+	const std::wstring& wSourcePath,
+	const std::wstring& wEntryPoint,
+	const std::wstring& wTargetProfile,
+	std::vector<std::wstring>& wIncludeDirs,
+	std::vector<std::wstring>& wDefines,
+	std::vector<LPCWSTR>& outArgs)
 {
 	outArgs.clear();
 	outArgs.reserve(32);
@@ -226,19 +190,17 @@ std::string DxcShaderCompiler::ExtractErrorMessage(IDxcResult* result)
 	return {};
 }
 
-void DxcShaderCompiler::SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath)
+std::filesystem::path DxcShaderCompiler::SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath)
 {
 	ComPtr<IDxcBlob> pdbBlob;
 	ComPtr<IDxcBlobUtf16> pdbNameBlob;
 	result->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(pdbBlob.ReleaseAndGetAddressOf()), pdbNameBlob.ReleaseAndGetAddressOf());
 
 	if (!pdbBlob || !pdbNameBlob)
-		return;
+		return {};
 
-	const std::filesystem::path& symbolsDir = Filesystem::GetShaderSymbolsOutputPath();
 	std::wstring pdbName(pdbNameBlob->GetStringPointer());
-	const std::filesystem::path pdbFilename = std::filesystem::path(pdbName).filename();
-	const std::filesystem::path pdbPath = symbolsDir / pdbFilename;
+	const std::filesystem::path pdbPath = BuildShaderDebugArtifactPath(pdbName);
 
 	FILE* fp = nullptr;
 	_wfopen_s(&fp, pdbPath.c_str(), L"wb");
@@ -246,5 +208,9 @@ void DxcShaderCompiler::SaveShaderSymbols(IDxcResult* result, const std::filesys
 	{
 		fwrite(pdbBlob->GetBufferPointer(), 1, pdbBlob->GetBufferSize(), fp);
 		fclose(fp);
+		return pdbPath;
 	}
+
+	LOG_WARNING("Failed to save shader symbols for '" + sourcePath.string() + "'");
+	return {};
 }

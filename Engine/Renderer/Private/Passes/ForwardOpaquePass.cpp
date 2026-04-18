@@ -35,14 +35,13 @@ const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetad
 	return metadata;
 }
 
-ShaderSourceDefinition ForwardOpaquePass::DescribePrimaryViewVertexShader() noexcept
+ShaderPackageDefinition ForwardOpaquePass::DescribePrimaryViewShaderPackage() noexcept
 {
-	return ShaderSourceDefinition::FromAsset("Passes/Forward/ForwardLitVS.hlsl", "main", ShaderStage::Vertex);
-}
-
-ShaderSourceDefinition ForwardOpaquePass::DescribePrimaryViewPixelShader() noexcept
-{
-	return ShaderSourceDefinition::FromAsset("Passes/Forward/ForwardLitPS.hlsl", "main", ShaderStage::Pixel);
+	return ShaderPackageDefinition{
+	    .PackageId = PassName,
+	    .VariantId = "Default",
+	    .BindingLayoutId = PassName,
+	    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel};
 }
 
 void ForwardOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)

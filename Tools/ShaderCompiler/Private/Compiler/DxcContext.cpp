@@ -1,5 +1,6 @@
 #include "PCH.h"
-#include "D3D12/Shaders/DxcContext.h"
+
+#include "Compiler/DxcContext.h"
 
 DxcContext::DxcContext()
 {

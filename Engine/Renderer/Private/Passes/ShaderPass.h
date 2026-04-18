@@ -16,10 +16,8 @@ class RenderHardwareInterface;
 class RenderBindingLayout;
 class RenderPipelineState;
 struct RenderGraphPassContext;
-class ShaderSourceDefinition;
 struct FrameContext;
 struct RenderPassContext;
-enum class ShaderStage : std::uint8_t;
 
 enum class ShaderPassKind : std::uint8_t
 {
@@ -36,11 +34,6 @@ struct ComputeDispatchDesc
 
 SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept;
 SPARKLE_RENDERER_API void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
-SPARKLE_RENDERER_API bool ValidateShaderSourceDefinition(
-    const ShaderSourceDefinition& sourceDefinition,
-    ShaderStage expectedStage,
-    const char* passName,
-    const char* shaderLabel) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
     ShaderPassKind passKind,

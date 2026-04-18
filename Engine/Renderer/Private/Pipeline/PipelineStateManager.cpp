@@ -4,9 +4,16 @@
 namespace
 {
 	template <typename... TPasses>
-	void InitializeRuntimeStorage(RenderHardwareInterface& rhi, std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
+	void InitializeRuntimeStorage(
+	    RenderHardwareInterface& rhi,
+	    CookedShaderPackageCache& shaderPackages,
+	    std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
 	{
-		(RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(rhi, std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage)), ...);
+		(RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(
+		     rhi,
+		     shaderPackages,
+		     std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage)),
+		 ...);
 	}
 
 	template <typename... TPasses>
@@ -32,6 +39,6 @@ const RenderPassRuntimeRegistry& PipelineStateManager::GetRuntimeRegistry() cons
 
 void PipelineStateManager::InitializePassRuntimes()
 {
-	InitializeRuntimeStorage(*m_rhi, m_runtimeStorage);
+	InitializeRuntimeStorage(*m_rhi, m_shaderPackages, m_runtimeStorage);
 	m_runtimeRegistry.emplace(BuildRuntimeRegistry(m_runtimeStorage));
 }

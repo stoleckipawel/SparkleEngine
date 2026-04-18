@@ -29,9 +29,13 @@ const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
 	return GetParameterMetadata().GetLayout();
 }
 
-ShaderSourceDefinition ComputeClearPass::DescribeShader() noexcept
+ShaderPackageDefinition ComputeClearPass::DescribeShaderPackage() noexcept
 {
-	return ShaderSourceDefinition::FromAsset("Passes/Compute/ComputeClearColorCS.hlsl", "main", ShaderStage::Compute);
+	return ShaderPackageDefinition{
+	    .PackageId = PassName,
+	    .VariantId = "Default",
+	    .BindingLayoutId = PassName,
+	    .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void ComputeClearPass::Execute(

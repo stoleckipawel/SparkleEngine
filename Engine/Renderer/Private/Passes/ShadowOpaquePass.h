@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
-#include "Passes/ShaderSourceDefinition.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 
@@ -47,8 +47,7 @@ class ShadowOpaquePass final
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
-	static ShaderSourceDefinition DescribeShadowViewVertexShader() noexcept;
-	static ShaderSourceDefinition DescribeShadowViewPixelShader() noexcept;
+	static ShaderPackageDefinition DescribeShadowViewShaderPackage() noexcept;
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex);
 
   private:

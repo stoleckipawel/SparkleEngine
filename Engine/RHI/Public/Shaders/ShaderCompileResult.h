@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -29,15 +31,17 @@ class ShaderCompileResult
 	explicit operator bool() const noexcept { return m_success; }
 
 	ShaderBytecode GetBytecode() const noexcept { return {m_bytecode.data(), m_bytecode.size()}; }
+	const std::filesystem::path& GetDebugArtifactPath() const noexcept { return m_debugArtifactPath; }
 
 	const std::string& GetErrorMessage() const noexcept { return m_errorMessage; }
 	bool HasErrors() const noexcept { return !m_errorMessage.empty(); }
 
-	static ShaderCompileResult Success(std::vector<uint8_t>&& bytecode)
+	static ShaderCompileResult Success(std::vector<uint8_t>&& bytecode, std::filesystem::path debugArtifactPath = {})
 	{
 		ShaderCompileResult result;
 		result.m_success = true;
 		result.m_bytecode = std::move(bytecode);
+		result.m_debugArtifactPath = std::move(debugArtifactPath);
 		return result;
 	}
 
@@ -52,5 +56,6 @@ class ShaderCompileResult
   private:
 	bool m_success = false;
 	std::vector<uint8_t> m_bytecode;
+	std::filesystem::path m_debugArtifactPath;
 	std::string m_errorMessage;
 };

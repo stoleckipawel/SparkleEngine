@@ -62,7 +62,6 @@ target_link_libraries(SparkleRHI
         dxgi
         d3dcompiler
         dxguid
-        dxcompiler
 )
 
 # Add /FS for parallel builds (PDB access)

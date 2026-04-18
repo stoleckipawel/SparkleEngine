@@ -5,6 +5,7 @@
 #include "../Formats/PixelFormat.h"
 #include "../Resources/RenderConstantBufferData.h"
 #include "../RHIAPI.h"
+#include "../Shaders/ShaderStage.h"
 
 #include <array>
 #include <cstddef>
@@ -14,6 +15,7 @@
 #include <string_view>
 
 class PassParameterLayout;
+class LoadedShaderPackage;
 class Texture;
 
 enum class RhiBackendApi : std::uint8_t
@@ -264,6 +266,7 @@ struct CompiledBinding
 struct RenderBindingLayoutCompileDesc
 {
 	const PassParameterLayout* ParameterLayout = nullptr;
+	const LoadedShaderPackage* ShaderPackage = nullptr;
 	bool AllowInputAssemblerInputLayout = false;
 	const wchar_t* DebugName = L"RHI_BindingLayout";
 	bool InlineUniformDataAsRootConstants = false;
@@ -302,19 +305,21 @@ struct RhiStencilTestDesc
 	RhiStencilOp BackFaceStencilPassOp = RhiStencilOp::Keep;
 };
 
-struct RhiShaderBytecode
+struct RhiShaderStageDesc
 {
-	const void* Data = nullptr;
-	std::size_t Size = 0;
+	const LoadedShaderPackage* Package = nullptr;
+	ShaderStage Stage = ShaderStage::Count;
+
+	constexpr bool IsValid() const noexcept { return Package != nullptr && Stage != ShaderStage::Count; }
+	explicit constexpr operator bool() const noexcept { return IsValid(); }
 };
 
 struct GraphicsPipelineStateDesc
 {
 	RhiVertexLayoutKind VertexLayout = RhiVertexLayoutKind::StaticMesh;
 	const RenderBindingLayout* BindingLayout = nullptr;
-	RhiShaderBytecode VertexShader = {};
-	RhiShaderBytecode PixelShader = {};
-	bool HasPixelShader = true;
+	RhiShaderStageDesc VertexShader = {};
+	RhiShaderStageDesc PixelShader = {};
 	bool RenderWireframe = false;
 	RhiCullMode CullMode = RhiCullMode::Back;
 	RhiDepthTestDesc DepthTest = {};
@@ -328,7 +333,7 @@ struct GraphicsPipelineStateDesc
 struct ComputePipelineStateDesc
 {
 	const RenderBindingLayout* BindingLayout = nullptr;
-	RhiShaderBytecode ComputeShader = {};
+	RhiShaderStageDesc ComputeShader = {};
 	const wchar_t* DebugName = L"RHI_ComputePipelineState";
 };
 

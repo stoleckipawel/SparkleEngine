@@ -1,29 +1,31 @@
 @echo off
 :: ============================================================================
-:: AssetCooking.bat - Shared AssetConverter preparation helpers
+:: AssetCooking.bat - Shared cook-tool preparation helpers
 :: ============================================================================
-:: Internal helper module that keeps the scene-cooking entrypoints on one
-:: preflight path for toolchain validation, configure/sync, AssetConverter
+:: Internal helper module that keeps the asset and shader cooking entrypoints
+:: on one preflight path for toolchain validation, configure/sync, cook-tool
 :: build, and executable discovery.
 ::
 :: Usage:
-::   call "Internal\AssetCooking.bat" PrepareAssetConverter <Configuration>
+::   call "Internal\AssetCooking.bat" PrepareCookTools <Configuration>
 ::
 :: Outputs:
 ::   ASSET_CONVERTER_EXE - Absolute path to AssetConverter.exe
+::   SHADER_COMPILER_EXE - Absolute path to ShaderCompiler.exe
 ::   ASSET_COOKING_RC    - Return code from the preparation workflow
 :: ============================================================================
 
 setlocal enabledelayedexpansion
 
-if /I "%~1"=="PrepareAssetConverter" goto :PREPARE_ASSET_CONVERTER
+if /I "%~1"=="PrepareCookTools" goto :PREPARE_COOK_TOOLS
+if /I "%~1"=="PrepareAssetConverter" goto :PREPARE_COOK_TOOLS
 
 echo [ERROR] AssetCooking.bat requires a valid command.
-echo         Supported commands: PrepareAssetConverter
+echo         Supported commands: PrepareCookTools
 set "ASSET_COOKING_RC=1"
 goto :FINISH
 
-:PREPARE_ASSET_CONVERTER
+:PREPARE_COOK_TOOLS
 call "%~dp0Config.bat"
 
 set "CONFIG=%~2"
@@ -54,16 +56,17 @@ if "!CONFIGURE_RC!" NEQ "0" (
 )
 
 echo.
-echo [LOG] Step 3/3: Building AssetConverter...
-call "%~dp0CMakeHelpers.bat" BuildTargets !CONFIG! AssetConverter
+echo [LOG] Step 3/3: Building AssetConverter and ShaderCompiler...
+call "%~dp0CMakeHelpers.bat" BuildTargets !CONFIG! AssetConverter ShaderCompiler
 set "BUILD_RC=!ERRORLEVEL!"
 if "!BUILD_RC!" NEQ "0" (
-    echo [ERROR] Failed to build the AssetConverter target.
+    echo [ERROR] Failed to build one or more cook-tool targets.
     set "ASSET_COOKING_RC=1"
     goto :FINISH
 )
 
 set "ASSET_CONVERTER_EXE="
+set "SHADER_COMPILER_EXE="
 for %%P in (
     "!BUILD_DIR!\bin\!CONFIG!\AssetConverter.exe"
     "!BUILD_DIR!\bin\AssetConverter.exe"
@@ -81,10 +84,28 @@ if not defined ASSET_CONVERTER_EXE (
     goto :FINISH
 )
 
+for %%P in (
+    "!BUILD_DIR!\bin\!CONFIG!\ShaderCompiler.exe"
+    "!BUILD_DIR!\bin\ShaderCompiler.exe"
+    "!BIN_DIR!\!CONFIG!\ShaderCompiler.exe"
+    "!BIN_DIR!\ShaderCompiler.exe"
+) do (
+    if not defined SHADER_COMPILER_EXE (
+        if exist "%%~P" set "SHADER_COMPILER_EXE=%%~fP"
+    )
+)
+
+if not defined SHADER_COMPILER_EXE (
+    echo [ERROR] ShaderCompiler.exe was not found after build.
+    set "ASSET_COOKING_RC=1"
+    goto :FINISH
+)
+
 set "ASSET_COOKING_RC=0"
 goto :FINISH
 
 :FINISH
-set "_TMP_EXE=%ASSET_CONVERTER_EXE%"
+set "_TMP_ASSET_CONVERTER_EXE=%ASSET_CONVERTER_EXE%"
+set "_TMP_SHADER_COMPILER_EXE=%SHADER_COMPILER_EXE%"
 set "_TMP_RC=%ASSET_COOKING_RC%"
-endlocal & set "ASSET_CONVERTER_EXE=%_TMP_EXE%" & set "ASSET_COOKING_RC=%_TMP_RC%" & exit /B %_TMP_RC%
+endlocal & set "ASSET_CONVERTER_EXE=%_TMP_ASSET_CONVERTER_EXE%" & set "SHADER_COMPILER_EXE=%_TMP_SHADER_COMPILER_EXE%" & set "ASSET_COOKING_RC=%_TMP_RC%" & exit /B %_TMP_RC%

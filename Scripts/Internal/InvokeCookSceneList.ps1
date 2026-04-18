@@ -34,7 +34,7 @@ try {
         Write-Host ''
         Write-Host ("[LOG] Cooking [{0}/{1}] {2}: {3}" -f $cookedCount, $TotalSceneCount, $origin, $relativePath)
 
-        & $AssetConverterExe $scenePath
+        & $AssetConverterExe cook-scene $scenePath
         if ($LASTEXITCODE -ne 0) {
             Write-Host ("[ERROR] Failed to cook '{0}'." -f $relativePath)
             $failedScenes += ('{0}:{1}' -f $origin, $relativePath)

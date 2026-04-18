@@ -664,7 +664,7 @@ NativeGraphicsCommandListHandle D3D12RenderHardwareInterface::GetGraphicsCommand
 
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
-	if (m_rhi == nullptr)
+	if (m_rhi == nullptr || desc.ParameterLayout == nullptr || desc.ShaderPackage == nullptr)
 	{
 		return {};
 	}
@@ -674,7 +674,7 @@ std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBinding
 
 std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc)
 {
-	if (m_rhi == nullptr)
+	if (m_rhi == nullptr || desc.BindingLayout == nullptr || !desc.VertexShader.IsValid())
 	{
 		return {};
 	}
@@ -684,7 +684,7 @@ std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateGraphic
 
 std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc& desc)
 {
-	if (m_rhi == nullptr)
+	if (m_rhi == nullptr || desc.BindingLayout == nullptr || !desc.ComputeShader.IsValid())
 	{
 		return {};
 	}

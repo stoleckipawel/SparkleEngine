@@ -34,14 +34,13 @@ const ShadowOpaquePass::ParameterMetadata& ShadowOpaquePass::GetParameterMetadat
 	return metadata;
 }
 
-ShaderSourceDefinition ShadowOpaquePass::DescribeShadowViewVertexShader() noexcept
+ShaderPackageDefinition ShadowOpaquePass::DescribeShadowViewShaderPackage() noexcept
 {
-	return ShaderSourceDefinition::FromAsset("Passes/Shadow/ShadowDepthVS.hlsl", "main", ShaderStage::Vertex);
-}
-
-ShaderSourceDefinition ShadowOpaquePass::DescribeShadowViewPixelShader() noexcept
-{
-	return ShaderSourceDefinition::FromAsset("Passes/Shadow/ShadowDepthPS.hlsl", "main", ShaderStage::Pixel);
+	return ShaderPackageDefinition{
+	    .PackageId = PassName,
+	    .VariantId = "Default",
+	    .BindingLayoutId = PassName,
+	    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel};
 }
 
 void ShadowOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex)

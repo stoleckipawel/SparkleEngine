@@ -1,6 +1,6 @@
 @echo off
 :: ============================================================================
-:: CookAssets.bat - Build and run AssetConverter for all engine/project scenes
+:: CookAssets.bat - Build and run ShaderCompiler plus AssetConverter for all engine/project scenes
 :: ============================================================================
 :: Cooks every supported source scene under the engine mesh root and the
 :: selected project's mesh root into the selected project's cooked asset tree.
@@ -158,8 +158,32 @@ echo [LOG] Project scenes discovered: !PROJECT_SCENE_COUNT!
 echo [LOG] Project overrides applied: !OVERRIDDEN_ENGINE_COUNT!
 echo [LOG] Final scenes to cook:      !TOTAL_SCENE_COUNT!
 
-call "%~dp0Internal\AssetCooking.bat" PrepareAssetConverter !CONFIG!
+call "%~dp0Internal\AssetCooking.bat" PrepareCookTools !CONFIG!
 if errorlevel 1 (
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
+echo.
+echo [LOG] Validating shader cook manifest required for runtime startup...
+pushd "!PROJECT_ROOT!" >nul
+"!SHADER_COMPILER_EXE!" inspect-manifest
+set "SHADER_MANIFEST_RC=!ERRORLEVEL!"
+popd >nul
+if "!SHADER_MANIFEST_RC!" NEQ "0" (
+    echo [ERROR] Shader cook manifest validation failed. Normal runtime startup requires cooked shader artifacts.
+    set "EXIT_RC=1"
+    goto :FINISH
+)
+
+echo.
+echo [LOG] Cooking shader packages required for runtime startup...
+pushd "!PROJECT_ROOT!" >nul
+"!SHADER_COMPILER_EXE!" cook
+set "SHADER_COOK_RC=!ERRORLEVEL!"
+popd >nul
+if "!SHADER_COOK_RC!" NEQ "0" (
+    echo [ERROR] Shader package cooking failed. Runtime startup cannot proceed without cooked shader artifacts.
     set "EXIT_RC=1"
     goto :FINISH
 )
@@ -184,6 +208,8 @@ echo [LOG] Scene manifests:    Projects\!TARGET_PROJECT!\Assets\Cooked\SceneMani
 echo [LOG] Mesh assets:        Projects\!TARGET_PROJECT!\Assets\Cooked\Meshes\
 echo [LOG] Material assets:    Projects\!TARGET_PROJECT!\Assets\Cooked\Materials\
 echo [LOG] Texture assets:     Projects\!TARGET_PROJECT!\Assets\Cooked\Textures\
+echo [LOG] Shader packages:    Projects\!TARGET_PROJECT!\Assets\Cooked\Shaders\Packages\
+echo [LOG] Shader registry:    Projects\!TARGET_PROJECT!\Assets\Cooked\Shaders\ShaderPackageRegistry.sreg
 
 set "EXIT_RC=0"
 goto :FINISH
@@ -200,6 +226,11 @@ echo This command cooks all supported scenes under Engine\Assets\Meshes and
 echo Projects\^<ProjectName^>\Assets\Meshes into the selected project's
 echo cooked asset output. Project scenes override engine scenes when the same
 echo relative path exists in both roots.
+echo.
+echo Normal runtime startup also expects cooked shader artifacts under:
+echo   Projects\^<ProjectName^>\Assets\Cooked\Shaders\Packages\
+echo and this script builds the standalone ShaderCompiler and AssetConverter tools,
+echo validates the shader cook manifest, cooks shader packages, and then cooks scenes.
 echo.
 set "EXIT_RC=1"
 

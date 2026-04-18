@@ -102,6 +102,21 @@ add_dependencies(SparkleApplication runtime_cooked_boundary_check)
 add_dependencies(SparkleGameFramework runtime_cooked_boundary_check)
 add_dependencies(SparkleRenderer runtime_cooked_boundary_check)
 
+add_custom_target(
+    shader_compiler_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DSHADER_COMPILER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateShaderCompilerBoundary.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating runtime and ShaderCompiler boundary ownership..."
+)
+
+add_dependencies(SparkleRHI shader_compiler_boundary_check)
+add_dependencies(SparkleApplication shader_compiler_boundary_check)
+add_dependencies(SparkleGameFramework shader_compiler_boundary_check)
+add_dependencies(SparkleRenderer shader_compiler_boundary_check)
+add_dependencies(ShaderCompiler shader_compiler_boundary_check)
+
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
 # ---------------------------
@@ -173,7 +188,7 @@ if(CLANG_FORMAT_EXE)
     # Make all targets depend on clang_format_check
     get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(t ${all_targets})
-        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check")
+        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check")
             add_dependencies(${t} clang_format_check)
         endif()
     endforeach()

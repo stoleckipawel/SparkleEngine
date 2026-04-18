@@ -48,6 +48,7 @@ class PipelineStateManager final
 	void InitializePassRuntimes();
 
 	RenderHardwareInterface* m_rhi = nullptr;
+	CookedShaderPackageCache m_shaderPackages;
 	PassRuntimeStorageTuple m_runtimeStorage;
 	std::optional<RenderPassRuntimeRegistry> m_runtimeRegistry;
 };

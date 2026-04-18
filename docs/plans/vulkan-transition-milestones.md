@@ -50,18 +50,47 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      How: trace the flow from pass source definitions into DXC invocation and then into pipeline creation; capture stage entry points, target profiles, macro sets, include roots, debug symbol outputs, and any binding or reflection data that later code consumes.
      Where: `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, `Engine/Renderer/Private/Passes/ShaderSourceDefinition.h`, `Engine/RHI/Public/Shaders/ShaderCompileOptions.h`, `Engine/RHI/Public/Shaders/ShaderCompileResult.h`, `Engine/RHI/Private/D3D12/Shaders/DxcShaderCompiler.cpp`.
      Guardrails: do not design the cooked format first and hope the missing fields appear later; do not assume DXC runtime reflection can remain the shipping source of truth.
+     Current runtime path snapshot:
+     - Startup trigger: `Renderer::InitializeCoreSystems()` constructs `PipelineStateManager`, whose constructor immediately calls `InitializePassRuntimes()`. That means shader compilation currently happens during renderer startup, before the first frame is recorded.
+     - Live shader declarations today: `ForwardOpaquePass` declares `ForwardLitVS.hlsl` and `ForwardLitPS.hlsl`; `ShadowOpaquePass` declares `ShadowDepthVS.hlsl` and `ShadowDepthPS.hlsl`; `ComputeClearPass` declares `ComputeClearColorCS.hlsl`. All current pass declarations use asset-relative paths, entry point `main`, and an explicit `ShaderStage` value.
+     - Validation before compile: `ValidateShaderSourceDefinition(...)` only checks that the declaration exists and that the declared stage matches the expected stage. It does not verify file existence, schema compatibility, compile settings, or parameter-layout compatibility.
+     - DXC handoff: `CompileRenderPassShader(...)` calls `DxcShaderCompiler::CompileFromAsset(...)`, which resolves the shader asset through `Filesystem::ResolveAssetPathValidated(..., AssetType::Shader)`, then builds `ShaderCompileOptions` from the resolved path, entry point, and stage.
+     - Compile configuration resolved at runtime: include roots come from the project shader directory with engine shaders added as a fallback or secondary include root; target profiles are derived from `RenderConfig::ShaderModelMajor` and `RenderConfig::ShaderModelMinor`; build configuration toggles debug info and optimization through `ENGINE_SHADERS_DEBUG` and `ENGINE_SHADERS_OPTIMIZED`.
+     - DXC arguments in use today: the compiler passes `-E`, `-T`, `-HV 2021`, include directories, strictness, `DXC_ARG_ALL_RESOURCES_BOUND`, warnings-as-errors, optional debug or optimization flags, and by default strips reflection and debug info. `ShaderCompileOptions::Defines` exists, but no runtime caller currently populates defines, permutations, or specialization-style inputs.
+     - Outputs produced today: `ShaderCompileResult` returns object bytecode and an error string; warnings are logged; PDB symbols are extracted through `DXC_OUT_PDB` and written to `Filesystem::GetShaderSymbolsOutputPath()`. Reflection data is intentionally stripped from shipping results.
+     - Outputs consumed downstream: `RenderPassPipelineTraits` stores one `ShaderCompileResult` per compiled stage, but the downstream pipeline descriptors only consume raw bytecode through `RhiShaderBytecode`. The current renderer path does not branch on `IsSuccess()`, `HasErrors()`, or `GetErrorMessage()` after compilation.
+     - Binding metadata source today: root-signature and binding-layout compilation do not come from shader reflection. `BuildForwardOpaqueBindingLayout()`, `BuildShadowOpaqueBindingLayout()`, `ComputeClearPass::GetParameterLayout()`, and `D3D12BindingLayoutCompiler` derive bindings from `PassParameterLayout` instead.
+     - Migration implication: the first cooked shader asset does not need runtime reflection just to preserve current behavior, because runtime binding layout is already driven by pass metadata. The minimum replacement surface is stage bytecode, shader identity, compile-configuration identity, and debug-symbol linkage.
+     - Migration risk to remove in later prompts: compile failures currently surface through DXC logging and fatal-path behavior during startup, not through a robust cooked-artifact compatibility layer. Phase 1D should replace that with explicit artifact validation and loading failures.
    - Prompt 2: define a backend-neutral cooked shader package schema.
      What: specify the artifact format that stores compiled stage binaries plus backend-neutral metadata describing resource bindings, stage usage, optional specialization inputs, debug-symbol references, and compatibility identifiers.
      Why: this schema is the contract that separates renderer logic from backend-specific compilation details and lets D3D12 and Vulkan consume the same logical shader definition.
      How: model the package around logical binding slots, descriptor table expectations, push or constant ranges only if they are already represented in the neutral binding model, and version the format so future SPIR-V support does not invalidate DXIL-era assets.
-     Where: `Engine/RHI/Public/Shaders/ShaderCompileResult.h`, `Engine/RHI/Public/Shaders/ShaderCompileOptions.h`, `Engine/RHI/Public/Interop/RenderHardwareInterface.h`, and new shader-cooking code under `Tools/AssetConverter/Private/Cooking` wired through `Tools/AssetConverter/CMakeLists.txt`.
+    Where: `Engine/RHI/Public/Shaders/ShaderCompileResult.h`, `Engine/RHI/Public/Shaders/ShaderCompileOptions.h`, `Engine/RHI/Public/Interop/RenderHardwareInterface.h`, and new shader-cooking code under `Tools/ShaderCompiler/Private/Cooking` wired through `Tools/ShaderCompiler/CMakeLists.txt`.
      Guardrails: do not encode D3D12 root-signature layout details directly into the asset; do not make the schema DXIL-only if Milestone 2 will need SPIR-V from the same source pipeline.
+     Concrete schema snapshot:
+     - Chosen schema surface: place the shared package definition in `Engine/RHI/Public/Shaders/CookedShaderPackage.h`. This keeps the shader artifact ABI at the same layer that will eventually load and translate it, rather than forcing RHI to depend upward on GameFramework.
+     - File header: `CookedShaderPackageHeader` should carry `Magic`, `Version`, `DeclaredStages`, shader-model major or minor values, record counts, string-table size, binary-blob size, and four compatibility identifiers: `ShaderPackageKey`, `SourceIdentityHash`, `BindingLayoutHash`, and `VariantHash`.
+     - Binary payload records: `CookedShaderBinaryRecord` should represent one backend-specific compiled payload for one stage. Each record should store the stage, binary format (`Dxil` now, `SpirV` later), entry-point string reference, optional debug-artifact string reference, bytecode blob reference, and a bytecode hash.
+     - Binding metadata records: `CookedShaderBindingRecord` should describe Sparkle logical bindings, not native register or set layout. Each record should store binding name, semantic kind, resource domain, access mode, stage-visibility mask, logical binding index, descriptor or array count, and uniform byte size.
+     - Specialization metadata records: `CookedShaderSpecializationInputRecord` should reserve space for future specialization or permutation control using a logical input name, stage-visibility mask, scalar value type, logical index, and default value bits.
+     - Variable data layout: the package should be laid out as header, fixed-size record arrays, UTF-8 string table, then binary blob storage. Record structs stay trivially copyable so the loader can validate headers first and then map or read the variable sections deterministically.
+     - Compatibility rule: `BindingLayoutHash` validates that cooked shader metadata still matches the logical `PassParameterLayout` contract, while `VariantHash` captures compile-affecting defines or specialization identity without baking D3D12 register numbering into the file format.
+     - First-scope limit: version 1 should store enough metadata to replace current runtime DXC usage on D3D12 without pretending to solve all future reflection problems. That means bytecode, stage identity, debug-symbol linkage, binding compatibility, and variation identity are in scope now; native root-signature serialization is not.
    - Prompt 3: assign shader cooking ownership and build entry points.
      What: decide exactly which tool builds shader artifacts, when it runs, how outputs are stored, and how the runtime discovers them.
      Why: without clear ownership, runtime code will grow fallback compilation paths again and the build pipeline will become ambiguous for editor, game, and CI flows.
      How: place shader compilation in the asset-cooking toolchain, define manifest naming and output layout, and make runtime loading consume artifact references instead of source-file paths.
-     Where: `Tools/AssetConverter/CMakeLists.txt`, `Scripts/CookAssets.bat`, `Engine/RHI/CMakeLists.txt`, and the runtime asset-loading path that currently resolves shader sources indirectly through pass traits.
+    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAssets.bat`, `Engine/RHI/CMakeLists.txt`, and the runtime asset-loading path that currently resolves shader sources indirectly through pass traits.
      Guardrails: do not let the renderer own offline cooking logic; do not require the editor to invoke DXC directly during normal runtime startup.
+     Concrete ownership snapshot:
+    - Tool owner: offline shader-package ownership now lives under `Tools/ShaderCompiler/Private/Cooking/ShaderCookManifest.h` and `.cpp`. ShaderCompiler, not AssetConverter or Renderer, is the seam that discovers package definitions, validates them, and decides cooked output locations.
+     - Source manifest contract: engine-owned package declarations now live in `Engine/Assets/Shaders/ShaderPackages.ini`. The tool also looks for a project-side `Assets/Shaders/ShaderPackages.ini` and merges both manifests by logical `packageId`, with the project manifest overriding the engine definition when both declare the same package.
+     - Initial package inventory: the first manifest captures the exact runtime-compiled set from Prompt 1: `ForwardOpaque`, `ShadowOpaque`, and `ComputeClear`, each with an explicit binding-layout id, logical variant id, per-stage HLSL path, and entry point.
+    - Build entrypoints: `ShaderCompiler` now exposes `inspect-manifest` and `cook` for standalone shader validation and emission, while `AssetConverter` keeps the explicit `cook-scene <source-scene-path>` scene-cook command. `Scripts/CookAssets.bat` builds both tools, runs shader-manifest validation and shader cooking through ShaderCompiler before any scene cooking, and `Scripts/Internal/InvokeCookSceneList.ps1` now uses the explicit AssetConverter scene subcommand instead of the older implicit single-argument mode.
+     - Cooked output layout: shader artifacts are reserved under `Projects/<Project>/Assets/Cooked/Shaders`, with package payloads under `Projects/<Project>/Assets/Cooked/Shaders/Packages` and the future registry at `Projects/<Project>/Assets/Cooked/Shaders/ShaderPackageRegistry.sreg`.
+     - Runtime discovery rule: cooked package paths are keyed by a stable FNV-1a hash over logical `packageId` plus `variantId`, not by raw source file path. That keeps runtime lookup aligned to logical shader identity and leaves room for one package id to eventually carry both DXIL and SPIR-V payloads.
+     - Scope boundary: Prompt 3 stops at ownership, manifest discovery, validation, and output conventions. Actual package emission, registry writing, and runtime cooked-shader loading remain Phase 1D work.
    - Phase exit snapshot:
      Completed: the engine has a defined cooked shader contract, known build ownership, and a documented inventory of what runtime compilation currently provides.
      WIP: D3D12 still consumes runtime-compiled results while the new artifact path is being connected.
@@ -74,20 +103,38 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      How: create a loader that maps cooked binaries and metadata into immutable runtime shader records, caches them by asset identity, and rejects incompatible package versions with actionable diagnostics.
      Where: the shader-loading path reachable from `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, the public shader result and options headers under `Engine/RHI/Public/Shaders`, and any asset discovery plumbing used by cooked project content.
      Guardrails: do not keep source-HLSL loading as the default path; do not hide stale-artifact failures behind silent runtime recompilation.
+     Concrete runtime loader snapshot:
+    - Shared shader identity and path helpers now live in `Engine/RHI/Public/Shaders/CookedShaderPackageUtils.h` with implementation in `Engine/RHI/Private/Shaders/CookedShaderPackageUtils.cpp`. Both runtime and ShaderCompiler now use the same package-key hashing and cooked package path convention, so `ForwardOpaque`, `ShadowOpaque`, and `ComputeClear` resolve to the exact same `.sshd` locations in both flows.
+     - Runtime package loading now lives in `Engine/RHI/Public/Shaders/CookedShaderPackageCache.h` and `Engine/RHI/Private/Shaders/CookedShaderPackageCache.cpp`. The loader reads a cooked package file, validates header magic and version, verifies shader-model compatibility, package key, variant hash, binding-layout hash, declared stage mask, binding metadata records, bytecode blob bounds, and bytecode hashes, then caches the immutable package by logical package key.
+     - Renderer pass declarations no longer describe HLSL source files for normal startup. `ForwardOpaquePass`, `ShadowOpaquePass`, and `ComputeClearPass` now describe logical shader packages by `packageId`, `variantId`, binding-layout id, and required stage mask.
+     - `PipelineStateManager` now owns a `CookedShaderPackageCache`, and `RenderPassPipelineTraits` loads cooked packages during pass-runtime initialization. The existing D3D12 PSO path still consumes `RhiShaderBytecode`, but that bytecode now comes from loaded cooked packages instead of runtime DXC compilation.
+     - Failure mode is now explicit: if a cooked package is missing, stale, or incompatible with the runtime `PassParameterLayout`, renderer startup fails with a targeted cooked-shader diagnostic instead of silently recompiling shader source.
+    - Current boundary after Prompt 1: the runtime loader is real and strict about cooked package compatibility, but package emission and registry writing still need to arrive before the public cook flow can satisfy startup end to end.
    - Prompt 2: rework D3D12 pipeline creation to consume cooked metadata instead of runtime DXC output.
      What: make pipeline creation read cooked stage binaries and neutral binding metadata, then translate them into D3D12-native objects behind the RHI boundary.
      Why: this is the actual architectural win of the phase; once pipeline creation consumes cooked metadata, the renderer no longer needs compile-time knowledge of D3D12 shader details.
      How: build D3D12 root-signature and PSO translation from the neutral metadata model, keep shader bytecode ownership backend-local, and preserve debug-symbol references for tooling.
      Where: `Engine/RHI/Private/D3D12/Shaders/DxcShaderCompiler.cpp`, `Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp`, `Engine/RHI/Private/D3D12/Pipeline/D3D12BindingLayout.cpp`, `Engine/RHI/Private/D3D12/Pipeline/D3D12PipelineState.cpp`.
      Guardrails: do not push D3D12 pipeline-layout concepts back into renderer types; do not special-case one pass type in a way that bypasses the cooked metadata path.
+     Concrete D3D12 translation snapshot:
+     - Renderer-facing pipeline descriptors no longer pass raw DXIL blobs into the RHI. `RenderBindingLayoutCompileDesc` now carries the loaded cooked package alongside the expected `PassParameterLayout`, and graphics or compute pipeline descriptors now identify required shader stages through neutral package-backed stage descriptors instead of raw bytecode pointers.
+     - `D3D12BindingLayoutCompiler` now builds root signatures from `CookedShaderBindingRecord` metadata loaded from the package, while still retaining the original `PassParameterLayout` handle for renderer-side binding validation and `PassBinder` lookup.
+     - `D3D12PipelineState` now resolves DXIL binaries and debug-artifact strings from `LoadedShaderPackage` internally, then translates those stage records into native `D3D12_SHADER_BYTECODE` values behind the RHI boundary. The renderer no longer needs to know how D3D12 stage binaries are stored or selected.
+     - `D3D12RenderHardwareInterface` now rejects pipeline or binding-layout creation requests that do not include cooked package metadata, which prevents the renderer from drifting back toward a source-compile or raw-bytecode startup path.
+     - Debug-symbol linkage remains preserved: PSO creation keeps access to per-stage cooked debug-artifact references and reports them on D3D12 pipeline creation failure instead of requiring renderer-owned DXC state.
    - Prompt 3: remove renderer-owned runtime compilation from normal execution.
      What: delete the code paths that compile pass shaders during renderer startup or pipeline setup, leaving only explicit offline or developer-only workflows if still needed.
      Why: as long as the normal runtime still compiles shaders, the asset ABI is optional and future Vulkan work will drift back toward the old model.
      How: change pass registration to reference cooked shader identities, keep error messages focused on missing or stale cooked artifacts, and move any remaining development-only compile helpers out of the shipping frame setup path.
-     Where: `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, `Engine/Renderer/Private/Passes/ShaderSourceDefinition.h`, `Engine/RHI/Public/Shaders/DxcShaderCompiler.h`, `Scripts/CookAssets.bat`.
+    Where: `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`, `Engine/Renderer/Private/Passes/ShaderSourceDefinition.h`, `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.h`, `Scripts/CookAssets.bat`.
      Guardrails: do not leave a hidden runtime compile fallback for convenience; do not make asset cooking optional for the shipping execution path.
+     Concrete normal-path removal snapshot:
+     - `RenderPassPipelineTraits` no longer carries any shader-source declaration validation or DXC compile work. Startup only loads cooked packages, builds binding layouts from cooked metadata, and creates backend PSOs from cooked stage identities.
+     - The old renderer-owned `ShaderSourceDefinition` surface has been removed, and `ShaderPass` no longer exposes `ValidateShaderSourceDefinition(...)`. That removes the last renderer-private abstraction that implied source-HLSL compilation during normal pass registration.
+    - `DxcShaderCompiler` now lives only inside the standalone `ShaderCompiler` tool as the explicit DXC wrapper for offline or developer-initiated compilation work. The asset-path convenience API that matched the old runtime model has been removed, runtime no longer owns the DXC wrapper, and normal startup must consume cooked artifacts instead of compiling source.
+    - `Scripts/CookAssets.bat` now makes the cooked shader requirement explicit by validating the shader cook manifest, invoking `ShaderCompiler inspect-manifest` plus `ShaderCompiler cook`, and documenting that normal runtime startup expects cooked shader outputs under `Projects/<Project>/Assets/Cooked/Shaders/Packages`.
    - Phase exit snapshot:
-     Completed: D3D12 pipelines are created from cooked shader artifacts plus neutral metadata; renderer startup no longer depends on runtime DXC compilation.
+    Completed: D3D12 pipelines are created from cooked shader artifacts plus neutral metadata; ShaderCompiler emits cooked `.sshd` payloads and the shader registry during the public cook flow; renderer startup no longer depends on runtime DXC compilation.
      WIP: dev-facing artifact authoring and diagnostics may still need polish.
      Todo: generic GPU diagnostics surface and D3D12 tooling integration.
 5. Milestone 1 / Phase 1E: Design the neutral GPU diagnostics surface.
@@ -144,7 +191,7 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      What: verify cooked shader generation, stale-artifact detection, and pipeline creation from cooked metadata.
      Why: the shader ABI is now a core engine contract and needs regression coverage before Vulkan depends on it.
      How: add validation around artifact generation, loading, and compatibility checks, and make build or smoke flows fail when cooked shader expectations drift.
-     Where: `Tools/AssetConverter/CMakeLists.txt`, `Scripts/CookAssets.bat`, runtime shader-loading code, and milestone validation scripts or project smoke targets.
+    Where: `Tools/ShaderCompiler/CMakeLists.txt`, `Scripts/CookAssets.bat`, runtime shader-loading code, and milestone validation scripts or project smoke targets.
      Guardrails: do not test only artifact existence; also test that the runtime consumes the artifacts successfully.
    - Prompt 2: add D3D12 diagnostics smoke validation.
      What: validate markers, timing scopes, debug messages, and capture-friendly labeling in a repeatable smoke workflow.
@@ -216,13 +263,13 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
      What: extend the offline shader pipeline so one source definition can produce both DXIL and SPIR-V payloads under the same cooked shader identity.
      Why: if Vulkan needs a different authoring path, the asset system has already failed its central purpose.
      How: reuse the cooked shader schema from Milestone 1, add backend-specific binary payload slots, and keep shared metadata identical unless a true backend divergence must be modeled explicitly.
-     Where: shader-cooking code under `Tools/AssetConverter/Private/Cooking`, `Tools/AssetConverter/CMakeLists.txt`, and the public shader artifact definitions under `Engine/RHI/Public/Shaders`.
+    Where: shader-cooking code under `Tools/ShaderCompiler/Private/Cooking`, `Tools/ShaderCompiler/CMakeLists.txt`, and the public shader artifact definitions under `Engine/RHI/Public/Shaders`.
      Guardrails: do not fork source-authoring conventions between D3D12 and Vulkan; do not duplicate metadata blocks just because the binary payloads differ.
    - Prompt 2: validate metadata compatibility across both binary outputs.
      What: prove that the same logical binding metadata describes both DXIL and SPIR-V payloads accurately enough for backend pipeline creation.
      Why: this is the core claim of the neutral shader ABI and must be validated before descriptor or pipeline translation goes deeper.
      How: compare stage expectations, binding counts, specialization hooks, and debug identity between both outputs and tighten the schema if a real mismatch appears.
-     Where: shader artifact definitions under `Engine/RHI/Public/Shaders`, cooking code under `Tools/AssetConverter`, and backend loaders that validate cooked package compatibility.
+    Where: shader artifact definitions under `Engine/RHI/Public/Shaders`, cooking code under `Tools/ShaderCompiler`, and backend loaders that validate cooked package compatibility.
      Guardrails: do not let one backend silently ignore metadata fields that the other backend requires; do not rely on backend runtime reflection to patch missing schema information.
    - Prompt 3: define how feature toggles and specialization values flow through cooked shaders.
      What: formalize how backend-neutral feature switches become specialization constants, permutations, or cooked variants.
@@ -336,16 +383,19 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Interop\RendererBackendServices.h` - renderer-facing bootstrap and backend orchestration seam.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\Pipeline\RenderPassPipelineTraits.h` - current runtime shader compilation call path and the main runtime entrypoint that must switch to cooked shader consumption.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Renderer\Private\Passes\ShaderSourceDefinition.h` - current pass-to-shader source definition contract that must stop implying runtime compilation.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\ShaderStage.h` - shared stage and stage-mask surface used by both compile-time and cooked-shader metadata.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\CookedShaderPackage.h` - backend-neutral cooked shader package schema for stage binaries, logical binding metadata, specialization inputs, and compatibility identifiers.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\ShaderCompileOptions.h` - public compile description that should evolve into offline shader-cooking input and variant metadata.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\ShaderCompileResult.h` - public compile result contract that should evolve into cooked artifact metadata rather than a runtime compile return type.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Public\Shaders\DxcShaderCompiler.h` - current DXC-focused interface that should stop being part of normal runtime execution.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\Shaders\DxcShaderCompiler.cpp` - existing DXC compile path and a key place to split offline compilation from runtime consumption.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\ShaderCompiler\Private\Compiler\DxcShaderCompiler.h` - tool-owned DXC wrapper used only by the standalone shader cook path.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\ShaderCompiler\Private\Compiler\DxcShaderCompiler.cpp` - tool-owned DXC compile path that stays outside normal runtime execution.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12RenderHardwareInterface.cpp` - D3D12 backend translation point for cooked shader loading, diagnostics, timing, and backend service wiring.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12Rhi.cpp` - D3D12 device and backend bootstrap path, including debug and diagnostics ownership.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\Private\D3D12\D3D12DebugLayer.cpp` - D3D12 validation, InfoQueue, and live-object baseline to extend into the new diagnostics surface.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Editor\Private\UI.cpp` - sanctioned editor host seam where backend-specific present or UI integration behavior must stay isolated.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Engine\RHI\CMakeLists.txt` - backend dependency wiring, shader tool linkage decisions, and future Vulkan module integration start here.
-- `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\AssetConverter\CMakeLists.txt` - asset cooking entrypoints and future shader-cooking integration.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\AssetConverter\CMakeLists.txt` - asset cooking entrypoints for scene and texture conversion.
+- `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\ShaderCompiler\CMakeLists.txt` - standalone shader-cooking entrypoints and offline shader artifact ownership.
 - `c:\Users\stole\Documents\GitHub\SparkleEngine\Tools\AssetConverter\Private\Cooking\KtxTextureCooker.cpp` - current texture cooking path that still needs neutrality work before full dual-backend asset parity.
 
 **Verification**
@@ -385,20 +435,26 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 **ASCII Container Architecture / System Design**
 ```text
 +---------------------------+        +----------------------------------+
-| Source Assets             |        | Tools/AssetConverter             |
-| - HLSL shader sources     | -----> | - cooks scenes and textures      |
-| - textures and materials  |        | - cooks shader artifacts         |
-| - scene content           |        | - emits DXIL now, SPIR-V next    |
+| Source Assets             |        | Tools/ShaderCompiler            |
+| - HLSL shader sources     | -----> | - validates shader manifests    |
+| - textures and materials  |        | - cooks shader artifacts        |
+| - scene content           |        | - emits DXIL now, SPIR-V next   |
 +-------------+-------------+        +----------------+-----------------+
-              |                                       |
-              |                                       v
-              |                         +-------------------------------+
-              |                         | Cooked Content                |
-              |                         | - scene data                  |
-              |                         | - texture payloads            |
-              +-----------------------> | - shader binaries            |
-                                        | - neutral shader metadata     |
-                                        +---------------+---------------+
+        |                                       |
+        |                                       v
+        |        +------------------------------+----------------+
+        | -----> | Tools/AssetConverter                          |
+        |        | - cooks scenes and textures                   |
+        |        +------------------------------+----------------+
+        |                                       |
+        |                                       v
+        |                         +-------------------------------+
+        |                         | Cooked Content                |
+        |                         | - scene data                  |
+        |                         | - texture payloads            |
+        +-----------------------> | - shader binaries            |
+                                  | - neutral shader metadata     |
+                                  +---------------+---------------+
                                                         |
                                                         v
                               +------------------------------------------------+
@@ -455,5 +511,5 @@ Refine SparkleEngine into a two-milestone rendering transition. Milestone 1 make
 
 - The renderer is the policy layer. It decides what to render, how passes depend on each other, and which logical resources or bindings are needed.
 - The RHI is the translation layer. It owns native resource identity, native pipelines, diagnostics integration, and backend-specific submission details.
-- AssetConverter is the offline boundary. It should produce cooked shader and texture artifacts so runtime execution is about loading and translating prepared data, not compiling or inventing metadata on the fly.
+- ShaderCompiler is the offline shader boundary, while AssetConverter remains the offline scene and texture boundary. Runtime execution should be about loading and translating prepared data, not compiling or inventing metadata on the fly.
 - D3D12 remains the control backend until Milestone 2 closes. Vulkan should match the same contracts rather than forcing the renderer to learn a second execution model.
