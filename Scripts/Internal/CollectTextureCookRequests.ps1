@@ -51,7 +51,7 @@ try {
             continue
         }
 
-        $requestLines = Get-Content -LiteralPath $sceneRequestFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        $requestLines = @(Get-Content -LiteralPath $sceneRequestFile | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
         if ($requestLines.Count -eq 0) {
             throw "Texture request file was empty for scene '$relativePath'."
         }

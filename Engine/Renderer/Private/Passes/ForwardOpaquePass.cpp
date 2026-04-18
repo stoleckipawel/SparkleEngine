@@ -21,6 +21,11 @@
 
 #include <cassert>
 
+namespace
+{
+	std::shared_ptr<spdlog::logger> g_forwardOpaquePassLogger = Engine::Logging::GetOrCreateLogger("Renderer.ForwardOpaquePass");
+}
+
 const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -134,7 +139,7 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 		const RhiDescriptorTableHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableHandle;
 		if (!materialTextureTable)
 		{
-			SPDLOG_LOGGER_WARN(g_shaderPassLogger, "ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
+			SPDLOG_LOGGER_WARN(g_forwardOpaquePassLogger, "ForwardOpaquePass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
 			continue;
 		}
 

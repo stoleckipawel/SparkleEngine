@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <format>
 #include <iostream>
+#include <objbase.h>
 #include <string_view>
 
 static bool IsInspectRequestFileCommand(std::string_view command) noexcept
@@ -39,10 +40,22 @@ static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 
 static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 {
+	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(coInitializeResult) && coInitializeResult != RPC_E_CHANGED_MODE)
+	{
+		std::cerr << "TextureCooker: failed to initialize COM for source texture loading\n";
+		return 4;
+	}
+
 	std::vector<Engine::AssetAuthoring::TextureCookRequest> requests;
 	std::string errorMessage;
 	if (!Engine::AssetAuthoring::LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
 	{
+		if (SUCCEEDED(coInitializeResult))
+		{
+			CoUninitialize();
+		}
+
 		std::cerr << "TextureCooker: failed to load request file - " << errorMessage << "\n";
 		return 6;
 	}
@@ -52,9 +65,19 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 	{
 		if (!cooker.Cook(request, errorMessage))
 		{
+			if (SUCCEEDED(coInitializeResult))
+			{
+				CoUninitialize();
+			}
+
 			std::cerr << "TextureCooker: failed to cook texture '" << request.sourcePath.string() << "' - " << errorMessage << "\n";
 			return 7;
 		}
+	}
+
+	if (SUCCEEDED(coInitializeResult))
+	{
+		CoUninitialize();
 	}
 
 	std::cout << "TextureCooker: cooked " << requests.size() << " texture asset(s) from request file '" << requestFilePath.string() << "'\n";
