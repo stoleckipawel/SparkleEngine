@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <cstdio>
+#include <numeric>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -43,6 +44,33 @@ namespace
 		return sum;
 	}
 
+	std::string_view ShortenScopeName(std::string_view fullName) noexcept
+	{
+		if (const std::size_t bracket = fullName.find("] "); bracket != std::string_view::npos)
+		{
+			return fullName.substr(bracket + 2);
+		}
+		if (const std::size_t dot = fullName.rfind('.'); dot != std::string_view::npos)
+		{
+			return fullName.substr(dot + 1);
+		}
+		return fullName;
+	}
+
+	ImU32 GenerateProfilerColor(std::string_view /*shortName*/, std::size_t index, std::size_t total, float saturation = 0.55f) noexcept
+	{
+		// Divide the full hue wheel evenly among items.
+		const float n = total > 0 ? static_cast<float>(total) : 1.0f;
+		const float hue = std::fmod(static_cast<float>(index) / n, 1.0f);
+
+		const float val = 0.82f;
+
+		ImVec4 rgb;
+		ImGui::ColorConvertHSVtoRGB(hue, saturation, val, rgb.x, rgb.y, rgb.z);
+		rgb.w = 1.0f;
+		return ImGui::ColorConvertFloat4ToU32(rgb);
+	}
+
 	std::string_view ExtractModuleName(std::string_view scopeName) noexcept
 	{
 		// CPU scopes use dotted names like "Renderer.RecordFrame". Module is the first segment.
@@ -69,7 +97,7 @@ void ProfilerPanel::BuildEmbeddedUI(bool disableInteraction)
 	m_snapshot = profiler.CaptureSnapshot();
 
 	ImGui::BeginDisabled(disableInteraction);
-	RenderToolbar(profiler);
+	RenderToolbar();
 
 	if (ImGui::BeginTabBar("##ProfilerTabs", ImGuiTabBarFlags_None))
 	{
@@ -92,7 +120,7 @@ void ProfilerPanel::BuildEmbeddedUI(bool disableInteraction)
 	ImGui::EndDisabled();
 }
 
-void ProfilerPanel::RenderToolbar(Engine::Diagnostics::LiveProfiler& profiler) noexcept
+void ProfilerPanel::RenderToolbar() noexcept
 {
 	static constexpr const char* kSortLabels[] = {
 	    "Hierarchy (grouped)",
@@ -109,8 +137,6 @@ void ProfilerPanel::RenderToolbar(Engine::Diagnostics::LiveProfiler& profiler) n
 	{
 		m_sortMode = static_cast<SortMode>(sortIndex);
 	}
-	ImGui::SameLine();
-	ImGui::Checkbox("Charts", &m_showCharts);
 	ImGui::Separator();
 }
 
@@ -162,31 +188,38 @@ void ProfilerPanel::RenderGpuTab() const
 	ImGui::PopID();
 
 	// Chart the pass-level nodes. If there's a single root, use its children.
-	if (m_showCharts)
+	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+	if (bucket.size() == 1 && !bucket[0]->Children.empty())
 	{
-		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
-		if (bucket.size() == 1 && !bucket[0]->Children.empty())
+		chartBucket.reserve(bucket[0]->Children.size());
+		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : bucket[0]->Children)
 		{
-			chartBucket.reserve(bucket[0]->Children.size());
-			for (const Engine::Diagnostics::ProfilerSnapshotNode& child : bucket[0]->Children)
-			{
-				chartBucket.push_back(&child);
-			}
+			chartBucket.push_back(&child);
 		}
-		else
-		{
-			chartBucket = bucket;
-		}
-		if (chartBucket.size() >= 2)
-		{
-			RenderModuleCharts(chartBucket, "GPU");
-		}
+	}
+	else
+	{
+		chartBucket = bucket;
+	}
+	if (chartBucket.size() >= 2)
+	{
+		RenderModuleCharts(chartBucket, "GPU");
 	}
 }
 
-void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth) const
+void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth, std::size_t siblingIndex, std::size_t siblingTotal) const
 {
 	ImGui::TableNextRow();
+
+	// Tint rows with a low-opacity color matching the charts.
+	if (siblingTotal > 0)
+	{
+		const std::string_view shortName = ShortenScopeName(node.Name);
+		ImU32 color = GenerateProfilerColor(shortName, siblingIndex, siblingTotal, 0.85f);
+		// Override alpha to ~25/255 for a subtle tint.
+		color = (color & 0x00FFFFFFu) | (0x19u << 24);
+		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, color);
+	}
 
 	ImGui::TableSetColumnIndex(0);
 	const bool hasChildren = !node.Children.empty();
@@ -196,7 +229,9 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 	{
 		nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 	}
-	const bool open = ImGui::TreeNodeEx(node.Name.c_str(), nodeFlags);
+	const std::string_view displayName = ShortenScopeName(node.Name);
+	const std::string displayNameStr(displayName);
+	const bool open = ImGui::TreeNodeEx(displayNameStr.c_str(), nodeFlags);
 
 	const double inclusiveMs = node.AverageDurationMicroseconds * kMicrosecondsToMilliseconds;
 	const double childSumMs = SumChildAverages(node.Children) * kMicrosecondsToMilliseconds;
@@ -316,11 +351,14 @@ void ProfilerPanel::SortBucket(std::vector<const Engine::Diagnostics::ProfilerSn
 
 void ProfilerPanel::RenderTableRows(
     const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes,
-    int depth) const
+    int depth,
+    std::size_t siblingOffset,
+    std::size_t siblingTotal) const
 {
-	for (const Engine::Diagnostics::ProfilerSnapshotNode* node : nodes)
+	const std::size_t total = siblingTotal > 0 ? siblingTotal : nodes.size();
+	for (std::size_t i = 0; i < nodes.size(); ++i)
 	{
-		RenderNodeRow(*node, depth);
+		RenderNodeRow(*nodes[i], depth, siblingOffset + i, total);
 	}
 }
 
@@ -360,7 +398,7 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 		ImGui::EndTable();
 		ImGui::PopID();
 
-		if (m_showCharts && bucket.size() >= 2)
+		if (bucket.size() >= 2)
 		{
 			RenderModuleCharts(bucket, moduleOrder[0]);
 		}
@@ -387,7 +425,7 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 			ImGui::EndTable();
 			ImGui::PopID(); // from BeginProfilerTable
 
-			if (m_showCharts && bucket.size() >= 2)
+			if (bucket.size() >= 2)
 			{
 				RenderModuleCharts(bucket, moduleName);
 			}
@@ -408,32 +446,15 @@ void ProfilerPanel::RenderModuleCharts(
 		ImU32 Color = 0;
 	};
 
-	auto hashColor = [](std::string_view name) noexcept -> ImU32
+	auto hashColor = [](std::string_view name, std::size_t index, std::size_t total) noexcept -> ImU32
 	{
-		std::uint32_t h = 2166136261u;
-		for (char c : name)
-		{
-			h ^= static_cast<std::uint32_t>(static_cast<unsigned char>(c));
-			h *= 16777619u;
-		}
-		const float hue = static_cast<float>(h % 360u) / 360.0f;
-		ImVec4 rgb;
-		ImGui::ColorConvertHSVtoRGB(hue, 0.50f, 0.78f, rgb.x, rgb.y, rgb.z);
-		rgb.w = 1.0f;
-		return ImGui::ColorConvertFloat4ToU32(rgb);
+		return GenerateProfilerColor(name, index, total);
 	};
 
 	auto shortenName = [](const std::string& fullName) -> std::string
 	{
-		if (const std::size_t bracket = fullName.find("] "); bracket != std::string::npos)
-		{
-			return fullName.substr(bracket + 2);
-		}
-		if (const std::size_t dot = fullName.rfind('.'); dot != std::string::npos)
-		{
-			return fullName.substr(dot + 1);
-		}
-		return fullName;
+		const std::string_view sv = ShortenScopeName(fullName);
+		return std::string(sv);
 	};
 
 	// ---- Build data ----
@@ -441,10 +462,13 @@ void ProfilerPanel::RenderModuleCharts(
 	slices.reserve(bucket.size());
 	double totalMs = 0.0;
 	double maxMs = 0.0;
-	for (const Engine::Diagnostics::ProfilerSnapshotNode* node : bucket)
+	for (std::size_t i = 0; i < bucket.size(); ++i)
 	{
+		const Engine::Diagnostics::ProfilerSnapshotNode* node = bucket[i];
 		const double ms = node->AverageDurationMicroseconds * kMicrosecondsToMilliseconds;
-		slices.push_back(Slice{shortenName(node->Name), ms, 0.0, hashColor(node->Name)});
+		std::string shortName = shortenName(node->Name);
+		const ImU32 color = hashColor(shortName, i, bucket.size());
+		slices.push_back(Slice{std::move(shortName), ms, 0.0, color});
 		totalMs += ms;
 		maxMs = std::max(maxMs, ms);
 	}
@@ -456,6 +480,10 @@ void ProfilerPanel::RenderModuleCharts(
 	{
 		s.Pct = s.ValueMs / totalMs * 100.0;
 	}
+	// Sorted indices for the bar chart (most expensive → cheapest). Pie keeps insertion order.
+	std::vector<std::size_t> barOrder(slices.size());
+	std::iota(barOrder.begin(), barOrder.end(), std::size_t{0});
+	std::sort(barOrder.begin(), barOrder.end(), [&](std::size_t a, std::size_t b) { return slices[a].ValueMs > slices[b].ValueMs; });
 
 	const float availWidth = ImGui::GetContentRegionAvail().x;
 	if (availWidth < 220.0f)
@@ -471,22 +499,20 @@ void ProfilerPanel::RenderModuleCharts(
 	const float innerPad = 10.0f;
 	const float innerWidth = availWidth - outerPad * 2.0f;
 
-	// Pie dimensions.
-	const float pieSize = 80.0f;
+	// Pie dimensions — takes ~40% of width.
+	const float piePanelW = innerWidth * 0.38f;
+	const float pieSize = std::min(piePanelW - 16.0f, 120.0f);
 	const float pieRadius = pieSize * 0.5f;
 	const float donutHole = pieRadius * 0.40f;
 
-	// Legend occupies space to the right of pie within the left panel.
-	const float legendRowH = fontSize * 2.0f + 5.0f;
-	const float legendHeight = legendRowH * static_cast<float>(slices.size());
-	const float pieLegendHeight = std::max(pieSize, legendHeight);
+	const float chartContentH = pieSize + 4.0f;
 
 	// Right panel: bar chart.
-	const float barChartH = pieLegendHeight;
+	const float barChartH = chartContentH;
 	const float barLabelH = fontSize + 2.0f;
 
 	// Total card height.
-	const float cardContentH = pieLegendHeight + barLabelH + innerPad + rowH;
+	const float cardContentH = chartContentH + barLabelH + innerPad + rowH;
 	const float cardH = cardContentH + outerPad * 2.0f;
 
 	// ---- Card container ----
@@ -512,16 +538,13 @@ void ProfilerPanel::RenderModuleCharts(
 	const float cx = cardOrigin.x + outerPad;
 	float cy = cardOrigin.y + outerPad;
 
-	// ============ Donut pie (left) | Legend (middle) | Bar chart (right) ============
-	// Split: pie gets fixed space, legend gets fixed space, bar chart gets the rest.
-	const float pieBlockW = pieSize + innerPad;
-	const float legendColW = 170.0f;
+	// ============ Donut pie (left) | Bar chart (right) ============
 	const float dividerGap = innerPad;
-	const float barAreaLeft = cx + pieBlockW + legendColW + dividerGap;
+	const float barAreaLeft = cx + piePanelW + dividerGap;
 	const float barAreaW = (cx + innerWidth) - barAreaLeft;
 
 	// ---- Donut pie ----
-	const ImVec2 pieCenter{cx + pieRadius, cy + pieLegendHeight * 0.5f};
+	const ImVec2 pieCenter{cx + piePanelW * 0.5f, cy + chartContentH * 0.5f};
 
 	double angleCursor = 0.0;
 	for (const Slice& s : slices)
@@ -567,7 +590,7 @@ void ProfilerPanel::RenderModuleCharts(
 
 	// Label under pie.
 	{
-		const char* unitLabel = "ms (excl)";
+		const char* unitLabel = "ms (incl)";
 		const ImVec2 ulSz = ImGui::CalcTextSize(unitLabel);
 		dl->AddText(
 		    ImVec2(pieCenter.x - ulSz.x * 0.5f, pieCenter.y + pieRadius + 2.0f),
@@ -575,27 +598,10 @@ void ProfilerPanel::RenderModuleCharts(
 		    unitLabel);
 	}
 
-	// ---- Legend (right of pie) ----
-	{
-		const float lx = cx + pieBlockW;
-		float ly = cy + (pieLegendHeight - legendHeight) * 0.5f;
-		for (const Slice& s : slices)
-		{
-			dl->AddRectFilled(ImVec2(lx, ly + 3.0f), ImVec2(lx + 8.0f, ly + fontSize - 1.0f), s.Color, 2.0f);
-			dl->AddText(ImVec2(lx + 12.0f, ly), IM_COL32(200, 200, 200, 220), s.ShortName.c_str());
-
-			// Value on second line, indented.
-			char valBuf[32];
-			std::snprintf(valBuf, sizeof(valBuf), "%.3f ms  (%.0f%%)", s.ValueMs, s.Pct);
-			dl->AddText(ImVec2(lx + 12.0f, ly + fontSize + 1.0f), IM_COL32(140, 140, 150, 190), valBuf);
-			ly += legendRowH;
-		}
-	}
-
 	// ---- Vertical divider ----
 	{
 		const float divX = barAreaLeft - dividerGap * 0.5f;
-		dl->AddLine(ImVec2(divX, cy + 2.0f), ImVec2(divX, cy + pieLegendHeight - 2.0f), IM_COL32(60, 60, 70, 120));
+		dl->AddLine(ImVec2(divX, cy + 2.0f), ImVec2(divX, cy + chartContentH - 2.0f), IM_COL32(60, 60, 70, 120));
 	}
 
 	// ---- Column bar chart (right) ----
@@ -613,10 +619,10 @@ void ProfilerPanel::RenderModuleCharts(
 			dl->AddLine(ImVec2(barAreaLeft, gy), ImVec2(barAreaLeft + barAreaW, gy), IM_COL32(50, 50, 58, 80));
 		}
 
-		for (std::size_t i = 0; i < slices.size(); ++i)
+		for (std::size_t bi = 0; bi < barOrder.size(); ++bi)
 		{
-			const Slice& s = slices[i];
-			const float xL = barAreaLeft + static_cast<float>(i) * (slotW + barSpacing);
+			const Slice& s = slices[barOrder[bi]];
+			const float xL = barAreaLeft + static_cast<float>(bi) * (slotW + barSpacing);
 			const float xR = xL + slotW;
 			const float frac = maxMs > 0.0 ? static_cast<float>(s.ValueMs / maxMs) : 0.0f;
 			const float barH = maxBarH * frac;
@@ -644,14 +650,15 @@ void ProfilerPanel::RenderModuleCharts(
 				    vBuf);
 			}
 
-			// Name below bar.
-			const ImVec2 nSz = ImGui::CalcTextSize(s.ShortName.c_str());
-			if (slotW >= nSz.x + 2.0f)
+			// Name below bar — clipped to column width, left-aligned.
 			{
-				dl->AddText(
-				    ImVec2(xL + (slotW - nSz.x) * 0.5f, bBot + 2.0f),
+				const ImVec2 nSz = ImGui::CalcTextSize(s.ShortName.c_str());
+				const ImVec4 clipRect{xL + 1.0f, bBot + 2.0f, xR - 1.0f, bBot + 2.0f + nSz.y};
+				dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(),
+				    ImVec2(xL + 1.0f, bBot + 2.0f),
 				    IM_COL32(160, 160, 170, 190),
-				    s.ShortName.c_str());
+				    s.ShortName.c_str(), nullptr,
+				    0.0f, &clipRect);
 			}
 
 			// Hover.

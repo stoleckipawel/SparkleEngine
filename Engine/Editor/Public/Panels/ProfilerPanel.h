@@ -33,16 +33,17 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	void RenderGroupedNodes(const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>& nodes) const;
 	void RenderTableRows(
 	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes,
-	    int depth) const;
-	void RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth) const;
+	    int depth,
+	    std::size_t siblingOffset = 0,
+	    std::size_t siblingTotal = 0) const;
+	void RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth, std::size_t siblingIndex = 0, std::size_t siblingTotal = 0) const;
 	void RenderModuleCharts(
 	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    std::string_view moduleName) const;
 	void BeginProfilerTable(const char* id) const;
-	void RenderToolbar(Engine::Diagnostics::LiveProfiler& profiler) noexcept;
+	void RenderToolbar() noexcept;
 	void SortBucket(std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket) const;
 
 	Engine::Diagnostics::ProfilerSnapshot m_snapshot;
 	SortMode m_sortMode = SortMode::Hierarchy;
-	bool m_showCharts = true;
 };
