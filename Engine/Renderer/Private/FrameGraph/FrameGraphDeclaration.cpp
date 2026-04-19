@@ -82,8 +82,6 @@ void FrameGraph::RecordDeclaration(PassResourceDeclaration declaration) noexcept
 void FrameGraph::Setup(const FrameContext& frame)
 {
 	ReleaseExternalViewDescriptors();
-	m_virtualTransientResources.clear();
-	m_nextDynamicResourceIndex = 0;
 	m_compiledPlan.Clear();
 	m_compiledPlan.passes.reserve(m_passes.size());
 

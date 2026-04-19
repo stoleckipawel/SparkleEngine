@@ -30,7 +30,24 @@ RendererBackendServices::~RendererBackendServices() noexcept
 {
 	if (m_impl != nullptr)
 	{
+		if (m_impl->rhi != nullptr)
+		{
+			m_impl->rhi->Flush();
+		}
+
 		m_impl->samplerLibrary.reset();
+		m_impl->renderHardwareInterface.reset();
+		m_impl->constantBufferManager.reset();
+		m_impl->frameResourceManager.reset();
+		m_impl->swapChain.reset();
+		m_impl->descriptorHeapManager.reset();
+
+		if (m_impl->rhi != nullptr && IsDebuggerPresent())
+		{
+			m_impl->rhi->ReportLiveObjects();
+		}
+
+		m_impl->rhi.reset();
 	}
 }
 

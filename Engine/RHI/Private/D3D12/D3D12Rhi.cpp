@@ -334,10 +334,6 @@ D3D12Rhi::~D3D12Rhi() noexcept
 	m_cmdQueue.Reset();
 
 	#if ENGINE_GPU_VALIDATION
-	if (IsDebuggerPresent())
-	{
-		ReportLiveObjects();
-	}
 	m_debugLayer.reset();
 	#endif
 
