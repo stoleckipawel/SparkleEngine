@@ -9,12 +9,17 @@
 class GameScene;
 class Mesh;
 class MeshComponent;
+class ProfilerPanel;
 struct SceneObjectSelection;
 
 class SceneInspectorPanel final
 {
   public:
-	SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels = 456.0f) noexcept;
+	SceneInspectorPanel(
+	    GameScene& gameScene,
+	    SceneObjectSelection& selection,
+	    ProfilerPanel* profilerPanel,
+	    float widthPixels = 560.0f) noexcept;
 	~SceneInspectorPanel() = default;
 
 	SceneInspectorPanel(const SceneInspectorPanel&) = delete;
@@ -23,6 +28,7 @@ class SceneInspectorPanel final
 	SceneInspectorPanel& operator=(SceneInspectorPanel&&) = delete;
 
 	void SetWidth(float widthPixels) noexcept;
+	float GetWidth() const noexcept { return m_widthPixels; }
 	void SetTopInset(float topInsetPixels) noexcept;
 	void BuildUI(bool disableInteraction = false);
 
@@ -30,6 +36,7 @@ class SceneInspectorPanel final
 	std::string BuildSelectionTitle() const;
 	const char* BuildSelectionSubtitle() const noexcept;
 	void BuildSelectionHeader() noexcept;
+	void BuildSelectionInspector() noexcept;
 	static void ClampCameraUiValues(float& pitchDegrees, float& fovYDegrees, float& moveSpeed) noexcept;
 	static void ClampLightingUiValues(DirectX::XMFLOAT3& color, float& intensity) noexcept;
 	void BuildEmptyState() noexcept;
@@ -51,6 +58,7 @@ class SceneInspectorPanel final
 
 	GameScene* m_gameScene = nullptr;
 	SceneObjectSelection* m_selection = nullptr;
-	float m_widthPixels = 456.0f;
+	ProfilerPanel* m_profilerPanel = nullptr;
+	float m_widthPixels = 560.0f;
 	float m_topInsetPixels = 0.0f;
 };

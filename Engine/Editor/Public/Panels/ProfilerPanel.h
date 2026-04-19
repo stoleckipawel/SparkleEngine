@@ -14,18 +14,35 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	ProfilerPanel& operator=(const ProfilerPanel&) = delete;
 	ProfilerPanel& operator=(ProfilerPanel&&) = delete;
 
-	void SetTopInset(float topInsetPixels) noexcept { m_topInsetPixels = topInsetPixels; }
-	void BuildUI(bool disableInteraction = false);
+	void BuildEmbeddedUI(bool disableInteraction = false);
 
   private:
+	enum class SortMode : int
+	{
+		Hierarchy = 0,
+		AlphabeticalAsc = 1,
+		AlphabeticalDesc = 2,
+		InclusiveDescending = 3,
+		ExclusiveDescending = 4,
+		MaxDescending = 5,
+		CallsDescending = 6,
+	};
+
 	void RenderCpuTab() const;
 	void RenderGpuTab() const;
-	static void RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node);
-	static void RenderToolbar(Engine::Diagnostics::LiveProfiler& profiler) noexcept;
+	void RenderGroupedNodes(const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>& nodes) const;
+	void RenderTableRows(
+	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes,
+	    int depth) const;
+	void RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth) const;
+	void RenderModuleCharts(
+	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    std::string_view moduleName) const;
+	void BeginProfilerTable(const char* id) const;
+	void RenderToolbar(Engine::Diagnostics::LiveProfiler& profiler) noexcept;
+	void SortBucket(std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket) const;
 
 	Engine::Diagnostics::ProfilerSnapshot m_snapshot;
-	float m_topInsetPixels = 0.0f;
-	float m_widthPixels = 520.0f;
-	float m_heightPixels = 420.0f;
-	bool m_isVisible = true;
+	SortMode m_sortMode = SortMode::Hierarchy;
+	bool m_showCharts = true;
 };

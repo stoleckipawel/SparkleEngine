@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "Panels/SceneInspectorPanel.h"
 
+#include "Panels/ProfilerPanel.h"
+
 #include "Core/Public/Math/MathUtils.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/Camera/CameraComponent.h"
@@ -21,8 +23,12 @@
 
 #include <imgui.h>
 
-SceneInspectorPanel::SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
-    m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
+SceneInspectorPanel::SceneInspectorPanel(
+	GameScene& gameScene,
+	SceneObjectSelection& selection,
+	ProfilerPanel* profilerPanel,
+	float widthPixels) noexcept :
+	m_gameScene(&gameScene), m_selection(&selection), m_profilerPanel(profilerPanel), m_widthPixels(widthPixels)
 {
 }
 
@@ -70,11 +76,11 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 
 void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
-	UiUtil::BeginSectionCard("Selection");
 	ImGui::TextUnformatted(BuildSelectionTitle().c_str());
 	ImGui::TextDisabled("%s", BuildSelectionSubtitle());
-	UiUtil::EndSectionCard();
-	ImGui::Dummy(ImVec2(0.0f, 6.0f));
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
 }
 
 void SceneInspectorPanel::SetWidth(float widthPixels) noexcept
@@ -104,9 +110,28 @@ void SceneInspectorPanel::ClampLightingUiValues(DirectX::XMFLOAT3& color, float&
 
 void SceneInspectorPanel::BuildEmptyState() noexcept
 {
-	UiUtil::BeginSectionCard("No Selection");
 	ImGui::TextDisabled("Select an object from the scene outliner to inspect its properties.");
-	UiUtil::EndSectionCard();
+}
+
+void SceneInspectorPanel::BuildSelectionInspector() noexcept
+{
+	BuildSelectionHeader();
+	switch (m_selection->type)
+	{
+		case SceneObjectType::Camera:
+			BuildCameraInspector();
+			break;
+		case SceneObjectType::DirectionalLight:
+			BuildDirectionalLightInspector(m_selection->index);
+			break;
+		case SceneObjectType::Mesh:
+			BuildMeshInspector(m_selection->index);
+			break;
+		case SceneObjectType::None:
+		default:
+			BuildEmptyState();
+			break;
+	}
 }
 
 void SceneInspectorPanel::BuildCameraInspector() noexcept
@@ -286,15 +311,22 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
+	constexpr float kMinWidth = 320.0f;
+	const float kMaxWidth = (std::max) (kMinWidth + 1.0f, io.DisplaySize.x * 0.7f);
+	m_widthPixels = std::clamp(m_widthPixels, kMinWidth, kMaxWidth);
+	const float panelHeight = (std::max) (1.0f, io.DisplaySize.y - m_topInsetPixels);
+
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - m_widthPixels, m_topInsetPixels), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, io.DisplaySize.y - m_topInsetPixels), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, panelHeight), ImGuiCond_Once);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, panelHeight), ImVec2(kMaxWidth, panelHeight));
 	ImGui::SetNextWindowBgAlpha(0.98f);
 
 	ImGui::Begin(
 	    "Inspector",
 	    nullptr,
-	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	UiUtil::DrawPanelHeader("Inspector", "Selection");
+	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+
+	m_widthPixels = ImGui::GetWindowWidth();
 
 	if (m_gameScene == nullptr || m_selection == nullptr)
 	{
@@ -304,23 +336,27 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 	}
 
 	ImGui::BeginDisabled(disableInteraction);
-	BuildSelectionHeader();
-	switch (m_selection->type)
+
+	constexpr ImGuiTabBarFlags kTabBarFlags = ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown;
+	if (ImGui::BeginTabBar("##InspectorTabs", kTabBarFlags))
 	{
-		case SceneObjectType::Camera:
-			BuildCameraInspector();
-			break;
-		case SceneObjectType::DirectionalLight:
-			BuildDirectionalLightInspector(m_selection->index);
-			break;
-		case SceneObjectType::Mesh:
-			BuildMeshInspector(m_selection->index);
-			break;
-		case SceneObjectType::None:
-		default:
-			BuildEmptyState();
-			break;
+		if (ImGui::BeginTabItem("Details"))
+		{
+			ImGui::Spacing();
+			BuildSelectionInspector();
+			ImGui::EndTabItem();
+		}
+
+		if (m_profilerPanel != nullptr && ImGui::BeginTabItem("Profiler"))
+		{
+			ImGui::Spacing();
+			m_profilerPanel->BuildEmbeddedUI(disableInteraction);
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
 	}
+
 	ImGui::EndDisabled();
 
 	ImGui::End();

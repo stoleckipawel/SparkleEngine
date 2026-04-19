@@ -4,6 +4,7 @@
 
 #include "GPU/CommandContext.h"
 
+#include <algorithm>
 #include <utility>
 
 ScopedGpuEvent::ScopedGpuEvent(CommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept :
@@ -272,6 +273,23 @@ void FrameExecutionDiagnostics::ResolveTimings() noexcept
 		    .DurationMilliseconds = durationMilliseconds,
 		    .Depth = record.Depth});
 	}
+
+	// Records are pushed in scope-end order (inner timers end before their parents),
+	// but downstream consumers (LiveProfiler hierarchy reconstruction) require
+	// begin-order entries to interpret the depth stream correctly. Sort ascending by
+	// begin tick; tie-break by depth so a parent precedes a child that begins on the
+	// same tick.
+	std::sort(
+	    m_resolvedTimers.begin(),
+	    m_resolvedTimers.end(),
+	    [](const ResolvedGpuTiming& lhs, const ResolvedGpuTiming& rhs) noexcept
+	    {
+		    if (lhs.BeginTicks != rhs.BeginTicks)
+		    {
+			    return lhs.BeginTicks < rhs.BeginTicks;
+		    }
+		    return lhs.Depth < rhs.Depth;
+	    });
 
 	ResetRecordedTimers();
 }

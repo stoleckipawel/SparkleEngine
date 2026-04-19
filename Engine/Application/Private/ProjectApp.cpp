@@ -68,6 +68,7 @@ void ProjectApp::Initialize()
 
 ProjectAppFrameResult ProjectApp::BeginFrame()
 {
+	SPARKLE_CPU_SCOPE("Application.Project.BeginFrame");
 	if (!m_isInitialized)
 	{
 		return ProjectAppFrameResult::Exit;
@@ -95,6 +96,7 @@ ProjectAppFrameResult ProjectApp::BeginFrame()
 
 void ProjectApp::UpdateRuntime() noexcept
 {
+	SPARKLE_CPU_SCOPE("Application.Project.UpdateRuntime");
 	if (m_gameCameraController)
 	{
 		m_gameCameraController->Update();
@@ -122,6 +124,7 @@ const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noex
 
 void ProjectApp::EndFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Application.Project.EndFrame");
 	if (m_inputSystem)
 	{
 		m_inputSystem->EndFrame();

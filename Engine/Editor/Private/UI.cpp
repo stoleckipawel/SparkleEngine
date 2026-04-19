@@ -14,6 +14,8 @@
 #include "Style/SparkleUiTheme.h"
 #include "D3D12/D3D12TypeConversions.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <imgui.h>
@@ -25,7 +27,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 namespace
 {
 	constexpr float SceneOutlinerWidth = 320.0f;
-	constexpr float SceneInspectorWidth = 456.0f;
+	constexpr float SceneInspectorWidth = 560.0f;
 
 	ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept
 	{
@@ -264,7 +266,8 @@ void UI::InitializeDefaultPanels()
 	{
 		m_sceneSelection = SceneObjectSelection::Camera();
 		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection, SceneOutlinerWidth);
-		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, SceneInspectorWidth);
+		m_sceneInspectorPanel =
+		    std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, m_profilerPanel.get(), SceneInspectorWidth);
 	}
 }
 
@@ -280,6 +283,7 @@ void UI::SubscribeToWindowEvents(Window& window)
 
 void UI::NewFrame()
 {
+	SPARKLE_CPU_SCOPE("Editor.UI.NewFrame");
 	if (!IsReady())
 	{
 		return;
@@ -296,6 +300,7 @@ void UI::NewFrame()
 
 void UI::Build()
 {
+	SPARKLE_CPU_SCOPE("Editor.UI.Build");
 	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
 	float mainMenuBarHeight = 0.0f;
 	if (m_mainMenuBar)
@@ -310,9 +315,13 @@ void UI::Build()
 		m_sceneOutlinerPanel->BuildUI(disableInteraction);
 	}
 
+	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : SceneOutlinerWidth;
+	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
+
 	if (m_viewportPanel)
 	{
 		m_viewportPanel->SetTopInset(mainMenuBarHeight);
+		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
 		m_viewportPanel->BuildUI(disableInteraction);
 	}
 
@@ -320,12 +329,6 @@ void UI::Build()
 	{
 		m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
 		m_sceneInspectorPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_profilerPanel)
-	{
-		m_profilerPanel->SetTopInset(mainMenuBarHeight);
-		m_profilerPanel->BuildUI(disableInteraction);
 	}
 
 #if USE_IMGUI_DEMO_WINDOW
@@ -338,6 +341,7 @@ void UI::Build()
 
 void UI::Update()
 {
+	SPARKLE_CPU_SCOPE("Editor.UI.Update");
 	if (!IsReady())
 	{
 		return;
@@ -349,6 +353,7 @@ void UI::Update()
 
 void UI::Render(NativeGraphicsCommandListHandle commandList) noexcept
 {
+	SPARKLE_CPU_SCOPE("Editor.UI.Render");
 	if (!IsReady())
 	{
 		return;

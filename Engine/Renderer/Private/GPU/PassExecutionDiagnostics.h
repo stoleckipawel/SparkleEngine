@@ -51,5 +51,6 @@ class PassExecutionDiagnostics final
 	SPARKLE_CPU_SCOPE(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__));                                            \
 	auto SPARKLE_PP_CONCAT(_gpuPassScope_, __LINE__) = (diagnostics).BeginGpuEvent(                      \
 	    SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__));                                                   \
-	auto SPARKLE_PP_CONCAT(_gpuPassTimer_, __LINE__) = (diagnostics).BeginPassTimer()
+	auto SPARKLE_PP_CONCAT(_gpuPassTimer_, __LINE__) = (diagnostics).BeginTimer(                          \
+	    SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__))
 #endif

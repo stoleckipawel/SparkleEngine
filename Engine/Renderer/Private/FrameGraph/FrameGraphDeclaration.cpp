@@ -10,9 +10,15 @@ static const auto g_frameGraphDeclarationLogger = Engine::Logging::GetOrCreateLo
 
 namespace
 {
-	std::string FormatPassDisplayLabel(FrameGraph::PassIndex passIndex, std::string_view passName)
+	std::string FormatPassDisplayLabel(FrameGraph::PassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
 	{
-		return std::string{"#"} + std::to_string(passIndex) + ":" + std::string(passName);
+		std::string label{"["};
+		label += FrameGraphPassKindToString(flags);
+		label += " #";
+		label += std::to_string(passIndex);
+		label += "] ";
+		label.append(passName.begin(), passName.end());
+		return label;
 	}
 
 	std::string FormatPassEventScopeLabel(FrameGraph::PassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
@@ -100,7 +106,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .flags = pass.flags,
 		        .passKind = GetFrameGraphPassKind(pass.flags),
 		        .diagnosticName = FormatPassDiagnosticName(pass.name),
-		        .displayLabel = FormatPassDisplayLabel(static_cast<PassIndex>(passIndex), pass.name),
+		        .displayLabel = FormatPassDisplayLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
 		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
 		        .declarations = m_activePassDeclarations});
 	}

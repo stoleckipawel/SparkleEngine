@@ -4,14 +4,12 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
-#include <cstdio>
 
 #include <imgui.h>
 
 namespace
 {
 	constexpr float MinimumViewportExtent = 64.0f;
-	constexpr float ViewportDetailsHeight = 116.0f;
 
 	const char* ToViewKindLabel(RenderViewKind viewKind) noexcept
 	{
@@ -30,49 +28,6 @@ namespace
 			default:
 				return "Viewport";
 		}
-	}
-
-	const char* ToProductFormatLabel(RenderProductFormat format) noexcept
-	{
-		switch (format)
-		{
-			case RenderProductFormat::ColorLdr:
-				return "ColorLdr";
-			case RenderProductFormat::ColorHdr:
-				return "ColorHdr";
-			case RenderProductFormat::DepthStencil:
-				return "DepthStencil";
-			case RenderProductFormat::UnsignedInteger:
-				return "UnsignedInteger";
-			case RenderProductFormat::Float:
-				return "Float";
-			case RenderProductFormat::Unknown:
-			default:
-				return "Unknown";
-		}
-	}
-
-	const char* ToRequestedOutputsLabel(RenderOutputFlags outputs) noexcept
-	{
-		const bool hasSceneColor = HasAnyRenderOutputFlags(outputs, RenderOutputFlags::SceneColor);
-		const bool hasSceneDepth = HasAnyRenderOutputFlags(outputs, RenderOutputFlags::SceneDepth);
-
-		if (hasSceneColor && hasSceneDepth)
-		{
-			return "Color+Depth";
-		}
-
-		if (hasSceneColor)
-		{
-			return "Color";
-		}
-
-		if (hasSceneDepth)
-		{
-			return "Depth";
-		}
-
-		return "None";
 	}
 
 	ImVec2 ComputeViewportImageSize(const ImVec2& availableRegion, const RenderViewportExtent& extent) noexcept
@@ -162,7 +117,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	UiUtil::DrawPanelHeader("Viewport", ToViewKindLabel(m_renderRequest.ViewKind));
 
-	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y - ViewportDetailsHeight);
+	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginDisabled(disableInteraction);
 	ImGui::BeginChild(
 	    "##ViewportSurface",
@@ -195,19 +150,6 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	}
 
 	ImGui::EndChild();
-	ImGui::Dummy(ImVec2(0.0f, 6.0f));
-
-	UiUtil::BeginSectionCard("Render Output");
-	char buffer[64] = {};
-	std::snprintf(buffer, sizeof(buffer), "%llu", static_cast<unsigned long long>(m_renderProducts.SceneColor.Handle.Value));
-	UiUtil::DrawKeyValueRow("Color", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%ux%u", m_renderRequest.Extent.Width, m_renderRequest.Extent.Height);
-	UiUtil::DrawKeyValueRow("Request", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%ux%u", m_renderProducts.SceneColor.Extent.Width, m_renderProducts.SceneColor.Extent.Height);
-	UiUtil::DrawKeyValueRow("Rendered", buffer);
-	UiUtil::DrawKeyValueRow("Format", ToProductFormatLabel(m_renderProducts.SceneColor.Format));
-	UiUtil::DrawKeyValueRow("Outputs", ToRequestedOutputsLabel(m_renderProducts.AvailableOutputs));
-	UiUtil::EndSectionCard();
 	ImGui::EndDisabled();
 
 	ImGui::End();

@@ -15,6 +15,7 @@
 #include "GPU/CommandContext.h"
 #include "GPU/FrameExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
+#include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/FrameContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPassContext.h"
@@ -56,17 +57,20 @@ const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noex
 
 void Renderer::PrepareHostFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.PrepareHostFrame");
 	BeginFrame();
 	SetupFrame();
 }
 
 void Renderer::RecordHostFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.RecordHostFrame");
 	RecordFrame();
 }
 
 void Renderer::SubmitHostFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.SubmitHostFrame");
 	SubmitFrame();
 	EndFrame();
 }
@@ -202,6 +206,7 @@ void Renderer::RefreshFrameExecution() noexcept
 
 void Renderer::BeginFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.BeginFrame");
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
@@ -228,6 +233,7 @@ void Renderer::BeginFrame() noexcept
 
 void Renderer::SetupFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.SetupFrame");
 	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame begin");
 
@@ -269,25 +275,37 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 
 void Renderer::RecordFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.RecordFrame");
 	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context begin");
 
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
-	FrameContext frame = BuildFrameContext(
-	    *m_sceneSnapshot,
-	    renderHardwareInterface,
-	    *m_renderCamera,
-	    *m_renderSceneDataBuilder,
-	    *m_perViewDataBuilder,
-	    *m_viewLightingBuilder,
-	    *m_shadowFrameBuilder,
-	    *m_shadowBuilder);
+	FrameContext frame = [&]()
+	{
+		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.BuildFrameContext");
+		return BuildFrameContext(
+		    *m_sceneSnapshot,
+		    renderHardwareInterface,
+		    *m_renderCamera,
+		    *m_renderSceneDataBuilder,
+		    *m_perViewDataBuilder,
+		    *m_viewLightingBuilder,
+		    *m_shadowFrameBuilder,
+		    *m_shadowBuilder);
+	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
-	m_frameGraph->Setup(frame);
+	{
+		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
+		m_frameGraph->Setup(frame);
+	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph setup end");
 
-	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
+	const FrameGraph::CompiledPlan compiledPlan = [&]()
+	{
+		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphCompile");
+		return m_frameGraph->Compile();
+	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	const RenderPassContext renderPassContext{
 	    .HardwareInterface = renderHardwareInterface,
@@ -306,6 +324,7 @@ void Renderer::RecordFrame() noexcept
 
 void Renderer::SubmitFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.SubmitFrame");
 	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame begin");
 	m_backend->SubmitFrame();
@@ -314,6 +333,7 @@ void Renderer::SubmitFrame() noexcept
 
 void Renderer::EndFrame() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.EndFrame");
 	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
 	m_backend->AdvanceFrameInFlight();

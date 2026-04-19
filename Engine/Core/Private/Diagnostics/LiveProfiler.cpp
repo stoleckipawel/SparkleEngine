@@ -35,6 +35,12 @@ namespace Engine::Diagnostics
 			double AverageDurationMicroseconds = 0.0;
 			double MaxDurationMicroseconds = 0.0;
 			std::uint64_t TotalCallCount = 0;
+			std::uint64_t DrawCallCount = 0;
+			std::uint64_t IndexedDrawCount = 0;
+			std::uint64_t TotalVertexCount = 0;
+			std::uint64_t TotalInstanceCount = 0;
+			std::uint64_t DispatchCount = 0;
+			std::uint64_t TotalThreadGroupCount = 0;
 			std::vector<std::unique_ptr<LiveNode>> Children;
 
 			LiveNode* FindOrCreateChild(std::string_view name) noexcept
@@ -80,6 +86,12 @@ namespace Engine::Diagnostics
 			destination.AverageDurationMicroseconds = source.AverageDurationMicroseconds;
 			destination.MaxDurationMicroseconds = source.MaxDurationMicroseconds;
 			destination.TotalCallCount = source.TotalCallCount;
+			destination.DrawCallCount = source.DrawCallCount;
+			destination.IndexedDrawCount = source.IndexedDrawCount;
+			destination.TotalVertexCount = source.TotalVertexCount;
+			destination.TotalInstanceCount = source.TotalInstanceCount;
+			destination.DispatchCount = source.DispatchCount;
+			destination.TotalThreadGroupCount = source.TotalThreadGroupCount;
 			destination.Children.reserve(source.Children.size());
 			for (const std::unique_ptr<LiveNode>& child : source.Children)
 			{
@@ -177,6 +189,75 @@ namespace Engine::Diagnostics
 
 		profile->CurrentNode->RecordSample(durationMicroseconds);
 		profile->CurrentNode = profile->CurrentNode->Parent != nullptr ? profile->CurrentNode->Parent : profile->Root.get();
+	}
+
+	void LiveProfiler::AccumulateDrawCall(
+	    std::uint32_t vertexCountPerInstance,
+	    std::uint32_t instanceCount,
+	    bool indexed) noexcept
+	{
+		if (!IsEnabled() || m_state == nullptr)
+		{
+			return;
+		}
+
+		const std::uint32_t threadId = GetCurrentThreadIdValue();
+		CpuThreadProfile* profile = nullptr;
+		{
+			std::lock_guard<std::mutex> registryLock(m_state->CpuRegistryMutex);
+			auto it = m_state->CpuThreadProfiles.find(threadId);
+			if (it == m_state->CpuThreadProfiles.end())
+			{
+				return;
+			}
+			profile = it->second.get();
+		}
+
+		std::lock_guard<std::mutex> lock(profile->Mutex);
+		if (profile->CurrentNode == nullptr || profile->CurrentNode == profile->Root.get())
+		{
+			return;
+		}
+
+		LiveNode* node = profile->CurrentNode;
+		++node->DrawCallCount;
+		if (indexed)
+		{
+			++node->IndexedDrawCount;
+		}
+		node->TotalVertexCount += static_cast<std::uint64_t>(vertexCountPerInstance) * instanceCount;
+		node->TotalInstanceCount += instanceCount;
+	}
+
+	void LiveProfiler::AccumulateDispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
+	{
+		if (!IsEnabled() || m_state == nullptr)
+		{
+			return;
+		}
+
+		const std::uint32_t threadId = GetCurrentThreadIdValue();
+		CpuThreadProfile* profile = nullptr;
+		{
+			std::lock_guard<std::mutex> registryLock(m_state->CpuRegistryMutex);
+			auto it = m_state->CpuThreadProfiles.find(threadId);
+			if (it == m_state->CpuThreadProfiles.end())
+			{
+				return;
+			}
+			profile = it->second.get();
+		}
+
+		std::lock_guard<std::mutex> lock(profile->Mutex);
+		if (profile->CurrentNode == nullptr || profile->CurrentNode == profile->Root.get())
+		{
+			return;
+		}
+
+		LiveNode* node = profile->CurrentNode;
+		++node->DispatchCount;
+		node->TotalThreadGroupCount +=
+		    static_cast<std::uint64_t>(groupCountX) * static_cast<std::uint64_t>(groupCountY) * static_cast<std::uint64_t>(groupCountZ);
 	}
 
 	void LiveProfiler::SubmitGpuFrame(const GpuTimingEntry* entries, std::size_t count) noexcept

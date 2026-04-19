@@ -20,6 +20,15 @@ namespace Engine::Diagnostics
 		double AverageDurationMicroseconds = 0.0;
 		double MaxDurationMicroseconds = 0.0;
 		std::uint64_t TotalCallCount = 0;
+		// Draw/dispatch totals attributed to this scope across the lifetime of the
+		// profiler (since last Reset). Per-frame averages can be derived by dividing
+		// by TotalCallCount when needed.
+		std::uint64_t DrawCallCount = 0;
+		std::uint64_t IndexedDrawCount = 0;
+		std::uint64_t TotalVertexCount = 0;
+		std::uint64_t TotalInstanceCount = 0;
+		std::uint64_t DispatchCount = 0;
+		std::uint64_t TotalThreadGroupCount = 0;
 		std::vector<ProfilerSnapshotNode> Children;
 	};
 
@@ -63,6 +72,14 @@ namespace Engine::Diagnostics
 		// CPU producer surface. Both calls must be balanced and same-thread.
 		void BeginCpuScope(std::string_view name) noexcept;
 		void EndCpuScope(std::uint64_t durationMicroseconds) noexcept;
+
+		// Attributes a draw or dispatch to the current CPU scope on this thread.
+		// Safe to call when no CPU scope is active (the call is dropped).
+		void AccumulateDrawCall(
+		    std::uint32_t vertexCountPerInstance,
+		    std::uint32_t instanceCount,
+		    bool indexed) noexcept;
+		void AccumulateDispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
 
 		// GPU producer surface. Entries must be ordered by submission and carry
 		// nesting depth so the profiler can rebuild the hierarchy without parsing

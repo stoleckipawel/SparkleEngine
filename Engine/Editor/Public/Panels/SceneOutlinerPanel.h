@@ -19,6 +19,7 @@ class SceneOutlinerPanel final
 	SceneOutlinerPanel& operator=(SceneOutlinerPanel&&) = delete;
 
 	void SetWidth(float widthPixels) noexcept;
+	float GetWidth() const noexcept { return m_widthPixels; }
 	void SetTopInset(float topInsetPixels) noexcept;
 	void BuildUI(bool disableInteraction = false);
 

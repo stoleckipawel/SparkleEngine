@@ -178,14 +178,22 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 {
 	ImGuiIO& io = ImGui::GetIO();
 
+	constexpr float kMinWidth = 220.0f;
+	const float kMaxWidth = (std::max) (kMinWidth + 1.0f, io.DisplaySize.x * 0.5f);
+	m_widthPixels = std::clamp(m_widthPixels, kMinWidth, kMaxWidth);
+	const float panelHeight = (std::max) (1.0f, io.DisplaySize.y - m_topInsetPixels);
+
 	ImGui::SetNextWindowPos(ImVec2(0.0f, m_topInsetPixels), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, io.DisplaySize.y - m_topInsetPixels), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, panelHeight), ImGuiCond_Once);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, panelHeight), ImVec2(kMaxWidth, panelHeight));
 	ImGui::SetNextWindowBgAlpha(0.98f);
 
 	ImGui::Begin(
 	    "Scene Outliner",
 	    nullptr,
-	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+
+	m_widthPixels = ImGui::GetWindowWidth();
 	UiUtil::DrawPanelHeader("Scene", "Outliner");
 
 	if (m_gameScene == nullptr || m_selection == nullptr)
