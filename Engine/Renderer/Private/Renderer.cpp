@@ -110,9 +110,21 @@ void Renderer::TransitionRenderProduct(
 
 void Renderer::InitializeCoreSystems() noexcept
 {
-	m_backend = RendererBackendServices::Create(*m_timer, *m_window);
-	m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
-	m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
+	SPARKLE_CPU_SCOPE("Renderer.InitializeCoreSystems");
+
+	{
+		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");
+		m_backend = RendererBackendServices::Create(*m_timer, *m_window);
+	}
+	{
+		SPARKLE_CPU_SCOPE("Renderer.CreatePipelineStateManager");
+		m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
+	}
+	{
+		SPARKLE_CPU_SCOPE("Renderer.CreateGPUMeshCache");
+		m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
+	}
+
 	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
 	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
@@ -123,6 +135,7 @@ void Renderer::InitializeCoreSystems() noexcept
 
 void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.InitializeSceneSystems");
 	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
@@ -162,6 +175,7 @@ bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.InitializeFrameGraph");
 	const FrameGraphDependencies dependencies{
 	    GetRenderHardwareInterface(),
 	    *m_window,
@@ -316,6 +330,14 @@ void Renderer::RecordFrame() noexcept
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
 	CommandContext cmd(commandList);
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
+
+	// A top-level GPU event covering the entire recorded frame.
+	auto gpuFrameScope = frameDiagnostics.BeginGpuEvent(
+	    cmd,
+	    "GPU Frame",
+	    RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255});
+	auto gpuFrameTimer = frameDiagnostics.BeginTimer(cmd, "GPU Frame");
+
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
 	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext, frameDiagnostics);
 
@@ -410,6 +432,7 @@ void Renderer::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resol
 
 void Renderer::PostLoad() noexcept
 {
+	SPARKLE_CPU_SCOPE("Renderer.PostLoad");
 	m_backend->CloseExecuteAndFlushCurrentFrame();
 }
 

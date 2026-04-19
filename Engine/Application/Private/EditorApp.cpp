@@ -14,7 +14,7 @@ EditorApp::~EditorApp() = default;
 
 void EditorApp::Initialize()
 {
-	SPARKLE_CPU_SCOPE("Application.Editor.Initialize");
+	SPARKLE_CPU_SCOPE("Application.EditorInitialize");
 	if (m_isEditorSessionActive)
 	{
 		return;
@@ -44,7 +44,7 @@ void EditorApp::Initialize()
 
 bool EditorApp::Tick()
 {
-	SPARKLE_CPU_SCOPE("Application.Editor.Tick");
+	SPARKLE_CPU_SCOPE("Application.EditorTick");
 	if (!m_isEditorSessionActive || !m_projectApp || !m_ui)
 	{
 		return false;
@@ -103,7 +103,7 @@ bool EditorApp::Tick()
 
 void EditorApp::Shutdown()
 {
-	SPARKLE_CPU_SCOPE("Application.Editor.Shutdown");
+	SPARKLE_CPU_SCOPE("Application.EditorShutdown");
 	if (!m_isEditorSessionActive)
 	{
 		return;

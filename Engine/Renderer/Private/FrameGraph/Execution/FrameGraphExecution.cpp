@@ -22,11 +22,6 @@ void FrameGraph::Execute(
 
 	static constexpr auto kFrameGraphExecuteName = Engine::Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	SPARKLE_CPU_SCOPE(kFrameGraphExecuteName);
-	auto frameScope = frameDiagnostics.BeginGpuEvent(
-	    cmd,
-	    kFrameGraphExecuteName,
-	    RhiDiagnosticLabelColor{.Red = 196, .Green = 214, .Blue = 235, .Alpha = 255});
-	auto frameTimer = frameDiagnostics.BeginTimer(cmd, kFrameGraphExecuteName);
 
 	EnsureTransientResourcesMaterialized(plan);
 

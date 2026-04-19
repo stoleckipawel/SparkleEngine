@@ -43,32 +43,42 @@ Renderer& ProjectApp::GetRenderer() noexcept
 
 void ProjectApp::Initialize()
 {
-	SPARKLE_CPU_SCOPE("Application.Project.Initialize");
+	SPARKLE_CPU_SCOPE("Application.ProjectInitialize");
 	if (m_isInitialized)
 	{
 		return;
 	}
 
-	m_timer = std::make_unique<Timer>();
+	{
+		SPARKLE_CPU_SCOPE("Application.ProjectCreateWindow");
+		m_timer = std::make_unique<Timer>();
+		m_window = std::make_unique<Window>("Sparkle Engine");
+	}
 
-	m_window = std::make_unique<Window>("Sparkle Engine");
+	{
+		SPARKLE_CPU_SCOPE("Application.ProjectCreateInput");
+		m_inputSystem = InputSystem::Create();
+		m_inputSystem->SubscribeToWindow(*m_window);
+	}
 
-	m_inputSystem = InputSystem::Create();
-	m_inputSystem->SubscribeToWindow(*m_window);
+	{
+		SPARKLE_CPU_SCOPE("Application.ProjectCreateScene");
+		m_gameScene = std::make_unique<GameScene>();
+		m_sceneAssetManager = std::make_unique<Engine::Assets::SceneAssetManager>();
+		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
+		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
+	}
 
-	m_gameScene = std::make_unique<GameScene>();
-	m_sceneAssetManager = std::make_unique<Engine::Assets::SceneAssetManager>();
-	m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
-
-	m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
-
-	m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
+	{
+		SPARKLE_CPU_SCOPE("Application.ProjectCreateRenderer");
+		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
+	}
 	m_isInitialized = true;
 }
 
 ProjectAppFrameResult ProjectApp::BeginFrame()
 {
-	SPARKLE_CPU_SCOPE("Application.Project.BeginFrame");
+	SPARKLE_CPU_SCOPE("Application.ProjectBeginFrame");
 	if (!m_isInitialized)
 	{
 		return ProjectAppFrameResult::Exit;
@@ -96,7 +106,7 @@ ProjectAppFrameResult ProjectApp::BeginFrame()
 
 void ProjectApp::UpdateRuntime() noexcept
 {
-	SPARKLE_CPU_SCOPE("Application.Project.UpdateRuntime");
+	SPARKLE_CPU_SCOPE("Application.ProjectUpdateRuntime");
 	if (m_gameCameraController)
 	{
 		m_gameCameraController->Update();
@@ -124,7 +134,7 @@ const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noex
 
 void ProjectApp::EndFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Application.Project.EndFrame");
+	SPARKLE_CPU_SCOPE("Application.ProjectEndFrame");
 	if (m_inputSystem)
 	{
 		m_inputSystem->EndFrame();
@@ -152,7 +162,7 @@ bool ProjectApp::Tick()
 
 void ProjectApp::Shutdown()
 {
-	SPARKLE_CPU_SCOPE("Application.Project.Shutdown");
+	SPARKLE_CPU_SCOPE("Application.ProjectShutdown");
 	if (!m_isInitialized)
 	{
 		return;

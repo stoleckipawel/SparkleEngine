@@ -13,6 +13,8 @@
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
 struct RendererBackendServices::Impl
 {
 	std::unique_ptr<D3D12Rhi> rhi;
@@ -53,28 +55,51 @@ RendererBackendServices::~RendererBackendServices() noexcept
 
 std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& timer, Window& window) noexcept
 {
+	SPARKLE_CPU_SCOPE("RHI.CreateBackend");
 	auto services = std::unique_ptr<RendererBackendServices>(new RendererBackendServices());
 	services->m_impl = std::make_unique<Impl>();
-	services->m_impl->rhi = std::make_unique<D3D12Rhi>();
-	services->m_impl->descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*services->m_impl->rhi);
-	services->m_impl->swapChain =
-	    std::make_unique<D3D12SwapChain>(*services->m_impl->rhi, window, *services->m_impl->descriptorHeapManager);
-	services->m_impl->frameResourceManager =
-	    std::make_unique<D3D12FrameResourceManager>(*services->m_impl->rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
-	services->m_impl->constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
-	    timer,
-	    *services->m_impl->rhi,
-	    window,
-	    *services->m_impl->descriptorHeapManager,
-	    *services->m_impl->frameResourceManager,
-	    *services->m_impl->swapChain);
-	services->m_impl->renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
-	    *services->m_impl->rhi,
-	    *services->m_impl->descriptorHeapManager,
-	    *services->m_impl->swapChain,
-	    *services->m_impl->constantBufferManager);
-	services->m_impl->samplerLibrary =
-	    std::make_unique<D3D12SamplerLibrary>(*services->m_impl->rhi, *services->m_impl->renderHardwareInterface);
+
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateDevice");
+		services->m_impl->rhi = std::make_unique<D3D12Rhi>();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateDescriptorHeaps");
+		services->m_impl->descriptorHeapManager = std::make_unique<D3D12DescriptorHeapManager>(*services->m_impl->rhi);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateSwapChain");
+		services->m_impl->swapChain =
+		    std::make_unique<D3D12SwapChain>(*services->m_impl->rhi, window, *services->m_impl->descriptorHeapManager);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateFrameResources");
+		services->m_impl->frameResourceManager =
+		    std::make_unique<D3D12FrameResourceManager>(*services->m_impl->rhi, D3D12FrameResourceManager::DefaultCapacityPerFrame);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateConstantBuffers");
+		services->m_impl->constantBufferManager = std::make_unique<D3D12ConstantBufferManager>(
+		    timer,
+		    *services->m_impl->rhi,
+		    window,
+		    *services->m_impl->descriptorHeapManager,
+		    *services->m_impl->frameResourceManager,
+		    *services->m_impl->swapChain);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateHardwareInterface");
+		services->m_impl->renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
+		    *services->m_impl->rhi,
+		    *services->m_impl->descriptorHeapManager,
+		    *services->m_impl->swapChain,
+		    *services->m_impl->constantBufferManager);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.CreateSamplerLibrary");
+		services->m_impl->samplerLibrary =
+		    std::make_unique<D3D12SamplerLibrary>(*services->m_impl->rhi, *services->m_impl->renderHardwareInterface);
+	}
 	services->m_impl->renderHardwareInterface->SetSamplerTableHandle(services->m_impl->samplerLibrary->GetTableHandle());
 	return services;
 }

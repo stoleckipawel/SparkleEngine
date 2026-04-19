@@ -238,25 +238,12 @@ void ProfilerPanel::RenderGpuTab() const
 		return;
 	}
 
-	// If there is a single wrapper root (e.g. "Renderer.FrameGraph.Execute"),
-	// drill into its children so the table shows actual passes directly.
+	// Show GPU roots as-is; "GPU Frame" is the top-level scope.
 	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> bucket;
-	if (m_snapshot.GpuRoots.size() == 1 && !m_snapshot.GpuRoots[0].Children.empty())
+	bucket.reserve(m_snapshot.GpuRoots.size());
+	for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
 	{
-		const auto& wrapper = m_snapshot.GpuRoots[0];
-		bucket.reserve(wrapper.Children.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : wrapper.Children)
-		{
-			bucket.push_back(&child);
-		}
-	}
-	else
-	{
-		bucket.reserve(m_snapshot.GpuRoots.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
-		{
-			bucket.push_back(&node);
-		}
+		bucket.push_back(&node);
 	}
 	SortBucket(bucket);
 	BeginProfilerTable("gpu");
@@ -264,10 +251,21 @@ void ProfilerPanel::RenderGpuTab() const
 	ImGui::EndTable();
 	ImGui::PopID();
 
-	// Charts use the same flat bucket.
-	if (bucket.size() >= 2)
+	// Charts use the deepest single-child drill-in to reach the actual passes.
+	const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
+	while (chartLevel->size() == 1 && !(*chartLevel)[0].Children.empty())
 	{
-		RenderModuleCharts(bucket, "GPU");
+		chartLevel = &(*chartLevel)[0].Children;
+	}
+	if (chartLevel->size() >= 2)
+	{
+		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+		chartBucket.reserve(chartLevel->size());
+		for (const Engine::Diagnostics::ProfilerSnapshotNode& node : *chartLevel)
+		{
+			chartBucket.push_back(&node);
+		}
+		RenderModuleCharts(chartBucket, "GPU");
 	}
 }
 

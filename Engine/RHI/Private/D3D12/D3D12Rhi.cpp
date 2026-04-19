@@ -4,6 +4,8 @@
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
 static const auto g_d3d12RhiLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12");
 
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
@@ -11,18 +13,39 @@ D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
 #endif
-	CreateFactory();
-	CreateDevice(requireDXRSupport);
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateFactory");
+		CreateFactory();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateDevice");
+		CreateDevice(requireDXRSupport);
+	}
 
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer->InitializeInfoQueue(m_device.Get());
 #endif
 
-	CheckShaderModel6Support();
-	CreateCommandQueue();
-	CreateCommandAllocators();
-	CreateCommandLists();
-	CreateFenceAndEvent();
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CheckShaderModel");
+		CheckShaderModel6Support();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandQueue");
+		CreateCommandQueue();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandAllocators");
+		CreateCommandAllocators();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateCommandLists");
+		CreateCommandLists();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateFence");
+		CreateFenceAndEvent();
+	}
 
 	constexpr uint32_t kInitialFrameIndex = 0;
 	SetCurrentFrameIndex(kInitialFrameIndex);
