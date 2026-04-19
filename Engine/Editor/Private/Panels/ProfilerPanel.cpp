@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cmath>
+#include <cstdarg>
 #include <cstdio>
 #include <numeric>
 #include <string>
@@ -57,18 +58,51 @@ namespace
 		return fullName;
 	}
 
-	ImU32 GenerateProfilerColor(std::string_view /*shortName*/, std::size_t index, std::size_t total, float saturation = 0.55f) noexcept
+	ImU32 GenerateProfilerColor(std::string_view /*shortName*/, std::size_t index, std::size_t /*total*/, float saturation = 1.0f) noexcept
 	{
-		// Divide the full hue wheel evenly among items.
-		const float n = total > 0 ? static_cast<float>(total) : 1.0f;
-		const float hue = std::fmod(static_cast<float>(index) / n, 1.0f);
-
-		const float val = 0.82f;
-
-		ImVec4 rgb;
-		ImGui::ColorConvertHSVtoRGB(hue, saturation, val, rgb.x, rgb.y, rgb.z);
+		// Curated palette inspired by Tableau 10 / Chrome DevTools performance —
+		// muted but distinguishable, reads cleanly on a dark background.
+		static constexpr ImU32 kPalette[] = {
+		    IM_COL32(0x4E, 0x79, 0xA7, 255), // blue
+		    IM_COL32(0xF2, 0x8E, 0x2B, 255), // orange
+		    IM_COL32(0x59, 0xA1, 0x4F, 255), // green
+		    IM_COL32(0xE1, 0x57, 0x59, 255), // red
+		    IM_COL32(0xB0, 0x7A, 0xA1, 255), // purple
+		    IM_COL32(0xED, 0xC9, 0x49, 255), // yellow
+		    IM_COL32(0x76, 0xB7, 0xB2, 255), // teal
+		    IM_COL32(0xFF, 0x9D, 0xA7, 255), // pink
+		    IM_COL32(0x9C, 0x75, 0x5F, 255), // brown
+		    IM_COL32(0xBA, 0xB0, 0xAC, 255), // gray
+		};
+		const ImU32 base = kPalette[index % (sizeof(kPalette) / sizeof(kPalette[0]))];
+		if (saturation >= 0.999f)
+		{
+			return base;
+		}
+		// Optionally desaturate toward neutral gray for table tints.
+		ImVec4 rgb = ImGui::ColorConvertU32ToFloat4(base);
+		float h, s, v;
+		ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, h, s, v);
+		s *= saturation;
+		ImGui::ColorConvertHSVtoRGB(h, s, v, rgb.x, rgb.y, rgb.z);
 		rgb.w = 1.0f;
 		return ImGui::ColorConvertFloat4ToU32(rgb);
+	}
+
+	void RightAlignedText(const char* fmt, ...)
+	{
+		va_list args;
+		va_start(args, fmt);
+		char buf[64];
+		std::vsnprintf(buf, sizeof(buf), fmt, args);
+		va_end(args);
+		const float textW = ImGui::CalcTextSize(buf).x;
+		const float colW = ImGui::GetContentRegionAvail().x;
+		if (colW > textW)
+		{
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (colW - textW));
+		}
+		ImGui::TextUnformatted(buf);
 	}
 
 	std::string_view ExtractModuleName(std::string_view scopeName) noexcept
@@ -131,12 +165,42 @@ void ProfilerPanel::RenderToolbar() noexcept
 	    "Max (high-low)",
 	    "Calls (high-low)",
 	};
-	ImGui::SetNextItemWidth(160.0f);
+
+	// Toolbar row: "Sort:" label + dropdown on the left, frame summary on the right.
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("SORT");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(170.0f);
 	int sortIndex = static_cast<int>(m_sortMode);
-	if (ImGui::Combo("Sort", &sortIndex, kSortLabels, IM_ARRAYSIZE(kSortLabels)))
+	if (ImGui::Combo("##SortCombo", &sortIndex, kSortLabels, IM_ARRAYSIZE(kSortLabels)))
 	{
 		m_sortMode = static_cast<SortMode>(sortIndex);
 	}
+
+	// Right-aligned summary: scope counts and total sample frames.
+	std::size_t cpuScopeCount = 0;
+	for (const Engine::Diagnostics::ProfilerThreadSnapshot& thread : m_snapshot.CpuThreads)
+	{
+		cpuScopeCount += thread.Roots.size();
+	}
+	const std::size_t gpuPassCount = !m_snapshot.GpuRoots.empty() && m_snapshot.GpuRoots.size() == 1
+	    ? m_snapshot.GpuRoots[0].Children.size()
+	    : m_snapshot.GpuRoots.size();
+
+	char summaryBuf[96];
+	std::snprintf(summaryBuf, sizeof(summaryBuf),
+	    "CPU threads: %zu  \xC2\xB7  GPU passes: %zu",
+	    m_snapshot.CpuThreads.size(), gpuPassCount);
+	(void)cpuScopeCount;
+	const float summaryW = ImGui::CalcTextSize(summaryBuf).x;
+	const float availX = ImGui::GetContentRegionAvail().x;
+	if (availX > summaryW + 12.0f)
+	{
+		ImGui::SameLine(0.0f, availX - summaryW - 4.0f);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextDisabled("%s", summaryBuf);
+	}
+
 	ImGui::Separator();
 }
 
@@ -174,12 +238,25 @@ void ProfilerPanel::RenderGpuTab() const
 		return;
 	}
 
-	// Flat list — no module grouping for GPU.
+	// If there is a single wrapper root (e.g. "Renderer.FrameGraph.Execute"),
+	// drill into its children so the table shows actual passes directly.
 	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> bucket;
-	bucket.reserve(m_snapshot.GpuRoots.size());
-	for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
+	if (m_snapshot.GpuRoots.size() == 1 && !m_snapshot.GpuRoots[0].Children.empty())
 	{
-		bucket.push_back(&node);
+		const auto& wrapper = m_snapshot.GpuRoots[0];
+		bucket.reserve(wrapper.Children.size());
+		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : wrapper.Children)
+		{
+			bucket.push_back(&child);
+		}
+	}
+	else
+	{
+		bucket.reserve(m_snapshot.GpuRoots.size());
+		for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
+		{
+			bucket.push_back(&node);
+		}
 	}
 	SortBucket(bucket);
 	BeginProfilerTable("gpu");
@@ -187,23 +264,10 @@ void ProfilerPanel::RenderGpuTab() const
 	ImGui::EndTable();
 	ImGui::PopID();
 
-	// Chart the pass-level nodes. If there's a single root, use its children.
-	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
-	if (bucket.size() == 1 && !bucket[0]->Children.empty())
+	// Charts use the same flat bucket.
+	if (bucket.size() >= 2)
 	{
-		chartBucket.reserve(bucket[0]->Children.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : bucket[0]->Children)
-		{
-			chartBucket.push_back(&child);
-		}
-	}
-	else
-	{
-		chartBucket = bucket;
-	}
-	if (chartBucket.size() >= 2)
-	{
-		RenderModuleCharts(chartBucket, "GPU");
+		RenderModuleCharts(bucket, "GPU");
 	}
 }
 
@@ -262,26 +326,26 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 	}
 
 	ImGui::TableSetColumnIndex(1);
-	ImGui::Text("%.3f", inclusiveMs);
+	RightAlignedText("%.3f", inclusiveMs);
 	ImGui::TableSetColumnIndex(2);
-	ImGui::Text("%.3f", exclusiveMs);
+	RightAlignedText("%.3f", exclusiveMs);
 	ImGui::TableSetColumnIndex(3);
-	ImGui::Text("%.3f", node.MaxDurationMicroseconds * kMicrosecondsToMilliseconds);
+	RightAlignedText("%.3f", node.MaxDurationMicroseconds * kMicrosecondsToMilliseconds);
 	ImGui::TableSetColumnIndex(4);
 	if (hasDrawStats)
 	{
 		if (node.DispatchCount > 0)
 		{
-			ImGui::Text("%" PRIu64 " (%" PRIu64 "d/%" PRIu64 "x)", node.TotalCallCount, node.DrawCallCount, node.DispatchCount);
+			RightAlignedText("%" PRIu64 " (%" PRIu64 "d/%" PRIu64 "x)", node.TotalCallCount, node.DrawCallCount, node.DispatchCount);
 		}
 		else
 		{
-			ImGui::Text("%" PRIu64 " (%" PRIu64 "d)", node.TotalCallCount, node.DrawCallCount);
+			RightAlignedText("%" PRIu64 " (%" PRIu64 "d)", node.TotalCallCount, node.DrawCallCount);
 		}
 	}
 	else
 	{
-		ImGui::Text("%" PRIu64, node.TotalCallCount);
+		RightAlignedText("%" PRIu64, node.TotalCallCount);
 	}
 
 	if (open)
@@ -303,10 +367,10 @@ void ProfilerPanel::BeginProfilerTable(const char* id) const
 	if (ImGui::BeginTable("##Table", 5, kTableFlags))
 	{
 		ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Incl", ImGuiTableColumnFlags_WidthFixed, 56.0f);
-		ImGui::TableSetupColumn("Excl", ImGuiTableColumnFlags_WidthFixed, 56.0f);
-		ImGui::TableSetupColumn("Max", ImGuiTableColumnFlags_WidthFixed, 56.0f);
-		ImGui::TableSetupColumn("Calls", ImGuiTableColumnFlags_WidthFixed, 48.0f);
+		ImGui::TableSetupColumn("Incl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+		ImGui::TableSetupColumn("Excl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+		ImGui::TableSetupColumn("Max ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+		ImGui::TableSetupColumn("Calls", ImGuiTableColumnFlags_WidthFixed, 64.0f);
 		ImGui::TableHeadersRow();
 	}
 }
@@ -486,33 +550,53 @@ void ProfilerPanel::RenderModuleCharts(
 	std::sort(barOrder.begin(), barOrder.end(), [&](std::size_t a, std::size_t b) { return slices[a].ValueMs > slices[b].ValueMs; });
 
 	const float availWidth = ImGui::GetContentRegionAvail().x;
-	if (availWidth < 220.0f)
+	if (availWidth < 260.0f)
 	{
 		return;
 	}
+
+	// ---- Palette ----
+	constexpr ImU32 kColCardBg = IM_COL32(24, 25, 30, 230);
+	constexpr ImU32 kColCardBorder = IM_COL32(48, 50, 58, 140);
+	constexpr ImU32 kColDivider = IM_COL32(48, 50, 58, 140);
+	constexpr ImU32 kColAxis = IM_COL32(70, 72, 82, 200);
+	constexpr ImU32 kColGrid = IM_COL32(50, 52, 60, 90);
+	constexpr ImU32 kColTextStrong = IM_COL32(220, 222, 228, 230);
+	constexpr ImU32 kColTextMuted = IM_COL32(140, 144, 156, 200);
+	constexpr ImU32 kColTextDim = IM_COL32(105, 110, 122, 200);
+	constexpr ImU32 kColTitle = IM_COL32(170, 175, 190, 220);
 
 	// ---- Layout constants ----
 	constexpr float kPi = 3.14159265358979323846f;
 	const float fontSize = ImGui::GetFontSize();
 	const float rowH = fontSize + 3.0f;
-	const float outerPad = 6.0f;
-	const float innerPad = 10.0f;
+	const float outerPad = 10.0f;
+	const float innerPad = 14.0f;
 	const float innerWidth = availWidth - outerPad * 2.0f;
 
-	// Pie dimensions — takes ~40% of width.
-	const float piePanelW = innerWidth * 0.38f;
-	const float pieSize = std::min(piePanelW - 16.0f, 120.0f);
-	const float pieRadius = pieSize * 0.5f;
-	const float donutHole = pieRadius * 0.40f;
+	// Section header band.
+	const float titleBarH = rowH + 2.0f;
 
-	const float chartContentH = pieSize + 4.0f;
+	// Pie panel — narrower, cleaner proportions.
+	const float piePanelW = std::min(innerWidth * 0.33f, 200.0f);
+	const float pieMaxSize = std::min(piePanelW - 24.0f, 130.0f);
+	const float pieRadius = pieMaxSize * 0.5f;
+	const float donutHole = pieRadius * 0.55f; // thinner ring for refinement
+	const float pieCaptionH = fontSize + 4.0f;
 
-	// Right panel: bar chart.
-	const float barChartH = chartContentH;
-	const float barLabelH = fontSize + 2.0f;
+	// Bar chart geometry.
+	const float yAxisLabelW = ImGui::CalcTextSize("88.8").x + 6.0f; // "x.xx" width
+	const float barXLabelH = fontSize + 4.0f;
+	const float barValLabelH = fontSize + 2.0f;
+
+	// Chart content height: pick something taller than wide for nicer bar proportions.
+	const float chartContentH = std::max(pieMaxSize + pieCaptionH, 150.0f);
+
+	// Footer band.
+	const float footerH = rowH + 2.0f;
 
 	// Total card height.
-	const float cardContentH = chartContentH + barLabelH + innerPad + rowH;
+	const float cardContentH = titleBarH + innerPad + chartContentH + barXLabelH + innerPad + footerH;
 	const float cardH = cardContentH + outerPad * 2.0f;
 
 	// ---- Card container ----
@@ -524,27 +608,35 @@ void ProfilerPanel::RenderModuleCharts(
 	const ImVec2 cardOrigin = ImGui::GetCursorScreenPos();
 
 	// Card background.
-	dl->AddRectFilled(
-	    cardOrigin,
-	    ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH),
-	    IM_COL32(28, 28, 34, 230),
-	    4.0f);
-	dl->AddRect(
-	    cardOrigin,
-	    ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH),
-	    IM_COL32(55, 55, 65, 160),
-	    4.0f);
+	dl->AddRectFilled(cardOrigin, ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH), kColCardBg, 4.0f);
+	dl->AddRect(cardOrigin, ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH), kColCardBorder, 4.0f);
 
 	const float cx = cardOrigin.x + outerPad;
 	float cy = cardOrigin.y + outerPad;
 
-	// ============ Donut pie (left) | Bar chart (right) ============
-	const float dividerGap = innerPad;
-	const float barAreaLeft = cx + piePanelW + dividerGap;
-	const float barAreaW = (cx + innerWidth) - barAreaLeft;
+	// ============ Header band ============
+	const float pieAreaLeft = cx;
+	const float pieAreaRight = cx + piePanelW;
+	const float dividerX = pieAreaRight + innerPad * 0.5f;
+	const float barAreaLeft = pieAreaRight + innerPad;
+	const float barAreaRight = cx + innerWidth;
 
-	// ---- Donut pie ----
-	const ImVec2 pieCenter{cx + piePanelW * 0.5f, cy + chartContentH * 0.5f};
+	// Section titles.
+	{
+		dl->AddText(ImVec2(pieAreaLeft, cy), kColTitle, "Distribution");
+		const char* rightTitle = "Pass timings (ms)";
+		dl->AddText(ImVec2(barAreaLeft, cy), kColTitle, rightTitle);
+	}
+	cy += titleBarH + innerPad;
+
+	const float chartTop = cy;
+	const float chartBot = cy + chartContentH;
+
+	// ---- Vertical divider ----
+	dl->AddLine(ImVec2(dividerX, chartTop - 4.0f), ImVec2(dividerX, chartBot + barXLabelH + 2.0f), kColDivider);
+
+	// ============ Donut pie (left) ============
+	const ImVec2 pieCenter{pieAreaLeft + piePanelW * 0.5f, chartTop + (chartContentH - pieCaptionH) * 0.5f};
 
 	double angleCursor = 0.0;
 	for (const Slice& s : slices)
@@ -559,7 +651,7 @@ void ProfilerPanel::RenderModuleCharts(
 		const float a0 = static_cast<float>(startFrac * 2.0 * kPi) - kPi * 0.5f;
 		const float a1 = static_cast<float>(endFrac * 2.0 * kPi) - kPi * 0.5f;
 		dl->PathLineTo(pieCenter);
-		dl->PathArcTo(pieCenter, pieRadius, a0, a1, 32);
+		dl->PathArcTo(pieCenter, pieRadius, a0, a1, 48);
 		dl->PathFillConvex(s.Color);
 
 		// Hover.
@@ -581,91 +673,142 @@ void ProfilerPanel::RenderModuleCharts(
 			}
 		}
 	}
-	// Hole.
-	dl->AddCircleFilled(pieCenter, donutHole, IM_COL32(28, 28, 34, 255), 32);
-	char centerBuf[16];
-	std::snprintf(centerBuf, sizeof(centerBuf), "%.2f", totalMs);
-	const ImVec2 cSz = ImGui::CalcTextSize(centerBuf);
-	dl->AddText(ImVec2(pieCenter.x - cSz.x * 0.5f, pieCenter.y - cSz.y * 0.5f), IM_COL32(200, 200, 200, 220), centerBuf);
+	// Hole + thin separator ring.
+	dl->AddCircleFilled(pieCenter, donutHole, kColCardBg, 48);
+	dl->AddCircle(pieCenter, donutHole, kColCardBorder, 48, 1.0f);
+	dl->AddCircle(pieCenter, pieRadius, kColCardBorder, 48, 1.0f);
 
-	// Label under pie.
+	// Center text — large value + "ms" suffix.
 	{
-		const char* unitLabel = "ms (incl)";
-		const ImVec2 ulSz = ImGui::CalcTextSize(unitLabel);
+		char centerBuf[16];
+		std::snprintf(centerBuf, sizeof(centerBuf), "%.2f", totalMs);
+		const ImVec2 cSz = ImGui::CalcTextSize(centerBuf);
+		const float cTextY = pieCenter.y - cSz.y;
+		dl->AddText(ImVec2(pieCenter.x - cSz.x * 0.5f, cTextY), kColTextStrong, centerBuf);
+		const ImVec2 msSz = ImGui::CalcTextSize("ms");
+		dl->AddText(ImVec2(pieCenter.x - msSz.x * 0.5f, cTextY + cSz.y + 1.0f), kColTextMuted, "ms");
+	}
+
+	// Caption under pie.
+	{
+		char captionBuf[48];
+		std::snprintf(captionBuf, sizeof(captionBuf), "%zu items", slices.size());
+		const ImVec2 capSz = ImGui::CalcTextSize(captionBuf);
 		dl->AddText(
-		    ImVec2(pieCenter.x - ulSz.x * 0.5f, pieCenter.y + pieRadius + 2.0f),
-		    IM_COL32(120, 120, 130, 180),
-		    unitLabel);
+		    ImVec2(pieCenter.x - capSz.x * 0.5f, chartTop + chartContentH - pieCaptionH),
+		    kColTextDim,
+		    captionBuf);
 	}
 
-	// ---- Vertical divider ----
-	{
-		const float divX = barAreaLeft - dividerGap * 0.5f;
-		dl->AddLine(ImVec2(divX, cy + 2.0f), ImVec2(divX, cy + chartContentH - 2.0f), IM_COL32(60, 60, 70, 120));
-	}
+	// ============ Column bar chart (right) ============
+	const float plotLeft = barAreaLeft + yAxisLabelW;
+	const float plotRight = barAreaRight - 2.0f;
+	const float plotW = plotRight - plotLeft;
+	const float plotH = chartContentH - barValLabelH; // leave room for value labels above bars
+	const float plotTop = chartTop + barValLabelH;
+	const float plotBot = chartTop + chartContentH;
 
-	// ---- Column bar chart (right) ----
-	if (barAreaW > 50.0f)
+	if (plotW > 60.0f && !barOrder.empty())
 	{
-		const float barSpacing = 4.0f;
-		const float numSlices = static_cast<float>(slices.size());
-		const float slotW = (barAreaW - barSpacing * (numSlices - 1.0f)) / numSlices;
-		const float maxBarH = barChartH - 4.0f;
-
-		// Subtle grid lines (3 horizontal).
-		for (int g = 1; g <= 3; ++g)
+		// Round axis maximum up to a nice number for tick labels.
+		auto niceCeil = [](double v) -> double
 		{
-			const float gy = cy + barChartH - maxBarH * (static_cast<float>(g) / 4.0f);
-			dl->AddLine(ImVec2(barAreaLeft, gy), ImVec2(barAreaLeft + barAreaW, gy), IM_COL32(50, 50, 58, 80));
+			if (v <= 0.0)
+			{
+				return 1.0;
+			}
+			const double mag = std::pow(10.0, std::floor(std::log10(v)));
+			const double n = v / mag;
+			double nice;
+			if (n <= 1.0) nice = 1.0;
+			else if (n <= 2.0) nice = 2.0;
+			else if (n <= 5.0) nice = 5.0;
+			else nice = 10.0;
+			return nice * mag;
+		};
+		const double axisMax = niceCeil(maxMs);
+
+		// Y-axis grid + tick labels (0, max/4, max/2, 3max/4, max).
+		for (int g = 0; g <= 4; ++g)
+		{
+			const float gy = plotBot - plotH * (static_cast<float>(g) / 4.0f);
+			const ImU32 col = (g == 0) ? kColAxis : kColGrid;
+			dl->AddLine(ImVec2(plotLeft, gy), ImVec2(plotRight, gy), col);
+
+			char tickBuf[16];
+			std::snprintf(tickBuf, sizeof(tickBuf), "%.1f", axisMax * (g / 4.0));
+			const ImVec2 tSz = ImGui::CalcTextSize(tickBuf);
+			dl->AddText(ImVec2(plotLeft - tSz.x - 4.0f, gy - tSz.y * 0.5f), kColTextDim, tickBuf);
 		}
+
+		// Bar geometry — cap bar width so they don't look like squares.
+		const float maxBarW = 40.0f;
+		const float minBarSpacing = 6.0f;
+		const float numBars = static_cast<float>(barOrder.size());
+		float slotW = plotW / numBars;
+		float barW = std::min(maxBarW, slotW - minBarSpacing);
+		barW = std::max(barW, 8.0f);
+
+		// Center the group of bars within the plot if they don't fill it.
+		const float groupW = numBars * barW + (numBars - 1.0f) * minBarSpacing;
+		const float plotPadLeft = std::max(0.0f, (plotW - groupW) * 0.5f);
 
 		for (std::size_t bi = 0; bi < barOrder.size(); ++bi)
 		{
 			const Slice& s = slices[barOrder[bi]];
-			const float xL = barAreaLeft + static_cast<float>(bi) * (slotW + barSpacing);
-			const float xR = xL + slotW;
-			const float frac = maxMs > 0.0 ? static_cast<float>(s.ValueMs / maxMs) : 0.0f;
-			const float barH = maxBarH * frac;
-			const float bTop = cy + barChartH - barH;
-			const float bBot = cy + barChartH;
+			const float xL = plotLeft + plotPadLeft + static_cast<float>(bi) * (barW + minBarSpacing);
+			const float xR = xL + barW;
+			const float frac = axisMax > 0.0 ? static_cast<float>(s.ValueMs / axisMax) : 0.0f;
+			const float barH = plotH * frac;
+			const float bTop = plotBot - barH;
+			const float bBot = plotBot;
 
-			// Bar with subtle gradient — slightly lighter at top.
-			const ImU32 colTop = s.Color;
-			ImVec4 colBotRgb = ImGui::ColorConvertU32ToFloat4(s.Color);
-			colBotRgb.x *= 0.7f;
-			colBotRgb.y *= 0.7f;
-			colBotRgb.z *= 0.7f;
-			const ImU32 colBot = ImGui::ColorConvertFloat4ToU32(colBotRgb);
-			dl->AddRectFilledMultiColor(ImVec2(xL, bTop), ImVec2(xR, bBot), colTop, colTop, colBot, colBot);
+			// Bar — flat color with a slightly darker top accent line.
+			const ImU32 col = s.Color;
+			ImVec4 colTopRgb = ImGui::ColorConvertU32ToFloat4(col);
+			colTopRgb.x = std::min(1.0f, colTopRgb.x * 1.15f);
+			colTopRgb.y = std::min(1.0f, colTopRgb.y * 1.15f);
+			colTopRgb.z = std::min(1.0f, colTopRgb.z * 1.15f);
+			const ImU32 colTopAccent = ImGui::ColorConvertFloat4ToU32(colTopRgb);
+			dl->AddRectFilled(ImVec2(xL, bTop), ImVec2(xR, bBot), col, 1.5f, ImDrawFlags_RoundCornersTop);
+			if (barH > 4.0f)
+			{
+				dl->AddLine(ImVec2(xL + 1.0f, bTop + 1.0f), ImVec2(xR - 1.0f, bTop + 1.0f), colTopAccent, 1.0f);
+			}
 
 			// Value above bar.
 			char vBuf[16];
 			std::snprintf(vBuf, sizeof(vBuf), "%.2f", s.ValueMs);
 			const ImVec2 vSz = ImGui::CalcTextSize(vBuf);
-			if (slotW >= vSz.x + 2.0f)
-			{
-				dl->AddText(
-				    ImVec2(xL + (slotW - vSz.x) * 0.5f, std::max(cy, bTop - vSz.y - 1.0f)),
-				    IM_COL32(210, 210, 210, 210),
-				    vBuf);
-			}
+			const float vCenterX = xL + barW * 0.5f;
+			const float vY = std::max(plotTop - vSz.y - 1.0f, bTop - vSz.y - 2.0f);
+			dl->AddText(ImVec2(vCenterX - vSz.x * 0.5f, vY), kColTextStrong, vBuf);
 
-			// Name below bar — clipped to column width, left-aligned.
+			// Name below bar — clipped to bar width, centered.
 			{
 				const ImVec2 nSz = ImGui::CalcTextSize(s.ShortName.c_str());
-				const ImVec4 clipRect{xL + 1.0f, bBot + 2.0f, xR - 1.0f, bBot + 2.0f + nSz.y};
+				const float labelLeft = xL - minBarSpacing * 0.4f;
+				const float labelRight = xR + minBarSpacing * 0.4f;
+				const ImVec4 clipRect{labelLeft, bBot + 4.0f, labelRight, bBot + 4.0f + nSz.y};
+				const float labelX = (nSz.x <= (labelRight - labelLeft))
+				    ? (labelLeft + (labelRight - labelLeft - nSz.x) * 0.5f)
+				    : labelLeft;
 				dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(),
-				    ImVec2(xL + 1.0f, bBot + 2.0f),
-				    IM_COL32(160, 160, 170, 190),
+				    ImVec2(labelX, bBot + 4.0f),
+				    kColTextMuted,
 				    s.ShortName.c_str(), nullptr,
 				    0.0f, &clipRect);
 			}
 
-			// Hover.
-			if (ImGui::IsMouseHoveringRect(ImVec2(xL, cy), ImVec2(xR, bBot + barLabelH)))
+			// Hover hit area covers the entire column slot.
+			const float hitL = xL - minBarSpacing * 0.5f;
+			const float hitR = xR + minBarSpacing * 0.5f;
+			if (ImGui::IsMouseHoveringRect(ImVec2(hitL, plotTop), ImVec2(hitR, plotBot + barXLabelH)))
 			{
 				ImGui::BeginTooltip();
-				ImGui::Text("%s: %.3f ms (%.1f%%)", s.ShortName.c_str(), s.ValueMs, s.Pct);
+				ImGui::Text("%s", s.ShortName.c_str());
+				ImGui::Separator();
+				ImGui::Text("%.3f ms  (%.1f%%)", s.ValueMs, s.Pct);
 				ImGui::EndTooltip();
 			}
 		}
@@ -673,10 +816,20 @@ void ProfilerPanel::RenderModuleCharts(
 
 	// ============ Footer ============
 	{
+		const float footY = cardOrigin.y + cardH - outerPad - footerH + 2.0f;
+		dl->AddLine(
+		    ImVec2(cx, footY - innerPad * 0.5f),
+		    ImVec2(cx + innerWidth, footY - innerPad * 0.5f),
+		    kColDivider);
+
 		char totalBuf[64];
-		std::snprintf(totalBuf, sizeof(totalBuf), "Inclusive total: %.3f ms", totalMs);
-		const float footY = cardOrigin.y + cardH - outerPad - rowH + 2.0f;
-		dl->AddText(ImVec2(cx, footY), IM_COL32(130, 130, 140, 180), totalBuf);
+		std::snprintf(totalBuf, sizeof(totalBuf), "Total inclusive: %.3f ms", totalMs);
+		dl->AddText(ImVec2(cx, footY), kColTextMuted, totalBuf);
+
+		char rightBuf[64];
+		std::snprintf(rightBuf, sizeof(rightBuf), "Peak: %.3f ms  ·  Avg: %.3f ms", maxMs, totalMs / static_cast<double>(slices.size()));
+		const ImVec2 rSz = ImGui::CalcTextSize(rightBuf);
+		dl->AddText(ImVec2(cx + innerWidth - rSz.x, footY), kColTextDim, rightBuf);
 	}
 
 	ImGui::Dummy(ImVec2(availWidth, cardH));
