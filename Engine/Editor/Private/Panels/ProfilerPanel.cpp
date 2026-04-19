@@ -212,6 +212,7 @@ void ProfilerPanel::RenderCpuTab() const
 		return;
 	}
 
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 	for (const Engine::Diagnostics::ProfilerThreadSnapshot& thread : m_snapshot.CpuThreads)
 	{
 		char threadLabel[96] = {};
@@ -228,6 +229,7 @@ void ProfilerPanel::RenderCpuTab() const
 		RenderGroupedNodes(thread.Roots);
 		ImGui::PopID();
 	}
+	ImGui::PopStyleVar();
 }
 
 void ProfilerPanel::RenderGpuTab() const
@@ -239,6 +241,7 @@ void ProfilerPanel::RenderGpuTab() const
 	}
 
 	// Show GPU roots as-is; "GPU Frame" is the top-level scope.
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> bucket;
 	bucket.reserve(m_snapshot.GpuRoots.size());
 	for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
@@ -267,6 +270,7 @@ void ProfilerPanel::RenderGpuTab() const
 		}
 		RenderModuleCharts(chartBucket, "GPU");
 	}
+	ImGui::PopStyleVar();
 }
 
 void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNode& node, int depth, std::size_t siblingIndex, std::size_t siblingTotal) const
@@ -650,16 +654,28 @@ void ProfilerPanel::RenderModuleCharts(
 	const float cardH = cardContentH + outerPad * 2.0f;
 
 	// ---- Card container ----
-	ImGui::Spacing();
+	// Render flush against the table above so the panel reads as one tool.
 	ImGui::PushID(moduleName.data() != nullptr ? moduleName.data() : "charts");
 	ImGui::BeginChild("##Charts", ImVec2(availWidth, cardH), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
 
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const ImVec2 cardOrigin = ImGui::GetCursorScreenPos();
 
-	// Card background.
-	dl->AddRectFilled(cardOrigin, ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH), kColCardBg, 4.0f);
-	dl->AddRect(cardOrigin, ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH), kColCardBorder, 4.0f);
+	// Card background — only round the bottom corners so the top edge butts cleanly
+	// against the table border. Use the same dark fill the table rows use.
+	dl->AddRectFilled(
+	    cardOrigin,
+	    ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH),
+	    kColCardBg,
+	    4.0f,
+	    ImDrawFlags_RoundCornersBottom);
+	dl->AddRect(
+	    cardOrigin,
+	    ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH),
+	    kColCardBorder,
+	    4.0f,
+	    ImDrawFlags_RoundCornersBottom,
+	    1.0f);
 
 	const float cx = cardOrigin.x + outerPad;
 	float cy = cardOrigin.y + outerPad;
