@@ -111,18 +111,19 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 	ImGui::SetNextWindowBgAlpha(0.98f);
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin(
 	    "Viewport",
 	    nullptr,
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	UiUtil::DrawPanelHeader("Viewport", ToViewKindLabel(m_renderRequest.ViewKind));
+	ImGui::PopStyleVar(); // WindowPadding
 
 	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginDisabled(disableInteraction);
 	ImGui::BeginChild(
 	    "##ViewportSurface",
 	    ImVec2(0.0f, surfaceRegionHeight),
-	    ImGuiChildFlags_Borders,
+	    ImGuiChildFlags_None,
 	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();

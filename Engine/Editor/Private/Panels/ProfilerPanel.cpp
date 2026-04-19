@@ -19,7 +19,7 @@
 namespace
 {
 	constexpr ImGuiTableFlags kTableFlags =
-	    ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+	    ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
 
 	constexpr double kMicrosecondsToMilliseconds = 1.0 / 1000.0;
 
@@ -219,7 +219,7 @@ void ProfilerPanel::RenderCpuTab() const
 		FormatThreadLabel(threadLabel, sizeof(threadLabel), thread);
 
 		const ImGuiTreeNodeFlags threadFlags =
-		    ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+		    ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 		if (!ImGui::CollapsingHeader(threadLabel, threadFlags))
 		{
 			continue;
@@ -520,7 +520,7 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 		headerLabel.append(moduleName.begin(), moduleName.end());
 		headerLabel += "]";
 
-		const ImGuiTreeNodeFlags groupFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+		const ImGuiTreeNodeFlags groupFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 		ImGui::PushID(headerLabel.c_str());
 		const bool groupOpen = ImGui::CollapsingHeader(headerLabel.c_str(), groupFlags);
 		if (groupOpen)
@@ -669,13 +669,7 @@ void ProfilerPanel::RenderModuleCharts(
 	    kColCardBg,
 	    4.0f,
 	    ImDrawFlags_RoundCornersBottom);
-	dl->AddRect(
-	    cardOrigin,
-	    ImVec2(cardOrigin.x + availWidth, cardOrigin.y + cardH),
-	    kColCardBorder,
-	    4.0f,
-	    ImDrawFlags_RoundCornersBottom,
-	    1.0f);
+
 
 	const float cx = cardOrigin.x + outerPad;
 	float cy = cardOrigin.y + outerPad;
