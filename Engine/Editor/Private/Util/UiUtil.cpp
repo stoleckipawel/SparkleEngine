@@ -95,13 +95,11 @@ namespace UiUtil
 
 	void BeginSectionCard(const char* title)
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
 		ImGui::BeginChild(
 		    title,
 		    ImVec2(0.0f, 0.0f),
-		    ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY,
+		    ImGuiChildFlags_AutoResizeY,
 		    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		DrawSectionHeader(title);
 	}
@@ -109,7 +107,7 @@ namespace UiUtil
 	void EndSectionCard()
 	{
 		ImGui::EndChild();
-		ImGui::PopStyleVar(3);
+		ImGui::PopStyleVar(1);
 	}
 
 	void DrawKeyValueRow(const char* label, const char* value)

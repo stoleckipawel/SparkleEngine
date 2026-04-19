@@ -319,12 +319,13 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - m_widthPixels, m_topInsetPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(m_widthPixels, panelHeight), ImGuiCond_Once);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(kMinWidth, panelHeight), ImVec2(kMaxWidth, panelHeight));
-	ImGui::SetNextWindowBgAlpha(0.98f);
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin(
 	    "Inspector",
 	    nullptr,
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings);
+	ImGui::PopStyleVar();
 
 	m_widthPixels = ImGui::GetWindowWidth();
 

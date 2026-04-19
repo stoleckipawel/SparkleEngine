@@ -57,7 +57,7 @@ namespace SparkleUiTheme
 		style.ScrollbarRounding = 2.0f;
 		style.GrabRounding = 2.0f;
 		style.TabRounding = 2.0f;
-		style.WindowBorderSize = 1.0f;
+		style.WindowBorderSize = 0.0f;
 		style.ChildBorderSize = 0.0f;
 		style.FrameBorderSize = 0.0f;
 		style.IndentSpacing = 12.0f;

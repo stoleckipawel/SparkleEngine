@@ -15,7 +15,7 @@ namespace SparkleUiPalette
 
 	ImVec4 WindowBackground() noexcept
 	{
-		return ImVec4(0.11f, 0.11f, 0.12f, 0.99f);
+		return ImVec4(0.11f, 0.11f, 0.12f, 1.0f);
 	}
 
 	ImVec4 SurfaceBackground() noexcept
@@ -25,7 +25,7 @@ namespace SparkleUiPalette
 
 	ImVec4 PopupBackground() noexcept
 	{
-		return ImVec4(0.13f, 0.13f, 0.14f, 0.99f);
+		return ImVec4(0.13f, 0.13f, 0.14f, 1.0f);
 	}
 
 	ImVec4 Border() noexcept

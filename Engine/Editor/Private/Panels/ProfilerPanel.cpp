@@ -406,8 +406,8 @@ void ProfilerPanel::BeginProfilerTable(const char* id) const
 	ImGui::PushID(id);
 	if (ImGui::BeginTable("##Table", 6, kTableFlags))
 	{
-		ImGui::TableSetupColumn("##Vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 20.0f);
-		ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("##Vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable, 20.0f);
+		ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable);
 		ImGui::TableSetupColumn("Incl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
 		ImGui::TableSetupColumn("Excl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
 		ImGui::TableSetupColumn("Max ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
