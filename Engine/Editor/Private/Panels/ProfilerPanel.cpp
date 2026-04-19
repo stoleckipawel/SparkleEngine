@@ -23,6 +23,44 @@ namespace
 
 	constexpr double kMicrosecondsToMilliseconds = 1.0 / 1000.0;
 
+	const Engine::Diagnostics::ProfilerSnapshotNode* FindNodeByName(
+	    const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>& nodes,
+	    const std::string& name)
+	{
+		for (const auto& node : nodes)
+		{
+			if (node.Name == name)
+			{
+				return &node;
+			}
+			const auto* found = FindNodeByName(node.Children, name);
+			if (found != nullptr)
+			{
+				return found;
+			}
+		}
+		return nullptr;
+	}
+
+	const Engine::Diagnostics::ProfilerSnapshotNode* FindNodeInBucket(
+	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    const std::string& name)
+	{
+		for (const auto* node : bucket)
+		{
+			if (node->Name == name)
+			{
+				return node;
+			}
+			const auto* found = FindNodeByName(node->Children, name);
+			if (found != nullptr)
+			{
+				return found;
+			}
+		}
+		return nullptr;
+	}
+
 	void FormatThreadLabel(char* buffer, std::size_t bufferSize, const Engine::Diagnostics::ProfilerThreadSnapshot& thread)
 	{
 		if (!thread.ThreadName.empty())
@@ -254,21 +292,37 @@ void ProfilerPanel::RenderGpuTab() const
 	ImGui::EndTable();
 	ImGui::PopID();
 
-	// Charts use the deepest single-child drill-in to reach the actual passes.
-	const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
-	while (chartLevel->size() == 1 && !(*chartLevel)[0].Children.empty())
-	{
-		chartLevel = &(*chartLevel)[0].Children;
-	}
-	if (chartLevel->size() >= 2)
+	// Charts: use focused node's children if set, otherwise auto-drill to passes.
+	const Engine::Diagnostics::ProfilerSnapshotNode* gpuFocus =
+	    m_chartFocusNodeName.empty() ? nullptr : FindNodeByName(m_snapshot.GpuRoots, m_chartFocusNodeName);
+	if (gpuFocus != nullptr && gpuFocus->Children.size() >= 2)
 	{
 		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
-		chartBucket.reserve(chartLevel->size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& node : *chartLevel)
+		chartBucket.reserve(gpuFocus->Children.size());
+		for (const auto& child : gpuFocus->Children)
 		{
-			chartBucket.push_back(&node);
+			chartBucket.push_back(&child);
 		}
-		RenderModuleCharts(chartBucket, "GPU");
+		RenderModuleCharts(chartBucket, ShortenScopeName(gpuFocus->Name));
+	}
+	else
+	{
+		// Default: deepest single-child drill-in to reach the actual passes.
+		const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
+		while (chartLevel->size() == 1 && !(*chartLevel)[0].Children.empty())
+		{
+			chartLevel = &(*chartLevel)[0].Children;
+		}
+		if (chartLevel->size() >= 2)
+		{
+			std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+			chartBucket.reserve(chartLevel->size());
+			for (const Engine::Diagnostics::ProfilerSnapshotNode& node : *chartLevel)
+			{
+				chartBucket.push_back(&node);
+			}
+			RenderModuleCharts(chartBucket, "GPU");
+		}
 	}
 	ImGui::PopStyleVar();
 }
@@ -298,9 +352,14 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 		ImGui::PushID(node.Name.c_str());
 
 		// Draw a small clickable colored circle (filled if visible, hollow ring if hidden).
-		const ImVec2 cursorPos = ImGui::GetCursorScreenPos();
 		const float radius = ImGui::GetFontSize() * 0.3f;
-		const ImVec2 center{cursorPos.x + radius + 2.0f, cursorPos.y + ImGui::GetTextLineHeight() * 0.5f};
+		const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
+		// Center within the cell: cursor sits at the content start; use content width for X.
+		const ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+		const float contentW = ImGui::GetContentRegionAvail().x;
+		const ImVec2 center{
+		    cursorPos.x + contentW * 0.5f,
+		    cursorPos.y + ImGui::GetTextLineHeight() * 0.5f};
 		ImDrawList* rowDl = ImGui::GetWindowDrawList();
 		if (isHidden)
 		{
@@ -327,7 +386,7 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 
 	ImGui::TableSetColumnIndex(1);
 	const bool hasChildren = !node.Children.empty();
-	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth
+	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow
 	                               | (hasChildren ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 	if (depth == 0)
 	{
@@ -336,6 +395,12 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 	const std::string_view displayName = ShortenScopeName(node.Name);
 	const std::string displayNameStr(displayName);
 	const bool open = ImGui::TreeNodeEx(displayNameStr.c_str(), nodeFlags);
+
+	// Click a scope with children to focus charts on its immediate children.
+	if (hasChildren && ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		m_chartFocusNodeName = node.Name;
+	}
 
 	const double inclusiveMs = node.AverageDurationMicroseconds * kMicrosecondsToMilliseconds;
 	const double childSumMs = SumChildAverages(node.Children) * kMicrosecondsToMilliseconds;
@@ -503,7 +568,20 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 		ImGui::EndTable();
 		ImGui::PopID();
 
-		if (bucket.size() >= 2)
+		// Charts: use focused node's children if set, otherwise top-level bucket.
+		const Engine::Diagnostics::ProfilerSnapshotNode* focusNode =
+		    m_chartFocusNodeName.empty() ? nullptr : FindNodeByName(nodes, m_chartFocusNodeName);
+		if (focusNode != nullptr && focusNode->Children.size() >= 2)
+		{
+			std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+			chartBucket.reserve(focusNode->Children.size());
+			for (const auto& child : focusNode->Children)
+			{
+				chartBucket.push_back(&child);
+			}
+			RenderModuleCharts(chartBucket, ShortenScopeName(focusNode->Name));
+		}
+		else if (bucket.size() >= 2)
 		{
 			RenderModuleCharts(bucket, moduleOrder[0]);
 		}
@@ -530,7 +608,20 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 			ImGui::EndTable();
 			ImGui::PopID(); // from BeginProfilerTable
 
-			if (bucket.size() >= 2)
+			// Charts: use focused node's children if focus is within this group.
+			const Engine::Diagnostics::ProfilerSnapshotNode* focusNode =
+			    m_chartFocusNodeName.empty() ? nullptr : FindNodeInBucket(bucket, m_chartFocusNodeName);
+			if (focusNode != nullptr && focusNode->Children.size() >= 2)
+			{
+				std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+				chartBucket.reserve(focusNode->Children.size());
+				for (const auto& child : focusNode->Children)
+				{
+					chartBucket.push_back(&child);
+				}
+				RenderModuleCharts(chartBucket, ShortenScopeName(focusNode->Name));
+			}
+			else if (bucket.size() >= 2)
 			{
 				RenderModuleCharts(bucket, moduleName);
 			}

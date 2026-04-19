@@ -50,4 +50,5 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	Engine::Diagnostics::ProfilerSnapshot m_snapshot;
 	SortMode m_sortMode = SortMode::Hierarchy;
 	mutable std::unordered_set<std::string> m_hiddenScopes;
+	mutable std::string m_chartFocusNodeName;
 };

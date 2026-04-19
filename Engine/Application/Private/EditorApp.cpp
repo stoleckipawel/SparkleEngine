@@ -44,7 +44,7 @@ void EditorApp::Initialize()
 
 bool EditorApp::Tick()
 {
-	SPARKLE_CPU_SCOPE("Application.EditorTick");
+	SPARKLE_CPU_SCOPE("Application.CpuFrame");
 	if (!m_isEditorSessionActive || !m_projectApp || !m_ui)
 	{
 		return false;

@@ -338,6 +338,9 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 
 	ImGui::BeginDisabled(disableInteraction);
 
+	constexpr float kContentPad = 8.0f;
+	ImGui::Indent(kContentPad);
+
 	constexpr ImGuiTabBarFlags kTabBarFlags = ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_FittingPolicyResizeDown;
 	if (ImGui::BeginTabBar("##InspectorTabs", kTabBarFlags))
 	{
@@ -357,6 +360,8 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 
 		ImGui::EndTabBar();
 	}
+
+	ImGui::Unindent(kContentPad);
 
 	ImGui::EndDisabled();
 

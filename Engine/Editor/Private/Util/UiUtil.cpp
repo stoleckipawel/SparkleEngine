@@ -95,7 +95,7 @@ namespace UiUtil
 
 	void BeginSectionCard(const char* title)
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::BeginChild(
 		    title,
 		    ImVec2(0.0f, 0.0f),
@@ -106,6 +106,7 @@ namespace UiUtil
 
 	void EndSectionCard()
 	{
+		ImGui::Spacing();
 		ImGui::EndChild();
 		ImGui::PopStyleVar(1);
 	}
