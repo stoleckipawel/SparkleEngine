@@ -28,7 +28,7 @@ class D3D12PipelineState final : public RenderPipelineState
 	void HandlePsoCreateFailure(HRESULT hr) const noexcept;
 
 	void SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept;
-	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, bool bRenderWireframe, RhiCullMode cullMode) noexcept;
+	void SetRasterizerState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, bool bRenderWireframe, ERhiCullMode cullMode) noexcept;
 	void SetRenderTargetBlendState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, D3D12_RENDER_TARGET_BLEND_DESC blendDesc) noexcept;
 	void SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthTestDesc depthDesc) noexcept;
 	void SetStencilTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiStencilTestDesc stencilDesc) noexcept;

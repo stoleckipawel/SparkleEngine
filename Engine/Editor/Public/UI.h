@@ -15,6 +15,7 @@ class MainMenuBarPanel;
 class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
+class ProfilerPanel;
 class LevelManager;
 class GameScene;
 class Window;
@@ -67,6 +68,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
+	std::unique_ptr<ProfilerPanel> m_profilerPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;

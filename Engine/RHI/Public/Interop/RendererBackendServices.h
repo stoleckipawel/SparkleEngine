@@ -23,6 +23,8 @@ class SPARKLE_RHI_API RendererBackendServices final
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	RenderDiagnostics& GetDiagnostics() noexcept;
+	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	void Flush() noexcept;
 	void ResizeSwapChain() noexcept;
 	void BeginFrame() noexcept;

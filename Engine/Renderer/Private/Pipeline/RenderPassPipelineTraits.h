@@ -20,10 +20,67 @@
 #include <format>
 #include <memory>
 
+inline std::string FormatShaderStageMask(ShaderStageMask mask)
+{
+	if (mask == ShaderStageMask::None)
+	{
+		return "None";
+	}
+
+	struct StageLabel
+	{
+		ShaderStageMask Mask;
+		const char* Label;
+	};
+
+	static constexpr std::array<StageLabel, 6> kStageLabels = {{
+	    {ShaderStageMask::Vertex, "Vertex"},
+	    {ShaderStageMask::Pixel, "Pixel"},
+	    {ShaderStageMask::Geometry, "Geometry"},
+	    {ShaderStageMask::Hull, "Hull"},
+	    {ShaderStageMask::Domain, "Domain"},
+	    {ShaderStageMask::Compute, "Compute"},
+	}};
+
+	std::string result;
+	for (const StageLabel& stageLabel : kStageLabels)
+	{
+		if (!HasAnyShaderStageMask(mask, stageLabel.Mask))
+		{
+			continue;
+		}
+
+		if (!result.empty())
+		{
+			result += '|';
+		}
+
+		result += stageLabel.Label;
+	}
+
+	return result.empty() ? "None" : result;
+}
+
 inline const std::shared_ptr<spdlog::logger>& GetRendererPipelineLogger() noexcept
 {
 	static std::shared_ptr<spdlog::logger> logger = Engine::Logging::GetOrCreateLogger("Renderer");
 	return logger;
+}
+
+inline void LogCookedShaderRuntimeReady(
+	std::string_view passName,
+	std::string_view pipelineKind,
+	const ShaderPackageDefinition& definition)
+{
+	SPDLOG_LOGGER_INFO(
+	    GetRendererPipelineLogger(),
+	    "Cooked shader runtime ready: pass='{}' pipeline='{}' package='{}' variant='{}' bindingLayout='{}' expectedStages='{}'",
+	    passName,
+	    pipelineKind,
+	    definition.PackageId != nullptr ? definition.PackageId : "<null>",
+	    definition.VariantId != nullptr ? definition.VariantId : "<null>",
+	    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : "<null>",
+	    FormatShaderStageMask(definition.ExpectedStages));
 }
 
 inline void AppendPassParameterLayout(PassParameterLayout& destination, const PassParameterLayout& source)
@@ -92,16 +149,20 @@ inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
 	std::string errorMessage;
 	if (!shaderPackageCache.LoadPackage(definition, bindingLayout, errorMessage, loadedPackage))
 	{
+		const std::string bindingLayoutLabel =
+		    definition.BindingLayoutId != nullptr ? std::string(definition.BindingLayoutId) : bindingLayout.GetDebugName();
 		Engine::Diagnostics::Fail(
 		    GetRendererPipelineLogger(),
 		    __FILE__,
 		    __LINE__,
 		    std::format(
-		        "Failed to load cooked shader package '{}' variant '{}' for pass '{}' ({}) - {}",
+		        "Failed to load cooked shader package '{}' variant '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - {}",
 		        definition.PackageId != nullptr ? definition.PackageId : "<null>",
 		        definition.VariantId != nullptr ? definition.VariantId : "<null>",
 		        passName,
 		        declarationName,
+		        bindingLayoutLabel,
+		        FormatShaderStageMask(definition.ExpectedStages),
 		        errorMessage));
 	}
 
@@ -149,6 +210,7 @@ template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
 		pipelineDesc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
 		pipelineDesc.DebugName = L"ForwardOpaque_PipelineState";
 		storage.PipelineState = rhi.CreateGraphicsPipelineState(pipelineDesc);
+		LogCookedShaderRuntimeReady(ForwardOpaquePass::PassName, "graphics", shaderPackage);
 	}
 
 	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
@@ -195,6 +257,7 @@ template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
 		pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
 		pipelineDesc.DebugName = L"ShadowDepth_PipelineState";
 		storage.PipelineState = rhi.CreateGraphicsPipelineState(pipelineDesc);
+		LogCookedShaderRuntimeReady(ShadowOpaquePass::PassName, "graphics", shaderPackage);
 	}
 
 	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
@@ -229,6 +292,7 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 		pipelineDesc.ComputeShader = RhiShaderStageDesc{storage.ShaderPackage, ShaderStage::Compute};
 		pipelineDesc.DebugName = L"ComputeClear_PipelineState";
 		storage.PipelineState = rhi.CreateComputePipelineState(pipelineDesc);
+		LogCookedShaderRuntimeReady(ComputeClearPass::PassName, "compute", shaderPackage);
 	}
 
 	static RuntimeType MakeRuntime(const StorageType& storage) noexcept

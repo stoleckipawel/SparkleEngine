@@ -23,23 +23,6 @@ namespace
 		return it != passRecord.compiledBarriers.end();
 	}
 
-	std::string BuildResourceDisplayLabel(ResourceHandle handle, const std::string& debugName)
-	{
-		const std::string& name = debugName.empty() ? std::string{"Resource"} : debugName;
-		return std::string{"#"} + std::to_string(handle.index) + ":" + name;
-	}
-
-	std::string BuildResourceEventScopeLabel(ResourceHandle handle, FrameGraphResourceClass resourceClass, const std::string& debugName)
-	{
-		const std::string& name = debugName.empty() ? std::string{"Resource"} : debugName;
-		std::string label{"FG/Resource/"};
-		label += resourceClass == FrameGraphResourceClass::Buffer ? "Buffer/" : "Texture/";
-		label += std::to_string(handle.index);
-		label += "/";
-		label += name;
-		return label;
-	}
-
 	void ValidateResourceVersionGraph(const FrameGraph::CompiledPlan& plan) noexcept
 	{
 		for (const FrameGraph::CompileResourceEntry& resource : plan.resources)
@@ -75,7 +58,6 @@ FrameGraphCompiler::FrameGraphCompiler(FrameGraph::CompiledPlan& plan, ResourceR
 
 void FrameGraphCompiler::Compile() noexcept
 {
-	m_resourceRegistry.ResetCurrentStates();
 	BuildCompiledPlanResources();
 	m_plan.executionOrder.clear();
 	m_plan.executionOrder.reserve(m_plan.passes.size());
@@ -183,8 +165,6 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .finalState = entry.finalState,
 		        .currentState = runtimeState.currentState,
 		        .debugName = entry.debugName,
-		        .displayLabel = BuildResourceDisplayLabel(entry.handle, entry.debugName),
-		        .eventScopeLabel = BuildResourceEventScopeLabel(entry.handle, entry.resourceClass, entry.debugName),
 		        .currentVersion = 0,
 		        .versions = {ResourceVersion{.handle = entry.handle, .version = 0, .writerPass = FrameGraph::INVALID_PASS_INDEX}}});
 	}
@@ -194,9 +174,9 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 {
 	for (CompileResourceEntry& compiledResource : m_plan.resources)
 	{
-		compiledResource.currentState = compiledResource.initialState;
+		compiledResource.currentState = m_resourceRegistry.GetRuntimeState(compiledResource.handle).currentState;
 		FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(compiledResource.handle);
-		runtimeState.currentState = compiledResource.initialState;
+		runtimeState.currentState = compiledResource.currentState;
 	}
 }
 

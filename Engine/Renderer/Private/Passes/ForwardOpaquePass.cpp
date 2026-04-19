@@ -2,6 +2,8 @@
 #include "Passes/ForwardOpaquePass.h"
 
 #include "GPU/CommandContext.h"
+#include "GPU/PassExecutionDiagnostics.h"
+#include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/RenderViewContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
@@ -50,6 +52,8 @@ ShaderPackageDefinition ForwardOpaquePass::DescribePrimaryViewShaderPackage() no
 
 void ForwardOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)
 {
+	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.ForwardOpaque.Execute");
+
 	const ForwardOpaquePassRuntime& runtime = context.Runtime.GetPassRuntime<ForwardOpaquePass>();
 	PreparePassParameters(parameters, context.Frame.mainView, context.Runtime);
 	PrepareTargets(context, parameters.GetFields());

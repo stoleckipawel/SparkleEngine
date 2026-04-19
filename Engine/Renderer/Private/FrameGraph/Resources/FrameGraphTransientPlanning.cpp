@@ -10,22 +10,6 @@
 
 namespace
 {
-	std::string BuildTransientDisplayLabel(ResourceHandle handle, const FrameGraphResourceMetadata& metadata)
-	{
-		const std::string name = metadata.debugName.empty() ? std::string{"Transient"} : metadata.debugName;
-		return std::string{"#"} + std::to_string(handle.index) + ":" + name;
-	}
-
-	std::string BuildTransientEventScopeLabel(ResourceHandle handle, const FrameGraphResourceMetadata& metadata)
-	{
-		std::string label{"FG/Transient/"};
-		label += metadata.resourceClass == FrameGraphResourceClass::Buffer ? "Buffer/" : "Texture/";
-		label += std::to_string(handle.index);
-		label += "/";
-		label += metadata.debugName.empty() ? "Transient" : metadata.debugName;
-		return label;
-	}
-
 	bool RequiresUnorderedAccess(const FrameGraph::CompiledPlan& plan, ResourceHandle handle) noexcept
 	{
 		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
@@ -147,9 +131,7 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		                    isBuffer ? RhiOptimizedClearValue{}
 		                             : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
 		                .hasOptimizedClearValue = !isBuffer,
-		                .initialState = resourceMetadata.initialState},
-		        .displayLabel = BuildTransientDisplayLabel(transientResource.handle, resourceMetadata),
-		        .eventScopeLabel = BuildTransientEventScopeLabel(transientResource.handle, resourceMetadata)});
+		                .initialState = resourceMetadata.initialState}});
 	}
 }
 

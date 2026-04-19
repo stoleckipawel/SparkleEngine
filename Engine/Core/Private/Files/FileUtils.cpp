@@ -42,4 +42,78 @@ namespace Engine::Files
 		outErrorMessage.clear();
 		return true;
 	}
+
+	bool TryWriteAllBytes(const std::filesystem::path& path, const std::vector<std::uint8_t>& bytes, std::string& outErrorMessage)
+	{
+		std::error_code ec;
+		if (path.has_parent_path())
+		{
+			std::filesystem::create_directories(path.parent_path(), ec);
+			if (ec)
+			{
+				outErrorMessage = std::format("Failed to create directories for '{}': {}", path.string(), ec.message());
+				return false;
+			}
+		}
+
+		std::ofstream output(path, std::ios::binary | std::ios::trunc);
+		if (!output)
+		{
+			outErrorMessage = std::format("Failed to open '{}' for writing", path.string());
+			return false;
+		}
+
+		if (!bytes.empty() && !output.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())))
+		{
+			outErrorMessage = std::format("Failed to write '{}'", path.string());
+			return false;
+		}
+
+		output.flush();
+		if (!output)
+		{
+			outErrorMessage = std::format("Failed to flush '{}'", path.string());
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
+
+	bool TryWriteAllText(const std::filesystem::path& path, std::string_view text, std::string& outErrorMessage)
+	{
+		std::error_code ec;
+		if (path.has_parent_path())
+		{
+			std::filesystem::create_directories(path.parent_path(), ec);
+			if (ec)
+			{
+				outErrorMessage = std::format("Failed to create directories for '{}': {}", path.string(), ec.message());
+				return false;
+			}
+		}
+
+		std::ofstream output(path, std::ios::binary | std::ios::trunc);
+		if (!output)
+		{
+			outErrorMessage = std::format("Failed to open '{}' for writing", path.string());
+			return false;
+		}
+
+		if (!text.empty() && !output.write(text.data(), static_cast<std::streamsize>(text.size())))
+		{
+			outErrorMessage = std::format("Failed to write '{}'", path.string());
+			return false;
+		}
+
+		output.flush();
+		if (!output)
+		{
+			outErrorMessage = std::format("Failed to flush '{}'", path.string());
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
 }

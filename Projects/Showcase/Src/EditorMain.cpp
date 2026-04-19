@@ -1,8 +1,6 @@
-#include "EditorApp.h"
+#include "ApplicationLaunch.h"
 
 int main()
 {
-	EditorApp app;
-	app.Run();
-	return 0;
+	return RunEditorApplication();
 }

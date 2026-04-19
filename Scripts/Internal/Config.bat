@@ -67,7 +67,7 @@ if exist "!ROOT_DIR!\CMakeLists.txt" (
         set "_RAW_NAME=%%P"
     )
     for /f "delims=) tokens=1" %%A in ("!_RAW_NAME!") do set "PROJECT_NAME=%%A"
-    set "PROJECT_NAME=!PROJECT_NAME: =!"
+    if defined PROJECT_NAME set "PROJECT_NAME=!PROJECT_NAME: =!"
     set "_RAW_NAME="
 )
 

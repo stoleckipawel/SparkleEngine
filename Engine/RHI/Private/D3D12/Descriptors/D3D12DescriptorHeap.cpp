@@ -3,6 +3,9 @@
 
 static const auto g_descriptorHeapLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
 
+static constexpr UINT kRenderTargetDescriptorHeapSize = 4096;
+static constexpr UINT kDepthStencilDescriptorHeapSize = 4096;
+
 D3D12DescriptorHeap::D3D12DescriptorHeap(D3D12Rhi& rhi, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, LPCWSTR name) :
     m_rhi(&rhi)
 {
@@ -37,6 +40,18 @@ D3D12DescriptorHandle D3D12DescriptorHeap::GetHandleAt(UINT index) const
 
 UINT D3D12DescriptorHeap::GetNumDescriptors() const
 {
-	return m_desc.Type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER ? D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE
-	                                                         : D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2;
+	switch (m_desc.Type)
+	{
+		case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+			return D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER:
+			return D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_RTV:
+			return kRenderTargetDescriptorHeapSize;
+		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+			return kDepthStencilDescriptorHeapSize;
+		default:
+			Engine::Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Unsupported descriptor heap type.");
+			return 0;
+	}
 }

@@ -6,12 +6,15 @@
 #include "ProjectApp.h"
 #include "Renderer.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
 EditorApp::EditorApp() = default;
 
 EditorApp::~EditorApp() = default;
 
 void EditorApp::Initialize()
 {
+	SPARKLE_CPU_SCOPE("Application.Editor.Initialize");
 	if (m_isEditorSessionActive)
 	{
 		return;
@@ -41,6 +44,7 @@ void EditorApp::Initialize()
 
 bool EditorApp::Tick()
 {
+	SPARKLE_CPU_SCOPE("Application.Editor.Tick");
 	if (!m_isEditorSessionActive || !m_projectApp || !m_ui)
 	{
 		return false;
@@ -99,6 +103,7 @@ bool EditorApp::Tick()
 
 void EditorApp::Shutdown()
 {
+	SPARKLE_CPU_SCOPE("Application.Editor.Shutdown");
 	if (!m_isEditorSessionActive)
 	{
 		return;
@@ -111,6 +116,8 @@ void EditorApp::Shutdown()
 
 void EditorApp::Run()
 {
+	Engine::Diagnostics::BeginTraceSession();
+
 	Initialize();
 
 	while (Tick())
@@ -118,4 +125,6 @@ void EditorApp::Run()
 	}
 
 	Shutdown();
+
+	Engine::Diagnostics::EndTraceSession();
 }

@@ -12,13 +12,15 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <string_view>
 
 class PassParameterLayout;
 class LoadedShaderPackage;
 class Texture;
+class RenderCommandList;
 
-enum class RhiBackendApi : std::uint8_t
+enum class ERhiBackendApi : std::uint8_t
 {
 	Unknown = 0,
 	D3D12 = 1,
@@ -90,7 +92,7 @@ struct RhiGpuDescriptorHandle
 	constexpr explicit operator bool() const noexcept { return Value != 0; }
 };
 
-enum class RhiDescriptorHeapType : std::uint8_t
+enum class ERhiDescriptorHeapType : std::uint8_t
 {
 	ShaderResource = 0,
 	Sampler = 1,
@@ -115,7 +117,7 @@ struct RhiDescriptorTableHandle
 
 using RhiGpuVirtualAddress = std::uint64_t;
 
-enum class RhiCullMode : std::uint8_t
+enum class ERhiCullMode : std::uint8_t
 {
 	None = 0,
 	Front = 1,
@@ -321,7 +323,7 @@ struct GraphicsPipelineStateDesc
 	RhiShaderStageDesc VertexShader = {};
 	RhiShaderStageDesc PixelShader = {};
 	bool RenderWireframe = false;
-	RhiCullMode CullMode = RhiCullMode::Back;
+	ERhiCullMode CullMode = ERhiCullMode::Back;
 	RhiDepthTestDesc DepthTest = {};
 	RhiStencilTestDesc StencilTest = {};
 	std::array<PixelFormat, 8> RenderTargetFormats = {};
@@ -343,13 +345,133 @@ class SPARKLE_RHI_API RenderPipelineState
 	virtual ~RenderPipelineState() noexcept = default;
 };
 
+struct RhiDiagnosticLabelColor
+{
+	std::uint8_t Red = 255;
+	std::uint8_t Green = 255;
+	std::uint8_t Blue = 255;
+	std::uint8_t Alpha = 255;
+};
+
+struct RhiTimestampQueryHandle
+{
+	std::uint32_t Value = 0;
+
+	constexpr explicit operator bool() const noexcept { return Value != 0; }
+};
+
+enum class ERhiDiagnosticMessageSeverity : std::uint8_t
+{
+	Verbose = 0,
+	Info = 1,
+	Warning = 2,
+	Error = 3,
+	Fatal = 4,
+};
+
+enum class ERhiDiagnosticMessageCategory : std::uint8_t
+{
+	General = 0,
+	Validation = 1,
+	Performance = 2,
+	ResourceLifetime = 3,
+	Shader = 4,
+	Driver = 5,
+	Capture = 6,
+};
+
+struct RhiDiagnosticMessage
+{
+	ERhiDiagnosticMessageSeverity Severity = ERhiDiagnosticMessageSeverity::Info;
+	ERhiDiagnosticMessageCategory Category = ERhiDiagnosticMessageCategory::General;
+	std::string Text = {};
+};
+
+struct RhiDiagnosticsCapabilities
+{
+	bool SupportsObjectNames = false;
+	bool SupportsGpuEvents = false;
+	bool SupportsTimestampQueries = false;
+	bool SupportsDebugMessages = false;
+	bool SupportsLiveObjectReports = false;
+	bool SupportsCrashDiagnostics = false;
+};
+
+class SPARKLE_RHI_API RenderObjectDiagnostics
+{
+  public:
+	virtual ~RenderObjectDiagnostics() noexcept = default;
+
+	virtual bool SupportsObjectNames() const noexcept = 0;
+	virtual void SetDebugName(NativeGraphicsDeviceHandle device, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(NativeGraphicsQueueHandle queue, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(NativeGraphicsCommandListHandle commandList, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(RhiOwnedHeapHandle heap, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept = 0;
+};
+
+class SPARKLE_RHI_API RenderTimingDiagnostics
+{
+  public:
+	virtual ~RenderTimingDiagnostics() noexcept = default;
+
+	virtual bool SupportsTimestampQueries() const noexcept = 0;
+	virtual RhiTimestampQueryHandle AllocateTimestampQuery() = 0;
+	virtual void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept = 0;
+	virtual bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept = 0;
+	virtual bool TryResolveTimestamp(RhiTimestampQueryHandle query, std::uint64_t& outTicks) const noexcept = 0;
+	virtual std::uint64_t GetTimestampFrequencyHz() const noexcept = 0;
+};
+
+class SPARKLE_RHI_API RenderMessageDiagnostics
+{
+  public:
+	virtual ~RenderMessageDiagnostics() noexcept = default;
+
+	virtual bool SupportsDebugMessages() const noexcept = 0;
+	virtual bool TryPopMessage(RhiDiagnosticMessage& outMessage) noexcept = 0;
+	virtual void ClearMessages() noexcept = 0;
+};
+
+class SPARKLE_RHI_API RenderFailureDiagnostics
+{
+  public:
+	virtual ~RenderFailureDiagnostics() noexcept = default;
+
+	virtual bool SupportsLiveObjectReports() const noexcept = 0;
+	virtual bool SupportsCrashDiagnostics() const noexcept = 0;
+	virtual void ReportLiveObjects() noexcept = 0;
+	virtual void CollectCrashDiagnostics() noexcept = 0;
+};
+
+class SPARKLE_RHI_API RenderDiagnostics
+{
+  public:
+	virtual ~RenderDiagnostics() noexcept = default;
+
+	virtual RhiDiagnosticsCapabilities GetCapabilities() const noexcept = 0;
+	virtual RenderObjectDiagnostics& GetObjectDiagnostics() noexcept = 0;
+	virtual const RenderObjectDiagnostics& GetObjectDiagnostics() const noexcept = 0;
+	virtual RenderTimingDiagnostics* GetTimingDiagnostics() noexcept = 0;
+	virtual const RenderTimingDiagnostics* GetTimingDiagnostics() const noexcept = 0;
+	virtual RenderMessageDiagnostics* GetMessageDiagnostics() noexcept = 0;
+	virtual const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept = 0;
+	virtual RenderFailureDiagnostics* GetFailureDiagnostics() noexcept = 0;
+	virtual const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept = 0;
+};
+
 class SPARKLE_RHI_API RenderCommandList
 {
   public:
 	virtual ~RenderCommandList() noexcept = default;
 
-	virtual RhiBackendApi GetBackendApi() const noexcept = 0;
+	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual NativeGraphicsCommandListHandle GetNativeHandle() const noexcept = 0;
+	virtual bool SupportsDiagnosticScopes() const noexcept = 0;
+	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
+	virtual void EndDiagnosticScope() noexcept = 0;
+	virtual void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
 	virtual void SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept = 0;
 	virtual void SetPipelineState(const RenderPipelineState& pipelineState) noexcept = 0;
 	virtual void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
@@ -409,20 +531,23 @@ class SPARKLE_RHI_API RenderHardwareInterface
   public:
 	virtual ~RenderHardwareInterface() noexcept = default;
 
-	virtual RhiBackendApi GetBackendApi() const noexcept = 0;
+	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
+	virtual void WaitForIdle() noexcept = 0;
 	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;
 	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
 	virtual NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept = 0;
+	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
+	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;
 	virtual void SetShaderVisibleDescriptorHeaps(RenderCommandList& commandList) const noexcept = 0;
 	virtual NativeDescriptorHeapHandle GetShaderResourceHeapHandle() const noexcept = 0;
-	virtual RhiDescriptorAllocation AllocateDescriptor(RhiDescriptorHeapType heapType) = 0;
-	virtual void ReleaseDescriptor(RhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept = 0;
-	virtual RhiDescriptorTableHandle AllocateDescriptorTable(RhiDescriptorHeapType heapType, std::uint32_t descriptorCount) = 0;
+	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorHeapType heapType) = 0;
+	virtual void ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept = 0;
+	virtual RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorHeapType heapType, std::uint32_t descriptorCount) = 0;
 	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept = 0;
 	virtual void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept = 0;

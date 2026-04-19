@@ -226,7 +226,6 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		if (selectedBlock == nullptr)
 		{
 			const std::uint32_t blockIndex = static_cast<std::uint32_t>(m_plan.physicalBlocks.size());
-			const std::string blockLabel = std::string{"Block#"} + std::to_string(blockIndex);
 			m_plan.physicalBlocks.push_back(
 			    FrameGraph::CompiledPhysicalBlockPlan{
 			        .physicalBlockIndex = blockIndex,
@@ -240,8 +239,6 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			        .hasOptimizedClearValue = transientPlan->physicalAllocation.hasOptimizedClearValue,
 			        .firstExecutionIndex = transientPlan->firstExecutionIndex,
 			        .lastExecutionIndex = transientPlan->lastExecutionIndex,
-			        .displayLabel = blockLabel,
-			        .eventScopeLabel = std::string{"FG/PhysicalBlock/"} + std::to_string(blockIndex),
 			        .handles = {transientPlan->handle}});
 			selectedBlock = &m_plan.physicalBlocks.back();
 		}

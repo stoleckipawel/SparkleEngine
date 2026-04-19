@@ -38,3 +38,13 @@ FrameGraph::CompiledPlan FrameGraph::Compile()
 	compiler.Compile();
 	return m_compiledPlan;
 }
+
+void FrameGraph::UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept
+{
+	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
+	{
+		return;
+	}
+
+	m_resourceRegistry.UpdateCurrentState(handle, currentState);
+}

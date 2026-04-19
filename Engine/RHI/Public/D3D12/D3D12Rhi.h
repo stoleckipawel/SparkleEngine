@@ -9,7 +9,9 @@
 
 using Microsoft::WRL::ComPtr;
 
-#ifdef ENGINE_GPU_VALIDATION
+struct RhiDiagnosticMessage;
+
+#if ENGINE_GPU_VALIDATION
 class D3D12DebugLayer;
 #endif
 
@@ -41,6 +43,13 @@ class D3D12Rhi final
 	void WaitForGPU(uint32_t frameInFlightIndex) noexcept;
 
 	void Flush() noexcept;
+	bool SupportsDebugMessages() const noexcept;
+	bool TryPopDebugMessage(RhiDiagnosticMessage& outMessage) noexcept;
+	void ClearDebugMessages() noexcept;
+	bool SupportsLiveObjectReports() const noexcept;
+	bool SupportsCrashDiagnostics() const noexcept;
+	void ReportLiveObjects() noexcept;
+	void CollectCrashDiagnostics() noexcept;
 
 	void CheckShaderModel6Support() const noexcept;
 
@@ -69,7 +78,7 @@ class D3D12Rhi final
 	void CreateCommandLists();
 	void CreateFenceAndEvent();
 
-#ifdef ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	std::unique_ptr<D3D12DebugLayer> m_debugLayer;
 #endif
 

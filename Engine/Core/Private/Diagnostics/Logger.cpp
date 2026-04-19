@@ -57,6 +57,30 @@ namespace Engine::Logging
 			return initialized;
 		}
 
+		bool TryGetEnvironmentValue(const char* name, std::string& outValue) noexcept
+		{
+			outValue.clear();
+			if (name == nullptr)
+			{
+				return false;
+			}
+
+			char* rawValue = nullptr;
+			size_t requiredLength = 0;
+			if (_dupenv_s(&rawValue, &requiredLength, name) != 0 || rawValue == nullptr || requiredLength <= 1)
+			{
+				if (rawValue != nullptr)
+				{
+					std::free(rawValue);
+				}
+				return false;
+			}
+
+			outValue.assign(rawValue, requiredLength - 1);
+			std::free(rawValue);
+			return true;
+		}
+
 #if defined(_WIN32)
 		class DebugOutputSink final : public spdlog::sinks::base_sink<std::mutex>
 		{
@@ -87,8 +111,8 @@ namespace Engine::Logging
 			sinks.push_back(debuggerSink);
 #endif
 
-			const char* filePath = std::getenv("SPARKLE_LOG_FILE");
-			if (filePath && filePath[0] != '\0')
+			std::string filePath;
+			if (TryGetEnvironmentValue("SPARKLE_LOG_FILE", filePath))
 			{
 				try
 				{

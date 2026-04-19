@@ -1,6 +1,9 @@
 #pragma once
 
-#ifdef ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
+	#include "Interop/RenderHardwareInterface.h"
+
+	#include <deque>
 	#include <wrl/client.h>
 	#include <d3d12.h>
 	#include <dxgidebug.h>
@@ -20,12 +23,21 @@ class D3D12DebugLayer final
 	D3D12DebugLayer& operator=(D3D12DebugLayer&&) = delete;
 
 	void InitializeInfoQueue(ID3D12Device* device);
+	bool SupportsDebugMessages() const noexcept;
+	bool TryPopMessage(RhiDiagnosticMessage& outMessage) noexcept;
+	void ClearMessages() noexcept;
+	bool SupportsLiveObjectReports() const noexcept;
+	bool SupportsCrashDiagnostics() const noexcept;
+	void ReportLiveObjects(ID3D12Device* device);
+	void CollectCrashDiagnostics(ID3D12Device* device) noexcept;
 
 	void ReportLiveDeviceObjects(ID3D12Device* device);
 
 	void ReportLiveDXGIObjects();
 
   private:
+	void DrainStoredMessages() noexcept;
+	void InitDredSettings() noexcept;
 	void InitD3D12Debug();
 	void InitDXGIDebug();
 	void ConfigureInfoQueue(ID3D12Device* device);
@@ -33,6 +45,9 @@ class D3D12DebugLayer final
 
 	ComPtr<ID3D12Debug> m_d3d12Debug;
 	ComPtr<IDXGIDebug1> m_dxgiDebug;
+	ComPtr<ID3D12InfoQueue> m_infoQueue;
+	std::deque<RhiDiagnosticMessage> m_messages;
+	bool m_supportsCrashDiagnostics = false;
 };
 
 #endif

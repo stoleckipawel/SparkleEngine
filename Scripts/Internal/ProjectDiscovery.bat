@@ -43,8 +43,8 @@ call "%~dp0Config.bat"
 
 set "TARGET_PROJECT=%~2"
 set "HOST_MODE=%~3"
-set "TARGET_PROJECT=!TARGET_PROJECT: =!"
-set "HOST_MODE=!HOST_MODE: =!"
+if defined TARGET_PROJECT set "TARGET_PROJECT=!TARGET_PROJECT: =!"
+if defined HOST_MODE set "HOST_MODE=!HOST_MODE: =!"
 
 if "%TARGET_PROJECT%"=="" (
     echo [ERROR] ResolveTargets requires a project name or ALL.

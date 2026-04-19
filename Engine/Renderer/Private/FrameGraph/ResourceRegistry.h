@@ -95,6 +95,7 @@ class SPARKLE_RENDERER_API ResourceRegistry final
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
 	void SetBoundaryStates(ResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
+	void UpdateCurrentState(ResourceHandle handle, ResourceState currentState) noexcept;
 	void ClearResolvedAccess(ResourceHandle handle) noexcept;
 	bool IsRegistered(ResourceHandle handle) const noexcept;
 

@@ -9,7 +9,7 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface&
 {
 	constexpr uint32_t samplerCount = static_cast<uint32_t>(Slot::Count);
 
-	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(RhiDescriptorHeapType::Sampler, samplerCount);
+	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::Sampler, samplerCount);
 	if (!m_tableHandle)
 	{
 		Engine::Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");

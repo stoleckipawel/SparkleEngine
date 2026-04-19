@@ -32,6 +32,7 @@ void ResourceRegistry::RegisterBackBuffer(ResourceHandle handle, const FrameGrap
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
+	GetRuntimeState(handle).currentState = initialState;
 	ClearResolvedAccess(handle);
 }
 
@@ -71,6 +72,7 @@ void ResourceRegistry::RegisterImportedTexture(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
+	GetRuntimeState(handle).currentState = initialState;
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
 	access = {};
 	access.externalResource = resource;
@@ -107,6 +109,7 @@ void ResourceRegistry::RegisterImportedBuffer(
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
+	GetRuntimeState(handle).currentState = initialState;
 	FrameGraphResourceAccess& access = GetResolvedAccess(handle);
 	access = {};
 	access.externalResource = resource;
@@ -118,6 +121,11 @@ void ResourceRegistry::SetBoundaryStates(ResourceHandle handle, ResourceState in
 	metadata.initialState = initialState;
 	metadata.finalState = finalState;
 	GetRuntimeState(handle).currentState = initialState;
+}
+
+void ResourceRegistry::UpdateCurrentState(ResourceHandle handle, ResourceState currentState) noexcept
+{
+	GetRuntimeState(handle).currentState = currentState;
 }
 
 void ResourceRegistry::ClearResolvedAccess(ResourceHandle handle) noexcept
@@ -199,7 +207,10 @@ FrameGraphResourceMetadata& ResourceRegistry::RegisterMetadata(
 	entry.debugName = std::string(debugName);
 
 	FrameGraphResourceRuntimeState& runtimeState = m_runtimeStates[handle.index];
-	runtimeState.currentState = initialState;
+	if (!alreadyRegistered)
+	{
+		runtimeState.currentState = initialState;
+	}
 
 	if (!alreadyRegistered)
 	{

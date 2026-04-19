@@ -72,7 +72,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_textureManager->ResolveTextureOrDefault(desc.emissiveTexture, DefaultTexture::Black)};
 
 		const RhiDescriptorTableHandle tableHandle =
-		    m_renderHardwareInterface->AllocateDescriptorTable(RhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
+		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
 		if (!tableHandle)
 		{
 			Engine::Diagnostics::Fail(

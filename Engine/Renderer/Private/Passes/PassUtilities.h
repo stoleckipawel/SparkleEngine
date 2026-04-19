@@ -109,7 +109,7 @@ namespace PassUtilities
 	{
 		frameGraph.AddPass(
 		    name,
-		    FrameGraphPassFlags::Transfer,
+		    EFrameGraphPassFlags::Transfer,
 		    [destinationHandle, sourceHandle](PassBuilder& builder)
 		    {
 			    builder.Read(sourceHandle, ResourceUsage::CopySource);
@@ -125,7 +125,7 @@ namespace PassUtilities
 	{
 		frameGraph.AddPass(
 		    name,
-		    FrameGraphPassFlags::Transfer,
+		    EFrameGraphPassFlags::Transfer,
 		    [destinationHandle, sourceHandle](PassBuilder& builder)
 		    {
 			    builder.Read(sourceHandle, ResourceUsage::CopySource);

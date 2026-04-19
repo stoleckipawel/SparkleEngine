@@ -50,7 +50,7 @@ SceneImportResult GltfImporter::Import(const std::filesystem::path& filePath) co
 	    g_gltfImporterLogger,
 	    "{}",
 	    std::format(
-	        "GltfImporter: Loaded '{}' — {} meshes, {} materials",
+	        "GltfImporter: Loaded '{}' - {} meshes, {} materials",
 	        filePath.filename().string(),
 	        result.meshes.size(),
 	        result.materials.size()));

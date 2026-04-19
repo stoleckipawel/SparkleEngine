@@ -29,6 +29,7 @@
 #include <vector>
 
 class CommandContext;
+class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 struct RenderPassContext;
 class Window;
@@ -55,7 +56,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	FrameGraph& operator=(FrameGraph&&) = delete;
 
 	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(std::string_view name, FrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
+	void AddPass(std::string_view name, EFrameGraphPassFlags flags, SetupFn&& setupFn, ExecuteFn&& executeFn)
 	{
 		using SetupFnType = std::decay_t<SetupFn>;
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
@@ -97,7 +98,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    FrameGraphPassFlags::Raster,
+		    EFrameGraphPassFlags::Raster,
 		    parameters,
 		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -112,7 +113,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    FrameGraphPassFlags::Raster,
+		    EFrameGraphPassFlags::Raster,
 		    parameters,
 		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -127,7 +128,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    FrameGraphPassFlags::Compute,
+		    EFrameGraphPassFlags::Compute,
 		    parameters,
 		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -142,7 +143,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		AddTypedShaderPass(
 		    name,
-		    FrameGraphPassFlags::Compute,
+		    EFrameGraphPassFlags::Compute,
 		    parameters,
 		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
@@ -155,8 +156,12 @@ class SPARKLE_RENDERER_API FrameGraph
 
 	CompiledPlan Compile();
 
-	void Execute(const CompiledPlan& plan, CommandContext& cmd, const FrameContext& frame, const RenderPassContext& renderPassContext)
-	    const;
+	void Execute(
+	    const CompiledPlan& plan,
+	    CommandContext& cmd,
+	    const FrameContext& frame,
+	    const RenderPassContext& renderPassContext,
+	    FrameExecutionDiagnostics& frameDiagnostics) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
 		struct AllocatedParameterInstance final : AllocatedParameterInstanceBase
@@ -198,6 +203,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	TextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	BufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
 	BufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
+	void UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
 	    CommandContext& cmd,
 	    TextureHandle renderTargetHandle,
@@ -301,8 +307,9 @@ class SPARKLE_RENDERER_API FrameGraph
 	{
 		PassIndex index = INVALID_PASS_INDEX;
 		std::string passName;
-		FrameGraphPassFlags flags = FrameGraphPassFlags::None;
-		FrameGraphPassFlags passKind = FrameGraphPassFlags::None;
+		EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
+		EFrameGraphPassFlags passKind = EFrameGraphPassFlags::None;
+		std::string diagnosticName;
 		std::string displayLabel;
 		std::string eventScopeLabel;
 		std::vector<PassResourceDeclaration> declarations;
@@ -325,8 +332,6 @@ class SPARKLE_RENDERER_API FrameGraph
 		ResourceState finalState = ResourceState::Common;
 		ResourceState currentState = ResourceState::Common;
 		std::string debugName;
-		std::string displayLabel;
-		std::string eventScopeLabel;
 		std::uint32_t currentVersion = 0;
 		std::vector<ResourceVersion> versions;
 	};
@@ -367,8 +372,6 @@ class SPARKLE_RENDERER_API FrameGraph
 		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
 		bool readUsed = false;
 		bool writeUsed = false;
-		std::string displayLabel;
-		std::string eventScopeLabel;
 		std::vector<ResourceState> requiredStates;
 	};
 
@@ -385,8 +388,6 @@ class SPARKLE_RENDERER_API FrameGraph
 		bool hasOptimizedClearValue = false;
 		PassIndex firstExecutionIndex = INVALID_PASS_INDEX;
 		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
-		std::string displayLabel;
-		std::string eventScopeLabel;
 		std::vector<ResourceHandle> handles;
 	};
 
@@ -453,7 +454,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	template <typename TParameterBindings, typename SetupFn, typename ExecuteFn>
 	void AddTypedShaderPass(
 	    std::string_view name,
-	    FrameGraphPassFlags flags,
+	    EFrameGraphPassFlags flags,
 	    TParameterBindings& parameters,
 	    SetupFn&& setupFn,
 	    ExecuteFn&& executeFn)
@@ -532,7 +533,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	struct RegisteredPass
 	{
 		std::string name;
-		FrameGraphPassFlags flags = FrameGraphPassFlags::None;
+		EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
 		SetupCallback setupCallback;
 		ExecuteCallback executeCallback;
 	};

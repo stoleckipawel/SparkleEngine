@@ -1,8 +1,6 @@
-#include "ProjectApp.h"
+#include "ApplicationLaunch.h"
 
 int main()
 {
-	ProjectApp app;
-	app.Run();
-	return 0;
+	return RunProjectApplication();
 }

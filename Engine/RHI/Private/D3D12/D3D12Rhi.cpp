@@ -248,6 +248,73 @@ void D3D12Rhi::Flush() noexcept
 	}
 }
 
+bool D3D12Rhi::SupportsDebugMessages() const noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	return m_debugLayer != nullptr && m_debugLayer->SupportsDebugMessages();
+	#else
+	return false;
+	#endif
+}
+
+bool D3D12Rhi::TryPopDebugMessage(RhiDiagnosticMessage& outMessage) noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	return m_debugLayer != nullptr && m_debugLayer->TryPopMessage(outMessage);
+	#else
+	static_cast<void>(outMessage);
+	return false;
+	#endif
+}
+
+void D3D12Rhi::ClearDebugMessages() noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	if (m_debugLayer != nullptr)
+	{
+		m_debugLayer->ClearMessages();
+	}
+	#endif
+}
+
+bool D3D12Rhi::SupportsLiveObjectReports() const noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	return m_debugLayer != nullptr && m_debugLayer->SupportsLiveObjectReports();
+	#else
+	return false;
+	#endif
+}
+
+bool D3D12Rhi::SupportsCrashDiagnostics() const noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	return m_debugLayer != nullptr && m_debugLayer->SupportsCrashDiagnostics();
+	#else
+	return false;
+	#endif
+}
+
+void D3D12Rhi::ReportLiveObjects() noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	if (m_debugLayer != nullptr)
+	{
+		m_debugLayer->ReportLiveObjects(m_device.Get());
+	}
+	#endif
+}
+
+void D3D12Rhi::CollectCrashDiagnostics() noexcept
+{
+	#if ENGINE_GPU_VALIDATION
+	if (m_debugLayer != nullptr)
+	{
+		m_debugLayer->CollectCrashDiagnostics(m_device.Get());
+	}
+	#endif
+}
+
 D3D12Rhi::~D3D12Rhi() noexcept
 {
 	for (UINT i = 0; i < RenderConfig::FramesInFlight; ++i)
@@ -266,18 +333,15 @@ D3D12Rhi::~D3D12Rhi() noexcept
 	m_fence.Reset();
 	m_cmdQueue.Reset();
 
-#if ENGINE_REPORT_LIVE_OBJECTS
-	if (m_debugLayer)
+	#if ENGINE_GPU_VALIDATION
+	if (IsDebuggerPresent())
 	{
-		m_debugLayer->ReportLiveDeviceObjects(m_device.Get());
+		ReportLiveObjects();
 	}
-#endif
+	m_debugLayer.reset();
+	#endif
 
 	m_device.Reset();
 	m_adapter.Reset();
 	m_dxgiFactory.Reset();
-
-#if ENGINE_GPU_VALIDATION
-	m_debugLayer.reset();
-#endif
 }

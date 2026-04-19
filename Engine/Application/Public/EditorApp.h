@@ -23,7 +23,7 @@ class SPARKLE_APPLICATION_API EditorApp
 	void Shutdown();
 	void Run();
 
-  private:
+	private:
 	std::unique_ptr<ProjectApp> m_projectApp;
 	std::unique_ptr<UI> m_ui;
 	bool m_isEditorSessionActive = false;

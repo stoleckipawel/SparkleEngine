@@ -10,6 +10,8 @@
 #include "Level/LevelManager.h"
 #include "Time/Timer.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
 ProjectApp::ProjectApp() = default;
 
 ProjectApp::~ProjectApp() = default;
@@ -41,6 +43,7 @@ Renderer& ProjectApp::GetRenderer() noexcept
 
 void ProjectApp::Initialize()
 {
+	SPARKLE_CPU_SCOPE("Application.Project.Initialize");
 	if (m_isInitialized)
 	{
 		return;
@@ -146,6 +149,7 @@ bool ProjectApp::Tick()
 
 void ProjectApp::Shutdown()
 {
+	SPARKLE_CPU_SCOPE("Application.Project.Shutdown");
 	if (!m_isInitialized)
 	{
 		return;
@@ -164,6 +168,8 @@ void ProjectApp::Shutdown()
 
 void ProjectApp::Run()
 {
+	Engine::Diagnostics::BeginTraceSession();
+
 	Initialize();
 
 	while (Tick())
@@ -171,4 +177,6 @@ void ProjectApp::Run()
 	}
 
 	Shutdown();
+
+	Engine::Diagnostics::EndTraceSession();
 }

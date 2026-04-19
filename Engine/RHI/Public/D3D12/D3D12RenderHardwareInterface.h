@@ -29,20 +29,23 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	D3D12RenderHardwareInterface(D3D12RenderHardwareInterface&&) = delete;
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
-	RhiBackendApi GetBackendApi() const noexcept override;
+	ERhiBackendApi GetBackendApi() const noexcept override;
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
+	void WaitForIdle() noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept override;
+	RenderDiagnostics& GetDiagnostics() noexcept override;
+	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;
 	void SetShaderVisibleDescriptorHeaps(RenderCommandList& commandList) const noexcept override;
 	NativeDescriptorHeapHandle GetShaderResourceHeapHandle() const noexcept override;
-	RhiDescriptorAllocation AllocateDescriptor(RhiDescriptorHeapType heapType) override;
-	void ReleaseDescriptor(RhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept override;
-	RhiDescriptorTableHandle AllocateDescriptorTable(RhiDescriptorHeapType heapType, std::uint32_t descriptorCount) override;
+	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorHeapType heapType) override;
+	void ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept override;
+	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorHeapType heapType, std::uint32_t descriptorCount) override;
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept override;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
@@ -123,7 +126,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 
 	struct DescriptorTableRecord
 	{
-		RhiDescriptorHeapType heapType = RhiDescriptorHeapType::ShaderResource;
+		ERhiDescriptorHeapType heapType = ERhiDescriptorHeapType::ShaderResource;
 		std::uint32_t descriptorCount = 0;
 		D3D12DescriptorHandle nativeHandle;
 
@@ -135,13 +138,14 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle) const noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
-	static D3D12_DESCRIPTOR_HEAP_TYPE ToNativeDescriptorHeapType(RhiDescriptorHeapType heapType) noexcept;
+	static D3D12_DESCRIPTOR_HEAP_TYPE ToNativeDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
 	RhiDescriptorTableHandle m_samplerTableHandle = {};
+	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
 	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;

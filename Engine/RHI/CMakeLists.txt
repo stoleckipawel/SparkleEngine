@@ -31,6 +31,12 @@ else()
     target_compile_definitions(SparkleRHI PUBLIC SPARKLE_STATIC)
 endif()
 
+target_compile_definitions(SparkleRHI
+	PRIVATE
+		$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:ENGINE_GPU_VALIDATION=1;ENGINE_REPORT_LIVE_OBJECTS=1>
+		$<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>>:ENGINE_GPU_VALIDATION=0;ENGINE_REPORT_LIVE_OBJECTS=0>
+)
+
 target_include_directories(SparkleRHI
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Public

@@ -16,6 +16,47 @@
 
 namespace
 {
+	std::string FormatStageMask(ShaderStageMask mask)
+	{
+		if (mask == ShaderStageMask::None)
+		{
+			return "None";
+		}
+
+		struct StageLabel
+		{
+			ShaderStageMask Mask;
+			const char* Label;
+		};
+
+		static constexpr std::array<StageLabel, 6> kStageLabels = {{
+		    {ShaderStageMask::Vertex, "Vertex"},
+		    {ShaderStageMask::Pixel, "Pixel"},
+		    {ShaderStageMask::Geometry, "Geometry"},
+		    {ShaderStageMask::Hull, "Hull"},
+		    {ShaderStageMask::Domain, "Domain"},
+		    {ShaderStageMask::Compute, "Compute"},
+		}};
+
+		std::string result;
+		for (const StageLabel& stageLabel : kStageLabels)
+		{
+			if (!HasAnyShaderStageMask(mask, stageLabel.Mask))
+			{
+				continue;
+			}
+
+			if (!result.empty())
+			{
+				result += '|';
+			}
+
+			result += stageLabel.Label;
+		}
+
+		return result.empty() ? "None" : result;
+	}
+
 	class ShaderPackageByteReader final
 	{
 	  public:
@@ -265,7 +306,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().ShaderPackageKey != expectedPackageKey)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package key mismatch for '{}' variant '{}': expected {:016X}, got {:016X}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderPackageKey expected={:016X} actual={:016X}",
 		    definition.PackageId,
 		    definition.VariantId,
 		    expectedPackageKey,
@@ -277,18 +318,18 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().VariantHash != expectedVariantHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' has an unexpected variant hash {:016X}; expected {:016X}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=VariantHash expected={:016X} actual={:016X}",
 		    definition.PackageId,
 		    definition.VariantId,
-		    package.GetHeader().VariantHash,
-		    expectedVariantHash);
+		    expectedVariantHash,
+		    package.GetHeader().VariantHash);
 		return false;
 	}
 
 	if (package.GetHeader().SourceIdentityHash == 0)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' is missing SourceIdentityHash metadata",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=SourceIdentityHash actual=0",
 		    definition.PackageId,
 		    definition.VariantId);
 		return false;
@@ -298,7 +339,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().BindingLayoutHash != expectedBindingLayoutHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' is incompatible with binding layout '{}' (expected {:016X}, got {:016X})",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={:016X} actual={:016X}",
 		    definition.PackageId,
 		    definition.VariantId,
 		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
@@ -311,22 +352,24 @@ bool CookedShaderPackageCache::ValidatePackage(
 	    package.GetHeader().ShaderModelMinor != static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' targets shader model {}.{} but runtime expects {}.{}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderModel expected={}.{} actual={}.{}",
 		    definition.PackageId,
 		    definition.VariantId,
-		    package.GetHeader().ShaderModelMajor,
-		    package.GetHeader().ShaderModelMinor,
 		    RenderConfig::ShaderModelMajor,
-		    RenderConfig::ShaderModelMinor);
+		    RenderConfig::ShaderModelMinor,
+		    package.GetHeader().ShaderModelMajor,
+		    package.GetHeader().ShaderModelMinor);
 		return false;
 	}
 
 	if (!HasAllStages(package.GetHeader().DeclaredStages, definition.ExpectedStages))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' does not declare all required stages for the runtime pass",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=DeclaredStages expected='{}' actual='{}'",
 		    definition.PackageId,
-		    definition.VariantId);
+		    definition.VariantId,
+		    FormatStageMask(definition.ExpectedStages),
+		    FormatStageMask(package.GetHeader().DeclaredStages));
 		return false;
 	}
 

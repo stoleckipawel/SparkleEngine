@@ -15,6 +15,7 @@
 struct SPARKLE_RENDERER_API RenderPassContext
 {
 	RenderHardwareInterface& HardwareInterface;
+	RenderDiagnostics& BackendDiagnostics;
 	RhiDescriptorTableHandle SamplerTableHandle;
 	const RenderPassRuntimeRegistry& RuntimeRegistry;
 

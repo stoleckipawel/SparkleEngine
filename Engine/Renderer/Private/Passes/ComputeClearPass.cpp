@@ -2,6 +2,8 @@
 #include "Passes/ComputeClearPass.h"
 
 #include "GPU/CommandContext.h"
+#include "GPU/PassExecutionDiagnostics.h"
+#include "Core/Public/Diagnostics/Trace.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
@@ -44,6 +46,8 @@ void ComputeClearPass::Execute(
     std::uint32_t width,
     std::uint32_t height) noexcept
 {
+	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.ComputeClear.Execute");
+
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),

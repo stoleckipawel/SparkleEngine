@@ -10,14 +10,14 @@ static const auto g_frameGraphDeclarationLogger = Engine::Logging::GetOrCreateLo
 
 namespace
 {
-	std::string BuildPassDisplayLabel(FrameGraph::PassIndex passIndex, std::string_view passName)
+	std::string FormatPassDisplayLabel(FrameGraph::PassIndex passIndex, std::string_view passName)
 	{
 		return std::string{"#"} + std::to_string(passIndex) + ":" + std::string(passName);
 	}
 
-	std::string BuildPassEventScopeLabel(FrameGraph::PassIndex passIndex, std::string_view passName, FrameGraphPassFlags flags)
+	std::string FormatPassEventScopeLabel(FrameGraph::PassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
 	{
-		std::string label{"FG/"};
+		std::string label{"FrameGraph/"};
 		label += FrameGraphPassKindToString(flags);
 		label += "/";
 		label += std::to_string(passIndex);
@@ -26,9 +26,16 @@ namespace
 		return label;
 	}
 
+	std::string FormatPassDiagnosticName(std::string_view passName)
+	{
+		std::string name{"Renderer.FrameGraph."};
+		name.append(passName.begin(), passName.end());
+		return name;
+	}
+
 	void ValidatePassDeclarations(
 	    std::string_view passName,
-	    FrameGraphPassFlags flags,
+	    EFrameGraphPassFlags flags,
 	    const std::vector<PassResourceDeclaration>& declarations) noexcept
 	{
 		assert(HasExactlyOnePassKind(flags));
@@ -74,6 +81,9 @@ void FrameGraph::RecordDeclaration(PassResourceDeclaration declaration) noexcept
 
 void FrameGraph::Setup(const FrameContext& frame)
 {
+	ReleaseExternalViewDescriptors();
+	m_virtualTransientResources.clear();
+	m_nextDynamicResourceIndex = 0;
 	m_compiledPlan.Clear();
 	m_compiledPlan.passes.reserve(m_passes.size());
 
@@ -91,8 +101,9 @@ void FrameGraph::Setup(const FrameContext& frame)
 		        .passName = pass.name,
 		        .flags = pass.flags,
 		        .passKind = GetFrameGraphPassKind(pass.flags),
-		        .displayLabel = BuildPassDisplayLabel(static_cast<PassIndex>(passIndex), pass.name),
-		        .eventScopeLabel = BuildPassEventScopeLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
+		        .diagnosticName = FormatPassDiagnosticName(pass.name),
+		        .displayLabel = FormatPassDisplayLabel(static_cast<PassIndex>(passIndex), pass.name),
+		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
 		        .declarations = m_activePassDeclarations});
 	}
 

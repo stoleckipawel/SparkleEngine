@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum class FrameGraphPassFlags : std::uint8_t
+enum class EFrameGraphPassFlags : std::uint8_t
 {
 	None = 0,
 	Raster = 1 << 0,
@@ -10,67 +10,67 @@ enum class FrameGraphPassFlags : std::uint8_t
 	Transfer = 1 << 2,
 };
 
-constexpr FrameGraphPassFlags operator|(FrameGraphPassFlags lhs, FrameGraphPassFlags rhs) noexcept
+constexpr EFrameGraphPassFlags operator|(EFrameGraphPassFlags lhs, EFrameGraphPassFlags rhs) noexcept
 {
-	return static_cast<FrameGraphPassFlags>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
+	return static_cast<EFrameGraphPassFlags>(static_cast<std::uint8_t>(lhs) | static_cast<std::uint8_t>(rhs));
 }
 
-constexpr FrameGraphPassFlags operator&(FrameGraphPassFlags lhs, FrameGraphPassFlags rhs) noexcept
+constexpr EFrameGraphPassFlags operator&(EFrameGraphPassFlags lhs, EFrameGraphPassFlags rhs) noexcept
 {
-	return static_cast<FrameGraphPassFlags>(static_cast<std::uint8_t>(lhs) & static_cast<std::uint8_t>(rhs));
+	return static_cast<EFrameGraphPassFlags>(static_cast<std::uint8_t>(lhs) & static_cast<std::uint8_t>(rhs));
 }
 
-constexpr FrameGraphPassFlags& operator|=(FrameGraphPassFlags& lhs, FrameGraphPassFlags rhs) noexcept
+constexpr EFrameGraphPassFlags& operator|=(EFrameGraphPassFlags& lhs, EFrameGraphPassFlags rhs) noexcept
 {
 	lhs = lhs | rhs;
 	return lhs;
 }
 
-constexpr bool HasAnyPassFlags(FrameGraphPassFlags value, FrameGraphPassFlags flags) noexcept
+constexpr bool HasAnyPassFlags(EFrameGraphPassFlags value, EFrameGraphPassFlags flags) noexcept
 {
 	return static_cast<std::uint8_t>(value & flags) != 0;
 }
 
-constexpr FrameGraphPassFlags GetFrameGraphPassKindMask() noexcept
+constexpr EFrameGraphPassFlags GetFrameGraphPassKindMask() noexcept
 {
-	return FrameGraphPassFlags::Raster | FrameGraphPassFlags::Compute | FrameGraphPassFlags::Transfer;
+	return EFrameGraphPassFlags::Raster | EFrameGraphPassFlags::Compute | EFrameGraphPassFlags::Transfer;
 }
 
-constexpr FrameGraphPassFlags GetFrameGraphPassKind(FrameGraphPassFlags flags) noexcept
+constexpr EFrameGraphPassFlags GetFrameGraphPassKind(EFrameGraphPassFlags flags) noexcept
 {
 	return flags & GetFrameGraphPassKindMask();
 }
 
-constexpr bool HasExactlyOnePassKind(FrameGraphPassFlags flags) noexcept
+constexpr bool HasExactlyOnePassKind(EFrameGraphPassFlags flags) noexcept
 {
-	const FrameGraphPassFlags kind = GetFrameGraphPassKind(flags);
-	return kind == FrameGraphPassFlags::Raster || kind == FrameGraphPassFlags::Compute || kind == FrameGraphPassFlags::Transfer;
+	const EFrameGraphPassFlags kind = GetFrameGraphPassKind(flags);
+	return kind == EFrameGraphPassFlags::Raster || kind == EFrameGraphPassFlags::Compute || kind == EFrameGraphPassFlags::Transfer;
 }
 
-constexpr const char* FrameGraphPassKindToString(FrameGraphPassFlags flags) noexcept
+constexpr const char* FrameGraphPassKindToString(EFrameGraphPassFlags flags) noexcept
 {
 	switch (GetFrameGraphPassKind(flags))
 	{
-		case FrameGraphPassFlags::Raster:
+		case EFrameGraphPassFlags::Raster:
 			return "Raster";
-		case FrameGraphPassFlags::Compute:
+		case EFrameGraphPassFlags::Compute:
 			return "Compute";
-		case FrameGraphPassFlags::Transfer:
+		case EFrameGraphPassFlags::Transfer:
 			return "Transfer";
 		default:
 			return "None";
 	}
 }
 
-constexpr const char* FrameGraphPassFlagToString(FrameGraphPassFlags flag) noexcept
+constexpr const char* FrameGraphPassFlagToString(EFrameGraphPassFlags flag) noexcept
 {
 	switch (flag)
 	{
-		case FrameGraphPassFlags::Raster:
+		case EFrameGraphPassFlags::Raster:
 			return "Raster";
-		case FrameGraphPassFlags::Compute:
+		case EFrameGraphPassFlags::Compute:
 			return "Compute";
-		case FrameGraphPassFlags::Transfer:
+		case EFrameGraphPassFlags::Transfer:
 			return "Transfer";
 		default:
 			return "None";

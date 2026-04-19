@@ -48,7 +48,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.renderTargetView)
 			{
-				access.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::RenderTarget).CpuHandle;
+				access.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::RenderTarget).CpuHandle;
 			}
 
 			m_renderHardwareInterface->CreateRenderTargetView(
@@ -59,7 +59,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
 				const RhiDescriptorAllocation allocation =
-				    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				access.shaderResourceViewCpu = allocation.CpuHandle;
 				access.shaderResourceViewGpu = allocation.GpuHandle;
 			}
@@ -82,7 +82,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
 					const RhiDescriptorAllocation allocation =
-					    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+					    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 					access.unorderedAccessViewCpu = allocation.CpuHandle;
 					access.unorderedAccessViewGpu = allocation.GpuHandle;
 				}
@@ -97,7 +97,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.depthStencilView)
 			{
-				access.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::DepthStencil).CpuHandle;
+				access.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::DepthStencil).CpuHandle;
 			}
 
 			m_renderHardwareInterface->CreateDepthStencilView(
@@ -110,7 +110,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
 			{
 				const RhiDescriptorAllocation allocation =
-				    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				access.shaderResourceViewCpu = allocation.CpuHandle;
 				access.shaderResourceViewGpu = allocation.GpuHandle;
 			}
@@ -134,7 +134,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
 				{
 					const RhiDescriptorAllocation allocation =
-					    m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+					    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 					access.unorderedAccessViewCpu = allocation.CpuHandle;
 					access.unorderedAccessViewGpu = allocation.GpuHandle;
 				}
@@ -162,7 +162,7 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		if (access.renderTargetView)
 		{
 			m_renderHardwareInterface->ReleaseDescriptor(
-			    RhiDescriptorHeapType::RenderTarget,
+			    ERhiDescriptorHeapType::RenderTarget,
 			    RhiDescriptorAllocation{.CpuHandle = access.renderTargetView});
 			access.renderTargetView = {};
 		}
@@ -170,7 +170,7 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		if (access.depthStencilView)
 		{
 			m_renderHardwareInterface->ReleaseDescriptor(
-			    RhiDescriptorHeapType::DepthStencil,
+			    ERhiDescriptorHeapType::DepthStencil,
 			    RhiDescriptorAllocation{.CpuHandle = access.depthStencilView});
 			access.depthStencilView = {};
 		}
@@ -178,7 +178,7 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		if (access.shaderResourceViewCpu || access.shaderResourceViewGpu)
 		{
 			m_renderHardwareInterface->ReleaseDescriptor(
-			    RhiDescriptorHeapType::ShaderResource,
+			    ERhiDescriptorHeapType::ShaderResource,
 			    RhiDescriptorAllocation{.CpuHandle = access.shaderResourceViewCpu, .GpuHandle = access.shaderResourceViewGpu});
 			access.shaderResourceViewCpu = {};
 			access.shaderResourceViewGpu = {};
@@ -187,7 +187,7 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		if (access.unorderedAccessViewCpu || access.unorderedAccessViewGpu)
 		{
 			m_renderHardwareInterface->ReleaseDescriptor(
-			    RhiDescriptorHeapType::ShaderResource,
+			    ERhiDescriptorHeapType::ShaderResource,
 			    RhiDescriptorAllocation{.CpuHandle = access.unorderedAccessViewCpu, .GpuHandle = access.unorderedAccessViewGpu});
 			access.unorderedAccessViewCpu = {};
 			access.unorderedAccessViewGpu = {};

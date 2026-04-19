@@ -20,13 +20,19 @@ struct RendererBackendServices::Impl
 	std::unique_ptr<D3D12SwapChain> swapChain;
 	std::unique_ptr<D3D12FrameResourceManager> frameResourceManager;
 	std::unique_ptr<D3D12ConstantBufferManager> constantBufferManager;
-	std::unique_ptr<D3D12SamplerLibrary> samplerLibrary;
 	std::unique_ptr<D3D12RenderHardwareInterface> renderHardwareInterface;
+	std::unique_ptr<D3D12SamplerLibrary> samplerLibrary;
 };
 
 RendererBackendServices::RendererBackendServices() noexcept = default;
 
-RendererBackendServices::~RendererBackendServices() noexcept = default;
+RendererBackendServices::~RendererBackendServices() noexcept
+{
+	if (m_impl != nullptr)
+	{
+		m_impl->samplerLibrary.reset();
+	}
+}
 
 std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& timer, Window& window) noexcept
 {
@@ -64,6 +70,16 @@ RenderHardwareInterface& RendererBackendServices::GetRenderHardwareInterface() n
 const RenderHardwareInterface& RendererBackendServices::GetRenderHardwareInterface() const noexcept
 {
 	return *m_impl->renderHardwareInterface;
+}
+
+RenderDiagnostics& RendererBackendServices::GetDiagnostics() noexcept
+{
+	return m_impl->renderHardwareInterface->GetDiagnostics();
+}
+
+const RenderDiagnostics& RendererBackendServices::GetDiagnostics() const noexcept
+{
+	return m_impl->renderHardwareInterface->GetDiagnostics();
 }
 
 void RendererBackendServices::Flush() noexcept

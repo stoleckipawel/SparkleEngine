@@ -79,26 +79,26 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 	{
 		if (allocation.renderTargetView.IsValid())
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::RenderTarget, allocation.renderTargetView);
+			m_renderHardwareInterface->ReleaseDescriptor(ERhiDescriptorHeapType::RenderTarget, allocation.renderTargetView);
 			allocation.renderTargetView = {};
 		}
 
 		if (allocation.depthStencilView.IsValid())
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::DepthStencil, allocation.depthStencilView);
+			m_renderHardwareInterface->ReleaseDescriptor(ERhiDescriptorHeapType::DepthStencil, allocation.depthStencilView);
 			allocation.depthStencilView = {};
 		}
 
 		if (allocation.shaderResourceView.IsValid())
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::ShaderResource, allocation.shaderResourceView);
+			m_renderHardwareInterface->ReleaseDescriptor(ERhiDescriptorHeapType::ShaderResource, allocation.shaderResourceView);
 			allocation.shaderResourceView = {};
 			allocation.hasShaderResourceView = false;
 		}
 
 		if (allocation.unorderedAccessView.IsValid())
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(RhiDescriptorHeapType::ShaderResource, allocation.unorderedAccessView);
+			m_renderHardwareInterface->ReleaseDescriptor(ERhiDescriptorHeapType::ShaderResource, allocation.unorderedAccessView);
 			allocation.unorderedAccessView = {};
 			allocation.hasUnorderedAccessView = false;
 		}
@@ -353,7 +353,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
 			allocation.depthStencilResource = m_renderHardwareInterface->GetNativeResource(allocation.ownedDepthStencilResource);
-			allocation.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::DepthStencil);
+			allocation.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::DepthStencil);
 			m_renderHardwareInterface->CreateDepthStencilView(
 			    allocation.depthStencilResource,
 			    transientPlan.textureDesc.format,
@@ -373,7 +373,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 			        .InitialState = transientPlan.physicalAllocation.initialState},
 			    debugName);
 			allocation.renderTargetResource = m_renderHardwareInterface->GetNativeResource(allocation.ownedRenderTargetResource);
-			allocation.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::RenderTarget);
+			allocation.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::RenderTarget);
 			m_renderHardwareInterface->CreateRenderTargetView(
 			    allocation.renderTargetResource,
 			    transientPlan.textureDesc.format,
@@ -381,7 +381,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
-				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				m_renderHardwareInterface->CreateTextureShaderResourceView(
 				    allocation.renderTargetResource,
 				    transientPlan.textureDesc.format,
@@ -391,7 +391,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
-				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				m_renderHardwareInterface->CreateTextureUnorderedAccessView(
 				    allocation.renderTargetResource,
 				    transientPlan.textureDesc.format,
@@ -415,7 +415,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 			if (RequiresShaderResourceView(transientPlan))
 			{
-				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				allocation.shaderResourceView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				m_renderHardwareInterface->CreateBufferShaderResourceView(
 				    allocation.buffer,
 				    transientPlan.bufferDesc.sizeInBytes,
@@ -426,7 +426,7 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 
 			if (RequiresUnorderedAccessView(transientPlan))
 			{
-				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(RhiDescriptorHeapType::ShaderResource);
+				allocation.unorderedAccessView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
 				m_renderHardwareInterface->CreateBufferUnorderedAccessView(
 				    allocation.buffer,
 				    transientPlan.bufferDesc.sizeInBytes,

@@ -7,6 +7,7 @@
 #include "Timer.h"
 
 #include "Panels/MainMenuBarPanel.h"
+#include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/ViewportPanel.h"
@@ -77,7 +78,14 @@ static void AllocSRV(
 static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
 {
 	auto* renderHardware = static_cast<RenderHardwareInterface*>(info->UserData);
+	static const auto editorLogger = Engine::Logging::GetOrCreateLogger("Editor");
+	SPDLOG_LOGGER_INFO(
+	    editorLogger,
+	    "UI::FreeSRV releasing cpu={} gpu={}",
+	    static_cast<unsigned long long>(cpu_handle.ptr),
+	    static_cast<unsigned long long>(gpu_handle.ptr));
 	renderHardware->ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle{cpu_handle.ptr}, RhiGpuDescriptorHandle{gpu_handle.ptr});
+	SPDLOG_LOGGER_INFO(editorLogger, "UI::FreeSRV release complete");
 }
 
 void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
@@ -187,7 +195,7 @@ bool UI::InitializeGraphicsBackend()
 
 	switch (m_renderHardware->GetBackendApi())
 	{
-		case RhiBackendApi::D3D12:
+		case ERhiBackendApi::D3D12:
 			return InitializeNativeGraphicsBackend();
 		default:
 			Engine::Diagnostics::Fail(
@@ -201,7 +209,7 @@ bool UI::InitializeGraphicsBackend()
 
 bool UI::InitializeNativeGraphicsBackend()
 {
-	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != RhiBackendApi::D3D12)
+	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != ERhiBackendApi::D3D12)
 	{
 		Engine::Diagnostics::Fail(
 		    g_editorLogger,
@@ -242,6 +250,7 @@ void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
+	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	if (m_window != nullptr && m_viewportPanel)
 	{
 		const RenderViewportExtent initialExtent{
@@ -313,6 +322,12 @@ void UI::Build()
 		m_sceneInspectorPanel->BuildUI(disableInteraction);
 	}
 
+	if (m_profilerPanel)
+	{
+		m_profilerPanel->SetTopInset(mainMenuBarHeight);
+		m_profilerPanel->BuildUI(disableInteraction);
+	}
+
 #if USE_IMGUI_DEMO_WINDOW
 	bool showDemoWindow = true;
 	ImGui::ShowDemoWindow(&showDemoWindow);
@@ -350,20 +365,44 @@ void UI::Render(NativeGraphicsCommandListHandle commandList) noexcept
 
 UI::~UI() noexcept
 {
+	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI begin");
+
+	m_windowMessageHandle.Reset();
+	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI window message handle released");
+
 	if (m_isGraphicsBackendInitialized)
 	{
+		if (m_renderHardware != nullptr)
+		{
+			m_renderHardware->WaitForIdle();
+		}
+
+		SPDLOG_LOGGER_INFO(
+		    g_editorLogger,
+		    "UI::~UI graphics backend invalidate begin (context={})",
+		    static_cast<const void*>(ImGui::GetCurrentContext()));
+		ImGui_ImplDX12_InvalidateDeviceObjects();
+		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend invalidate complete");
 		ImGui_ImplDX12_Shutdown();
+		m_isGraphicsBackendInitialized = false;
+		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend shutdown complete");
 	}
 
 	if (m_isWin32BackendInitialized)
 	{
 		ImGui_ImplWin32_Shutdown();
+		m_isWin32BackendInitialized = false;
+		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI Win32 backend shutdown complete");
 	}
 
 	if (m_isImGuiContextInitialized)
 	{
 		ImGui::DestroyContext();
+		m_isImGuiContextInitialized = false;
+		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI ImGui context destroyed");
 	}
+
+	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI end");
 }
 
 bool UI::IsReady() const noexcept

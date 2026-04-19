@@ -1,7 +1,14 @@
 #include "PCH.h"
 #include "GPU/CommandContext.h"
 
+#include <cstdio>
+
 CommandContext::CommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
+
+void CommandContext::EnableDrawDispatchDiagnostics() noexcept
+{
+	m_drawDispatchDiagnosticsEnabled = SupportsDiagnosticScopes();
+}
 
 void CommandContext::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
 {
@@ -146,6 +153,20 @@ void CommandContext::SetScissorRect(std::int32_t left, std::int32_t top, std::in
 	SetScissorRect(RhiRect{.Left = left, .Top = top, .Right = right, .Bottom = bottom});
 }
 
+void CommandContext::EmitDrawMarker() noexcept
+{
+	char label[32];
+	std::snprintf(label, sizeof(label), "Draw.%u", m_drawCount++);
+	m_commandList->InsertDiagnosticMarker(label, {});
+}
+
+void CommandContext::EmitDispatchMarker(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
+{
+	char label[64];
+	std::snprintf(label, sizeof(label), "Dispatch.%u.%ux%ux%u", m_dispatchCount++, groupCountX, groupCountY, groupCountZ);
+	m_commandList->InsertDiagnosticMarker(label, {});
+}
+
 void CommandContext::DrawIndexedInstanced(
     std::uint32_t indexCountPerInstance,
     std::uint32_t instanceCount,
@@ -153,6 +174,10 @@ void CommandContext::DrawIndexedInstanced(
     std::int32_t baseVertexLocation,
     std::uint32_t startInstanceLocation) noexcept
 {
+	if (m_drawDispatchDiagnosticsEnabled)
+	{
+		EmitDrawMarker();
+	}
 	m_commandList
 	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
@@ -163,12 +188,40 @@ void CommandContext::DrawInstanced(
     std::uint32_t startVertexLocation,
     std::uint32_t startInstanceLocation) noexcept
 {
+	if (m_drawDispatchDiagnosticsEnabled)
+	{
+		EmitDrawMarker();
+	}
 	m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
 void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
 {
+	if (m_drawDispatchDiagnosticsEnabled)
+	{
+		EmitDispatchMarker(groupCountX, groupCountY, groupCountZ);
+	}
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
+}
+
+bool CommandContext::SupportsDiagnosticScopes() const noexcept
+{
+	return m_commandList->SupportsDiagnosticScopes();
+}
+
+void CommandContext::BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept
+{
+	m_commandList->BeginDiagnosticScope(label, color);
+}
+
+void CommandContext::EndDiagnosticScope() noexcept
+{
+	m_commandList->EndDiagnosticScope();
+}
+
+void CommandContext::InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept
+{
+	m_commandList->InsertDiagnosticMarker(label, color);
 }
 
 void CommandContext::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept

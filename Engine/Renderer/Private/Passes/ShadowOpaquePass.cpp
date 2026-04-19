@@ -3,6 +3,8 @@
 #include "Passes/ShadowOpaquePass.h"
 
 #include "GPU/CommandContext.h"
+#include "GPU/PassExecutionDiagnostics.h"
+#include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/RenderViewContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
@@ -49,6 +51,8 @@ void ShadowOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstanc
 	{
 		return;
 	}
+
+	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.ShadowOpaque.Execute");
 
 	const ShadowOpaquePassRuntime& runtime = context.Runtime.GetPassRuntime<ShadowOpaquePass>();
 	const RenderViewContext& viewContext = context.Frame.shadowViews[lightIndex];

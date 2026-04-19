@@ -9,7 +9,6 @@
 #include "Strings/StringUtils.h"
 
 #include <cstdio>
-#include <vector>
 #include <string>
 
 static const auto g_pipelineStateLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Pipeline");
@@ -21,15 +20,15 @@ void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& pso
 
 namespace
 {
-	D3D12_CULL_MODE ToD3D12CullMode(RhiCullMode cullMode) noexcept
+	D3D12_CULL_MODE ToD3D12CullMode(ERhiCullMode cullMode) noexcept
 	{
 		switch (cullMode)
 		{
-			case RhiCullMode::None:
+			case ERhiCullMode::None:
 				return D3D12_CULL_MODE_NONE;
-			case RhiCullMode::Front:
+			case ERhiCullMode::Front:
 				return D3D12_CULL_MODE_FRONT;
-			case RhiCullMode::Back:
+			case ERhiCullMode::Back:
 			default:
 				return D3D12_CULL_MODE_BACK;
 		}
@@ -135,12 +134,52 @@ namespace
 			    std::format("D3D12 PSO stage '{}' debug artifact: {}", stageName, debugArtifact));
 		}
 	}
+
+	std::string_view GetDiagnosticSeverityLabel(ERhiDiagnosticMessageSeverity severity) noexcept
+	{
+		switch (severity)
+		{
+			case ERhiDiagnosticMessageSeverity::Fatal:
+				return "fatal";
+			case ERhiDiagnosticMessageSeverity::Error:
+				return "error";
+			case ERhiDiagnosticMessageSeverity::Warning:
+				return "warning";
+			case ERhiDiagnosticMessageSeverity::Info:
+				return "info";
+			case ERhiDiagnosticMessageSeverity::Verbose:
+			default:
+				return "verbose";
+		}
+	}
+
+	std::string_view GetDiagnosticCategoryLabel(ERhiDiagnosticMessageCategory category) noexcept
+	{
+		switch (category)
+		{
+			case ERhiDiagnosticMessageCategory::Validation:
+				return "validation";
+			case ERhiDiagnosticMessageCategory::Performance:
+				return "performance";
+			case ERhiDiagnosticMessageCategory::ResourceLifetime:
+				return "resource-lifetime";
+			case ERhiDiagnosticMessageCategory::Shader:
+				return "shader";
+			case ERhiDiagnosticMessageCategory::Driver:
+				return "driver";
+			case ERhiDiagnosticMessageCategory::Capture:
+				return "capture";
+			case ERhiDiagnosticMessageCategory::General:
+			default:
+				return "general";
+		}
+	}
 }
 
 void D3D12PipelineState::SetRasterizerState(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
     bool bRenderWireframe,
-    RhiCullMode cullMode) noexcept
+    ERhiCullMode cullMode) noexcept
 {
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	auto& rs = psoDesc.RasterizerState;
@@ -292,28 +331,18 @@ void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
 
 void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 {
-#if defined(_DEBUG)
-	ComPtr<ID3D12InfoQueue> infoQueue;
-	if (SUCCEEDED(m_rhi.GetDevice()->QueryInterface(IID_PPV_ARGS(infoQueue.ReleaseAndGetAddressOf()))))
+	m_rhi.CollectCrashDiagnostics();
+
+	RhiDiagnosticMessage diagnosticMessage{};
+	while (m_rhi.TryPopDebugMessage(diagnosticMessage))
 	{
-		const UINT64 numMessages = infoQueue->GetNumStoredMessagesAllowedByRetrievalFilter();
-		for (UINT64 i = 0; i < numMessages; ++i)
-		{
-			SIZE_T messageLength = 0;
-			if (FAILED(infoQueue->GetMessage(i, nullptr, &messageLength)) || messageLength == 0)
-				continue;
-
-			std::vector<char> messageData(messageLength);
-			D3D12_MESSAGE* message = reinterpret_cast<D3D12_MESSAGE*>(messageData.data());
-			if (SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength)) && message->pDescription)
-			{
-				SPDLOG_LOGGER_ERROR(g_pipelineStateLogger, "D3D12 InfoQueue: {}", message->pDescription);
-			}
-		}
-
-		infoQueue->ClearStoredMessages();
+		SPDLOG_LOGGER_ERROR(
+		    g_pipelineStateLogger,
+		    "D3D12 diagnostic [{}:{}] {}",
+		    GetDiagnosticSeverityLabel(diagnosticMessage.Severity),
+		    GetDiagnosticCategoryLabel(diagnosticMessage.Category),
+		    diagnosticMessage.Text);
 	}
-#endif
 
 	char buf[256];
 	std::snprintf(buf, sizeof(buf), "Failed To Create PSO. HRESULT: 0x%08X", static_cast<unsigned int>(hr));

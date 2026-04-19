@@ -7,6 +7,7 @@
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 
 #include <memory>
+#include <vector>
 
 class Timer;
 class RendererBackendServices;
@@ -26,7 +27,9 @@ class RenderSceneDataBuilder;
 class ShadowBuilder;
 class ShadowFrameBuilder;
 class ViewLightingBuilder;
+class FrameExecutionDiagnostics;
 struct RenderSceneSnapshot;
+struct ResolvedGpuTiming;
 
 class SPARKLE_RENDERER_API Renderer final
 {
@@ -72,6 +75,10 @@ class SPARKLE_RENDERER_API Renderer final
 	void RecordFrame() noexcept;
 	void SubmitFrame() noexcept;
 	void EndFrame() noexcept;
+	FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() noexcept;
+	const FrameExecutionDiagnostics& GetCurrentFrameDiagnostics() const noexcept;
+	void ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept;
+	void PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept;
 
 	Timer* m_timer = nullptr;
 	GameScene* m_gameScene = nullptr;
@@ -90,6 +97,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
 	std::unique_ptr<FrameGraph> m_frameGraph;
+	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};

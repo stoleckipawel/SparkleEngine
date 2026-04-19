@@ -48,3 +48,4 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - `Scripts\Cook\CookAssets.bat` cooks only scene manifests plus cooked mesh/material outputs. Use `CookAllAssets.bat` for the full shader + texture + scene pipeline.
 - `CleanWorkspace.bat PRISTINE` removes generated outputs only. It does not delete tracked project assets such as committed Showcase cooked content under `Projects/Showcase/Assets/Cooked`.
 - Runtime boundary validation is a CMake target, not a user-run batch command. It lives under `CMake/Validation/` and runs as part of the engine build wiring.
+- The old Phase 1H validation wrapper scripts were removed. Use the documented direct smoke launch steps in `docs/plans/phase1h-d3d12-production-readiness.md` if you still need that evidence flow.

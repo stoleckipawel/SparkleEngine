@@ -5,12 +5,22 @@
 #include "D3D12/Textures/CookedTextureAsset.h"
 #include "D3D12/Textures/TextureLoader.h"
 
+#include "Core/Public/Diagnostics/Trace.h"
+
+#include <filesystem>
 #include <fstream>
 #include <limits>
 #include <system_error>
 
 namespace Engine::AssetAuthoring
 {
+	static std::filesystem::path BuildTemporaryOutputPath(const std::filesystem::path& outputPath)
+	{
+		std::filesystem::path temporaryPath = outputPath;
+		temporaryPath += ".tmp";
+		return temporaryPath;
+	}
+
 	static bool OpenBinaryOutput(const std::filesystem::path& outputPath, std::ofstream& output, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
@@ -28,7 +38,45 @@ namespace Engine::AssetAuthoring
 			return false;
 		}
 
+		outErrorMessage.clear();
 		return true;
+	}
+
+	static bool FinalizeBinaryOutput(
+		const std::filesystem::path& temporaryOutputPath,
+		const std::filesystem::path& finalOutputPath,
+		std::string& outErrorMessage)
+	{
+		std::error_code errorCode;
+		std::filesystem::rename(temporaryOutputPath, finalOutputPath, errorCode);
+		if (!errorCode)
+		{
+			outErrorMessage.clear();
+			return true;
+		}
+
+		if (std::filesystem::exists(finalOutputPath))
+		{
+			errorCode.clear();
+			std::filesystem::remove(finalOutputPath, errorCode);
+			if (errorCode)
+			{
+				outErrorMessage = "Failed to replace existing cooked texture output '" + finalOutputPath.string() +
+				                  "'. The destination file may still be in use.";
+				return false;
+			}
+
+			errorCode.clear();
+			std::filesystem::rename(temporaryOutputPath, finalOutputPath, errorCode);
+			if (!errorCode)
+			{
+				outErrorMessage.clear();
+				return true;
+			}
+		}
+
+		outErrorMessage = "Failed to finalize cooked texture output '" + finalOutputPath.string() + "'";
+		return false;
 	}
 
 	static bool WriteBytes(std::ofstream& output, const void* bytes, std::size_t byteCount, std::string& outErrorMessage)
@@ -48,8 +96,21 @@ namespace Engine::AssetAuthoring
 		return false;
 	}
 
+	static void CleanupTemporaryOutput(const std::filesystem::path& temporaryOutputPath, std::ofstream& output) noexcept
+	{
+		if (output.is_open())
+		{
+			output.close();
+		}
+
+		std::error_code cleanupErrorCode;
+		std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
+	}
+
 	bool TextureAssetCooker::Cook(const TextureCookRequest& request, std::string& outErrorMessage) const
 	{
+		SPARKLE_CPU_SCOPE("Tools.TextureCook.Cook");
+
 		if (!request.IsValid())
 		{
 			outErrorMessage = "Texture cook request is invalid.";
@@ -98,8 +159,12 @@ namespace Engine::AssetAuthoring
 		header.formatIntent = static_cast<std::uint32_t>(formatIntent);
 		header.mipCount = static_cast<std::uint32_t>(mipHeaders.size());
 
+		const std::filesystem::path temporaryOutputPath = BuildTemporaryOutputPath(request.outputPath);
+		std::error_code cleanupErrorCode;
+		std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
+
 		std::ofstream output;
-		if (!OpenBinaryOutput(request.outputPath, output, outErrorMessage))
+		if (!OpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
@@ -107,6 +172,7 @@ namespace Engine::AssetAuthoring
 		if (!WriteBytes(output, &header, sizeof(header), outErrorMessage) ||
 		    !WriteBytes(output, mipHeaders.data(), sizeof(CookedTextureMipHeader) * mipHeaders.size(), outErrorMessage))
 		{
+			CleanupTemporaryOutput(temporaryOutputPath, output);
 			return false;
 		}
 
@@ -114,8 +180,31 @@ namespace Engine::AssetAuthoring
 		{
 			if (!WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
 			{
+				CleanupTemporaryOutput(temporaryOutputPath, output);
 				return false;
 			}
+		}
+
+		output.flush();
+		if (!output.good())
+		{
+			CleanupTemporaryOutput(temporaryOutputPath, output);
+			outErrorMessage = "Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'";
+			return false;
+		}
+
+		output.close();
+		if (output.fail())
+		{
+			CleanupTemporaryOutput(temporaryOutputPath, output);
+			outErrorMessage = "Failed to finalize cooked texture output '" + temporaryOutputPath.string() + "'";
+			return false;
+		}
+
+		if (!FinalizeBinaryOutput(temporaryOutputPath, request.outputPath, outErrorMessage))
+		{
+			std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
+			return false;
 		}
 
 		outErrorMessage.clear();

@@ -5,6 +5,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <cstdint>
+#include <string_view>
 
 class SPARKLE_RENDERER_API CommandContext final
 {
@@ -16,6 +17,9 @@ class SPARKLE_RENDERER_API CommandContext final
 	CommandContext& operator=(const CommandContext&) = delete;
 	CommandContext(CommandContext&&) = delete;
 	CommandContext& operator=(CommandContext&&) = delete;
+
+	void EnableDrawDispatchDiagnostics() noexcept;
+	bool IsDrawDispatchDiagnosticsEnabled() const noexcept { return m_drawDispatchDiagnosticsEnabled; }
 
 	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept;
@@ -79,6 +83,10 @@ class SPARKLE_RENDERER_API CommandContext final
 	    std::uint32_t startInstanceLocation) noexcept;
 
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
+	bool SupportsDiagnosticScopes() const noexcept;
+	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
+	void EndDiagnosticScope() noexcept;
+	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 
 	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept;
 
@@ -89,5 +97,11 @@ class SPARKLE_RENDERER_API CommandContext final
 	RenderCommandList& GetRenderCommandList() const noexcept { return *m_commandList; }
 
   private:
+	void EmitDrawMarker() noexcept;
+	void EmitDispatchMarker(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
+
 	RenderCommandList* m_commandList = nullptr;
+	bool m_drawDispatchDiagnosticsEnabled = false;
+	std::uint32_t m_drawCount = 0;
+	std::uint32_t m_dispatchCount = 0;
 };

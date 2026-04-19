@@ -26,8 +26,8 @@ call "%~dp0..\Internal\Config.bat"
 set "EXIT_RC=1"
 set "TARGET_PROJECT=%~1"
 set "CONFIG=%~2"
-set "TARGET_PROJECT=!TARGET_PROJECT: =!"
-set "CONFIG=!CONFIG: =!"
+if defined TARGET_PROJECT set "TARGET_PROJECT=!TARGET_PROJECT: =!"
+if defined CONFIG set "CONFIG=!CONFIG: =!"
 
 if /I "%TARGET_PROJECT%"=="/h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="-h" goto :USAGE

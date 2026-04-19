@@ -16,11 +16,80 @@
 
 #include <d3d12.h>
 #include <cstring>
+#include <limits>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace
 {
+	struct D3D12PixEventRuntime final
+	{
+		using BeginEventOnCommandListFn = void(WINAPI*)(ID3D12GraphicsCommandList* commandList, UINT64 color, PCSTR formatString);
+		using EndEventOnCommandListFn = void(WINAPI*)(ID3D12GraphicsCommandList* commandList);
+		using SetMarkerOnCommandListFn = void(WINAPI*)(ID3D12GraphicsCommandList* commandList, UINT64 color, PCSTR formatString);
+
+		D3D12PixEventRuntime() noexcept
+		{
+			module = LoadLibraryW(L"WinPixEventRuntime.dll");
+			if (module == nullptr)
+			{
+				return;
+			}
+
+			beginEventOnCommandList = reinterpret_cast<BeginEventOnCommandListFn>(GetProcAddress(module, "PIXBeginEventOnCommandList"));
+			endEventOnCommandList = reinterpret_cast<EndEventOnCommandListFn>(GetProcAddress(module, "PIXEndEventOnCommandList"));
+			setMarkerOnCommandList = reinterpret_cast<SetMarkerOnCommandListFn>(GetProcAddress(module, "PIXSetMarkerOnCommandList"));
+		}
+
+		bool IsAvailable() const noexcept
+		{
+			return module != nullptr && beginEventOnCommandList != nullptr && endEventOnCommandList != nullptr &&
+			       setMarkerOnCommandList != nullptr;
+		}
+
+		void BeginEvent(ID3D12GraphicsCommandList* commandList, UINT64 color, const char* label) const noexcept
+		{
+			if (IsAvailable() && commandList != nullptr && label != nullptr)
+			{
+				beginEventOnCommandList(commandList, color, label);
+			}
+		}
+
+		void EndEvent(ID3D12GraphicsCommandList* commandList) const noexcept
+		{
+			if (IsAvailable() && commandList != nullptr)
+			{
+				endEventOnCommandList(commandList);
+			}
+		}
+
+		void SetMarker(ID3D12GraphicsCommandList* commandList, UINT64 color, const char* label) const noexcept
+		{
+			if (IsAvailable() && commandList != nullptr && label != nullptr)
+			{
+				setMarkerOnCommandList(commandList, color, label);
+			}
+		}
+
+		HMODULE module = nullptr;
+		BeginEventOnCommandListFn beginEventOnCommandList = nullptr;
+		EndEventOnCommandListFn endEventOnCommandList = nullptr;
+		SetMarkerOnCommandListFn setMarkerOnCommandList = nullptr;
+	};
+
+	const D3D12PixEventRuntime& GetPixEventRuntime() noexcept
+	{
+		static const D3D12PixEventRuntime runtime;
+		return runtime;
+	}
+
+	UINT64 ToPixEventColor(RhiDiagnosticLabelColor color) noexcept
+	{
+		return (static_cast<UINT64>(0xFFu) << 24u) | (static_cast<UINT64>(color.Red) << 16u) |
+		       (static_cast<UINT64>(color.Green) << 8u) | static_cast<UINT64>(color.Blue);
+	}
+
 	struct OwnedHeapState
 	{
 		Microsoft::WRL::ComPtr<ID3D12Heap> Heap;
@@ -51,17 +120,17 @@ namespace
 		return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
 	}
 
-	D3D12_DESCRIPTOR_HEAP_TYPE ToD3D12DescriptorHeapType(RhiDescriptorHeapType heapType) noexcept
+	D3D12_DESCRIPTOR_HEAP_TYPE ToD3D12DescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept
 	{
 		switch (heapType)
 		{
-			case RhiDescriptorHeapType::RenderTarget:
+			case ERhiDescriptorHeapType::RenderTarget:
 				return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-			case RhiDescriptorHeapType::DepthStencil:
+			case ERhiDescriptorHeapType::DepthStencil:
 				return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-			case RhiDescriptorHeapType::Sampler:
+			case ERhiDescriptorHeapType::Sampler:
 				return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-			case RhiDescriptorHeapType::ShaderResource:
+			case ERhiDescriptorHeapType::ShaderResource:
 			default:
 				return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		}
@@ -205,6 +274,17 @@ namespace
 		return properties;
 	}
 
+	D3D12_HEAP_PROPERTIES BuildReadbackHeapProperties() noexcept
+	{
+		D3D12_HEAP_PROPERTIES properties{};
+		properties.Type = D3D12_HEAP_TYPE_READBACK;
+		properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		properties.CreationNodeMask = 1;
+		properties.VisibleNodeMask = 1;
+		return properties;
+	}
+
 	std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName) noexcept
 	{
 		return debugName.empty() ? std::wstring(fallbackName) : std::wstring(debugName);
@@ -229,6 +309,387 @@ namespace
 	{
 		return resource != nullptr && (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
 	}
+
+	void SetD3D12ObjectDebugName(ID3D12Object* object, std::wstring_view debugName) noexcept
+	{
+		if (object == nullptr || debugName.empty())
+		{
+			return;
+		}
+
+		std::wstring ownedName(debugName);
+		object->SetName(ownedName.c_str());
+	}
+	class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
+	{
+	  public:
+		explicit D3D12RenderObjectDiagnostics(D3D12Rhi&) noexcept {}
+
+		bool SupportsObjectNames() const noexcept override { return true; }
+
+		void SetDebugName(NativeGraphicsDeviceHandle device, std::wstring_view debugName) noexcept override
+		{
+			SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(device.Value), debugName);
+		}
+
+		void SetDebugName(NativeGraphicsQueueHandle queue, std::wstring_view debugName) noexcept override
+		{
+			SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(queue.Value), debugName);
+		}
+
+		void SetDebugName(NativeGraphicsCommandListHandle commandList, std::wstring_view debugName) noexcept override
+		{
+			SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(commandList.Value), debugName);
+		}
+
+		void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override
+		{
+			SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName);
+		}
+
+		void SetDebugName(RhiOwnedHeapHandle heap, std::wstring_view debugName) noexcept override
+		{
+			OwnedHeapState* ownedHeap = ToOwnedHeapState(heap);
+			SetD3D12ObjectDebugName(ownedHeap != nullptr ? ownedHeap->Heap.Get() : nullptr, debugName);
+		}
+
+		void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept override
+		{
+			OwnedResourceState* ownedResource = ToOwnedResourceState(resource);
+			SetD3D12ObjectDebugName(ownedResource != nullptr ? ownedResource->Resource.Get() : nullptr, debugName);
+		}
+
+	};
+
+	class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
+	{
+	  public:
+		explicit D3D12RenderTimingDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(&rhi)
+		{
+			Initialize();
+		}
+
+		bool SupportsTimestampQueries() const noexcept override { return m_supportsTimestampQueries; }
+
+		RhiTimestampQueryHandle AllocateTimestampQuery() override
+		{
+			if (!m_supportsTimestampQueries || m_rhi == nullptr || m_queryLocations.size() >= std::numeric_limits<std::uint32_t>::max() - 1)
+			{
+				return {};
+			}
+
+			const std::uint32_t frameIndex = m_rhi->GetCurrentFrameIndex();
+			if (frameIndex >= m_frameStates.size())
+			{
+				return {};
+			}
+
+			FrameTimingState& frameState = m_frameStates[frameIndex];
+			if (frameState.FreeQueryIndices.empty() || frameState.MappedReadback == nullptr)
+			{
+				return {};
+			}
+
+			const std::uint32_t queryIndex = frameState.FreeQueryIndices.back();
+			frameState.FreeQueryIndices.pop_back();
+			frameState.MappedReadback[queryIndex] = 0;
+
+			std::uint32_t handleValue = m_nextHandleValue++;
+			while (handleValue == 0 || m_queryLocations.find(handleValue) != m_queryLocations.end())
+			{
+				handleValue = m_nextHandleValue++;
+			}
+
+			m_queryLocations.emplace(handleValue, QueryLocation{.FrameIndex = frameIndex, .QueryIndex = queryIndex});
+			return RhiTimestampQueryHandle{.Value = handleValue};
+		}
+
+		void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept override
+		{
+			const auto locationIt = m_queryLocations.find(query.Value);
+			if (locationIt == m_queryLocations.end())
+			{
+				return;
+			}
+
+			const QueryLocation location = locationIt->second;
+			if (location.FrameIndex < m_frameStates.size())
+			{
+				FrameTimingState& frameState = m_frameStates[location.FrameIndex];
+				if (location.QueryIndex < frameState.QueryCount)
+				{
+					if (frameState.MappedReadback != nullptr)
+					{
+						frameState.MappedReadback[location.QueryIndex] = 0;
+					}
+					frameState.FreeQueryIndices.push_back(location.QueryIndex);
+				}
+			}
+
+			m_queryLocations.erase(locationIt);
+		}
+
+		bool WriteTimestamp(RenderCommandList& commandList, RhiTimestampQueryHandle query) noexcept override
+		{
+			if (!m_supportsTimestampQueries)
+			{
+				return false;
+			}
+
+			const auto locationIt = m_queryLocations.find(query.Value);
+			if (locationIt == m_queryLocations.end())
+			{
+				return false;
+			}
+
+			const QueryLocation location = locationIt->second;
+			if (location.FrameIndex >= m_frameStates.size())
+			{
+				return false;
+			}
+
+			FrameTimingState& frameState = m_frameStates[location.FrameIndex];
+			ID3D12GraphicsCommandList* const nativeCommandList = ToD3D12GraphicsCommandList(commandList.GetNativeHandle());
+			if (nativeCommandList == nullptr || frameState.QueryHeap == nullptr || frameState.ReadbackBuffer == nullptr)
+			{
+				return false;
+			}
+
+			nativeCommandList->EndQuery(frameState.QueryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, location.QueryIndex);
+			nativeCommandList->ResolveQueryData(
+			    frameState.QueryHeap.Get(),
+			    D3D12_QUERY_TYPE_TIMESTAMP,
+			    location.QueryIndex,
+			    1,
+			    frameState.ReadbackBuffer.Get(),
+			    static_cast<UINT64>(location.QueryIndex) * sizeof(std::uint64_t));
+			return true;
+		}
+
+		bool TryResolveTimestamp(RhiTimestampQueryHandle query, std::uint64_t& outTicks) const noexcept override
+		{
+			outTicks = 0;
+			const auto locationIt = m_queryLocations.find(query.Value);
+			if (!m_supportsTimestampQueries || locationIt == m_queryLocations.end())
+			{
+				return false;
+			}
+
+			const QueryLocation location = locationIt->second;
+			if (location.FrameIndex >= m_frameStates.size())
+			{
+				return false;
+			}
+
+			const FrameTimingState& frameState = m_frameStates[location.FrameIndex];
+			if (frameState.MappedReadback == nullptr || location.QueryIndex >= frameState.QueryCount)
+			{
+				return false;
+			}
+
+			outTicks = frameState.MappedReadback[location.QueryIndex];
+			return true;
+		}
+
+		std::uint64_t GetTimestampFrequencyHz() const noexcept override { return m_timestampFrequencyHz; }
+
+	  private:
+		static constexpr std::uint32_t kQueriesPerFrame = 4096;
+
+		struct QueryLocation
+		{
+			std::uint32_t FrameIndex = 0;
+			std::uint32_t QueryIndex = 0;
+		};
+
+		struct FrameTimingState
+		{
+			Microsoft::WRL::ComPtr<ID3D12QueryHeap> QueryHeap;
+			Microsoft::WRL::ComPtr<ID3D12Resource> ReadbackBuffer;
+			std::uint64_t* MappedReadback = nullptr;
+			std::vector<std::uint32_t> FreeQueryIndices;
+			std::uint32_t QueryCount = 0;
+		};
+
+		void Initialize() noexcept
+		{
+			if (m_rhi == nullptr || m_rhi->GetDevice() == nullptr || m_rhi->GetCommandQueue() == nullptr)
+			{
+				return;
+			}
+
+			UINT64 timestampFrequency = 0;
+			if (FAILED(m_rhi->GetCommandQueue()->GetTimestampFrequency(&timestampFrequency)) || timestampFrequency == 0)
+			{
+				return;
+			}
+
+			for (std::uint32_t frameIndex = 0; frameIndex < m_frameStates.size(); ++frameIndex)
+			{
+				if (!InitializeFrameState(frameIndex))
+				{
+					return;
+				}
+			}
+
+			m_timestampFrequencyHz = timestampFrequency;
+			m_supportsTimestampQueries = true;
+		}
+
+		bool InitializeFrameState(std::uint32_t frameIndex) noexcept
+		{
+			FrameTimingState& frameState = m_frameStates[frameIndex];
+			const D3D12_QUERY_HEAP_DESC queryHeapDesc{
+			    .Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP,
+			    .Count = kQueriesPerFrame,
+			    .NodeMask = 0};
+			if (FAILED(m_rhi->GetDevice()->CreateQueryHeap(
+			        &queryHeapDesc,
+			        IID_PPV_ARGS(frameState.QueryHeap.ReleaseAndGetAddressOf()))))
+			{
+				return false;
+			}
+
+			const RhiBufferResourceDesc readbackBufferDesc{
+			    .SizeInBytes = static_cast<std::uint64_t>(kQueriesPerFrame) * sizeof(std::uint64_t),
+			    .StrideInBytes = sizeof(std::uint64_t),
+			    .AllowUnorderedAccess = false};
+			const D3D12_RESOURCE_DESC nativeReadbackDesc = BuildBufferResourceDesc(readbackBufferDesc);
+			const D3D12_HEAP_PROPERTIES readbackHeapProperties = BuildReadbackHeapProperties();
+			if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
+			        &readbackHeapProperties,
+			        D3D12_HEAP_FLAG_NONE,
+			        &nativeReadbackDesc,
+			        D3D12_RESOURCE_STATE_COPY_DEST,
+			        nullptr,
+			        IID_PPV_ARGS(frameState.ReadbackBuffer.ReleaseAndGetAddressOf()))))
+			{
+				return false;
+			}
+
+			if (FAILED(frameState.ReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&frameState.MappedReadback))))
+			{
+				return false;
+			}
+
+			std::memset(frameState.MappedReadback, 0, static_cast<std::size_t>(readbackBufferDesc.SizeInBytes));
+			frameState.QueryCount = kQueriesPerFrame;
+			frameState.FreeQueryIndices.reserve(kQueriesPerFrame);
+			for (std::uint32_t queryIndex = kQueriesPerFrame; queryIndex > 0; --queryIndex)
+			{
+				frameState.FreeQueryIndices.push_back(queryIndex - 1);
+			}
+
+			std::wstring queryHeapName = std::wstring(L"D3D12TimestampQueryHeap_Frame") + std::to_wstring(frameIndex);
+			frameState.QueryHeap->SetName(queryHeapName.c_str());
+			std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_Frame") + std::to_wstring(frameIndex);
+			frameState.ReadbackBuffer->SetName(readbackName.c_str());
+			return true;
+		}
+
+		D3D12Rhi* m_rhi = nullptr;
+		std::array<FrameTimingState, RenderConfig::FramesInFlight> m_frameStates;
+		std::unordered_map<std::uint32_t, QueryLocation> m_queryLocations;
+		std::uint32_t m_nextHandleValue = 1;
+		std::uint64_t m_timestampFrequencyHz = 0;
+		bool m_supportsTimestampQueries = false;
+	};
+
+	class D3D12RenderMessageDiagnostics final : public RenderMessageDiagnostics
+	{
+	  public:
+		explicit D3D12RenderMessageDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(rhi) {}
+
+		bool SupportsDebugMessages() const noexcept override { return m_rhi.SupportsDebugMessages(); }
+
+		bool TryPopMessage(RhiDiagnosticMessage& outMessage) noexcept override { return m_rhi.TryPopDebugMessage(outMessage); }
+
+		void ClearMessages() noexcept override { m_rhi.ClearDebugMessages(); }
+
+	  private:
+		D3D12Rhi& m_rhi;
+	};
+
+	class D3D12RenderFailureDiagnostics final : public RenderFailureDiagnostics
+	{
+	  public:
+		explicit D3D12RenderFailureDiagnostics(D3D12Rhi& rhi) noexcept : m_rhi(rhi) {}
+
+		bool SupportsLiveObjectReports() const noexcept override { return m_rhi.SupportsLiveObjectReports(); }
+
+		bool SupportsCrashDiagnostics() const noexcept override { return m_rhi.SupportsCrashDiagnostics(); }
+
+		void ReportLiveObjects() noexcept override { m_rhi.ReportLiveObjects(); }
+
+		void CollectCrashDiagnostics() noexcept override { m_rhi.CollectCrashDiagnostics(); }
+
+	  private:
+		D3D12Rhi& m_rhi;
+	};
+
+	class D3D12RenderDiagnostics final : public RenderDiagnostics
+	{
+	  public:
+		explicit D3D12RenderDiagnostics(D3D12Rhi& rhi) noexcept :
+			m_objectDiagnostics(rhi), m_timingDiagnostics(rhi), m_messageDiagnostics(rhi), m_failureDiagnostics(rhi)
+		{
+		}
+
+		RhiDiagnosticsCapabilities GetCapabilities() const noexcept override
+		{
+			return RhiDiagnosticsCapabilities{
+			    .SupportsObjectNames = m_objectDiagnostics.SupportsObjectNames(),
+			    .SupportsGpuEvents = GetPixEventRuntime().IsAvailable(),
+			    .SupportsTimestampQueries = m_timingDiagnostics.SupportsTimestampQueries(),
+			    .SupportsDebugMessages = m_messageDiagnostics.SupportsDebugMessages(),
+			    .SupportsLiveObjectReports = m_failureDiagnostics.SupportsLiveObjectReports(),
+			    .SupportsCrashDiagnostics = m_failureDiagnostics.SupportsCrashDiagnostics()};
+		}
+
+		RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }
+
+		const RenderObjectDiagnostics& GetObjectDiagnostics() const noexcept override { return m_objectDiagnostics; }
+
+		RenderTimingDiagnostics* GetTimingDiagnostics() noexcept override
+		{
+			return m_timingDiagnostics.SupportsTimestampQueries() ? &m_timingDiagnostics : nullptr;
+		}
+
+		const RenderTimingDiagnostics* GetTimingDiagnostics() const noexcept override
+		{
+			return m_timingDiagnostics.SupportsTimestampQueries() ? &m_timingDiagnostics : nullptr;
+		}
+
+		RenderMessageDiagnostics* GetMessageDiagnostics() noexcept override
+		{
+			return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
+		}
+
+		const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept override
+		{
+			return m_messageDiagnostics.SupportsDebugMessages() ? &m_messageDiagnostics : nullptr;
+		}
+
+		RenderFailureDiagnostics* GetFailureDiagnostics() noexcept override
+		{
+			return (m_failureDiagnostics.SupportsLiveObjectReports() || m_failureDiagnostics.SupportsCrashDiagnostics())
+			           ? &m_failureDiagnostics
+			           : nullptr;
+		}
+
+		const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override
+		{
+			return (m_failureDiagnostics.SupportsLiveObjectReports() || m_failureDiagnostics.SupportsCrashDiagnostics())
+			           ? &m_failureDiagnostics
+			           : nullptr;
+		}
+
+	  private:
+		D3D12RenderObjectDiagnostics m_objectDiagnostics;
+		D3D12RenderTimingDiagnostics m_timingDiagnostics;
+		D3D12RenderMessageDiagnostics m_messageDiagnostics;
+		D3D12RenderFailureDiagnostics m_failureDiagnostics;
+	};
 }
 
 class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public RenderCommandList
@@ -239,8 +700,39 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 	{
 	}
 
-	RhiBackendApi GetBackendApi() const noexcept override { return RhiBackendApi::D3D12; }
+	ERhiBackendApi GetBackendApi() const noexcept override { return ERhiBackendApi::D3D12; }
 	NativeGraphicsCommandListHandle GetNativeHandle() const noexcept override { return NativeGraphicsCommandListHandle{m_commandList}; }
+	bool SupportsDiagnosticScopes() const noexcept override { return m_commandList != nullptr && GetPixEventRuntime().IsAvailable(); }
+
+	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept override
+	{
+		if (!SupportsDiagnosticScopes() || label.empty())
+		{
+			return;
+		}
+
+		const std::string ownedLabel(label);
+		GetPixEventRuntime().BeginEvent(m_commandList, ToPixEventColor(color), ownedLabel.c_str());
+	}
+
+	void EndDiagnosticScope() noexcept override
+	{
+		if (SupportsDiagnosticScopes())
+		{
+			GetPixEventRuntime().EndEvent(m_commandList);
+		}
+	}
+
+	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept override
+	{
+		if (!SupportsDiagnosticScopes() || label.empty())
+		{
+			return;
+		}
+
+		const std::string ownedLabel(label);
+		GetPixEventRuntime().SetMarker(m_commandList, ToPixEventColor(color), ownedLabel.c_str());
+	}
 
 	void SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept override
 	{
@@ -618,16 +1110,26 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	{
 		m_commandLists[frameIndex] = std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(frameIndex).Get());
 	}
+
+	m_diagnostics = std::make_unique<D3D12RenderDiagnostics>(rhi);
 }
 
-RhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
+ERhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
 {
-	return RhiBackendApi::D3D12;
+	return ERhiBackendApi::D3D12;
 }
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetCurrentFrameIndex() : 0u;
+}
+
+void D3D12RenderHardwareInterface::WaitForIdle() noexcept
+{
+	if (m_rhi != nullptr)
+	{
+		m_rhi->Flush();
+	}
 }
 
 NativeGraphicsDeviceHandle D3D12RenderHardwareInterface::GetDeviceHandle() const noexcept
@@ -648,6 +1150,16 @@ RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uin
 NativeGraphicsCommandListHandle D3D12RenderHardwareInterface::GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept
 {
 	return NativeGraphicsCommandListHandle{m_rhi != nullptr ? m_rhi->GetCommandList(frameIndex).Get() : nullptr};
+}
+
+RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() noexcept
+{
+	return *m_diagnostics;
+}
+
+const RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() const noexcept
+{
+	return *m_diagnostics;
 }
 
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
@@ -699,7 +1211,7 @@ NativeDescriptorHeapHandle D3D12RenderHardwareInterface::GetShaderResourceHeapHa
 	return NativeDescriptorHeapHandle{heap != nullptr ? heap->GetRaw() : nullptr};
 }
 
-RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(RhiDescriptorHeapType heapType)
+RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDescriptorHeapType heapType)
 {
 	RhiDescriptorAllocation allocation{};
 	if (m_descriptorHeapManager == nullptr)
@@ -716,7 +1228,7 @@ RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(RhiDesc
 	return allocation;
 }
 
-void D3D12RenderHardwareInterface::ReleaseDescriptor(RhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept
+void D3D12RenderHardwareInterface::ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept
 {
 	if (m_descriptorHeapManager == nullptr || !allocation.CpuHandle)
 	{
@@ -730,7 +1242,7 @@ void D3D12RenderHardwareInterface::ReleaseDescriptor(RhiDescriptorHeapType heapT
 }
 
 RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
-    RhiDescriptorHeapType heapType,
+    ERhiDescriptorHeapType heapType,
     std::uint32_t descriptorCount)
 {
 	if (m_descriptorHeapManager == nullptr || descriptorCount == 0)
@@ -1400,7 +1912,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
 	return record != nullptr ? record->nativeHandle.GetGPU() : D3D12_GPU_DESCRIPTOR_HANDLE{};
 }
 
-D3D12_DESCRIPTOR_HEAP_TYPE D3D12RenderHardwareInterface::ToNativeDescriptorHeapType(RhiDescriptorHeapType heapType) noexcept
+D3D12_DESCRIPTOR_HEAP_TYPE D3D12RenderHardwareInterface::ToNativeDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept
 {
 	return ToD3D12DescriptorHeapType(heapType);
 }

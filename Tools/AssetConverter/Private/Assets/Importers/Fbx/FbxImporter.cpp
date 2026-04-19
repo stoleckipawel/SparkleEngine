@@ -48,7 +48,7 @@ SceneImportResult FbxImporter::Import(const std::filesystem::path& filePath) con
 	    g_fbxImporterLogger,
 	    "{}",
 	    std::format(
-	        "FbxImporter: Loaded '{}' — {} meshes, {} materials",
+	        "FbxImporter: Loaded '{}' - {} meshes, {} materials",
 	        filePath.filename().string(),
 	        result.meshes.size(),
 	        result.materials.size()));

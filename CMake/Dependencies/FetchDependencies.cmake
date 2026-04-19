@@ -461,6 +461,12 @@ set(KTX_FEATURE_LOADTEST_APPS "" CACHE STRING "" FORCE)
 set(KTX_FEATURE_VK_UPLOAD OFF CACHE BOOL "" FORCE)
 set(KTX_FEATURE_GL_UPLOAD OFF CACHE BOOL "" FORCE)
 
+# CMake 4.2 can reach CTestTargets before the fetched binary tree has created
+# its CMakeFiles directory on repeated configure passes. Seed the sub-build
+# directories explicitly so the KTX configure remains stable during cook flows.
+file(MAKE_DIRECTORY "${ktx_BINARY_DIR}")
+file(MAKE_DIRECTORY "${ktx_BINARY_DIR}/CMakeFiles")
+
 # Build from root CMakeLists.txt (v4.3.2 has no lib/CMakeLists.txt)
 add_subdirectory(${ktx_SOURCE_DIR} ${ktx_BINARY_DIR})
 

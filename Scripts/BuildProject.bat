@@ -27,9 +27,9 @@ set "EXIT_RC=1"
 set "SELECTED_PROJECT=%~1"
 set "HOST_MODE=%~2"
 set "CONFIG=%~3"
-set "SELECTED_PROJECT=!SELECTED_PROJECT: =!"
-set "HOST_MODE=!HOST_MODE: =!"
-set "CONFIG=!CONFIG: =!"
+if defined SELECTED_PROJECT set "SELECTED_PROJECT=!SELECTED_PROJECT: =!"
+if defined HOST_MODE set "HOST_MODE=!HOST_MODE: =!"
+if defined CONFIG set "CONFIG=!CONFIG: =!"
 
 if /I "%SELECTED_PROJECT%"=="/h" goto :USAGE
 if /I "%SELECTED_PROJECT%"=="-h" goto :USAGE

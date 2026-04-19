@@ -39,8 +39,10 @@ void InputSystem::EndFrame()
 
 void InputSystem::ProcessDeferredEvents()
 {
-	ImGuiIO& io = ImGui::GetIO();
-	SetLayerEnabled(InputLayer::Gameplay, !io.WantCaptureKeyboard && !io.WantCaptureMouse);
+	const ImGuiContext* currentContext = ImGui::GetCurrentContext();
+	const bool wantsCaptureInput =
+	    currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
+	SetLayerEnabled(InputLayer::Gameplay, !wantsCaptureInput);
 
 	ProcessDeferredEventsForType<KeyboardEvent>();
 	ProcessDeferredEventsForType<MouseButtonEvent>();

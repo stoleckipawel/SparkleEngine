@@ -11,7 +11,10 @@
 #include "Time/Timer.h"
 #include "Camera/RenderCamera.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
+#include "Config/RenderConfig.h"
 #include "GPU/CommandContext.h"
+#include "GPU/FrameExecutionDiagnostics.h"
+#include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Frame/FrameContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPassContext.h"
@@ -98,6 +101,7 @@ void Renderer::TransitionRenderProduct(
 	}
 
 	GetRenderHardwareInterface().TransitionResource(commandList, resource, before, after);
+	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }
 
 void Renderer::InitializeCoreSystems() noexcept
@@ -105,6 +109,12 @@ void Renderer::InitializeCoreSystems() noexcept
 	m_backend = RendererBackendServices::Create(*m_timer, *m_window);
 	m_pipelineStateManager = std::make_unique<PipelineStateManager>(GetRenderHardwareInterface());
 	m_gpuMeshCache = std::make_unique<GPUMeshCache>(GetRenderHardwareInterface());
+	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
+	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
+	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
+	{
+		frameDiagnostics = std::make_unique<FrameExecutionDiagnostics>(backendDiagnostics);
+	}
 }
 
 void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
@@ -211,10 +221,16 @@ void Renderer::BeginFrame() noexcept
 	}
 
 	m_backend->BeginFrame();
+	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
+	frameDiagnostics.ResolveTimings();
+	ReportResolvedTimings(GetRenderHardwareInterface().GetCurrentFrameIndex(), frameDiagnostics);
 }
 
 void Renderer::SetupFrame() noexcept
 {
+	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame begin");
+
 	m_timer->Tick();
 	RefreshViewportRenderProducts();
 
@@ -223,6 +239,7 @@ void Renderer::SetupFrame() noexcept
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 
 	m_backend->UpdatePerFrameConstants(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame end");
 }
 
 void Renderer::RefreshViewportRenderProducts() noexcept
@@ -252,6 +269,9 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 
 void Renderer::RecordFrame() noexcept
 {
+	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context begin");
+
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
 	FrameContext frame = BuildFrameContext(
 	    *m_sceneSnapshot,
@@ -262,27 +282,110 @@ void Renderer::RecordFrame() noexcept
 	    *m_viewLightingBuilder,
 	    *m_shadowFrameBuilder,
 	    *m_shadowBuilder);
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
 	m_frameGraph->Setup(frame);
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph setup end");
+
 	const FrameGraph::CompiledPlan compiledPlan = m_frameGraph->Compile();
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	const RenderPassContext renderPassContext{
 	    .HardwareInterface = renderHardwareInterface,
+	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .SamplerTableHandle = renderHardwareInterface.GetSamplerTableHandle(),
 	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
 
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
 	CommandContext cmd(commandList);
-	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext);
+	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
+	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext, frameDiagnostics);
+
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute end");
 }
 
 void Renderer::SubmitFrame() noexcept
 {
+	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame begin");
 	m_backend->SubmitFrame();
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame end");
 }
 
 void Renderer::EndFrame() noexcept
 {
+	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
 	m_backend->AdvanceFrameInFlight();
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
+}
+
+FrameExecutionDiagnostics& Renderer::GetCurrentFrameDiagnostics() noexcept
+{
+	return *m_frameExecutionDiagnostics[GetRenderHardwareInterface().GetCurrentFrameIndex()];
+}
+
+const FrameExecutionDiagnostics& Renderer::GetCurrentFrameDiagnostics() const noexcept
+{
+	return *m_frameExecutionDiagnostics[GetRenderHardwareInterface().GetCurrentFrameIndex()];
+}
+
+void Renderer::ReportResolvedTimings(
+	std::uint32_t frameIndex,
+	const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
+{
+	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
+
+	PublishLiveGpuTimings(resolvedTimers);
+
+	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+
+	if (rendererLogger == nullptr || !rendererLogger->should_log(spdlog::level::trace))
+	{
+		return;
+	}
+
+	if (resolvedTimers.empty())
+	{
+		return;
+	}
+
+	SPDLOG_LOGGER_TRACE(rendererLogger, "Resolved GPU timings for frame slot {} ({} scopes)", frameIndex, resolvedTimers.size());
+	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
+	{
+		SPDLOG_LOGGER_TRACE(
+		    rendererLogger,
+		    "  {}: {:.3f} ms ({} ticks)",
+		    resolvedTimer.Label,
+		    resolvedTimer.DurationMilliseconds,
+		    resolvedTimer.DurationTicks);
+	}
+}
+
+void Renderer::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept
+{
+	if (resolvedTimers.empty())
+	{
+		return;
+	}
+
+	Engine::Diagnostics::LiveProfiler& profiler = Engine::Diagnostics::LiveProfiler::Get();
+	if (!profiler.IsEnabled())
+	{
+		return;
+	}
+
+	std::vector<Engine::Diagnostics::LiveProfiler::GpuTimingEntry> entries;
+	entries.reserve(resolvedTimers.size());
+	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
+	{
+		entries.push_back(Engine::Diagnostics::LiveProfiler::GpuTimingEntry{
+		    .Label = std::string_view(resolvedTimer.Label),
+		    .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
+		    .Depth = resolvedTimer.Depth});
+	}
+
+	profiler.SubmitGpuFrame(entries.data(), entries.size());
 }
 
 void Renderer::PostLoad() noexcept
