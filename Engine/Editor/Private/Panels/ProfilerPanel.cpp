@@ -285,9 +285,47 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, color);
 	}
 
+	// Visibility toggle column — only for depth-0 (chart-visible) scopes.
 	ImGui::TableSetColumnIndex(0);
+	if (depth == 0)
+	{
+		const bool isHidden = m_hiddenScopes.count(node.Name) > 0;
+		const ImU32 dotColor = (siblingTotal > 0)
+		    ? GenerateProfilerColor(ShortenScopeName(node.Name), siblingIndex, siblingTotal)
+		    : IM_COL32(160, 165, 180, 200);
+		ImGui::PushID(node.Name.c_str());
+
+		// Draw a small clickable colored circle (filled if visible, hollow ring if hidden).
+		const ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+		const float radius = ImGui::GetFontSize() * 0.3f;
+		const ImVec2 center{cursorPos.x + radius + 2.0f, cursorPos.y + ImGui::GetTextLineHeight() * 0.5f};
+		ImDrawList* rowDl = ImGui::GetWindowDrawList();
+		if (isHidden)
+		{
+			rowDl->AddCircle(center, radius, (dotColor & 0x00FFFFFFu) | (0x60u << 24), 12, 1.5f);
+		}
+		else
+		{
+			rowDl->AddCircleFilled(center, radius, dotColor, 12);
+		}
+		// Invisible button over the dot for click detection.
+		if (ImGui::InvisibleButton("##vis", ImVec2(radius * 2.0f + 4.0f, ImGui::GetTextLineHeight())))
+		{
+			if (isHidden)
+			{
+				m_hiddenScopes.erase(node.Name);
+			}
+			else
+			{
+				m_hiddenScopes.insert(node.Name);
+			}
+		}
+		ImGui::PopID();
+	}
+
+	ImGui::TableSetColumnIndex(1);
 	const bool hasChildren = !node.Children.empty();
-	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAllColumns
+	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth
 	                               | (hasChildren ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 	if (depth == 0)
 	{
@@ -325,13 +363,13 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 		ImGui::EndTooltip();
 	}
 
-	ImGui::TableSetColumnIndex(1);
-	RightAlignedText("%.3f", inclusiveMs);
 	ImGui::TableSetColumnIndex(2);
-	RightAlignedText("%.3f", exclusiveMs);
+	RightAlignedText("%.3f", inclusiveMs);
 	ImGui::TableSetColumnIndex(3);
-	RightAlignedText("%.3f", node.MaxDurationMicroseconds * kMicrosecondsToMilliseconds);
+	RightAlignedText("%.3f", exclusiveMs);
 	ImGui::TableSetColumnIndex(4);
+	RightAlignedText("%.3f", node.MaxDurationMicroseconds * kMicrosecondsToMilliseconds);
+	ImGui::TableSetColumnIndex(5);
 	if (hasDrawStats)
 	{
 		if (node.DispatchCount > 0)
@@ -364,8 +402,9 @@ void ProfilerPanel::RenderNodeRow(const Engine::Diagnostics::ProfilerSnapshotNod
 void ProfilerPanel::BeginProfilerTable(const char* id) const
 {
 	ImGui::PushID(id);
-	if (ImGui::BeginTable("##Table", 5, kTableFlags))
+	if (ImGui::BeginTable("##Table", 6, kTableFlags))
 	{
+		ImGui::TableSetupColumn("##Vis", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 20.0f);
 		ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Incl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
 		ImGui::TableSetupColumn("Excl ms", ImGuiTableColumnFlags_WidthFixed, 70.0f);
@@ -529,6 +568,10 @@ void ProfilerPanel::RenderModuleCharts(
 	for (std::size_t i = 0; i < bucket.size(); ++i)
 	{
 		const Engine::Diagnostics::ProfilerSnapshotNode* node = bucket[i];
+		if (m_hiddenScopes.count(node->Name) > 0)
+		{
+			continue;
+		}
 		const double ms = node->AverageDurationMicroseconds * kMicrosecondsToMilliseconds;
 		std::string shortName = shortenName(node->Name);
 		const ImU32 color = hashColor(shortName, i, bucket.size());
@@ -586,8 +629,17 @@ void ProfilerPanel::RenderModuleCharts(
 
 	// Bar chart geometry.
 	const float yAxisLabelW = ImGui::CalcTextSize("88.8").x + 6.0f; // "x.xx" width
-	const float barXLabelH = fontSize + 4.0f;
 	const float barValLabelH = fontSize + 2.0f;
+
+	// X-axis labels are always rotated for consistent, scannable layout.
+	float maxLabelW = 0.0f;
+	for (const Slice& s : slices)
+	{
+		maxLabelW = std::max(maxLabelW, ImGui::CalcTextSize(s.ShortName.c_str()).x);
+	}
+	constexpr float kLabelAngleDeg = 35.0f;
+	const float labelAngleRad = kLabelAngleDeg * (3.14159265f / 180.0f);
+	const float barXLabelH = maxLabelW * std::sin(labelAngleRad) + fontSize * std::cos(labelAngleRad) + 6.0f;
 
 	// Chart content height: pick something taller than wide for nicer bar proportions.
 	const float chartContentH = std::max(pieMaxSize + pieCaptionH, 150.0f);
@@ -784,20 +836,22 @@ void ProfilerPanel::RenderModuleCharts(
 			const float vY = std::max(plotTop - vSz.y - 1.0f, bTop - vSz.y - 2.0f);
 			dl->AddText(ImVec2(vCenterX - vSz.x * 0.5f, vY), kColTextStrong, vBuf);
 
-			// Name below bar — clipped to bar width, centered.
+			// Name below bar — rotated 35° anchored at the bar's bottom-center.
 			{
-				const ImVec2 nSz = ImGui::CalcTextSize(s.ShortName.c_str());
-				const float labelLeft = xL - minBarSpacing * 0.4f;
-				const float labelRight = xR + minBarSpacing * 0.4f;
-				const ImVec4 clipRect{labelLeft, bBot + 4.0f, labelRight, bBot + 4.0f + nSz.y};
-				const float labelX = (nSz.x <= (labelRight - labelLeft))
-				    ? (labelLeft + (labelRight - labelLeft - nSz.x) * 0.5f)
-				    : labelLeft;
-				dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(),
-				    ImVec2(labelX, bBot + 4.0f),
-				    kColTextMuted,
-				    s.ShortName.c_str(), nullptr,
-				    0.0f, &clipRect);
+				const ImVec2 anchor{xL + barW * 0.5f, bBot + 4.0f};
+				const int vtxStart = dl->VtxBuffer.Size;
+				dl->AddText(anchor, kColTextMuted, s.ShortName.c_str());
+				const int vtxEnd = dl->VtxBuffer.Size;
+				const float c = std::cos(labelAngleRad);
+				const float si = std::sin(labelAngleRad);
+				for (int vi = vtxStart; vi < vtxEnd; ++vi)
+				{
+					ImDrawVert& v = dl->VtxBuffer[vi];
+					const float dx = v.pos.x - anchor.x;
+					const float dy = v.pos.y - anchor.y;
+					v.pos.x = anchor.x + dx * c - dy * si;
+					v.pos.y = anchor.y + dx * si + dy * c;
+				}
 			}
 
 			// Hover hit area covers the entire column slot.

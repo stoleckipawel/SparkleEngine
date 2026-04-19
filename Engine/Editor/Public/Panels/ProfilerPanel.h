@@ -3,6 +3,9 @@
 #include "../EditorAPI.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
+#include <string>
+#include <unordered_set>
+
 class SPARKLE_EDITOR_API ProfilerPanel final
 {
   public:
@@ -46,4 +49,5 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 
 	Engine::Diagnostics::ProfilerSnapshot m_snapshot;
 	SortMode m_sortMode = SortMode::Hierarchy;
+	mutable std::unordered_set<std::string> m_hiddenScopes;
 };
