@@ -3,19 +3,13 @@
 #include "Compiler/DxcShaderCompiler.h"
 
 #include "Compiler/DxcContext.h"
+#include "Constants/ShaderCompilerConstants.h"
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 
-static const auto g_dxcShaderCompilerLogger = Engine::Logging::GetOrCreateLogger("Tools.ShaderCompiler");
-
-namespace
-{
-	std::filesystem::path BuildShaderDebugArtifactPath(std::wstring_view pdbName)
-	{
-		return Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
-	}
-}
+static const auto g_dxcShaderCompilerLogger =
+	Engine::Logging::GetOrCreateLogger(std::string{kDxcCompilerLoggerCategory});
 
 ShaderCompileResult DxcShaderCompiler::Compile(const ShaderCompileOptions& options)
 {
@@ -215,4 +209,8 @@ std::filesystem::path DxcShaderCompiler::SaveShaderSymbols(IDxcResult* result, c
 
 	SPDLOG_LOGGER_WARN(g_dxcShaderCompilerLogger, "Failed to save shader symbols for '{}'", sourcePath.string());
 	return {};
+}
+std::filesystem::path DxcShaderCompiler::BuildShaderDebugArtifactPath(std::wstring_view pdbName)
+{
+	return Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
 }

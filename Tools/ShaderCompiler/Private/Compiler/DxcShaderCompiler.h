@@ -43,4 +43,6 @@ class DxcShaderCompiler
 	static std::string ExtractErrorMessage(IDxcResult* result);
 
 	static std::filesystem::path SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
+
+	static std::filesystem::path BuildShaderDebugArtifactPath(std::wstring_view pdbName);
 };

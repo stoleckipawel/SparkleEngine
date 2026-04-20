@@ -2,7 +2,10 @@
 
 #include "Compiler/DxcContext.h"
 
-static std::shared_ptr<spdlog::logger> g_shaderCompilerLogger = Engine::Logging::GetOrCreateLogger("ShaderCompiler");
+#include "Constants/ShaderCompilerConstants.h"
+
+static std::shared_ptr<spdlog::logger> g_shaderCompilerLogger =
+	Engine::Logging::GetOrCreateLogger(std::string{kDxcContextLoggerCategory});
 
 DxcContext::DxcContext()
 {

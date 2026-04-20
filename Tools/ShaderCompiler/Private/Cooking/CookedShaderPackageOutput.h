@@ -1,0 +1,20 @@
+#pragma once
+
+#include "RHI/Public/Shaders/CookedShaderPackage.h"
+
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
+struct CookedShaderPackageOutput final
+{
+	std::string packageId;
+	std::string variantId;
+	std::string bindingLayoutId;
+	std::filesystem::path outputPath;
+	std::uint64_t packageKey = 0;
+	std::uint64_t sourceIdentityHash = 0;
+	std::uint64_t bindingLayoutHash = 0;
+	std::uint64_t variantHash = 0;
+	ShaderStageMask declaredStages = ShaderStageMask::None;
+};

@@ -2,12 +2,32 @@
 
 #include "Core/Public/Paths/PathUtils.h"
 
+#include "Core/Public/FileSystemUtils.h"
+
 #include <algorithm>
 #include <cwctype>
 #include <system_error>
 
 namespace Engine::Paths
 {
+	static bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
+	{
+		if (path.empty() || root.empty())
+		{
+			return false;
+		}
+
+		std::error_code ec;
+		const std::filesystem::path relativePath = std::filesystem::relative(path, root, ec);
+		if (ec)
+		{
+			return false;
+		}
+
+		const std::string relativePathString = relativePath.generic_string();
+		return !relativePathString.empty() && !relativePathString.starts_with("..");
+	}
+
 	std::string_view GetFileName(std::string_view path) noexcept
 	{
 		for (std::size_t index = path.size(); index > 0; --index)
@@ -19,6 +39,28 @@ namespace Engine::Paths
 		}
 
 		return path;
+	}
+
+	std::string MakeProjectRelativeString(const std::filesystem::path& path)
+	{
+		if (path.empty())
+		{
+			return {};
+		}
+
+		const std::filesystem::path normalizedPath = Normalize(path);
+		const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
+		if (IsUnderRoot(normalizedPath, projectRoot))
+		{
+			std::error_code ec;
+			const std::filesystem::path relativePath = std::filesystem::relative(normalizedPath, projectRoot, ec);
+			if (!ec)
+			{
+				return relativePath.generic_string();
+			}
+		}
+
+		return normalizedPath.generic_string();
 	}
 
 	std::filesystem::path Normalize(const std::filesystem::path& path)

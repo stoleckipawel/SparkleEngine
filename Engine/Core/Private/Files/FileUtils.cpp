@@ -8,6 +8,34 @@
 
 namespace Engine::Files
 {
+	static bool TryOpenOutput(
+	    const std::filesystem::path& path,
+	    const std::ios::openmode mode,
+	    std::ofstream& output,
+	    std::string& outErrorMessage)
+	{
+		std::error_code ec;
+		if (path.has_parent_path())
+		{
+			std::filesystem::create_directories(path.parent_path(), ec);
+			if (ec)
+			{
+				outErrorMessage = std::format("Failed to create directories for '{}': {}", path.string(), ec.message());
+				return false;
+			}
+		}
+
+		output.open(path, mode | std::ios::trunc);
+		if (!output)
+		{
+			outErrorMessage = std::format("Failed to open '{}' for writing", path.string());
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
+
 	bool TryReadAllBytes(const std::filesystem::path& path, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage)
 	{
 		std::ifstream input(path, std::ios::binary | std::ios::ate);
@@ -115,5 +143,15 @@ namespace Engine::Files
 
 		outErrorMessage.clear();
 		return true;
+	}
+
+	bool TryOpenBinaryOutput(const std::filesystem::path& path, std::ofstream& output, std::string& outErrorMessage)
+	{
+		return TryOpenOutput(path, std::ios::binary, output, outErrorMessage);
+	}
+
+	bool TryOpenTextOutput(const std::filesystem::path& path, std::ofstream& output, std::string& outErrorMessage)
+	{
+		return TryOpenOutput(path, static_cast<std::ios::openmode>(0), output, outErrorMessage);
 	}
 }
