@@ -182,4 +182,94 @@ namespace SparkleUiPalette
 	{
 		return IM_COL32(220, 224, 230, 255);
 	}
+
+	// ---- Chart / data-visualization palette ----
+
+	ImU32 ChartCardBackground() noexcept
+	{
+		return IM_COL32(24, 25, 30, 230);
+	}
+
+	ImU32 ChartCardBorder() noexcept
+	{
+		return IM_COL32(48, 50, 58, 140);
+	}
+
+	ImU32 ChartDivider() noexcept
+	{
+		return IM_COL32(48, 50, 58, 140);
+	}
+
+	ImU32 ChartAxis() noexcept
+	{
+		return IM_COL32(70, 72, 82, 200);
+	}
+
+	ImU32 ChartGrid() noexcept
+	{
+		return IM_COL32(50, 52, 60, 90);
+	}
+
+	ImU32 ChartTextStrong() noexcept
+	{
+		return IM_COL32(220, 222, 228, 230);
+	}
+
+	ImU32 ChartTextMuted() noexcept
+	{
+		return IM_COL32(140, 144, 156, 200);
+	}
+
+	ImU32 ChartTextDim() noexcept
+	{
+		return IM_COL32(105, 110, 122, 200);
+	}
+
+	ImU32 ChartTitle() noexcept
+	{
+		return IM_COL32(170, 175, 190, 220);
+	}
+
+	// ---- Categorical color palette ----
+	// Inspired by Tableau 10 / Chrome DevTools — muted but distinguishable on dark backgrounds.
+	static constexpr ImU32 kCategoricalPalette[] = {
+	    IM_COL32(0x4E, 0x79, 0xA7, 255), // blue
+	    IM_COL32(0xF2, 0x8E, 0x2B, 255), // orange
+	    IM_COL32(0x59, 0xA1, 0x4F, 255), // green
+	    IM_COL32(0xE1, 0x57, 0x59, 255), // red
+	    IM_COL32(0xB0, 0x7A, 0xA1, 255), // purple
+	    IM_COL32(0xED, 0xC9, 0x49, 255), // yellow
+	    IM_COL32(0x76, 0xB7, 0xB2, 255), // teal
+	    IM_COL32(0xFF, 0x9D, 0xA7, 255), // pink
+	    IM_COL32(0x9C, 0x75, 0x5F, 255), // brown
+	    IM_COL32(0xBA, 0xB0, 0xAC, 255), // gray
+	};
+
+	std::size_t CategoricalColorCount() noexcept
+	{
+		return sizeof(kCategoricalPalette) / sizeof(kCategoricalPalette[0]);
+	}
+
+	ImU32 CategoricalColor(std::size_t index) noexcept
+	{
+		return kCategoricalPalette[index % CategoricalColorCount()];
+	}
+
+	ImU32 CategoricalColorDesaturated(std::size_t index, float saturation) noexcept
+	{
+		const ImU32 base = CategoricalColor(index);
+		if (saturation >= 0.999f)
+		{
+			return base;
+		}
+		ImVec4 rgb = ImGui::ColorConvertU32ToFloat4(base);
+		float h = 0.0f;
+		float s = 0.0f;
+		float v = 0.0f;
+		ImGui::ColorConvertRGBtoHSV(rgb.x, rgb.y, rgb.z, h, s, v);
+		s *= saturation;
+		ImGui::ColorConvertHSVtoRGB(h, s, v, rgb.x, rgb.y, rgb.z);
+		rgb.w = 1.0f;
+		return ImGui::ColorConvertFloat4ToU32(rgb);
+	}
 }  // namespace SparkleUiPalette

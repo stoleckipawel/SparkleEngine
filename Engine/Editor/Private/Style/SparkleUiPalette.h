@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include <imgui.h>
 
 namespace SparkleUiPalette
@@ -42,4 +44,26 @@ namespace SparkleUiPalette
 	ImU32 SectionHeaderBorder() noexcept;
 	ImU32 SceneOutlinerBadgeBackground() noexcept;
 	ImU32 SceneOutlinerBadgeText() noexcept;
+
+	// ---- Chart / data-visualization palette ----
+	// Shared by the profiler and any future chart-style widgets so colors stay
+	// consistent with the editorial dark theme.
+	ImU32 ChartCardBackground() noexcept;
+	ImU32 ChartCardBorder() noexcept;
+	ImU32 ChartDivider() noexcept;
+	ImU32 ChartAxis() noexcept;
+	ImU32 ChartGrid() noexcept;
+	ImU32 ChartTextStrong() noexcept;
+	ImU32 ChartTextMuted() noexcept;
+	ImU32 ChartTextDim() noexcept;
+	ImU32 ChartTitle() noexcept;
+
+	// ---- Categorical color palette ----
+	// Curated 10-color palette inspired by Tableau 10 / Chrome DevTools.
+	// Used to color independent series (profiler scopes, chart bars, etc.).
+	std::size_t CategoricalColorCount() noexcept;
+	ImU32 CategoricalColor(std::size_t index) noexcept;
+	// Returns the same hue with reduced saturation, useful for low-contrast tints
+	// (e.g. table row backgrounds) that should not distract from foreground text.
+	ImU32 CategoricalColorDesaturated(std::size_t index, float saturation) noexcept;
 }  // namespace SparkleUiPalette
