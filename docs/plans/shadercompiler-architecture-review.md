@@ -70,8 +70,11 @@ Vocabulary used throughout (full glossary in Appendix B):
   used together (e.g. a vertex+pixel pair forming a material program).
 - **Variant / Permutation** — one specific compilation of a package or stage
   parameterised by `#define`s, target, quality, feature flags.
-- **Manifest** — a declarative file authored by a human that tells the cooker
-  *which packages exist* and *which stages each contains*. It is the input
+- **Manifest** — a declarative package-definition file authored by a human
+  that tells the cooker *which packages exist* and *which stages each
+  contains*. The concept is common across engines, but the exact word is not
+  universal; other systems may call the same thing a descriptor, shader
+  database, registry input, or definition file. It is the authoring input
   surface; humans edit manifests, the cooker reads them.
 - **Cook** — the act of taking source + manifest and producing the runtime
   binary artifact.
@@ -87,14 +90,43 @@ Vocabulary used throughout (full glossary in Appendix B):
 **Goals**
 
 - Single source of truth for shader compilation — runtime never compiles.
+- Initial scope is **global shaders only**: renderer/engine-owned shaders
+  declared in C++ and backed by `.hlsl` / `.hlsli` source files.
 - Incremental, content-addressed cook — unchanged inputs reuse previous output.
 - Backend-agnostic orchestration — DXIL today, SPIR-V designed for, no churn
   in the orchestration layer when a new backend lands.
 - Stable, versioned cooked artifact format owned by RHI.
 - Structured diagnostics — machine-readable errors with source maps.
+- First-class visibility into shader compilation products — preprocessed
+  source, reflection output, backend disassembly, and intermediate
+  representations when the backend can expose them.
 - Editor hot reload via out-of-process recook + signal, not in-process compile.
 - Single-threaded executor today; the dependency graph is the parallelism
   contract for tomorrow.
+
+### UE-Inspired Design Commitments We Are Adopting
+
+These are not just references or recommendations anymore. They are part of the
+target Sparkle design.
+
+- **Clear runtime vs offline ownership.** Runtime and editor consume cooked
+  shader artifacts; the offline tool owns compilation work.
+- **Out-of-process compile orchestration.** Shader compilation runs through
+  `ShaderCompiler.exe`, including editor recook workflows.
+- **Explicit permutation domain model.** Permutations are represented through
+  `ShaderPermutationDomainDesc` and `ShaderPermutationVector`, not loose define
+  bags.
+- **Content-addressed shader caching.** Cache lookup is part of the normal cook
+  path, not a future bolt-on.
+- **One cook path for editor and automation.** The editor should trigger the
+  same offline cook path CI and scripts use.
+- **Cooked-artifact-only runtime contract.** Runtime loads only cooked shader
+  packages through RHI-owned schema and readers.
+- **Backend abstraction from the start.** DXC is the first adapter, not the
+  permanent shape of the orchestration layer.
+- **Debug artifact capture is intentional.** Shader compilation should produce
+  optional inspection artifacts for debugging and learning, not hide all
+  intermediate forms behind the backend boundary.
 
 **Non-goals (explicitly out of scope)**
 
@@ -105,6 +137,11 @@ Vocabulary used throughout (full glossary in Appendix B):
 - In-editor in-process recompilation.
 - Vendor-specific analysis (RGA-style ISA disassembly) as a built-in — left as
   an `IAnalysisPass` seam.
+- Unreal-scale material graph driven shader generation.
+- Unreal-scale shader type taxonomy and vertex-factory matrix.
+- Copying Unreal's class, macro, or naming surface literally.
+- Material/uasset shader workflows in the initial shipping version.
+- Project-authored shader package manifests in the initial shipping version.
 
 ## 4. End-User Mental Model
 
@@ -114,10 +151,6 @@ Three personas interact with the system. Each has a different surface.
 runs the cook tool (or the editor, which triggers a recook). Cares about:
 diagnostics quality, cook speed, deterministic output, never having to think
 about runtime fallback.
-
-**Shader author / TA.** Edits manifests and `.hlsl` source. Adds new packages.
-Cares about: a clear authoring format, fast iteration, useful error messages
-that point to source, reasonable permutation behaviour.
 
 **Build automation.** Invokes the tool from CI / batch scripts. Cares about:
 exit codes, machine-readable output, reproducibility, idempotency.
@@ -232,27 +265,42 @@ validator.
 - **Editor ↔ runtime**: the editor calls into RHI to bump shader resource
   versions after a successful recook.
 
+This is an adopted design rule, not just a possible implementation option:
+
+```text
+Editor/CI request work.
+ShaderCompiler.exe owns compile orchestration.
+RHI/Renderer consume cooked results only.
+```
+
 ## 7. Core Abstractions / Object Catalog
 
 Each entry: **role**, **owns**, **depends on**, **lifetime**.
 
 ### Front-end (authoring intent → in-memory description)
 
-- **`ShaderManifest`** — the parsed, validated, merged authoring document.
-  Owns: a list of `ShaderPackageDesc`. Depends on: `IManifestSource`. Lifetime:
-  one cook invocation.
-- **`IManifestSource`** — pluggable parser interface (`ini`, `json`, code).
-  Owns: nothing. Depends on: `Engine/Core` file utilities. Lifetime: stateless.
-- **`ShaderPackageDesc`** — declarative package: id, binding-layout id, variant
-  id, list of `ShaderStageDesc`. Plain data.
+- **`ShaderRegistrationDesc`** — C++-declared shader registration record for
+  Unreal-style engine/global shader workflows. Captures source path, entry
+  point, stage, shader family id, and optional permutation domain metadata.
+- **`IShaderRegistrationSource`** — pluggable registration source interface.
+  Initial implementation is C++ registration compiled into the engine/tool.
+  Future implementations may load generated registrations or declarative files.
+- **`ShaderPackageDesc`** — normalized internal package/family description
+  produced from registrations. Even in a global-shader-only system, the cooker
+  still benefits from a normalized internal model.
 - **`ShaderStageDesc`** — stage enum + source path + entry point. Plain data.
 
 ### Plan (intent → unit-of-work)
 
 - **`PermutationExpander`** — turns one `ShaderPackageDesc` into N
-  `ShaderCompileRequest`s by combining variant axes. Pure function.
-- **`ShaderPermutationKey`** — stable hash of all axis values. Used as part of
-  `ShaderCacheKey`.
+  `ShaderCompileRequest`s by walking a declared permutation domain and
+  materializing concrete permutation vectors. Pure function.
+- **`ShaderPermutationDomainDesc`** — typed declaration of the legal
+  permutation dimensions for a package or shader family.
+- **`ShaderPermutationVector`** — one concrete choice of values inside a
+  permutation domain. Used to derive compile definitions and form cache keys.
+- **`ShaderPermutationKey`** — stable hash of a `ShaderPermutationVector`
+  under a specific domain schema version. Used as part of `ShaderCacheKey`.
 - **`ShaderCompileRequest`** — immutable, fully-resolved unit of work: source
   path, entry point, stage, target, define set, include roots, debug flags.
 - **`ShaderTarget`** — enum of (api, profile, shader model). E.g. `DxilSm66`,
@@ -287,7 +335,8 @@ Each entry: **role**, **owns**, **depends on**, **lifetime**.
 ### Backend
 
 - **`IShaderBackend`** — `Compile(ShaderCompileRequest) → CompiledArtifact`.
-  Returns bytecode + raw reflection blob + diagnostics.
+  Returns bytecode + raw reflection blob + diagnostics + optional debug
+  artifacts/intermediate outputs.
 - **`ShaderBackendCapabilities`** — query: which targets, which features (mesh
   shaders, raytracing), which reflection format.
 - **`DxcShaderBackend`** — adapter over `IDxcCompiler3`. Current concrete
@@ -319,6 +368,10 @@ Each entry: **role**, **owns**, **depends on**, **lifetime**.
   for humans, to JSON Lines for automation.
 - **`SourceMap`** — maps post-preprocess line numbers back to original source
   + line. Attached to errors so a paste-into-IDE jump works.
+- **`ShaderDebugArtifactSet`** — optional bundle of offline inspection
+  artifacts: preprocessed source, reflection dump, include graph snapshot,
+  compile-request replay data, backend disassembly, and backend-specific
+  intermediate representation files.
 
 ### Editor / hot reload (design-only seams)
 
@@ -328,12 +381,141 @@ Each entry: **role**, **owns**, **depends on**, **lifetime**.
   signal, asks RHI to re-open changed packages, and bumps shader-resource
   version numbers so PSO caches invalidate.
 
-## 8. Authoring Front-End: What A Manifest Is And Why
+## 8. Authoring Front-End: Global Shader Registration First
 
-A **manifest** is a declarative file that tells the cooker *what to cook*.
-It is the human-authored input. It does **not** contain shader code; it
-references `.hlsl` files. A manifest is to a shader pipeline what
-`CMakeLists.txt` is to a build system.
+The initial Sparkle design should not be manifest-first. It should be
+**global-shader-registration-first**.
+
+That means the primary authoring workflow is:
+
+- write `.hlsl` / `.hlsli` files
+- declare shaders in C++
+- point registration at source path + entry point + stage
+- attach optional permutation-domain metadata in C++
+- let the offline cooker discover those registrations and compile them
+
+This is much closer to how Unreal global shaders feel in practice, and it is a
+better fit for the current Sparkle scope because there are no material/uasset
+shader workflows yet.
+
+### Why this is the right simplification now
+
+If Sparkle supports only global shaders initially, a manifest file adds more
+surface area than value.
+
+For global shaders, the natural source of truth is usually the renderer or
+engine feature that owns the shader. That makes C++ registration a better fit:
+
+- the shader is declared next to the engine feature that uses it
+- source path, stage, and entry point live in one obvious place
+- permutation-domain setup can live next to registration
+- there is no need to invent a project/content authoring format before content
+  shaders exist
+
+So the design choice should be:
+
+```text
+Initial Sparkle scope:
+  global shaders only
+  C++ registration is the primary authoring surface
+
+Future extension:
+  declarative shader package files only if content/uasset shader workflows
+  appear and genuinely need them
+```
+
+### What Unreal-style C++ registration looks like in Sparkle
+
+The C++ side should feel familiar if you are used to Unreal:
+
+```cpp
+struct ShaderRegistrationDesc {
+    std::string_view ShaderId;
+    std::string_view ShaderFamilyId;
+    ShaderStage      Stage;
+    std::string_view SourcePath;
+    std::string_view EntryPoint;
+    std::string_view BindingLayoutId;
+    ShaderTarget     Target;
+    ShaderPermutationDomainDesc PermutationDomain;
+};
+
+RegisterShader({
+    .ShaderId = "FullscreenBlitPS",
+  .ShaderFamilyId = "FullscreenBlit",
+    .Stage = ShaderStage::Pixel,
+    .SourcePath = "/Engine/Shaders/PostProcess/FullscreenBlit.hlsl",
+    .EntryPoint = "MainPS",
+    .BindingLayoutId = "FullscreenPass",
+    .Target = ShaderTarget::DxilSm66,
+    .PermutationDomain = MakeDomain<UseGammaCorrection>()
+});
+```
+
+You could register a vertex shader and pixel shader into the same shader family
+in C++, and the cooker would normalize those registrations into one internal
+description for compilation and packaging.
+
+That gives you the Unreal-like workflow you are asking for:
+
+- write `.hlsl` / `.hlsli` shader files
+- declare VS / PS / CS entry points in C++
+- attach permutation-domain metadata in C++
+- let the offline compiler discover those registrations and cook them
+
+Under this initial scope, there is no need for a manifest at all.
+
+### Where manifests still fit later
+
+The earlier manifest discussion is still useful as a **future extension point**,
+not as an initial requirement.
+
+If Sparkle later grows into project-authored shader packages, content shaders,
+or asset-driven shader groups, then a declarative file format may become useful.
+But that should happen only when the engine actually has that category of work.
+
+For now, the recommendation is simple:
+
+```text
+Do what Unreal global shaders do:
+  register shaders in C++
+  compile them offline
+  keep runtime limited to cooked artifacts
+```
+
+### Why you need it in practice
+
+If Sparkle only ever compiled one shader file by hand, a manifest would be
+overkill. You could just run something like:
+
+```text
+dxc BasicLit.hlsl -E PSMain -T ps_6_6
+```
+
+That stops working the moment the engine needs more than "compile this one
+file once":
+
+- one package contains multiple stages that must stay compatible
+- the package has a binding layout id the runtime needs to agree with
+- the same shader has multiple variants or quality levels
+- the tool needs to know what output package name/path to produce
+- the editor or CI needs one stable input file that declares the whole set
+
+The manifest exists so the cooker can answer questions like:
+
+- Which packages are part of this project?
+- Which stages belong to each package?
+- Which entry points should be used?
+- Which binding layout does this package expect?
+- Which variants should be cooked?
+
+So the short version is:
+
+```text
+source file (.hlsl) = shader code
+manifest            = build declaration for shader packages
+cooker              = tool that reads both and emits cooked runtime artifacts
+```
 
 A minimal manifest in today's INI-flavored shape:
 
@@ -347,6 +529,48 @@ Variant       = Default
 Stage.Vertex  = Materials/BasicLit.hlsl | VSMain
 Stage.Pixel   = Materials/BasicLit.hlsl | PSMain
 ```
+
+Read that example as:
+
+- define one package named `BasicLit`
+- use the runtime binding layout `StandardMaterial`
+- cook the `Default` variant
+- compile `VSMain` as the vertex stage
+- compile `PSMain` as the pixel stage
+
+Slightly richer example with two packages:
+
+```ini
+[ShaderCookManifest]
+Version = 1
+
+[Package BasicLit]
+BindingLayout = StandardMaterial
+Variant       = Default
+Stage.Vertex  = Materials/BasicLit.hlsl | VSMain
+Stage.Pixel   = Materials/BasicLit.hlsl | PSMain
+
+[Package ShadowDepth]
+BindingLayout = ShadowPass
+Variant       = Default
+Stage.Vertex  = Shadow/ShadowDepth.hlsl | VSMain
+```
+
+This tells the cooker:
+
+- build a `BasicLit` package for the main material pass
+- build a separate `ShadowDepth` package for shadow rendering
+- each package has its own binding layout and stage set
+
+Without a manifest, that information has to live somewhere else anyway:
+
+- hardcoded in C++
+- buried in scripts
+- duplicated in the editor
+- duplicated in CI/build files
+
+That is why production systems usually want some declarative input file, even
+if they do not literally call it a manifest.
 
 Why packages, not loose stage files? Because the **runtime unit of binding** is
 a pipeline (vertex+pixel, or compute, or mesh+pixel). Cooking at the package
@@ -380,18 +604,72 @@ A **permutation** is one concrete compile of a stage with a specific set of
 material. Even a toy engine grows them quickly the moment quality levels,
 feature flags, or platform variants appear.
 
+The right mental model here is the one Unreal uses:
+
+- a **permutation domain** declares which dimensions exist
+- a **permutation vector** chooses one concrete value for each dimension
+- the compile environment is derived from that vector
+- `ShouldCompilePermutation`-style logic prunes illegal or wasteful cases
+
+That is better than treating permutations as a loose bag of defines. It gives
+the system structure, validation rules, and a stable identity.
+
 Target design:
 
-- Each package declares **variant axes** (e.g. `SHADOWS={On,Off}`,
-  `QUALITY={Low,High}`). The expander produces the cartesian product, optionally
-  pruned.
-- Pruning rules are first-class: `if SHADOWS=Off then QUALITY ignored`. This
-  is what Frostbite calls "permutation pruning" and UE handles via
-  `ShouldCompilePermutation`.
-- A **`ShaderPermutationKey`** is a stable hash of all axis values plus the
-  axis schema version. It is part of `ShaderCacheKey` and embedded in the
-  cooked package so the runtime can look up the right variant.
+- Each package or shader family declares a **`ShaderPermutationDomainDesc`**.
+  That domain defines the legal dimensions, their value sets, and the schema
+  version. Example dimensions:
+
+  - `USE_SHADOWS = {0,1}`
+  - `USE_NORMAL_MAP = {0,1}`
+  - `QUALITY = {Low, High}`
+
+- The expander walks the domain and produces concrete
+  **`ShaderPermutationVector`** instances. A vector is one specific choice,
+  for example:
+
+  - `USE_SHADOWS=1`
+  - `USE_NORMAL_MAP=0`
+  - `QUALITY=High`
+
+- The vector is the source of truth for compile definitions. The backend does
+  not receive a hand-assembled define bag from random call sites. It receives
+  a normalized vector, and the compile environment is derived from it.
+- Pruning rules are first-class and live next to the domain, not buried in
+  ad-hoc scripts. This is the equivalent of Unreal's
+  `ShouldCompilePermutation`: if a combination is invalid, unsupported, or not
+  worth the cook cost, it never becomes a compile request.
+- A **`ShaderPermutationKey`** is a stable hash of the
+  `ShaderPermutationVector` plus the domain schema version. It is part of
+  `ShaderCacheKey` and embedded in the cooked package so the runtime can look
+  up the right variant.
 - The runtime never *computes* permutations. It looks them up by key.
+
+Small example:
+
+```text
+Domain:
+  USE_SHADOWS   = {0,1}
+  QUALITY       = {Low,High}
+
+Candidate vectors:
+  { USE_SHADOWS=0, QUALITY=Low }
+  { USE_SHADOWS=0, QUALITY=High }
+  { USE_SHADOWS=1, QUALITY=Low }
+  { USE_SHADOWS=1, QUALITY=High }
+
+Prune rule:
+  if USE_SHADOWS=0, force QUALITY=Low
+
+Cooked vectors:
+  { USE_SHADOWS=0, QUALITY=Low }
+  { USE_SHADOWS=1, QUALITY=Low }
+  { USE_SHADOWS=1, QUALITY=High }
+```
+
+That gives Sparkle the same core benefit Unreal gets from permutation domains:
+definitions are no longer just strings; they are typed configuration choices
+with stable identity, explicit pruning, and deterministic cache keys.
 
 Out of scope for now: dynamic permutation generation from material graphs.
 That is a content-pipeline problem above this layer.
@@ -476,6 +754,21 @@ enum class ShaderTarget : std::uint16_t {
 
 `ShaderBackendCapabilities` answers: *can you compile this target?* *do you
 support mesh shaders?* *what reflection format do you emit?*
+
+For Sparkle, backend capability should also cover a tooling question:
+
+*which intermediate forms and debug artifacts can this backend expose?*
+
+Examples:
+
+- DXC path may expose preprocessed HLSL, reflection blobs, DXIL disassembly,
+  compiler replay arguments, and debug-info sidecar outputs.
+- Future SPIR-V path may expose SPIR-V binary, SPIR-V text disassembly, and
+  reflection dumps.
+
+Sparkle should treat those outputs as intentional offline products. They are
+useful for debugging, learning, and validating the pipeline, even when they do
+not participate in runtime loading.
 
 Concrete adapters:
 
@@ -599,6 +892,36 @@ Two renderers:
 - **JSON Lines renderer** for CI: one JSON object per line, deterministic
   field order, exit code reflects highest severity seen.
 
+### Intermediate representations and debug artifact bundles
+
+For this engine, access to intermediate representations is a feature, not a
+luxury. The system should be able to emit a structured debug bundle per shader
+compile or package when requested.
+
+```text
+DebugArtifactBundle/
+  compile-request.json
+  defines.json
+  include-graph.json
+  preprocessed-source.hlsl
+  reflection.json
+  backend-ir.bin / backend-ir.txt
+  disassembly.txt
+  compiler-stderr.txt
+```
+
+These artifacts exist for offline inspection only. They let you:
+
+- see what the backend actually compiled after preprocessing
+- understand how a permutation vector translated into concrete defines
+- inspect reflection output against the runtime binding model
+- study backend-generated disassembly or IR for learning/debugging
+- replay or reproduce a compile outside the engine when necessary
+
+That is especially useful for Sparkle because part of the value of the system is
+that it should teach you what the compiler and backend are doing, not just hide
+the result behind a final bytecode blob.
+
 ### Source maps
 
 DXC accepts `-Zi` for debug info. The cooker captures the preprocessed
@@ -621,6 +944,15 @@ Examples (all optional, all out-of-scope to implement now):
   pressure summaries to diagnostics.
 - **`PsoStatsPass`** — record bytecode size, resource counts, into a CSV.
 - **`ValidationPass`** — re-run DXC validator with stricter rules.
+
+Recommended ordering for Sparkle:
+
+- first build the debug artifact capture path
+- then expose backend disassembly and intermediate forms where available
+- only after that consider heavyweight vendor analyzers like RGA
+
+That gives immediate learning/debug value without making the initial system
+depend on any vendor-specific tool.
 
 These plug in at the cook orchestrator level. Their failure can be either
 warning or error per project policy.
@@ -843,10 +1175,252 @@ How they do it:
 - Reflection is normalized into `FShaderParameterMap` consumed by the renderer.
 
 Sparkle borrows: out-of-process worker model, content-addressed cache,
-package-as-unit-of-shipping.
+package-as-unit-of-shipping, and the idea that permutations should be modeled
+as an explicit domain with code-level pruning rather than as unstructured
+define lists.
 
 Sparkle skips: distributed farm, materials-as-shader-graphs, multi-cooker
 DDC sharding.
+
+#### Unreal runtime vs offline mental model
+
+The easiest way to understand Unreal is to stop looking for one manifest file
+and instead look at the **split of responsibilities**.
+
+```text
+AUTHORING / DECLARATION
+  .usf / .ush shader files
+  C++ shader type registration
+  material system
+  vertex factory types
+        │
+        ▼
+RUNTIME / EDITOR PROCESS
+  UnrealEditor.exe or the game process
+  owns materials, shader maps, render resources, PSOs
+  decides a shader map is missing / stale
+        │
+        ▼
+OFFLINE COMPILE PATH
+  build compile jobs
+  send them to ShaderCompileWorker processes
+  compile for target platform
+  return bytecode + parameter/reflection info
+        │
+        ▼
+CACHE / COOKED OUTPUT
+  store results in DDC
+  use cooked shader data during packaging/cooking
+  material shaders end up in cooked asset data
+  global shaders are stored separately for startup/runtime use
+```
+
+That leads to one important conclusion:
+
+- Unreal's **runtime/editor process** is the owner of shader usage,
+  materials, shader maps, and render resources.
+- Unreal's **offline/worker side** is the owner of heavy compilation work,
+  platform compiler invocation, and derived shader artifacts.
+
+It is not a perfectly pure separation in the abstract, because Unreal can be
+configured to compile more directly for debugging, but the production mental
+model is still: **runtime requests, worker compiles, DDC caches, cooked builds
+consume results**.
+
+More concretely:
+
+- Runtime/editor decides *what is needed*.
+  Example: a material needs a shader map for a given platform and vertex
+  factory combination.
+- Shader type registration decides *what may exist*.
+  Example: `FShaderType`, `FMaterialShaderType`, and
+  `FMeshMaterialShaderType` define the legal shader families.
+- Permutation domain logic decides *which combinations are legal*.
+  Example: `ShouldCompilePermutation` and compile-environment setup prune the
+  matrix.
+- ShaderCompileWorker decides *how compilation is executed*.
+  Example: helper processes call the platform compiler rather than doing all
+  work inline in the editor process.
+- DDC decides *whether work can be skipped*.
+  Example: if the shader inputs hash to an existing cached result, UE reuses
+  it instead of recompiling.
+- Cooking/package output decides *how runtime receives the result*.
+  Example: cooked builds ship shader data as derived/cooked content, not as
+  source that end users compile on their machines.
+
+This is the part Sparkle should copy conceptually.
+
+Sparkle does **not** need to copy Unreal's full shader-class hierarchy,
+material graph system, or distributed worker farm. But it **should** copy the
+decision split:
+
+- authoring/declaration layer says what may be built
+- runtime/editor layer decides what it needs
+- offline compiler layer performs compilation work
+- cache layer avoids recompiling unchanged inputs
+- cooked output layer is the only thing runtime consumes
+
+That is the real architectural lesson from Unreal, not the exact class names.
+
+#### Sparkle vs Unreal side-by-side
+
+The point of this comparison is not to say Sparkle should become Unreal.
+It is to make the architectural choices legible.
+
+##### Side-by-side flow
+
+```text
+SPARKLE TARGET DESIGN                             UNREAL PRODUCTION MODEL
+──────────────────────────────────────────        ──────────────────────────────────────────
+Author edits:                                    Author edits:
+  - .hlsl / .hlsli files                           - .usf / .ush files
+  - C++ shader registration                        - material graphs / settings
+  - permutation-domain metadata                    - C++ shader type registration
+                                                   - vertex factory / platform rules
+
+        │                                                      │
+        ▼                                                      ▼
+Planning layer:                                     Runtime/editor decides need:
+  - discover C++ registrations                        - material needs shader map
+  - normalize shader families                         - pass / VF / platform combination
+  - expand permutation domain                         - stale or missing shader job
+
+        │                                                      │
+        ▼                                                      ▼
+Offline compile layer:                               Offline compile layer:
+  - ShaderCompiler.exe                                 - ShaderCompileWorker
+  - IShaderBackend                                     - platform compiler invocation
+  - serial executor today                              - async / multi-worker scheduling
+
+        │                                                      │
+        ▼                                                      ▼
+Cache layer:                                         Cache layer:
+  - local shader artifact store                        - DDC local/shared/cloud
+  - content-addressed keys                             - content-addressed derived data
+
+        │                                                      │
+        ▼                                                      ▼
+Cooked output:                                      Cooked output:
+  - *.spkg + registry                                 - shader maps / cooked shader data
+  - RHI-owned schema                                  - cooked packages + global shader data
+
+        │                                                      │
+        ▼                                                      ▼
+Runtime consumes only cooked data                    Runtime consumes only cooked data
+  - RHI reader                                         - shader maps / global shaders
+  - renderer builds PSOs                               - renderer builds PSOs/resources
+```
+
+##### Responsibility split
+
+| Concern | Sparkle target design | Unreal production model | Takeaway |
+|---|---|---|---|
+| Authoring surface | `.hlsl` / `.hlsli` files + C++ registration | Distributed across shader files, C++ shader types, materials, vertex factories | Sparkle is simpler and more explicit; Unreal is more implicit and scalable |
+| What declares legal shaders | C++ registrations + permutation domain descriptors | `FShaderType`, material shader types, vertex factory types, platform rules | Both are code-registration driven, but Sparkle stays much smaller in scope |
+| What decides what must be compiled | Cook command + discovered registrations + permutation expansion | Runtime/editor discovers missing or stale shader maps | Sparkle is batch-first; Unreal is demand-driven in the editor |
+| Permutation modeling | `ShaderPermutationDomainDesc` + `ShaderPermutationVector` + pruning | permutation domain parameters + `ShouldCompilePermutation` | This is the main Unreal idea Sparkle should borrow directly |
+| Compile execution | `ShaderCompiler.exe` with backend adapters | `ShaderCompileWorker` helper processes | Same principle: heavy compile work should live out of process |
+| Cache | Local artifact store first, shared later if needed | DDC local/shared/cloud | Same principle, different scale |
+| Runtime contract | `*.spkg` schema owned by RHI | shader maps / cooked shader blobs owned by runtime systems | Runtime must consume cooked artifacts, not source |
+| Editor hot reload | spawn tool, recook, reload package, bump version | editor triggers recompilation and reloads shader maps | Same workflow shape, Unreal just has more infrastructure around it |
+| Platform scope | D3D12 first, Vulkan-ready interfaces | many platforms, many shader families | Sparkle should copy separation, not scale |
+
+##### Decision-making split
+
+| Question | Sparkle target owner | Unreal owner |
+|---|---|---|
+| What shaders exist? | C++ shader registration | shader type registration + material system |
+| Which permutations are legal? | permutation domain + prune rules | permutation domain + `ShouldCompilePermutation` |
+| Which permutations are needed right now? | cook command / package selection / future editor recook logic | editor/runtime shader-map demand |
+| How are they compiled? | `IShaderBackend` adapter | worker process + platform compiler path |
+| Can compilation be skipped? | `IShaderArtifactStore` key lookup | DDC key lookup |
+| What does runtime load? | `*.spkg` through RHI reader | cooked shader maps / global shader data |
+
+##### What Sparkle should copy vs not copy
+
+| Copy | Do not copy blindly |
+|---|---|
+| Clear runtime vs offline ownership | Full Unreal shader class hierarchy |
+| Out-of-process compile path | Material graph complexity |
+| Explicit permutation domain + vector model | Distributed worker farm right now |
+| Content-addressed cache keys | Full DDC product surface |
+| Runtime consumes cooked data only | Every Unreal-specific naming convention |
+
+The practical conclusion is:
+
+```text
+Sparkle should be Unreal-like in separation of concerns,
+not Unreal-like in sheer amount of machinery.
+```
+
+##### UE-inspired workflow for Sparkle: adopt now vs defer
+
+If the goal is a UE-inspired workflow without importing Unreal's full scale,
+the right move is to separate ideas into three buckets.
+
+| Bucket | Unreal-inspired element | Why it is worth it for Sparkle now |
+|---|---|---|
+| Adopt now | Clear runtime vs offline boundary | This is the most important architectural rule and gives immediate design clarity |
+| Adopt now | Out-of-process shader compiler executable | Keeps DXC and compiler failures out of runtime/editor code |
+| Adopt now | Explicit permutation domain + permutation vector model | Gives structured definitions, pruning, and stable cache identity |
+| Adopt now | Content-addressed shader cache | Prevents pointless recompiles and aligns with production workflows |
+| Adopt now | Editor-driven recook that spawns the offline tool | Matches the Unreal iteration loop without needing Unreal's full worker farm |
+| Adopt now | Runtime only loads cooked shader artifacts | Keeps shipping/runtime behavior deterministic |
+| Adopt now | Backend abstraction layer | Needed for Vulkan readiness without polluting the rest of the tool |
+
+| Bucket | Unreal-inspired element | Why it should wait |
+|---|---|---|
+| Defer | Multiple worker processes / compile farm | Great for scale, but operationally heavy and unnecessary while Sparkle is single-threaded |
+| Defer | Shared/cloud DDC product surface | Valuable later, but local cache is enough to prove the architecture first |
+| Defer | Full material graph driven shader generation | This explodes scope and ties the shader system to a much bigger content pipeline |
+| Defer | Huge shader type hierarchy like Unreal's | Sparkle needs the ownership split, not the entire taxonomy |
+| Defer | Massive platform matrix from day one | D3D12 first plus a clean Vulkan-ready seam is the right scope |
+| Defer | Deep editor tooling around shader maps, viewmodes, and diagnostics | Good later, but not required to prove a strong portfolio-grade pipeline |
+
+| Bucket | Unreal-inspired element | Why it is too big for now |
+|---|---|---|
+| Avoid for now | Reproducing Unreal's material system architecture | It is a rendering/content framework problem, not just a shader compiler problem |
+| Avoid for now | Reproducing all engine shader families and vertex factory combinations | Sparkle does not yet need Unreal's breadth of rendering abstractions |
+| Avoid for now | Treating runtime/editor as the owner of compile orchestration complexity | Sparkle should keep compile orchestration concentrated in the offline tool |
+| Avoid for now | Copying Unreal naming/macros/class shapes literally | The concepts matter; the exact surface does not |
+
+Recommended Sparkle workflow, inspired by UE but scaled down:
+
+```text
+1. Author edits .hlsl / .hlsli files and updates C++ registration if needed
+2. Editor or CI asks ShaderCompiler.exe to cook affected shader registrations
+3. ShaderCompiler expands permutation domains into vectors
+4. Cache decides which vectors actually need compilation
+5. Backend adapter compiles only cache misses
+6. Tool writes cooked packages + registry + reload signal
+7. Runtime/editor reopens cooked artifacts and rebuilds dependent PSOs lazily
+```
+
+That workflow is strongly Unreal-inspired in the right places:
+
+- offline compilation is separate from runtime use
+- permutations are first-class and pruned before compile
+- caching is part of the design, not an afterthought
+- editor iteration goes through the same cook path as automation
+
+But it stays small enough for Sparkle because:
+
+- one executable owns orchestration
+- one local cache is enough initially
+- one renderer/backend pair can prove the design
+- no distributed farm is needed
+- no giant material graph system is required
+
+If Sparkle wants a concise rule for decision-making, it should be this:
+
+```text
+Take Unreal's ownership boundaries, cache philosophy, and permutation model.
+Do not take Unreal's scale, taxonomy, or infrastructure footprint until
+Sparkle's real workloads force it.
+```
+
+For this design document, that rule is now treated as adopted architecture, not
+just advisory guidance.
 
 ### Frostbite
 
@@ -901,7 +1475,12 @@ How it works:
 Sparkle borrows: the *seam* — `IAnalysisPass` lets RGA-style passes plug in
 later without changing the core pipeline.
 
-Sparkle skips: shipping any vendor analyzer in the box; vendor ISA reporting.
+Sparkle also adopts a smaller adjacent idea: preserve backend intermediate
+representations and debug artifacts so developers can inspect what the compile
+pipeline produced even before any heavyweight vendor analysis tool is added.
+
+Sparkle skips: shipping any vendor analyzer in the box initially and making
+vendor ISA reporting mandatory for the first useful version of the system.
 
 ## 19. Sparkle Today vs Target (Gap Matrix)
 
@@ -910,7 +1489,7 @@ Sparkle skips: shipping any vendor analyzer in the box; vendor ISA reporting.
 | CLI dispatch | `CommandRegistry`, two verbs | same shape, more verbs, `--json` | `Tools/ShaderCompiler/Private/Cli/CommandRegistry.cpp` |
 | Manifest | hand-rolled INI parser | `IManifestSource` + versioned schema | `Tools/ShaderCompiler/Private/Manifest/ShaderCookManifestParser.cpp` |
 | Validation | rule list in one validator | same, more rules, structured errors | `Tools/ShaderCompiler/Private/Manifest/ShaderCookManifestValidator.cpp` |
-| Permutations | none (single variant per package) | `PermutationExpander` + `ShaderPermutationKey` | (new) |
+| Permutations | none (single variant per package) | `ShaderPermutationDomainDesc` + `ShaderPermutationVector` + `PermutationExpander` + `ShaderPermutationKey` | (new) |
 | Dependency graph | implicit (loop) | explicit `DependencyGraph` of `CookNode`s | (new) |
 | Cache | none (always recompiles) | `IShaderArtifactStore` content-addressed | (new) |
 | Backend abstraction | `DxcShaderCompiler` directly called | `IShaderBackend` + `DxcShaderBackend` adapter | `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.cpp` |
@@ -918,67 +1497,377 @@ Sparkle skips: shipping any vendor analyzer in the box; vendor ISA reporting.
 | Cooked package | binary with header + records | same, schema already neutral | `Engine/RHI/Public/Shaders/CookedShaderPackage.h` |
 | Schema versioning | `Magic` + `Version` already present | add migration playbook + loader policy | `Engine/RHI/Public/Shaders/CookedShaderPackage.h` |
 | Diagnostics | log strings | `CookDiagnosticSink` + JSON Lines + source maps | (new) |
+| Intermediate visibility | minimal | `ShaderDebugArtifactSet` + optional IR/disassembly dump path | (new) |
 | Editor hot reload | not implemented | spawn-tool + `ShaderRecookSignal` + watcher | (new) |
 | Boundary enforcement | CMake script in place | keep, extend with new forbidden tokens | `CMake/Validation/ValidateShaderCompilerBoundary.cmake` |
 | Threading | serial loop | serial executor + DAG-ready interface | `Tools/ShaderCompiler/Private/Cooking/ShaderPackageCooker.cpp` |
 
-## 20. Phased Evolution Roadmap
+## 20. Implementation Playbook
 
-Each phase: scope, files touched (illustrative), exit criteria.
+This chapter is the working contract for *how* the design in chapters 1–19
+gets built. Every phase is shaped the same way so progress is checkable and
+each increment is visible end-to-end.
+
+### How to read a phase
+
+Each phase has six sections:
+
+1. **Goal.** One sentence describing the user-visible increment.
+2. **Prerequisites.** What must be true before starting.
+3. **Work Items.** Numbered, granular tasks. Each is small enough to land in
+   one PR and reviewable in isolation.
+4. **Implementation Prompts.** Copy-paste-ready prompts you can hand to an
+   agent (or use as your own checklist). Each prompt is self-contained and
+   names the files it is allowed to touch.
+5. **Validation Gates.** Binary pass/fail checks. A gate is the equivalent
+   of a green light: if any gate fails, the phase is not done. Gates are
+   listed as either a CLI invocation, a CMake check, or a one-line manual
+   verification a reviewer can perform.
+6. **Increment Demo.** What you can *show* at the end of the phase — the
+   tangible artifact a reviewer or portfolio viewer can see.
+
+Global invariants that all phases must keep green:
+
+- `cmake --build build --target ValidateShaderCompilerBoundary` passes.
+- Renderer/RHI/Editor link no shader compiler.
+- `ShaderCompiler.exe cook` succeeds on the Showcase project.
+- The cooked package format only changes on a deliberate `Version` bump
+  documented in the migration playbook (Ch.13).
+- The shader compiler executor remains single-threaded.
 
 ### Phase 0 — Stabilize current state
 
-- **Scope.** Restore full build; add a smoke cook in CI; document current
-  manifest format precisely.
-- **Files.** existing `Tools/ShaderCompiler/*`.
-- **Exit criteria.** `ShaderCompiler cook` succeeds end-to-end on the
-  Showcase project; CI runs `cook` + `inspect-manifest` on every PR.
+- **Goal.** A clean baseline: the existing tool builds, cooks, and is
+  guarded by CI before any refactor begins.
+- **Prerequisites.** None.
+- **Work Items.**
+  1. Confirm `Tools/ShaderCompiler/` builds in Debug + Release.
+  2. Add a CI job that runs `ShaderCompiler.exe cook` + `inspect-manifest`
+     on the Showcase project on every PR.
+  3. Snapshot the current manifest format in `docs/plans/` as the frozen
+     v0 reference.
+  4. Run `ValidateShaderCompilerBoundary.cmake` in CI; fix any current
+     boundary violations before the refactor begins.
+- **Implementation Prompts.**
+  - *"Add a CI job that builds `Tools/ShaderCompiler` and runs
+    `ShaderCompiler.exe cook --no-cache` against the Showcase project.
+    Fail the job on non-zero exit. Touch only CI config and
+    `Scripts/`."*
+  - *"Audit the current `Tools/ShaderCompiler` for any include of
+    Renderer/Editor private headers; remove them and re-run
+    `ValidateShaderCompilerBoundary.cmake`."*
+- **Validation Gates.**
+  - `cmake --build build --target Sparkle ShaderCompiler` succeeds.
+  - `ShaderCompiler.exe cook` exit code is `0` on Showcase.
+  - `cmake --build build --target ValidateShaderCompilerBoundary` succeeds.
+  - CI job is wired and runs on PRs.
+- **Increment Demo.** A green CI badge on a no-op PR; cook log printed at
+  the end of the build.
 
 ### Phase 1 — Dependency graph + content-addressed cache
 
-- **Scope.** Introduce `CookNode`, `DependencyGraph`, `ICookExecutor`
-  (serial), `ShaderCacheKey`, `IShaderArtifactStore` (local on-disk).
-- **Files.** New `Tools/ShaderCompiler/Private/Cook/` directory; refactor
-  `ShaderPackageCooker` to drive the graph instead of looping.
-- **Exit criteria.** Re-running `cook` with no changes does zero compile
+- **Goal.** Re-running `cook` with no changes performs zero backend
   invocations and finishes in milliseconds.
+- **Prerequisites.** Phase 0 gates green.
+- **Work Items.**
+  1. Introduce `Tools/ShaderCompiler/Private/Cook/CookNode.h/cpp` and
+     `DependencyGraph.h/cpp`.
+  2. Introduce `ICookExecutor` and a `SerialCookExecutor` implementation.
+  3. Introduce `ShaderCacheKey` (content-addressed: source hash + include
+     closure hash + options hash + backend version + schema version).
+  4. Introduce `IShaderArtifactStore` with a local on-disk implementation
+     under `bin/Cache/Shaders/`. Use temp-file + atomic rename for writes.
+  5. Refactor `ShaderPackageCooker` to build a graph and drive the executor
+     instead of looping.
+  6. Add a `--no-cache` CLI flag (already documented in Ch.16) and a
+     `--cache-dir <path>` flag.
+- **Implementation Prompts.**
+  - *"Create `CookNode` and `DependencyGraph` types under
+    `Tools/ShaderCompiler/Private/Cook/`. A `CookNode` wraps one
+    `ShaderCompileRequest` plus its resolved input hashes. The graph is a
+    DAG with topological-order traversal. No threading. Add unit tests
+    under `Tools/ShaderCompiler/Tests/`."*
+  - *"Implement `IShaderArtifactStore` and `LocalDiskShaderArtifactStore`
+    under `Tools/ShaderCompiler/Private/Cook/Cache/`. Keys map to files at
+    `<cache-dir>/<first-2-hex>/<full-hex>.bin`. Writes go through a
+    temp-file + `std::filesystem::rename`. Reads return `std::optional`.
+    Add unit tests covering miss → put → hit."*
+  - *"Refactor `ShaderPackageCooker::Cook` to (a) expand the manifest into
+    `CookNode`s, (b) compute `ShaderCacheKey` per node, (c) ask the store
+    for a hit, (d) on miss invoke the backend, (e) put result back. Keep
+    the executor serial. Do not change the cooked package format."*
+- **Validation Gates.**
+  - First cook on a clean cache: full backend invocations, exit `0`.
+  - Second cook with no source changes: backend invocation count is `0`,
+    wall time `< 500 ms` on Showcase, exit `0`.
+  - Touching one `.hlsl` file: only nodes whose include closure contains
+    that file are recompiled.
+  - `--no-cache` forces full recompile.
+  - Cooked output is byte-identical between cached and uncached runs.
+- **Increment Demo.** A `time` comparison in CI logs: cold cook vs warm
+  cook. Cache directory layout visible under `bin/Cache/Shaders/`.
 
-### Phase 2 — Backend abstraction + reflection
+### Phase 2 — Backend abstraction + rich reflection + DebugArtifactBundle
 
-- **Scope.** Extract `IShaderBackend`. Move DXC behind `DxcShaderBackend`.
-  Introduce `ShaderTarget`. Extract `IReflectionExtractor` + `ShaderReflection`.
-  Wire reflection through to the cooked package.
-- **Files.** New `Tools/ShaderCompiler/Backends/`. Cooked package writer
-  consumes `ShaderReflection` instead of layout directly.
-- **Exit criteria.** No file outside `Tools/ShaderCompiler/Backends/Dxc/`
-  mentions DXC. Renderer consumes `ShaderReflection` only.
+- **Goal.** DXC lives behind one adapter. The cooker can already emit both
+  DXIL and SPIR-V targets through the same backend. `ShaderReflection` is
+  PSO-grade. Every compile can optionally drop a `DebugArtifactBundle/`.
+- **Prerequisites.** Phase 1 gates green.
+- **Work Items.**
+  1. Define `IShaderBackend`, `ShaderBackendCapabilities`,
+     `ShaderCompileEnvironment`, `ShaderTarget`, and `CompiledArtifact`
+     under `Tools/ShaderCompiler/Public/Backend/`.
+  2. Move all DXC code under `Tools/ShaderCompiler/Backends/Dxc/` as
+     `DxcShaderBackend` implementing `IShaderBackend`. The backend reports
+     support for both `Dxil*` and `SpirV*` targets (DXC's `-spirv` mode).
+  3. Rip every reference to `dxcompiler` outside
+     `Tools/ShaderCompiler/Backends/Dxc/`. Extend
+     `ValidateShaderCompilerBoundary.cmake` with a new forbidden token
+     check.
+  4. Define `ShaderReflection` in
+     `Engine/RHI/Public/Shaders/ShaderReflection.h` covering: bindings
+     (descriptor `Set`/`Space` + `Slot`/`Register` + `Count`), constant
+     buffer member layout (name, offset, size, type, array stride), thread
+     group size, IO signature, push/root-constant ranges, specialization
+     constants, resource access, entry-point metadata.
+  5. Implement `IReflectionExtractor` + `DxilReflectionExtractor` +
+     `SpirVReflectionExtractor`. Both produce the same normalized
+     `ShaderReflection`.
+  6. Wire reflection into the cooked package. Bump
+     `kCookedShaderPackageVersion` and follow the migration playbook in
+     Ch.13.
+  7. Implement `ShaderDebugArtifactSet` writer. Add CLI flag
+     `--debug-artifacts <dir>` that writes one bundle per
+     (shader id, permutation, target).
+- **Implementation Prompts.**
+  - *"Define `IShaderBackend`, `ShaderBackendCapabilities`,
+    `ShaderCompileEnvironment`, and `ShaderTarget` exactly as Ch.11
+    describes. Place public headers in
+    `Tools/ShaderCompiler/Public/Backend/`. Implementations under
+    `Tools/ShaderCompiler/Backends/`. Do not name DXC anywhere outside
+    `Tools/ShaderCompiler/Backends/Dxc/`."*
+  - *"Implement `DxcShaderBackend` so it can compile both DXIL and SPIR-V
+    by selecting the target via `ShaderTarget` and toggling DXC's `-spirv`
+    mode. Both code paths share the same compile environment marshalling
+    and the same diagnostic translation. Add a smoke test that cooks one
+    PS to both targets and checks the resulting `*.spkg` contains both
+    binaries."*
+  - *"Define the full `ShaderReflection` struct in
+    `Engine/RHI/Public/Shaders/ShaderReflection.h`. Implement
+    `DxilReflectionExtractor` (DXC) and `SpirVReflectionExtractor`
+    (SPIRV-Reflect). Round-trip the reflection through the cooked package.
+    Bump the package version and add a `LoadV<N-1>` migration entry."*
+  - *"Add a `--debug-artifacts <dir>` flag to `ShaderCompiler.exe`. For
+    every successful compile, emit a folder named
+    `<shaderId>__<permutationHash>__<target>/` containing
+    `compile-request.json`, `defines.json`, `preprocessed-source.hlsl`,
+    `reflection.json`, `disassembly.txt`, and `compiler-stderr.txt`."*
+- **Validation Gates.**
+  - `grep -r "dxc\|IDxcCompiler\|dxcompiler" Tools/ShaderCompiler/`
+    returns matches *only* under `Tools/ShaderCompiler/Backends/Dxc/`.
+  - `cmake --build build --target ValidateShaderCompilerBoundary`
+    succeeds with the new forbidden-token check enabled.
+  - `ShaderCompiler.exe cook --target=DxilSm66,SpirV16` produces a cooked
+    package containing both binaries; `inspect-package` lists both.
+  - Reflection JSON for a known shader contains every field listed in
+    Ch.12 (descriptor space/set, CB member offsets, thread group, etc.).
+  - Renderer/RHI consume `ShaderReflection` only; no renderer file
+    includes a DXC header.
+  - `--debug-artifacts <tmp>` produces the documented bundle layout.
+- **Increment Demo.** Side-by-side `inspect-package` showing the same
+  shader compiled to DXIL and SPIR-V, plus a `DebugArtifactBundle/`
+  directory tree printed by `tree`.
 
-### Phase 3 — Permutations
+### Phase 3 — Typed shader classes, permutations, parameter-struct verification, inspect CLI
 
-- **Scope.** Introduce `ShaderPermutationKey`, axis declarations in manifest,
-  `PermutationExpander`, pruning rules.
-- **Files.** `Tools/ShaderCompiler/Private/Permutation/`. Cooked package
-  gains permutation key in record metadata.
-- **Exit criteria.** A package can declare ≥2 axes and the runtime can pick
-  the right variant by key.
+- **Goal.** Shaders are authored as UE-style typed C++ classes with typed
+  parameter structs and typed permutation domains. The cooker validates
+  every compile against the declared parameter struct and refuses on
+  mismatch. The CLI lets you list and inspect any shader.
+- **Prerequisites.** Phase 2 gates green.
+- **Work Items.**
+  1. Implement the typed authoring surface from Ch.8 / Ch.8.5 / Ch.9:
+     `TGlobalShader<T>`, `BEGIN_SHADER_PARAMETER_STRUCT`,
+     `SHADER_PARAMETER*` macros, `TShaderPermutationDomain`,
+     `ShaderPermutationBool`, `ShaderPermutationEnum`,
+     `IMPLEMENT_GLOBAL_SHADER`, `ShouldCompilePermutation`,
+     `ModifyCompilationEnvironment`.
+  2. Macros expand into static `ShaderRegistrationDesc` records held by an
+     `IShaderRegistrationSource` registry the cooker reads at startup.
+  3. Implement `PermutationExpander`: walk each registered shader's
+     domain, prune via `ShouldCompilePermutation`, emit one
+     `ShaderCompileRequest` per surviving vector × target.
+  4. Implement `ShaderParameterStructDescriptor` (generated by
+     `BEGIN_SHADER_PARAMETER_STRUCT`) and
+     `ShaderParameterStructVerifier` (cook-time check against
+     `ShaderReflection`). Mismatch → cook failure with diagnostic code
+     `SC2xxx`.
+  5. Implement runtime `TShaderRef<T>` lookup that finds the cooked entry
+     by `(shader id, permutation key, target)`.
+  6. Add CLI verbs: `list-shaders`, `list-permutations <ShaderId>`,
+     `inspect-shader <ShaderId> [--permutation k=v,...] [--target ...]`.
+     `inspect-shader` emits the same `DebugArtifactBundle/` content for
+     one shader on demand.
+  7. Convert one existing global shader (e.g. `FullscreenBlit`) end-to-end
+     to the new authoring surface as the canonical reference.
+- **Implementation Prompts.**
+  - *"Implement `TGlobalShader<T>`, `BEGIN_SHADER_PARAMETER_STRUCT`,
+    `SHADER_PARAMETER`, `SHADER_PARAMETER_TEXTURE`,
+    `SHADER_PARAMETER_RDG_BUFFER_SRV`, and `IMPLEMENT_GLOBAL_SHADER` in
+    `Engine/RHI/Public/Shaders/Authoring/`. Macros expand into POD
+    descriptors plus a `static const ShaderRegistrationDesc&` registered
+    at static init. No runtime cost beyond a vector push at init."*
+  - *"Implement `TShaderPermutationDomain<...>`, `ShaderPermutationBool`,
+    and `ShaderPermutationEnum<E, Count>`. Provide `ToVector()` and
+    `FromKey(ShaderPermutationKey)`. Add unit tests covering domain
+    enumeration, pruning, and stable key hashing."*
+  - *"Implement `ShaderParameterStructVerifier::Verify(descriptor,
+    reflection) -> std::optional<MismatchReport>`. Mismatch checks: missing
+    binding, type mismatch, size mismatch, register/space mismatch, array
+    count mismatch. Wire into the cook so a mismatch becomes a `SC2001`
+    diagnostic and the cook exits with code `6`."*
+  - *"Add CLI verbs `list-shaders`, `list-permutations <id>`,
+    `inspect-shader <id> [--permutation k=v,...] [--target ...]` to
+    `Tools/ShaderCompiler/Private/Cli/`. `inspect-shader` writes the
+    same `DebugArtifactBundle/` layout for one shader on demand and
+    prints a one-page summary to stdout."*
+  - *"Convert `FullscreenBlit` to the typed authoring surface. Delete the
+    legacy registration. Ensure the cook still produces the same cooked
+    bytecode (modulo header version) and the renderer still draws."*
+- **Validation Gates.**
+  - `ShaderCompiler.exe list-shaders` enumerates ≥1 shader with its
+    permutation domain and target list.
+  - `ShaderCompiler.exe list-permutations FullscreenBlitPS` enumerates
+    only legal vectors after `ShouldCompilePermutation` pruning.
+  - `ShaderCompiler.exe inspect-shader FullscreenBlitPS --permutation
+    UseGammaCorrection=1` writes a complete `DebugArtifactBundle/`.
+  - Introducing a deliberate mismatch (rename a `SHADER_PARAMETER` field)
+    causes the cook to fail with `SC2xxx` and a non-zero exit code.
+  - `--allow-parameter-mismatch` downgrades the same mismatch to a
+    warning (transitional flag).
+  - Cooked package round-trips through the RHI reader; renderer renders
+    the converted `FullscreenBlit` shader correctly.
+  - Permutation key hashing is stable across runs (re-running the cook
+    produces the same keys).
+- **Increment Demo.** Terminal recording of `list-shaders` →
+  `list-permutations` → `inspect-shader` → deliberate-typo-causes-cook-
+  fail → fix → cook-passes. The `FullscreenBlit` C++ class shown side by
+  side with the corresponding `reflection.json`.
 
-### Phase 4 — SPIR-V adapter (Vulkan readiness)
+### Phase 4 — Editor hot reload via out-of-process recook
 
-- **Scope.** Implement `SpirVShaderBackend` (likely via DXC's SPIR-V codegen).
-  Introduce a `SpirVReflectionExtractor`. Verify the cooked package emits
-  `CookedShaderBinaryFormat::SpirV` correctly.
-- **Files.** `Tools/ShaderCompiler/Backends/SpirV/`.
-- **Exit criteria.** A trivial compute shader cooks to SPIR-V and the cooked
-  package round-trips through the RHI reader. (Renderer Vulkan path is a
-  separate effort; this phase only proves the cooker.)
+- **Goal.** Saving an `.hlsl` file with the editor open triggers a recook
+  and the viewport reflects the new shader without restart, with the
+  editor still linking no compiler.
+- **Prerequisites.** Phase 3 gates green.
+- **Work Items.**
+  1. Implement `ShaderRecookSignal` (marker file written atomically by
+     the tool on successful cook).
+  2. Implement `ShaderRecookWatcher` in `Engine/Editor/ShaderRecook/`
+     using `ReadDirectoryChangesW` + an explicit "Recompile shaders"
+     menu action.
+  3. On signal, the editor diffs the registry, asks RHI to reopen changed
+     `*.spkg` files, and bumps `ShaderResource::Version`.
+  4. Renderer's PSO cache observes the version bump and lazily rebuilds
+     dependent PSOs.
+  5. Editor surfaces structured diagnostics from the spawned tool's
+     stderr (`--json`) in a status panel.
+  6. Atomic-rename writes for both `*.spkg` and the registry.
+- **Implementation Prompts.**
+  - *"Implement `ShaderRecookSignal` as `bin/Cache/Shaders/recook.signal`
+    written via temp-file + atomic rename at the end of every successful
+    cook. The file contents are the registry file hash."*
+  - *"Implement `ShaderRecookWatcher` in
+    `Engine/Editor/ShaderRecook/`. On `recook.signal` change, parse the
+    new registry, diff against the previously loaded one, call
+    `RHI::ReopenCookedPackage(packageId)` for each changed entry, and
+    increment `ShaderResource::Version`. Add a 'Recompile Shaders'
+    editor menu action that spawns `ShaderCompiler.exe cook --json` and
+    streams stderr into a status panel."*
+  - *"Make the renderer's PSO cache key include
+    `ShaderResource::Version` so a version bump invalidates dependent
+    PSOs. Recreate them lazily on next draw."*
+- **Validation Gates.**
+  - `cmake --build build --target ValidateShaderCompilerBoundary`
+    succeeds; the editor links no compiler symbol.
+  - With editor running, edit `FullscreenBlit.hlsl` → save → viewport
+    reflects the change within one frame after recook completes, no
+    restart required.
+  - Forcing a cook failure (introduce a syntax error) leaves the
+    previous artifacts in place; editor surfaces the diagnostic without
+    crashing.
+  - Concurrent reads during a recook never observe a partial file
+    (atomic rename test).
+- **Increment Demo.** Screen recording: editor open, edit shader, save,
+  see viewport update; then introduce error, see diagnostic in panel,
+  fix, see green.
 
-### Phase 5 — Editor hot reload + analysis hooks
+### Phase 5 — Editor shader inspector + analysis seam + glslang seam
 
-- **Scope.** `ShaderRecookSignal` emission; editor-side `ShaderRecookWatcher`;
-  ShaderResource version bumping. Optional `IAnalysisPass` seam.
-- **Files.** `Engine/Editor/ShaderRecook/`, `Engine/RHI/Shaders/Reload.h`.
-- **Exit criteria.** Saving an `.hlsl` file with the editor open triggers a
-  recook and the editor viewport reflects the new shader without restart.
+- **Goal.** Visualize shader compilation products inside the editor and
+  document the optional analysis/secondary-backend seams without making
+  them mandatory.
+- **Prerequisites.** Phase 4 gates green.
+- **Work Items.**
+  1. Editor "Shader Inspector" panel that browses `DebugArtifactBundle/`
+     directories: select shader → permutation → target → view
+     preprocessed source, reflection, disassembly, parameter-struct match
+     report.
+  2. Per-PSO live overlay: selected PSO in the renderer debug HUD shows
+     its shader class, permutation vector, last cook timestamp,
+     reflection summary.
+  3. `IAnalysisPass` seam in the cooker: optional pass list invoked after
+     each successful compile. Ship one example wrapper
+     (`PsoStatsPass` writing bytecode size + resource counts to CSV).
+  4. Document `GlslangShaderBackend` as a future seam in Ch.11; do not
+     implement unless DXC's SPIR-V mode misses something concrete.
+  5. Optional: `RgaAnalysisPass` skeleton that shells out to AMD RGA if
+     installed and attaches ISA/register-pressure to diagnostics.
+- **Implementation Prompts.**
+  - *"Add a Shader Inspector panel to the editor. It reads only on-disk
+    artifacts under `bin/Cache/Shaders/Debug/`. Tree view: shader →
+    permutation → target. Detail tabs: Source (preprocessed),
+    Reflection (table), Disassembly (text), Param Match (status). The
+    editor must not link the compiler."*
+  - *"Implement `IAnalysisPass` and `PsoStatsPass` in
+    `Tools/ShaderCompiler/Private/Analysis/`. Wire a `--analysis pso-stats`
+    CLI flag that runs the pass list. Output goes to
+    `bin/Cache/Shaders/Analysis/<shaderId>.csv`."*
+- **Validation Gates.**
+  - Inspector panel opens, lists every shader the cooker registered, and
+    renders the four detail tabs without error for a known shader.
+  - Running `ShaderCompiler.exe cook --analysis pso-stats` produces a
+    CSV whose row count equals the number of cooked permutations.
+  - Boundary validator still passes — the inspector reads files only.
+- **Increment Demo.** Screenshot of the Shader Inspector showing
+  preprocessed source + reflection + disassembly side by side; CSV
+  excerpt from `pso-stats`.
+
+### Phase tracker (snapshot)
+
+Use this checklist as the live progress view; check off gates, not
+intents.
+
+```text
+[ ] Phase 0 — Stabilize current state
+    [ ] Build green   [ ] CI cook job   [ ] Boundary validator green
+[ ] Phase 1 — Dependency graph + cache
+    [ ] Cold cook    [ ] Warm cook = 0 backend invocations
+    [ ] Targeted invalidation works   [ ] --no-cache forces recompile
+[ ] Phase 2 — Backend abstraction + reflection + DebugArtifactBundle
+    [ ] DXC contained to Backends/Dxc/   [ ] DXIL + SPIR-V both cooked
+    [ ] PSO-grade reflection lands   [ ] DebugArtifactBundle/ writes
+[ ] Phase 3 — Typed shaders + permutations + verification + inspect CLI
+    [ ] list-shaders / list-permutations / inspect-shader work
+    [ ] Parameter-struct verifier rejects mismatches
+    [ ] FullscreenBlit converted as reference
+[ ] Phase 4 — Editor hot reload
+    [ ] Save .hlsl → viewport updates without restart
+    [ ] Failed cook surfaces diagnostic, keeps old artifacts
+[ ] Phase 5 — Inspector + analysis seam + glslang seam
+    [ ] Editor Shader Inspector panel
+    [ ] PsoStatsPass CSV   [ ] GlslangShaderBackend documented
+```
 
 ## 21. Open Questions
 
@@ -1013,7 +1902,9 @@ Front-end:
 
 Plan:
   PermutationExpander     desc → list of compile requests
-  ShaderPermutationKey    stable hash of axis values
+  ShaderPermutationDomainDesc declared legal permutation dimensions
+  ShaderPermutationVector one concrete value selection within a domain
+  ShaderPermutationKey    stable hash of a permutation vector
   ShaderCompileRequest    immutable unit of work
   ShaderTarget            target API + profile enum
 
@@ -1048,6 +1939,7 @@ Output:
 Diagnostics:
   CookDiagnosticSink      structured diagnostic receiver
   SourceMap               post-preprocess line → original line
+  ShaderDebugArtifactSet  optional bundle of IR/disassembly/debug outputs
 
 Editor / hot reload:
   ShaderRecookSignal      marker file emitted on successful cook
@@ -1072,6 +1964,10 @@ Editor / hot reload:
   Unit of runtime binding.
 - **Permutation / variant** — one specific compile of a package or stage
   parameterised by `#define`s, target, quality flags.
+- **Permutation domain** — the typed declaration of which permutation
+  dimensions exist and what values they may take.
+- **Permutation vector** — one concrete selection of values inside a
+  permutation domain. This is the real input to compile-environment setup.
 - **Pipeline (engine sense)** — the orchestration system around a backend
   compiler: planning, caching, packaging, registry. What this document is
   about.
