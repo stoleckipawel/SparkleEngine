@@ -18,9 +18,10 @@ void BindingRecordBuilder::Build(
 	for (std::size_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
 	{
 		const PassParameterDesc& parameter = parameters[parameterIndex];
+		const Engine::Strings::StringTableEntry nameEntry = stringTable.Add(parameter.Name);
 		outBindingRecords.push_back(
 		    CookedShaderBindingRecord{
-		        .Name = stringTable.Add(parameter.Name),
+		        .Name = CookedShaderStringRef{nameEntry.OffsetInBytes, nameEntry.SizeInBytes},
 		        .SemanticKind = parameter.Kind,
 		        .ResourceDomain = parameter.ResourceDomain,
 		        .Access = parameter.Access,
@@ -29,6 +30,4 @@ void BindingRecordBuilder::Build(
 		        .ArrayCount = parameter.ArrayCount,
 		        .ValueSizeInBytes = parameter.ValueSizeInBytes});
 	}
-}
-
 }

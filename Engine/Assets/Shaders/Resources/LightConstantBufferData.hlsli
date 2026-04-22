@@ -9,7 +9,7 @@ struct DirectionalLightConstantBufferData
 	float Intensity;
 
 	float3 Color;
-	float _pad0;
+	uint CastShadow;
 };
 
 struct PerViewLightingConstantBufferData

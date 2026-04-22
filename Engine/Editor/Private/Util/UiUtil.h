@@ -25,5 +25,7 @@ namespace UiUtil
 
 	bool EditColor3(const char* label, float values[3]);
 
+	bool EditCheckbox(const char* label, bool& value);
+
 	void DrawSectionHeader(const char* title);
 }  // namespace UiUtil

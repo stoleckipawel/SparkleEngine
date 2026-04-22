@@ -64,6 +64,13 @@ namespace LevelParsing
 			return true;
 		}
 
+		if (key == "CastShadow" || key == "DirectionalCastShadow")
+		{
+			outIndex = 0;
+			outField = "CastShadow";
+			return true;
+		}
+
 		return false;
 	}
 
@@ -100,6 +107,18 @@ namespace LevelParsing
 				errorMessage = "Invalid directional light color";
 				return false;
 			}
+			return true;
+		}
+
+		if (directionalLightField == "CastShadow")
+		{
+			bool castShadow = true;
+			if (!Engine::Strings::TryParseBool(parsedLine.value, castShadow))
+			{
+				errorMessage = "Invalid directional light CastShadow value";
+				return false;
+			}
+			directionalLightDesc.castShadow = castShadow;
 			return true;
 		}
 
@@ -146,6 +165,7 @@ namespace LevelParsing
 			output << "DirectionalLight" << lightIndex << "Intensity = " << directionalLight.intensity << "\n";
 			output << "DirectionalLight" << lightIndex << "Color = " << directionalLight.color.x << ", " << directionalLight.color.y << ", "
 			       << directionalLight.color.z << "\n";
+			output << "DirectionalLight" << lightIndex << "CastShadow = " << (directionalLight.castShadow ? "true" : "false") << "\n";
 		}
 
 		output << "\n";

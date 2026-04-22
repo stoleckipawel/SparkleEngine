@@ -20,6 +20,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		lighting.DirectionalLights[lightIndex].Direction = {sourceLight.direction.x, sourceLight.direction.y, sourceLight.direction.z};
 		lighting.DirectionalLights[lightIndex].Intensity = sourceLight.intensity;
 		lighting.DirectionalLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};
+		lighting.DirectionalLights[lightIndex].CastShadow = sourceLight.castShadow ? 1u : 0u;
 	}
 
 	return lighting;

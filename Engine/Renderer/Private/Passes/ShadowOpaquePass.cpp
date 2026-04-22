@@ -17,6 +17,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Config/RenderConfig.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
 #include "Pipeline/PassBinder.h"
@@ -48,6 +49,13 @@ ShaderPackageDefinition ShadowOpaquePass::DescribeShadowViewShaderPackage() noex
 void ShadowOpaquePass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex)
 {
 	if (lightIndex >= context.Frame.shadowViewCount)
+	{
+		return;
+	}
+
+	const std::size_t directionalLightIndex = lightIndex / RenderConfig::Shadows::MaxCascades;
+	const auto& directionalLights = context.Frame.sceneData.directionalLights;
+	if (directionalLightIndex >= directionalLights.size() || !directionalLights[directionalLightIndex].castShadow)
 	{
 		return;
 	}

@@ -231,6 +231,13 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 		lightDesc.color = clampedColor;
 		light.ApplyDesc(lightDesc);
 	}
+
+	bool castShadow = lightDesc.castShadow;
+	if (UiUtil::EditCheckbox("Cast Shadow", castShadow))
+	{
+		lightDesc.castShadow = castShadow;
+		light.ApplyDesc(lightDesc);
+	}
 	UiUtil::EndSectionCard();
 }
 

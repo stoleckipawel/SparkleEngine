@@ -284,6 +284,37 @@ namespace UiUtil
 		return changed;
 	}
 
+	bool EditCheckbox(const char* label, bool& value)
+	{
+		ImFont* monoFont = SparkleUiTheme::GetMonoFont();
+		bool changed = false;
+
+		ImGui::PushID(label);
+		if (ImGui::BeginTable(
+		        "##checkbox_row",
+		        2,
+		        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+		{
+			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, PropertyLabelWidth);
+			ImGui::TableSetupColumn("editor", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableNextRow();
+
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			PushFontIfAvailable(monoFont);
+			ImGui::TextDisabled("%s", label);
+			PopFontIfAvailable(monoFont);
+
+			ImGui::TableSetColumnIndex(1);
+			changed = ImGui::Checkbox("##checkbox", &value);
+
+			ImGui::EndTable();
+		}
+		ImGui::PopID();
+
+		return changed;
+	}
+
 	void DrawSectionHeader(const char* title)
 	{
 		ImFont* headingFont = SparkleUiTheme::GetHeadingFont();

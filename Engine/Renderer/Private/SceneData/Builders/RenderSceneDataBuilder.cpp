@@ -100,6 +100,7 @@ void RenderSceneDataBuilder::BuildLighting(const RenderSceneSnapshot& sceneSnaps
 		renderLight.direction = light.direction;
 		renderLight.intensity = light.intensity;
 		renderLight.color = light.color;
+		renderLight.castShadow = light.castShadow;
 		sceneData.directionalLights.push_back(renderLight);
 	}
 }

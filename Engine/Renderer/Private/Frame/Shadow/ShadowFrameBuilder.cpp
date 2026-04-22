@@ -38,6 +38,12 @@ ShadowFrameBuildResult ShadowFrameBuilder::Build(
 	for (std::size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
 	{
 		const std::size_t cascadeBaseIndex = lightIndex * ShadowFrameBuildResult::MaxShadowCascades;
+		if (!sceneData.directionalLights[lightIndex].castShadow)
+		{
+			// Skip shadow view construction entirely; the shader and ShadowOpaquePass
+			// honour the per-light CastShadow flag and avoid sampling/rendering this slot.
+			continue;
+		}
 
 		for (std::size_t cascadeIndex = 0; cascadeIndex < ShadowFrameBuildResult::MaxShadowCascades; ++cascadeIndex)
 		{

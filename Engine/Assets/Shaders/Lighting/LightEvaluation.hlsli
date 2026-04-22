@@ -11,6 +11,7 @@ namespace Lighting
 	{
 		float3 Direction;
 		float3 Radiance;
+		bool CastShadow;
 	};
 
 	DirectionalLight GetDirectionalLight(uint lightIndex)
@@ -18,6 +19,7 @@ namespace Lighting
 		DirectionalLight light;
 		light.Direction = normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
 		light.Radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
+		light.CastShadow = ViewLighting.DirectionalLights[lightIndex].CastShadow != 0u;
 		return light;
 	}
 
@@ -80,7 +82,9 @@ namespace Lighting
 		[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 		{
 			DirectionalLight light = GetDirectionalLight(lightIndex);
-			const float shadowFactor = Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction, lightIndex);
+			const float shadowFactor = light.CastShadow
+			    ? Shadow::ComputeShadowFactor(positionWorld, matProps.NormalWorld, light.Direction, lightIndex)
+			    : 1.0f;
 
 			AccumulateDirectLight(
 			    viewDirWorld,

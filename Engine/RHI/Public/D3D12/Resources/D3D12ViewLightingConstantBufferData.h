@@ -14,7 +14,7 @@ struct DirectionalLightConstantBufferData
 	float Intensity = 1.0f;
 
 	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
-	float _pad0 = 0.0f;
+	std::uint32_t CastShadow = 1u;
 };
 
 struct PerViewLightingConstantBufferData
@@ -38,7 +38,7 @@ static_assert(
     offsetof(DirectionalLightConstantBufferData, Intensity) == 12,
     "DirectionalLightConstantBufferData::Intensity must be at c0.w");
 static_assert(offsetof(DirectionalLightConstantBufferData, Color) == 16, "DirectionalLightConstantBufferData::Color must start at c1.xyz");
-static_assert(offsetof(DirectionalLightConstantBufferData, _pad0) == 28, "DirectionalLightConstantBufferData::_pad0 must be at c1.w");
+static_assert(offsetof(DirectionalLightConstantBufferData, CastShadow) == 28, "DirectionalLightConstantBufferData::CastShadow must be at c1.w");
 static_assert(sizeof(PerViewLightingConstantBufferData) == 400, "Per-view lighting constant buffer data must match the shader layout");
 static_assert(
     offsetof(PerViewLightingConstantBufferData, DirectionalLightCount) == 0,

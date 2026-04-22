@@ -21,5 +21,3 @@ ShaderStageMask StageMaskUtils::FromVisibility(ShaderStageVisibility visibility)
 			return ShaderStageMask::None;
 	}
 }
-
-		}
