@@ -124,7 +124,28 @@ Non-goals (explicitly out of scope):
 - Material/uasset shader workflows. Global shaders only.
 - Manifest-driven authoring as the primary surface. (Documented as a
   future extension; not implemented.)
-- In-editor in-process recompilation.
+- In-editor **in-process** recompilation. The editor never links a shader
+  compiler. Editor-driven iteration is delivered by Phase 4 as
+  out-of-process recook (spawn `ShaderCompiler.exe`, watch signal,
+  reopen packages). "In-editor recompile" is a supported workflow;
+  "in-editor compiler" is not.
+
+> **Implementation note (pay special attention).** The user goal is
+> "iterate on shaders with the editor open." That goal is satisfied by
+> Phase 4 + Phase 3 together, with a deliberate split:
+> - **Pure HLSL edits** (math, constants, sampling, control flow) hot-
+>   reload via out-of-process recook + `ShaderResource::Version++`.
+>   No editor restart, no C++ rebuild.
+> - **Binding / resource-layout edits** (changing the parameter struct,
+>   root signature, descriptor layout) intentionally require a C++
+>   rebuild, because the typed parameter struct lives in C++ and the
+>   Phase 3 `ShaderParameterStructVerifier` will (correctly) fail the
+>   cook on any mismatch. This is a feature, not a limitation — it is
+>   what prevents silent GPU crashes.
+>
+> Any future PR that proposes "just link DXC into the editor to make
+> hot reload faster" is rejecting this design pillar and must be
+> bounced back to this section.
 
 ## 4. Module Boundaries
 
@@ -172,6 +193,16 @@ Tools/ShaderCompiler        ──/► Engine/Renderer        FORBIDDEN
 Tools/ShaderCompiler        ──/► Engine/Editor          FORBIDDEN
 Tools/ShaderCompiler        ──/► Engine/RHI/Private/    FORBIDDEN (only RHI public)
 ```
+
+**Shader declaration ownership.** Translation units that contain
+`IMPLEMENT_GLOBAL_SHADER` must live in a low-level shared target that
+both `ShaderCompiler.exe` and runtime consumers can link without
+violating the forbidden edges above. In practice that means
+`Engine/RHI/Public/Shaders/...` plus a dedicated shared registration
+target or equivalent bootstrap layer, **not** `Engine/Renderer`,
+`Engine/Editor`, or `Engine/Application`. The tool discovers shaders by
+linking that shared registration surface, never by depending on
+Renderer.
 
 The forbidden-edge list is *the* architectural invariant. Everything else
 can change. If a future PR needs a forbidden edge, the design is wrong,
@@ -710,6 +741,47 @@ All phases must keep these green:
   documented in §10.
 - The shader compiler executor remains single-threaded.
 
+### Guardrails (apply to every phase and every prompt)
+
+These positive/negative rules apply to every phase, every prompt, and
+every PR. A phase is not done if any of these is violated.
+
+**Positive guardrails — every change must:**
+
+- Keep `ValidateShaderCompilerBoundary.cmake` green, including any new
+  forbidden-token rules added by the phase.
+- Keep `ShaderCompiler.exe cook` exit-code-`0` on Showcase before and
+  after the change (cold and warm where relevant).
+- Land replacement and removal of legacy code in the **same PR**
+  (cleanup discipline; no parallel old/new paths).
+- Cross the runtime↔offline boundary only via the cooked package format
+  + registry described in §10/§12.
+- Scope diagnostics with stable `SC####` codes when introducing new
+  failure modes; non-zero exit codes when the cook is involved.
+- Add or extend tests under `Tools/ShaderCompiler/Tests/` for any new
+  pure-logic component (graph, cache, expander, verifier, coordinator).
+
+**Negative guardrails — no change in any phase may:**
+
+- Link a shader compiler (DXC, Slang, glslang, …) into `Engine/RHI`,
+  `Engine/Renderer`, `Engine/Editor`, `Engine/Application`, or
+  `Engine/GameFramework`.
+- Introduce a runtime shader-compile fallback path or "dev mode" that
+  bypasses cooked artifacts.
+- Reference DXC types, headers, or symbols outside
+  `Tools/ShaderCompiler/Backends/Dxc/`.
+- Place `IMPLEMENT_GLOBAL_SHADER` translation units in
+  `Engine/Renderer`, `Engine/Editor`, `Engine/Application`, or any
+  module the standalone tool does not link.
+- Add a parallel "legacy" code path, compatibility shim, or re-export
+  header to keep retired code alive past the phase that retired it.
+- Multithread the cook executor (the dependency graph is the
+  parallelism contract for tomorrow; today it stays serial).
+- Bump the cooked package `Version` without a documented `LoadV<N-1>`
+  migration entry in §10.
+- Change behavior silently — every new failure mode emits a structured
+  diagnostic and propagates a non-zero exit code where applicable.
+
 ### Cleanup discipline (applies to every phase)
 
 When a phase introduces a replacement, the legacy path is **deleted in
@@ -761,6 +833,15 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   - *"Audit `Tools/ShaderCompiler/` for any include of Renderer/Editor
     private headers; remove and re-run
     `ValidateShaderCompilerBoundary.cmake`."*
+- **Guardrails.**
+  - *Must:* land the CI cook job in a PR that demonstrates a green run
+    on `main`'s current state before any other phase begins.
+  - *Must:* keep changes scoped to CI configuration, `Scripts/`, and
+    include hygiene fixes only.
+  - *Must not:* refactor cook orchestration, change cook output,
+    introduce new flags, or modify the package schema in this phase.
+  - *Must not:* paper over a pre-existing red baseline by relaxing the
+    boundary validator or marking the CI cook job non-blocking.
 - **Validation Gates.**
   - `cmake --build build --target Sparkle ShaderCompiler` succeeds.
   - `ShaderCompiler.exe cook` exit code is `0` on Showcase.
@@ -815,6 +896,21 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     the store for a hit, (d) on miss invoke the backend, (e) put result
     back. Keep the executor serial. Do not change the cooked package
     format yet."*
+- **Guardrails.**
+  - *Must:* include backend version, schema version, target, and
+    permutation key in `ShaderCacheKey` so bumping any of them
+    invalidates the cache automatically.
+  - *Must:* write cache entries via temp-file + `std::filesystem::rename`
+    so concurrent reads never observe partial files.
+  - *Must:* produce byte-identical cooked output between cached and
+    uncached runs (golden test).
+  - *Must not:* change the cooked package schema, add new CLI verbs
+    beyond `--no-cache` / `--cache-dir`, or move DXC code in this phase
+    (those belong to Phase 2).
+  - *Must not:* parallelize the executor; the graph is the parallelism
+    contract for later, but the runtime stays serial.
+  - *Must not:* leak cache files outside the configured cache directory
+    or write outside the project tree by default.
 - **Validation Gates.**
   - First cook on a clean cache: full backend invocations, exit `0`.
   - Second cook with no source changes: backend invocation count is
@@ -909,6 +1005,24 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     successful compile, emit a folder
     `<shaderId>__<permutationHash>__<target>/` with the bundle layout
     from §11."*
+- **Guardrails.**
+  - *Must:* contain every DXC type, header, and symbol to
+    `Tools/ShaderCompiler/Backends/Dxc/`; the orchestrator names
+    `IShaderBackend*` only.
+  - *Must:* normalize reflection so DXIL and SPIR-V produce the same
+    `ShaderReflection` shape consumed by the renderer.
+  - *Must:* bump `kCookedShaderPackageVersion` and add a `LoadV<N-1>`
+    migration entry in §10 in the same PR.
+  - *Must:* delete `DxcShaderCompiler` / `DxcContext` and the moved
+    `ShaderCompileOptions.h` / `ShaderCompileResult.h` from their old
+    locations in the same PR — no re-export shims.
+  - *Must not:* introduce a second backend (Slang, glslang, …) in this
+    phase; only DXC ships, exposing both DXIL and SPIR-V via `-spirv`.
+  - *Must not:* put compile options, compile results, or any
+    backend-specific type under `Engine/RHI/Public/` after this phase.
+  - *Must not:* break the cache from Phase 1: cached artifacts produced
+    by the new backend must remain content-addressed and byte-stable
+    for identical inputs.
 - **Validation Gates.**
   - `grep -r "dxc\|IDxcCompiler\|dxcompiler" Tools/ShaderCompiler/`
     matches *only* under `Backends/Dxc/`.
@@ -967,20 +1081,27 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      `ShaderPermutationEnum`, `IMPLEMENT_GLOBAL_SHADER`.
   2. Macros expand into static `ShaderRegistrationDesc` records held by
      `IShaderRegistrationSource`.
-  3. Implement `PermutationExpander` (domain → vectors → requests, with
+  3. Introduce the shared shader-registration bootstrap/target that is
+    linked by both `ShaderCompiler.exe` and runtime consumers. All
+    translation units containing `IMPLEMENT_GLOBAL_SHADER` must live in
+    that shared surface, not in `Engine/Renderer` or editor-only code.
+  4. Implement `PermutationExpander` (domain → vectors → requests, with
      `ShouldCompilePermutation` pruning).
-  4. Implement `ShaderParameterStructDescriptor` (generated by the
+  5. Implement `ShaderParameterStructDescriptor` (generated by the
      macros) and `ShaderParameterStructVerifier`. Mismatch → `SC2xxx`,
      cook exits with code `6`.
-  5. Implement runtime `TShaderRef<T>` lookup by
-     `(shader id, permutation key, target)`.
-  6. Add CLI verbs: `list-shaders`, `list-permutations <id>`,
+  6. Implement runtime `TShaderRef<T>` lookup by
+    `(shader id, permutation key, target)` plus generated
+    `SetParameters(cmdList, params)` binding that walks the typed
+    parameter struct against cooked `ShaderReflection`, with no
+    per-shader hand-written binding code.
+  7. Add CLI verbs: `list-shaders`, `list-permutations <id>`,
      `inspect-shader <id> [--permutation k=v,...] [--target ...]`,
      and `list-shaders --validate` (used by `CookShaders.bat` in place
      of the old `inspect-manifest` step).
-  7. Convert `FullscreenBlit` end-to-end as the canonical reference;
+  8. Convert `FullscreenBlit` end-to-end as the canonical reference;
      delete the legacy registration.
-  8. **Cleanup (same PR or immediate follow-up).** Retire the manifest
+  9. **Cleanup (same PR or immediate follow-up).** Retire the manifest
      world entirely:
      - Delete `Tools/ShaderCompiler/Private/Manifest/` (all 8 files:
        `ShaderCookManifest.{h,cpp}`, `ShaderCookManifestParser.{h,cpp}`,
@@ -1014,6 +1135,12 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     `Engine/RHI/Public/Shaders/Authoring/`. Macros expand into POD
     descriptors plus a `static const ShaderRegistrationDesc&` registered
     at static init."*
+  - *"Introduce the shared shader-registration bootstrap that both
+    `ShaderCompiler.exe` and runtime link. Move every translation unit
+    containing `IMPLEMENT_GLOBAL_SHADER` into that shared surface so the
+    standalone tool can enumerate shaders without depending on
+    `Engine/Renderer`. Touch CMake targets as needed, but keep
+    forbidden-edge validation green."*
   - *"Implement `TShaderPermutationDomain<...>`, `ShaderPermutationBool`,
     `ShaderPermutationEnum<E, Count>`. Provide `ToVector()` and
     `FromKey(ShaderPermutationKey)`. Unit-test domain enumeration,
@@ -1022,6 +1149,12 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     reflection)`. Mismatch checks: missing/extra binding, type, size,
     register/space, array count. Wire into the cook so a mismatch
     becomes `SC2001` and exit code `6`."*
+  - *"Implement runtime typed binding for `TShaderRef<T>` so
+    `shader.SetParameters(cmdList, params)` walks the generated
+    `ShaderParameterStructDescriptor`, matches it to cooked
+    `ShaderReflection`, caches the binding map, and writes descriptors/
+    constants with no per-shader hand-written binding code. Validate it
+    with `FullscreenBlit`."*
   - *"Add CLI verbs `list-shaders`, `list-permutations <id>`,
     `inspect-shader <id> [--permutation k=v,...] [--target ...]` to
     `Tools/ShaderCompiler/Private/Cli/`. `inspect-shader` writes the
@@ -1030,9 +1163,34 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   - *"Convert `FullscreenBlit` to the typed authoring surface. Delete
     the legacy registration. Cook still produces the same cooked
     bytecode (modulo header version) and the renderer still draws."*
+- **Guardrails.**
+  - *Must:* enforce the parameter-struct verifier as **mandatory** in
+    the cook path; mismatch → `SC2xxx` + exit code `6`.
+  - *Must:* keep `--allow-parameter-mismatch` strictly transitional and
+    never the default; CI cooks must not pass this flag.
+  - *Must:* place every TU containing `IMPLEMENT_GLOBAL_SHADER` in the
+    shared registration surface so the standalone tool can enumerate
+    them without linking `Engine/Renderer`.
+  - *Must:* delete the entire manifest world (`Manifest/` folder,
+    `ShaderPackageLayoutCatalog`, `BindingRecordBuilder`,
+    `StageMaskUtils`, `ShaderCompileOptionsBuilder`,
+    `ShaderPackages.ini`, legacy verbs/constants) in the same PR or
+    immediate follow-up.
+  - *Must:* extend `ValidateShaderCompilerBoundary.cmake` with
+    `ShaderPackageLayoutCatalog` and `ShaderCookManifest` as forbidden
+    tokens to prevent regressions.
+  - *Must not:* generate code from a manifest, an INI file, or any
+    sidecar; macros + static registration are the only authoring path.
+  - *Must not:* hand-write per-shader binding code; runtime binding
+    flows exclusively through generated `SetParameters(...)` over the
+    typed parameter struct + cooked `ShaderReflection`.
+  - *Must not:* leave any `ShaderPackages.ini` or
+    `ShaderPackageLayoutCatalog` reference in the tree after this
+    phase.
 - **Validation Gates.**
   - `ShaderCompiler.exe list-shaders` enumerates ≥1 shader with its
-    permutation domain and target list.
+    permutation domain and target list, and does so without the tool
+    linking `Engine/Renderer`.
   - `list-permutations FullscreenBlitPS` enumerates only legal vectors
     after `ShouldCompilePermutation` pruning.
   - `inspect-shader FullscreenBlitPS --permutation
@@ -1042,6 +1200,9 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     code.
   - `--allow-parameter-mismatch` downgrades the same mismatch to a
     warning.
+  - The converted `FullscreenBlit` runtime path binds exclusively via
+    `shader.SetParameters(cmdList, params)`; no bespoke binding helper
+    survives for that shader.
   - Cooked package round-trips through the RHI reader; renderer renders
     the converted `FullscreenBlit` shader correctly.
   - Permutation key hashing is stable across runs.
@@ -1055,6 +1216,14 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 - **Goal.** Saving an `.hlsl` file with the editor open triggers a
   recook; the viewport reflects the change without restart; the editor
   still links no compiler.
+- **Scope of hot reload (pay special attention).** Pure HLSL edits
+  (math, constants, sampling, control flow) hot-reload while the editor
+  stays open. Edits that change resource bindings (parameter struct,
+  root signature, descriptor layout) are **out of scope for hot reload**
+  by design — they require a C++ rebuild because the typed parameter
+  struct lives in C++ and the Phase 3 cook-time verifier will reject a
+  mismatched cook. This split is the contract; do not try to work
+  around it.
 - **Why.** This is the iteration loop that makes the engine pleasant to
   work in. Today: edit `.hlsl` → close editor → run cook batch →
   relaunch editor → navigate back to the scene you were on. That kills
@@ -1073,13 +1242,17 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   2. Implement `ShaderRecookWatcher` in
      `Engine/Editor/ShaderRecook/` using `ReadDirectoryChangesW` + an
      explicit "Recompile shaders" menu action.
-  3. On signal, the editor diffs the registry, asks RHI to reopen
+  3. Add a recook coordinator in the editor that resolves the
+    `ShaderCompiler.exe` path explicitly, allows at most one active
+    subprocess plus one queued rerun, and discards stale completion
+    events so an older cook can never overwrite a newer save.
+  4. On signal, the editor diffs the registry, asks RHI to reopen
      changed `*.spkg` files, bumps `ShaderResource::Version`.
-  4. Renderer's PSO cache key includes `ShaderResource::Version` so
+  5. Renderer's PSO cache key includes `ShaderResource::Version` so
      a bump invalidates dependent PSOs; rebuild lazily.
-  5. Editor surfaces structured diagnostics from the spawned tool's
+  6. Editor surfaces structured diagnostics from the spawned tool's
      stderr (`--json`) in a status panel.
-  6. Atomic-rename writes for both `*.spkg` and the registry.
+  7. Atomic-rename writes for both `*.spkg` and the registry.
 - **Implementation Prompts.**
   - *"Implement `ShaderRecookSignal` as
     `bin/Cache/Shaders/recook.signal` written via temp-file + atomic
@@ -1092,15 +1265,40 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     increment `ShaderResource::Version`. Add a 'Recompile Shaders'
     menu action that spawns `ShaderCompiler.exe cook --json` and streams
     stderr into a status panel."*
+  - *"Introduce an editor-side recook coordinator that resolves the
+   absolute `ShaderCompiler.exe` path from the current build output,
+   spawns at most one active cook process plus one queued rerun, and
+   ignores stale process completions/results if a newer save arrived in
+   the meantime. Failed path resolution must surface a clear editor
+   diagnostic instead of silently doing nothing."*
   - *"Make the renderer's PSO cache key include
     `ShaderResource::Version` so a version bump invalidates dependent
     PSOs. Recreate them lazily on next draw."*
+- **Guardrails.**
+  - *Must:* spawn `ShaderCompiler.exe` as a subprocess; the editor
+    process must not link any shader compiler symbol.
+  - *Must:* go through one recook coordinator that resolves the tool
+    path, serializes runs (one active + one queued), and ignores stale
+    completions.
+  - *Must:* leave prior `*.spkg` artifacts in place on cook failure and
+    surface diagnostics in the editor status panel.
+  - *Must:* write `*.spkg`, registry, and recook signal via temp-file +
+    atomic rename; readers see old or new, never partial.
+  - *Must not:* allow binding/parameter-struct edits to "hot reload";
+    those require a C++ rebuild by design (see §3 callout).
+  - *Must not:* add an in-process compile fallback "for speed",
+    "for debug builds only", or under any other guise.
+  - *Must not:* poll on tight loops; the OS file watcher and explicit
+    menu action coexist (Open Question 5) — neither is a busy-wait.
 - **Validation Gates.**
   - `ValidateShaderCompilerBoundary` still passes; the editor links no
     compiler symbol.
   - With editor running, edit `FullscreenBlit.hlsl` → save → viewport
     reflects the change within one frame after recook completes, no
     restart required.
+  - Saving the same shader repeatedly during an in-flight cook produces
+    one final up-to-date reload; stale subprocess completion cannot roll
+    the viewport back to an older artifact.
   - Forcing a cook failure (introduce a syntax error) leaves the
     previous artifacts in place; editor surfaces the diagnostic without
     crashing.
@@ -1157,6 +1355,21 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     `Tools/ShaderCompiler/Private/Analysis/`. Wire `--analysis
     pso-stats` to run the pass list. Output goes to
     `bin/Cache/Shaders/Analysis/<shaderId>.csv`."*
+- **Guardrails.**
+  - *Must:* read on-disk `DebugArtifactBundle/` artifacts only; the
+    editor still links no compiler.
+  - *Must:* keep analysis passes optional and out of the default cook
+    path so cook latency does not regress.
+  - *Must:* document `SlangShaderBackend` / `GlslangShaderBackend` as
+    `IShaderBackend` seams without implementing them until a real
+    workload (Open Question 7) demands it.
+  - *Must not:* let the inspector or any analysis pass call into a
+    shader compiler from the editor process.
+  - *Must not:* couple the inspector UI to a specific backend; it
+    consumes normalized `ShaderReflection` and the bundle layout from
+    §11 only.
+  - *Must not:* gate Phases 0–4 on Phase 5 deliverables; Phase 5 is
+    additive polish, not on the critical path.
 - **Validation Gates.**
   - Inspector panel opens, lists every shader the cooker registered, and
     renders the four detail tabs without error for a known shader.
@@ -1209,6 +1422,10 @@ true at the same time:
 - Every shader in the engine is authored with `IMPLEMENT_GLOBAL_SHADER`
   and a typed parameter struct. Grep for the old patterns returns zero
   hits.
+- Every translation unit containing `IMPLEMENT_GLOBAL_SHADER` lives in
+  the shared shader-registration surface consumed by both the tool and
+  runtime, never under `Engine/Renderer`, `Engine/Editor`, or
+  `Engine/Application`.
 - `ValidateShaderCompilerBoundary.cmake` enforces the new forbidden
   tokens (`ShaderPackageLayoutCatalog`, `ShaderCookManifest`, DXC outside
   `Backends/Dxc/`, compile options outside `Tools/`) and passes.

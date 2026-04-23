@@ -1,0 +1,43 @@
+# Goal:
+#   Prove on every PR that:
+#     - CMake configures
+#     - Tools/ShaderCompiler builds in Debug AND Release
+#     - ValidateShaderCompilerBoundary passes (runs as part of the build)
+#     - ShaderCompiler.exe cook succeeds on the Showcase project
+
+name: shader-cook
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.hlsl'
+      - '**/*.hlsli'
+      - '**/ShaderPackages.ini'
+      - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
+      - '.github/workflows/shader-cook.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.hlsl'
+      - '**/*.hlsli'
+      - '**/ShaderPackages.ini'
+      - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
+      - '.github/workflows/shader-cook.yml'
+  workflow_dispatch:
+
+jobs:
+  cook:
+    name: Build + cook (Showcase)
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run shader cook check
+        shell: pwsh
+        run: ./Scripts/CI/RunShaderCompilerCookCheck.ps1
