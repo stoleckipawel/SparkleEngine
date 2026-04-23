@@ -14,6 +14,7 @@ on:
       - '**/*.hlsl'
       - '**/*.hlsli'
       - '**/ShaderPackages.ini'
+      - 'Tools/ShaderCompiler/**'
       - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
       - '.github/workflows/shader-cook.yml'
   push:
@@ -22,6 +23,7 @@ on:
       - '**/*.hlsl'
       - '**/*.hlsli'
       - '**/ShaderPackages.ini'
+      - 'Tools/ShaderCompiler/**'
       - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
       - '.github/workflows/shader-cook.yml'
   workflow_dispatch:

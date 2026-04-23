@@ -8,10 +8,52 @@
 
 #include <iostream>
 
-int CookShadersCommand::Run() const
+bool CookShadersCommand::TryParseArguments(
+	std::span<const std::string_view> args,
+	ShaderPackageCookSettings& outSettings,
+	std::string& outErrorMessage)
 {
+	for (std::size_t index = 0; index < args.size(); ++index)
+	{
+		if (args[index] == "--no-cache")
+		{
+			outSettings.useCache = false;
+			continue;
+		}
+
+		if (args[index] == "--cache-dir")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --cache-dir";
+				return false;
+			}
+
+			outSettings.cacheDirectory = std::filesystem::path(std::string(args[index + 1]));
+			++index;
+			continue;
+		}
+
+		outErrorMessage = "Unknown cook argument '" + std::string(args[index]) + "'";
+		return false;
+	}
+
+	outErrorMessage.clear();
+	return true;
+}
+
+int CookShadersCommand::Run(std::span<const std::string_view> args) const
+{
+	ShaderPackageCookSettings settings;
+	std::string parseErrorMessage;
+	if (!TryParseArguments(args, settings, parseErrorMessage))
+	{
+		std::cerr << "ShaderCompiler: invalid cook arguments - " << parseErrorMessage << "\n";
+		return kExitCodeUsage;
+	}
+
 	ShaderPackageCooker cooker;
-	const ShaderPackageCookResult cookResult = cooker.CookAll();
+	const ShaderPackageCookResult cookResult = cooker.CookAll(settings);
 	if (!cookResult.Succeeded())
 	{
 		std::cerr << "ShaderCompiler: failed to cook shader packages - " << cookResult.errorMessage << "\n";
@@ -20,7 +62,11 @@ int CookShadersCommand::Run() const
 
 	std::cout << "ShaderCompiler: cooked " << cookResult.packages.size() << " shader package(s) under '"
 	          << ::GetCookedShaderPackageRootPath().string() << "'"
-	          << " and registry '" << cookResult.registryPath.string() << "'\n";
+	          << " and registry '" << cookResult.registryPath.string() << "'"
+	          << "; backendInvocations=" << cookResult.backendInvocationCount
+	          << ", cacheHits=" << cookResult.cacheHitCount
+	          << ", cacheMisses=" << cookResult.cacheMissCount
+	          << ", cacheDir='" << cookResult.cacheDirectory.string() << "'\n";
 
 	for (const CookedShaderPackageOutput& package : cookResult.packages)
 	{

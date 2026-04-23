@@ -870,24 +870,26 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 - **Prerequisites.** Phase 0 gates green.
 - **Work Items.**
   1. Introduce `CookNode` and `DependencyGraph` under
-     `Tools/ShaderCompiler/Private/Cook/`.
-  2. Introduce `ICookExecutor` and `SerialCookExecutor`.
+     `Tools/ShaderCompiler/Private/Cooking/Graph/`.
+  2. Introduce `ICookExecutor` and `SerialCookExecutor` under
+     `Tools/ShaderCompiler/Private/Cooking/Execution/`.
   3. Introduce `ShaderCacheKey` (content-addressed: source + include
      closure + options + backend version + schema version + permutation
-     key + target).
+     key + target) under `Tools/ShaderCompiler/Private/Cooking/Cache/`.
   4. Introduce `IShaderArtifactStore` + `LocalDiskShaderArtifactStore`
-     under `bin/Cache/Shaders/`. Temp-file + atomic rename.
+     under `Tools/ShaderCompiler/Private/Cooking/Cache/`, defaulting to
+     `bin/Cache/Shaders/`. Temp-file + atomic rename.
   5. Refactor `ShaderPackageCooker::Cook` to drive the graph instead of
      looping.
   6. Add `--no-cache` and `--cache-dir` CLI flags.
 - **Implementation Prompts.**
   - *"Create `CookNode` and `DependencyGraph` types under
-    `Tools/ShaderCompiler/Private/Cook/`. A `CookNode` wraps one
+    `Tools/ShaderCompiler/Private/Cooking/Graph/`. A `CookNode` wraps one
     `ShaderCompileRequest` plus its resolved input hashes. The graph is
     a DAG with topological-order traversal. No threading. Add unit tests
     under `Tools/ShaderCompiler/Tests/`."*
   - *"Implement `LocalDiskShaderArtifactStore` under
-    `Tools/ShaderCompiler/Private/Cook/Cache/`. Keys map to files at
+    `Tools/ShaderCompiler/Private/Cooking/Cache/`. Keys map to files at
     `<cache-dir>/<first-2-hex>/<full-hex>.bin`. Writes go through a
     temp-file + `std::filesystem::rename`. Reads return
     `std::optional`. Cover miss → put → hit in tests."*

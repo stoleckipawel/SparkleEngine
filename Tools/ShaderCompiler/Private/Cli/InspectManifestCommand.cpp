@@ -8,8 +8,14 @@
 
 #include <iostream>
 
-int InspectManifestCommand::Run() const
+int InspectManifestCommand::Run(std::span<const std::string_view> args) const
 {
+	if (!args.empty())
+	{
+		std::cerr << "ShaderCompiler: inspect-manifest does not accept extra arguments\n";
+		return kExitCodeUsage;
+	}
+
 	ShaderCookManifest manifest;
 	std::string errorMessage;
 	if (!manifest.LoadMerged(errorMessage))

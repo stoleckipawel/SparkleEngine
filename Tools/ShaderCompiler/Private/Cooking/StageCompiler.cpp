@@ -3,7 +3,6 @@
 #include "Cooking/StageCompiler.h"
 
 #include "Compiler/DxcShaderCompiler.h"
-#include "Compiler/ShaderCompileOptionsBuilder.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Shaders/ShaderCompileOptions.h"
@@ -11,12 +10,12 @@
 
 bool StageCompiler::Compile(
 	const ShaderCookStageDesc& stage,
+	const ShaderCompileOptions& options,
 	CookedStageBuild& outCompiledStage,
 	std::string& outErrorMessage)
 {
 	using Engine::Paths::MakeProjectRelativeString;
 
-	const ShaderCompileOptions options = ShaderCompileOptionsBuilder::Build(stage);
 	const ShaderCompileResult compileResult = DxcShaderCompiler::Compile(options);
 	if (!compileResult.IsSuccess())
 	{

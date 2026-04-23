@@ -69,7 +69,7 @@ Push-Location $ShowcaseRoot
 try
 {
     Invoke-CIStep -Label 'Cooking shaders for Showcase project' -Action {
-        & $ShaderCompiler cook
+        & $ShaderCompiler cook --no-cache
     }
 }
 finally

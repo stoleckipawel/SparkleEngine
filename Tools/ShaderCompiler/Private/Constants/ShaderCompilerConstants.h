@@ -42,3 +42,5 @@ inline constexpr std::string_view kCommandCookLegacy = "cook-shaders";
 
 inline constexpr std::string_view kDxcContextLoggerCategory = "ShaderCompiler";
 inline constexpr std::string_view kDxcCompilerLoggerCategory = "Tools.ShaderCompiler";
+inline constexpr std::string_view kShaderCacheBackendVersion = "dxc-v1";
+inline constexpr std::uint32_t kShaderCacheSchemaVersion = 1;
