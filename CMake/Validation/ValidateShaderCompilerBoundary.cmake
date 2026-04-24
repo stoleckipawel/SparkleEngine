@@ -35,9 +35,15 @@ set(SHADER_COMPILER_TOOL_CMAKE_FILES
 
 set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "DxcShaderCompiler"
+    "DxcShaderBackend"
     "DxcContext"
+    "IDxcCompiler"
+    "dxcapi"
+    "ShaderCompileOptions"
+    "ShaderCompileResult"
     "Compiler/DxcShaderCompiler.h"
     "Compiler/DxcContext.h"
+    "Backends/Dxc/"
     "Tools/ShaderCompiler"
     "ShaderCompiler.exe"
     "SHADER_COMPILER_EXE"
@@ -58,6 +64,23 @@ set(FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS
     "GameFramework/"
     "Editor/"
     "AssetConverter/"
+)
+
+# DXC must be contained to Backends/Dxc/. Any tool source outside that folder
+# that names DXC indicates an orchestration leak.
+set(FORBIDDEN_DXC_TOKENS_OUTSIDE_BACKEND
+    "IDxcCompiler"
+    "dxcapi"
+    "DxcCreateInstance"
+    "DxcShaderBackend"
+    "DxcShaderCompiler"
+    "DxcContext"
+    # SPIRV-Reflect is consumed only by the SPIR-V reflection extractor that
+    # lives next to the DXC backend; runtime and other tool code must not
+    # take a dependency on it.
+    "spirv_reflect.h"
+    "SpvReflect"
+    "spvReflect"
 )
 
 set(FORBIDDEN_SHADER_COMPILER_CMAKE_TOKENS
@@ -126,6 +149,15 @@ foreach(tool_root IN LISTS SHADER_COMPILER_TOOL_SOURCE_ROOTS)
             "${tool_source_file}"
             TOKENS ${FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS}
         )
+
+        # Containment: DXC tokens may only appear under Backends/Dxc/.
+        string(FIND "${tool_source_file}" "/Backends/Dxc/" dxc_backend_index)
+        if(dxc_backend_index EQUAL -1)
+            check_file_for_tokens(
+                "${tool_source_file}"
+                TOKENS ${FORBIDDEN_DXC_TOKENS_OUTSIDE_BACKEND}
+            )
+        endif()
     endforeach()
 endforeach()
 

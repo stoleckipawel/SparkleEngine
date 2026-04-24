@@ -1,20 +1,16 @@
 #pragma once
 
-#include <cstddef>
+#include "RHI/Public/Shaders/ShaderBytecode.h"
+#include "ShaderReflection.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
-struct ShaderBytecode
-{
-	const void* Data = nullptr;
-	size_t Size = 0;
-
-	bool IsValid() const noexcept { return Data != nullptr && Size > 0; }
-	explicit operator bool() const noexcept { return IsValid(); }
-};
-
+// Output of one shader compile invocation for the offline tool.
+// ShaderBytecode stays under RHI public because runtime readers return it.
 class ShaderCompileResult
 {
   public:
@@ -36,7 +32,11 @@ class ShaderCompileResult
 	const std::string& GetErrorMessage() const noexcept { return m_errorMessage; }
 	bool HasErrors() const noexcept { return !m_errorMessage.empty(); }
 
-	static ShaderCompileResult Success(std::vector<uint8_t>&& bytecode, std::filesystem::path debugArtifactPath = {})
+	const ShaderReflection& GetReflection() const noexcept { return m_reflection; }
+	ShaderReflection&& TakeReflection() noexcept { return std::move(m_reflection); }
+	void SetReflection(ShaderReflection&& reflection) noexcept { m_reflection = std::move(reflection); }
+
+	static ShaderCompileResult Success(std::vector<std::uint8_t>&& bytecode, std::filesystem::path debugArtifactPath = {})
 	{
 		ShaderCompileResult result;
 		result.m_success = true;
@@ -55,7 +55,8 @@ class ShaderCompileResult
 
   private:
 	bool m_success = false;
-	std::vector<uint8_t> m_bytecode;
+	std::vector<std::uint8_t> m_bytecode;
 	std::filesystem::path m_debugArtifactPath;
 	std::string m_errorMessage;
+	ShaderReflection m_reflection;
 };

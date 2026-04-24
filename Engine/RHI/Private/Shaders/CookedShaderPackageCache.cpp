@@ -260,6 +260,17 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 
 	if (!outPackage.m_header.Matches(kCookedShaderPackageMagic, kCookedShaderPackageVersion))
 	{
+		if (outPackage.m_header.Magic == kCookedShaderPackageMagic && outPackage.m_header.Version == kCookedShaderPackageVersionV1)
+		{
+			outErrorMessage = std::format(
+			    "Cooked shader package '{}' is version {} (legacy v1, pre-reflection). Recook to version {} (Phase 2b adds shader "
+			    "reflection and backend identity).",
+			    path.string(),
+			    kCookedShaderPackageVersionV1,
+			    kCookedShaderPackageVersion);
+			return false;
+		}
+
 		outErrorMessage = std::format(
 		    "Invalid cooked shader package header in '{}': expected magic {:08X} version {}, got magic {:08X} version {}",
 		    path.string(),
@@ -273,6 +284,13 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 	if (!reader.ReadArray(outPackage.m_header.BinaryRecordCount, outPackage.m_binaryRecords, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.BindingRecordCount, outPackage.m_bindingRecords, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.SpecializationInputCount, outPackage.m_specializationInputs, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.ReflectionRecordCount, outPackage.m_reflectionRecords, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.ResourceBindingRecordCount, outPackage.m_resourceBindings, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.ConstantBufferRecordCount, outPackage.m_constantBuffers, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.ConstantBufferMemberRecordCount, outPackage.m_constantBufferMembers, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.InputElementRecordCount, outPackage.m_inputElements, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.PushConstantRangeRecordCount, outPackage.m_pushConstantRanges, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.SpecializationConstantRecordCount, outPackage.m_specializationConstants, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.StringTableSizeInBytes, outPackage.m_stringTable, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.BinaryBlobSizeInBytes, outPackage.m_binaryBlob, outErrorMessage))
 	{

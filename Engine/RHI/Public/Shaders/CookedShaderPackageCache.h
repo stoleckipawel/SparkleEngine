@@ -4,7 +4,7 @@
 
 #include "CookedShaderPackage.h"
 #include "CookedShaderPackageUtils.h"
-#include "ShaderCompileResult.h"
+#include "ShaderBytecode.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -30,6 +30,20 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	const std::vector<CookedShaderBindingRecord>& GetBindingRecords() const noexcept { return m_bindingRecords; }
 	const std::vector<CookedShaderSpecializationInputRecord>& GetSpecializationInputs() const noexcept { return m_specializationInputs; }
 
+	// v2 reflection accessors. ReflectionRecords is parallel to BinaryRecords;
+	// the typed arrays are package-wide, indexed by the offsets in each
+	// CookedShaderReflectionRecord.
+	const std::vector<CookedShaderReflectionRecord>& GetReflectionRecords() const noexcept { return m_reflectionRecords; }
+	const std::vector<CookedShaderResourceBindingRecord>& GetResourceBindings() const noexcept { return m_resourceBindings; }
+	const std::vector<CookedShaderConstantBufferRecord>& GetConstantBuffers() const noexcept { return m_constantBuffers; }
+	const std::vector<CookedShaderConstantBufferMemberRecord>& GetConstantBufferMembers() const noexcept { return m_constantBufferMembers; }
+	const std::vector<CookedShaderInputElementRecord>& GetInputElements() const noexcept { return m_inputElements; }
+	const std::vector<CookedShaderPushConstantRangeRecord>& GetPushConstantRanges() const noexcept { return m_pushConstantRanges; }
+	const std::vector<CookedShaderSpecializationConstantRecord>& GetSpecializationConstants() const noexcept
+	{
+		return m_specializationConstants;
+	}
+
 	const CookedShaderBinaryRecord* FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil)
 	    const noexcept;
 	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil) const noexcept;
@@ -46,6 +60,13 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	std::vector<CookedShaderBinaryRecord> m_binaryRecords;
 	std::vector<CookedShaderBindingRecord> m_bindingRecords;
 	std::vector<CookedShaderSpecializationInputRecord> m_specializationInputs;
+	std::vector<CookedShaderReflectionRecord> m_reflectionRecords;
+	std::vector<CookedShaderResourceBindingRecord> m_resourceBindings;
+	std::vector<CookedShaderConstantBufferRecord> m_constantBuffers;
+	std::vector<CookedShaderConstantBufferMemberRecord> m_constantBufferMembers;
+	std::vector<CookedShaderInputElementRecord> m_inputElements;
+	std::vector<CookedShaderPushConstantRangeRecord> m_pushConstantRanges;
+	std::vector<CookedShaderSpecializationConstantRecord> m_specializationConstants;
 	std::vector<std::uint8_t> m_stringTable;
 	std::vector<std::uint8_t> m_binaryBlob;
 	bool m_isValid = false;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Backend/ShaderTarget.h"
 #include "Cooking/CookedShaderPackageOutput.h"
 
 #include <filesystem>
@@ -9,6 +10,7 @@
 struct ShaderPackageCookSettings final
 {
 	bool useCache = true;
+	ShaderTarget target = kDefaultShaderTarget;
 	std::filesystem::path cacheDirectory;
 };
 

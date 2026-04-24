@@ -2,6 +2,7 @@
 
 #include "Cooking/ShaderPackageCooker.h"
 
+#include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileOptionsBuilder.h"
 #include "Cooking/Cache/IncludeClosureHasher.h"
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
@@ -42,6 +43,14 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	ShaderPackageCookResult result;
 	result.cacheDirectory = ResolveCacheDirectory(settings);
 
+	std::unique_ptr<IShaderBackend> backend = CreateDefaultShaderBackend();
+	if (!backend || !backend->GetCapabilities().SupportsTarget(settings.target))
+	{
+		result.errorMessage = std::string{"Active shader backend cannot service target '"} +
+			GetShaderTargetName(settings.target) + "' (backend uninitialized or unsupported)";
+		return result;
+	}
+
 	ShaderCookManifest manifest;
 	if (!manifest.LoadMerged(result.errorMessage))
 	{
@@ -66,7 +75,8 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 		for (std::size_t stageIndex = 0; stageIndex < package.stages.size(); ++stageIndex)
 		{
 			const ShaderCookStageDesc& stage = package.stages[stageIndex];
-			const ShaderCompileOptions compileOptions = ShaderCompileOptionsBuilder::Build(stage);
+			ShaderCompileOptions compileOptions = ShaderCompileOptionsBuilder::Build(stage);
+			compileOptions.Target = settings.target;
 			const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
 			if (!includeHashResult.Succeeded())
 			{
@@ -95,7 +105,9 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 			        compileOptions,
 			        includeHashResult.sourceHash,
 			        includeHashResult.includeClosureHash,
-			        optionsHash)});
+			        optionsHash,
+			        backend->GetBackendName(),
+			        backend->GetBackendVersion())});
 		}
 	}
 
@@ -126,7 +138,7 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 
 		        ++result.cacheMissCount;
 		        ++result.backendInvocationCount;
-		        if (!StageCompiler::Compile(*node.stage, node.compileOptions, compiledStage, outErrorMessage))
+		        if (!StageCompiler::Compile(*backend, *node.stage, node.compileOptions, compiledStage, outErrorMessage))
 		        {
 			        outErrorMessage = std::format(
 			            "Failed to compile shader package '{}' variant '{}' stage '{}' - {}",

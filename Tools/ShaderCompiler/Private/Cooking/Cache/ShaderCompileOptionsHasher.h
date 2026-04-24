@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Shaders/ShaderCompileOptions.h"
+#include "ShaderCompileOptions.h"
 
 #include <cstdint>
 

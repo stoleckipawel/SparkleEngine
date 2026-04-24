@@ -2,7 +2,7 @@
 
 #include "Cooking/Cache/ShaderCacheKey.h"
 #include "Manifest/ShaderCookManifestTypes.h"
-#include "RHI/Public/Shaders/ShaderCompileOptions.h"
+#include "ShaderCompileOptions.h"
 
 #include <cstddef>
 #include <cstdint>

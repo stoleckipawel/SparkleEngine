@@ -6,9 +6,11 @@
 >
 > **Scope today:** D3D12 only, global shaders only, single-threaded
 > executor, offline-only compilation. **Designed for:** Vulkan / SPIR-V
-> as a peer target via the same backend, Slang as a future second
-> backend behind the same interface. No design choice may close the
-> door on those.
+> as a peer target, and **two backends from day one** — `DxcShaderBackend`
+> (DXIL + SPIR-V via `-spirv`) and `SlangShaderBackend` (DXIL + SPIR-V
+> via Slang's multi-target codegen). The same `IShaderBackend` interface
+> covers both. A future `GlslangShaderBackend` is a documented seam.
+> No design choice may close the door on these.
 
 ## 1. Vision
 
@@ -29,7 +31,8 @@ What we want, in one diagram:
                 │   PermutationExpand   CacheLookup        CompileStage    │
                 │                          │                   │           │
                 │                          ├── hit ──► reuse artifact      │
-                │                          └── miss ─► IShaderBackend ──► DXC (D3D12+SPIRV)
+                │                          └── miss ─► IShaderBackend ──► DXC   (DXIL + SPIR-V)
+                │                                                       └─► Slang (DXIL + SPIR-V)
                 │                                            │             │
                 │                                            ▼             │
                 │                                   ReflectionExtract      │
@@ -73,12 +76,15 @@ them is a design bug.
 1. **Offline-only compilation.** Runtime/editor consumes cooked
    artifacts. The editor links no shader compiler. Editor iteration is
    out-of-process recook, not in-process compile.
-2. **Backend abstraction from day one.** `IShaderBackend` + `ShaderTarget`
-   enum. Today the only adapter is `DxcShaderBackend`, which produces
-   both **DXIL** (D3D12) and **SPIR-V** (Vulkan-ready) through DXC's
-   `-spirv` mode. A future `SlangShaderBackend` and a separate
-   `GlslangShaderBackend` are documented seams; neither is implemented
-   in the initial plan.
+2. **Two backends from day one.** `IShaderBackend` + `ShaderTarget`
+   enum. Two concrete adapters ship in Phase 2:
+   - `DxcShaderBackend` produces **DXIL** (D3D12) and **SPIR-V** (Vulkan)
+     through DXC's `-spirv` mode.
+   - `SlangShaderBackend` produces **DXIL** and **SPIR-V** through
+     Slang's multi-target codegen.
+   The orchestrator selects a backend per cook via capability matching
+   (and `--backend <name>` override). A future `GlslangShaderBackend`
+   is a documented seam, not implemented in the initial plan.
 3. **Typed UE-style authoring for global shaders.** Shaders are declared
    as C++ classes deriving from `TGlobalShader<T>`, with typed
    parameter structs (`BEGIN_SHADER_PARAMETER_STRUCT`), typed permutation
@@ -456,36 +462,68 @@ enum class ShaderTarget : uint16_t {
 };
 ```
 
-### Today's adapter
+### Today's adapters
+
+Two adapters ship in Phase 2 and stand on equal footing:
 
 - **`DxcShaderBackend`** wraps `IDxcCompiler3`.
-- It supports both `Dxil*` and `SpirV*` targets by toggling DXC's
-  `-spirv` mode based on `ShaderTarget`.
-- DXIL is what we use for D3D12 (the only renderer backend we have).
-- SPIR-V is built and validated end-to-end through the cooker so that
-  when a Vulkan RHI lands, the producer side is already in place.
+  - Supports both `Dxil*` and `SpirV*` targets by toggling DXC's
+    `-spirv` mode based on `ShaderTarget`.
+  - Ingests HLSL only.
+  - Reflection comes from the DXC reflection API (DXIL) and
+    `SPIRV-Reflect` (SPIR-V).
+- **`SlangShaderBackend`** wraps the Slang compiler API
+  (`slang::IGlobalSession` / `slang::ISession`).
+  - Supports both `Dxil*` and `SpirV*` targets via Slang's multi-target
+    codegen (`SLANG_DXIL` / `SLANG_SPIRV`).
+  - Ingests HLSL **and** Slang (`.slang`). HLSL files compile through
+    Slang unmodified for the hello-world cases; native Slang features
+    (modules, generics, interfaces) are unlocked when a `.slang` file
+    is registered.
+  - Reflection comes from Slang's first-class reflection API
+    (`slang::ProgramLayout`), normalized into the same `ShaderReflection`
+    shape produced by the DXC path.
 
-### Per-shader target selection
+Both backends report support for the full `ShaderTarget` family they
+implement; neither is privileged in the orchestrator.
 
-`IMPLEMENT_GLOBAL_SHADER` may name a target list (or take the project
-default). The cook expands per-target × per-permutation. Capability
-selection is by `ShaderBackendCapabilities::SupportsTarget(...)`; the
-orchestrator picks the first registered backend that claims the target.
+### Backend selection
 
-### Future seams (designed for, not implemented)
+The orchestrator never names a concrete backend. Selection happens via:
 
-- **`SlangShaderBackend`** — when we want Slang's IR, modules, or
-  multi-target codegen. Slots in via `IShaderBackend` like DXC.
-- **`GlslangShaderBackend`** — only if DXC's SPIR-V mode misses
-  something concrete (specific extensions, GLSL ingest).
+1. **Per-shader explicit choice** — a `TGlobalShader<T>` registration
+   may name a backend (`UseSlangBackend`/`UseDxcBackend`). Default is
+   `Auto`.
+2. **`Auto` rule** — the source extension dictates the default backend:
+   `.slang` → Slang, `.hlsl` → DXC. This keeps existing HLSL shaders
+   on DXC and lets Slang opt in file-by-file.
+3. **CLI override** — `--backend <name>` (`dxc`, `slang`) forces the
+   backend for the entire cook regardless of per-shader hints. Used by
+   CI to prove every shader cooks on every backend it claims to support.
+4. **Capability gate** — the chosen backend must report
+   `SupportsTarget(ShaderTarget)`. Mismatch is a hard error
+   (`SC1xxx`), never a silent fallback.
+
+`ShaderBackendFactory` becomes a small registry: each backend
+self-registers an entry `{ name, factory_fn, capability_probe }`. The
+orchestrator looks up by name (CLI/registration) or by extension+target
+(Auto), then queries capabilities.
+
+### Future seams (documented, not implemented)
+
+- **`GlslangShaderBackend`** — only if a workload needs GLSL ingest or
+  a SPIR-V capability that neither DXC nor Slang reaches. Slots in via
+  `IShaderBackend` exactly like the day-1 adapters.
 
 The orchestrator must never name DXC, Slang, or glslang. It holds an
-`IShaderBackend*` chosen by capability lookup. **This is the single
-biggest architectural lever for Vulkan readiness.**
+`IShaderBackend*` chosen by the rules above. **This is the single
+biggest architectural lever for Vulkan readiness and for adopting
+Slang's authoring features incrementally.**
 
-The cooked artifact already accommodates plurality:
-`CookedShaderBinaryFormat::{Dxil, SpirV}` is in the schema today. The
-producer side is what we are catching up.
+The cooked artifact is already format-plural:
+`CookedShaderBinaryFormat::{Dxil, SpirV}` is in the schema today, and
+the producing backend (`Dxc` vs `Slang`) is recorded per binary record
+so `inspect-package` can show which backend produced which blob.
 
 ## 9. Reflection & Parameter-Struct Verification
 
@@ -624,6 +662,7 @@ verbs:
   cook                          cook all registered shaders
   cook --shader <id>            cook one shader (all surviving permutations × targets)
   cook --target=<list>          comma-separated ShaderTarget values
+  cook --backend=<name>         force a specific backend (`dxc`, `slang`); default is per-shader Auto
   cook --no-cache               force full recook
   cook --debug-artifacts <dir>  emit DebugArtifactBundle/ per compile
   cook --analysis <pass>        run optional analysis pass(es)
@@ -631,9 +670,10 @@ verbs:
 
   list-shaders                  enumerate registered shaders + permutation domains
   list-permutations <ShaderId>  enumerate legal vectors after pruning
-  inspect-shader  <ShaderId>    [--permutation k=v,...] [--target ...] dump bundle + summary
-  inspect-package <PackageId>   summarize cooked package contents
+  inspect-shader  <ShaderId>    [--permutation k=v,...] [--target ...] [--backend ...] dump bundle + summary
+  inspect-package <PackageId>   summarize cooked package contents (lists producing backend per binary)
   list-targets                  print supported ShaderTarget values
+  list-backends                 print registered backends + their declared capabilities
 
   --cache-dir <path>            override default cache location
   --allow-parameter-mismatch    transitional: parameter mismatch becomes a warning
@@ -923,12 +963,15 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   - Cooked output is byte-identical between cached and uncached runs.
 - **Increment Demo.** `time` comparison cold vs warm cook in CI logs.
 
-### Phase 2 — Backend abstraction + rich reflection + DebugArtifactBundle
+### Phase 2 — Backend abstraction + rich reflection + DebugArtifactBundle + Slang backend
 
-- **Goal.** DXC lives behind one adapter that produces both DXIL and
-  SPIR-V. `ShaderReflection` is PSO-grade. Every compile can drop a
-  `DebugArtifactBundle/`.
-- **Why.** Three concrete pains today:
+- **Goal.** Two backends ship behind `IShaderBackend`: `DxcShaderBackend`
+  (DXIL + SPIR-V) and `SlangShaderBackend` (DXIL + SPIR-V). Every
+  registered shader can be cooked through any of the **four** concrete
+  compile paths: `dxc→dxil`, `dxc→spirv`, `slang→dxil`, `slang→spirv`.
+  `ShaderReflection` is PSO-grade and normalized across both backends.
+  Every compile can drop a `DebugArtifactBundle/`.
+- **Why.** Four concrete pains today:
   1. **DXC is hard-wired into the cooker.** `DxcShaderCompiler` and
      `DxcContext` are called directly from `StageCompiler`. There is no
      seam to ever add Vulkan-native (`glslang`) or Slang. Today's
@@ -946,14 +989,41 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      PSO need?" — it has to know out of band. After this phase,
      `ShaderReflection` carries every field listed in §9 (resources,
      CBuffer layout, push constants, vertex input, thread group, etc.),
-     extracted from DXIL and SPIR-V into one normalized shape, and is
-     written into the cooked package for the renderer to consume.
+     extracted from DXIL, SPIR-V, **and Slang's reflection API** into
+     one normalized shape, and is written into the cooked package for
+     the renderer to consume.
+  4. **Slang as a "future seam" never arrives if it isn't day-1.** Once
+     the cooker, cache key, package format, and CLI all assume a single
+     compiler, retrofitting a second one is a year of incidental work.
+     Standing up `SlangShaderBackend` alongside `DxcShaderBackend` *now*
+     forces the abstractions to be honest — backend identity in the
+     cache key, backend name in the package, `--backend` in the CLI,
+     boundary containment for two compiler families, normalized
+     reflection from two reflection APIs. Doing it later means doing it
+     twice.
 
   Example: a Vulkan port becomes a one-line CLI change
   (`--target SpirV16`) plus a renderer that reads `ShaderReflection`
   to build descriptor set layouts — no new offline tool, no second
-  manifest format, no recook of the DXIL artifacts.
+  manifest format, no recook of the DXIL artifacts. Adopting Slang's
+  module/generic features for a single shader becomes "rename `.hlsl`
+  to `.slang`" — the rest of the pipeline is unchanged.
 - **Prerequisites.** Phase 1 gates green.
+- **Sub-phase split (recommended landing order).**
+  - **2a — Structural** (work items 1–3, the DXC half of 4, and 9):
+    `IShaderBackend`, DXC backend (DXIL + SPIR-V), header moves out of
+    RHI public, boundary validator extension for DXC containment,
+    legacy `DxcShaderCompiler`/`DxcContext` deletion. **Status: shipped.**
+  - **2b — Reflection** (work items 5, 6, 7): `ShaderReflection`,
+    DXIL + SPIR-V extractors, package version bump + `LoadV<N-1>`,
+    `BackendName`/`BackendVersion` on `CookedShaderBinaryRecord`.
+  - **2c — Debug bundle** (work item 8): `ShaderDebugArtifactSet` +
+    `--debug-artifacts <dir>`.
+  - **2d — Slang backend** (work items 10–17, plus the Slang half of
+    work item 4): `SlangShaderBackend` (DXIL + SPIR-V), Slang
+    reflection extractor, backend identity in the cache key, backend
+    registry, `--backend` / `list-backends` CLI, hello-world shaders,
+    four-path validation.
 - **Work Items.**
   1. Define `IShaderBackend`, `ShaderBackendCapabilities`,
      `ShaderCompileEnvironment`, `ShaderTarget`, `CompiledArtifact` in
@@ -965,10 +1035,16 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      `ShaderCompileResult.h` to `Tools/ShaderCompiler/Public/`. Update
      all includes. RHI public headers must no longer mention compile
      options or compile results.
-  4. Extend `ValidateShaderCompilerBoundary.cmake` with a forbidden-
-     token check so `dxc`/`IDxcCompiler`/`dxcompiler` only appear under
-     `Backends/Dxc/`, and `ShaderCompileOptions`/`ShaderCompileResult`
-     never appear under `Engine/RHI/Public/`.
+  4. Extend `ValidateShaderCompilerBoundary.cmake` with forbidden-token
+     checks so:
+     - `dxc`/`IDxcCompiler`/`dxcompiler`/`DxcShaderBackend` only appear
+       under `Tools/ShaderCompiler/Backends/Dxc/`.
+     - `slang`/`SlangShaderBackend`/`slang::` only appear under
+       `Tools/ShaderCompiler/Backends/Slang/`.
+     - `ShaderCompileOptions`/`ShaderCompileResult` never appear under
+       `Engine/RHI/Public/`.
+     - The orchestrator (`ShaderPackageCooker.cpp`) names neither DXC
+       nor Slang concrete types.
   5. Define `ShaderReflection` in
      `Engine/RHI/Public/Shaders/ShaderReflection.h` covering every
      field listed in §9.
@@ -976,23 +1052,75 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      `SpirVReflectionExtractor` (SPIRV-Reflect). Same normalized output.
   7. Wire reflection into the cooked package. Bump
      `kCookedShaderPackageVersion` and add a `LoadV<N-1>` migration
-     entry (§10).
+     entry (§10). Add `BackendName` (string) and `BackendVersion`
+     (uint64) to `CookedShaderBinaryRecord` so `inspect-package` can
+     show producer.
   8. Implement `ShaderDebugArtifactSet` writer + `--debug-artifacts
-     <dir>` flag.
-  9. **Cleanup (same PR).** Delete the legacy DXC files in their old
-     location after the move:
+     <dir>` flag. Bundle path includes backend name:
+     `<shaderId>__<permutationHash>__<backend>__<target>/`.
+  9. **Cleanup (same PR as 2a).** Delete the legacy DXC files in their
+     old location after the move:
      `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.{h,cpp}`,
      `Tools/ShaderCompiler/Private/Compiler/DxcContext.{h,cpp}`. The
      `Compiler/` folder keeps only `ShaderCompileOptionsBuilder` (which
      Phase 3 retires). Remove the moved-from headers
      `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` and
      `ShaderCompileResult.h`. No re-export shims.
+  10. Implement `SlangReflectionExtractor` over
+      `slang::ProgramLayout` (Slang's first-class reflection). Output
+      is the same `ShaderReflection` shape as DXIL/SPIR-V extractors.
+      `SlangShaderBackend` always uses this extractor, regardless of
+      whether it emitted DXIL or SPIR-V.
+  11. Extend `ShaderCacheKey` to include `BackendName` and
+      `BackendVersion`. Two backends producing the same target for the
+      same source must yield distinct cache entries (DXC's DXIL and
+      Slang's DXIL are not interchangeable artifacts).
+  12. Add Slang as a third-party dependency via FetchContent or
+      vendored binary release under `Engine/third_party/slang/`. Pin
+      to a known-good release; record the pinned version in repo
+      memory.
+  13. Implement `Tools/ShaderCompiler/Backends/Slang/SlangShaderBackend.{h,cpp}`
+      against `slang.h`/`slang-com-ptr.h`. Owns a private
+      `slang::IGlobalSession`. `Compile()` creates a per-call
+      `slang::ISession` configured with target `SLANG_DXIL` or
+      `SLANG_SPIRV` based on `ShaderTarget`, loads the source module
+      (HLSL or `.slang`), finds the entry point by name, and emits the
+      target blob. Translates Slang diagnostics into the same
+      `CookDiagnostic` shape as the DXC backend.
+  14. Promote `ShaderBackendFactory` from a single function to a small
+      registry: `RegisterBackend(name, factory_fn, capability_probe)`,
+      `CreateBackend(name)`, `SelectBackendFor(shaderRegistration,
+      target, cliOverride)`. Built-in registrations live in
+      `Tools/ShaderCompiler/Public/Backend/BuiltinBackends.cpp` and
+      reference the two adapters by name only — no concrete includes
+      leak through the public surface.
+  15. Add `--backend <name>` CLI flag (`dxc`, `slang`, default `auto`)
+      to `cook` and `inspect-shader`. Add `list-backends` verb that
+      prints `{ name, declared targets, version string }`. The Auto
+      rule selects backend by source extension: `.slang` → Slang,
+      `.hlsl` → DXC. Per-shader registrations may override Auto.
+  16. **Hello-world cross-backend validation.** Add
+      `Engine/Assets/Shaders/HelloWorld/` containing two trivial
+      shaders that share semantics:
+      - `HelloTriangle.hlsl` (VS + PS, no resources)
+      - `HelloTriangle.slang` (same VS + PS in Slang syntax)
+      Register both as global shaders. CI cooks every (shader, target,
+      backend) pair the registration permits and asserts: cook exits
+      `0`, the `*.spkg` contains exactly the expected
+      `CookedShaderBinaryRecord`s with the right `BackendName`, the
+      bytecode is non-empty, and the normalized `ShaderReflection`
+      matches across all four paths (same VS input signature, same
+      empty resource list).
+  17. **Cleanup (same PR as 2d).** Remove any TODO/comment in the
+      orchestrator referring to Slang as a future backend. Update
+      `/memories/repo/shader-compiler-tool-layout.md` to list both
+      backends as shipping.
 - **Implementation Prompts.**
   - *"Define `IShaderBackend`, `ShaderBackendCapabilities`,
     `ShaderCompileEnvironment`, `ShaderTarget` in
     `Tools/ShaderCompiler/Public/Backend/`. Implementations under
-    `Tools/ShaderCompiler/Backends/`. Do not name DXC outside
-    `Backends/Dxc/`."*
+    `Tools/ShaderCompiler/Backends/`. Do not name DXC or Slang outside
+    `Backends/Dxc/` and `Backends/Slang/` respectively."*
   - *"Implement `DxcShaderBackend` so it compiles both DXIL and SPIR-V by
     selecting the target via `ShaderTarget` and toggling DXC's `-spirv`
     mode. Both code paths share compile-environment marshalling and
@@ -1000,47 +1128,101 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     targets and checks the resulting `*.spkg` contains both binaries."*
   - *"Define the full `ShaderReflection` struct in
     `Engine/RHI/Public/Shaders/ShaderReflection.h`. Implement
-    `DxilReflectionExtractor` and `SpirVReflectionExtractor`. Round-trip
-    reflection through the cooked package. Bump the version and add a
-    `LoadV<N-1>` migration entry."*
+    `DxilReflectionExtractor`, `SpirVReflectionExtractor`, and
+    `SlangReflectionExtractor`. Round-trip reflection through the cooked
+    package. Bump the version and add a `LoadV<N-1>` migration entry."*
   - *"Add `--debug-artifacts <dir>` to `ShaderCompiler.exe`. For every
     successful compile, emit a folder
-    `<shaderId>__<permutationHash>__<target>/` with the bundle layout
-    from §11."*
+    `<shaderId>__<permutationHash>__<backend>__<target>/` with the
+    bundle layout from §11."*
+  - *"Add Slang under `Engine/third_party/slang/` (FetchContent pinned
+    to a release, or vendored binary). Implement
+    `Tools/ShaderCompiler/Backends/Slang/SlangShaderBackend.{h,cpp}`
+    that owns a `slang::IGlobalSession`, configures a per-compile
+    `slang::ISession` with `SLANG_DXIL` or `SLANG_SPIRV` based on
+    `ShaderTarget`, compiles HLSL and `.slang` sources, and translates
+    Slang diagnostics into `CookDiagnostic`. The orchestrator must not
+    name `slang::` types."*
+  - *"Promote `ShaderBackendFactory` to a small registry. Built-in
+    backends self-register from
+    `Tools/ShaderCompiler/Public/Backend/BuiltinBackends.cpp`. Add
+    `--backend <name>` to `cook`/`inspect-shader` and a `list-backends`
+    verb. Add `BackendName` + `BackendVersion` to `ShaderCacheKey` and
+    to `CookedShaderBinaryRecord` (same package version bump as the
+    reflection landing)."*
+  - *"Add hello-world shaders under `Engine/Assets/Shaders/HelloWorld/`:
+    a minimal VS+PS in HLSL (`HelloTriangle.hlsl`) and the same shader
+    in Slang (`HelloTriangle.slang`). Register both as global shaders.
+    Add a CI-driven test that cooks each (shader, backend, target) pair
+    the registrations permit — four paths total — and asserts the
+    cooked package contains a binary for each path with non-empty
+    bytecode and matching normalized reflection."*
 - **Guardrails.**
   - *Must:* contain every DXC type, header, and symbol to
-    `Tools/ShaderCompiler/Backends/Dxc/`; the orchestrator names
-    `IShaderBackend*` only.
-  - *Must:* normalize reflection so DXIL and SPIR-V produce the same
-    `ShaderReflection` shape consumed by the renderer.
+    `Tools/ShaderCompiler/Backends/Dxc/`, and every Slang type, header,
+    and symbol to `Tools/ShaderCompiler/Backends/Slang/`. The
+    orchestrator names `IShaderBackend*` only and resolves backends by
+    string name.
+  - *Must:* normalize reflection so DXIL, SPIR-V (DXC), and both Slang
+    paths produce the same `ShaderReflection` shape consumed by the
+    renderer.
   - *Must:* bump `kCookedShaderPackageVersion` and add a `LoadV<N-1>`
-    migration entry in §10 in the same PR.
+    migration entry in §10. The single bump covers reflection,
+    `BackendName`, and `BackendVersion` together — do not bump twice.
+  - *Must:* include `BackendName` and `BackendVersion` in
+    `ShaderCacheKey` so DXC's DXIL and Slang's DXIL produce distinct
+    cache entries.
   - *Must:* delete `DxcShaderCompiler` / `DxcContext` and the moved
     `ShaderCompileOptions.h` / `ShaderCompileResult.h` from their old
     locations in the same PR — no re-export shims.
-  - *Must not:* introduce a second backend (Slang, glslang, …) in this
-    phase; only DXC ships, exposing both DXIL and SPIR-V via `-spirv`.
+  - *Must:* land Slang as a *peer* to DXC — same registry, same CLI,
+    same cache treatment, same reflection contract. No "DXC primary,
+    Slang experimental" framing.
+  - *Must not:* introduce a third backend (`glslang`, …) in this phase;
+    only DXC and Slang ship.
   - *Must not:* put compile options, compile results, or any
     backend-specific type under `Engine/RHI/Public/` after this phase.
   - *Must not:* break the cache from Phase 1: cached artifacts produced
-    by the new backend must remain content-addressed and byte-stable
-    for identical inputs.
+    by either backend must remain content-addressed and byte-stable for
+    identical (source, options, backend, target) inputs.
+  - *Must not:* allow silent backend fallback. If the requested backend
+    cannot satisfy the requested target, fail the cook with a structured
+    diagnostic.
 - **Validation Gates.**
-  - `grep -r "dxc\|IDxcCompiler\|dxcompiler" Tools/ShaderCompiler/`
-    matches *only* under `Backends/Dxc/`.
+  - `grep -r "dxc\|IDxcCompiler\|dxcompiler\|DxcShaderBackend"
+    Tools/ShaderCompiler/` matches *only* under `Backends/Dxc/`.
+  - `grep -r "slang\|SlangShaderBackend" Tools/ShaderCompiler/` matches
+    *only* under `Backends/Slang/`.
   - `cmake --build build --target ValidateShaderCompilerBoundary`
-    passes with the new forbidden-token check.
-  - `ShaderCompiler.exe cook --target=DxilSm66,SpirV16` produces a
-    cooked package containing both binaries; `inspect-package` lists
-    both.
+    passes with the new forbidden-token checks (DXC and Slang both
+    contained).
+  - `ShaderCompiler.exe list-backends` prints exactly two entries:
+    `dxc` and `slang`, each declaring DXIL + SPIR-V capability.
+  - `ShaderCompiler.exe cook --target=DxilSm66,SpirV16` (Auto backend)
+    produces a cooked package containing both binaries; `inspect-package`
+    lists each binary's producing backend.
+  - **Hello-world four-path matrix** — all four cooks exit `0` and
+    produce non-empty bytecode:
+    - `cook --shader HelloTriangle.hlsl --backend dxc   --target DxilSm66`
+    - `cook --shader HelloTriangle.hlsl --backend dxc   --target SpirV16`
+    - `cook --shader HelloTriangle.hlsl --backend slang --target DxilSm66`
+    - `cook --shader HelloTriangle.slang --backend slang --target SpirV16`
+    Plus the symmetry case: `HelloTriangle.slang` cooked to DXIL via
+    Slang, and `HelloTriangle.hlsl` cooked to SPIR-V via Slang, both
+    succeed.
+  - Normalized `ShaderReflection` for `HelloTriangle` is bit-identical
+    across all four paths (same VS input signature, same empty resource
+    list, same entry-point metadata).
   - Reflection JSON for a known shader contains every field listed in
     §9.
   - Renderer/RHI consume `ShaderReflection` only; no renderer file
-    includes a DXC header.
-  - `--debug-artifacts <tmp>` produces the bundle layout from §11.
+    includes a DXC or Slang header.
+  - `--debug-artifacts <tmp>` produces the bundle layout from §11 with
+    backend name in the directory.
 - **Increment Demo.** Side-by-side `inspect-package` showing the same
-  shader compiled to DXIL and SPIR-V; `DebugArtifactBundle/` directory
-  tree printed.
+  hello-world shader compiled four ways (DXC→DXIL, DXC→SPIR-V,
+  Slang→DXIL, Slang→SPIR-V), plus a `DebugArtifactBundle/` tree printed
+  for one of them showing backend name in the path.
 
 ### Phase 3 — Typed shader classes + permutations + parameter-struct verification + inspect CLI
 
@@ -1341,9 +1523,10 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   3. `IAnalysisPass` seam in the cooker: optional pass list invoked
      after each successful compile. Ship `PsoStatsPass` (writes
      bytecode size + resource counts to CSV) as the example.
-  4. Document `SlangShaderBackend` and `GlslangShaderBackend` as
-     `IShaderBackend` seams in §8. Implement only when a real workload
-     forces it.
+  4. Document `GlslangShaderBackend` as an `IShaderBackend` seam in §8.
+     Implement only when a real workload (GLSL ingest or a SPIR-V
+     extension neither DXC nor Slang reaches) forces it. DXC and Slang
+     already ship from Phase 2.
   5. Optional: `RgaAnalysisPass` skeleton that shells out to AMD RGA
      when installed and attaches ISA / register-pressure to
      diagnostics.
@@ -1362,9 +1545,9 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     editor still links no compiler.
   - *Must:* keep analysis passes optional and out of the default cook
     path so cook latency does not regress.
-  - *Must:* document `SlangShaderBackend` / `GlslangShaderBackend` as
-    `IShaderBackend` seams without implementing them until a real
-    workload (Open Question 7) demands it.
+  - *Must:* document `GlslangShaderBackend` as an `IShaderBackend`
+    seam without implementing it until a real workload demands it.
+    DXC and Slang already shipped in Phase 2.
   - *Must not:* let the inspector or any analysis pass call into a
     shader compiler from the editor process.
   - *Must not:* couple the inspector UI to a specific backend; it
@@ -1390,11 +1573,15 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 [ ] Phase 1 — Dependency graph + cache
     [ ] Cold cook    [ ] Warm cook = 0 backend invocations
     [ ] Targeted invalidation works   [ ] --no-cache forces recompile
-[ ] Phase 2 — Backend abstraction + reflection + DebugArtifactBundle
-    [ ] DXC contained to Backends/Dxc/   [ ] DXIL + SPIR-V both cooked
-    [ ] PSO-grade reflection lands       [ ] DebugArtifactBundle/ writes
-    [ ] Cleanup: legacy DxcShaderCompiler / DxcContext deleted
-    [ ] Cleanup: ShaderCompileOptions.h / ShaderCompileResult.h moved out of RHI public
+[ ] Phase 2 — Backend abstraction + reflection + DebugArtifactBundle + Slang
+    [x] 2a Structural: DXC contained to Backends/Dxc/   [x] DXIL + SPIR-V both cooked
+    [ ] 2b PSO-grade reflection lands (DXIL + SPIR-V + Slang extractors)
+    [ ] 2c DebugArtifactBundle/ writes (per backend, per target)
+    [ ] 2d Slang contained to Backends/Slang/           [ ] SlangShaderBackend ships DXIL + SPIR-V
+    [ ] Hello-world cooks 4 paths: dxc→dxil, dxc→spirv, slang→dxil, slang→spirv
+    [ ] Backend registry + --backend / list-backends CLI
+    [x] Cleanup: legacy DxcShaderCompiler / DxcContext deleted
+    [x] Cleanup: ShaderCompileOptions.h / ShaderCompileResult.h moved out of RHI public
 [ ] Phase 3 — Typed shaders + permutations + verification + inspect CLI
     [ ] list-shaders / list-permutations / inspect-shader work
     [ ] Parameter-struct verifier rejects mismatches
@@ -1407,9 +1594,9 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 [ ] Phase 4 — Editor hot reload
     [ ] Save .hlsl → viewport updates without restart
     [ ] Failed cook surfaces diagnostic, keeps old artifacts
-[ ] Phase 5 — Inspector + analysis seam + secondary backend seam
+[ ] Phase 5 — Inspector + analysis seam + glslang seam
     [ ] Editor Shader Inspector panel
-    [ ] PsoStatsPass CSV   [ ] Slang/Glslang documented
+    [ ] PsoStatsPass CSV   [ ] Glslang documented as future seam
 ```
 
 ### Definition of done (whole effort)
@@ -1429,10 +1616,16 @@ true at the same time:
   runtime, never under `Engine/Renderer`, `Engine/Editor`, or
   `Engine/Application`.
 - `ValidateShaderCompilerBoundary.cmake` enforces the new forbidden
-  tokens (`ShaderPackageLayoutCatalog`, `ShaderCookManifest`, DXC outside
-  `Backends/Dxc/`, compile options outside `Tools/`) and passes.
+  tokens (`ShaderPackageLayoutCatalog`, `ShaderCookManifest`, DXC
+  outside `Backends/Dxc/`, Slang outside `Backends/Slang/`, compile
+  options outside `Tools/`) and passes.
 - `ShaderCompiler.exe --help` lists exactly: `cook`, `list-shaders`,
-  `list-permutations`, `inspect-shader`. No legacy aliases.
+  `list-permutations`, `inspect-shader`, `inspect-package`,
+  `list-targets`, `list-backends`. No legacy aliases.
+- `ShaderCompiler.exe list-backends` reports two shipping backends
+  (`dxc`, `slang`), each declaring DXIL + SPIR-V capability, and the
+  hello-world shader cooks successfully on all four (backend, target)
+  pairs.
 - The cooked package version reflects the Phase 2 bump, with one
   documented `LoadV<N-1>` migration entry.
 
@@ -1458,6 +1651,11 @@ Decisions intentionally deferred until a phase needs them:
 6. **Schema migration policy.** Single-version-only (recook everything)
    vs read-old-versions for one release. *Recommend single-version
    while the engine is small.*
-7. **Slang adoption trigger.** What concrete capability would push us
-   from DXC-SPIRV to a `SlangShaderBackend`? (Likely: modules /
-   generics, multi-target IR sharing, or a target DXC cannot reach.)
+7. **Slang adoption boundary.** Slang ships as a peer backend in
+   Phase 2, so the question is no longer *whether* but *how far*: does
+   any engine-owned shader migrate from `.hlsl` to `.slang` to take
+   advantage of modules / generics / interfaces? *Recommend keeping
+   the engine HLSL-first while Slang exists for opt-in per shader; the
+   hello-world `.slang` file is the only required Slang source until a
+   concrete feature need (e.g., a parameterized BRDF library) justifies
+   converting more.*

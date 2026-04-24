@@ -1,18 +1,22 @@
 #pragma once
 
-#include "Config/RenderConfig.h"
-#include "ShaderStage.h"
+#include "Backend/ShaderTarget.h"
+#include "RHI/Public/Config/RenderConfig.h"
+#include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <filesystem>
 #include <string>
 #include <vector>
 
+// Inputs to one shader compile invocation. Owned by the offline tool; runtime
+// modules must not include this header.
 struct ShaderCompileOptions
 {
 	std::filesystem::path SourcePath;
 	std::filesystem::path IncludeDir;
 	std::string EntryPoint = "main";
 	ShaderStage Stage = ShaderStage::Pixel;
+	ShaderTarget Target = kDefaultShaderTarget;
 
 	bool EnableDebugInfo = false;
 	bool EnableOptimizations = true;

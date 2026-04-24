@@ -5,10 +5,8 @@
 #include <span>
 #include <vector>
 
-// Phase 1 placeholder: nodes carry no edges yet, so traversal order is
-// insertion order. The class exists as the parallelism contract for later
-// phases; today it just lets ShaderPackageCooker iterate uniformly via the
-// executor seam (see docs/plans/shadercompiler-architecture-review.md §13).
+// Phase 1 placeholder graph.
+// With no edges yet, traversal order is just insertion order.
 class DependencyGraph final
 {
   public:

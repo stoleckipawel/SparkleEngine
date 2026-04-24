@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ShaderReflection.h"
 #include "ShaderStage.h"
 
 #include "../ShaderParameters/ShaderParameterSemantics.h"
@@ -15,7 +16,12 @@ constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, cha
 }
 
 constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
-constexpr std::uint32_t kCookedShaderPackageVersion = 1;
+// v2 (Phase 2b): adds ShaderReflection records (per-binary + typed arrays),
+// BackendName + BackendVersion on CookedShaderBinaryRecord. v1 packages are
+// rejected with a clear error; the project recooks (cache is also keyed on
+// backend identity now, so the on-disk artifact cache invalidates cleanly).
+constexpr std::uint32_t kCookedShaderPackageVersion = 2;
+constexpr std::uint32_t kCookedShaderPackageVersionV1 = 1;
 
 enum class CookedShaderBinaryFormat : std::uint8_t
 {
@@ -62,6 +68,17 @@ struct CookedShaderPackageHeader
 	std::uint32_t SpecializationInputCount = 0;
 	std::uint32_t StringTableSizeInBytes = 0;
 	std::uint32_t BinaryBlobSizeInBytes = 0;
+	// v2: per-binary reflection block + typed reflection arrays. The
+	// ReflectionRecordCount equals BinaryRecordCount when reflection is
+	// present, or 0 when extraction failed/was disabled (writer always
+	// emits one block per binary today).
+	std::uint32_t ReflectionRecordCount = 0;
+	std::uint32_t ResourceBindingRecordCount = 0;
+	std::uint32_t ConstantBufferRecordCount = 0;
+	std::uint32_t ConstantBufferMemberRecordCount = 0;
+	std::uint32_t InputElementRecordCount = 0;
+	std::uint32_t PushConstantRangeRecordCount = 0;
+	std::uint32_t SpecializationConstantRecordCount = 0;
 	std::uint32_t Reserved1 = 0;
 	std::uint64_t ShaderPackageKey = 0;
 	std::uint64_t SourceIdentityHash = 0;
@@ -84,6 +101,11 @@ struct CookedShaderBinaryRecord
 	std::uint16_t Reserved = 0;
 	std::uint32_t Flags = 0;
 	std::uint64_t BytecodeHash = 0;
+	// v2: producer identity. BackendName is interned in the package string
+	// table ("dxc", "slang", ...). BackendVersion is the backend's reported
+	// version stamp; renderers/tools must not parse it but may display it.
+	CookedShaderStringRef BackendName = {};
+	std::uint64_t BackendVersion = 0;
 };
 
 struct CookedShaderBindingRecord

@@ -2,6 +2,7 @@
 
 #include "Cli/CookShadersCommand.h"
 
+#include "Backend/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
@@ -30,6 +31,41 @@ bool CookShadersCommand::TryParseArguments(
 			}
 
 			outSettings.cacheDirectory = std::filesystem::path(std::string(args[index + 1]));
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--target")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --target";
+				return false;
+			}
+
+			const std::string_view value = args[index + 1];
+			ShaderTarget parsed = kDefaultShaderTarget;
+			bool matched = false;
+			for (std::uint16_t candidate = static_cast<std::uint16_t>(ShaderTarget::DxilSm60);
+			     candidate <= static_cast<std::uint16_t>(ShaderTarget::SpirV16);
+			     ++candidate)
+			{
+				const auto target = static_cast<ShaderTarget>(candidate);
+				if (value == GetShaderTargetName(target))
+				{
+					parsed = target;
+					matched = true;
+					break;
+				}
+			}
+
+			if (!matched)
+			{
+				outErrorMessage = "Unknown shader target '" + std::string(value) + "'";
+				return false;
+			}
+
+			outSettings.target = parsed;
 			++index;
 			continue;
 		}

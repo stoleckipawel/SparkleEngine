@@ -20,7 +20,9 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	const ShaderCompileOptions& options,
 	const std::uint64_t sourceHash,
 	const std::uint64_t includeClosureHash,
-	const std::uint64_t optionsHash)
+	const std::uint64_t optionsHash,
+	const std::string_view backendName,
+	const std::uint64_t backendVersion)
 {
 	std::string canonical;
 	canonical.reserve(256);
@@ -45,6 +47,10 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	canonical += std::to_string(includeClosureHash);
 	canonical += '|';
 	canonical += std::to_string(optionsHash);
+	canonical += '|';
+	canonical += backendName;
+	canonical += '|';
+	canonical += std::to_string(backendVersion);
 
 	ShaderCacheKey key;
 	key.value = Hash::Fnv1a64(canonical);

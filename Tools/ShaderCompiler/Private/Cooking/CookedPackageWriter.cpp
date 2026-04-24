@@ -4,6 +4,7 @@
 
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/BindingRecordBuilder.h"
+#include "Cooking/ReflectionSerializer.h"
 #include "Cooking/SourceIdentityHasher.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
@@ -41,6 +42,9 @@ bool CookedPackageWriter::Write(
 	binaryBlob.reserve(kBinaryBlobInitialReserveBytes);
 	ShaderStageMask declaredStages = ShaderStageMask::None;
 
+	std::vector<ShaderReflection> reflectionsForSerialization;
+	reflectionsForSerialization.reserve(compiledStages.size());
+
 	for (const CookedStageBuild& compiledStage : compiledStages)
 	{
 		const std::uint32_t blobOffset = static_cast<std::uint32_t>(binaryBlob.size());
@@ -52,11 +56,17 @@ bool CookedPackageWriter::Write(
 		        .DebugArtifact = ToCookedShaderStringRef(stringTable.Add(compiledStage.debugArtifact)),
 		        .Bytecode = CookedShaderBlobRef{blobOffset, static_cast<std::uint32_t>(compiledStage.bytecode.size())},
 		        .Stage = compiledStage.stage,
-		        .Format = CookedShaderBinaryFormat::Dxil,
-		        .BytecodeHash = compiledStage.bytecodeHash});
+		        .Format = compiledStage.format,
+		        .BytecodeHash = compiledStage.bytecodeHash,
+		        .BackendName = ToCookedShaderStringRef(stringTable.Add(compiledStage.backendName)),
+		        .BackendVersion = compiledStage.backendVersion});
 
 		declaredStages |= ToShaderStageMask(compiledStage.stage);
+		reflectionsForSerialization.push_back(compiledStage.reflection);
 	}
+
+	ReflectionSerializer::Output reflectionOutput;
+	ReflectionSerializer::Build(reflectionsForSerialization, stringTable, reflectionOutput);
 
 	CookedShaderPackageHeader header{};
 	header.DeclaredStages = declaredStages;
@@ -67,6 +77,13 @@ bool CookedPackageWriter::Write(
 	header.SpecializationInputCount = static_cast<std::uint32_t>(specializationInputs.size());
 	header.StringTableSizeInBytes = stringTable.SizeInBytes();
 	header.BinaryBlobSizeInBytes = static_cast<std::uint32_t>(binaryBlob.size());
+	header.ReflectionRecordCount = static_cast<std::uint32_t>(reflectionOutput.reflectionRecords.size());
+	header.ResourceBindingRecordCount = static_cast<std::uint32_t>(reflectionOutput.resourceBindings.size());
+	header.ConstantBufferRecordCount = static_cast<std::uint32_t>(reflectionOutput.constantBuffers.size());
+	header.ConstantBufferMemberRecordCount = static_cast<std::uint32_t>(reflectionOutput.constantBufferMembers.size());
+	header.InputElementRecordCount = static_cast<std::uint32_t>(reflectionOutput.inputElements.size());
+	header.PushConstantRangeRecordCount = static_cast<std::uint32_t>(reflectionOutput.pushConstantRanges.size());
+	header.SpecializationConstantRecordCount = static_cast<std::uint32_t>(reflectionOutput.specializationConstants.size());
 	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId, package.variantId);
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
 	header.BindingLayoutHash = BuildPassParameterLayoutHash(bindingLayout);
@@ -83,6 +100,13 @@ bool CookedPackageWriter::Write(
 	    !BinaryStreamWriter::WriteArray(output, binaryRecords, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, bindingRecords, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, specializationInputs, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBuffers, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBufferMembers, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
 	{

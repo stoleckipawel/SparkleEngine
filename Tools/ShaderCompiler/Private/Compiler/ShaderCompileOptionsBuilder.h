@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Manifest/ShaderCookManifestTypes.h"
-#include "RHI/Public/Shaders/ShaderCompileOptions.h"
+#include "ShaderCompileOptions.h"
 
 class ShaderCompileOptionsBuilder final
 {

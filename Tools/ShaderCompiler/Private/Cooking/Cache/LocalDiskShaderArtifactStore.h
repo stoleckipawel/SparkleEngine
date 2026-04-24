@@ -20,8 +20,10 @@ class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
 	bool Put(const ShaderCacheKey& key, const CookedStageBuild& build, std::string& outErrorMessage) override;
 
   private:
+	// v2 adds backend identity and ShaderReflection per cached stage.
+	// The version bump protects against stray on-disk v1 artifacts.
 	static constexpr std::uint32_t kFormatMagic = 0x31414353;
-	static constexpr std::uint32_t kFormatVersion = 1;
+	static constexpr std::uint32_t kFormatVersion = 2;
 
 	template <typename T>
 	static void WritePOD(std::vector<std::uint8_t>& outBytes, const T& value)
@@ -49,6 +51,15 @@ class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
 	static bool ReadString(std::span<const std::uint8_t> bytes, std::size_t& cursor, std::string& outValue);
 	static bool Serialize(const CookedStageBuild& build, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage);
 	static bool Deserialize(std::span<const std::uint8_t> bytes, CookedStageBuild& outBuild, std::string& outErrorMessage);
+	static bool SerializeReflection(
+	    const struct ShaderReflection& reflection,
+	    std::vector<std::uint8_t>& outBytes,
+	    std::string& outErrorMessage);
+	static bool DeserializeReflection(
+	    std::span<const std::uint8_t> bytes,
+	    std::size_t& cursor,
+	    struct ShaderReflection& outReflection,
+	    std::string& outErrorMessage);
 
 	std::filesystem::path m_rootDirectory;
 };

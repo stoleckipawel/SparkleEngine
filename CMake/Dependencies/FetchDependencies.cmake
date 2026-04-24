@@ -16,6 +16,7 @@
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
 #   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
+#   - SPIRV-Reflect  (vulkan-sdk-1.3.290.0) - SPIR-V reflection (offline tool only)
 #
 # ============================================================================
 
@@ -73,7 +74,7 @@ message(STATUS "")
 # directory, which fails on Windows with "Error removing directory".
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
-foreach(_dep imgui cgltf stb spdlog assimp ktx)
+foreach(_dep imgui cgltf stb spdlog assimp ktx spirv_reflect)
     set(_src_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-src")
     set(_subbuild_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-subbuild")
     if(EXISTS "${_src_dir}" AND NOT EXISTS "${_src_dir}/.git")
@@ -478,6 +479,45 @@ if(TARGET ktx_read)
 endif()
 
 message(STATUS "  KTX-Software:   ${ktx_SOURCE_DIR} (~46 MB)")
+
+# ============================================================================
+# SPIRV-Reflect - SPIR-V reflection (Khronos)
+# https://github.com/KhronosGroup/SPIRV-Reflect
+#
+# Used by Tools/ShaderCompiler/Backends/Dxc to extract reflection from the
+# SPIR-V blobs DXC emits in `-spirv` mode. Single .c + headers; we build it
+# as a small static library so its symbols stay out of every translation
+# unit that includes the header.
+#
+# Target:  spirv_reflect (STATIC)
+# Usage:   target_link_libraries(YourTarget PRIVATE spirv_reflect)
+#          #include <spirv_reflect.h>
+# ============================================================================
+FetchContent_Declare(spirv_reflect
+    GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect.git
+    GIT_TAG        vulkan-sdk-1.3.290.0
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+)
+message(STATUS "  [8/8] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
+FetchContent_Populate(spirv_reflect)
+
+add_library(spirv_reflect STATIC
+    ${spirv_reflect_SOURCE_DIR}/spirv_reflect.c
+    ${spirv_reflect_SOURCE_DIR}/spirv_reflect.h
+)
+
+target_include_directories(spirv_reflect PUBLIC
+    ${spirv_reflect_SOURCE_DIR}
+    ${spirv_reflect_SOURCE_DIR}/include
+)
+
+if(MSVC)
+    target_compile_options(spirv_reflect PRIVATE /W0)
+endif()
+
+set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty")
+message(STATUS "  SPIRV-Reflect:  ${spirv_reflect_SOURCE_DIR} (~2 MB)")
 
 # ============================================================================
 # Restore LFS behavior

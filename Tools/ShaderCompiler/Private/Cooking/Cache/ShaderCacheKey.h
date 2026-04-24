@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Manifest/ShaderCookManifestTypes.h"
-#include "RHI/Public/Shaders/ShaderCompileOptions.h"
+#include "ShaderCompileOptions.h"
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 struct ShaderCacheKey final
 {
@@ -19,5 +20,7 @@ struct ShaderCacheKey final
 		const ShaderCompileOptions& options,
 		std::uint64_t sourceHash,
 		std::uint64_t includeClosureHash,
-		std::uint64_t optionsHash);
+		std::uint64_t optionsHash,
+		std::string_view backendName,
+		std::uint64_t backendVersion);
 };

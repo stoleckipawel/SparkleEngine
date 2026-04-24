@@ -19,7 +19,7 @@ CommandRegistry::CommandRegistry()
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandCook, kCommandCookLegacy},
 	    .command = std::make_shared<CookShadersCommand>(),
-	    .usageLine = "  ShaderCompiler cook [--no-cache] [--cache-dir <path>]",
+	    .usageLine = "  ShaderCompiler cook [--no-cache] [--cache-dir <path>] [--target <name>]",
 	    .legacyUsageLine = "  ShaderCompiler cook-shaders"});
 }
 

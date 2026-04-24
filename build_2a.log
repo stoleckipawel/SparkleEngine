@@ -1,0 +1,14 @@
+﻿MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Validating repo-wide logging ownership, logger acquisition, and legacy logging removal...
+  -- Logging boundary check passed for Engine, Tools, Projects, and logging-related CMake wiring.
+  Validating runtime and ShaderCompiler boundary ownership...
+  -- ShaderCompiler boundary check passed for Engine/RHI, runtime modules, and Tools/ShaderCompiler.
+  SparkleCore.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleCored.lib
+  imgui.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\imguid.lib
+  SparklePlatform.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparklePlatformd.lib
+  Validating AssetConverter and TextureCooker boundary ownership...
+  -- TextureCooker boundary check passed for runtime modules, Tools/AssetConverter, and Tools/TextureCooker.
+  SparkleRHI.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleRHId.lib
+  ShaderCompiler.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\ShaderCompiler.exe

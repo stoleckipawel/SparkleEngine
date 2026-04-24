@@ -23,6 +23,8 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 	canonical += '|';
 	canonical += std::to_string(static_cast<std::uint32_t>(options.Stage));
 	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(options.Target));
+	canonical += '|';
 	canonical += options.EnableDebugInfo ? '1' : '0';
 	canonical += options.EnableOptimizations ? '1' : '0';
 	canonical += options.TreatWarningsAsErrors ? '1' : '0';
