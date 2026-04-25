@@ -59,6 +59,12 @@ set(FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS
     "RHI/Private/"
     "Engine/RHI/Private/"
     "RHI/Public/D3D12/"
+    "ShaderPackageLayoutCatalog"
+    "ShaderCookManifest"
+    "Manifest/"
+    "ShaderPackages.ini"
+    "inspect-manifest"
+    "cook-shaders"
     "Application/"
     "Renderer/"
     "GameFramework/"
@@ -81,6 +87,14 @@ set(FORBIDDEN_DXC_TOKENS_OUTSIDE_BACKEND
     "spirv_reflect.h"
     "SpvReflect"
     "spvReflect"
+)
+
+set(FORBIDDEN_SLANG_TOKENS_OUTSIDE_BACKEND
+    "SlangShaderBackend"
+    "SlangReflectionExtractor"
+    "slang::"
+    "slang.h"
+    "slang-com-ptr.h"
 )
 
 set(FORBIDDEN_SHADER_COMPILER_CMAKE_TOKENS
@@ -122,9 +136,15 @@ foreach(runtime_root IN LISTS SHADER_COMPILER_RUNTIME_SOURCE_ROOTS)
     )
 
     foreach(runtime_source_file IN LISTS runtime_source_files)
+        set(runtime_source_tokens ${FORBIDDEN_RUNTIME_SOURCE_TOKENS})
+        string(FIND "${runtime_source_file}" "/Engine/Application/Private/ShaderRecook/" shader_recook_source_index)
+        if(NOT shader_recook_source_index EQUAL -1)
+            list(REMOVE_ITEM runtime_source_tokens "ShaderCompiler.exe" "SHADER_COMPILER_EXE")
+        endif()
+
         check_file_for_tokens(
             "${runtime_source_file}"
-            TOKENS ${FORBIDDEN_RUNTIME_SOURCE_TOKENS}
+            TOKENS ${runtime_source_tokens}
         )
     endforeach()
 endforeach()
@@ -156,6 +176,14 @@ foreach(tool_root IN LISTS SHADER_COMPILER_TOOL_SOURCE_ROOTS)
             check_file_for_tokens(
                 "${tool_source_file}"
                 TOKENS ${FORBIDDEN_DXC_TOKENS_OUTSIDE_BACKEND}
+            )
+        endif()
+
+        string(FIND "${tool_source_file}" "/Backends/Slang/" slang_backend_index)
+        if(slang_backend_index EQUAL -1)
+            check_file_for_tokens(
+                "${tool_source_file}"
+                TOKENS ${FORBIDDEN_SLANG_TOKENS_OUTSIDE_BACKEND}
             )
         endif()
     endforeach()

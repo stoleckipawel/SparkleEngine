@@ -10,22 +10,8 @@ name: shader-cook
 on:
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.hlsl'
-      - '**/*.hlsli'
-      - '**/ShaderPackages.ini'
-      - 'Tools/ShaderCompiler/**'
-      - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
-      - '.github/workflows/shader-cook.yml'
   push:
     branches: [main]
-    paths:
-      - '**/*.hlsl'
-      - '**/*.hlsli'
-      - '**/ShaderPackages.ini'
-      - 'Tools/ShaderCompiler/**'
-      - 'Scripts/CI/RunShaderCompilerCookCheck.ps1'
-      - '.github/workflows/shader-cook.yml'
   workflow_dispatch:
 
 jobs:
@@ -43,3 +29,11 @@ jobs:
       - name: Run shader cook check
         shell: pwsh
         run: ./Scripts/CI/RunShaderCompilerCookCheck.ps1
+
+      - name: Run shader cache behavior check
+        shell: pwsh
+        run: ./Scripts/CI/RunShaderCacheCheck.ps1
+
+      - name: Run shader editor pipeline check
+        shell: pwsh
+        run: ./Scripts/CI/RunShaderEditorPipelineCheck.ps1

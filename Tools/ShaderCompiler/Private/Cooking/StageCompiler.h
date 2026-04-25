@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Cooking/CookedStageBuild.h"
-#include "Manifest/ShaderCookManifestTypes.h"
+#include "Cooking/ShaderCookTypes.h"
+#include "ShaderDebugArtifactSet.h"
 #include "ShaderCompileOptions.h"
 
 #include <string>
@@ -16,5 +17,6 @@ class StageCompiler final
 	    const ShaderCookStageDesc& stage,
 	    const ShaderCompileOptions& options,
 	    CookedStageBuild& outCompiledStage,
+	    ShaderDebugArtifactSet* outDebugArtifacts,
 	    std::string& outErrorMessage);
 };

@@ -1,16 +1,16 @@
 [ShaderPackageRegistry]
 Version = 1
-PackageCount = 3
+PackageCount = 4
 
-[Package ComputeClear]
+[Package HelloTriangle]
 Variant = Default
-BindingLayout = ComputeClear
-PackageKey = 8437DA8723A9FE1B
-SourceIdentityHash = 39D395A9F980A001
-BindingLayoutHash = 0686B542BD86ED7D
+BindingLayout = Empty
+PackageKey = 7BC1A00494AEFD27
+SourceIdentityHash = D5A3498310E9BBD2
+BindingLayoutHash = 6E96994300ADCD4E
 VariantHash = EBADA5168620C5FE
-DeclaredStages = Compute
-Output = Assets/Cooked/Shaders/Packages/8437DA8723A9FE1B.sshd
+DeclaredStages = Vertex|Pixel
+Output = Assets/Cooked/Shaders/Packages/7BC1A00494AEFD27.sshd
 
 [Package ForwardOpaque]
 Variant = Default
@@ -31,4 +31,14 @@ BindingLayoutHash = 80BE5D86BCDB5692
 VariantHash = EBADA5168620C5FE
 DeclaredStages = Vertex|Pixel
 Output = Assets/Cooked/Shaders/Packages/9C17AB485FA704CE.sshd
+
+[Package ComputeClear]
+Variant = Default
+BindingLayout = ComputeClear
+PackageKey = 8437DA8723A9FE1B
+SourceIdentityHash = 39D395A9F980A001
+BindingLayoutHash = 0686B542BD86ED7D
+VariantHash = EBADA5168620C5FE
+DeclaredStages = Compute
+Output = Assets/Cooked/Shaders/Packages/8437DA8723A9FE1B.sshd
 

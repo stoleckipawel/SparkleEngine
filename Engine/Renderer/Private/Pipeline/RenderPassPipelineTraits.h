@@ -13,7 +13,6 @@
 #include "Passes/ShadowOpaquePass.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
-#include "RHI/Public/Shaders/ShaderPackageLayoutCatalog.h"
 
 #include <array>
 #include <cassert>
@@ -91,35 +90,24 @@ inline void AppendPassParameterLayout(PassParameterLayout& destination, const Pa
 	}
 }
 
-inline PassParameterLayout BuildKnownShaderPackageBindingLayout(
-    std::string_view bindingLayoutId,
-    ShaderPassKind passKind,
-    const char* passName)
+inline PassParameterLayout BuildShadowOpaqueBindingLayout()
 {
-	PassParameterLayout layout;
-	std::string errorMessage;
-	if (!ShaderPackageLayouts::TryBuild(bindingLayoutId, layout, errorMessage))
-	{
-		Engine::Diagnostics::Fail(
-		    GetRendererPipelineLogger(),
-		    __FILE__,
-		    __LINE__,
-		    std::format("Failed to build known binding layout '{}' for pass '{}' - {}", bindingLayoutId, passName, errorMessage));
-	}
-
-	const bool valid = ValidateShaderPassLayout(layout, passKind, passName);
+	PassParameterLayout layout = ShadowOpaquePass::GetParameterMetadata().GetLayout();
+	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
+	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ShadowOpaquePass::PassName);
 	assert(valid);
 	return layout;
 }
 
-inline PassParameterLayout BuildShadowOpaqueBindingLayout()
-{
-	return BuildKnownShaderPackageBindingLayout(ShadowOpaquePass::PassName, ShaderPassKind::Raster, ShadowOpaquePass::PassName);
-}
-
 inline PassParameterLayout BuildForwardOpaqueBindingLayout()
 {
-	return BuildKnownShaderPackageBindingLayout(ForwardOpaquePass::PassName, ShaderPassKind::Raster, ForwardOpaquePass::PassName);
+	PassParameterLayout layout = ForwardOpaquePass::GetParameterMetadata().GetLayout();
+	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
+	layout.Add<UniformData<PerObjectPSConstantBufferData>>("PerObjectPS", ShaderStageVisibility::Pixel);
+	layout.Add<ReadTexture>("MaterialTextures", ShaderStageVisibility::Pixel, 5u);
+	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ForwardOpaquePass::PassName);
+	assert(valid);
+	return layout;
 }
 
 template <typename TPass> struct RenderPassRuntimeStorage

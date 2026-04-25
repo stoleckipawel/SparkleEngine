@@ -3,7 +3,6 @@
 #include "Cooking/CookedPackageWriter.h"
 
 #include "Constants/ShaderCompilerConstants.h"
-#include "Cooking/BindingRecordBuilder.h"
 #include "Cooking/ReflectionSerializer.h"
 #include "Cooking/SourceIdentityHasher.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
@@ -20,9 +19,53 @@ static CookedShaderStringRef ToCookedShaderStringRef(const Engine::Strings::Stri
 	return CookedShaderStringRef{entry.OffsetInBytes, entry.SizeInBytes};
 }
 
+static ShaderStageMask ToCookedShaderStageMask(ShaderStageVisibility visibility) noexcept
+{
+	switch (visibility)
+	{
+		case ShaderStageVisibility::Vertex:
+			return ShaderStageMask::Vertex;
+		case ShaderStageVisibility::Pixel:
+			return ShaderStageMask::Pixel;
+		case ShaderStageVisibility::Compute:
+			return ShaderStageMask::Compute;
+		case ShaderStageVisibility::AllGraphics:
+			return ShaderStageMask::Vertex | ShaderStageMask::Pixel;
+		case ShaderStageVisibility::All:
+			return ShaderStageMask::Vertex | ShaderStageMask::Pixel | ShaderStageMask::Compute;
+		case ShaderStageVisibility::None:
+		default:
+			return ShaderStageMask::None;
+	}
+}
+
+static void BuildBindingRecords(
+	const PassParameterLayout& layout,
+	Engine::Strings::StringTableBuilder& stringTable,
+	std::vector<CookedShaderBindingRecord>& outBindingRecords)
+{
+	const std::vector<PassParameterDesc>& parameters = layout.GetParameters();
+	outBindingRecords.clear();
+	outBindingRecords.reserve(parameters.size());
+
+	for (std::size_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
+	{
+		const PassParameterDesc& parameter = parameters[parameterIndex];
+		const Engine::Strings::StringTableEntry nameEntry = stringTable.Add(parameter.Name);
+		outBindingRecords.push_back(CookedShaderBindingRecord{
+		    .Name = ToCookedShaderStringRef(nameEntry),
+		    .SemanticKind = parameter.Kind,
+		    .ResourceDomain = parameter.ResourceDomain,
+		    .Access = parameter.Access,
+		    .VisibilityMask = ToCookedShaderStageMask(parameter.Visibility),
+		    .LogicalBindingIndex = static_cast<std::uint32_t>(parameterIndex),
+		    .ArrayCount = parameter.ArrayCount,
+		    .ValueSizeInBytes = parameter.ValueSizeInBytes});
+	}
+}
+
 bool CookedPackageWriter::Write(
 	const ShaderCookPackageDesc& package,
-	const PassParameterLayout& bindingLayout,
 	std::span<const CookedStageBuild> compiledStages,
 	CookedShaderPackageOutput& outPackageOutput,
 	std::string& outErrorMessage)
@@ -36,7 +79,7 @@ bool CookedPackageWriter::Write(
 	std::vector<CookedShaderSpecializationInputRecord> specializationInputs;
 	std::vector<std::uint8_t> binaryBlob;
 
-	BindingRecordBuilder::Build(bindingLayout, stringTable, bindingRecords);
+	BuildBindingRecords(package.bindingLayout, stringTable, bindingRecords);
 
 	binaryRecords.reserve(compiledStages.size());
 	binaryBlob.reserve(kBinaryBlobInitialReserveBytes);
@@ -86,12 +129,13 @@ bool CookedPackageWriter::Write(
 	header.SpecializationConstantRecordCount = static_cast<std::uint32_t>(reflectionOutput.specializationConstants.size());
 	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId, package.variantId);
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
-	header.BindingLayoutHash = BuildPassParameterLayoutHash(bindingLayout);
+	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
 	header.VariantHash = BuildShaderVariantHash(package.variantId);
 
 	const std::filesystem::path packagePath = ::BuildCookedShaderPackagePath(header.ShaderPackageKey);
+	const std::filesystem::path tempPackagePath = packagePath.string() + ".tmp";
 	std::ofstream output;
-	if (!TryOpenBinaryOutput(packagePath, output, outErrorMessage))
+	if (!TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
 	{
 		return false;
 	}
@@ -110,6 +154,17 @@ bool CookedPackageWriter::Write(
 	    !BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
 	{
+		return false;
+	}
+	output.close();
+
+	std::error_code ec;
+	std::filesystem::remove(packagePath, ec);
+	ec.clear();
+	std::filesystem::rename(tempPackagePath, packagePath, ec);
+	if (ec)
+	{
+		outErrorMessage = "Failed to publish cooked shader package '" + packagePath.string() + "' - " + ec.message();
 		return false;
 	}
 

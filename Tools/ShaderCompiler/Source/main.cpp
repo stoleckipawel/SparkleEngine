@@ -13,7 +13,14 @@ int main(int argc, char** argv)
 
 	if (argc >= 2)
 	{
-		const ICommand* command = registry.Find(std::string_view{argv[1]});
+		const std::string_view verb{argv[1]};
+		if (verb == "--help" || verb == "-h" || verb == "/?")
+		{
+			registry.PrintUsage(std::cout);
+			return kExitCodeSuccess;
+		}
+
+		const ICommand* command = registry.Find(verb);
 		if (command != nullptr)
 		{
 			std::vector<std::string_view> commandArgs;

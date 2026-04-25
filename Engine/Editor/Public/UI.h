@@ -8,7 +8,10 @@
 
 #include <Windows.h>
 
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <string>
 
 class Timer;
 class MainMenuBarPanel;
@@ -16,6 +19,7 @@ class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
 class ProfilerPanel;
+class ShaderInspectorPanel;
 class LevelManager;
 class GameScene;
 class Window;
@@ -40,6 +44,10 @@ class SPARKLE_EDITOR_API UI final
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
+	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
+	void SetShaderRecookStatus(std::string status);
+	bool ConsumeShaderReloadRequest() noexcept;
+	bool ConsumeShaderRecookRequest() noexcept;
 
 	void Update();
 
@@ -49,6 +57,7 @@ class SPARKLE_EDITOR_API UI final
 	void NewFrame();
 
 	void Build();
+	void BuildShaderRecookStatusWindow(bool disableInteraction) noexcept;
 	bool IsReady() const noexcept;
 
 	void InitializeImGuiContext();
@@ -59,6 +68,7 @@ class SPARKLE_EDITOR_API UI final
 	bool InitializeNativeGraphicsBackend();
 
 	void InitializeDefaultPanels();
+	void ConfigureMainMenuBarShaderActions();
 
 	void SubscribeToWindowEvents(Window& window);
 
@@ -69,12 +79,18 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	std::unique_ptr<ProfilerPanel> m_profilerPanel;
+	std::unique_ptr<ShaderInspectorPanel> m_shaderInspectorPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
 	RenderHardwareInterface* m_renderHardware = nullptr;
 	Window* m_window = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
+	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
+	std::string m_shaderRecookStatus;
+	bool m_shaderReloadRequested = false;
+	bool m_shaderRecookRequested = false;
+	bool m_showShaderRecookStatus = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
 	bool m_isGraphicsBackendInitialized = false;

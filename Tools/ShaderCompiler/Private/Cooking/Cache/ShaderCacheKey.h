@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Manifest/ShaderCookManifestTypes.h"
+#include "Cooking/ShaderCookTypes.h"
 #include "ShaderCompileOptions.h"
 
 #include <cstdint>

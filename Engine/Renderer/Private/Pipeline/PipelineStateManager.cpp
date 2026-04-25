@@ -1,6 +1,8 @@
 #include "../PCH.h"
 #include "PipelineStateManager.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
+
 namespace
 {
 	template <typename... TPasses>
@@ -35,6 +37,19 @@ const RenderPassRuntimeRegistry& PipelineStateManager::GetRuntimeRegistry() cons
 {
 	assert(m_runtimeRegistry.has_value());
 	return *m_runtimeRegistry;
+}
+
+void PipelineStateManager::ReloadCookedShaders() noexcept
+{
+	static const std::shared_ptr<spdlog::logger>& logger = Engine::Logging::GetOrCreateLogger("Renderer");
+	SPDLOG_LOGGER_INFO(logger, "Reloading cooked shader packages and pipeline state runtimes");
+
+	m_runtimeRegistry.reset();
+	m_runtimeStorage = PassRuntimeStorageTuple{};
+	m_shaderPackages.Clear();
+	InitializePassRuntimes();
+
+	SPDLOG_LOGGER_INFO(logger, "Cooked shader reload complete (generation={})", m_shaderPackages.GetGeneration());
 }
 
 void PipelineStateManager::InitializePassRuntimes()

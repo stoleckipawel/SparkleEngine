@@ -196,6 +196,12 @@ bool LoadedShaderPackage::ContainsBlobRef(CookedShaderBlobRef ref) const noexcep
 	return ref.OffsetInBytes <= m_binaryBlob.size() && ref.SizeInBytes <= m_binaryBlob.size() - ref.OffsetInBytes;
 }
 
+void CookedShaderPackageCache::Clear() noexcept
+{
+	m_packages.clear();
+	++m_generation;
+}
+
 bool CookedShaderPackageCache::LoadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
@@ -236,6 +242,40 @@ bool CookedShaderPackageCache::LoadPackage(
 
 	LoadedShaderPackage* cachedPackage = loadedPackage.get();
 	m_packages.emplace(packageKey, std::move(loadedPackage));
+	outPackage = cachedPackage;
+	outErrorMessage.clear();
+	return true;
+}
+
+bool CookedShaderPackageCache::ReloadPackage(
+    const ShaderPackageDefinition& definition,
+    const PassParameterLayout& expectedBindingLayout,
+    std::string& outErrorMessage,
+    const LoadedShaderPackage*& outPackage)
+{
+	outPackage = nullptr;
+	if (!definition.IsValid())
+	{
+		outErrorMessage = "Shader package definition is invalid.";
+		return false;
+	}
+
+	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
+	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
+	const std::filesystem::path packagePath = BuildCookedShaderPackagePath(packageKey);
+	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
+	{
+		return false;
+	}
+
+	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, outErrorMessage))
+	{
+		return false;
+	}
+
+	LoadedShaderPackage* cachedPackage = loadedPackage.get();
+	m_packages[packageKey] = std::move(loadedPackage);
+	++m_generation;
 	outPackage = cachedPackage;
 	outErrorMessage.clear();
 	return true;

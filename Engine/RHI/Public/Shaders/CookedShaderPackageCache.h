@@ -75,7 +75,15 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 class SPARKLE_RHI_API CookedShaderPackageCache final
 {
   public:
+	std::uint64_t GetGeneration() const noexcept { return m_generation; }
+	void Clear() noexcept;
+
 	bool LoadPackage(
+	    const ShaderPackageDefinition& definition,
+	    const PassParameterLayout& expectedBindingLayout,
+	    std::string& outErrorMessage,
+	    const LoadedShaderPackage*& outPackage);
+	bool ReloadPackage(
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
 	    std::string& outErrorMessage,
@@ -90,4 +98,5 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	    std::string& outErrorMessage);
 
 	std::unordered_map<std::uint64_t, std::unique_ptr<LoadedShaderPackage>> m_packages;
+	std::uint64_t m_generation = 1;
 };

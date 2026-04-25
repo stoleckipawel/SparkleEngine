@@ -23,6 +23,7 @@ struct ShaderCompileOptions
 	bool TreatWarningsAsErrors = true;
 	bool StripReflection = true;
 	bool StripDebugInfo = true;
+	bool CaptureDebugArtifacts = false;
 
 	std::vector<std::filesystem::path> AdditionalIncludeDirs;
 

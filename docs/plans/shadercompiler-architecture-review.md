@@ -44,7 +44,7 @@ What we want, in one diagram:
                 │                                  CookedPackageWriter     │
                 │                                            │             │
                 │                          ┌─────────────────▼──────────┐  │
-                │                          │  *.spkg  +  registry       │  │
+                │                          │  *.sshd  +  registry       │  │
                 │                          │  + DebugArtifactBundle/    │  │
                 │                          └────────────────────────────┘  │
                 └──────────────────────────────────────────────────────────┘
@@ -60,7 +60,7 @@ What we want, in one diagram:
                  │              ▼                          ▼                │
                  │     ReflectionView           PSO / RootSignature build   │
                  │                                                          │
-                 │   Editor: ShaderRecookWatcher ─► reopen + bump version   │
+                │   Editor: ShaderRecookCoordinator ─► reopen + version++  │
                  └──────────────────────────────────────────────────────────┘
 ```
 
@@ -159,10 +159,10 @@ Non-goals (explicitly out of scope):
 
 ```text
 Tools/ShaderCompiler/             orchestration, planning, executor, cache, CLI
-Tools/ShaderCompiler/Public/      IShaderBackend, ShaderTarget, ShaderCompileEnvironment
+Tools/ShaderCompiler/Public/      IShaderBackend, ShaderTarget, ShaderCompileOptions
 Tools/ShaderCompiler/Backends/    IShaderBackend adapters
   └─ Dxc/                         DxcShaderBackend (DXIL + SPIR-V via DXC)
-  └─ Slang/                       (future, not in initial plan)
+  └─ Slang/                       SlangShaderBackend (DXIL + SPIR-V via Slang)
   └─ Glslang/                     (future, not in initial plan)
 Tools/ShaderCompiler/Analysis/    optional analysis passes (PsoStatsPass, RGA wrap, ...)
 
@@ -170,7 +170,7 @@ Engine/RHI/Public/Shaders/        cooked package SCHEMA + reader + ShaderReflect
                                   + typed authoring macros (TGlobalShader, etc.)
 Engine/Core/                      generic file/path/string/hash/log utilities
 Engine/Renderer/                  CONSUMER of cooked packages (no compile, ever)
-Engine/Editor/                    editor UI + ShaderRecookWatcher (no compile, ever)
+Engine/Editor/                    editor UI + ShaderRecookCoordinator (no compile, ever)
 ```
 
 ### Allowed edges
@@ -182,7 +182,7 @@ Tools/ShaderCompiler/Backends  ──► dxcompiler            (only the DXC ada
 Engine/RHI                     ──► Engine/Core
 Engine/Renderer                ──► Engine/RHI            (reads cooked packages)
 Engine/Editor                  ──► Engine/RHI            (reads cooked packages)
-Engine/Editor                  ──► OS file watcher       (observes recook signal)
+Engine/Editor                  ──► filesystem polling seam (observes source + recook signal)
 ```
 
 ### Forbidden edges (enforced by `ValidateShaderCompilerBoundary.cmake`)
@@ -283,18 +283,19 @@ Each entry: role + lifetime owner.
 ### Backend
 
 - **`IShaderBackend`** —
-  `Compile(ShaderCompileRequest, CookDiagnosticSink) → CompiledArtifact`.
+  `Compile(const ShaderCompileOptions&) → ShaderCompileResult`.
 - **`ShaderBackendCapabilities`** — `SupportsTarget(...)`,
   `SupportsFeature(...)` (mesh, raytracing), debug-artifact
   capabilities.
-- **`ShaderCompileEnvironment`** — defines, include roots, debug flags,
-  target, profile. Mutated by `ModifyCompilationEnvironment`. Consumed
-  by backends.
+- **`ShaderCompileOptions`** — source path, entry point, stage, defines,
+  include roots, debug flags, target, and capture settings consumed by
+  backends.
 - **`DxcShaderBackend`** — wraps `IDxcCompiler3`. Produces both DXIL and
-  SPIR-V depending on `ShaderTarget`. The only adapter we ship in the
-  initial plan.
-- **`SlangShaderBackend`**, **`GlslangShaderBackend`** — designed seams,
-  not implemented. Slot in via `IShaderBackend` only.
+  SPIR-V depending on `ShaderTarget`.
+- **`SlangShaderBackend`** — peer backend for DXIL and SPIR-V through
+  Slang's multi-target codegen.
+- **`GlslangShaderBackend`** — documented future seam. Slots in via
+  `IShaderBackend` only when a real workload requires it.
 
 ### Reflection
 
@@ -324,8 +325,9 @@ Each entry: role + lifetime owner.
 
 ### Diagnostics + inspection
 
-- **`CookDiagnosticSink`** — receives structured diagnostics. Two
-  renderers: console (humans) and JSON Lines (`--json`, for CI/editor).
+- **Cook diagnostics** — stable `SC####` codes are emitted in process
+  output for CI/editor status surfaces; structured inspection data is
+  captured in the debug artifact JSON files.
 - **`ShaderDebugArtifactSet`** / **`DebugArtifactBundle/`** — per
   `(shader id, permutation, target)` directory containing
   `compile-request.json`, `defines.json`, `permutation-vector.json`,
@@ -336,8 +338,10 @@ Each entry: role + lifetime owner.
 
 - **`ShaderRecookSignal`** — marker file written atomically by the tool
   on successful cook.
-- **`ShaderRecookWatcher`** — editor-side, observes the signal, asks
-  RHI to reopen changed packages, bumps `ShaderResource::Version`.
+- **`ShaderRecookCoordinator`** — editor-side, observes shader source
+  timestamps and the recook signal at the frame boundary, spawns the
+  tool out of process, asks RHI to reopen cooked packages, and bumps
+  `ShaderResource::Version`.
 
 ## 6. Authoring Model
 
@@ -367,12 +371,9 @@ public:
         return true;
     }
 
-    static void ModifyCompilationEnvironment(const FPermutationDomain& d,
-                                             ShaderCompileEnvironment& env)
-    {
-        env.SetDefine("USE_GAMMA", d.Get<FUseGammaCorrection>() ? 1 : 0);
-        env.SetDefine("QUALITY",   static_cast<int>(d.Get<FQuality>()));
-    }
+    // The shipped Phase 3 surface exposes typed permutation domains to the
+    // registry/CLI. Per-permutation compile-environment mutation remains a
+    // narrow future extension because no current shader requires it.
 };
 
 // FullscreenBlit.cpp
@@ -447,9 +448,7 @@ public:
 
     virtual ShaderBackendCapabilities GetCapabilities() const = 0;
 
-    virtual CompiledArtifact Compile(
-        const ShaderCompileRequest& request,
-        CookDiagnosticSink&         diagnostics) = 0;
+    virtual ShaderCompileResult Compile(const ShaderCompileOptions& options) = 0;
 };
 ```
 
@@ -609,7 +608,7 @@ Versioning rules:
 - New fields are appended; old loaders refuse-by-version, never
   mis-read.
 
-A separate **registry** (also versioned) indexes the `*.spkg` files
+A separate **registry** (also versioned) indexes the `*.sshd` files
 produced by the cook: package id, variant, output path, hashes. Two
 consumers: humans (debugging "what got cooked") and runtime discovery.
 
@@ -628,9 +627,10 @@ struct CookDiagnostic
 };
 ```
 
-Two renderers: console (humans, colored, with caret-and-source-line) and
-JSON Lines (`--json`, for CI and editor). Source maps map post-preprocess
-positions back to the original `.hlsl` line.
+Diagnostics are emitted as process output with stable `SC####` codes for
+CI and editor status surfaces. Structured inspection details live in the
+debug artifact JSON files, and backend diagnostics retain source paths and
+line/column information from the compiler.
 
 ### DebugArtifactBundle
 
@@ -666,7 +666,6 @@ verbs:
   cook --no-cache               force full recook
   cook --debug-artifacts <dir>  emit DebugArtifactBundle/ per compile
   cook --analysis <pass>        run optional analysis pass(es)
-  cook --json                   structured diagnostics on stderr
 
   list-shaders                  enumerate registered shaders + permutation domains
   list-permutations <ShaderId>  enumerate legal vectors after pruning
@@ -709,7 +708,7 @@ runtime loads from the tool.
 `Engine/Editor` owns:
 
 - Editor UI surfaces (recook button, status panel).
-- `ShaderRecookWatcher`.
+- `ShaderRecookCoordinator` plus `ShaderSourceChangeTracker`.
 
 ### Editor hot reload — out-of-process recook
 
@@ -720,21 +719,21 @@ runtime loads from the tool.
 │  User saves Materials/BasicLit.hlsl                            │
 │         │                                                      │
 │         ▼                                                      │
-│  ShaderRecookWatcher detects change (or "Recompile shaders"    │
+│  ShaderRecookCoordinator detects change (or "Recompile shaders"│
 │  menu action)                                                  │
 │         │                                                      │
 │         ▼                                                      │
-│  Editor SPAWNS ShaderCompiler.exe cook --json                  │
+│  Editor SPAWNS ShaderCompiler.exe cook                         │
 │         │                                                      │
 │         ▼                                                      │
-│  Editor waits on exit + reads stderr (JSON Lines)              │
+│  Editor waits on exit + captures process diagnostics           │
 │         │                                                      │
 │         ├─ exit ≠ 0 → show diagnostics, do not reload          │
 │         └─ exit = 0 + ShaderRecookSignal updated:              │
 │                  │                                             │
 │                  ▼                                             │
 │            For each package whose hash changed:                │
-│              RHI reopens *.spkg                                │
+│              RHI reopens *.sshd                                │
 │              ShaderResource::Version++                         │
 │                  │                                             │
 │                  ▼                                             │
@@ -836,7 +835,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 | --- | --- | --- | --- |
 | `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.{h,cpp}` | DXC invocation, hard-coded | Phase 2 | `Backends/Dxc/DxcShaderBackend` behind `IShaderBackend` |
 | `Tools/ShaderCompiler/Private/Compiler/DxcContext.{h,cpp}` | Singleton DXC com objects | Phase 2 | Owned privately by `DxcShaderBackend` |
-| `Tools/ShaderCompiler/Private/Compiler/ShaderCompileOptionsBuilder.{h,cpp}` | Builds `ShaderCompileOptions` from manifest stage desc | Phase 3 | Typed registration → `ShaderCompileEnvironment` |
+| `Tools/ShaderCompiler/Private/Compiler/ShaderCompileOptionsBuilder.{h,cpp}` | Builds `ShaderCompileOptions` from manifest stage desc | Phase 3 | Typed registration → `ShaderCompileOptions` |
 | `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` | Compile-time options leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Public/` |
 | `Engine/RHI/Public/Shaders/ShaderCompileResult.h` | Compile result leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Public/` |
 | `Tools/ShaderCompiler/Private/Manifest/*` (ShaderCookManifest, Parser, Validator, Types, ShaderStageNames) | INI parser for `ShaderPackages.ini` | Phase 3 | Typed `IMPLEMENT_GLOBAL_SHADER` registrations |
@@ -1026,7 +1025,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     four-path validation.
 - **Work Items.**
   1. Define `IShaderBackend`, `ShaderBackendCapabilities`,
-     `ShaderCompileEnvironment`, `ShaderTarget`, `CompiledArtifact` in
+      `ShaderCompileOptions`, `ShaderTarget`, `ShaderCompileResult` in
      `Tools/ShaderCompiler/Public/Backend/`.
   2. Move all DXC code under `Tools/ShaderCompiler/Backends/Dxc/` as
      `DxcShaderBackend`. Backend reports support for both `Dxil*` and
@@ -1106,7 +1105,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
       - `HelloTriangle.slang` (same VS + PS in Slang syntax)
       Register both as global shaders. CI cooks every (shader, target,
       backend) pair the registration permits and asserts: cook exits
-      `0`, the `*.spkg` contains exactly the expected
+      `0`, the `*.sshd` contains exactly the expected
       `CookedShaderBinaryRecord`s with the right `BackendName`, the
       bytecode is non-empty, and the normalized `ShaderReflection`
       matches across all four paths (same VS input signature, same
@@ -1117,7 +1116,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
       backends as shipping.
 - **Implementation Prompts.**
   - *"Define `IShaderBackend`, `ShaderBackendCapabilities`,
-    `ShaderCompileEnvironment`, `ShaderTarget` in
+    `ShaderCompileOptions`, `ShaderTarget` in
     `Tools/ShaderCompiler/Public/Backend/`. Implementations under
     `Tools/ShaderCompiler/Backends/`. Do not name DXC or Slang outside
     `Backends/Dxc/` and `Backends/Slang/` respectively."*
@@ -1125,7 +1124,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     selecting the target via `ShaderTarget` and toggling DXC's `-spirv`
     mode. Both code paths share compile-environment marshalling and
     diagnostic translation. Add a smoke test that cooks one PS to both
-    targets and checks the resulting `*.spkg` contains both binaries."*
+    targets and checks the resulting `*.sshd` contains both binaries."*
   - *"Define the full `ShaderReflection` struct in
     `Engine/RHI/Public/Shaders/ShaderReflection.h`. Implement
     `DxilReflectionExtractor`, `SpirVReflectionExtractor`, and
@@ -1423,32 +1422,29 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 - **Work Items.**
   1. Implement `ShaderRecookSignal` (marker file written atomically by
      the tool on successful cook).
-  2. Implement `ShaderRecookWatcher` in
-     `Engine/Editor/ShaderRecook/` using `ReadDirectoryChangesW` + an
-     explicit "Recompile shaders" menu action.
+    2. Implement editor-side shader source change detection through a
+      frame-boundary `ShaderSourceChangeTracker` plus an explicit
+      "Recompile shaders" menu action.
   3. Add a recook coordinator in the editor that resolves the
     `ShaderCompiler.exe` path explicitly, allows at most one active
     subprocess plus one queued rerun, and discards stale completion
     events so an older cook can never overwrite a newer save.
-  4. On signal, the editor diffs the registry, asks RHI to reopen
-     changed `*.spkg` files, bumps `ShaderResource::Version`.
+    4. On signal/manual reload, the editor asks RHI to reopen cooked
+      shader packages and bumps `ShaderResource::Version`.
   5. Renderer's PSO cache key includes `ShaderResource::Version` so
      a bump invalidates dependent PSOs; rebuild lazily.
-  6. Editor surfaces structured diagnostics from the spawned tool's
-     stderr (`--json`) in a status panel.
-  7. Atomic-rename writes for both `*.spkg` and the registry.
+    6. Editor surfaces diagnostics from the spawned tool in a status panel.
+    7. Atomic-rename writes for cooked packages, registry, and recook signal.
 - **Implementation Prompts.**
   - *"Implement `ShaderRecookSignal` as
     `bin/Cache/Shaders/recook.signal` written via temp-file + atomic
     rename at the end of every successful cook. Contents are the
     registry file hash."*
-  - *"Implement `ShaderRecookWatcher` in
-    `Engine/Editor/ShaderRecook/`. On `recook.signal` change, parse the
-    new registry, diff against the previous one, call
-    `RHI::ReopenCookedPackage(packageId)` for each changed entry, and
-    increment `ShaderResource::Version`. Add a 'Recompile Shaders'
-    menu action that spawns `ShaderCompiler.exe cook --json` and streams
-    stderr into a status panel."*
+  - *"Implement editor-side `ShaderRecookCoordinator` and
+    `ShaderSourceChangeTracker`. On watched shader source changes or
+    manual menu request, spawn `ShaderCompiler.exe cook`, capture the
+    process output into the status panel, and reload cooked shaders only
+    after the successful atomic recook signal/package publish."*
   - *"Introduce an editor-side recook coordinator that resolves the
    absolute `ShaderCompiler.exe` path from the current build output,
    spawns at most one active cook process plus one queued rerun, and
@@ -1464,16 +1460,16 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   - *Must:* go through one recook coordinator that resolves the tool
     path, serializes runs (one active + one queued), and ignores stale
     completions.
-  - *Must:* leave prior `*.spkg` artifacts in place on cook failure and
+  - *Must:* leave prior `*.sshd` artifacts in place on cook failure and
     surface diagnostics in the editor status panel.
-  - *Must:* write `*.spkg`, registry, and recook signal via temp-file +
+  - *Must:* write cooked packages, registry, and recook signal via temp-file +
     atomic rename; readers see old or new, never partial.
   - *Must not:* allow binding/parameter-struct edits to "hot reload";
     those require a C++ rebuild by design (see §3 callout).
   - *Must not:* add an in-process compile fallback "for speed",
     "for debug builds only", or under any other guise.
-  - *Must not:* poll on tight loops; the OS file watcher and explicit
-    menu action coexist (Open Question 5) — neither is a busy-wait.
+  - *Must not:* poll on tight loops; the frame-boundary source tracker
+    is throttled and coexists with the explicit menu action.
 - **Validation Gates.**
   - `ValidateShaderCompilerBoundary` still passes; the editor links no
     compiler symbol.
@@ -1565,38 +1561,238 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   preprocessed source + reflection + disassembly side by side; CSV
   excerpt from `pso-stats`.
 
+### Phase 6 — Unreal-style editor console + shader command workflows
+
+- **Goal.** Add an editor console and command surface recognizable to
+  Unreal Engine users: input line, scrollback output, command history,
+  autocomplete, CVar get/set, and shader commands such as
+  `RecompileShaders Global` or `RecompileShaders <shader-path>`. Add a
+  separate read-only Output Log panel next to the interactive console
+  in the bottom editor area. Add a Used Shaders panel whose first
+  delivery lists all registered global shaders and lets the user select
+  one or more entries for recook/reload/inspection; an active-level or
+  drawn-this-frame filter can be layered on after the registration-backed
+  workflow is stable.
+- **Why.** Phase 4 proves that recook and reload work, and Phase 5
+  makes artifacts inspectable. The missing workflow layer is the day-to-
+  day engine-user interface: a technical artist or rendering engineer
+  should be able to type a command, see output, set a CVar, then
+  recompile the global shader set or one shader without leaving the
+  editor. Unreal's Output Log/console pattern is the reference, but the
+  Sparkle UI should keep those concepts distinct: the Output Log is a
+  read-only log stream, while the Console is an interactive command
+  input/output panel. One command bus handles CVars and commands;
+  command execution is visible in console scrollback; shader recompilation
+  is routed through the same offline cook path used by CI, never through
+  an in-process compiler. NVIDIA/AMD
+  tooling patterns should feel familiar too: explicit command history,
+  searchable output, stable command names, and data views sourced from
+  typed/runtime shader registration state rather than ad-hoc disk
+  scanning.
+- **Prerequisites.** Phase 5 gates green. The existing
+  `ConsoleVariableRegistry`, `ShaderRecookCoordinator`, shader inspector,
+  and renderer shader package generation seams are available.
+- **Decisions from planning.** Deliver the console foundation first;
+  defer any remote/dev-console networking. Use Unreal-like canonical
+  command names such as `RecompileShaders Global`. Put the Output Log on
+  the left and the interactive Console on the right in the bottom editor
+  area. Support shader targeting by registered shader id, package id,
+  source path, selected Used Shaders row, and eventually wildcard/pattern
+  matching. The first Used Shaders panel mode lists all registered global
+  shaders, with later active-level/runtime filtering kept as an extension
+  point. Failure UX must reach console scrollback, recook status, selected
+  shader rows, and an optional modal/notification path.
+- **Work Items.**
+  1. **Phase 6a — command model + CVar foundation.** Introduce a small
+     `ConsoleCommandRegistry` under `Engine/Core` (or
+     `Engine/Editor` if editor-only commands stay out of runtime):
+     command name, help text, argument schema, execution callback, and
+     autocomplete callback. Keep it single-threaded and frame-bound;
+     command callbacks enqueue work or update state but do not block the
+     UI.
+  2. Extend the existing CVar system with string parsing/formatting
+     adapters for supported types (`bool`, integral, floating point,
+     string-like values) plus `GetCVar`, `SetCVar`, `ListCVars`, and
+     `Help` command handlers. Preserve typed storage in
+     `ConsoleVariable<T>`; do not replace the registry with a stringly
+     typed map.
+  3. **Phase 6b — bottom Console + separate Output Log panels.** Add an
+     editor `ConsolePanel` model/view split:
+     `ConsoleHistoryBuffer`, `ConsoleInputParser`, `ConsoleOutputSink`,
+     and ImGui panel. Features: command history, multiline scrollback,
+     severity coloring, copy/clear, filter, autocomplete, and focus
+     shortcut. The panel is UI-only; parsing/execution lives in reusable
+     non-ImGui classes. Add/formalize an `OutputLogPanel` separately:
+     bottom-left read-only engine log stream, while the bottom-right
+     Console is interactive command input/output.
+  4. **Phase 6c — shader command bridge.** Add shader console commands
+     through a dedicated bridge owned by the
+     application/editor layer, not by the UI widget:
+     - `RecompileShaders Global` → enqueue full out-of-process cook.
+     - `RecompileShaders Changed` → enqueue the normal changed-source
+       path if the source tracker has pending changes.
+     - `RecompileShaders <path-or-id>` → call the tool with `cook
+       --shader <value>` for a source path, registered shader id, or
+       package id.
+     - `ReloadShaders` → reload currently cooked packages without
+       recook.
+     - `ListShaders`, `ListShaderBackends`, `ListShaderTargets` →
+       mirror the tool's introspection commands into editor scrollback.
+  5. Evolve `ShaderRecookCoordinator` into a small command-capable
+     service instead of a menu-only helper: explicit request type
+     (`Global`, `Changed`, `ShaderPath`, `ShaderId`), arguments, request
+     id, process command line, status, captured output, and artifact
+     preservation status. Keep one active subprocess plus one queued
+     latest request. Keep all compiler work out of process.
+    6. **Phase 6d — registered global shader list model.** Expose a small
+      tool/runtime-readable shader list model backed by typed global shader
+      registrations and cooked package metadata: shader id, package id,
+      source path, variant/pass/package name when known, stages,
+      backend/target, reflection/resource counts, artifact availability,
+      and current package generation. Do not build this panel by scanning
+      the shader source tree. Leave a clean seam for a later
+      `ShaderUsageSnapshot` mode sourced from actual active-level/runtime
+      usage.
+    7. **Phase 6e — Used Shaders panel.** Add an editor
+      `UsedShadersPanel`: searchable table of all registered global
+      shaders for the first delivery, with columns for shader id, package
+      id, pass/package/stages, backend/target, source path, last recook
+      status, artifact links, and reflection/resource counts. Actions:
+      recook selected, inspect selected, copy command, open artifact
+      bundle. The panel calls the same command bridge as the console.
+    8. **Phase 6f — diagnostics + failure UX.** Add structured diagnostics
+      routing: subprocess stdout/stderr and
+     command status feed both the status panel and console scrollback.
+     Failed recooks must explicitly say that previous artifacts remain
+      active. Selected rows should retain/echo last recook status and an
+      optional popup/notification path may summarize blocking failures.
+    9. **Phase 6g — validation + docs.** Add tests/gates for parser and CVar conversion logic, command
+     dispatch, shader command argument normalization, and used-shader
+     snapshot generation. CI should be able to exercise command handlers
+      without launching the editor UI. Update this plan and add command
+      reference docs once command names stabilize.
+- **Implementation Prompts.**
+  - *"Implement a typed `ConsoleCommandRegistry` and
+    `ConsoleInputParser` that can dispatch `Help`, `ListCVars`,
+    `GetCVar <name>`, and `SetCVar <name> <value>` against the existing
+    `ConsoleVariableRegistry`. Keep typed CVar storage; add conversion
+    helpers instead of making CVars string-only."*
+  - *"Add an editor `ConsolePanel` with input, output scrollback,
+    history, filtering, autocomplete, and severity coloring. The panel
+    delegates all execution to a command service; it does not know about
+    shader compiler process spawning directly."*
+  - *"Add shader commands (`RecompileShaders Global`,
+    `RecompileShaders Changed`, `RecompileShaders <path-or-id>`,
+    `ReloadShaders`) by routing through `ShaderRecookCoordinator` and
+    the existing out-of-process `ShaderCompiler.exe cook` path. The
+    editor must still link no shader compiler."*
+  - *"Expose a registration-backed global shader list model and add a
+    `UsedShadersPanel` that lists all registered global shaders first.
+    Actions use the same command service as the console and can recook
+    selected shaders or open their inspector artifacts. Keep an active-
+    level/runtime usage filter as a later mode, not as the Phase 6a-6e
+    blocker."*
+- **Guardrails.**
+  - *Must:* keep the command dispatcher single-threaded from the editor
+    point of view. Long work is represented as an out-of-process shader
+    cook request owned by `ShaderRecookCoordinator`, not as a blocking
+    command callback.
+  - *Must:* keep the editor process free of shader compiler libraries
+    and tool-private headers. Console shader commands spawn
+    `ShaderCompiler.exe`; they never call compiler APIs directly.
+  - *Must:* separate model/service/UI layers: command parser/registry,
+    CVar conversion, shader command bridge, output buffer, and ImGui
+    panels are distinct files/classes. No god `ConsolePanel` and no god
+    `ShaderRecookCoordinator`.
+  - *Must:* use typed registration/cooked package metadata for the first
+    used-shaders panel mode, not source-tree scans. Disk scans are
+    acceptable only for artifact browsing in the existing inspector.
+    Runtime active-level filtering can be added later through the same
+    model seam.
+  - *Must:* keep command names and output stable enough for automated
+    tests and documentation (`RecompileShaders Global`, not a hidden
+    menu-only code path).
+  - *Must not:* introduce an in-process compile fallback, background
+    worker pool, or multithreaded executor in this phase.
+  - *Must not:* let failed recooks replace packages, update the recook
+    signal, or hide diagnostics from the console/status panel.
+- **Validation Gates.**
+  - `ConsoleInputParser` unit tests cover quoting, whitespace,
+    autocomplete tokens, CVar get/set, unknown command errors, and help
+    output.
+  - Editor console can set an existing CVar by name and echo the new
+    typed value in output scrollback.
+  - `RecompileShaders Global` from the console runs the same
+    out-of-process cook as the Shaders menu action, streams output, and
+    reloads packages on success.
+  - `RecompileShaders <path>` recooks only the requested shader/package
+    where the tool supports it and reports a clear error for unknown
+    paths/ids.
+  - A deliberate shader syntax error from a console-triggered recook
+    leaves previous artifacts active and prints the compiler diagnostic
+    in the console.
+  - Used Shaders panel lists all registered global shaders for the first
+    delivery (`ForwardOpaque`, `ShadowOpaque`, `ComputeClear`, plus any
+    additional typed global packages), supports search/filter, and can
+    recook/inspect a selected entry. A later active-level/runtime usage
+    filter can reuse the same row/action model.
+  - `ValidateShaderCompilerBoundary` still passes.
+- **Increment Demo.** Screen recording: bottom Output Log on the left
+  and interactive Console on the right; open console, `SetCVar` an
+  existing render/debug CVar, run `RecompileShaders Global`, see
+  console scrollback output and viewport reload; open Used Shaders panel,
+  select `ForwardOpaque`, run recook selected, then open the inspector
+  artifacts for that package.
+
 ### Phase tracker (snapshot)
 
 ```text
-[ ] Phase 0 — Stabilize current state
-    [ ] Build green   [ ] CI cook job   [ ] Boundary validator green
-[ ] Phase 1 — Dependency graph + cache
-    [ ] Cold cook    [ ] Warm cook = 0 backend invocations
-    [ ] Targeted invalidation works   [ ] --no-cache forces recompile
-[ ] Phase 2 — Backend abstraction + reflection + DebugArtifactBundle + Slang
+[x] Phase 0 — Stabilize current state
+  [x] Build green   [x] CI cook job   [x] Boundary validator green
+[x] Phase 1 — Dependency graph + cache
+  [x] Cold cook    [x] Warm cook = 0 backend invocations
+  [x] Targeted invalidation works   [x] --no-cache forces recompile
+[x] Phase 2 — Backend abstraction + reflection + DebugArtifactBundle + Slang
     [x] 2a Structural: DXC contained to Backends/Dxc/   [x] DXIL + SPIR-V both cooked
-    [ ] 2b PSO-grade reflection lands (DXIL + SPIR-V + Slang extractors)
-    [ ] 2c DebugArtifactBundle/ writes (per backend, per target)
-    [ ] 2d Slang contained to Backends/Slang/           [ ] SlangShaderBackend ships DXIL + SPIR-V
-    [ ] Hello-world cooks 4 paths: dxc→dxil, dxc→spirv, slang→dxil, slang→spirv
-    [ ] Backend registry + --backend / list-backends CLI
+  [x] 2b PSO-grade reflection lands (DXIL + SPIR-V + Slang extractors)
+  [x] 2c DebugArtifactBundle/ writes (per backend, per target)
+  [x] 2d Slang contained to Backends/Slang/           [x] SlangShaderBackend ships DXIL + SPIR-V
+  [x] Hello-world cooks 4 paths: dxc→dxil, dxc→spirv, slang→dxil, slang→spirv
+  [x] Backend registry + --backend / list-backends CLI
     [x] Cleanup: legacy DxcShaderCompiler / DxcContext deleted
     [x] Cleanup: ShaderCompileOptions.h / ShaderCompileResult.h moved out of RHI public
-[ ] Phase 3 — Typed shaders + permutations + verification + inspect CLI
-    [ ] list-shaders / list-permutations / inspect-shader work
-    [ ] Parameter-struct verifier rejects mismatches
-    [ ] FullscreenBlit converted as reference
-    [ ] Cleanup: Manifest/ folder deleted (8 files)
-    [ ] Cleanup: ShaderPackageLayoutCatalog deleted (RHI public + private)
-    [ ] Cleanup: BindingRecordBuilder + StageMaskUtils + ShaderCompileOptionsBuilder deleted
-    [ ] Cleanup: InspectManifestCommand + manifest constants + legacy verbs removed
-    [ ] Cleanup: ShaderPackages.ini files deleted; CookShaders.bat updated
-[ ] Phase 4 — Editor hot reload
-    [ ] Save .hlsl → viewport updates without restart
-    [ ] Failed cook surfaces diagnostic, keeps old artifacts
-[ ] Phase 5 — Inspector + analysis seam + glslang seam
-    [ ] Editor Shader Inspector panel
-    [ ] PsoStatsPass CSV   [ ] Glslang documented as future seam
+[x] Phase 3 — Typed shaders + permutations + verification + inspect CLI
+  [x] Typed authoring foundation lands under RHI public (TGlobalShader, parameter macros, permutation primitives)
+  [x] Shared static registration bootstrap visible to ShaderCompiler (HelloTriangleVS/PS typed registrations)
+  [x] Typed package cook planning works for `cook --shader HelloTriangle` (registration-backed, no manifest lookup)
+  [x] list-permutations / inspect-shader surface typed registrations without manifest fallback
+  [x] list-shaders / list-permutations / inspect-shader work on the typed registration surface
+  [x] Parameter-struct verifier foundation emits SC2000/SC200x reports for typed registrations
+  [x] Renderer packages registered as typed shaders (ForwardOpaque, ShadowOpaque, ComputeClear) with matched parameter reports
+  [x] Default cook path prefers typed global-shader registrations (4 typed packages / 7 stages validated)
+    [x] Parameter-struct verifier rejects deliberate mismatch in full typed cook path
+    [x] FullscreenBlit/reference conversion covered by renderer pass package conversion (no FullscreenBlit pass exists in tree)
+    [x] Cleanup: Manifest/ folder deleted (8 files)
+    [x] Cleanup: ShaderPackageLayoutCatalog deleted (RHI public + private)
+    [x] Cleanup: BindingRecordBuilder + StageMaskUtils + ShaderCompileOptionsBuilder deleted
+    [x] Cleanup: InspectManifestCommand + manifest constants + legacy verbs removed
+    [x] Cleanup: ShaderPackages.ini files deleted; CookShaders.bat updated
+[x] Phase 4 — Editor hot reload
+  [x] Tool writes ShaderRecookSignal after successful cook
+  [x] Runtime/editor reload seam: CookedShaderPackageCache generation + renderer pipeline rebuild + editor Shaders menu request
+  [x] Editor polls bin/Cache/Shaders/recook.signal at the frame boundary and reloads cooked shader runtimes after RHI idle
+  [x] Editor recook coordinator isolated in dedicated ShaderRecook files (one active subprocess + one queued rerun, status surfaced to UI)
+  [x] Save .hlsl → viewport updates without restart
+    [x] Failed cook surfaces diagnostic, keeps old artifacts
+[x] Phase 5 — Inspector + analysis seam + glslang seam
+  [x] Editor Shader Inspector panel
+  [x] PsoStatsPass CSV   [x] Glslang documented as future seam
+[ ] Phase 6 — Unreal-style editor console + shader command workflows
+  [ ] Phase 6a command registry/parser/CVar commands
+  [ ] Phase 6b separate bottom Output Log + Console panels
+  [ ] RecompileShaders Global/path/id commands via out-of-process cook
+  [ ] Used Shaders panel lists registered global shaders first
+  [ ] Console diagnostics preserve old artifacts on failed recook
 ```
 
 ### Definition of done (whole effort)
@@ -1628,6 +1824,15 @@ true at the same time:
   pairs.
 - The cooked package version reflects the Phase 2 bump, with one
   documented `LoadV<N-1>` migration entry.
+- The editor exposes a console command surface that can set existing
+  CVars and route `RecompileShaders Global` / path-or-id shader recooks
+  through the same out-of-process cook path used by CI.
+- The editor exposes a used-shaders view sourced from typed shader
+  registrations and cooked package metadata, not source-tree scans, and
+  selected entries can be recooked or opened in the shader inspector
+  without linking shader compiler internals. Active-level/runtime usage
+  filtering remains an extension of the same model, not a prerequisite
+  for the first console workflow.
 
 ## 14. Open Questions
 
@@ -1645,9 +1850,10 @@ Decisions intentionally deferred until a phase needs them:
    hash. *Recommend bitfield with `static_assert` on axis count.*
 4. **Cache storage location.** Per-user `%LOCALAPPDATA%` vs in-tree
    `bin/Cache/`. *Recommend in-tree; easier to wipe and inspect.*
-5. **Hot reload trigger source.** OS file watcher
-   (`ReadDirectoryChangesW`) vs explicit "Recompile" button vs both.
-   *Recommend both: button is reliable, watcher is convenient.*
+5. **Hot reload trigger source.** Resolved for this phase as a
+  throttled frame-boundary source tracker plus explicit "Recompile"
+  button. A native OS watcher can replace the tracker later if shader
+  tree size or latency makes it worthwhile.
 6. **Schema migration policy.** Single-version-only (recook everything)
    vs read-old-versions for one release. *Recommend single-version
    while the engine is small.*

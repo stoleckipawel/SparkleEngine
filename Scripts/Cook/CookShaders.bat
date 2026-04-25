@@ -2,8 +2,8 @@
 :: ============================================================================
 :: CookShaders.bat - Validate and cook shader packages for a project
 :: ============================================================================
-:: Validates the merged shader package manifest and emits cooked shader
-:: packages plus the shader registry for the selected project.
+:: Validates typed shader registrations and emits cooked shader packages plus
+:: the shader registry for the selected project.
 ::
 :: Usage:
 ::   CookShaders.bat <ProjectName> [Debug|Release|RelWithDebInfo]
@@ -123,13 +123,13 @@ if errorlevel 1 (
 )
 
 echo.
-echo [LOG] Validating shader cook manifest required for runtime startup...
+echo [LOG] Validating typed shader registrations required for runtime startup...
 pushd "!PROJECT_ROOT!" >nul
-"!SHADER_COMPILER_EXE!" inspect-manifest
+"!SHADER_COMPILER_EXE!" list-shaders --validate
 set "SHADER_MANIFEST_RC=!ERRORLEVEL!"
 popd >nul
 if "!SHADER_MANIFEST_RC!" NEQ "0" (
-	echo [ERROR] Shader cook manifest validation failed. Normal runtime startup requires cooked shader artifacts.
+	echo [ERROR] Typed shader registration validation failed. Normal runtime startup requires cooked shader artifacts.
 	set "EXIT_RC=1"
 	goto :FINISH
 )
@@ -162,8 +162,8 @@ echo Examples:
 echo   Scripts\Cook\CookShaders.bat Showcase
 echo   Scripts\Cook\CookShaders.bat Showcase Release
 echo.
-echo This command validates the merged shader cook manifest for the selected
-echo project and emits cooked shader packages plus the shader registry under:
+echo This command validates typed shader registrations for the selected project
+echo and emits cooked shader packages plus the shader registry under:
 echo   Projects\^<ProjectName^>\Assets\Cooked\Shaders\
 echo.
 set "EXIT_RC=1"

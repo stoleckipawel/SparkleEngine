@@ -1,5 +1,6 @@
 file(GLOB_RECURSE SHADER_COMPILER_PRIVATE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Backends/*.cpp
 )
 
@@ -15,6 +16,18 @@ add_executable(ShaderCompiler
     ${SHADER_COMPILER_PRIVATE_HEADERS}
 )
 
+set(SLANG_SDK_ROOT "$ENV{VULKAN_SDK}" CACHE PATH "Slang SDK root")
+find_path(SLANG_INCLUDE_DIR NAMES slang.h PATHS "${SLANG_SDK_ROOT}/Include/slang" REQUIRED)
+find_library(SLANG_IMPORT_LIBRARY NAMES slang PATHS "${SLANG_SDK_ROOT}/Lib" REQUIRED)
+find_file(SLANG_RUNTIME_LIBRARY NAMES slang.dll PATHS "${SLANG_SDK_ROOT}/Bin" REQUIRED)
+
+add_library(slang::slang SHARED IMPORTED GLOBAL)
+set_target_properties(slang::slang PROPERTIES
+    IMPORTED_IMPLIB "${SLANG_IMPORT_LIBRARY}"
+    IMPORTED_LOCATION "${SLANG_RUNTIME_LIBRARY}"
+    INTERFACE_INCLUDE_DIRECTORIES "${SLANG_INCLUDE_DIR}"
+)
+
 # ShaderCompiler owns offline shader manifest validation and cooked package
 # emission. Keep shader-cooking implementation private to this executable
 # target so scene-cook tooling cannot accidentally absorb it again.
@@ -23,6 +36,7 @@ target_include_directories(ShaderCompiler
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/Backends
+        ${SLANG_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
@@ -44,6 +58,13 @@ target_link_libraries(ShaderCompiler
     # SPIRV-Reflect: SPIR-V → ShaderReflection extractor. Confined to
     # Backends/Dxc/ by the boundary validator.
     spirv_reflect
+    slang::slang
+)
+
+add_custom_command(TARGET ShaderCompiler POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SLANG_RUNTIME_LIBRARY}"
+        "$<TARGET_FILE_DIR:ShaderCompiler>/slang.dll"
 )
 
 set_target_properties(ShaderCompiler PROPERTIES

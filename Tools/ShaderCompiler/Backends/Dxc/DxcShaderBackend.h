@@ -13,6 +13,7 @@
 
 #include <dxcapi.h>
 #include <filesystem>
+#include <span>
 #include <string>
 #include <vector>
 #include <wrl/client.h>
@@ -52,6 +53,27 @@ class DxcShaderBackend final : public IShaderBackend
 	static std::vector<std::uint8_t> ExtractBytecode(IDxcResult* result);
 
 	static std::string ExtractErrorMessage(IDxcResult* result);
+	static std::string ExtractTextOutput(IDxcResult* result, DXC_OUT_KIND kind);
+	static std::string ExtractPreprocessedSource(
+	    IDxcUtils& utils,
+	    IDxcCompiler3& compiler,
+	    const DxcBuffer& sourceBuffer,
+	    const std::vector<LPCWSTR>& compileArgs);
+	static std::string ExtractDisassembly(
+	    IDxcUtils& utils,
+	    IDxcCompiler3& compiler,
+	    std::span<const std::uint8_t> bytecode);
+	static void CaptureDebugArtifacts(
+	    const ShaderCompileOptions& options,
+	    IDxcUtils& utils,
+	    IDxcCompiler3& compiler,
+	    const DxcBuffer& sourceBuffer,
+	    std::span<const std::uint8_t> bytecode,
+	    const std::vector<LPCWSTR>& compileArgs,
+	    IDxcResult* result,
+	    std::string_view compilerOutput,
+	    ShaderCompileResult& outCompileResult);
+	static std::vector<std::string> BuildDebugArgumentStrings(const std::vector<LPCWSTR>& compileArgs);
 
 	static std::filesystem::path SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
 

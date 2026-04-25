@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cooking/CookedStageBuild.h"
-#include "Manifest/ShaderCookManifestTypes.h"
+#include "Cooking/ShaderCookTypes.h"
 
 #include <cstdint>
 #include <span>

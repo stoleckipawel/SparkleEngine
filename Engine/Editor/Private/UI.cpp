@@ -10,6 +10,7 @@
 #include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
+#include "Panels/ShaderInspectorPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Style/SparkleUiTheme.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -21,6 +22,8 @@
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx12.h>
+
+#include <utility>
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -138,6 +141,32 @@ void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
 	}
 }
 
+void UI::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
+{
+	m_shaderPackageGenerationProvider = std::move(provider);
+	ConfigureMainMenuBarShaderActions();
+}
+
+bool UI::ConsumeShaderReloadRequest() noexcept
+{
+	const bool requested = m_shaderReloadRequested;
+	m_shaderReloadRequested = false;
+	return requested;
+}
+
+void UI::SetShaderRecookStatus(std::string status)
+{
+	m_shaderRecookStatus = std::move(status);
+	m_showShaderRecookStatus = !m_shaderRecookStatus.empty();
+}
+
+bool UI::ConsumeShaderRecookRequest() noexcept
+{
+	const bool requested = m_shaderRecookRequested;
+	m_shaderRecookRequested = false;
+	return requested;
+}
+
 UI::UI(Timer& timer, LevelManager* levelManager, GameScene* gameScene, RenderHardwareInterface& renderHardware, Window& window) :
     m_timer(&timer),
     m_levelManager(levelManager),
@@ -251,8 +280,10 @@ bool UI::InitializeNativeGraphicsBackend()
 void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
+	ConfigureMainMenuBarShaderActions();
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
+	m_shaderInspectorPanel = std::make_unique<ShaderInspectorPanel>();
 	if (m_window != nullptr && m_viewportPanel)
 	{
 		const RenderViewportExtent initialExtent{
@@ -269,6 +300,34 @@ void UI::InitializeDefaultPanels()
 		m_sceneInspectorPanel =
 		    std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, m_profilerPanel.get(), SceneInspectorWidth);
 	}
+}
+
+void UI::ConfigureMainMenuBarShaderActions()
+{
+	if (!m_mainMenuBar)
+	{
+		return;
+	}
+
+	m_mainMenuBar->SetShaderReloadRequestHandler(
+	    [this]()
+	    {
+		    m_shaderReloadRequested = true;
+	    });
+	m_mainMenuBar->SetShaderRecookRequestHandler(
+	    [this]()
+	    {
+		    m_shaderRecookRequested = true;
+	    });
+	m_mainMenuBar->SetShaderInspectorOpenHandler(
+	    [this]()
+	    {
+		    if (m_shaderInspectorPanel)
+		    {
+			    m_shaderInspectorPanel->SetOpen(true);
+		    }
+	    });
+	m_mainMenuBar->SetShaderPackageGenerationProvider(m_shaderPackageGenerationProvider);
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -331,12 +390,39 @@ void UI::Build()
 		m_sceneInspectorPanel->BuildUI(disableInteraction);
 	}
 
+	if (m_shaderInspectorPanel)
+	{
+		m_shaderInspectorPanel->BuildUI(disableInteraction);
+	}
+
+	BuildShaderRecookStatusWindow(disableInteraction);
+
 #if USE_IMGUI_DEMO_WINDOW
 	bool showDemoWindow = true;
 	ImGui::ShowDemoWindow(&showDemoWindow);
 #endif
 
 	ImGui::Render();
+}
+
+void UI::BuildShaderRecookStatusWindow(bool disableInteraction) noexcept
+{
+	if (!m_showShaderRecookStatus)
+	{
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(640.0f, 240.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Shader Recook Status", &m_showShaderRecookStatus))
+	{
+		ImGui::End();
+		return;
+	}
+
+	ImGui::BeginDisabled(disableInteraction);
+	ImGui::TextWrapped("%s", m_shaderRecookStatus.c_str());
+	ImGui::EndDisabled();
+	ImGui::End();
 }
 
 void UI::Update()

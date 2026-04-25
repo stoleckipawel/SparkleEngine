@@ -5,7 +5,7 @@
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Manifest/ShaderStageNames.h"
+#include "Cooking/ShaderStageText.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <format>
@@ -20,8 +20,9 @@ bool CookedRegistryWriter::Write(
 	using Engine::Paths::MakeProjectRelativeString;
 
 	outRegistryPath = ::GetCookedShaderRegistryPath();
+	const std::filesystem::path tempRegistryPath = outRegistryPath.string() + ".tmp";
 	std::ofstream output;
-	if (!TryOpenTextOutput(outRegistryPath, output, outErrorMessage))
+	if (!TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
 	{
 		return false;
 	}
@@ -39,13 +40,24 @@ bool CookedRegistryWriter::Write(
 		output << kRegistryKeySourceIdentityHash << " = " << std::format("{:016X}", package.sourceIdentityHash) << '\n';
 		output << kRegistryKeyBindingLayoutHash << " = " << std::format("{:016X}", package.bindingLayoutHash) << '\n';
 		output << kRegistryKeyVariantHash << " = " << std::format("{:016X}", package.variantHash) << '\n';
-		output << kRegistryKeyDeclaredStages << " = " << ShaderStageNames::FormatMask(package.declaredStages) << '\n';
+		output << kRegistryKeyDeclaredStages << " = " << ShaderStageText::FormatMask(package.declaredStages) << '\n';
 		output << kRegistryKeyOutput << " = " << MakeProjectRelativeString(package.outputPath) << "\n\n";
 	}
 
 	if (!output.good())
 	{
 		outErrorMessage = "Failed to write shader registry output '" + outRegistryPath.string() + "'";
+		return false;
+	}
+	output.close();
+
+	std::error_code ec;
+	std::filesystem::remove(outRegistryPath, ec);
+	ec.clear();
+	std::filesystem::rename(tempRegistryPath, outRegistryPath, ec);
+	if (ec)
+	{
+		outErrorMessage = "Failed to publish shader registry '" + outRegistryPath.string() + "' - " + ec.message();
 		return false;
 	}
 

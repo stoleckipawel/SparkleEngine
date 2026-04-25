@@ -55,6 +55,19 @@ const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noex
 	return m_backend->GetRenderHardwareInterface();
 }
 
+void Renderer::ReloadCookedShaders() noexcept
+{
+	if (m_pipelineStateManager != nullptr)
+	{
+		m_pipelineStateManager->ReloadCookedShaders();
+	}
+}
+
+std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept
+{
+	return m_pipelineStateManager != nullptr ? m_pipelineStateManager->GetShaderPackageGeneration() : 0;
+}
+
 void Renderer::PrepareHostFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.PrepareHostFrame");

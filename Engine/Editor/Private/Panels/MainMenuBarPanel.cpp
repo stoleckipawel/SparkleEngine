@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 #include <cstdio>
+#include <utility>
 
 MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) noexcept
 {
@@ -84,6 +85,26 @@ void MainMenuBarPanel::SetWindow(Window* window) noexcept
 	m_window = window;
 }
 
+void MainMenuBarPanel::SetShaderReloadRequestHandler(std::function<void()> handler)
+{
+	m_shaderReloadRequestHandler = std::move(handler);
+}
+
+void MainMenuBarPanel::SetShaderRecookRequestHandler(std::function<void()> handler)
+{
+	m_shaderRecookRequestHandler = std::move(handler);
+}
+
+void MainMenuBarPanel::SetShaderInspectorOpenHandler(std::function<void()> handler)
+{
+	m_shaderInspectorOpenHandler = std::move(handler);
+}
+
+void MainMenuBarPanel::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
+{
+	m_shaderPackageGenerationProvider = std::move(provider);
+}
+
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 {
 	if (m_levelManager == nullptr)
@@ -127,6 +148,30 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	if (ImGui::MenuItem("Save All", nullptr, false, hasActiveLevel && !levelChangeInProgress))
 	{
 		m_levelManager->SaveActiveLevel();
+	}
+}
+
+void MainMenuBarPanel::BuildShaderMenu() noexcept
+{
+	if (ImGui::MenuItem("Reload Cooked Shaders", nullptr, false, static_cast<bool>(m_shaderReloadRequestHandler)))
+	{
+		m_shaderReloadRequestHandler();
+	}
+
+	if (ImGui::MenuItem("Recook Shaders", nullptr, false, static_cast<bool>(m_shaderRecookRequestHandler)))
+	{
+		m_shaderRecookRequestHandler();
+	}
+
+	if (ImGui::MenuItem("Shader Inspector", nullptr, false, static_cast<bool>(m_shaderInspectorOpenHandler)))
+	{
+		m_shaderInspectorOpenHandler();
+	}
+
+	if (m_shaderPackageGenerationProvider)
+	{
+		ImGui::Separator();
+		ImGui::TextDisabled("Runtime generation: %llu", static_cast<unsigned long long>(m_shaderPackageGenerationProvider()));
 	}
 }
 
@@ -212,6 +257,12 @@ void MainMenuBarPanel::BuildUI() noexcept
 	if (ImGui::BeginMenu("File"))
 	{
 		BuildFileMenu();
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::BeginMenu("Shaders"))
+	{
+		BuildShaderMenu();
 		ImGui::EndMenu();
 	}
 

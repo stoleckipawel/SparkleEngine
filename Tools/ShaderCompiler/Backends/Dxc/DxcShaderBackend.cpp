@@ -4,6 +4,7 @@
 
 #include "Backend/ShaderBackendFactory.h"
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "DxilReflectionExtractor.h"
@@ -175,6 +176,19 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 		options.SourcePath.filename().string());
 	auto compileResult = ShaderCompileResult::Success(std::move(bytecode), debugArtifactPath);
 	compileResult.SetReflection(std::move(reflection));
+	if (options.CaptureDebugArtifacts)
+	{
+		CaptureDebugArtifacts(
+			options,
+			*m_utils.Get(),
+			*m_compiler.Get(),
+			sourceBuffer,
+			bytecode,
+			args,
+			result.Get(),
+			errorMsg,
+			compileResult);
+	}
 	return compileResult;
 }
 
@@ -292,6 +306,148 @@ std::string DxcShaderBackend::ExtractErrorMessage(IDxcResult* result)
 	return {};
 }
 
+std::string DxcShaderBackend::ExtractTextOutput(IDxcResult* result, DXC_OUT_KIND kind)
+{
+	ComPtr<IDxcBlobUtf8> textBlob;
+	if (SUCCEEDED(result->GetOutput(kind, IID_PPV_ARGS(textBlob.ReleaseAndGetAddressOf()), nullptr)) && textBlob)
+	{
+		return std::string(textBlob->GetStringPointer(), textBlob->GetStringLength());
+	}
+
+	ComPtr<IDxcBlobWide> wideBlob;
+	if (SUCCEEDED(result->GetOutput(kind, IID_PPV_ARGS(wideBlob.ReleaseAndGetAddressOf()), nullptr)) && wideBlob)
+	{
+		return Engine::Strings::ToNarrow(std::wstring_view(wideBlob->GetStringPointer(), wideBlob->GetStringLength()));
+	}
+
+	return {};
+}
+
+std::string DxcShaderBackend::ExtractPreprocessedSource(
+	IDxcUtils& utils,
+	IDxcCompiler3& compiler,
+	const DxcBuffer& sourceBuffer,
+	const std::vector<LPCWSTR>& compileArgs)
+{
+	std::vector<LPCWSTR> preprocessArgs = compileArgs;
+	preprocessArgs.push_back(L"-P");
+
+	ComPtr<IDxcIncludeHandler> includeHandler;
+	utils.CreateDefaultIncludeHandler(includeHandler.ReleaseAndGetAddressOf());
+
+	ComPtr<IDxcResult> preprocessResult;
+	if (FAILED(compiler.Compile(
+		    &sourceBuffer,
+		    preprocessArgs.data(),
+		    static_cast<UINT>(preprocessArgs.size()),
+		    includeHandler.Get(),
+		    IID_PPV_ARGS(preprocessResult.ReleaseAndGetAddressOf()))) || !preprocessResult)
+	{
+		return {};
+	}
+
+	std::string preprocessed = ExtractTextOutput(preprocessResult.Get(), DXC_OUT_HLSL);
+	if (!preprocessed.empty())
+	{
+		return preprocessed;
+	}
+
+	return {};
+}
+
+std::string DxcShaderBackend::ExtractDisassembly(
+	IDxcUtils& utils,
+	IDxcCompiler3& compiler,
+	std::span<const std::uint8_t> bytecode)
+{
+	if (bytecode.empty())
+	{
+		return {};
+	}
+
+	DxcBuffer objectBuffer{};
+	objectBuffer.Ptr = bytecode.data();
+	objectBuffer.Size = bytecode.size();
+	objectBuffer.Encoding = 0;
+
+	ComPtr<IDxcResult> disassemblyResult;
+	if (FAILED(compiler.Disassemble(&objectBuffer, IID_PPV_ARGS(disassemblyResult.ReleaseAndGetAddressOf()))) || !disassemblyResult)
+	{
+		return {};
+	}
+
+	std::string disassembly = ExtractTextOutput(disassemblyResult.Get(), DXC_OUT_DISASSEMBLY);
+	if (!disassembly.empty())
+	{
+		return disassembly;
+	}
+
+	ComPtr<IDxcCompiler> legacyCompiler;
+	if (FAILED(compiler.QueryInterface(IID_PPV_ARGS(legacyCompiler.ReleaseAndGetAddressOf()))) || !legacyCompiler)
+	{
+		return {};
+	}
+
+	ComPtr<IDxcBlobEncoding> objectBlob;
+	if (FAILED(utils.CreateBlobFromPinned(
+		    bytecode.data(),
+		    static_cast<UINT32>(bytecode.size()),
+		    0,
+		    objectBlob.ReleaseAndGetAddressOf())) || !objectBlob)
+	{
+		return {};
+	}
+
+	ComPtr<IDxcBlobEncoding> legacyDisassembly;
+	if (FAILED(legacyCompiler->Disassemble(objectBlob.Get(), legacyDisassembly.ReleaseAndGetAddressOf())) || !legacyDisassembly)
+	{
+		return {};
+	}
+
+	return std::string(
+	    static_cast<const char*>(legacyDisassembly->GetBufferPointer()),
+	    static_cast<std::size_t>(legacyDisassembly->GetBufferSize()));
+}
+
+void DxcShaderBackend::CaptureDebugArtifacts(
+	const ShaderCompileOptions& options,
+	IDxcUtils& utils,
+	IDxcCompiler3& compiler,
+	const DxcBuffer& sourceBuffer,
+	std::span<const std::uint8_t> bytecode,
+	const std::vector<LPCWSTR>& compileArgs,
+	IDxcResult* result,
+	std::string_view compilerOutput,
+	ShaderCompileResult& outCompileResult)
+{
+	ShaderDebugArtifactSet debugArtifacts;
+	debugArtifacts.CompileArguments = BuildDebugArgumentStrings(compileArgs);
+	debugArtifacts.CompilerOutput.assign(compilerOutput);
+	debugArtifacts.Disassembly = ExtractDisassembly(utils, compiler, bytecode);
+	debugArtifacts.PreprocessedSource = ExtractPreprocessedSource(utils, compiler, sourceBuffer, compileArgs);
+	if (debugArtifacts.PreprocessedSource.empty())
+	{
+		std::vector<std::uint8_t> sourceBytes;
+		std::string sourceError;
+		if (Engine::Files::TryReadAllBytes(options.SourcePath, sourceBytes, sourceError))
+		{
+			debugArtifacts.PreprocessedSource.assign(reinterpret_cast<const char*>(sourceBytes.data()), sourceBytes.size());
+		}
+	}
+	outCompileResult.SetDebugArtifacts(std::move(debugArtifacts));
+}
+
+std::vector<std::string> DxcShaderBackend::BuildDebugArgumentStrings(const std::vector<LPCWSTR>& compileArgs)
+{
+	std::vector<std::string> args;
+	args.reserve(compileArgs.size());
+	for (const LPCWSTR arg : compileArgs)
+	{
+		args.push_back(Engine::Strings::ToNarrow(std::wstring_view(arg)));
+	}
+	return args;
+}
+
 std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath)
 {
 	ComPtr<IDxcBlob> pdbBlob;
@@ -320,9 +476,4 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 std::filesystem::path DxcShaderBackend::BuildShaderDebugArtifactPath(std::wstring_view pdbName)
 {
 	return Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
-}
-
-std::unique_ptr<IShaderBackend> CreateDefaultShaderBackend()
-{
-	return std::make_unique<DxcShaderBackend>();
 }

@@ -3,7 +3,6 @@
 #include "Cooking/ShaderPackageCooker.h"
 
 #include "Backend/ShaderBackendFactory.h"
-#include "Compiler/ShaderCompileOptionsBuilder.h"
 #include "Cooking/Cache/IncludeClosureHasher.h"
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 #include "Cooking/Cache/ShaderCacheKey.h"
@@ -11,16 +10,20 @@
 #include "Cooking/CookedPackageWriter.h"
 #include "Cooking/CookedRegistryWriter.h"
 #include "Cooking/CookedStageBuild.h"
+#include "Cooking/ShaderCookPlanner.h"
+#include "Cooking/ShaderDebugArtifactWriter.h"
+#include "Cooking/ShaderRecookSignal.h"
 #include "Cooking/Execution/SerialCookExecutor.h"
 #include "Cooking/Graph/DependencyGraph.h"
 #include "Cooking/StageCompiler.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Manifest/ShaderCookManifest.h"
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
-#include "RHI/Public/Shaders/ShaderPackageLayoutCatalog.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "Verification/ShaderParameterStructVerifier.h"
 
 #include <format>
+#include <unordered_map>
 
 std::filesystem::path ShaderPackageCooker::ResolveCacheDirectory(const ShaderPackageCookSettings& settings)
 {
@@ -31,52 +34,98 @@ std::filesystem::path ShaderPackageCooker::ResolveCacheDirectory(const ShaderPac
 
 	return Engine::Paths::Normalize(Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders");
 }
-
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
 	struct PackageCookContext final
 	{
-		PassParameterLayout bindingLayout;
 		std::vector<CookedStageBuild> compiledStages;
 	};
 
 	ShaderPackageCookResult result;
 	result.cacheDirectory = ResolveCacheDirectory(settings);
+	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
+	std::unordered_map<std::string, std::unique_ptr<IShaderBackend>> backends;
 
-	std::unique_ptr<IShaderBackend> backend = CreateDefaultShaderBackend();
-	if (!backend || !backend->GetCapabilities().SupportsTarget(settings.target))
+	auto acquireBackend = [&](std::string_view backendName, std::string& outErrorMessage) -> IShaderBackend*
 	{
-		result.errorMessage = std::string{"Active shader backend cannot service target '"} +
-			GetShaderTargetName(settings.target) + "' (backend uninitialized or unsupported)";
-		return result;
-	}
-
-	ShaderCookManifest manifest;
-	if (!manifest.LoadMerged(result.errorMessage))
-	{
-		return result;
-	}
-
-	std::vector<PackageCookContext> packageContexts(manifest.GetPackages().size());
-	DependencyGraph graph;
-	for (std::size_t packageIndex = 0; packageIndex < manifest.GetPackages().size(); ++packageIndex)
-	{
-		const ShaderCookPackageDesc& package = manifest.GetPackages()[packageIndex];
-		PackageCookContext& packageContext = packageContexts[packageIndex];
-
-		if (!ShaderPackageLayouts::TryBuild(package.bindingLayoutId, packageContext.bindingLayout, result.errorMessage))
+		const auto existing = backends.find(std::string(backendName));
+		if (existing != backends.end())
 		{
-			result.errorMessage =
-			    "Failed to build binding layout for shader package '" + package.packageId + "' - " + result.errorMessage;
-			return result;
+			return existing->second.get();
 		}
+
+		std::unique_ptr<IShaderBackend> backend = CreateShaderBackend(backendName, outErrorMessage);
+		if (!backend)
+		{
+			return nullptr;
+		}
+
+		const std::string resolvedName(backend->GetBackendName());
+		if (!backend->GetCapabilities().SupportsTarget(settings.target))
+		{
+			outErrorMessage = std::string{"Shader backend '"} + resolvedName + "' does not support target '" +
+				GetShaderTargetName(settings.target) + "'";
+			return nullptr;
+		}
+
+		IShaderBackend* backendPtr = backend.get();
+		backends.emplace(resolvedName, std::move(backend));
+		outErrorMessage.clear();
+		return backendPtr;
+	};
+
+	std::vector<ShaderCookPackageDesc> packages = ShaderCookPlanner::BuildPackages(settings, result.errorMessage);
+	if (!result.errorMessage.empty())
+	{
+		return result;
+	}
+
+	std::vector<PackageCookContext> packageContexts(packages.size());
+	DependencyGraph graph;
+	for (std::size_t packageIndex = 0; packageIndex < packages.size(); ++packageIndex)
+	{
+		const ShaderCookPackageDesc& package = packages[packageIndex];
+		PackageCookContext& packageContext = packageContexts[packageIndex];
 
 		packageContext.compiledStages.reserve(package.stages.size());
 		for (std::size_t stageIndex = 0; stageIndex < package.stages.size(); ++stageIndex)
 		{
 			const ShaderCookStageDesc& stage = package.stages[stageIndex];
-			ShaderCompileOptions compileOptions = ShaderCompileOptionsBuilder::Build(stage);
+			ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
 			compileOptions.Target = settings.target;
+			compileOptions.CaptureDebugArtifacts = writeDebugArtifacts;
+			std::string backendSelectionError;
+			const std::string backendName = ResolveShaderBackendName(
+			    compileOptions.SourcePath,
+			    compileOptions.Target,
+			    settings.backendName,
+			    backendSelectionError);
+			if (backendName.empty())
+			{
+				result.errorMessage = std::format(
+				    "Failed to select shader backend for shader package '{}' variant '{}' stage '{}' - {}",
+				    package.packageId,
+				    package.variantId,
+				    GetShaderStagePrefix(stage.stage),
+				    backendSelectionError);
+				return result;
+			}
+
+			IShaderBackend* backend = acquireBackend(backendName, backendSelectionError);
+			if (backend == nullptr)
+			{
+				result.errorMessage = std::format(
+				    "Failed to construct shader backend '{}' for shader package '{}' variant '{}' stage '{}' - {}",
+				    backendName,
+				    package.packageId,
+				    package.variantId,
+				    GetShaderStagePrefix(stage.stage),
+				    backendSelectionError);
+				return result;
+			}
+
+			const std::string resolvedBackendName(backend->GetBackendName());
+
 			const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
 			if (!includeHashResult.Succeeded())
 			{
@@ -95,7 +144,9 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 			    .stageIndex = stageIndex,
 			    .package = &package,
 			    .stage = &stage,
+			    .backendName = resolvedBackendName,
 			    .compileOptions = compileOptions,
+			    .parameterStructDescriptor = ShaderCookPlanner::FindParameterStructDescriptor(compileOptions),
 			    .sourceHash = includeHashResult.sourceHash,
 			    .includeClosureHash = includeHashResult.includeClosureHash,
 			    .optionsHash = optionsHash,
@@ -106,7 +157,7 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 			        includeHashResult.sourceHash,
 			        includeHashResult.includeClosureHash,
 			        optionsHash,
-			        backend->GetBackendName(),
+			        resolvedBackendName,
 			        backend->GetBackendVersion())});
 		}
 	}
@@ -117,12 +168,63 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	        graph,
 	        [&](const CookNode& node, std::string& outErrorMessage) -> bool
 	        {
+		        const auto backendIt = backends.find(node.backendName);
+		        if (backendIt == backends.end() || !backendIt->second)
+		        {
+			        outErrorMessage = "Selected shader backend '" + node.backendName + "' is unavailable";
+			        return false;
+		        }
+
+		        IShaderBackend& backend = *backendIt->second;
 		        CookedStageBuild compiledStage;
-		        if (settings.useCache)
+		        auto verifyParameterStruct = [&](ShaderDebugArtifactSet* debugArtifacts) -> bool
+		        {
+			        if (!node.parameterStructDescriptor.has_value())
+			        {
+				        return true;
+			        }
+
+			        ShaderParameterStructDescriptor descriptor = *node.parameterStructDescriptor;
+			        if (settings.forceParameterStructMismatchForValidation)
+			        {
+				        descriptor.Fields.push_back(ShaderParameterStructFieldDescriptor{
+				            .Name = "__DeliberateMissingBindingForSelfTest",
+				            .Kind = CookedShaderResourceKind::ConstantBuffer,
+				            .Dimension = CookedShaderResourceDimension::Buffer,
+				            .ArrayCount = 1,
+				            .ValueSizeInBytes = sizeof(std::uint32_t),
+				            .ValueAlignmentInBytes = alignof(std::uint32_t)});
+			        }
+
+			        const ShaderParameterStructVerificationResult verificationResult =
+			            ShaderParameterStructVerifier::Verify(descriptor, compiledStage.reflection);
+			        if (debugArtifacts != nullptr)
+			        {
+				        debugArtifacts->ParameterMatchReportJson = verificationResult.BuildJsonReport();
+			        }
+			        if (!verificationResult.succeeded)
+			        {
+				        outErrorMessage = std::format(
+				            "SC2001 shader package '{}' variant '{}' stage '{}' parameter-struct verification failed: {}",
+				            node.package->packageId,
+				            node.package->variantId,
+				            GetShaderStagePrefix(node.stage->stage),
+				            verificationResult.diagnostics.empty() ? "unknown mismatch" : verificationResult.diagnostics.front());
+				        return false;
+			        }
+
+			        return true;
+		        };
+		        if (settings.useCache && !writeDebugArtifacts)
 		        {
 			        std::string cacheLookupError;
 			        if (artifactStore.TryGet(node.cacheKey, compiledStage, cacheLookupError))
 			        {
+				        if (!verifyParameterStruct(nullptr))
+				        {
+					        return false;
+				        }
+
 				        ++result.cacheHitCount;
 				        packageContexts[node.packageIndex].compiledStages.push_back(std::move(compiledStage));
 				        outErrorMessage.clear();
@@ -138,7 +240,14 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 
 		        ++result.cacheMissCount;
 		        ++result.backendInvocationCount;
-		        if (!StageCompiler::Compile(*backend, *node.stage, node.compileOptions, compiledStage, outErrorMessage))
+		        ShaderDebugArtifactSet debugArtifacts;
+		        if (!StageCompiler::Compile(
+			        backend,
+			        *node.stage,
+			        node.compileOptions,
+			        compiledStage,
+			        writeDebugArtifacts ? &debugArtifacts : nullptr,
+			        outErrorMessage))
 		        {
 			        outErrorMessage = std::format(
 			            "Failed to compile shader package '{}' variant '{}' stage '{}' - {}",
@@ -147,6 +256,32 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 			            GetShaderStagePrefix(node.stage->stage),
 			            outErrorMessage);
 			        return false;
+		        }
+
+		        if (!verifyParameterStruct(&debugArtifacts))
+		        {
+			        return false;
+		        }
+
+		        if (writeDebugArtifacts)
+		        {
+			        if (!ShaderDebugArtifactWriter::Write(
+				        settings.debugArtifactDirectory,
+				        *node.package,
+				        *node.stage,
+				        node.compileOptions,
+				        compiledStage,
+				        debugArtifacts,
+				        outErrorMessage))
+			        {
+				        outErrorMessage = std::format(
+				            "Failed to write debug artifacts for shader package '{}' variant '{}' stage '{}' - {}",
+				            node.package->packageId,
+				            node.package->variantId,
+				            GetShaderStagePrefix(node.stage->stage),
+				            outErrorMessage);
+				        return false;
+			        }
 		        }
 
 		        if (settings.useCache)
@@ -169,16 +304,15 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 		return result;
 	}
 
-	result.packages.reserve(manifest.GetPackages().size());
-	for (std::size_t packageIndex = 0; packageIndex < manifest.GetPackages().size(); ++packageIndex)
+	result.packages.reserve(packages.size());
+	for (std::size_t packageIndex = 0; packageIndex < packages.size(); ++packageIndex)
 	{
-		const ShaderCookPackageDesc& package = manifest.GetPackages()[packageIndex];
+		const ShaderCookPackageDesc& package = packages[packageIndex];
 		const PackageCookContext& packageContext = packageContexts[packageIndex];
 
 		CookedShaderPackageOutput packageOutput;
 		if (!CookedPackageWriter::Write(
 		        package,
-		        packageContext.bindingLayout,
 		        packageContext.compiledStages,
 		        packageOutput,
 		        result.errorMessage))
@@ -197,6 +331,15 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 		result.packages.clear();
 		return result;
 	}
+
+	ShaderRecookSignalResult signalResult;
+	if (!ShaderRecookSignal::Write(result.cacheDirectory, result.registryPath, signalResult, result.errorMessage))
+	{
+		result.packages.clear();
+		return result;
+	}
+	result.recookSignalPath = signalResult.signalPath;
+	result.recookSignalRegistryHash = signalResult.registryHash;
 
 	return result;
 }

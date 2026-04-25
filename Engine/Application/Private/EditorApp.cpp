@@ -5,8 +5,11 @@
 
 #include "ProjectApp.h"
 #include "Renderer.h"
+#include "ShaderRecook/ShaderRecookCoordinator.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+
+#include <utility>
 
 EditorApp::EditorApp() = default;
 
@@ -25,6 +28,11 @@ void EditorApp::Initialize()
 		m_projectApp = std::make_unique<ProjectApp>();
 	}
 
+	if (!m_shaderRecookCoordinator)
+	{
+		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>();
+	}
+
 	m_projectApp->Initialize();
 
 	if (!m_ui)
@@ -37,6 +45,19 @@ void EditorApp::Initialize()
 		    m_projectApp->GetGameScene(),
 		    renderHardware,
 		    m_projectApp->GetWindow());
+		m_ui->SetShaderPackageGenerationProvider(
+		    [&renderer]() noexcept
+		    {
+			    return renderer.GetShaderPackageGeneration();
+		    });
+		m_shaderRecookCoordinator->SetStatusHandler(
+		    [this](std::string status)
+		    {
+			    if (m_ui)
+			    {
+				    m_ui->SetShaderRecookStatus(std::move(status));
+			    }
+		    });
 	}
 
 	m_isEditorSessionActive = true;
@@ -61,10 +82,20 @@ bool EditorApp::Tick()
 			break;
 	}
 
+	Renderer& renderer = m_projectApp->GetRenderer();
+	if (m_shaderRecookCoordinator)
+	{
+		if (m_ui->ConsumeShaderRecookRequest())
+		{
+			m_shaderRecookCoordinator->RequestRecook();
+		}
+
+		m_shaderRecookCoordinator->Update(renderer, m_ui->ConsumeShaderReloadRequest());
+	}
+
 	m_projectApp->UpdateRuntime();
 	m_projectApp->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 
-	Renderer& renderer = m_projectApp->GetRenderer();
 	renderer.PrepareHostFrame();
 	renderer.RecordHostFrame();
 

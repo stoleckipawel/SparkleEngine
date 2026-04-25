@@ -22,6 +22,8 @@ class PipelineStateManager final
 	PipelineStateManager& operator=(PipelineStateManager&&) = delete;
 
 	const RenderPassRuntimeRegistry& GetRuntimeRegistry() const noexcept;
+	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
+	void ReloadCookedShaders() noexcept;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{

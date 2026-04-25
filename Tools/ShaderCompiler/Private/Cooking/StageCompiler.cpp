@@ -12,6 +12,7 @@ bool StageCompiler::Compile(
 	const ShaderCookStageDesc& stage,
 	const ShaderCompileOptions& options,
 	CookedStageBuild& outCompiledStage,
+	ShaderDebugArtifactSet* outDebugArtifacts,
 	std::string& outErrorMessage)
 {
 	using Engine::Paths::MakeProjectRelativeString;
@@ -50,6 +51,10 @@ bool StageCompiler::Compile(
 	outCompiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
 	outCompiledStage.bytecodeHash = Hash::Fnv1a64(outCompiledStage.bytecode.data(), outCompiledStage.bytecode.size());
 	outCompiledStage.reflection = compileResult.TakeReflection();
+	if (outDebugArtifacts != nullptr)
+	{
+		*outDebugArtifacts = compileResult.TakeDebugArtifacts();
+	}
 	outErrorMessage.clear();
 	return true;
 }
