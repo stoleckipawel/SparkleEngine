@@ -1,0 +1,36 @@
+#pragma once
+
+#include "ShaderRecook/ShaderRecookCoordinator.h"
+
+#include <functional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
+
+class ConsoleCommandRegistry;
+struct ConsoleAutocompleteRequest;
+struct ConsoleCommandContext;
+struct ConsoleCommandResult;
+
+class ShaderConsoleCommands final
+{
+  public:
+	struct Handlers final
+	{
+		std::function<void(ShaderRecookRequest)> RequestRecook;
+		std::function<void()> RequestReload;
+	};
+
+	static void Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers);
+
+  private:
+	static ConsoleCommandResult ExecuteRecompileShaders(const Handlers& handlers, std::span<const std::string_view> arguments);
+	static ConsoleCommandResult ExecuteReloadShaders(const Handlers& handlers);
+	static ConsoleCommandResult ExecuteListShaders();
+	static ConsoleCommandResult ExecuteListShaderBackends();
+	static ConsoleCommandResult ExecuteListShaderTargets();
+	static std::vector<std::string> CompleteRecompileShaders(const ConsoleAutocompleteRequest& request);
+	static std::string BuildShaderList();
+	static std::vector<std::string> BuildShaderTargetCompletions(std::string_view prefix);
+};

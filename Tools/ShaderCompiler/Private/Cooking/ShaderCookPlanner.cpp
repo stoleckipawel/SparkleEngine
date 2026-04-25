@@ -9,6 +9,7 @@
 
 #include <format>
 #include <unordered_map>
+#include <unordered_set>
 
 ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStageDesc& stage)
 {
@@ -49,6 +50,14 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
 {
 	if (!settings.singleShaderPath.empty() && settings.singleShaderPath.has_extension())
 	{
+		std::string typedRequestError;
+		std::vector<ShaderCookPackageDesc> typedPackages = BuildTypedShaderPackages(settings.singleShaderPath.generic_string(), typedRequestError);
+		if (!typedPackages.empty())
+		{
+			outErrorMessage.clear();
+			return typedPackages;
+		}
+
 		outErrorMessage.clear();
 		return BuildSingleShaderPackage(settings);
 	}
@@ -121,10 +130,30 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	std::vector<ShaderCookPackageDesc> packages;
 	std::unordered_map<std::string, std::size_t> packageIndices;
 	const std::string requested(requestedPackageId);
+	std::unordered_set<std::string> packageIdsSelectedBySource;
+	if (!requested.empty())
+	{
+		for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
+		{
+			const std::string shaderName(shader.ShaderName);
+			const std::string sourcePath(shader.SourcePath);
+			const bool sourceMatches = sourcePath == requested || sourcePath.ends_with("/" + requested) || requested.ends_with("/" + sourcePath);
+			if (shaderName == requested || sourceMatches)
+			{
+				packageIdsSelectedBySource.insert(shader.PackageName.empty() ? shaderName : std::string(shader.PackageName));
+			}
+		}
+	}
+
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
 		const std::string packageId(shader.PackageName.empty() ? shader.ShaderName : shader.PackageName);
-		if (!requested.empty() && packageId != requested && std::string(shader.ShaderName) != requested)
+		const std::string shaderName(shader.ShaderName);
+		const std::string sourcePath(shader.SourcePath);
+		const bool sourceMatches = !requested.empty() &&
+		    (sourcePath == requested || sourcePath.ends_with("/" + requested) || requested.ends_with("/" + sourcePath));
+		const bool packageSelectedBySource = packageIdsSelectedBySource.contains(packageId);
+		if (!requested.empty() && packageId != requested && shaderName != requested && !sourceMatches && !packageSelectedBySource)
 		{
 			continue;
 		}

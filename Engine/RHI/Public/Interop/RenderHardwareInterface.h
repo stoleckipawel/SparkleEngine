@@ -622,6 +622,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    ResourceState before,
 	    ResourceState after) const noexcept = 0;
 	virtual void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept = 0;
+	virtual void BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept = 0;
 	virtual void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept = 0;
 	virtual PixelFormat GetPresentColorFormat() const noexcept = 0;
 };

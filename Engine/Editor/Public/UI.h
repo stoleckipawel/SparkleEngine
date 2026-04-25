@@ -15,11 +15,17 @@
 
 class Timer;
 class MainMenuBarPanel;
+class ConsoleCommandRegistry;
+class ConsolePanel;
+class ConsoleSession;
+struct ConsoleOutputRecord;
+class OutputLogPanel;
 class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
 class ProfilerPanel;
 class ShaderInspectorPanel;
+class UsedShadersPanel;
 class LevelManager;
 class GameScene;
 class Window;
@@ -46,6 +52,8 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
 	void SetShaderRecookStatus(std::string status);
+	ConsoleCommandRegistry* GetConsoleCommandRegistry() noexcept { return m_consoleCommandRegistry.get(); }
+	void AppendConsoleOutput(ConsoleOutputRecord record);
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
 
@@ -69,17 +77,23 @@ class SPARKLE_EDITOR_API UI final
 
 	void InitializeDefaultPanels();
 	void ConfigureMainMenuBarShaderActions();
+	void SubscribeToLogStream();
 
 	void SubscribeToWindowEvents(Window& window);
 
 	void SetupDPIScaling() noexcept;
 
 	std::unique_ptr<MainMenuBarPanel> m_mainMenuBar;
+	std::unique_ptr<ConsoleCommandRegistry> m_consoleCommandRegistry;
+	std::unique_ptr<ConsoleSession> m_consoleSession;
+	std::unique_ptr<ConsolePanel> m_consolePanel;
+	std::unique_ptr<OutputLogPanel> m_outputLogPanel;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	std::unique_ptr<ProfilerPanel> m_profilerPanel;
 	std::unique_ptr<ShaderInspectorPanel> m_shaderInspectorPanel;
+	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
@@ -96,4 +110,5 @@ class SPARKLE_EDITOR_API UI final
 	bool m_isGraphicsBackendInitialized = false;
 
 	ScopedEventHandle m_windowMessageHandle;
+	std::uint64_t m_logRecordHandlerId = 0;
 };

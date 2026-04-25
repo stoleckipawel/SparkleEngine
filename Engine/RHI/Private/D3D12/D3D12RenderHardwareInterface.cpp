@@ -1805,31 +1805,42 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(NativeGraphicsCommandL
 	transitionToRenderTarget.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	nativeCommandList->ResourceBarrier(1, &transitionToRenderTarget);
 
-	ID3D12DescriptorHeap* heaps[2] = {};
-	UINT heapCount = 0;
-	if (m_descriptorHeapManager != nullptr)
-	{
-		if (D3D12DescriptorHeap* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV))
-		{
-			heaps[heapCount++] = srvHeap->GetRaw();
-		}
-
-		if (D3D12DescriptorHeap* samplerHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER))
-		{
-			heaps[heapCount++] = samplerHeap->GetRaw();
-		}
-	}
-
-	if (heapCount > 0)
-	{
-		nativeCommandList->SetDescriptorHeaps(heapCount, heaps);
-	}
+	BindPresentDescriptorHeaps(*nativeCommandList);
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_swapChain->GetCPUHandle();
 	nativeCommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
 
 	static constexpr float defaultClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 	nativeCommandList->ClearRenderTargetView(renderTargetView, clearColor != nullptr ? clearColor : defaultClearColor, 0, nullptr);
+}
+
+void D3D12RenderHardwareInterface::BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept
+{
+	if (m_swapChain == nullptr || !commandList)
+	{
+		return;
+	}
+
+	auto* nativeCommandList = ToD3D12GraphicsCommandList(commandList);
+	ID3D12Resource* presentTexture = m_swapChain->GetCurrentResource();
+	if (nativeCommandList == nullptr || presentTexture == nullptr)
+	{
+		return;
+	}
+
+	D3D12_RESOURCE_BARRIER transitionToRenderTarget{};
+	transitionToRenderTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	transitionToRenderTarget.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	transitionToRenderTarget.Transition.pResource = presentTexture;
+	transitionToRenderTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	transitionToRenderTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	transitionToRenderTarget.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	nativeCommandList->ResourceBarrier(1, &transitionToRenderTarget);
+
+	BindPresentDescriptorHeaps(*nativeCommandList);
+
+	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_swapChain->GetCPUHandle();
+	nativeCommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
 }
 
 void D3D12RenderHardwareInterface::EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept
@@ -1854,6 +1865,29 @@ void D3D12RenderHardwareInterface::EndPresentRenderPass(NativeGraphicsCommandLis
 	transitionToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	transitionToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	nativeCommandList->ResourceBarrier(1, &transitionToPresent);
+}
+
+void D3D12RenderHardwareInterface::BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept
+{
+	ID3D12DescriptorHeap* heaps[2] = {};
+	UINT heapCount = 0;
+	if (m_descriptorHeapManager != nullptr)
+	{
+		if (D3D12DescriptorHeap* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV))
+		{
+			heaps[heapCount++] = srvHeap->GetRaw();
+		}
+
+		if (D3D12DescriptorHeap* samplerHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER))
+		{
+			heaps[heapCount++] = samplerHeap->GetRaw();
+		}
+	}
+
+	if (heapCount > 0)
+	{
+		commandList.SetDescriptorHeaps(heapCount, heaps);
+	}
 }
 
 PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept

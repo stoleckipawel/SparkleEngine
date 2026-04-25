@@ -13,6 +13,7 @@ class GameScene;
 class GameCameraController;
 class Renderer;
 class LevelManager;
+class RuntimeConsoleOverlay;
 namespace Engine::Assets
 {
 	class SceneAssetManager;
@@ -25,10 +26,16 @@ enum class ProjectAppFrameResult : std::uint8_t
 	Ready = 2,
 };
 
+struct ProjectAppOptions final
+{
+	bool EnableRuntimeConsoleOverlay = true;
+};
+
 class SPARKLE_APPLICATION_API ProjectApp
 {
   public:
 	ProjectApp();
+	explicit ProjectApp(ProjectAppOptions options) noexcept;
 	~ProjectApp();
 
 	ProjectApp(const ProjectApp&) = delete;
@@ -60,5 +67,7 @@ class SPARKLE_APPLICATION_API ProjectApp
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
+	std::unique_ptr<RuntimeConsoleOverlay> m_runtimeConsoleOverlay;
+	ProjectAppOptions m_options;
 	bool m_isInitialized = false;
 };

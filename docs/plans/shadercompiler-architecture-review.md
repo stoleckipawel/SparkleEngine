@@ -1561,70 +1561,89 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
   preprocessed source + reflection + disassembly side by side; CSV
   excerpt from `pso-stats`.
 
-### Phase 6 — Unreal-style editor console + shader command workflows
+### Phase 6 — Unreal-style console + shader command workflows
 
-- **Goal.** Add an editor console and command surface recognizable to
-  Unreal Engine users: input line, scrollback output, command history,
-  autocomplete, CVar get/set, and shader commands such as
-  `RecompileShaders Global` or `RecompileShaders <shader-path>`. Add a
-  separate read-only Output Log panel next to the interactive console
-  in the bottom editor area. Add a Used Shaders panel whose first
-  delivery lists all registered global shaders and lets the user select
-  one or more entries for recook/reload/inspection; an active-level or
-  drawn-this-frame filter can be layered on after the registration-backed
+- **Goal.** Add a shared console command backend plus two frontends:
+  an editor console panel and a runtime tilde console. Both surfaces are
+  recognizable to Unreal Engine users: input line, scrollback output,
+  command history, autocomplete, CVar get/set, and command dispatch.
+  Editor-only shader commands such as `RecompileShaders Global` or
+  `RecompileShaders <shader-path>` are available from the editor console
+  and shader panels; runtime-safe commands such as CVar inspection and
+  mutation are available from the in-game tilde overlay. Add a separate
+  read-only Output Log panel next to the interactive editor console in
+  the bottom editor area. Add a Used Shaders panel whose first delivery
+  lists all registered global shaders and lets the user select one or
+  more entries for recook/reload/inspection; an active-level or drawn-
+  this-frame filter can be layered on after the registration-backed
   workflow is stable.
 - **Why.** Phase 4 proves that recook and reload work, and Phase 5
   makes artifacts inspectable. The missing workflow layer is the day-to-
   day engine-user interface: a technical artist or rendering engineer
   should be able to type a command, see output, set a CVar, then
   recompile the global shader set or one shader without leaving the
-  editor. Unreal's Output Log/console pattern is the reference, but the
-  Sparkle UI should keep those concepts distinct: the Output Log is a
-  read-only log stream, while the Console is an interactive command
-  input/output panel. One command bus handles CVars and commands;
-  command execution is visible in console scrollback; shader recompilation
-  is routed through the same offline cook path used by CI, never through
-  an in-process compiler. NVIDIA/AMD
+  editor. The same command backend should also exist at runtime so a
+  running game/showcase can open a tilde console and adjust live CVars
+  without the editor. Unreal's Output Log/console pattern is the
+  reference, but the Sparkle UI should keep those concepts distinct: the
+  Output Log is a read-only log stream, while each Console frontend is
+  an interactive command input/output surface. One shared command bus
+  handles CVars and runtime-safe commands; editor modules register
+  editor-only commands on top. Command execution is visible in console
+  scrollback; shader recompilation is routed through the same offline
+  cook path used by CI, never through an in-process compiler. NVIDIA/AMD
   tooling patterns should feel familiar too: explicit command history,
   searchable output, stable command names, and data views sourced from
   typed/runtime shader registration state rather than ad-hoc disk
   scanning.
 - **Prerequisites.** Phase 5 gates green. The existing
   `ConsoleVariableRegistry`, `ShaderRecookCoordinator`, shader inspector,
-  and renderer shader package generation seams are available.
+  renderer shader package generation seams, and runtime input/UI overlay
+  seams are available.
 - **Decisions from planning.** Deliver the console foundation first;
   defer any remote/dev-console networking. Use Unreal-like canonical
   command names such as `RecompileShaders Global`. Put the Output Log on
   the left and the interactive Console on the right in the bottom editor
-  area. Support shader targeting by registered shader id, package id,
-  source path, selected Used Shaders row, and eventually wildcard/pattern
-  matching. The first Used Shaders panel mode lists all registered global
-  shaders, with later active-level/runtime filtering kept as an extension
-  point. Failure UX must reach console scrollback, recook status, selected
-  shader rows, and an optional modal/notification path.
+  area. Add a runtime overlay toggled by the tilde key for CVar/debug
+  commands while the game/showcase is running. Support shader targeting
+  by registered shader id, package id, source path, selected Used
+  Shaders row, and eventually wildcard/pattern matching. The first Used
+  Shaders panel mode lists all registered global shaders, with later
+  active-level/runtime filtering kept as an extension point. Failure UX
+  must reach console scrollback, recook status, selected shader rows,
+  and an optional modal/notification path.
 - **Work Items.**
-  1. **Phase 6a — command model + CVar foundation.** Introduce a small
-     `ConsoleCommandRegistry` under `Engine/Core` (or
-     `Engine/Editor` if editor-only commands stay out of runtime):
-     command name, help text, argument schema, execution callback, and
-     autocomplete callback. Keep it single-threaded and frame-bound;
-     command callbacks enqueue work or update state but do not block the
-     UI.
+    1. **Phase 6a — console command model + CVar foundation.** Introduce a
+      small `ConsoleCommandRegistry` in shared engine code as the backend
+      used by both editor and runtime frontends: command name,
+     help text, argument schema, execution callback, autocomplete
+     callback, and command category/scope (`Runtime`, `Editor`,
+     `Developer`). Keep it single-threaded and frame-bound; command
+     callbacks enqueue work or update state but do not block the UI.
+     Editor-only commands are registered by editor/application code
+     against this backend; they do not make the backend depend on
+     editor modules.
   2. Extend the existing CVar system with string parsing/formatting
      adapters for supported types (`bool`, integral, floating point,
      string-like values) plus `GetCVar`, `SetCVar`, `ListCVars`, and
      `Help` command handlers. Preserve typed storage in
      `ConsoleVariable<T>`; do not replace the registry with a stringly
-     typed map.
-  3. **Phase 6b — bottom Console + separate Output Log panels.** Add an
-     editor `ConsolePanel` model/view split:
+     typed map. These commands must be runtime-safe and callable from
+     either frontend.
+  3. **Phase 6b — shared console session + frontends.** Add reusable
+     non-ImGui console backend pieces in the shared Console system:
+     `ConsoleSession`,
      `ConsoleHistoryBuffer`, `ConsoleInputParser`, `ConsoleOutputSink`,
-     and ImGui panel. Features: command history, multiline scrollback,
-     severity coloring, copy/clear, filter, autocomplete, and focus
-     shortcut. The panel is UI-only; parsing/execution lives in reusable
-     non-ImGui classes. Add/formalize an `OutputLogPanel` separately:
-     bottom-left read-only engine log stream, while the bottom-right
-     Console is interactive command input/output.
+     command scrollback records, and autocomplete query/results. Add an
+     editor `ConsolePanel` as a frontend over that backend, and add a
+     runtime tilde console overlay as a second frontend over the same
+     backend. Both frontends support command history, multiline
+     scrollback, severity coloring, copy/clear where appropriate,
+     filtering/search, autocomplete, and focus handling. Frontends are
+     UI-only; parsing/execution lives in reusable non-ImGui classes.
+     Add/formalize an `OutputLogPanel` separately: bottom-left read-only
+     engine log stream, while the bottom-right editor Console is
+     interactive command input/output.
   4. **Phase 6c — shader command bridge.** Add shader console commands
      through a dedicated bridge owned by the
      application/editor layer, not by the UI widget:
@@ -1644,43 +1663,51 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      id, process command line, status, captured output, and artifact
      preservation status. Keep one active subprocess plus one queued
      latest request. Keep all compiler work out of process.
-    6. **Phase 6d — registered global shader list model.** Expose a small
-      tool/runtime-readable shader list model backed by typed global shader
-      registrations and cooked package metadata: shader id, package id,
-      source path, variant/pass/package name when known, stages,
-      backend/target, reflection/resource counts, artifact availability,
-      and current package generation. Do not build this panel by scanning
-      the shader source tree. Leave a clean seam for a later
-      `ShaderUsageSnapshot` mode sourced from actual active-level/runtime
-      usage.
-    7. **Phase 6e — Used Shaders panel.** Add an editor
-      `UsedShadersPanel`: searchable table of all registered global
-      shaders for the first delivery, with columns for shader id, package
-      id, pass/package/stages, backend/target, source path, last recook
-      status, artifact links, and reflection/resource counts. Actions:
-      recook selected, inspect selected, copy command, open artifact
-      bundle. The panel calls the same command bridge as the console.
-    8. **Phase 6f — diagnostics + failure UX.** Add structured diagnostics
-      routing: subprocess stdout/stderr and
-     command status feed both the status panel and console scrollback.
-     Failed recooks must explicitly say that previous artifacts remain
-      active. Selected rows should retain/echo last recook status and an
-      optional popup/notification path may summarize blocking failures.
-    9. **Phase 6g — validation + docs.** Add tests/gates for parser and CVar conversion logic, command
-     dispatch, shader command argument normalization, and used-shader
-     snapshot generation. CI should be able to exercise command handlers
-      without launching the editor UI. Update this plan and add command
-      reference docs once command names stabilize.
+  6. **Phase 6d — registered global shader list model.** Expose a small
+     tool/runtime-readable shader list model backed by typed global
+     shader registrations and cooked package metadata: shader id,
+     package id, source path, variant/pass/package name when known,
+     stages, backend/target, reflection/resource counts, artifact
+     availability, and current package generation. Do not build this
+     panel by scanning the shader source tree. Leave a clean seam for a
+     later `ShaderUsageSnapshot` mode sourced from actual active-level/
+     runtime usage.
+  7. **Phase 6e — Used Shaders panel.** Add an editor
+     `UsedShadersPanel`: searchable table of all registered global
+     shaders for the first delivery, with columns for shader id, package
+     id, pass/package/stages, backend/target, source path, last recook
+     status, artifact links, and reflection/resource counts. Actions:
+     recook selected, inspect selected, copy command, open artifact
+     bundle. The panel calls the same command bridge as the console.
+  8. **Phase 6f — diagnostics + failure UX.** Add structured diagnostics
+     routing: subprocess stdout/stderr and command status feed both the
+     status panel and console scrollback. Failed recooks must explicitly
+     say that previous artifacts remain active. Selected rows should
+     retain/echo last recook status and an optional popup/notification
+     path may summarize blocking failures.
+  9. **Phase 6g — validation + docs.** Add tests/gates for parser and
+     CVar conversion logic, command dispatch, shader command argument
+     normalization, and used-shader list model generation. CI should be
+     able to exercise command handlers without launching the editor UI.
+     Update this plan and add command reference docs once command names
+     stabilize.
 - **Implementation Prompts.**
   - *"Implement a typed `ConsoleCommandRegistry` and
     `ConsoleInputParser` that can dispatch `Help`, `ListCVars`,
     `GetCVar <name>`, and `SetCVar <name> <value>` against the existing
     `ConsoleVariableRegistry`. Keep typed CVar storage; add conversion
-    helpers instead of making CVars string-only."*
+    helpers instead of making CVars string-only. Keep the backend in
+    shared engine code so editor and runtime frontends use the same
+    command path."*
   - *"Add an editor `ConsolePanel` with input, output scrollback,
     history, filtering, autocomplete, and severity coloring. The panel
     delegates all execution to a command service; it does not know about
     shader compiler process spawning directly."*
+  - *"Add a runtime tilde console overlay that reuses the shared Console
+    backend/session and can run runtime-safe commands such as `Help`,
+    `ListCVars`, `GetCVar`, and `SetCVar` while the Showcase/runtime is
+    running. Keep editor-only shader recook commands unavailable unless
+    the editor/application layer registered them."*
   - *"Add shader commands (`RecompileShaders Global`,
     `RecompileShaders Changed`, `RecompileShaders <path-or-id>`,
     `ReloadShaders`) by routing through `ShaderRecookCoordinator` and
@@ -1693,16 +1720,22 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     level/runtime usage filter as a later mode, not as the Phase 6a-6e
     blocker."*
 - **Guardrails.**
-  - *Must:* keep the command dispatcher single-threaded from the editor
-    point of view. Long work is represented as an out-of-process shader
-    cook request owned by `ShaderRecookCoordinator`, not as a blocking
-    command callback.
+  - *Must:* keep the command dispatcher single-threaded from both editor
+    and runtime points of view. Long work is represented as an out-of-
+    process shader cook request owned by `ShaderRecookCoordinator`, not
+    as a blocking command callback.
+  - *Must:* keep separation of concerns explicit: the shared Console
+    system owns command registration, parsing, CVar conversion, history,
+    autocomplete, and output records; Editor owns editor panels and
+    shader recook command registration; Runtime/Application owns the
+    tilde overlay and only registers runtime-safe commands by default.
   - *Must:* keep the editor process free of shader compiler libraries
     and tool-private headers. Console shader commands spawn
     `ShaderCompiler.exe`; they never call compiler APIs directly.
   - *Must:* separate model/service/UI layers: command parser/registry,
     CVar conversion, shader command bridge, output buffer, and ImGui
-    panels are distinct files/classes. No god `ConsolePanel` and no god
+    panels/runtime overlays are distinct files/classes. No god
+    `ConsolePanel`, no god runtime overlay, and no god
     `ShaderRecookCoordinator`.
   - *Must:* use typed registration/cooked package metadata for the first
     used-shaders panel mode, not source-tree scans. Disk scans are
@@ -1722,12 +1755,18 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     output.
   - Editor console can set an existing CVar by name and echo the new
     typed value in output scrollback.
+  - Runtime tilde console opens/closes over the running viewport,
+    captures text input while focused, can set an existing CVar by name,
+    and immediately affects runtime state without requiring the editor.
+  - Runtime console does not expose editor-only shader recook commands
+    unless the editor/application command layer explicitly registers
+    them for that process.
   - `RecompileShaders Global` from the console runs the same
     out-of-process cook as the Shaders menu action, streams output, and
     reloads packages on success.
-  - `RecompileShaders <path>` recooks only the requested shader/package
-    where the tool supports it and reports a clear error for unknown
-    paths/ids.
+  - `RecompileShaders <path-or-id>` recooks only the requested
+    shader/package where the tool supports it and reports a clear error
+    for unknown paths/ids.
   - A deliberate shader syntax error from a console-triggered recook
     leaves previous artifacts active and prints the compiler diagnostic
     in the console.
@@ -1737,12 +1776,13 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     recook/inspect a selected entry. A later active-level/runtime usage
     filter can reuse the same row/action model.
   - `ValidateShaderCompilerBoundary` still passes.
-- **Increment Demo.** Screen recording: bottom Output Log on the left
-  and interactive Console on the right; open console, `SetCVar` an
-  existing render/debug CVar, run `RecompileShaders Global`, see
-  console scrollback output and viewport reload; open Used Shaders panel,
-  select `ForwardOpaque`, run recook selected, then open the inspector
-  artifacts for that package.
+- **Increment Demo.** Screen recording: in runtime/showcase, press tilde,
+  `SetCVar` an existing render/debug CVar, and see runtime state change;
+  in editor, show bottom Output Log on the left and interactive Console
+  on the right, run `RecompileShaders Global`, see console scrollback
+  output and viewport reload; open Used Shaders panel, select
+  `ForwardOpaque`, run recook selected, then open the inspector artifacts
+  for that package.
 
 ### Phase tracker (snapshot)
 
@@ -1787,12 +1827,16 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 [x] Phase 5 — Inspector + analysis seam + glslang seam
   [x] Editor Shader Inspector panel
   [x] PsoStatsPass CSV   [x] Glslang documented as future seam
-[ ] Phase 6 — Unreal-style editor console + shader command workflows
-  [ ] Phase 6a command registry/parser/CVar commands
-  [ ] Phase 6b separate bottom Output Log + Console panels
-  [ ] RecompileShaders Global/path/id commands via out-of-process cook
-  [ ] Used Shaders panel lists registered global shaders first
-  [ ] Console diagnostics preserve old artifacts on failed recook
+[x] Phase 6 — Unreal-style console + shader command workflows
+  [x] Phase 6a console command registry/parser/CVar commands
+  [x] Phase 6b runtime tilde console + editor Console/Output Log frontends
+    [x] Shared ConsoleSession/history/output records
+    [x] Editor Console panel and separate Output Log panel shell
+    [x] Standalone runtime tilde overlay host
+    [x] Engine log stream routing into Output Log panel
+  [x] RecompileShaders Global/path/id commands via out-of-process cook
+  [x] Used Shaders panel lists registered global shaders first
+  [x] Console diagnostics preserve old artifacts on failed recook
 ```
 
 ### Definition of done (whole effort)
@@ -1824,9 +1868,11 @@ true at the same time:
   pairs.
 - The cooked package version reflects the Phase 2 bump, with one
   documented `LoadV<N-1>` migration entry.
-- The editor exposes a console command surface that can set existing
-  CVars and route `RecompileShaders Global` / path-or-id shader recooks
-  through the same out-of-process cook path used by CI.
+- The shared Console backend can set existing CVars through the
+  same parser/command path from both the editor console panel and the
+  runtime tilde overlay. Editor-only commands route
+  `RecompileShaders Global` / path-or-id shader recooks through the same
+  out-of-process cook path used by CI.
 - The editor exposes a used-shaders view sourced from typed shader
   registrations and cooked package metadata, not source-tree scans, and
   selected entries can be recooked or opened in the shader inspector

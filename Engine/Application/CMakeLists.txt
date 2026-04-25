@@ -63,6 +63,7 @@ target_link_libraries(SparkleApplication
         SparklePlatform
         SparkleGameFramework
         SparkleEditor
+        imgui
 )
 
 set_target_properties(SparkleApplication PROPERTIES

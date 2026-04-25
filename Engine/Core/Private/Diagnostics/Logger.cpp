@@ -2,6 +2,7 @@
 #include "Logger.h"
 
 #include <atomic>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <mutex>
@@ -26,6 +27,7 @@ namespace Engine::Logging
 	namespace Detail
 	{
 		using LoggerMap = std::unordered_map<std::string, std::shared_ptr<spdlog::logger>>;
+		using LogRecordHandlerMap = std::unordered_map<std::uint64_t, LogRecordHandler>;
 
 		std::mutex& GetRegistryMutex() noexcept
 		{
@@ -43,6 +45,24 @@ namespace Engine::Logging
 		{
 			static std::vector<spdlog::sink_ptr> sharedSinks;
 			return sharedSinks;
+		}
+
+		std::mutex& GetLogRecordHandlerMutex() noexcept
+		{
+			static std::mutex handlerMutex;
+			return handlerMutex;
+		}
+
+		LogRecordHandlerMap& GetLogRecordHandlers() noexcept
+		{
+			static LogRecordHandlerMap handlers;
+			return handlers;
+		}
+
+		std::atomic<std::uint64_t>& GetNextLogRecordHandlerId() noexcept
+		{
+			static std::atomic<std::uint64_t> nextHandlerId{1};
+			return nextHandlerId;
 		}
 
 		std::atomic<int>& GetLevelStorage() noexcept
@@ -97,9 +117,55 @@ namespace Engine::Logging
 		};
 #endif
 
+		void PublishLogRecord(LogRecord record) noexcept
+		{
+			std::vector<LogRecordHandler> handlers;
+			{
+				std::lock_guard<std::mutex> lock(GetLogRecordHandlerMutex());
+				handlers.reserve(GetLogRecordHandlers().size());
+				for (const auto& [id, handler] : GetLogRecordHandlers())
+				{
+					(void) id;
+					if (handler)
+					{
+						handlers.push_back(handler);
+					}
+				}
+			}
+
+			for (const LogRecordHandler& handler : handlers)
+			{
+				try
+				{
+					handler(record);
+				}
+				catch (...)
+				{
+				}
+			}
+		}
+
+		class LogObserverSink final : public spdlog::sinks::base_sink<std::mutex>
+		{
+		  protected:
+			void sink_it_(const spdlog::details::log_msg& msg) override
+			{
+				PublishLogRecord(LogRecord{
+				    .LoggerName = std::string(msg.logger_name.data(), msg.logger_name.size()),
+				    .Level = msg.level,
+				    .Message = std::string(msg.payload.data(), msg.payload.size()),
+				});
+			}
+
+			void flush_() override {}
+		};
+
 		std::vector<spdlog::sink_ptr> CreateDefaultSinks()
 		{
 			std::vector<spdlog::sink_ptr> sinks;
+
+			auto observerSink = std::make_shared<LogObserverSink>();
+			sinks.push_back(observerSink);
 
 			auto stderrSink = std::make_shared<spdlog::sinks::stderr_sink_mt>();
 			stderrSink->set_pattern("[%n] [%l] %s:%# %v");
@@ -226,6 +292,44 @@ namespace Engine::Logging
 			}
 
 			return spdlog::default_logger();
+		}
+	}
+
+	std::uint64_t AddRecordHandler(LogRecordHandler handler) noexcept
+	{
+		if (!handler)
+		{
+			return 0;
+		}
+
+		try
+		{
+			Initialize();
+			const std::uint64_t handlerId = Detail::GetNextLogRecordHandlerId().fetch_add(1, std::memory_order_relaxed);
+			std::lock_guard<std::mutex> lock(Detail::GetLogRecordHandlerMutex());
+			Detail::GetLogRecordHandlers().emplace(handlerId, std::move(handler));
+			return handlerId;
+		}
+		catch (...)
+		{
+			return 0;
+		}
+	}
+
+	void RemoveRecordHandler(std::uint64_t handlerId) noexcept
+	{
+		if (handlerId == 0)
+		{
+			return;
+		}
+
+		try
+		{
+			std::lock_guard<std::mutex> lock(Detail::GetLogRecordHandlerMutex());
+			Detail::GetLogRecordHandlers().erase(handlerId);
+		}
+		catch (...)
+		{
 		}
 	}
 

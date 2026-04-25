@@ -2,15 +2,36 @@
 
 #include <DirectXMath.h>
 
+#include <charconv>
 #include <filesystem>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <system_error>
+#include <type_traits>
 
 namespace Engine
 {
 	namespace Strings
 	{
+		constexpr bool IsAsciiWhitespace(char character) noexcept
+		{
+			return character == ' ' || character == '\t' || character == '\r' || character == '\n';
+		}
+
+		constexpr bool ContainsAsciiWhitespace(std::string_view str) noexcept
+		{
+			for (const char character : str)
+			{
+				if (IsAsciiWhitespace(character))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		constexpr std::string_view TrimAsciiWhitespace(std::string_view str) noexcept
 		{
 			constexpr std::string_view kWhitespace = " \t\r\n";
@@ -45,9 +66,27 @@ namespace Engine
 		std::string ToLowerCopy(std::string_view str);
 
 		bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept;
+		bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept;
 		bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept;
 		bool TryParseBool(std::string_view str, bool& outValue);
 		bool TrySplitKeyValue(std::string_view str, char separator, std::string_view& outKey, std::string_view& outValue) noexcept;
+		std::string Join(std::span<const std::string_view> values, std::string_view separator, std::size_t firstValueIndex = 0);
+
+		template <typename TNumber> bool TryParseNumber(std::string_view str, TNumber& outValue)
+		{
+			static_assert(std::is_arithmetic_v<TNumber>);
+
+			const std::string_view trimmed = TrimAsciiWhitespace(str);
+			if (trimmed.empty())
+			{
+				return false;
+			}
+
+			const char* begin = trimmed.data();
+			const char* end = trimmed.data() + trimmed.size();
+			const std::from_chars_result result = std::from_chars(begin, end, outValue);
+			return result.ec == std::errc{} && result.ptr == end;
+		}
 
 		inline bool TryParseFloat(std::string_view str, float& outValue)
 		{

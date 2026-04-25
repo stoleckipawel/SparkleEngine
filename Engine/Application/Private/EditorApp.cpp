@@ -5,8 +5,11 @@
 
 #include "ProjectApp.h"
 #include "Renderer.h"
+#include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 
+#include "Core/Public/Console/ConsoleCommandRegistry.h"
+#include "Core/Public/Console/ConsoleOutput.h"
 #include "Core/Public/Diagnostics/Trace.h"
 
 #include <utility>
@@ -25,7 +28,7 @@ void EditorApp::Initialize()
 
 	if (!m_projectApp)
 	{
-		m_projectApp = std::make_unique<ProjectApp>();
+		m_projectApp = std::make_unique<ProjectApp>(ProjectAppOptions{.EnableRuntimeConsoleOverlay = false});
 	}
 
 	if (!m_shaderRecookCoordinator)
@@ -55,9 +58,33 @@ void EditorApp::Initialize()
 		    {
 			    if (m_ui)
 			    {
+				    const ConsoleCommandSeverity severity = status.find("failed") != std::string::npos ? ConsoleCommandSeverity::Error : ConsoleCommandSeverity::Info;
+				    m_ui->AppendConsoleOutput(ConsoleOutputRecord{.Severity = severity, .Text = status});
 				    m_ui->SetShaderRecookStatus(std::move(status));
 			    }
 		    });
+
+		if (ConsoleCommandRegistry* consoleCommandRegistry = m_ui->GetConsoleCommandRegistry())
+		{
+			ShaderConsoleCommands::Register(
+			    *consoleCommandRegistry,
+			    ShaderConsoleCommands::Handlers{
+			        .RequestRecook = [this](ShaderRecookRequest request)
+			        {
+				        if (m_shaderRecookCoordinator)
+				        {
+					        m_shaderRecookCoordinator->RequestRecook(std::move(request));
+				        }
+			        },
+			        .RequestReload = [this]()
+			        {
+				        if (m_shaderRecookCoordinator)
+				        {
+					        m_shaderRecookCoordinator->RequestReload();
+				        }
+			        },
+			    });
+		}
 	}
 
 	m_isEditorSessionActive = true;

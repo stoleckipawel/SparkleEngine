@@ -21,14 +21,28 @@ void ShaderRecookCoordinator::SetStatusHandler(StatusHandler handler)
 
 void ShaderRecookCoordinator::RequestRecook() noexcept
 {
+	RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Global});
+}
+
+void ShaderRecookCoordinator::RequestRecook(ShaderRecookRequest request) noexcept
+{
 	if (m_hasActiveRecook)
 	{
+		m_queuedRequest = std::move(request);
 		m_hasQueuedRecook = true;
-		PublishStatus("Shader recook already running; queued one follow-up recook for the newest request.");
+		PublishStatus(std::format(
+		    "Shader recook already running; queued one follow-up request for {}.",
+		    DescribeRequest(m_queuedRequest)));
 		return;
 	}
 
-	StartRecook();
+	StartRecook(std::move(request));
+}
+
+void ShaderRecookCoordinator::RequestReload() noexcept
+{
+	m_reloadRequested = true;
+	PublishStatus("Shader reload requested; cooked shader packages will reload at the next coordinator update.");
 }
 
 void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) noexcept
@@ -36,11 +50,12 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 	if (m_shaderSourceChangeTracker.HasChanged())
 	{
 		PublishStatus("Shader source change detected; scheduling out-of-process recook.");
-		RequestRecook();
+		RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Changed});
 	}
 
-	if (reloadRequested || HasRecookSignalChanged())
+	if (m_reloadRequested || reloadRequested || HasRecookSignalChanged())
 	{
+		m_reloadRequested = false;
 		ReloadCookedShaders(renderer);
 	}
 
@@ -63,28 +78,33 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 	catch (const std::exception& exception)
 	{
 		result.RequestId = m_activeRequestId;
+		result.Request = m_activeRequest;
 		result.ExitCode = -1;
 		result.Output = exception.what();
 	}
 	catch (...)
 	{
 		result.RequestId = m_activeRequestId;
+		result.Request = m_activeRequest;
 		result.ExitCode = -1;
 		result.Output = "Unknown shader recook worker failure.";
 	}
 
 	m_hasActiveRecook = false;
 	m_activeRequestId = 0;
+	m_activeRequest = {};
 	CompleteRecook(renderer, std::move(result));
 
 	if (m_hasQueuedRecook)
 	{
+		ShaderRecookRequest queuedRequest = std::move(m_queuedRequest);
+		m_queuedRequest = {};
 		m_hasQueuedRecook = false;
-		StartRecook();
+		StartRecook(std::move(queuedRequest));
 	}
 }
 
-void ShaderRecookCoordinator::StartRecook() noexcept
+void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 {
 	try
 	{
@@ -105,17 +125,23 @@ void ShaderRecookCoordinator::StartRecook() noexcept
 		const std::uint64_t requestId = m_nextRequestId++;
 		m_activeRequestId = requestId;
 		m_latestRequestId = requestId;
+		m_activeRequest = request;
 		m_hasActiveRecook = true;
 		const std::filesystem::path debugArtifactDirectory = ResolveShaderDebugArtifactDirectory();
 		m_recookFuture = std::async(
 		    std::launch::async,
 		    &ShaderRecookCoordinator::RunRecookProcess,
 		    requestId,
+		    request,
 		    shaderCompilerPath,
 		    projectDirectory,
 		    debugArtifactDirectory);
 
-		PublishStatus(std::format("Shader recook #{} started via '{}'.", requestId, shaderCompilerPath.generic_string()));
+		PublishStatus(std::format(
+		    "Shader recook #{} started for {} via '{}'.",
+		    requestId,
+		    DescribeRequest(request),
+		    shaderCompilerPath.generic_string()));
 	}
 	catch (const std::exception& exception)
 	{
@@ -141,14 +167,21 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ProcessResult r
 	if (result.ExitCode == 0)
 	{
 		ReloadCookedShaders(renderer);
-		PublishStatus(std::format("Shader recook #{} succeeded. Reloaded cooked shader packages.\n\n{}", result.RequestId, result.Output));
+		PublishStatus(std::format(
+		    "Shader recook #{} ({}) succeeded. Reloaded cooked shader packages.\nCommand: {}\n\n{}",
+		    result.RequestId,
+		    DescribeRequest(result.Request),
+		    result.CommandLine,
+		    result.Output));
 		return;
 	}
 
 	PublishStatus(std::format(
-	    "Shader recook #{} failed with exit code {}. Previous cooked shader packages remain active.\n\n{}",
+	    "Shader recook #{} ({}) failed with exit code {}. Previous cooked shader packages remain active; no recook signal was accepted and old artifacts remain loaded.\nCommand: {}\n\n{}",
 	    result.RequestId,
+	    DescribeRequest(result.Request),
 	    result.ExitCode,
+	    result.CommandLine,
 	    result.Output));
 }
 
@@ -171,6 +204,20 @@ void ShaderRecookCoordinator::PublishStatus(std::string status) noexcept
 	}
 	catch (...)
 	{
+	}
+}
+
+std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& request)
+{
+	switch (request.Type)
+	{
+		case ShaderRecookRequestType::Changed:
+			return "changed shader sources";
+		case ShaderRecookRequestType::ShaderPathOrId:
+			return request.Target.empty() ? "targeted shader <empty>" : "targeted shader '" + request.Target + "'";
+		case ShaderRecookRequestType::Global:
+		default:
+			return "all global shaders";
 	}
 }
 
@@ -246,12 +293,14 @@ std::filesystem::path ShaderRecookCoordinator::ResolveShaderDebugArtifactDirecto
 
 ShaderRecookCoordinator::ProcessResult ShaderRecookCoordinator::RunRecookProcess(
     std::uint64_t requestId,
+	ShaderRecookRequest request,
     std::filesystem::path executablePath,
     std::filesystem::path workingDirectory,
     std::filesystem::path debugArtifactDirectory) noexcept
 {
 	ProcessResult result;
 	result.RequestId = requestId;
+	result.Request = request;
 	result.ExecutablePath = executablePath;
 
 	auto quote = [](const std::filesystem::path& path)
@@ -272,11 +321,27 @@ ShaderRecookCoordinator::ProcessResult ShaderRecookCoordinator::RunRecookProcess
 		return quoted;
 	};
 
+	std::string shaderArgument;
+	if (request.Type == ShaderRecookRequestType::ShaderPathOrId)
+	{
+		if (request.Target.empty())
+		{
+			result.ExitCode = -1;
+			result.Output = "Targeted shader recook requires a shader source path, package id, or shader id.";
+			return result;
+		}
+
+		shaderArgument = " --shader ";
+		shaderArgument += quote(std::filesystem::path(request.Target));
+	}
+
 	const std::string command = std::format(
-	    "cd /d {} && {} cook --debug-artifacts {} 2>&1",
+	    "cd /d {} && {} cook{} --debug-artifacts {} 2>&1",
 	    quote(workingDirectory),
 	    quote(executablePath),
+	    shaderArgument,
 	    quote(debugArtifactDirectory));
+	result.CommandLine = command;
 
 	FILE* pipe = _popen(command.c_str(), "r");
 	if (pipe == nullptr)

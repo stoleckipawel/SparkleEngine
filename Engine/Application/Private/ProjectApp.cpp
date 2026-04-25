@@ -3,6 +3,7 @@
 
 #include "Window/Window.h"
 #include "Renderer.h"
+#include "RuntimeConsole/RuntimeConsoleOverlay.h"
 #include "Assets/SceneAssetManager.h"
 #include "Input/InputSystem.h"
 #include "Scene/GameScene.h"
@@ -13,6 +14,8 @@
 #include "Core/Public/Diagnostics/Trace.h"
 
 ProjectApp::ProjectApp() = default;
+
+ProjectApp::ProjectApp(ProjectAppOptions options) noexcept : m_options(options) {}
 
 ProjectApp::~ProjectApp() = default;
 
@@ -72,6 +75,12 @@ void ProjectApp::Initialize()
 	{
 		SPARKLE_CPU_SCOPE("Application.ProjectCreateRenderer");
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
+	}
+
+	if (m_options.EnableRuntimeConsoleOverlay)
+	{
+		SPARKLE_CPU_SCOPE("Application.ProjectCreateRuntimeConsole");
+		m_runtimeConsoleOverlay = std::make_unique<RuntimeConsoleOverlay>(*m_timer, *m_window, m_renderer->GetRenderHardwareInterface());
 	}
 	m_isInitialized = true;
 }
@@ -155,7 +164,29 @@ bool ProjectApp::Tick()
 	}
 
 	UpdateRuntime();
-	m_renderer->OnRender();
+	if (m_runtimeConsoleOverlay != nullptr && m_runtimeConsoleOverlay->IsVisible())
+	{
+		m_renderer->PrepareHostFrame();
+		m_renderer->RecordHostFrame();
+		m_runtimeConsoleOverlay->Update();
+
+		RenderHardwareInterface& renderHardware = m_renderer->GetRenderHardwareInterface();
+		const NativeGraphicsCommandListHandle commandListHandle =
+		    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
+		renderHardware.BeginPresentOverlayPass(commandListHandle);
+		m_runtimeConsoleOverlay->Render(commandListHandle);
+		renderHardware.EndPresentRenderPass(commandListHandle);
+
+		m_renderer->SubmitHostFrame();
+	}
+	else
+	{
+		m_renderer->OnRender();
+		if (m_runtimeConsoleOverlay != nullptr)
+		{
+			m_runtimeConsoleOverlay->Update();
+		}
+	}
 	EndFrame();
 	return true;
 }
@@ -168,6 +199,7 @@ void ProjectApp::Shutdown()
 		return;
 	}
 
+	m_runtimeConsoleOverlay.reset();
 	m_renderer.reset();
 	m_gameCameraController.reset();
 	m_levelManager.reset();

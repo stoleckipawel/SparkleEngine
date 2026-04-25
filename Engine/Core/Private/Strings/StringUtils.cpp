@@ -42,6 +42,25 @@ namespace Engine
 			return true;
 		}
 
+		bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept
+		{
+			if (prefix.size() > value.size())
+			{
+				return false;
+			}
+
+			for (std::size_t index = 0; index < prefix.size(); ++index)
+			{
+				const unsigned char valueCharacter = static_cast<unsigned char>(value[index]);
+				const unsigned char prefixCharacter = static_cast<unsigned char>(prefix[index]);
+				if (std::tolower(valueCharacter) != std::tolower(prefixCharacter))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
 		bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept
 		{
 			if (needle.empty())
@@ -83,6 +102,20 @@ namespace Engine
 			outKey = TrimAsciiWhitespace(str.substr(0, separatorIndex));
 			outValue = TrimAsciiWhitespace(str.substr(separatorIndex + 1));
 			return true;
+		}
+
+		std::string Join(std::span<const std::string_view> values, std::string_view separator, std::size_t firstValueIndex)
+		{
+			std::string output;
+			for (std::size_t index = firstValueIndex; index < values.size(); ++index)
+			{
+				if (index > firstValueIndex)
+				{
+					output += separator;
+				}
+				output += values[index];
+			}
+			return output;
 		}
 	}  // namespace Strings
 }  // namespace Engine

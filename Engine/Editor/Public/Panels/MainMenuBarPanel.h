@@ -25,12 +25,16 @@ class MainMenuBarPanel final
 	void SetShaderReloadRequestHandler(std::function<void()> handler);
 	void SetShaderRecookRequestHandler(std::function<void()> handler);
 	void SetShaderInspectorOpenHandler(std::function<void()> handler);
+	void SetUsedShadersOpenHandler(std::function<void()> handler);
+	void SetConsoleOpenHandler(std::function<void()> handler);
+	void SetOutputLogOpenHandler(std::function<void()> handler);
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
 	void BuildUI() noexcept;
 	float GetHeight() const noexcept { return m_heightPixels; }
 
   private:
 	void BuildFileMenu() noexcept;
+	void BuildWindowMenu() noexcept;
 	void BuildShaderMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;
 	void BuildWindowControls() noexcept;
@@ -49,6 +53,9 @@ class MainMenuBarPanel final
 	std::function<void()> m_shaderReloadRequestHandler;
 	std::function<void()> m_shaderRecookRequestHandler;
 	std::function<void()> m_shaderInspectorOpenHandler;
+	std::function<void()> m_usedShadersOpenHandler;
+	std::function<void()> m_consoleOpenHandler;
+	std::function<void()> m_outputLogOpenHandler;
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
 	float m_heightPixels = 0.0f;
 };

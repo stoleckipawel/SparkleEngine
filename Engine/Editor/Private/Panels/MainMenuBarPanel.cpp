@@ -100,6 +100,21 @@ void MainMenuBarPanel::SetShaderInspectorOpenHandler(std::function<void()> handl
 	m_shaderInspectorOpenHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetUsedShadersOpenHandler(std::function<void()> handler)
+{
+	m_usedShadersOpenHandler = std::move(handler);
+}
+
+void MainMenuBarPanel::SetConsoleOpenHandler(std::function<void()> handler)
+{
+	m_consoleOpenHandler = std::move(handler);
+}
+
+void MainMenuBarPanel::SetOutputLogOpenHandler(std::function<void()> handler)
+{
+	m_outputLogOpenHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
 {
 	m_shaderPackageGenerationProvider = std::move(provider);
@@ -151,6 +166,19 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	}
 }
 
+void MainMenuBarPanel::BuildWindowMenu() noexcept
+{
+	if (ImGui::MenuItem("Console", nullptr, false, static_cast<bool>(m_consoleOpenHandler)))
+	{
+		m_consoleOpenHandler();
+	}
+
+	if (ImGui::MenuItem("Output Log", nullptr, false, static_cast<bool>(m_outputLogOpenHandler)))
+	{
+		m_outputLogOpenHandler();
+	}
+}
+
 void MainMenuBarPanel::BuildShaderMenu() noexcept
 {
 	if (ImGui::MenuItem("Reload Cooked Shaders", nullptr, false, static_cast<bool>(m_shaderReloadRequestHandler)))
@@ -166,6 +194,11 @@ void MainMenuBarPanel::BuildShaderMenu() noexcept
 	if (ImGui::MenuItem("Shader Inspector", nullptr, false, static_cast<bool>(m_shaderInspectorOpenHandler)))
 	{
 		m_shaderInspectorOpenHandler();
+	}
+
+	if (ImGui::MenuItem("Used Shaders", nullptr, false, static_cast<bool>(m_usedShadersOpenHandler)))
+	{
+		m_usedShadersOpenHandler();
 	}
 
 	if (m_shaderPackageGenerationProvider)
@@ -257,6 +290,12 @@ void MainMenuBarPanel::BuildUI() noexcept
 	if (ImGui::BeginMenu("File"))
 	{
 		BuildFileMenu();
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::BeginMenu("Window"))
+	{
+		BuildWindowMenu();
 		ImGui::EndMenu();
 	}
 

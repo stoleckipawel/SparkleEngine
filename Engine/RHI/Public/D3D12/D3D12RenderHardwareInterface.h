@@ -117,6 +117,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	    ResourceState before,
 	    ResourceState after) const noexcept override;
 	void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept override;
+	void BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept override;
 	void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept override;
 	PixelFormat GetPresentColorFormat() const noexcept override;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
@@ -136,6 +137,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle) const noexcept;
+	void BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 	static D3D12_DESCRIPTOR_HEAP_TYPE ToNativeDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept;

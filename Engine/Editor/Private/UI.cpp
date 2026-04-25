@@ -6,11 +6,20 @@
 #include "Scene/GameScene.h"
 #include "Timer.h"
 
+#include "Core/Public/Console/ConsoleBuiltinCommands.h"
+#include "Core/Public/Console/ConsoleCommandRegistry.h"
+#include "Core/Public/Console/ConsoleOutput.h"
+#include "Core/Public/Console/ConsoleSession.h"
+#include "Core/Public/Diagnostics/Logger.h"
+
+#include "Panels/ConsolePanel.h"
 #include "Panels/MainMenuBarPanel.h"
+#include "Panels/OutputLogPanel.h"
 #include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/ShaderInspectorPanel.h"
+#include "Panels/UsedShadersPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Style/SparkleUiTheme.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -50,6 +59,19 @@ namespace
 	ID3D12GraphicsCommandList* ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept
 	{
 		return static_cast<ID3D12GraphicsCommandList*>(handle.Value);
+	}
+
+	ConsoleCommandSeverity ToConsoleSeverity(spdlog::level::level_enum level) noexcept
+	{
+		if (level >= spdlog::level::err)
+		{
+			return ConsoleCommandSeverity::Error;
+		}
+		if (level >= spdlog::level::warn)
+		{
+			return ConsoleCommandSeverity::Warning;
+		}
+		return ConsoleCommandSeverity::Info;
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
@@ -108,6 +130,15 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 		return false;
 	}
 
+	if (msg == WM_KEYDOWN && wParam == VK_OEM_3 && ImGui::GetCurrentContext() != nullptr && !ImGui::GetIO().WantTextInput)
+	{
+		if (m_consolePanel)
+		{
+			m_consolePanel->RequestFocus();
+			return true;
+		}
+	}
+
 	return ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam);
 }
 
@@ -144,6 +175,10 @@ void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
 void UI::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
 {
 	m_shaderPackageGenerationProvider = std::move(provider);
+	if (m_usedShadersPanel)
+	{
+		m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	}
 	ConfigureMainMenuBarShaderActions();
 }
 
@@ -158,6 +193,18 @@ void UI::SetShaderRecookStatus(std::string status)
 {
 	m_shaderRecookStatus = std::move(status);
 	m_showShaderRecookStatus = !m_shaderRecookStatus.empty();
+	if (m_usedShadersPanel)
+	{
+		m_usedShadersPanel->SetLastStatus(m_shaderRecookStatus);
+	}
+}
+
+void UI::AppendConsoleOutput(ConsoleOutputRecord record)
+{
+	if (m_consoleSession)
+	{
+		m_consoleSession->Append(std::move(record));
+	}
 }
 
 bool UI::ConsumeShaderRecookRequest() noexcept
@@ -281,9 +328,34 @@ void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	ConfigureMainMenuBarShaderActions();
+	m_consoleCommandRegistry = std::make_unique<ConsoleCommandRegistry>();
+	ConsoleBuiltinCommands::Register(*m_consoleCommandRegistry);
+	m_consoleSession = std::make_unique<ConsoleSession>(*m_consoleCommandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Editor});
+	m_consolePanel = std::make_unique<ConsolePanel>(*m_consoleSession);
+	m_outputLogPanel = std::make_unique<OutputLogPanel>();
+	m_outputLogPanel->AddLine(ConsoleCommandSeverity::Info, "Output Log panel initialized. Listening to engine log records.");
+	SubscribeToLogStream();
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_shaderInspectorPanel = std::make_unique<ShaderInspectorPanel>();
+	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
+	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	m_usedShadersPanel->SetRecookHandler(
+	    [this](std::string packageId)
+	    {
+		    if (m_consoleSession)
+		    {
+			    m_consoleSession->SubmitLine("RecompileShaders " + packageId);
+		    }
+	    });
+	m_usedShadersPanel->SetInspectHandler(
+	    [this]()
+	    {
+		    if (m_shaderInspectorPanel)
+		    {
+			    m_shaderInspectorPanel->SetOpen(true);
+		    }
+	    });
 	if (m_window != nullptr && m_viewportPanel)
 	{
 		const RenderViewportExtent initialExtent{
@@ -327,7 +399,56 @@ void UI::ConfigureMainMenuBarShaderActions()
 			    m_shaderInspectorPanel->SetOpen(true);
 		    }
 	    });
+	m_mainMenuBar->SetUsedShadersOpenHandler(
+	    [this]()
+	    {
+		    if (m_usedShadersPanel)
+		    {
+			    m_usedShadersPanel->SetOpen(true);
+		    }
+	    });
+	m_mainMenuBar->SetConsoleOpenHandler(
+	    [this]()
+	    {
+		    if (m_consolePanel)
+		    {
+			    m_consolePanel->RequestFocus();
+		    }
+	    });
+	m_mainMenuBar->SetOutputLogOpenHandler(
+	    [this]()
+	    {
+		    if (m_outputLogPanel)
+		    {
+			    m_outputLogPanel->SetOpen(true);
+		    }
+	    });
 	m_mainMenuBar->SetShaderPackageGenerationProvider(m_shaderPackageGenerationProvider);
+}
+
+void UI::SubscribeToLogStream()
+{
+	if (m_logRecordHandlerId != 0 || m_outputLogPanel == nullptr)
+	{
+		return;
+	}
+
+	m_logRecordHandlerId = Engine::Logging::AddRecordHandler(
+	    [this](Engine::Logging::LogRecord record)
+	    {
+		    if (m_outputLogPanel == nullptr)
+		    {
+			    return;
+		    }
+
+		    std::string text;
+		    text.reserve(record.LoggerName.size() + record.Message.size() + 4);
+		    text += '[';
+		    text += record.LoggerName;
+		    text += "] ";
+		    text += record.Message;
+		    m_outputLogPanel->AddRecord(ConsoleOutputRecord{.Severity = ToConsoleSeverity(record.Level), .Text = std::move(text)});
+	    });
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -395,6 +516,21 @@ void UI::Build()
 		m_shaderInspectorPanel->BuildUI(disableInteraction);
 	}
 
+	if (m_usedShadersPanel)
+	{
+		m_usedShadersPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_outputLogPanel)
+	{
+		m_outputLogPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_consolePanel)
+	{
+		m_consolePanel->BuildUI(disableInteraction);
+	}
+
 	BuildShaderRecookStatusWindow(disableInteraction);
 
 #if USE_IMGUI_DEMO_WINDOW
@@ -457,6 +593,12 @@ void UI::Render(NativeGraphicsCommandListHandle commandList) noexcept
 UI::~UI() noexcept
 {
 	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI begin");
+
+	if (m_logRecordHandlerId != 0)
+	{
+		Engine::Logging::RemoveRecordHandler(m_logRecordHandlerId);
+		m_logRecordHandlerId = 0;
+	}
 
 	m_windowMessageHandle.Reset();
 	SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI window message handle released");
