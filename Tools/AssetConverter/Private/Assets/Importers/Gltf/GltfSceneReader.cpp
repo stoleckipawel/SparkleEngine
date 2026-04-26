@@ -1,4 +1,4 @@
-#define CGLTF_IMPLEMENTATION
+﻿#define CGLTF_IMPLEMENTATION
 #include "PCH.h"
 
 #include "Assets/Importers/Gltf/GltfSceneReader.h"
@@ -7,7 +7,7 @@
 
 #include <format>
 
-static const auto g_gltfSceneReaderLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+static const auto g_gltfSceneReaderLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
 
 GltfScene::~GltfScene()
 {

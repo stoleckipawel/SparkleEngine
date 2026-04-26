@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Console/EditorConsoleSystem.h"
 
@@ -44,7 +44,7 @@ EditorConsoleSystem::~EditorConsoleSystem() noexcept
 {
 	if (m_logRecordHandlerId != 0)
 	{
-		Engine::Logging::RemoveRecordHandler(m_logRecordHandlerId);
+		Logging::RemoveRecordHandler(m_logRecordHandlerId);
 		m_logRecordHandlerId = 0;
 	}
 }
@@ -115,8 +115,8 @@ void EditorConsoleSystem::SubscribeToLogStream()
 		return;
 	}
 
-	m_logRecordHandlerId = Engine::Logging::AddRecordHandler(
-	    [this](Engine::Logging::LogRecord record)
+	m_logRecordHandlerId = Logging::AddRecordHandler(
+	    [this](Logging::LogRecord record)
 	    {
 		    if (m_outputLogPanel == nullptr)
 		    {

@@ -15,7 +15,7 @@ bool StageCompiler::Compile(
 	ShaderDebugArtifactSet* outDebugArtifacts,
 	std::string& outErrorMessage)
 {
-	using Engine::Paths::MakeProjectRelativeString;
+	using Paths::MakeProjectRelativeString;
 
 	if (!backend.GetCapabilities().SupportsTarget(options.Target))
 	{

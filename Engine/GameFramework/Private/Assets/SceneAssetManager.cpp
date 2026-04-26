@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/SceneAssetManager.h"
 
@@ -8,11 +8,11 @@
 #include "Assets/Loaders/MaterialAssetLoader.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <format>
 
-namespace Engine::Assets
+namespace Assets
 {
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAsset(const SceneAssetId& sceneAssetId)
 	{
@@ -70,7 +70,7 @@ namespace Engine::Assets
 		{
 			errorMessage = std::format(
 			    "Failed to load scene asset registry from '{}' - {}",
-			    SceneAssetRegistry::GetRegistryPath().string(),
+			    Paths::SceneAssetRegistry().string(),
 			    errorMessage);
 			return false;
 		}
@@ -78,17 +78,6 @@ namespace Engine::Assets
 		m_sceneAssetRegistryLoaded = true;
 		errorMessage.clear();
 		return true;
-	}
-
-	std::optional<std::filesystem::path> SceneAssetManager::ResolveSceneManifestPath(const SceneAssetId& sceneAssetId) const
-	{
-		const auto manifestRelativePath = m_sceneAssetRegistry.Resolve(sceneAssetId.value);
-		if (!manifestRelativePath)
-		{
-			return std::nullopt;
-		}
-
-		return GetCookedAssetRootPath() / "SceneManifests" / *manifestRelativePath;
 	}
 
 	bool SceneAssetManager::AppendSceneAssetToPayload(
@@ -104,14 +93,15 @@ namespace Engine::Assets
 
 		SceneManifestLoader sceneManifestLoader;
 		LoadedSceneManifest sceneManifest;
-		const auto sceneManifestPath = ResolveSceneManifestPath(sceneAssetId);
-		if (!sceneManifestPath)
+		const auto manifestRelativePath = m_sceneAssetRegistry.Resolve(sceneAssetId.value);
+		if (!manifestRelativePath)
 		{
 			errorMessage = std::format("Scene asset id '{}' is not registered in the cooked scene asset registry", sceneAssetId.value);
 			return false;
 		}
+		const std::filesystem::path sceneManifestPath = Paths::CookedSceneManifestRelative(*manifestRelativePath);
 
-		if (!sceneManifestLoader.Load(*sceneManifestPath, sceneManifest, errorMessage))
+		if (!sceneManifestLoader.Load(sceneManifestPath, sceneManifest, errorMessage))
 		{
 			errorMessage = std::format(
 			    "Failed to load cooked scene manifest for '{}' from '{}' - {}",
@@ -127,7 +117,7 @@ namespace Engine::Assets
 		for (const CookedSceneMeshAssetRef& meshReference : sceneManifest.meshAssetReferences)
 		{
 			MeshData meshData;
-			const std::filesystem::path meshAssetPath = BuildMeshAssetPath(meshReference.meshAssetId);
+			const std::filesystem::path meshAssetPath = Paths::CookedMeshAsset(meshReference.meshAssetId);
 			if (!meshAssetLoader.Load(meshAssetPath, meshData, errorMessage))
 			{
 				errorMessage = std::format(
@@ -147,7 +137,7 @@ namespace Engine::Assets
 		for (const CookedSceneMaterialAssetRef& materialReference : sceneManifest.materialAssetReferences)
 		{
 			LoadedMaterialAsset materialAsset;
-			const std::filesystem::path materialAssetPath = BuildMaterialAssetPath(materialReference.materialAssetId);
+			const std::filesystem::path materialAssetPath = Paths::CookedMaterialAsset(materialReference.materialAssetId);
 			if (!materialAssetLoader.Load(materialAssetPath, materialAsset, errorMessage))
 			{
 				errorMessage = std::format(
@@ -212,18 +202,4 @@ namespace Engine::Assets
 		return true;
 	}
 
-	std::filesystem::path SceneAssetManager::GetCookedAssetRootPath()
-	{
-		return Filesystem::GetProjectAssetsPath() / "Cooked";
-	}
-
-	std::filesystem::path SceneAssetManager::BuildMeshAssetPath(CookedAssetId meshAssetId)
-	{
-		return GetCookedAssetRootPath() / "Meshes" / std::format("{:016X}.smsh", meshAssetId);
-	}
-
-	std::filesystem::path SceneAssetManager::BuildMaterialAssetPath(CookedAssetId materialAssetId)
-	{
-		return GetCookedAssetRootPath() / "Materials" / std::format("{:016X}.smat", materialAssetId);
-	}
 }

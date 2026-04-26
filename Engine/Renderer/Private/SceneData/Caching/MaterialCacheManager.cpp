@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "MaterialCacheManager.h"
 
@@ -11,7 +11,7 @@
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
 
-static const auto g_materialCacheManagerLogger = Engine::Logging::GetOrCreateLogger("Renderer.MaterialCache");
+static const auto g_materialCacheManagerLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
@@ -46,7 +46,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 {
 	if (!m_textureManager || !m_renderHardwareInterface)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_materialCacheManagerLogger,
 		    __FILE__,
 		    __LINE__,
@@ -75,7 +75,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
 		if (!tableHandle)
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_materialCacheManagerLogger,
 			    __FILE__,
 			    __LINE__,
@@ -87,7 +87,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		{
 			if (!textures[slot])
 			{
-				Engine::Diagnostics::Fail(
+				Diagnostics::Fail(
 				    g_materialCacheManagerLogger,
 				    __FILE__,
 				    __LINE__,

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "TextureCookRequestList.h"
 
@@ -10,7 +10,7 @@
 #include <map>
 #include <system_error>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	static constexpr std::string_view kTextureCookRequestHeader = "TextureCookRequests|2";
 

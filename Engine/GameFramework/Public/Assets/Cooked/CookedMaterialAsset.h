@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace Engine::Assets
+namespace Assets
 {
 	enum class CookedAlphaMode : std::uint32_t
 	{
@@ -38,5 +38,5 @@ namespace Engine::Assets
 }
 
 static_assert(
-    std::is_trivially_copyable_v<Engine::Assets::CookedMaterialAssetHeader>,
+    std::is_trivially_copyable_v<Assets::CookedMaterialAssetHeader>,
     "CookedMaterialAssetHeader must stay trivially copyable.");

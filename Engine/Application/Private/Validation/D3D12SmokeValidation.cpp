@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Validation/D3D12SmokeValidation.h"
 
@@ -134,7 +134,7 @@ void D3D12SmokeValidationRunner::ApplyLoggingConfig(const D3D12SmokeValidationCo
 {
 	if (config.Enabled && config.TraceLogging)
 	{
-		Engine::Logging::SetLevel(spdlog::level::trace);
+		Logging::SetLevel(spdlog::level::trace);
 	}
 }
 
@@ -148,7 +148,7 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 		return;
 	}
 
-	static const auto appLogger = Engine::Logging::GetOrCreateLogger("Application.SmokeValidation");
+	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 	if (appLogger == nullptr)
 	{
 		return;
@@ -209,7 +209,7 @@ void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
 		return;
 	}
 
-	static const auto appLogger = Engine::Logging::GetOrCreateLogger("Application.SmokeValidation");
+	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 	if (appLogger == nullptr)
 	{
 		return;
@@ -241,7 +241,7 @@ void D3D12SmokeValidationRunner::Advance(
 
 	Window& window = app.GetWindow();
 	++state.CompletedRenderFrames;
-	static const auto appLogger = Engine::Logging::GetOrCreateLogger("Application.SmokeValidation");
+	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 
 	if (config.RestoreFrame > 0 && state.CompletedRenderFrames == config.RestoreFrame)
 	{
@@ -374,7 +374,7 @@ int D3D12SmokeValidationRunner::RunEditorValidation(const D3D12SmokeValidationCo
 	ApplyLoggingConfig(config);
 	app.Initialize();
 	LogDiagnosticsCapabilities(config, app, state);
-	static const auto appLogger = Engine::Logging::GetOrCreateLogger("Application.SmokeValidation");
+	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 
 	{
 		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "D3D12 editor smoke UI scope");

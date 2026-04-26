@@ -15,12 +15,12 @@ param()
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$ShaderCompiler = Join-Path $RepoRoot 'bin\Debug\ShaderCompiler.exe'
+$ShaderCompiler = Join-Path $RepoRoot 'build\bin\Debug\ShaderCompiler.exe'
 $ShowcaseRoot = Join-Path $RepoRoot 'Projects\Showcase'
-$CacheRoot = Join-Path $RepoRoot 'bin\Cache\Shaders\EditorPipelineValidation'
+$CacheRoot = Join-Path $RepoRoot 'build\Cache\Shaders\EditorPipelineValidation'
 $DebugArtifactRoot = Join-Path $CacheRoot 'Debug'
 $AnalysisCsv = Join-Path $CacheRoot 'Analysis\pso-stats.csv'
-$RegistryPath = Join-Path $ShowcaseRoot 'Assets\Cooked\Shaders\ShaderPackageRegistry.sreg'
+$RegistryPath = Join-Path $RepoRoot 'build\Cooked\Showcase\Shaders\ShaderPackageRegistry.sreg'
 $TargetShader = Join-Path $RepoRoot 'Engine\Assets\Shaders\HelloWorld\HelloTriangle.hlsl'
 $RequiredBundleFiles = @(
     'compile-request.json',
@@ -115,7 +115,13 @@ function Get-HelloTrianglePackagePath
 
         if ($insideHelloTriangle -and $line -match '^Output\s*=\s*(.+)$')
         {
-            return Join-Path $ShowcaseRoot $Matches[1].Trim()
+            $outputPath = $Matches[1].Trim()
+            if ([System.IO.Path]::IsPathRooted($outputPath))
+            {
+                return $outputPath
+            }
+
+            return Join-Path $ShowcaseRoot $outputPath
         }
     }
 

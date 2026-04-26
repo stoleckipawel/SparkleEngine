@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "ShaderRecook/ShaderConsoleCommands.h"
 
@@ -113,18 +113,18 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handle
 	}
 
 	ShaderRecookRequest request{};
-	if (arguments.empty() || Engine::Strings::EqualsIgnoreCase(arguments.front(), "Global"))
+	if (arguments.empty() || Strings::EqualsIgnoreCase(arguments.front(), "Global"))
 	{
 		request.Type = ShaderRecookRequestType::Global;
 	}
-	else if (Engine::Strings::EqualsIgnoreCase(arguments.front(), "Changed"))
+	else if (Strings::EqualsIgnoreCase(arguments.front(), "Changed"))
 	{
 		request.Type = ShaderRecookRequestType::Changed;
 	}
 	else
 	{
 		request.Type = ShaderRecookRequestType::ShaderPathOrId;
-		request.Target = Engine::Strings::Join(arguments, " ");
+		request.Target = Strings::Join(arguments, " ");
 	}
 
 	handlers.RequestRecook(request);
@@ -176,11 +176,11 @@ std::vector<std::string> ShaderConsoleCommands::CompleteRecompileShaders(const C
 {
 	const std::string_view prefix = request.CurrentToken;
 	std::vector<std::string> completions = BuildShaderTargetCompletions(prefix);
-	if (Engine::Strings::StartsWithIgnoreCase("Global", prefix))
+	if (Strings::StartsWithIgnoreCase("Global", prefix))
 	{
 		completions.emplace_back("Global");
 	}
-	if (Engine::Strings::StartsWithIgnoreCase("Changed", prefix))
+	if (Strings::StartsWithIgnoreCase("Changed", prefix))
 	{
 		completions.emplace_back("Changed");
 	}
@@ -222,15 +222,15 @@ std::vector<std::string> ShaderConsoleCommands::BuildShaderTargetCompletions(std
 		const std::string shaderName(shader.ShaderName);
 		const std::string packageName(shader.PackageName.empty() ? shader.ShaderName : shader.PackageName);
 		const std::string sourcePath(shader.SourcePath);
-		if (Engine::Strings::StartsWithIgnoreCase(shaderName, prefix))
+		if (Strings::StartsWithIgnoreCase(shaderName, prefix))
 		{
 			uniqueCompletions.insert(shaderName);
 		}
-		if (Engine::Strings::StartsWithIgnoreCase(packageName, prefix))
+		if (Strings::StartsWithIgnoreCase(packageName, prefix))
 		{
 			uniqueCompletions.insert(packageName);
 		}
-		if (Engine::Strings::StartsWithIgnoreCase(sourcePath, prefix))
+		if (Strings::StartsWithIgnoreCase(sourcePath, prefix))
 		{
 			uniqueCompletions.insert(sourcePath);
 		}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <DirectXMath.h>
 
@@ -11,11 +11,9 @@
 #include <system_error>
 #include <type_traits>
 
-namespace Engine
+namespace Strings
 {
-	namespace Strings
-	{
-		constexpr bool IsAsciiWhitespace(char character) noexcept
+	constexpr bool IsAsciiWhitespace(char character) noexcept
 		{
 			return character == ' ' || character == '\t' || character == '\r' || character == '\n';
 		}
@@ -145,5 +143,4 @@ namespace Engine
 		{
 			return std::string(str.begin(), str.end());
 		}
-	}  // namespace Strings
-}  // namespace Engine
+}  // namespace Strings

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Assets/Import/SceneImportResult.h"
 #include "GameFramework/Public/Assets/Cooked/CookedMaterialAsset.h"
@@ -10,31 +10,31 @@
 #include <string>
 #include <vector>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	struct CookedMeshAssetBuild
 	{
-		Engine::Assets::CookedAssetId assetId = Engine::Assets::InvalidCookedAssetId;
-		std::vector<Engine::Assets::CookedMeshVertex> vertices;
+		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
+		std::vector<Assets::CookedMeshVertex> vertices;
 		std::vector<std::uint32_t> indices;
 	};
 
 	struct CookedMaterialAssetBuild
 	{
-		Engine::Assets::CookedAssetId assetId = Engine::Assets::InvalidCookedAssetId;
-		Engine::Assets::CookedMaterialAssetHeader header;
+		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
+		Assets::CookedMaterialAssetHeader header;
 		std::string name;
-		std::vector<Engine::Assets::CookedTextureReference> textureReferences;
+		std::vector<Assets::CookedTextureReference> textureReferences;
 	};
 
 	struct CookedSceneBuild
 	{
 		std::string sceneAssetId;
 		std::filesystem::path sceneManifestPath;
-		Engine::Assets::CookedSceneManifestHeader manifestHeader;
-		std::vector<Engine::Assets::CookedSceneMeshAssetRef> meshAssetReferences;
-		std::vector<Engine::Assets::CookedSceneMaterialAssetRef> materialAssetReferences;
-		std::vector<Engine::Assets::CookedSceneInstanceRecord> instances;
+		Assets::CookedSceneManifestHeader manifestHeader;
+		std::vector<Assets::CookedSceneMeshAssetRef> meshAssetReferences;
+		std::vector<Assets::CookedSceneMaterialAssetRef> materialAssetReferences;
+		std::vector<Assets::CookedSceneInstanceRecord> instances;
 		std::vector<CookedMeshAssetBuild> meshAssets;
 		std::vector<CookedMaterialAssetBuild> materialAssets;
 		std::string errorMessage;
@@ -60,12 +60,9 @@ namespace Engine::AssetAuthoring
 		    const std::filesystem::path& resolvedSourceScenePath,
 		    std::string& outSceneAssetId,
 		    std::string& outErrorMessage);
-		static Engine::Assets::CookedAssetId BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept;
-		static Engine::Assets::CookedAssetId BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept;
-		static std::filesystem::path BuildSceneManifestPath(std::string_view sceneAssetId);
-		static std::filesystem::path BuildMeshAssetPath(Engine::Assets::CookedAssetId meshAssetId);
-		static std::filesystem::path BuildMaterialAssetPath(Engine::Assets::CookedAssetId materialAssetId);
-		static Engine::Assets::CookedAlphaMode TranslateAlphaMode(AlphaMode alphaMode) noexcept;
+		static Assets::CookedAssetId BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept;
+		static Assets::CookedAssetId BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept;
+		static Assets::CookedAlphaMode TranslateAlphaMode(AlphaMode alphaMode) noexcept;
 		static void BuildMeshAssets(const SceneImportResult& importResult, std::string_view sceneAssetId, CookedSceneBuild& outBuild);
 		static bool BuildMaterialAssets(
 		    const SceneImportResult& importResult,

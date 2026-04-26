@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/SceneAssetRegistry.h"
@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace Engine::Assets
+namespace Assets
 {
 	struct SPARKLE_ENGINE_API SceneAssetLoadResult
 	{
@@ -40,15 +40,11 @@ namespace Engine::Assets
 
 	  private:
 		bool EnsureRegistryLoaded(std::string& errorMessage);
-		std::optional<std::filesystem::path> ResolveSceneManifestPath(const SceneAssetId& sceneAssetId) const;
 		bool AppendSceneAssetToPayload(
 		    const SceneAssetId& sceneAssetId,
 		    RuntimeScenePayload& payload,
 		    std::uint32_t& materialBaseIndex,
 		    std::string& errorMessage);
-		static std::filesystem::path GetCookedAssetRootPath();
-		static std::filesystem::path BuildMeshAssetPath(CookedAssetId meshAssetId);
-		static std::filesystem::path BuildMaterialAssetPath(CookedAssetId materialAssetId);
 
 		SceneAssetRegistry m_sceneAssetRegistry;
 		bool m_sceneAssetRegistryLoaded = false;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "Level/Parsing/LevelParserCommon.h"
@@ -15,7 +15,7 @@ namespace LevelParsing
 	{
 		if (parsedLine.key == "Position")
 		{
-			if (!Engine::Strings::TryParseFloat3(parsedLine.value, levelDesc.cameraDesc.position))
+			if (!Strings::TryParseFloat3(parsedLine.value, levelDesc.cameraDesc.position))
 			{
 				errorMessage = "Invalid camera position";
 				return false;
@@ -25,7 +25,7 @@ namespace LevelParsing
 
 		if (parsedLine.key == "YawRadians")
 		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.yawRadians))
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.yawRadians))
 			{
 				errorMessage = "Invalid camera yaw";
 				return false;
@@ -35,7 +35,7 @@ namespace LevelParsing
 
 		if (parsedLine.key == "PitchRadians")
 		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.pitchRadians))
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.pitchRadians))
 			{
 				errorMessage = "Invalid camera pitch";
 				return false;
@@ -45,7 +45,7 @@ namespace LevelParsing
 
 		if (parsedLine.key == "FovYDegrees")
 		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.fovYDegrees))
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.fovYDegrees))
 			{
 				errorMessage = "Invalid camera FOV";
 				return false;
@@ -55,7 +55,7 @@ namespace LevelParsing
 
 		if (parsedLine.key == "MoveSpeed")
 		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.moveSpeed))
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.moveSpeed))
 			{
 				errorMessage = "Invalid camera move speed";
 				return false;

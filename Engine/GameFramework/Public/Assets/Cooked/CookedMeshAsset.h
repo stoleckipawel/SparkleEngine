@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 
@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace Engine::Assets
+namespace Assets
 {
 	inline constexpr std::uint32_t kCookedMeshAssetMagic = MakeCookedAssetMagic('S', 'M', 'S', 'H');
 	inline constexpr std::uint32_t kCookedMeshAssetVersion = 1;
@@ -31,5 +31,5 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedMeshVertex>, "CookedMeshVertex must stay trivially copyable.");
-static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedMeshAssetHeader>, "CookedMeshAssetHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedMeshVertex>, "CookedMeshVertex must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedMeshAssetHeader>, "CookedMeshAssetHeader must stay trivially copyable.");

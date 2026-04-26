@@ -23,12 +23,10 @@ class ShaderCompilerProcess final
 
 	static ShaderCompilerProcessResult RunCook(const ShaderRecookRequest& request) noexcept;
 	static ShaderCompilerProcessResult RunToolCommand(std::string_view command) noexcept;
-	static std::filesystem::path ResolveRecookSignalPath() noexcept;
 
   private:
 	static std::filesystem::path ResolveExecutable() noexcept;
 	static std::filesystem::path ResolveProjectDirectory() noexcept;
-	static std::filesystem::path ResolveDebugArtifactDirectory() noexcept;
 	static std::string QuotePath(const std::filesystem::path& path);
 	static ShaderCompilerProcessResult RunCommand(
 	    const std::filesystem::path& executablePath,

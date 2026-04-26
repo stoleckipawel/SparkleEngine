@@ -1,9 +1,9 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Window/Window.h"
 
 #include <dwmapi.h>
 
-static std::shared_ptr<spdlog::logger> g_platformLogger = Engine::Logging::GetOrCreateLogger("Platform");
+static std::shared_ptr<spdlog::logger> g_platformLogger = Logging::GetOrCreateLogger("Platform");
 
 Window::Window(std::string_view windowTitle)
 {
@@ -48,7 +48,7 @@ void Window::RegisterWindowClass()
 	m_windowClassAtom = RegisterClassExW(&wc);
 	if (!m_windowClassAtom)
 	{
-		Engine::Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to register window class");
+		Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to register window class");
 	}
 }
 
@@ -72,7 +72,7 @@ void Window::CreateWindowHandle(std::string_view title)
 
 	if (!m_hWnd)
 	{
-		Engine::Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to create window");
+		Diagnostics::Fail(g_platformLogger, __FILE__, __LINE__, "Window: Failed to create window");
 	}
 
 	const MARGINS margins{-1, -1, -1, -1};

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
 
@@ -16,7 +16,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	class TraceService final
 	{
@@ -88,10 +88,10 @@ namespace Engine::Diagnostics
 			m_names.push_back({});
 			m_nextNameId = 1;
 			m_sessionStart = Clock::now();
-			m_outputPath = config.OutputPath.empty() ? std::filesystem::path{"logs/trace.json"} : Engine::Paths::Normalize(config.OutputPath);
+			m_outputPath = config.OutputPath.empty() ? std::filesystem::path{"logs/trace.json"} : Paths::Normalize(config.OutputPath);
 			m_exportOnEnd = config.ExportOnEnd;
 			m_logMirroringEnabled = config.EnableLogMirroring;
-			m_logMirrorLogger = m_logMirroringEnabled ? Engine::Logging::GetOrCreateLogger("Diagnostics.Trace") : nullptr;
+			m_logMirrorLogger = m_logMirroringEnabled ? Logging::GetOrCreateLogger("Diagnostics.Trace") : nullptr;
 			m_sessionActive.store(true, std::memory_order_release);
 		}
 
@@ -288,7 +288,7 @@ namespace Engine::Diagnostics
 			{
 				return m_logMirrorLogger;
 			}
-			return Engine::Logging::GetOrCreateLogger("Diagnostics.Trace");
+			return Logging::GetOrCreateLogger("Diagnostics.Trace");
 		}
 
 		std::string LookupName(std::uint32_t nameId)
@@ -405,10 +405,10 @@ namespace Engine::Diagnostics
 
 			std::string errorMessage;
 			const std::filesystem::path normalizedOutputPath = outputPath.empty() ? std::filesystem::path{"logs/trace.json"} : outputPath;
-			if (!Engine::Files::TryWriteAllText(normalizedOutputPath, output, errorMessage))
+			if (!Files::TryWriteAllText(normalizedOutputPath, output, errorMessage))
 			{
 				const std::shared_ptr<spdlog::logger> logger =
-				    m_logMirrorLogger != nullptr ? m_logMirrorLogger : Engine::Logging::GetOrCreateLogger("Diagnostics.Trace");
+				    m_logMirrorLogger != nullptr ? m_logMirrorLogger : Logging::GetOrCreateLogger("Diagnostics.Trace");
 				if (logger != nullptr)
 				{
 					SPDLOG_LOGGER_ERROR(logger, "Failed to export trace to '{}': {}", normalizedOutputPath.string(), errorMessage);

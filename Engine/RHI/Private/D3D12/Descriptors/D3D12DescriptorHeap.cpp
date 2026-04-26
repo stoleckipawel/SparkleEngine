@@ -1,7 +1,7 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 
-static const auto g_descriptorHeapLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
+static const auto g_descriptorHeapLogger = Logging::GetOrCreateLogger("RHI.D3D12.Descriptors");
 
 static constexpr UINT kRenderTargetDescriptorHeapSize = 4096;
 static constexpr UINT kDepthStencilDescriptorHeapSize = 4096;
@@ -26,7 +26,7 @@ D3D12DescriptorHandle D3D12DescriptorHeap::GetHandleAt(UINT index) const
 {
 	if (index >= m_desc.NumDescriptors)
 	{
-		Engine::Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Index out of range");
+		Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Index out of range");
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = {0};
@@ -51,7 +51,7 @@ UINT D3D12DescriptorHeap::GetNumDescriptors() const
 		case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
 			return kDepthStencilDescriptorHeapSize;
 		default:
-			Engine::Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Unsupported descriptor heap type.");
+			Diagnostics::Fail(g_descriptorHeapLogger, __FILE__, __LINE__, "Unsupported descriptor heap type.");
 			return 0;
 	}
 }

@@ -1,11 +1,11 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/D3D12DebugLayer.h"
 
 #if ENGINE_GPU_VALIDATION
 
 #include <format>
 
-static const auto g_d3d12DiagnosticsLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
+static const auto g_d3d12DiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
 
 namespace D3D12DebugLayerDetail
 {

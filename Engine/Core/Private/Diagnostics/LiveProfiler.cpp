@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	namespace
 	{

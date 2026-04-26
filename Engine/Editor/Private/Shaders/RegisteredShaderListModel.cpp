@@ -1,8 +1,8 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Shaders/RegisteredShaderListModel.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
@@ -54,7 +54,7 @@ void RegisteredShaderListModel::SetLastStatus(std::string status)
 
 bool RegisteredShaderListModel::HasDebugArtifactsFor(std::string_view shaderId, std::string_view packageId)
 {
-	const std::filesystem::path root = Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders";
+	const std::filesystem::path root = Paths::ShaderCacheRoot();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(root, errorCode) || errorCode)
 	{
@@ -70,7 +70,7 @@ bool RegisteredShaderListModel::HasDebugArtifactsFor(std::string_view shaderId, 
 		}
 
 		const std::string directoryName = it->path().filename().generic_string();
-		if ((Engine::Strings::ContainsIgnoreCase(directoryName, shaderId) || Engine::Strings::ContainsIgnoreCase(directoryName, packageId)) &&
+		if ((Strings::ContainsIgnoreCase(directoryName, shaderId) || Strings::ContainsIgnoreCase(directoryName, packageId)) &&
 		    std::filesystem::exists(it->path() / "compile-request.json", errorCode) && !errorCode)
 		{
 			return true;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace Engine::Assets
+namespace Assets
 {
 	class CookedAssetByteReader final
 	{

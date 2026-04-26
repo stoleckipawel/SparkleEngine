@@ -15,7 +15,6 @@ class ShaderRecookSignal final
   public:
 	ShaderRecookSignal() = delete;
 
-	static std::filesystem::path BuildPath(const std::filesystem::path& cacheDirectory);
 	static bool Write(
 	    const std::filesystem::path& cacheDirectory,
 	    const std::filesystem::path& registryPath,

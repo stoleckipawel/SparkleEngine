@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
@@ -24,6 +24,6 @@ namespace ProfilerSorting
 	// Stable-sorts a flat bucket of node pointers in place. `Hierarchy` is a
 	// no-op (preserves capture order so the table mirrors the call tree).
 	void SortBucket(
-	    std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    SortMode mode) noexcept;
 }

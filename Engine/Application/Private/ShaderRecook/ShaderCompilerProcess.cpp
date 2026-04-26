@@ -2,7 +2,7 @@
 
 #include "ShaderRecook/ShaderCompilerProcess.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <array>
 #include <cstdio>
@@ -41,7 +41,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	}
 
 	arguments += " --debug-artifacts ";
-	arguments += QuotePath(ResolveDebugArtifactDirectory());
+	arguments += QuotePath(Paths::ShaderDebugArtifactRoot());
 	return RunCommand(executablePath, projectDirectory, arguments);
 }
 
@@ -65,18 +65,10 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunToolCommand(std::string_vi
 	return RunCommand(executablePath, projectDirectory, command);
 }
 
-std::filesystem::path ShaderCompilerProcess::ResolveRecookSignalPath() noexcept
-{
-	return Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders" / "recook.signal";
-}
-
 std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 {
-	const std::filesystem::path executableDirectory = Filesystem::GetExecutableDirectory();
-	const std::array<std::filesystem::path, 3> candidates{
-	    executableDirectory / "ShaderCompiler.exe",
-	    executableDirectory.parent_path() / "ShaderCompiler.exe",
-	    executableDirectory.parent_path() / "Debug" / "ShaderCompiler.exe"};
+	const std::array<std::filesystem::path, 3> candidates =
+	    Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
 
 	std::error_code errorCode;
 	for (const std::filesystem::path& candidate : candidates)
@@ -93,8 +85,7 @@ std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 
 std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 {
-	const std::filesystem::path repoRoot = Filesystem::GetExecutableDirectory().parent_path().parent_path();
-	const std::filesystem::path showcaseDirectory = repoRoot / "Projects" / "Showcase";
+	const std::filesystem::path showcaseDirectory = Paths::ProjectRoot();
 	std::error_code errorCode;
 	if (std::filesystem::exists(showcaseDirectory, errorCode) && !errorCode)
 	{
@@ -103,12 +94,6 @@ std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 
 	return {};
 }
-
-std::filesystem::path ShaderCompilerProcess::ResolveDebugArtifactDirectory() noexcept
-{
-	return Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders" / "Debug";
-}
-
 std::string ShaderCompilerProcess::QuotePath(const std::filesystem::path& path)
 {
 	std::string text = path.string();

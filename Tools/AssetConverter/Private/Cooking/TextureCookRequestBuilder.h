@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
 #include "TextureCookRequestList.h"
@@ -6,19 +6,19 @@
 #include <filesystem>
 #include <string>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	class TextureCookRequestBuilder final
 	{
 	  public:
 		static bool Build(
 		    const std::filesystem::path& sourceTexturePath,
-		    Engine::Assets::CookedTextureSemantic semantic,
+		    Assets::CookedTextureSemantic semantic,
 		    TextureCookRequest& outRequest,
 		    std::string& outErrorMessage);
 
 	  private:
-		static TextureColorSpace ResolveColorSpace(Engine::Assets::CookedTextureSemantic semantic) noexcept;
+		static TextureColorSpace ResolveColorSpace(Assets::CookedTextureSemantic semantic) noexcept;
 		static bool NormalizeSourceTexturePath(
 		    const std::filesystem::path& sourceTexturePath,
 		    std::filesystem::path& outNormalizedSourceTexturePath,

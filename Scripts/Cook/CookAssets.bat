@@ -33,8 +33,10 @@ set "TOTAL_SCENE_COUNT=0"
 set "ENGINE_SCENE_COUNT=0"
 set "PROJECT_SCENE_COUNT=0"
 set "OVERRIDDEN_ENGINE_COUNT=0"
-set "SCENE_LIST_FILE=%TEMP%\sparkle-cookassets-%RANDOM%%RANDOM%.txt"
-set "SCENE_SUMMARY_FILE=%TEMP%\sparkle-cookassets-summary-%RANDOM%%RANDOM%.txt"
+set "COOK_TEMP_DIR=!BUILD_DIR!\Cook\Temp"
+if not exist "!COOK_TEMP_DIR!" mkdir "!COOK_TEMP_DIR!" >nul 2>&1
+set "SCENE_LIST_FILE=!COOK_TEMP_DIR!\sparkle-cookassets-%RANDOM%%RANDOM%.txt"
+set "SCENE_SUMMARY_FILE=!COOK_TEMP_DIR!\sparkle-cookassets-summary-%RANDOM%%RANDOM%.txt"
 
 if /I "%TARGET_PROJECT%"=="/h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="-h" goto :USAGE
@@ -177,9 +179,9 @@ set "COOKED_COUNT=!TOTAL_SCENE_COUNT!"
 echo.
 echo [SUCCESS] CookAssets completed successfully.
 echo [LOG] Cooked scene inputs: !COOKED_COUNT!
-echo [LOG] Scene manifests:    Projects\!TARGET_PROJECT!\Assets\Cooked\SceneManifests\
-echo [LOG] Mesh assets:        Projects\!TARGET_PROJECT!\Assets\Cooked\Meshes\
-echo [LOG] Material assets:    Projects\!TARGET_PROJECT!\Assets\Cooked\Materials\
+echo [LOG] Scene manifests:    build\Cooked\!TARGET_PROJECT!\SceneManifests\
+echo [LOG] Mesh assets:        build\Cooked\!TARGET_PROJECT!\Meshes\
+echo [LOG] Material assets:    build\Cooked\!TARGET_PROJECT!\Materials\
 
 set "EXIT_RC=0"
 goto :FINISH

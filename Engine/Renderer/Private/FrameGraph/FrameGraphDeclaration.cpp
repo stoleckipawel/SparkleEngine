@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Frame/FrameContext.h"
@@ -6,7 +6,7 @@
 #include <cassert>
 #include <string>
 
-static const auto g_frameGraphDeclarationLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
+static const auto g_frameGraphDeclarationLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {

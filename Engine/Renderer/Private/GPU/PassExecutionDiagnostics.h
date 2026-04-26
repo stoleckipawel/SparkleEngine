@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GPU/FrameExecutionDiagnostics.h"
 
@@ -26,11 +26,11 @@ class PassExecutionDiagnostics final
 	ScopedGpuEvent BeginPassGpuEvent() noexcept;
 	ScopedGpuTimer BeginPassTimer() noexcept;
 	ScopedGpuEvent BeginGpuEvent(std::string_view label) noexcept;
-	ScopedGpuEvent BeginGpuEvent(const Engine::Diagnostics::DiagnosticName& name) noexcept;
+	ScopedGpuEvent BeginGpuEvent(const Diagnostics::DiagnosticName& name) noexcept;
 	ScopedGpuTimer BeginTimer(std::string_view label) noexcept;
-	ScopedGpuTimer BeginTimer(const Engine::Diagnostics::DiagnosticName& name) noexcept;
+	ScopedGpuTimer BeginTimer(const Diagnostics::DiagnosticName& name) noexcept;
 	void InsertGpuMarker(std::string_view label) const noexcept;
-	void InsertGpuMarker(const Engine::Diagnostics::DiagnosticName& name) const noexcept;
+	void InsertGpuMarker(const Diagnostics::DiagnosticName& name) const noexcept;
 
   private:
 	static RhiDiagnosticLabelColor GetPassEventColor(EFrameGraphPassFlags passKind) noexcept;

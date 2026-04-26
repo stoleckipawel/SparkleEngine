@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Gltf/GltfImporter.h"
 
@@ -10,7 +10,7 @@
 
 #include <format>
 
-static const auto g_gltfImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+static const auto g_gltfImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
 
 bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {

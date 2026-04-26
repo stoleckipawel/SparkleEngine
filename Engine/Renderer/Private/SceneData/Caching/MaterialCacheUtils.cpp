@@ -1,7 +1,7 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "MaterialCacheUtils.h"
 
-static const auto g_materialCacheUtilsLogger = Engine::Logging::GetOrCreateLogger("Renderer.MaterialCache");
+static const auto g_materialCacheUtilsLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
 
 namespace MaterialCacheUtils
 {

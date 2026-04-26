@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 
 #include <cstdint>
 #include <type_traits>
 
-namespace Engine::Assets
+namespace Assets
 {
 	enum class CookedTextureSemantic : std::uint8_t
 	{
@@ -26,4 +26,4 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedTextureReference>, "CookedTextureReference must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedTextureReference>, "CookedTextureReference must stay trivially copyable.");

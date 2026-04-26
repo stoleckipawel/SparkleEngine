@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/CoreAPI.h"
 
@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	// Immutable snapshot node consumed by the editor profiler panel.
 	// The tree is owned by value so the consumer can read it without locking.

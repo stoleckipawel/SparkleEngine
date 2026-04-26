@@ -14,7 +14,7 @@
 
 void ProfilerPanel::BuildEmbeddedUI(bool disableInteraction)
 {
-	Engine::Diagnostics::LiveProfiler& profiler = Engine::Diagnostics::LiveProfiler::Get();
+	Diagnostics::LiveProfiler& profiler = Diagnostics::LiveProfiler::Get();
 	m_snapshot = profiler.CaptureSnapshot();
 
 	ImGui::BeginDisabled(disableInteraction);
@@ -96,7 +96,7 @@ void ProfilerPanel::RenderCpuTab() const
 	}
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-	for (const Engine::Diagnostics::ProfilerThreadSnapshot& thread : m_snapshot.CpuThreads)
+	for (const Diagnostics::ProfilerThreadSnapshot& thread : m_snapshot.CpuThreads)
 	{
 		char threadLabel[96] = {};
 		ProfilerSnapshotUtils::FormatThreadLabel(threadLabel, sizeof(threadLabel), thread);
@@ -124,9 +124,9 @@ void ProfilerPanel::RenderGpuTab() const
 	}
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-	std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> bucket;
+	std::vector<const Diagnostics::ProfilerSnapshotNode*> bucket;
 	bucket.reserve(m_snapshot.GpuRoots.size());
-	for (const Engine::Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
+	for (const Diagnostics::ProfilerSnapshotNode& node : m_snapshot.GpuRoots)
 	{
 		bucket.push_back(&node);
 	}
@@ -136,14 +136,14 @@ void ProfilerPanel::RenderGpuTab() const
 	// Charts: focused-children if the user clicked a row, otherwise auto-drill
 	// down through any single-child wrappers (the "GPU Frame" root) so we land
 	// on the actual passes.
-	const Engine::Diagnostics::ProfilerSnapshotNode* gpuFocus = m_chartFocusNodeName.empty()
+	const Diagnostics::ProfilerSnapshotNode* gpuFocus = m_chartFocusNodeName.empty()
 	    ? nullptr
 	    : ProfilerSnapshotUtils::FindNodeByName(m_snapshot.GpuRoots, m_chartFocusNodeName);
 	if (gpuFocus != nullptr && gpuFocus->Children.size() >= 2)
 	{
-		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 		chartBucket.reserve(gpuFocus->Children.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : gpuFocus->Children)
+		for (const Diagnostics::ProfilerSnapshotNode& child : gpuFocus->Children)
 		{
 			chartBucket.push_back(&child);
 		}
@@ -151,16 +151,16 @@ void ProfilerPanel::RenderGpuTab() const
 	}
 	else
 	{
-		const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
+		const std::vector<Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
 		while (chartLevel->size() == 1 && !(*chartLevel)[0].Children.empty())
 		{
 			chartLevel = &(*chartLevel)[0].Children;
 		}
 		if (chartLevel->size() >= 2)
 		{
-			std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+			std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 			chartBucket.reserve(chartLevel->size());
-			for (const Engine::Diagnostics::ProfilerSnapshotNode& node : *chartLevel)
+			for (const Diagnostics::ProfilerSnapshotNode& node : *chartLevel)
 			{
 				chartBucket.push_back(&node);
 			}
@@ -170,7 +170,7 @@ void ProfilerPanel::RenderGpuTab() const
 	ImGui::PopStyleVar();
 }
 
-void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>& nodes) const
+void ProfilerPanel::RenderGroupedNodes(const std::vector<Diagnostics::ProfilerSnapshotNode>& nodes) const
 {
 	if (nodes.empty())
 	{
@@ -180,8 +180,8 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 	// Build module groups, preserving first-seen order so the UI stays stable
 	// across captures even though `unordered_map` iteration is not.
 	std::vector<std::string_view> moduleOrder;
-	std::unordered_map<std::string_view, std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>> grouped;
-	for (const Engine::Diagnostics::ProfilerSnapshotNode& node : nodes)
+	std::unordered_map<std::string_view, std::vector<const Diagnostics::ProfilerSnapshotNode*>> grouped;
+	for (const Diagnostics::ProfilerSnapshotNode& node : nodes)
 	{
 		const std::string_view moduleName = ProfilerSnapshotUtils::ExtractModuleName(node.Name);
 		auto [it, inserted] = grouped.try_emplace(moduleName);
@@ -195,9 +195,9 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 	// Single module â€” no grouping headers, just one table + chart pair.
 	if (moduleOrder.size() < 2)
 	{
-		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> bucket;
+		std::vector<const Diagnostics::ProfilerSnapshotNode*> bucket;
 		bucket.reserve(nodes.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& node : nodes)
+		for (const Diagnostics::ProfilerSnapshotNode& node : nodes)
 		{
 			bucket.push_back(&node);
 		}
@@ -230,19 +230,19 @@ void ProfilerPanel::RenderGroupedNodes(const std::vector<Engine::Diagnostics::Pr
 }
 
 void ProfilerPanel::RenderChartsForBucket(
-    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
     std::string_view defaultModuleName) const
 {
 	// Drill into the focused node's children when the user clicked a row that
 	// belongs to *this* bucket. Anything else falls back to the bucket itself.
-	const Engine::Diagnostics::ProfilerSnapshotNode* focusNode = m_chartFocusNodeName.empty()
+	const Diagnostics::ProfilerSnapshotNode* focusNode = m_chartFocusNodeName.empty()
 	    ? nullptr
 	    : ProfilerSnapshotUtils::FindNodeInBucket(bucket, m_chartFocusNodeName);
 	if (focusNode != nullptr && focusNode->Children.size() >= 2)
 	{
-		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> chartBucket;
+		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 		chartBucket.reserve(focusNode->Children.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : focusNode->Children)
+		for (const Diagnostics::ProfilerSnapshotNode& child : focusNode->Children)
 		{
 			chartBucket.push_back(&child);
 		}

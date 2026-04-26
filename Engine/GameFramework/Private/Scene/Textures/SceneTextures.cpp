@@ -39,11 +39,11 @@ void SceneTextures::AppendTexturePaths(const std::vector<std::filesystem::path>&
 		std::filesystem::path normalizedPath;
 		if (auto resolvedPath = Filesystem::ResolveAssetPath(texturePath, AssetType::Texture))
 		{
-			normalizedPath = Engine::Paths::Normalize(*resolvedPath);
+			normalizedPath = Paths::Normalize(*resolvedPath);
 		}
 		else
 		{
-			normalizedPath = Engine::Paths::Normalize(texturePath);
+			normalizedPath = Paths::Normalize(texturePath);
 		}
 
 		if (normalizedPath.empty())

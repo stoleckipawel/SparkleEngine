@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Level/Parsing/LevelParser.h"
 
 #include "Level/Parsing/CameraSectionParser.h"
@@ -15,7 +15,7 @@ namespace
 	{
 		if (parsedLine.key == "Name")
 		{
-			levelDesc.name = Engine::Strings::UnquoteCopy(parsedLine.value);
+			levelDesc.name = Strings::UnquoteCopy(parsedLine.value);
 			return true;
 		}
 
@@ -31,7 +31,7 @@ namespace
 	{
 		if (parsedLine.key == "Asset")
 		{
-			levelDesc.sceneAssetIds.push_back({Engine::Strings::UnquoteCopy(parsedLine.value)});
+			levelDesc.sceneAssetIds.push_back({Strings::UnquoteCopy(parsedLine.value)});
 		}
 
 		return true;
@@ -93,7 +93,7 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 
 	for (std::string line; std::getline(input, line);)
 	{
-		line = Engine::Strings::TrimCopy(line);
+		line = Strings::TrimCopy(line);
 		if (line.empty() || line[0] == '#' || line[0] == ';')
 		{
 			continue;
@@ -108,7 +108,7 @@ std::unique_ptr<LevelAsset> LevelParser::LoadFromFile(const std::filesystem::pat
 		LevelParsing::ParsedLevelLine parsedLine;
 		std::string_view key;
 		std::string_view value;
-		if (!Engine::Strings::TrySplitKeyValue(line, '=', key, value))
+		if (!Strings::TrySplitKeyValue(line, '=', key, value))
 		{
 			continue;
 		}

@@ -2,6 +2,7 @@
 
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Renderer.h"
 
 #include <exception>
@@ -197,7 +198,7 @@ std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& 
 
 bool ShaderRecookCoordinator::HasRecookSignalChanged() noexcept
 {
-	const std::filesystem::path signalPath = ShaderCompilerProcess::ResolveRecookSignalPath();
+	const std::filesystem::path signalPath = Paths::ShaderRecookSignal();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(signalPath, errorCode) || errorCode)
 	{

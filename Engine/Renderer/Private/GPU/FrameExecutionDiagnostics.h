@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphPassFlags.h"
 
@@ -106,12 +106,12 @@ class FrameExecutionDiagnostics final
 	    RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuEvent BeginGpuEvent(
 	    CommandContext& commands,
-	    const Engine::Diagnostics::DiagnosticName& name,
+	    const Diagnostics::DiagnosticName& name,
 	    RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuTimer BeginTimer(CommandContext& commands, std::string_view label) noexcept;
-	ScopedGpuTimer BeginTimer(CommandContext& commands, const Engine::Diagnostics::DiagnosticName& name) noexcept;
+	ScopedGpuTimer BeginTimer(CommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept;
 	void InsertGpuMarker(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
-	void InsertGpuMarker(CommandContext& commands, const Engine::Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {}) const noexcept;
+	void InsertGpuMarker(CommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {}) const noexcept;
 	void ResolveTimings() noexcept;
 
 	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept { return m_recordedTimers; }
@@ -136,5 +136,5 @@ class FrameExecutionDiagnostics final
 };
 
 #ifndef SPARKLE_DIAGNOSTIC_NAME
-#define SPARKLE_DIAGNOSTIC_NAME(name) ::Engine::Diagnostics::DiagnosticName{(name)}
+#define SPARKLE_DIAGNOSTIC_NAME(name) ::Diagnostics::DiagnosticName{(name)}
 #endif

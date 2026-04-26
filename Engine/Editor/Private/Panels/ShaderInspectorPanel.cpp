@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "Panels/ShaderInspectorPanel.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <algorithm>
 #include <fstream>
@@ -9,11 +9,6 @@
 #include <system_error>
 
 #include <imgui.h>
-
-std::filesystem::path ShaderInspectorPanel::GetArtifactSearchRoot()
-{
-	return Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders";
-}
 
 std::string ShaderInspectorPanel::BuildBundleLabel(const std::filesystem::path& directory)
 {
@@ -50,7 +45,7 @@ void ShaderInspectorPanel::RefreshBundles()
 	m_selectedIndex = 0;
 	m_texts = {};
 
-	const std::filesystem::path root = GetArtifactSearchRoot();
+	const std::filesystem::path root = Paths::ShaderCacheRoot();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(root, errorCode) || errorCode)
 	{
@@ -142,7 +137,7 @@ void ShaderInspectorPanel::BuildUI(bool disableInteraction)
 		RefreshBundles();
 	}
 	ImGui::SameLine();
-	const std::filesystem::path root = GetArtifactSearchRoot();
+	const std::filesystem::path root = Paths::ShaderCacheRoot();
 	ImGui::TextDisabled("Artifacts: %s", root.generic_string().c_str());
 	ImGui::Separator();
 

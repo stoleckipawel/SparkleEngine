@@ -1,4 +1,4 @@
-#include "../PCH.h"
+﻿#include "../PCH.h"
 #include "Passes/ForwardOpaquePass.h"
 
 #include "GPU/CommandContext.h"
@@ -25,7 +25,7 @@
 
 namespace
 {
-	std::shared_ptr<spdlog::logger> g_forwardOpaquePassLogger = Engine::Logging::GetOrCreateLogger("Renderer.ForwardOpaquePass");
+	std::shared_ptr<spdlog::logger> g_forwardOpaquePassLogger = Logging::GetOrCreateLogger("Renderer.ForwardOpaquePass");
 }
 
 const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetadata() noexcept

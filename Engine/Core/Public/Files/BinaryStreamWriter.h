@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <fstream>
@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace Engine::Files
+namespace Files
 {
 	class BinaryStreamWriter final
 	{

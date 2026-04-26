@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Loaders/SceneManifestLoader.h"
 
@@ -6,12 +6,12 @@
 #include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Core/Public/Files/FileUtils.h"
 
-namespace Engine::Assets
+namespace Assets
 {
 	bool SceneManifestLoader::Load(const std::filesystem::path& path, LoadedSceneManifest& outManifest, std::string& outErrorMessage) const
 	{
 		std::vector<std::uint8_t> fileBytes;
-		if (!Engine::Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
+		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 		{
 			return false;
 		}

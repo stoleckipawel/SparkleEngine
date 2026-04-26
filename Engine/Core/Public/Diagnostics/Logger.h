@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/CoreAPI.h"
 
@@ -10,7 +10,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace Engine::Logging
+namespace Logging
 {
 	struct LogRecord final
 	{

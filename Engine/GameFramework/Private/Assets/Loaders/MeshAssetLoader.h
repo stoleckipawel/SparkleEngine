@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Scene/Meshes/MeshData.h"
 
@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <string>
 
-namespace Engine::Assets
+namespace Assets
 {
 	class MeshAssetLoader final
 	{

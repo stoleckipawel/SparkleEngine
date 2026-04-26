@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
 
 #include <algorithm>
@@ -107,7 +107,7 @@ namespace ProfilerSnapshotUtils
 	void FormatThreadLabel(
 	    char* buffer,
 	    std::size_t bufferSize,
-	    const Engine::Diagnostics::ProfilerThreadSnapshot& thread) noexcept
+	    const Diagnostics::ProfilerThreadSnapshot& thread) noexcept
 	{
 		if (!thread.ThreadName.empty())
 		{

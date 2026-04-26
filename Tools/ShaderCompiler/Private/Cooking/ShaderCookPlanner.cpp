@@ -4,6 +4,7 @@
 
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
@@ -18,14 +19,14 @@ ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStag
 	options.EntryPoint = stage.entryPoint;
 	options.Stage = stage.stage;
 
-	const std::filesystem::path& projectShaderRoot = Filesystem::GetShaderPath(PathRoot::Project);
-	const std::filesystem::path& engineShaderRoot = Filesystem::GetShaderPath(PathRoot::Engine);
+	const std::filesystem::path& projectShaderRoot = Paths::ShaderSourceRoot(PathRoot::Project);
+	const std::filesystem::path& engineShaderRoot = Paths::ShaderSourceRoot(PathRoot::Engine);
 
 	if (!projectShaderRoot.empty())
 	{
 		options.IncludeDir = projectShaderRoot;
 		if (!engineShaderRoot.empty() &&
-		    Engine::Paths::MakePathKey(engineShaderRoot) != Engine::Paths::MakePathKey(projectShaderRoot))
+		    Paths::MakePathKey(engineShaderRoot) != Paths::MakePathKey(projectShaderRoot))
 		{
 			options.AdditionalIncludeDirs.push_back(engineShaderRoot);
 		}

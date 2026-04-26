@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/CookedPackageWriter.h"
 
@@ -7,6 +7,7 @@
 #include "Cooking/SourceIdentityHasher.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringTableBuilder.h"
 
 #include "RHI/Public/Config/RenderConfig.h"
@@ -14,7 +15,7 @@
 
 #include <fstream>
 
-static CookedShaderStringRef ToCookedShaderStringRef(const Engine::Strings::StringTableEntry& entry)
+static CookedShaderStringRef ToCookedShaderStringRef(const Strings::StringTableEntry& entry)
 {
 	return CookedShaderStringRef{entry.OffsetInBytes, entry.SizeInBytes};
 }
@@ -41,7 +42,7 @@ static ShaderStageMask ToCookedShaderStageMask(ShaderStageVisibility visibility)
 
 static void BuildBindingRecords(
 	const PassParameterLayout& layout,
-	Engine::Strings::StringTableBuilder& stringTable,
+	Strings::StringTableBuilder& stringTable,
 	std::vector<CookedShaderBindingRecord>& outBindingRecords)
 {
 	const std::vector<PassParameterDesc>& parameters = layout.GetParameters();
@@ -51,7 +52,7 @@ static void BuildBindingRecords(
 	for (std::size_t parameterIndex = 0; parameterIndex < parameters.size(); ++parameterIndex)
 	{
 		const PassParameterDesc& parameter = parameters[parameterIndex];
-		const Engine::Strings::StringTableEntry nameEntry = stringTable.Add(parameter.Name);
+		const Strings::StringTableEntry nameEntry = stringTable.Add(parameter.Name);
 		outBindingRecords.push_back(CookedShaderBindingRecord{
 		    .Name = ToCookedShaderStringRef(nameEntry),
 		    .SemanticKind = parameter.Kind,
@@ -70,10 +71,10 @@ bool CookedPackageWriter::Write(
 	CookedShaderPackageOutput& outPackageOutput,
 	std::string& outErrorMessage)
 {
-	using Engine::Files::BinaryStreamWriter;
-	using Engine::Files::TryOpenBinaryOutput;
+	using Files::BinaryStreamWriter;
+	using Files::TryOpenBinaryOutput;
 
-	Engine::Strings::StringTableBuilder stringTable;
+	Strings::StringTableBuilder stringTable;
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
 	std::vector<CookedShaderBindingRecord> bindingRecords;
 	std::vector<CookedShaderSpecializationInputRecord> specializationInputs;
@@ -132,7 +133,7 @@ bool CookedPackageWriter::Write(
 	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
 	header.VariantHash = BuildShaderVariantHash(package.variantId);
 
-	const std::filesystem::path packagePath = ::BuildCookedShaderPackagePath(header.ShaderPackageKey);
+	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
 	const std::filesystem::path tempPackagePath = packagePath.string() + ".tmp";
 	std::ofstream output;
 	if (!TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))

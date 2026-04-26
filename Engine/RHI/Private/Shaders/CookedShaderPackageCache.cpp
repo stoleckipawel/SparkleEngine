@@ -1,10 +1,11 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Shaders/CookedShaderPackageCache.h"
 
 #include "Config/RenderConfig.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "ShaderParameters/PassParameterLayout.h"
 
 #include <array>
@@ -240,7 +241,7 @@ bool CookedShaderPackageCache::LoadPackage(
 	}
 
 	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
-	const std::filesystem::path packagePath = BuildCookedShaderPackagePath(packageKey);
+	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
 	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
 	{
 		return false;
@@ -274,7 +275,7 @@ bool CookedShaderPackageCache::ReloadPackage(
 
 	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
 	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
-	const std::filesystem::path packagePath = BuildCookedShaderPackagePath(packageKey);
+	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
 	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
 	{
 		return false;
@@ -299,7 +300,7 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
     std::string& outErrorMessage)
 {
 	std::vector<std::uint8_t> fileBytes;
-	if (!Engine::Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
 	{
 		return false;
 	}

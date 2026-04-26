@@ -1,10 +1,10 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 #include "GPU/CommandContext.h"
 
 #include <cassert>
 
-static const auto g_frameGraphBarrierLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
+static const auto g_frameGraphBarrierLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept
 {

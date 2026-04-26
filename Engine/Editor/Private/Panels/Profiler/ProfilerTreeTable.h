@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
@@ -13,7 +13,7 @@ class ProfilerTreeTable
 {
   public:
 	// State the table needs from the owner. Owned externally so the table itself
-	// stays free of persistent state — this keeps it easy to test and reuse.
+	// stays free of persistent state â€” this keeps it easy to test and reuse.
 	struct State
 	{
 		// Names of root-level scopes the user has hidden from the chart.
@@ -35,7 +35,7 @@ class ProfilerTreeTable
 	void Render(
 	    const State& state,
 	    const char* tableId,
-	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes) const;
+	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes) const;
 
   private:
 	// ImGui table flags shared by every profiler table instance.
@@ -55,25 +55,25 @@ class ProfilerTreeTable
 
 	void RenderRows(
 	    const State& state,
-	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes,
+	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes,
 	    int depth,
 	    std::size_t siblingOffset,
 	    std::size_t siblingTotal) const;
 
 	void RenderRow(
 	    const State& state,
-	    const Engine::Diagnostics::ProfilerSnapshotNode& node,
+	    const Diagnostics::ProfilerSnapshotNode& node,
 	    int depth,
 	    std::size_t siblingIndex,
 	    std::size_t siblingTotal) const;
 
 	void RenderVisibilityDot(
 	    const State& state,
-	    const Engine::Diagnostics::ProfilerSnapshotNode& node,
+	    const Diagnostics::ProfilerSnapshotNode& node,
 	    std::size_t siblingIndex,
 	    std::size_t siblingTotal) const;
 
-	void RenderDrawStatsTooltip(const Engine::Diagnostics::ProfilerSnapshotNode& node) const;
+	void RenderDrawStatsTooltip(const Diagnostics::ProfilerSnapshotNode& node) const;
 
 	static void RightAlignedText(const char* fmt, ...);
 };

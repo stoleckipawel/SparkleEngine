@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Textures/TextureManager.h"
 
@@ -9,13 +9,13 @@
 
 #include <format>
 
-static const auto g_textureManagerLogger = Engine::Logging::GetOrCreateLogger("Renderer.TextureManager");
+static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
 
 std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_textureManagerLogger,
 		    __FILE__,
 		    __LINE__,
@@ -96,7 +96,7 @@ Texture* TextureManager::LoadFromPath(const std::filesystem::path& texturePath)
 
 	const std::filesystem::path& resolvedPath = *resolvedPathResult;
 
-	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(resolvedPath);
+	const TextureCacheKey cacheKey = Paths::MakePathKey(resolvedPath);
 	if (cacheKey.empty())
 	{
 		SPDLOG_LOGGER_WARN(
@@ -255,7 +255,7 @@ void TextureManager::RegisterDefaultPathTexture(const std::filesystem::path& tex
 		return;
 	}
 
-	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(*resolvedPath);
+	const TextureCacheKey cacheKey = Paths::MakePathKey(*resolvedPath);
 	if (cacheKey.empty())
 	{
 		return;
@@ -272,7 +272,7 @@ const Texture* TextureManager::FindPathTexture(const std::filesystem::path& text
 		return nullptr;
 	}
 
-	const TextureCacheKey cacheKey = Engine::Paths::MakePathKey(*resolvedPath);
+	const TextureCacheKey cacheKey = Paths::MakePathKey(*resolvedPath);
 	if (cacheKey.empty())
 	{
 		return nullptr;

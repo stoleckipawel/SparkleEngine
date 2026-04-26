@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12DebugLayer.h"
 #include "CVars/RHICVars.h"
@@ -6,7 +6,7 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
-static const auto g_d3d12RhiLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12");
+static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 
 D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 {
@@ -105,13 +105,13 @@ void D3D12Rhi::CheckShaderModel6Support() const noexcept
 	shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
 	if (!m_device)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "CheckShaderModel6Support called before device creation");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "CheckShaderModel6Support called before device creation");
 	}
 
 	HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
 	if (FAILED(hr) || shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_0)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_d3d12RhiLogger,
 		    __FILE__,
 		    __LINE__,
@@ -134,7 +134,7 @@ void D3D12Rhi::CreateDevice(bool)
 	SelectAdapter();
 	if (!m_adapter)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "No suitable adapter found when creating device");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "No suitable adapter found when creating device");
 	}
 
 	CHECK(D3D12CreateDevice(m_adapter.Get(), m_desiredD3DFeatureLevel, IID_PPV_ARGS(m_device.ReleaseAndGetAddressOf())));
@@ -186,7 +186,7 @@ void D3D12Rhi::CreateFenceAndEvent()
 
 	if (!m_fenceEvent)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Failed To Create Fence Event");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Failed To Create Fence Event");
 	}
 }
 
@@ -199,7 +199,7 @@ void D3D12Rhi::ResetCommandAllocator(uint32_t frameInFlightIndex) noexcept
 {
 	if (!m_cmdAllocator[frameInFlightIndex])
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandAllocator called with missing allocator");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandAllocator called with missing allocator");
 		return;
 	}
 
@@ -210,12 +210,12 @@ void D3D12Rhi::ResetCommandList(uint32_t frameInFlightIndex) noexcept
 {
 	if (!m_cmdList[frameInFlightIndex])
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called without a valid command list");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called without a valid command list");
 		return;
 	}
 	if (!m_cmdAllocator[frameInFlightIndex])
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called with missing allocator");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ResetCommandList called with missing allocator");
 		return;
 	}
 
@@ -226,7 +226,7 @@ void D3D12Rhi::ExecuteCommandList(uint32_t frameInFlightIndex) noexcept
 {
 	if (!m_cmdList[frameInFlightIndex] || !m_cmdQueue)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ExecuteCommandList called without valid command list or queue");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "ExecuteCommandList called without valid command list or queue");
 	}
 
 	ID3D12CommandList* ppcommandLists[] = {m_cmdList[frameInFlightIndex].Get()};
@@ -238,7 +238,7 @@ void D3D12Rhi::WaitForGPU(uint32_t frameInFlightIndex) noexcept
 	const uint64_t fenceCurrentValue = m_fenceValues[frameInFlightIndex];
 	if (!m_fence)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "WaitForGPU called without a fence");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "WaitForGPU called without a fence");
 	}
 
 	const uint64_t fenceCompletedValue = m_fence->GetCompletedValue();
@@ -254,7 +254,7 @@ void D3D12Rhi::Signal(uint32_t frameInFlightIndex) noexcept
 	const uint64_t currentFenceValue = m_nextFenceValue++;
 	if (!m_cmdQueue || !m_fence)
 	{
-		Engine::Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Signal called without command queue or fence");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Signal called without command queue or fence");
 	}
 
 	CHECK(m_cmdQueue->Signal(m_fence.Get(), currentFenceValue));

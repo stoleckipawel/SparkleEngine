@@ -1,20 +1,20 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/TextureCookRequestBuilder.h"
 
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "GameFramework/Public/Assets/Cooked/CookedTextureAssetUtils.h"
 
 #include <system_error>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	bool TextureCookRequestBuilder::Build(
 	    const std::filesystem::path& sourceTexturePath,
-	    Engine::Assets::CookedTextureSemantic semantic,
+	    Assets::CookedTextureSemantic semantic,
 	    TextureCookRequest& outRequest,
 	    std::string& outErrorMessage)
 	{
@@ -34,24 +34,23 @@ namespace Engine::AssetAuthoring
 
 		outRequest.assetId = Hash::Fnv1a64(textureSourceKey);
 		outRequest.sourcePath = normalizedSourceTexturePath;
-		outRequest.outputPath = Engine::Assets::BuildCookedTextureAssetPath(
-		    static_cast<Engine::Assets::CookedAssetId>(outRequest.assetId));
+		outRequest.outputPath = Paths::CookedTextureAsset(outRequest.assetId);
 		outRequest.colorSpace = colorSpace;
 		outErrorMessage.clear();
 		return true;
 	}
 
-	TextureColorSpace TextureCookRequestBuilder::ResolveColorSpace(Engine::Assets::CookedTextureSemantic semantic) noexcept
+	TextureColorSpace TextureCookRequestBuilder::ResolveColorSpace(Assets::CookedTextureSemantic semantic) noexcept
 	{
 		switch (semantic)
 		{
-			case Engine::Assets::CookedTextureSemantic::Albedo:
-			case Engine::Assets::CookedTextureSemantic::Emissive:
+			case Assets::CookedTextureSemantic::Albedo:
+			case Assets::CookedTextureSemantic::Emissive:
 				return TextureColorSpace::Srgb;
 
-			case Engine::Assets::CookedTextureSemantic::Normal:
-			case Engine::Assets::CookedTextureSemantic::MetallicRoughness:
-			case Engine::Assets::CookedTextureSemantic::Occlusion:
+			case Assets::CookedTextureSemantic::Normal:
+			case Assets::CookedTextureSemantic::MetallicRoughness:
+			case Assets::CookedTextureSemantic::Occlusion:
 			default:
 				return TextureColorSpace::Linear;
 		}
@@ -69,7 +68,7 @@ namespace Engine::AssetAuthoring
 			return true;
 		}
 
-		const std::filesystem::path normalizedPath = Engine::Paths::Normalize(sourceTexturePath);
+		const std::filesystem::path normalizedPath = Paths::Normalize(sourceTexturePath);
 		if (!normalizedPath.empty() && normalizedPath.is_absolute())
 		{
 			std::error_code errorCode;
@@ -93,7 +92,7 @@ namespace Engine::AssetAuthoring
 	{
 		std::error_code errorCode;
 
-		const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
+		const std::filesystem::path& projectRoot = Paths::ProjectRoot();
 		if (!projectRoot.empty())
 		{
 			const std::filesystem::path relativePath = std::filesystem::relative(normalizedSourceTexturePath, projectRoot, errorCode);
@@ -108,7 +107,7 @@ namespace Engine::AssetAuthoring
 		}
 
 		errorCode.clear();
-		const std::filesystem::path& engineRoot = Filesystem::GetEnginePath();
+		const std::filesystem::path& engineRoot = Paths::EngineRoot();
 		if (!engineRoot.empty())
 		{
 			const std::filesystem::path relativePath = std::filesystem::relative(normalizedSourceTexturePath, engineRoot, errorCode);

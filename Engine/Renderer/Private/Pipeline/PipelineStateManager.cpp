@@ -1,4 +1,4 @@
-#include "../PCH.h"
+﻿#include "../PCH.h"
 #include "PipelineStateManager.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
@@ -41,7 +41,7 @@ const RenderPassRuntimeRegistry& PipelineStateManager::GetRuntimeRegistry() cons
 
 void PipelineStateManager::ReloadCookedShaders() noexcept
 {
-	static const std::shared_ptr<spdlog::logger>& logger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const std::shared_ptr<spdlog::logger>& logger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_INFO(logger, "Reloading cooked shader packages and pipeline state runtimes");
 
 	m_runtimeRegistry.reset();

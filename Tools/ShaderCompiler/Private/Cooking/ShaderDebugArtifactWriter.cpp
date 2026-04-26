@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/ShaderDebugArtifactWriter.h"
 
@@ -276,5 +276,5 @@ bool ShaderDebugArtifactWriter::WriteTextFile(
 	std::string_view text,
 	std::string& outErrorMessage)
 {
-	return Engine::Files::TryWriteAllText(path, text, outErrorMessage);
+	return Files::TryWriteAllText(path, text, outErrorMessage);
 }

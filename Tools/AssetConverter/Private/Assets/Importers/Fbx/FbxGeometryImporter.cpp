@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Fbx/FbxGeometryImporter.h"
 
@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 
-static const auto g_fbxGeometryImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+static const auto g_fbxGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
 
 std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) noexcept
 {

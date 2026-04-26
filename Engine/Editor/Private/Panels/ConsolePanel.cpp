@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/ConsolePanel.h"
 
 #include "Core/Public/Console/ConsoleSession.h"
@@ -85,7 +85,7 @@ std::size_t ConsolePanel::FindCompletionTokenStart(const std::string& input) noe
 {
 	for (std::size_t index = input.size(); index > 0; --index)
 	{
-		if (Engine::Strings::IsAsciiWhitespace(input[index - 1]))
+		if (Strings::IsAsciiWhitespace(input[index - 1]))
 		{
 			return index;
 		}
@@ -201,7 +201,7 @@ void ConsolePanel::DrawOutputRecords()
 	const std::string_view filter(m_filterBuffer.data());
 	for (const ConsoleOutputRecord& record : records)
 	{
-		if (!filter.empty() && !Engine::Strings::ContainsIgnoreCase(record.Text, filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(record.Text, filter))
 		{
 			continue;
 		}

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Level/LevelRegistry.h"
@@ -12,7 +12,7 @@
 class LevelAsset;
 class GameScene;
 struct GameSceneLoadResult;
-namespace Engine::Assets
+namespace Assets
 {
 	class SceneAssetManager;
 }
@@ -20,7 +20,7 @@ namespace Engine::Assets
 class SPARKLE_ENGINE_API LevelManager final
 {
   public:
-	LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept;
+	LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager) noexcept;
 	~LevelManager() noexcept = default;
 
 	LevelManager(const LevelManager&) = delete;
@@ -51,7 +51,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	void ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcept;
 
 	GameScene* m_gameScene = nullptr;
-	Engine::Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
+	Assets::SceneAssetManager* m_sceneAssetManager = nullptr;
 	LevelRegistry m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
 	LevelAsset* m_activeLevel = nullptr;

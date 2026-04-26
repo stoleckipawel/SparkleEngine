@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Strings/StringTableBuilder.h"
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
@@ -25,6 +25,6 @@ class ReflectionSerializer final
 
 	static void Build(
 	    std::span<const ShaderReflection> reflections,
-	    Engine::Strings::StringTableBuilder& stringTable,
+	    Strings::StringTableBuilder& stringTable,
 	    Output& outOutput);
 };

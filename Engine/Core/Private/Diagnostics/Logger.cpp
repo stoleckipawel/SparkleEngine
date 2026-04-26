@@ -1,5 +1,7 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Logger.h"
+
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <atomic>
 #include <cstdint>
@@ -7,6 +9,7 @@
 #include <filesystem>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -20,7 +23,7 @@
 	#include <windows.h>
 #endif
 
-namespace Engine::Logging
+namespace Logging
 {
 	static constexpr std::string_view kCoreLoggerName = "SparkleCore";
 
@@ -177,24 +180,18 @@ namespace Engine::Logging
 			sinks.push_back(debuggerSink);
 #endif
 
-			std::string filePath;
-			if (TryGetEnvironmentValue("SPARKLE_LOG_FILE", filePath))
+			try
 			{
-				try
-				{
-					std::filesystem::path logPath(filePath);
-					if (logPath.has_parent_path())
-					{
-						std::filesystem::create_directories(logPath.parent_path());
-					}
+				std::string configuredFile;
+				TryGetEnvironmentValue("SPARKLE_LOG_FILE", configuredFile);
+				const std::filesystem::path logPath = Paths::LogFile(configuredFile);
 
-					auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);
-					fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %s:%# %v");
-					sinks.push_back(fileSink);
-				}
-				catch (...)
-				{
-				}
+				auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);
+				fileSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %s:%# %v");
+				sinks.push_back(fileSink);
+			}
+			catch (...)
+			{
 			}
 
 			return sinks;

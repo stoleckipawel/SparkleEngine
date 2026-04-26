@@ -1,9 +1,9 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Window/Window.h"
 
-static const auto g_frameGraphTextureLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
+static const auto g_frameGraphTextureLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {

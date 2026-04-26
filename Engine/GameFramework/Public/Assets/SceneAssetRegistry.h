@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
@@ -9,7 +9,7 @@
 #include <string>
 #include <string_view>
 
-namespace Engine::Assets
+namespace Assets
 {
 	inline constexpr std::uint32_t kSceneAssetRegistryVersion = 1;
 
@@ -21,9 +21,6 @@ namespace Engine::Assets
 		void Clear() noexcept;
 		void Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath);
 		std::optional<std::filesystem::path> Resolve(std::string_view sceneAssetId) const;
-
-		static std::filesystem::path GetRegistryPath();
-
 	  private:
 		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
 	};

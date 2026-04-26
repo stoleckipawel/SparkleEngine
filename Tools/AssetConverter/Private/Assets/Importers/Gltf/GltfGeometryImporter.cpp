@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Gltf/GltfGeometryImporter.h"
 
@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 
-static const auto g_gltfGeometryImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+static const auto g_gltfGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
 
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {

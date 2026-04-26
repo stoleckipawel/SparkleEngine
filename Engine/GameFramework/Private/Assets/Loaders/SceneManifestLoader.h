@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include <filesystem>
 #include <string>
 
-namespace Engine::Assets
+namespace Assets
 {
 	struct LoadedSceneManifest;
 

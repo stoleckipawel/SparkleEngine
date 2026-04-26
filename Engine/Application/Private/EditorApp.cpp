@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "EditorApp.h"
 
 #include "Editor/Public/UI.h"
@@ -139,7 +139,7 @@ void EditorApp::Shutdown()
 
 void EditorApp::Run()
 {
-	Engine::Diagnostics::BeginTraceSession();
+	Diagnostics::BeginTraceSession();
 
 	Initialize();
 
@@ -149,5 +149,5 @@ void EditorApp::Run()
 
 	Shutdown();
 
-	Engine::Diagnostics::EndTraceSession();
+	Diagnostics::EndTraceSession();
 }

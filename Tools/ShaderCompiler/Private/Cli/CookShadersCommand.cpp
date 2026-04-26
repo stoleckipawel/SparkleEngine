@@ -6,7 +6,7 @@
 #include "Backend/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
-#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <iostream>
 #include <string>
@@ -194,7 +194,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	}
 
 	std::cout << "ShaderCompiler: cooked " << cookResult.packages.size() << " shader package(s) under '"
-	          << ::GetCookedShaderPackageRootPath().string() << "'"
+	          << Paths::CookedShaderPackageRoot().string() << "'"
 	          << " and registry '" << cookResult.registryPath.string() << "'"
 	          << "; recookSignal='" << cookResult.recookSignalPath.string() << "'"
 	          << "; backendInvocations=" << cookResult.backendInvocationCount

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "D3D12/Textures/DdsTextureLoader.h"
 
@@ -10,7 +10,7 @@
 #include <format>
 #include <limits>
 
-static const auto g_ddsTextureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
+static const auto g_ddsTextureLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
 bool DdsTextureLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -22,9 +22,9 @@ TextureLoadResult DdsTextureLoader::Load(const std::filesystem::path& fileName) 
 	const std::filesystem::path resolvedPath = Filesystem::ResolveAssetPathValidated(fileName, AssetType::Texture);
 	std::vector<std::uint8_t> fileBytes;
 	std::string readErrorMessage;
-	if (!Engine::Files::TryReadAllBytes(resolvedPath, fileBytes, readErrorMessage))
+	if (!Files::TryReadAllBytes(resolvedPath, fileBytes, readErrorMessage))
 	{
-		Engine::Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, std::format("DdsTextureLoader: {}", readErrorMessage));
+		Diagnostics::Fail(g_ddsTextureLoaderLogger, __FILE__, __LINE__, std::format("DdsTextureLoader: {}", readErrorMessage));
 		return {};
 	}
 
@@ -42,7 +42,7 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -54,7 +54,7 @@ DdsTextureLoader::DdsHeader DdsTextureLoader::ReadHeader(const std::vector<std::
 	std::memcpy(&magic, fileBytes.data(), sizeof(magic));
 	if (magic != kDdsMagic)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -76,7 +76,7 @@ DdsTextureLoader::DdsHeaderDx10 DdsTextureLoader::ReadDx10Header(const std::vect
 {
 	if (fileBytes.size() < sizeof(kDdsMagic) + sizeof(DdsHeader) + sizeof(DdsHeaderDx10))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -93,7 +93,7 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 {
 	if (header.size != sizeof(DdsHeader) || header.pixelFormat.size != sizeof(DdsPixelFormat))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -103,7 +103,7 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 
 	if (header.width == 0 || header.height == 0)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -113,7 +113,7 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 
 	if ((header.caps2 & kCaps2Cubemap) != 0)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_ddsTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -125,7 +125,7 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 	{
 		if (dx10Header->resourceDimension != kResourceDimensionTexture2D)
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,
@@ -135,7 +135,7 @@ void DdsTextureLoader::ValidateHeader(const DdsHeader& header, const DdsHeaderDx
 
 		if (dx10Header->arraySize != 1)
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,
@@ -154,7 +154,7 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 	{
 		if (dx10Header->dxgiFormat == DXGI_FORMAT_UNKNOWN)
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,
@@ -188,7 +188,7 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 			case MakeFourCc('B', 'C', '5', 'S'):
 				return DXGI_FORMAT_BC5_SNORM;
 			default:
-				Engine::Diagnostics::Fail(
+				Diagnostics::Fail(
 				    g_ddsTextureLoaderLogger,
 				    __FILE__,
 				    __LINE__,
@@ -221,7 +221,7 @@ DXGI_FORMAT DdsTextureLoader::ResolveDxgiFormat(
 		}
 	}
 
-	Engine::Diagnostics::Fail(
+	Diagnostics::Fail(
 	    g_ddsTextureLoaderLogger,
 	    __FILE__,
 	    __LINE__,
@@ -237,7 +237,7 @@ std::uint32_t DdsTextureLoader::ResolveBitsPerPixel(DXGI_FORMAT format, const st
 		case DXGI_FORMAT_B8G8R8A8_UNORM:
 			return 32;
 		default:
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,
@@ -263,7 +263,7 @@ std::uint32_t DdsTextureLoader::ResolveBlockSize(DXGI_FORMAT format, const std::
 		case DXGI_FORMAT_BC5_SNORM:
 			return 16;
 		default:
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,
@@ -355,7 +355,7 @@ TextureLoadResult DdsTextureLoader::BuildLoadResult(
 
 		if (byteOffset + mipLevel.slicePitch > fileBytes.size())
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_ddsTextureLoaderLogger,
 			    __FILE__,
 			    __LINE__,

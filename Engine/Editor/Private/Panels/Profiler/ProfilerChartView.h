@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
@@ -26,7 +26,7 @@ class ProfilerChartView
 	// used to disambiguate ImGui IDs when multiple charts appear on the page.
 	// Returns false if there isn't enough room or there are no visible slices.
 	bool Render(
-	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    std::string_view moduleName,
 	    const std::unordered_set<std::string>& hiddenScopes) const;
 
@@ -66,13 +66,13 @@ class ProfilerChartView
 	static constexpr float kCardCornerRadius = 4.0f;
 	static constexpr float kBarCornerRadius = 1.5f;
 
-	// Rounds a value up to a "nice" axis maximum (1, 2, 5, 10 × 10^n).
+	// Rounds a value up to a "nice" axis maximum (1, 2, 5, 10 Ă— 10^n).
 	static double NiceCeil(double value) noexcept;
 
 	// Build slice list from `bucket` skipping anything in `hiddenScopes`.
 	// Returns true if at least one slice has a positive value.
 	static bool BuildSlices(
-	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    const std::unordered_set<std::string>& hiddenScopes,
 	    std::vector<Slice>& outSlices,
 	    double& outTotalMs,

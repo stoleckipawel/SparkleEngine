@@ -1,4 +1,4 @@
-#include "Cooking/TextureAssetCooker.h"
+﻿#include "Cooking/TextureAssetCooker.h"
 #include "TextureCookRequestList.h"
 
 #include <filesystem>
@@ -19,19 +19,19 @@ static bool IsCookRequestFileCommand(std::string_view command) noexcept
 
 static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 {
-	std::vector<Engine::AssetAuthoring::TextureCookRequest> requests;
+	std::vector<AssetAuthoring::TextureCookRequest> requests;
 	std::string errorMessage;
-	if (!Engine::AssetAuthoring::LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
+	if (!AssetAuthoring::LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
 	{
 		std::cerr << "TextureCooker: failed to inspect request file - " << errorMessage << "\n";
 		return 5;
 	}
 
 	std::cout << "TextureCooker: request file='" << requestFilePath.string() << "' contains " << requests.size() << " texture request(s)\n";
-	for (const Engine::AssetAuthoring::TextureCookRequest& request : requests)
+	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
 		std::cout << "  Texture '" << std::format("{:016X}", request.assetId) << "' colorSpace='"
-		          << Engine::AssetAuthoring::GetTextureColorSpaceName(request.colorSpace) << "' output='"
+		          << AssetAuthoring::GetTextureColorSpaceName(request.colorSpace) << "' output='"
 		          << request.outputPath.string() << "' source='" << request.sourcePath.string() << "'\n";
 	}
 
@@ -47,9 +47,9 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 		return 4;
 	}
 
-	std::vector<Engine::AssetAuthoring::TextureCookRequest> requests;
+	std::vector<AssetAuthoring::TextureCookRequest> requests;
 	std::string errorMessage;
-	if (!Engine::AssetAuthoring::LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
+	if (!AssetAuthoring::LoadTextureCookRequestList(requestFilePath, requests, errorMessage))
 	{
 		if (SUCCEEDED(coInitializeResult))
 		{
@@ -60,8 +60,8 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 		return 6;
 	}
 
-	Engine::AssetAuthoring::TextureAssetCooker cooker;
-	for (const Engine::AssetAuthoring::TextureCookRequest& request : requests)
+	AssetAuthoring::TextureAssetCooker cooker;
+	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
 		if (!cooker.Cook(request, errorMessage))
 		{
@@ -81,7 +81,7 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 	}
 
 	std::cout << "TextureCooker: cooked " << requests.size() << " texture asset(s) from request file '" << requestFilePath.string() << "'\n";
-	for (const Engine::AssetAuthoring::TextureCookRequest& request : requests)
+	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
 		std::cout << "  Texture '" << std::format("{:016X}", request.assetId) << "' output='" << request.outputPath.string()
 		          << "'\n";

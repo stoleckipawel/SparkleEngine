@@ -33,9 +33,11 @@ set "TOTAL_SCENE_COUNT=0"
 set "ENGINE_SCENE_COUNT=0"
 set "PROJECT_SCENE_COUNT=0"
 set "OVERRIDDEN_ENGINE_COUNT=0"
-set "SCENE_LIST_FILE=%TEMP%\sparkle-cooktextures-%RANDOM%%RANDOM%.txt"
-set "SCENE_SUMMARY_FILE=%TEMP%\sparkle-cooktextures-summary-%RANDOM%%RANDOM%.txt"
-set "TEXTURE_REQUEST_FILE=%TEMP%\sparkle-cooktextures-requests-%RANDOM%%RANDOM%.txt"
+set "COOK_TEMP_DIR=!BUILD_DIR!\Cook\Temp"
+if not exist "!COOK_TEMP_DIR!" mkdir "!COOK_TEMP_DIR!" >nul 2>&1
+set "SCENE_LIST_FILE=!COOK_TEMP_DIR!\sparkle-cooktextures-%RANDOM%%RANDOM%.txt"
+set "SCENE_SUMMARY_FILE=!COOK_TEMP_DIR!\sparkle-cooktextures-summary-%RANDOM%%RANDOM%.txt"
+set "TEXTURE_REQUEST_FILE=!COOK_TEMP_DIR!\sparkle-cooktextures-requests-%RANDOM%%RANDOM%.txt"
 
 if /I "%TARGET_PROJECT%"=="/h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="-h" goto :USAGE
@@ -190,7 +192,7 @@ if "!TEXTURE_COOK_RC!" NEQ "0" (
 
 echo.
 echo [SUCCESS] CookTextures completed successfully.
-echo [LOG] Texture assets: Projects\!TARGET_PROJECT!\Assets\Cooked\Textures\
+echo [LOG] Texture assets: build\Cooked\!TARGET_PROJECT!\Textures\
 
 set "EXIT_RC=0"
 goto :FINISH
@@ -206,7 +208,7 @@ echo.
 echo This command enumerates supported scenes under Engine\Assets\Meshes and
 echo Projects\^<ProjectName^>\Assets\Meshes, collects texture cook requests,
 echo deduplicates them, and emits cooked texture assets under:
-echo   Projects\^<ProjectName^>\Assets\Cooked\Textures\
+echo   build\Cooked\^<ProjectName^>\Textures\
 echo.
 set "EXIT_RC=1"
 

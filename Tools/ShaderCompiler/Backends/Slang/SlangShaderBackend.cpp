@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Slang/SlangShaderBackend.h"
 
@@ -236,7 +236,7 @@ std::string SlangShaderBackend::BlobToString(slang::IBlob* blob)
 std::string SlangShaderBackend::LoadSourceText(const std::filesystem::path& sourcePath, std::string& outErrorMessage)
 {
 	std::vector<std::uint8_t> bytes;
-	if (!Engine::Files::TryReadAllBytes(sourcePath, bytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(sourcePath, bytes, outErrorMessage))
 	{
 		outErrorMessage = "Failed to read shader source for Slang backend '" + sourcePath.generic_string() + "' - " + outErrorMessage;
 		return {};

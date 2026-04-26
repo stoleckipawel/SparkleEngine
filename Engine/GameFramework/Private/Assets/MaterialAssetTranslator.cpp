@@ -1,12 +1,12 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/MaterialAssetTranslator.h"
 
-#include "Assets/Cooked/CookedTextureAssetUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <format>
 
-namespace Engine::Assets
+namespace Assets
 {
 	bool MaterialAssetTranslator::Translate(
 	    const LoadedMaterialAsset& materialAsset,
@@ -36,7 +36,7 @@ namespace Engine::Assets
 
 			outMaterialDesc.SetTexturePath(
 			    TranslateTextureType(textureReference.semantic),
-			    BuildCookedTextureAssetPath(textureReference.textureAssetId));
+			    Paths::CookedTextureAsset(textureReference.textureAssetId));
 		}
 
 		outErrorMessage.clear();

@@ -1,8 +1,8 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/SceneAssetRegistry.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <fstream>
@@ -20,19 +20,19 @@ namespace
 			return false;
 		}
 
-		outSceneAssetId = Engine::Strings::TrimCopy(entryValue.substr(0, separatorIndex));
-		outManifestRelativePath = Engine::Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
+		outSceneAssetId = Strings::TrimCopy(entryValue.substr(0, separatorIndex));
+		outManifestRelativePath = Strings::TrimCopy(entryValue.substr(separatorIndex + 1));
 		return !outSceneAssetId.empty() && !outManifestRelativePath.empty();
 	}
 }
 
-namespace Engine::Assets
+namespace Assets
 {
 	bool SceneAssetRegistry::Load(std::string& outErrorMessage)
 	{
 		m_entries.clear();
 
-		const std::filesystem::path registryPath = GetRegistryPath();
+		const std::filesystem::path registryPath = Paths::SceneAssetRegistry();
 		std::error_code errorCode;
 		if (!std::filesystem::exists(registryPath, errorCode))
 		{
@@ -50,7 +50,7 @@ namespace Engine::Assets
 		bool inEntriesSection = false;
 		for (std::string line; std::getline(input, line);)
 		{
-			const std::string trimmedLine = Engine::Strings::TrimCopy(line);
+			const std::string trimmedLine = Strings::TrimCopy(line);
 			if (trimmedLine.empty() || trimmedLine[0] == '#' || trimmedLine[0] == ';')
 			{
 				continue;
@@ -70,12 +70,12 @@ namespace Engine::Assets
 
 			std::string_view key;
 			std::string_view value;
-			if (!Engine::Strings::TrySplitKeyValue(trimmedLine, '=', key, value))
+			if (!Strings::TrySplitKeyValue(trimmedLine, '=', key, value))
 			{
 				continue;
 			}
 
-			if (!inEntriesSection || !Engine::Strings::EqualsIgnoreCase(key, "Entry"))
+			if (!inEntriesSection || !Strings::EqualsIgnoreCase(key, "Entry"))
 			{
 				continue;
 			}
@@ -98,7 +98,7 @@ namespace Engine::Assets
 
 	bool SceneAssetRegistry::Save(std::string& outErrorMessage) const
 	{
-		const std::filesystem::path registryPath = GetRegistryPath();
+		const std::filesystem::path registryPath = Paths::SceneAssetRegistry();
 		std::error_code errorCode;
 		std::filesystem::create_directories(registryPath.parent_path(), errorCode);
 		if (errorCode)
@@ -150,10 +150,5 @@ namespace Engine::Assets
 		}
 
 		return std::nullopt;
-	}
-
-	std::filesystem::path SceneAssetRegistry::GetRegistryPath()
-	{
-		return Filesystem::GetProjectAssetsPath() / "Cooked" / "SceneAssetRegistry.sreg";
 	}
 }

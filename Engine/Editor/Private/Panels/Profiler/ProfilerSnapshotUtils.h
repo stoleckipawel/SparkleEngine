@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
@@ -8,7 +8,7 @@
 
 namespace ProfilerSnapshotUtils
 {
-	using Engine::Diagnostics::ProfilerSnapshotNode;
+	using Diagnostics::ProfilerSnapshotNode;
 
 	// ---- Time helpers ----
 	inline constexpr double kMicrosecondsToMilliseconds = 1.0 / 1000.0;
@@ -32,7 +32,7 @@ namespace ProfilerSnapshotUtils
 		double InclusiveMicroseconds = 0.0;
 		double ChildSumMicroseconds = 0.0;
 		// True when the child sum exceeded the inclusive average by more than the
-		// caller's tolerance (currently 1µs). Indicates the data is unreliable for
+		// caller's tolerance (currently 1Âµs). Indicates the data is unreliable for
 		// exclusive-time analysis (typically async/overlapping children).
 		bool WasClampedToZero = false;
 	};
@@ -54,8 +54,8 @@ namespace ProfilerSnapshotUtils
 	std::string_view ShortenScopeName(std::string_view fullName) noexcept;
 
 	// Returns the module/category name used to group sibling scopes:
-	//   - CPU `Renderer.RecordFrame` → `Renderer`
-	//   - GPU `[Graphics 0] DepthPass` → `Graphics`
+	//   - CPU `Renderer.RecordFrame` â†’ `Renderer`
+	//   - GPU `[Graphics 0] DepthPass` â†’ `Graphics`
 	//   - Otherwise the input is returned unchanged.
 	std::string_view ExtractModuleName(std::string_view scopeName) noexcept;
 
@@ -64,5 +64,5 @@ namespace ProfilerSnapshotUtils
 	void FormatThreadLabel(
 	    char* buffer,
 	    std::size_t bufferSize,
-	    const Engine::Diagnostics::ProfilerThreadSnapshot& thread) noexcept;
+	    const Diagnostics::ProfilerThreadSnapshot& thread) noexcept;
 }

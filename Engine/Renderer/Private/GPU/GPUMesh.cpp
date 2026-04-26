@@ -1,10 +1,10 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "GPU/GPUMesh.h"
 
 #include "GPU/CommandContext.h"
 #include "Scene/Meshes/MeshData.h"
 
-static const auto g_gpuMeshLogger = Engine::Logging::GetOrCreateLogger("Renderer.GPUMesh");
+static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
 
 GPUMesh::~GPUMesh() noexcept
 {

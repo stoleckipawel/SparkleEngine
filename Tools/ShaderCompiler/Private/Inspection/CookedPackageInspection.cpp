@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Inspection/CookedPackageInspection.h"
 
@@ -50,7 +50,7 @@ bool CookedPackageInspection::Inspect(
 	outPackage = {};
 
 	std::vector<std::uint8_t> bytes;
-	if (!Engine::Files::TryReadAllBytes(packagePath, bytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(packagePath, bytes, outErrorMessage))
 	{
 		return false;
 	}

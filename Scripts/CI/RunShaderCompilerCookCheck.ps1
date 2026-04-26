@@ -57,7 +57,7 @@ foreach ($config in @('Debug', 'Release'))
 }
 
 # 3. Cook the Showcase project using the Debug binary.
-$ShaderCompiler = Join-Path $RepoRoot 'bin\Debug\ShaderCompiler.exe'
+$ShaderCompiler = Join-Path $RepoRoot 'build\bin\Debug\ShaderCompiler.exe'
 if (-not (Test-Path $ShaderCompiler))
 {
     Write-Host "[CI][ERROR] ShaderCompiler.exe not found at $ShaderCompiler."

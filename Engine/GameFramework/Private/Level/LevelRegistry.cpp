@@ -1,13 +1,13 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Level/LevelRegistry.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Level/Level.h"
 #include "Level/Parsing/LevelParser.h"
 
 #include <algorithm>
 
-static const auto g_levelRegistryLogger = Engine::Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
+static const auto g_levelRegistryLogger = Logging::GetOrCreateLogger("GameFramework.LevelRegistry");
 
 LevelRegistry::LevelRegistry()
 {
@@ -18,7 +18,7 @@ LevelRegistry::~LevelRegistry() noexcept = default;
 
 void LevelRegistry::DiscoverLevels()
 {
-	const std::filesystem::path levelsPath = Filesystem::GetProjectPath() / "Levels";
+	const std::filesystem::path levelsPath = Paths::ProjectLevelsRoot();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(levelsPath, errorCode))
 	{

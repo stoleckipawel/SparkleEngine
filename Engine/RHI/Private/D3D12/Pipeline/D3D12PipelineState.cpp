@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -11,7 +11,7 @@
 #include <cstdio>
 #include <string>
 
-static const auto g_pipelineStateLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Pipeline");
+static const auto g_pipelineStateLogger = Logging::GetOrCreateLogger("RHI.D3D12.Pipeline");
 
 void D3D12PipelineState::SetStreamOutput(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc) noexcept
 {
@@ -80,7 +80,7 @@ namespace
 		{
 			if (required)
 			{
-				Engine::Diagnostics::Fail(
+				Diagnostics::Fail(
 				    g_pipelineStateLogger,
 				    __FILE__,
 				    __LINE__,
@@ -94,7 +94,7 @@ namespace
 		const CookedShaderBinaryRecord* shaderBinary = shaderPackage.FindBinaryRecord(shaderDesc.Stage, CookedShaderBinaryFormat::Dxil);
 		if (shaderBinary == nullptr)
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_pipelineStateLogger,
 			    __FILE__,
 			    __LINE__,
@@ -107,7 +107,7 @@ namespace
 		const ShaderBytecode bytecode = shaderPackage.GetBytecode(*shaderBinary);
 		if (!bytecode.IsValid())
 		{
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_pipelineStateLogger,
 			    __FILE__,
 			    __LINE__,
@@ -245,7 +245,7 @@ D3D12PipelineState::D3D12PipelineState(D3D12Rhi& rhi, const ComputePipelineState
 void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	const std::string pipelineName = desc.DebugName != nullptr ? Engine::Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipelineState";
+	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_GraphicsPipelineState";
 	const ResolvedD3D12ShaderStage vertexShader = ResolveD3D12ShaderStage(desc.VertexShader, pipelineName, true);
 	const ResolvedD3D12ShaderStage pixelShader = ResolveD3D12ShaderStage(desc.PixelShader, pipelineName, false);
 
@@ -310,7 +310,7 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 void D3D12PipelineState::Create(const ComputePipelineStateDesc& desc)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-	const std::string pipelineName = desc.DebugName != nullptr ? Engine::Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipelineState";
+	const std::string pipelineName = desc.DebugName != nullptr ? Strings::ToNarrow(desc.DebugName) : "RHI_ComputePipelineState";
 	const ResolvedD3D12ShaderStage computeShader = ResolveD3D12ShaderStage(desc.ComputeShader, pipelineName, true);
 	const auto* bindingLayout = static_cast<const D3D12BindingLayout*>(desc.BindingLayout);
 	psoDesc.pRootSignature = bindingLayout != nullptr ? bindingLayout->GetRootSignature().GetRaw() : nullptr;
@@ -346,7 +346,7 @@ void D3D12PipelineState::HandlePsoCreateFailure(HRESULT hr) const noexcept
 
 	char buf[256];
 	std::snprintf(buf, sizeof(buf), "Failed To Create PSO. HRESULT: 0x%08X", static_cast<unsigned int>(hr));
-	Engine::Diagnostics::Fail(g_pipelineStateLogger, __FILE__, __LINE__, buf);
+	Diagnostics::Fail(g_pipelineStateLogger, __FILE__, __LINE__, buf);
 }
 
 D3D12PipelineState::~D3D12PipelineState() noexcept

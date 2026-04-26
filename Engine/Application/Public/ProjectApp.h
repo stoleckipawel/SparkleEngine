@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ApplicationAPI.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -14,7 +14,7 @@ class GameCameraController;
 class Renderer;
 class LevelManager;
 class RuntimeConsoleHost;
-namespace Engine::Assets
+namespace Assets
 {
 	class SceneAssetManager;
 }
@@ -63,7 +63,7 @@ class SPARKLE_APPLICATION_API ProjectApp
 	std::unique_ptr<Window> m_window;
 	std::unique_ptr<InputSystem> m_inputSystem;
 	std::unique_ptr<GameScene> m_gameScene;
-	std::unique_ptr<Engine::Assets::SceneAssetManager> m_sceneAssetManager;
+	std::unique_ptr<Assets::SceneAssetManager> m_sceneAssetManager;
 	std::unique_ptr<LevelManager> m_levelManager;
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;

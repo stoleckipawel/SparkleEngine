@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Verify.h"
 
 #include "Logger.h"
@@ -15,7 +15,7 @@
 	#include <windows.h>
 #endif
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	namespace Detail
 	{
@@ -71,7 +71,7 @@ namespace Engine::Diagnostics
 
 		std::string BuildMessagePrefix(const char* file, std::uint32_t line)
 		{
-			const std::string_view fileName = Engine::Paths::GetFileName(file ? file : "");
+			const std::string_view fileName = Paths::GetFileName(file ? file : "");
 			std::string prefix;
 			if (!fileName.empty())
 			{
@@ -177,7 +177,7 @@ namespace Engine::Diagnostics
 	[[noreturn]] void CheckHResult(long hr, const char* expression, const char* file, std::uint32_t line) noexcept
 	{
 		const std::string record = Detail::BuildHResultRecord(hr, expression);
-		auto logger = Engine::Logging::GetOrCreateLogger("Verify");
+		auto logger = Logging::GetOrCreateLogger("Verify");
 		Detail::WriteRecord(logger, file, line, record, spdlog::level::critical);
 		Detail::BreakInDebuggerIfAttached();
 		std::abort();

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Renderer.h"
 
 #include "Level/LevelManager.h"
@@ -261,7 +261,7 @@ void Renderer::BeginFrame() noexcept
 void Renderer::SetupFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.SetupFrame");
-	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame begin");
 
 	m_timer->Tick();
@@ -303,7 +303,7 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 void Renderer::RecordFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.RecordFrame");
-	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context begin");
 
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
@@ -360,7 +360,7 @@ void Renderer::RecordFrame() noexcept
 void Renderer::SubmitFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.SubmitFrame");
-	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame begin");
 	m_backend->SubmitFrame();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SubmitFrame end");
@@ -369,7 +369,7 @@ void Renderer::SubmitFrame() noexcept
 void Renderer::EndFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.EndFrame");
-	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame begin");
 	m_backend->AdvanceFrameInFlight();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::EndFrame end");
@@ -393,7 +393,7 @@ void Renderer::ReportResolvedTimings(
 
 	PublishLiveGpuTimings(resolvedTimers);
 
-	static const auto rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static const auto rendererLogger = Logging::GetOrCreateLogger("Renderer");
 
 	if (rendererLogger == nullptr || !rendererLogger->should_log(spdlog::level::trace))
 	{
@@ -424,17 +424,17 @@ void Renderer::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resol
 		return;
 	}
 
-	Engine::Diagnostics::LiveProfiler& profiler = Engine::Diagnostics::LiveProfiler::Get();
+	Diagnostics::LiveProfiler& profiler = Diagnostics::LiveProfiler::Get();
 	if (!profiler.IsEnabled())
 	{
 		return;
 	}
 
-	std::vector<Engine::Diagnostics::LiveProfiler::GpuTimingEntry> entries;
+	std::vector<Diagnostics::LiveProfiler::GpuTimingEntry> entries;
 	entries.reserve(resolvedTimers.size());
 	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
 	{
-		entries.push_back(Engine::Diagnostics::LiveProfiler::GpuTimingEntry{
+		entries.push_back(Diagnostics::LiveProfiler::GpuTimingEntry{
 		    .Label = std::string_view(resolvedTimer.Label),
 		    .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
 		    .Depth = resolvedTimer.Depth});

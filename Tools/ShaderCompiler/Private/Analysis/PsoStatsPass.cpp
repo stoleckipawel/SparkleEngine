@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Analysis/PsoStatsPass.h"
 
@@ -68,7 +68,7 @@ bool PsoStatsPass::WriteCsv(
 		}
 	}
 
-	if (!Engine::Files::TryWriteAllText(outResult.outputPath, csv.str(), outErrorMessage))
+	if (!Files::TryWriteAllText(outResult.outputPath, csv.str(), outErrorMessage))
 	{
 		return false;
 	}

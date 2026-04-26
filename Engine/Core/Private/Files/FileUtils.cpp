@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Files/FileUtils.h"
 
@@ -6,7 +6,7 @@
 #include <fstream>
 #include <limits>
 
-namespace Engine::Files
+namespace Files
 {
 	static bool TryOpenOutput(
 	    const std::filesystem::path& path,

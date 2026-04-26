@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 
@@ -8,7 +8,7 @@
 #include <limits>
 #include <type_traits>
 
-namespace Engine::Assets
+namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = MakeCookedAssetMagic('S', 'S', 'C', 'N');
 	inline constexpr std::uint32_t kCookedSceneManifestVersion = 1;
@@ -42,14 +42,14 @@ namespace Engine::Assets
 }
 
 static_assert(
-    std::is_trivially_copyable_v<Engine::Assets::CookedSceneMeshAssetRef>,
+    std::is_trivially_copyable_v<Assets::CookedSceneMeshAssetRef>,
     "CookedSceneMeshAssetRef must stay trivially copyable.");
 static_assert(
-    std::is_trivially_copyable_v<Engine::Assets::CookedSceneMaterialAssetRef>,
+    std::is_trivially_copyable_v<Assets::CookedSceneMaterialAssetRef>,
     "CookedSceneMaterialAssetRef must stay trivially copyable.");
 static_assert(
-    std::is_trivially_copyable_v<Engine::Assets::CookedSceneInstanceRecord>,
+    std::is_trivially_copyable_v<Assets::CookedSceneInstanceRecord>,
     "CookedSceneInstanceRecord must stay trivially copyable.");
 static_assert(
-    std::is_trivially_copyable_v<Engine::Assets::CookedSceneManifestHeader>,
+    std::is_trivially_copyable_v<Assets::CookedSceneManifestHeader>,
     "CookedSceneManifestHeader must stay trivially copyable.");

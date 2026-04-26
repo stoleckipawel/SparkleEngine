@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "GPU/PassExecutionDiagnostics.h"
 
@@ -68,12 +68,12 @@ ScopedGpuTimer PassExecutionDiagnostics::BeginTimer(std::string_view label) noex
 	return m_frameDiagnostics->BeginTimer(*m_commands, FormatDisplayLabel(label));
 }
 
-ScopedGpuEvent PassExecutionDiagnostics::BeginGpuEvent(const Engine::Diagnostics::DiagnosticName& name) noexcept
+ScopedGpuEvent PassExecutionDiagnostics::BeginGpuEvent(const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginGpuEvent(name.GetCanonicalName());
 }
 
-ScopedGpuTimer PassExecutionDiagnostics::BeginTimer(const Engine::Diagnostics::DiagnosticName& name) noexcept
+ScopedGpuTimer PassExecutionDiagnostics::BeginTimer(const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginTimer(name.GetCanonicalName());
 }
@@ -88,7 +88,7 @@ void PassExecutionDiagnostics::InsertGpuMarker(std::string_view label) const noe
 	m_frameDiagnostics->InsertGpuMarker(*m_commands, FormatEventScopeLabel(label), m_passColor);
 }
 
-void PassExecutionDiagnostics::InsertGpuMarker(const Engine::Diagnostics::DiagnosticName& name) const noexcept
+void PassExecutionDiagnostics::InsertGpuMarker(const Diagnostics::DiagnosticName& name) const noexcept
 {
 	InsertGpuMarker(name.GetCanonicalName());
 }

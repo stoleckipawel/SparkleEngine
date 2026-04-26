@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/CoreMacros.h"
 #include "Core/Public/Diagnostics/Logger.h"
@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	class ScopedLogEvent final
 	{
@@ -56,5 +56,5 @@ namespace Engine::Diagnostics
 
 #ifndef SPARKLE_LOG_SCOPE
 #define SPARKLE_LOG_SCOPE(logger, level, label) \
-	::Engine::Diagnostics::ScopedLogEvent SPARKLE_PP_CONCAT(_sparkleScopedLogEvent_, __LINE__){(logger), (level), (label)}
+	::Diagnostics::ScopedLogEvent SPARKLE_PP_CONCAT(_sparkleScopedLogEvent_, __LINE__){(logger), (level), (label)}
 #endif

@@ -1,17 +1,13 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/ShaderRecookSignal.h"
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <chrono>
 #include <format>
-
-std::filesystem::path ShaderRecookSignal::BuildPath(const std::filesystem::path& cacheDirectory)
-{
-	return cacheDirectory / "recook.signal";
-}
 
 bool ShaderRecookSignal::Write(
     const std::filesystem::path& cacheDirectory,
@@ -20,10 +16,10 @@ bool ShaderRecookSignal::Write(
     std::string& outErrorMessage)
 {
 	outResult = {};
-	outResult.signalPath = BuildPath(cacheDirectory);
+	outResult.signalPath = Paths::ShaderRecookSignal(cacheDirectory);
 
 	std::vector<std::uint8_t> registryBytes;
-	if (!Engine::Files::TryReadAllBytes(registryPath, registryBytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(registryPath, registryBytes, outErrorMessage))
 	{
 		outErrorMessage = "Failed to read shader registry for recook signal - " + outErrorMessage;
 		return false;
@@ -39,7 +35,7 @@ bool ShaderRecookSignal::Write(
 	    milliseconds);
 
 	const std::filesystem::path tempPath = outResult.signalPath.string() + ".tmp";
-	if (!Engine::Files::TryWriteAllText(tempPath, contents, outErrorMessage))
+	if (!Files::TryWriteAllText(tempPath, contents, outErrorMessage))
 	{
 		return false;
 	}

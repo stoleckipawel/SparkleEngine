@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
 
@@ -80,7 +80,7 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
 		{
 			continue;
 		}
-		if (!filter.empty() && !Engine::Strings::ContainsIgnoreCase(command.Name, filter) && !Engine::Strings::ContainsIgnoreCase(command.Help, filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(command.Name, filter) && !Strings::ContainsIgnoreCase(command.Help, filter))
 		{
 			continue;
 		}
@@ -111,7 +111,7 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
 		{
 			continue;
 		}
-		if (!filter.empty() && !Engine::Strings::ContainsIgnoreCase(variable->GetName(), filter) && !Engine::Strings::ContainsIgnoreCase(variable->GetDescription(), filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(variable->GetName(), filter) && !Strings::ContainsIgnoreCase(variable->GetDescription(), filter))
 		{
 			continue;
 		}
@@ -163,7 +163,7 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
 		return ConsoleCommandResult::Error("unknown CVar: " + std::string(arguments.front()));
 	}
 
-	const std::string value = Engine::Strings::Join(arguments, " ", 1);
+	const std::string value = Strings::Join(arguments, " ", 1);
 	std::string errorMessage;
 	if (!variable->TrySetValueFromString(value, errorMessage))
 	{
@@ -178,7 +178,7 @@ std::vector<std::string> ConsoleBuiltinCommands::CompleteCVarName(const ConsoleV
 	std::vector<std::string> completions;
 	for (const ConsoleVariableBase* variable : cvarRegistry.GetVariables())
 	{
-		if (variable != nullptr && Engine::Strings::StartsWithIgnoreCase(variable->GetName(), prefix))
+		if (variable != nullptr && Strings::StartsWithIgnoreCase(variable->GetName(), prefix))
 		{
 			completions.emplace_back(variable->GetName());
 		}

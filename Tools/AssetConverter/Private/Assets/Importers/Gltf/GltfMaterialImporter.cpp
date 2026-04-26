@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Gltf/GltfMaterialImporter.h"
 
@@ -11,7 +11,7 @@
 
 using namespace DirectX;
 
-static const auto g_gltfMaterialImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
+static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
 
 void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SceneImportResult& result)
 {
@@ -58,7 +58,7 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 		}
 
 		const std::optional<std::filesystem::path> resolvedTexturePath =
-		    Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
+		    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
 		if (!resolvedTexturePath)
 		{
 			SPDLOG_LOGGER_WARN(
@@ -318,7 +318,7 @@ std::optional<std::filesystem::path> GltfMaterialImporter::NormalizeTexturePath(
 	MaterialHandle materialHandle,
 	std::string_view slotName)
 {
-	const std::filesystem::path normalizedTexturePath = Engine::Paths::Normalize(texturePath);
+	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
 	if (normalizedTexturePath.empty())
 	{
 		SPDLOG_LOGGER_WARN(

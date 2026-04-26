@@ -1,11 +1,11 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "GPU/CommandContext.h"
 
 #include <cassert>
 
-static const auto g_frameGraphExternalLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
+static const auto g_frameGraphExternalLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {

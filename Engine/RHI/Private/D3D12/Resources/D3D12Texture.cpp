@@ -1,11 +1,11 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/Resources/D3D12Texture.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
 #include <vector>
 
-static const auto g_d3d12TextureLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
+static const auto g_d3d12TextureLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
@@ -15,12 +15,12 @@ D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D
 {
 	if (!m_srvHandle.IsValid())
 	{
-		Engine::Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: failed to allocate SRV descriptor.");
+		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: failed to allocate SRV descriptor.");
 	}
 
 	if (!m_textureLoadResult.IsValid())
 	{
-		Engine::Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: runtime texture load result is invalid.");
+		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: runtime texture load result is invalid.");
 	}
 
 	CreateResource();

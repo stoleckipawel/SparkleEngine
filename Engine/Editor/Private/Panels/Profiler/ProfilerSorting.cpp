@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/Profiler/ProfilerSorting.h"
 
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
@@ -28,7 +28,7 @@ namespace ProfilerSorting
 	}
 
 	void SortBucket(
-	    std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    SortMode mode) noexcept
 	{
 		if (mode == SortMode::Hierarchy)
@@ -38,8 +38,8 @@ namespace ProfilerSorting
 		std::stable_sort(
 		    bucket.begin(),
 		    bucket.end(),
-		    [mode](const Engine::Diagnostics::ProfilerSnapshotNode* lhs,
-		           const Engine::Diagnostics::ProfilerSnapshotNode* rhs)
+		    [mode](const Diagnostics::ProfilerSnapshotNode* lhs,
+		           const Diagnostics::ProfilerSnapshotNode* rhs)
 		    {
 			    switch (mode)
 			    {

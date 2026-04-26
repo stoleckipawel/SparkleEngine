@@ -77,8 +77,6 @@ class DxcShaderBackend final : public IShaderBackend
 
 	static std::filesystem::path SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
 
-	static std::filesystem::path BuildShaderDebugArtifactPath(std::wstring_view pdbName);
-
 	Microsoft::WRL::ComPtr<IDxcCompiler3> m_compiler;
 	Microsoft::WRL::ComPtr<IDxcUtils> m_utils;
 	std::uint64_t m_backendVersion = 0;

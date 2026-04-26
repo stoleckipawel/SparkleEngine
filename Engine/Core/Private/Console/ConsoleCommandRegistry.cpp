@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 
@@ -31,7 +31,7 @@ bool ConsoleCommandRegistry::Register(ConsoleCommandDescriptor descriptor)
 		return false;
 	}
 
-	const std::string normalizedName = Engine::Strings::ToLowerCopy(descriptor.Name);
+	const std::string normalizedName = Strings::ToLowerCopy(descriptor.Name);
 	if (m_commandIndicesByName.contains(normalizedName))
 	{
 		return false;
@@ -44,7 +44,7 @@ bool ConsoleCommandRegistry::Register(ConsoleCommandDescriptor descriptor)
 
 const ConsoleCommandDescriptor* ConsoleCommandRegistry::Find(std::string_view commandName) const
 {
-	const std::string normalizedName = Engine::Strings::ToLowerCopy(commandName);
+	const std::string normalizedName = Strings::ToLowerCopy(commandName);
 	const auto iterator = m_commandIndicesByName.find(normalizedName);
 	if (iterator == m_commandIndicesByName.end())
 	{
@@ -82,13 +82,13 @@ ConsoleCommandResult ConsoleCommandRegistry::ExecuteLine(std::string_view input,
 
 std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view input, const ConsoleCommandContext& context) const
 {
-	const bool commandNameOnly = !Engine::Strings::ContainsAsciiWhitespace(input);
+	const bool commandNameOnly = !Strings::ContainsAsciiWhitespace(input);
 	if (commandNameOnly)
 	{
 		std::vector<std::string> completions;
 		for (const ConsoleCommandDescriptor& command : m_commands)
 		{
-			if (IsScopeAllowed(command.Scope, context.Scope) && Engine::Strings::StartsWithIgnoreCase(command.Name, input))
+			if (IsScopeAllowed(command.Scope, context.Scope) && Strings::StartsWithIgnoreCase(command.Name, input))
 			{
 				completions.push_back(command.Name);
 			}

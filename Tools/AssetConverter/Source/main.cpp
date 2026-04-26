@@ -1,4 +1,4 @@
-#include "Assets/Import/SceneImporter.h"
+﻿#include "Assets/Import/SceneImporter.h"
 #include "Cooking/CookedSceneCooker.h"
 #include "TextureCookRequestList.h"
 
@@ -50,8 +50,8 @@ namespace
 		    sourceScenePath,
 		    [&](const SceneImportResult& importResult) -> int
 		    {
-				Engine::AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-				const Engine::AssetAuthoring::CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
+				AssetAuthoring::CookedSceneCooker cookedSceneCooker;
+				const AssetAuthoring::CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
 				if (!cookedSceneBuild.Succeeded())
 				{
 					std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
@@ -76,8 +76,8 @@ namespace
 		    sourceScenePath,
 		    [&](const SceneImportResult& importResult) -> int
 		    {
-				Engine::AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-				std::vector<Engine::AssetAuthoring::TextureCookRequest> requests;
+				AssetAuthoring::CookedSceneCooker cookedSceneCooker;
+				std::vector<AssetAuthoring::TextureCookRequest> requests;
 				std::string errorMessage;
 				if (!cookedSceneCooker.CollectTextureCookRequests(importResult, requests, errorMessage))
 				{
@@ -86,7 +86,7 @@ namespace
 					return 5;
 				}
 
-				if (!Engine::AssetAuthoring::WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
+				if (!AssetAuthoring::WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
 				{
 					std::cerr << "AssetConverter: failed to write texture request file '" << outputRequestPath.string() << "' - "
 					          << errorMessage << "\n";

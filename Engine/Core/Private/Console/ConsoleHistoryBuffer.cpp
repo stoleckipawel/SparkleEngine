@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleHistoryBuffer.h"
 
@@ -11,7 +11,7 @@ ConsoleHistoryBuffer::ConsoleHistoryBuffer(std::size_t maxEntries) :
 
 void ConsoleHistoryBuffer::Add(std::string_view line)
 {
-	const std::string_view trimmedLine = Engine::Strings::TrimAsciiWhitespace(line);
+	const std::string_view trimmedLine = Strings::TrimAsciiWhitespace(line);
 	if (trimmedLine.empty())
 	{
 		ResetNavigation();

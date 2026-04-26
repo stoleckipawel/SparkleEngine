@@ -1,10 +1,10 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/ReflectionSerializer.h"
 
 void ReflectionSerializer::Build(
     std::span<const ShaderReflection> reflections,
-    Engine::Strings::StringTableBuilder& stringTable,
+    Strings::StringTableBuilder& stringTable,
     Output& outOutput)
 {
 	outOutput.reflectionRecords.clear();

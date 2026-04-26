@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Strings/StringUtils.h"
 
@@ -25,7 +25,7 @@ namespace LevelParsing
 
 	inline LevelFileSection ParseSection(std::string_view line)
 	{
-		const std::string sectionName = Engine::Strings::TrimCopy(line.substr(1, line.size() - 2));
+		const std::string sectionName = Strings::TrimCopy(line.substr(1, line.size() - 2));
 		if (sectionName == "Level")
 		{
 			return LevelFileSection::Level;

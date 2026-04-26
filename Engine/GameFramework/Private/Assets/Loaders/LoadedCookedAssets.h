@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Assets/Cooked/CookedMaterialAsset.h"
 #include "Assets/Cooked/CookedSceneManifest.h"
@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace Engine::Assets
+namespace Assets
 {
 	struct LoadedSceneManifest
 	{

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Level/LevelManager.h"
 
 #include "Assets/SceneAssetManager.h"
@@ -11,9 +11,9 @@
 
 #include <algorithm>
 
-static const auto g_levelManagerLogger = Engine::Logging::GetOrCreateLogger("GameFramework.LevelManager");
+static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
 
-LevelManager::LevelManager(GameScene& scene, Engine::Assets::SceneAssetManager& sceneAssetManager) noexcept :
+LevelManager::LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager) noexcept :
     m_gameScene(&scene), m_sceneAssetManager(&sceneAssetManager)
 {
 	InitializeStartupLevel();
@@ -156,7 +156,7 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	Engine::Assets::SceneAssetLoadResult sceneAssetLoadResult = m_sceneAssetManager->LoadSceneAssets(levelDesc.sceneAssetIds);
+	Assets::SceneAssetLoadResult sceneAssetLoadResult = m_sceneAssetManager->LoadSceneAssets(levelDesc.sceneAssetIds);
 	if (!sceneAssetLoadResult.Succeeded())
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;

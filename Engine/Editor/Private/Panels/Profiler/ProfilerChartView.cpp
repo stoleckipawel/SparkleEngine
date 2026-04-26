@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/Profiler/ProfilerChartView.h"
 
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
@@ -34,7 +34,7 @@ double ProfilerChartView::NiceCeil(double value) noexcept
 }
 
 bool ProfilerChartView::BuildSlices(
-    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
     const std::unordered_set<std::string>& hiddenScopes,
     std::vector<Slice>& outSlices,
     double& outTotalMs,
@@ -46,7 +46,7 @@ bool ProfilerChartView::BuildSlices(
 	outMaxMs = 0.0;
 	for (std::size_t i = 0; i < bucket.size(); ++i)
 	{
-		const Engine::Diagnostics::ProfilerSnapshotNode* node = bucket[i];
+		const Diagnostics::ProfilerSnapshotNode* node = bucket[i];
 		if (hiddenScopes.count(node->Name) > 0)
 		{
 			continue;
@@ -64,7 +64,7 @@ bool ProfilerChartView::BuildSlices(
 }
 
 bool ProfilerChartView::Render(
-    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
     std::string_view moduleName,
     const std::unordered_set<std::string>& hiddenScopes) const
 {
@@ -80,7 +80,7 @@ bool ProfilerChartView::Render(
 		s.Pct = s.ValueMs / totalMs * 100.0;
 	}
 
-	// Sorted indices for the bar chart (most expensive → cheapest). Pie keeps
+	// Sorted indices for the bar chart (most expensive â†’ cheapest). Pie keeps
 	// insertion order so its slices line up with table rows.
 	std::vector<std::size_t> barOrder(slices.size());
 	std::iota(barOrder.begin(), barOrder.end(), std::size_t{0});
@@ -142,7 +142,7 @@ bool ProfilerChartView::Render(
 	ImDrawList* dl = ImGui::GetWindowDrawList();
 	const ImVec2 cardOrigin = ImGui::GetCursorScreenPos();
 
-	// Background — round only the bottom corners so the top edge butts cleanly
+	// Background â€” round only the bottom corners so the top edge butts cleanly
 	// against the table border above the chart.
 	dl->AddRectFilled(
 	    cardOrigin,
@@ -188,7 +188,7 @@ bool ProfilerChartView::Render(
 		dl->PathArcTo(pieCenter, pieRadius, a0, a1, 48);
 		dl->PathFillConvex(s.Color);
 
-		// Per-slice tooltip — uses precomputed pct so numbers always match the bar chart.
+		// Per-slice tooltip â€” uses precomputed pct so numbers always match the bar chart.
 		const ImVec2 mp = ImGui::GetMousePos();
 		const ImVec2 tm{mp.x - pieCenter.x, mp.y - pieCenter.y};
 		const float dSq = tm.x * tm.x + tm.y * tm.y;

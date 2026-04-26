@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "D3D12/Textures/TextureLoadResult.h"
 #include "TextureCookRequestList.h"
@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	class TextureAssetCooker final
 	{

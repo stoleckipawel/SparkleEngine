@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "UI.h"
 #include "Window/Window.h"
 #include "Config/RenderConfig.h"
@@ -85,7 +85,7 @@ static void AllocSRV(
 static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
 {
 	auto* renderHardware = static_cast<RenderHardwareInterface*>(info->UserData);
-	static const auto editorLogger = Engine::Logging::GetOrCreateLogger("Editor");
+	static const auto editorLogger = Logging::GetOrCreateLogger("Editor");
 	SPDLOG_LOGGER_INFO(
 	    editorLogger,
 	    "UI::FreeSRV releasing cpu={} gpu={}",
@@ -220,13 +220,13 @@ void UI::InitializeImGuiContext()
 	SparkleUiTheme::ApplyEditorialDarkTheme();
 }
 
-static std::shared_ptr<spdlog::logger> g_editorLogger = Engine::Logging::GetOrCreateLogger("Editor");
+static std::shared_ptr<spdlog::logger> g_editorLogger = Logging::GetOrCreateLogger("Editor");
 
 bool UI::InitializeWin32Backend()
 {
 	if (!m_window->GetHWND())
 	{
-		Engine::Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
+		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeWin32Backend: invalid window handle");
 		return false;
 	}
 
@@ -239,7 +239,7 @@ bool UI::InitializeGraphicsBackend()
 {
 	if (m_renderHardware == nullptr)
 	{
-		Engine::Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing render hardware interface");
+		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing render hardware interface");
 		return false;
 	}
 
@@ -248,7 +248,7 @@ bool UI::InitializeGraphicsBackend()
 		case ERhiBackendApi::D3D12:
 			return InitializeNativeGraphicsBackend();
 		default:
-			Engine::Diagnostics::Fail(
+			Diagnostics::Fail(
 			    g_editorLogger,
 			    __FILE__,
 			    __LINE__,
@@ -261,7 +261,7 @@ bool UI::InitializeNativeGraphicsBackend()
 {
 	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != ERhiBackendApi::D3D12)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_editorLogger,
 		    __FILE__,
 		    __LINE__,
@@ -282,7 +282,7 @@ bool UI::InitializeNativeGraphicsBackend()
 
 	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_editorLogger,
 		    __FILE__,
 		    __LINE__,

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/Console/CVarRegistry.h"
 #include "Core/Public/CoreAPI.h"
@@ -108,7 +108,7 @@ template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableB
 	{
 		if constexpr (std::is_same_v<T, bool>)
 		{
-			if (Engine::Strings::TryParseBool(value, parsedValue))
+			if (Strings::TryParseBool(value, parsedValue))
 			{
 				return true;
 			}
@@ -119,7 +119,7 @@ template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableB
 		else if constexpr (std::is_enum_v<T>)
 		{
 			std::underlying_type_t<T> underlyingValue{};
-			if (!Engine::Strings::TryParseNumber(value, underlyingValue))
+			if (!Strings::TryParseNumber(value, underlyingValue))
 			{
 				errorMessage = "expected numeric enum value";
 				return false;
@@ -130,7 +130,7 @@ template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableB
 		}
 		else if constexpr (std::is_integral_v<T>)
 		{
-			if (!Engine::Strings::TryParseNumber(value, parsedValue))
+			if (!Strings::TryParseNumber(value, parsedValue))
 			{
 				errorMessage = "expected integer value";
 				return false;
@@ -139,7 +139,7 @@ template <CVarValueType T> class ConsoleVariable final : public ConsoleVariableB
 		}
 		else if constexpr (std::is_floating_point_v<T>)
 		{
-			if (!Engine::Strings::TryParseNumber(value, parsedValue))
+			if (!Strings::TryParseNumber(value, parsedValue))
 			{
 				errorMessage = "expected floating-point value";
 				return false;

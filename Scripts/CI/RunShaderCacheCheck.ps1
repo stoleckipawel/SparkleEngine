@@ -15,9 +15,9 @@ param()
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$ShaderCompiler = Join-Path $RepoRoot 'bin\Debug\ShaderCompiler.exe'
+$ShaderCompiler = Join-Path $RepoRoot 'build\bin\Debug\ShaderCompiler.exe'
 $ShowcaseRoot = Join-Path $RepoRoot 'Projects\Showcase'
-$CacheRoot = Join-Path $RepoRoot 'bin\Cache\Shaders\Phase1CacheValidation'
+$CacheRoot = Join-Path $RepoRoot 'build\Cache\Shaders\Phase1CacheValidation'
 $TargetShader = Join-Path $RepoRoot 'Engine\Assets\Shaders\HelloWorld\HelloTriangle.hlsl'
 
 if (-not (Test-Path $ShaderCompiler))

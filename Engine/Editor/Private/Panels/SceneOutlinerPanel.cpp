@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/SceneOutlinerPanel.h"
 
 #include "Core/Public/Strings/StringUtils.h"
@@ -94,7 +94,7 @@ void SceneOutlinerPanel::BuildCameraSection() noexcept
 	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 	if (ImGui::TreeNodeEx("Camera", flags, "Camera (1)"))
 	{
-		if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase("Scene Camera", m_filterText))
+		if (m_filterText.empty() || Strings::ContainsIgnoreCase("Scene Camera", m_filterText))
 		{
 			DrawSelectionEntry("Scene Camera", "CAM", SceneObjectSelection::Camera());
 		}
@@ -117,7 +117,7 @@ void SceneOutlinerPanel::BuildLightSection() noexcept
 		for (std::size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
 		{
 			const std::string label = "Directional Light " + std::to_string(lightIndex + 1);
-			if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase(label, m_filterText))
+			if (m_filterText.empty() || Strings::ContainsIgnoreCase(label, m_filterText))
 			{
 				DrawSelectionEntry(label.c_str(), "LGT", SceneObjectSelection::DirectionalLight(lightIndex));
 			}
@@ -141,7 +141,7 @@ void SceneOutlinerPanel::BuildMeshSection() noexcept
 		for (std::size_t meshIndex = 0; meshIndex < meshCount; ++meshIndex)
 		{
 			const std::string label = BuildMeshLabel(meshIndex);
-			if (m_filterText.empty() || Engine::Strings::ContainsIgnoreCase(label, m_filterText))
+			if (m_filterText.empty() || Strings::ContainsIgnoreCase(label, m_filterText))
 			{
 				DrawSelectionEntry(label.c_str(), "SM", SceneObjectSelection::Mesh(meshIndex));
 			}

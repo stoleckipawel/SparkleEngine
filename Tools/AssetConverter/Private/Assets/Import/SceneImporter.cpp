@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Import/SceneImporter.h"
 
@@ -10,14 +10,14 @@
 #include <array>
 #include <format>
 
-static const auto g_sceneImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter");
+static const auto g_sceneImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter");
 
 SceneImportResult SceneImporter::Import(const std::filesystem::path& filePath)
 {
 	SceneImportResult result;
 	bool handledByImporter = false;
 
-	const std::wstring extension = Engine::Paths::GetLowercaseExtension(filePath);
+	const std::wstring extension = Paths::GetLowercaseExtension(filePath);
 	static const GltfImporter gltfImporter;
 	static const FbxImporter fbxImporter;
 	const std::array<const AssetImporter*, 2> importers = {&gltfImporter, &fbxImporter};

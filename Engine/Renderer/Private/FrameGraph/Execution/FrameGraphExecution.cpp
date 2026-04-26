@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "GPU/CommandContext.h"
@@ -20,7 +20,7 @@ void FrameGraph::Execute(
 {
 	cmd.EnableDrawDispatchDiagnostics();
 
-	static constexpr auto kFrameGraphExecuteName = Engine::Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
+	static constexpr auto kFrameGraphExecuteName = Diagnostics::DiagnosticName{"Renderer.FrameGraph.Execute"};
 	SPARKLE_CPU_SCOPE(kFrameGraphExecuteName);
 
 	EnsureTransientResourcesMaterialized(plan);

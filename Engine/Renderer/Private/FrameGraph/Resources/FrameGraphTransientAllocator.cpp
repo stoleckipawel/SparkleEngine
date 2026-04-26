@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
@@ -438,8 +438,8 @@ FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::Cre
 		}
 
 		default:
-			Engine::Diagnostics::Fail(
-			    Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph"),
+			Diagnostics::Fail(
+			    Logging::GetOrCreateLogger("Renderer.FrameGraph"),
 			    __FILE__,
 			    __LINE__,
 			    "FrameGraphTransientAllocator: unsupported transient resource kind for heap-backed allocation");

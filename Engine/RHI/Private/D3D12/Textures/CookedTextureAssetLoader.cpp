@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "D3D12/Textures/CookedTextureAssetLoader.h"
 
@@ -8,7 +8,7 @@
 #include <cstring>
 #include <format>
 
-static const auto g_cookedTextureAssetLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
+static const auto g_cookedTextureAssetLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
 bool CookedTextureAssetLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -20,9 +20,9 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	const std::filesystem::path resolvedPath = Filesystem::ResolveAssetPathValidated(fileName, AssetType::Texture);
 	std::vector<std::uint8_t> fileBytes;
 	std::string errorMessage;
-	if (!Engine::Files::TryReadAllBytes(resolvedPath, fileBytes, errorMessage))
+	if (!Files::TryReadAllBytes(resolvedPath, fileBytes, errorMessage))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -34,7 +34,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	CookedTextureAssetHeader header;
 	if (!ReadBytes(fileBytes, byteOffset, &header, sizeof(header), errorMessage) || !ValidateHeader(header, resolvedPath, errorMessage))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -45,7 +45,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	TextureFormatIntent formatIntent = TextureFormatIntent::Unknown;
 	if (!TryResolveFormatIntent(header.formatIntent, formatIntent))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -59,7 +59,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	if (!ReadMipHeaders(fileBytes, byteOffset, header.mipCount, resolvedPath, mipHeaders, errorMessage))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -74,7 +74,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	loadResult.formatIntent = formatIntent;
 	if (!ReadMipPayloads(fileBytes, byteOffset, mipHeaders, resolvedPath, loadResult, errorMessage))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,
@@ -84,7 +84,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 
 	if (byteOffset != fileBytes.size())
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
 		    __FILE__,
 		    __LINE__,

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Fbx/FbxMaterialImporter.h"
 
@@ -8,7 +8,7 @@
 
 using namespace DirectX;
 
-static const auto g_fbxMaterialImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+static const auto g_fbxMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
 
 void FbxMaterialImporter::ImportMaterials(const aiScene& scene, const std::filesystem::path& sourceDirectory, SceneImportResult& result)
 {
@@ -235,7 +235,7 @@ std::optional<std::filesystem::path> FbxMaterialImporter::ResolveTexturePath(
 	}
 
 	const std::optional<std::filesystem::path> resolvedTexturePath =
-	    Engine::Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
+	    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
 	if (!resolvedTexturePath)
 	{
 		SPDLOG_LOGGER_WARN(
@@ -257,7 +257,7 @@ std::optional<std::filesystem::path> FbxMaterialImporter::NormalizeTexturePath(
 	MaterialHandle materialHandle,
 	std::string_view slotName)
 {
-	const std::filesystem::path normalizedTexturePath = Engine::Paths::Normalize(texturePath);
+	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
 	if (normalizedTexturePath.empty())
 	{
 		SPDLOG_LOGGER_WARN(

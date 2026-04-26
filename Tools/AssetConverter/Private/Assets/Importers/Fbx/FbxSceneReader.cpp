@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Fbx/FbxSceneReader.h"
 
@@ -8,7 +8,7 @@
 
 #include <format>
 
-static const auto g_fbxSceneReaderLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+static const auto g_fbxSceneReaderLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
 
 constexpr unsigned int FbxSceneReader::GetPostProcessFlags() noexcept
 {

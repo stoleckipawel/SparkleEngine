@@ -7,22 +7,12 @@
 #include "Cooking/CookedShaderPackageEmitter.h"
 #include "Cooking/ShaderCookGraphBuilder.h"
 #include "Cooking/ShaderCookGraphExecutor.h"
-#include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
-std::filesystem::path ShaderPackageCooker::ResolveCacheDirectory(const ShaderPackageCookSettings& settings)
-{
-	if (!settings.cacheDirectory.empty())
-	{
-		return settings.cacheDirectory;
-	}
-
-	return Engine::Paths::Normalize(Filesystem::GetExecutableDirectory().parent_path() / "Cache" / "Shaders");
-}
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
 {
 	ShaderPackageCookResult result;
-	result.cacheDirectory = ResolveCacheDirectory(settings);
+	result.cacheDirectory = settings.cacheDirectory.empty() ? Paths::ShaderCacheRoot() : settings.cacheDirectory;
 	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderBackendPool backendPool;
 	ShaderCookPipelinePlan plan;

@@ -5,7 +5,6 @@
 #include "CookedShaderPackage.h"
 
 #include <cstdint>
-#include <filesystem>
 #include <string_view>
 
 class PassParameterLayout;
@@ -29,7 +28,3 @@ struct ShaderPackageDefinition final
 SPARKLE_RHI_API std::uint64_t BuildShaderPackageKey(std::string_view packageId, std::string_view variantId = "Default");
 SPARKLE_RHI_API std::uint64_t BuildShaderVariantHash(std::string_view variantId = "Default");
 SPARKLE_RHI_API std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout);
-SPARKLE_RHI_API std::filesystem::path GetCookedShaderRootPath();
-SPARKLE_RHI_API std::filesystem::path GetCookedShaderPackageRootPath();
-SPARKLE_RHI_API std::filesystem::path GetCookedShaderRegistryPath();
-SPARKLE_RHI_API std::filesystem::path BuildCookedShaderPackagePath(std::uint64_t packageKey);

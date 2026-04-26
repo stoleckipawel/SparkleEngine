@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Scene/GameScene.h"
 
 #include "Scene/Meshes/CookedMesh.h"
@@ -8,7 +8,7 @@
 
 #include <memory>
 
-static const auto g_gameSceneLogger = Engine::Logging::GetOrCreateLogger("GameFramework.GameScene");
+static const auto g_gameSceneLogger = Logging::GetOrCreateLogger("GameFramework.GameScene");
 
 GameScene::GameScene() = default;
 

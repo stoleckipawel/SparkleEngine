@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <cstdint>
 #include <type_traits>
 
-namespace Engine::Assets
+namespace Assets
 {
 	using CookedAssetId = std::uint64_t;
 
@@ -30,4 +30,4 @@ namespace Engine::Assets
 	};
 }
 
-static_assert(std::is_trivially_copyable_v<Engine::Assets::CookedAssetHeader>, "CookedAssetHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedAssetHeader>, "CookedAssetHeader must stay trivially copyable.");

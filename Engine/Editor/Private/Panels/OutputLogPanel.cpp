@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/OutputLogPanel.h"
 
 #include "Core/Public/Strings/StringUtils.h"
@@ -73,7 +73,7 @@ void OutputLogPanel::BuildUI(bool disableInteraction)
 	ImGui::BeginChild("##OutputLogScrollback", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
 	for (const ConsoleOutputRecord& record : m_records)
 	{
-		if (!filter.empty() && !Engine::Strings::ContainsIgnoreCase(record.Text, filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(record.Text, filter))
 		{
 			continue;
 		}

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleSession.h"
 
@@ -11,7 +11,7 @@ ConsoleSession::ConsoleSession(ConsoleCommandRegistry& commandRegistry, ConsoleC
 
 void ConsoleSession::SubmitLine(std::string_view line)
 {
-	const std::string_view trimmedLine = Engine::Strings::TrimAsciiWhitespace(line);
+	const std::string_view trimmedLine = Strings::TrimAsciiWhitespace(line);
 	if (trimmedLine.empty() || m_commandRegistry == nullptr)
 	{
 		return;

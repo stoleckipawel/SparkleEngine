@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "Level/Parsing/LevelParserCommon.h"
@@ -82,7 +82,7 @@ namespace LevelParsing
 	{
 		if (directionalLightField == "Direction")
 		{
-			if (!Engine::Strings::TryParseFloat3(parsedLine.value, directionalLightDesc.direction))
+			if (!Strings::TryParseFloat3(parsedLine.value, directionalLightDesc.direction))
 			{
 				errorMessage = "Invalid directional light direction";
 				return false;
@@ -92,7 +92,7 @@ namespace LevelParsing
 
 		if (directionalLightField == "Intensity")
 		{
-			if (!Engine::Strings::TryParseFloat(parsedLine.value, directionalLightDesc.intensity))
+			if (!Strings::TryParseFloat(parsedLine.value, directionalLightDesc.intensity))
 			{
 				errorMessage = "Invalid directional light intensity";
 				return false;
@@ -102,7 +102,7 @@ namespace LevelParsing
 
 		if (directionalLightField == "Color")
 		{
-			if (!Engine::Strings::TryParseFloat3(parsedLine.value, directionalLightDesc.color))
+			if (!Strings::TryParseFloat3(parsedLine.value, directionalLightDesc.color))
 			{
 				errorMessage = "Invalid directional light color";
 				return false;
@@ -113,7 +113,7 @@ namespace LevelParsing
 		if (directionalLightField == "CastShadow")
 		{
 			bool castShadow = true;
-			if (!Engine::Strings::TryParseBool(parsedLine.value, castShadow))
+			if (!Strings::TryParseBool(parsedLine.value, castShadow))
 			{
 				errorMessage = "Invalid directional light CastShadow value";
 				return false;

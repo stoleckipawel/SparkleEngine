@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/TextureAssetCooker.h"
 
@@ -12,7 +12,7 @@
 #include <limits>
 #include <system_error>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	static std::filesystem::path BuildTemporaryOutputPath(const std::filesystem::path& outputPath)
 	{

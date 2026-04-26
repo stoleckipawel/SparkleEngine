@@ -1,8 +1,8 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "D3D12/D3D12Rhi.h"
 
-static const auto g_samplerLibraryLogger = Engine::Logging::GetOrCreateLogger("RHI.D3D12.Samplers");
+static const auto g_samplerLibraryLogger = Logging::GetOrCreateLogger("RHI.D3D12.Samplers");
 
 D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface& renderHardwareInterface) :
     m_rhi(&rhi), m_renderHardwareInterface(&renderHardwareInterface)
@@ -12,7 +12,7 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface&
 	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::Sampler, samplerCount);
 	if (!m_tableHandle)
 	{
-		Engine::Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");
+		Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");
 		return;
 	}
 

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "RenderSceneDataBuilder.h"
 
@@ -12,7 +12,7 @@
 
 #include <cstddef>
 
-static const auto g_renderSceneDataBuilderLogger = Engine::Logging::GetOrCreateLogger("Renderer.SceneData");
+static const auto g_renderSceneDataBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData");
 
 RenderSceneDataBuilder::RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache) noexcept :
     m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache)
@@ -25,7 +25,7 @@ RenderSceneData RenderSceneDataBuilder::Build(const RenderSceneSnapshot& sceneSn
 
 	if (!m_materialCache)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_renderSceneDataBuilderLogger,
 		    __FILE__,
 		    __LINE__,

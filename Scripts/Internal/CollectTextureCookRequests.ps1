@@ -15,7 +15,11 @@ param(
     [int]$TotalSceneCount
 )
 
-$temporaryRoot = Join-Path $env:TEMP ("sparkle-texture-requests-" + [System.Guid]::NewGuid().ToString("N"))
+$temporaryParent = Split-Path -Parent $OutputRequestFile
+if ([string]::IsNullOrWhiteSpace($temporaryParent)) {
+    $temporaryParent = $ProjectRoot
+}
+$temporaryRoot = Join-Path $temporaryParent ("sparkle-texture-requests-" + [System.Guid]::NewGuid().ToString("N"))
 $failedScenes = @()
 $header = $null
 $uniqueRequestLines = New-Object 'System.Collections.Generic.SortedSet[string]' ([System.StringComparer]::Ordinal)

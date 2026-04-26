@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "Panels/Profiler/ProfilerTreeTable.h"
 
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
@@ -31,7 +31,7 @@ void ProfilerTreeTable::RightAlignedText(const char* fmt, ...)
 void ProfilerTreeTable::Render(
     const State& state,
     const char* tableId,
-    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes) const
+    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes) const
 {
 	BeginTable(tableId);
 	RenderRows(state, nodes, 0, 0, nodes.size());
@@ -66,7 +66,7 @@ void ProfilerTreeTable::EndTable() const
 
 void ProfilerTreeTable::RenderRows(
     const State& state,
-    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& nodes,
+    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes,
     int depth,
     std::size_t siblingOffset,
     std::size_t siblingTotal) const
@@ -80,7 +80,7 @@ void ProfilerTreeTable::RenderRows(
 
 void ProfilerTreeTable::RenderRow(
     const State& state,
-    const Engine::Diagnostics::ProfilerSnapshotNode& node,
+    const Diagnostics::ProfilerSnapshotNode& node,
     int depth,
     std::size_t siblingIndex,
     std::size_t siblingTotal) const
@@ -136,7 +136,7 @@ void ProfilerTreeTable::RenderRow(
 	if (exclusive.WasClampedToZero)
 	{
 		// Visually flag scopes whose children's measured time exceeded the
-		// parent's — typically async/overlapping work where exclusive time is
+		// parent's â€” typically async/overlapping work where exclusive time is
 		// not meaningful.
 		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
 		RightAlignedText("~%.3f", exclusiveMs);
@@ -180,9 +180,9 @@ void ProfilerTreeTable::RenderRow(
 
 	if (open)
 	{
-		std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*> childPtrs;
+		std::vector<const Diagnostics::ProfilerSnapshotNode*> childPtrs;
 		childPtrs.reserve(node.Children.size());
-		for (const Engine::Diagnostics::ProfilerSnapshotNode& child : node.Children)
+		for (const Diagnostics::ProfilerSnapshotNode& child : node.Children)
 		{
 			childPtrs.push_back(&child);
 		}
@@ -193,7 +193,7 @@ void ProfilerTreeTable::RenderRow(
 
 void ProfilerTreeTable::RenderVisibilityDot(
     const State& state,
-    const Engine::Diagnostics::ProfilerSnapshotNode& node,
+    const Diagnostics::ProfilerSnapshotNode& node,
     std::size_t siblingIndex,
     std::size_t siblingTotal) const
 {
@@ -241,7 +241,7 @@ void ProfilerTreeTable::RenderVisibilityDot(
 	ImGui::PopID();
 }
 
-void ProfilerTreeTable::RenderDrawStatsTooltip(const Engine::Diagnostics::ProfilerSnapshotNode& node) const
+void ProfilerTreeTable::RenderDrawStatsTooltip(const Diagnostics::ProfilerSnapshotNode& node) const
 {
 	const double invocations = node.TotalCallCount > 0 ? static_cast<double>(node.TotalCallCount) : 1.0;
 	ImGui::BeginTooltip();

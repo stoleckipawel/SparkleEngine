@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "FrameGraph/RenderPassRuntime.h"
 
@@ -62,7 +62,7 @@ inline std::string FormatShaderStageMask(ShaderStageMask mask)
 
 inline const std::shared_ptr<spdlog::logger>& GetRendererPipelineLogger() noexcept
 {
-	static std::shared_ptr<spdlog::logger> logger = Engine::Logging::GetOrCreateLogger("Renderer");
+	static std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer");
 	return logger;
 }
 
@@ -127,7 +127,7 @@ inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
 {
 	if (!definition.IsValid())
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    GetRendererPipelineLogger(),
 		    __FILE__,
 		    __LINE__,
@@ -140,7 +140,7 @@ inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
 	{
 		const std::string bindingLayoutLabel =
 		    definition.BindingLayoutId != nullptr ? std::string(definition.BindingLayoutId) : bindingLayout.GetDebugName();
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    GetRendererPipelineLogger(),
 		    __FILE__,
 		    __LINE__,

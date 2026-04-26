@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/CoreAPI.h"
 #include "Logger.h"
@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	[[noreturn]] SPARKLE_CORE_API void Fail(
 	    const std::shared_ptr<spdlog::logger>& logger,
@@ -22,5 +22,5 @@ namespace Engine::Diagnostics
 	{                                                                          \
 		const long _hr = static_cast<long>(hr);                                \
 		if (_hr < 0)                                                           \
-			::Engine::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__); \
+			::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__); \
 	} while (0)

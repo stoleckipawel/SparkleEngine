@@ -148,8 +148,8 @@ if "!SHADER_COOK_RC!" NEQ "0" (
 
 echo.
 echo [SUCCESS] CookShaders completed successfully.
-echo [LOG] Shader packages: Projects\!TARGET_PROJECT!\Assets\Cooked\Shaders\Packages\
-echo [LOG] Shader registry: Projects\!TARGET_PROJECT!\Assets\Cooked\Shaders\ShaderPackageRegistry.sreg
+echo [LOG] Shader packages: build\Cooked\!TARGET_PROJECT!\Shaders\Packages\
+echo [LOG] Shader registry: build\Cooked\!TARGET_PROJECT!\Shaders\ShaderPackageRegistry.sreg
 
 set "EXIT_RC=0"
 goto :FINISH
@@ -164,7 +164,7 @@ echo   Scripts\Cook\CookShaders.bat Showcase Release
 echo.
 echo This command validates typed shader registrations for the selected project
 echo and emits cooked shader packages plus the shader registry under:
-echo   Projects\^<ProjectName^>\Assets\Cooked\Shaders\
+echo   build\Cooked\^<ProjectName^>\Shaders\
 echo.
 set "EXIT_RC=1"
 

@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "RuntimeConsole/RuntimeConsoleOverlay.h"
 
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
@@ -296,7 +296,7 @@ void RuntimeConsoleOverlay::DrawOutputRecords()
 	const std::string_view filter(m_filterBuffer.data());
 	for (const ConsoleOutputRecord& record : records)
 	{
-		if (!filter.empty() && !Engine::Strings::ContainsIgnoreCase(record.Text, filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(record.Text, filter))
 		{
 			continue;
 		}
@@ -483,7 +483,7 @@ std::size_t RuntimeConsoleOverlay::FindCompletionTokenStart(const std::string& i
 {
 	for (std::size_t index = input.size(); index > 0; --index)
 	{
-		if (Engine::Strings::IsAsciiWhitespace(input[index - 1]))
+		if (Strings::IsAsciiWhitespace(input[index - 1]))
 		{
 			return index;
 		}

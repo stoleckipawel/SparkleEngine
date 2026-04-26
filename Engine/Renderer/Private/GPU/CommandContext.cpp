@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "GPU/CommandContext.h"
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
@@ -180,7 +180,7 @@ void CommandContext::DrawIndexedInstanced(
 	{
 		EmitDrawMarker();
 	}
-	Engine::Diagnostics::LiveProfiler::Get().AccumulateDrawCall(indexCountPerInstance, instanceCount, /*indexed*/ true);
+	Diagnostics::LiveProfiler::Get().AccumulateDrawCall(indexCountPerInstance, instanceCount, /*indexed*/ true);
 	m_commandList
 	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
@@ -195,7 +195,7 @@ void CommandContext::DrawInstanced(
 	{
 		EmitDrawMarker();
 	}
-	Engine::Diagnostics::LiveProfiler::Get().AccumulateDrawCall(vertexCountPerInstance, instanceCount, /*indexed*/ false);
+	Diagnostics::LiveProfiler::Get().AccumulateDrawCall(vertexCountPerInstance, instanceCount, /*indexed*/ false);
 	m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
@@ -205,7 +205,7 @@ void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCoun
 	{
 		EmitDispatchMarker(groupCountX, groupCountY, groupCountZ);
 	}
-	Engine::Diagnostics::LiveProfiler::Get().AccumulateDispatch(groupCountX, groupCountY, groupCountZ);
+	Diagnostics::LiveProfiler::Get().AccumulateDispatch(groupCountX, groupCountY, groupCountZ);
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 

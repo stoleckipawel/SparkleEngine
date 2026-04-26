@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "D3D12/Textures/CookedTextureAssetLoader.h"
 #include "D3D12/Textures/TextureLoader.h"
@@ -10,7 +10,7 @@
 #include <array>
 #include <format>
 
-static const auto g_textureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
+static const auto g_textureLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
 TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 {
@@ -22,7 +22,7 @@ TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 	    &ddsTextureLoader,
 	    &wicTextureLoader};
 
-	const std::wstring extension = Engine::Paths::GetLowercaseExtension(fileName);
+	const std::wstring extension = Paths::GetLowercaseExtension(fileName);
 	for (const TextureLoaderBackend* textureLoaderBackend : textureLoaderBackends)
 	{
 		if (textureLoaderBackend->SupportsExtension(extension))
@@ -31,7 +31,7 @@ TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 		}
 	}
 
-	Engine::Diagnostics::Fail(
+	Diagnostics::Fail(
 	    g_textureLoaderLogger,
 	    __FILE__,
 	    __LINE__,

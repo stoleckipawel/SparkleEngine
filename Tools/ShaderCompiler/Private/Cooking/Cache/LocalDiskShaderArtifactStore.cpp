@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 
@@ -163,7 +163,7 @@ bool LocalDiskShaderArtifactStore::TryGet(
 		return false;
 	}
 
-	if (!Engine::Files::TryReadAllBytes(artifactPath, bytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(artifactPath, bytes, outErrorMessage))
 	{
 		return false;
 	}
@@ -196,7 +196,7 @@ bool LocalDiskShaderArtifactStore::Put(
 
 	const auto nowTicks = std::chrono::steady_clock::now().time_since_epoch().count();
 	const std::filesystem::path tempPath = artifactPath.string() + "." + std::to_string(nowTicks) + ".tmp";
-	if (!Engine::Files::TryWriteAllBytes(tempPath, bytes, outErrorMessage))
+	if (!Files::TryWriteAllBytes(tempPath, bytes, outErrorMessage))
 	{
 		return false;
 	}

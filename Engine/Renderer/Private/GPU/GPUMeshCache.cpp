@@ -1,10 +1,10 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "GPU/GPUMeshCache.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 
-static const auto g_gpuMeshCacheLogger = Engine::Logging::GetOrCreateLogger("Renderer.GPUMeshCache");
+static const auto g_gpuMeshCacheLogger = Logging::GetOrCreateLogger("Renderer.GPUMeshCache");
 
 GPUMeshCache::GPUMeshCache(RenderHardwareInterface& renderHardwareInterface) noexcept : m_renderHardwareInterface(&renderHardwareInterface)
 {

@@ -1,14 +1,12 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <cctype>
 
-namespace Engine
+namespace Strings
 {
-	namespace Strings
-	{
-		std::string ToLowerCopy(std::string_view str)
+	std::string ToLowerCopy(std::string_view str)
 		{
 			std::string lowered(str);
 			std::transform(
@@ -117,5 +115,4 @@ namespace Engine
 			}
 			return output;
 		}
-	}  // namespace Strings
-}  // namespace Engine
+}  // namespace Strings

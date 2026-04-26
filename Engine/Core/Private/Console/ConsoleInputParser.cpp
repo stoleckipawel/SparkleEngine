@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Core/Public/Console/ConsoleInputParser.h"
 #include "Core/Public/Strings/StringUtils.h"
@@ -45,7 +45,7 @@ ConsoleParsedInput ConsoleInputParser::Parse(std::string_view input)
 			continue;
 		}
 
-		if (Engine::Strings::IsAsciiWhitespace(character))
+		if (Strings::IsAsciiWhitespace(character))
 		{
 			if (tokenActive)
 			{

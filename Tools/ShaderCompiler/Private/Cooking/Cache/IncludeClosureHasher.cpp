@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/Cache/IncludeClosureHasher.h"
 
@@ -19,7 +19,7 @@ std::optional<std::filesystem::path> IncludeClosureHasher::ResolveIncludePath(
 	const std::filesystem::path includeRelativePath(includePath);
 
 	std::error_code ec;
-	const std::filesystem::path localCandidate = Engine::Paths::Normalize(includerPath.parent_path() / includeRelativePath);
+	const std::filesystem::path localCandidate = Paths::Normalize(includerPath.parent_path() / includeRelativePath);
 	if (std::filesystem::exists(localCandidate, ec) && !ec)
 	{
 		return localCandidate;
@@ -33,7 +33,7 @@ std::optional<std::filesystem::path> IncludeClosureHasher::ResolveIncludePath(
 		}
 
 		ec.clear();
-		const std::filesystem::path candidate = Engine::Paths::Normalize(root / includeRelativePath);
+		const std::filesystem::path candidate = Paths::Normalize(root / includeRelativePath);
 		if (std::filesystem::exists(candidate, ec) && !ec)
 		{
 			return candidate;
@@ -64,15 +64,15 @@ bool IncludeClosureHasher::VisitFile(
 	std::vector<HashPair>& outFileHashes,
 	std::string& outErrorMessage)
 {
-	const std::filesystem::path normalizedPath = Engine::Paths::Normalize(filePath);
-	const std::wstring pathKey = Engine::Paths::MakePathKey(normalizedPath);
+	const std::filesystem::path normalizedPath = Paths::Normalize(filePath);
+	const std::wstring pathKey = Paths::MakePathKey(normalizedPath);
 	if (!visitedPathKeys.insert(pathKey).second)
 	{
 		return true;
 	}
 
 	std::vector<std::uint8_t> bytes;
-	if (!Engine::Files::TryReadAllBytes(normalizedPath, bytes, outErrorMessage))
+	if (!Files::TryReadAllBytes(normalizedPath, bytes, outErrorMessage))
 	{
 		outErrorMessage = std::format(
 			"Failed to read shader source '{}' while computing include closure - {}",
@@ -159,7 +159,7 @@ IncludeClosureHashResult IncludeClosureHasher::Compute(const ShaderCompileOption
 		result.includeClosureHash = Hash::kFnv64OffsetBasis;
 	}
 
-	const std::wstring sourcePathKey = Engine::Paths::MakePathKey(Engine::Paths::Normalize(options.SourcePath));
+	const std::wstring sourcePathKey = Paths::MakePathKey(Paths::Normalize(options.SourcePath));
 	for (const auto& [path, hash] : fileHashes)
 	{
 		if (path == sourcePathKey)

@@ -3,10 +3,10 @@
 :: CleanWorkspace.bat - Unified build artifact cleanup utility
 :: ============================================================================
 :: Removes generated build artifacts with fine-grained control:
-::   1) Build artifacts only - build/ (except _deps/), bin/, .vs/
+::   1) Build artifacts only - build/ (except _deps/), legacy bin/, .vs/
 ::   2) Third-party deps only - build/_deps/
-::   3) Everything - full clean (build/, bin/, .vs/ including _deps/)
-::   4) Pristine - tracked repo state (build/, bin/, .vs/, logs/)
+::   3) Everything - full clean (build/, legacy bin/, .vs/ including _deps/)
+::   4) Pristine - tracked repo state (build/, legacy bin/, .vs/, logs/)
 ::
 :: Usage: CleanWorkspace.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
@@ -61,7 +61,7 @@ echo ============================================================
 echo   Clean Options
 echo ============================================================
 echo.
-echo   1^) Build artifacts only   ^(build/, bin/, .vs/^)
+echo   1^) Build artifacts only   ^(build/, legacy bin/, .vs/^)
 echo      Preserves third-party deps in build\_deps\.
 echo.
 echo   2^) Third-party deps only  ^(build/_deps/, ~64 MB^)
@@ -97,18 +97,18 @@ if defined PARENT_BATCH goto :EXECUTE_CLEAN
 echo.
 if "!CLEAN_MODE!"=="BUILD" (
     echo [LOG] Selected: Build artifacts only
-    echo       Will remove: build/ ^(except _deps/^), bin/, .vs/
+    echo       Will remove: build/ ^(except _deps/^), legacy bin/, .vs/
 ) else if "!CLEAN_MODE!"=="DEPS" (
     echo [LOG] Selected: Third-party deps only
     echo       Will remove: build/_deps/
     echo       Re-download: ~64 MB, 1-3 min to re-sync
 ) else if "!CLEAN_MODE!"=="ALL" (
     echo [LOG] Selected: Everything
-    echo       Will remove: build/, bin/, .vs/
+    echo       Will remove: build/, legacy bin/, .vs/
     echo       Includes all third-party deps ^(~64 MB re-download^)
 ) else (
     echo [LOG] Selected: Pristine ^(tracked repo state^)
-    echo       Will remove: build/, bin/, .vs/, logs/
+    echo       Will remove: build/, legacy bin/, .vs/, logs/
     echo       Will keep tracked project assets, including committed cooked content.
 )
 
@@ -154,7 +154,7 @@ if "!CLEAN_MODE!"=="PRISTINE" goto :CLEAN_PRISTINE
 :: Mode: Build artifacts only (preserve _deps/)
 :: ---------------------------------------------------------------------------
 :CLEAN_BUILD_ONLY
-call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 
 :: Remove build/ contents EXCEPT _deps/
@@ -213,7 +213,7 @@ goto :CLEAN_SUMMARY
 :: ---------------------------------------------------------------------------
 :CLEAN_ALL
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
-call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
@@ -223,7 +223,7 @@ goto :CLEAN_SUMMARY
 :: ---------------------------------------------------------------------------
 :CLEAN_PRISTINE
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
-call :REMOVE_DIR "!BIN_DIR!" "bin\"
+call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :REMOVE_DIR "!ROOT_DIR!\logs" "logs\"
 call :CLEAN_ROOT_ARTIFACTS

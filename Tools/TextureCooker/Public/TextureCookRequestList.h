@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	using TextureAssetId = std::uint64_t;
 

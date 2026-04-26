@@ -40,7 +40,4 @@ class ShaderPackageCooker final
 {
   public:
 	ShaderPackageCookResult CookAll(const ShaderPackageCookSettings& settings = {}) const;
-
-  private:
-	static std::filesystem::path ResolveCacheDirectory(const ShaderPackageCookSettings& settings);
 };

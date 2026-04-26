@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "GPU/FrameExecutionDiagnostics.h"
 
@@ -208,7 +208,7 @@ ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(CommandContext& commands, s
 
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
 	CommandContext& commands,
-	const Engine::Diagnostics::DiagnosticName& name,
+	const Diagnostics::DiagnosticName& name,
 	RhiDiagnosticLabelColor color) noexcept
 {
 	return BeginGpuEvent(commands, name.GetCanonicalName(), color);
@@ -216,7 +216,7 @@ ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
 
 ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(
 	CommandContext& commands,
-	const Engine::Diagnostics::DiagnosticName& name) noexcept
+	const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginTimer(commands, name.GetCanonicalName());
 }
@@ -236,7 +236,7 @@ void FrameExecutionDiagnostics::InsertGpuMarker(
 
 void FrameExecutionDiagnostics::InsertGpuMarker(
 	CommandContext& commands,
-	const Engine::Diagnostics::DiagnosticName& name,
+	const Diagnostics::DiagnosticName& name,
 	RhiDiagnosticLabelColor color) const noexcept
 {
 	InsertGpuMarker(commands, name.GetCanonicalName(), color);

@@ -1,8 +1,7 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Shaders/CookedShaderPackageUtils.h"
 
-#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "ShaderParameters/PassParameterLayout.h"
@@ -14,7 +13,7 @@ namespace
 {
 	std::string NormalizeShaderPackageToken(std::string_view value, std::string_view fallback = {})
 	{
-		std::string normalized = Engine::Strings::ToLowerCopy(Engine::Strings::TrimAsciiWhitespace(value));
+		std::string normalized = Strings::ToLowerCopy(Strings::TrimAsciiWhitespace(value));
 		if (!normalized.empty())
 		{
 			return normalized;
@@ -81,24 +80,4 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 	}
 
 	return Hash::Fnv1a64(canonicalLayout);
-}
-
-std::filesystem::path GetCookedShaderRootPath()
-{
-	return Filesystem::GetProjectAssetsPath() / "Cooked" / "Shaders";
-}
-
-std::filesystem::path GetCookedShaderPackageRootPath()
-{
-	return GetCookedShaderRootPath() / "Packages";
-}
-
-std::filesystem::path GetCookedShaderRegistryPath()
-{
-	return GetCookedShaderRootPath() / "ShaderPackageRegistry.sreg";
-}
-
-std::filesystem::path BuildCookedShaderPackagePath(std::uint64_t packageKey)
-{
-	return GetCookedShaderPackageRootPath() / std::format("{:016X}.sshd", packageKey);
 }

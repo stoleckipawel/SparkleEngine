@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace Engine::Paths
+namespace Paths
 {
 	std::string_view GetFileName(std::string_view path) noexcept;
 	std::string MakeProjectRelativeString(const std::filesystem::path& path);

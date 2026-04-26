@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Assets/Importers/Fbx/FbxImporter.h"
 
@@ -10,7 +10,7 @@
 
 #include <format>
 
-static const auto g_fbxImporterLogger = Engine::Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
+static const auto g_fbxImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
 
 bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {

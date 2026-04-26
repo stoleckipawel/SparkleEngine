@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cooking/CookedSceneCooker.h"
 
@@ -6,6 +6,7 @@
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Assets/SceneAssetRegistry.h"
 
@@ -15,7 +16,7 @@
 #include <unordered_set>
 #include <system_error>
 
-namespace Engine::AssetAuthoring
+namespace AssetAuthoring
 {
 	namespace
 	{
@@ -90,7 +91,7 @@ namespace Engine::AssetAuthoring
 			return build;
 		}
 
-		build.sceneManifestPath = BuildSceneManifestPath(build.sceneAssetId);
+		build.sceneManifestPath = Paths::CookedSceneManifest(build.sceneAssetId);
 		BuildMeshAssets(importResult, build.sceneAssetId, build);
 		if (!BuildMaterialAssets(importResult, build.sceneAssetId, build, build.errorMessage))
 		{
@@ -120,7 +121,7 @@ namespace Engine::AssetAuthoring
 		referencedTextureAssetIds.reserve(importResult.materials.size() * 5);
 
 		auto appendTextureRequest =
-		    [&](const std::optional<std::filesystem::path>& texturePath, Engine::Assets::CookedTextureSemantic semantic) -> bool
+		    [&](const std::optional<std::filesystem::path>& texturePath, Assets::CookedTextureSemantic semantic) -> bool
 		{
 			if (!texturePath)
 			{
@@ -143,13 +144,13 @@ namespace Engine::AssetAuthoring
 
 		for (const MaterialDesc& materialDesc : importResult.materials)
 		{
-			if (!appendTextureRequest(materialDesc.albedoTexture, Engine::Assets::CookedTextureSemantic::Albedo) ||
-			    !appendTextureRequest(materialDesc.normalTexture, Engine::Assets::CookedTextureSemantic::Normal) ||
+			if (!appendTextureRequest(materialDesc.albedoTexture, Assets::CookedTextureSemantic::Albedo) ||
+			    !appendTextureRequest(materialDesc.normalTexture, Assets::CookedTextureSemantic::Normal) ||
 			    !appendTextureRequest(
 			        materialDesc.metallicRoughnessTexture,
-			        Engine::Assets::CookedTextureSemantic::MetallicRoughness) ||
-			    !appendTextureRequest(materialDesc.occlusionTexture, Engine::Assets::CookedTextureSemantic::Occlusion) ||
-			    !appendTextureRequest(materialDesc.emissiveTexture, Engine::Assets::CookedTextureSemantic::Emissive))
+			        Assets::CookedTextureSemantic::MetallicRoughness) ||
+			    !appendTextureRequest(materialDesc.occlusionTexture, Assets::CookedTextureSemantic::Occlusion) ||
+			    !appendTextureRequest(materialDesc.emissiveTexture, Assets::CookedTextureSemantic::Emissive))
 			{
 				return false;
 			}
@@ -171,7 +172,7 @@ namespace Engine::AssetAuthoring
 			return true;
 		}
 
-		const std::filesystem::path normalizedAbsolutePath = Engine::Paths::Normalize(sourceScenePath);
+		const std::filesystem::path normalizedAbsolutePath = Paths::Normalize(sourceScenePath);
 		if (!normalizedAbsolutePath.empty() && normalizedAbsolutePath.is_absolute())
 		{
 			std::error_code errorCode;
@@ -193,8 +194,8 @@ namespace Engine::AssetAuthoring
 	    std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
-		const std::filesystem::path projectMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Project);
-		const std::filesystem::path engineMeshRoot = Filesystem::GetTypedPath(AssetType::Mesh, PathRoot::Engine);
+		const std::filesystem::path projectMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Project);
+		const std::filesystem::path engineMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Engine);
 
 		std::filesystem::path relativePath = std::filesystem::relative(resolvedSourceScenePath, projectMeshRoot, errorCode);
 		if (const std::string relativePathString = relativePath.generic_string();
@@ -221,50 +222,31 @@ namespace Engine::AssetAuthoring
 		return true;
 	}
 
-	Engine::Assets::CookedAssetId CookedSceneCooker::BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept
+	Assets::CookedAssetId CookedSceneCooker::BuildMeshAssetId(std::string_view sceneAssetId, std::size_t meshIndex) noexcept
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#mesh#" + std::to_string(meshIndex));
 	}
 
-	Engine::Assets::CookedAssetId CookedSceneCooker::BuildMaterialAssetId(
+	Assets::CookedAssetId CookedSceneCooker::BuildMaterialAssetId(
 	    std::string_view sceneAssetId,
 	    std::size_t materialIndex) noexcept
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#material#" + std::to_string(materialIndex));
 	}
 
-	std::filesystem::path CookedSceneCooker::BuildSceneManifestPath(std::string_view sceneAssetId)
-	{
-		std::filesystem::path relativeScenePath(sceneAssetId);
-		relativeScenePath.replace_extension(".sscn");
-		return Filesystem::GetProjectAssetsPath() / "Cooked" / "SceneManifests" / relativeScenePath;
-	}
-
-	std::filesystem::path CookedSceneCooker::BuildMeshAssetPath(Engine::Assets::CookedAssetId meshAssetId)
-	{
-		return Filesystem::GetProjectAssetsPath() / "Cooked" / "Meshes" /
-		       (std::format("{:016X}", meshAssetId) + ".smsh");
-	}
-
-	std::filesystem::path CookedSceneCooker::BuildMaterialAssetPath(Engine::Assets::CookedAssetId materialAssetId)
-	{
-		return Filesystem::GetProjectAssetsPath() / "Cooked" / "Materials" /
-		       (std::format("{:016X}", materialAssetId) + ".smat");
-	}
-
-	Engine::Assets::CookedAlphaMode CookedSceneCooker::TranslateAlphaMode(AlphaMode alphaMode) noexcept
+	Assets::CookedAlphaMode CookedSceneCooker::TranslateAlphaMode(AlphaMode alphaMode) noexcept
 	{
 		switch (alphaMode)
 		{
 			case AlphaMode::Opaque:
-				return Engine::Assets::CookedAlphaMode::Opaque;
+				return Assets::CookedAlphaMode::Opaque;
 			case AlphaMode::Mask:
-				return Engine::Assets::CookedAlphaMode::Mask;
+				return Assets::CookedAlphaMode::Mask;
 			case AlphaMode::Blend:
-				return Engine::Assets::CookedAlphaMode::Blend;
+				return Assets::CookedAlphaMode::Blend;
 		}
 
-		return Engine::Assets::CookedAlphaMode::Opaque;
+		return Assets::CookedAlphaMode::Opaque;
 	}
 
 	void CookedSceneCooker::BuildMeshAssets(
@@ -284,7 +266,7 @@ namespace Engine::AssetAuthoring
 			for (const VertexData& vertex : meshData.vertices)
 			{
 				meshAsset.vertices.push_back(
-				    Engine::Assets::CookedMeshVertex{
+				    Assets::CookedMeshVertex{
 				        .position = vertex.position,
 				        .uv = vertex.uv,
 				        .color = vertex.color,
@@ -309,7 +291,7 @@ namespace Engine::AssetAuthoring
 
 		auto appendTextureReference =
 		    [&](const std::optional<std::filesystem::path>& texturePath,
-		        Engine::Assets::CookedTextureSemantic semantic,
+		        Assets::CookedTextureSemantic semantic,
 		        CookedMaterialAssetBuild& materialAsset) -> bool
 		{
 			if (!texturePath)
@@ -324,7 +306,7 @@ namespace Engine::AssetAuthoring
 			}
 
 			materialAsset.textureReferences.push_back(
-			    {static_cast<Engine::Assets::CookedAssetId>(request.assetId), semantic});
+			    {static_cast<Assets::CookedAssetId>(request.assetId), semantic});
 			return true;
 		};
 
@@ -344,14 +326,14 @@ namespace Engine::AssetAuthoring
 			materialAsset.header.alphaCutoff = materialDesc.alphaCutoff;
 			materialAsset.header.emissiveColor = materialDesc.emissiveColor;
 
-			if (!appendTextureReference(materialDesc.albedoTexture, Engine::Assets::CookedTextureSemantic::Albedo, materialAsset) ||
-			    !appendTextureReference(materialDesc.normalTexture, Engine::Assets::CookedTextureSemantic::Normal, materialAsset) ||
+			if (!appendTextureReference(materialDesc.albedoTexture, Assets::CookedTextureSemantic::Albedo, materialAsset) ||
+			    !appendTextureReference(materialDesc.normalTexture, Assets::CookedTextureSemantic::Normal, materialAsset) ||
 			    !appendTextureReference(
 			        materialDesc.metallicRoughnessTexture,
-			        Engine::Assets::CookedTextureSemantic::MetallicRoughness,
+			        Assets::CookedTextureSemantic::MetallicRoughness,
 			        materialAsset) ||
-			    !appendTextureReference(materialDesc.occlusionTexture, Engine::Assets::CookedTextureSemantic::Occlusion, materialAsset) ||
-			    !appendTextureReference(materialDesc.emissiveTexture, Engine::Assets::CookedTextureSemantic::Emissive, materialAsset))
+			    !appendTextureReference(materialDesc.occlusionTexture, Assets::CookedTextureSemantic::Occlusion, materialAsset) ||
+			    !appendTextureReference(materialDesc.emissiveTexture, Assets::CookedTextureSemantic::Emissive, materialAsset))
 			{
 				return false;
 			}
@@ -378,7 +360,7 @@ namespace Engine::AssetAuthoring
 			const Transform instanceTransform =
 			    meshIndex < importResult.transforms.size() ? importResult.transforms[meshIndex] : Transform();
 
-			std::uint32_t materialAssetIndex = Engine::Assets::kInvalidCookedMaterialAssetIndex;
+			std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
 			if (meshIndex < importResult.materialHandles.size() && importResult.materialHandles[meshIndex].IsValid())
 			{
 				materialAssetIndex = importResult.materialHandles[meshIndex].GetIndex();
@@ -390,7 +372,7 @@ namespace Engine::AssetAuthoring
 			}
 
 			outBuild.instances.push_back(
-			    Engine::Assets::CookedSceneInstanceRecord{
+			    Assets::CookedSceneInstanceRecord{
 			        .meshAssetIndex = static_cast<std::uint32_t>(meshIndex),
 			        .materialAssetIndex = materialAssetIndex,
 			        .worldTransform = instanceTransform.GetWorldMatrix4x4()});
@@ -408,17 +390,17 @@ namespace Engine::AssetAuthoring
 		for (const CookedMeshAssetBuild& meshAsset : build.meshAssets)
 		{
 			std::ofstream output;
-			const std::filesystem::path outputPath = BuildMeshAssetPath(meshAsset.assetId);
+			const std::filesystem::path outputPath = Paths::CookedMeshAsset(meshAsset.assetId);
 			if (!OpenBinaryOutput(outputPath, output, outErrorMessage))
 			{
 				return false;
 			}
 
-			const Engine::Assets::CookedMeshAssetHeader header{
-			    .fileHeader = {Engine::Assets::kCookedMeshAssetMagic, Engine::Assets::kCookedMeshAssetVersion},
+			const Assets::CookedMeshAssetHeader header{
+			    .fileHeader = {Assets::kCookedMeshAssetMagic, Assets::kCookedMeshAssetVersion},
 			    .vertexCount = static_cast<std::uint32_t>(meshAsset.vertices.size()),
 			    .indexCount = static_cast<std::uint32_t>(meshAsset.indices.size()),
-			    .vertexStride = sizeof(Engine::Assets::CookedMeshVertex),
+			    .vertexStride = sizeof(Assets::CookedMeshVertex),
 			    .indexStride = sizeof(std::uint32_t)};
 
 			if (!WriteValue(output, header, outErrorMessage) || !WriteArray(output, meshAsset.vertices, outErrorMessage) ||
@@ -431,7 +413,7 @@ namespace Engine::AssetAuthoring
 		for (const CookedMaterialAssetBuild& materialAsset : build.materialAssets)
 		{
 			std::ofstream output;
-			const std::filesystem::path outputPath = BuildMaterialAssetPath(materialAsset.assetId);
+			const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
 			if (!OpenBinaryOutput(outputPath, output, outErrorMessage))
 			{
 				return false;
@@ -484,7 +466,7 @@ namespace Engine::AssetAuthoring
 	bool CookedSceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
-		const std::filesystem::path manifestRoot = Filesystem::GetProjectAssetsPath() / "Cooked" / "SceneManifests";
+		const std::filesystem::path manifestRoot = Paths::CookedSceneManifestRoot();
 		const std::filesystem::path manifestRelativePath = std::filesystem::relative(build.sceneManifestPath, manifestRoot, errorCode);
 		const std::string manifestRelativePathString = manifestRelativePath.generic_string();
 		if (errorCode || manifestRelativePathString.empty() || manifestRelativePathString.starts_with(".."))
@@ -493,7 +475,7 @@ namespace Engine::AssetAuthoring
 			return false;
 		}
 
-		Engine::Assets::SceneAssetRegistry sceneAssetRegistry;
+		Assets::SceneAssetRegistry sceneAssetRegistry;
 		if (!sceneAssetRegistry.Load(outErrorMessage))
 		{
 			return false;

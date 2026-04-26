@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "ProjectApp.h"
 
 #include "Window/Window.h"
@@ -67,7 +67,7 @@ void ProjectApp::Initialize()
 	{
 		SPARKLE_CPU_SCOPE("Application.ProjectCreateScene");
 		m_gameScene = std::make_unique<GameScene>();
-		m_sceneAssetManager = std::make_unique<Engine::Assets::SceneAssetManager>();
+		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
 		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
 		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
 	}
@@ -198,7 +198,7 @@ void ProjectApp::Shutdown()
 
 void ProjectApp::Run()
 {
-	Engine::Diagnostics::BeginTraceSession();
+	Diagnostics::BeginTraceSession();
 
 	Initialize();
 
@@ -208,5 +208,5 @@ void ProjectApp::Run()
 
 	Shutdown();
 
-	Engine::Diagnostics::EndTraceSession();
+	Diagnostics::EndTraceSession();
 }

@@ -10,7 +10,7 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 {
 	auto appendPathKey = [](std::string& target, const std::filesystem::path& path)
 	{
-		const std::wstring key = Engine::Paths::MakePathKey(path);
+		const std::wstring key = Paths::MakePathKey(path);
 		target.append(
 			reinterpret_cast<const char*>(key.data()),
 			key.size() * sizeof(std::wstring::value_type));

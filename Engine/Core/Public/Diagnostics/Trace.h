@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Public/CoreAPI.h"
 #include "Core/Public/CoreMacros.h"
@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <string_view>
 
-namespace Engine::Diagnostics
+namespace Diagnostics
 {
 	enum class ETraceCategory : std::uint8_t
 	{
@@ -75,5 +75,5 @@ namespace Engine::Diagnostics
 }
 
 #ifndef SPARKLE_CPU_SCOPE
-#define SPARKLE_CPU_SCOPE(name) ::Engine::Diagnostics::ScopedTrace SPARKLE_PP_CONCAT(_sparkleCpuScope_, __LINE__){(name)}
+#define SPARKLE_CPU_SCOPE(name) ::Diagnostics::ScopedTrace SPARKLE_PP_CONCAT(_sparkleCpuScope_, __LINE__){(name)}
 #endif

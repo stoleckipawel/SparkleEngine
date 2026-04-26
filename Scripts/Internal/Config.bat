@@ -12,7 +12,8 @@
 :: Sets:
 ::   ROOT_DIR      - Repository root (parent of Scripts/)
 ::   BUILD_DIR     - CMake build directory (ROOT_DIR\build)
-::   BIN_DIR       - Output binaries (ROOT_DIR\bin)
+::   BIN_DIR       - Output binaries (ROOT_DIR\build\bin)
+::   LOG_DIR       - Tool/script logs (ROOT_DIR\logs)
 ::   PROJECTS_DIR  - User projects (ROOT_DIR\Projects)
 ::   DEPS_DIR      - FetchContent dependencies (BUILD_DIR\_deps)
 ::   ENGINE_DIR    - Engine source (ROOT_DIR\Engine)
@@ -35,7 +36,8 @@ for %%I in ("%~dp0..\..") do set "ROOT_DIR=%%~fI"
 :: Directory paths (all derived from ROOT_DIR)
 :: ---------------------------------------------------------------------------
 set "BUILD_DIR=!ROOT_DIR!\build"
-set "BIN_DIR=!ROOT_DIR!\bin"
+set "BIN_DIR=!BUILD_DIR!\bin"
+set "LOG_DIR=!ROOT_DIR!\logs"
 set "PROJECTS_DIR=!ROOT_DIR!\Projects"
 set "DEPS_DIR=!BUILD_DIR!\_deps"
 set "ENGINE_DIR=!ROOT_DIR!\Engine"

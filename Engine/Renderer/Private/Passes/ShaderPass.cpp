@@ -1,4 +1,4 @@
-#include "../PCH.h"
+﻿#include "../PCH.h"
 #include "Passes/ShaderPass.h"
 
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
@@ -16,7 +16,7 @@
 
 namespace
 {
-	std::shared_ptr<spdlog::logger> g_rendererLogger = Engine::Logging::GetOrCreateLogger("Renderer");
+	std::shared_ptr<spdlog::logger> g_rendererLogger = Logging::GetOrCreateLogger("Renderer");
 
 	const char* GetShaderPassName(const char* passName) noexcept
 	{

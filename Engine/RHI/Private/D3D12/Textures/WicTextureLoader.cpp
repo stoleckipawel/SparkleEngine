@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "D3D12/Textures/WicTextureLoader.h"
 #include "Core/Public/FileSystemUtils.h"
 
@@ -7,7 +7,7 @@
 #include <limits>
 #include <utility>
 
-static const auto g_wicTextureLoaderLogger = Engine::Logging::GetOrCreateLogger("RHI.Textures");
+static const auto g_wicTextureLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
 bool WicTextureLoader::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -120,7 +120,7 @@ void WicTextureLoader::CalculateBufferLayout()
 
 	if (stride64 > (std::numeric_limits<uint32_t>::max)() || slicePitch64 > (std::numeric_limits<size_t>::max)())
 	{
-		Engine::Diagnostics::Fail(g_wicTextureLoaderLogger, __FILE__, __LINE__, "Texture too large or stride overflow");
+		Diagnostics::Fail(g_wicTextureLoaderLogger, __FILE__, __LINE__, "Texture too large or stride overflow");
 	}
 
 	TextureMipLevelData baseMip;
@@ -151,7 +151,7 @@ void WicTextureLoader::CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapF
 	CHECK(formatConverter->CanConvert(m_sourceWicPixelFormat, m_targetWicPixelFormat, &canConvert));
 	if (!canConvert)
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 		    g_wicTextureLoaderLogger,
 		    __FILE__,
 		    __LINE__,

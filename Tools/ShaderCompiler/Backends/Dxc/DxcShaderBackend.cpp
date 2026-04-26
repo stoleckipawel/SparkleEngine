@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "DxcShaderBackend.h"
 
@@ -6,7 +6,7 @@
 #include "Compiler/ShaderCompileProfile.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "DxilReflectionExtractor.h"
 #include "SpirVReflectionExtractor.h"
@@ -14,14 +14,14 @@
 using Microsoft::WRL::ComPtr;
 
 static const auto g_dxcShaderBackendLogger =
-	Engine::Logging::GetOrCreateLogger(std::string{kDxcCompilerLoggerCategory});
+	Logging::GetOrCreateLogger(std::string{kDxcCompilerLoggerCategory});
 
 DxcShaderBackend::DxcShaderBackend()
 {
 	HRESULT hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(m_compiler.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 			g_dxcShaderBackendLogger,
 			__FILE__,
 			__LINE__,
@@ -32,7 +32,7 @@ DxcShaderBackend::DxcShaderBackend()
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(m_utils.ReleaseAndGetAddressOf()));
 	if (FAILED(hr))
 	{
-		Engine::Diagnostics::Fail(
+		Diagnostics::Fail(
 			g_dxcShaderBackendLogger,
 			__FILE__,
 			__LINE__,
@@ -102,9 +102,9 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	sourceBuffer.Size = sourceBlob->GetBufferSize();
 	sourceBuffer.Encoding = DXC_CP_ACP;
 
-	std::wstring wSourcePath = Engine::Strings::ToWide(options.SourcePath);
-	std::wstring wEntryPoint = Engine::Strings::ToWide(std::string_view{options.EntryPoint});
-	std::wstring wTargetProfile = Engine::Strings::ToWide(std::string_view{ShaderCompileProfile::BuildTargetProfile(options)});
+	std::wstring wSourcePath = Strings::ToWide(options.SourcePath);
+	std::wstring wEntryPoint = Strings::ToWide(std::string_view{options.EntryPoint});
+	std::wstring wTargetProfile = Strings::ToWide(std::string_view{ShaderCompileProfile::BuildTargetProfile(options)});
 	std::vector<std::wstring> wIncludeDirs;
 	std::vector<std::wstring> wDefines;
 	std::vector<LPCWSTR> args;
@@ -217,10 +217,10 @@ void DxcShaderBackend::BuildCompileArguments(
 	outArgs.push_back(L"2021");
 
 	wIncludeDirs.clear();
-	wIncludeDirs.push_back(Engine::Strings::ToWide(options.IncludeDir));
+	wIncludeDirs.push_back(Strings::ToWide(options.IncludeDir));
 	for (const auto& dir : options.AdditionalIncludeDirs)
 	{
-		wIncludeDirs.push_back(Engine::Strings::ToWide(dir));
+		wIncludeDirs.push_back(Strings::ToWide(dir));
 	}
 	for (const auto& dir : wIncludeDirs)
 	{
@@ -231,7 +231,7 @@ void DxcShaderBackend::BuildCompileArguments(
 	wDefines.clear();
 	for (const auto& def : options.Defines)
 	{
-		wDefines.push_back(Engine::Strings::ToWide(std::string_view{def}));
+		wDefines.push_back(Strings::ToWide(std::string_view{def}));
 	}
 	for (const auto& def : wDefines)
 	{
@@ -318,7 +318,7 @@ std::string DxcShaderBackend::ExtractTextOutput(IDxcResult* result, DXC_OUT_KIND
 	ComPtr<IDxcBlobWide> wideBlob;
 	if (SUCCEEDED(result->GetOutput(kind, IID_PPV_ARGS(wideBlob.ReleaseAndGetAddressOf()), nullptr)) && wideBlob)
 	{
-		return Engine::Strings::ToNarrow(std::wstring_view(wideBlob->GetStringPointer(), wideBlob->GetStringLength()));
+		return Strings::ToNarrow(std::wstring_view(wideBlob->GetStringPointer(), wideBlob->GetStringLength()));
 	}
 
 	return {};
@@ -430,7 +430,7 @@ void DxcShaderBackend::CaptureDebugArtifacts(
 	{
 		std::vector<std::uint8_t> sourceBytes;
 		std::string sourceError;
-		if (Engine::Files::TryReadAllBytes(options.SourcePath, sourceBytes, sourceError))
+		if (Files::TryReadAllBytes(options.SourcePath, sourceBytes, sourceError))
 		{
 			debugArtifacts.PreprocessedSource.assign(reinterpret_cast<const char*>(sourceBytes.data()), sourceBytes.size());
 		}
@@ -444,7 +444,7 @@ std::vector<std::string> DxcShaderBackend::BuildDebugArgumentStrings(const std::
 	args.reserve(compileArgs.size());
 	for (const LPCWSTR arg : compileArgs)
 	{
-		args.push_back(Engine::Strings::ToNarrow(std::wstring_view(arg)));
+		args.push_back(Strings::ToNarrow(std::wstring_view(arg)));
 	}
 	return args;
 }
@@ -459,7 +459,7 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 		return {};
 
 	std::wstring pdbName(pdbNameBlob->GetStringPointer());
-	const std::filesystem::path pdbPath = BuildShaderDebugArtifactPath(pdbName);
+	const std::filesystem::path pdbPath = Paths::ShaderSymbolsOutputRoot() / std::filesystem::path(pdbName).filename();
 
 	FILE* fp = nullptr;
 	_wfopen_s(&fp, pdbPath.c_str(), L"wb");
@@ -472,9 +472,4 @@ std::filesystem::path DxcShaderBackend::SaveShaderSymbols(IDxcResult* result, co
 
 	SPDLOG_LOGGER_WARN(g_dxcShaderBackendLogger, "Failed to save shader symbols for '{}'", sourcePath.string());
 	return {};
-}
-
-std::filesystem::path DxcShaderBackend::BuildShaderDebugArtifactPath(std::wstring_view pdbName)
-{
-	return Filesystem::GetShaderSymbolsOutputPath() / std::filesystem::path(pdbName).filename();
 }

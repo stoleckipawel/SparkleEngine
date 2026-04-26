@@ -28,7 +28,6 @@ class ShaderInspectorPanel final
 		std::string CompileRequest;
 	};
 
-	static std::filesystem::path GetArtifactSearchRoot();
 	static std::string BuildBundleLabel(const std::filesystem::path& directory);
 	static std::string ReadTextFileOrMessage(const std::filesystem::path& path);
 	static void DrawTextArtifact(const char* childId, const std::string& text) noexcept;

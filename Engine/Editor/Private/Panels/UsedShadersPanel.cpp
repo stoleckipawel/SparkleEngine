@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Panels/UsedShadersPanel.h"
 
@@ -181,8 +181,8 @@ bool UsedShadersPanel::MatchesFilter(const RegisteredShaderRow& row) const noexc
 {
 	const std::string_view filter(m_filterBuffer.data());
 	return filter.empty() ||
-	    Engine::Strings::ContainsIgnoreCase(row.ShaderId, filter) ||
-	    Engine::Strings::ContainsIgnoreCase(row.PackageId, filter) ||
-	    Engine::Strings::ContainsIgnoreCase(row.SourcePath, filter) ||
-	    Engine::Strings::ContainsIgnoreCase(row.Stage, filter);
+	    Strings::ContainsIgnoreCase(row.ShaderId, filter) ||
+	    Strings::ContainsIgnoreCase(row.PackageId, filter) ||
+	    Strings::ContainsIgnoreCase(row.SourcePath, filter) ||
+	    Strings::ContainsIgnoreCase(row.Stage, filter);
 }

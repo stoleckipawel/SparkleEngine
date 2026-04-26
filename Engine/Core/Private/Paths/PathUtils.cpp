@@ -2,13 +2,13 @@
 
 #include "Core/Public/Paths/PathUtils.h"
 
-#include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <algorithm>
 #include <cwctype>
 #include <system_error>
 
-namespace Engine::Paths
+namespace Paths
 {
 	static bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
 	{
@@ -49,7 +49,7 @@ namespace Engine::Paths
 		}
 
 		const std::filesystem::path normalizedPath = Normalize(path);
-		const std::filesystem::path& projectRoot = Filesystem::GetProjectPath();
+		const std::filesystem::path& projectRoot = Paths::ProjectRoot();
 		if (IsUnderRoot(normalizedPath, projectRoot))
 		{
 			std::error_code ec;

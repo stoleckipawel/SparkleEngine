@@ -34,13 +34,13 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	void RenderToolbar() noexcept;
 	void RenderCpuTab() const;
 	void RenderGpuTab() const;
-	void RenderGroupedNodes(const std::vector<Engine::Diagnostics::ProfilerSnapshotNode>& nodes) const;
+	void RenderGroupedNodes(const std::vector<Diagnostics::ProfilerSnapshotNode>& nodes) const;
 	void RenderChartsForBucket(
-	    const std::vector<const Engine::Diagnostics::ProfilerSnapshotNode*>& bucket,
+	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
 	    std::string_view defaultModuleName) const;
 	ProfilerTreeTable::State MakeTableState() const noexcept;
 
-	Engine::Diagnostics::ProfilerSnapshot m_snapshot;
+	Diagnostics::ProfilerSnapshot m_snapshot;
 	ProfilerSorting::SortMode m_sortMode = ProfilerSorting::SortMode::Hierarchy;
 
 	// Mutated from `const` rendering paths; UI-owned state, so `mutable` keeps

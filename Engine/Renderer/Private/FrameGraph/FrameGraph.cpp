@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
@@ -7,7 +7,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
-static const auto g_frameGraphLogger = Engine::Logging::GetOrCreateLogger("Renderer.FrameGraph");
+static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 FrameGraph::FrameGraph(RenderHardwareInterface* renderHardwareInterface, Window* window, RenderViewportExtent sceneExtent) :
     m_renderHardwareInterface(renderHardwareInterface),
