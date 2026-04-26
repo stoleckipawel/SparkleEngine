@@ -57,6 +57,16 @@ namespace
 		return result.empty() ? "None" : result;
 	}
 
+	const char* FormatCookedShaderBinaryFormat(CookedShaderBinaryFormat format) noexcept
+	{
+		switch (format)
+		{
+			case CookedShaderBinaryFormat::Dxil:  return "DXIL";
+			case CookedShaderBinaryFormat::SpirV: return "SPIR-V";
+		}
+		return "unknown";
+	}
+
 	class ShaderPackageByteReader final
 	{
 	  public:
@@ -205,6 +215,7 @@ void CookedShaderPackageCache::Clear() noexcept
 bool CookedShaderPackageCache::LoadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
+	CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage,
     const LoadedShaderPackage*& outPackage)
 {
@@ -218,7 +229,7 @@ bool CookedShaderPackageCache::LoadPackage(
 	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
 	if (auto it = m_packages.find(packageKey); it != m_packages.end())
 	{
-		if (!ValidatePackage(*it->second, definition, expectedBindingLayout, outErrorMessage))
+		if (!ValidatePackage(*it->second, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 		{
 			return false;
 		}
@@ -235,7 +246,7 @@ bool CookedShaderPackageCache::LoadPackage(
 		return false;
 	}
 
-	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, outErrorMessage))
+	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 	{
 		return false;
 	}
@@ -250,6 +261,7 @@ bool CookedShaderPackageCache::LoadPackage(
 bool CookedShaderPackageCache::ReloadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
+	CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage,
     const LoadedShaderPackage*& outPackage)
 {
@@ -268,7 +280,7 @@ bool CookedShaderPackageCache::ReloadPackage(
 		return false;
 	}
 
-	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, outErrorMessage))
+	if (!ValidatePackage(*loadedPackage, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
 	{
 		return false;
 	}
@@ -352,6 +364,7 @@ bool CookedShaderPackageCache::ValidatePackage(
     const LoadedShaderPackage& package,
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
+	CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage)
 {
 	if (!package.IsValid())
@@ -476,7 +489,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 		}
 	}
 
-	std::array<bool, static_cast<std::size_t>(ShaderStage::Count)> hasDxilBinaryForStage = {};
+	std::array<bool, static_cast<std::size_t>(ShaderStage::Count)> hasRequiredBinaryForStage = {};
 	for (const CookedShaderBinaryRecord& binaryRecord : package.m_binaryRecords)
 	{
 		if (binaryRecord.Stage == ShaderStage::Count)
@@ -536,20 +549,21 @@ bool CookedShaderPackageCache::ValidatePackage(
 			return false;
 		}
 
-		if (binaryRecord.Format == CookedShaderBinaryFormat::Dxil)
+		if (binaryRecord.Format == requiredBinaryFormat)
 		{
 			const std::size_t stageIndex = static_cast<std::size_t>(binaryRecord.Stage);
-			if (hasDxilBinaryForStage[stageIndex])
+			if (hasRequiredBinaryForStage[stageIndex])
 			{
 				outErrorMessage = std::format(
-				    "Cooked shader package '{}' variant '{}' contains more than one DXIL binary for stage {}",
+				    "Cooked shader package '{}' variant '{}' contains more than one {} binary for stage {}",
 				    definition.PackageId,
 				    definition.VariantId,
+				    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
 				    stageIndex);
 				return false;
 			}
 
-			hasDxilBinaryForStage[stageIndex] = true;
+			hasRequiredBinaryForStage[stageIndex] = true;
 		}
 	}
 
@@ -560,12 +574,13 @@ bool CookedShaderPackageCache::ValidatePackage(
 			continue;
 		}
 
-		if (!hasDxilBinaryForStage[static_cast<std::size_t>(stage)])
+		if (!hasRequiredBinaryForStage[static_cast<std::size_t>(stage)])
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' is missing the required DXIL binary for stage {}",
+			    "Cooked shader package '{}' variant '{}' is missing the required {} binary for stage {}",
 			    definition.PackageId,
 			    definition.VariantId,
+			    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
 			    static_cast<std::uint32_t>(stage));
 			return false;
 		}

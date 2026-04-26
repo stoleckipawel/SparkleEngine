@@ -3,13 +3,26 @@
 #include "ShaderRecook/ShaderConsoleCommands.h"
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
+#include "Core/Public/Console/ConsoleOutput.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "Editor/Public/Console/EditorConsoleSystem.h"
+#include "Editor/Public/UI.h"
 #include "RHI/Public/Shaders/Authoring/GlobalShader.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
+#include "ShaderRecook/ShaderCompilerProcess.h"
+#include "ShaderRecook/ShaderRecookCoordinator.h"
 
 #include <format>
 #include <set>
 #include <utility>
+
+namespace
+{
+	ConsoleCommandSeverity ResolveRecookStatusSeverity(const std::string& status) noexcept
+	{
+		return status.find("failed") != std::string::npos ? ConsoleCommandSeverity::Error : ConsoleCommandSeverity::Info;
+	}
+}
 
 void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers)
 {
@@ -63,6 +76,35 @@ void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Ha
 	});
 }
 
+void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coordinator)
+{
+	coordinator.SetStatusHandler(
+	    [&ui](std::string status)
+	    {
+		    if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())
+		    {
+			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = ResolveRecookStatusSeverity(status), .Text = status});
+		    }
+		    ui.SetShaderRecookStatus(std::move(status));
+	    });
+
+	if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())
+	{
+		Register(
+		    consoleSystem->GetCommandRegistry(),
+		    Handlers{
+		        .RequestRecook = [&coordinator](ShaderRecookRequest request)
+		        {
+			        coordinator.RequestRecook(std::move(request));
+		        },
+		        .RequestReload = [&coordinator]()
+		        {
+			        coordinator.RequestReload();
+		        },
+		    });
+	}
+}
+
 ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handlers& handlers, std::span<const std::string_view> arguments)
 {
 	if (!handlers.RequestRecook)
@@ -112,13 +154,22 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteListShaders()
 
 ConsoleCommandResult ShaderConsoleCommands::ExecuteListShaderBackends()
 {
-	return ConsoleCommandResult::Success("dxc - DXIL + SPIR-V\nslang - DXIL + SPIR-V");
+	ShaderCompilerProcessResult result = ShaderCompilerProcess::RunToolCommand("list-backends");
+	if (!result.Succeeded())
+	{
+		return ConsoleCommandResult::Error(result.Output.empty() ? "failed to query shader compiler backends" : std::move(result.Output));
+	}
+	return ConsoleCommandResult::Success(std::move(result.Output));
 }
 
 ConsoleCommandResult ShaderConsoleCommands::ExecuteListShaderTargets()
 {
-	return ConsoleCommandResult::Success(
-	    "DxilSm60\nDxilSm61\nDxilSm62\nDxilSm63\nDxilSm64\nDxilSm65\nDxilSm66\nDxilSm67\nSpirV14\nSpirV15\nSpirV16");
+	ShaderCompilerProcessResult result = ShaderCompilerProcess::RunToolCommand("list-targets");
+	if (!result.Succeeded())
+	{
+		return ConsoleCommandResult::Error(result.Output.empty() ? "failed to query shader compiler targets" : std::move(result.Output));
+	}
+	return ConsoleCommandResult::Success(std::move(result.Output));
 }
 
 std::vector<std::string> ShaderConsoleCommands::CompleteRecompileShaders(const ConsoleAutocompleteRequest& request)

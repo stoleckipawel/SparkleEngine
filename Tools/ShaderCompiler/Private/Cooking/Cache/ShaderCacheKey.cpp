@@ -2,6 +2,7 @@
 
 #include "Cooking/Cache/ShaderCacheKey.h"
 
+#include "Compiler/ShaderCompileProfile.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
@@ -40,7 +41,7 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	canonical += '|';
 	canonical += GetShaderStagePrefix(stage.stage);
 	canonical += '|';
-	canonical += options.BuildTargetProfile();
+	canonical += ShaderCompileProfile::BuildTargetProfile(options);
 	canonical += '|';
 	canonical += std::to_string(sourceHash);
 	canonical += '|';

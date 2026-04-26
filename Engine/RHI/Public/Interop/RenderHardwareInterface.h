@@ -19,6 +19,7 @@ class PassParameterLayout;
 class LoadedShaderPackage;
 class Texture;
 class RenderCommandList;
+enum class CookedShaderBinaryFormat : std::uint8_t;
 
 enum class ERhiBackendApi : std::uint8_t
 {
@@ -532,6 +533,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual ~RenderHardwareInterface() noexcept = default;
 
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
+	virtual CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
 	virtual void WaitForIdle() noexcept = 0;
 	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;

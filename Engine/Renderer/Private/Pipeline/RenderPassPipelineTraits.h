@@ -118,6 +118,7 @@ template <typename TPass> struct RenderPassRuntimeStorage
 };
 
 inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
+	RenderHardwareInterface& rhi,
     CookedShaderPackageCache& shaderPackageCache,
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& bindingLayout,
@@ -135,7 +136,7 @@ inline const LoadedShaderPackage& LoadRenderPassShaderPackage(
 
 	const LoadedShaderPackage* loadedPackage = nullptr;
 	std::string errorMessage;
-	if (!shaderPackageCache.LoadPackage(definition, bindingLayout, errorMessage, loadedPackage))
+	if (!shaderPackageCache.LoadPackage(definition, bindingLayout, rhi.GetRequiredShaderBinaryFormat(), errorMessage, loadedPackage))
 	{
 		const std::string bindingLayoutLabel =
 		    definition.BindingLayoutId != nullptr ? std::string(definition.BindingLayoutId) : bindingLayout.GetDebugName();
@@ -173,6 +174,7 @@ template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
 		static const PassParameterLayout bindingLayout = BuildForwardOpaqueBindingLayout();
 		const ShaderPackageDefinition shaderPackage = ForwardOpaquePass::DescribePrimaryViewShaderPackage();
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    rhi,
 		    shaderPackageCache,
 		    shaderPackage,
 		    bindingLayout,
@@ -219,6 +221,7 @@ template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
 		static const PassParameterLayout bindingLayout = BuildShadowOpaqueBindingLayout();
 		const ShaderPackageDefinition shaderPackage = ShadowOpaquePass::DescribeShadowViewShaderPackage();
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    rhi,
 		    shaderPackageCache,
 		    shaderPackage,
 		    bindingLayout,
@@ -263,6 +266,7 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 	{
 		const ShaderPackageDefinition shaderPackage = ComputeClearPass::DescribeShaderPackage();
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
+		    rhi,
 		    shaderPackageCache,
 		    shaderPackage,
 		    ComputeClearPass::GetParameterLayout(),

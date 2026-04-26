@@ -1,0 +1,21 @@
+[Core] [info] FileSystemUtils.cpp:178 ========== Asset Paths Configuration ==========
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Working Directory       : C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Executable Directory    : C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Engine                  : C:\Users\stole\Documents\GitHub\SparkleEngine\Engine
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Engine Assets           : C:\Users\stole\Documents\GitHub\SparkleEngine\Engine\Assets
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Project                 : C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Project Assets          : C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets
+[Core] [info] FileSystemUtils.cpp:164 [OK]       Shader Symbols Output   : C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Shaders/ShaderSymbols
+[Core] [info] FileSystemUtils.cpp:186 ===============================================
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): HelloTriangle.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): HelloTriangle.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): ForwardLitVS.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): ForwardLitPS.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): ShadowDepthVS.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): ShadowDepthPS.hlsl
+[Tools.ShaderCompiler] [info] DxcShaderBackend.cpp:177 Shader compiled successfully (DXIL): ComputeClearColorCS.hlsl
+ShaderCompiler: cooked 4 shader package(s) under 'C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\Packages' and registry 'C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\ShaderPackageRegistry.sreg'; recookSignal='C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Cache\Shaders\recook.signal'; backendInvocations=7, cacheHits=0, cacheMisses=7, cacheDir='C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Cache\Shaders'
+  Package 'HelloTriangle' variant='Default' bindingLayout='Empty' key=7bc1a00494aefd27 output='C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\Packages\7BC1A00494AEFD27.sshd'
+  Package 'ForwardOpaque' variant='Default' bindingLayout='ForwardOpaque' key=b64d9af38a949d01 output='C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\Packages\B64D9AF38A949D01.sshd'
+  Package 'ShadowOpaque' variant='Default' bindingLayout='ShadowOpaque' key=9c17ab485fa704ce output='C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\Packages\9C17AB485FA704CE.sshd'
+  Package 'ComputeClear' variant='Default' bindingLayout='ComputeClear' key=8437da8723a9fe1b output='C:\Users\stole\Documents\GitHub\SparkleEngine\Projects\Showcase\Assets\Cooked\Shaders\Packages\8437DA8723A9FE1B.sshd'

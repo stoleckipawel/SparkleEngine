@@ -30,6 +30,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
+	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept override;
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
 	void WaitForIdle() noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;

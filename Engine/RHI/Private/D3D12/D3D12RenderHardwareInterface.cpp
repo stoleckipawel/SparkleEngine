@@ -13,6 +13,7 @@
 #include "Resources/Texture.h"
 #include "D3D12/Textures/TextureFactory.h"
 #include "D3D12/Textures/TextureLoader.h"
+#include "Shaders/CookedShaderPackage.h"
 
 #include <d3d12.h>
 #include <cstring>
@@ -1117,6 +1118,11 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 ERhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
 {
 	return ERhiBackendApi::D3D12;
+}
+
+CookedShaderBinaryFormat D3D12RenderHardwareInterface::GetRequiredShaderBinaryFormat() const noexcept
+{
+	return CookedShaderBinaryFormat::Dxil;
 }
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept

@@ -3,7 +3,7 @@
 
 #include "Window/Window.h"
 #include "Renderer.h"
-#include "RuntimeConsole/RuntimeConsoleOverlay.h"
+#include "RuntimeConsole/RuntimeConsoleHost.h"
 #include "Assets/SceneAssetManager.h"
 #include "Input/InputSystem.h"
 #include "Scene/GameScene.h"
@@ -77,10 +77,10 @@ void ProjectApp::Initialize()
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 	}
 
-	if (m_options.EnableRuntimeConsoleOverlay)
+	if (m_options.EnableRuntimeConsole)
 	{
 		SPARKLE_CPU_SCOPE("Application.ProjectCreateRuntimeConsole");
-		m_runtimeConsoleOverlay = std::make_unique<RuntimeConsoleOverlay>(*m_timer, *m_window, m_renderer->GetRenderHardwareInterface());
+		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window, *m_renderer);
 	}
 	m_isInitialized = true;
 }
@@ -163,29 +163,14 @@ bool ProjectApp::Tick()
 			break;
 	}
 
-	UpdateRuntime();
-	if (m_runtimeConsoleOverlay != nullptr && m_runtimeConsoleOverlay->IsVisible())
+	if (m_runtimeConsoleHost != nullptr)
 	{
-		m_renderer->PrepareHostFrame();
-		m_renderer->RecordHostFrame();
-		m_runtimeConsoleOverlay->Update();
-
-		RenderHardwareInterface& renderHardware = m_renderer->GetRenderHardwareInterface();
-		const NativeGraphicsCommandListHandle commandListHandle =
-		    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
-		renderHardware.BeginPresentOverlayPass(commandListHandle);
-		m_runtimeConsoleOverlay->Render(commandListHandle);
-		renderHardware.EndPresentRenderPass(commandListHandle);
-
-		m_renderer->SubmitHostFrame();
+		m_runtimeConsoleHost->TickFrame(*m_renderer, [this]() { UpdateRuntime(); });
 	}
 	else
 	{
+		UpdateRuntime();
 		m_renderer->OnRender();
-		if (m_runtimeConsoleOverlay != nullptr)
-		{
-			m_runtimeConsoleOverlay->Update();
-		}
 	}
 	EndFrame();
 	return true;
@@ -199,7 +184,7 @@ void ProjectApp::Shutdown()
 		return;
 	}
 
-	m_runtimeConsoleOverlay.reset();
+	m_runtimeConsoleHost.reset();
 	m_renderer.reset();
 	m_gameCameraController.reset();
 	m_levelManager.reset();

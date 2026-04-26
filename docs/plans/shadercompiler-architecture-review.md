@@ -158,9 +158,10 @@ Non-goals (explicitly out of scope):
 ### Layout
 
 ```text
-Tools/ShaderCompiler/             orchestration, planning, executor, cache, CLI
-Tools/ShaderCompiler/Public/      IShaderBackend, ShaderTarget, ShaderCompileOptions
-Tools/ShaderCompiler/Backends/    IShaderBackend adapters
+Tools/ShaderCompiler/             executable-only offline cooker
+Tools/ShaderCompiler/Private/     orchestration, planning, executor, cache, CLI,
+                                  backend seams, compile options/results
+Tools/ShaderCompiler/Backends/    concrete IShaderBackend adapters
   └─ Dxc/                         DxcShaderBackend (DXIL + SPIR-V via DXC)
   └─ Slang/                       SlangShaderBackend (DXIL + SPIR-V via Slang)
   └─ Glslang/                     (future, not in initial plan)
@@ -836,8 +837,8 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 | `Tools/ShaderCompiler/Private/Compiler/DxcShaderCompiler.{h,cpp}` | DXC invocation, hard-coded | Phase 2 | `Backends/Dxc/DxcShaderBackend` behind `IShaderBackend` |
 | `Tools/ShaderCompiler/Private/Compiler/DxcContext.{h,cpp}` | Singleton DXC com objects | Phase 2 | Owned privately by `DxcShaderBackend` |
 | `Tools/ShaderCompiler/Private/Compiler/ShaderCompileOptionsBuilder.{h,cpp}` | Builds `ShaderCompileOptions` from manifest stage desc | Phase 3 | Typed registration → `ShaderCompileOptions` |
-| `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` | Compile-time options leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Public/` |
-| `Engine/RHI/Public/Shaders/ShaderCompileResult.h` | Compile result leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Public/` |
+| `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` | Compile-time options leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Private/` |
+| `Engine/RHI/Public/Shaders/ShaderCompileResult.h` | Compile result leaked into RHI public | Phase 2 | Move under `Tools/ShaderCompiler/Private/` |
 | `Tools/ShaderCompiler/Private/Manifest/*` (ShaderCookManifest, Parser, Validator, Types, ShaderStageNames) | INI parser for `ShaderPackages.ini` | Phase 3 | Typed `IMPLEMENT_GLOBAL_SHADER` registrations |
 | `Tools/ShaderCompiler/Private/Cli/InspectManifestCommand.{h,cpp}` | `inspect-manifest` verb | Phase 3 | `list-shaders` + `inspect-shader` |
 | `Engine/RHI/Public/Shaders/ShaderPackageLayoutCatalog.h` + `Engine/RHI/Private/Shaders/ShaderPackageLayoutCatalog.cpp` | Hard-coded `ForwardOpaque`/`ShadowOpaque`/`ComputeClear` layouts | Phase 3 | `BEGIN_SHADER_PARAMETER_STRUCT` per shader |
@@ -981,7 +982,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
      `Engine/RHI/Public/Shaders/`** even though only the offline tool
      uses them. That's a leak — RHI public headers should describe
      runtime resources, not compiler I/O. They move to
-     `Tools/ShaderCompiler/Public/`.
+    `Tools/ShaderCompiler/Private/`.
   3. **Reflection is anemic.** Today the cooked package carries
      `CookedShaderBindingRecord` built by hand from a `PassParameterLayout`
      catalog. The renderer cannot ask "what root parameters does this
@@ -1026,12 +1027,13 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 - **Work Items.**
   1. Define `IShaderBackend`, `ShaderBackendCapabilities`,
       `ShaderCompileOptions`, `ShaderTarget`, `ShaderCompileResult` in
-     `Tools/ShaderCompiler/Public/Backend/`.
+     `Tools/ShaderCompiler/Private/` because the tool is an executable,
+     not a reusable library surface.
   2. Move all DXC code under `Tools/ShaderCompiler/Backends/Dxc/` as
      `DxcShaderBackend`. Backend reports support for both `Dxil*` and
      `SpirV*` targets.
-  3. Move `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` and
-     `ShaderCompileResult.h` to `Tools/ShaderCompiler/Public/`. Update
+    3. Move `Engine/RHI/Public/Shaders/ShaderCompileOptions.h` and
+      `ShaderCompileResult.h` to `Tools/ShaderCompiler/Private/`. Update
      all includes. RHI public headers must no longer mention compile
      options or compile results.
   4. Extend `ValidateShaderCompilerBoundary.cmake` with forbidden-token
@@ -1090,7 +1092,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
       registry: `RegisterBackend(name, factory_fn, capability_probe)`,
       `CreateBackend(name)`, `SelectBackendFor(shaderRegistration,
       target, cliOverride)`. Built-in registrations live in
-      `Tools/ShaderCompiler/Public/Backend/BuiltinBackends.cpp` and
+      `Tools/ShaderCompiler/Private/Backend/BuiltinBackends.cpp` and
       reference the two adapters by name only — no concrete includes
       leak through the public surface.
   15. Add `--backend <name>` CLI flag (`dxc`, `slang`, default `auto`)
@@ -1117,7 +1119,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
 - **Implementation Prompts.**
   - *"Define `IShaderBackend`, `ShaderBackendCapabilities`,
     `ShaderCompileOptions`, `ShaderTarget` in
-    `Tools/ShaderCompiler/Public/Backend/`. Implementations under
+    `Tools/ShaderCompiler/Private/Backend/`. Implementations under
     `Tools/ShaderCompiler/Backends/`. Do not name DXC or Slang outside
     `Backends/Dxc/` and `Backends/Slang/` respectively."*
   - *"Implement `DxcShaderBackend` so it compiles both DXIL and SPIR-V by
@@ -1144,7 +1146,7 @@ Phases 2 and 3 is enumerated in the relevant phase's Cleanup work item.
     name `slang::` types."*
   - *"Promote `ShaderBackendFactory` to a small registry. Built-in
     backends self-register from
-    `Tools/ShaderCompiler/Public/Backend/BuiltinBackends.cpp`. Add
+    `Tools/ShaderCompiler/Private/Backend/BuiltinBackends.cpp`. Add
     `--backend <name>` to `cook`/`inspect-shader` and a `list-backends`
     verb. Add `BackendName` + `BackendVersion` to `ShaderCacheKey` and
     to `CookedShaderBinaryRecord` (same package version bump as the

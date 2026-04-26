@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Backend/ShaderTarget.h"
-#include "RHI/Public/Config/RenderConfig.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <filesystem>
@@ -26,18 +25,5 @@ struct ShaderCompileOptions
 	bool CaptureDebugArtifacts = false;
 
 	std::vector<std::filesystem::path> AdditionalIncludeDirs;
-
 	std::vector<std::string> Defines;
-
-	std::string BuildTargetProfile() const
-	{
-		std::string profile;
-		profile.reserve(8);
-		profile += GetShaderStagePrefix(Stage);
-		profile += '_';
-		profile += std::to_string(RenderConfig::ShaderModelMajor);
-		profile += '_';
-		profile += std::to_string(RenderConfig::ShaderModelMinor);
-		return profile;
-	}
 };

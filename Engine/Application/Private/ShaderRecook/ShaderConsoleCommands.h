@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ShaderRecook/ShaderRecookCoordinator.h"
+#include "ShaderRecook/ShaderRecookRequest.h"
 
 #include <functional>
 #include <span>
@@ -9,6 +9,8 @@
 #include <vector>
 
 class ConsoleCommandRegistry;
+class ShaderRecookCoordinator;
+class UI;
 struct ConsoleAutocompleteRequest;
 struct ConsoleCommandContext;
 struct ConsoleCommandResult;
@@ -23,6 +25,7 @@ class ShaderConsoleCommands final
 	};
 
 	static void Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers);
+	static void ConnectEditor(UI& ui, ShaderRecookCoordinator& coordinator);
 
   private:
 	static ConsoleCommandResult ExecuteRecompileShaders(const Handlers& handlers, std::span<const std::string_view> arguments);

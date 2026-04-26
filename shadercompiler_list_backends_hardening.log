@@ -1,0 +1,3 @@
+ShaderCompiler: 2 backend(s) registered
+  name='dxc' available=true targets='dxil, spirv' version=281517926388796
+  name='slang' available=true targets='dxil, spirv' version=6267645929903173495

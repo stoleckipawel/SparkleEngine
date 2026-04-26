@@ -2,6 +2,7 @@
 
 #include "Cooking/Cache/ShaderCompileOptionsHasher.h"
 
+#include "Compiler/ShaderCompileProfile.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 
@@ -17,7 +18,7 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 
 	std::string canonical;
 	canonical.reserve(256);
-	canonical += options.BuildTargetProfile();
+	canonical += ShaderCompileProfile::BuildTargetProfile(options);
 	canonical += '|';
 	canonical += options.EntryPoint;
 	canonical += '|';

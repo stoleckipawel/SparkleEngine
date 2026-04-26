@@ -6,22 +6,11 @@
 #include <future>
 #include <string>
 
+#include "ShaderRecook/ShaderCompilerProcess.h"
+#include "ShaderRecook/ShaderRecookRequest.h"
 #include "ShaderRecook/ShaderSourceChangeTracker.h"
 
 class Renderer;
-
-enum class ShaderRecookRequestType : std::uint8_t
-{
-	Global = 0,
-	Changed,
-	ShaderPathOrId,
-};
-
-struct ShaderRecookRequest final
-{
-	ShaderRecookRequestType Type = ShaderRecookRequestType::Global;
-	std::string Target;
-};
 
 class ShaderRecookCoordinator final
 {
@@ -40,10 +29,7 @@ class ShaderRecookCoordinator final
 	{
 		std::uint64_t RequestId = 0;
 		ShaderRecookRequest Request;
-		int ExitCode = -1;
-		std::filesystem::path ExecutablePath;
-		std::string CommandLine;
-		std::string Output;
+		ShaderCompilerProcessResult Process;
 	};
 
 	void StartRecook(ShaderRecookRequest request) noexcept;
@@ -52,15 +38,7 @@ class ShaderRecookCoordinator final
 	void PublishStatus(std::string status) noexcept;
 	bool HasRecookSignalChanged() noexcept;
 
-	static std::filesystem::path ResolveShaderCompilerExecutable() noexcept;
-	static std::filesystem::path ResolveShowcaseProjectDirectory() noexcept;
-	static std::filesystem::path ResolveShaderDebugArtifactDirectory() noexcept;
-	static ProcessResult RunRecookProcess(
-	    std::uint64_t requestId,
-	    ShaderRecookRequest request,
-	    std::filesystem::path executablePath,
-	    std::filesystem::path workingDirectory,
-	    std::filesystem::path debugArtifactDirectory) noexcept;
+	static ProcessResult RunRecookProcess(std::uint64_t requestId, ShaderRecookRequest request) noexcept;
 
 	StatusHandler m_statusHandler;
 	std::future<ProcessResult> m_recookFuture;

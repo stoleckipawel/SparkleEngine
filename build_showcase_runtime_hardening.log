@@ -1,0 +1,20 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Validating repo-wide logging ownership, logger acquisition, and legacy logging removal...
+  -- Logging boundary check passed for Engine, Tools, Projects, and logging-related CMake wiring.
+  Validating cooked-only runtime boundaries for Application, GameFramework, and Renderer...
+  -- Cooked-runtime boundary check passed for Engine/Application, Engine/GameFramework, and Engine/Renderer.
+  Validating runtime and ShaderCompiler boundary ownership...
+  -- ShaderCompiler boundary check passed for Engine/RHI, runtime modules, and Tools/ShaderCompiler.
+  Validating AssetConverter and TextureCooker boundary ownership...
+  -- TextureCooker boundary check passed for runtime modules, Tools/AssetConverter, and Tools/TextureCooker.
+  SparkleCore.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleCored.lib
+  imgui.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\imguid.lib
+  SparklePlatform.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparklePlatformd.lib
+  SparkleRHI.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleRHId.lib
+  SparkleGameFramework.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleGameFrameworkd.lib
+  SparkleRenderer.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleRendererd.lib
+  SparkleEditor.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleEditord.lib
+  SparkleApplication.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\SparkleApplicationd.lib
+  ShowcaseRuntime.vcxproj -> C:\Users\stole\Documents\GitHub\SparkleEngine\bin\Debug\ShowcaseRuntime.exe

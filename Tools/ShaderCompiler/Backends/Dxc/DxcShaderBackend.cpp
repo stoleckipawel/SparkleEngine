@@ -3,6 +3,7 @@
 #include "DxcShaderBackend.h"
 
 #include "Backend/ShaderBackendFactory.h"
+#include "Compiler/ShaderCompileProfile.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
@@ -103,7 +104,7 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 
 	std::wstring wSourcePath = Engine::Strings::ToWide(options.SourcePath);
 	std::wstring wEntryPoint = Engine::Strings::ToWide(std::string_view{options.EntryPoint});
-	std::wstring wTargetProfile = Engine::Strings::ToWide(std::string_view{options.BuildTargetProfile()});
+	std::wstring wTargetProfile = Engine::Strings::ToWide(std::string_view{ShaderCompileProfile::BuildTargetProfile(options)});
 	std::vector<std::wstring> wIncludeDirs;
 	std::vector<std::wstring> wDefines;
 	std::vector<LPCWSTR> args;

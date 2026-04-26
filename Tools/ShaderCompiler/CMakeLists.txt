@@ -1,12 +1,10 @@
 file(GLOB_RECURSE SHADER_COMPILER_PRIVATE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Backends/*.cpp
 )
 
 file(GLOB_RECURSE SHADER_COMPILER_PRIVATE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Backends/*.h
 )
 
@@ -34,7 +32,6 @@ set_target_properties(slang::slang PROPERTIES
 target_include_directories(ShaderCompiler
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/Backends
         ${SLANG_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/Engine

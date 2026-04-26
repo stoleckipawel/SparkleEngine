@@ -44,9 +44,9 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 		return m_specializationConstants;
 	}
 
-	const CookedShaderBinaryRecord* FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil)
+	const CookedShaderBinaryRecord* FindBinaryRecord(ShaderStage stage, CookedShaderBinaryFormat format)
 	    const noexcept;
-	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format = CookedShaderBinaryFormat::Dxil) const noexcept;
+	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderBinaryRecord& record) const noexcept;
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
 
@@ -81,11 +81,13 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	bool LoadPackage(
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
+	    CookedShaderBinaryFormat requiredBinaryFormat,
 	    std::string& outErrorMessage,
 	    const LoadedShaderPackage*& outPackage);
 	bool ReloadPackage(
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
+	    CookedShaderBinaryFormat requiredBinaryFormat,
 	    std::string& outErrorMessage,
 	    const LoadedShaderPackage*& outPackage);
 
@@ -95,6 +97,7 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
 	    const LoadedShaderPackage& package,
 	    const ShaderPackageDefinition& definition,
 	    const PassParameterLayout& expectedBindingLayout,
+	    CookedShaderBinaryFormat requiredBinaryFormat,
 	    std::string& outErrorMessage);
 
 	std::unordered_map<std::uint64_t, std::unique_ptr<LoadedShaderPackage>> m_packages;
