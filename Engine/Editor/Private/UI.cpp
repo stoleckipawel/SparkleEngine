@@ -145,6 +145,11 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
 }
 
+bool UI::WantsGameplayInput() const noexcept
+{
+	return m_viewportPanel != nullptr && m_viewportPanel->WantsGameplayInput();
+}
+
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
 {
 	if (m_viewportPanel)

@@ -29,6 +29,11 @@ Window& ProjectApp::GetWindow() noexcept
 	return *m_window;
 }
 
+InputSystem& ProjectApp::GetInputSystem() noexcept
+{
+	return *m_inputSystem;
+}
+
 GameScene* ProjectApp::GetGameScene() const noexcept
 {
 	return m_gameScene.get();

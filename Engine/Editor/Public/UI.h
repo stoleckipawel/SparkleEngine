@@ -44,6 +44,7 @@ class SPARKLE_EDITOR_API UI final
 	bool ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
+	bool WantsGameplayInput() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);

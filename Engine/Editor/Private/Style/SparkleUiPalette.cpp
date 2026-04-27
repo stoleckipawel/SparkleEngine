@@ -183,6 +183,16 @@ namespace SparkleUiPalette
 		return IM_COL32(220, 224, 230, 255);
 	}
 
+	ImVec4 ConsoleScrollbackBackground() noexcept
+	{
+		return ImVec4(0.10f, 0.11f, 0.12f, 1.0f);
+	}
+
+	ImVec4 ConsoleInputBackground() noexcept
+	{
+		return ImVec4(0.13f, 0.15f, 0.17f, 1.0f);
+	}
+
 	// ---- Chart / data-visualization palette ----
 
 	ImU32 ChartCardBackground() noexcept

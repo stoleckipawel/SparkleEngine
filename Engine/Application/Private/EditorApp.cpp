@@ -3,6 +3,8 @@
 
 #include "Editor/Public/UI.h"
 
+#include "Input/EditorInputCoordinator.h"
+
 #include "ProjectApp.h"
 #include "Renderer.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
@@ -52,6 +54,11 @@ void EditorApp::Initialize()
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
 
+	if (!m_editorInputCoordinator)
+	{
+		m_editorInputCoordinator = std::make_unique<EditorInputCoordinator>(m_projectApp->GetInputSystem());
+	}
+
 	m_isEditorSessionActive = true;
 }
 
@@ -62,6 +69,8 @@ bool EditorApp::Tick()
 	{
 		return false;
 	}
+
+	m_editorInputCoordinator->UpdateGameplayInput(*m_ui);
 
 	switch (m_projectApp->BeginFrame())
 	{
@@ -132,6 +141,7 @@ void EditorApp::Shutdown()
 		return;
 	}
 
+	m_editorInputCoordinator.reset();
 	m_ui.reset();
 	m_projectApp->Shutdown();
 	m_isEditorSessionActive = false;

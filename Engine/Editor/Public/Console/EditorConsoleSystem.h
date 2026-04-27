@@ -7,7 +7,6 @@
 #include <string_view>
 
 class ConsoleCommandRegistry;
-class ConsolePanel;
 class ConsoleSession;
 class OutputLogPanel;
 struct ConsoleOutputRecord;
@@ -33,18 +32,10 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	void BuildDockedUI(float left, float top, float width, float height, bool disableInteraction);
 
   private:
-	enum class ActiveDockTab : std::uint8_t
-	{
-		OutputLog,
-		Console,
-	};
-
 	void SubscribeToLogStream();
 
 	std::unique_ptr<ConsoleCommandRegistry> m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_session;
-	std::unique_ptr<ConsolePanel> m_consolePanel;
 	std::unique_ptr<OutputLogPanel> m_outputLogPanel;
 	std::uint64_t m_logRecordHandlerId = 0;
-	ActiveDockTab m_activeDockTab = ActiveDockTab::OutputLog;
 };

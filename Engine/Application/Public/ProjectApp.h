@@ -51,6 +51,7 @@ class SPARKLE_APPLICATION_API ProjectApp
 	void EndFrame() noexcept;
 	Timer& GetTimer() noexcept;
 	Window& GetWindow() noexcept;
+	InputSystem& GetInputSystem() noexcept;
 	GameScene* GetGameScene() const noexcept;
 	LevelManager* GetLevelManager() const noexcept;
 	Renderer& GetRenderer() noexcept;

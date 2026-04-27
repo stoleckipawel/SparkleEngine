@@ -39,10 +39,13 @@ void InputSystem::EndFrame()
 
 void InputSystem::ProcessDeferredEvents()
 {
-	const ImGuiContext* currentContext = ImGui::GetCurrentContext();
-	const bool wantsCaptureInput =
-	    currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
-	SetLayerEnabled(InputLayer::Gameplay, !wantsCaptureInput);
+	if (m_automaticImGuiCaptureEnabled)
+	{
+		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
+		const bool wantsCaptureInput =
+		    currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
+		SetLayerEnabled(InputLayer::Gameplay, !wantsCaptureInput);
+	}
 
 	ProcessDeferredEventsForType<KeyboardEvent>();
 	ProcessDeferredEventsForType<MouseButtonEvent>();
@@ -117,6 +120,11 @@ void InputSystem::SetLayerEnabled(InputLayer Layer, bool bEnabled)
 	{
 		m_LayerEnabled[index] = bEnabled;
 	}
+}
+
+void InputSystem::SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept
+{
+	m_automaticImGuiCaptureEnabled = enabled;
 }
 
 bool InputSystem::IsLayerEnabled(InputLayer Layer) const noexcept

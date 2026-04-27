@@ -7,6 +7,7 @@
 #include "Input/Keyboard/Key.h"
 #include "Input/Mouse/MouseButton.h"
 #include "Input/Mouse/MousePosition.h"
+#include "Input/Dispatch/InputLayer.h"
 #include "Input/Events/MouseWheelEvent.h"
 #include "Core/Public/Time/Timer.h"
 
@@ -24,37 +25,51 @@ GameCameraController::GameCameraController(Timer& timer, InputSystem& inputSyste
 	    });
 	m_windowResizeHandle = ScopedEventHandle(m_window.OnResized, resizeHandle);
 
-	auto mouseButtonPressedHandle = m_inputSystem.OnMouseButtonPressed.Add(
+	m_mouseButtonPressedHandle = m_inputSystem.SubscribeMouseButton(
 	    [this](const MouseButtonEvent& event)
 	    {
-		    OnMouseButtonPressed(event);
-	    });
-	m_mouseButtonPressedHandle = ScopedEventHandle(m_inputSystem.OnMouseButtonPressed, mouseButtonPressedHandle);
+		    if (event.IsPressed())
+		    {
+			    OnMouseButtonPressed(event);
+		    }
+	    },
+	    InputLayer::Gameplay);
 
-	auto mouseButtonReleasedHandle = m_inputSystem.OnMouseButtonReleased.Add(
+	m_mouseButtonReleasedHandle = m_inputSystem.SubscribeMouseButton(
 	    [this](const MouseButtonEvent& event)
 	    {
-		    OnMouseButtonReleased(event);
-	    });
-	m_mouseButtonReleasedHandle = ScopedEventHandle(m_inputSystem.OnMouseButtonReleased, mouseButtonReleasedHandle);
+		    if (event.IsReleased())
+		    {
+			    OnMouseButtonReleased(event);
+		    }
+	    },
+	    InputLayer::Gameplay);
 
-	auto keyPressedHandle = m_inputSystem.OnKeyPressed.Add(
+	m_keyPressedHandle = m_inputSystem.SubscribeKeyboard(
 	    [this](const KeyboardEvent& event)
 	    {
-		    OnKeyPressed(event);
-	    });
-	m_keyPressedHandle = ScopedEventHandle(m_inputSystem.OnKeyPressed, keyPressedHandle);
+		    if (event.IsPressed())
+		    {
+			    OnKeyPressed(event);
+		    }
+	    },
+	    InputLayer::Gameplay);
 
-	auto mouseWheelHandle = m_inputSystem.OnMouseWheel.Add(
+	m_mouseWheelHandle = m_inputSystem.SubscribeMouseWheel(
 	    [this](const MouseWheelEvent& event)
 	    {
 		    OnMouseWheel(event);
-	    });
-	m_mouseWheelHandle = ScopedEventHandle(m_inputSystem.OnMouseWheel, mouseWheelHandle);
+	    },
+	    InputLayer::Gameplay);
 }
 
 GameCameraController::~GameCameraController() noexcept
 {
+	m_inputSystem.Unsubscribe(m_mouseButtonPressedHandle);
+	m_inputSystem.Unsubscribe(m_mouseButtonReleasedHandle);
+	m_inputSystem.Unsubscribe(m_keyPressedHandle);
+	m_inputSystem.Unsubscribe(m_mouseWheelHandle);
+
 	if (m_bMouseLookActive)
 	{
 		m_inputSystem.ReleaseMouse();

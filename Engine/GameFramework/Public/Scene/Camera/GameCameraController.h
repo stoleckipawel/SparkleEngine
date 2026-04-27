@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
+#include "Events/EventHandle.h"
 #include "Events/ScopedEventHandle.h"
 
 class Timer;
@@ -37,10 +38,10 @@ class SPARKLE_ENGINE_API GameCameraController final
 	Window& m_window;
 	SceneCamera& m_camera;
 
-	ScopedEventHandle m_mouseButtonPressedHandle;
-	ScopedEventHandle m_mouseButtonReleasedHandle;
-	ScopedEventHandle m_keyPressedHandle;
 	ScopedEventHandle m_windowResizeHandle;
-	ScopedEventHandle m_mouseWheelHandle;
+	EventHandle m_mouseButtonPressedHandle;
+	EventHandle m_mouseButtonReleasedHandle;
+	EventHandle m_keyPressedHandle;
+	EventHandle m_mouseWheelHandle;
 	bool m_bMouseLookActive = false;
 };

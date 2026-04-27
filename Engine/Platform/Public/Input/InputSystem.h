@@ -64,6 +64,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	const InputState& GetState() const noexcept { return m_State; }
 
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
+	void SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept;
 
 	bool IsLayerEnabled(InputLayer Layer) const noexcept;
 
@@ -183,6 +184,7 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
 	std::array<bool, LayerCount> m_LayerEnabled = {true, true};
+	bool m_automaticImGuiCaptureEnabled = true;
 
 	int32_t m_LastMouseX = 0;
 	int32_t m_LastMouseY = 0;

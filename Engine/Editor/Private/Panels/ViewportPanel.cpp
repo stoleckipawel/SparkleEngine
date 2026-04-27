@@ -110,6 +110,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    ImVec2(0.0f, surfaceRegionHeight),
 	    ImGuiChildFlags_None,
 	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	m_wantsGameplayInput = !disableInteraction && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);

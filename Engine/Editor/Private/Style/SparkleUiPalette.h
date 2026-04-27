@@ -44,6 +44,8 @@ namespace SparkleUiPalette
 	ImU32 SectionHeaderBorder() noexcept;
 	ImU32 SceneOutlinerBadgeBackground() noexcept;
 	ImU32 SceneOutlinerBadgeText() noexcept;
+	ImVec4 ConsoleScrollbackBackground() noexcept;
+	ImVec4 ConsoleInputBackground() noexcept;
 
 	// ---- Chart / data-visualization palette ----
 	// Shared by the profiler and any future chart-style widgets so colors stay

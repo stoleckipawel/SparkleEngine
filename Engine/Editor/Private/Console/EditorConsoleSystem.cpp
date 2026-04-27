@@ -7,8 +7,8 @@
 #include "Core/Public/Console/ConsoleOutput.h"
 #include "Core/Public/Console/ConsoleSession.h"
 #include "Core/Public/Diagnostics/Logger.h"
-#include "Panels/ConsolePanel.h"
 #include "Panels/OutputLogPanel.h"
+#include "Style/SparkleUiPalette.h"
 
 #include <imgui.h>
 
@@ -29,6 +29,19 @@ namespace
 		}
 		return ConsoleCommandSeverity::Info;
 	}
+
+	const char* ToSeverityLabel(spdlog::level::level_enum level) noexcept
+	{
+		if (level >= spdlog::level::err)
+		{
+			return "error";
+		}
+		if (level >= spdlog::level::warn)
+		{
+			return "warning";
+		}
+		return "info";
+	}
 }
 
 EditorConsoleSystem::EditorConsoleSystem()
@@ -36,8 +49,7 @@ EditorConsoleSystem::EditorConsoleSystem()
 	m_commandRegistry = std::make_unique<ConsoleCommandRegistry>();
 	ConsoleBuiltinCommands::Register(*m_commandRegistry);
 	m_session = std::make_unique<ConsoleSession>(*m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Editor});
-	m_consolePanel = std::make_unique<ConsolePanel>(*m_session);
-	m_outputLogPanel = std::make_unique<OutputLogPanel>();
+	m_outputLogPanel = std::make_unique<OutputLogPanel>(*m_session);
 	m_outputLogPanel->AddLine(ConsoleCommandSeverity::Info, "Output Log panel initialized. Listening to engine log records.");
 	SubscribeToLogStream();
 }
@@ -74,19 +86,15 @@ void EditorConsoleSystem::AppendOutput(ConsoleOutputRecord record)
 
 void EditorConsoleSystem::RequestConsoleFocus() noexcept
 {
-	m_activeDockTab = ActiveDockTab::Console;
-	if (m_consolePanel)
-	{
-		m_consolePanel->RequestFocus();
-	}
+	OpenOutputLog();
 }
 
 void EditorConsoleSystem::OpenOutputLog() noexcept
 {
-	m_activeDockTab = ActiveDockTab::OutputLog;
 	if (m_outputLogPanel)
 	{
 		m_outputLogPanel->SetOpen(true);
+		m_outputLogPanel->RequestFocus();
 	}
 }
 
@@ -106,10 +114,6 @@ void EditorConsoleSystem::BuildUI(bool disableInteraction)
 	{
 		m_outputLogPanel->BuildUI(disableInteraction);
 	}
-	if (m_consolePanel)
-	{
-		m_consolePanel->BuildUI(disableInteraction);
-	}
 }
 
 void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, float height, bool disableInteraction)
@@ -121,6 +125,12 @@ void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, floa
 
 	ImGui::SetNextWindowPos(ImVec2(left, top), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 6.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 4.0f));
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, SparkleUiPalette::WindowBackground());
+	ImGui::PushStyleColor(ImGuiCol_Tab, SparkleUiPalette::TabBackground());
+	ImGui::PushStyleColor(ImGuiCol_TabHovered, SparkleUiPalette::TabBackgroundHovered());
+	ImGui::PushStyleColor(ImGuiCol_TabActive, SparkleUiPalette::TabBackgroundActive());
 	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove |
 	    ImGuiWindowFlags_NoResize |
 	    ImGuiWindowFlags_NoCollapse |
@@ -129,37 +139,19 @@ void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, floa
 	if (!ImGui::Begin("Viewport Console Dock", nullptr, windowFlags))
 	{
 		ImGui::End();
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar(2);
 		return;
 	}
 
-	if (ImGui::BeginTabBar("##ViewportConsoleDockTabs"))
+	if (m_outputLogPanel)
 	{
-		const ImGuiTabItemFlags outputLogFlags = m_activeDockTab == ActiveDockTab::OutputLog ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
-		if (ImGui::BeginTabItem("Output Log", nullptr, outputLogFlags))
-		{
-			m_activeDockTab = ActiveDockTab::OutputLog;
-			if (m_outputLogPanel)
-			{
-				m_outputLogPanel->BuildContent(disableInteraction);
-			}
-			ImGui::EndTabItem();
-		}
-
-		const ImGuiTabItemFlags consoleFlags = m_activeDockTab == ActiveDockTab::Console ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
-		if (ImGui::BeginTabItem("Console", nullptr, consoleFlags))
-		{
-			m_activeDockTab = ActiveDockTab::Console;
-			if (m_consolePanel)
-			{
-				m_consolePanel->BuildContent(disableInteraction);
-			}
-			ImGui::EndTabItem();
-		}
-
-		ImGui::EndTabBar();
+		m_outputLogPanel->BuildContent(disableInteraction);
 	}
 
 	ImGui::End();
+	ImGui::PopStyleColor(4);
+	ImGui::PopStyleVar(2);
 }
 
 void EditorConsoleSystem::SubscribeToLogStream()
@@ -177,10 +169,13 @@ void EditorConsoleSystem::SubscribeToLogStream()
 			    return;
 		    }
 
+		    const char* severityLabel = ToSeverityLabel(record.Level);
 		    std::string text;
-		    text.reserve(record.LoggerName.size() + record.Message.size() + 4);
+		    text.reserve(record.LoggerName.size() + record.Message.size() + 16);
 		    text += '[';
 		    text += record.LoggerName;
+		    text += "] [";
+		    text += severityLabel;
 		    text += "] ";
 		    text += record.Message;
 		    m_outputLogPanel->AddRecord(ConsoleOutputRecord{.Severity = ToConsoleSeverity(record.Level), .Text = std::move(text)});

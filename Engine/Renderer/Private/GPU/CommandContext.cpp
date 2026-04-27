@@ -71,11 +71,6 @@ void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGp
 	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, baseDescriptor);
 }
 
-void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept
-{
-	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableHandle);
-}
-
 void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableBinding);
@@ -89,11 +84,6 @@ void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIn
 void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
 	m_commandList->BindComputeDescriptorTable(rootParameterIndex, baseDescriptor);
-}
-
-void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept
-{
-	m_commandList->BindComputeDescriptorTable(rootParameterIndex, tableHandle);
 }
 
 void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept

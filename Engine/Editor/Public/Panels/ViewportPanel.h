@@ -23,6 +23,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTextureId(std::uint64_t textureId) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
+	bool WantsGameplayInput() const noexcept { return m_wantsGameplayInput; }
 	void BuildUI(bool disableInteraction = false);
 
   private:
@@ -36,4 +37,5 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	float m_leftInsetPixels = 320.0f;
 	float m_rightInsetPixels = 456.0f;
 	std::uint64_t m_sceneColorTextureId = 0;
+	bool m_wantsGameplayInput = false;
 };
