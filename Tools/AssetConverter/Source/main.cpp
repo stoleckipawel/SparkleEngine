@@ -9,96 +9,92 @@
 
 #include <objbase.h>
 
-namespace
+static int RunWithImportedScene(
+    const std::filesystem::path& sourceScenePath,
+    const std::function<int(const SceneImportResult&)>& onImportedScene)
 {
-	int RunWithImportedScene(
-	    const std::filesystem::path& sourceScenePath,
-	    const std::function<int(const SceneImportResult&)>& onImportedScene)
+	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(coInitializeResult) && coInitializeResult != RPC_E_CHANGED_MODE)
 	{
-		const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-		if (FAILED(coInitializeResult) && coInitializeResult != RPC_E_CHANGED_MODE)
-		{
-			std::cerr << "AssetConverter: failed to initialize COM for source texture loading\n";
-			return 4;
-		}
+		std::cerr << "AssetConverter: failed to initialize COM for source texture loading\n";
+		return 4;
+	}
 
-		SceneImportResult importResult = SceneImporter::Import(sourceScenePath);
-		if (!importResult.IsValid())
-		{
-			if (SUCCEEDED(coInitializeResult))
-			{
-				CoUninitialize();
-			}
-
-			std::cerr << "AssetConverter: failed to import '" << sourceScenePath.string() << "'\n";
-			return 2;
-		}
-
-		const int exitCode = onImportedScene(importResult);
-
+	SceneImportResult importResult = SceneImporter::Import(sourceScenePath);
+	if (!importResult.IsValid())
+	{
 		if (SUCCEEDED(coInitializeResult))
 		{
 			CoUninitialize();
 		}
 
-		return exitCode;
+		std::cerr << "AssetConverter: failed to import '" << sourceScenePath.string() << "'\n";
+		return 2;
 	}
 
-	int RunCookScene(const std::filesystem::path& sourceScenePath)
+	const int exitCode = onImportedScene(importResult);
+
+	if (SUCCEEDED(coInitializeResult))
 	{
-		return RunWithImportedScene(
-		    sourceScenePath,
-		    [&](const SceneImportResult& importResult) -> int
-		    {
-				AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-				const AssetAuthoring::CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
-				if (!cookedSceneBuild.Succeeded())
-				{
-					std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
-					          << cookedSceneBuild.errorMessage << "\n";
-					return 3;
-				}
-
-				std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
-				          << GetSceneImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
-				          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
-				          << cookedSceneBuild.sceneAssetId << "' to '" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
-
-				return 0;
-		    });
+		CoUninitialize();
 	}
 
-	int RunCollectTextureRequests(
-	    const std::filesystem::path& sourceScenePath,
-	    const std::filesystem::path& outputRequestPath)
-	{
-		return RunWithImportedScene(
-		    sourceScenePath,
-		    [&](const SceneImportResult& importResult) -> int
-		    {
-				AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-				std::vector<AssetAuthoring::TextureCookRequest> requests;
-				std::string errorMessage;
-				if (!cookedSceneCooker.CollectTextureCookRequests(importResult, requests, errorMessage))
-				{
-					std::cerr << "AssetConverter: failed to collect texture requests for '" << sourceScenePath.string() << "' - "
-					          << errorMessage << "\n";
-					return 5;
-				}
+	return exitCode;
+}
 
-				if (!AssetAuthoring::WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
-				{
-					std::cerr << "AssetConverter: failed to write texture request file '" << outputRequestPath.string() << "' - "
-					          << errorMessage << "\n";
-					return 6;
-				}
+static int RunCookScene(const std::filesystem::path& sourceScenePath)
+{
+	return RunWithImportedScene(
+	    sourceScenePath,
+	    [&](const SceneImportResult& importResult) -> int
+	    {
+			AssetAuthoring::CookedSceneCooker cookedSceneCooker;
+			const AssetAuthoring::CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
+			if (!cookedSceneBuild.Succeeded())
+			{
+				std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
+				          << cookedSceneBuild.errorMessage << "\n";
+				return 3;
+			}
 
-				std::cout << "AssetConverter: collected " << requests.size() << " unique texture request(s) from '"
-				          << sourceScenePath.string() << "' into '" << outputRequestPath.string() << "'\n";
-				return 0;
-		    });
-	}
+			std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
+			          << GetSceneImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
+			          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
+			          << cookedSceneBuild.sceneAssetId << "' to '" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
 
+			return 0;
+	    });
+}
+
+static int RunCollectTextureRequests(
+    const std::filesystem::path& sourceScenePath,
+    const std::filesystem::path& outputRequestPath)
+{
+	return RunWithImportedScene(
+	    sourceScenePath,
+	    [&](const SceneImportResult& importResult) -> int
+	    {
+			AssetAuthoring::CookedSceneCooker cookedSceneCooker;
+			std::vector<AssetAuthoring::TextureCookRequest> requests;
+			std::string errorMessage;
+			if (!cookedSceneCooker.CollectTextureCookRequests(importResult, requests, errorMessage))
+			{
+				std::cerr << "AssetConverter: failed to collect texture requests for '" << sourceScenePath.string() << "' - "
+				          << errorMessage << "\n";
+				return 5;
+			}
+
+			if (!AssetAuthoring::WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
+			{
+				std::cerr << "AssetConverter: failed to write texture request file '" << outputRequestPath.string() << "' - "
+				          << errorMessage << "\n";
+				return 6;
+			}
+
+			std::cout << "AssetConverter: collected " << requests.size() << " unique texture request(s) from '"
+			          << sourceScenePath.string() << "' into '" << outputRequestPath.string() << "'\n";
+			return 0;
+	    });
 }
 
 int main(int argc, char** argv)

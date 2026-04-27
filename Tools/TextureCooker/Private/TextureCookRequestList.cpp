@@ -1,35 +1,19 @@
-﻿#include "PCH.h"
+﻿#include "TextureCookRequestList.h"
 
-#include "TextureCookRequestList.h"
+#include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 
-#include <cctype>
+#include <algorithm>
 #include <charconv>
-#include <cstring>
 #include <format>
 #include <fstream>
 #include <map>
-#include <system_error>
+#include <sstream>
+#include <string_view>
 
 namespace AssetAuthoring
 {
 	static constexpr std::string_view kTextureCookRequestHeader = "TextureCookRequests|2";
-
-	static std::string TrimCopy(std::string_view value)
-	{
-		std::size_t first = 0;
-		while (first < value.size() && std::isspace(static_cast<unsigned char>(value[first])) != 0)
-		{
-			++first;
-		}
-
-		std::size_t last = value.size();
-		while (last > first && std::isspace(static_cast<unsigned char>(value[last - 1])) != 0)
-		{
-			--last;
-		}
-
-		return std::string(value.substr(first, last - first));
-	}
 
 	static std::filesystem::path NormalizeRequestPath(std::string_view pathText)
 	{
@@ -38,13 +22,13 @@ namespace AssetAuthoring
 
 	static bool TryParseTextureColorSpace(std::string_view value, TextureColorSpace& outColorSpace) noexcept
 	{
-		if (_stricmp(std::string(value).c_str(), "linear") == 0)
+		if (Strings::EqualsIgnoreCase(value, "linear"))
 		{
 			outColorSpace = TextureColorSpace::Linear;
 			return true;
 		}
 
-		if (_stricmp(std::string(value).c_str(), "srgb") == 0)
+		if (Strings::EqualsIgnoreCase(value, "srgb"))
 		{
 			outColorSpace = TextureColorSpace::Srgb;
 			return true;
@@ -148,17 +132,6 @@ namespace AssetAuthoring
 			return false;
 		}
 
-		std::error_code errorCode;
-		if (!outputPath.parent_path().empty())
-		{
-			std::filesystem::create_directories(outputPath.parent_path(), errorCode);
-			if (errorCode)
-			{
-				outErrorMessage = "Failed to create texture cook request directory '" + outputPath.parent_path().string() + "'.";
-				return false;
-			}
-		}
-
 		std::vector<TextureCookRequest> sortedRequests = requests;
 		std::sort(
 		    sortedRequests.begin(),
@@ -173,13 +146,7 @@ namespace AssetAuthoring
 			    return lhs.outputPath.generic_string() < rhs.outputPath.generic_string();
 		    });
 
-		std::ofstream output(outputPath, std::ios::trunc);
-		if (!output.is_open())
-		{
-			outErrorMessage = "Failed to open texture cook request output '" + outputPath.string() + "'.";
-			return false;
-		}
-
+		std::ostringstream output;
 		output << kTextureCookRequestHeader << '\n';
 		for (const TextureCookRequest& request : sortedRequests)
 		{
@@ -193,9 +160,8 @@ namespace AssetAuthoring
 			       << request.outputPath.generic_string() << '|' << request.sourcePath.generic_string() << '\n';
 		}
 
-		if (!output.good())
+		if (!Files::TryWriteAllText(outputPath, output.str(), outErrorMessage))
 		{
-			outErrorMessage = "Failed to write texture cook request output '" + outputPath.string() + "'.";
 			return false;
 		}
 
@@ -223,7 +189,7 @@ namespace AssetAuthoring
 		for (std::string line; std::getline(input, line);)
 		{
 			++lineNumber;
-			const std::string trimmedLine = TrimCopy(line);
+			const std::string trimmedLine = Strings::TrimCopy(line);
 			if (trimmedLine.empty())
 			{
 				continue;

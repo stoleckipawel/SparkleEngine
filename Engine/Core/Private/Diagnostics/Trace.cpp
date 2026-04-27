@@ -168,7 +168,7 @@ namespace Diagnostics
 				const std::shared_ptr<spdlog::logger> logger = ResolveMirrorLogger();
 				if (logger != nullptr && logger->should_log(spdlog::level::info))
 				{
-					const std::string_view name = LookupName(nameId);
+					const std::string name = LookupName(nameId);
 					const double elapsedMs =
 					    static_cast<double>(endTimestamp - beginTimestampMicroseconds) / 1000.0;
 					SPDLOG_LOGGER_INFO(logger, "{} end ({:.3f} ms)", name, elapsedMs);

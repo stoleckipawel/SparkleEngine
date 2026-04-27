@@ -1,3 +1,4 @@
+add_subdirectory(CookCommon)
 add_subdirectory(TextureCooker)
 add_subdirectory(AssetConverter)
 add_subdirectory(ShaderCompiler)

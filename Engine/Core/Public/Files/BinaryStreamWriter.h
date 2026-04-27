@@ -11,6 +11,23 @@ namespace Files
 	class BinaryStreamWriter final
 	{
 	  public:
+		static bool WriteBytes(std::ofstream& output, const void* bytes, std::size_t byteCount, std::string& outErrorMessage)
+		{
+			if (byteCount == 0)
+			{
+				return true;
+			}
+
+			output.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(byteCount));
+			if (output.good())
+			{
+				return true;
+			}
+
+			outErrorMessage = "Failed to write binary bytes to output stream";
+			return false;
+		}
+
 		template <typename T>
 		static bool WriteValue(std::ofstream& output, const T& value, std::string& outErrorMessage)
 		{

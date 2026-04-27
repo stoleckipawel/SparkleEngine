@@ -116,7 +116,11 @@ if not exist "!BUILD_DIR!\CMakeCache.txt" (
     goto :FINISH
 )
 
-cmake --build "!BUILD_DIR!" --config !BUILD_CONFIG! --target !TARGET_ARGS! -- /nologo /v:minimal
+set "MSBUILD_ARGS=/nologo /v:minimal /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false"
+if defined SPARKLE_MSBUILD_ARGS set "MSBUILD_ARGS=!SPARKLE_MSBUILD_ARGS!"
+
+echo [LOG] MSBuild args: !MSBUILD_ARGS!
+cmake --build "!BUILD_DIR!" --config !BUILD_CONFIG! --target !TARGET_ARGS! -- !MSBUILD_ARGS!
 set "HELPER_RC=!ERRORLEVEL!"
 goto :FINISH
 

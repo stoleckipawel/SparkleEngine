@@ -72,6 +72,9 @@ bool CookedPackageWriter::Write(
 	std::string& outErrorMessage)
 {
 	using Files::BinaryStreamWriter;
+	using Files::BuildTemporaryPath;
+	using Files::TryCloseOutput;
+	using Files::TryFinalizeTemporaryFile;
 	using Files::TryOpenBinaryOutput;
 
 	Strings::StringTableBuilder stringTable;
@@ -134,7 +137,7 @@ bool CookedPackageWriter::Write(
 	header.VariantHash = BuildShaderVariantHash(package.variantId);
 
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
-	const std::filesystem::path tempPackagePath = packagePath.string() + ".tmp";
+	const std::filesystem::path tempPackagePath = BuildTemporaryPath(packagePath);
 	std::ofstream output;
 	if (!TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
 	{
@@ -157,15 +160,14 @@ bool CookedPackageWriter::Write(
 	{
 		return false;
 	}
-	output.close();
 
-	std::error_code ec;
-	std::filesystem::remove(packagePath, ec);
-	ec.clear();
-	std::filesystem::rename(tempPackagePath, packagePath, ec);
-	if (ec)
+	if (!TryCloseOutput(output, tempPackagePath, outErrorMessage))
 	{
-		outErrorMessage = "Failed to publish cooked shader package '" + packagePath.string() + "' - " + ec.message();
+		return false;
+	}
+
+	if (!TryFinalizeTemporaryFile(tempPackagePath, packagePath, outErrorMessage))
+	{
 		return false;
 	}
 

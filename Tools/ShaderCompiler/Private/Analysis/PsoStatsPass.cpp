@@ -3,30 +3,11 @@
 #include "Analysis/PsoStatsPass.h"
 
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include "Inspection/CookedPackageInspection.h"
 
 #include <format>
 #include <sstream>
-
-namespace
-{
-	std::string EscapeCsv(std::string_view value)
-	{
-		std::string result;
-		result.reserve(value.size() + 2);
-		result.push_back('"');
-		for (const char ch : value)
-		{
-			if (ch == '"')
-			{
-				result.push_back('"');
-			}
-			result.push_back(ch);
-		}
-		result.push_back('"');
-		return result;
-	}
-}
 
 bool PsoStatsPass::WriteCsv(
     std::span<const CookedShaderPackageOutput> packages,
@@ -51,13 +32,13 @@ bool PsoStatsPass::WriteCsv(
 
 		for (const InspectedCookedShaderBinary& binary : inspectedPackage.binaries)
 		{
-			csv << EscapeCsv(package.packageId) << ','
-			    << EscapeCsv(package.variantId) << ','
+			csv << Strings::EscapeCsvField(package.packageId) << ','
+			    << Strings::EscapeCsvField(package.variantId) << ','
 			    << std::format("{:016X}", package.packageKey) << ','
-			    << EscapeCsv(GetShaderStagePrefix(binary.stage)) << ','
-			    << EscapeCsv(CookedPackageInspection::GetBinaryFormatName(binary.format)) << ','
-			    << EscapeCsv(binary.backendName) << ','
-			    << EscapeCsv(binary.entryPoint) << ','
+			    << Strings::EscapeCsvField(GetShaderStagePrefix(binary.stage)) << ','
+			    << Strings::EscapeCsvField(CookedPackageInspection::GetBinaryFormatName(binary.format)) << ','
+			    << Strings::EscapeCsvField(binary.backendName) << ','
+			    << Strings::EscapeCsvField(binary.entryPoint) << ','
 			    << binary.bytecodeSizeInBytes << ','
 			    << binary.resourceBindingCount << ','
 			    << binary.constantBufferCount << ','

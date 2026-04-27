@@ -9,7 +9,6 @@
 PassParameterLayout BuildForwardOpaqueShaderPackageBindingLayout()
 {
 	PassParameterLayout layout("ForwardOpaque");
-	layout.Add<ReadTexture>("MaterialTextures", ShaderStageVisibility::Pixel, 5u);
 	layout.Add<RenderTarget>("BackBuffer", ShaderStageVisibility::AllGraphics);
 	layout.Add<DepthTarget>("MainDepth", ShaderStageVisibility::AllGraphics);
 	layout.Add<ReadTexture>("ShadowMap0", ShaderStageVisibility::Pixel);
@@ -21,6 +20,7 @@ PassParameterLayout BuildForwardOpaqueShaderPackageBindingLayout()
 	layout.Add<SamplerSet>("SamplerTable", ShaderStageVisibility::Pixel);
 	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
 	layout.Add<UniformData<PerObjectPSConstantBufferData>>("PerObjectPS", ShaderStageVisibility::Pixel);
+	layout.Add<ReadTexture>("MaterialTextures", ShaderStageVisibility::Pixel, 5u);
 	return layout;
 }
 

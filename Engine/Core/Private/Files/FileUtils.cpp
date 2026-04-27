@@ -145,6 +145,28 @@ namespace Files
 		return true;
 	}
 
+	bool TryWriteAllTextAtomic(const std::filesystem::path& path, std::string_view text, std::string& outErrorMessage)
+	{
+		const std::filesystem::path temporaryPath = BuildTemporaryPath(path);
+
+		std::error_code ec;
+		std::filesystem::remove(temporaryPath, ec);
+
+		if (!TryWriteAllText(temporaryPath, text, outErrorMessage))
+		{
+			return false;
+		}
+
+		if (!TryFinalizeTemporaryFile(temporaryPath, path, outErrorMessage))
+		{
+			std::filesystem::remove(temporaryPath, ec);
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
+
 	bool TryOpenBinaryOutput(const std::filesystem::path& path, std::ofstream& output, std::string& outErrorMessage)
 	{
 		return TryOpenOutput(path, std::ios::binary, output, outErrorMessage);
@@ -153,5 +175,108 @@ namespace Files
 	bool TryOpenTextOutput(const std::filesystem::path& path, std::ofstream& output, std::string& outErrorMessage)
 	{
 		return TryOpenOutput(path, static_cast<std::ios::openmode>(0), output, outErrorMessage);
+	}
+
+	std::filesystem::path BuildTemporaryPath(const std::filesystem::path& path, std::string_view suffix)
+	{
+		std::filesystem::path temporaryPath = path;
+		temporaryPath += std::string(suffix.empty() ? std::string_view{".tmp"} : suffix);
+		return temporaryPath;
+	}
+
+	bool TryFinalizeTemporaryFile(
+	    const std::filesystem::path& temporaryPath,
+	    const std::filesystem::path& finalPath,
+	    std::string& outErrorMessage)
+	{
+		std::error_code ec;
+		std::filesystem::rename(temporaryPath, finalPath, ec);
+		if (!ec)
+		{
+			outErrorMessage.clear();
+			return true;
+		}
+
+		if (std::filesystem::exists(finalPath))
+		{
+			ec.clear();
+			std::filesystem::remove(finalPath, ec);
+			if (ec)
+			{
+				outErrorMessage = std::format(
+				    "Failed to replace existing output '{}'. The destination file may still be in use.",
+				    finalPath.string());
+				return false;
+			}
+
+			ec.clear();
+			std::filesystem::rename(temporaryPath, finalPath, ec);
+			if (!ec)
+			{
+				outErrorMessage.clear();
+				return true;
+			}
+		}
+
+		outErrorMessage = std::format("Failed to move temporary file '{}' into place as '{}'", temporaryPath.string(), finalPath.string());
+		return false;
+	}
+
+	bool TryFinalizeTemporaryFileIfMissing(
+	    const std::filesystem::path& temporaryPath,
+	    const std::filesystem::path& finalPath,
+	    std::string& outErrorMessage)
+	{
+		std::error_code ec;
+		if (std::filesystem::exists(finalPath, ec) && !ec)
+		{
+			CleanupTemporaryFile(temporaryPath);
+			outErrorMessage.clear();
+			return true;
+		}
+
+		ec.clear();
+		std::filesystem::rename(temporaryPath, finalPath, ec);
+		if (!ec)
+		{
+			outErrorMessage.clear();
+			return true;
+		}
+
+		std::error_code existsError;
+		if (std::filesystem::exists(finalPath, existsError) && !existsError)
+		{
+			CleanupTemporaryFile(temporaryPath);
+			outErrorMessage.clear();
+			return true;
+		}
+
+		CleanupTemporaryFile(temporaryPath);
+		outErrorMessage = std::format("Failed to move temporary file '{}' into place as '{}'", temporaryPath.string(), finalPath.string());
+		return false;
+	}
+
+	void CleanupTemporaryFile(const std::filesystem::path& temporaryPath, std::ofstream* output) noexcept
+	{
+		if (output != nullptr && output->is_open())
+		{
+			output->close();
+		}
+
+		std::error_code ec;
+		std::filesystem::remove(temporaryPath, ec);
+	}
+
+	bool TryCloseOutput(std::ofstream& output, const std::filesystem::path& path, std::string& outErrorMessage)
+	{
+		output.close();
+		if (!output.fail())
+		{
+			outErrorMessage.clear();
+			return true;
+		}
+
+		outErrorMessage = std::format("Failed to finalize output '{}'", path.string());
+		return false;
 	}
 }

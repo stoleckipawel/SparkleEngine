@@ -10,7 +10,7 @@
 
 namespace Paths
 {
-	static bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
+	bool IsUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
 	{
 		if (path.empty() || root.empty())
 		{
@@ -26,6 +26,25 @@ namespace Paths
 
 		const std::string relativePathString = relativePath.generic_string();
 		return !relativePathString.empty() && !relativePathString.starts_with("..");
+	}
+
+	std::optional<std::filesystem::path> TryMakeRelativeUnderRoot(
+	    const std::filesystem::path& path,
+	    const std::filesystem::path& root)
+	{
+		if (!IsUnderRoot(path, root))
+		{
+			return std::nullopt;
+		}
+
+		std::error_code ec;
+		const std::filesystem::path relativePath = std::filesystem::relative(path, root, ec);
+		if (ec || relativePath.empty())
+		{
+			return std::nullopt;
+		}
+
+		return relativePath;
 	}
 
 	std::string_view GetFileName(std::string_view path) noexcept
@@ -101,6 +120,19 @@ namespace Paths
 		}
 
 		return resolvedPath;
+	}
+
+	std::string MakeSafePathComponent(std::string_view value)
+	{
+		std::string result;
+		result.reserve(value.size());
+		for (const char character : value)
+		{
+			const bool allowed = (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
+			                     (character >= '0' && character <= '9') || character == '_' || character == '-' || character == '.';
+			result.push_back(allowed ? character : '_');
+		}
+		return result;
 	}
 
 	std::wstring MakePathKey(const std::filesystem::path& path)

@@ -106,7 +106,7 @@ namespace Assets
 			errorMessage = std::format(
 			    "Failed to load cooked scene manifest for '{}' from '{}' - {}",
 			    sceneAssetId.value,
-			    sceneManifestPath->string(),
+			    sceneManifestPath.string(),
 			    errorMessage);
 			return false;
 		}

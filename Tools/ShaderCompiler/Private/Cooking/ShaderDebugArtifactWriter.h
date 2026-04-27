@@ -26,8 +26,6 @@ class ShaderDebugArtifactWriter final
 	    const ShaderCookStageDesc& stage,
 	    const ShaderCompileOptions& options,
 	    const CookedStageBuild& compiledStage);
-	static std::string SanitizePathComponent(std::string_view value);
-	static std::string EscapeJson(std::string_view value);
 	static std::string BuildCompileRequestJson(
 	    const ShaderCookPackageDesc& package,
 	    const ShaderCookStageDesc& stage,
@@ -38,8 +36,4 @@ class ShaderDebugArtifactWriter final
 	static std::string BuildCompileArgsJson(const ShaderDebugArtifactSet& debugArtifacts);
 	static std::string BuildReflectionJson(const ShaderReflection& reflection);
 	static std::string BuildParameterMatchJson();
-	static bool WriteTextFile(
-	    const std::filesystem::path& path,
-	    std::string_view text,
-	    std::string& outErrorMessage);
 };

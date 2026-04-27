@@ -1,9 +1,11 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Cooking/ShaderDebugArtifactWriter.h"
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 
 #include <format>
 #include <sstream>
@@ -19,23 +21,23 @@ bool ShaderDebugArtifactWriter::Write(
 {
 	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(package, stage, options, compiledStage);
 
-	if (!WriteTextFile(bundleDirectory / "compile-request.json", BuildCompileRequestJson(package, stage, options, compiledStage), outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "defines.json", BuildDefinesJson(options), outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "permutation-vector.json", BuildPermutationJson(package), outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage) ||
-		!WriteTextFile(
+	if (!Files::TryWriteAllText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(package, stage, options, compiledStage), outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "defines.json", BuildDefinesJson(options), outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "permutation-vector.json", BuildPermutationJson(package), outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage) ||
+		!Files::TryWriteAllText(
 			bundleDirectory / "parameter-struct-match.json",
 			debugArtifacts.ParameterMatchReportJson.empty() ? BuildParameterMatchJson() : debugArtifacts.ParameterMatchReportJson,
 			outErrorMessage) ||
-		!WriteTextFile(
+		!Files::TryWriteAllText(
 			bundleDirectory / "disassembly.txt",
 			debugArtifacts.Disassembly.empty()
 				? std::string_view{"Disassembly capture unavailable for this backend/target in the current environment.\n"}
 				: std::string_view{debugArtifacts.Disassembly},
 			outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput, outErrorMessage) ||
-		!WriteTextFile(bundleDirectory / "compile-args.json", BuildCompileArgsJson(debugArtifacts), outErrorMessage))
+		!Files::TryWriteAllText(bundleDirectory / "compiler-stderr.txt", debugArtifacts.CompilerOutput, outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "compile-args.json", BuildCompileArgsJson(debugArtifacts), outErrorMessage))
 	{
 		return false;
 	}
@@ -50,45 +52,14 @@ std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(
 	const ShaderCompileOptions& options,
 	const CookedStageBuild& compiledStage)
 {
-	const std::string shaderId = SanitizePathComponent(package.packageId + "_" + std::string(GetShaderStagePrefix(stage.stage)));
+	const std::string shaderId = Paths::MakeSafePathComponent(package.packageId + "_" + std::string(GetShaderStagePrefix(stage.stage)));
 	const std::uint64_t permutationHash = Hash::Fnv1a64(package.variantId);
 	return std::format(
 	    "{}__{:016x}__{}__{}",
 	    shaderId,
 	    permutationHash,
-	    SanitizePathComponent(compiledStage.backendName),
-	    SanitizePathComponent(GetShaderTargetName(options.Target)));
-}
-
-std::string ShaderDebugArtifactWriter::SanitizePathComponent(std::string_view value)
-{
-	std::string result;
-	result.reserve(value.size());
-	for (const char ch : value)
-	{
-		const bool allowed = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_' || ch == '-' || ch == '.';
-		result.push_back(allowed ? ch : '_');
-	}
-	return result;
-}
-
-std::string ShaderDebugArtifactWriter::EscapeJson(std::string_view value)
-{
-	std::string result;
-	result.reserve(value.size() + 8);
-	for (const char ch : value)
-	{
-		switch (ch)
-		{
-			case '\\': result += "\\\\"; break;
-			case '"': result += "\\\""; break;
-			case '\n': result += "\\n"; break;
-			case '\r': result += "\\r"; break;
-			case '\t': result += "\\t"; break;
-			default: result.push_back(ch); break;
-		}
-	}
-	return result;
+	    Paths::MakeSafePathComponent(compiledStage.backendName),
+	    Paths::MakeSafePathComponent(GetShaderTargetName(options.Target)));
 }
 
 std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
@@ -111,17 +82,17 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 	    "  \"format\": \"{}\",\n"
 	    "  \"debugArtifact\": \"{}\"\n"
 	    "}}\n",
-	    EscapeJson(package.packageId),
-	    EscapeJson(package.variantId),
-	    EscapeJson(package.bindingLayoutId),
-	    EscapeJson(stage.sourcePath.generic_string()),
-	    EscapeJson(stage.entryPoint),
-	    EscapeJson(GetShaderStagePrefix(stage.stage)),
-	    EscapeJson(GetShaderTargetName(options.Target)),
-	    EscapeJson(compiledStage.backendName),
+	    Strings::EscapeJsonString(package.packageId),
+	    Strings::EscapeJsonString(package.variantId),
+	    Strings::EscapeJsonString(package.bindingLayoutId),
+	    Strings::EscapeJsonString(stage.sourcePath.generic_string()),
+	    Strings::EscapeJsonString(stage.entryPoint),
+	    Strings::EscapeJsonString(GetShaderStagePrefix(stage.stage)),
+	    Strings::EscapeJsonString(GetShaderTargetName(options.Target)),
+	    Strings::EscapeJsonString(compiledStage.backendName),
 	    compiledStage.backendVersion,
 	    compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil",
-	    EscapeJson(compiledStage.debugArtifact));
+	    Strings::EscapeJsonString(compiledStage.debugArtifact));
 }
 
 std::string ShaderDebugArtifactWriter::BuildDefinesJson(const ShaderCompileOptions& options)
@@ -130,7 +101,7 @@ std::string ShaderDebugArtifactWriter::BuildDefinesJson(const ShaderCompileOptio
 	stream << "[\n";
 	for (std::size_t index = 0; index < options.Defines.size(); ++index)
 	{
-		stream << "  \"" << EscapeJson(options.Defines[index]) << "\"";
+		stream << "  \"" << Strings::EscapeJsonString(options.Defines[index]) << "\"";
 		if (index + 1 < options.Defines.size())
 		{
 			stream << ',';
@@ -148,7 +119,7 @@ std::string ShaderDebugArtifactWriter::BuildPermutationJson(const ShaderCookPack
 	    "  \"variantId\": \"{}\",\n"
 	    "  \"variantHash\": \"{:016x}\"\n"
 	    "}}\n",
-	    EscapeJson(package.variantId),
+	    Strings::EscapeJsonString(package.variantId),
 	    Hash::Fnv1a64(package.variantId));
 }
 
@@ -158,7 +129,7 @@ std::string ShaderDebugArtifactWriter::BuildCompileArgsJson(const ShaderDebugArt
 	stream << "[\n";
 	for (std::size_t index = 0; index < debugArtifacts.CompileArguments.size(); ++index)
 	{
-		stream << "  \"" << EscapeJson(debugArtifacts.CompileArguments[index]) << "\"";
+		stream << "  \"" << Strings::EscapeJsonString(debugArtifacts.CompileArguments[index]) << "\"";
 		if (index + 1 < debugArtifacts.CompileArguments.size())
 		{
 			stream << ',';
@@ -183,7 +154,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 		const ShaderReflectionResourceBinding& binding = reflection.Bindings[index];
 		stream << std::format(
 		    "    {{ \"name\": \"{}\", \"set\": {}, \"slot\": {}, \"arrayCount\": {}, \"sizeInBytes\": {}, \"readOnly\": {}, \"constantBufferIndex\": {} }}",
-		    EscapeJson(binding.Name),
+		    Strings::EscapeJsonString(binding.Name),
 		    binding.Set,
 		    binding.Slot,
 		    binding.ArrayCount,
@@ -203,7 +174,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 		const ShaderReflectionConstantBuffer& cb = reflection.ConstantBuffers[index];
 		stream << std::format(
 		    "    {{ \"name\": \"{}\", \"sizeInBytes\": {}, \"memberCount\": {} }}",
-		    EscapeJson(cb.Name),
+		    Strings::EscapeJsonString(cb.Name),
 		    cb.SizeInBytes,
 		    cb.Members.size());
 		if (index + 1 < reflection.ConstantBuffers.size())
@@ -219,7 +190,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 		const ShaderReflectionInputElement& input = reflection.InputElements[index];
 		stream << std::format(
 		    "    {{ \"semantic\": \"{}\", \"semanticIndex\": {}, \"location\": {}, \"componentCount\": {} }}",
-		    EscapeJson(input.Semantic),
+		    Strings::EscapeJsonString(input.Semantic),
 		    input.SemanticIndex,
 		    input.Location,
 		    input.ComponentCount);
@@ -252,7 +223,7 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 		const ShaderReflectionSpecializationConstant& spec = reflection.SpecializationConstants[index];
 		stream << std::format(
 		    "    {{ \"name\": \"{}\", \"constantId\": {}, \"defaultValueBits\": {} }}",
-		    EscapeJson(spec.Name),
+		    Strings::EscapeJsonString(spec.Name),
 		    spec.ConstantId,
 		    spec.DefaultValueBits);
 		if (index + 1 < reflection.SpecializationConstants.size())
@@ -269,12 +240,4 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 std::string ShaderDebugArtifactWriter::BuildParameterMatchJson()
 {
 	return "{\n  \"status\": \"not-run\",\n  \"reason\": \"ShaderParameterStructVerifier lands in Phase 3\"\n}\n";
-}
-
-bool ShaderDebugArtifactWriter::WriteTextFile(
-	const std::filesystem::path& path,
-	std::string_view text,
-	std::string& outErrorMessage)
-{
-	return Files::TryWriteAllText(path, text, outErrorMessage);
 }

@@ -2,8 +2,11 @@
 
 #include "Cooking/CookedSceneCooker.h"
 
+#include "CookArtifactCache.h"
 #include "Cooking/TextureCookRequestBuilder.h"
 
+#include "Core/Public/Files/BinaryStreamWriter.h"
+#include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -13,62 +16,71 @@
 #include <format>
 #include <fstream>
 #include <limits>
+#include <optional>
 #include <unordered_set>
-#include <system_error>
 
 namespace AssetAuthoring
 {
-	namespace
+	static constexpr std::uint32_t kAssetConverterCookerVersion = 1;
+
+	static Cook::CookArtifactKey BuildMeshCookArtifactKey(
+	    const CookedMeshAssetBuild& meshAsset,
+	    const Assets::CookedMeshAssetHeader& header,
+	    const std::filesystem::path& outputPath)
 	{
-		template <typename T> bool WriteValue(std::ofstream& output, const T& value, std::string& outErrorMessage)
-		{
-			output.write(reinterpret_cast<const char*>(&value), sizeof(T));
-			if (output.good())
-			{
-				return true;
-			}
+		std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, header);
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, meshAsset.vertices);
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, meshAsset.indices);
 
-			outErrorMessage = "Failed to write cooked binary payload";
-			return false;
-		}
+		return Cook::CookArtifactKey{
+		    .assetType = "Mesh",
+		    .assetId = std::format("{:016X}", meshAsset.assetId),
+		    .cookerName = "AssetConverter",
+		    .outputPath = outputPath,
+		    .cookedFormatVersion = Assets::kCookedMeshAssetVersion,
+		    .cookerVersion = kAssetConverterCookerVersion,
+		    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
+		    .dependencyHash = 0,
+		    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedMeshAsset")};
+	}
 
-		template <typename T>
-		bool WriteArray(std::ofstream& output, const std::vector<T>& values, std::string& outErrorMessage)
-		{
-			if (values.empty())
-			{
-				return true;
-			}
+	static Cook::CookArtifactKey BuildMaterialCookArtifactKey(
+	    const CookedMaterialAssetBuild& materialAsset,
+	    const std::filesystem::path& outputPath)
+	{
+		std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, materialAsset.header);
+		contentHash = Hash::ContinueFnv1a64(contentHash, materialAsset.name.data(), materialAsset.name.size());
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, materialAsset.textureReferences);
 
-			output.write(reinterpret_cast<const char*>(values.data()), static_cast<std::streamsize>(sizeof(T) * values.size()));
-			if (output.good())
-			{
-				return true;
-			}
+		return Cook::CookArtifactKey{
+		    .assetType = "Material",
+		    .assetId = std::format("{:016X}", materialAsset.assetId),
+		    .cookerName = "AssetConverter",
+		    .outputPath = outputPath,
+		    .cookedFormatVersion = Assets::kCookedMaterialAssetVersion,
+		    .cookerVersion = kAssetConverterCookerVersion,
+		    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
+		    .dependencyHash = 0,
+		    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedMaterialAsset")};
+	}
 
-			outErrorMessage = "Failed to write cooked binary array payload";
-			return false;
-		}
+	static Cook::CookArtifactKey BuildSceneManifestCookArtifactKey(const CookedSceneBuild& build)
+	{
+		std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, build.manifestHeader);
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.meshAssetReferences);
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.materialAssetReferences);
+		contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.instances);
 
-		bool OpenBinaryOutput(const std::filesystem::path& path, std::ofstream& output, std::string& outErrorMessage)
-		{
-			std::error_code errorCode;
-			std::filesystem::create_directories(path.parent_path(), errorCode);
-			if (errorCode)
-			{
-				outErrorMessage = "Failed to create output directory '" + path.parent_path().string() + "'";
-				return false;
-			}
-
-			output.open(path, std::ios::binary | std::ios::trunc);
-			if (output.is_open())
-			{
-				return true;
-			}
-
-			outErrorMessage = "Failed to open cooked output '" + path.string() + "'";
-			return false;
-		}
+		return Cook::CookArtifactKey{
+		    .assetType = "SceneManifest",
+		    .assetId = build.sceneAssetId,
+		    .cookerName = "AssetConverter",
+		    .outputPath = build.sceneManifestPath,
+		    .cookedFormatVersion = Assets::kCookedSceneManifestVersion,
+		    .cookerVersion = kAssetConverterCookerVersion,
+		    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
+		    .dependencyHash = 0,
+		    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedSceneManifest")};
 	}
 
 	CookedSceneBuild CookedSceneCooker::Cook(const std::filesystem::path& sourceScenePath, const SceneImportResult& importResult) const
@@ -172,18 +184,6 @@ namespace AssetAuthoring
 			return true;
 		}
 
-		const std::filesystem::path normalizedAbsolutePath = Paths::Normalize(sourceScenePath);
-		if (!normalizedAbsolutePath.empty() && normalizedAbsolutePath.is_absolute())
-		{
-			std::error_code errorCode;
-			if (std::filesystem::exists(normalizedAbsolutePath, errorCode) && !errorCode)
-			{
-				outResolvedPath = normalizedAbsolutePath;
-				outErrorMessage.clear();
-				return true;
-			}
-		}
-
 		outErrorMessage = "Unable to resolve source scene path '" + sourceScenePath.string() + "'";
 		return false;
 	}
@@ -193,20 +193,16 @@ namespace AssetAuthoring
 	    std::string& outSceneAssetId,
 	    std::string& outErrorMessage)
 	{
-		std::error_code errorCode;
 		const std::filesystem::path projectMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Project);
 		const std::filesystem::path engineMeshRoot = Paths::TypedAssetRoot(AssetType::Mesh, PathRoot::Engine);
 
-		std::filesystem::path relativePath = std::filesystem::relative(resolvedSourceScenePath, projectMeshRoot, errorCode);
-		if (const std::string relativePathString = relativePath.generic_string();
-		    errorCode || relativePathString.empty() || relativePathString.starts_with(".."))
+		std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(resolvedSourceScenePath, projectMeshRoot);
+		if (!relativePath)
 		{
-			errorCode.clear();
-			relativePath = std::filesystem::relative(resolvedSourceScenePath, engineMeshRoot, errorCode);
+			relativePath = Paths::TryMakeRelativeUnderRoot(resolvedSourceScenePath, engineMeshRoot);
 		}
 
-		if (const std::string relativePathString = relativePath.generic_string();
-		    errorCode || relativePathString.empty() || relativePathString.starts_with(".."))
+		if (!relativePath)
 		{
 			outErrorMessage =
 			    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
@@ -214,7 +210,7 @@ namespace AssetAuthoring
 			return false;
 		}
 
-		outSceneAssetId = relativePath.generic_string();
+		outSceneAssetId = relativePath->generic_string();
 		std::filesystem::path sceneAssetPath(outSceneAssetId);
 		sceneAssetPath.replace_extension();
 		outSceneAssetId = sceneAssetPath.generic_string();
@@ -389,22 +385,44 @@ namespace AssetAuthoring
 	{
 		for (const CookedMeshAssetBuild& meshAsset : build.meshAssets)
 		{
-			std::ofstream output;
 			const std::filesystem::path outputPath = Paths::CookedMeshAsset(meshAsset.assetId);
-			if (!OpenBinaryOutput(outputPath, output, outErrorMessage))
-			{
-				return false;
-			}
-
 			const Assets::CookedMeshAssetHeader header{
 			    .fileHeader = {Assets::kCookedMeshAssetMagic, Assets::kCookedMeshAssetVersion},
 			    .vertexCount = static_cast<std::uint32_t>(meshAsset.vertices.size()),
 			    .indexCount = static_cast<std::uint32_t>(meshAsset.indices.size()),
 			    .vertexStride = sizeof(Assets::CookedMeshVertex),
 			    .indexStride = sizeof(std::uint32_t)};
+			const Cook::CookArtifactKey artifactKey = BuildMeshCookArtifactKey(meshAsset, header, outputPath);
+			bool isCurrent = false;
+			isCurrent = Cook::CookArtifactCache::IsCurrent(artifactKey, outErrorMessage);
+			if (!isCurrent && !outErrorMessage.empty())
+			{
+				return false;
+			}
+			if (isCurrent)
+			{
+				continue;
+			}
 
-			if (!WriteValue(output, header, outErrorMessage) || !WriteArray(output, meshAsset.vertices, outErrorMessage) ||
-			    !WriteArray(output, meshAsset.indices, outErrorMessage))
+			std::ofstream output;
+			if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Cook::CookArtifactCache::Publish(artifactKey, outErrorMessage))
 			{
 				return false;
 			}
@@ -412,14 +430,26 @@ namespace AssetAuthoring
 
 		for (const CookedMaterialAssetBuild& materialAsset : build.materialAssets)
 		{
-			std::ofstream output;
 			const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
-			if (!OpenBinaryOutput(outputPath, output, outErrorMessage))
+			const Cook::CookArtifactKey artifactKey = BuildMaterialCookArtifactKey(materialAsset, outputPath);
+			bool isCurrent = false;
+			isCurrent = Cook::CookArtifactCache::IsCurrent(artifactKey, outErrorMessage);
+			if (!isCurrent && !outErrorMessage.empty())
+			{
+				return false;
+			}
+			if (isCurrent)
+			{
+				continue;
+			}
+
+			std::ofstream output;
+			if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
 			{
 				return false;
 			}
 
-			if (!WriteValue(output, materialAsset.header, outErrorMessage))
+			if (!Files::BinaryStreamWriter::WriteValue(output, materialAsset.header, outErrorMessage))
 			{
 				return false;
 			}
@@ -434,24 +464,54 @@ namespace AssetAuthoring
 				}
 			}
 
-			if (!WriteArray(output, materialAsset.textureReferences, outErrorMessage))
+			if (!Files::BinaryStreamWriter::WriteArray(output, materialAsset.textureReferences, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Cook::CookArtifactCache::Publish(artifactKey, outErrorMessage))
 			{
 				return false;
 			}
 		}
 
-		std::ofstream manifestOutput;
-		if (!OpenBinaryOutput(build.sceneManifestPath, manifestOutput, outErrorMessage))
+		const Cook::CookArtifactKey manifestArtifactKey = BuildSceneManifestCookArtifactKey(build);
+		bool manifestIsCurrent = false;
+		manifestIsCurrent = Cook::CookArtifactCache::IsCurrent(manifestArtifactKey, outErrorMessage);
+		if (!manifestIsCurrent && !outErrorMessage.empty())
 		{
 			return false;
 		}
-
-		if (!WriteValue(manifestOutput, build.manifestHeader, outErrorMessage) ||
-		    !WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
-		    !WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
-		    !WriteArray(manifestOutput, build.instances, outErrorMessage))
+		if (!manifestIsCurrent)
 		{
-			return false;
+			std::ofstream manifestOutput;
+			if (!Files::TryOpenBinaryOutput(build.sceneManifestPath, manifestOutput, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifestHeader, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.instances, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Files::TryCloseOutput(manifestOutput, build.sceneManifestPath, outErrorMessage))
+			{
+				return false;
+			}
+
+			if (!Cook::CookArtifactCache::Publish(manifestArtifactKey, outErrorMessage))
+			{
+				return false;
+			}
 		}
 
 		if (!UpdateSceneAssetRegistry(build, outErrorMessage))
@@ -465,11 +525,10 @@ namespace AssetAuthoring
 
 	bool CookedSceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
 	{
-		std::error_code errorCode;
 		const std::filesystem::path manifestRoot = Paths::CookedSceneManifestRoot();
-		const std::filesystem::path manifestRelativePath = std::filesystem::relative(build.sceneManifestPath, manifestRoot, errorCode);
-		const std::string manifestRelativePathString = manifestRelativePath.generic_string();
-		if (errorCode || manifestRelativePathString.empty() || manifestRelativePathString.starts_with(".."))
+		const std::optional<std::filesystem::path> manifestRelativePath =
+		    Paths::TryMakeRelativeUnderRoot(build.sceneManifestPath, manifestRoot);
+		if (!manifestRelativePath)
 		{
 			outErrorMessage = "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.sceneAssetId + "'";
 			return false;
@@ -481,7 +540,7 @@ namespace AssetAuthoring
 			return false;
 		}
 
-		sceneAssetRegistry.Upsert(build.sceneAssetId, manifestRelativePath);
+		sceneAssetRegistry.Upsert(build.sceneAssetId, *manifestRelativePath);
 		if (!sceneAssetRegistry.Save(outErrorMessage))
 		{
 			return false;

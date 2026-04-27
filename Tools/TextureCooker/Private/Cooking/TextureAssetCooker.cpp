@@ -6,107 +6,15 @@
 #include "D3D12/Textures/TextureLoader.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Core/Public/Files/BinaryStreamWriter.h"
+#include "Core/Public/Files/FileUtils.h"
 
 #include <filesystem>
 #include <fstream>
 #include <limits>
-#include <system_error>
 
 namespace AssetAuthoring
 {
-	static std::filesystem::path BuildTemporaryOutputPath(const std::filesystem::path& outputPath)
-	{
-		std::filesystem::path temporaryPath = outputPath;
-		temporaryPath += ".tmp";
-		return temporaryPath;
-	}
-
-	static bool OpenBinaryOutput(const std::filesystem::path& outputPath, std::ofstream& output, std::string& outErrorMessage)
-	{
-		std::error_code errorCode;
-		std::filesystem::create_directories(outputPath.parent_path(), errorCode);
-		if (errorCode)
-		{
-			outErrorMessage = "Failed to create cooked texture output directory '" + outputPath.parent_path().string() + "'";
-			return false;
-		}
-
-		output.open(outputPath, std::ios::binary | std::ios::trunc);
-		if (!output.is_open())
-		{
-			outErrorMessage = "Failed to open cooked texture output '" + outputPath.string() + "'";
-			return false;
-		}
-
-		outErrorMessage.clear();
-		return true;
-	}
-
-	static bool FinalizeBinaryOutput(
-		const std::filesystem::path& temporaryOutputPath,
-		const std::filesystem::path& finalOutputPath,
-		std::string& outErrorMessage)
-	{
-		std::error_code errorCode;
-		std::filesystem::rename(temporaryOutputPath, finalOutputPath, errorCode);
-		if (!errorCode)
-		{
-			outErrorMessage.clear();
-			return true;
-		}
-
-		if (std::filesystem::exists(finalOutputPath))
-		{
-			errorCode.clear();
-			std::filesystem::remove(finalOutputPath, errorCode);
-			if (errorCode)
-			{
-				outErrorMessage = "Failed to replace existing cooked texture output '" + finalOutputPath.string() +
-				                  "'. The destination file may still be in use.";
-				return false;
-			}
-
-			errorCode.clear();
-			std::filesystem::rename(temporaryOutputPath, finalOutputPath, errorCode);
-			if (!errorCode)
-			{
-				outErrorMessage.clear();
-				return true;
-			}
-		}
-
-		outErrorMessage = "Failed to finalize cooked texture output '" + finalOutputPath.string() + "'";
-		return false;
-	}
-
-	static bool WriteBytes(std::ofstream& output, const void* bytes, std::size_t byteCount, std::string& outErrorMessage)
-	{
-		if (byteCount == 0)
-		{
-			return true;
-		}
-
-		output.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(byteCount));
-		if (output.good())
-		{
-			return true;
-		}
-
-		outErrorMessage = "Failed to write cooked texture asset payload";
-		return false;
-	}
-
-	static void CleanupTemporaryOutput(const std::filesystem::path& temporaryOutputPath, std::ofstream& output) noexcept
-	{
-		if (output.is_open())
-		{
-			output.close();
-		}
-
-		std::error_code cleanupErrorCode;
-		std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
-	}
-
 	bool TextureAssetCooker::Cook(const TextureCookRequest& request, std::string& outErrorMessage) const
 	{
 		SPARKLE_CPU_SCOPE("Tools.TextureCook.Cook");
@@ -159,28 +67,31 @@ namespace AssetAuthoring
 		header.formatIntent = static_cast<std::uint32_t>(formatIntent);
 		header.mipCount = static_cast<std::uint32_t>(mipHeaders.size());
 
-		const std::filesystem::path temporaryOutputPath = BuildTemporaryOutputPath(request.outputPath);
-		std::error_code cleanupErrorCode;
-		std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
+		const std::filesystem::path temporaryOutputPath = Files::BuildTemporaryPath(request.outputPath);
+		Files::CleanupTemporaryFile(temporaryOutputPath);
 
 		std::ofstream output;
-		if (!OpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
+		if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
 		{
 			return false;
 		}
 
-		if (!WriteBytes(output, &header, sizeof(header), outErrorMessage) ||
-		    !WriteBytes(output, mipHeaders.data(), sizeof(CookedTextureMipHeader) * mipHeaders.size(), outErrorMessage))
+		if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+		    !Files::BinaryStreamWriter::WriteBytes(
+		        output,
+		        mipHeaders.data(),
+		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
+		        outErrorMessage))
 		{
-			CleanupTemporaryOutput(temporaryOutputPath, output);
+			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
 			return false;
 		}
 
 		for (const TextureMipLevelData& mipLevel : loadResult.mipLevels)
 		{
-			if (!WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
+			if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
 			{
-				CleanupTemporaryOutput(temporaryOutputPath, output);
+				Files::CleanupTemporaryFile(temporaryOutputPath, &output);
 				return false;
 			}
 		}
@@ -188,22 +99,20 @@ namespace AssetAuthoring
 		output.flush();
 		if (!output.good())
 		{
-			CleanupTemporaryOutput(temporaryOutputPath, output);
+			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
 			outErrorMessage = "Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'";
 			return false;
 		}
 
-		output.close();
-		if (output.fail())
+		if (!Files::TryCloseOutput(output, temporaryOutputPath, outErrorMessage))
 		{
-			CleanupTemporaryOutput(temporaryOutputPath, output);
-			outErrorMessage = "Failed to finalize cooked texture output '" + temporaryOutputPath.string() + "'";
+			Files::CleanupTemporaryFile(temporaryOutputPath);
 			return false;
 		}
 
-		if (!FinalizeBinaryOutput(temporaryOutputPath, request.outputPath, outErrorMessage))
+		if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
 		{
-			std::filesystem::remove(temporaryOutputPath, cleanupErrorCode);
+			Files::CleanupTemporaryFile(temporaryOutputPath);
 			return false;
 		}
 

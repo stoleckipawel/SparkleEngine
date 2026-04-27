@@ -1,11 +1,18 @@
 ﻿#include "Cooking/TextureAssetCooker.h"
+#include "CookArtifactCache.h"
+#include "D3D12/Textures/CookedTextureAsset.h"
 #include "TextureCookRequestList.h"
+
+#include "Core/Public/Hash/HashUtils.h"
 
 #include <filesystem>
 #include <format>
 #include <iostream>
+#include <string>
 #include <objbase.h>
 #include <string_view>
+
+static constexpr std::uint32_t kTextureCookerCookerVersion = 1;
 
 static bool IsInspectRequestFileCommand(std::string_view command) noexcept
 {
@@ -38,6 +45,32 @@ static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 	return 0;
 }
 
+static bool BuildTextureCookArtifactKey(
+    const AssetAuthoring::TextureCookRequest& request,
+    Cook::CookArtifactKey& outKey,
+    std::string& outErrorMessage)
+{
+	std::uint64_t sourceHash = 0;
+	if (!Hash::TryFnv1a64File(request.sourcePath, sourceHash, outErrorMessage))
+	{
+		return false;
+	}
+
+	outKey = Cook::CookArtifactKey{
+	    .assetType = "Texture",
+	    .assetId = std::format("{:016X}", request.assetId),
+	    .cookerName = "TextureCooker",
+	    .outputPath = request.outputPath,
+	    .cookedFormatVersion = kCookedTextureAssetVersion,
+	    .cookerVersion = kTextureCookerCookerVersion,
+	    .sourceHash = sourceHash,
+	    .dependencyHash = 0,
+	    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash(
+	        std::string("ColorSpace=") + AssetAuthoring::GetTextureColorSpaceName(request.colorSpace))};
+	outErrorMessage.clear();
+	return true;
+}
+
 static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 {
 	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -61,8 +94,41 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 	}
 
 	AssetAuthoring::TextureAssetCooker cooker;
+	std::size_t cookedCount = 0;
+	std::size_t skippedCount = 0;
 	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
+		Cook::CookArtifactKey artifactKey;
+		if (!BuildTextureCookArtifactKey(request, artifactKey, errorMessage))
+		{
+			if (SUCCEEDED(coInitializeResult))
+			{
+				CoUninitialize();
+			}
+
+			std::cerr << "TextureCooker: failed to build cook identity for texture '" << request.sourcePath.string() << "' - "
+			          << errorMessage << "\n";
+			return 7;
+		}
+
+		if (Cook::CookArtifactCache::IsCurrent(artifactKey, errorMessage))
+		{
+			++skippedCount;
+			continue;
+		}
+
+		if (!errorMessage.empty())
+		{
+			if (SUCCEEDED(coInitializeResult))
+			{
+				CoUninitialize();
+			}
+
+			std::cerr << "TextureCooker: failed to inspect cooked texture metadata for '" << request.sourcePath.string() << "' - "
+			          << errorMessage << "\n";
+			return 7;
+		}
+
 		if (!cooker.Cook(request, errorMessage))
 		{
 			if (SUCCEEDED(coInitializeResult))
@@ -73,6 +139,20 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 			std::cerr << "TextureCooker: failed to cook texture '" << request.sourcePath.string() << "' - " << errorMessage << "\n";
 			return 7;
 		}
+
+		if (!Cook::CookArtifactCache::Publish(artifactKey, errorMessage))
+		{
+			if (SUCCEEDED(coInitializeResult))
+			{
+				CoUninitialize();
+			}
+
+			std::cerr << "TextureCooker: failed to publish cook metadata for texture '" << request.sourcePath.string() << "' - "
+			          << errorMessage << "\n";
+			return 7;
+		}
+
+		++cookedCount;
 	}
 
 	if (SUCCEEDED(coInitializeResult))
@@ -80,7 +160,8 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 		CoUninitialize();
 	}
 
-	std::cout << "TextureCooker: cooked " << requests.size() << " texture asset(s) from request file '" << requestFilePath.string() << "'\n";
+	std::cout << "TextureCooker: processed " << requests.size() << " texture asset(s) from request file '" << requestFilePath.string()
+	          << "'; cooked=" << cookedCount << ", skipped=" << skippedCount << "\n";
 	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
 		std::cout << "  Texture '" << std::format("{:016X}", request.assetId) << "' output='" << request.outputPath.string()

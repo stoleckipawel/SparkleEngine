@@ -6,7 +6,6 @@
 #include "ShaderReflection.h"
 
 #include <chrono>
-#include <format>
 #include <limits>
 
 std::filesystem::path LocalDiskShaderArtifactStore::BuildArtifactPath(const ShaderCacheKey& key) const
@@ -183,38 +182,15 @@ bool LocalDiskShaderArtifactStore::Put(
 	}
 
 	const std::filesystem::path artifactPath = BuildArtifactPath(key);
-	std::error_code ec;
-	if (artifactPath.has_parent_path())
-	{
-		std::filesystem::create_directories(artifactPath.parent_path(), ec);
-		if (ec)
-		{
-			outErrorMessage = std::format("Failed to create cache directory '{}' - {}", artifactPath.parent_path().string(), ec.message());
-			return false;
-		}
-	}
-
 	const auto nowTicks = std::chrono::steady_clock::now().time_since_epoch().count();
-	const std::filesystem::path tempPath = artifactPath.string() + "." + std::to_string(nowTicks) + ".tmp";
+	const std::filesystem::path tempPath = Files::BuildTemporaryPath(artifactPath, "." + std::to_string(nowTicks) + ".tmp");
 	if (!Files::TryWriteAllBytes(tempPath, bytes, outErrorMessage))
 	{
 		return false;
 	}
 
-	ec.clear();
-	if (std::filesystem::exists(artifactPath, ec) && !ec)
+	if (!Files::TryFinalizeTemporaryFileIfMissing(tempPath, artifactPath, outErrorMessage))
 	{
-		std::filesystem::remove(tempPath, ec);
-		outErrorMessage.clear();
-		return true;
-	}
-
-	ec.clear();
-	std::filesystem::rename(tempPath, artifactPath, ec);
-	if (ec)
-	{
-		std::filesystem::remove(tempPath, ec);
-		outErrorMessage = std::format("Failed to move cache artifact '{}' into place - {}", artifactPath.string(), ec.message());
 		return false;
 	}
 

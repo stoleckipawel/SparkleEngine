@@ -62,6 +62,8 @@ namespace Strings
 		}
 
 		std::string ToLowerCopy(std::string_view str);
+		std::string EscapeCsvField(std::string_view str);
+		std::string EscapeJsonString(std::string_view str);
 
 		bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept;
 		bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept;

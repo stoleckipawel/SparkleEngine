@@ -8,8 +8,6 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 
-#include <system_error>
-
 namespace AssetAuthoring
 {
 	bool TextureCookRequestBuilder::Build(
@@ -68,18 +66,6 @@ namespace AssetAuthoring
 			return true;
 		}
 
-		const std::filesystem::path normalizedPath = Paths::Normalize(sourceTexturePath);
-		if (!normalizedPath.empty() && normalizedPath.is_absolute())
-		{
-			std::error_code errorCode;
-			if (std::filesystem::exists(normalizedPath, errorCode) && !errorCode)
-			{
-				outNormalizedSourceTexturePath = normalizedPath;
-				outErrorMessage.clear();
-				return true;
-			}
-		}
-
 		outErrorMessage = "Unable to resolve source texture path '" + sourceTexturePath.string() + "'";
 		return false;
 	}
@@ -90,35 +76,22 @@ namespace AssetAuthoring
 	    std::string& outTextureSourceKey,
 	    std::string& outErrorMessage)
 	{
-		std::error_code errorCode;
-
 		const std::filesystem::path& projectRoot = Paths::ProjectRoot();
-		if (!projectRoot.empty())
+		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(normalizedSourceTexturePath, projectRoot))
 		{
-			const std::filesystem::path relativePath = std::filesystem::relative(normalizedSourceTexturePath, projectRoot, errorCode);
-			const std::string relativePathString = relativePath.generic_string();
-			if (!errorCode && !relativePathString.empty() && !relativePathString.starts_with(".."))
-			{
-				outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "project:srgb:" : "project:linear:") +
-				                     relativePathString;
-				outErrorMessage.clear();
-				return true;
-			}
+			outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "project:srgb:" : "project:linear:") +
+			                     relativePath->generic_string();
+			outErrorMessage.clear();
+			return true;
 		}
 
-		errorCode.clear();
 		const std::filesystem::path& engineRoot = Paths::EngineRoot();
-		if (!engineRoot.empty())
+		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(normalizedSourceTexturePath, engineRoot))
 		{
-			const std::filesystem::path relativePath = std::filesystem::relative(normalizedSourceTexturePath, engineRoot, errorCode);
-			const std::string relativePathString = relativePath.generic_string();
-			if (!errorCode && !relativePathString.empty() && !relativePathString.starts_with(".."))
-			{
-				outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "engine:srgb:" : "engine:linear:") +
-				                     relativePathString;
-				outErrorMessage.clear();
-				return true;
-			}
+			outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "engine:srgb:" : "engine:linear:") +
+			                     relativePath->generic_string();
+			outErrorMessage.clear();
+			return true;
 		}
 
 		outErrorMessage =

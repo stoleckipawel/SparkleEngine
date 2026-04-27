@@ -52,7 +52,7 @@ if (-not (Test-Path (Join-Path $RepoRoot 'build')))
 foreach ($config in @('Debug', 'Release'))
 {
     Invoke-CIStep -Label "Building ShaderCompiler ($config)" -Action {
-        cmake --build build --config $config --target ShaderCompiler
+        cmake --build build --config $config --target ShaderCompiler -- /nologo /v:minimal /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false
     }
 }
 

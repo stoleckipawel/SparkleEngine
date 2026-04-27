@@ -34,19 +34,8 @@ bool ShaderRecookSignal::Write(
 	    outResult.registryHash,
 	    milliseconds);
 
-	const std::filesystem::path tempPath = outResult.signalPath.string() + ".tmp";
-	if (!Files::TryWriteAllText(tempPath, contents, outErrorMessage))
+	if (!Files::TryWriteAllTextAtomic(outResult.signalPath, contents, outErrorMessage))
 	{
-		return false;
-	}
-
-	std::error_code ec;
-	std::filesystem::remove(outResult.signalPath, ec);
-	ec.clear();
-	std::filesystem::rename(tempPath, outResult.signalPath, ec);
-	if (ec)
-	{
-		outErrorMessage = "Failed to publish shader recook signal '" + outResult.signalPath.string() + "' - " + ec.message();
 		return false;
 	}
 

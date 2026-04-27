@@ -17,10 +17,13 @@ bool CookedRegistryWriter::Write(
 	std::string& outErrorMessage)
 {
 	using Files::TryOpenTextOutput;
+	using Files::BuildTemporaryPath;
+	using Files::TryCloseOutput;
+	using Files::TryFinalizeTemporaryFile;
 	using Paths::MakeProjectRelativeString;
 
 	outRegistryPath = Paths::CookedShaderRegistry();
-	const std::filesystem::path tempRegistryPath = outRegistryPath.string() + ".tmp";
+	const std::filesystem::path tempRegistryPath = BuildTemporaryPath(outRegistryPath);
 	std::ofstream output;
 	if (!TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
 	{
@@ -49,15 +52,14 @@ bool CookedRegistryWriter::Write(
 		outErrorMessage = "Failed to write shader registry output '" + outRegistryPath.string() + "'";
 		return false;
 	}
-	output.close();
 
-	std::error_code ec;
-	std::filesystem::remove(outRegistryPath, ec);
-	ec.clear();
-	std::filesystem::rename(tempRegistryPath, outRegistryPath, ec);
-	if (ec)
+	if (!TryCloseOutput(output, tempRegistryPath, outErrorMessage))
 	{
-		outErrorMessage = "Failed to publish shader registry '" + outRegistryPath.string() + "' - " + ec.message();
+		return false;
+	}
+
+	if (!TryFinalizeTemporaryFile(tempRegistryPath, outRegistryPath, outErrorMessage))
+	{
 		return false;
 	}
 
