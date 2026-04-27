@@ -34,14 +34,7 @@ namespace
 {
 	constexpr float SceneOutlinerWidth = 320.0f;
 	constexpr float SceneInspectorWidth = 560.0f;
-	constexpr float ConsoleDockHeight = 300.0f;
 	constexpr float MinimumViewportExtent = 64.0f;
-
-	float ComputeConsoleDockHeight(float availableHeight) noexcept
-	{
-		const float maxDockHeight = (std::max) (0.0f, availableHeight - MinimumViewportExtent);
-		return (std::min) (ConsoleDockHeight, maxDockHeight);
-	}
 
 	ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept
 	{
@@ -454,9 +447,8 @@ void UI::Build()
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
 	ImGuiIO& io = ImGui::GetIO();
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
-	const float consoleDockHeight = ComputeConsoleDockHeight(availableCenterHeight);
+	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableCenterHeight) : 0.0f;
 	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
-	const float viewportHeight = (std::max) (MinimumViewportExtent, availableCenterHeight - consoleDockHeight);
 
 	if (m_viewportPanel)
 	{
@@ -486,9 +478,9 @@ void UI::Build()
 	{
 		m_editorConsoleSystem->BuildDockedUI(
 		    outlinerWidth,
-		    mainMenuBarHeight + viewportHeight,
+		    mainMenuBarHeight + availableCenterHeight,
 		    viewportWidth,
-		    consoleDockHeight,
+		    availableCenterHeight,
 		    disableInteraction);
 	}
 

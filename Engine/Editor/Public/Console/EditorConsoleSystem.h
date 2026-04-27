@@ -29,7 +29,8 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	void OpenOutputLog() noexcept;
 	bool HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept;
 	void BuildUI(bool disableInteraction);
-	void BuildDockedUI(float left, float top, float width, float height, bool disableInteraction);
+	float GetDockHeight(float availableHeight) noexcept;
+	void BuildDockedUI(float left, float bottom, float width, float availableHeight, bool disableInteraction);
 
   private:
 	void SubscribeToLogStream();
@@ -38,4 +39,5 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	std::unique_ptr<ConsoleSession> m_session;
 	std::unique_ptr<OutputLogPanel> m_outputLogPanel;
 	std::uint64_t m_logRecordHandlerId = 0;
+	float m_dockHeight = 300.0f;
 };

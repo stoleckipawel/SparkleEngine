@@ -12,10 +12,14 @@
 
 #include <imgui.h>
 
+#include <algorithm>
+
 namespace
 {
 	constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
 	constexpr std::uintptr_t kTildeKey = 0xC0;
+	constexpr float kMinimumDockHeight = 160.0f;
+	constexpr float kMinimumViewportHeight = 64.0f;
 
 	ConsoleCommandSeverity ToConsoleSeverity(spdlog::level::level_enum level) noexcept
 	{
@@ -116,15 +120,34 @@ void EditorConsoleSystem::BuildUI(bool disableInteraction)
 	}
 }
 
-void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, float height, bool disableInteraction)
+float EditorConsoleSystem::GetDockHeight(float availableHeight) noexcept
 {
+	const float maxDockHeight = (std::max) (0.0f, availableHeight - kMinimumViewportHeight);
+	if (maxDockHeight <= 0.0f)
+	{
+		m_dockHeight = 0.0f;
+		return m_dockHeight;
+	}
+
+	const float minDockHeight = (std::min) (kMinimumDockHeight, maxDockHeight);
+	m_dockHeight = (std::clamp) (m_dockHeight, minDockHeight, maxDockHeight);
+	return m_dockHeight;
+}
+
+void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, float availableHeight, bool disableInteraction)
+{
+	const float height = GetDockHeight(availableHeight);
 	if (width <= 0.0f || height <= 0.0f)
 	{
 		return;
 	}
 
+	const float top = bottom - height;
+	const float maxDockHeight = (std::max) (0.0f, availableHeight - kMinimumViewportHeight);
+	const float minDockHeight = (std::min) (kMinimumDockHeight, maxDockHeight);
 	ImGui::SetNextWindowPos(ImVec2(left, top), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(width, minDockHeight), ImVec2(width, maxDockHeight));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 6.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.0f, 4.0f));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, SparkleUiPalette::WindowBackground());
@@ -132,7 +155,6 @@ void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, floa
 	ImGui::PushStyleColor(ImGuiCol_TabHovered, SparkleUiPalette::TabBackgroundHovered());
 	ImGui::PushStyleColor(ImGuiCol_TabActive, SparkleUiPalette::TabBackgroundActive());
 	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove |
-	    ImGuiWindowFlags_NoResize |
 	    ImGuiWindowFlags_NoCollapse |
 	    ImGuiWindowFlags_NoTitleBar |
 	    ImGuiWindowFlags_NoSavedSettings;
@@ -148,6 +170,8 @@ void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, floa
 	{
 		m_outputLogPanel->BuildContent(disableInteraction);
 	}
+	m_dockHeight = ImGui::GetWindowHeight();
+	GetDockHeight(availableHeight);
 
 	ImGui::End();
 	ImGui::PopStyleColor(4);
