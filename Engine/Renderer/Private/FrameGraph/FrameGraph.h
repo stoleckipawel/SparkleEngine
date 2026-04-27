@@ -225,11 +225,21 @@ class SPARKLE_RENDERER_API FrameGraph
 		return field;
 	}
 
+	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(TextureHandle handle) const noexcept
+	{
+		return Read<TValue>(handle);
+	}
+
 	template <typename TValue = void> ShaderBuffer<TValue> Read(BufferHandle handle) const noexcept
 	{
 		ShaderBuffer<TValue> field;
 		field = handle;
 		return field;
+	}
+
+	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(BufferHandle handle) const noexcept
+	{
+		return Read<TValue>(handle);
 	}
 
 	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(TextureHandle handle) const noexcept

@@ -3,6 +3,8 @@
 #include "Interop/RenderHardwareInterface.h"
 #include <d3d12.h>
 
+#include <cstdint>
+
 class D3D12Rhi;
 
 class D3D12SamplerLibrary
@@ -16,9 +18,9 @@ class D3D12SamplerLibrary
 
 	enum class MipFilter : uint8_t
 	{
+		None,
 		Point,
-		Linear,
-		None
+		Linear
 	};
 
 	enum class AddressMode : uint8_t
@@ -80,6 +82,7 @@ class D3D12SamplerLibrary
 	bool IsInitialized() const noexcept { return m_bInitialized; }
 	RhiDescriptorTableHandle GetTableHandle() const noexcept { return m_tableHandle; }
 	static constexpr uint32_t GetSamplerCount() noexcept { return static_cast<uint32_t>(Slot::Count); }
+	static bool TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& outSlot) noexcept;
 
   private:
 	struct SamplerConfig
@@ -91,6 +94,11 @@ class D3D12SamplerLibrary
 	};
 
 	void CreateSampler(Slot slot, const SamplerConfig& config);
+	static bool TryGetAddressOffset(RhiSamplerAddressMode addressMode, std::uint32_t& outOffset) noexcept;
+	static bool TryGetUniformAddressMode(const RhiSamplerDesc& samplerDesc, RhiSamplerAddressMode& outAddressMode) noexcept;
+	static bool TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
+	static bool TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
+	static bool TryGetAnisotropicSlot(RhiSamplerAnisotropy maxAnisotropy, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
 	static D3D12_FILTER ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic);
 	static D3D12_TEXTURE_ADDRESS_MODE ToD3D12Address(AddressMode address);
 	static D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;

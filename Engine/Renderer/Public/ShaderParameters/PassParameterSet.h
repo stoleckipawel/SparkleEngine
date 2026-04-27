@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "../../../RHI/Public/Interop/RenderHardwareInterface.h"
 #include "../FrameGraph/BufferHandle.h"
 #include "../FrameGraph/TextureHandle.h"
 
@@ -11,18 +12,12 @@
 #include <utility>
 #include <vector>
 
-struct SamplerReference
-{
-	std::string Name;
-
-	bool IsValid() const noexcept { return !Name.empty(); }
-};
-
 enum class PassParameterValueKind : std::uint8_t
 {
 	None,
 	Texture,
 	Buffer,
+	DescriptorTable,
 	UniformData,
 	Sampler,
 };
@@ -32,9 +27,10 @@ struct PassParameterBinding
 	PassParameterValueKind Kind = PassParameterValueKind::None;
 	std::vector<TextureHandle> Textures;
 	std::vector<BufferHandle> Buffers;
+	RhiDescriptorTableBinding DescriptorTable = {};
 	const void* UniformData = nullptr;
 	std::uint32_t UniformDataSizeInBytes = 0;
-	SamplerReference Sampler;
+	RhiSamplerDesc Sampler = {};
 
 	bool IsBound() const noexcept
 	{
@@ -44,10 +40,12 @@ struct PassParameterBinding
 				return !Textures.empty();
 			case PassParameterValueKind::Buffer:
 				return !Buffers.empty();
+			case PassParameterValueKind::DescriptorTable:
+				return static_cast<bool>(DescriptorTable);
 			case PassParameterValueKind::UniformData:
 				return UniformData != nullptr && UniformDataSizeInBytes > 0;
 			case PassParameterValueKind::Sampler:
-				return Sampler.IsValid();
+				return true;
 			default:
 				return false;
 		}
@@ -58,6 +56,7 @@ struct PassParameterBinding
 		Kind = PassParameterValueKind::None;
 		Textures.clear();
 		Buffers.clear();
+		DescriptorTable = {};
 		UniformData = nullptr;
 		UniformDataSizeInBytes = 0;
 		Sampler = {};
@@ -164,6 +163,50 @@ class PassParameterSet final
 		return ValidateBufferBinding(binding.Buffers, *parameter);
 	}
 
+	bool SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr ||
+		    (parameter->Kind != ShaderParameterSemanticKind::ReadTexture && parameter->Kind != ShaderParameterSemanticKind::ReadBuffer))
+		{
+			return false;
+		}
+
+		if (!descriptorTable || parameter->ArrayCount != 1u)
+		{
+			return false;
+		}
+
+		PassParameterBinding& binding = m_bindings[index];
+		binding.Reset();
+		binding.Kind = PassParameterValueKind::DescriptorTable;
+		binding.DescriptorTable = descriptorTable;
+		return true;
+	}
+
+	bool SetUnorderedAccessView(const char* name, RhiDescriptorTableBinding descriptorTable)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr ||
+		    (parameter->Kind != ShaderParameterSemanticKind::RWTexture && parameter->Kind != ShaderParameterSemanticKind::RWBuffer))
+		{
+			return false;
+		}
+
+		if (!descriptorTable || parameter->ArrayCount != 1u)
+		{
+			return false;
+		}
+
+		PassParameterBinding& binding = m_bindings[index];
+		binding.Reset();
+		binding.Kind = PassParameterValueKind::DescriptorTable;
+		binding.DescriptorTable = descriptorTable;
+		return true;
+	}
+
 	template <typename T> bool SetUniformDataReference(const char* name, const T& value)
 	{
 		static_assert(std::is_trivially_copyable_v<T>, "Uniform data must be trivially copyable.");
@@ -194,7 +237,7 @@ class PassParameterSet final
 		return true;
 	}
 
-	bool SetSampler(const char* name, SamplerReference sampler)
+	bool SetSampler(const char* name, RhiSamplerDesc sampler)
 	{
 		std::uint32_t index = 0;
 		const PassParameterDesc* parameter = FindParameter(name, index);
@@ -203,15 +246,10 @@ class PassParameterSet final
 			return false;
 		}
 
-		if (!sampler.IsValid())
-		{
-			return false;
-		}
-
 		PassParameterBinding& binding = m_bindings[index];
 		binding.Reset();
 		binding.Kind = PassParameterValueKind::Sampler;
-		binding.Sampler = std::move(sampler);
+		binding.Sampler = sampler;
 		return true;
 	}
 

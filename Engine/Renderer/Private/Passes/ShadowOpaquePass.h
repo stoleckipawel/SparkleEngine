@@ -37,16 +37,30 @@ struct ShadowOpaquePassParameters
 	}
 };
 
+struct ShadowOpaqueDrawParameters
+{
+	ShaderUniform<PerObjectVSConstantBufferData> PerObjectVS;
+
+	static void Describe(ShaderParameterStructBuilder<ShadowOpaqueDrawParameters>& builder)
+	{
+		builder.Uniform("PerObjectVS", &ShadowOpaqueDrawParameters::PerObjectVS, ShaderStageVisibility::Vertex);
+	}
+};
+
 class ShadowOpaquePass final
 {
   public:
 	static constexpr const char* PassName = "ShadowOpaque";
 	using Parameters = ShadowOpaquePassParameters;
+	using DrawParameters = ShadowOpaqueDrawParameters;
 
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
+	using DrawParameterMetadata = ShaderParameterStructMetadata<DrawParameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
+	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShadowViewShaderPackage() noexcept;
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters, std::size_t lightIndex);
 

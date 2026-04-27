@@ -337,7 +337,6 @@ void Renderer::RecordFrame() noexcept
 	const RenderPassContext renderPassContext{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
-	    .SamplerTableHandle = renderHardwareInterface.GetSamplerTableHandle(),
 	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
 
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();

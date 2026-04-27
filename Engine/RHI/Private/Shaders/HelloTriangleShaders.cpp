@@ -14,7 +14,6 @@ class HelloTriangleVS final : public TGlobalShader<HelloTriangleVS>
 	static constexpr std::string_view kShaderName = "HelloTriangleVS";
 	static constexpr std::string_view kShaderPackageName = "HelloTriangle";
 	static constexpr std::string_view kBindingLayoutId = "Empty";
-	static PassParameterLayout BuildPackageBindingLayout() { return PassParameterLayout("Empty"); }
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	END_SHADER_PARAMETER_STRUCT()
@@ -28,7 +27,6 @@ class HelloTrianglePS final : public TGlobalShader<HelloTrianglePS>
 	static constexpr std::string_view kShaderName = "HelloTrianglePS";
 	static constexpr std::string_view kShaderPackageName = "HelloTriangle";
 	static constexpr std::string_view kBindingLayoutId = "Empty";
-	static PassParameterLayout BuildPackageBindingLayout() { return PassParameterLayout("Empty"); }
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	END_SHADER_PARAMETER_STRUCT()

@@ -41,6 +41,16 @@ const ForwardOpaquePass::ParameterMetadata& ForwardOpaquePass::GetParameterMetad
 	return metadata;
 }
 
+const ForwardOpaquePass::DrawParameterMetadata& ForwardOpaquePass::GetDrawParameterMetadata() noexcept
+{
+	static const DrawParameterMetadata metadata = []
+	{
+		return ShaderParameterStructBuilder<DrawParameters>::BuildMetadata("ForwardOpaque.Draw");
+	}();
+
+	return metadata;
+}
+
 ShaderPackageDefinition ForwardOpaquePass::DescribePrimaryViewShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
@@ -96,20 +106,13 @@ void ForwardOpaquePass::BindPassResources(
     RhiGpuVirtualAddress perViewGpuAddress)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
-	PassBindingOverrides overrides;
-	overrides.SetConstantBufferView("PerFrame", renderHardwareInterface.GetPerFrameConstantGpuAddress());
-	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
-	assert(renderPassContext.SamplerTableHandle);
-	overrides.SetDescriptorTable("SamplerTable", renderPassContext.SamplerTableHandle);
-	const bool bound = PassUtilities::BindRasterPassWithRuntime(
+	const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 	    frameGraph,
 	    cmd,
 	    &renderHardwareInterface,
 	    runtime,
 	    parameters.GetPassParameterSet(),
-	    RenderPassPipelineTraits<ForwardOpaquePass>::StableBindingNames.data(),
-	    static_cast<std::uint32_t>(RenderPassPipelineTraits<ForwardOpaquePass>::StableBindingNames.size()),
-	    &overrides,
+	    nullptr,
 	    PassName);
 	assert(bound);
 }
@@ -147,17 +150,21 @@ void ForwardOpaquePass::DrawOpaqueMeshes(
 			continue;
 		}
 
-		PassBindingOverrides overrides;
-		overrides.SetConstantBufferView("PerObjectVS", renderHardwareInterface.AllocatePerObjectVertexConstants(perObjectVS));
-		overrides.SetConstantBufferView("PerObjectPS", renderHardwareInterface.AllocatePerObjectPixelConstants(perObjectPS));
-		overrides.SetDescriptorTable("MaterialTextures", materialTextureTable);
-		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
+		DrawParameterInstance drawParameters(GetDrawParameterMetadata());
+		drawParameters->PerObjectVS = perObjectVS;
+		drawParameters->PerObjectPS = perObjectPS;
+		drawParameters->TextureBaseColor = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::BaseColor};
+		drawParameters->TextureNormal = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Normal};
+		drawParameters->TextureMetallicRoughness = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::MetallicRoughness};
+		drawParameters->TextureOcclusion = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Occlusion};
+		drawParameters->TextureEmissive = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Emissive};
+		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    frameGraph,
 		    cmd,
 		    &renderHardwareInterface,
 		    runtime,
-		    RenderPassPipelineTraits<ForwardOpaquePass>::DrawBindingNames,
-		    overrides,
+		    drawParameters.GetPassParameterSet(),
+		    nullptr,
 		    PassName);
 		assert(bound);
 

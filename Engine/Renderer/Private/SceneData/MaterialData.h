@@ -20,6 +20,11 @@ namespace MaterialTextureFlags
 
 namespace MaterialTextureSlots
 {
+	constexpr std::uint32_t BaseColor = 0;
+	constexpr std::uint32_t Normal = 1;
+	constexpr std::uint32_t MetallicRoughness = 2;
+	constexpr std::uint32_t Occlusion = 3;
+	constexpr std::uint32_t Emissive = 4;
 	constexpr std::uint32_t Count = 5;
 }
 

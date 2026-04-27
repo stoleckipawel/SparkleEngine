@@ -27,6 +27,7 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	const CookedShaderPackageHeader& GetHeader() const noexcept { return m_header; }
 	std::uint64_t GetPackageKey() const noexcept { return m_header.ShaderPackageKey; }
 
+	const std::vector<CookedShaderBinaryRecord>& GetBinaryRecords() const noexcept { return m_binaryRecords; }
 	const std::vector<CookedShaderBindingRecord>& GetBindingRecords() const noexcept { return m_bindingRecords; }
 	const std::vector<CookedShaderSpecializationInputRecord>& GetSpecializationInputs() const noexcept { return m_specializationInputs; }
 

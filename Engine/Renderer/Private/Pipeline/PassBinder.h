@@ -9,6 +9,7 @@ class CommandContext;
 class FrameGraph;
 struct PassParameterBinding;
 class PassParameterSet;
+class RenderHardwareInterface;
 
 class PassBinder final
 {
@@ -16,6 +17,7 @@ class PassBinder final
 	static void BindGraphics(
 	    CommandContext& cmd,
 	    const FrameGraph& frameGraph,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
@@ -24,6 +26,7 @@ class PassBinder final
 	static void BindCompute(
 	    CommandContext& cmd,
 	    const FrameGraph& frameGraph,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
@@ -33,6 +36,7 @@ class PassBinder final
 	static void BindImpl(
 	    CommandContext& cmd,
 	    const FrameGraph& frameGraph,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames,
@@ -41,6 +45,7 @@ class PassBinder final
 	static void BindCompiledBinding(
 	    CommandContext& cmd,
 	    const FrameGraph& frameGraph,
+	    RenderHardwareInterface* renderHardwareInterface,
 	    const CompiledBinding& compiledBinding,
 	    const PassParameterBinding* parameterBinding,
 	    const PassBindingOverrides* overrides,
@@ -50,6 +55,11 @@ class PassBinder final
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuVirtualAddress gpuAddress,
 	    bool isCompute);
+	static bool TryBindDescriptorTableOverride(
+	    CommandContext& cmd,
+	    const CompiledBinding& compiledBinding,
+	    const PassBindingOverrides* overrides,
+	    bool isCompute);
 	static void BindDescriptorTable(
 	    CommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
@@ -58,7 +68,7 @@ class PassBinder final
 	static void BindDescriptorTable(
 	    CommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
-	    RhiDescriptorTableHandle descriptorTable,
+	    RhiDescriptorTableBinding descriptorTable,
 	    bool isCompute);
 	static void BindRootConstants(
 	    CommandContext& cmd,

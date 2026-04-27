@@ -7,14 +7,18 @@
 #include "FrameGraph/RenderPassContext.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 #include "GPU/CommandContext.h"
+#include "Pipeline/PassBindingOverrides.h"
 #include "Passes/ShaderPass.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
+#include <algorithm>
 #include <array>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace PassUtilities
 {
@@ -29,6 +33,58 @@ namespace PassUtilities
 		static const PassParameterLayout emptyLayout("PassUtilities.EmptyPassParameters");
 		static const PassParameterSet emptyParameters(emptyLayout);
 		return emptyParameters;
+	}
+
+	inline void AppendBindingNameIfCompiled(
+	    std::vector<const char*>& bindingNames,
+	    const RenderBindingLayout& bindingLayout,
+	    const char* bindingName) noexcept
+	{
+		if (bindingName == nullptr || bindingName[0] == '\0' || bindingLayout.FindBinding(bindingName) == nullptr)
+		{
+			return;
+		}
+
+		const auto existing = std::ranges::find_if(
+		    bindingNames,
+		    [bindingName](const char* existingName)
+		    {
+			    return std::string_view(existingName != nullptr ? existingName : "") == bindingName;
+		    });
+		if (existing == bindingNames.end())
+		{
+			bindingNames.push_back(bindingName);
+		}
+	}
+
+	inline std::vector<const char*> BuildBoundBindingNames(
+	    const RenderBindingLayout& bindingLayout,
+	    const PassParameterSet& parameters,
+	    const PassBindingOverrides* overrides) noexcept
+	{
+		std::vector<const char*> bindingNames;
+		if (const PassParameterLayout* parameterLayout = parameters.GetLayout())
+		{
+			const std::vector<PassParameterDesc>& parameterDescs = parameterLayout->GetParameters();
+			for (std::size_t index = 0; index < parameterDescs.size() && index < parameters.GetBindingCount(); ++index)
+			{
+				const PassParameterBinding* binding = parameters.GetBinding(static_cast<std::uint32_t>(index));
+				if (binding != nullptr && binding->IsBound())
+				{
+					AppendBindingNameIfCompiled(bindingNames, bindingLayout, parameterDescs[index].Name.c_str());
+				}
+			}
+		}
+
+		if (overrides != nullptr)
+		{
+			for (const PassBindingOverride& bindingOverride : overrides->GetOverrides())
+			{
+				AppendBindingNameIfCompiled(bindingNames, bindingLayout, bindingOverride.Name.c_str());
+			}
+		}
+
+		return bindingNames;
 	}
 
 	template <typename TRasterPassRuntime>
@@ -56,6 +112,29 @@ namespace PassUtilities
 		    passName);
 	}
 
+	template <typename TRasterPassRuntime>
+	bool BindAvailableRasterPassWithRuntime(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    RenderHardwareInterface* renderHardwareInterface,
+	    const TRasterPassRuntime& runtime,
+	    const PassParameterSet& parameters,
+	    const PassBindingOverrides* overrides = nullptr,
+	    const char* passName = nullptr) noexcept
+	{
+		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
+		return BindRasterPassWithRuntime(
+		    frameGraph,
+		    cmd,
+		    renderHardwareInterface,
+		    runtime,
+		    parameters,
+		    bindingNames.data(),
+		    static_cast<std::uint32_t>(bindingNames.size()),
+		    overrides,
+		    passName);
+	}
+
 	template <typename TRasterPassRuntime, std::size_t N>
 	bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraph& frameGraph,
@@ -74,6 +153,25 @@ namespace PassUtilities
 		    GetEmptyPassParameterSet(),
 		    bindingNames.data(),
 		    static_cast<std::uint32_t>(bindingNames.size()),
+		    &overrides,
+		    passName);
+	}
+
+	template <typename TRasterPassRuntime>
+	bool BindRasterPassOverridesWithRuntime(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    RenderHardwareInterface* renderHardwareInterface,
+	    const TRasterPassRuntime& runtime,
+	    const PassBindingOverrides& overrides,
+	    const char* passName = nullptr) noexcept
+	{
+		return BindAvailableRasterPassWithRuntime(
+		    frameGraph,
+		    cmd,
+		    renderHardwareInterface,
+		    runtime,
+		    GetEmptyPassParameterSet(),
 		    &overrides,
 		    passName);
 	}

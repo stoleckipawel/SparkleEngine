@@ -1,21 +1,10 @@
 #include "PCH.h"
 
-#include "Resources/RenderConstantBufferData.h"
 #include "Shaders/Authoring/GlobalShader.h"
 
-#include <cstdint>
-#include <string_view>
+#include "Resources/RenderConstantBufferData.h"
 
-PassParameterLayout BuildShadowOpaqueShaderPackageBindingLayout()
-{
-	PassParameterLayout layout("ShadowOpaque");
-	layout.Add<RenderTarget>("ShadowColor", ShaderStageVisibility::AllGraphics);
-	layout.Add<DepthTarget>("ShadowDepth", ShaderStageVisibility::AllGraphics);
-	layout.Add<UniformData<PerFrameConstantBufferData>>("PerFrame", ShaderStageVisibility::AllGraphics);
-	layout.Add<UniformData<PerViewConstantBufferData>>("PerView", ShaderStageVisibility::AllGraphics);
-	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
-	return layout;
-}
+#include <string_view>
 
 void RegisterShadowOpaqueShaders() noexcept
 {
@@ -27,11 +16,10 @@ class ShadowOpaqueVS final : public TGlobalShader<ShadowOpaqueVS>
 	static constexpr std::string_view kShaderName = "ShadowOpaqueVS";
 	static constexpr std::string_view kShaderPackageName = "ShadowOpaque";
 	static constexpr std::string_view kBindingLayoutId = "ShadowOpaque";
-	static PassParameterLayout BuildPackageBindingLayout() { return BuildShadowOpaqueShaderPackageBindingLayout(); }
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER(std::uint32_t, PerViewConstantBufferData)
-		SHADER_PARAMETER(std::uint32_t, PerObjectVSConstantBufferData)
+		SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
+		SHADER_PARAMETER_CBUFFER_NAMED(PerObjectVS, PerObjectVSConstantBufferData, PerObjectVSConstantBufferData)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
@@ -43,7 +31,6 @@ class ShadowOpaquePS final : public TGlobalShader<ShadowOpaquePS>
 	static constexpr std::string_view kShaderName = "ShadowOpaquePS";
 	static constexpr std::string_view kShaderPackageName = "ShadowOpaque";
 	static constexpr std::string_view kBindingLayoutId = "ShadowOpaque";
-	static PassParameterLayout BuildPackageBindingLayout() { return BuildShadowOpaqueShaderPackageBindingLayout(); }
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 	END_SHADER_PARAMETER_STRUCT()

@@ -13,6 +13,7 @@
 #include "Passes/ShadowOpaquePass.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
+#include "RHI/Public/Shaders/ShaderPackageLayoutBuilder.h"
 
 #include <array>
 #include <cassert>
@@ -82,32 +83,39 @@ inline void LogCookedShaderRuntimeReady(
 	    FormatShaderStageMask(definition.ExpectedStages));
 }
 
-inline void AppendPassParameterLayout(PassParameterLayout& destination, const PassParameterLayout& source)
+inline PassParameterLayout BuildRenderPassShaderPackageLayout(
+    const ShaderPackageDefinition& definition,
+    std::string_view passName,
+    std::string_view declarationName)
 {
-	for (const PassParameterDesc& parameter : source.GetParameters())
+	if (!definition.IsValid())
 	{
-		destination.AddParameter(parameter);
+		Diagnostics::Fail(
+		    GetRendererPipelineLogger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format("Render pass '{}' declares an invalid cooked shader package for '{}'", passName, declarationName));
+		return PassParameterLayout("Invalid");
 	}
-}
 
-inline PassParameterLayout BuildShadowOpaqueBindingLayout()
-{
-	PassParameterLayout layout = ShadowOpaquePass::GetParameterMetadata().GetLayout();
-	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
-	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ShadowOpaquePass::PassName);
-	assert(valid);
-	return layout;
-}
+	PassParameterLayout bindingLayout;
+	std::string errorMessage;
+	if (!BuildRegisteredShaderPackageLayout(definition.PackageId, bindingLayout, errorMessage))
+	{
+		Diagnostics::Fail(
+		    GetRendererPipelineLogger(),
+		    __FILE__,
+		    __LINE__,
+		    std::format(
+		        "Failed to build generated shader package layout '{}' for pass '{}' ({}) - {}",
+		        definition.PackageId != nullptr ? definition.PackageId : "<null>",
+		        passName,
+		        declarationName,
+		        errorMessage));
+		return PassParameterLayout("Invalid");
+	}
 
-inline PassParameterLayout BuildForwardOpaqueBindingLayout()
-{
-	PassParameterLayout layout = ForwardOpaquePass::GetParameterMetadata().GetLayout();
-	layout.Add<UniformData<PerObjectVSConstantBufferData>>("PerObjectVS", ShaderStageVisibility::Vertex);
-	layout.Add<UniformData<PerObjectPSConstantBufferData>>("PerObjectPS", ShaderStageVisibility::Pixel);
-	layout.Add<ReadTexture>("MaterialTextures", ShaderStageVisibility::Pixel, 5u);
-	const bool valid = ValidateShaderPassLayout(layout, ShaderPassKind::Raster, ForwardOpaquePass::PassName);
-	assert(valid);
-	return layout;
+	return bindingLayout;
 }
 
 template <typename TPass> struct RenderPassRuntimeStorage
@@ -165,14 +173,12 @@ template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
 {
 	using RuntimeType = RenderPassRuntimeTraits<ForwardOpaquePass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ForwardOpaquePass>;
-	static constexpr std::array<const char*, 7> StableBindingNames =
-	    {"PerFrame", "PerView", "ShadowMap0", "ShadowMap1", "ShadowMap2", "ShadowMap3", "SamplerTable"};
-	static constexpr std::array<const char*, 3> DrawBindingNames = {"PerObjectVS", "PerObjectPS", "MaterialTextures"};
 
 	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
-		static const PassParameterLayout bindingLayout = BuildForwardOpaqueBindingLayout();
 		const ShaderPackageDefinition shaderPackage = ForwardOpaquePass::DescribePrimaryViewShaderPackage();
+		static const PassParameterLayout bindingLayout =
+		    BuildRenderPassShaderPackageLayout(shaderPackage, ForwardOpaquePass::PassName, "PrimaryViewShaderPackage");
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
 		    rhi,
 		    shaderPackageCache,
@@ -213,13 +219,12 @@ template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
 {
 	using RuntimeType = RenderPassRuntimeTraits<ShadowOpaquePass>::RuntimeType;
 	using StorageType = RenderPassRuntimeStorage<ShadowOpaquePass>;
-	static constexpr std::array<const char*, 2> StableBindingNames = {"PerFrame", "PerView"};
-	static constexpr std::array<const char*, 1> DrawBindingNames = {"PerObjectVS"};
 
 	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
-		static const PassParameterLayout bindingLayout = BuildShadowOpaqueBindingLayout();
 		const ShaderPackageDefinition shaderPackage = ShadowOpaquePass::DescribeShadowViewShaderPackage();
+		static const PassParameterLayout bindingLayout =
+		    BuildRenderPassShaderPackageLayout(shaderPackage, ShadowOpaquePass::PassName, "ShadowViewShaderPackage");
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
 		    rhi,
 		    shaderPackageCache,
@@ -265,16 +270,18 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 	static void CreateRuntimeStorage(RenderHardwareInterface& rhi, CookedShaderPackageCache& shaderPackageCache, StorageType& storage)
 	{
 		const ShaderPackageDefinition shaderPackage = ComputeClearPass::DescribeShaderPackage();
+		static const PassParameterLayout bindingLayout =
+		    BuildRenderPassShaderPackageLayout(shaderPackage, ComputeClearPass::PassName, "ComputeShaderPackage");
 		storage.ShaderPackage = &LoadRenderPassShaderPackage(
 		    rhi,
 		    shaderPackageCache,
 		    shaderPackage,
-		    ComputeClearPass::GetParameterLayout(),
+		    bindingLayout,
 		    ComputeClearPass::PassName,
 		    "ComputeShaderPackage");
 
 		RenderBindingLayoutCompileDesc bindingDesc{};
-		bindingDesc.ParameterLayout = &ComputeClearPass::GetParameterLayout();
+		bindingDesc.ParameterLayout = &bindingLayout;
 		bindingDesc.ShaderPackage = storage.ShaderPackage;
 		bindingDesc.DebugName = L"ComputeClear_RootSignature";
 		storage.BindingLayout = rhi.CreateBindingLayout(bindingDesc);

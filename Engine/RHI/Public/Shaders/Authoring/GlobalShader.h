@@ -1,14 +1,12 @@
 #pragma once
 
 #include "../../RHIAPI.h"
-#include "../../ShaderParameters/PassParameterLayout.h"
 #include "../ShaderStage.h"
 #include "ShaderParameterStruct.h"
 #include "ShaderPermutation.h"
 
 #include <cstdint>
 #include <span>
-#include <string>
 #include <string_view>
 
 struct ShaderRegistrationDesc final
@@ -21,7 +19,6 @@ struct ShaderRegistrationDesc final
 	ShaderStage Stage = ShaderStage::Count;
 	ShaderParameterStructDescriptor (*BuildParameterStructDescriptor)() = nullptr;
 	ShaderPermutationDomainDescriptor (*BuildPermutationDomainDescriptor)() = nullptr;
-	PassParameterLayout (*BuildPackageBindingLayout)() = nullptr;
 };
 
 class SPARKLE_RHI_API GlobalShaderRegistry final
@@ -57,18 +54,6 @@ template <typename TShader> class TGlobalShader
 			return {};
 		}
 	}
-	static PassParameterLayout BuildPackageBindingLayout()
-	{
-		if constexpr (requires { TShader::BuildPackageBindingLayout(); })
-		{
-			return TShader::BuildPackageBindingLayout();
-		}
-		else
-		{
-			const std::string debugName(TShader::kBindingLayoutId.empty() ? "Empty" : TShader::kBindingLayoutId);
-			return PassParameterLayout(debugName.c_str());
-		}
-	}
 };
 
 template <typename TShader> class TGlobalShaderAutoRegister final
@@ -85,7 +70,6 @@ template <typename TShader> class TGlobalShaderAutoRegister final
 		    .Stage = stage,
 		    .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
 		    .BuildPermutationDomainDescriptor = &TGlobalShader<TShader>::GetPermutationDomainDescriptor,
-		    .BuildPackageBindingLayout = &TGlobalShader<TShader>::BuildPackageBindingLayout,
 		});
 	}
 };

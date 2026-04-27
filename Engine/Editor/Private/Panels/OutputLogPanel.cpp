@@ -91,6 +91,44 @@ void OutputLogPanel::BuildUI(bool disableInteraction)
 	ImGui::End();
 }
 
+void OutputLogPanel::BuildContent(bool disableInteraction)
+{
+	DrainPendingRecords();
+
+	ImGui::BeginDisabled(disableInteraction);
+	if (ImGui::Button("Clear"))
+	{
+		Clear();
+	}
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(220.0f);
+	ImGui::InputTextWithHint("##OutputLogFilter", "Filter log output", m_filterBuffer.data(), m_filterBuffer.size());
+	ImGui::SameLine();
+	ImGui::TextDisabled("%zu record(s)", m_records.size());
+	ImGui::EndDisabled();
+	ImGui::Separator();
+
+	const std::string_view filter(m_filterBuffer.data());
+	ImGui::BeginChild("##OutputLogScrollback", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
+	for (const ConsoleOutputRecord& record : m_records)
+	{
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(record.Text, filter))
+		{
+			continue;
+		}
+
+		ImGui::PushStyleColor(ImGuiCol_Text, GetSeverityColor(record.Severity));
+		ImGui::TextUnformatted(record.Text.c_str());
+		ImGui::PopStyleColor();
+	}
+	if (m_scrollToBottom)
+	{
+		ImGui::SetScrollHereY(1.0f);
+		m_scrollToBottom = false;
+	}
+	ImGui::EndChild();
+}
+
 void OutputLogPanel::DrainPendingRecords()
 {
 	std::vector<ConsoleOutputRecord> pendingRecords;

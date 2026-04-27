@@ -21,6 +21,7 @@ class D3D12RootSignatureBuilder final
 	    D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
 	    std::uint32_t descriptorCount,
 	    std::uint32_t baseShaderRegister,
+	    std::uint32_t registerSpace,
 	    D3D12_SHADER_VISIBILITY visibility);
 
 	std::uint32_t AddRootConstants(

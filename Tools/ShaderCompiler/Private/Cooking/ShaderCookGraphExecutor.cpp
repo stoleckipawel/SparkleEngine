@@ -158,11 +158,17 @@ bool ShaderCookGraphExecutor::VerifyParameterStruct(
 	{
 		descriptor.Fields.push_back(ShaderParameterStructFieldDescriptor{
 		    .Name = "__DeliberateMissingBindingForSelfTest",
+		    .LayoutName = "__DeliberateMissingBindingForSelfTest",
+		    .ShaderName = "__DeliberateMissingBindingForSelfTest",
 		    .Kind = CookedShaderResourceKind::ConstantBuffer,
 		    .Dimension = CookedShaderResourceDimension::Buffer,
+		    .SemanticKind = ShaderParameterSemanticKind::UniformData,
+		    .ResourceDomain = ShaderParameterResourceDomain::Uniform,
+		    .Access = ShaderParameterAccess::None,
 		    .ArrayCount = 1,
 		    .ValueSizeInBytes = sizeof(std::uint32_t),
-		    .ValueAlignmentInBytes = alignof(std::uint32_t)});
+		    .ValueAlignmentInBytes = alignof(std::uint32_t),
+		    .Reflected = true});
 	}
 
 	const ShaderParameterStructVerificationResult verificationResult =

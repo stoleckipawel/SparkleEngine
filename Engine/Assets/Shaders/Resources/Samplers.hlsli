@@ -33,8 +33,8 @@
 // =============================================================================
 // Sampler Declarations
 // =============================================================================
-// Contiguous descriptor table bound at runtime.
-// Register slots must match D3D12SamplerLibrary::Slot.
+// Shared sampler symbols are reflected during cook. Runtime pass code selects
+// the shared sampler by typed options; shader authors do not assign registers.
 //
 // Naming: Sampler<MinMag><Mip><Address>
 //   MinMag:  Point, Linear
@@ -49,67 +49,67 @@
 // =============================================================================
 
 // Point MinMag, Point Mip
-SamplerState SamplerPointMipPointWrap : register(s0);
-SamplerState SamplerPointMipPointClamp : register(s1);
-SamplerState SamplerPointMipPointMirror : register(s2);
+SamplerState SamplerPointMipPointWrap;
+SamplerState SamplerPointMipPointClamp;
+SamplerState SamplerPointMipPointMirror;
 
 // Point MinMag, Linear Mip
-SamplerState SamplerPointMipLinearWrap : register(s3);
-SamplerState SamplerPointMipLinearClamp : register(s4);
-SamplerState SamplerPointMipLinearMirror : register(s5);
+SamplerState SamplerPointMipLinearWrap;
+SamplerState SamplerPointMipLinearClamp;
+SamplerState SamplerPointMipLinearMirror;
 
 // Point MinMag, No Mip
-SamplerState SamplerPointNoMipWrap : register(s6);
-SamplerState SamplerPointNoMipClamp : register(s7);
-SamplerState SamplerPointNoMipMirror : register(s8);
+SamplerState SamplerPointNoMipWrap;
+SamplerState SamplerPointNoMipClamp;
+SamplerState SamplerPointNoMipMirror;
 
 // =============================================================================
 // Linear MinMag (s9-s17)
 // =============================================================================
 
 // Linear MinMag, Point Mip (Bilinear)
-SamplerState SamplerLinearMipPointWrap : register(s9);
-SamplerState SamplerLinearMipPointClamp : register(s10);
-SamplerState SamplerLinearMipPointMirror : register(s11);
+SamplerState SamplerLinearMipPointWrap;
+SamplerState SamplerLinearMipPointClamp;
+SamplerState SamplerLinearMipPointMirror;
 
 // Linear MinMag, Linear Mip (Trilinear)
-SamplerState SamplerLinearMipLinearWrap : register(s12);
-SamplerState SamplerLinearMipLinearClamp : register(s13);
-SamplerState SamplerLinearMipLinearMirror : register(s14);
+SamplerState SamplerLinearMipLinearWrap;
+SamplerState SamplerLinearMipLinearClamp;
+SamplerState SamplerLinearMipLinearMirror;
 
 // Linear MinMag, No Mip
-SamplerState SamplerLinearNoMipWrap : register(s15);
-SamplerState SamplerLinearNoMipClamp : register(s16);
-SamplerState SamplerLinearNoMipMirror : register(s17);
+SamplerState SamplerLinearNoMipWrap;
+SamplerState SamplerLinearNoMipClamp;
+SamplerState SamplerLinearNoMipMirror;
 
 // =============================================================================
 // Anisotropic (s18-s32)
 // =============================================================================
 
 // Anisotropic 1x
-SamplerState SamplerAniso1xWrap : register(s18);
-SamplerState SamplerAniso1xClamp : register(s19);
-SamplerState SamplerAniso1xMirror : register(s20);
+SamplerState SamplerAniso1xWrap;
+SamplerState SamplerAniso1xClamp;
+SamplerState SamplerAniso1xMirror;
 
 // Anisotropic 2x
-SamplerState SamplerAniso2xWrap : register(s21);
-SamplerState SamplerAniso2xClamp : register(s22);
-SamplerState SamplerAniso2xMirror : register(s23);
+SamplerState SamplerAniso2xWrap;
+SamplerState SamplerAniso2xClamp;
+SamplerState SamplerAniso2xMirror;
 
 // Anisotropic 4x
-SamplerState SamplerAniso4xWrap : register(s24);
-SamplerState SamplerAniso4xClamp : register(s25);
-SamplerState SamplerAniso4xMirror : register(s26);
+SamplerState SamplerAniso4xWrap;
+SamplerState SamplerAniso4xClamp;
+SamplerState SamplerAniso4xMirror;
 
 // Anisotropic 8x
-SamplerState SamplerAniso8xWrap : register(s27);
-SamplerState SamplerAniso8xClamp : register(s28);
-SamplerState SamplerAniso8xMirror : register(s29);
+SamplerState SamplerAniso8xWrap;
+SamplerState SamplerAniso8xClamp;
+SamplerState SamplerAniso8xMirror;
 
 // Anisotropic 16x
-SamplerState SamplerAniso16xWrap : register(s30);
-SamplerState SamplerAniso16xClamp : register(s31);
-SamplerState SamplerAniso16xMirror : register(s32);
+SamplerState SamplerAniso16xWrap;
+SamplerState SamplerAniso16xClamp;
+SamplerState SamplerAniso16xMirror;
 
 // =============================================================================
 // Sampler Count

@@ -65,6 +65,8 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 	{
 		canonicalLayout += parameter.Name;
 		canonicalLayout += '|';
+		canonicalLayout += parameter.GetShaderName();
+		canonicalLayout += '|';
 		canonicalLayout += std::to_string(static_cast<std::uint32_t>(parameter.Kind));
 		canonicalLayout += '|';
 		canonicalLayout += std::to_string(static_cast<std::uint32_t>(parameter.ResourceDomain));

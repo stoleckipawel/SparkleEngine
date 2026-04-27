@@ -19,6 +19,7 @@ class ConsolePanel final
 	bool IsOpen() const noexcept { return m_isOpen; }
 	void RequestFocus() noexcept;
 	void BuildUI(bool disableInteraction);
+	void BuildContent(bool disableInteraction);
 
   private:
 	static int HandleInputTextCallback(ImGuiInputTextCallbackData* data);

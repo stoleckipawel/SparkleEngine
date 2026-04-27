@@ -54,10 +54,11 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept override;
 	const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept override;
 	RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept override;
+	RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) override;
 	RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data) override;
 	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data) override;
 	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data) override;
-	RhiDescriptorTableHandle GetSamplerTableHandle() const noexcept override;
+	RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept override;
 	RhiViewport GetBackBufferViewport() const noexcept override;
 	RhiRect GetBackBufferScissorRect() const noexcept override;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
@@ -137,7 +138,8 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
-	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle) const noexcept;
+	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
+	    const noexcept;
 	void BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;

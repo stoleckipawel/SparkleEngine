@@ -3,7 +3,7 @@
 #include "Resources/CameraConstantBufferData.hlsli"
 #include "Resources/LightConstantBufferData.hlsli"
 
-cbuffer PerFrameConstantBufferData : register(b0)
+cbuffer PerFrameConstantBufferData
 {
 	uint FrameIndex;
 	float TotalTime;
@@ -16,19 +16,19 @@ cbuffer PerFrameConstantBufferData : register(b0)
 	float2 ViewportSizeInv;
 };
 
-cbuffer PerViewConstantBufferData : register(b1)
+cbuffer PerViewConstantBufferData
 {
 	PerViewCameraConstantBufferData Camera;
 	PerViewLightingConstantBufferData ViewLighting;
 };
 
-cbuffer PerObjectVSConstantBufferData : register(b2)
+cbuffer PerObjectVSConstantBufferData
 {
 	row_major float4x4 WorldMTX;
 	row_major float3x3 WorldInvTransposeMTX;
 };
 
-cbuffer PerObjectPSConstantBufferData : register(b3)
+cbuffer PerObjectPSConstantBufferData
 {
 	float4 BaseColor;
 

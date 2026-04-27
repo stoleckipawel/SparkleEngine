@@ -7,6 +7,7 @@
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Shaders/Authoring/GlobalShader.h"
+#include "Shaders/ShaderPackageLayoutBuilder.h"
 
 #include <format>
 #include <unordered_map>
@@ -163,7 +164,12 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		auto packageIt = packageIndices.find(packageId);
 		if (packageIt == packageIndices.end())
 		{
-			PassParameterLayout bindingLayout = shader.BuildPackageBindingLayout != nullptr ? shader.BuildPackageBindingLayout() : PassParameterLayout(bindingLayoutId.c_str());
+			PassParameterLayout bindingLayout;
+			if (!ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), bindingLayout, outErrorMessage))
+			{
+				return {};
+			}
+
 			ShaderCookPackageDesc package;
 			package.packageId = packageId;
 			package.bindingLayoutId = bindingLayoutId;
@@ -181,13 +187,6 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 			    packageId,
 			    package.bindingLayoutId,
 			    bindingLayoutId);
-			return {};
-		}
-
-		const PassParameterLayout shaderBindingLayout = shader.BuildPackageBindingLayout != nullptr ? shader.BuildPackageBindingLayout() : PassParameterLayout(bindingLayoutId.c_str());
-		if (BuildPassParameterLayoutHash(package.bindingLayout) != BuildPassParameterLayoutHash(shaderBindingLayout))
-		{
-			outErrorMessage = std::format("Typed shader package '{}' has inconsistent binding layout declarations", packageId);
 			return {};
 		}
 

@@ -48,6 +48,21 @@ void ConsolePanel::BuildUI(bool disableInteraction)
 	ImGui::End();
 }
 
+void ConsolePanel::BuildContent(bool disableInteraction)
+{
+	if (m_session == nullptr)
+	{
+		return;
+	}
+
+	DrawToolbar(disableInteraction);
+	ImGui::Separator();
+	DrawOutputRecords();
+	ImGui::Separator();
+	DrawInputLine(disableInteraction);
+	DrawAutocompletePreview();
+}
+
 int ConsolePanel::HandleInputTextCallback(ImGuiInputTextCallbackData* data)
 {
 	if (data == nullptr || data->UserData == nullptr)

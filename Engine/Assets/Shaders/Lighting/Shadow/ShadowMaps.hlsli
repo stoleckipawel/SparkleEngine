@@ -4,10 +4,10 @@
 
 namespace Shadow
 {
-	Texture2D<float> ShadowMap0 : register(t5);
-	Texture2D<float> ShadowMap1 : register(t6);
-	Texture2D<float> ShadowMap2 : register(t7);
-	Texture2D<float> ShadowMap3 : register(t8);
+	Texture2D<float> ShadowMap0;
+	Texture2D<float> ShadowMap1;
+	Texture2D<float> ShadowMap2;
+	Texture2D<float> ShadowMap3;
 
 	float4 GatherShadowDepth(float2 uv, uint mapIndex, int2 offset)
 	{

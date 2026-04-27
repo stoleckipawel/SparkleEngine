@@ -16,12 +16,10 @@ constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, cha
 }
 
 constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
-// v2 (Phase 2b): adds ShaderReflection records (per-binary + typed arrays),
-// BackendName + BackendVersion on CookedShaderBinaryRecord. v1 packages are
-// rejected with a clear error; the project recooks (cache is also keyed on
-// backend identity now, so the on-disk artifact cache invalidates cleanly).
-constexpr std::uint32_t kCookedShaderPackageVersion = 2;
-constexpr std::uint32_t kCookedShaderPackageVersionV1 = 1;
+// v3: shader authors no longer assign HLSL registers manually. The runtime
+// treats reflected Set/Slot records as the physical backend binding source of
+// truth, so v2 packages cooked with the previous register policy must recook.
+constexpr std::uint32_t kCookedShaderPackageVersion = 3;
 
 enum class CookedShaderBinaryFormat : std::uint8_t
 {

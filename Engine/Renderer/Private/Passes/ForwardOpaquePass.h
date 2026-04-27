@@ -28,7 +28,8 @@ struct ForwardOpaquePassParameters
 	ShaderTexture2D<void> ShadowMap3;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
-	ShaderSamplerSet SamplerTable;
+	ShaderSamplerSet SamplerAniso16xWrap;
+	ShaderSamplerSet SamplerLinearNoMipClamp;
 
 	static void Describe(ShaderParameterStructBuilder<ForwardOpaquePassParameters>& builder)
 	{
@@ -40,7 +41,30 @@ struct ForwardOpaquePassParameters
 		builder.ReadTexture("ShadowMap3", &ForwardOpaquePassParameters::ShadowMap3, ShaderStageVisibility::Pixel);
 		builder.Uniform("PerFrame", &ForwardOpaquePassParameters::PerFrame, ShaderStageVisibility::AllGraphics);
 		builder.Uniform("PerView", &ForwardOpaquePassParameters::PerView, ShaderStageVisibility::AllGraphics);
-		builder.Sampler("SamplerTable", &ForwardOpaquePassParameters::SamplerTable, ShaderStageVisibility::Pixel);
+		builder.Sampler("SamplerAniso16xWrap", &ForwardOpaquePassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
+		builder.Sampler("SamplerLinearNoMipClamp", &ForwardOpaquePassParameters::SamplerLinearNoMipClamp, ShaderStageVisibility::Pixel);
+	}
+};
+
+struct ForwardOpaqueDrawParameters
+{
+	ShaderUniform<PerObjectVSConstantBufferData> PerObjectVS;
+	ShaderUniform<PerObjectPSConstantBufferData> PerObjectPS;
+	ShaderTexture2DSRV TextureBaseColor;
+	ShaderTexture2DSRV TextureNormal;
+	ShaderTexture2DSRV TextureMetallicRoughness;
+	ShaderTexture2DSRV TextureOcclusion;
+	ShaderTexture2DSRV TextureEmissive;
+
+	static void Describe(ShaderParameterStructBuilder<ForwardOpaqueDrawParameters>& builder)
+	{
+		builder.Uniform("PerObjectVS", &ForwardOpaqueDrawParameters::PerObjectVS, ShaderStageVisibility::Vertex);
+		builder.Uniform("PerObjectPS", &ForwardOpaqueDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureBaseColor", &ForwardOpaqueDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureNormal", &ForwardOpaqueDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureMetallicRoughness", &ForwardOpaqueDrawParameters::TextureMetallicRoughness, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureOcclusion", &ForwardOpaqueDrawParameters::TextureOcclusion, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureEmissive", &ForwardOpaqueDrawParameters::TextureEmissive, ShaderStageVisibility::Pixel);
 	}
 };
 
@@ -49,11 +73,15 @@ class ForwardOpaquePass final
   public:
 	static constexpr const char* PassName = "ForwardOpaque";
 	using Parameters = ForwardOpaquePassParameters;
+	using DrawParameters = ForwardOpaqueDrawParameters;
 
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
+	using DrawParameterMetadata = ShaderParameterStructMetadata<DrawParameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
+	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribePrimaryViewShaderPackage() noexcept;
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 

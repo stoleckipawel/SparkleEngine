@@ -56,7 +56,7 @@ static const ShaderParameterStructFieldDescriptor* FindDescriptorField(
 {
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
-		if (field.Name == name)
+		if (field.Reflected && field.GetShaderName() == name)
 		{
 			return &field;
 		}
@@ -92,11 +92,21 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
-		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, field.Name);
+		if (!field.Reflected)
+		{
+			continue;
+		}
+
+		const std::string_view shaderName = field.GetShaderName();
+		const std::string_view layoutName = field.GetLayoutName();
+		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, shaderName);
 		if (binding == nullptr)
 		{
 			result.succeeded = false;
-			result.diagnostics.push_back(std::format("SC2001 missing reflected binding for parameter '{}'", field.Name));
+			result.diagnostics.push_back(std::format(
+			    "SC2001 missing reflected binding for parameter '{}' (layout '{}')",
+			    shaderName,
+			    layoutName));
 			continue;
 		}
 
@@ -104,8 +114,9 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2002 kind mismatch for parameter '{}' (declared={}, reflected={})",
-			    field.Name,
+			    "SC2002 kind mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
+			    shaderName,
+			    layoutName,
 			    static_cast<std::uint32_t>(field.Kind),
 			    static_cast<std::uint32_t>(binding->Kind)));
 		}
@@ -115,8 +126,9 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2003 dimension mismatch for parameter '{}' (declared={}, reflected={})",
-			    field.Name,
+			    "SC2003 dimension mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
+			    shaderName,
+			    layoutName,
 			    static_cast<std::uint32_t>(field.Dimension),
 			    static_cast<std::uint32_t>(binding->Dimension)));
 		}
@@ -125,8 +137,9 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2004 array-count mismatch for parameter '{}' (declared={}, reflected={})",
-			    field.Name,
+			    "SC2004 array-count mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
+			    shaderName,
+			    layoutName,
 			    field.ArrayCount,
 			    binding->ArrayCount));
 		}

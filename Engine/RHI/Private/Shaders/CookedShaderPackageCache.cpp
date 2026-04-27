@@ -313,13 +313,12 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 
 	if (!outPackage.m_header.Matches(kCookedShaderPackageMagic, kCookedShaderPackageVersion))
 	{
-		if (outPackage.m_header.Magic == kCookedShaderPackageMagic && outPackage.m_header.Version == kCookedShaderPackageVersionV1)
+		if (outPackage.m_header.Magic == kCookedShaderPackageMagic)
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' is version {} (legacy v1, pre-reflection). Recook to version {} (Phase 2b adds shader "
-			    "reflection and backend identity).",
+			    "Cooked shader package '{}' is version {}. Recook to current version {}.",
 			    path.string(),
-			    kCookedShaderPackageVersionV1,
+			    outPackage.m_header.Version,
 			    kCookedShaderPackageVersion);
 			return false;
 		}

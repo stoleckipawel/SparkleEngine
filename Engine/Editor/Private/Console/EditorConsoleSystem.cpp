@@ -10,6 +10,8 @@
 #include "Panels/ConsolePanel.h"
 #include "Panels/OutputLogPanel.h"
 
+#include <imgui.h>
+
 namespace
 {
 	constexpr std::uint32_t kWindowsKeyDownMessage = 0x0100;
@@ -72,6 +74,7 @@ void EditorConsoleSystem::AppendOutput(ConsoleOutputRecord record)
 
 void EditorConsoleSystem::RequestConsoleFocus() noexcept
 {
+	m_activeDockTab = ActiveDockTab::Console;
 	if (m_consolePanel)
 	{
 		m_consolePanel->RequestFocus();
@@ -80,6 +83,7 @@ void EditorConsoleSystem::RequestConsoleFocus() noexcept
 
 void EditorConsoleSystem::OpenOutputLog() noexcept
 {
+	m_activeDockTab = ActiveDockTab::OutputLog;
 	if (m_outputLogPanel)
 	{
 		m_outputLogPanel->SetOpen(true);
@@ -106,6 +110,56 @@ void EditorConsoleSystem::BuildUI(bool disableInteraction)
 	{
 		m_consolePanel->BuildUI(disableInteraction);
 	}
+}
+
+void EditorConsoleSystem::BuildDockedUI(float left, float top, float width, float height, bool disableInteraction)
+{
+	if (width <= 0.0f || height <= 0.0f)
+	{
+		return;
+	}
+
+	ImGui::SetNextWindowPos(ImVec2(left, top), ImGuiCond_Always);
+	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove |
+	    ImGuiWindowFlags_NoResize |
+	    ImGuiWindowFlags_NoCollapse |
+	    ImGuiWindowFlags_NoTitleBar |
+	    ImGuiWindowFlags_NoSavedSettings;
+	if (!ImGui::Begin("Viewport Console Dock", nullptr, windowFlags))
+	{
+		ImGui::End();
+		return;
+	}
+
+	if (ImGui::BeginTabBar("##ViewportConsoleDockTabs"))
+	{
+		const ImGuiTabItemFlags outputLogFlags = m_activeDockTab == ActiveDockTab::OutputLog ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+		if (ImGui::BeginTabItem("Output Log", nullptr, outputLogFlags))
+		{
+			m_activeDockTab = ActiveDockTab::OutputLog;
+			if (m_outputLogPanel)
+			{
+				m_outputLogPanel->BuildContent(disableInteraction);
+			}
+			ImGui::EndTabItem();
+		}
+
+		const ImGuiTabItemFlags consoleFlags = m_activeDockTab == ActiveDockTab::Console ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None;
+		if (ImGui::BeginTabItem("Console", nullptr, consoleFlags))
+		{
+			m_activeDockTab = ActiveDockTab::Console;
+			if (m_consolePanel)
+			{
+				m_consolePanel->BuildContent(disableInteraction);
+			}
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }
 
 void EditorConsoleSystem::SubscribeToLogStream()

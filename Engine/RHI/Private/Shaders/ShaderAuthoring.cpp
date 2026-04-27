@@ -103,13 +103,19 @@ std::string BuildShaderParameterStructReport(const ShaderParameterStructDescript
 	stream << descriptor.Name << " parameter(s)=" << descriptor.Fields.size();
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
-		stream << "\n  " << field.Name << " kind=" << static_cast<std::uint32_t>(field.Kind)
+		stream << "\n  layout=" << field.GetLayoutName() << " shader=" << field.GetShaderName()
+		       << " kind=" << static_cast<std::uint32_t>(field.Kind)
 		       << " dimension=" << static_cast<std::uint32_t>(field.Dimension)
+		       << " semantic=" << static_cast<std::uint32_t>(field.SemanticKind)
+		       << " domain=" << static_cast<std::uint32_t>(field.ResourceDomain)
+		       << " access=" << static_cast<std::uint32_t>(field.Access)
+		       << " visibility=" << static_cast<std::uint32_t>(field.Visibility)
 		       << " array=" << field.ArrayCount;
 		if (field.ValueSizeInBytes > 0)
 		{
 			stream << " size=" << field.ValueSizeInBytes;
 		}
+		stream << " reflected=" << (field.Reflected ? "true" : "false");
 	}
 	return stream.str();
 }

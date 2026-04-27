@@ -11,25 +11,6 @@ namespace
 {
 	constexpr float MinimumViewportExtent = 64.0f;
 
-	const char* ToViewKindLabel(RenderViewKind viewKind) noexcept
-	{
-		switch (viewKind)
-		{
-			case RenderViewKind::Game:
-				return "Game";
-			case RenderViewKind::Scene:
-				return "Scene";
-			case RenderViewKind::Preview:
-				return "Preview";
-			case RenderViewKind::Thumbnail:
-				return "Thumbnail";
-			case RenderViewKind::Debug:
-				return "Debug";
-			default:
-				return "Viewport";
-		}
-	}
-
 	ImVec2 ComputeViewportImageSize(const ImVec2& availableRegion, const RenderViewportExtent& extent) noexcept
 	{
 		if (!extent.IsValid() || availableRegion.x <= 0.0f || availableRegion.y <= 0.0f)
@@ -56,6 +37,11 @@ ViewportPanel::ViewportPanel(float leftInsetPixels, float rightInsetPixels) noex
 void ViewportPanel::SetTopInset(float topInsetPixels) noexcept
 {
 	m_topInsetPixels = topInsetPixels;
+}
+
+void ViewportPanel::SetBottomInset(float bottomInsetPixels) noexcept
+{
+	m_bottomInsetPixels = bottomInsetPixels;
 }
 
 void ViewportPanel::SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept
@@ -105,7 +91,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	const float width = (std::max) (MinimumViewportExtent, io.DisplaySize.x - m_leftInsetPixels - m_rightInsetPixels);
-	const float height = (std::max) (MinimumViewportExtent, io.DisplaySize.y - m_topInsetPixels);
+	const float height = (std::max) (MinimumViewportExtent, io.DisplaySize.y - m_topInsetPixels - m_bottomInsetPixels);
 
 	ImGui::SetNextWindowPos(ImVec2(m_leftInsetPixels, m_topInsetPixels), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);

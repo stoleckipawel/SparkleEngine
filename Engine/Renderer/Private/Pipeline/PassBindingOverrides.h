@@ -3,6 +3,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -27,7 +28,7 @@ struct PassBindingOverride
 	PassBindingOverrideType Type = PassBindingOverrideType::DescriptorTable;
 	RhiGpuVirtualAddress GpuAddress = 0;
 	RhiGpuDescriptorHandle DescriptorTable = {};
-	RhiDescriptorTableHandle LogicalDescriptorTable = {};
+	RhiDescriptorTableBinding LogicalDescriptorTable = {};
 	DescriptorTableOverrideKind DescriptorTableKind = DescriptorTableOverrideKind::GpuDescriptor;
 	const void* ConstantsData = nullptr;
 	std::uint32_t ConstantCount = 0;
@@ -41,8 +42,10 @@ class PassBindingOverrides final
 	void SetUnorderedAccessView(const char* name, RhiGpuVirtualAddress gpuAddress);
 	void SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable);
 	void SetDescriptorTable(const char* name, RhiDescriptorTableHandle descriptorTable);
+	void SetDescriptorTable(const char* name, RhiDescriptorTableBinding descriptorTable);
 	void SetRootConstants(const char* name, const void* data, std::uint32_t constantCount);
 
+	std::span<const PassBindingOverride> GetOverrides() const noexcept { return m_overrides; }
 	const PassBindingOverride* Find(const char* name, PassBindingOverrideType type) const noexcept;
 
   private:

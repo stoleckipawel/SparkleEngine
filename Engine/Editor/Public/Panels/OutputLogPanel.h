@@ -19,6 +19,7 @@ class OutputLogPanel final
 	void AddRecord(ConsoleOutputRecord record);
 	void Clear() noexcept;
 	void BuildUI(bool disableInteraction);
+	void BuildContent(bool disableInteraction);
 
   private:
 	void DrainPendingRecords();

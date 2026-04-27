@@ -116,6 +116,63 @@ struct RhiDescriptorTableHandle
 	constexpr explicit operator bool() const noexcept { return Value != 0; }
 };
 
+struct RhiDescriptorTableBinding
+{
+	RhiDescriptorTableHandle Table = {};
+	std::uint32_t DescriptorIndex = 0;
+
+	constexpr explicit operator bool() const noexcept { return static_cast<bool>(Table); }
+};
+
+enum class RhiSamplerMinMagFilter : std::uint8_t
+{
+	Point = 0,
+	Linear,
+};
+
+enum class RhiSamplerMipFilter : std::uint8_t
+{
+	None = 0,
+	Point,
+	Linear,
+};
+
+enum class RhiSamplerAddressMode : std::uint8_t
+{
+	Wrap = 0,
+	Clamp,
+	Mirror,
+};
+
+struct RhiSamplerAddressModes
+{
+	RhiSamplerAddressMode U = RhiSamplerAddressMode::Wrap;
+	RhiSamplerAddressMode V = RhiSamplerAddressMode::Wrap;
+	RhiSamplerAddressMode W = RhiSamplerAddressMode::Wrap;
+};
+
+constexpr RhiSamplerAddressModes MakeRhiSamplerAddressModes(RhiSamplerAddressMode addressMode) noexcept
+{
+	return RhiSamplerAddressModes{addressMode, addressMode, addressMode};
+}
+
+enum class RhiSamplerAnisotropy : std::uint8_t
+{
+	X1 = 1,
+	X2 = 2,
+	X4 = 4,
+	X8 = 8,
+	X16 = 16,
+};
+
+struct RhiSamplerDesc
+{
+	RhiSamplerMinMagFilter MinMagFilter = RhiSamplerMinMagFilter::Linear;
+	RhiSamplerMipFilter MipFilter = RhiSamplerMipFilter::Linear;
+	RhiSamplerAddressModes Address = {};
+	RhiSamplerAnisotropy MaxAnisotropy = RhiSamplerAnisotropy::X1;
+};
+
 using RhiGpuVirtualAddress = std::uint64_t;
 
 enum class ERhiCullMode : std::uint8_t
@@ -480,7 +537,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BindGraphicsConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsShaderResource(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindGraphicsUnorderedAccess(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
-	virtual void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept = 0;
+	virtual void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
 	virtual void SetGraphicsRootConstants(
 	    std::uint32_t rootParameterIndex,
@@ -490,7 +547,7 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BindComputeConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeShaderResource(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
 	virtual void BindComputeUnorderedAccess(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept = 0;
-	virtual void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept = 0;
+	virtual void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept = 0;
 	virtual void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept = 0;
 	virtual void SetComputeRootConstants(
 	    std::uint32_t rootParameterIndex,
@@ -557,10 +614,11 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual void ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle cpuHandle, RhiGpuDescriptorHandle gpuHandle) noexcept = 0;
 	virtual const PerFrameConstantBufferData& GetPerFrameConstantData() const noexcept = 0;
 	virtual RhiGpuVirtualAddress GetPerFrameConstantGpuAddress() const noexcept = 0;
+	virtual RhiGpuVirtualAddress AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes) = 0;
 	virtual RhiGpuVirtualAddress AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data) = 0;
 	virtual RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data) = 0;
 	virtual RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data) = 0;
-	virtual RhiDescriptorTableHandle GetSamplerTableHandle() const noexcept = 0;
+	virtual RhiDescriptorTableBinding GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept = 0;
 	virtual RhiViewport GetBackBufferViewport() const noexcept = 0;
 	virtual RhiRect GetBackBufferScissorRect() const noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept = 0;

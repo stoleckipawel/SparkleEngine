@@ -30,8 +30,15 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	void OpenOutputLog() noexcept;
 	bool HandleShortcut(std::uint32_t message, std::uintptr_t key, bool wantsTextInput) noexcept;
 	void BuildUI(bool disableInteraction);
+	void BuildDockedUI(float left, float top, float width, float height, bool disableInteraction);
 
   private:
+	enum class ActiveDockTab : std::uint8_t
+	{
+		OutputLog,
+		Console,
+	};
+
 	void SubscribeToLogStream();
 
 	std::unique_ptr<ConsoleCommandRegistry> m_commandRegistry;
@@ -39,4 +46,5 @@ class SPARKLE_EDITOR_API EditorConsoleSystem final
 	std::unique_ptr<ConsolePanel> m_consolePanel;
 	std::unique_ptr<OutputLogPanel> m_outputLogPanel;
 	std::uint64_t m_logRecordHandlerId = 0;
+	ActiveDockTab m_activeDockTab = ActiveDockTab::OutputLog;
 };

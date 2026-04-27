@@ -66,6 +66,77 @@ class ShaderTexture2D final : public ShaderParameterFields::ResourceArrayField<T
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
+class ShaderTexture3D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+{
+  public:
+	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Semantic = ReadTexture;
+	using ValueType = TValue;
+	using Base::operator=;
+	using Base::Base;
+};
+
+template <typename TValue = void, std::size_t ArrayCount = 1>
+class ShaderTextureCube final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+{
+  public:
+	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Semantic = ReadTexture;
+	using ValueType = TValue;
+	using Base::operator=;
+	using Base::Base;
+};
+
+class ShaderTexture2DSRV final
+{
+  public:
+	using Semantic = ReadTexture;
+
+	ShaderTexture2DSRV() = default;
+
+	ShaderTexture2DSRV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
+	{
+		m_descriptorTable = descriptorTable;
+		return *this;
+	}
+
+	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
+
+	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable); }
+
+	void Reset() noexcept { m_descriptorTable = {}; }
+
+  private:
+	RhiDescriptorTableBinding m_descriptorTable = {};
+};
+
+using ShaderTexture3DSRV = ShaderTexture2DSRV;
+using ShaderTextureCubeSRV = ShaderTexture2DSRV;
+
+class ShaderTexture2DUAV final
+{
+  public:
+	using Semantic = RWTexture;
+
+	ShaderTexture2DUAV() = default;
+
+	ShaderTexture2DUAV& operator=(RhiDescriptorTableBinding descriptorTable) noexcept
+	{
+		m_descriptorTable = descriptorTable;
+		return *this;
+	}
+
+	RhiDescriptorTableBinding GetDescriptorTable() const noexcept { return m_descriptorTable; }
+
+	bool IsBound() const noexcept { return static_cast<bool>(m_descriptorTable); }
+
+	void Reset() noexcept { m_descriptorTable = {}; }
+
+  private:
+	RhiDescriptorTableBinding m_descriptorTable = {};
+};
+
+template <typename TValue = void, std::size_t ArrayCount = 1>
 class ShaderRWTexture2D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
 {
   public:
@@ -147,20 +218,26 @@ class ShaderSamplerSet final
 
 	ShaderSamplerSet() = default;
 
-	ShaderSamplerSet& operator=(SamplerReference sampler)
+	ShaderSamplerSet& operator=(RhiSamplerDesc sampler) noexcept
 	{
-		m_sampler = std::move(sampler);
+		m_sampler = sampler;
+		m_isBound = true;
 		return *this;
 	}
 
-	const SamplerReference& GetSampler() const noexcept { return m_sampler; }
+	const RhiSamplerDesc& GetSampler() const noexcept { return m_sampler; }
 
-	bool IsBound() const noexcept { return m_sampler.IsValid(); }
+	bool IsBound() const noexcept { return m_isBound; }
 
-	void Reset() noexcept { m_sampler = {}; }
+	void Reset() noexcept
+	{
+		m_sampler = {};
+		m_isBound = false;
+	}
 
   private:
-	SamplerReference m_sampler;
+	RhiSamplerDesc m_sampler = {};
+	bool m_isBound = false;
 };
 
 template <typename T> struct ShaderParameterFieldTraits;
@@ -169,6 +246,30 @@ template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTr
 {
 	using Semantic = ReadTexture;
 	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+};
+
+template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTexture3D<TValue, ArrayCount>>
+{
+	using Semantic = ReadTexture;
+	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+};
+
+template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderTextureCube<TValue, ArrayCount>>
+{
+	using Semantic = ReadTexture;
+	static constexpr std::uint32_t FieldArrayCount = static_cast<std::uint32_t>(ArrayCount);
+};
+
+template <> struct ShaderParameterFieldTraits<ShaderTexture2DSRV>
+{
+	using Semantic = ReadTexture;
+	static constexpr std::uint32_t FieldArrayCount = 1;
+};
+
+template <> struct ShaderParameterFieldTraits<ShaderTexture2DUAV>
+{
+	using Semantic = RWTexture;
+	static constexpr std::uint32_t FieldArrayCount = 1;
 };
 
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWTexture2D<TValue, ArrayCount>>
@@ -239,6 +340,52 @@ std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
     const ShaderTexture2D<TValue, ArrayCount>& field)
 {
 	return parameterSet.SetTextureArray(name, field.ToVector());
+}
+
+template <typename TValue, std::size_t ArrayCount>
+std::enable_if_t<ArrayCount == 1, bool> BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderTexture3D<TValue, ArrayCount>& field)
+{
+	return parameterSet.SetTexture(name, field.GetValues()[0]);
+}
+
+template <typename TValue, std::size_t ArrayCount>
+std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderTexture3D<TValue, ArrayCount>& field)
+{
+	return parameterSet.SetTextureArray(name, field.ToVector());
+}
+
+template <typename TValue, std::size_t ArrayCount>
+std::enable_if_t<ArrayCount == 1, bool> BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderTextureCube<TValue, ArrayCount>& field)
+{
+	return parameterSet.SetTexture(name, field.GetValues()[0]);
+}
+
+template <typename TValue, std::size_t ArrayCount>
+std::enable_if_t<(ArrayCount > 1), bool> BindParameterField(
+    PassParameterSet& parameterSet,
+    const char* name,
+    const ShaderTextureCube<TValue, ArrayCount>& field)
+{
+	return parameterSet.SetTextureArray(name, field.ToVector());
+}
+
+inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DSRV& field)
+{
+	return parameterSet.SetShaderResourceView(name, field.GetDescriptorTable());
+}
+
+inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DUAV& field)
+{
+	return parameterSet.SetUnorderedAccessView(name, field.GetDescriptorTable());
 }
 
 template <typename TValue, std::size_t ArrayCount>
@@ -317,5 +464,10 @@ template <typename TValue> bool BindParameterField(PassParameterSet& parameterSe
 
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderSamplerSet& field)
 {
+	if (!field.IsBound())
+	{
+		return false;
+	}
+
 	return parameterSet.SetSampler(name, field.GetSampler());
 }

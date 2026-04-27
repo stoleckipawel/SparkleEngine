@@ -37,6 +37,16 @@ const ShadowOpaquePass::ParameterMetadata& ShadowOpaquePass::GetParameterMetadat
 	return metadata;
 }
 
+const ShadowOpaquePass::DrawParameterMetadata& ShadowOpaquePass::GetDrawParameterMetadata() noexcept
+{
+	static const DrawParameterMetadata metadata = []
+	{
+		return ShaderParameterStructBuilder<DrawParameters>::BuildMetadata("ShadowOpaque.Draw");
+	}();
+
+	return metadata;
+}
+
 ShaderPackageDefinition ShadowOpaquePass::DescribeShadowViewShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
@@ -105,18 +115,13 @@ void ShadowOpaquePass::BindPassResources(
     RhiGpuVirtualAddress perViewGpuAddress)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
-	PassBindingOverrides overrides;
-	overrides.SetConstantBufferView("PerFrame", renderHardwareInterface.GetPerFrameConstantGpuAddress());
-	overrides.SetConstantBufferView("PerView", perViewGpuAddress);
-	const bool bound = PassUtilities::BindRasterPassWithRuntime(
+	const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 	    frameGraph,
 	    cmd,
-	    nullptr,
+	    &renderHardwareInterface,
 	    runtime,
 	    parameters.GetPassParameterSet(),
-	    RenderPassPipelineTraits<ShadowOpaquePass>::StableBindingNames.data(),
-	    static_cast<std::uint32_t>(RenderPassPipelineTraits<ShadowOpaquePass>::StableBindingNames.size()),
-	    &overrides,
+	    nullptr,
 	    PassName);
 	assert(bound);
 }
@@ -144,15 +149,15 @@ void ShadowOpaquePass::DrawMeshes(
 		PerObjectVSConstantBufferData perObjectVS{};
 		perObjectVS.WorldMTX = draw.worldMatrix;
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
-		PassBindingOverrides overrides;
-		overrides.SetConstantBufferView("PerObjectVS", renderHardwareInterface.AllocatePerObjectVertexConstants(perObjectVS));
-		const bool bound = PassUtilities::BindRasterPassOverridesWithRuntime(
+		DrawParameterInstance drawParameters(GetDrawParameterMetadata());
+		drawParameters->PerObjectVS = perObjectVS;
+		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    frameGraph,
 		    cmd,
-		    nullptr,
+		    &renderHardwareInterface,
 		    runtime,
-		    RenderPassPipelineTraits<ShadowOpaquePass>::DrawBindingNames,
-		    overrides,
+		    drawParameters.GetPassParameterSet(),
+		    nullptr,
 		    PassName);
 		assert(bound);
 

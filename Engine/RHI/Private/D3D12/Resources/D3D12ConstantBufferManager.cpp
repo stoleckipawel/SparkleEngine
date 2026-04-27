@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/Resources/D3D12FrameResource.h"
+
+#include <cstring>
 #include "Timer.h"
 #include "Window/Window.h"
 #include "D3D12/D3D12SwapChain.h"
@@ -56,6 +58,19 @@ void D3D12ConstantBufferManager::UpdatePerFrame(std::uint32_t viewModeIndex)
 	m_perFrameData[frameInFlightIndex] = data;
 	m_perFrameCB[frameInFlightIndex]->Update(data);
 }
+
+D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::AllocateUniform(const void* data, std::uint32_t sizeInBytes)
+{
+	if (data == nullptr || sizeInBytes == 0)
+	{
+		return 0;
+	}
+
+	D3D12LinearAllocation allocation = m_frameResourceManager->Allocate(sizeInBytes, 256);
+	std::memcpy(allocation.CpuPtr, data, sizeInBytes);
+	return allocation.GpuAddress;
+}
+
 D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::AllocatePerView(const PerViewConstantBufferData& data)
 {
 	return m_frameResourceManager->AllocateConstantBuffer(data);

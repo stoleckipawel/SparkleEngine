@@ -17,6 +17,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	ViewportPanel& operator=(ViewportPanel&&) = delete;
 
 	void SetTopInset(float topInsetPixels) noexcept;
+	void SetBottomInset(float bottomInsetPixels) noexcept;
 	void SetSideInsets(float leftInsetPixels, float rightInsetPixels) noexcept;
 	void SetRequestedExtent(RenderViewportExtent extent) noexcept;
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
@@ -31,6 +32,7 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	ViewportRenderRequest m_renderRequest = {};
 	ViewportRenderProducts m_renderProducts = {};
 	float m_topInsetPixels = 0.0f;
+	float m_bottomInsetPixels = 0.0f;
 	float m_leftInsetPixels = 320.0f;
 	float m_rightInsetPixels = 456.0f;
 	std::uint64_t m_sceneColorTextureId = 0;

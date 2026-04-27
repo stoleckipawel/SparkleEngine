@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -43,12 +44,15 @@ constexpr bool HasAnyShaderStageVisibility(ShaderStageVisibility value, ShaderSt
 struct PassParameterDesc
 {
 	std::string Name;
+	std::string ShaderName;
 	ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::ReadTexture;
 	ShaderParameterResourceDomain ResourceDomain = ShaderParameterResourceDomain::None;
 	ShaderParameterAccess Access = ShaderParameterAccess::None;
 	ShaderStageVisibility Visibility = ShaderStageVisibility::All;
 	std::uint32_t ArrayCount = 1;
 	std::uint32_t ValueSizeInBytes = 0;
+
+	std::string_view GetShaderName() const noexcept { return ShaderName.empty() ? std::string_view(Name) : std::string_view(ShaderName); }
 
 	bool IsArray() const noexcept { return ArrayCount > 1; }
 
@@ -118,6 +122,7 @@ class PassParameterLayout final
 
 		PassParameterDesc parameter{};
 		parameter.Name = name != nullptr ? name : "";
+		parameter.ShaderName = parameter.Name;
 		parameter.Kind = ShaderParameterSemanticTraits<T>::Kind;
 		parameter.ResourceDomain = ShaderParameterSemanticTraits<T>::ResourceDomain;
 		parameter.Access = ShaderParameterSemanticTraits<T>::Access;

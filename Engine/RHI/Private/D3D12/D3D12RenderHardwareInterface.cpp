@@ -10,6 +10,7 @@
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
+#include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "Resources/Texture.h"
 #include "D3D12/Textures/TextureFactory.h"
 #include "D3D12/Textures/TextureLoader.h"
@@ -808,14 +809,16 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 		}
 	}
 
-	void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept override
+	void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept override
 	{
-		if (m_commandList == nullptr || m_owner == nullptr || !tableHandle)
+		if (m_commandList == nullptr || m_owner == nullptr || !tableBinding)
 		{
 			return;
 		}
 
-		m_commandList->SetGraphicsRootDescriptorTable(rootParameterIndex, m_owner->ResolveDescriptorTableGpuHandle(tableHandle));
+		m_commandList->SetGraphicsRootDescriptorTable(
+		    rootParameterIndex,
+		    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
 	}
 
 	void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override
@@ -862,14 +865,16 @@ class D3D12RenderHardwareInterface::D3D12RenderCommandList final : public Render
 		}
 	}
 
-	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept override
+	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept override
 	{
-		if (m_commandList == nullptr || m_owner == nullptr || !tableHandle)
+		if (m_commandList == nullptr || m_owner == nullptr || !tableBinding)
 		{
 			return;
 		}
 
-		m_commandList->SetComputeRootDescriptorTable(rootParameterIndex, m_owner->ResolveDescriptorTableGpuHandle(tableHandle));
+		m_commandList->SetComputeRootDescriptorTable(
+		    rootParameterIndex,
+		    m_owner->ResolveDescriptorTableGpuHandle(tableBinding.Table, tableBinding.DescriptorIndex));
 	}
 
 	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override
@@ -1345,6 +1350,12 @@ RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetPerFrameConstantGpuAddress
 	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameGpuAddress() : 0;
 }
 
+
+RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
+{
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : 0;
+}
+
 RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data)
 {
 	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerView(data) : 0;
@@ -1360,9 +1371,15 @@ RhiGpuVirtualAddress D3D12RenderHardwareInterface::AllocatePerObjectPixelConstan
 	return m_constantBufferManager != nullptr ? m_constantBufferManager->UpdatePerObjectPS(data) : 0;
 }
 
-RhiDescriptorTableHandle D3D12RenderHardwareInterface::GetSamplerTableHandle() const noexcept
+RhiDescriptorTableBinding D3D12RenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
 {
-	return m_samplerTableHandle;
+	D3D12SamplerLibrary::Slot slot = D3D12SamplerLibrary::Slot::Count;
+	if (!m_samplerTableHandle || !D3D12SamplerLibrary::TryGetSlot(samplerDesc, slot))
+	{
+		return {};
+	}
+
+	return RhiDescriptorTableBinding{m_samplerTableHandle, static_cast<std::uint32_t>(slot)};
 }
 
 RhiViewport D3D12RenderHardwareInterface::GetBackBufferViewport() const noexcept
@@ -1946,10 +1963,18 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTableGpuHandle(
-    RhiDescriptorTableHandle tableHandle) const noexcept
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex) const noexcept
 {
 	const DescriptorTableRecord* const record = FindDescriptorTableRecord(tableHandle);
-	return record != nullptr ? record->nativeHandle.GetGPU() : D3D12_GPU_DESCRIPTOR_HANDLE{};
+	if (record == nullptr || descriptorIndex >= record->descriptorCount)
+	{
+		return D3D12_GPU_DESCRIPTOR_HANDLE{};
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = record->nativeHandle.GetGPU();
+	gpuHandle.ptr += static_cast<UINT64>(descriptorIndex) * record->nativeHandle.GetIncrementSize();
+	return gpuHandle;
 }
 
 D3D12_DESCRIPTOR_HEAP_TYPE D3D12RenderHardwareInterface::ToNativeDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept

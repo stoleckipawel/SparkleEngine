@@ -5,11 +5,11 @@
 #include "Geometry/PixelInput.hlsli"
 #include "Geometry/Transforms.hlsli"
 
-Texture2D TextureBaseColor : register(t0);
-Texture2D TextureNormal : register(t1);
-Texture2D TextureMetallicRoughness : register(t2);
-Texture2D TextureOcclusion : register(t3);
-Texture2D TextureEmissive : register(t4);
+Texture2D TextureBaseColor;
+Texture2D TextureNormal;
+Texture2D TextureMetallicRoughness;
+Texture2D TextureOcclusion;
+Texture2D TextureEmissive;
 
 namespace Material
 {

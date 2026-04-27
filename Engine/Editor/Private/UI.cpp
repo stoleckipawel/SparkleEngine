@@ -25,6 +25,7 @@
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_dx12.h>
 
+#include <algorithm>
 #include <utility>
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -33,6 +34,14 @@ namespace
 {
 	constexpr float SceneOutlinerWidth = 320.0f;
 	constexpr float SceneInspectorWidth = 560.0f;
+	constexpr float ConsoleDockHeight = 300.0f;
+	constexpr float MinimumViewportExtent = 64.0f;
+
+	float ComputeConsoleDockHeight(float availableHeight) noexcept
+	{
+		const float maxDockHeight = (std::max) (0.0f, availableHeight - MinimumViewportExtent);
+		return (std::min) (ConsoleDockHeight, maxDockHeight);
+	}
 
 	ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept
 	{
@@ -438,10 +447,16 @@ void UI::Build()
 
 	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : SceneOutlinerWidth;
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
+	ImGuiIO& io = ImGui::GetIO();
+	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
+	const float consoleDockHeight = ComputeConsoleDockHeight(availableCenterHeight);
+	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
+	const float viewportHeight = (std::max) (MinimumViewportExtent, availableCenterHeight - consoleDockHeight);
 
 	if (m_viewportPanel)
 	{
 		m_viewportPanel->SetTopInset(mainMenuBarHeight);
+		m_viewportPanel->SetBottomInset(consoleDockHeight);
 		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
 		m_viewportPanel->BuildUI(disableInteraction);
 	}
@@ -464,7 +479,12 @@ void UI::Build()
 
 	if (m_editorConsoleSystem)
 	{
-		m_editorConsoleSystem->BuildUI(disableInteraction);
+		m_editorConsoleSystem->BuildDockedUI(
+		    outlinerWidth,
+		    mainMenuBarHeight + viewportHeight,
+		    viewportWidth,
+		    consoleDockHeight,
+		    disableInteraction);
 	}
 
 	BuildShaderRecookStatusWindow(disableInteraction);

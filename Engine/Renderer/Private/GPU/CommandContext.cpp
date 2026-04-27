@@ -76,6 +76,11 @@ void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDe
 	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableHandle);
 }
 
+void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+{
+	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableBinding);
+}
+
 void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindComputeConstantBuffer(rootParameterIndex, gpuAddress);
@@ -89,6 +94,11 @@ void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex
 void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableHandle tableHandle) noexcept
 {
 	m_commandList->BindComputeDescriptorTable(rootParameterIndex, tableHandle);
+}
+
+void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+{
+	m_commandList->BindComputeDescriptorTable(rootParameterIndex, tableBinding);
 }
 
 void CommandContext::SetComputeRoot32BitConstants(
