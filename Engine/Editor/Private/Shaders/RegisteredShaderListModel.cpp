@@ -37,7 +37,8 @@ void RegisteredShaderListModel::Refresh()
 		row.ParameterCount = parameters.Fields.size();
 		row.PermutationDimensionCount = permutations.Dimensions.size();
 		row.RuntimeGeneration = generation;
-		row.ArtifactAvailable = HasDebugArtifactsFor(row.ShaderId, row.PackageId);
+		row.ArtifactDirectory = FindDebugArtifactDirectoryFor(row.ShaderId, row.PackageId);
+		row.ArtifactAvailable = !row.ArtifactDirectory.empty();
 		row.LastStatus = m_lastStatus;
 		m_rows.push_back(std::move(row));
 	}
@@ -52,13 +53,13 @@ void RegisteredShaderListModel::SetLastStatus(std::string status)
 	}
 }
 
-bool RegisteredShaderListModel::HasDebugArtifactsFor(std::string_view shaderId, std::string_view packageId)
+std::filesystem::path RegisteredShaderListModel::FindDebugArtifactDirectoryFor(std::string_view shaderId, std::string_view packageId)
 {
 	const std::filesystem::path root = Paths::ShaderCacheRoot();
 	std::error_code errorCode;
 	if (!std::filesystem::exists(root, errorCode) || errorCode)
 	{
-		return false;
+		return {};
 	}
 
 	for (std::filesystem::recursive_directory_iterator it(root, errorCode), end; it != end && !errorCode; it.increment(errorCode))
@@ -73,9 +74,9 @@ bool RegisteredShaderListModel::HasDebugArtifactsFor(std::string_view shaderId, 
 		if ((Strings::ContainsIgnoreCase(directoryName, shaderId) || Strings::ContainsIgnoreCase(directoryName, packageId)) &&
 		    std::filesystem::exists(it->path() / "compile-request.json", errorCode) && !errorCode)
 		{
-			return true;
+			return it->path();
 		}
 		errorCode.clear();
 	}
-	return false;
+	return {};
 }

@@ -85,44 +85,14 @@ void MainMenuBarPanel::SetWindow(Window* window) noexcept
 	m_window = window;
 }
 
-void MainMenuBarPanel::SetShaderReloadRequestHandler(std::function<void()> handler)
+void MainMenuBarPanel::SetShaderToolsOpenHandler(std::function<void()> handler)
 {
-	m_shaderReloadRequestHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetShaderRecookRequestHandler(std::function<void()> handler)
-{
-	m_shaderRecookRequestHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetShaderInspectorOpenHandler(std::function<void()> handler)
-{
-	m_shaderInspectorOpenHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetUsedShadersOpenHandler(std::function<void()> handler)
-{
-	m_usedShadersOpenHandler = std::move(handler);
+	m_shaderToolsOpenHandler = std::move(handler);
 }
 
 void MainMenuBarPanel::SetProfilerOpenHandler(std::function<void()> handler)
 {
 	m_profilerOpenHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetConsoleOpenHandler(std::function<void()> handler)
-{
-	m_consoleOpenHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetOutputLogOpenHandler(std::function<void()> handler)
-{
-	m_outputLogOpenHandler = std::move(handler);
-}
-
-void MainMenuBarPanel::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
-{
-	m_shaderPackageGenerationProvider = std::move(provider);
 }
 
 void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
@@ -173,49 +143,14 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 
 void MainMenuBarPanel::BuildWindowsMenu() noexcept
 {
-	if (ImGui::MenuItem("Output Log", nullptr, false, static_cast<bool>(m_outputLogOpenHandler)))
-	{
-		m_outputLogOpenHandler();
-	}
-
 	if (ImGui::MenuItem("Profiler", nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
 	{
 		m_profilerOpenHandler();
 	}
 
-	if (ImGui::BeginMenu("Shaders"))
+	if (ImGui::MenuItem("Shaders", nullptr, false, static_cast<bool>(m_shaderToolsOpenHandler)))
 	{
-		BuildShaderMenu();
-		ImGui::EndMenu();
-	}
-}
-
-void MainMenuBarPanel::BuildShaderMenu() noexcept
-{
-	if (ImGui::MenuItem("Reload Cooked Shaders", nullptr, false, static_cast<bool>(m_shaderReloadRequestHandler)))
-	{
-		m_shaderReloadRequestHandler();
-	}
-
-	if (ImGui::MenuItem("Recook Shaders", nullptr, false, static_cast<bool>(m_shaderRecookRequestHandler)))
-	{
-		m_shaderRecookRequestHandler();
-	}
-
-	if (ImGui::MenuItem("Shader Inspector", nullptr, false, static_cast<bool>(m_shaderInspectorOpenHandler)))
-	{
-		m_shaderInspectorOpenHandler();
-	}
-
-	if (ImGui::MenuItem("Used Shaders", nullptr, false, static_cast<bool>(m_usedShadersOpenHandler)))
-	{
-		m_usedShadersOpenHandler();
-	}
-
-	if (m_shaderPackageGenerationProvider)
-	{
-		ImGui::Separator();
-		ImGui::TextDisabled("Runtime generation: %llu", static_cast<unsigned long long>(m_shaderPackageGenerationProvider()));
+		m_shaderToolsOpenHandler();
 	}
 }
 

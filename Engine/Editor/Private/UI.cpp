@@ -11,7 +11,6 @@
 #include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
-#include "Panels/ShaderInspectorPanel.h"
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Style/SparkleUiTheme.h"
@@ -310,23 +309,24 @@ void UI::InitializeDefaultPanels()
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
-	m_shaderInspectorPanel = std::make_unique<ShaderInspectorPanel>();
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	m_usedShadersPanel->SetReloadHandler(
+	    [this]()
+	    {
+		    m_shaderReloadRequested = true;
+	    });
+	m_usedShadersPanel->SetRecookAllHandler(
+	    [this]()
+	    {
+		    m_shaderRecookRequested = true;
+	    });
 	m_usedShadersPanel->SetRecookHandler(
 	    [this](std::string packageId)
 	    {
 		    if (m_editorConsoleSystem)
 		    {
 			    m_editorConsoleSystem->SubmitLine("RecompileShaders " + packageId);
-		    }
-	    });
-	m_usedShadersPanel->SetInspectHandler(
-	    [this]()
-	    {
-		    if (m_shaderInspectorPanel)
-		    {
-			    m_shaderInspectorPanel->SetOpen(true);
 		    }
 	    });
 	if (m_window != nullptr && m_viewportPanel)
@@ -353,25 +353,7 @@ void UI::ConfigureMainMenuBarShaderActions()
 		return;
 	}
 
-	m_mainMenuBar->SetShaderReloadRequestHandler(
-	    [this]()
-	    {
-		    m_shaderReloadRequested = true;
-	    });
-	m_mainMenuBar->SetShaderRecookRequestHandler(
-	    [this]()
-	    {
-		    m_shaderRecookRequested = true;
-	    });
-	m_mainMenuBar->SetShaderInspectorOpenHandler(
-	    [this]()
-	    {
-		    if (m_shaderInspectorPanel)
-		    {
-			    m_shaderInspectorPanel->SetOpen(true);
-		    }
-	    });
-	m_mainMenuBar->SetUsedShadersOpenHandler(
+	m_mainMenuBar->SetShaderToolsOpenHandler(
 	    [this]()
 	    {
 		    if (m_usedShadersPanel)
@@ -387,23 +369,6 @@ void UI::ConfigureMainMenuBarShaderActions()
 			    m_profilerPanel->SetOpen(true);
 		    }
 	    });
-	m_mainMenuBar->SetConsoleOpenHandler(
-	    [this]()
-	    {
-		    if (m_editorConsoleSystem)
-		    {
-			    m_editorConsoleSystem->RequestConsoleFocus();
-		    }
-	    });
-	m_mainMenuBar->SetOutputLogOpenHandler(
-	    [this]()
-	    {
-		    if (m_editorConsoleSystem)
-		    {
-			    m_editorConsoleSystem->OpenOutputLog();
-		    }
-	    });
-	m_mainMenuBar->SetShaderPackageGenerationProvider(m_shaderPackageGenerationProvider);
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -469,11 +434,6 @@ void UI::Build()
 	{
 		m_sceneInspectorPanel->SetTopInset(mainMenuBarHeight);
 		m_sceneInspectorPanel->BuildUI(disableInteraction);
-	}
-
-	if (m_shaderInspectorPanel)
-	{
-		m_shaderInspectorPanel->BuildUI(disableInteraction);
 	}
 
 	if (m_usedShadersPanel)

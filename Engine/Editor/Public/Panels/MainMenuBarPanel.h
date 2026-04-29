@@ -3,7 +3,6 @@
 struct ImVec2;
 struct ImVec4;
 
-#include <cstdint>
 #include <functional>
 
 class LevelManager;
@@ -22,21 +21,14 @@ class MainMenuBarPanel final
 
 	void SetLevelManager(LevelManager* levelManager) noexcept;
 	void SetWindow(Window* window) noexcept;
-	void SetShaderReloadRequestHandler(std::function<void()> handler);
-	void SetShaderRecookRequestHandler(std::function<void()> handler);
-	void SetShaderInspectorOpenHandler(std::function<void()> handler);
-	void SetUsedShadersOpenHandler(std::function<void()> handler);
+	void SetShaderToolsOpenHandler(std::function<void()> handler);
 	void SetProfilerOpenHandler(std::function<void()> handler);
-	void SetConsoleOpenHandler(std::function<void()> handler);
-	void SetOutputLogOpenHandler(std::function<void()> handler);
-	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
 	void BuildUI() noexcept;
 	float GetHeight() const noexcept { return m_heightPixels; }
 
   private:
 	void BuildFileMenu() noexcept;
 	void BuildWindowsMenu() noexcept;
-	void BuildShaderMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;
 	void BuildWindowControls() noexcept;
 	bool DrawTitleBarButton(
@@ -51,13 +43,7 @@ class MainMenuBarPanel final
 
 	LevelManager* m_levelManager = nullptr;
 	Window* m_window = nullptr;
-	std::function<void()> m_shaderReloadRequestHandler;
-	std::function<void()> m_shaderRecookRequestHandler;
-	std::function<void()> m_shaderInspectorOpenHandler;
-	std::function<void()> m_usedShadersOpenHandler;
+	std::function<void()> m_shaderToolsOpenHandler;
 	std::function<void()> m_profilerOpenHandler;
-	std::function<void()> m_consoleOpenHandler;
-	std::function<void()> m_outputLogOpenHandler;
-	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
 	float m_heightPixels = 0.0f;
 };

@@ -6,6 +6,9 @@
 
 #include <imgui.h>
 
+#include <fstream>
+#include <sstream>
+#include <system_error>
 #include <utility>
 
 void UsedShadersPanel::SetGenerationProvider(RegisteredShaderListModel::GenerationProvider provider)
@@ -14,14 +17,19 @@ void UsedShadersPanel::SetGenerationProvider(RegisteredShaderListModel::Generati
 	m_hasRows = false;
 }
 
+void UsedShadersPanel::SetReloadHandler(CommandHandler handler)
+{
+	m_reloadHandler = std::move(handler);
+}
+
+void UsedShadersPanel::SetRecookAllHandler(CommandHandler handler)
+{
+	m_recookAllHandler = std::move(handler);
+}
+
 void UsedShadersPanel::SetRecookHandler(RecookHandler handler)
 {
 	m_recookHandler = std::move(handler);
-}
-
-void UsedShadersPanel::SetInspectHandler(InspectHandler handler)
-{
-	m_inspectHandler = std::move(handler);
 }
 
 void UsedShadersPanel::SetLastStatus(std::string status)
@@ -37,8 +45,8 @@ void UsedShadersPanel::BuildUI(bool disableInteraction)
 	}
 
 	EnsureRows();
-	ImGui::SetNextWindowSize(ImVec2(1080.0f, 520.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Used Shaders", &m_isOpen))
+	ImGui::SetNextWindowSize(ImVec2(1180.0f, 760.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Shader Tools", &m_isOpen))
 	{
 		ImGui::End();
 		return;
@@ -46,8 +54,49 @@ void UsedShadersPanel::BuildUI(bool disableInteraction)
 
 	DrawToolbar(disableInteraction);
 	ImGui::Separator();
+	const float availableHeight = ImGui::GetContentRegionAvail().y;
+	const float tableHeight = availableHeight * 0.48f;
+	ImGui::BeginChild("##UsedShadersTableRegion", ImVec2(0.0f, tableHeight), ImGuiChildFlags_None);
 	DrawTable(disableInteraction);
+	ImGui::EndChild();
+	ImGui::SeparatorText("Selected Shader Inspection");
+	DrawSelectedShaderArtifacts();
 	ImGui::End();
+}
+
+std::filesystem::path UsedShadersPanel::FindArtifactDirectory(const RegisteredShaderRow& row)
+{
+	if (!row.ArtifactDirectory.empty())
+	{
+		std::error_code errorCode;
+		if (std::filesystem::exists(row.ArtifactDirectory / "compile-request.json", errorCode) && !errorCode)
+		{
+			return row.ArtifactDirectory;
+		}
+	}
+
+	return {};
+}
+
+std::string UsedShadersPanel::ReadTextFileOrMessage(const std::filesystem::path& path)
+{
+	std::ifstream input(path, std::ios::binary);
+	if (!input.is_open())
+	{
+		return "Artifact not found: " + path.generic_string();
+	}
+
+	std::ostringstream contents;
+	contents << input.rdbuf();
+	return contents.str();
+}
+
+void UsedShadersPanel::DrawTextArtifact(const char* childId, const std::string& text) noexcept
+{
+	ImGui::BeginChild(childId, ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::InputTextMultiline("##ArtifactText", const_cast<char*>(text.c_str()), text.size() + 1, ImGui::GetContentRegionAvail(),
+	    ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoUndoRedo | ImGuiInputTextFlags_AllowTabInput);
+	ImGui::EndChild();
 }
 
 void UsedShadersPanel::EnsureRows()
@@ -68,10 +117,19 @@ void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 	{
 		m_model.Refresh();
 		m_hasRows = true;
+		m_loadedArtifactShaderId.clear();
+		RefreshSelectedShaderArtifacts();
 	}
 	ImGui::SameLine();
-	ImGui::SetNextItemWidth(260.0f);
-	ImGui::InputTextWithHint("##UsedShadersFilter", "Filter shader/package/source", m_filterBuffer.data(), m_filterBuffer.size());
+	if (ImGui::Button("Reload Cooked") && m_reloadHandler)
+	{
+		m_reloadHandler();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Recook All") && m_recookAllHandler)
+	{
+		m_recookAllHandler();
+	}
 	ImGui::SameLine();
 
 	const RegisteredShaderRow* selectedRow = GetSelectedRow();
@@ -80,16 +138,8 @@ void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 		m_recookHandler(selectedRow->PackageId);
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Inspect Artifacts") && m_inspectHandler)
-	{
-		m_inspectHandler();
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Copy Command") && selectedRow != nullptr)
-	{
-		const std::string command = "RecompileShaders " + selectedRow->PackageId;
-		ImGui::SetClipboardText(command.c_str());
-	}
+	ImGui::SetNextItemWidth(260.0f);
+	ImGui::InputTextWithHint("##UsedShadersFilter", "Filter shader/package/source", m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled("%zu registered shader stage(s)", m_model.GetRows().size());
 	ImGui::EndDisabled();
@@ -137,6 +187,7 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 		if (ImGui::Selectable(row.ShaderId.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 		{
 			m_selectedShaderId = row.ShaderId;
+			RefreshSelectedShaderArtifacts();
 		}
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.PackageId.c_str());
@@ -163,6 +214,88 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 	}
 	ImGui::EndDisabled();
 	ImGui::EndTable();
+}
+
+void UsedShadersPanel::DrawSelectedShaderArtifacts()
+{
+	const RegisteredShaderRow* selectedRow = GetSelectedRow();
+	if (selectedRow == nullptr)
+	{
+		ImGui::TextDisabled("Select a shader row to inspect source, reflection, disassembly, parameter match, and compile request artifacts.");
+		return;
+	}
+
+	RefreshSelectedShaderArtifacts();
+	ImGui::TextUnformatted(selectedRow->ShaderId.c_str());
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s | %s | %s", selectedRow->PackageId.c_str(), selectedRow->Stage.c_str(), selectedRow->EntryPoint.c_str());
+	if (m_selectedArtifactDirectory.empty())
+	{
+		ImGui::TextWrapped("No debug artifact bundle is available for this shader. Recook shaders with debug artifacts enabled to populate inspection data.");
+		return;
+	}
+
+	ImGui::TextDisabled("%s", m_selectedArtifactDirectory.generic_string().c_str());
+	if (ImGui::BeginTabBar("##SelectedShaderArtifactTabs"))
+	{
+		if (ImGui::BeginTabItem("Source"))
+		{
+			DrawTextArtifact("##SelectedShaderSourceText", m_artifactTexts.Source);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Reflection"))
+		{
+			DrawTextArtifact("##SelectedShaderReflectionText", m_artifactTexts.Reflection);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Disassembly"))
+		{
+			DrawTextArtifact("##SelectedShaderDisassemblyText", m_artifactTexts.Disassembly);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Param Match"))
+		{
+			DrawTextArtifact("##SelectedShaderParamMatchText", m_artifactTexts.ParameterMatch);
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Compile Request"))
+		{
+			DrawTextArtifact("##SelectedShaderCompileRequestText", m_artifactTexts.CompileRequest);
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+}
+
+void UsedShadersPanel::RefreshSelectedShaderArtifacts()
+{
+	const RegisteredShaderRow* selectedRow = GetSelectedRow();
+	if (selectedRow == nullptr)
+	{
+		m_loadedArtifactShaderId.clear();
+		m_selectedArtifactDirectory.clear();
+		m_artifactTexts = {};
+		return;
+	}
+
+	if (m_loadedArtifactShaderId == selectedRow->ShaderId)
+	{
+		return;
+	}
+
+	m_loadedArtifactShaderId = selectedRow->ShaderId;
+	m_selectedArtifactDirectory = FindArtifactDirectory(*selectedRow);
+	if (m_selectedArtifactDirectory.empty())
+	{
+		m_artifactTexts = {};
+		return;
+	}
+
+	m_artifactTexts.Source = ReadTextFileOrMessage(m_selectedArtifactDirectory / "preprocessed-source.hlsl");
+	m_artifactTexts.Reflection = ReadTextFileOrMessage(m_selectedArtifactDirectory / "reflection.json");
+	m_artifactTexts.Disassembly = ReadTextFileOrMessage(m_selectedArtifactDirectory / "disassembly.txt");
+	m_artifactTexts.ParameterMatch = ReadTextFileOrMessage(m_selectedArtifactDirectory / "parameter-struct-match.json");
+	m_artifactTexts.CompileRequest = ReadTextFileOrMessage(m_selectedArtifactDirectory / "compile-request.json");
 }
 
 const RegisteredShaderRow* UsedShadersPanel::GetSelectedRow() const noexcept

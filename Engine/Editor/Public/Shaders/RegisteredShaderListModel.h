@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@ struct RegisteredShaderRow final
 	std::size_t PermutationDimensionCount = 0;
 	std::uint64_t RuntimeGeneration = 0;
 	bool ArtifactAvailable = false;
+	std::filesystem::path ArtifactDirectory;
 	std::string LastStatus;
 };
 
@@ -33,7 +35,7 @@ class RegisteredShaderListModel final
 	const std::vector<RegisteredShaderRow>& GetRows() const noexcept { return m_rows; }
 
   private:
-	static bool HasDebugArtifactsFor(std::string_view shaderId, std::string_view packageId);
+	static std::filesystem::path FindDebugArtifactDirectoryFor(std::string_view shaderId, std::string_view packageId);
 
 	GenerationProvider m_generationProvider;
 	std::vector<RegisteredShaderRow> m_rows;
