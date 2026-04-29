@@ -3,6 +3,7 @@
 #include "Panels/UsedShadersPanel.h"
 
 #include "Core/Public/Strings/StringUtils.h"
+#include "Util/UiUtil.h"
 
 #include <imgui.h>
 
@@ -46,7 +47,8 @@ void UsedShadersPanel::BuildUI(bool disableInteraction)
 
 	EnsureRows();
 	ImGui::SetNextWindowSize(ImVec2(1180.0f, 760.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Shader Tools", &m_isOpen))
+	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Shader, "Shader Tools") + "##Shader Tools";
+	if (!ImGui::Begin(windowTitle.c_str(), &m_isOpen))
 	{
 		ImGui::End();
 		return;
@@ -59,7 +61,8 @@ void UsedShadersPanel::BuildUI(bool disableInteraction)
 	ImGui::BeginChild("##UsedShadersTableRegion", ImVec2(0.0f, tableHeight), ImGuiChildFlags_None);
 	DrawTable(disableInteraction);
 	ImGui::EndChild();
-	ImGui::SeparatorText("Selected Shader Inspection");
+	const std::string inspectionLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Shader, "Selected Shader Inspection");
+	ImGui::SeparatorText(inspectionLabel.c_str());
 	DrawSelectedShaderArtifacts();
 	ImGui::End();
 }
@@ -113,7 +116,8 @@ void UsedShadersPanel::EnsureRows()
 void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 {
 	ImGui::BeginDisabled(disableInteraction);
-	if (ImGui::Button("Refresh"))
+	const std::string refreshLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Refresh, "Refresh");
+	if (ImGui::Button(refreshLabel.c_str()))
 	{
 		m_model.Refresh();
 		m_hasRows = true;
@@ -121,25 +125,29 @@ void UsedShadersPanel::DrawToolbar(bool disableInteraction)
 		RefreshSelectedShaderArtifacts();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Reload Cooked") && m_reloadHandler)
+	const std::string reloadLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Reload, "Reload Cooked");
+	if (ImGui::Button(reloadLabel.c_str()) && m_reloadHandler)
 	{
 		m_reloadHandler();
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Recook All") && m_recookAllHandler)
+	const std::string recookAllLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Refresh, "Recook All");
+	if (ImGui::Button(recookAllLabel.c_str()) && m_recookAllHandler)
 	{
 		m_recookAllHandler();
 	}
 	ImGui::SameLine();
 
 	const RegisteredShaderRow* selectedRow = GetSelectedRow();
-	if (ImGui::Button("Recook Selected") && selectedRow != nullptr && m_recookHandler)
+	const std::string recookSelectedLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Refresh, "Recook Selected");
+	if (ImGui::Button(recookSelectedLabel.c_str()) && selectedRow != nullptr && m_recookHandler)
 	{
 		m_recookHandler(selectedRow->PackageId);
 	}
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(260.0f);
-	ImGui::InputTextWithHint("##UsedShadersFilter", "Filter shader/package/source", m_filterBuffer.data(), m_filterBuffer.size());
+	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter shader/package/source");
+	ImGui::InputTextWithHint("##UsedShadersFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled("%zu registered shader stage(s)", m_model.GetRows().size());
 	ImGui::EndDisabled();
@@ -238,27 +246,32 @@ void UsedShadersPanel::DrawSelectedShaderArtifacts()
 	ImGui::TextDisabled("%s", m_selectedArtifactDirectory.generic_string().c_str());
 	if (ImGui::BeginTabBar("##SelectedShaderArtifactTabs"))
 	{
-		if (ImGui::BeginTabItem("Source"))
+		const std::string sourceLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::SourceFile, "Source");
+		if (ImGui::BeginTabItem(sourceLabel.c_str()))
 		{
 			DrawTextArtifact("##SelectedShaderSourceText", m_artifactTexts.Source);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Reflection"))
+		const std::string reflectionLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Reflection, "Reflection");
+		if (ImGui::BeginTabItem(reflectionLabel.c_str()))
 		{
 			DrawTextArtifact("##SelectedShaderReflectionText", m_artifactTexts.Reflection);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Disassembly"))
+		const std::string disassemblyLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Disassembly, "Disassembly");
+		if (ImGui::BeginTabItem(disassemblyLabel.c_str()))
 		{
 			DrawTextArtifact("##SelectedShaderDisassemblyText", m_artifactTexts.Disassembly);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Param Match"))
+		const std::string paramMatchLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Filter, "Param Match");
+		if (ImGui::BeginTabItem(paramMatchLabel.c_str()))
 		{
 			DrawTextArtifact("##SelectedShaderParamMatchText", m_artifactTexts.ParameterMatch);
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("Compile Request"))
+		const std::string compileRequestLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::CompileRequest, "Compile Request");
+		if (ImGui::BeginTabItem(compileRequestLabel.c_str()))
 		{
 			DrawTextArtifact("##SelectedShaderCompileRequestText", m_artifactTexts.CompileRequest);
 			ImGui::EndTabItem();

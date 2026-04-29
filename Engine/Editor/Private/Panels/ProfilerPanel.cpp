@@ -3,6 +3,7 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
+#include "Util/UiUtil.h"
 
 #include <cstdio>
 #include <string>
@@ -20,7 +21,8 @@ void ProfilerPanel::BuildUI(bool disableInteraction)
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(1080.0f, 640.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Profiler", &m_isOpen))
+	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Profiler, "Profiler") + "##Profiler";
+	if (!ImGui::Begin(windowTitle.c_str(), &m_isOpen))
 	{
 		ImGui::End();
 		return;
@@ -40,14 +42,16 @@ void ProfilerPanel::BuildEmbeddedUI(bool disableInteraction)
 
 	if (ImGui::BeginTabBar("##ProfilerTabs", ImGuiTabBarFlags_None))
 	{
-		if (ImGui::BeginTabItem("CPU"))
+		const std::string cpuLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Cpu, "CPU");
+		if (ImGui::BeginTabItem(cpuLabel.c_str()))
 		{
 			ImGui::BeginChild("##CpuScroll", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
 			RenderCpuTab();
 			ImGui::EndChild();
 			ImGui::EndTabItem();
 		}
-		if (ImGui::BeginTabItem("GPU"))
+		const std::string gpuLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Gpu, "GPU");
+		if (ImGui::BeginTabItem(gpuLabel.c_str()))
 		{
 			ImGui::BeginChild("##GpuScroll", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
 			RenderGpuTab();
@@ -71,7 +75,8 @@ void ProfilerPanel::RenderToolbar() noexcept
 {
 	// Toolbar row: "Sort:" label + dropdown on the left, frame summary on the right.
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("SORT");
+	const std::string sortLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Sort, "SORT");
+	ImGui::TextDisabled("%s", sortLabel.c_str());
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(170.0f);
 	int sortIndex = static_cast<int>(m_sortMode);

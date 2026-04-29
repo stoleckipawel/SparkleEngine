@@ -127,16 +127,6 @@ namespace UiUtil
 			return color;
 		}
 
-		void DrawResetGlyph(ImDrawList* drawList, const ImVec2& center, ImU32 color) noexcept
-		{
-			constexpr float radius = 4.6f;
-			drawList->PathArcTo(center, radius, 0.25f, 5.05f, 18);
-			drawList->PathStroke(color, false, 1.2f);
-
-			const ImVec2 tip(center.x - 2.8f, center.y - 5.4f);
-			drawList->AddTriangleFilled(tip, ImVec2(tip.x + 4.5f, tip.y - 0.5f), ImVec2(tip.x + 1.6f, tip.y + 3.4f), color);
-		}
-
 		void DrawCenteredGlyph(ImDrawList* drawList, const ImVec2& start, const ImVec2& size, const char* glyph, ImU32 color) noexcept
 		{
 			const ImVec2 textSize = ImGui::CalcTextSize(glyph);
@@ -206,14 +196,7 @@ namespace UiUtil
 
 			const ImVec4 iconColor = hovered ? SparkleUiPalette::TextPrimary() : WithAlpha(SparkleUiPalette::TextMuted(), 0.62f);
 			const ImU32 iconColorU32 = ImGui::ColorConvertFloat4ToU32(iconColor);
-			if (SparkleUiTheme::AreEditorIconsAvailable())
-			{
-				DrawCenteredGlyph(drawList, start, size, GetEditorIconGlyph(EditorIcon::Reset), iconColorU32);
-			}
-			else
-			{
-				DrawResetGlyph(drawList, ImVec2(start.x + (size.x * 0.5f), start.y + (size.y * 0.5f) + 0.4f), iconColorU32);
-			}
+			DrawCenteredGlyph(drawList, start, size, GetEditorIconGlyph(EditorIcon::Reset), iconColorU32);
 			if (tooltip != nullptr && tooltip[0] != '\0' && hovered)
 			{
 				ImGui::SetTooltip("%s", tooltip);
@@ -241,36 +224,112 @@ namespace UiUtil
 
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept
 	{
-		const bool useFontAwesome = SparkleUiTheme::AreEditorIconsAvailable();
 		switch (icon)
 		{
 			case EditorIcon::Folder:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Folder : EditorIconGlyphs::Fallback::Folder;
+				return EditorIconGlyphs::FontAwesome::Folder;
+			case EditorIcon::FolderOpen:
+				return EditorIconGlyphs::FontAwesome::FolderOpen;
 			case EditorIcon::Camera:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Camera : EditorIconGlyphs::Fallback::Camera;
+				return EditorIconGlyphs::FontAwesome::Camera;
 			case EditorIcon::DirectionalLight:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::DirectionalLight : EditorIconGlyphs::Fallback::DirectionalLight;
+				return EditorIconGlyphs::FontAwesome::DirectionalLight;
 			case EditorIcon::StaticMesh:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::StaticMesh : EditorIconGlyphs::Fallback::StaticMesh;
+				return EditorIconGlyphs::FontAwesome::StaticMesh;
+			case EditorIcon::Material:
+				return EditorIconGlyphs::FontAwesome::Material;
 			case EditorIcon::EyeVisible:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::EyeVisible : EditorIconGlyphs::Fallback::EyeVisible;
+				return EditorIconGlyphs::FontAwesome::EyeVisible;
 			case EditorIcon::EyeHidden:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::EyeHidden : EditorIconGlyphs::Fallback::EyeHidden;
+				return EditorIconGlyphs::FontAwesome::EyeHidden;
 			case EditorIcon::Reset:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Reset : EditorIconGlyphs::Fallback::Reset;
+				return EditorIconGlyphs::FontAwesome::Reset;
 			case EditorIcon::Filter:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Filter : EditorIconGlyphs::Fallback::Filter;
+				return EditorIconGlyphs::FontAwesome::Filter;
 			case EditorIcon::Settings:
-				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Settings : EditorIconGlyphs::Fallback::Settings;
+				return EditorIconGlyphs::FontAwesome::Settings;
+			case EditorIcon::Save:
+				return EditorIconGlyphs::FontAwesome::Save;
+			case EditorIcon::Profiler:
+				return EditorIconGlyphs::FontAwesome::Profiler;
+			case EditorIcon::Shader:
+				return EditorIconGlyphs::FontAwesome::Shader;
+			case EditorIcon::Refresh:
+				return EditorIconGlyphs::FontAwesome::Refresh;
+			case EditorIcon::Reload:
+				return EditorIconGlyphs::FontAwesome::Reload;
+			case EditorIcon::Search:
+				return EditorIconGlyphs::FontAwesome::Search;
+			case EditorIcon::Level:
+				return EditorIconGlyphs::FontAwesome::Level;
+			case EditorIcon::ViewMode:
+				return EditorIconGlyphs::FontAwesome::ViewMode;
+			case EditorIcon::ViewLit:
+				return EditorIconGlyphs::FontAwesome::ViewLit;
+			case EditorIcon::ViewDiffuse:
+				return EditorIconGlyphs::FontAwesome::ViewDiffuse;
+			case EditorIcon::ViewNormal:
+				return EditorIconGlyphs::FontAwesome::ViewNormal;
+			case EditorIcon::ViewRoughness:
+				return EditorIconGlyphs::FontAwesome::ViewRoughness;
+			case EditorIcon::ViewMetallic:
+				return EditorIconGlyphs::FontAwesome::ViewMetallic;
+			case EditorIcon::ViewEmissive:
+				return EditorIconGlyphs::FontAwesome::ViewEmissive;
+			case EditorIcon::ViewAmbientOcclusion:
+				return EditorIconGlyphs::FontAwesome::ViewAmbientOcclusion;
+			case EditorIcon::ViewSubsurfaceColor:
+				return EditorIconGlyphs::FontAwesome::ViewSubsurfaceColor;
+			case EditorIcon::ViewSubsurfaceStrength:
+				return EditorIconGlyphs::FontAwesome::ViewSubsurfaceStrength;
+			case EditorIcon::ViewDirectDiffuse:
+				return EditorIconGlyphs::FontAwesome::ViewDirectDiffuse;
+			case EditorIcon::ViewDirectSpecular:
+				return EditorIconGlyphs::FontAwesome::ViewDirectSpecular;
+			case EditorIcon::ViewDirectSubsurface:
+				return EditorIconGlyphs::FontAwesome::ViewDirectSubsurface;
+			case EditorIcon::Cpu:
+				return EditorIconGlyphs::FontAwesome::Cpu;
+			case EditorIcon::Gpu:
+				return EditorIconGlyphs::FontAwesome::Gpu;
+			case EditorIcon::Help:
+				return EditorIconGlyphs::FontAwesome::Help;
+			case EditorIcon::Clear:
+				return EditorIconGlyphs::FontAwesome::Clear;
+			case EditorIcon::Copy:
+				return EditorIconGlyphs::FontAwesome::Copy;
+			case EditorIcon::Console:
+				return EditorIconGlyphs::FontAwesome::Console;
+			case EditorIcon::SourceFile:
+				return EditorIconGlyphs::FontAwesome::SourceFile;
+			case EditorIcon::Reflection:
+				return EditorIconGlyphs::FontAwesome::Reflection;
+			case EditorIcon::Disassembly:
+				return EditorIconGlyphs::FontAwesome::Disassembly;
+			case EditorIcon::CompileRequest:
+				return EditorIconGlyphs::FontAwesome::CompileRequest;
+			case EditorIcon::Sort:
+				return EditorIconGlyphs::FontAwesome::Sort;
 			case EditorIcon::None:
 			default:
-				return "-";
+				return EditorIconGlyphs::FontAwesome::Default;
 		}
 	}
 
-	void DrawEditorIcon(EditorIcon icon, const char* tooltip)
+	std::string MakeIconLabel(EditorIcon icon, const char* label)
 	{
-		DrawPlaceholderTypeIcon(GetEditorIconGlyph(icon), tooltip);
+		std::string result = GetEditorIconGlyph(icon);
+		if (label != nullptr && label[0] != '\0')
+		{
+			result += ' ';
+			result += label;
+		}
+		return result;
+	}
+
+	void DrawEditorIcon(EditorIcon icon, const char* tooltip, bool drawBadgeBackground)
+	{
+		DrawPlaceholderTypeIcon(GetEditorIconGlyph(icon), tooltip, drawBadgeBackground);
 	}
 
 	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip)
@@ -292,7 +351,7 @@ namespace UiUtil
 		return pressed;
 	}
 
-	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip)
+	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip, bool drawBadgeBackground)
 	{
 		const ImVec2 size(PlaceholderIconSize, PlaceholderIconSize);
 		const ImVec2 start = ImGui::GetCursorScreenPos();
@@ -300,8 +359,11 @@ namespace UiUtil
 
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
 		const ImVec2 end(start.x + size.x, start.y + size.y);
-		drawList->AddRectFilled(start, end, SparkleUiPalette::SceneOutlinerBadgeBackground(), 3.0f);
-		drawList->AddRect(start, end, SparkleUiPalette::PanelHeaderBorder(), 3.0f, 0, 1.0f);
+		if (drawBadgeBackground)
+		{
+			drawList->AddRectFilled(start, end, SparkleUiPalette::SceneOutlinerBadgeBackground(), 3.0f);
+			drawList->AddRect(start, end, SparkleUiPalette::PanelHeaderBorder(), 3.0f, 0, 1.0f);
+		}
 
 		if (text != nullptr && text[0] != '\0')
 		{
@@ -332,27 +394,14 @@ namespace UiUtil
 			drawList->AddRectFilled(start, end, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::ButtonBackgroundHovered()), 3.0f);
 		}
 
-		const ImVec2 center(start.x + (size.x * 0.5f), start.y + (size.y * 0.5f));
 		const ImVec4 iconColor = visible ? WithAlpha(SparkleUiPalette::TextMuted(), 0.58f) : SparkleUiPalette::AccentStrong();
 		const ImU32 iconColorU32 = ImGui::ColorConvertFloat4ToU32(iconColor);
-		if (SparkleUiTheme::AreEditorIconsAvailable())
-		{
-			DrawCenteredGlyph(
-			    drawList,
-			    start,
-			    size,
-			    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
-			    iconColorU32);
-		}
-		else if (visible)
-		{
-			drawList->AddCircle(center, 3.3f, iconColorU32, 16, 1.1f);
-			drawList->AddCircleFilled(center, 1.1f, iconColorU32, 8);
-		}
-		else
-		{
-			drawList->AddLine(ImVec2(center.x - 3.8f, center.y), ImVec2(center.x + 3.8f, center.y), iconColorU32, 1.2f);
-		}
+		DrawCenteredGlyph(
+		    drawList,
+		    start,
+		    size,
+		    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
+		    iconColorU32);
 
 		if (hovered)
 		{
@@ -637,7 +686,7 @@ namespace UiUtil
 		EndDetailsRow();
 	}
 
-	void DrawDetailsAssetRow(const char* label, const char* thumbnailText, const char* value, const char* typeText)
+	void DrawDetailsAssetRow(const char* label, EditorIcon thumbnailIcon, const char* value, const char* typeText)
 	{
 		if (!BeginDetailsRow(label, 1))
 		{
@@ -654,7 +703,7 @@ namespace UiUtil
 		    SparkleUiPalette::SceneOutlinerBadgeBackground(),
 		    4.0f);
 		drawList->AddRect(start, ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y), SparkleUiPalette::PanelHeaderBorder(), 4.0f);
-		const char* thumbnailLabel = (thumbnailText != nullptr && thumbnailText[0] != '\0') ? thumbnailText : "A";
+		const char* thumbnailLabel = GetEditorIconGlyph(thumbnailIcon);
 		const ImVec2 thumbnailTextSize = ImGui::CalcTextSize(thumbnailLabel);
 		drawList->AddText(
 		    ImVec2(start.x + ((thumbnailSize.x - thumbnailTextSize.x) * 0.5f), start.y + ((thumbnailSize.y - thumbnailTextSize.y) * 0.5f)),

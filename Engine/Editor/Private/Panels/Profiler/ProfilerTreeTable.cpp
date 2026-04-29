@@ -3,6 +3,7 @@
 
 #include "Panels/Profiler/ProfilerSnapshotUtils.h"
 #include "Style/SparkleUiPalette.h"
+#include "Util/UiUtil.h"
 
 #include <algorithm>
 #include <cinttypes>
@@ -28,10 +29,8 @@ void ProfilerTreeTable::RightAlignedText(const char* fmt, ...)
 	ImGui::TextUnformatted(buf);
 }
 
-void ProfilerTreeTable::Render(
-    const State& state,
-    const char* tableId,
-    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes) const
+void ProfilerTreeTable::Render(const State& state, const char* tableId, const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes)
+    const
 {
 	BeginTable(tableId);
 	RenderRows(state, nodes, 0, 0, nodes.size());
@@ -47,9 +46,7 @@ void ProfilerTreeTable::BeginTable(const char* tableId) const
 		    "##Vis",
 		    ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_IndentDisable,
 		    kVisibilityColumnWidth);
-		ImGui::TableSetupColumn(
-		    "Scope",
-		    ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable);
+		ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_IndentEnable);
 		ImGui::TableSetupColumn("Incl ms", ImGuiTableColumnFlags_WidthFixed, kNumericColumnWidth);
 		ImGui::TableSetupColumn("Excl ms", ImGuiTableColumnFlags_WidthFixed, kNumericColumnWidth);
 		ImGui::TableSetupColumn("Max ms", ImGuiTableColumnFlags_WidthFixed, kNumericColumnWidth);
@@ -98,13 +95,13 @@ void ProfilerTreeTable::RenderRow(
 	ImGui::TableSetColumnIndex(0);
 	if (depth == 0)
 	{
-		RenderVisibilityDot(state, node, siblingIndex, siblingTotal);
+		RenderVisibilityToggle(state, node);
 	}
 
 	ImGui::TableSetColumnIndex(1);
 	const bool hasChildren = !node.Children.empty();
-	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow
-	                               | (hasChildren ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
+	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow |
+	                               (hasChildren ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 	if (depth == 0)
 	{
 		nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
@@ -162,11 +159,7 @@ void ProfilerTreeTable::RenderRow(
 	{
 		if (node.DispatchCount > 0)
 		{
-			RightAlignedText(
-			    "%" PRIu64 " (%" PRIu64 "d/%" PRIu64 "x)",
-			    node.TotalCallCount,
-			    node.DrawCallCount,
-			    node.DispatchCount);
+			RightAlignedText("%" PRIu64 " (%" PRIu64 "d/%" PRIu64 "x)", node.TotalCallCount, node.DrawCallCount, node.DispatchCount);
 		}
 		else
 		{
@@ -191,11 +184,7 @@ void ProfilerTreeTable::RenderRow(
 	}
 }
 
-void ProfilerTreeTable::RenderVisibilityDot(
-    const State& state,
-    const Diagnostics::ProfilerSnapshotNode& node,
-    std::size_t siblingIndex,
-    std::size_t siblingTotal) const
+void ProfilerTreeTable::RenderVisibilityToggle(const State& state, const Diagnostics::ProfilerSnapshotNode& node) const
 {
 	if (state.HiddenScopes == nullptr)
 	{
@@ -203,27 +192,13 @@ void ProfilerTreeTable::RenderVisibilityDot(
 	}
 
 	const bool isHidden = state.HiddenScopes->count(node.Name) > 0;
-	const ImU32 dotColor = (siblingTotal > 0)
-	    ? SparkleUiPalette::CategoricalColor(siblingIndex)
-	    : IM_COL32(160, 165, 180, 200);
 	ImGui::PushID(node.Name.c_str());
 
-	const float radius = ImGui::GetFontSize() * 0.3f;
-	const ImVec2 cursorPos = ImGui::GetCursorScreenPos();
 	const float contentW = ImGui::GetContentRegionAvail().x;
-	const ImVec2 center{
-	    cursorPos.x + contentW * 0.5f,
-	    cursorPos.y + ImGui::GetTextLineHeight() * 0.5f};
-	ImDrawList* dl = ImGui::GetWindowDrawList();
-	if (isHidden)
-	{
-		dl->AddCircle(center, radius, (dotColor & 0x00FFFFFFu) | (0x60u << 24), 12, 1.5f);
-	}
-	else
-	{
-		dl->AddCircleFilled(center, radius, dotColor, 12);
-	}
-	if (ImGui::InvisibleButton("##vis", ImVec2(radius * 2.0f + 4.0f, ImGui::GetTextLineHeight())))
+	constexpr float buttonSize = 14.0f;
+	const float offset = (std::max) (0.0f, (contentW - buttonSize) * 0.5f);
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+	if (UiUtil::DrawVisibilityIconButton("chart_visibility", !isHidden))
 	{
 		if (isHidden)
 		{

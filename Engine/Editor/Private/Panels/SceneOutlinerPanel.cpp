@@ -110,7 +110,8 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 	}
 
 	ImGui::SetNextItemWidth(-1.0f);
-	if (ImGui::InputTextWithHint("##SceneFilter", "Search actors, lights, meshes...", filterBuffer, sizeof(filterBuffer)))
+	const std::string searchHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search actors, lights, meshes...");
+	if (ImGui::InputTextWithHint("##SceneFilter", searchHint.c_str(), filterBuffer, sizeof(filterBuffer)))
 	{
 		m_filterText = filterBuffer;
 	}
@@ -386,10 +387,12 @@ void SceneOutlinerPanel::DrawSectionRow(const char* id, const char* label, std::
 	ImGui::TableSetColumnIndex(1);
 	ImGui::PushID(id);
 	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	open = ImGui::TreeNodeEx("##section", flags, "+ %s (%zu)", label, count);
+	const std::string sectionLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::FolderOpen, label);
+	open = ImGui::TreeNodeEx("##section", flags, "%s (%zu)", sectionLabel.c_str(), count);
 	ImGui::PopID();
 	ImGui::TableSetColumnIndex(2);
-	DrawMutedText("Folder", 0.58f);
+	const std::string typeLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Folder, "Folder");
+	DrawMutedText(typeLabel.c_str(), 0.58f);
 	if (open)
 	{
 		ImGui::TreePop();
@@ -415,7 +418,7 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 
 	ImGui::TableSetColumnIndex(1);
 	ImGui::Indent(16.0f);
-	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel);
+	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel, !isSelected);
 	ImGui::SameLine(0.0f, 6.0f);
 	if (!isVisible)
 	{
@@ -425,9 +428,18 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
 	}
-	if (ImGui::Selectable(label, isSelected, ImGuiSelectableFlags_SpanAllColumns, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+	if (isSelected)
+	{
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+	}
+	if (ImGui::Selectable(label, false, ImGuiSelectableFlags_SpanAllColumns, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
 	{
 		*m_selection = selection;
+	}
+	if (isSelected)
+	{
+		ImGui::PopStyleColor(2);
 	}
 	if (!isVisible || isSelected)
 	{

@@ -1,25 +1,61 @@
 #pragma once
 
+#include <string>
+
 namespace UiUtil
 {
 	enum class EditorIcon
 	{
 		None,
 		Folder,
+		FolderOpen,
 		Camera,
 		DirectionalLight,
 		StaticMesh,
+		Material,
 		EyeVisible,
 		EyeHidden,
 		Reset,
 		Filter,
-		Settings
+		Settings,
+		Save,
+		Profiler,
+		Shader,
+		Refresh,
+		Reload,
+		Search,
+		Level,
+		ViewMode,
+		ViewLit,
+		ViewDiffuse,
+		ViewNormal,
+		ViewRoughness,
+		ViewMetallic,
+		ViewEmissive,
+		ViewAmbientOcclusion,
+		ViewSubsurfaceColor,
+		ViewSubsurfaceStrength,
+		ViewDirectDiffuse,
+		ViewDirectSpecular,
+		ViewDirectSubsurface,
+		Cpu,
+		Gpu,
+		Help,
+		Clear,
+		Copy,
+		Console,
+		SourceFile,
+		Reflection,
+		Disassembly,
+		CompileRequest,
+		Sort
 	};
 
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept;
-	void DrawEditorIcon(EditorIcon icon, const char* tooltip = nullptr);
+	std::string MakeIconLabel(EditorIcon icon, const char* label);
+	void DrawEditorIcon(EditorIcon icon, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip = nullptr);
-	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr);
+	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawVisibilityIconButton(const char* id, bool visible);
 
 	void DrawPanelHeader(const char* title, const char* subtitle);
@@ -52,7 +88,7 @@ namespace UiUtil
 	bool BeginDetailsCategory(const char* title, bool defaultOpen = true);
 	void EndDetailsCategory();
 	void DrawDetailsValueRow(const char* label, const char* value);
-	void DrawDetailsAssetRow(const char* label, const char* thumbnailText, const char* value, const char* typeText = nullptr);
+	void DrawDetailsAssetRow(const char* label, EditorIcon thumbnailIcon, const char* value, const char* typeText = nullptr);
 	bool EditDetailsFloat(
 	    const char* label,
 	    float& value,

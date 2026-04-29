@@ -157,7 +157,8 @@ void SceneInspectorPanel::BuildDetailsToolbar() noexcept
 
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
 	ImGui::SetNextItemWidth(-1.0f);
-	if (ImGui::InputTextWithHint("##DetailsFilter", "Search details...", filterBuffer, sizeof(filterBuffer)))
+	const std::string searchHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search details...");
+	if (ImGui::InputTextWithHint("##DetailsFilter", searchHint.c_str(), filterBuffer, sizeof(filterBuffer)))
 	{
 		m_filterText = filterBuffer;
 	}
@@ -599,7 +600,7 @@ void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponen
 	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;
 	UiUtil::DrawDetailsAssetRow(
 	    "Mesh",
-	    "M",
+	    UiUtil::EditorIcon::StaticMesh,
 	    isCookedMesh ? "Cooked Static Mesh" : "Procedural Mesh",
 	    isCookedMesh ? "Cooked asset" : "Generated geometry");
 	UiUtil::DrawDetailsValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
@@ -642,7 +643,7 @@ void SceneInspectorPanel::BuildMeshMaterialsCategory(const MeshComponent& meshCo
 	char buffer[64] = {};
 	const MaterialHandle materialHandle = meshComponent.GetMaterialHandle();
 	std::snprintf(buffer, sizeof(buffer), "Material %u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
-	UiUtil::DrawDetailsAssetRow("Element 0", "Mat", buffer, "Material slot");
+	UiUtil::DrawDetailsAssetRow("Element 0", UiUtil::EditorIcon::Material, buffer, "Material slot");
 	UiUtil::EndDetailsCategory();
 }
 

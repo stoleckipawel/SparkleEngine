@@ -5,11 +5,51 @@
 #include "Level/LevelManager.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Style/SparkleUiPalette.h"
+#include "Util/UiUtil.h"
 
 #include <imgui.h>
 
+#include <cstring>
 #include <cstdio>
 #include <string>
+
+namespace
+{
+	UiUtil::EditorIcon GetViewModeIcon(RenderViewMode viewMode) noexcept
+	{
+		switch (viewMode)
+		{
+			case RenderViewMode::Lit:
+				return UiUtil::EditorIcon::ViewLit;
+			case RenderViewMode::GBufferDiffuse:
+				return UiUtil::EditorIcon::ViewDiffuse;
+			case RenderViewMode::GBufferNormal:
+				return UiUtil::EditorIcon::ViewNormal;
+			case RenderViewMode::GBufferRoughness:
+				return UiUtil::EditorIcon::ViewRoughness;
+			case RenderViewMode::GBufferMetallic:
+				return UiUtil::EditorIcon::ViewMetallic;
+			case RenderViewMode::GBufferEmissive:
+				return UiUtil::EditorIcon::ViewEmissive;
+			case RenderViewMode::GBufferAmbientOcclusion:
+				return UiUtil::EditorIcon::ViewAmbientOcclusion;
+			case RenderViewMode::GBufferSubsurfaceColor:
+				return UiUtil::EditorIcon::ViewSubsurfaceColor;
+			case RenderViewMode::GBufferSubsurfaceStrength:
+				return UiUtil::EditorIcon::ViewSubsurfaceStrength;
+			case RenderViewMode::DirectDiffuse:
+				return UiUtil::EditorIcon::ViewDirectDiffuse;
+			case RenderViewMode::DirectSpecular:
+				return UiUtil::EditorIcon::ViewDirectSpecular;
+			case RenderViewMode::DirectSubsurface:
+				return UiUtil::EditorIcon::ViewDirectSubsurface;
+			case RenderViewMode::Count:
+				break;
+		}
+
+		return UiUtil::EditorIcon::ViewLit;
+	}
+}  // namespace
 
 ViewportTopPanel::ViewportTopPanel(LevelManager* levelManager) noexcept
 {
@@ -67,13 +107,20 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 {
 	ImGui::Spacing();
 	ImGui::Separator();
-	ImGui::TextDisabled("%s", label);
+	UiUtil::EditorIcon icon = UiUtil::EditorIcon::ViewMode;
+	if (std::strcmp(label, "Lighting") == 0)
+	{
+		icon = UiUtil::EditorIcon::DirectionalLight;
+	}
+	const std::string categoryLabel = UiUtil::MakeIconLabel(icon, label);
+	ImGui::TextDisabled("%s", categoryLabel.c_str());
 }
 
 void ViewportTopPanel::DrawViewModeOption(RenderViewMode option, RenderViewMode currentViewMode) noexcept
 {
 	const bool selected = option == currentViewMode;
-	if (ImGui::Selectable(GetViewModeLabel(option), selected))
+	const std::string optionLabel = UiUtil::MakeIconLabel(GetViewModeIcon(option), GetViewModeLabel(option));
+	if (ImGui::Selectable(optionLabel.c_str(), selected))
 	{
 		CVarRenderViewMode.Set(option);
 	}
@@ -90,7 +137,8 @@ void ViewportTopPanel::BuildLevelName() const noexcept
 	const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string("<None>");
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("Level");
+	const std::string levelLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Level, "Level");
+	ImGui::TextDisabled("%s", levelLabel.c_str());
 	ImGui::SameLine();
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextUnformatted(activeLevelName.c_str());
@@ -105,11 +153,13 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 	}
 
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("Viewmode");
+	const std::string viewModeLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::ViewMode, "Viewmode");
+	ImGui::TextDisabled("%s", viewModeLabel.c_str());
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(180.0f);
 	ImGui::BeginDisabled(disableInteraction);
-	if (ImGui::BeginCombo("##ViewportViewMode", GetViewModeLabel(currentViewMode)))
+	const std::string previewLabel = UiUtil::MakeIconLabel(GetViewModeIcon(currentViewMode), GetViewModeLabel(currentViewMode));
+	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
 		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
 

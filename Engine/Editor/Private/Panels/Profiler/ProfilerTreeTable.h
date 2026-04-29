@@ -32,15 +32,11 @@ class ProfilerTreeTable
 
 	// Renders an ImGui table containing the supplied flat node bucket. Recurses
 	// into children when the user expands tree rows.
-	void Render(
-	    const State& state,
-	    const char* tableId,
-	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes) const;
+	void Render(const State& state, const char* tableId, const std::vector<const Diagnostics::ProfilerSnapshotNode*>& nodes) const;
 
   private:
 	// ImGui table flags shared by every profiler table instance.
-	static constexpr ImGuiTableFlags kTableFlags =
-	    ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
+	static constexpr ImGuiTableFlags kTableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable;
 
 	static constexpr float kVisibilityColumnWidth = 20.0f;
 	static constexpr float kNumericColumnWidth = 70.0f;
@@ -67,11 +63,7 @@ class ProfilerTreeTable
 	    std::size_t siblingIndex,
 	    std::size_t siblingTotal) const;
 
-	void RenderVisibilityDot(
-	    const State& state,
-	    const Diagnostics::ProfilerSnapshotNode& node,
-	    std::size_t siblingIndex,
-	    std::size_t siblingTotal) const;
+	void RenderVisibilityToggle(const State& state, const Diagnostics::ProfilerSnapshotNode& node) const;
 
 	void RenderDrawStatsTooltip(const Diagnostics::ProfilerSnapshotNode& node) const;
 

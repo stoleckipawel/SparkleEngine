@@ -5,6 +5,7 @@
 #include "Core/Public/Strings/StringUtils.h"
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
+#include "Util/UiUtil.h"
 
 #include <imgui.h>
 
@@ -67,7 +68,8 @@ void OutputLogPanel::BuildUI(bool disableInteraction)
 		    ImGuiCond_FirstUseEver);
 	}
 	ImGui::SetNextWindowSize(ImVec2(600.0f, 300.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Output Log", &m_isOpen))
+	const std::string windowTitle = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Console, "Output Log") + "##Output Log";
+	if (!ImGui::Begin(windowTitle.c_str(), &m_isOpen))
 	{
 		ImGui::End();
 		return;
@@ -206,28 +208,31 @@ void OutputLogPanel::DrawToolbar(bool disableInteraction)
 	ImGui::BeginDisabled(disableInteraction);
 	if (ImGui::BeginTable("##OutputLogToolbar", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadOuterX))
 	{
-		ImGui::TableSetupColumn("help", ImGuiTableColumnFlags_WidthFixed, 54.0f);
-		ImGui::TableSetupColumn("clear", ImGuiTableColumnFlags_WidthFixed, 54.0f);
-		ImGui::TableSetupColumn("copy", ImGuiTableColumnFlags_WidthFixed, 54.0f);
+		ImGui::TableSetupColumn("help", ImGuiTableColumnFlags_WidthFixed, 66.0f);
+		ImGui::TableSetupColumn("clear", ImGuiTableColumnFlags_WidthFixed, 66.0f);
+		ImGui::TableSetupColumn("copy", ImGuiTableColumnFlags_WidthFixed, 66.0f);
 		ImGui::TableSetupColumn("filter", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("count", ImGuiTableColumnFlags_WidthFixed, 96.0f);
 		ImGui::TableNextRow();
 
 		ImGui::TableSetColumnIndex(0);
-		if (ImGui::Button("Help", ImVec2(-1.0f, 0.0f)) && m_session != nullptr)
+		const std::string helpLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Help, "Help");
+		if (ImGui::Button(helpLabel.c_str(), ImVec2(-1.0f, 0.0f)) && m_session != nullptr)
 		{
 			m_session->SubmitLine("Help");
 			m_scrollToBottom = true;
 		}
 
 		ImGui::TableSetColumnIndex(1);
-		if (ImGui::Button("Clear", ImVec2(-1.0f, 0.0f)))
+		const std::string clearLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Clear, "Clear");
+		if (ImGui::Button(clearLabel.c_str(), ImVec2(-1.0f, 0.0f)))
 		{
 			Clear();
 		}
 
 		ImGui::TableSetColumnIndex(2);
-		if (ImGui::Button("Copy", ImVec2(-1.0f, 0.0f)))
+		const std::string copyLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Copy, "Copy");
+		if (ImGui::Button(copyLabel.c_str(), ImVec2(-1.0f, 0.0f)))
 		{
 			BuildOutputTextBuffer(std::string_view(m_filterBuffer.data()));
 			ImGui::SetClipboardText(m_outputTextBuffer.c_str());

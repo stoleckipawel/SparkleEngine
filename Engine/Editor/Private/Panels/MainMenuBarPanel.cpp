@@ -4,6 +4,7 @@
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
 #include "Style/SparkleUiPalette.h"
+#include "Util/UiUtil.h"
 #include "Window/Window.h"
 
 #include <imgui.h>
@@ -115,7 +116,8 @@ void MainMenuBarPanel::BuildOpenLevelMenu() noexcept
 	for (const std::string& levelName : levelNames)
 	{
 		const bool isActive = levelName == activeLevelName;
-		if (ImGui::MenuItem(levelName.c_str(), nullptr, isActive, !isActive))
+		const std::string levelLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Level, levelName.c_str());
+		if (ImGui::MenuItem(levelLabel.c_str(), nullptr, isActive, !isActive))
 		{
 			m_levelManager->RequestLevelChange(levelName);
 		}
@@ -128,13 +130,15 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	const bool hasActiveLevel = hasLevelManager && m_levelManager->HasActiveLevel();
 	const bool levelChangeInProgress = hasLevelManager && m_levelManager->IsLevelChangeInProgress();
 
-	if (ImGui::BeginMenu("Open Level", hasLevelManager && !levelChangeInProgress))
+	const std::string openLevelLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::FolderOpen, "Open Level");
+	if (ImGui::BeginMenu(openLevelLabel.c_str(), hasLevelManager && !levelChangeInProgress))
 	{
 		BuildOpenLevelMenu();
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::MenuItem("Save All", nullptr, false, hasActiveLevel && !levelChangeInProgress))
+	const std::string saveAllLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Save, "Save All");
+	if (ImGui::MenuItem(saveAllLabel.c_str(), nullptr, false, hasActiveLevel && !levelChangeInProgress))
 	{
 		m_levelManager->SaveActiveLevel();
 	}
@@ -142,12 +146,14 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 
 void MainMenuBarPanel::BuildWindowsMenu() noexcept
 {
-	if (ImGui::MenuItem("Profiler", nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
+	const std::string profilerLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Profiler, "Profiler");
+	if (ImGui::MenuItem(profilerLabel.c_str(), nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
 	{
 		m_profilerOpenHandler();
 	}
 
-	if (ImGui::MenuItem("Shaders", nullptr, false, static_cast<bool>(m_shaderToolsOpenHandler)))
+	const std::string shadersLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Shader, "Shaders");
+	if (ImGui::MenuItem(shadersLabel.c_str(), nullptr, false, static_cast<bool>(m_shaderToolsOpenHandler)))
 	{
 		m_shaderToolsOpenHandler();
 	}

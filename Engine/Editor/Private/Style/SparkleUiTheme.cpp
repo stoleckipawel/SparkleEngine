@@ -7,6 +7,10 @@
 
 #include <imgui.h>
 
+#ifndef SPARKLE_FONT_AWESOME_SOLID_TTF
+	#error "Sparkle editor icons require SPARKLE_FONT_AWESOME_SOLID_TTF."
+#endif
+
 namespace SparkleUiTheme
 {
 	namespace
@@ -14,15 +18,10 @@ namespace SparkleUiTheme
 		ImFont* g_bodyFont = nullptr;
 		ImFont* g_headingFont = nullptr;
 		ImFont* g_monoFont = nullptr;
-		bool g_editorIconsAvailable = false;
 
 		const char* GetFontAwesomeSolidPath() noexcept
 		{
-#ifdef SPARKLE_FONT_AWESOME_SOLID_TTF
 			return SPARKLE_FONT_AWESOME_SOLID_TTF;
-#else
-			return nullptr;
-#endif
 		}
 
 		ImFont* LoadFirstAvailableFont(const std::array<const char*, 4>& fontPaths, float sizePixels)
@@ -54,11 +53,6 @@ namespace SparkleUiTheme
 		void MergeEditorIconsIntoLastFont(float baseSizePixels)
 		{
 			const char* fontPath = GetFontAwesomeSolidPath();
-			if (fontPath == nullptr || fontPath[0] == '\0')
-			{
-				return;
-			}
-
 			std::error_code errorCode;
 			if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
 			{
@@ -73,10 +67,7 @@ namespace SparkleUiTheme
 			iconConfig.GlyphMinAdvanceX = baseSizePixels;
 
 			const float iconSize = baseSizePixels * 0.86f;
-			if (io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges) != nullptr)
-			{
-				g_editorIconsAvailable = true;
-			}
+			io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges);
 		}
 	}  // namespace
 
@@ -133,7 +124,6 @@ namespace SparkleUiTheme
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->Clear();
-		g_editorIconsAvailable = false;
 
 		const float bodySize = 14.0f * dpiScale;
 		const float headingSize = 15.0f * dpiScale;
@@ -177,11 +167,6 @@ namespace SparkleUiTheme
 		}
 
 		io.FontDefault = g_bodyFont;
-	}
-
-	bool AreEditorIconsAvailable() noexcept
-	{
-		return g_editorIconsAvailable;
 	}
 
 	ImFont* GetBodyFont()
