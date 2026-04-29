@@ -27,7 +27,7 @@ namespace EditorIconGlyphs
 		inline constexpr const char* Search = "\xef\x80\x82";
 		inline constexpr const char* Level = "\xef\x89\xb9";
 		inline constexpr const char* ViewMode = "\xef\x97\xbd";
-		inline constexpr const char* ViewLit = "\xef\x81\xae";
+		inline constexpr const char* ViewLit = "\xef\x86\x85";
 		inline constexpr const char* ViewDiffuse = "\xef\x94\xbf";
 		inline constexpr const char* ViewNormal = "\xef\x81\x87";
 		inline constexpr const char* ViewRoughness = "\xef\x9b\xbc";
@@ -38,7 +38,7 @@ namespace EditorIconGlyphs
 		inline constexpr const char* ViewSubsurfaceStrength = "\xef\x9d\xb3";
 		inline constexpr const char* ViewDirectDiffuse = "\xef\x83\xa7";
 		inline constexpr const char* ViewDirectSpecular = "\xef\x8e\xa5";
-		inline constexpr const char* ViewDirectSubsurface = "\xef\x95\xb6";
+		inline constexpr const char* ViewDirectSubsurface = "\xef\x97\x92";
 		inline constexpr const char* Cpu = "\xef\x8b\x9b";
 		inline constexpr const char* Gpu = "\xef\x84\x88";
 		inline constexpr const char* Help = "\xef\x81\x99";

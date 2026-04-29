@@ -69,7 +69,8 @@ class ProfilerChartView
 	// Rounds a value up to a "nice" axis maximum (1, 2, 5, 10 Ă— 10^n).
 	static double NiceCeil(double value) noexcept;
 
-	// Build slice list from `bucket` skipping anything in `hiddenScopes`.
+	// Build slice list from `bucket`, skipping hidden scopes and reducing parent
+	// slices when hidden descendants are nested below them.
 	// Returns true if at least one slice has a positive value.
 	static bool BuildSlices(
 	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
@@ -77,4 +78,12 @@ class ProfilerChartView
 	    std::vector<Slice>& outSlices,
 	    double& outTotalMs,
 	    double& outMaxMs);
+
+	static bool IsScopeHidden(const Diagnostics::ProfilerSnapshotNode& node, const std::unordered_set<std::string>& hiddenScopes) noexcept;
+	static double ComputeHiddenDescendantAverageMicroseconds(
+	    const Diagnostics::ProfilerSnapshotNode& node,
+	    const std::unordered_set<std::string>& hiddenScopes) noexcept;
+	static double ComputeVisibleAverageMicroseconds(
+	    const Diagnostics::ProfilerSnapshotNode& node,
+	    const std::unordered_set<std::string>& hiddenScopes) noexcept;
 };

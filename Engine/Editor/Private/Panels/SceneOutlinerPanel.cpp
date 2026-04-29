@@ -419,6 +419,10 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	ImGui::TableSetColumnIndex(1);
 	ImGui::Indent(16.0f);
 	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel, !isSelected);
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+	{
+		*m_selection = selection;
+	}
 	ImGui::SameLine(0.0f, 6.0f);
 	if (!isVisible)
 	{
@@ -447,7 +451,23 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	}
 	ImGui::Unindent(16.0f);
 	ImGui::TableSetColumnIndex(2);
-	DrawMutedText(typeLabel, 0.62f);
+	ImVec4 mutedTypeColor = SparkleUiPalette::TextMuted();
+	mutedTypeColor.w *= 0.62f;
+	ImGui::PushStyleColor(ImGuiCol_Text, mutedTypeColor);
+	if (isSelected)
+	{
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+	}
+	if (ImGui::Selectable(typeLabel, false, 0, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+	{
+		*m_selection = selection;
+	}
+	if (isSelected)
+	{
+		ImGui::PopStyleColor(2);
+	}
+	ImGui::PopStyleColor();
 	ImGui::PopID();
 }
 

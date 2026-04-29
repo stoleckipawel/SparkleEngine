@@ -33,6 +33,44 @@ double ProfilerChartView::NiceCeil(double value) noexcept
 	return nice * mag;
 }
 
+bool ProfilerChartView::IsScopeHidden(
+    const Diagnostics::ProfilerSnapshotNode& node,
+    const std::unordered_set<std::string>& hiddenScopes) noexcept
+{
+	return hiddenScopes.count(node.Name) > 0;
+}
+
+double ProfilerChartView::ComputeHiddenDescendantAverageMicroseconds(
+    const Diagnostics::ProfilerSnapshotNode& node,
+    const std::unordered_set<std::string>& hiddenScopes) noexcept
+{
+	double hiddenMicroseconds = 0.0;
+	for (const Diagnostics::ProfilerSnapshotNode& child : node.Children)
+	{
+		if (IsScopeHidden(child, hiddenScopes))
+		{
+			hiddenMicroseconds += child.AverageDurationMicroseconds;
+			continue;
+		}
+
+		hiddenMicroseconds += ComputeHiddenDescendantAverageMicroseconds(child, hiddenScopes);
+	}
+	return hiddenMicroseconds;
+}
+
+double ProfilerChartView::ComputeVisibleAverageMicroseconds(
+    const Diagnostics::ProfilerSnapshotNode& node,
+    const std::unordered_set<std::string>& hiddenScopes) noexcept
+{
+	if (IsScopeHidden(node, hiddenScopes))
+	{
+		return 0.0;
+	}
+
+	const double hiddenDescendantMicroseconds = ComputeHiddenDescendantAverageMicroseconds(node, hiddenScopes);
+	return std::max(0.0, node.AverageDurationMicroseconds - hiddenDescendantMicroseconds);
+}
+
 bool ProfilerChartView::BuildSlices(
     const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
     const std::unordered_set<std::string>& hiddenScopes,
@@ -47,11 +85,16 @@ bool ProfilerChartView::BuildSlices(
 	for (std::size_t i = 0; i < bucket.size(); ++i)
 	{
 		const Diagnostics::ProfilerSnapshotNode* node = bucket[i];
-		if (hiddenScopes.count(node->Name) > 0)
+		if (IsScopeHidden(*node, hiddenScopes))
 		{
 			continue;
 		}
-		const double ms = ProfilerSnapshotUtils::MicrosecondsToMilliseconds(node->AverageDurationMicroseconds);
+		const double visibleAverageMicroseconds = ComputeVisibleAverageMicroseconds(*node, hiddenScopes);
+		if (visibleAverageMicroseconds <= 0.0)
+		{
+			continue;
+		}
+		const double ms = ProfilerSnapshotUtils::MicrosecondsToMilliseconds(visibleAverageMicroseconds);
 		const std::string_view sv = ProfilerSnapshotUtils::ShortenScopeName(node->Name);
 		// Slice color is derived from the node's index *in the original bucket*
 		// so chart slices match the table's row tint and visibility-dot colors.

@@ -162,7 +162,7 @@ void ProfilerPanel::RenderGpuTab() const
 	const Diagnostics::ProfilerSnapshotNode* gpuFocus = m_chartFocusNodeName.empty()
 	    ? nullptr
 	    : ProfilerSnapshotUtils::FindNodeByName(m_snapshot.GpuRoots, m_chartFocusNodeName);
-	if (gpuFocus != nullptr && gpuFocus->Children.size() >= 2)
+	if (gpuFocus != nullptr && m_hiddenScopes.count(gpuFocus->Name) == 0 && gpuFocus->Children.size() >= 2)
 	{
 		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 		chartBucket.reserve(gpuFocus->Children.size());
@@ -175,11 +175,13 @@ void ProfilerPanel::RenderGpuTab() const
 	else
 	{
 		const std::vector<Diagnostics::ProfilerSnapshotNode>* chartLevel = &m_snapshot.GpuRoots;
+		bool hiddenAutoDrillAncestor = false;
 		while (chartLevel->size() == 1 && !(*chartLevel)[0].Children.empty())
 		{
+			hiddenAutoDrillAncestor = hiddenAutoDrillAncestor || m_hiddenScopes.count((*chartLevel)[0].Name) > 0;
 			chartLevel = &(*chartLevel)[0].Children;
 		}
-		if (chartLevel->size() >= 2)
+		if (!hiddenAutoDrillAncestor && chartLevel->size() >= 2)
 		{
 			std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 			chartBucket.reserve(chartLevel->size());
@@ -261,7 +263,7 @@ void ProfilerPanel::RenderChartsForBucket(
 	const Diagnostics::ProfilerSnapshotNode* focusNode = m_chartFocusNodeName.empty()
 	    ? nullptr
 	    : ProfilerSnapshotUtils::FindNodeInBucket(bucket, m_chartFocusNodeName);
-	if (focusNode != nullptr && focusNode->Children.size() >= 2)
+	if (focusNode != nullptr && m_hiddenScopes.count(focusNode->Name) == 0 && focusNode->Children.size() >= 2)
 	{
 		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
 		chartBucket.reserve(focusNode->Children.size());

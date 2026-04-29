@@ -16,7 +16,7 @@ class ProfilerTreeTable
 	// stays free of persistent state â€” this keeps it easy to test and reuse.
 	struct State
 	{
-		// Names of root-level scopes the user has hidden from the chart.
+		// Names of scopes the user has hidden from profiler charts.
 		std::unordered_set<std::string>* HiddenScopes = nullptr;
 		// Set when the user clicks a row label so the chart can drill in.
 		// Cleared by the table when the same row is clicked twice (toggle behavior

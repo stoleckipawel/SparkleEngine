@@ -93,10 +93,7 @@ void ProfilerTreeTable::RenderRow(
 	}
 
 	ImGui::TableSetColumnIndex(0);
-	if (depth == 0)
-	{
-		RenderVisibilityToggle(state, node);
-	}
+	RenderVisibilityToggle(state, node);
 
 	ImGui::TableSetColumnIndex(1);
 	const bool hasChildren = !node.Children.empty();
