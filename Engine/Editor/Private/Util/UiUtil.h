@@ -2,6 +2,9 @@
 
 namespace UiUtil
 {
+	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr);
+	bool DrawVisibilityIconButton(const char* id, bool visible);
+
 	void DrawPanelHeader(const char* title, const char* subtitle);
 	void BeginSectionCard(const char* title);
 	void EndSectionCard();

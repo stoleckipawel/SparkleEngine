@@ -68,10 +68,35 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 	}
 }
 
+const char* SceneInspectorPanel::BuildSelectionIconText() const noexcept
+{
+	if (m_selection == nullptr)
+	{
+		return "-";
+	}
+
+	switch (m_selection->type)
+	{
+		case SceneObjectType::Camera:
+			return "C";
+		case SceneObjectType::DirectionalLight:
+			return "L";
+		case SceneObjectType::Mesh:
+			return "M";
+		case SceneObjectType::None:
+		default:
+			return "-";
+	}
+}
+
 void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
+	UiUtil::DrawPlaceholderTypeIcon(BuildSelectionIconText(), BuildSelectionSubtitle());
+	ImGui::SameLine(0.0f, 8.0f);
+	ImGui::BeginGroup();
 	ImGui::TextUnformatted(BuildSelectionTitle().c_str());
 	ImGui::TextDisabled("%s", BuildSelectionSubtitle());
+	ImGui::EndGroup();
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();

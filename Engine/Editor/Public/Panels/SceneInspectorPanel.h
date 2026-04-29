@@ -33,6 +33,7 @@ class SceneInspectorPanel final
   private:
 	std::string BuildSelectionTitle() const;
 	const char* BuildSelectionSubtitle() const noexcept;
+	const char* BuildSelectionIconText() const noexcept;
 	void BuildSelectionHeader() noexcept;
 	void BuildSelectionInspector() noexcept;
 	static void ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept;

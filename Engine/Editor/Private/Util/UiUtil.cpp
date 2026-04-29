@@ -19,6 +19,7 @@ namespace UiUtil
 		constexpr float DetailsLabelWidth = 160.0f;
 		constexpr float DetailsAxisLabelWidth = 14.0f;
 		constexpr float DetailsRowVerticalPadding = 3.0f;
+		constexpr float PlaceholderIconSize = 16.0f;
 
 		ImVec4 DetailsGridLineColor() noexcept
 		{
@@ -133,6 +134,49 @@ namespace UiUtil
 			ImGui::PopID();
 		}
 	}  // namespace
+
+	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip)
+	{
+		const ImVec2 size(PlaceholderIconSize, PlaceholderIconSize);
+		const ImVec2 start = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##placeholder_type_icon", size);
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		const ImVec2 end(start.x + size.x, start.y + size.y);
+		drawList->AddRectFilled(start, end, SparkleUiPalette::SceneOutlinerBadgeBackground(), 3.0f);
+		drawList->AddRect(start, end, SparkleUiPalette::PanelHeaderBorder(), 3.0f, 0, 1.0f);
+
+		if (text != nullptr && text[0] != '\0')
+		{
+			const ImVec2 textSize = ImGui::CalcTextSize(text);
+			const ImVec2 textPos(start.x + ((size.x - textSize.x) * 0.5f), start.y + ((size.y - textSize.y) * 0.5f));
+			drawList->AddText(textPos, SparkleUiPalette::SceneOutlinerBadgeText(), text);
+		}
+
+		if (tooltip != nullptr && tooltip[0] != '\0' && ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", tooltip);
+		}
+	}
+
+	bool DrawVisibilityIconButton(const char* id, bool visible)
+	{
+		ImGui::PushID(id);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
+		ImGui::PushStyleColor(ImGuiCol_Text, visible ? SparkleUiPalette::TextPrimary() : SparkleUiPalette::TextMuted());
+		const bool pressed = ImGui::Button(visible ? "O" : "-", ImVec2(PlaceholderIconSize, PlaceholderIconSize));
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", visible ? "Visible" : "Hidden");
+		}
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar();
+		ImGui::PopID();
+		return pressed;
+	}
 
 	void DrawPanelHeader(const char* title, const char* subtitle)
 	{
@@ -474,8 +518,7 @@ namespace UiUtil
 		const bool changed = ImGui::ColorEdit3(
 		    "##value",
 		    values,
-		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
-		        ImGuiColorEditFlags_PickerHueBar);
+		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
 
 		EndDetailsRow();
 		return changed;
