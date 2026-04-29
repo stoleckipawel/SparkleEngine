@@ -113,10 +113,8 @@ bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 	}
 
 	if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr &&
-	    m_editorConsoleSystem->HandleShortcut(
-	        static_cast<std::uint32_t>(msg),
-	        static_cast<std::uintptr_t>(wParam),
-	        ImGui::GetIO().WantTextInput))
+	    m_editorConsoleSystem
+	        ->HandleShortcut(static_cast<std::uint32_t>(msg), static_cast<std::uintptr_t>(wParam), ImGui::GetIO().WantTextInput))
 	{
 		return true;
 	}

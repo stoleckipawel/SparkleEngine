@@ -26,6 +26,9 @@ void EditorInputCoordinator::UpdateGameplayInput(const UI& ui) noexcept
 		return;
 	}
 
+	// Editor UI owns keyboard/mouse whenever an ImGui control is focused. The
+	// gameplay layer is only enabled when the viewport surface explicitly claims
+	// input, or while mouse-look already owns a captured mouse.
 	const bool enableGameplayInput = ui.WantsGameplayInput() || m_inputSystem->IsMouseCaptured();
 	m_inputSystem->SetLayerEnabled(InputLayer::Gameplay, enableGameplayInput);
 }

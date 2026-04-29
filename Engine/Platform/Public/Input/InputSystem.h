@@ -62,6 +62,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	bool OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param2);
 
 	const InputState& GetState() const noexcept { return m_State; }
+	const InputState& GetState(InputLayer Layer) const noexcept;
 
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
 	void SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept;
@@ -173,6 +174,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	std::unique_ptr<IInputBackend> m_Backend;
 
 	InputState m_State;
+	InputState m_DisabledState;
 
 	std::mutex m_CallbackMutex;
 

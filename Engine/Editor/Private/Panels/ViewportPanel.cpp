@@ -101,7 +101,7 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    "Viewport",
 	    nullptr,
 	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-	ImGui::PopStyleVar(); // WindowPadding
+	ImGui::PopStyleVar();  // WindowPadding
 
 	const float surfaceRegionHeight = (std::max) (MinimumViewportExtent, ImGui::GetContentRegionAvail().y);
 	ImGui::BeginDisabled(disableInteraction);
@@ -110,7 +110,24 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    ImVec2(0.0f, surfaceRegionHeight),
 	    ImGuiChildFlags_None,
 	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-	m_wantsGameplayInput = !disableInteraction && ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+	const bool viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+	const bool mouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+	                          ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
+	if (disableInteraction)
+	{
+		m_hasInputFocus = false;
+	}
+	else if (viewportHovered && mouseClicked)
+	{
+		m_hasInputFocus = true;
+	}
+	else if (!viewportHovered && mouseClicked && ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+	{
+		m_hasInputFocus = false;
+	}
+
+	const bool textInputOwnsKeyboard = io.WantTextInput && !(viewportHovered && mouseClicked);
+	m_wantsGameplayInput = !disableInteraction && m_hasInputFocus && !textInputOwnsKeyboard;
 
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);

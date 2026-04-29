@@ -20,17 +20,22 @@ namespace UiUtil
 		constexpr float Float3InputWidth = 188.0f;
 		constexpr float DetailsLabelWidth = 132.0f;
 		constexpr float DetailsAxisLabelWidth = 12.0f;
-		constexpr float DetailsRowVerticalPadding = 2.0f;
+		constexpr float DetailsRowVerticalPadding = 1.0f;
 		constexpr float PlaceholderIconSize = 14.0f;
-		constexpr float DetailsUtilityColumnWidth = 20.0f;
+		constexpr float DetailsUtilityColumnWidth = 24.0f;
 		constexpr float DetailsResetButtonSize = 14.0f;
 		constexpr float DetailsDirtyEpsilon = 0.0001f;
 
 		ImVec4 DetailsGridLineColor() noexcept
 		{
 			ImVec4 color = ImGui::ColorConvertU32ToFloat4(SparkleUiPalette::PanelHeaderBorder());
-			color.w = 0.28f;
+			color.w = 0.18f;
 			return color;
+		}
+
+		ImU32 DetailsRowBackgroundColor() noexcept
+		{
+			return IM_COL32(24, 25, 28, 150);
 		}
 
 		void PushFontIfAvailable(ImFont* font)
@@ -137,13 +142,19 @@ namespace UiUtil
 		bool BeginDetailsRow(const char* label, int valueColumnCount)
 		{
 			ImGui::PushID(label);
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, DetailsRowVerticalPadding));
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(8.0f, DetailsRowVerticalPadding));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 2.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 2.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 			const ImVec4 gridLineColor = DetailsGridLineColor();
 			ImGui::PushStyleColor(ImGuiCol_TableBorderStrong, gridLineColor);
 			ImGui::PushStyleColor(ImGuiCol_TableBorderLight, gridLineColor);
 			ImGui::PushStyleColor(ImGuiCol_Separator, gridLineColor);
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.18f, 0.19f, 0.21f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.22f, 0.23f, 0.25f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.18f, 0.29f, 0.45f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_CheckMark, SparkleUiPalette::AccentStrong());
 
 			ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingStretchSame;
 			tableFlags |= ImGuiTableFlags_NoPadOuterX;
@@ -151,8 +162,8 @@ namespace UiUtil
 
 			if (!ImGui::BeginTable("##details_row", valueColumnCount + 2, tableFlags))
 			{
-				ImGui::PopStyleColor(3);
-				ImGui::PopStyleVar(3);
+				ImGui::PopStyleColor(7);
+				ImGui::PopStyleVar(5);
 				ImGui::PopID();
 				return false;
 			}
@@ -165,6 +176,7 @@ namespace UiUtil
 			ImGui::TableSetupColumn("utility", ImGuiTableColumnFlags_WidthFixed, DetailsUtilityColumnWidth);
 
 			ImGui::TableNextRow();
+			ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, DetailsRowBackgroundColor());
 			ImGui::TableSetColumnIndex(0);
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextDisabled("%s", label);
@@ -216,8 +228,8 @@ namespace UiUtil
 		{
 			ImGui::EndTable();
 			ImGui::Separator();
-			ImGui::PopStyleColor(3);
-			ImGui::PopStyleVar(3);
+			ImGui::PopStyleColor(7);
+			ImGui::PopStyleVar(5);
 			ImGui::PopID();
 		}
 	}  // namespace
@@ -656,20 +668,18 @@ namespace UiUtil
 			flags |= ImGuiTreeNodeFlags_DefaultOpen;
 		}
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 3.0f));
-		ImGui::PushStyleColor(ImGuiCol_Header, SparkleUiPalette::SectionHeaderBackground());
-		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, SparkleUiPalette::HeaderBackgroundHovered());
-		ImGui::PushStyleColor(ImGuiCol_HeaderActive, SparkleUiPalette::HeaderBackgroundActive());
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 4.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+		ImGui::PushStyleColor(ImGuiCol_Header, ImGui::ColorConvertU32ToFloat4(SparkleUiPalette::SectionHeaderBackground()));
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.21f, 0.22f, 0.24f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.19f, 0.26f, 0.36f, 1.0f));
 		const bool open = ImGui::CollapsingHeader(title, flags);
 		ImGui::PopStyleColor(3);
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(2);
 		return open;
 	}
 
-	void EndDetailsCategory()
-	{
-		ImGui::Spacing();
-	}
+	void EndDetailsCategory() {}
 
 	void DrawDetailsValueRow(const char* label, const char* value)
 	{

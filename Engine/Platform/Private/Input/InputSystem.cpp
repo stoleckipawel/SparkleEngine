@@ -26,15 +26,22 @@ InputSystem::InputSystem(std::unique_ptr<IInputBackend> Backend) : m_Backend(std
 
 InputSystem::~InputSystem() = default;
 
+const InputState& InputSystem::GetState(InputLayer Layer) const noexcept
+{
+	return ShouldDispatchToLayer(Layer) ? m_State : m_DisabledState;
+}
+
 void InputSystem::BeginFrame()
 {
 	m_State.BeginFrame();
+	m_DisabledState.BeginFrame();
 	ClearDeferredQueues();
 }
 
 void InputSystem::EndFrame()
 {
 	m_State.EndFrame();
+	m_DisabledState.EndFrame();
 }
 
 void InputSystem::ProcessDeferredEvents()
@@ -42,8 +49,7 @@ void InputSystem::ProcessDeferredEvents()
 	if (m_automaticImGuiCaptureEnabled)
 	{
 		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
-		const bool wantsCaptureInput =
-		    currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
+		const bool wantsCaptureInput = currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
 		SetLayerEnabled(InputLayer::Gameplay, !wantsCaptureInput);
 	}
 

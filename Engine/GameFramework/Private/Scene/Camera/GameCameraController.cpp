@@ -79,10 +79,22 @@ GameCameraController::~GameCameraController() noexcept
 
 void GameCameraController::Update() noexcept
 {
-	const InputState& input = m_inputSystem.GetState();
+	const InputState& input = m_inputSystem.GetState(InputLayer::Gameplay);
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
 	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
 	const CameraMovementSettings& settings = m_camera.GetSettings();
+	if (!m_bMouseLookActive && input.IsMouseButtonDown(MouseButton::Right))
+	{
+		m_bMouseLookActive = true;
+		m_inputSystem.CaptureMouse();
+		m_inputSystem.SetCursorVisibility(false);
+	}
+	else if (m_bMouseLookActive && !input.IsMouseButtonDown(MouseButton::Right))
+	{
+		m_bMouseLookActive = false;
+		m_inputSystem.ReleaseMouse();
+		m_inputSystem.SetCursorVisibility(true);
+	}
 
 	if (m_bMouseLookActive)
 	{

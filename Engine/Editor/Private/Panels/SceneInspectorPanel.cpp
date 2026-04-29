@@ -46,31 +46,15 @@ namespace
 		}
 	}
 
-	bool DrawFilterChip(const char* label, bool active) noexcept
-	{
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
-		if (active)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackgroundActive());
-			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
-		}
-		else
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackground());
-			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
-		}
-
-		ImGui::PushID("FilterChip");
-		const bool pressed = ImGui::SmallButton(label);
-		ImGui::PopID();
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar();
-		return pressed;
-	}
-
 	bool MatchesFilterText(const std::string& filterText, const char* text) noexcept
 	{
 		return filterText.empty() || (text != nullptr && Strings::ContainsIgnoreCase(text, filterText));
+	}
+
+	ImU32 WithAlphaU32(ImVec4 color, float alpha) noexcept
+	{
+		color.w *= alpha;
+		return ImGui::ColorConvertFloat4ToU32(color);
 	}
 }  // namespace
 
@@ -123,31 +107,37 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 
 void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, SparkleUiPalette::SurfaceBackground());
-	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 5.0f));
-	ImGui::BeginChild(
-	    "##DetailsSelectionHeader",
-	    ImVec2(0.0f, 42.0f),
-	    ImGuiChildFlags_Borders,
-	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-	UiUtil::DrawEditorIcon(BuildSelectionIcon(m_selection), BuildSelectionSubtitle());
+	const std::string title = BuildSelectionTitle();
+	const char* subtitle = BuildSelectionSubtitle();
+	const UiUtil::EditorIcon icon = BuildSelectionIcon(m_selection);
+
+	constexpr float kHeaderHeight = 30.0f;
+	constexpr float kHeaderPaddingX = 8.0f;
+	const float width = ImGui::GetContentRegionAvail().x;
+	const ImVec2 start = ImGui::GetCursorScreenPos();
+	const ImVec2 end(start.x + width, start.y + kHeaderHeight);
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+	drawList->AddRectFilled(start, end, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::HeaderBackgroundActive()));
+	drawList->AddRectFilled(start, ImVec2(start.x + 3.0f, end.y), ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::Accent()));
+	drawList->AddLine(ImVec2(start.x, start.y), ImVec2(end.x, start.y), WithAlphaU32(SparkleUiPalette::Border(), 0.52f));
+	drawList->AddLine(ImVec2(start.x, end.y - 1.0f), ImVec2(end.x, end.y - 1.0f), WithAlphaU32(SparkleUiPalette::Border(), 0.58f));
+
+	ImGui::InvisibleButton("##DetailsSelectionHeader", ImVec2(width, kHeaderHeight));
+
+	ImGui::SetCursorScreenPos(ImVec2(start.x + kHeaderPaddingX + 10.0f, start.y + 7.0f));
+	ImGui::TextUnformatted(UiUtil::GetEditorIconGlyph(icon));
 	ImGui::SameLine(0.0f, 8.0f);
-	ImGui::BeginGroup();
-	ImGui::TextUnformatted(BuildSelectionTitle().c_str());
-	ImGui::TextDisabled("%s", BuildSelectionSubtitle());
-	ImGui::EndGroup();
-	ImGui::EndChild();
-	ImGui::PopStyleVar(2);
-	ImGui::PopStyleColor();
+	ImGui::TextUnformatted(title.c_str());
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", subtitle);
+
+	ImGui::SetCursorScreenPos(ImVec2(start.x, end.y));
 	BuildDetailsToolbar();
-	ImGui::Spacing();
 }
 
 void SceneInspectorPanel::BuildDetailsToolbar() noexcept
 {
-	EnsureValidDetailsFilter();
-
 	char filterBuffer[128] = {};
 	const std::size_t copyLength = (std::min) (m_filterText.size(), sizeof(filterBuffer) - 1);
 	if (copyLength > 0)
@@ -155,78 +145,21 @@ void SceneInspectorPanel::BuildDetailsToolbar() noexcept
 		std::copy_n(m_filterText.data(), copyLength, filterBuffer);
 	}
 
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 5.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.055f, 0.058f, 0.064f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.075f, 0.080f, 0.090f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.070f, 0.095f, 0.130f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_Border, WithAlphaU32(SparkleUiPalette::Border(), 0.70f));
 	ImGui::SetNextItemWidth(-1.0f);
-	const std::string searchHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search details...");
+	const std::string searchHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Search");
 	if (ImGui::InputTextWithHint("##DetailsFilter", searchHint.c_str(), filterBuffer, sizeof(filterBuffer)))
 	{
 		m_filterText = filterBuffer;
 	}
-	ImGui::PopStyleVar();
-
-	ImGui::Spacing();
-	bool drewPreviousFilter = false;
-	DrawDetailsFilterChip(SceneInspectorFilter::All, "All", drewPreviousFilter);
-	DrawDetailsFilterChip(SceneInspectorFilter::General, "General", drewPreviousFilter);
-	DrawDetailsFilterChip(SceneInspectorFilter::Transform, "Transform", drewPreviousFilter);
-	DrawDetailsFilterChip(SceneInspectorFilter::Rendering, "Render", drewPreviousFilter);
-	DrawDetailsFilterChip(SceneInspectorFilter::Materials, "Mats", drewPreviousFilter);
-	ImGui::Spacing();
-	ImGui::Spacing();
-}
-
-void SceneInspectorPanel::EnsureValidDetailsFilter() noexcept
-{
-	if (!IsDetailsFilterAvailable(m_activeFilter))
-	{
-		m_activeFilter = SceneInspectorFilter::All;
-	}
-}
-
-bool SceneInspectorPanel::IsDetailsFilterAvailable(SceneInspectorFilter filter) const noexcept
-{
-	if (filter == SceneInspectorFilter::All)
-	{
-		return true;
-	}
-
-	if (m_selection == nullptr)
-	{
-		return false;
-	}
-
-	switch (m_selection->type)
-	{
-		case SceneObjectType::Camera:
-			return filter == SceneInspectorFilter::General || filter == SceneInspectorFilter::Transform;
-		case SceneObjectType::DirectionalLight:
-			return filter == SceneInspectorFilter::Transform || filter == SceneInspectorFilter::Rendering;
-		case SceneObjectType::Mesh:
-			return filter == SceneInspectorFilter::Transform || filter == SceneInspectorFilter::Rendering ||
-			       filter == SceneInspectorFilter::Materials;
-		case SceneObjectType::None:
-		default:
-			return false;
-	}
-}
-
-void SceneInspectorPanel::DrawDetailsFilterChip(SceneInspectorFilter filter, const char* label, bool& drewPreviousFilter) noexcept
-{
-	if (!IsDetailsFilterAvailable(filter))
-	{
-		return;
-	}
-
-	if (drewPreviousFilter)
-	{
-		ImGui::SameLine(0.0f, 4.0f);
-	}
-
-	if (DrawFilterChip(label, m_activeFilter == filter))
-	{
-		m_activeFilter = filter;
-	}
-	drewPreviousFilter = true;
+	ImGui::PopStyleColor(4);
+	ImGui::PopStyleVar(3);
 }
 
 void SceneInspectorPanel::SetWidth(float widthPixels) noexcept
@@ -279,14 +212,8 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	}
 }
 
-bool SceneInspectorPanel::ShouldShowDetailsCategory(SceneInspectorFilter category, const char* title, const char* keywords) const noexcept
+bool SceneInspectorPanel::ShouldShowDetailsCategory(SceneInspectorFilter, const char* title, const char* keywords) const noexcept
 {
-	const bool filterMatches = m_activeFilter == SceneInspectorFilter::All || m_activeFilter == category;
-	if (!filterMatches)
-	{
-		return false;
-	}
-
 	return MatchesFilterText(m_filterText, title) || MatchesFilterText(m_filterText, keywords);
 }
 
@@ -298,6 +225,7 @@ void SceneInspectorPanel::BuildCameraInspector() noexcept
 	BuildCameraTransformCategory(cameraComponent);
 	BuildCameraCategory(cameraComponent);
 	BuildCameraMovementCategory(sceneCamera);
+	BuildCameraAdvancedParametersCategory(cameraComponent);
 }
 
 void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraComponent) noexcept
@@ -343,7 +271,7 @@ void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraCo
 
 void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) noexcept
 {
-	if (!ShouldShowDetailsCategory(SceneInspectorFilter::General, "Camera", "visible field of view near clip far clip aspect ratio"))
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::General, "Camera", "field of view near clip far clip aspect ratio"))
 	{
 		return;
 	}
@@ -354,13 +282,6 @@ void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) 
 	}
 
 	char buffer[64] = {};
-	constexpr bool kDefaultVisible = true;
-	bool visible = cameraComponent.IsVisible();
-	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
-	{
-		cameraComponent.SetVisible(visible);
-	}
-
 	float fovYDegrees = cameraComponent.GetFovYDegrees();
 	constexpr float kDefaultFovYDegrees = 60.0f;
 	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f", &kDefaultFovYDegrees))
@@ -386,6 +307,28 @@ void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) 
 
 	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetAspectRatio());
 	UiUtil::DrawDetailsValueRow("Aspect Ratio", buffer);
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildCameraAdvancedParametersCategory(CameraComponent& cameraComponent) noexcept
+{
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::General, "Advanced", "visible visibility hidden"))
+	{
+		return;
+	}
+
+	if (!UiUtil::BeginDetailsCategory("Advanced", false))
+	{
+		return;
+	}
+
+	constexpr bool kDefaultVisible = true;
+	bool visible = cameraComponent.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		cameraComponent.SetVisible(visible);
+	}
+
 	UiUtil::EndDetailsCategory();
 }
 
@@ -427,6 +370,7 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 	DirectionalLightDesc lightDesc = light.GetDesc();
 	BuildDirectionalLightTransformCategory(lightDesc);
 	BuildDirectionalLightCategory(light, lightDesc);
+	BuildDirectionalLightAdvancedParametersCategory(light);
 	light.ApplyDesc(lightDesc);
 }
 
@@ -457,7 +401,7 @@ void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLigh
 
 void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept
 {
-	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Light", "visible direction intensity color cast shadow rendering"))
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Light", "direction intensity color cast shadow rendering"))
 	{
 		return;
 	}
@@ -465,13 +409,6 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponen
 	if (!UiUtil::BeginDetailsCategory("Light"))
 	{
 		return;
-	}
-
-	constexpr bool kDefaultVisible = true;
-	bool visible = light.IsVisible();
-	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
-	{
-		light.SetVisible(visible);
 	}
 
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
@@ -506,6 +443,28 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponen
 	{
 		lightDesc.castShadow = castShadow;
 	}
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildDirectionalLightAdvancedParametersCategory(DirectionalLightComponent& light) noexcept
+{
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Advanced", "visible visibility hidden"))
+	{
+		return;
+	}
+
+	if (!UiUtil::BeginDetailsCategory("Advanced", false))
+	{
+		return;
+	}
+
+	constexpr bool kDefaultVisible = true;
+	bool visible = light.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		light.SetVisible(visible);
+	}
+
 	UiUtil::EndDetailsCategory();
 }
 
@@ -575,12 +534,13 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 	BuildMeshTransformCategory(*meshComponent);
 	BuildStaticMeshCategory(*mesh, *meshComponent);
 	BuildStaticMeshAdvancedCategory(*mesh);
+	BuildMeshAdvancedParametersCategory(*meshComponent);
 	BuildMeshMaterialsCategory(*meshComponent);
 }
 
 void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept
 {
-	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Static Mesh", "visible type mesh asset rendering"))
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Static Mesh", "type mesh asset rendering"))
 	{
 		return;
 	}
@@ -588,13 +548,6 @@ void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponen
 	if (!UiUtil::BeginDetailsCategory("Static Mesh"))
 	{
 		return;
-	}
-
-	constexpr bool kDefaultVisible = true;
-	bool visible = meshComponent.IsVisible();
-	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
-	{
-		meshComponent.SetVisible(visible);
 	}
 
 	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;
@@ -625,6 +578,28 @@ void SceneInspectorPanel::BuildStaticMeshAdvancedCategory(const Mesh& mesh) noex
 	UiUtil::DrawDetailsValueRow("Vertices", buffer);
 	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetIndexCount());
 	UiUtil::DrawDetailsValueRow("Indices", buffer);
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildMeshAdvancedParametersCategory(MeshComponent& meshComponent) noexcept
+{
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Advanced", "visible visibility hidden"))
+	{
+		return;
+	}
+
+	if (!UiUtil::BeginDetailsCategory("Advanced", false))
+	{
+		return;
+	}
+
+	constexpr bool kDefaultVisible = true;
+	bool visible = meshComponent.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		meshComponent.SetVisible(visible);
+	}
+
 	UiUtil::EndDetailsCategory();
 }
 
