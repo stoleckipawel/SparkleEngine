@@ -21,6 +21,30 @@
 
 #include <imgui.h>
 
+namespace
+{
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection) noexcept
+	{
+		if (selection == nullptr)
+		{
+			return UiUtil::EditorIcon::None;
+		}
+
+		switch (selection->type)
+		{
+			case SceneObjectType::Camera:
+				return UiUtil::EditorIcon::Camera;
+			case SceneObjectType::DirectionalLight:
+				return UiUtil::EditorIcon::DirectionalLight;
+			case SceneObjectType::Mesh:
+				return UiUtil::EditorIcon::StaticMesh;
+			case SceneObjectType::None:
+			default:
+				return UiUtil::EditorIcon::None;
+		}
+	}
+}  // namespace
+
 SceneInspectorPanel::SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
     m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
 {
@@ -68,30 +92,9 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 	}
 }
 
-const char* SceneInspectorPanel::BuildSelectionIconText() const noexcept
-{
-	if (m_selection == nullptr)
-	{
-		return "-";
-	}
-
-	switch (m_selection->type)
-	{
-		case SceneObjectType::Camera:
-			return "C";
-		case SceneObjectType::DirectionalLight:
-			return "L";
-		case SceneObjectType::Mesh:
-			return "M";
-		case SceneObjectType::None:
-		default:
-			return "-";
-	}
-}
-
 void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
-	UiUtil::DrawPlaceholderTypeIcon(BuildSelectionIconText(), BuildSelectionSubtitle());
+	UiUtil::DrawEditorIcon(BuildSelectionIcon(m_selection), BuildSelectionSubtitle());
 	ImGui::SameLine(0.0f, 8.0f);
 	ImGui::BeginGroup();
 	ImGui::TextUnformatted(BuildSelectionTitle().c_str());
@@ -171,7 +174,8 @@ void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraCo
 
 	DirectX::XMFLOAT3 position = cameraComponent.GetTransform().GetTranslation();
 	float positionValues[3] = {position.x, position.y, position.z};
-	if (UiUtil::EditDetailsFloat3("Location", positionValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f"))
+	const float defaultPosition[3] = {0.0f, 0.0f, -4.0f};
+	if (UiUtil::EditDetailsFloat3("Location", positionValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultPosition))
 	{
 		cameraComponent.SetPosition({positionValues[0], positionValues[1], positionValues[2]});
 	}
@@ -179,7 +183,8 @@ void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraCo
 	DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
 	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
 	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
-	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
+	const float defaultRotation[3] = {0.0f, 0.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotation))
 	{
 		cameraComponent.SetRotationEuler(
 		    MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
@@ -187,7 +192,8 @@ void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraCo
 
 	DirectX::XMFLOAT3 scale = cameraComponent.GetTransform().GetScale();
 	float scaleValues[3] = {scale.x, scale.y, scale.z};
-	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f"))
+	const float defaultScale[3] = {1.0f, 1.0f, 1.0f};
+	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultScale))
 	{
 		cameraComponent.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
 	}
@@ -203,8 +209,16 @@ void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) 
 	}
 
 	char buffer[64] = {};
+	constexpr bool kDefaultVisible = true;
+	bool visible = cameraComponent.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		cameraComponent.SetVisible(visible);
+	}
+
 	float fovYDegrees = cameraComponent.GetFovYDegrees();
-	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f"))
+	constexpr float kDefaultFovYDegrees = 60.0f;
+	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f", &kDefaultFovYDegrees))
 	{
 		float dummySpeed = 0.15f;
 		ClampCameraUiValues(fovYDegrees, dummySpeed);
@@ -212,13 +226,15 @@ void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) 
 	}
 
 	float nearZ = cameraComponent.GetNearZ();
-	if (UiUtil::EditDetailsFloat("Near Clip", nearZ, 0.01f, 0.001f, cameraComponent.GetFarZ(), "%.3f"))
+	constexpr float kDefaultNearZ = 0.1f;
+	if (UiUtil::EditDetailsFloat("Near Clip", nearZ, 0.01f, 0.001f, cameraComponent.GetFarZ(), "%.3f", &kDefaultNearZ))
 	{
 		cameraComponent.SetNearFar(nearZ, cameraComponent.GetFarZ());
 	}
 
 	float farZ = cameraComponent.GetFarZ();
-	if (UiUtil::EditDetailsFloat("Far Clip", farZ, 1.0f, cameraComponent.GetNearZ(), 100000.0f, "%.3f"))
+	constexpr float kDefaultFarZ = 1000.0f;
+	if (UiUtil::EditDetailsFloat("Far Clip", farZ, 1.0f, cameraComponent.GetNearZ(), 100000.0f, "%.3f", &kDefaultFarZ))
 	{
 		cameraComponent.SetNearFar(cameraComponent.GetNearZ(), farZ);
 	}
@@ -237,7 +253,8 @@ void SceneInspectorPanel::BuildCameraMovementCategory(SceneCamera& sceneCamera) 
 
 	CameraMovementSettings settings = sceneCamera.GetSettings();
 	float moveSpeed = settings.moveSpeed;
-	if (UiUtil::EditDetailsFloat("Move Speed", moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f"))
+	constexpr float kDefaultMoveSpeed = 0.10f;
+	if (UiUtil::EditDetailsFloat("Move Speed", moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &kDefaultMoveSpeed))
 	{
 		float dummyFov = 60.0f;
 		ClampCameraUiValues(dummyFov, moveSpeed);
@@ -259,7 +276,7 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 	DirectionalLightComponent& light = m_gameScene->GetLighting().GetDirectionalLightComponent(lightIndex);
 	DirectionalLightDesc lightDesc = light.GetDesc();
 	BuildDirectionalLightTransformCategory(lightDesc);
-	BuildDirectionalLightCategory(lightDesc);
+	BuildDirectionalLightCategory(light, lightDesc);
 	light.ApplyDesc(lightDesc);
 }
 
@@ -272,7 +289,9 @@ void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLigh
 
 	DirectX::XMFLOAT3 rotationDegrees = MathUtils::DirectionToRotationDegrees(lightDesc.direction);
 	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
-	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
+	const DirectX::XMFLOAT3 defaultRotation = MathUtils::DirectionToRotationDegrees(DirectX::XMFLOAT3{0.0f, -1.0f, 0.0f});
+	const float defaultRotationValues[3] = {defaultRotation.x, defaultRotation.y, defaultRotation.z};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotationValues))
 	{
 		lightDesc.direction =
 		    MathUtils::RotationDegreesToDirection(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]});
@@ -281,21 +300,30 @@ void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLigh
 	UiUtil::EndDetailsCategory();
 }
 
-void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightDesc& lightDesc) noexcept
+void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept
 {
 	if (!UiUtil::BeginDetailsCategory("Light"))
 	{
 		return;
 	}
 
+	constexpr bool kDefaultVisible = true;
+	bool visible = light.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		light.SetVisible(visible);
+	}
+
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
-	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f"))
+	const float defaultDirection[3] = {0.0f, -1.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f", defaultDirection))
 	{
 		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
 	}
 
 	float intensity = lightDesc.intensity;
-	if (UiUtil::EditDetailsFloat("Intensity", intensity, 0.05f, kIntensitySliderMin, kIntensitySliderMax, "%.3f"))
+	constexpr float kDefaultIntensity = 1.0f;
+	if (UiUtil::EditDetailsFloat("Intensity", intensity, 0.05f, kIntensitySliderMin, kIntensitySliderMax, "%.3f", &kDefaultIntensity))
 	{
 		DirectX::XMFLOAT3 dummyColor = {1.0f, 1.0f, 1.0f};
 		ClampLightingUiValues(dummyColor, intensity);
@@ -303,7 +331,8 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightDesc& li
 	}
 
 	float colorValues[3] = {lightDesc.color.x, lightDesc.color.y, lightDesc.color.z};
-	if (UiUtil::EditDetailsColor3("Color", colorValues))
+	const float defaultColor[3] = {1.0f, 1.0f, 1.0f};
+	if (UiUtil::EditDetailsColor3("Color", colorValues, defaultColor))
 	{
 		DirectX::XMFLOAT3 clampedColor = {colorValues[0], colorValues[1], colorValues[2]};
 		float dummyIntensity = 1.0f;
@@ -312,7 +341,8 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightDesc& li
 	}
 
 	bool castShadow = lightDesc.castShadow;
-	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow))
+	constexpr bool kDefaultCastShadow = true;
+	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow, &kDefaultCastShadow))
 	{
 		lightDesc.castShadow = castShadow;
 	}
@@ -329,7 +359,8 @@ void SceneInspectorPanel::BuildMeshTransformCategory(MeshComponent& meshComponen
 	Transform& transform = meshComponent.GetTransform();
 	DirectX::XMFLOAT3 translation = transform.GetTranslation();
 	float translationValues[3] = {translation.x, translation.y, translation.z};
-	if (UiUtil::EditDetailsFloat3("Location", translationValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f"))
+	const float defaultTranslation[3] = {0.0f, 0.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Location", translationValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f", defaultTranslation))
 	{
 		transform.SetTranslation({translationValues[0], translationValues[1], translationValues[2]});
 	}
@@ -337,14 +368,16 @@ void SceneInspectorPanel::BuildMeshTransformCategory(MeshComponent& meshComponen
 	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
 	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
 	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
-	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
+	const float defaultRotation[3] = {0.0f, 0.0f, 0.0f};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f", defaultRotation))
 	{
 		transform.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
 	}
 
 	DirectX::XMFLOAT3 scale = transform.GetScale();
 	float scaleValues[3] = {scale.x, scale.y, scale.z};
-	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f"))
+	const float defaultScale[3] = {1.0f, 1.0f, 1.0f};
+	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f", defaultScale))
 	{
 		transform.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
 	}
@@ -375,15 +408,22 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 	}
 
 	BuildMeshTransformCategory(*meshComponent);
-	BuildStaticMeshCategory(*mesh);
+	BuildStaticMeshCategory(*mesh, *meshComponent);
 	BuildMeshMaterialsCategory(*meshComponent);
 }
 
-void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh) noexcept
+void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept
 {
 	if (!UiUtil::BeginDetailsCategory("Static Mesh"))
 	{
 		return;
+	}
+
+	constexpr bool kDefaultVisible = true;
+	bool visible = meshComponent.IsVisible();
+	if (UiUtil::EditDetailsCheckbox("Visible", visible, &kDefaultVisible))
+	{
+		meshComponent.SetVisible(visible);
 	}
 
 	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;

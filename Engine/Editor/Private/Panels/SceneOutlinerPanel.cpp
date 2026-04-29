@@ -3,8 +3,12 @@
 
 #include "Core/Public/Strings/StringUtils.h"
 #include "Scene/SceneObjectSelection.h"
+#include "Scene/Camera/CameraComponent.h"
+#include "Scene/Camera/SceneCamera.h"
 #include "Scene/GameScene.h"
+#include "Scene/Lighting/DirectionalLightComponent.h"
 #include "Scene/Lighting/SceneLighting.h"
+#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
@@ -13,6 +17,43 @@
 #include <string>
 
 #include <imgui.h>
+
+namespace
+{
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection) noexcept
+	{
+		switch (selection.type)
+		{
+			case SceneObjectType::Camera:
+				return UiUtil::EditorIcon::Camera;
+			case SceneObjectType::DirectionalLight:
+				return UiUtil::EditorIcon::DirectionalLight;
+			case SceneObjectType::Mesh:
+				return UiUtil::EditorIcon::StaticMesh;
+			case SceneObjectType::None:
+			default:
+				return UiUtil::EditorIcon::None;
+		}
+	}
+
+	bool DrawFilterChip(const char* label, bool active) noexcept
+	{
+		if (active)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackgroundActive());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackground());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
+		}
+
+		const bool pressed = ImGui::SmallButton(label);
+		ImGui::PopStyleColor(2);
+		return pressed;
+	}
+}  // namespace
 
 SceneOutlinerPanel::SceneOutlinerPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
     m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
@@ -36,6 +77,7 @@ void SceneOutlinerPanel::SetTopInset(float topInsetPixels) noexcept
 
 void SceneOutlinerPanel::BuildToolbar() noexcept
 {
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
 	char filterBuffer[128] = {};
 	const std::size_t copyLength = (std::min) (m_filterText.size(), sizeof(filterBuffer) - 1);
 	if (copyLength > 0)
@@ -48,6 +90,47 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 	{
 		m_filterText = filterBuffer;
 	}
+
+	ImGui::Spacing();
+	if (DrawFilterChip("All", m_activeFilter == SceneOutlinerFilter::All))
+	{
+		m_activeFilter = SceneOutlinerFilter::All;
+	}
+	ImGui::SameLine(0.0f, 4.0f);
+	if (DrawFilterChip("Camera", m_activeFilter == SceneOutlinerFilter::Cameras))
+	{
+		m_activeFilter = SceneOutlinerFilter::Cameras;
+	}
+	ImGui::SameLine(0.0f, 4.0f);
+	if (DrawFilterChip("Light", m_activeFilter == SceneOutlinerFilter::Lights))
+	{
+		m_activeFilter = SceneOutlinerFilter::Lights;
+	}
+	ImGui::SameLine(0.0f, 4.0f);
+	if (DrawFilterChip("Mesh", m_activeFilter == SceneOutlinerFilter::Meshes))
+	{
+		m_activeFilter = SceneOutlinerFilter::Meshes;
+	}
+
+	const float actionsWidth = 44.0f;
+	const float remainingWidth = ImGui::GetContentRegionAvail().x;
+	if (remainingWidth > actionsWidth)
+	{
+		ImGui::SameLine(ImGui::GetCursorPosX() + remainingWidth - actionsWidth);
+		UiUtil::DrawEditorIconButton(UiUtil::EditorIcon::Filter, "outliner_filter_action", "Filter options");
+		ImGui::SameLine(0.0f, 4.0f);
+		UiUtil::DrawEditorIconButton(UiUtil::EditorIcon::Settings, "outliner_settings_action", "Outliner settings");
+	}
+	ImGui::PopStyleVar();
+}
+
+void SceneOutlinerPanel::BuildFooter() noexcept
+{
+	const std::size_t totalCount = 1 + m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount();
+	const std::size_t displayedCount = CountVisibleEntries();
+	const bool hasValidSelection = IsSelectionValid();
+	ImGui::Separator();
+	ImGui::TextDisabled("%zu / %zu items shown%s", displayedCount, totalCount, hasValidSelection ? " (1 selected)" : "");
 }
 
 bool SceneOutlinerPanel::IsSelectionValid() const noexcept
@@ -86,74 +169,138 @@ void SceneOutlinerPanel::EnsureValidSelection() noexcept
 
 void SceneOutlinerPanel::BuildCameraSection() noexcept
 {
-	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	if (ImGui::TreeNodeEx("Camera", flags, "Camera (1)"))
+	if (m_activeFilter != SceneOutlinerFilter::All && m_activeFilter != SceneOutlinerFilter::Cameras)
 	{
-		if (m_filterText.empty() || Strings::ContainsIgnoreCase("Scene Camera", m_filterText))
+		return;
+	}
+
+	bool open = true;
+	DrawSectionRow("Camera", "Camera", 1, open);
+	if (open)
+	{
+		const SceneObjectSelection selection = SceneObjectSelection::Camera();
+		if (PassesActiveFilter(selection) && MatchesSearch("Scene Camera", "Camera"))
 		{
-			DrawSelectionEntry("Scene Camera", "C", "Camera", SceneObjectSelection::Camera());
+			DrawSelectionEntry("Scene Camera", "Camera", selection);
 		}
-		ImGui::TreePop();
 	}
 }
 
 void SceneOutlinerPanel::BuildLightSection() noexcept
 {
+	if (m_activeFilter != SceneOutlinerFilter::All && m_activeFilter != SceneOutlinerFilter::Lights)
+	{
+		return;
+	}
+
 	const std::size_t lightCount = m_gameScene->GetLighting().GetDirectionalLightCount();
-	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	const std::string header = "Lights (" + std::to_string(lightCount) + ")";
-	if (ImGui::TreeNodeEx("Lights", flags, "%s", header.c_str()))
+	bool open = true;
+	DrawSectionRow("Lights", "Lights", lightCount, open);
+	if (open)
 	{
 		if (lightCount == 0)
 		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(1);
 			ImGui::TextDisabled("No directional lights in scene");
 		}
 
 		for (std::size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
 		{
 			const std::string label = "Directional Light " + std::to_string(lightIndex + 1);
-			if (m_filterText.empty() || Strings::ContainsIgnoreCase(label, m_filterText))
+			const SceneObjectSelection selection = SceneObjectSelection::DirectionalLight(lightIndex);
+			if (PassesActiveFilter(selection) && MatchesSearch(label.c_str(), "Directional Light"))
 			{
-				DrawSelectionEntry(label.c_str(), "L", "Directional Light", SceneObjectSelection::DirectionalLight(lightIndex));
+				DrawSelectionEntry(label.c_str(), "Directional Light", selection);
 			}
 		}
-		ImGui::TreePop();
 	}
 }
 
 void SceneOutlinerPanel::BuildMeshSection() noexcept
 {
+	if (m_activeFilter != SceneOutlinerFilter::All && m_activeFilter != SceneOutlinerFilter::Meshes)
+	{
+		return;
+	}
+
 	const std::size_t meshCount = m_gameScene->GetMeshes().GetMeshCount();
-	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	const std::string header = "Meshes (" + std::to_string(meshCount) + ")";
-	if (ImGui::TreeNodeEx("Meshes", flags, "%s", header.c_str()))
+	bool open = true;
+	DrawSectionRow("Meshes", "Meshes", meshCount, open);
+	if (open)
 	{
 		if (meshCount == 0)
 		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(1);
 			ImGui::TextDisabled("No meshes in scene");
 		}
 
 		for (std::size_t meshIndex = 0; meshIndex < meshCount; ++meshIndex)
 		{
 			const std::string label = BuildMeshLabel(meshIndex);
-			if (m_filterText.empty() || Strings::ContainsIgnoreCase(label, m_filterText))
+			const SceneObjectSelection selection = SceneObjectSelection::Mesh(meshIndex);
+			if (PassesActiveFilter(selection) && MatchesSearch(label.c_str(), "Static Mesh"))
 			{
-				DrawSelectionEntry(label.c_str(), "M", "Static Mesh", SceneObjectSelection::Mesh(meshIndex));
+				DrawSelectionEntry(label.c_str(), "Static Mesh", selection);
 			}
 		}
-		ImGui::TreePop();
 	}
 }
 
-void SceneOutlinerPanel::SyncVisibilityState() noexcept
+bool SceneOutlinerPanel::PassesActiveFilter(const SceneObjectSelection& selection) const noexcept
 {
-	if (m_gameScene == nullptr)
+	switch (m_activeFilter)
 	{
-		return;
+		case SceneOutlinerFilter::Cameras:
+			return selection.type == SceneObjectType::Camera;
+		case SceneOutlinerFilter::Lights:
+			return selection.type == SceneObjectType::DirectionalLight;
+		case SceneOutlinerFilter::Meshes:
+			return selection.type == SceneObjectType::Mesh;
+		case SceneOutlinerFilter::All:
+		default:
+			return true;
+	}
+}
+
+bool SceneOutlinerPanel::MatchesSearch(const char* label, const char* typeLabel) const noexcept
+{
+	return m_filterText.empty() || Strings::ContainsIgnoreCase(label, m_filterText) || Strings::ContainsIgnoreCase(typeLabel, m_filterText);
+}
+
+std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
+{
+	std::size_t count = 0;
+	const SceneObjectSelection cameraSelection = SceneObjectSelection::Camera();
+	if (PassesActiveFilter(cameraSelection) && MatchesSearch("Scene Camera", "Camera"))
+	{
+		++count;
 	}
 
-	m_lightVisibility.resize(m_gameScene->GetLighting().GetDirectionalLightCount(), true);
-	m_meshVisibility.resize(m_gameScene->GetMeshes().GetMeshCount(), true);
+	const std::size_t lightCount = m_gameScene->GetLighting().GetDirectionalLightCount();
+	for (std::size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
+	{
+		const std::string label = "Directional Light " + std::to_string(lightIndex + 1);
+		const SceneObjectSelection selection = SceneObjectSelection::DirectionalLight(lightIndex);
+		if (PassesActiveFilter(selection) && MatchesSearch(label.c_str(), "Directional Light"))
+		{
+			++count;
+		}
+	}
+
+	const std::size_t meshCount = m_gameScene->GetMeshes().GetMeshCount();
+	for (std::size_t meshIndex = 0; meshIndex < meshCount; ++meshIndex)
+	{
+		const std::string label = BuildMeshLabel(meshIndex);
+		const SceneObjectSelection selection = SceneObjectSelection::Mesh(meshIndex);
+		if (PassesActiveFilter(selection) && MatchesSearch(label.c_str(), "Static Mesh"))
+		{
+			++count;
+		}
+	}
+
+	return count;
 }
 
 bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) const noexcept
@@ -161,11 +308,20 @@ bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) c
 	switch (selection.type)
 	{
 		case SceneObjectType::Camera:
-			return m_cameraVisible;
+			return m_gameScene->GetSceneCamera().GetCameraComponent().IsVisible();
 		case SceneObjectType::DirectionalLight:
-			return selection.index >= m_lightVisibility.size() || m_lightVisibility[selection.index];
+			return selection.index >= m_gameScene->GetLighting().GetDirectionalLightCount() ||
+			       m_gameScene->GetLighting().GetDirectionalLightComponent(selection.index).IsVisible();
 		case SceneObjectType::Mesh:
-			return selection.index >= m_meshVisibility.size() || m_meshVisibility[selection.index];
+			if (selection.index >= m_gameScene->GetMeshes().GetMeshCount())
+			{
+				return true;
+			}
+			if (const MeshComponent* meshComponent = m_gameScene->GetMeshes().GetMeshComponent(selection.index))
+			{
+				return meshComponent->IsVisible();
+			}
+			return true;
 		case SceneObjectType::None:
 		default:
 			return true;
@@ -177,18 +333,25 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 	switch (selection.type)
 	{
 		case SceneObjectType::Camera:
-			m_cameraVisible = !m_cameraVisible;
+		{
+			CameraComponent& camera = m_gameScene->GetSceneCamera().GetCameraComponent();
+			camera.SetVisible(!camera.IsVisible());
 			break;
+		}
 		case SceneObjectType::DirectionalLight:
-			if (selection.index < m_lightVisibility.size())
+			if (selection.index < m_gameScene->GetLighting().GetDirectionalLightCount())
 			{
-				m_lightVisibility[selection.index] = !m_lightVisibility[selection.index];
+				DirectionalLightComponent& light = m_gameScene->GetLighting().GetDirectionalLightComponent(selection.index);
+				light.SetVisible(!light.IsVisible());
 			}
 			break;
 		case SceneObjectType::Mesh:
-			if (selection.index < m_meshVisibility.size())
+			if (selection.index < m_gameScene->GetMeshes().GetMeshCount())
 			{
-				m_meshVisibility[selection.index] = !m_meshVisibility[selection.index];
+				if (MeshComponent* meshComponent = m_gameScene->GetMeshes().GetMeshComponent(selection.index))
+				{
+					meshComponent->SetVisible(!meshComponent->IsVisible());
+				}
 			}
 			break;
 		case SceneObjectType::None:
@@ -197,22 +360,37 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 	}
 }
 
-void SceneOutlinerPanel::DrawSelectionEntry(
-    const char* label,
-    const char* iconText,
-    const char* typeLabel,
-    const SceneObjectSelection& selection) noexcept
+void SceneOutlinerPanel::DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept
+{
+	ImGui::TableNextRow();
+	ImGui::TableSetColumnIndex(1);
+	ImGui::PushID(id);
+	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	open = ImGui::TreeNodeEx("##section", flags, "%s (%zu)", label, count);
+	ImGui::PopID();
+	ImGui::TableSetColumnIndex(2);
+	ImGui::TextDisabled("Group");
+	if (open)
+	{
+		ImGui::TreePop();
+	}
+}
+
+void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeLabel, const SceneObjectSelection& selection) noexcept
 {
 	const bool isSelected = m_selection != nullptr && *m_selection == selection;
 	const bool isVisible = IsEntryVisible(selection);
+	ImGui::TableNextRow();
 	ImGui::PushID(label);
-	ImGui::Indent(12.0f);
+	ImGui::TableSetColumnIndex(0);
 	if (UiUtil::DrawVisibilityIconButton("visibility", isVisible))
 	{
 		ToggleEntryVisibility(selection);
 	}
-	ImGui::SameLine(0.0f, 4.0f);
-	UiUtil::DrawPlaceholderTypeIcon(iconText, typeLabel);
+
+	ImGui::TableSetColumnIndex(1);
+	ImGui::Indent(12.0f);
+	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel);
 	ImGui::SameLine(0.0f, 6.0f);
 	if (!isVisible)
 	{
@@ -227,6 +405,8 @@ void SceneOutlinerPanel::DrawSelectionEntry(
 		ImGui::PopStyleColor();
 	}
 	ImGui::Unindent(12.0f);
+	ImGui::TableSetColumnIndex(2);
+	ImGui::TextDisabled("%s", typeLabel);
 	ImGui::PopID();
 }
 
@@ -261,15 +441,28 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	}
 
 	EnsureValidSelection();
-	SyncVisibilityState();
 	ImGui::BeginDisabled(disableInteraction);
 	BuildToolbar();
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
-	BuildCameraSection();
-	BuildLightSection();
-	BuildMeshSection();
+	if (ImGui::BeginTable(
+	        "##OutlinerTable",
+	        3,
+	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY,
+	        ImVec2(0.0f, -28.0f)))
+	{
+		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 24.0f);
+		ImGui::TableSetupColumn("Item Label", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 104.0f);
+		ImGui::TableHeadersRow();
+
+		BuildCameraSection();
+		BuildLightSection();
+		BuildMeshSection();
+		ImGui::EndTable();
+	}
+	BuildFooter();
 	ImGui::EndDisabled();
 
 	ImGui::End();

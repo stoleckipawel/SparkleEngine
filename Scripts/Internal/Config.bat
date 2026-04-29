@@ -13,7 +13,7 @@
 ::   ROOT_DIR      - Repository root (parent of Scripts/)
 ::   BUILD_DIR     - CMake build directory (ROOT_DIR\build)
 ::   BIN_DIR       - Output binaries (ROOT_DIR\build\bin)
-::   LOG_DIR       - Tool/script logs (ROOT_DIR\logs)
+::   LOG_DIR       - Structured log root (ROOT_DIR\logs)
 ::   PROJECTS_DIR  - User projects (ROOT_DIR\Projects)
 ::   DEPS_DIR      - FetchContent dependencies (BUILD_DIR\_deps)
 ::   ENGINE_DIR    - Engine source (ROOT_DIR\Engine)

@@ -35,9 +35,9 @@ if errorlevel 1 (
     goto :FINISH
 )
 
-set "LOG_DIR=!ROOT_DIR!\logs"
-if not exist "!LOG_DIR!" mkdir "!LOG_DIR!"
-set "FORMAT_LOG=!LOG_DIR!\LogClangFormat.txt"
+set "FORMAT_LOG_DIR=!LOG_DIR!\Prerequisites\FormatCheckLog\Workspace"
+if not exist "!FORMAT_LOG_DIR!" mkdir "!FORMAT_LOG_DIR!"
+set "FORMAT_LOG=!FORMAT_LOG_DIR!\ClangFormatDetails.txt"
 
 echo [LOG] Format started: %DATE% %TIME% > "!FORMAT_LOG!"
 echo [LOG] Scanning for source files...

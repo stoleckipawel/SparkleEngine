@@ -19,32 +19,6 @@
 
 setlocal enabledelayedexpansion
 
-if not defined LOG_CAPTURED (
-	call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
-	set "BOOTSTRAP_RC=!ERRORLEVEL!"
-	if defined PARENT_BATCH exit /B !BOOTSTRAP_RC!
-
-	set "SUMMARY_TARGET=All discovered runnable projects"
-	set "SUMMARY_CONFIG=%~2"
-	if not "%~1"=="" if /I not "%~1"=="ALL" set "SUMMARY_TARGET=%~1"
-	if "!SUMMARY_CONFIG!"=="" set "SUMMARY_CONFIG=Debug"
-
-	echo.
-	echo ============================================================
-	if "!BOOTSTRAP_RC!"=="0" (
-		echo   [SUCCESS] CookAllAssets completed successfully.
-	) else (
-		echo   [ERROR] CookAllAssets completed with errors.
-	)
-	echo   Target: !SUMMARY_TARGET!
-	echo   Configuration: !SUMMARY_CONFIG!
-	echo ============================================================
-	echo.
-	echo [LOG] Logs: %~dp0..\logs\logTools.txt
-	pause
-	exit /B !BOOTSTRAP_RC!
-)
-
 call "%~dp0Internal\Config.bat"
 
 set "EXIT_RC=1"
@@ -152,7 +126,7 @@ set "PARENT_BATCH=1"
 
 echo.
 echo [LOG] Step 1/3: Cooking shader packages...
-call "%~dp0Cook\CookShaders.bat" "!TARGET_PROJECT!" "!CONFIG!"
+call :RUN_STEP_WITH_OWN_LOG "%~dp0Cook\CookShaders.bat" "!TARGET_PROJECT!" "!CONFIG!"
 if errorlevel 1 (
 	set "PARENT_BATCH="
 	echo [ERROR] CookShaders step failed.
@@ -161,7 +135,7 @@ if errorlevel 1 (
 
 echo.
 echo [LOG] Step 2/3: Cooking texture assets...
-call "%~dp0Cook\CookTextures.bat" "!TARGET_PROJECT!" "!CONFIG!"
+call :RUN_STEP_WITH_OWN_LOG "%~dp0Cook\CookTextures.bat" "!TARGET_PROJECT!" "!CONFIG!"
 if errorlevel 1 (
 	set "PARENT_BATCH="
 	echo [ERROR] CookTextures step failed.
@@ -170,7 +144,7 @@ if errorlevel 1 (
 
 echo.
 echo [LOG] Step 3/3: Cooking scene assets...
-call "%~dp0Cook\CookAssets.bat" "!TARGET_PROJECT!" "!CONFIG!"
+call :RUN_STEP_WITH_OWN_LOG "%~dp0Cook\CookAssets.bat" "!TARGET_PROJECT!" "!CONFIG!"
 if errorlevel 1 (
 	set "PARENT_BATCH="
 	echo [ERROR] CookAssets step failed.
@@ -179,6 +153,20 @@ if errorlevel 1 (
 
 set "PARENT_BATCH="
 exit /B 0
+
+:RUN_STEP_WITH_OWN_LOG
+set "_PARENT_LOG_CAPTURED=!LOG_CAPTURED!"
+set "_PARENT_LOGFILE=!LOGFILE!"
+set "_PARENT_LOG_LATESTFILE=!LOG_LATESTFILE!"
+set "LOG_CAPTURED="
+set "LOGFILE="
+set "LOG_LATESTFILE="
+call "%~1" "%~2" "%~3"
+set "_CHILD_RC=!ERRORLEVEL!"
+set "LOG_CAPTURED=!_PARENT_LOG_CAPTURED!"
+set "LOGFILE=!_PARENT_LOGFILE!"
+set "LOG_LATESTFILE=!_PARENT_LOG_LATESTFILE!"
+exit /B !_CHILD_RC!
 
 :USAGE
 echo.

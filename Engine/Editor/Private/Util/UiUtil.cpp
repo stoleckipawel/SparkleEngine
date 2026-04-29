@@ -16,10 +16,11 @@ namespace UiUtil
 		constexpr float PropertyLabelWidth = 78.0f;
 		constexpr float ScalarInputWidth = 86.0f;
 		constexpr float Float3InputWidth = 188.0f;
-		constexpr float DetailsLabelWidth = 160.0f;
+		constexpr float DetailsLabelWidth = 148.0f;
 		constexpr float DetailsAxisLabelWidth = 14.0f;
 		constexpr float DetailsRowVerticalPadding = 3.0f;
 		constexpr float PlaceholderIconSize = 16.0f;
+		constexpr float DetailsUtilityColumnWidth = 24.0f;
 
 		ImVec4 DetailsGridLineColor() noexcept
 		{
@@ -90,6 +91,21 @@ namespace UiUtil
 			ImGui::TextUnformatted(value);
 		}
 
+		ImU32 AxisColor(int axisIndex) noexcept
+		{
+			switch (axisIndex)
+			{
+				case 0:
+					return IM_COL32(216, 92, 92, 210);
+				case 1:
+					return IM_COL32(92, 190, 112, 210);
+				case 2:
+					return IM_COL32(92, 132, 220, 210);
+				default:
+					return ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::TextMuted());
+			}
+		}
+
 		bool BeginDetailsRow(const char* label, int valueColumnCount)
 		{
 			ImGui::PushID(label);
@@ -104,7 +120,7 @@ namespace UiUtil
 			tableFlags |= ImGuiTableFlags_NoPadOuterX;
 			tableFlags |= ImGuiTableFlags_BordersInnerV;
 
-			if (!ImGui::BeginTable("##details_row", valueColumnCount + 1, tableFlags))
+			if (!ImGui::BeginTable("##details_row", valueColumnCount + 2, tableFlags))
 			{
 				ImGui::PopStyleColor(3);
 				ImGui::PopStyleVar(2);
@@ -117,12 +133,25 @@ namespace UiUtil
 			{
 				ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
 			}
+			ImGui::TableSetupColumn("utility", ImGuiTableColumnFlags_WidthFixed, DetailsUtilityColumnWidth);
 
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextDisabled("%s", label);
 			return true;
+		}
+
+		bool DrawDetailsResetButton(int utilityColumnIndex, const char* tooltip = "Reset to default")
+		{
+			ImGui::TableSetColumnIndex(utilityColumnIndex);
+			return DrawEditorIconButton(EditorIcon::Reset, "reset", tooltip);
+		}
+
+		void DrawDetailsEmptyUtility(int utilityColumnIndex)
+		{
+			ImGui::TableSetColumnIndex(utilityColumnIndex);
+			ImGui::Dummy(ImVec2(DetailsUtilityColumnWidth, PlaceholderIconSize));
 		}
 
 		void EndDetailsRow()
@@ -134,6 +163,56 @@ namespace UiUtil
 			ImGui::PopID();
 		}
 	}  // namespace
+
+	const char* GetEditorIconGlyph(EditorIcon icon) noexcept
+	{
+		switch (icon)
+		{
+			case EditorIcon::Camera:
+				return "C";
+			case EditorIcon::DirectionalLight:
+				return "L";
+			case EditorIcon::StaticMesh:
+				return "M";
+			case EditorIcon::EyeVisible:
+				return "O";
+			case EditorIcon::EyeHidden:
+				return "-";
+			case EditorIcon::Reset:
+				return "R";
+			case EditorIcon::Filter:
+				return "F";
+			case EditorIcon::Settings:
+				return "S";
+			case EditorIcon::None:
+			default:
+				return "-";
+		}
+	}
+
+	void DrawEditorIcon(EditorIcon icon, const char* tooltip)
+	{
+		DrawPlaceholderTypeIcon(GetEditorIconGlyph(icon), tooltip);
+	}
+
+	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip)
+	{
+		ImGui::PushID(id);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
+		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+		const bool pressed = ImGui::Button(GetEditorIconGlyph(icon), ImVec2(PlaceholderIconSize, PlaceholderIconSize));
+		if (tooltip != nullptr && tooltip[0] != '\0' && ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("%s", tooltip);
+		}
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar();
+		ImGui::PopID();
+		return pressed;
+	}
 
 	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip)
 	{
@@ -167,7 +246,9 @@ namespace UiUtil
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
 		ImGui::PushStyleColor(ImGuiCol_Text, visible ? SparkleUiPalette::TextPrimary() : SparkleUiPalette::TextMuted());
-		const bool pressed = ImGui::Button(visible ? "O" : "-", ImVec2(PlaceholderIconSize, PlaceholderIconSize));
+		const bool pressed = ImGui::Button(
+		    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
+		    ImVec2(PlaceholderIconSize, PlaceholderIconSize));
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("%s", visible ? "Visible" : "Hidden");
@@ -448,11 +529,19 @@ namespace UiUtil
 		ImGui::TableSetColumnIndex(1);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted(value);
+		DrawDetailsEmptyUtility(2);
 
 		EndDetailsRow();
 	}
 
-	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format)
+	bool EditDetailsFloat(
+	    const char* label,
+	    float& value,
+	    float speed,
+	    float minValue,
+	    float maxValue,
+	    const char* format,
+	    const float* resetValue)
 	{
 		if (!BeginDetailsRow(label, 1))
 		{
@@ -461,13 +550,32 @@ namespace UiUtil
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::SetNextItemWidth(-FLT_MIN);
-		const bool changed = ImGui::DragFloat("##value", &value, speed, minValue, maxValue, format);
+		bool changed = ImGui::DragFloat("##value", &value, speed, minValue, maxValue, format);
+		if (resetValue != nullptr)
+		{
+			if (DrawDetailsResetButton(2))
+			{
+				value = *resetValue;
+				changed = true;
+			}
+		}
+		else
+		{
+			DrawDetailsEmptyUtility(2);
+		}
 
 		EndDetailsRow();
 		return changed;
 	}
 
-	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format)
+	bool EditDetailsFloat3(
+	    const char* label,
+	    float values[3],
+	    float speed,
+	    float minValue,
+	    float maxValue,
+	    const char* format,
+	    const float* resetValues)
 	{
 		if (!BeginDetailsRow(label, 3))
 		{
@@ -491,7 +599,9 @@ namespace UiUtil
 
 				ImGui::TableSetColumnIndex(0);
 				ImGui::AlignTextToFramePadding();
-				ImGui::TextDisabled("%s", axisLabels[axisIndex]);
+				ImGui::PushStyleColor(ImGuiCol_Text, AxisColor(axisIndex));
+				ImGui::TextUnformatted(axisLabels[axisIndex]);
+				ImGui::PopStyleColor();
 
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SetNextItemWidth(-FLT_MIN);
@@ -501,12 +611,26 @@ namespace UiUtil
 			}
 			ImGui::PopID();
 		}
+		if (resetValues != nullptr)
+		{
+			if (DrawDetailsResetButton(4))
+			{
+				values[0] = resetValues[0];
+				values[1] = resetValues[1];
+				values[2] = resetValues[2];
+				changed = true;
+			}
+		}
+		else
+		{
+			DrawDetailsEmptyUtility(4);
+		}
 
 		EndDetailsRow();
 		return changed;
 	}
 
-	bool EditDetailsColor3(const char* label, float values[3])
+	bool EditDetailsColor3(const char* label, float values[3], const float* resetValues)
 	{
 		if (!BeginDetailsRow(label, 1))
 		{
@@ -515,16 +639,30 @@ namespace UiUtil
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::SetNextItemWidth(-FLT_MIN);
-		const bool changed = ImGui::ColorEdit3(
+		bool changed = ImGui::ColorEdit3(
 		    "##value",
 		    values,
 		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
+		if (resetValues != nullptr)
+		{
+			if (DrawDetailsResetButton(2))
+			{
+				values[0] = resetValues[0];
+				values[1] = resetValues[1];
+				values[2] = resetValues[2];
+				changed = true;
+			}
+		}
+		else
+		{
+			DrawDetailsEmptyUtility(2);
+		}
 
 		EndDetailsRow();
 		return changed;
 	}
 
-	bool EditDetailsCheckbox(const char* label, bool& value)
+	bool EditDetailsCheckbox(const char* label, bool& value, const bool* resetValue)
 	{
 		if (!BeginDetailsRow(label, 1))
 		{
@@ -532,7 +670,19 @@ namespace UiUtil
 		}
 
 		ImGui::TableSetColumnIndex(1);
-		const bool changed = ImGui::Checkbox("##value", &value);
+		bool changed = ImGui::Checkbox("##value", &value);
+		if (resetValue != nullptr)
+		{
+			if (DrawDetailsResetButton(2))
+			{
+				value = *resetValue;
+				changed = true;
+			}
+		}
+		else
+		{
+			DrawDetailsEmptyUtility(2);
+		}
 
 		EndDetailsRow();
 		return changed;

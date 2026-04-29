@@ -3,10 +3,17 @@
 #include <cstddef>
 
 #include <string>
-#include <vector>
 
 class GameScene;
 struct SceneObjectSelection;
+
+enum class SceneOutlinerFilter
+{
+	All,
+	Cameras,
+	Lights,
+	Meshes
+};
 
 class SceneOutlinerPanel final
 {
@@ -27,22 +34,24 @@ class SceneOutlinerPanel final
   private:
 	static std::string BuildMeshLabel(std::size_t meshIndex);
 	void BuildToolbar() noexcept;
+	void BuildFooter() noexcept;
 	bool IsSelectionValid() const noexcept;
 	void EnsureValidSelection() noexcept;
 	void BuildCameraSection() noexcept;
 	void BuildLightSection() noexcept;
 	void BuildMeshSection() noexcept;
-	void SyncVisibilityState() noexcept;
+	bool PassesActiveFilter(const SceneObjectSelection& selection) const noexcept;
+	bool MatchesSearch(const char* label, const char* typeLabel) const noexcept;
+	std::size_t CountVisibleEntries() const noexcept;
 	bool IsEntryVisible(const SceneObjectSelection& selection) const noexcept;
 	void ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept;
-	void DrawSelectionEntry(const char* label, const char* iconText, const char* typeLabel, const SceneObjectSelection& selection) noexcept;
+	void DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept;
+	void DrawSelectionEntry(const char* label, const char* typeLabel, const SceneObjectSelection& selection) noexcept;
 
 	GameScene* m_gameScene = nullptr;
 	SceneObjectSelection* m_selection = nullptr;
 	float m_widthPixels = 320.0f;
 	float m_topInsetPixels = 0.0f;
-	bool m_cameraVisible = true;
-	std::vector<bool> m_lightVisibility;
-	std::vector<bool> m_meshVisibility;
+	SceneOutlinerFilter m_activeFilter = SceneOutlinerFilter::All;
 	std::string m_filterText;
 };

@@ -37,6 +37,18 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - `CMake/Dependencies/` contains configure-time dependency modules.
 - `CMake/Validation/` contains build-time validation modules such as runtime boundary checks.
 
+## Logs
+
+Generated logs are grouped by intent instead of being written directly into the repository root or the root of `logs/`:
+
+- `logs/Projects/<Project>/Full/` contains one full runtime/editor activity log per launched project process, such as `ShowcaseEditor`.
+- `logs/Prerequisites/ShaderCompilationLog/<Project>/` contains shader package cooking logs.
+- `logs/Prerequisites/TextureCookingLog/<Project>/` contains texture cooking logs.
+- `logs/Prerequisites/AssetCookingLog/<Project>/` contains scene, mesh, and material cooking logs.
+- Other prerequisite workflows use similarly named folders, such as `BuildLog`, `SolutionGenerationLog`, `ToolchainCheckLog`, `FormatCheckLog`, and workspace setup/cleanup logs.
+
+Each prerequisite folder keeps a timestamped log plus `Latest.txt` for that specific action/scope.
+
 ## Notes
 
 - `BuildProject.bat` understands the split project targets introduced by the current host model: `<Project>Editor` and `<Project>Runtime`.
@@ -46,7 +58,7 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - `Scripts\Cook\CookShaders.bat` validates the merged shader manifest and emits cooked shader packages required for normal runtime startup.
 - `Scripts\Cook\CookTextures.bat` enumerates supported source scenes, collects texture cook requests, and emits cooked texture assets.
 - `Scripts\Cook\CookAssets.bat` cooks only scene manifests plus cooked mesh/material outputs. Use `CookAllAssets.bat` for the full shader + texture + scene pipeline.
-- Build outputs and cooked assets are generated under `build/`; tool/script logs are generated under `logs/`.
+- Build outputs and cooked assets are generated under `build/`; runtime/editor and prerequisite logs are generated under the structured `logs/` hierarchy.
 - `CleanWorkspace.bat PRISTINE` removes generated outputs only. It does not delete tracked project assets.
 - Runtime boundary validation is a CMake target, not a user-run batch command. It lives under `CMake/Validation/` and runs as part of the engine build wiring.
 - The old Phase 1H validation wrapper scripts were removed. Use the documented direct smoke launch steps in `docs/plans/phase1h-d3d12-production-readiness.md` if you still need that evidence flow.

@@ -2,6 +2,22 @@
 
 namespace UiUtil
 {
+	enum class EditorIcon
+	{
+		None,
+		Camera,
+		DirectionalLight,
+		StaticMesh,
+		EyeVisible,
+		EyeHidden,
+		Reset,
+		Filter,
+		Settings
+	};
+
+	const char* GetEditorIconGlyph(EditorIcon icon) noexcept;
+	void DrawEditorIcon(EditorIcon icon, const char* tooltip = nullptr);
+	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip = nullptr);
 	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr);
 	bool DrawVisibilityIconButton(const char* id, bool visible);
 
@@ -35,8 +51,22 @@ namespace UiUtil
 	bool BeginDetailsCategory(const char* title, bool defaultOpen = true);
 	void EndDetailsCategory();
 	void DrawDetailsValueRow(const char* label, const char* value);
-	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format);
-	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format);
-	bool EditDetailsColor3(const char* label, float values[3]);
-	bool EditDetailsCheckbox(const char* label, bool& value);
+	bool EditDetailsFloat(
+	    const char* label,
+	    float& value,
+	    float speed,
+	    float minValue,
+	    float maxValue,
+	    const char* format,
+	    const float* resetValue = nullptr);
+	bool EditDetailsFloat3(
+	    const char* label,
+	    float values[3],
+	    float speed,
+	    float minValue,
+	    float maxValue,
+	    const char* format,
+	    const float* resetValues = nullptr);
+	bool EditDetailsColor3(const char* label, float values[3], const float* resetValues = nullptr);
+	bool EditDetailsCheckbox(const char* label, bool& value, const bool* resetValue = nullptr);
 }  // namespace UiUtil

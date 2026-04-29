@@ -2,14 +2,15 @@
 :: ============================================================================
 :: BootstrapLog.bat - Centralized logging bootstrap for build toolchain
 :: ============================================================================
-:: Creates timestamped log files and captures all script output via PowerShell
-:: Tee-Object. Invoked by all top-level scripts to ensure consistent logging.
+:: Creates timestamped action log files and captures all script output via
+:: PowerShell. Invoked by top-level scripts to ensure consistent logging.
 ::
 :: Usage: call "BootstrapLog.bat" "<caller_full_path>" [args...]
 ::
 :: Environment:
 ::   LOG_CAPTURED  - Set to "1" when logging is active (prevents re-entry)
 ::   LOGFILE       - Absolute path to the current session's log file
+::   LOG_LATESTFILE - Absolute path to the latest log alias for this action
 :: ============================================================================
 
 setlocal enabledelayedexpansion
@@ -30,6 +31,7 @@ if "%~1"=="" (
 )
 
 set "CALLER=%~1"
+set "PRIMARY_ARG=%~2"
 
 :: ---------------------------------------------------------------------------
 :: Build remaining arguments (everything after the caller path)
@@ -62,9 +64,36 @@ set "ROOT_DIR=%CD%\"
 popd >nul
 
 :: ---------------------------------------------------------------------------
-:: Prepare logs directory and timestamped log file
+:: Resolve action-specific log location
 :: ---------------------------------------------------------------------------
-set "LOG_DIR=%ROOT_DIR%logs"
+for %%F in ("%CALLER%") do set "CALLER_NAME=%%~nF"
+
+set "LOG_ACTION=GeneralLog"
+set "LOG_STEM=%CALLER_NAME%Log"
+set "LOG_SCOPE=%PRIMARY_ARG%"
+
+if /I "%CALLER_NAME%"=="SetupWorkspace"    set "LOG_ACTION=WorkspaceSetupLog"     & set "LOG_STEM=WorkspaceSetupLog"     & set "LOG_SCOPE=Workspace"
+if /I "%CALLER_NAME%"=="GenerateSolution"  set "LOG_ACTION=SolutionGenerationLog" & set "LOG_STEM=SolutionGenerationLog" & set "LOG_SCOPE=Workspace"
+if /I "%CALLER_NAME%"=="BuildProject"      set "LOG_ACTION=BuildLog"              & set "LOG_STEM=BuildLog"
+if /I "%CALLER_NAME%"=="CookShaders"       set "LOG_ACTION=ShaderCompilationLog"  & set "LOG_STEM=ShaderCompilationLog"
+if /I "%CALLER_NAME%"=="CookTextures"      set "LOG_ACTION=TextureCookingLog"     & set "LOG_STEM=TextureCookingLog"
+if /I "%CALLER_NAME%"=="CookAssets"        set "LOG_ACTION=AssetCookingLog"       & set "LOG_STEM=AssetCookingLog"
+if /I "%CALLER_NAME%"=="RunClangFormat"    set "LOG_ACTION=FormatCheckLog"        & set "LOG_STEM=FormatCheckLog"        & set "LOG_SCOPE=Workspace"
+if /I "%CALLER_NAME%"=="CheckToolchain"    set "LOG_ACTION=ToolchainCheckLog"     & set "LOG_STEM=ToolchainCheckLog"     & set "LOG_SCOPE=Workspace"
+if /I "%CALLER_NAME%"=="SyncThirdParty"    set "LOG_ACTION=ThirdPartySyncLog"     & set "LOG_STEM=ThirdPartySyncLog"     & set "LOG_SCOPE=Workspace"
+if /I "%CALLER_NAME%"=="CleanWorkspace"    set "LOG_ACTION=WorkspaceCleanupLog"   & set "LOG_STEM=WorkspaceCleanupLog"   & set "LOG_SCOPE=Workspace"
+
+if not defined LOG_SCOPE set "LOG_SCOPE=Workspace"
+if /I "%LOG_SCOPE%"=="ALL" set "LOG_SCOPE=AllProjects"
+set "LOG_SCOPE_FIRST=!LOG_SCOPE:~0,1!"
+if "!LOG_SCOPE_FIRST!"=="/" set "LOG_SCOPE=Workspace"
+if "!LOG_SCOPE_FIRST!"=="-" set "LOG_SCOPE=Workspace"
+
+call :SANITIZE_SEGMENT "%LOG_ACTION%" LOG_ACTION
+call :SANITIZE_SEGMENT "%LOG_STEM%" LOG_STEM
+call :SANITIZE_SEGMENT "%LOG_SCOPE%" LOG_SCOPE
+
+set "LOG_DIR=%ROOT_DIR%logs\Prerequisites\%LOG_ACTION%\%LOG_SCOPE%"
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
 
 :: Generate timestamp: Day_MM-DD-YYYY__H-MM-SS-CC
@@ -74,7 +103,8 @@ set "TS=%TS:/=-%"
 set "TS=%TS:,=-%"
 set "TS=%TS:.=-%"
 set "TS=%TS: =_%"
-set "LOGFILE=%LOG_DIR%\logTools_%TS%.txt"
+set "LOGFILE=%LOG_DIR%\%LOG_STEM%_%TS%.txt"
+set "LOG_LATESTFILE=%LOG_DIR%\Latest.txt"
 
 :: ---------------------------------------------------------------------------
 :: Re-invoke caller under the PowerShell logging helper for output capture
@@ -87,7 +117,18 @@ set "BOOTSTRAP_HELPER=!SELF_DIR!BootstrapLog.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "!BOOTSTRAP_HELPER!" -Caller "!CALLER!" -RemainingArgs "!REMAINING_ARGS!" -LogFile "!LOGFILE!"
 set "RC=%ERRORLEVEL%"
 
-:: Copy to a stable "latest" log for easy access
-copy /Y "%LOGFILE%" "%LOG_DIR%\logTools.txt" >nul 2>&1
+:: Copy to a stable "latest" log for easy access within this action folder.
+copy /Y "%LOGFILE%" "%LOG_LATESTFILE%" >nul 2>&1
 
-endlocal & exit /B %RC%
+endlocal & set "LOGFILE=%LOGFILE%" & set "LOG_LATESTFILE=%LOG_LATESTFILE%" & exit /B %RC%
+
+:SANITIZE_SEGMENT
+set "_SEGMENT=%~1"
+if not defined _SEGMENT set "_SEGMENT=Workspace"
+set "_SEGMENT=%_SEGMENT:\=_%"
+set "_SEGMENT=%_SEGMENT:/=_%"
+set "_SEGMENT=%_SEGMENT::=_%"
+set "_SEGMENT=%_SEGMENT: =_%"
+if not defined _SEGMENT set "_SEGMENT=Workspace"
+set "%~2=%_SEGMENT%"
+exit /B 0

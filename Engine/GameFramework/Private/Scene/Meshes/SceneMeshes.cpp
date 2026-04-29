@@ -39,7 +39,7 @@ MeshSnapshot SceneMeshes::CaptureSnapshot() const
 
 	for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
 	{
-		if (!mesh)
+		if (!mesh || !mesh->IsVisible())
 		{
 			continue;
 		}

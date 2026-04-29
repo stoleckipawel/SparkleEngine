@@ -26,10 +26,20 @@ LevelLightingDesc SceneLighting::CaptureToDesc() const noexcept
 LightingSnapshot SceneLighting::CaptureSnapshot() const noexcept
 {
 	LightingSnapshot snapshot = {};
-	snapshot.directionalLightCount = static_cast<std::uint32_t>((std::min) (m_directionalLightComponents.size(), MaxDirectionalLights));
-	for (std::size_t i = 0; i < snapshot.directionalLightCount; ++i)
+	for (const DirectionalLightComponent& lightComponent : m_directionalLightComponents)
 	{
-		snapshot.directionalLights[i] = m_directionalLightComponents[i].GetDesc();
+		if (!lightComponent.IsVisible())
+		{
+			continue;
+		}
+
+		if (snapshot.directionalLightCount >= MaxDirectionalLights)
+		{
+			break;
+		}
+
+		snapshot.directionalLights[snapshot.directionalLightCount] = lightComponent.GetDesc();
+		++snapshot.directionalLightCount;
 	}
 	return snapshot;
 }

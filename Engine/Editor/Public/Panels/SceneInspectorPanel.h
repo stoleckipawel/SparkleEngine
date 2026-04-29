@@ -10,6 +10,7 @@ class GameScene;
 class Mesh;
 class MeshComponent;
 class CameraComponent;
+class DirectionalLightComponent;
 class SceneCamera;
 struct DirectionalLightDesc;
 struct SceneObjectSelection;
@@ -33,7 +34,6 @@ class SceneInspectorPanel final
   private:
 	std::string BuildSelectionTitle() const;
 	const char* BuildSelectionSubtitle() const noexcept;
-	const char* BuildSelectionIconText() const noexcept;
 	void BuildSelectionHeader() noexcept;
 	void BuildSelectionInspector() noexcept;
 	static void ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept;
@@ -46,9 +46,9 @@ class SceneInspectorPanel final
 	void BuildCameraCategory(CameraComponent& cameraComponent) noexcept;
 	void BuildCameraMovementCategory(SceneCamera& sceneCamera) noexcept;
 	void BuildDirectionalLightTransformCategory(DirectionalLightDesc& lightDesc) noexcept;
-	void BuildDirectionalLightCategory(DirectionalLightDesc& lightDesc) noexcept;
+	void BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept;
 	void BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept;
-	void BuildStaticMeshCategory(const Mesh& mesh) noexcept;
+	void BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept;
 	void BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;

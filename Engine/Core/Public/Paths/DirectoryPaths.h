@@ -4,6 +4,7 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <ctime>
 #include <filesystem>
@@ -203,15 +204,117 @@ namespace Paths
 		return fileStem + "_" + TimestampForFileName() + fileExtension;
 	}
 
+	inline bool IsAsciiAlphaNumeric(char character) noexcept
+	{
+		const bool isLower = character >= 'a' && character <= 'z';
+		const bool isUpper = character >= 'A' && character <= 'Z';
+		const bool isDigit = character >= '0' && character <= '9';
+		return isLower || isUpper || isDigit;
+	}
+
+	inline char ToLowerAscii(char character) noexcept
+	{
+		return character >= 'A' && character <= 'Z' ? static_cast<char>(character + 32) : character;
+	}
+
+	inline std::string SanitizeLogPathSegment(std::string_view segment)
+	{
+		std::string sanitized;
+		sanitized.reserve(segment.size());
+		for (const char character : segment)
+		{
+			if (IsAsciiAlphaNumeric(character) || character == '_' || character == '-' || character == '.')
+			{
+				sanitized.push_back(character);
+			}
+			else if (character == ' ')
+			{
+				sanitized.push_back('_');
+			}
+		}
+
+		return sanitized.empty() ? std::string("Unknown") : sanitized;
+	}
+
+	inline bool EndsWithIgnoreCase(std::string_view value, std::string_view suffix) noexcept
+	{
+		if (suffix.size() > value.size())
+		{
+			return false;
+		}
+
+		const std::string valueTail = std::string(value.substr(value.size() - suffix.size()));
+		const std::string suffixString(suffix);
+		for (std::size_t index = 0; index < suffix.size(); ++index)
+		{
+			const char lhs = ToLowerAscii(valueTail[index]);
+			const char rhs = ToLowerAscii(suffixString[index]);
+			if (lhs != rhs)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	inline std::string InferProjectNameFromExecutableStem(std::string_view executableStem)
+	{
+		std::string projectName(executableStem.empty() ? "Sparkle" : executableStem);
+		if (EndsWithIgnoreCase(projectName, "Editor"))
+		{
+			projectName.resize(projectName.size() - std::string_view("Editor").size());
+		}
+		else if (EndsWithIgnoreCase(projectName, "Runtime"))
+		{
+			projectName.resize(projectName.size() - std::string_view("Runtime").size());
+		}
+
+		return SanitizeLogPathSegment(projectName.empty() ? executableStem : projectName);
+	}
+
+	inline std::filesystem::path DefaultLogDirectory(bool ensureParentExists, std::string_view executableStem)
+	{
+		const std::string sanitizedExecutableStem = SanitizeLogPathSegment(executableStem.empty() ? "Sparkle" : executableStem);
+		std::filesystem::path logDirectory;
+		if (EndsWithIgnoreCase(sanitizedExecutableStem, "Editor") || EndsWithIgnoreCase(sanitizedExecutableStem, "Runtime"))
+		{
+			logDirectory =
+			    ResolveLogsRoot(ensureParentExists) / "Projects" / InferProjectNameFromExecutableStem(sanitizedExecutableStem) / "Full";
+		}
+		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "ShaderCompiler"))
+		{
+			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "ShaderCompilationLog" / "Workspace";
+		}
+		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "TextureCooker"))
+		{
+			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "TextureCookingLog" / "Workspace";
+		}
+		else if (EndsWithIgnoreCase(sanitizedExecutableStem, "AssetConverter"))
+		{
+			logDirectory = ResolveLogsRoot(ensureParentExists) / "Prerequisites" / "AssetCookingLog" / "Workspace";
+		}
+		else
+		{
+			logDirectory = ResolveLogsRoot(ensureParentExists) / "Applications" / sanitizedExecutableStem / "Full";
+		}
+
+		if (ensureParentExists)
+		{
+			std::error_code errorCode;
+			std::filesystem::create_directories(logDirectory, errorCode);
+		}
+		return logDirectory;
+	}
+
 	inline std::filesystem::path DefaultLogFile(bool ensureParentExists = true, std::string_view executableStemOverride = {})
 	{
-		const std::filesystem::path logDirectory = ResolveLogsRoot(ensureParentExists);
 		std::filesystem::path executableStem{std::string(executableStemOverride)};
 		if (executableStem.empty())
 		{
 			executableStem = ExecutablePath().stem();
 		}
-		return logDirectory / TimestampedFileName(executableStem.string(), ".log");
+		const std::string sanitizedExecutableStem = SanitizeLogPathSegment(executableStem.string());
+		return DefaultLogDirectory(ensureParentExists, sanitizedExecutableStem) / TimestampedFileName(sanitizedExecutableStem, ".log");
 	}
 
 	inline std::filesystem::path LogFile(std::string_view configuredFile = {}, bool ensureParentExists = true)
@@ -229,10 +332,21 @@ namespace Paths
 
 		if (configuredPath.is_absolute())
 		{
-			configuredPath = configuredPath.filename();
+			if (ensureParentExists)
+			{
+				std::error_code errorCode;
+				std::filesystem::create_directories(configuredPath.parent_path(), errorCode);
+			}
+			return configuredPath;
 		}
 
-		return ResolveLogsRoot(ensureParentExists) / configuredPath;
+		const std::filesystem::path logPath = ResolveLogsRoot(ensureParentExists) / configuredPath;
+		if (ensureParentExists)
+		{
+			std::error_code errorCode;
+			std::filesystem::create_directories(logPath.parent_path(), errorCode);
+		}
+		return logPath;
 	}
 
 	// Cooked shader files
