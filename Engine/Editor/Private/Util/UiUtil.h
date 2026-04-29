@@ -34,5 +34,6 @@ namespace UiUtil
 	void DrawDetailsValueRow(const char* label, const char* value);
 	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format);
 	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format);
+	bool EditDetailsColor3(const char* label, float values[3]);
 	bool EditDetailsCheckbox(const char* label, bool& value);
 }  // namespace UiUtil

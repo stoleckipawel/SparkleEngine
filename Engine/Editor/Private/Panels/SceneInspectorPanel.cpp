@@ -278,7 +278,7 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightDesc& li
 	}
 
 	float colorValues[3] = {lightDesc.color.x, lightDesc.color.y, lightDesc.color.z};
-	if (UiUtil::EditColor3("Color", colorValues))
+	if (UiUtil::EditDetailsColor3("Color", colorValues))
 	{
 		DirectX::XMFLOAT3 clampedColor = {colorValues[0], colorValues[1], colorValues[2]};
 		float dummyIntensity = 1.0f;

@@ -16,9 +16,16 @@ namespace UiUtil
 		constexpr float PropertyLabelWidth = 78.0f;
 		constexpr float ScalarInputWidth = 86.0f;
 		constexpr float Float3InputWidth = 188.0f;
-		constexpr float DetailsLabelWidth = 118.0f;
+		constexpr float DetailsLabelWidth = 160.0f;
 		constexpr float DetailsAxisLabelWidth = 14.0f;
-		constexpr float DetailsRowVerticalPadding = 2.0f;
+		constexpr float DetailsRowVerticalPadding = 3.0f;
+
+		ImVec4 DetailsGridLineColor() noexcept
+		{
+			ImVec4 color = ImGui::ColorConvertU32ToFloat4(SparkleUiPalette::PanelHeaderBorder());
+			color.w = 0.28f;
+			return color;
+		}
 
 		void PushFontIfAvailable(ImFont* font)
 		{
@@ -85,10 +92,21 @@ namespace UiUtil
 		bool BeginDetailsRow(const char* label, int valueColumnCount)
 		{
 			ImGui::PushID(label);
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, DetailsRowVerticalPadding));
-			if (!ImGui::BeginTable("##details_row", valueColumnCount + 1, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoPadOuterX))
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(6.0f, DetailsRowVerticalPadding));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+			const ImVec4 gridLineColor = DetailsGridLineColor();
+			ImGui::PushStyleColor(ImGuiCol_TableBorderStrong, gridLineColor);
+			ImGui::PushStyleColor(ImGuiCol_TableBorderLight, gridLineColor);
+			ImGui::PushStyleColor(ImGuiCol_Separator, gridLineColor);
+
+			ImGuiTableFlags tableFlags = ImGuiTableFlags_SizingStretchSame;
+			tableFlags |= ImGuiTableFlags_NoPadOuterX;
+			tableFlags |= ImGuiTableFlags_BordersInnerV;
+
+			if (!ImGui::BeginTable("##details_row", valueColumnCount + 1, tableFlags))
 			{
-				ImGui::PopStyleVar();
+				ImGui::PopStyleColor(3);
+				ImGui::PopStyleVar(2);
 				ImGui::PopID();
 				return false;
 			}
@@ -109,7 +127,9 @@ namespace UiUtil
 		void EndDetailsRow()
 		{
 			ImGui::EndTable();
-			ImGui::PopStyleVar();
+			ImGui::Separator();
+			ImGui::PopStyleColor(3);
+			ImGui::PopStyleVar(2);
 			ImGui::PopID();
 		}
 	}  // namespace
@@ -383,7 +403,7 @@ namespace UiUtil
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::AlignTextToFramePadding();
-		DrawRightAlignedText(value);
+		ImGui::TextUnformatted(value);
 
 		EndDetailsRow();
 	}
@@ -437,6 +457,25 @@ namespace UiUtil
 			}
 			ImGui::PopID();
 		}
+
+		EndDetailsRow();
+		return changed;
+	}
+
+	bool EditDetailsColor3(const char* label, float values[3])
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return false;
+		}
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		const bool changed = ImGui::ColorEdit3(
+		    "##value",
+		    values,
+		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB |
+		        ImGuiColorEditFlags_PickerHueBar);
 
 		EndDetailsRow();
 		return changed;
