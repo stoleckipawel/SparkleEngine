@@ -2,6 +2,7 @@
 
 #include "../EditorAPI.h"
 #include "../../../Renderer/Public/Viewport/ViewportContracts.h"
+#include "Input/Dispatch/InputLayer.h"
 
 #include <cstdint>
 
@@ -23,7 +24,8 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	void SetRenderProducts(const ViewportRenderProducts& renderProducts) noexcept;
 	void SetSceneColorTextureId(std::uint64_t textureId) noexcept;
 	const ViewportRenderRequest& GetRenderRequest() const noexcept;
-	bool WantsGameplayInput() const noexcept { return m_wantsGameplayInput; }
+	InputLayer GetTargetInputLayer() const noexcept { return InputLayer::Gameplay; }
+	bool GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept;
 	void BuildUI(bool disableInteraction = false);
 
   private:
@@ -37,6 +39,9 @@ class SPARKLE_EDITOR_API ViewportPanel final
 	float m_leftInsetPixels = 320.0f;
 	float m_rightInsetPixels = 456.0f;
 	std::uint64_t m_sceneColorTextureId = 0;
-	bool m_hasInputFocus = false;
-	bool m_wantsGameplayInput = false;
+	float m_inputLeft = 0.0f;
+	float m_inputTop = 0.0f;
+	float m_inputRight = 0.0f;
+	float m_inputBottom = 0.0f;
+	bool m_hasInputBounds = false;
 };

@@ -3,10 +3,9 @@
 
 #include "Editor/Public/UI.h"
 
-#include "Input/EditorInputCoordinator.h"
-
 #include "ProjectApp.h"
 #include "Renderer.h"
+#include "Input/InputSystem.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
 #include "ShaderRecook/ShaderRecookCoordinator.h"
 
@@ -35,6 +34,8 @@ void EditorApp::Initialize()
 	}
 
 	m_projectApp->Initialize();
+	m_projectApp->GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
+	m_projectApp->GetInputSystem().BeginInputRoutingFrame(false, false);
 
 	if (!m_ui)
 	{
@@ -45,18 +46,14 @@ void EditorApp::Initialize()
 		    m_projectApp->GetLevelManager(),
 		    m_projectApp->GetGameScene(),
 		    renderHardware,
-		    m_projectApp->GetWindow());
+		    m_projectApp->GetWindow(),
+		    m_projectApp->GetInputSystem());
 		m_ui->SetShaderPackageGenerationProvider(
 		    [&renderer]() noexcept
 		    {
 			    return renderer.GetShaderPackageGeneration();
 		    });
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
-	}
-
-	if (!m_editorInputCoordinator)
-	{
-		m_editorInputCoordinator = std::make_unique<EditorInputCoordinator>(m_projectApp->GetInputSystem());
 	}
 
 	m_isEditorSessionActive = true;
@@ -69,8 +66,6 @@ bool EditorApp::Tick()
 	{
 		return false;
 	}
-
-	m_editorInputCoordinator->UpdateGameplayInput(*m_ui);
 
 	switch (m_projectApp->BeginFrame())
 	{
@@ -141,8 +136,8 @@ void EditorApp::Shutdown()
 		return;
 	}
 
-	m_editorInputCoordinator.reset();
 	m_ui.reset();
+	m_projectApp->GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
 	m_projectApp->Shutdown();
 	m_isEditorSessionActive = false;
 }

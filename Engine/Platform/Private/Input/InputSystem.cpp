@@ -28,20 +28,32 @@ InputSystem::~InputSystem() = default;
 
 const InputState& InputSystem::GetState(InputLayer Layer) const noexcept
 {
-	return ShouldDispatchToLayer(Layer) ? m_State : m_DisabledState;
+	if (Layer == InputLayer::System)
+	{
+		return m_State;
+	}
+
+	const auto index = static_cast<std::size_t>(Layer);
+	return index < LayerCount ? m_LayerStates[index] : m_State;
 }
 
 void InputSystem::BeginFrame()
 {
 	m_State.BeginFrame();
-	m_DisabledState.BeginFrame();
+	for (InputState& layerState : m_LayerStates)
+	{
+		layerState.BeginFrame();
+	}
 	ClearDeferredQueues();
 }
 
 void InputSystem::EndFrame()
 {
 	m_State.EndFrame();
-	m_DisabledState.EndFrame();
+	for (InputState& layerState : m_LayerStates)
+	{
+		layerState.EndFrame();
+	}
 }
 
 void InputSystem::ProcessDeferredEvents()
@@ -50,7 +62,7 @@ void InputSystem::ProcessDeferredEvents()
 	{
 		const ImGuiContext* currentContext = ImGui::GetCurrentContext();
 		const bool wantsCaptureInput = currentContext != nullptr && (ImGui::GetIO().WantCaptureKeyboard || ImGui::GetIO().WantCaptureMouse);
-		SetLayerEnabled(InputLayer::Gameplay, !wantsCaptureInput);
+		SetActiveLayer(wantsCaptureInput ? InputLayer::Editor : InputLayer::Gameplay);
 	}
 
 	ProcessDeferredEventsForType<KeyboardEvent>();
@@ -97,20 +109,43 @@ bool InputSystem::OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param
 	{
 		return false;
 	}
+	if (result.Type == InputEventType::MouseMove)
+	{
+		int32_t deltaX = 0;
+		int32_t deltaY = 0;
+
+		if (m_bHasLastMousePosition)
+		{
+			deltaX = result.MouseMove.Position.X - m_LastMouseX;
+			deltaY = result.MouseMove.Position.Y - m_LastMouseY;
+		}
+
+		m_LastMouseX = result.MouseMove.Position.X;
+		m_LastMouseY = result.MouseMove.Position.Y;
+		m_bHasLastMousePosition = true;
+		result.MouseMove.Delta.X = deltaX;
+		result.MouseMove.Delta.Y = deltaY;
+	}
+
+	const InputLayer targetLayer = ResolveTargetLayer(result);
+	if (result.Type == InputEventType::MouseButton && result.MouseButton.bPressed && targetLayer != InputLayer::System)
+	{
+		SetActiveLayer(targetLayer);
+	}
 
 	switch (result.Type)
 	{
 		case InputEventType::Keyboard:
-			ProcessEvent(result.Keyboard);
+			ProcessEvent(result.Keyboard, targetLayer);
 			break;
 		case InputEventType::MouseButton:
-			ProcessEvent(result.MouseButton);
+			ProcessEvent(result.MouseButton, targetLayer);
 			break;
 		case InputEventType::MouseMove:
-			ProcessEvent(result.MouseMove);
+			ProcessEvent(result.MouseMove, targetLayer);
 			break;
 		case InputEventType::MouseWheel:
-			ProcessEvent(result.MouseWheel);
+			ProcessEvent(result.MouseWheel, targetLayer);
 			break;
 		default:
 			return false;
@@ -119,12 +154,46 @@ bool InputSystem::OnWindowMessage(uint32_t Msg, uintptr_t Param1, intptr_t Param
 	return true;
 }
 
+void InputSystem::BeginInputRoutingFrame(bool interactionDisabled, bool textInputActive)
+{
+	m_FocusRouter.BeginFrame(interactionDisabled, textInputActive);
+}
+
+void InputSystem::RegisterInputTargetRegion(float left, float top, float right, float bottom, InputLayer targetLayer)
+{
+	m_FocusRouter.RegisterTargetRegion(left, top, right, bottom, targetLayer);
+}
+
+void InputSystem::SetActiveLayer(InputLayer Layer) noexcept
+{
+	if (!IsLayerEnabled(Layer))
+	{
+		Layer = InputLayer::System;
+	}
+
+	if (m_ActiveLayer == Layer)
+	{
+		return;
+	}
+
+	const InputLayer oldLayer = m_ActiveLayer;
+	m_ActiveLayer = Layer;
+	if (oldLayer != InputLayer::System)
+	{
+		CancelLayer(oldLayer);
+	}
+}
+
 void InputSystem::SetLayerEnabled(InputLayer Layer, bool bEnabled)
 {
 	const auto index = static_cast<std::size_t>(Layer);
 	if (index < LayerCount)
 	{
 		m_LayerEnabled[index] = bEnabled;
+		if (!bEnabled && m_ActiveLayer == Layer)
+		{
+			SetActiveLayer(InputLayer::System);
+		}
 	}
 }
 
@@ -145,15 +214,19 @@ bool InputSystem::IsLayerEnabled(InputLayer Layer) const noexcept
 
 InputLayer InputSystem::GetActiveLayer() const noexcept
 {
-	for (std::size_t i = LayerCount; i > 0; --i)
+	return IsLayerEnabled(m_ActiveLayer) ? m_ActiveLayer : InputLayer::System;
+}
+
+InputLayer InputSystem::ResolveTargetLayer(const InputBackendResult& Result)
+{
+	if (m_State.IsMouseCaptured() && IsLayerEnabled(m_MouseCaptureLayer))
 	{
-		const std::size_t index = i - 1;
-		if (m_LayerEnabled[index])
-		{
-			return static_cast<InputLayer>(index);
-		}
+		return m_MouseCaptureLayer;
 	}
-	return InputLayer::Gameplay;
+
+	InputLayer targetLayer = m_FocusRouter.ResolveTargetLayer(Result, GetActiveLayer());
+
+	return IsLayerEnabled(targetLayer) ? targetLayer : InputLayer::System;
 }
 
 EventHandle InputSystem::SubscribeKeyboard(KeyboardCallback Callback, InputLayer Layer, DispatchMode Mode)
@@ -234,6 +307,7 @@ void InputSystem::CaptureMouse()
 	{
 		SetCapture(hWnd);
 		m_State.SetMouseCaptured(true);
+		m_MouseCaptureLayer = GetActiveLayer();
 	}
 }
 
@@ -241,6 +315,7 @@ void InputSystem::ReleaseMouse()
 {
 	ReleaseCapture();
 	m_State.SetMouseCaptured(false);
+	m_MouseCaptureLayer = InputLayer::System;
 }
 
 bool InputSystem::IsMouseCaptured() const noexcept
@@ -319,99 +394,102 @@ uint32_t InputSystem::GenerateCallbackId()
 	return m_NextCallbackId++;
 }
 
-bool InputSystem::ShouldDispatchToLayer(InputLayer Layer) const noexcept
+bool InputSystem::ShouldDispatchToLayer(InputLayer RegisteredLayer, InputLayer TargetLayer) const noexcept
 {
-	if (Layer == InputLayer::System)
+	if (RegisteredLayer == InputLayer::System)
 	{
 		return true;
 	}
 
-	if (!IsLayerEnabled(Layer))
+	if (RegisteredLayer != TargetLayer)
 	{
 		return false;
 	}
 
-	InputLayer activeLayer = GetActiveLayer();
-	return static_cast<uint8_t>(Layer) <= static_cast<uint8_t>(activeLayer);
+	return IsLayerEnabled(RegisteredLayer);
 }
 
-void InputSystem::UpdateStateFromEvent(const KeyboardEvent& Event)
+void InputSystem::CancelLayer(InputLayer Layer)
 {
-	m_State.SetKeyState(Event.KeyCode, Event.bPressed ? ButtonState::Pressed : ButtonState::Released);
-	m_State.SetModifiers(Event.Modifiers);
-}
-
-void InputSystem::UpdateStateFromEvent(const MouseButtonEvent& Event)
-{
-	m_State.SetMouseButtonState(Event.Button, Event.bPressed ? ButtonState::Pressed : ButtonState::Released);
-	m_State.SetMousePosition(Event.Position.X, Event.Position.Y);
-	m_State.SetModifiers(Event.Modifiers);
-}
-
-void InputSystem::UpdateStateFromEvent(const MouseMoveEvent& Event)
-{
-	int32_t deltaX = 0;
-	int32_t deltaY = 0;
-
-	if (m_bHasLastMousePosition)
+	if (Layer == InputLayer::System)
 	{
-		deltaX = Event.Position.X - m_LastMouseX;
-		deltaY = Event.Position.Y - m_LastMouseY;
+		return;
 	}
 
-	m_LastMouseX = Event.Position.X;
-	m_LastMouseY = Event.Position.Y;
-	m_bHasLastMousePosition = true;
+	const auto layerIndex = static_cast<std::size_t>(Layer);
+	if (layerIndex >= LayerCount)
+	{
+		return;
+	}
 
-	m_State.SetMousePosition(Event.Position.X, Event.Position.Y);
-	m_State.AccumulateMouseDelta(deltaX, deltaY);
-	m_State.SetModifiers(Event.Modifiers);
+	InputState& state = m_LayerStates[layerIndex];
+	for (std::size_t keyIndex = 0; keyIndex < InputState::KeyCount; ++keyIndex)
+	{
+		const ButtonState keyState = state.m_KeyStates[keyIndex];
+		if (keyState != ButtonState::Pressed && keyState != ButtonState::Held)
+		{
+			continue;
+		}
+
+		KeyboardEvent releaseEvent{};
+		releaseEvent.KeyCode = static_cast<Key>(keyIndex);
+		releaseEvent.Modifiers = state.GetModifiers();
+		releaseEvent.bPressed = false;
+		state.SetKeyState(releaseEvent.KeyCode, ButtonState::Released);
+		DispatchToCallbacks(releaseEvent, DispatchMode::Immediate, Layer);
+	}
+
+	const MousePosition mousePosition = state.GetMousePosition();
+	for (std::size_t buttonIndex = 0; buttonIndex < InputState::MouseButtonCount; ++buttonIndex)
+	{
+		const ButtonState buttonState = state.m_MouseButtonStates[buttonIndex];
+		if (buttonState != ButtonState::Pressed && buttonState != ButtonState::Held)
+		{
+			continue;
+		}
+
+		MouseButtonEvent releaseEvent{};
+		releaseEvent.Button = static_cast<MouseButton>(buttonIndex);
+		releaseEvent.Position = mousePosition;
+		releaseEvent.Modifiers = state.GetModifiers();
+		releaseEvent.bPressed = false;
+		state.SetMouseButtonState(releaseEvent.Button, ButtonState::Released);
+		DispatchToCallbacks(releaseEvent, DispatchMode::Immediate, Layer);
+	}
+
+	state = InputState{};
 }
 
-void InputSystem::UpdateStateFromEvent(const MouseWheelEvent& Event)
+void InputSystem::UpdateStateFromEvent(InputState& State, const KeyboardEvent& Event)
+{
+	State.SetKeyState(Event.KeyCode, Event.bPressed ? ButtonState::Pressed : ButtonState::Released);
+	State.SetModifiers(Event.Modifiers);
+}
+
+void InputSystem::UpdateStateFromEvent(InputState& State, const MouseButtonEvent& Event)
+{
+	State.SetMouseButtonState(Event.Button, Event.bPressed ? ButtonState::Pressed : ButtonState::Released);
+	State.SetMousePosition(Event.Position.X, Event.Position.Y);
+	State.SetModifiers(Event.Modifiers);
+}
+
+void InputSystem::UpdateStateFromEvent(InputState& State, const MouseMoveEvent& Event)
+{
+	State.SetMousePosition(Event.Position.X, Event.Position.Y);
+	State.AccumulateMouseDelta(Event.Delta.X, Event.Delta.Y);
+	State.SetModifiers(Event.Modifiers);
+}
+
+void InputSystem::UpdateStateFromEvent(InputState& State, const MouseWheelEvent& Event)
 {
 	if (Event.bHorizontal)
 	{
-		m_State.AccumulateWheelHorizontalDelta(Event.Delta);
+		State.AccumulateWheelHorizontalDelta(Event.Delta);
 	}
 	else
 	{
-		m_State.AccumulateWheelDelta(Event.Delta);
+		State.AccumulateWheelDelta(Event.Delta);
 	}
 
-	m_State.SetMousePosition(Event.Position.X, Event.Position.Y);
-}
-
-void InputSystem::BroadcastToPublicEvent(const KeyboardEvent& Event)
-{
-	if (Event.bPressed)
-	{
-		OnKeyPressed.Broadcast(Event);
-	}
-	else
-	{
-		OnKeyReleased.Broadcast(Event);
-	}
-}
-
-void InputSystem::BroadcastToPublicEvent(const MouseButtonEvent& Event)
-{
-	if (Event.bPressed)
-	{
-		OnMouseButtonPressed.Broadcast(Event);
-	}
-	else
-	{
-		OnMouseButtonReleased.Broadcast(Event);
-	}
-}
-
-void InputSystem::BroadcastToPublicEvent(const MouseMoveEvent& Event)
-{
-	OnMouseMove.Broadcast(Event);
-}
-
-void InputSystem::BroadcastToPublicEvent(const MouseWheelEvent& Event)
-{
-	OnMouseWheel.Broadcast(Event);
+	State.SetMousePosition(Event.Position.X, Event.Position.Y);
 }

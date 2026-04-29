@@ -8,6 +8,7 @@
 #include "Input/Mouse/MouseButton.h"
 #include "Input/Mouse/MousePosition.h"
 #include "Input/Dispatch/InputLayer.h"
+#include "Input/Events/MouseMoveEvent.h"
 #include "Input/Events/MouseWheelEvent.h"
 #include "Core/Public/Time/Timer.h"
 
@@ -45,13 +46,17 @@ GameCameraController::GameCameraController(Timer& timer, InputSystem& inputSyste
 	    },
 	    InputLayer::Gameplay);
 
-	m_keyPressedHandle = m_inputSystem.SubscribeKeyboard(
+	m_mouseMoveHandle = m_inputSystem.SubscribeMouseMove(
+	    [this](const MouseMoveEvent& event)
+	    {
+		    OnMouseMove(event);
+	    },
+	    InputLayer::Gameplay);
+
+	m_keyboardHandle = m_inputSystem.SubscribeKeyboard(
 	    [this](const KeyboardEvent& event)
 	    {
-		    if (event.IsPressed())
-		    {
-			    OnKeyPressed(event);
-		    }
+		    OnKeyboardEvent(event);
 	    },
 	    InputLayer::Gameplay);
 
@@ -67,7 +72,8 @@ GameCameraController::~GameCameraController() noexcept
 {
 	m_inputSystem.Unsubscribe(m_mouseButtonPressedHandle);
 	m_inputSystem.Unsubscribe(m_mouseButtonReleasedHandle);
-	m_inputSystem.Unsubscribe(m_keyPressedHandle);
+	m_inputSystem.Unsubscribe(m_mouseMoveHandle);
+	m_inputSystem.Unsubscribe(m_keyboardHandle);
 	m_inputSystem.Unsubscribe(m_mouseWheelHandle);
 
 	if (m_bMouseLookActive)
@@ -79,63 +85,33 @@ GameCameraController::~GameCameraController() noexcept
 
 void GameCameraController::Update() noexcept
 {
-	const InputState& input = m_inputSystem.GetState(InputLayer::Gameplay);
 	const float deltaTime = static_cast<float>(m_timer.GetDelta(TimeDomain::Scaled));
 	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
 	const CameraMovementSettings& settings = m_camera.GetSettings();
-	if (!m_bMouseLookActive && input.IsMouseButtonDown(MouseButton::Right))
-	{
-		m_bMouseLookActive = true;
-		m_inputSystem.CaptureMouse();
-		m_inputSystem.SetCursorVisibility(false);
-	}
-	else if (m_bMouseLookActive && !input.IsMouseButtonDown(MouseButton::Right))
-	{
-		m_bMouseLookActive = false;
-		m_inputSystem.ReleaseMouse();
-		m_inputSystem.SetCursorVisibility(true);
-	}
-
-	if (m_bMouseLookActive)
-	{
-		const MousePosition mouseDelta = input.GetMouseDelta();
-		const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
-
-		const float ySign = settings.invertY ? 1.0f : -1.0f;
-
-		const float yawDelta = static_cast<float>(mouseDelta.X) * settings.mouseSensitivity;
-		const float pitchDelta = ySign * static_cast<float>(mouseDelta.Y) * settings.mouseSensitivity;
-
-		cameraComponent.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta);
-
-		m_inputSystem.CenterCursor(m_window.GetHWND());
-	}
 
 	if (deltaTime <= 0.0f)
 	{
 		return;
 	}
 
-	float speed = settings.moveSpeed;
-	if (input.IsKeyDown(Key::LeftShift) || input.IsKeyDown(Key::RightShift))
-	{
-		speed *= settings.sprintMultiplier;
-	}
-
+	const float speed = settings.moveSpeed * (m_sprintHeld ? settings.sprintMultiplier : 1.0f);
 	const float distance = speed * deltaTime;
+	const float forwardAxis = (m_forwardHeld ? 1.0f : 0.0f) - (m_backwardHeld ? 1.0f : 0.0f);
+	const float rightAxis = (m_rightHeld ? 1.0f : 0.0f) - (m_leftHeld ? 1.0f : 0.0f);
+	const float upAxis = (m_upHeld ? 1.0f : 0.0f) - (m_downHeld ? 1.0f : 0.0f);
 
-	if (input.IsKeyDown(Key::W))
-		cameraComponent.MoveForward(distance);
-	if (input.IsKeyDown(Key::S))
-		cameraComponent.MoveForward(-distance);
-	if (input.IsKeyDown(Key::D))
-		cameraComponent.MoveRight(distance);
-	if (input.IsKeyDown(Key::A))
-		cameraComponent.MoveRight(-distance);
-	if (input.IsKeyDown(Key::E) || input.IsKeyDown(Key::Space))
-		cameraComponent.MoveUp(distance);
-	if (input.IsKeyDown(Key::Q) || input.IsKeyDown(Key::C))
-		cameraComponent.MoveUp(-distance);
+	if (forwardAxis != 0.0f)
+	{
+		cameraComponent.MoveForward(distance * forwardAxis);
+	}
+	if (rightAxis != 0.0f)
+	{
+		cameraComponent.MoveRight(distance * rightAxis);
+	}
+	if (upAxis != 0.0f)
+	{
+		cameraComponent.MoveUp(distance * upAxis);
+	}
 }
 
 void GameCameraController::OnMouseButtonPressed(const MouseButtonEvent& event) noexcept
@@ -153,19 +129,70 @@ void GameCameraController::OnMouseButtonReleased(const MouseButtonEvent& event) 
 	if (event.Button == MouseButton::Right)
 	{
 		m_bMouseLookActive = false;
+		ResetMovementIntent();
 		m_inputSystem.ReleaseMouse();
 		m_inputSystem.SetCursorVisibility(true);
 	}
 }
 
-void GameCameraController::OnKeyPressed(const KeyboardEvent& event) noexcept
+void GameCameraController::OnKeyboardEvent(const KeyboardEvent& event) noexcept
 {
-	if (event.KeyCode == Key::Escape && m_bMouseLookActive)
+	const bool pressed = event.IsPressed();
+	switch (event.KeyCode)
 	{
-		m_bMouseLookActive = false;
-		m_inputSystem.ReleaseMouse();
-		m_inputSystem.SetCursorVisibility(true);
+		case Key::W:
+			m_forwardHeld = pressed;
+			break;
+		case Key::S:
+			m_backwardHeld = pressed;
+			break;
+		case Key::D:
+			m_rightHeld = pressed;
+			break;
+		case Key::A:
+			m_leftHeld = pressed;
+			break;
+		case Key::E:
+		case Key::Space:
+			m_upHeld = pressed;
+			break;
+		case Key::Q:
+		case Key::C:
+			m_downHeld = pressed;
+			break;
+		case Key::LeftShift:
+		case Key::RightShift:
+			m_sprintHeld = event.IsPressed();
+			break;
+		case Key::Escape:
+			if (event.IsPressed() && m_bMouseLookActive)
+			{
+				m_bMouseLookActive = false;
+				ResetMovementIntent();
+				m_inputSystem.ReleaseMouse();
+				m_inputSystem.SetCursorVisibility(true);
+			}
+			break;
+		default:
+			break;
 	}
+}
+
+void GameCameraController::OnMouseMove(const MouseMoveEvent& event) noexcept
+{
+	if (!m_bMouseLookActive)
+	{
+		return;
+	}
+
+	CameraComponent& cameraComponent = m_camera.GetCameraComponent();
+	const CameraMovementSettings& settings = m_camera.GetSettings();
+	const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
+	const float ySign = settings.invertY ? 1.0f : -1.0f;
+	const float yawDelta = static_cast<float>(event.Delta.X) * settings.mouseSensitivity;
+	const float pitchDelta = ySign * static_cast<float>(event.Delta.Y) * settings.mouseSensitivity;
+	cameraComponent.SetYawPitch(rotationEuler.y + yawDelta, rotationEuler.x + pitchDelta);
+	m_inputSystem.CenterCursor(m_window.GetHWND());
 }
 
 void GameCameraController::OnWindowResized() noexcept
@@ -188,4 +215,15 @@ void GameCameraController::OnMouseWheel(const MouseWheelEvent& event) noexcept
 	CameraMovementSettings settings = m_camera.GetSettings();
 	settings.moveSpeed += event.Delta * settings.speedStep;
 	m_camera.SetSettings(settings);
+}
+
+void GameCameraController::ResetMovementIntent() noexcept
+{
+	m_forwardHeld = false;
+	m_backwardHeld = false;
+	m_rightHeld = false;
+	m_leftHeld = false;
+	m_upHeld = false;
+	m_downHeld = false;
+	m_sprintHeld = false;
 }

@@ -5,7 +5,8 @@
 enum class InputLayer : std::uint8_t
 {
 	System = 0,
-	Gameplay = 1,
+	Editor = 1,
+	Gameplay = 2,
 
 	Count
 };

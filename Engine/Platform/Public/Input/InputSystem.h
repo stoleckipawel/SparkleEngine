@@ -3,7 +3,6 @@
 #include "Platform/Public/PlatformAPI.h"
 
 #include "IInputBackend.h"
-#include "Events/Event.h"
 #include "Events/EventHandle.h"
 #include "Events/ScopedEventHandle.h"
 #include "Input/InputState.h"
@@ -13,6 +12,7 @@
 #include "Input/Events/MouseButtonEvent.h"
 #include "Input/Events/MouseMoveEvent.h"
 #include "Input/Events/MouseWheelEvent.h"
+#include "Input/Routing/InputFocusRouter.h"
 
 #include <array>
 #include <cstdint>
@@ -64,6 +64,10 @@ class SPARKLE_PLATFORM_API InputSystem
 	const InputState& GetState() const noexcept { return m_State; }
 	const InputState& GetState(InputLayer Layer) const noexcept;
 
+	void BeginInputRoutingFrame(bool interactionDisabled, bool textInputActive);
+	void RegisterInputTargetRegion(float left, float top, float right, float bottom, InputLayer targetLayer);
+
+	void SetActiveLayer(InputLayer Layer) noexcept;
 	void SetLayerEnabled(InputLayer Layer, bool bEnabled);
 	void SetAutomaticImGuiCaptureEnabled(bool enabled) noexcept;
 
@@ -93,18 +97,6 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	void Unsubscribe(EventHandle Handle);
 
-	Event<void(const KeyboardEvent&)> OnKeyPressed;
-
-	Event<void(const KeyboardEvent&)> OnKeyReleased;
-
-	Event<void(const MouseButtonEvent&)> OnMouseButtonPressed;
-
-	Event<void(const MouseButtonEvent&)> OnMouseButtonReleased;
-
-	Event<void(const MouseMoveEvent&)> OnMouseMove;
-
-	Event<void(const MouseWheelEvent&)> OnMouseWheel;
-
 	void CaptureMouse();
 
 	void ReleaseMouse();
@@ -122,12 +114,19 @@ class SPARKLE_PLATFORM_API InputSystem
 	void CenterCursor(void* windowHandle);
 
   private:
+	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
+
 	template <typename TEvent> struct CallbackEntry
 	{
 		std::function<void(const TEvent&)> Callback;
 		EventHandle Handle;
 		InputLayer Layer = InputLayer::Gameplay;
 		DispatchMode Mode = DispatchMode::Immediate;
+	};
+	template <typename TEvent> struct RoutedInputEvent
+	{
+		TEvent Event;
+		InputLayer TargetLayer = InputLayer::System;
 	};
 
 	using CallbackTuple = std::tuple<
@@ -136,36 +135,36 @@ class SPARKLE_PLATFORM_API InputSystem
 	    std::vector<CallbackEntry<MouseMoveEvent>>,
 	    std::vector<CallbackEntry<MouseWheelEvent>>>;
 
-	using DeferredQueueTuple =
-	    std::tuple<std::vector<KeyboardEvent>, std::vector<MouseButtonEvent>, std::vector<MouseMoveEvent>, std::vector<MouseWheelEvent>>;
+	using DeferredQueueTuple = std::tuple<
+	    std::vector<RoutedInputEvent<KeyboardEvent>>,
+	    std::vector<RoutedInputEvent<MouseButtonEvent>>,
+	    std::vector<RoutedInputEvent<MouseMoveEvent>>,
+	    std::vector<RoutedInputEvent<MouseWheelEvent>>>;
 
 	uint32_t GenerateCallbackId();
 
-	bool ShouldDispatchToLayer(InputLayer Layer) const noexcept;
+	bool ShouldDispatchToLayer(InputLayer RegisteredLayer, InputLayer TargetLayer) const noexcept;
+	InputLayer ResolveTargetLayer(const InputBackendResult& Result);
+	void CancelLayer(InputLayer Layer);
 
 	template <typename TEvent> std::vector<CallbackEntry<TEvent>>& GetCallbacks();
 
 	template <typename TEvent> const std::vector<CallbackEntry<TEvent>>& GetCallbacks() const;
 
-	template <typename TEvent> std::vector<TEvent>& GetDeferredQueue();
+	template <typename TEvent> std::vector<RoutedInputEvent<TEvent>>& GetDeferredQueue();
 
-	template <typename TEvent> void DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode);
+	template <typename TEvent> void DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode, InputLayer TargetLayer);
 
-	template <typename TEvent> void QueueIfHasDeferredCallbacks(const TEvent& Event);
+	template <typename TEvent> void QueueIfHasDeferredCallbacks(const TEvent& Event, InputLayer TargetLayer);
 
-	template <typename TEvent> void ProcessEvent(const TEvent& Event);
+	template <typename TEvent> void ProcessEvent(const TEvent& Event, InputLayer TargetLayer);
 
 	template <typename TEvent> void ProcessDeferredEventsForType();
 
-	void UpdateStateFromEvent(const KeyboardEvent& Event);
-	void UpdateStateFromEvent(const MouseButtonEvent& Event);
-	void UpdateStateFromEvent(const MouseMoveEvent& Event);
-	void UpdateStateFromEvent(const MouseWheelEvent& Event);
-
-	void BroadcastToPublicEvent(const KeyboardEvent& Event);
-	void BroadcastToPublicEvent(const MouseButtonEvent& Event);
-	void BroadcastToPublicEvent(const MouseMoveEvent& Event);
-	void BroadcastToPublicEvent(const MouseWheelEvent& Event);
+	void UpdateStateFromEvent(InputState& State, const KeyboardEvent& Event);
+	void UpdateStateFromEvent(InputState& State, const MouseButtonEvent& Event);
+	void UpdateStateFromEvent(InputState& State, const MouseMoveEvent& Event);
+	void UpdateStateFromEvent(InputState& State, const MouseWheelEvent& Event);
 
 	void ClearDeferredQueues();
 
@@ -174,7 +173,7 @@ class SPARKLE_PLATFORM_API InputSystem
 	std::unique_ptr<IInputBackend> m_Backend;
 
 	InputState m_State;
-	InputState m_DisabledState;
+	std::array<InputState, LayerCount> m_LayerStates{};
 
 	std::mutex m_CallbackMutex;
 
@@ -184,8 +183,10 @@ class SPARKLE_PLATFORM_API InputSystem
 
 	uint32_t m_NextCallbackId = 1;
 
-	static constexpr std::size_t LayerCount = static_cast<std::size_t>(InputLayer::Count);
-	std::array<bool, LayerCount> m_LayerEnabled = {true, true};
+	std::array<bool, LayerCount> m_LayerEnabled = {true, true, true};
+	InputLayer m_ActiveLayer = InputLayer::Gameplay;
+	InputLayer m_MouseCaptureLayer = InputLayer::System;
+	InputFocusRouter m_FocusRouter;
 	bool m_automaticImGuiCaptureEnabled = true;
 
 	int32_t m_LastMouseX = 0;
@@ -205,12 +206,12 @@ template <typename TEvent> const std::vector<InputSystem::CallbackEntry<TEvent>>
 	return std::get<std::vector<CallbackEntry<TEvent>>>(m_Callbacks);
 }
 
-template <typename TEvent> std::vector<TEvent>& InputSystem::GetDeferredQueue()
+template <typename TEvent> std::vector<InputSystem::RoutedInputEvent<TEvent>>& InputSystem::GetDeferredQueue()
 {
-	return std::get<std::vector<TEvent>>(m_DeferredQueues);
+	return std::get<std::vector<RoutedInputEvent<TEvent>>>(m_DeferredQueues);
 }
 
-template <typename TEvent> void InputSystem::DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode)
+template <typename TEvent> void InputSystem::DispatchToCallbacks(const TEvent& Event, DispatchMode TargetMode, InputLayer TargetLayer)
 {
 	std::lock_guard<std::mutex> lock(m_CallbackMutex);
 
@@ -221,7 +222,7 @@ template <typename TEvent> void InputSystem::DispatchToCallbacks(const TEvent& E
 			continue;
 		}
 
-		if (!ShouldDispatchToLayer(entry.Layer))
+		if (!ShouldDispatchToLayer(entry.Layer, TargetLayer))
 		{
 			continue;
 		}
@@ -233,33 +234,36 @@ template <typename TEvent> void InputSystem::DispatchToCallbacks(const TEvent& E
 	}
 }
 
-template <typename TEvent> void InputSystem::QueueIfHasDeferredCallbacks(const TEvent& Event)
+template <typename TEvent> void InputSystem::QueueIfHasDeferredCallbacks(const TEvent& Event, InputLayer TargetLayer)
 {
 	std::lock_guard<std::mutex> lock(m_CallbackMutex);
 
 	for (const auto& entry : GetCallbacks<TEvent>())
 	{
-		if (entry.Mode == DispatchMode::Deferred && ShouldDispatchToLayer(entry.Layer))
+		if (entry.Mode == DispatchMode::Deferred && ShouldDispatchToLayer(entry.Layer, TargetLayer))
 		{
-			GetDeferredQueue<TEvent>().push_back(Event);
+			GetDeferredQueue<TEvent>().push_back({Event, TargetLayer});
 			return;
 		}
 	}
 }
 
-template <typename TEvent> void InputSystem::ProcessEvent(const TEvent& Event)
+template <typename TEvent> void InputSystem::ProcessEvent(const TEvent& Event, InputLayer TargetLayer)
 {
-	UpdateStateFromEvent(Event);
-	BroadcastToPublicEvent(Event);
-	DispatchToCallbacks<TEvent>(Event, DispatchMode::Immediate);
-	QueueIfHasDeferredCallbacks<TEvent>(Event);
+	UpdateStateFromEvent(m_State, Event);
+	if (ShouldDispatchToLayer(TargetLayer, TargetLayer))
+	{
+		UpdateStateFromEvent(m_LayerStates[static_cast<std::size_t>(TargetLayer)], Event);
+	}
+	DispatchToCallbacks<TEvent>(Event, DispatchMode::Immediate, TargetLayer);
+	QueueIfHasDeferredCallbacks<TEvent>(Event, TargetLayer);
 }
 
 template <typename TEvent> void InputSystem::ProcessDeferredEventsForType()
 {
 	auto& queue = GetDeferredQueue<TEvent>();
-	for (const auto& event : queue)
+	for (const auto& routedEvent : queue)
 	{
-		DispatchToCallbacks<TEvent>(event, DispatchMode::Deferred);
+		DispatchToCallbacks<TEvent>(routedEvent.Event, DispatchMode::Deferred, routedEvent.TargetLayer);
 	}
 }

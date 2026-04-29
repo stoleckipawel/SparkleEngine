@@ -73,6 +73,20 @@ const ViewportRenderRequest& ViewportPanel::GetRenderRequest() const noexcept
 	return m_renderRequest;
 }
 
+bool ViewportPanel::GetInputBounds(float& left, float& top, float& right, float& bottom) const noexcept
+{
+	if (!m_hasInputBounds)
+	{
+		return false;
+	}
+
+	left = m_inputLeft;
+	top = m_inputTop;
+	right = m_inputRight;
+	bottom = m_inputBottom;
+	return true;
+}
+
 void ViewportPanel::UpdateRequestedExtent(float availableWidth, float availableHeight) noexcept
 {
 	const float clampedWidth = (std::max) (MinimumViewportExtent, availableWidth);
@@ -89,6 +103,7 @@ void ViewportPanel::BuildEmptyState() noexcept
 
 void ViewportPanel::BuildUI(bool disableInteraction)
 {
+	m_hasInputBounds = false;
 	ImGuiIO& io = ImGui::GetIO();
 	const float width = (std::max) (MinimumViewportExtent, io.DisplaySize.x - m_leftInsetPixels - m_rightInsetPixels);
 	const float height = (std::max) (MinimumViewportExtent, io.DisplaySize.y - m_topInsetPixels - m_bottomInsetPixels);
@@ -110,24 +125,12 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	    ImVec2(0.0f, surfaceRegionHeight),
 	    ImGuiChildFlags_None,
 	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-	const bool viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
-	const bool mouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
-	                          ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
-	if (disableInteraction)
-	{
-		m_hasInputFocus = false;
-	}
-	else if (viewportHovered && mouseClicked)
-	{
-		m_hasInputFocus = true;
-	}
-	else if (!viewportHovered && mouseClicked && ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
-	{
-		m_hasInputFocus = false;
-	}
-
-	const bool textInputOwnsKeyboard = io.WantTextInput && !(viewportHovered && mouseClicked);
-	m_wantsGameplayInput = !disableInteraction && m_hasInputFocus && !textInputOwnsKeyboard;
+	const ImVec2 viewportMin = ImGui::GetWindowPos();
+	m_inputLeft = viewportMin.x;
+	m_inputTop = viewportMin.y;
+	m_inputRight = viewportMin.x + ImGui::GetWindowWidth();
+	m_inputBottom = viewportMin.y + ImGui::GetWindowHeight();
+	m_hasInputBounds = m_inputRight > m_inputLeft && m_inputBottom > m_inputTop;
 
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);

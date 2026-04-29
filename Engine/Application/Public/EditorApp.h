@@ -6,7 +6,6 @@
 
 class ProjectApp;
 class ShaderRecookCoordinator;
-class EditorInputCoordinator;
 class UI;
 
 class SPARKLE_APPLICATION_API EditorApp
@@ -28,7 +27,6 @@ class SPARKLE_APPLICATION_API EditorApp
 	private:
 	std::unique_ptr<ProjectApp> m_projectApp;
 	std::unique_ptr<UI> m_ui;
-	std::unique_ptr<EditorInputCoordinator> m_editorInputCoordinator;
 	std::unique_ptr<ShaderRecookCoordinator> m_shaderRecookCoordinator;
 	bool m_isEditorSessionActive = false;
 };

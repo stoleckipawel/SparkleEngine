@@ -2,6 +2,7 @@
 #include "UI.h"
 #include "Window/Window.h"
 #include "Config/RenderConfig.h"
+#include "Input/InputSystem.h"
 #include "Level/LevelManager.h"
 #include "Scene/GameScene.h"
 #include "Timer.h"
@@ -136,11 +137,6 @@ const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
 	return m_viewportPanel ? m_viewportPanel->GetRenderRequest() : defaultRequest;
 }
 
-bool UI::WantsGameplayInput() const noexcept
-{
-	return m_viewportPanel != nullptr && m_viewportPanel->WantsGameplayInput();
-}
-
 void UI::SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept
 {
 	if (m_viewportPanel)
@@ -191,12 +187,19 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 	return requested;
 }
 
-UI::UI(Timer& timer, LevelManager* levelManager, GameScene* gameScene, RenderHardwareInterface& renderHardware, Window& window) :
+UI::UI(
+    Timer& timer,
+    LevelManager* levelManager,
+    GameScene* gameScene,
+    RenderHardwareInterface& renderHardware,
+    Window& window,
+    InputSystem& inputSystem) :
     m_timer(&timer),
     m_levelManager(levelManager),
     m_gameScene(gameScene),
     m_renderHardware(&renderHardware),
     m_window(&window),
+    m_inputSystem(&inputSystem),
     m_sceneSelection(SceneObjectSelection::None())
 {
 	InitializeImGuiContext();
@@ -402,6 +405,11 @@ void UI::Build()
 {
 	SPARKLE_CPU_SCOPE("Editor.UI.Build");
 	const bool disableInteraction = m_levelManager != nullptr && m_levelManager->IsLevelChangeInProgress();
+	ImGuiIO& io = ImGui::GetIO();
+	if (m_inputSystem != nullptr)
+	{
+		m_inputSystem->BeginInputRoutingFrame(disableInteraction, io.WantTextInput || io.WantCaptureKeyboard);
+	}
 	float mainMenuBarHeight = 0.0f;
 	if (m_mainMenuBar)
 	{
@@ -417,7 +425,6 @@ void UI::Build()
 
 	const float outlinerWidth = m_sceneOutlinerPanel ? m_sceneOutlinerPanel->GetWidth() : SceneOutlinerWidth;
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
-	ImGuiIO& io = ImGui::GetIO();
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
 	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
 	float viewportTopPanelHeight = 0.0f;
@@ -437,6 +444,22 @@ void UI::Build()
 		m_viewportPanel->SetBottomInset(consoleDockHeight);
 		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
 		m_viewportPanel->BuildUI(disableInteraction);
+		if (m_inputSystem != nullptr)
+		{
+			float viewportLeft = 0.0f;
+			float viewportTop = 0.0f;
+			float viewportRight = 0.0f;
+			float viewportBottom = 0.0f;
+			if (m_viewportPanel->GetInputBounds(viewportLeft, viewportTop, viewportRight, viewportBottom))
+			{
+				m_inputSystem->RegisterInputTargetRegion(
+				    viewportLeft,
+				    viewportTop,
+				    viewportRight,
+				    viewportBottom,
+				    m_viewportPanel->GetTargetInputLayer());
+			}
+		}
 	}
 
 	if (m_sceneInspectorPanel)

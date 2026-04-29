@@ -4,6 +4,7 @@
 
 #include "Diagnostics/ScopedLogEvent.h"
 #include "Editor/Public/UI.h"
+#include "Input/InputSystem.h"
 #include "Platform/Public/Window/Window.h"
 #include "ProjectApp.h"
 #include "Renderer.h"
@@ -380,11 +381,14 @@ int D3D12SmokeValidationRunner::RunEditorValidation(const D3D12SmokeValidationCo
 		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "D3D12 editor smoke UI scope");
 		Renderer& renderer = app.GetRenderer();
 		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-		UI ui(app.GetTimer(), app.GetLevelManager(), app.GetGameScene(), renderHardware, app.GetWindow());
+		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
+		app.GetInputSystem().BeginInputRoutingFrame(false, false);
+		UI ui(app.GetTimer(), app.GetLevelManager(), app.GetGameScene(), renderHardware, app.GetWindow(), app.GetInputSystem());
 
 		while (TickEditor(app, ui, config, state))
 		{
 		}
+		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
 	}
 
 	app.Shutdown();

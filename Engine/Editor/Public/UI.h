@@ -22,6 +22,7 @@ class ViewportPanel;
 class ViewportTopPanel;
 class ProfilerPanel;
 class UsedShadersPanel;
+class InputSystem;
 class LevelManager;
 class GameScene;
 class Window;
@@ -30,7 +31,12 @@ struct WindowMessageEvent;
 class SPARKLE_EDITOR_API UI final
 {
   public:
-	UI(Timer& timer, LevelManager* levelManager, GameScene* gameScene, RenderHardwareInterface& renderHardware, Window& window);
+	UI(Timer& timer,
+	   LevelManager* levelManager,
+	   GameScene* gameScene,
+	   RenderHardwareInterface& renderHardware,
+	   Window& window,
+	   InputSystem& inputSystem);
 
 	~UI() noexcept;
 
@@ -44,7 +50,6 @@ class SPARKLE_EDITOR_API UI final
 	bool ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
-	bool WantsGameplayInput() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
@@ -91,6 +96,7 @@ class SPARKLE_EDITOR_API UI final
 	GameScene* m_gameScene = nullptr;
 	RenderHardwareInterface* m_renderHardware = nullptr;
 	Window* m_window = nullptr;
+	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
 	std::string m_shaderRecookStatus;
