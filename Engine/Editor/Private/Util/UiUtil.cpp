@@ -3,9 +3,11 @@
 
 #include "Style/SparkleUiPalette.h"
 #include "Style/SparkleUiTheme.h"
+#include "Util/EditorIconGlyphs.h"
 
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 
 #include <imgui.h>
 
@@ -16,11 +18,13 @@ namespace UiUtil
 		constexpr float PropertyLabelWidth = 78.0f;
 		constexpr float ScalarInputWidth = 86.0f;
 		constexpr float Float3InputWidth = 188.0f;
-		constexpr float DetailsLabelWidth = 148.0f;
-		constexpr float DetailsAxisLabelWidth = 14.0f;
-		constexpr float DetailsRowVerticalPadding = 3.0f;
-		constexpr float PlaceholderIconSize = 16.0f;
-		constexpr float DetailsUtilityColumnWidth = 24.0f;
+		constexpr float DetailsLabelWidth = 132.0f;
+		constexpr float DetailsAxisLabelWidth = 12.0f;
+		constexpr float DetailsRowVerticalPadding = 2.0f;
+		constexpr float PlaceholderIconSize = 14.0f;
+		constexpr float DetailsUtilityColumnWidth = 20.0f;
+		constexpr float DetailsResetButtonSize = 14.0f;
+		constexpr float DetailsDirtyEpsilon = 0.0001f;
 
 		ImVec4 DetailsGridLineColor() noexcept
 		{
@@ -96,21 +100,56 @@ namespace UiUtil
 			switch (axisIndex)
 			{
 				case 0:
-					return IM_COL32(216, 92, 92, 210);
+					return IM_COL32(205, 82, 82, 210);
 				case 1:
-					return IM_COL32(92, 190, 112, 210);
+					return IM_COL32(82, 178, 104, 210);
 				case 2:
-					return IM_COL32(92, 132, 220, 210);
+					return IM_COL32(82, 122, 208, 210);
 				default:
 					return ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::TextMuted());
 			}
 		}
 
+		bool IsDifferentFromDefault(float value, float defaultValue) noexcept
+		{
+			return std::fabs(value - defaultValue) > DetailsDirtyEpsilon;
+		}
+
+		bool IsDifferentFromDefault(const float values[3], const float defaultValues[3]) noexcept
+		{
+			return IsDifferentFromDefault(values[0], defaultValues[0]) || IsDifferentFromDefault(values[1], defaultValues[1]) ||
+			       IsDifferentFromDefault(values[2], defaultValues[2]);
+		}
+
+		ImVec4 WithAlpha(ImVec4 color, float alpha) noexcept
+		{
+			color.w *= alpha;
+			return color;
+		}
+
+		void DrawResetGlyph(ImDrawList* drawList, const ImVec2& center, ImU32 color) noexcept
+		{
+			constexpr float radius = 4.6f;
+			drawList->PathArcTo(center, radius, 0.25f, 5.05f, 18);
+			drawList->PathStroke(color, false, 1.2f);
+
+			const ImVec2 tip(center.x - 2.8f, center.y - 5.4f);
+			drawList->AddTriangleFilled(tip, ImVec2(tip.x + 4.5f, tip.y - 0.5f), ImVec2(tip.x + 1.6f, tip.y + 3.4f), color);
+		}
+
+		void DrawCenteredGlyph(ImDrawList* drawList, const ImVec2& start, const ImVec2& size, const char* glyph, ImU32 color) noexcept
+		{
+			const ImVec2 textSize = ImGui::CalcTextSize(glyph);
+			const ImVec2 textPosition(start.x + ((size.x - textSize.x) * 0.5f), start.y + ((size.y - textSize.y) * 0.5f));
+			drawList->AddText(textPosition, color, glyph);
+		}
+
 		bool BeginDetailsRow(const char* label, int valueColumnCount)
 		{
 			ImGui::PushID(label);
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(6.0f, DetailsRowVerticalPadding));
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5.0f, DetailsRowVerticalPadding));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
 			const ImVec4 gridLineColor = DetailsGridLineColor();
 			ImGui::PushStyleColor(ImGuiCol_TableBorderStrong, gridLineColor);
 			ImGui::PushStyleColor(ImGuiCol_TableBorderLight, gridLineColor);
@@ -123,7 +162,7 @@ namespace UiUtil
 			if (!ImGui::BeginTable("##details_row", valueColumnCount + 2, tableFlags))
 			{
 				ImGui::PopStyleColor(3);
-				ImGui::PopStyleVar(2);
+				ImGui::PopStyleVar(3);
 				ImGui::PopID();
 				return false;
 			}
@@ -142,10 +181,46 @@ namespace UiUtil
 			return true;
 		}
 
-		bool DrawDetailsResetButton(int utilityColumnIndex, const char* tooltip = "Reset to default")
+		bool DrawDetailsResetButton(int utilityColumnIndex, bool dirty, const char* tooltip = "Reset to default")
 		{
 			ImGui::TableSetColumnIndex(utilityColumnIndex);
-			return DrawEditorIconButton(EditorIcon::Reset, "reset", tooltip);
+			if (!dirty)
+			{
+				ImGui::Dummy(ImVec2(DetailsUtilityColumnWidth, DetailsResetButtonSize));
+				return false;
+			}
+
+			ImGui::PushID("reset");
+			const ImVec2 start = ImGui::GetCursorScreenPos();
+			const ImVec2 size(DetailsResetButtonSize, DetailsResetButtonSize);
+			const bool pressed = ImGui::InvisibleButton("##reset", size);
+			const bool hovered = ImGui::IsItemHovered();
+			const bool active = ImGui::IsItemActive();
+
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			const ImVec2 end(start.x + size.x, start.y + size.y);
+			if (hovered || active)
+			{
+				drawList->AddRectFilled(start, end, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::ButtonBackgroundHovered()), 3.0f);
+			}
+
+			const ImVec4 iconColor = hovered ? SparkleUiPalette::TextPrimary() : WithAlpha(SparkleUiPalette::TextMuted(), 0.62f);
+			const ImU32 iconColorU32 = ImGui::ColorConvertFloat4ToU32(iconColor);
+			if (SparkleUiTheme::AreEditorIconsAvailable())
+			{
+				DrawCenteredGlyph(drawList, start, size, GetEditorIconGlyph(EditorIcon::Reset), iconColorU32);
+			}
+			else
+			{
+				DrawResetGlyph(drawList, ImVec2(start.x + (size.x * 0.5f), start.y + (size.y * 0.5f) + 0.4f), iconColorU32);
+			}
+			if (tooltip != nullptr && tooltip[0] != '\0' && hovered)
+			{
+				ImGui::SetTooltip("%s", tooltip);
+			}
+
+			ImGui::PopID();
+			return pressed;
 		}
 
 		void DrawDetailsEmptyUtility(int utilityColumnIndex)
@@ -159,31 +234,34 @@ namespace UiUtil
 			ImGui::EndTable();
 			ImGui::Separator();
 			ImGui::PopStyleColor(3);
-			ImGui::PopStyleVar(2);
+			ImGui::PopStyleVar(3);
 			ImGui::PopID();
 		}
 	}  // namespace
 
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept
 	{
+		const bool useFontAwesome = SparkleUiTheme::AreEditorIconsAvailable();
 		switch (icon)
 		{
+			case EditorIcon::Folder:
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Folder : EditorIconGlyphs::Fallback::Folder;
 			case EditorIcon::Camera:
-				return "C";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Camera : EditorIconGlyphs::Fallback::Camera;
 			case EditorIcon::DirectionalLight:
-				return "L";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::DirectionalLight : EditorIconGlyphs::Fallback::DirectionalLight;
 			case EditorIcon::StaticMesh:
-				return "M";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::StaticMesh : EditorIconGlyphs::Fallback::StaticMesh;
 			case EditorIcon::EyeVisible:
-				return "O";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::EyeVisible : EditorIconGlyphs::Fallback::EyeVisible;
 			case EditorIcon::EyeHidden:
-				return "-";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::EyeHidden : EditorIconGlyphs::Fallback::EyeHidden;
 			case EditorIcon::Reset:
-				return "R";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Reset : EditorIconGlyphs::Fallback::Reset;
 			case EditorIcon::Filter:
-				return "F";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Filter : EditorIconGlyphs::Fallback::Filter;
 			case EditorIcon::Settings:
-				return "S";
+				return useFontAwesome ? EditorIconGlyphs::FontAwesome::Settings : EditorIconGlyphs::Fallback::Settings;
 			case EditorIcon::None:
 			default:
 				return "-";
@@ -202,7 +280,7 @@ namespace UiUtil
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
-		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
 		const bool pressed = ImGui::Button(GetEditorIconGlyph(icon), ImVec2(PlaceholderIconSize, PlaceholderIconSize));
 		if (tooltip != nullptr && tooltip[0] != '\0' && ImGui::IsItemHovered())
 		{
@@ -241,20 +319,45 @@ namespace UiUtil
 	bool DrawVisibilityIconButton(const char* id, bool visible)
 	{
 		ImGui::PushID(id);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, SparkleUiPalette::ButtonBackgroundHovered());
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, SparkleUiPalette::ButtonBackgroundActive());
-		ImGui::PushStyleColor(ImGuiCol_Text, visible ? SparkleUiPalette::TextPrimary() : SparkleUiPalette::TextMuted());
-		const bool pressed = ImGui::Button(
-		    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
-		    ImVec2(PlaceholderIconSize, PlaceholderIconSize));
-		if (ImGui::IsItemHovered())
+		const ImVec2 start = ImGui::GetCursorScreenPos();
+		const ImVec2 size(PlaceholderIconSize, PlaceholderIconSize);
+		const bool pressed = ImGui::InvisibleButton("##visibility", size);
+		const bool hovered = ImGui::IsItemHovered();
+		const bool active = ImGui::IsItemActive();
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		const ImVec2 end(start.x + size.x, start.y + size.y);
+		if (hovered || active)
+		{
+			drawList->AddRectFilled(start, end, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::ButtonBackgroundHovered()), 3.0f);
+		}
+
+		const ImVec2 center(start.x + (size.x * 0.5f), start.y + (size.y * 0.5f));
+		const ImVec4 iconColor = visible ? WithAlpha(SparkleUiPalette::TextMuted(), 0.58f) : SparkleUiPalette::AccentStrong();
+		const ImU32 iconColorU32 = ImGui::ColorConvertFloat4ToU32(iconColor);
+		if (SparkleUiTheme::AreEditorIconsAvailable())
+		{
+			DrawCenteredGlyph(
+			    drawList,
+			    start,
+			    size,
+			    GetEditorIconGlyph(visible ? EditorIcon::EyeVisible : EditorIcon::EyeHidden),
+			    iconColorU32);
+		}
+		else if (visible)
+		{
+			drawList->AddCircle(center, 3.3f, iconColorU32, 16, 1.1f);
+			drawList->AddCircleFilled(center, 1.1f, iconColorU32, 8);
+		}
+		else
+		{
+			drawList->AddLine(ImVec2(center.x - 3.8f, center.y), ImVec2(center.x + 3.8f, center.y), iconColorU32, 1.2f);
+		}
+
+		if (hovered)
 		{
 			ImGui::SetTooltip("%s", visible ? "Visible" : "Hidden");
 		}
-		ImGui::PopStyleColor(4);
-		ImGui::PopStyleVar();
 		ImGui::PopID();
 		return pressed;
 	}
@@ -534,6 +637,65 @@ namespace UiUtil
 		EndDetailsRow();
 	}
 
+	void DrawDetailsAssetRow(const char* label, const char* thumbnailText, const char* value, const char* typeText)
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return;
+		}
+
+		ImGui::TableSetColumnIndex(1);
+		const ImVec2 thumbnailSize(32.0f, 32.0f);
+		const ImVec2 start = ImGui::GetCursorScreenPos();
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		drawList->AddRectFilled(
+		    start,
+		    ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y),
+		    SparkleUiPalette::SceneOutlinerBadgeBackground(),
+		    4.0f);
+		drawList->AddRect(start, ImVec2(start.x + thumbnailSize.x, start.y + thumbnailSize.y), SparkleUiPalette::PanelHeaderBorder(), 4.0f);
+		const char* thumbnailLabel = (thumbnailText != nullptr && thumbnailText[0] != '\0') ? thumbnailText : "A";
+		const ImVec2 thumbnailTextSize = ImGui::CalcTextSize(thumbnailLabel);
+		drawList->AddText(
+		    ImVec2(start.x + ((thumbnailSize.x - thumbnailTextSize.x) * 0.5f), start.y + ((thumbnailSize.y - thumbnailTextSize.y) * 0.5f)),
+		    SparkleUiPalette::SceneOutlinerBadgeText(),
+		    thumbnailLabel);
+		ImGui::Dummy(thumbnailSize);
+
+		ImGui::SameLine(0.0f, 6.0f);
+		ImGui::BeginGroup();
+		const float buttonWidth = (std::max) (80.0f, ImGui::GetContentRegionAvail().x - 72.0f);
+		ImGui::SetNextItemWidth(buttonWidth);
+		ImGui::Button(value != nullptr ? value : "None", ImVec2(buttonWidth, 0.0f));
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Asset selector placeholder");
+		}
+		if (typeText != nullptr && typeText[0] != '\0')
+		{
+			ImGui::TextDisabled("%s", typeText);
+		}
+		ImGui::EndGroup();
+
+		ImGui::SameLine(0.0f, 4.0f);
+		ImGui::BeginGroup();
+		ImGui::SmallButton("Use");
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Use selected asset placeholder");
+		}
+		ImGui::SameLine(0.0f, 3.0f);
+		ImGui::SmallButton("Find");
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Browse asset placeholder");
+		}
+		ImGui::EndGroup();
+
+		DrawDetailsEmptyUtility(2);
+		EndDetailsRow();
+	}
+
 	bool EditDetailsFloat(
 	    const char* label,
 	    float& value,
@@ -553,7 +715,7 @@ namespace UiUtil
 		bool changed = ImGui::DragFloat("##value", &value, speed, minValue, maxValue, format);
 		if (resetValue != nullptr)
 		{
-			if (DrawDetailsResetButton(2))
+			if (DrawDetailsResetButton(2, IsDifferentFromDefault(value, *resetValue)))
 			{
 				value = *resetValue;
 				changed = true;
@@ -613,7 +775,7 @@ namespace UiUtil
 		}
 		if (resetValues != nullptr)
 		{
-			if (DrawDetailsResetButton(4))
+			if (DrawDetailsResetButton(4, IsDifferentFromDefault(values, resetValues)))
 			{
 				values[0] = resetValues[0];
 				values[1] = resetValues[1];
@@ -645,7 +807,7 @@ namespace UiUtil
 		    ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_InputRGB | ImGuiColorEditFlags_PickerHueBar);
 		if (resetValues != nullptr)
 		{
-			if (DrawDetailsResetButton(2))
+			if (DrawDetailsResetButton(2, IsDifferentFromDefault(values, resetValues)))
 			{
 				values[0] = resetValues[0];
 				values[1] = resetValues[1];
@@ -673,7 +835,7 @@ namespace UiUtil
 		bool changed = ImGui::Checkbox("##value", &value);
 		if (resetValue != nullptr)
 		{
-			if (DrawDetailsResetButton(2))
+			if (DrawDetailsResetButton(2, value != *resetValue))
 			{
 				value = *resetValue;
 				changed = true;

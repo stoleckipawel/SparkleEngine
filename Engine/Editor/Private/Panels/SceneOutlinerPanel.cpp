@@ -38,6 +38,7 @@ namespace
 
 	bool DrawFilterChip(const char* label, bool active) noexcept
 	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
 		if (active)
 		{
 			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackgroundActive());
@@ -49,9 +50,32 @@ namespace
 			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
 		}
 
+		ImGui::PushID("FilterChip");
 		const bool pressed = ImGui::SmallButton(label);
+		ImGui::PopID();
 		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
 		return pressed;
+	}
+
+	void DrawMutedText(const char* text, float alpha = 0.72f) noexcept
+	{
+		ImVec4 color = SparkleUiPalette::TextMuted();
+		color.w *= alpha;
+		ImGui::PushStyleColor(ImGuiCol_Text, color);
+		ImGui::TextUnformatted(text);
+		ImGui::PopStyleColor();
+	}
+
+	bool DrawCenteredVisibilityButton(const char* id, bool visible) noexcept
+	{
+		constexpr float kVisibilityIconSize = 14.0f;
+		const float availableWidth = ImGui::GetContentRegionAvail().x;
+		const float horizontalOffset = (std::max) (0.0f, (availableWidth - kVisibilityIconSize) * 0.5f);
+		const float verticalOffset = (std::max) (0.0f, (ImGui::GetFrameHeight() - kVisibilityIconSize) * 0.5f);
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + horizontalOffset);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+		return UiUtil::DrawVisibilityIconButton(id, visible);
 	}
 }  // namespace
 
@@ -111,16 +135,6 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 	{
 		m_activeFilter = SceneOutlinerFilter::Meshes;
 	}
-
-	const float actionsWidth = 44.0f;
-	const float remainingWidth = ImGui::GetContentRegionAvail().x;
-	if (remainingWidth > actionsWidth)
-	{
-		ImGui::SameLine(ImGui::GetCursorPosX() + remainingWidth - actionsWidth);
-		UiUtil::DrawEditorIconButton(UiUtil::EditorIcon::Filter, "outliner_filter_action", "Filter options");
-		ImGui::SameLine(0.0f, 4.0f);
-		UiUtil::DrawEditorIconButton(UiUtil::EditorIcon::Settings, "outliner_settings_action", "Outliner settings");
-	}
 	ImGui::PopStyleVar();
 }
 
@@ -130,7 +144,12 @@ void SceneOutlinerPanel::BuildFooter() noexcept
 	const std::size_t displayedCount = CountVisibleEntries();
 	const bool hasValidSelection = IsSelectionValid();
 	ImGui::Separator();
-	ImGui::TextDisabled("%zu / %zu items shown%s", displayedCount, totalCount, hasValidSelection ? " (1 selected)" : "");
+	ImGui::TextDisabled("%zu actors%s", displayedCount, hasValidSelection ? " (1 selected)" : "");
+	if (displayedCount != totalCount)
+	{
+		ImGui::SameLine();
+		ImGui::TextDisabled("of %zu", totalCount);
+	}
 }
 
 bool SceneOutlinerPanel::IsSelectionValid() const noexcept
@@ -363,13 +382,14 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 void SceneOutlinerPanel::DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept
 {
 	ImGui::TableNextRow();
+	ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, SparkleUiPalette::SectionHeaderBackground());
 	ImGui::TableSetColumnIndex(1);
 	ImGui::PushID(id);
 	const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	open = ImGui::TreeNodeEx("##section", flags, "%s (%zu)", label, count);
+	open = ImGui::TreeNodeEx("##section", flags, "+ %s (%zu)", label, count);
 	ImGui::PopID();
 	ImGui::TableSetColumnIndex(2);
-	ImGui::TextDisabled("Group");
+	DrawMutedText("Folder", 0.58f);
 	if (open)
 	{
 		ImGui::TreePop();
@@ -381,32 +401,41 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	const bool isSelected = m_selection != nullptr && *m_selection == selection;
 	const bool isVisible = IsEntryVisible(selection);
 	ImGui::TableNextRow();
+	if (isSelected)
+	{
+		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::SelectionOverlay()));
+		ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImGui::ColorConvertFloat4ToU32(SparkleUiPalette::SelectionOverlay()));
+	}
 	ImGui::PushID(label);
 	ImGui::TableSetColumnIndex(0);
-	if (UiUtil::DrawVisibilityIconButton("visibility", isVisible))
+	if (DrawCenteredVisibilityButton("visibility", isVisible))
 	{
 		ToggleEntryVisibility(selection);
 	}
 
 	ImGui::TableSetColumnIndex(1);
-	ImGui::Indent(12.0f);
+	ImGui::Indent(16.0f);
 	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel);
 	ImGui::SameLine(0.0f, 6.0f);
 	if (!isVisible)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
 	}
-	if (ImGui::Selectable(label, isSelected, 0, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
+	else if (isSelected)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+	}
+	if (ImGui::Selectable(label, isSelected, ImGuiSelectableFlags_SpanAllColumns, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
 	{
 		*m_selection = selection;
 	}
-	if (!isVisible)
+	if (!isVisible || isSelected)
 	{
 		ImGui::PopStyleColor();
 	}
-	ImGui::Unindent(12.0f);
+	ImGui::Unindent(16.0f);
 	ImGui::TableSetColumnIndex(2);
-	ImGui::TextDisabled("%s", typeLabel);
+	DrawMutedText(typeLabel, 0.62f);
 	ImGui::PopID();
 }
 
@@ -446,15 +475,17 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
+	ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 2.0f));
 	if (ImGui::BeginTable(
 	        "##OutlinerTable",
 	        3,
-	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY,
+	        ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY |
+	            ImGuiTableFlags_NoPadOuterX,
 	        ImVec2(0.0f, -28.0f)))
 	{
-		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 24.0f);
+		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 20.0f);
 		ImGui::TableSetupColumn("Item Label", ImGuiTableColumnFlags_WidthStretch);
-		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 104.0f);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 88.0f);
 		ImGui::TableHeadersRow();
 
 		BuildCameraSection();
@@ -462,6 +493,7 @@ void SceneOutlinerPanel::BuildUI(bool disableInteraction)
 		BuildMeshSection();
 		ImGui::EndTable();
 	}
+	ImGui::PopStyleVar();
 	BuildFooter();
 	ImGui::EndDisabled();
 

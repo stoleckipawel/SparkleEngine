@@ -2,6 +2,7 @@
 #include "Panels/SceneInspectorPanel.h"
 
 #include "Core/Public/Math/MathUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/Camera/CameraComponent.h"
 #include "Scene/Camera/SceneCamera.h"
@@ -13,6 +14,7 @@
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Transform.h"
+#include "Style/SparkleUiPalette.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -42,6 +44,33 @@ namespace
 			default:
 				return UiUtil::EditorIcon::None;
 		}
+	}
+
+	bool DrawFilterChip(const char* label, bool active) noexcept
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+		if (active)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackgroundActive());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackground());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
+		}
+
+		ImGui::PushID("FilterChip");
+		const bool pressed = ImGui::SmallButton(label);
+		ImGui::PopID();
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
+		return pressed;
+	}
+
+	bool MatchesFilterText(const std::string& filterText, const char* text) noexcept
+	{
+		return filterText.empty() || (text != nullptr && Strings::ContainsIgnoreCase(text, filterText));
 	}
 }  // namespace
 
@@ -94,15 +123,109 @@ const char* SceneInspectorPanel::BuildSelectionSubtitle() const noexcept
 
 void SceneInspectorPanel::BuildSelectionHeader() noexcept
 {
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, SparkleUiPalette::SurfaceBackground());
+	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 5.0f));
+	ImGui::BeginChild(
+	    "##DetailsSelectionHeader",
+	    ImVec2(0.0f, 42.0f),
+	    ImGuiChildFlags_Borders,
+	    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	UiUtil::DrawEditorIcon(BuildSelectionIcon(m_selection), BuildSelectionSubtitle());
 	ImGui::SameLine(0.0f, 8.0f);
 	ImGui::BeginGroup();
 	ImGui::TextUnformatted(BuildSelectionTitle().c_str());
 	ImGui::TextDisabled("%s", BuildSelectionSubtitle());
 	ImGui::EndGroup();
+	ImGui::EndChild();
+	ImGui::PopStyleVar(2);
+	ImGui::PopStyleColor();
+	BuildDetailsToolbar();
 	ImGui::Spacing();
-	ImGui::Separator();
+}
+
+void SceneInspectorPanel::BuildDetailsToolbar() noexcept
+{
+	EnsureValidDetailsFilter();
+
+	char filterBuffer[128] = {};
+	const std::size_t copyLength = (std::min) (m_filterText.size(), sizeof(filterBuffer) - 1);
+	if (copyLength > 0)
+	{
+		std::copy_n(m_filterText.data(), copyLength, filterBuffer);
+	}
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
+	ImGui::SetNextItemWidth(-1.0f);
+	if (ImGui::InputTextWithHint("##DetailsFilter", "Search details...", filterBuffer, sizeof(filterBuffer)))
+	{
+		m_filterText = filterBuffer;
+	}
+	ImGui::PopStyleVar();
+
 	ImGui::Spacing();
+	bool drewPreviousFilter = false;
+	DrawDetailsFilterChip(SceneInspectorFilter::All, "All", drewPreviousFilter);
+	DrawDetailsFilterChip(SceneInspectorFilter::General, "General", drewPreviousFilter);
+	DrawDetailsFilterChip(SceneInspectorFilter::Transform, "Transform", drewPreviousFilter);
+	DrawDetailsFilterChip(SceneInspectorFilter::Rendering, "Render", drewPreviousFilter);
+	DrawDetailsFilterChip(SceneInspectorFilter::Materials, "Mats", drewPreviousFilter);
+	ImGui::Spacing();
+	ImGui::Spacing();
+}
+
+void SceneInspectorPanel::EnsureValidDetailsFilter() noexcept
+{
+	if (!IsDetailsFilterAvailable(m_activeFilter))
+	{
+		m_activeFilter = SceneInspectorFilter::All;
+	}
+}
+
+bool SceneInspectorPanel::IsDetailsFilterAvailable(SceneInspectorFilter filter) const noexcept
+{
+	if (filter == SceneInspectorFilter::All)
+	{
+		return true;
+	}
+
+	if (m_selection == nullptr)
+	{
+		return false;
+	}
+
+	switch (m_selection->type)
+	{
+		case SceneObjectType::Camera:
+			return filter == SceneInspectorFilter::General || filter == SceneInspectorFilter::Transform;
+		case SceneObjectType::DirectionalLight:
+			return filter == SceneInspectorFilter::Transform || filter == SceneInspectorFilter::Rendering;
+		case SceneObjectType::Mesh:
+			return filter == SceneInspectorFilter::Transform || filter == SceneInspectorFilter::Rendering ||
+			       filter == SceneInspectorFilter::Materials;
+		case SceneObjectType::None:
+		default:
+			return false;
+	}
+}
+
+void SceneInspectorPanel::DrawDetailsFilterChip(SceneInspectorFilter filter, const char* label, bool& drewPreviousFilter) noexcept
+{
+	if (!IsDetailsFilterAvailable(filter))
+	{
+		return;
+	}
+
+	if (drewPreviousFilter)
+	{
+		ImGui::SameLine(0.0f, 4.0f);
+	}
+
+	if (DrawFilterChip(label, m_activeFilter == filter))
+	{
+		m_activeFilter = filter;
+	}
+	drewPreviousFilter = true;
 }
 
 void SceneInspectorPanel::SetWidth(float widthPixels) noexcept
@@ -155,6 +278,17 @@ void SceneInspectorPanel::BuildSelectionInspector() noexcept
 	}
 }
 
+bool SceneInspectorPanel::ShouldShowDetailsCategory(SceneInspectorFilter category, const char* title, const char* keywords) const noexcept
+{
+	const bool filterMatches = m_activeFilter == SceneInspectorFilter::All || m_activeFilter == category;
+	if (!filterMatches)
+	{
+		return false;
+	}
+
+	return MatchesFilterText(m_filterText, title) || MatchesFilterText(m_filterText, keywords);
+}
+
 void SceneInspectorPanel::BuildCameraInspector() noexcept
 {
 	SceneCamera& sceneCamera = m_gameScene->GetSceneCamera();
@@ -167,6 +301,11 @@ void SceneInspectorPanel::BuildCameraInspector() noexcept
 
 void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraComponent) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Transform, "Transform", "location rotation scale position"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Transform"))
 	{
 		return;
@@ -203,6 +342,11 @@ void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraCo
 
 void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::General, "Camera", "visible field of view near clip far clip aspect ratio"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Camera"))
 	{
 		return;
@@ -246,6 +390,11 @@ void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) 
 
 void SceneInspectorPanel::BuildCameraMovementCategory(SceneCamera& sceneCamera) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::General, "Movement", "move speed navigation"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Movement"))
 	{
 		return;
@@ -282,6 +431,11 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 
 void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLightDesc& lightDesc) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Transform, "Transform", "rotation direction transform"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Transform"))
 	{
 		return;
@@ -302,6 +456,11 @@ void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLigh
 
 void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Light", "visible direction intensity color cast shadow rendering"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Light"))
 	{
 		return;
@@ -351,6 +510,11 @@ void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightComponen
 
 void SceneInspectorPanel::BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Transform, "Transform", "location rotation scale transform"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Transform"))
 	{
 		return;
@@ -409,11 +573,17 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 
 	BuildMeshTransformCategory(*meshComponent);
 	BuildStaticMeshCategory(*mesh, *meshComponent);
+	BuildStaticMeshAdvancedCategory(*mesh);
 	BuildMeshMaterialsCategory(*meshComponent);
 }
 
 void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Static Mesh", "visible type mesh asset rendering"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Static Mesh"))
 	{
 		return;
@@ -427,7 +597,26 @@ void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponen
 	}
 
 	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;
+	UiUtil::DrawDetailsAssetRow(
+	    "Mesh",
+	    "M",
+	    isCookedMesh ? "Cooked Static Mesh" : "Procedural Mesh",
+	    isCookedMesh ? "Cooked asset" : "Generated geometry");
 	UiUtil::DrawDetailsValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildStaticMeshAdvancedCategory(const Mesh& mesh) noexcept
+{
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Rendering, "Advanced Mesh Data", "vertices indices mesh data statistics"))
+	{
+		return;
+	}
+
+	if (!UiUtil::BeginDetailsCategory("Advanced Mesh Data", false))
+	{
+		return;
+	}
 
 	char buffer[64] = {};
 	const MeshData& meshData = mesh.GetMeshData();
@@ -440,6 +629,11 @@ void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh, MeshComponen
 
 void SceneInspectorPanel::BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept
 {
+	if (!ShouldShowDetailsCategory(SceneInspectorFilter::Materials, "Materials", "element material slot surface"))
+	{
+		return;
+	}
+
 	if (!UiUtil::BeginDetailsCategory("Materials"))
 	{
 		return;
@@ -447,8 +641,8 @@ void SceneInspectorPanel::BuildMeshMaterialsCategory(const MeshComponent& meshCo
 
 	char buffer[64] = {};
 	const MaterialHandle materialHandle = meshComponent.GetMaterialHandle();
-	std::snprintf(buffer, sizeof(buffer), "%u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
-	UiUtil::DrawDetailsValueRow("Element 0", buffer);
+	std::snprintf(buffer, sizeof(buffer), "Material %u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
+	UiUtil::DrawDetailsAssetRow("Element 0", "Mat", buffer, "Material slot");
 	UiUtil::EndDetailsCategory();
 }
 

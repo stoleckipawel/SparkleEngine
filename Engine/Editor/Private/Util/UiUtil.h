@@ -5,6 +5,7 @@ namespace UiUtil
 	enum class EditorIcon
 	{
 		None,
+		Folder,
 		Camera,
 		DirectionalLight,
 		StaticMesh,
@@ -51,6 +52,7 @@ namespace UiUtil
 	bool BeginDetailsCategory(const char* title, bool defaultOpen = true);
 	void EndDetailsCategory();
 	void DrawDetailsValueRow(const char* label, const char* value);
+	void DrawDetailsAssetRow(const char* label, const char* thumbnailText, const char* value, const char* typeText = nullptr);
 	bool EditDetailsFloat(
 	    const char* label,
 	    float& value,

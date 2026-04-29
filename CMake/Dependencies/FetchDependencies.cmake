@@ -17,6 +17,7 @@
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
 #   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
 #   - SPIRV-Reflect  (vulkan-sdk-1.3.290.0) - SPIR-V reflection (offline tool only)
+#   - Font Awesome Free Solid (v6.7.1) - Editor icon font asset only
 #
 # ============================================================================
 
@@ -47,7 +48,7 @@ find_program(_git_exe git REQUIRED)
 message(STATUS "")
 message(STATUS "=== Fetching Third-Party Dependencies ===")
 message(STATUS "")
-message(STATUS "  Total download: ~82 MB (shallow clones, LFS skipped)")
+message(STATUS "  Total download: ~85 MB (shallow clones, LFS skipped)")
 message(STATUS "  Expected time:  1-3 minutes depending on connection")
 message(STATUS "")
 message(STATUS "  Dependency sizes:")
@@ -58,7 +59,38 @@ message(STATUS "    spdlog           ~3 MB")
 message(STATUS "    assimp          ~15 MB")
 message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
 message(STATUS "    KTX-Software    ~46 MB  (largest)")
+message(STATUS "    SPIRV-Reflect   ~2 MB")
+message(STATUS "    Editor Icons   ~0.5 MB  (Font Awesome Solid font asset only)")
 message(STATUS "")
+
+function(download_sparkle_editor_asset url output_path display_name)
+    set(_needs_download TRUE)
+    if(EXISTS "${output_path}")
+        file(SIZE "${output_path}" _asset_size)
+        if(_asset_size GREATER 0)
+            set(_needs_download FALSE)
+        endif()
+    endif()
+
+    if(_needs_download)
+        get_filename_component(_asset_dir "${output_path}" DIRECTORY)
+        file(MAKE_DIRECTORY "${_asset_dir}")
+        message(STATUS "    Downloading ${display_name}...")
+        file(DOWNLOAD
+            "${url}"
+            "${output_path}"
+            STATUS _download_status
+            TLS_VERIFY ON
+            SHOW_PROGRESS
+        )
+        list(GET _download_status 0 _download_code)
+        list(GET _download_status 1 _download_message)
+        if(NOT _download_code EQUAL 0)
+            file(REMOVE "${output_path}")
+            message(FATAL_ERROR "Failed to download ${display_name}: ${_download_message}")
+        endif()
+    endif()
+endfunction()
 
 # ---------------------------------------------------------------------------
 # Recovery: Remove partial/corrupt clones from interrupted downloads.
@@ -113,7 +145,7 @@ FetchContent_Declare(imgui
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [1/7] Fetching Dear ImGui v1.92.5 (~7 MB)...")
+message(STATUS "  [1/9] Fetching Dear ImGui v1.92.5 (~7 MB)...")
 FetchContent_Populate(imgui)
 
 add_library(imgui STATIC
@@ -166,7 +198,7 @@ FetchContent_Declare(cgltf
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [2/7] Fetching cgltf v1.15 (~1 MB)...")
+message(STATUS "  [2/9] Fetching cgltf v1.15 (~1 MB)...")
 FetchContent_Populate(cgltf)
 
 add_library(cgltf INTERFACE)
@@ -196,7 +228,7 @@ FetchContent_Declare(stb
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [3/7] Fetching stb (~5 MB)...")
+message(STATUS "  [3/9] Fetching stb (~5 MB)...")
 FetchContent_Populate(stb)
 
 add_library(stb INTERFACE)
@@ -221,7 +253,7 @@ FetchContent_Declare(spdlog
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [4/7] Fetching spdlog v1.14.1 (~3 MB)...")
+message(STATUS "  [4/9] Fetching spdlog v1.14.1 (~3 MB)...")
 FetchContent_Populate(spdlog)
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
@@ -267,7 +299,7 @@ FetchContent_Declare(assimp
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [5/7] Fetching Assimp v5.4.3 (~15 MB)...")
+message(STATUS "  [5/9] Fetching Assimp v5.4.3 (~15 MB)...")
 FetchContent_Populate(assimp)
 
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -306,7 +338,7 @@ message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
 # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
 # ============================================================================
 message(STATUS "")
-message(STATUS "  [6/7] Fetching Compressonator (sparse checkout, ~5 MB)...")
+message(STATUS "  [6/9] Fetching Compressonator (sparse checkout, ~5 MB)...")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -448,7 +480,7 @@ FetchContent_Declare(ktx
     GIT_SUBMODULES ""
 )
 message(STATUS "")
-message(STATUS "  [7/7] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
+message(STATUS "  [7/9] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need
@@ -499,7 +531,7 @@ FetchContent_Declare(spirv_reflect
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [8/8] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
+message(STATUS "  [8/9] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
 FetchContent_Populate(spirv_reflect)
 
 add_library(spirv_reflect STATIC
@@ -518,6 +550,34 @@ endif()
 
 set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty")
 message(STATUS "  SPIRV-Reflect:  ${spirv_reflect_SOURCE_DIR} (~2 MB)")
+
+# ============================================================================
+# Font Awesome Free Solid - Editor icon font asset only
+# https://github.com/FortAwesome/Font-Awesome
+#
+# We intentionally download only the solid TTF and license instead of adding a
+# code dependency or cloning the full icon repository. Sparkle owns the small
+# semantic icon mapping in editor code.
+# ============================================================================
+message(STATUS "")
+message(STATUS "  [9/9] Fetching Font Awesome Free Solid v6.7.1 icon assets (~0.5 MB)...")
+
+set(_sparkle_editor_icons_dir "${FETCHCONTENT_BASE_DIR}/editor-icons/fontawesome-6.7.1")
+set(SPARKLE_FONT_AWESOME_SOLID_TTF "${_sparkle_editor_icons_dir}/fa-solid-900.ttf" CACHE FILEPATH "Font Awesome Free Solid TTF path" FORCE)
+set(SPARKLE_FONT_AWESOME_LICENSE "${_sparkle_editor_icons_dir}/LICENSE.txt" CACHE FILEPATH "Font Awesome Free license path" FORCE)
+
+download_sparkle_editor_asset(
+    "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.1/webfonts/fa-solid-900.ttf"
+    "${SPARKLE_FONT_AWESOME_SOLID_TTF}"
+    "Font Awesome Free Solid TTF"
+)
+download_sparkle_editor_asset(
+    "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.7.1/LICENSE.txt"
+    "${SPARKLE_FONT_AWESOME_LICENSE}"
+    "Font Awesome Free license"
+)
+
+message(STATUS "  Font Awesome:   ${SPARKLE_FONT_AWESOME_SOLID_TTF} (~0.5 MB asset-only)")
 
 # ============================================================================
 # Restore LFS behavior

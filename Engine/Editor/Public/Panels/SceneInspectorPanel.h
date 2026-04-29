@@ -15,6 +15,15 @@ class SceneCamera;
 struct DirectionalLightDesc;
 struct SceneObjectSelection;
 
+enum class SceneInspectorFilter
+{
+	All,
+	General,
+	Transform,
+	Rendering,
+	Materials
+};
+
 class SceneInspectorPanel final
 {
   public:
@@ -35,7 +44,12 @@ class SceneInspectorPanel final
 	std::string BuildSelectionTitle() const;
 	const char* BuildSelectionSubtitle() const noexcept;
 	void BuildSelectionHeader() noexcept;
+	void BuildDetailsToolbar() noexcept;
+	void EnsureValidDetailsFilter() noexcept;
+	bool IsDetailsFilterAvailable(SceneInspectorFilter filter) const noexcept;
+	void DrawDetailsFilterChip(SceneInspectorFilter filter, const char* label, bool& drewPreviousFilter) noexcept;
 	void BuildSelectionInspector() noexcept;
+	bool ShouldShowDetailsCategory(SceneInspectorFilter category, const char* title, const char* keywords) const noexcept;
 	static void ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept;
 	static void ClampLightingUiValues(DirectX::XMFLOAT3& color, float& intensity) noexcept;
 	void BuildEmptyState() noexcept;
@@ -49,6 +63,7 @@ class SceneInspectorPanel final
 	void BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept;
 	void BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept;
 	void BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept;
+	void BuildStaticMeshAdvancedCategory(const Mesh& mesh) noexcept;
 	void BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;
@@ -64,4 +79,6 @@ class SceneInspectorPanel final
 	SceneObjectSelection* m_selection = nullptr;
 	float m_widthPixels = 560.0f;
 	float m_topInsetPixels = 0.0f;
+	SceneInspectorFilter m_activeFilter = SceneInspectorFilter::All;
+	std::string m_filterText;
 };

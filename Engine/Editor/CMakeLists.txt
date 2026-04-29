@@ -49,6 +49,13 @@ target_include_directories(SparkleEditor
 
 target_compile_features(SparkleEditor PUBLIC cxx_std_20)
 
+if(DEFINED SPARKLE_FONT_AWESOME_SOLID_TTF AND EXISTS "${SPARKLE_FONT_AWESOME_SOLID_TTF}")
+    file(TO_CMAKE_PATH "${SPARKLE_FONT_AWESOME_SOLID_TTF}" SPARKLE_FONT_AWESOME_SOLID_TTF_NORMALIZED)
+    target_compile_definitions(SparkleEditor PRIVATE
+        SPARKLE_FONT_AWESOME_SOLID_TTF="${SPARKLE_FONT_AWESOME_SOLID_TTF_NORMALIZED}"
+    )
+endif()
+
 # Precompiled header (per-module PCH)
 target_precompile_headers(SparkleEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h

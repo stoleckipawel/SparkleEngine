@@ -14,6 +14,16 @@ namespace SparkleUiTheme
 		ImFont* g_bodyFont = nullptr;
 		ImFont* g_headingFont = nullptr;
 		ImFont* g_monoFont = nullptr;
+		bool g_editorIconsAvailable = false;
+
+		const char* GetFontAwesomeSolidPath() noexcept
+		{
+#ifdef SPARKLE_FONT_AWESOME_SOLID_TTF
+			return SPARKLE_FONT_AWESOME_SOLID_TTF;
+#else
+			return nullptr;
+#endif
+		}
 
 		ImFont* LoadFirstAvailableFont(const std::array<const char*, 4>& fontPaths, float sizePixels)
 		{
@@ -39,6 +49,34 @@ namespace SparkleUiTheme
 			}
 
 			return nullptr;
+		}
+
+		void MergeEditorIconsIntoLastFont(float baseSizePixels)
+		{
+			const char* fontPath = GetFontAwesomeSolidPath();
+			if (fontPath == nullptr || fontPath[0] == '\0')
+			{
+				return;
+			}
+
+			std::error_code errorCode;
+			if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
+			{
+				return;
+			}
+
+			ImGuiIO& io = ImGui::GetIO();
+			static constexpr ImWchar kFontAwesomeRanges[] = {0xf000, 0xf8ff, 0};
+			ImFontConfig iconConfig;
+			iconConfig.MergeMode = true;
+			iconConfig.PixelSnapH = true;
+			iconConfig.GlyphMinAdvanceX = baseSizePixels;
+
+			const float iconSize = baseSizePixels * 0.86f;
+			if (io.Fonts->AddFontFromFileTTF(fontPath, iconSize, &iconConfig, kFontAwesomeRanges) != nullptr)
+			{
+				g_editorIconsAvailable = true;
+			}
 		}
 	}  // namespace
 
@@ -95,6 +133,7 @@ namespace SparkleUiTheme
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.Fonts->Clear();
+		g_editorIconsAvailable = false;
 
 		const float bodySize = 14.0f * dpiScale;
 		const float headingSize = 15.0f * dpiScale;
@@ -102,24 +141,34 @@ namespace SparkleUiTheme
 
 		g_bodyFont =
 		    LoadFirstAvailableFont({"C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/Inter-Regular.ttf", nullptr, nullptr}, bodySize);
+		if (g_bodyFont == nullptr)
+		{
+			g_bodyFont = io.Fonts->AddFontDefault();
+		}
+		MergeEditorIconsIntoLastFont(bodySize);
+
 		g_headingFont = LoadFirstAvailableFont(
 		    {"C:/Windows/Fonts/seguisb.ttf", "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/Inter-SemiBold.ttf", nullptr},
 		    headingSize);
+		if (g_headingFont != nullptr && g_headingFont != g_bodyFont)
+		{
+			MergeEditorIconsIntoLastFont(headingSize);
+		}
+
+		if (g_headingFont == nullptr)
+		{
+			g_headingFont = g_bodyFont;
+		}
+
 		g_monoFont = LoadFirstAvailableFont(
 		    {"C:/Windows/Fonts/JetBrainsMono-Regular.ttf",
 		     "C:/Windows/Fonts/JetBrainsMonoNL-Regular.ttf",
 		     "C:/Windows/Fonts/consola.ttf",
 		     nullptr},
 		    monoSize);
-
-		if (g_bodyFont == nullptr)
+		if (g_monoFont != nullptr && g_monoFont != g_bodyFont)
 		{
-			g_bodyFont = io.Fonts->AddFontDefault();
-		}
-
-		if (g_headingFont == nullptr)
-		{
-			g_headingFont = g_bodyFont;
+			MergeEditorIconsIntoLastFont(monoSize);
 		}
 
 		if (g_monoFont == nullptr)
@@ -128,6 +177,11 @@ namespace SparkleUiTheme
 		}
 
 		io.FontDefault = g_bodyFont;
+	}
+
+	bool AreEditorIconsAvailable() noexcept
+	{
+		return g_editorIconsAvailable;
 	}
 
 	ImFont* GetBodyFont()
