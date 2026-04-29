@@ -48,11 +48,6 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 	{
 		m_filterText = filterBuffer;
 	}
-
-	ImGui::Spacing();
-	const std::string objectCount =
-	    std::to_string(1 + m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount());
-	UiUtil::DrawKeyValueRow("Objects", objectCount.c_str());
 }
 
 bool SceneOutlinerPanel::IsSelectionValid() const noexcept

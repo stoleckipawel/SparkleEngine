@@ -28,9 +28,35 @@ namespace MathUtils
 		return DirectX::XMConvertToDegrees(radians);
 	}
 
+	inline DirectX::XMFLOAT3 RadiansToDegrees(const DirectX::XMFLOAT3& radians)
+	{
+		return {RadiansToDegrees(radians.x), RadiansToDegrees(radians.y), RadiansToDegrees(radians.z)};
+	}
+
 	inline float DegreesToRadians(float degrees)
 	{
 		return DirectX::XMConvertToRadians(degrees);
+	}
+
+	inline DirectX::XMFLOAT3 DegreesToRadians(const DirectX::XMFLOAT3& degrees)
+	{
+		return {DegreesToRadians(degrees.x), DegreesToRadians(degrees.y), DegreesToRadians(degrees.z)};
+	}
+
+	inline DirectX::XMFLOAT3 DirectionToRotationDegrees(const DirectX::XMFLOAT3& direction) noexcept
+	{
+		const float clampedY = (std::max) (-1.0f, (std::min) (1.0f, direction.y));
+		const float pitch = std::asin(clampedY);
+		const float yaw = std::atan2(direction.x, direction.z);
+		return {RadiansToDegrees(pitch), RadiansToDegrees(yaw), 0.0f};
+	}
+
+	inline DirectX::XMFLOAT3 RotationDegreesToDirection(const DirectX::XMFLOAT3& rotationDegrees) noexcept
+	{
+		const float pitch = DegreesToRadians(rotationDegrees.x);
+		const float yaw = DegreesToRadians(rotationDegrees.y);
+		const float cosPitch = std::cos(pitch);
+		return {std::sin(yaw) * cosPitch, std::sin(pitch), std::cos(yaw) * cosPitch};
 	}
 
 	inline DirectX::XMFLOAT3 ExtractEulerRadians(const DirectX::XMFLOAT4X4& rotationMatrix) noexcept

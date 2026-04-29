@@ -21,11 +21,8 @@
 
 #include <imgui.h>
 
-SceneInspectorPanel::SceneInspectorPanel(
-	GameScene& gameScene,
-	SceneObjectSelection& selection,
-	float widthPixels) noexcept :
-	m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
+SceneInspectorPanel::SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels) noexcept :
+    m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -90,9 +87,8 @@ void SceneInspectorPanel::SetTopInset(float topInsetPixels) noexcept
 	m_topInsetPixels = topInsetPixels;
 }
 
-void SceneInspectorPanel::ClampCameraUiValues(float& pitchDegrees, float& fovYDegrees, float& moveSpeed) noexcept
+void SceneInspectorPanel::ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept
 {
-	pitchDegrees = std::clamp(pitchDegrees, -89.0f, 89.0f);
 	fovYDegrees = std::clamp(fovYDegrees, 1.0f, 179.0f);
 	moveSpeed = std::clamp(moveSpeed, 0.0001f, 10.0f);
 }
@@ -135,59 +131,96 @@ void SceneInspectorPanel::BuildCameraInspector() noexcept
 {
 	SceneCamera& sceneCamera = m_gameScene->GetSceneCamera();
 	CameraComponent& cameraComponent = sceneCamera.GetCameraComponent();
-	CameraMovementSettings settings = sceneCamera.GetSettings();
-	const DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
 
-	UiUtil::BeginSectionCard("Camera");
+	BuildCameraTransformCategory(cameraComponent);
+	BuildCameraCategory(cameraComponent);
+	BuildCameraMovementCategory(sceneCamera);
+}
+
+void SceneInspectorPanel::BuildCameraTransformCategory(CameraComponent& cameraComponent) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Transform"))
+	{
+		return;
+	}
+
 	DirectX::XMFLOAT3 position = cameraComponent.GetTransform().GetTranslation();
 	float positionValues[3] = {position.x, position.y, position.z};
-	if (UiUtil::EditFloat3SliderWithInput("Position", positionValues, kPositionSliderMin, kPositionSliderMax, "%.2f", "%.3f"))
+	if (UiUtil::EditDetailsFloat3("Location", positionValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f"))
 	{
 		cameraComponent.SetPosition({positionValues[0], positionValues[1], positionValues[2]});
 	}
 
-	float yawDegrees = MathUtils::RadiansToDegrees(rotationEuler.y);
-	if (UiUtil::EditFloatSliderWithInput("Yaw", yawDegrees, kYawSliderMin, kYawSliderMax, "%.1f deg", "%.2f"))
+	DirectX::XMFLOAT3 rotationEuler = cameraComponent.GetTransform().GetRotationEuler();
+	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
+	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
 	{
-		cameraComponent.SetYawPitch(MathUtils::DegreesToRadians(yawDegrees), rotationEuler.x);
+		cameraComponent.SetRotationEuler(
+		    MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
 	}
 
-	float pitchDegrees = MathUtils::RadiansToDegrees(rotationEuler.x);
-	if (UiUtil::EditFloatSliderWithInput("Pitch", pitchDegrees, -89.0f, 89.0f, "%.1f deg", "%.2f"))
+	DirectX::XMFLOAT3 scale = cameraComponent.GetTransform().GetScale();
+	float scaleValues[3] = {scale.x, scale.y, scale.z};
+	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f"))
 	{
-		float dummyFov = 60.0f;
-		float dummySpeed = 0.15f;
-		ClampCameraUiValues(pitchDegrees, dummyFov, dummySpeed);
-		cameraComponent.SetYawPitch(rotationEuler.y, MathUtils::DegreesToRadians(pitchDegrees));
+		cameraComponent.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
 	}
 
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildCameraCategory(CameraComponent& cameraComponent) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Camera"))
+	{
+		return;
+	}
+
+	char buffer[64] = {};
 	float fovYDegrees = cameraComponent.GetFovYDegrees();
-	if (UiUtil::EditFloatSliderWithInput("FOV", fovYDegrees, 1.0f, 179.0f, "%.1f deg", "%.1f"))
+	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f"))
 	{
-		float dummyPitch = 0.0f;
-		float dummySpeed = 0.0f;
-		ClampCameraUiValues(dummyPitch, fovYDegrees, dummySpeed);
+		float dummySpeed = 0.15f;
+		ClampCameraUiValues(fovYDegrees, dummySpeed);
 		cameraComponent.SetFovYDegrees(fovYDegrees);
 	}
 
-	float moveSpeed = settings.moveSpeed;
-	if (UiUtil::EditFloatSliderWithInput("Speed", moveSpeed, 0.0001f, 10.0f, "%.4f", "%.4f"))
+	float nearZ = cameraComponent.GetNearZ();
+	if (UiUtil::EditDetailsFloat("Near Clip", nearZ, 0.01f, 0.001f, cameraComponent.GetFarZ(), "%.3f"))
 	{
-		float dummyPitch = 0.0f;
+		cameraComponent.SetNearFar(nearZ, cameraComponent.GetFarZ());
+	}
+
+	float farZ = cameraComponent.GetFarZ();
+	if (UiUtil::EditDetailsFloat("Far Clip", farZ, 1.0f, cameraComponent.GetNearZ(), 100000.0f, "%.3f"))
+	{
+		cameraComponent.SetNearFar(cameraComponent.GetNearZ(), farZ);
+	}
+
+	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetAspectRatio());
+	UiUtil::DrawDetailsValueRow("Aspect Ratio", buffer);
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildCameraMovementCategory(SceneCamera& sceneCamera) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Movement"))
+	{
+		return;
+	}
+
+	CameraMovementSettings settings = sceneCamera.GetSettings();
+	float moveSpeed = settings.moveSpeed;
+	if (UiUtil::EditDetailsFloat("Move Speed", moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f"))
+	{
 		float dummyFov = 60.0f;
-		ClampCameraUiValues(dummyPitch, dummyFov, moveSpeed);
+		ClampCameraUiValues(dummyFov, moveSpeed);
 		settings.moveSpeed = moveSpeed;
 		sceneCamera.SetSettings(settings);
 	}
 
-	char buffer[64] = {};
-	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetNearZ());
-	UiUtil::DrawKeyValueRow("Near", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetFarZ());
-	UiUtil::DrawKeyValueRow("Far", buffer);
-	std::snprintf(buffer, sizeof(buffer), "%.3f", cameraComponent.GetAspectRatio());
-	UiUtil::DrawKeyValueRow("Aspect", buffer);
-	UiUtil::EndSectionCard();
+	UiUtil::EndDetailsCategory();
 }
 
 void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex) noexcept
@@ -200,23 +233,48 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 
 	DirectionalLightComponent& light = m_gameScene->GetLighting().GetDirectionalLightComponent(lightIndex);
 	DirectionalLightDesc lightDesc = light.GetDesc();
-	const std::string cardTitle = "Directional Light " + std::to_string(lightIndex + 1);
+	BuildDirectionalLightTransformCategory(lightDesc);
+	BuildDirectionalLightCategory(lightDesc);
+	light.ApplyDesc(lightDesc);
+}
 
-	UiUtil::BeginSectionCard(cardTitle.c_str());
+void SceneInspectorPanel::BuildDirectionalLightTransformCategory(DirectionalLightDesc& lightDesc) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Transform"))
+	{
+		return;
+	}
+
+	DirectX::XMFLOAT3 rotationDegrees = MathUtils::DirectionToRotationDegrees(lightDesc.direction);
+	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
+	{
+		lightDesc.direction =
+		    MathUtils::RotationDegreesToDirection(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]});
+	}
+
+	UiUtil::EndDetailsCategory();
+}
+
+void SceneInspectorPanel::BuildDirectionalLightCategory(DirectionalLightDesc& lightDesc) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Light"))
+	{
+		return;
+	}
+
 	float directionValues[3] = {lightDesc.direction.x, lightDesc.direction.y, lightDesc.direction.z};
-	if (UiUtil::EditFloat3SliderWithInput("Direction", directionValues, kDirectionSliderMin, kDirectionSliderMax, "%.2f", "%.3f"))
+	if (UiUtil::EditDetailsFloat3("Direction", directionValues, 0.01f, kDirectionSliderMin, kDirectionSliderMax, "%.3f"))
 	{
 		lightDesc.direction = {directionValues[0], directionValues[1], directionValues[2]};
-		light.ApplyDesc(lightDesc);
 	}
 
 	float intensity = lightDesc.intensity;
-	if (UiUtil::EditFloatSliderWithInput("Intensity", intensity, kIntensitySliderMin, kIntensitySliderMax, "%.2f", "%.3f"))
+	if (UiUtil::EditDetailsFloat("Intensity", intensity, 0.05f, kIntensitySliderMin, kIntensitySliderMax, "%.3f"))
 	{
 		DirectX::XMFLOAT3 dummyColor = {1.0f, 1.0f, 1.0f};
 		ClampLightingUiValues(dummyColor, intensity);
 		lightDesc.intensity = intensity;
-		light.ApplyDesc(lightDesc);
 	}
 
 	float colorValues[3] = {lightDesc.color.x, lightDesc.color.y, lightDesc.color.z};
@@ -226,47 +284,47 @@ void SceneInspectorPanel::BuildDirectionalLightInspector(std::size_t lightIndex)
 		float dummyIntensity = 1.0f;
 		ClampLightingUiValues(clampedColor, dummyIntensity);
 		lightDesc.color = clampedColor;
-		light.ApplyDesc(lightDesc);
 	}
 
 	bool castShadow = lightDesc.castShadow;
-	if (UiUtil::EditCheckbox("Cast Shadow", castShadow))
+	if (UiUtil::EditDetailsCheckbox("Cast Shadow", castShadow))
 	{
 		lightDesc.castShadow = castShadow;
-		light.ApplyDesc(lightDesc);
 	}
-	UiUtil::EndSectionCard();
+	UiUtil::EndDetailsCategory();
 }
 
-void SceneInspectorPanel::BuildEditableMeshTransform(MeshComponent& meshComponent) noexcept
+void SceneInspectorPanel::BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept
 {
+	if (!UiUtil::BeginDetailsCategory("Transform"))
+	{
+		return;
+	}
+
 	Transform& transform = meshComponent.GetTransform();
 	DirectX::XMFLOAT3 translation = transform.GetTranslation();
 	float translationValues[3] = {translation.x, translation.y, translation.z};
-	if (UiUtil::EditFloat3SliderWithInput("Position", translationValues, kPositionSliderMin, kPositionSliderMax, "%.2f", "%.3f"))
+	if (UiUtil::EditDetailsFloat3("Location", translationValues, 0.05f, kPositionSliderMin, kPositionSliderMax, "%.3f"))
 	{
 		transform.SetTranslation({translationValues[0], translationValues[1], translationValues[2]});
 	}
 
 	DirectX::XMFLOAT3 rotationEuler = transform.GetRotationEuler();
-	float rotationValues[3] = {
-	    MathUtils::RadiansToDegrees(rotationEuler.x),
-	    MathUtils::RadiansToDegrees(rotationEuler.y),
-	    MathUtils::RadiansToDegrees(rotationEuler.z)};
-	if (UiUtil::EditFloat3SliderWithInput("Rotation", rotationValues, -360.0f, 360.0f, "%.1f", "%.2f"))
+	const DirectX::XMFLOAT3 rotationDegrees = MathUtils::RadiansToDegrees(rotationEuler);
+	float rotationValues[3] = {rotationDegrees.x, rotationDegrees.y, rotationDegrees.z};
+	if (UiUtil::EditDetailsFloat3("Rotation", rotationValues, 0.1f, -360.0f, 360.0f, "%.2f"))
 	{
-		transform.SetRotationEuler(
-		    {MathUtils::DegreesToRadians(rotationValues[0]),
-		     MathUtils::DegreesToRadians(rotationValues[1]),
-		     MathUtils::DegreesToRadians(rotationValues[2])});
+		transform.SetRotationEuler(MathUtils::DegreesToRadians(DirectX::XMFLOAT3{rotationValues[0], rotationValues[1], rotationValues[2]}));
 	}
 
 	DirectX::XMFLOAT3 scale = transform.GetScale();
 	float scaleValues[3] = {scale.x, scale.y, scale.z};
-	if (UiUtil::EditFloat3SliderWithInput("Scale", scaleValues, kScaleSliderMin, kScaleSliderMax, "%.2f", "%.3f"))
+	if (UiUtil::EditDetailsFloat3("Scale", scaleValues, 0.01f, kScaleSliderMin, kScaleSliderMax, "%.3f"))
 	{
 		transform.SetScale({scaleValues[0], scaleValues[1], scaleValues[2]});
 	}
+
+	UiUtil::EndDetailsCategory();
 }
 
 void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
@@ -291,24 +349,42 @@ void SceneInspectorPanel::BuildMeshInspector(std::size_t meshIndex) noexcept
 		return;
 	}
 
-	const std::string cardTitle = "Mesh " + std::to_string(meshIndex + 1);
-	UiUtil::BeginSectionCard(cardTitle.c_str());
-	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(mesh) != nullptr;
-	UiUtil::DrawKeyValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
+	BuildMeshTransformCategory(*meshComponent);
+	BuildStaticMeshCategory(*mesh);
+	BuildMeshMaterialsCategory(*meshComponent);
+}
+
+void SceneInspectorPanel::BuildStaticMeshCategory(const Mesh& mesh) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Static Mesh"))
+	{
+		return;
+	}
+
+	const bool isCookedMesh = dynamic_cast<const CookedMesh*>(&mesh) != nullptr;
+	UiUtil::DrawDetailsValueRow("Type", isCookedMesh ? "Cooked" : "Procedural");
 
 	char buffer[64] = {};
-	const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
-	std::snprintf(buffer, sizeof(buffer), "%u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
-	UiUtil::DrawKeyValueRow("Material", buffer);
-
-	const MeshData& meshData = mesh->GetMeshData();
+	const MeshData& meshData = mesh.GetMeshData();
 	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetVertexCount());
-	UiUtil::DrawKeyValueRow("Vertices", buffer);
+	UiUtil::DrawDetailsValueRow("Vertices", buffer);
 	std::snprintf(buffer, sizeof(buffer), "%u", meshData.GetIndexCount());
-	UiUtil::DrawKeyValueRow("Indices", buffer);
+	UiUtil::DrawDetailsValueRow("Indices", buffer);
+	UiUtil::EndDetailsCategory();
+}
 
-	BuildEditableMeshTransform(*meshComponent);
-	UiUtil::EndSectionCard();
+void SceneInspectorPanel::BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept
+{
+	if (!UiUtil::BeginDetailsCategory("Materials"))
+	{
+		return;
+	}
+
+	char buffer[64] = {};
+	const MaterialHandle materialHandle = meshComponent.GetMaterialHandle();
+	std::snprintf(buffer, sizeof(buffer), "%u", materialHandle.IsValid() ? materialHandle.GetIndex() : 0u);
+	UiUtil::DrawDetailsValueRow("Element 0", buffer);
+	UiUtil::EndDetailsCategory();
 }
 
 void SceneInspectorPanel::BuildUI(bool disableInteraction)

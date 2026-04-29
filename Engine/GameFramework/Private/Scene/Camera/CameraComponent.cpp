@@ -46,6 +46,21 @@ void CameraComponent::SetPosition(const XMFLOAT3& position) noexcept
 	MarkDirty();
 }
 
+void CameraComponent::SetRotationEuler(const XMFLOAT3& rotationEuler) noexcept
+{
+	constexpr float maxPitch = XM_PIDIV2 - 0.01f;
+	const XMFLOAT3 clampedRotation{std::clamp(rotationEuler.x, -maxPitch, maxPitch), rotationEuler.y, rotationEuler.z};
+	m_transform.SetRotationEuler(clampedRotation);
+	m_directionDirty = true;
+	MarkDirty();
+}
+
+void CameraComponent::SetScale(const XMFLOAT3& scale) noexcept
+{
+	m_transform.SetScale(scale);
+	MarkDirty();
+}
+
 void CameraComponent::SetAspectRatio(float aspectRatio) noexcept
 {
 	m_aspectRatio = aspectRatio;

@@ -27,6 +27,8 @@ class CameraComponent final : public Component
 	void Rotate(float yawDelta, float pitchDelta) noexcept;
 
 	void SetPosition(const DirectX::XMFLOAT3& position) noexcept;
+	void SetRotationEuler(const DirectX::XMFLOAT3& rotationEuler) noexcept;
+	void SetScale(const DirectX::XMFLOAT3& scale) noexcept;
 	Transform& GetTransform() noexcept { return m_transform; }
 	const Transform& GetTransform() const noexcept { return m_transform; }
 

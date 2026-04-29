@@ -5,6 +5,7 @@
 #include "Style/SparkleUiTheme.h"
 
 #include <algorithm>
+#include <cfloat>
 
 #include <imgui.h>
 
@@ -15,6 +16,9 @@ namespace UiUtil
 		constexpr float PropertyLabelWidth = 78.0f;
 		constexpr float ScalarInputWidth = 86.0f;
 		constexpr float Float3InputWidth = 188.0f;
+		constexpr float DetailsLabelWidth = 118.0f;
+		constexpr float DetailsAxisLabelWidth = 14.0f;
+		constexpr float DetailsRowVerticalPadding = 2.0f;
 
 		void PushFontIfAvailable(ImFont* font)
 		{
@@ -76,6 +80,37 @@ namespace UiUtil
 			const float offset = (std::max) (0.0f, ImGui::GetContentRegionAvail().x - valueWidth);
 			ImGui::SetCursorPosX(currentX + offset);
 			ImGui::TextUnformatted(value);
+		}
+
+		bool BeginDetailsRow(const char* label, int valueColumnCount)
+		{
+			ImGui::PushID(label);
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, DetailsRowVerticalPadding));
+			if (!ImGui::BeginTable("##details_row", valueColumnCount + 1, ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoPadOuterX))
+			{
+				ImGui::PopStyleVar();
+				ImGui::PopID();
+				return false;
+			}
+
+			ImGui::TableSetupColumn("label", ImGuiTableColumnFlags_WidthFixed, DetailsLabelWidth);
+			for (int valueColumnIndex = 0; valueColumnIndex < valueColumnCount; ++valueColumnIndex)
+			{
+				ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+			}
+
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::AlignTextToFramePadding();
+			ImGui::TextDisabled("%s", label);
+			return true;
+		}
+
+		void EndDetailsRow()
+		{
+			ImGui::EndTable();
+			ImGui::PopStyleVar();
+			ImGui::PopID();
 		}
 	}  // namespace
 
@@ -313,6 +348,111 @@ namespace UiUtil
 		}
 		ImGui::PopID();
 
+		return changed;
+	}
+
+	bool BeginDetailsCategory(const char* title, bool defaultOpen)
+	{
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed;
+		if (defaultOpen)
+		{
+			flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		}
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 3.0f));
+		ImGui::PushStyleColor(ImGuiCol_Header, SparkleUiPalette::SectionHeaderBackground());
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, SparkleUiPalette::HeaderBackgroundHovered());
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, SparkleUiPalette::HeaderBackgroundActive());
+		const bool open = ImGui::CollapsingHeader(title, flags);
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
+		return open;
+	}
+
+	void EndDetailsCategory()
+	{
+		ImGui::Spacing();
+	}
+
+	void DrawDetailsValueRow(const char* label, const char* value)
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return;
+		}
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::AlignTextToFramePadding();
+		DrawRightAlignedText(value);
+
+		EndDetailsRow();
+	}
+
+	bool EditDetailsFloat(const char* label, float& value, float speed, float minValue, float maxValue, const char* format)
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return false;
+		}
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		const bool changed = ImGui::DragFloat("##value", &value, speed, minValue, maxValue, format);
+
+		EndDetailsRow();
+		return changed;
+	}
+
+	bool EditDetailsFloat3(const char* label, float values[3], float speed, float minValue, float maxValue, const char* format)
+	{
+		if (!BeginDetailsRow(label, 3))
+		{
+			return false;
+		}
+
+		bool changed = false;
+		static constexpr const char* axisLabels[] = {"X", "Y", "Z"};
+		for (int axisIndex = 0; axisIndex < 3; ++axisIndex)
+		{
+			ImGui::PushID(axisIndex);
+			ImGui::TableSetColumnIndex(axisIndex + 1);
+			if (ImGui::BeginTable(
+			        "##axis_field",
+			        2,
+			        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_NoPadInnerX))
+			{
+				ImGui::TableSetupColumn("axis", ImGuiTableColumnFlags_WidthFixed, DetailsAxisLabelWidth);
+				ImGui::TableSetupColumn("value", ImGuiTableColumnFlags_WidthStretch);
+				ImGui::TableNextRow();
+
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextDisabled("%s", axisLabels[axisIndex]);
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-FLT_MIN);
+				changed = ImGui::DragFloat("##value", &values[axisIndex], speed, minValue, maxValue, format) || changed;
+
+				ImGui::EndTable();
+			}
+			ImGui::PopID();
+		}
+
+		EndDetailsRow();
+		return changed;
+	}
+
+	bool EditDetailsCheckbox(const char* label, bool& value)
+	{
+		if (!BeginDetailsRow(label, 1))
+		{
+			return false;
+		}
+
+		ImGui::TableSetColumnIndex(1);
+		const bool changed = ImGui::Checkbox("##value", &value);
+
+		EndDetailsRow();
 		return changed;
 	}
 

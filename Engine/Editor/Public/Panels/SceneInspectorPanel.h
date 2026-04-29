@@ -9,15 +9,15 @@
 class GameScene;
 class Mesh;
 class MeshComponent;
+class CameraComponent;
+class SceneCamera;
+struct DirectionalLightDesc;
 struct SceneObjectSelection;
 
 class SceneInspectorPanel final
 {
   public:
-	SceneInspectorPanel(
-	    GameScene& gameScene,
-	    SceneObjectSelection& selection,
-	    float widthPixels = 560.0f) noexcept;
+	SceneInspectorPanel(GameScene& gameScene, SceneObjectSelection& selection, float widthPixels = 560.0f) noexcept;
 	~SceneInspectorPanel() = default;
 
 	SceneInspectorPanel(const SceneInspectorPanel&) = delete;
@@ -35,18 +35,23 @@ class SceneInspectorPanel final
 	const char* BuildSelectionSubtitle() const noexcept;
 	void BuildSelectionHeader() noexcept;
 	void BuildSelectionInspector() noexcept;
-	static void ClampCameraUiValues(float& pitchDegrees, float& fovYDegrees, float& moveSpeed) noexcept;
+	static void ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept;
 	static void ClampLightingUiValues(DirectX::XMFLOAT3& color, float& intensity) noexcept;
 	void BuildEmptyState() noexcept;
 	void BuildCameraInspector() noexcept;
 	void BuildDirectionalLightInspector(std::size_t lightIndex) noexcept;
 	void BuildMeshInspector(std::size_t meshIndex) noexcept;
-	void BuildEditableMeshTransform(MeshComponent& meshComponent) noexcept;
+	void BuildCameraTransformCategory(CameraComponent& cameraComponent) noexcept;
+	void BuildCameraCategory(CameraComponent& cameraComponent) noexcept;
+	void BuildCameraMovementCategory(SceneCamera& sceneCamera) noexcept;
+	void BuildDirectionalLightTransformCategory(DirectionalLightDesc& lightDesc) noexcept;
+	void BuildDirectionalLightCategory(DirectionalLightDesc& lightDesc) noexcept;
+	void BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept;
+	void BuildStaticMeshCategory(const Mesh& mesh) noexcept;
+	void BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept;
 
 	static constexpr float kPositionSliderMin = -500.0f;
 	static constexpr float kPositionSliderMax = 500.0f;
-	static constexpr float kYawSliderMin = -360.0f;
-	static constexpr float kYawSliderMax = 360.0f;
 	static constexpr float kDirectionSliderMin = -1.0f;
 	static constexpr float kDirectionSliderMax = 1.0f;
 	static constexpr float kIntensitySliderMin = 0.0f;
