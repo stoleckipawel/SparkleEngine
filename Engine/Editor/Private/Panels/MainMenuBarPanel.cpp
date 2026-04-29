@@ -7,7 +7,6 @@
 #include "Window/Window.h"
 
 #include <imgui.h>
-#include <cstdio>
 #include <utility>
 
 MainMenuBarPanel::MainMenuBarPanel(LevelManager* levelManager, Window* window) noexcept
@@ -243,27 +242,6 @@ void MainMenuBarPanel::BuildUI() noexcept
 	{
 		BuildWindowsMenu();
 		ImGui::EndMenu();
-	}
-
-	if (m_levelManager != nullptr)
-	{
-		const LevelAsset* activeLevel = m_levelManager->GetActiveLevel();
-		const std::string activeLevelName = activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string("<None>");
-
-		ImGui::Separator();
-		ImGui::TextDisabled("Level");
-		ImGui::SameLine();
-		ImGui::TextUnformatted(activeLevelName.c_str());
-	}
-
-	{
-		const ImGuiIO& io = ImGui::GetIO();
-		char statsText[64] = {};
-		std::snprintf(statsText, sizeof(statsText), "%.1f FPS  %.2f ms", io.Framerate, io.DeltaTime * 1000.0f);
-
-		ImGui::SameLine();
-		ImGui::Separator();
-		ImGui::TextDisabled("%s", statsText);
 	}
 
 	BuildWindowControls();

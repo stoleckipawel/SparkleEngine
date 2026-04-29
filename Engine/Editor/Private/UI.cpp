@@ -13,6 +13,7 @@
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/ViewportPanel.h"
+#include "Panels/ViewportTopPanel.h"
 #include "Style/SparkleUiTheme.h"
 #include "D3D12/D3D12TypeConversions.h"
 
@@ -307,6 +308,7 @@ void UI::InitializeDefaultPanels()
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
 	ConfigureMainMenuBarShaderActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
+	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
@@ -419,12 +421,21 @@ void UI::Build()
 	const float inspectorWidth = m_sceneInspectorPanel ? m_sceneInspectorPanel->GetWidth() : SceneInspectorWidth;
 	ImGuiIO& io = ImGui::GetIO();
 	const float availableCenterHeight = (std::max) (0.0f, io.DisplaySize.y - mainMenuBarHeight);
-	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableCenterHeight) : 0.0f;
 	const float viewportWidth = (std::max) (MinimumViewportExtent, io.DisplaySize.x - outlinerWidth - inspectorWidth);
+	float viewportTopPanelHeight = 0.0f;
+	if (m_viewportTopPanel)
+	{
+		m_viewportTopPanel->SetGeometry(outlinerWidth, mainMenuBarHeight, viewportWidth);
+		m_viewportTopPanel->BuildUI(disableInteraction);
+		viewportTopPanelHeight = m_viewportTopPanel->GetHeight();
+	}
+
+	const float availableViewportColumnHeight = (std::max) (0.0f, availableCenterHeight - viewportTopPanelHeight);
+	const float consoleDockHeight = m_editorConsoleSystem ? m_editorConsoleSystem->GetDockHeight(availableViewportColumnHeight) : 0.0f;
 
 	if (m_viewportPanel)
 	{
-		m_viewportPanel->SetTopInset(mainMenuBarHeight);
+		m_viewportPanel->SetTopInset(mainMenuBarHeight + viewportTopPanelHeight);
 		m_viewportPanel->SetBottomInset(consoleDockHeight);
 		m_viewportPanel->SetSideInsets(outlinerWidth, inspectorWidth);
 		m_viewportPanel->BuildUI(disableInteraction);
@@ -452,7 +463,7 @@ void UI::Build()
 		    outlinerWidth,
 		    mainMenuBarHeight + availableCenterHeight,
 		    viewportWidth,
-		    availableCenterHeight,
+		    availableViewportColumnHeight,
 		    disableInteraction);
 	}
 

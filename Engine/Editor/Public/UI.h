@@ -19,6 +19,7 @@ class EditorConsoleSystem;
 class SceneOutlinerPanel;
 class SceneInspectorPanel;
 class ViewportPanel;
+class ViewportTopPanel;
 class ProfilerPanel;
 class UsedShadersPanel;
 class LevelManager;
@@ -81,6 +82,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<EditorConsoleSystem> m_editorConsoleSystem;
 	std::unique_ptr<SceneOutlinerPanel> m_sceneOutlinerPanel;
 	std::unique_ptr<SceneInspectorPanel> m_sceneInspectorPanel;
+	std::unique_ptr<ViewportTopPanel> m_viewportTopPanel;
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	std::unique_ptr<ProfilerPanel> m_profilerPanel;
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;

@@ -59,7 +59,8 @@ namespace UiUtil
 			if (trailingText != nullptr && trailingText[0] != '\0')
 			{
 				const float trailingWidth = ImGui::CalcTextSize(trailingText).x;
-				ImGui::SetCursorScreenPos(ImVec2(end.x - padding.x - trailingWidth, start.y + padding.y));
+				const float trailingRightPadding = padding.x + ImGui::GetStyle().ScrollbarSize;
+				ImGui::SetCursorScreenPos(ImVec2(end.x - trailingRightPadding - trailingWidth, start.y + padding.y));
 				PushFontIfAvailable(trailingFont);
 				ImGui::TextDisabled("%s", trailingText);
 				PopFontIfAvailable(trailingFont);
