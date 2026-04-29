@@ -9,7 +9,6 @@
 class GameScene;
 class Mesh;
 class MeshComponent;
-class ProfilerPanel;
 struct SceneObjectSelection;
 
 class SceneInspectorPanel final
@@ -18,7 +17,6 @@ class SceneInspectorPanel final
 	SceneInspectorPanel(
 	    GameScene& gameScene,
 	    SceneObjectSelection& selection,
-	    ProfilerPanel* profilerPanel,
 	    float widthPixels = 560.0f) noexcept;
 	~SceneInspectorPanel() = default;
 
@@ -58,7 +56,6 @@ class SceneInspectorPanel final
 
 	GameScene* m_gameScene = nullptr;
 	SceneObjectSelection* m_selection = nullptr;
-	ProfilerPanel* m_profilerPanel = nullptr;
 	float m_widthPixels = 560.0f;
 	float m_topInsetPixels = 0.0f;
 };

@@ -105,6 +105,11 @@ void MainMenuBarPanel::SetUsedShadersOpenHandler(std::function<void()> handler)
 	m_usedShadersOpenHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetProfilerOpenHandler(std::function<void()> handler)
+{
+	m_profilerOpenHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::SetConsoleOpenHandler(std::function<void()> handler)
 {
 	m_consoleOpenHandler = std::move(handler);
@@ -166,16 +171,22 @@ void MainMenuBarPanel::BuildFileMenu() noexcept
 	}
 }
 
-void MainMenuBarPanel::BuildWindowMenu() noexcept
+void MainMenuBarPanel::BuildWindowsMenu() noexcept
 {
-	if (ImGui::MenuItem("Console", nullptr, false, static_cast<bool>(m_consoleOpenHandler)))
-	{
-		m_consoleOpenHandler();
-	}
-
 	if (ImGui::MenuItem("Output Log", nullptr, false, static_cast<bool>(m_outputLogOpenHandler)))
 	{
 		m_outputLogOpenHandler();
+	}
+
+	if (ImGui::MenuItem("Profiler", nullptr, false, static_cast<bool>(m_profilerOpenHandler)))
+	{
+		m_profilerOpenHandler();
+	}
+
+	if (ImGui::BeginMenu("Shaders"))
+	{
+		BuildShaderMenu();
+		ImGui::EndMenu();
 	}
 }
 
@@ -293,15 +304,9 @@ void MainMenuBarPanel::BuildUI() noexcept
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Window"))
+	if (ImGui::BeginMenu("Windows"))
 	{
-		BuildWindowMenu();
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu("Shaders"))
-	{
-		BuildShaderMenu();
+		BuildWindowsMenu();
 		ImGui::EndMenu();
 	}
 

@@ -1,8 +1,6 @@
 #include "PCH.h"
 #include "Panels/SceneInspectorPanel.h"
 
-#include "Panels/ProfilerPanel.h"
-
 #include "Core/Public/Math/MathUtils.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/Camera/CameraComponent.h"
@@ -26,9 +24,8 @@
 SceneInspectorPanel::SceneInspectorPanel(
 	GameScene& gameScene,
 	SceneObjectSelection& selection,
-	ProfilerPanel* profilerPanel,
 	float widthPixels) noexcept :
-	m_gameScene(&gameScene), m_selection(&selection), m_profilerPanel(profilerPanel), m_widthPixels(widthPixels)
+	m_gameScene(&gameScene), m_selection(&selection), m_widthPixels(widthPixels)
 {
 }
 
@@ -355,13 +352,6 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 		{
 			ImGui::Spacing();
 			BuildSelectionInspector();
-			ImGui::EndTabItem();
-		}
-
-		if (m_profilerPanel != nullptr && ImGui::BeginTabItem("Profiler"))
-		{
-			ImGui::Spacing();
-			m_profilerPanel->BuildEmbeddedUI(disableInteraction);
 			ImGui::EndTabItem();
 		}
 

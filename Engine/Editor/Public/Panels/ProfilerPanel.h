@@ -25,9 +25,13 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	ProfilerPanel& operator=(const ProfilerPanel&) = delete;
 	ProfilerPanel& operator=(ProfilerPanel&&) = delete;
 
+	void SetOpen(bool open) noexcept { m_isOpen = open; }
+	bool IsOpen() const noexcept { return m_isOpen; }
+
 	// Captures a fresh snapshot from the LiveProfiler and renders the panel
 	// inside the current ImGui window. Pass `disableInteraction=true` to gray
 	// out controls without hiding the data (e.g. while paused).
+	void BuildUI(bool disableInteraction = false);
 	void BuildEmbeddedUI(bool disableInteraction = false);
 
   private:
@@ -50,4 +54,5 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 
 	ProfilerTreeTable m_treeTable;
 	ProfilerChartView m_chartView;
+	bool m_isOpen = false;
 };

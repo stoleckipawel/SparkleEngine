@@ -342,8 +342,7 @@ void UI::InitializeDefaultPanels()
 	{
 		m_sceneSelection = SceneObjectSelection::Camera();
 		m_sceneOutlinerPanel = std::make_unique<SceneOutlinerPanel>(*m_gameScene, m_sceneSelection, SceneOutlinerWidth);
-		m_sceneInspectorPanel =
-		    std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, m_profilerPanel.get(), SceneInspectorWidth);
+		m_sceneInspectorPanel = std::make_unique<SceneInspectorPanel>(*m_gameScene, m_sceneSelection, SceneInspectorWidth);
 	}
 }
 
@@ -378,6 +377,14 @@ void UI::ConfigureMainMenuBarShaderActions()
 		    if (m_usedShadersPanel)
 		    {
 			    m_usedShadersPanel->SetOpen(true);
+		    }
+	    });
+	m_mainMenuBar->SetProfilerOpenHandler(
+	    [this]()
+	    {
+		    if (m_profilerPanel)
+		    {
+			    m_profilerPanel->SetOpen(true);
 		    }
 	    });
 	m_mainMenuBar->SetConsoleOpenHandler(
@@ -472,6 +479,11 @@ void UI::Build()
 	if (m_usedShadersPanel)
 	{
 		m_usedShadersPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_profilerPanel)
+	{
+		m_profilerPanel->BuildUI(disableInteraction);
 	}
 
 	if (m_editorConsoleSystem)

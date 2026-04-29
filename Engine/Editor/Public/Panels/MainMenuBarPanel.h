@@ -26,6 +26,7 @@ class MainMenuBarPanel final
 	void SetShaderRecookRequestHandler(std::function<void()> handler);
 	void SetShaderInspectorOpenHandler(std::function<void()> handler);
 	void SetUsedShadersOpenHandler(std::function<void()> handler);
+	void SetProfilerOpenHandler(std::function<void()> handler);
 	void SetConsoleOpenHandler(std::function<void()> handler);
 	void SetOutputLogOpenHandler(std::function<void()> handler);
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
@@ -34,7 +35,7 @@ class MainMenuBarPanel final
 
   private:
 	void BuildFileMenu() noexcept;
-	void BuildWindowMenu() noexcept;
+	void BuildWindowsMenu() noexcept;
 	void BuildShaderMenu() noexcept;
 	void BuildOpenLevelMenu() noexcept;
 	void BuildWindowControls() noexcept;
@@ -54,6 +55,7 @@ class MainMenuBarPanel final
 	std::function<void()> m_shaderRecookRequestHandler;
 	std::function<void()> m_shaderInspectorOpenHandler;
 	std::function<void()> m_usedShadersOpenHandler;
+	std::function<void()> m_profilerOpenHandler;
 	std::function<void()> m_consoleOpenHandler;
 	std::function<void()> m_outputLogOpenHandler;
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;

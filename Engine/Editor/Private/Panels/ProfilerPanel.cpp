@@ -12,6 +12,24 @@
 
 #include <imgui.h>
 
+void ProfilerPanel::BuildUI(bool disableInteraction)
+{
+	if (!m_isOpen)
+	{
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(1080.0f, 640.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Profiler", &m_isOpen))
+	{
+		ImGui::End();
+		return;
+	}
+
+	BuildEmbeddedUI(disableInteraction);
+	ImGui::End();
+}
+
 void ProfilerPanel::BuildEmbeddedUI(bool disableInteraction)
 {
 	Diagnostics::LiveProfiler& profiler = Diagnostics::LiveProfiler::Get();
