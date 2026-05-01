@@ -26,6 +26,8 @@ The portfolio story should be simple:
 6. Boundary validation prevents compiler implementation details from leaking into runtime modules.
 7. Ray tracing shader libraries and inline ray-query shaders use the same offline-cooked discipline instead of adding a second compiler path.
 
+The implementation should also stay intentionally small. Separation of concerns is valuable only when each file owns a real concept. The plan should replace old paths instead of layering new wrappers over stale ones, and every phase should include cleanup work that keeps the shader system easier to navigate than before.
+
 ## Goals
 
 - Keep runtime startup deterministic: missing, stale, or incompatible shader packages fail loudly.
@@ -37,6 +39,7 @@ The portfolio story should be simple:
 - Make package identity, layout identity, backend identity, target identity, and reflection visible to reviewers.
 - Improve editor recook and hot reload without introducing runtime compilation.
 - Keep the cook path single-threaded for now.
+- Reduce duplicate shader-system concepts as the architecture moves forward; new files must retire or simplify old ones, not add a second active path.
 
 ## Non-Goals
 
@@ -48,6 +51,7 @@ The portfolio story should be simple:
 - No Vulkan RHI pipeline implementation in this document; the package/runtime contract should prepare for it.
 - No full ray tracing acceleration structure, shader table, or RHI state object implementation in this document; the compiler/package contract should prepare for ray tracing now.
 - No work graph or mesh shader implementation beyond schema readiness.
+- No abstraction added only to make the folder tree look more architectural; each new type must remove complexity, enforce a boundary, or make diagnostics/review materially clearer.
 
 ## Current Architecture Snapshot
 
@@ -103,7 +107,7 @@ The goal is not to make Sparkle look like Unreal, Donut, or Cauldron line-for-li
 | Offline compile cache identity | Unreal shader compiler input hashes and shader cache/DDC versions | `ShaderCacheKey`, backend name/version, target, source/dependency/settings hashes | Make backend/target/cache fingerprints visible in diagnostics and package inspection. |
 | Compile output versioning | Unreal shader compiler input/output versions and shader cache version GUID | `kCookedShaderPackageVersion`, registry version, backend version | Version package/registry only when serialized compatibility changes; document recook requirements. |
 | Reflection/parameter validation | Unreal parameter map verification and shader binding layout metadata | `ShaderParameterStructVerifier`, cooked reflection records, `BindingLayoutHash` | Make reflected typed fields a hard cook contract, not a warning path. |
-| Runtime shader maps/packages | Unreal global shader maps and serialized shader code libraries | `.sshd` cooked packages plus `ShaderPackageRegistry.sreg` | Move toward multi-format packages and reviewer-friendly package inspection. |
+| Runtime shader maps/packages | Unreal global shader maps and serialized shader code libraries | `.sparkshader` cooked packages plus `ShaderPackageRegistry.sreg` | Move toward multi-format packages and reviewer-friendly package inspection. |
 | Runtime bytecode resolution facade | NVIDIA Donut `ShaderFactory` and bytecode cache | Proposed Renderer-private `RenderPassShaderRuntime` | Centralize package lookup, binary-format selection, binding layout, and PSO assembly. |
 | API-specific binary selection | Donut platform bytecode macros and auto shader creation | `CookedShaderBinaryFormat`, required runtime binary format | Let one logical package carry DXIL and SPIR-V records for DX12/Vulkan readiness. |
 | Ray tracing shader libraries | Unreal ray tracing shader classes and pipeline state, DXR/Vulkan RT shader libraries, NVIDIA/AMD samples using raygen/miss/hit/callable exports and hit groups | Future ray tracing shader package kind, export records, hit-group records, and local parameter layouts | Add compiler/package metadata before RHI state object work so ray tracing does not become a parallel shader system. |
@@ -159,7 +163,7 @@ Sparkle should not adopt as the main path:
 - Static embedded shader blobs as the primary package model.
 - Pass-local shader file probing.
 
-Concrete Sparkle lesson: pass code should not know where bytecode lives or how to choose DXIL versus SPIR-V. A Renderer-private shader runtime facade should serve the same architectural role as Donut's shader factory boundary, but backed by Sparkle's cooked `.sshd` packages.
+Concrete Sparkle lesson: pass code should not know where bytecode lives or how to choose DXIL versus SPIR-V. A Renderer-private shader runtime facade should serve the same architectural role as Donut's shader factory boundary, but backed by Sparkle's cooked `.sparkshader` packages.
 
 ### AMD FidelityFX/Cauldron Pattern
 
@@ -192,6 +196,46 @@ These rules are the practical industry-standard checklist for future changes:
 8. Ray tracing shader support must extend the same package/registry system with libraries, exports, hit groups, and inline ray-query feature metadata; it must not create a second ad hoc compiler path.
 9. CI must prove both positive and negative shader paths: successful cook, boundary cleanliness, and intentional metadata/reflection failure.
 
+## Complexity Budget And Cleanup Discipline
+
+The shader system should not become impressive by file count. Professional architecture is not maximum decomposition; it is clear ownership, fewer duplicate concepts, and predictable places to look. New files are acceptable when they create a durable boundary or make behavior easier to verify. They are harmful when they only rename an existing concept, preserve an obsolete path, or split a simple operation into many tiny hops.
+
+### When A New File Or Type Is Justified
+
+- It owns a real lifecycle, such as package loading, backend compilation, runtime facade assembly, or editor recook coordination.
+- It isolates a dependency boundary, such as DXC, Slang, RHI backend code, Renderer policy, or Application/editor tool launching.
+- It turns implicit policy into a reviewable contract, such as package validation, cache keys, permutation identity, or ray tracing export metadata.
+- It reduces repeated code across multiple call sites without hiding important behavior.
+- It gives diagnostics or inspection one obvious home.
+
+### When To Avoid A New File Or Type
+
+- The proposed type only forwards calls to one other object.
+- The behavior is used once and is clearer inside the owning class or command.
+- The split would require readers to jump through several files to understand one small operation.
+- The old implementation would remain active beside the new one.
+- The name describes a vague layer, such as manager, service, helper, or context, without a concrete resource or policy it owns.
+
+### Migration Rules
+
+1. Prefer replacement over compatibility shims once the new architecture is selected.
+2. Every new shader-system path must identify the old path it makes obsolete.
+3. Do not keep two active authorities for package layout, shader identity, cache identity, reflection validation, or runtime package loading.
+4. If a transition temporarily needs both paths, document the removal condition in the same phase that introduces the new path.
+5. Keep public headers smaller than private implementation surfaces; prefer Renderer-private and RHI-private files unless a type is truly part of a module contract.
+6. Periodically search for stale terms, duplicate concepts, and unused helpers before adding the next feature phase.
+7. Ray tracing compiler support should extend the existing package and registry model; do not create a disconnected RT-only shader pipeline unless a real API requirement forces it.
+
+### Review Checklist For Complexity
+
+- Can a reviewer state which of the three layers owns this file?
+- Does this file have one reason to change?
+- Does it replace an old concept or merely sit beside it?
+- Is the public API smaller after the change?
+- Are failure diagnostics easier to trace from user action to owning system?
+- Would merging this file into its owner make the code easier to read?
+- Did the change remove old comments, docs, validation exceptions, or helper paths that no longer describe reality?
+
 ## Ray Tracing Compiler Infrastructure Readiness
 
 Ray tracing is close enough that the shader compiler infrastructure should reserve the correct concepts now. The RHI ray tracing implementation can remain deferred, but the compiler/package design should stop assuming every shader package is only ordinary graphics or compute.
@@ -216,6 +260,7 @@ Inline ray tracing should stay attached to normal graphics/compute packages. A p
 | Shader package kind | Graphics, compute, and ray tracing packages have different validation and runtime assembly rules. | Add a package kind such as `Graphics`, `Compute`, `RayTracingLibrary`. |
 | Ray tracing shader stages | RT stages are not covered by graphics/compute stage masks. | Extend stage identity with `RayGeneration`, `Miss`, `ClosestHit`, `AnyHit`, `Intersection`, and `Callable`, or introduce a separate RT export kind if that keeps graphics masks cleaner. |
 | Shader library/profile handling | DXR commonly uses library profiles such as `lib_6_3+`; Vulkan RT uses SPIR-V ray tracing stages. | Teach profile construction to handle RT libraries/exports instead of only prefix profiles. |
+| Multi-source RT library packages | A reviewable RT library should not require one giant shader file; raygen, miss, hit, intersection, and callable shaders can be authored separately and packaged together. | Allow one ray tracing package to collect exports from multiple source files under one package id. |
 | Export records | A ray tracing library is selected by named exports, not only stage bytecode. | Add cooked export records with export name, stage/export kind, entry point, binary record, and optional debug artifact. |
 | Hit-group records | Closest-hit, any-hit, and intersection shaders are grouped for the RT pipeline. | Add backend-neutral hit-group metadata: group name, type, closest-hit export, any-hit export, intersection export. |
 | Local parameter layout | DXR local root signatures and Vulkan shader binding table data need local shader parameters. | Keep global/pass parameter layout separate from future local RT parameter layouts. |
@@ -233,18 +278,40 @@ Inline ray tracing should stay attached to normal graphics/compute packages. A p
 - RHI backend realization owns DXR/Vulkan RT pipeline/state object creation, shader table allocation, acceleration structure binding, and native validation.
 - RHI backend realization also owns inline ray-query capability validation for graphics/compute PSOs and native acceleration-structure binding translation.
 - The first RT compiler work should not add runtime compilation, editor-only fallback compiles, or pass-local file probing.
-- The package format should be extended once, with clear versioning, instead of creating separate `.rtshader` artifacts disconnected from `.sshd` and the shader registry.
+- The package format should be extended once, with clear versioning, instead of creating separate `.rtshader` artifacts disconnected from `.sparkshader` and the shader registry.
 
 ### Near-Term RT Readiness Order
 
 1. Extend shader identity and package metadata with package kind and RT export/hit-group concepts.
 2. Add inline ray-query metadata for ordinary graphics/compute packages: feature flags, acceleration-structure bindings, minimum shader model/capability, and backend target requirements.
-3. Teach `list-shaders`, `list-permutations`, and `inspect-package` to display RT library metadata and inline ray-query metadata even before runtime consumes it.
-4. Add backend capability reporting for RT library support and inline ray-query support per target/backend.
-5. Add DXC/Slang profile selection for DXIL ray tracing libraries, SPIR-V ray tracing targets, and regular graphics/compute shaders that require inline ray queries.
-6. Add package validation for RT libraries: required exports, hit-group references, payload/attribute metadata, backend identity, target format, and layout hashes.
-7. Add package validation for inline RT: required ray-query capability, acceleration-structure binding metadata, backend identity, target format, and layout hashes.
-8. Only after those contracts are inspectable, add RHI DXR/Vulkan RT state object, shader table, acceleration structure, and inline ray-query PSO validation work.
+3. Allow a ray tracing library package to collect exports from multiple source files under one package id.
+4. Teach `list-shaders`, `list-permutations`, and `inspect-package` to display RT library metadata and inline ray-query metadata even before runtime consumes it.
+5. Add backend capability reporting for RT library support and inline ray-query support per target/backend.
+6. Add DXC/Slang profile selection for DXIL ray tracing libraries, SPIR-V ray tracing targets, and regular graphics/compute shaders that require inline ray queries.
+7. Add package validation for RT libraries: required exports, hit-group references, payload/attribute metadata, backend identity, target format, and layout hashes.
+8. Add package validation for inline RT: required ray-query capability, acceleration-structure binding metadata, backend identity, target format, and layout hashes.
+9. Only after those contracts are inspectable, add RHI DXR/Vulkan RT state object, shader table, acceleration structure, and inline ray-query PSO validation work.
+
+## HelloWorld Shader Showcase Plan
+
+The shader system should include tiny example shaders that prove each capability without requiring a full gameplay or material feature. These examples are for documentation, inspection, CI, and portfolio review. They should live under the existing shader asset tree, starting from `Engine/Assets/Shaders/HelloWorld/`, and should use the same typed registration/package path as real engine shaders.
+
+| Example package | Shader file | What it proves | Runtime requirement |
+| --- | --- | --- | --- |
+| `HelloTriangle` | `HelloWorld/HelloTriangle.hlsl` | Basic graphics package with vertex/pixel stages and simple package inspection. | Can be runtime-visible or tool-only. |
+| `HelloPermutation` | `HelloWorld/HelloPermutation.hlsl` | Small typed permutation domain, stable variant IDs, compile defines, and `list-permutations` output. | Tool-only is enough until pass integration exists. |
+| `HelloCompute` | `HelloWorld/HelloComputeCS.hlsl` | Compute package, UAV binding, reflection validation, and DXIL/SPIR-V multi-format output. | Can reuse compute runtime patterns later. |
+| `HelloInlineRayQuery` | `HelloWorld/HelloInlineRayQueryCS.hlsl` | Ordinary compute package with inline ray-query feature metadata and acceleration-structure binding metadata. | Tool-only until RHI inline RT validation exists. |
+| `HelloRayTracingLibrary` | `HelloWorld/RayTracing/HelloRayGen.hlsl`, `HelloMiss.hlsl`, `HelloClosestHit.hlsl`, `HelloAnyHit.hlsl`, `HelloIntersection.hlsl`, `HelloCallable.hlsl` | RT library package assembled from one file per RT shader type, with exports, hit groups, payload/attribute metadata, and package inspection. | Tool-only until DXR/Vulkan RT state object support exists. |
+
+Rules for examples:
+
+- Keep each example intentionally small and named around the capability it proves.
+- Prefer the smallest file set that teaches the concept clearly; ray tracing library examples should use separate files per shader type because exports and hit groups are the lesson.
+- Register examples through the same typed shader registration mechanism as production shaders.
+- Mark examples as tool-only until the Renderer/RHI runtime can honestly execute them.
+- Include each example in `list-shaders`, `inspect-shader`, `list-permutations`, and `inspect-package` acceptance checks when the underlying feature lands.
+- Do not add bespoke example-only compiler paths, package formats, runtime fallbacks, or hand-authored package layouts.
 
 ## Target Architecture
 
@@ -359,32 +426,13 @@ Conclusion: Renderer should own orchestration and policy, but not API-specific b
 
 Short-term, `CookedShaderPackageCache` can remain in RHI because it already owns strict validation and loaded bytecode records. The review-grade target should split its mixed responsibilities more clearly: keep the binary reader/validator in RHI, and let the Renderer-private facade own package request policy, path locating, reload sequencing, and pass-facing diagnostics. That preserves Sparkle's current safety while aligning the architecture more closely with Unreal/Donut/Cauldron boundaries.
 
-## Boundary Options Considered
+## Boundary Decision
 
-### Option A: Keep Current Split
-
-Renderer pass traits continue to directly orchestrate package layout generation, package loading, binding layout creation, and PSO creation.
-
-Pros:
-
-- Lowest immediate churn.
-- Current code already works.
-- RHI remains the owner of package validation and backend translation.
-
-Cons:
-
-- Runtime shader orchestration is spread across inline trait code and `PipelineStateManager`.
-- Reviewers must read pass traits to understand shader runtime flow.
-- Adding variants and multi-format packages increases template/trait complexity.
-- Hot reload and startup use the same pieces, but the shared policy is implicit.
-
-Verdict: acceptable current state, but not the best review-grade target.
-
-### Option B: Add Renderer-Private Shader Runtime Facade
+### Add Renderer-Private Shader Runtime Facade
 
 Create a small Renderer-private owner for package request policy, package locating, generated layout lookup, binding layout compile requests, PSO creation requests, and reload coordination.
 
-Pros:
+Reasons:
 
 - Keeps RHI/package boundaries intact.
 - Reduces `RenderPassPipelineTraits` to declarations and pass-specific PSO state.
@@ -394,54 +442,19 @@ Pros:
 - Matches Donut's shader-factory lesson without moving compiler work into runtime.
 - Matches Cauldron's separation of parameter/pipeline objects while staying in Sparkle's module model.
 
-Cons:
+Constraints:
 
 - Adds one new abstraction.
 - Requires careful naming so it does not become a generic rendering god object.
 - Needs a focused migration to avoid compatibility shims lingering.
 
-Verdict: recommended.
-
-### Option C: Move More Shader Runtime Ownership Into RHI
-
-Renderer passes declare package definitions and RHI owns package selection, root signatures, and PSO assembly.
-
-Pros:
-
-- Strong backend encapsulation.
-- Renderer becomes thinner.
-- Future Vulkan selection could live fully behind RHI.
-
-Cons:
-
-- RHI would need more renderer pass semantics.
-- Risk of making RHI aware of pass-level concepts it should not own.
-- Less consistent with Sparkle's current pass/runtime registry split.
-
-Verdict: useful long-term pressure, but too broad for this phase.
-
-### Option D: Move More Shader Runtime Ownership Into Renderer
-
-Renderer owns package semantics and RHI only exposes low-level handles.
-
-Pros:
-
-- Renderer has direct control over pass-specific behavior.
-- Easy to reason about a pass from one module.
-
-Cons:
-
-- Higher risk of D3D12/Vulkan details leaking upward.
-- Weaker shader package contract boundary.
-- More difficult to enforce no compiler/backend leakage.
-
-Verdict: not recommended.
+Decision: implement `RenderPassShaderRuntime` as the narrow Renderer-private facade. Do not keep the current pass-trait orchestration as a parallel active architecture once the facade is in place.
 
 ## Key Design Decisions
 
 ### Decision 1: Runtime Is Strictly Cooked
 
-Runtime startup and reload consume `.sshd` packages only. Runtime must not include or link DXC, Slang, SPIRV-Reflect, `ShaderCompileOptions`, or `ShaderCompileResult`.
+Runtime startup and reload consume `.sparkshader` packages only. Runtime must not include or link DXC, Slang, SPIRV-Reflect, `ShaderCompileOptions`, or `ShaderCompileResult`.
 
 Rationale:
 
@@ -495,6 +508,17 @@ Rationale:
 
 - Gives Sparkle the architectural shape needed for growth.
 - Avoids material-system scope explosion.
+
+### Decision 7: Use Readable Cooked Shader Package Extensions
+
+Cooked shader package files should use `.sparkshader` instead of `.sshd`.
+
+Rationale:
+
+- `.sparkshader` is self-describing in logs, package inspection, and portfolio review.
+- `.sshd` looks like an SSH daemon file and does not communicate shader-package intent.
+- The filename extension is a tooling and UX concern; the binary magic/version remains the authoritative compatibility check inside the package.
+- The implementation touchpoint should be centralized in `Paths::CookedShaderPackage`, not repeated across compiler and runtime code.
 
 ## Data Flow
 
@@ -582,6 +606,7 @@ Acceptance:
 
 ### Phase 5: Multi-Format Package Strategy
 
+- Rename cooked shader package files from `.sshd` to `.sparkshader` through the centralized `Paths::CookedShaderPackage` helper, then recook packages.
 - Allow one logical package to contain DXIL and SPIR-V records for the same package/stage/variant.
 - Extend cook settings from a single target to a target set when needed.
 - Keep runtime selection through `CookedShaderBinaryFormat requiredBinaryFormat`.
@@ -590,6 +615,7 @@ Acceptance:
 
 Acceptance:
 
+- Cooked shader package filenames are readable in cooked output directories, logs, and package inspection paths.
 - A package can satisfy DX12 with DXIL and future Vulkan with SPIR-V without recooking over the same logical package.
 
 ### Phase 6: Ray Tracing Shader And Inline Ray Query Readiness
@@ -601,12 +627,14 @@ Acceptance:
 - Add backend capability reporting for ray tracing library support and inline ray-query support per target/backend.
 - Teach DXC/Slang profile selection to handle DXIL RT libraries, SPIR-V ray tracing targets, and regular graphics/compute profiles that require inline ray queries.
 - Add cooked export records and hit-group records with stable names and hashes.
+- Allow one RT package to gather exports from separate ray generation, miss, closest-hit, any-hit, intersection, and callable source files.
 - Keep global/pass parameter layouts separate from future local RT parameter layouts.
 - Extend `inspect-package` to print RT package kind, exports, hit groups, local parameter layout metadata, payload/attribute metadata, inline ray-query feature flags, acceleration-structure bindings, backend, target, and hashes.
 
 Acceptance:
 
 - The tool can describe a ray tracing shader library package with ray generation, miss, closest-hit, any-hit, intersection, and callable exports without adding runtime compilation or pass-local file probing.
+- The `HelloRayTracingLibrary` example can keep each RT shader type in a separate file while producing one inspected package with coherent export and hit-group metadata.
 - The tool can describe a normal graphics/compute package that uses inline ray queries without pretending it is a ray tracing library package.
 - A reviewer can inspect the package metadata needed for future DXR/Vulkan RT state object creation.
 - A reviewer can inspect inline ray-query feature requirements and acceleration-structure bindings before runtime support lands.
@@ -667,15 +695,20 @@ Acceptance:
 
 ### Phase 11: Cleanup
 
+- Run a duplicate-concept audit for shader identity, package layout, package loading, reflection validation, backend selection, debug artifact writing, and runtime reload policy.
+- Merge or delete tiny forwarding files that do not own lifecycle, policy, diagnostics, or a dependency boundary.
 - Remove stale manifest terminology from docs and comments where typed registrations are now authoritative.
 - Remove manual layout helper paths once generated layouts fully own cook and runtime.
 - Remove temporary compatibility wrappers after migration.
+- Keep each public shader header justified as a module contract; move implementation-only types private when possible.
 - Keep deferred Vulkan/material/full-RHI-ray-tracing notes labeled as deferred work.
 
 Acceptance:
 
 - No old architecture path appears as an active implementation path.
 - Search results do not imply runtime shader compilation or manual package layouts are still supported.
+- A reviewer can navigate the active shader path without finding duplicate owners for the same responsibility.
+- Any remaining helper/manager/service type has a concrete ownership reason documented by its name, API, or nearby architecture notes.
 
 ## Cleanup Inventory
 
@@ -687,6 +720,7 @@ Acceptance:
 - Improve package inspection output.
 - Consolidate runtime package assembly behind the new facade.
 - Harden recook signal handling.
+- Identify duplicate or obsolete shader package layout/loading paths before adding RT package records.
 
 ### Cleanup After Migration
 
@@ -694,6 +728,8 @@ Acceptance:
 - Remove stale manifest/cook wording from comments and scripts.
 - Add validation tokens to prevent old manual helpers returning.
 - Ensure docs describe implemented state, not aspirational state.
+- Collapse files that became one-line wrappers after the facade/package split.
+- Move implementation-only shader runtime types out of public headers where no external module consumes them.
 
 ### Deferred Cleanup
 
@@ -708,6 +744,7 @@ Acceptance:
 | Risk | Mitigation |
 | --- | --- |
 | Shader runtime facade becomes too broad | Keep it Renderer-private and focused on package-to-runtime assembly only. |
+| File count grows faster than clarity | Require every new file to own lifecycle, policy, diagnostics, or a dependency boundary; delete or merge old paths in the same phase. |
 | Multi-format packages force schema churn | Version package and registry together only when serialization changes. |
 | Permutations expand package count too quickly | Start with explicit small domains and reviewer-visible enumeration. |
 | Reflection differs between DXC and Slang | Make backend/target part of diagnostics and CI smoke tests. |
