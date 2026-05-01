@@ -49,78 +49,105 @@ bool ShaderCookGraphBuilder::AddPackageNodes(
 {
 	const ShaderCookPackageDesc& package = plan.packages[packageIndex];
 	ShaderCookPackageContext& packageContext = plan.packageContexts[packageIndex];
-	packageContext.compiledStages.reserve(package.stages.size());
+	packageContext.compiledStages.reserve(package.stages.size() * settings.targets.size());
 
 	for (std::size_t stageIndex = 0; stageIndex < package.stages.size(); ++stageIndex)
 	{
 		const ShaderCookStageDesc& stage = package.stages[stageIndex];
-		ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
-		compileOptions.Target = settings.target;
-		compileOptions.CaptureDebugArtifacts = writeDebugArtifacts;
+		for (std::size_t targetIndex = 0; targetIndex < settings.targets.size(); ++targetIndex)
+		{
+			const ShaderTarget target = settings.targets[targetIndex];
+			ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
+			compileOptions.Target = target;
+			compileOptions.CaptureDebugArtifacts = writeDebugArtifacts;
 
-		std::string backendError;
-		std::string backendName;
-		IShaderBackend* backend = backendPool.ResolveAndAcquire(
-		    compileOptions.SourcePath,
-		    compileOptions.Target,
-		    settings.backendName,
-		    backendName,
-		    backendError);
-		if (backendName.empty())
-		{
-			outErrorMessage = std::format(
-			    "Failed to select shader backend for shader package '{}' variant '{}' stage '{}' - {}",
-			    package.packageId,
-			    package.variantId,
-			    GetShaderStagePrefix(stage.stage),
-			    backendError);
-			return false;
-		}
-		if (backend == nullptr)
-		{
-			outErrorMessage = std::format(
-			    "Failed to construct shader backend '{}' for shader package '{}' variant '{}' stage '{}' - {}",
+			if (settings.forceMissingIncludeForValidation && packageIndex == 0 && stageIndex == 0 && targetIndex == 0)
+			{
+				std::string validationError;
+				if (!IncludeClosureHasher::ResolveValidationInclude(
+				        compileOptions.SourcePath,
+				        "__SparkleMissingIncludeSelfTest__.hlsli",
+				        compileOptions,
+				        validationError))
+				{
+					outErrorMessage = std::format(
+					    "Missing-include verification self-test confirmed unresolved include handling for shader package '{}' variant '{}' stage '{}': {}",
+					    package.packageId,
+					    package.variantId,
+					    GetShaderStagePrefix(stage.stage),
+					    validationError);
+					return false;
+				}
+			}
+
+			std::string backendError;
+			std::string backendName;
+			IShaderBackend* backend = backendPool.ResolveAndAcquire(
+			    compileOptions.SourcePath,
+			    compileOptions.Target,
+			    settings.backendName,
 			    backendName,
-			    package.packageId,
-			    package.variantId,
-			    GetShaderStagePrefix(stage.stage),
 			    backendError);
-			return false;
-		}
+			if (backendName.empty())
+			{
+				outErrorMessage = std::format(
+				    "Failed to select shader backend for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    package.packageId,
+				    package.variantId,
+				    GetShaderStagePrefix(stage.stage),
+				    GetShaderTargetName(target),
+				    backendError);
+				return false;
+			}
+			if (backend == nullptr)
+			{
+				outErrorMessage = std::format(
+				    "Failed to construct shader backend '{}' for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    backendName,
+				    package.packageId,
+				    package.variantId,
+				    GetShaderStagePrefix(stage.stage),
+				    GetShaderTargetName(target),
+				    backendError);
+				return false;
+			}
 
-		const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
-		if (!includeHashResult.Succeeded())
-		{
-			outErrorMessage = std::format(
-			    "Failed to compute include closure for shader package '{}' variant '{}' stage '{}' - {}",
-			    package.packageId,
-			    package.variantId,
-			    GetShaderStagePrefix(stage.stage),
-			    includeHashResult.errorMessage);
-			return false;
-		}
+			const IncludeClosureHashResult includeHashResult = IncludeClosureHasher::Compute(compileOptions);
+			if (!includeHashResult.Succeeded())
+			{
+				outErrorMessage = std::format(
+				    "Failed to compute include closure for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    package.packageId,
+				    package.variantId,
+				    GetShaderStagePrefix(stage.stage),
+				    GetShaderTargetName(target),
+				    includeHashResult.errorMessage);
+				return false;
+			}
 
-		const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
-		plan.graph.AddNode(CookNode{
-		    .packageIndex = packageIndex,
-		    .stageIndex = stageIndex,
-		    .package = &package,
-		    .stage = &stage,
-		    .backendName = backendName,
-		    .compileOptions = compileOptions,
-		    .parameterStructDescriptor = ShaderCookPlanner::FindParameterStructDescriptor(compileOptions),
-		    .sourceHash = includeHashResult.sourceHash,
-		    .includeClosureHash = includeHashResult.includeClosureHash,
-		    .optionsHash = optionsHash,
-		    .cacheKey = ShaderCacheKey::Compute(
-		        package,
-		        stage,
-		        compileOptions,
-		        includeHashResult.sourceHash,
-		        includeHashResult.includeClosureHash,
-		        optionsHash,
-		        backendName,
-		        backend->GetBackendVersion())});
+			const std::uint64_t optionsHash = ShaderCompileOptionsHasher::Compute(compileOptions);
+			plan.graph.AddNode(CookNode{
+			    .packageIndex = packageIndex,
+			    .stageIndex = stageIndex,
+			    .package = &package,
+			    .stage = &stage,
+			    .backendName = backendName,
+			    .compileOptions = compileOptions,
+			    .parameterStructDescriptor = ShaderCookPlanner::FindParameterStructDescriptor(compileOptions),
+			    .sourceHash = includeHashResult.sourceHash,
+			    .includeClosureHash = includeHashResult.includeClosureHash,
+			    .dependencyCount = includeHashResult.dependencyCount,
+			    .optionsHash = optionsHash,
+			    .cacheKey = ShaderCacheKey::Compute(
+			        package,
+			        stage,
+			        compileOptions,
+			        includeHashResult.sourceHash,
+			        includeHashResult.includeClosureHash,
+			        optionsHash,
+			        backendName,
+			        backend->GetBackendVersion())});
+		}
 	}
 
 	outErrorMessage.clear();

@@ -76,5 +76,9 @@ inline const char* GetShaderStagePrefix(ShaderStage stage)
 	static_assert(
 	    (sizeof(kPrefixes) / sizeof(kPrefixes[0])) == static_cast<std::size_t>(ShaderStage::Count),
 	    "Shader stage prefix table must match ShaderStage.");
+	if (stage == ShaderStage::Count)
+	{
+		return "lib";
+	}
 	return kPrefixes[static_cast<std::size_t>(stage)];
 }

@@ -10,6 +10,7 @@
 #include "Shaders/ShaderPackageLayoutBuilder.h"
 
 #include <format>
+#include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -19,6 +20,9 @@ ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStag
 	options.SourcePath = Filesystem::ResolveAssetPathValidated(stage.sourcePath, AssetType::Shader);
 	options.EntryPoint = stage.entryPoint;
 	options.Stage = stage.stage;
+	options.PackageKind = stage.packageKind;
+	options.PackageFeatures = stage.packageFeatures;
+	options.RayTracingExportKind = stage.rayTracingExportKind;
 
 	const std::filesystem::path& projectShaderRoot = Paths::ShaderSourceRoot(PathRoot::Project);
 	const std::filesystem::path& engineShaderRoot = Paths::ShaderSourceRoot(PathRoot::Engine);
@@ -89,7 +93,7 @@ std::optional<ShaderParameterStructDescriptor> ShaderCookPlanner::FindParameterS
 	{
 		const std::string registeredSourcePath(shader.SourcePath);
 		const bool sourceMatches = sourcePath == registeredSourcePath || sourcePath.ends_with("/" + registeredSourcePath);
-		if (shader.Stage != options.Stage || shader.EntryPoint != options.EntryPoint || !sourceMatches)
+		if (shader.Stage != options.Stage || shader.PackageKind != options.PackageKind || shader.EntryPoint != options.EntryPoint || !sourceMatches)
 		{
 			continue;
 		}
@@ -114,11 +118,13 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildSingleShaderPackage(c
 	package.stages.push_back(ShaderCookStageDesc{
 	    .stage = ShaderStage::Vertex,
 	    .sourcePath = settings.singleShaderPath,
-	    .entryPoint = "VSMain"});
+		    .entryPoint = "VSMain",
+		    .packageKind = CookedShaderPackageKind::Graphics});
 	package.stages.push_back(ShaderCookStageDesc{
 	    .stage = ShaderStage::Pixel,
 	    .sourcePath = settings.singleShaderPath,
-	    .entryPoint = "PSMain"});
+		    .entryPoint = "PSMain",
+		    .packageKind = CookedShaderPackageKind::Graphics});
 
 	std::vector<ShaderCookPackageDesc> packages;
 	packages.push_back(std::move(package));
@@ -175,6 +181,11 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 			package.bindingLayoutId = bindingLayoutId;
 			package.bindingLayout = std::move(bindingLayout);
 			package.variantId = "Default";
+			package.packageKind = shader.PackageKind;
+			package.packageFeatures = shader.PackageFeatures;
+			package.rayTracingPayloadSizeInBytes = shader.RayTracingPayloadSizeInBytes;
+			package.rayTracingAttributeSizeInBytes = shader.RayTracingAttributeSizeInBytes;
+			package.rayTracingMaxRecursionDepth = shader.RayTracingMaxRecursionDepth;
 			packages.push_back(std::move(package));
 			packageIt = packageIndices.emplace(packageId, packages.size() - 1).first;
 		}
@@ -189,11 +200,68 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 			    bindingLayoutId);
 			return {};
 		}
+		if (package.packageKind != shader.PackageKind)
+		{
+			outErrorMessage = std::format(
+			    "Typed shader package '{}' mixes package kinds {} and {}",
+			    packageId,
+			    static_cast<std::uint32_t>(package.packageKind),
+			    static_cast<std::uint32_t>(shader.PackageKind));
+			return {};
+		}
+		package.packageFeatures |= shader.PackageFeatures;
+		package.rayTracingPayloadSizeInBytes = std::max(package.rayTracingPayloadSizeInBytes, shader.RayTracingPayloadSizeInBytes);
+		package.rayTracingAttributeSizeInBytes = std::max(package.rayTracingAttributeSizeInBytes, shader.RayTracingAttributeSizeInBytes);
+		package.rayTracingMaxRecursionDepth = std::max(package.rayTracingMaxRecursionDepth, shader.RayTracingMaxRecursionDepth);
 
+		const std::uint32_t stageIndex = static_cast<std::uint32_t>(package.stages.size());
 		package.stages.push_back(ShaderCookStageDesc{
 		    .stage = shader.Stage,
 		    .sourcePath = std::filesystem::path(std::string(shader.SourcePath)),
-		    .entryPoint = std::string(shader.EntryPoint)});
+		    .entryPoint = std::string(shader.EntryPoint),
+		    .packageKind = shader.PackageKind,
+		    .packageFeatures = shader.PackageFeatures,
+		    .rayTracingExportKind = shader.RayTracingExportKind,
+		    .rayTracingExportName = shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName)});
+
+		if (shader.PackageKind == CookedShaderPackageKind::RayTracingLibrary)
+		{
+			package.rayTracingExports.push_back(ShaderCookRayTracingExportDesc{
+			    .shaderName = shaderName,
+			    .kind = shader.RayTracingExportKind,
+			    .exportName = shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName),
+			    .entryPoint = std::string(shader.EntryPoint),
+			    .stageIndex = stageIndex});
+		}
+	}
+
+	for (const RayTracingHitGroupRegistrationDesc& hitGroup : GlobalShaderRegistry::GetRayTracingHitGroups())
+	{
+		const std::string packageId(hitGroup.PackageName);
+		const bool wholePackageSelected = requested.empty() || packageId == requested || packageIdsSelectedBySource.contains(packageId);
+		if (!wholePackageSelected)
+		{
+			continue;
+		}
+
+		auto packageIt = packageIndices.find(packageId);
+		if (packageIt == packageIndices.end())
+		{
+			continue;
+		}
+
+		ShaderCookPackageDesc& package = packages[packageIt->second];
+		if (package.packageKind != CookedShaderPackageKind::RayTracingLibrary)
+		{
+			outErrorMessage = std::format("Ray tracing hit group '{}' targets non-RT shader package '{}'", hitGroup.HitGroupName, packageId);
+			return {};
+		}
+
+		package.rayTracingHitGroups.push_back(ShaderCookRayTracingHitGroupDesc{
+		    .name = std::string(hitGroup.HitGroupName),
+		    .closestHitShaderName = std::string(hitGroup.ClosestHitShaderName),
+		    .anyHitShaderName = std::string(hitGroup.AnyHitShaderName),
+		    .intersectionShaderName = std::string(hitGroup.IntersectionShaderName)});
 	}
 
 	if (!requested.empty() && packages.empty())

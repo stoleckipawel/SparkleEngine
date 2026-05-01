@@ -37,6 +37,10 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - `CMake/Dependencies/` contains configure-time dependency modules.
 - `CMake/Validation/` contains build-time validation modules such as runtime boundary checks.
 
+## Architecture Notes
+
+- [../docs/architecture/shader-system-design.md](../docs/architecture/shader-system-design.md) is the current shader-system architecture baseline, including the compiler tool, Renderer shader orchestration, RHI backend realization, and no-runtime-compiler invariant.
+
 ## Logs
 
 Generated logs are grouped by intent instead of being written directly into the repository root or the root of `logs/`:

@@ -24,6 +24,12 @@ static std::vector<ShaderRegistrationDesc>& MutableGlobalShaderRegistrations()
 	return registrations;
 }
 
+static std::vector<RayTracingHitGroupRegistrationDesc>& MutableRayTracingHitGroupRegistrations()
+{
+	static std::vector<RayTracingHitGroupRegistrationDesc> registrations;
+	return registrations;
+}
+
 static std::uint64_t HashBytes(std::uint64_t hash, const void* data, std::size_t size) noexcept
 {
 	const auto* bytes = static_cast<const std::uint8_t*>(data);
@@ -59,10 +65,35 @@ void GlobalShaderRegistry::Register(ShaderRegistrationDesc desc)
 	registrations.push_back(desc);
 }
 
+void GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistrationDesc desc)
+{
+	EnsureGlobalShaderRegistrationBootstrap();
+
+	std::vector<RayTracingHitGroupRegistrationDesc>& registrations = MutableRayTracingHitGroupRegistrations();
+	const auto existing = std::ranges::find_if(
+	    registrations,
+	    [desc](const RayTracingHitGroupRegistrationDesc& registeredDesc)
+	    {
+		    return registeredDesc.PackageName == desc.PackageName && registeredDesc.HitGroupName == desc.HitGroupName;
+	    });
+	if (existing != registrations.end())
+	{
+		return;
+	}
+
+	registrations.push_back(desc);
+}
+
 std::span<const ShaderRegistrationDesc> GlobalShaderRegistry::GetRegistrations() noexcept
 {
 	EnsureGlobalShaderRegistrationBootstrap();
 	return MutableGlobalShaderRegistrations();
+}
+
+std::span<const RayTracingHitGroupRegistrationDesc> GlobalShaderRegistry::GetRayTracingHitGroups() noexcept
+{
+	EnsureGlobalShaderRegistrationBootstrap();
+	return MutableRayTracingHitGroupRegistrations();
 }
 
 const ShaderRegistrationDesc* GlobalShaderRegistry::FindByName(std::string_view shaderName) noexcept

@@ -358,7 +358,7 @@ namespace Paths
 
 	inline std::filesystem::path CookedShaderPackage(std::uint64_t packageKey)
 	{
-		return CookedShaderPackageRoot() / std::format("{:016X}.sshd", packageKey);
+		return CookedShaderPackageRoot() / std::format("{:016X}.sparkshader", packageKey);
 	}
 
 	// Cooked scene/material/mesh/texture files

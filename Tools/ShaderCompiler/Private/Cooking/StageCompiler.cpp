@@ -17,9 +17,24 @@ bool StageCompiler::Compile(
 {
 	using Paths::MakeProjectRelativeString;
 
-	if (!backend.GetCapabilities().SupportsTarget(options.Target))
+	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
+	if (!capabilities.SupportsTarget(options.Target))
 	{
 		outErrorMessage = std::string{"Active shader backend does not support target '"} +
+			GetShaderTargetName(options.Target) + "'";
+		return false;
+	}
+	if (options.PackageKind == CookedShaderPackageKind::RayTracingLibrary &&
+	    !capabilities.SupportsRayTracingLibrary(options.Target))
+	{
+		outErrorMessage = std::string{"Active shader backend does not support ray tracing library packages for target '"} +
+			GetShaderTargetName(options.Target) + "'";
+		return false;
+	}
+	if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
+	    !capabilities.SupportsInlineRayQuery(options.Target))
+	{
+		outErrorMessage = std::string{"Active shader backend does not support inline ray queries for target '"} +
 			GetShaderTargetName(options.Target) + "'";
 		return false;
 	}

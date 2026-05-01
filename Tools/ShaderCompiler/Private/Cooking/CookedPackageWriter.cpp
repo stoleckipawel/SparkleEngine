@@ -7,6 +7,7 @@
 #include "Cooking/SourceIdentityHasher.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringTableBuilder.h"
 
@@ -65,6 +66,152 @@ static void BuildBindingRecords(
 	}
 }
 
+static bool LayoutUsesAccelerationStructure(const PassParameterLayout& layout) noexcept
+{
+	for (const PassParameterDesc& parameter : layout.GetParameters())
+	{
+		if (parameter.Kind == ShaderParameterSemanticKind::AccelerationStructure)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static std::uint32_t FindBinaryRecordIndexForStage(
+    const ShaderCookPackageDesc& package,
+    std::span<const CookedStageBuild> compiledStages,
+    const ShaderCookRayTracingExportDesc& rtExport) noexcept
+{
+	if (rtExport.stageIndex >= package.stages.size())
+	{
+		return UINT32_MAX;
+	}
+
+	const ShaderCookStageDesc& stage = package.stages[rtExport.stageIndex];
+	for (std::size_t binaryIndex = 0; binaryIndex < compiledStages.size(); ++binaryIndex)
+	{
+		const CookedStageBuild& compiledStage = compiledStages[binaryIndex];
+		if (compiledStage.stage == stage.stage && compiledStage.sourcePath.ends_with(stage.sourcePath.generic_string()) &&
+		    compiledStage.entryPoint == stage.entryPoint)
+		{
+			return static_cast<std::uint32_t>(binaryIndex);
+		}
+	}
+
+	return UINT32_MAX;
+}
+
+static void BuildRayTracingExportRecords(
+    const ShaderCookPackageDesc& package,
+    std::span<const CookedStageBuild> compiledStages,
+    Strings::StringTableBuilder& stringTable,
+    std::vector<CookedShaderRayTracingExportRecord>& outRecords)
+{
+	outRecords.clear();
+	outRecords.reserve(package.rayTracingExports.size());
+
+	for (const ShaderCookRayTracingExportDesc& rtExport : package.rayTracingExports)
+	{
+		const std::string& exportName = rtExport.exportName.empty() ? rtExport.entryPoint : rtExport.exportName;
+		outRecords.push_back(CookedShaderRayTracingExportRecord{
+		    .ExportName = ToCookedShaderStringRef(stringTable.Add(exportName)),
+		    .EntryPoint = ToCookedShaderStringRef(stringTable.Add(rtExport.entryPoint)),
+		    .BinaryRecordIndex = FindBinaryRecordIndexForStage(package, compiledStages, rtExport),
+		    .Kind = rtExport.kind,
+		    .Flags = 0,
+		    .ExportHash = Hash::Fnv1a64(exportName)});
+	}
+}
+
+static std::uint32_t FindRayTracingExportIndex(
+    std::span<const ShaderCookRayTracingExportDesc> exports,
+    std::string_view shaderName,
+    CookedShaderRayTracingExportKind expectedKind) noexcept
+{
+	if (shaderName.empty())
+	{
+		return UINT32_MAX;
+	}
+
+	for (std::size_t exportIndex = 0; exportIndex < exports.size(); ++exportIndex)
+	{
+		const ShaderCookRayTracingExportDesc& rtExport = exports[exportIndex];
+		if (rtExport.shaderName == shaderName && rtExport.kind == expectedKind)
+		{
+			return static_cast<std::uint32_t>(exportIndex);
+		}
+	}
+
+	return UINT32_MAX;
+}
+
+static bool BuildRayTracingHitGroupRecords(
+    const ShaderCookPackageDesc& package,
+    Strings::StringTableBuilder& stringTable,
+	std::vector<CookedShaderRayTracingHitGroupRecord>& outRecords,
+	std::string& outErrorMessage)
+{
+	outRecords.clear();
+	outRecords.reserve(package.rayTracingHitGroups.size());
+	for (const ShaderCookRayTracingHitGroupDesc& hitGroup : package.rayTracingHitGroups)
+	{
+		const std::uint32_t closestHitExportIndex = FindRayTracingExportIndex(
+		    package.rayTracingExports,
+		    hitGroup.closestHitShaderName,
+		    CookedShaderRayTracingExportKind::ClosestHit);
+		if (closestHitExportIndex == UINT32_MAX)
+		{
+			outErrorMessage = std::format(
+			    "Ray tracing hit group '{}' references missing closest-hit shader '{}' in package '{}'",
+			    hitGroup.name,
+			    hitGroup.closestHitShaderName,
+			    package.packageId);
+			return false;
+		}
+
+		const std::uint32_t anyHitExportIndex = FindRayTracingExportIndex(
+		    package.rayTracingExports,
+		    hitGroup.anyHitShaderName,
+		    CookedShaderRayTracingExportKind::AnyHit);
+		if (!hitGroup.anyHitShaderName.empty() && anyHitExportIndex == UINT32_MAX)
+		{
+			outErrorMessage = std::format(
+			    "Ray tracing hit group '{}' references missing any-hit shader '{}' in package '{}'",
+			    hitGroup.name,
+			    hitGroup.anyHitShaderName,
+			    package.packageId);
+			return false;
+		}
+
+		const std::uint32_t intersectionExportIndex = FindRayTracingExportIndex(
+		    package.rayTracingExports,
+		    hitGroup.intersectionShaderName,
+		    CookedShaderRayTracingExportKind::Intersection);
+		if (!hitGroup.intersectionShaderName.empty() && intersectionExportIndex == UINT32_MAX)
+		{
+			outErrorMessage = std::format(
+			    "Ray tracing hit group '{}' references missing intersection shader '{}' in package '{}'",
+			    hitGroup.name,
+			    hitGroup.intersectionShaderName,
+			    package.packageId);
+			return false;
+		}
+
+		outRecords.push_back(CookedShaderRayTracingHitGroupRecord{
+		    .HitGroupName = ToCookedShaderStringRef(stringTable.Add(hitGroup.name)),
+		    .Type = intersectionExportIndex != UINT32_MAX ? CookedShaderRayTracingHitGroupType::ProceduralPrimitive
+		                                                    : CookedShaderRayTracingHitGroupType::Triangles,
+		    .ClosestHitExportIndex = closestHitExportIndex,
+		    .AnyHitExportIndex = anyHitExportIndex,
+		    .IntersectionExportIndex = intersectionExportIndex,
+		    .HitGroupHash = Hash::Fnv1a64(hitGroup.name)});
+	}
+
+	outErrorMessage.clear();
+	return true;
+}
+
 bool CookedPackageWriter::Write(
 	const ShaderCookPackageDesc& package,
 	std::span<const CookedStageBuild> compiledStages,
@@ -81,6 +228,9 @@ bool CookedPackageWriter::Write(
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
 	std::vector<CookedShaderBindingRecord> bindingRecords;
 	std::vector<CookedShaderSpecializationInputRecord> specializationInputs;
+	std::vector<CookedShaderRayTracingExportRecord> rayTracingExportRecords;
+	std::vector<CookedShaderRayTracingHitGroupRecord> rayTracingHitGroupRecords;
+	std::vector<CookedShaderRayTracingLocalParameterRecord> rayTracingLocalParameterRecords;
 	std::vector<std::uint8_t> binaryBlob;
 
 	BuildBindingRecords(package.bindingLayout, stringTable, bindingRecords);
@@ -114,9 +264,20 @@ bool CookedPackageWriter::Write(
 
 	ReflectionSerializer::Output reflectionOutput;
 	ReflectionSerializer::Build(reflectionsForSerialization, stringTable, reflectionOutput);
+	BuildRayTracingExportRecords(package, compiledStages, stringTable, rayTracingExportRecords);
+	if (!BuildRayTracingHitGroupRecords(package, stringTable, rayTracingHitGroupRecords, outErrorMessage))
+	{
+		return false;
+	}
 
 	CookedShaderPackageHeader header{};
 	header.DeclaredStages = declaredStages;
+	header.PackageKind = package.packageKind;
+	header.PackageFeatures = package.packageFeatures;
+	if (LayoutUsesAccelerationStructure(package.bindingLayout))
+	{
+		header.PackageFeatures |= CookedShaderPackageFeatureFlags::UsesAccelerationStructure;
+	}
 	header.ShaderModelMajor = static_cast<std::uint16_t>(RenderConfig::ShaderModelMajor);
 	header.ShaderModelMinor = static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor);
 	header.BinaryRecordCount = static_cast<std::uint32_t>(binaryRecords.size());
@@ -131,6 +292,12 @@ bool CookedPackageWriter::Write(
 	header.InputElementRecordCount = static_cast<std::uint32_t>(reflectionOutput.inputElements.size());
 	header.PushConstantRangeRecordCount = static_cast<std::uint32_t>(reflectionOutput.pushConstantRanges.size());
 	header.SpecializationConstantRecordCount = static_cast<std::uint32_t>(reflectionOutput.specializationConstants.size());
+	header.RayTracingExportRecordCount = static_cast<std::uint32_t>(rayTracingExportRecords.size());
+	header.RayTracingHitGroupRecordCount = static_cast<std::uint32_t>(rayTracingHitGroupRecords.size());
+	header.RayTracingLocalParameterRecordCount = static_cast<std::uint32_t>(rayTracingLocalParameterRecords.size());
+	header.RayTracingPayloadSizeInBytes = package.rayTracingPayloadSizeInBytes;
+	header.RayTracingAttributeSizeInBytes = package.rayTracingAttributeSizeInBytes;
+	header.RayTracingMaxRecursionDepth = package.rayTracingMaxRecursionDepth;
 	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId, package.variantId);
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
 	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
@@ -155,6 +322,9 @@ bool CookedPackageWriter::Write(
 	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, rayTracingExportRecords, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, rayTracingHitGroupRecords, outErrorMessage) ||
+	    !BinaryStreamWriter::WriteArray(output, rayTracingLocalParameterRecords, outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
 	    !BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
 	{

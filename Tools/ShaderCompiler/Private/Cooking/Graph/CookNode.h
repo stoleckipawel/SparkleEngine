@@ -21,6 +21,7 @@ struct CookNode final
 	std::optional<ShaderParameterStructDescriptor> parameterStructDescriptor;
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;
+	std::uint32_t dependencyCount = 0;
 	std::uint64_t optionsHash = 0;
 	ShaderCacheKey cacheKey{};
 };

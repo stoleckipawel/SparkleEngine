@@ -14,6 +14,33 @@
 
 namespace
 {
+	bool ContainsTarget(std::span<const ShaderTarget> targets, ShaderTarget target) noexcept
+	{
+		for (const ShaderTarget existingTarget : targets)
+		{
+			if (existingTarget == target)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	std::string FormatTargets(std::span<const ShaderTarget> targets)
+	{
+		std::string result;
+		for (std::size_t index = 0; index < targets.size(); ++index)
+		{
+			if (index > 0)
+			{
+				result += ',';
+			}
+			result += GetShaderTargetName(targets[index]);
+		}
+		return result;
+	}
+
 	void AppendAnalysisPasses(std::string_view value, std::vector<std::string>& outPasses)
 	{
 		std::size_t begin = 0;
@@ -40,6 +67,7 @@ bool CookShadersCommand::TryParseArguments(
 	ShaderPackageCookSettings& outSettings,
 	std::string& outErrorMessage)
 {
+	bool targetWasSpecified = false;
 	for (std::size_t index = 0; index < args.size(); ++index)
 	{
 		if (args[index] == "--no-cache")
@@ -104,7 +132,15 @@ bool CookShadersCommand::TryParseArguments(
 				return false;
 			}
 
-			outSettings.target = parsed;
+			if (!targetWasSpecified)
+			{
+				outSettings.targets.clear();
+				targetWasSpecified = true;
+			}
+			if (!ContainsTarget(outSettings.targets, parsed))
+			{
+				outSettings.targets.push_back(parsed);
+			}
 			++index;
 			continue;
 		}
@@ -156,15 +192,22 @@ bool CookShadersCommand::TryParseArguments(
 				return false;
 			}
 
-			if (args[index + 1] != "parameter-mismatch")
+			if (args[index + 1] == "parameter-mismatch")
 			{
-				outErrorMessage = "Unknown verification self-test '" + std::string(args[index + 1]) + "'";
-				return false;
+				outSettings.forceParameterStructMismatchForValidation = true;
+				++index;
+				continue;
 			}
 
-			outSettings.forceParameterStructMismatchForValidation = true;
-			++index;
-			continue;
+			if (args[index + 1] == "missing-include")
+			{
+				outSettings.forceMissingIncludeForValidation = true;
+				++index;
+				continue;
+			}
+
+			outErrorMessage = "Unknown verification self-test '" + std::string(args[index + 1]) + "'";
+			return false;
 		}
 
 		outErrorMessage = "Unknown cook argument '" + std::string(args[index]) + "'";
@@ -196,6 +239,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	std::cout << "ShaderCompiler: cooked " << cookResult.packages.size() << " shader package(s) under '"
 	          << Paths::CookedShaderPackageRoot().string() << "'"
 	          << " and registry '" << cookResult.registryPath.string() << "'"
+	          << "; targets='" << FormatTargets(settings.targets) << "'"
 	          << "; recookSignal='" << cookResult.recookSignalPath.string() << "'"
 	          << "; backendInvocations=" << cookResult.backendInvocationCount
 	          << ", cacheHits=" << cookResult.cacheHitCount

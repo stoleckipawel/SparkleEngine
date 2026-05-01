@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Backend/ShaderTarget.h"
+#include "RHI/Public/Shaders/CookedShaderPackage.h"
 #include "RHI/Public/Shaders/ShaderStage.h"
 
 #include <filesystem>
@@ -16,6 +17,9 @@ struct ShaderCompileOptions
 	std::string EntryPoint = "main";
 	ShaderStage Stage = ShaderStage::Pixel;
 	ShaderTarget Target = kDefaultShaderTarget;
+	CookedShaderPackageKind PackageKind = CookedShaderPackageKind::Graphics;
+	CookedShaderPackageFeatureFlags PackageFeatures = CookedShaderPackageFeatureFlags::None;
+	CookedShaderRayTracingExportKind RayTracingExportKind = CookedShaderRayTracingExportKind::None;
 
 	bool EnableDebugInfo = false;
 	bool EnableOptimizations = true;

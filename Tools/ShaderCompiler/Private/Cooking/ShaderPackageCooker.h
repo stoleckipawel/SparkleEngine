@@ -12,13 +12,14 @@
 struct ShaderPackageCookSettings final
 {
 	bool useCache = true;
-	ShaderTarget target = kDefaultShaderTarget;
+	std::vector<ShaderTarget> targets = {kDefaultShaderTarget};
 	std::string backendName = "auto";
 	std::filesystem::path singleShaderPath;
 	std::filesystem::path cacheDirectory;
 	std::filesystem::path debugArtifactDirectory;
 	std::vector<std::string> analysisPasses;
 	bool forceParameterStructMismatchForValidation = false;
+	bool forceMissingIncludeForValidation = false;
 };
 
 struct ShaderPackageCookResult final

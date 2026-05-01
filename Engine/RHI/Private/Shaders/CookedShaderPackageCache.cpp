@@ -343,6 +343,9 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 	    !reader.ReadArray(outPackage.m_header.InputElementRecordCount, outPackage.m_inputElements, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.PushConstantRangeRecordCount, outPackage.m_pushConstantRanges, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.SpecializationConstantRecordCount, outPackage.m_specializationConstants, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.RayTracingExportRecordCount, outPackage.m_rayTracingExports, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.RayTracingHitGroupRecordCount, outPackage.m_rayTracingHitGroups, outErrorMessage) ||
+	    !reader.ReadArray(outPackage.m_header.RayTracingLocalParameterRecordCount, outPackage.m_rayTracingLocalParameters, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.StringTableSizeInBytes, outPackage.m_stringTable, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.BinaryBlobSizeInBytes, outPackage.m_binaryBlob, outErrorMessage))
 	{
@@ -370,6 +373,15 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (!package.IsValid())
 	{
 		outErrorMessage = "Cooked shader package payload is invalid.";
+		return false;
+	}
+
+	if (package.GetHeader().PackageKind == CookedShaderPackageKind::RayTracingLibrary)
+	{
+		outErrorMessage = std::format(
+		    "Cooked shader package '{}' variant '{}' is a ray tracing library package; runtime RT state object execution is not implemented yet.",
+		    definition.PackageId,
+		    definition.VariantId);
 		return false;
 	}
 

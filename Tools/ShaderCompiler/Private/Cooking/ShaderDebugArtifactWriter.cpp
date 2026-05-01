@@ -22,6 +22,7 @@ bool ShaderDebugArtifactWriter::Write(
 	const std::filesystem::path bundleDirectory = rootDirectory / BuildBundleDirectoryName(package, stage, options, compiledStage);
 
 	if (!Files::TryWriteAllText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(package, stage, options, compiledStage), outErrorMessage) ||
+		!Files::TryWriteAllText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "defines.json", BuildDefinesJson(options), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "permutation-vector.json", BuildPermutationJson(package), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage) ||
@@ -80,6 +81,11 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 	    "  \"backend\": \"{}\",\n"
 	    "  \"backendVersion\": {},\n"
 	    "  \"format\": \"{}\",\n"
+	    "  \"sourceHash\": \"{:016x}\",\n"
+	    "  \"includeClosureHash\": \"{:016x}\",\n"
+	    "  \"optionsHash\": \"{:016x}\",\n"
+	    "  \"cacheKey\": \"{:016x}\",\n"
+	    "  \"cacheStatus\": \"{}\",\n"
 	    "  \"debugArtifact\": \"{}\"\n"
 	    "}}\n",
 	    Strings::EscapeJsonString(package.packageId),
@@ -92,7 +98,37 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 	    Strings::EscapeJsonString(compiledStage.backendName),
 	    compiledStage.backendVersion,
 	    compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil",
+	    compiledStage.sourceHash,
+	    compiledStage.includeClosureHash,
+	    compiledStage.optionsHash,
+	    compiledStage.cacheKey,
+	    Strings::EscapeJsonString(compiledStage.cacheStatus),
 	    Strings::EscapeJsonString(compiledStage.debugArtifact));
+}
+
+std::string ShaderDebugArtifactWriter::BuildCacheInfoJson(const ShaderCompileOptions& options, const CookedStageBuild& compiledStage)
+{
+	return std::format(
+	    "{{\n"
+	    "  \"cacheStatus\": \"{}\",\n"
+	    "  \"cacheKey\": \"{:016x}\",\n"
+	    "  \"sourceHash\": \"{:016x}\",\n"
+	    "  \"includeClosureHash\": \"{:016x}\",\n"
+	    "  \"optionsHash\": \"{:016x}\",\n"
+	    "  \"target\": \"{}\",\n"
+	    "  \"format\": \"{}\",\n"
+	    "  \"backend\": \"{}\",\n"
+	    "  \"backendVersion\": {}\n"
+	    "}}\n",
+	    Strings::EscapeJsonString(compiledStage.cacheStatus),
+	    compiledStage.cacheKey,
+	    compiledStage.sourceHash,
+	    compiledStage.includeClosureHash,
+	    compiledStage.optionsHash,
+	    Strings::EscapeJsonString(GetShaderTargetName(options.Target)),
+	    compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil",
+	    Strings::EscapeJsonString(compiledStage.backendName),
+	    compiledStage.backendVersion);
 }
 
 std::string ShaderDebugArtifactWriter::BuildDefinesJson(const ShaderCompileOptions& options)

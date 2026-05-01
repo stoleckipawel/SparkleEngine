@@ -30,6 +30,12 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	const std::vector<CookedShaderBinaryRecord>& GetBinaryRecords() const noexcept { return m_binaryRecords; }
 	const std::vector<CookedShaderBindingRecord>& GetBindingRecords() const noexcept { return m_bindingRecords; }
 	const std::vector<CookedShaderSpecializationInputRecord>& GetSpecializationInputs() const noexcept { return m_specializationInputs; }
+	const std::vector<CookedShaderRayTracingExportRecord>& GetRayTracingExports() const noexcept { return m_rayTracingExports; }
+	const std::vector<CookedShaderRayTracingHitGroupRecord>& GetRayTracingHitGroups() const noexcept { return m_rayTracingHitGroups; }
+	const std::vector<CookedShaderRayTracingLocalParameterRecord>& GetRayTracingLocalParameters() const noexcept
+	{
+		return m_rayTracingLocalParameters;
+	}
 
 	// v2 reflection accessors. ReflectionRecords is parallel to BinaryRecords;
 	// the typed arrays are package-wide, indexed by the offsets in each
@@ -61,6 +67,9 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	std::vector<CookedShaderBinaryRecord> m_binaryRecords;
 	std::vector<CookedShaderBindingRecord> m_bindingRecords;
 	std::vector<CookedShaderSpecializationInputRecord> m_specializationInputs;
+	std::vector<CookedShaderRayTracingExportRecord> m_rayTracingExports;
+	std::vector<CookedShaderRayTracingHitGroupRecord> m_rayTracingHitGroups;
+	std::vector<CookedShaderRayTracingLocalParameterRecord> m_rayTracingLocalParameters;
 	std::vector<CookedShaderReflectionRecord> m_reflectionRecords;
 	std::vector<CookedShaderResourceBindingRecord> m_resourceBindings;
 	std::vector<CookedShaderConstantBufferRecord> m_constantBuffers;

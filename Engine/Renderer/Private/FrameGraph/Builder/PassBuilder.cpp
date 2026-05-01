@@ -117,6 +117,7 @@ bool PassBuilder::HasFrameGraphUsage(const PassParameterDesc& parameter) noexcep
 			return true;
 		case ShaderParameterSemanticKind::UniformData:
 		case ShaderParameterSemanticKind::SamplerSet:
+		case ShaderParameterSemanticKind::AccelerationStructure:
 			return false;
 		default:
 			assert(false);
@@ -140,6 +141,7 @@ ResourceUsage PassBuilder::GetFrameGraphUsage(const PassParameterDesc& parameter
 			return ResourceUsage::DepthWrite;
 		case ShaderParameterSemanticKind::UniformData:
 		case ShaderParameterSemanticKind::SamplerSet:
+		case ShaderParameterSemanticKind::AccelerationStructure:
 		default:
 			assert(false);
 			return ResourceUsage::ShaderRead;

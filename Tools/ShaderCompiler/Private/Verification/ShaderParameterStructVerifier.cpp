@@ -5,6 +5,46 @@
 #include <format>
 #include <sstream>
 
+static const char* GetResourceKindName(CookedShaderResourceKind kind) noexcept
+{
+	switch (kind)
+	{
+		case CookedShaderResourceKind::Unknown: return "Unknown";
+		case CookedShaderResourceKind::ConstantBuffer: return "ConstantBuffer";
+		case CookedShaderResourceKind::Texture: return "Texture";
+		case CookedShaderResourceKind::StructuredBuffer: return "StructuredBuffer";
+		case CookedShaderResourceKind::ByteAddressBuffer: return "ByteAddressBuffer";
+		case CookedShaderResourceKind::TypedBuffer: return "TypedBuffer";
+		case CookedShaderResourceKind::RWTexture: return "RWTexture";
+		case CookedShaderResourceKind::RWStructuredBuffer: return "RWStructuredBuffer";
+		case CookedShaderResourceKind::RWByteAddressBuffer: return "RWByteAddressBuffer";
+		case CookedShaderResourceKind::RWTypedBuffer: return "RWTypedBuffer";
+		case CookedShaderResourceKind::Sampler: return "Sampler";
+		case CookedShaderResourceKind::AccelerationStructure: return "AccelerationStructure";
+		case CookedShaderResourceKind::PushConstantBlock: return "PushConstantBlock";
+	}
+	return "Unknown";
+}
+
+static const char* GetResourceDimensionName(CookedShaderResourceDimension dimension) noexcept
+{
+	switch (dimension)
+	{
+		case CookedShaderResourceDimension::Unknown: return "Unknown";
+		case CookedShaderResourceDimension::Buffer: return "Buffer";
+		case CookedShaderResourceDimension::Texture1D: return "Texture1D";
+		case CookedShaderResourceDimension::Texture1DArray: return "Texture1DArray";
+		case CookedShaderResourceDimension::Texture2D: return "Texture2D";
+		case CookedShaderResourceDimension::Texture2DArray: return "Texture2DArray";
+		case CookedShaderResourceDimension::Texture2DMS: return "Texture2DMS";
+		case CookedShaderResourceDimension::Texture2DMSArray: return "Texture2DMSArray";
+		case CookedShaderResourceDimension::Texture3D: return "Texture3D";
+		case CookedShaderResourceDimension::TextureCube: return "TextureCube";
+		case CookedShaderResourceDimension::TextureCubeArray: return "TextureCubeArray";
+	}
+	return "Unknown";
+}
+
 static std::string EscapeJsonString(std::string_view value)
 {
 	std::string result;
@@ -50,13 +90,39 @@ static const ShaderReflectionResourceBinding* FindReflectionBinding(
 	return nullptr;
 }
 
+static const ShaderReflectionResourceBinding* FindReflectionBinding(
+	const ShaderReflection& reflection,
+	const ShaderParameterStructFieldDescriptor& field) noexcept
+{
+	if (const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, field.GetShaderName()))
+	{
+		return binding;
+	}
+
+	const std::string_view layoutName = field.GetLayoutName();
+	if (layoutName != field.GetShaderName())
+	{
+		if (const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, layoutName))
+		{
+			return binding;
+		}
+	}
+
+	return nullptr;
+}
+
 static const ShaderParameterStructFieldDescriptor* FindDescriptorField(
 	const ShaderParameterStructDescriptor& descriptor,
 	std::string_view name) noexcept
 {
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
-		if (field.Reflected && field.GetShaderName() == name)
+		if (!field.Reflected)
+		{
+			continue;
+		}
+
+		if (field.GetShaderName() == name || field.GetLayoutName() == name)
 		{
 			return &field;
 		}
@@ -99,14 +165,17 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 
 		const std::string_view shaderName = field.GetShaderName();
 		const std::string_view layoutName = field.GetLayoutName();
-		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, shaderName);
+		const ShaderReflectionResourceBinding* binding = FindReflectionBinding(reflection, field);
 		if (binding == nullptr)
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2001 missing reflected binding for parameter '{}' (layout '{}')",
+			    "SC2001 missing reflected binding: field='{}' layout='{}' shaderBinding='{}' declaredKind='{}' declaredDimension='{}'",
+			    field.Name,
+			    layoutName,
 			    shaderName,
-			    layoutName));
+			    GetResourceKindName(field.Kind),
+			    GetResourceDimensionName(field.Dimension)));
 			continue;
 		}
 
@@ -114,11 +183,13 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2002 kind mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
-			    shaderName,
+			    "SC2002 reflected kind mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredKind='{}' reflectedKind='{}'",
+			    field.Name,
 			    layoutName,
-			    static_cast<std::uint32_t>(field.Kind),
-			    static_cast<std::uint32_t>(binding->Kind)));
+			    shaderName,
+			    binding->Name,
+			    GetResourceKindName(field.Kind),
+			    GetResourceKindName(binding->Kind)));
 		}
 
 		if (field.Dimension != CookedShaderResourceDimension::Unknown && binding->Dimension != CookedShaderResourceDimension::Unknown &&
@@ -126,20 +197,24 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2003 dimension mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
-			    shaderName,
+			    "SC2003 reflected dimension mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredDimension='{}' reflectedDimension='{}'",
+			    field.Name,
 			    layoutName,
-			    static_cast<std::uint32_t>(field.Dimension),
-			    static_cast<std::uint32_t>(binding->Dimension)));
+			    shaderName,
+			    binding->Name,
+			    GetResourceDimensionName(field.Dimension),
+			    GetResourceDimensionName(binding->Dimension)));
 		}
 
 		if (binding->ArrayCount != field.ArrayCount)
 		{
 			result.succeeded = false;
 			result.diagnostics.push_back(std::format(
-			    "SC2004 array-count mismatch for parameter '{}' (layout '{}', declared={}, reflected={})",
-			    shaderName,
+			    "SC2004 reflected array-count mismatch: field='{}' layout='{}' shaderBinding='{}' reflectedBinding='{}' declaredCount={} reflectedCount={}",
+			    field.Name,
 			    layoutName,
+			    shaderName,
+			    binding->Name,
 			    field.ArrayCount,
 			    binding->ArrayCount));
 		}
@@ -149,8 +224,12 @@ ShaderParameterStructVerificationResult ShaderParameterStructVerifier::Verify(
 	{
 		if (FindDescriptorField(descriptor, binding.Name) == nullptr)
 		{
-			result.succeeded = false;
-			result.diagnostics.push_back(std::format("SC2005 extra reflected binding '{}' is not declared in parameter struct", binding.Name));
+			result.diagnostics.push_back(std::format(
+			    "SC2005 extra reflected binding: reflectedBinding='{}' reflectedKind='{}' reflectedDimension='{}' is not declared in parameter struct '{}'",
+			    binding.Name,
+			    GetResourceKindName(binding.Kind),
+			    GetResourceDimensionName(binding.Dimension),
+			    descriptor.Name));
 		}
 	}
 

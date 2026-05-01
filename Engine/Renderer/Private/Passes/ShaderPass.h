@@ -199,6 +199,7 @@ class SPARKLE_RENDERER_API ShaderPass
 				return true;
 			case ShaderParameterSemanticKind::UniformData:
 			case ShaderParameterSemanticKind::SamplerSet:
+			case ShaderParameterSemanticKind::AccelerationStructure:
 				return false;
 			default:
 				return false;

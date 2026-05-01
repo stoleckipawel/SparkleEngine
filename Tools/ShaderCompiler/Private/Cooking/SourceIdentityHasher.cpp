@@ -21,9 +21,43 @@ std::uint64_t SourceIdentityHasher::Compute(
 	canonical += '|';
 	canonical += package.bindingLayoutId;
 	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(package.packageKind));
+	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(package.packageFeatures));
+	canonical += '|';
 	canonical += std::to_string(RenderConfig::ShaderModelMajor);
 	canonical += '.';
 	canonical += std::to_string(RenderConfig::ShaderModelMinor);
+	canonical += '|';
+	canonical += std::to_string(package.rayTracingPayloadSizeInBytes);
+	canonical += '|';
+	canonical += std::to_string(package.rayTracingAttributeSizeInBytes);
+	canonical += '|';
+	canonical += std::to_string(package.rayTracingMaxRecursionDepth);
+
+	for (const ShaderCookRayTracingExportDesc& rtExport : package.rayTracingExports)
+	{
+		canonical += ";rt-export=";
+		canonical += rtExport.shaderName;
+		canonical += '|';
+		canonical += std::to_string(static_cast<std::uint32_t>(rtExport.kind));
+		canonical += '|';
+		canonical += rtExport.exportName;
+		canonical += '|';
+		canonical += rtExport.entryPoint;
+	}
+
+	for (const ShaderCookRayTracingHitGroupDesc& hitGroup : package.rayTracingHitGroups)
+	{
+		canonical += ";rt-hit-group=";
+		canonical += hitGroup.name;
+		canonical += '|';
+		canonical += hitGroup.closestHitShaderName;
+		canonical += '|';
+		canonical += hitGroup.anyHitShaderName;
+		canonical += '|';
+		canonical += hitGroup.intersectionShaderName;
+	}
 
 	for (const CookedStageBuild& compiledStage : compiledStages)
 	{

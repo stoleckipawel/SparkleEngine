@@ -26,6 +26,12 @@ std::uint64_t ShaderCompileOptionsHasher::Compute(const ShaderCompileOptions& op
 	canonical += '|';
 	canonical += std::to_string(static_cast<std::uint32_t>(options.Target));
 	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(options.PackageKind));
+	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(options.PackageFeatures));
+	canonical += '|';
+	canonical += std::to_string(static_cast<std::uint32_t>(options.RayTracingExportKind));
+	canonical += '|';
 	canonical += options.EnableDebugInfo ? '1' : '0';
 	canonical += options.EnableOptimizations ? '1' : '0';
 	canonical += options.TreatWarningsAsErrors ? '1' : '0';

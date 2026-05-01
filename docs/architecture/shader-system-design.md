@@ -301,15 +301,22 @@ The shader system should include tiny example shaders that prove each capability
 | `HelloTriangle` | `HelloWorld/HelloTriangle.hlsl` | Basic graphics package with vertex/pixel stages and simple package inspection. | Can be runtime-visible or tool-only. |
 | `HelloPermutation` | `HelloWorld/HelloPermutation.hlsl` | Small typed permutation domain, stable variant IDs, compile defines, and `list-permutations` output. | Tool-only is enough until pass integration exists. |
 | `HelloCompute` | `HelloWorld/HelloComputeCS.hlsl` | Compute package, UAV binding, reflection validation, and DXIL/SPIR-V multi-format output. | Can reuse compute runtime patterns later. |
+| `HelloSlangTriangle` | `HelloWorld/Slang/HelloSlangTriangle.slang` | Small vertex/pixel package authored as Slang source, proving the Slang backend can compile ordinary graphics shaders to DXIL/SPIR-V through the same package path. | Tool-only until Slang graphics packages are runtime-smoked beside HLSL packages. |
+| `HelloSlangCompute` | `HelloWorld/Slang/HelloSlangCompute.slang` | Minimal compute package authored in Slang, proving UAV/resource reflection and package inspection through the Slang backend. | Tool-only is enough until compute runtime integration exists. |
+| `HelloSlangGenericColorMix` | `HelloWorld/Slang/HelloSlangGenericColorMix.slang` | Self-contained Slang generic color helper example; the file name tells reviewers they will see a tiny generic color-mixing function. | Tool-only; meant to show Slang generics without testing multi-file dependency handling yet. |
+| `HelloSlangInterfaceShadingModel` | `HelloWorld/Slang/HelloSlangInterfaceShadingModel.slang` | Self-contained interface-style shading model demo; the file name tells reviewers they will see a tiny interface dispatch pattern, not a material system. | Tool-only; meant to show Slang interfaces without creating a second material system. |
 | `HelloInlineRayQuery` | `HelloWorld/HelloInlineRayQueryCS.hlsl` | Ordinary compute package with inline ray-query feature metadata and acceleration-structure binding metadata. | Tool-only until RHI inline RT validation exists. |
 | `HelloRayTracingLibrary` | `HelloWorld/RayTracing/HelloRayGen.hlsl`, `HelloMiss.hlsl`, `HelloClosestHit.hlsl`, `HelloAnyHit.hlsl`, `HelloIntersection.hlsl`, `HelloCallable.hlsl` | RT library package assembled from one file per RT shader type, with exports, hit groups, payload/attribute metadata, and package inspection. | Tool-only until DXR/Vulkan RT state object support exists. |
 
 Rules for examples:
 
 - Keep each example intentionally small and named around the capability it proves.
+- Keep Slang-specific examples under `Engine/Assets/Shaders/HelloWorld/Slang/` so the repository clearly shows which demos are language/backend capability showcases.
+- Keep each HelloWorld Slang demo self-contained in its own shader file. Do not use shared `Common.slang` files, `include`, `import`, or module examples until dependency tracking is the explicit feature being tested.
 - Prefer the smallest file set that teaches the concept clearly; ray tracing library examples should use separate files per shader type because exports and hit groups are the lesson.
 - Register examples through the same typed shader registration mechanism as production shaders.
 - Mark examples as tool-only until the Renderer/RHI runtime can honestly execute them.
+- Slang examples must still produce normal `.sparkshader` packages; do not add a Slang-only artifact format, runtime fallback, or pass-local source compile path.
 - Include each example in `list-shaders`, `inspect-shader`, `list-permutations`, and `inspect-package` acceptance checks when the underlying feature lands.
 - Do not add bespoke example-only compiler paths, package formats, runtime fallbacks, or hand-authored package layouts.
 
@@ -561,75 +568,190 @@ Rationale:
 
 ## Required Changes
 
-### Phase 1: Architecture Document and Invariants
+Use each phase below as a standalone implementation prompt. At the start of a phase, inspect the named files and current call flow before editing. Keep changes scoped to the phase, update this document when implementation reality differs, and do not start the next phase until the validation steps pass or the blocker is documented.
 
-- Land this design document.
-- Add a short link from `Scripts/README.md` or future top-level docs index if a docs tree becomes the standard location.
-- Keep the no-runtime-compiler invariant explicit in boundary validation comments.
+### Phase 1: Architecture Document and Invariants - Complete
+
+Prompt:
+
+Preserve Phase 1 as completed baseline work. The design document is the implementation compass for later phases, and boundary comments now state the no-runtime-compiler invariant.
+
+Completed evidence:
+
+- `docs/architecture/shader-system-design.md` exists as the architecture baseline.
+- `docs/README.md` and `Scripts/README.md` link to the shader architecture document.
+- `CMake/Validation/ValidateShaderCompilerBoundary.cmake` documents the runtime cooked-package invariant.
+
+Validation:
+
+- Run `cmake -P CMake\Validation\ValidateShaderCompilerBoundary.cmake` after edits that touch shader compiler boundaries.
 
 Acceptance:
 
 - A reviewer can understand current state, target state, non-goals, and tradeoffs from one document.
 
-### Phase 2: Boundary Validation Audit
+### Phase 2: Boundary Validation Audit - Complete
 
-- Re-audit `ValidateShaderCompilerBoundary.cmake` against current backend files.
-- Keep `ShaderCompiler.exe` exception limited to Application shader recook files.
-- Ensure Slang and DXC tokens remain backend-local.
-- Consider adding stale manual-layout tokens to validation after migration.
+Prompt:
+
+Preserve Phase 2 as completed boundary hardening. The validator should fail if compiler implementation details leak into runtime, Renderer orchestration, Editor UI, or runtime CMake targets.
+
+Completed evidence:
+
+- `ShaderCompiler.exe` and `SHADER_COMPILER_EXE` remain allowed only under `Engine/Application/Private/ShaderRecook/` on the runtime side.
+- Runtime source validation rejects tool-only backend APIs, DXC, Slang, SPIRV-Reflect, stale manifest terms, and stale manual-layout helper names.
+- Runtime CMake validation rejects `ShaderCompiler`, `Tools/ShaderCompiler`, `dxcompiler`, `spirv_reflect`, `slang::slang`, and Slang SDK include variables.
+- Tool source validation keeps ShaderCompiler free of high-level runtime modules and runtime-private RHI paths.
 
 Acceptance:
 
 - Build fails if compiler implementation details leak into runtime or orchestration.
 
-### Phase 3: Reflection as a Required Contract
+### Phase 3: Reflection as a Required Contract - Complete
 
-- Make typed reflected fields fail cook when backend reflection is unavailable or incomplete.
-- Keep `Reflected=false` as the path for pass IO and layout-only abstractions.
-- Improve diagnostics with package, variant, stage, backend, target, field, reflected kind, and declared kind.
+Prompt:
+
+Preserve Phase 3 as completed reflection-contract hardening. Backend reflection extraction failure is now surfaced to cook orchestration, and declared `Reflected=true` fields fail cook before package emission when reflection is missing or incompatible.
+
+Completed evidence:
+
+- DXC and Slang compile paths fail when backend reflection extraction or reflection layout production fails.
+- `ShaderCookGraphExecutor` reports package id, shader source, variant id, stage, backend, target, and parameter struct in reflection verification failures.
+- `ShaderParameterStructVerifier` reports field name, layout name, shader binding name, declared kind/dimension, and reflected kind/dimension where applicable.
+- Declared `Reflected=true` fields remain strict; undeclared extra reflected bindings are diagnostic-only so Slang's global reflection superset does not reject valid packages.
+
+Validation:
+
+- Built `ShaderCompiler` with serial MSBuild flags.
+- Ran `list-shaders --validate` from `Projects\Showcase` and validated 7 typed shader registrations.
+- Ran cold-cache DXC cook for `DxilSm66` and cooked 4 packages / 7 stages.
+- Ran cold-cache Slang cook for `DxilSm66` and cooked 4 packages / 7 stages.
+- Ran `cook --verification-self-test parameter-mismatch` and confirmed it fails with the richer `SC2001` diagnostic.
 
 Acceptance:
 
 - A shader with missing reflected metadata fails before package emission.
 - `cook --verification-self-test parameter-mismatch` remains a reliable negative test.
 
-### Phase 4: Include and Cache Correctness
+### Phase 4: Include and Cache Correctness - Complete
 
-- Make include closure failures explicit.
-- Add an inspect or debug output mode that reports dependency hash, settings hash, backend identity, and target.
-- Ensure cache keys include all compile-affecting backend and target inputs.
+Prompt:
+
+Implement Phase 4 by making shader include closure and cache identity reviewable. Start by tracing `IncludeClosureHasher`, `ShaderCompileOptionsHasher`, `ShaderCacheKey`, `LocalDiskShaderArtifactStore`, `ShaderDebugArtifactWriter`, and the `cook`, `inspect-shader`, or debug-artifact CLI surfaces.
+
+Scope:
+
+- Turn missing, unreadable, or unresolved includes into explicit cook failures or explicit diagnostics, never silent stale cache reuse.
+- Ensure cache keys include every compile-affecting input: source identity, include/dependency closure, compile defines, shader model/profile, backend name, backend version, target format, entry point, stage, debug/cook settings that affect output, and relevant compiler arguments.
+- Add or extend an inspect/debug output surface that reports dependency hash, settings hash, backend identity, backend version, target, and whether a stage was a cache hit or miss.
+- Keep the cook executor serial.
+
+Guardrails:
+
+- Do not add a parallel cook graph.
+- Do not make runtime responsible for source dependency tracking.
+- Do not add a cache identity field unless it affects compilation or package validation.
+
+Completed evidence:
+
+- Include closure hashing reports source hash, include closure hash, and dependency count, and unresolved validation includes use the same include resolution path as normal compilation.
+- Cook nodes carry source, include closure, options, cache key, and dependency-count identity through execution.
+- Cache hits and compile misses annotate `CookedStageBuild` with cache status before package/debug output.
+- Debug artifact bundles now include `cache-info.json`, and `compile-request.json` includes source hash, include closure hash, options hash, cache key, cache status, backend, backend version, target, and binary format.
+- `cook --verification-self-test missing-include` exercises a missing include through the cook graph and fails loudly with the unresolved include name and includer source path.
+
+Validation:
+
+- Built `ShaderCompiler` with serial MSBuild flags.
+- Ran an isolated cold-cache DXC cook for `DxilSm66`; result: 4 packages / 7 stages, `cacheHits=0`, `cacheMisses=7`.
+- Ran the same isolated cook again; result: 4 packages / 7 stages, `backendInvocations=0`, `cacheHits=7`, `cacheMisses=0`.
+- Ran `cook --verification-self-test missing-include` and confirmed it fails through the cook path with unresolved `__SparkleMissingIncludeSelfTest__.hlsli` referenced from the owning shader source.
+- Ran a debug-artifact DXC cook and inspected `cache-info.json` plus `compile-request.json` for dependency/settings/backend/target/cache identity.
+- Re-ran `CMake/Validation/ValidateShaderCompilerBoundary.cmake` successfully.
 
 Acceptance:
 
 - A missing include cannot silently produce a stale cache hit.
 - Debug artifacts explain why a shader did or did not recook.
 
-### Phase 5: Multi-Format Package Strategy
+### Phase 5: Multi-Format Package Strategy - Complete
 
-- Rename cooked shader package files from `.sshd` to `.sparkshader` through the centralized `Paths::CookedShaderPackage` helper, then recook packages.
-- Allow one logical package to contain DXIL and SPIR-V records for the same package/stage/variant.
-- Extend cook settings from a single target to a target set when needed.
-- Keep runtime selection through `CookedShaderBinaryFormat requiredBinaryFormat`.
-- Keep the package model flexible enough for future ray tracing library records, not only graphics/compute stage records.
-- Bump package and registry versions only if serialized compatibility changes.
+Prompt:
+
+Implement Phase 5 by making cooked shader artifacts readable and preparing the package contract for multiple binary formats. Start by tracing `Paths::CookedShaderPackage`, cooked package writer/reader code, registry writer/reader code, `CookedShaderBinaryFormat`, runtime package validation, and CLI target parsing.
+
+Scope:
+
+- Rename cooked shader package files from `.sshd` to `.sparkshader` through the centralized path helper, then recook packages.
+- Let one logical package carry DXIL and SPIR-V records for the same package, stage, and variant when the cook requests multiple targets.
+- Keep runtime binary selection driven by `CookedShaderBinaryFormat requiredBinaryFormat`.
+- Extend cook target UX conservatively by allowing repeated `--target` values while preserving the current single-target form. Defer named target profiles until they remove real workflow friction.
+- Keep the package model flexible enough for future ray tracing library records.
+- Bump package and registry versions only when serialized compatibility changes.
+
+Guardrails:
+
+- Do not keep `.sshd` as an active compatibility path once `.sparkshader` is selected, unless a temporary migration blocker is documented with a removal condition.
+- Do not write separate logical packages that overwrite each other for DXIL versus SPIR-V.
+- Do not move API-specific pipeline creation out of RHI.
+- Do not add Vulkan RHI pipeline implementation in this phase.
+
+Completed evidence:
+
+- `Paths::CookedShaderPackage` now emits readable `.sparkshader` package filenames from the centralized cooked-package helper; no `.sshd` runtime compatibility path was kept active.
+- `cook --target` supports repeated values while preserving the existing single-target form. The first explicit `--target` replaces the default target, and duplicate target values are ignored.
+- `ShaderPackageCookSettings` carries a target list, and the cook graph now creates one serial cook node for every package stage and requested target.
+- One logical package now carries multiple `CookedShaderBinaryRecord` entries for the same package/stage/variant across DXIL and SPIR-V, using the existing package schema. No package version bump was required because the serialized layout already supported multiple binary records.
+- `inspect-package` shows the distinguishable binary records in one package, including backend, entry point, format, bytecode size, and reflection counts.
+- SPIR-V reflection extraction now normalizes buffer-like resources to `Buffer`, preserving strict typed parameter verification across DXIL and SPIR-V records.
+- D3D12 binding layout realization filters package reflection to DXIL records, matching its DXIL bytecode selection and keeping API-specific realization inside the RHI backend.
+
+Validation:
+
+- Built `ShaderCompiler` with serial MSBuild flags after the multi-target cook changes and after the SPIR-V reflection normalization fix; both builds completed with 0 warnings and 0 errors.
+- Ran `ShaderCompiler.exe cook --no-cache --backend dxc --target DxilSm66 --target SpirV16` for Showcase; result: 4 `.sparkshader` packages, 14 backend invocations, `cacheHits=0`, `cacheMisses=14`, and no `.sshd` outputs.
+- Inspected `7BC1A00494AEFD27.sparkshader`; result: one `HelloTriangle` package with 4 binary records: VS DXIL, VS SPIR-V, PS DXIL, and PS SPIR-V.
+- Built `ShowcaseRuntime` after the package extension and D3D12 reflection filtering; result: 0 warnings and 0 errors.
+- Ran short D3D12 runtime smoke validation with `SPARKLE_SMOKE_VALIDATE_D3D12=1` and `SPARKLE_SMOKE_FRAME_LIMIT=3`; result: cooked shader runtime loaded `ForwardOpaque`, `ShadowOpaque`, and `ComputeClear` from `.sparkshader` packages and exited successfully.
+- Re-ran `CMake/Validation/ValidateShaderCompilerBoundary.cmake`; result: shader compiler boundary check passed for Engine/RHI, high-level engine modules, and Tools/ShaderCompiler.
 
 Acceptance:
 
 - Cooked shader package filenames are readable in cooked output directories, logs, and package inspection paths.
 - A package can satisfy DX12 with DXIL and future Vulkan with SPIR-V without recooking over the same logical package.
 
-### Phase 6: Ray Tracing Shader And Inline Ray Query Readiness
+### Phase 6: Ray Tracing Shader And Inline Ray Query Readiness - Complete
 
-- Add a package kind concept so graphics, compute, and ray tracing library packages can validate differently.
-- Extend shader identity with RT export kinds or RT stages: ray generation, miss, closest-hit, any-hit, intersection, and callable.
-- Add inline ray-query feature metadata for ordinary graphics/compute shaders that use `RayQuery` or Vulkan ray query capabilities.
-- Add an acceleration-structure binding semantic/domain that can be used by both RT libraries and inline ray-query shaders.
-- Add backend capability reporting for ray tracing library support and inline ray-query support per target/backend.
-- Teach DXC/Slang profile selection to handle DXIL RT libraries, SPIR-V ray tracing targets, and regular graphics/compute profiles that require inline ray queries.
+Prompt:
+
+Implement Phase 6 by extending shader identity, package metadata, and inspection for ray tracing libraries and inline ray queries without adding runtime DXR/Vulkan RT execution yet. Start by tracing shader stage identity, package schema, backend capability reporting, profile construction, reflection metadata, package validation, and `inspect-package` output.
+
+Scope:
+
+- Add package kind metadata so graphics, compute, and ray tracing library packages can validate differently.
+- Add a separate RT export kind for ray generation, miss, closest-hit, any-hit, intersection, and callable so graphics/compute `ShaderStageMask` stays clean.
+- Add inline ray-query feature metadata to ordinary graphics/compute packages.
+- Add an acceleration-structure binding semantic or resource domain usable by both RT libraries and inline ray-query shaders.
+- Add backend capability reporting for RT library support and inline ray-query support per backend and target.
+- Teach DXC and Slang profile selection enough to describe DXIL RT libraries, SPIR-V RT targets, and graphics/compute shaders that require inline ray queries.
 - Add cooked export records and hit-group records with stable names and hashes.
 - Allow one RT package to gather exports from separate ray generation, miss, closest-hit, any-hit, intersection, and callable source files.
 - Keep global/pass parameter layouts separate from future local RT parameter layouts.
-- Extend `inspect-package` to print RT package kind, exports, hit groups, local parameter layout metadata, payload/attribute metadata, inline ray-query feature flags, acceleration-structure bindings, backend, target, and hashes.
+- Extend `inspect-package` to print package kind, exports, hit groups, local parameter metadata, payload/attribute metadata, inline ray-query flags, acceleration-structure bindings, backend, target, and hashes.
+
+Guardrails:
+
+- Do not add runtime compilation, pass-local file probing, or editor-only fallback compiles.
+- Do not implement full RHI DXR/Vulkan state objects, shader tables, acceleration structures, or RT dispatch in this phase.
+- Do not create `.rtshader` or any artifact disconnected from `.sparkshader` and the shader registry.
+- Keep backend APIs contained to backend folders and RHI-native RT work deferred.
+
+Validation:
+
+- Add tool-visible Hello examples only when the schema can inspect them honestly.
+- Run `list-shaders`, `list-permutations`, and `inspect-package` against RT and inline-ray-query examples.
+- Verify inline ray-query packages remain graphics/compute packages rather than fake RT libraries.
+- Re-run boundary validation and shader compiler smoke cooks for supported backends/targets.
 
 Acceptance:
 
@@ -640,13 +762,59 @@ Acceptance:
 - A reviewer can inspect inline ray-query feature requirements and acceleration-structure bindings before runtime support lands.
 - The RHI ray tracing implementation can consume the package contract later without inventing a second shader artifact format.
 
+Completed implementation:
+
+- Bumped `.sparkshader` to cooked package schema v4 with `CookedShaderPackageKind`, package feature flags, ray tracing export records, hit-group records, local-parameter record slots, and payload/attribute/recursion metadata.
+- Kept RT export identity separate from `ShaderStageMask`; ray tracing library binaries use the neutral `lib` label while graphics and compute stage masks remain unchanged.
+- Added acceleration-structure parameter semantics and authoring support with `SHADER_PARAMETER_ACCELERATION_STRUCTURE` for inline ray-query and future RT library bindings.
+- Extended backend capabilities and `list-backends` so DXC reports DXIL RT library and DXIL inline ray-query support while Slang remains honest with no RT feature claim in this phase.
+- Updated DXC profile construction to honor `DxilSm6x` targets, enabling `cs_6_6` inline ray queries and `lib_6_6` RT library exports without runtime compilation.
+- Added `HelloInlineRayQuery` as a compute package using `RayQuery` and `RaytracingAccelerationStructure`.
+- Added `HelloRayTracingLibrary` with separate source files for ray generation, miss, closest-hit, any-hit, intersection, and callable exports, collected into one package and one hit group.
+- Extended `inspect-package` to print package kind, features, hashes, backend/version, bytecode hashes, RT exports, hit groups, payload/attribute metadata, local-parameter count, and reflected acceleration-structure bindings.
+
+Validation evidence:
+
+- `Build_CMakeTools` was attempted first and still cannot configure this workspace; direct MSBuild remains the working validation path for this generated build tree.
+- `msbuild build\Tools\ShaderCompiler\ShaderCompiler.vcxproj /p:Configuration=Debug /p:Platform=x64 /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false /nologo /clp:ErrorsOnly` completed with no MSVC errors.
+- `ShaderCompiler list-backends` reports `dxc` with `rt='dxil-rt-library, dxil-inline-ray-query'` and `slang` with `rt='none'`.
+- `ShaderCompiler list-shaders --validate` reports 14 valid typed shader registrations.
+- `ShaderCompiler cook --backend dxc --target DxilSm66 --no-cache` from `Projects\Showcase` cooked 6 packages and 14 backend invocations, including `HelloInlineRayQuery` and `HelloRayTracingLibrary`.
+- `inspect-package F945D020B622E1EE.sparkshader` reports `kind=compute`, `features='inline-ray-query, acceleration-structure'`, and the `SceneAccelerationStructure` binding at set 0 slot 0.
+- `inspect-package 68A69CDEC3332C78.sparkshader` reports `kind=ray-tracing-library`, 6 DXIL `lib` binaries, 6 exports, one procedural hit group, `payloadBytes=16`, `attributeBytes=8`, and `maxRecursion=1`.
+- `ShaderCompiler list-permutations HelloInlineRayQueryCS` reports the default `HelloInlineRayQuery` permutation.
+- `msbuild build\Projects\Showcase\ShowcaseRuntime.vcxproj /t:Rebuild /p:Configuration=Debug /p:Platform=x64 /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false /nologo /clp:ErrorsOnly` completed with no MSVC errors.
+- `ShowcaseRuntime.exe` with `SPARKLE_SMOKE_VALIDATE_D3D12=1` and `SPARKLE_SMOKE_FRAME_LIMIT=2` exited 0; ForwardOpaque, ShadowOpaque, and ComputeClear cooked shader runtime setup still succeeds while RT execution remains deferred.
+- `msbuild build\sparkle_validation_check.vcxproj /p:Configuration=Debug /p:Platform=x64 /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false /nologo /clp:ErrorsOnly` completed with no reported validation errors.
+
 ### Phase 7: Small Typed Permutation Model
 
-- Give permutation dimensions stable define names and values.
-- Generate stable variant IDs from permutation vectors.
-- Add compile defines from the selected vector.
-- Make `list-permutations` display actual vectors and keys.
-- Make `inspect-shader` show the domain in reviewer-friendly terms.
+Prompt:
+
+Implement Phase 7 by adding a compact typed permutation model for global and render-pass shaders only. Start by tracing `TShaderPermutationDomain`, `ShaderPermutationVector`, `ShaderPermutationKey`, `GlobalShaderRegistry`, `ShaderCookPlanner`, compile define generation, `list-permutations`, and `inspect-shader`.
+
+Scope:
+
+- Give each permutation dimension a stable name, legal values, and compile define mapping.
+- Generate stable artifact-facing variant IDs from deterministic permutation vectors, and keep human-readable vector names for diagnostics and inspection.
+- Add compile defines from the selected vector into backend compile options.
+- Make `list-permutations` show actual vectors, dimension values, variant IDs, and keys.
+- Make `inspect-shader` show the permutation domain in reviewer-friendly language.
+- Let runtime request a typed shader reference or package variant by stable permutation key where the current runtime path needs it.
+
+Guardrails:
+
+- Do not implement material shader maps or material permutations.
+- Do not use ad hoc string-only variant selection when typed dimension data exists.
+- Do not break existing default/no-permutation shaders.
+
+Validation:
+
+- Add or update a tiny `HelloPermutation` shader/package.
+- Run `list-shaders --validate`.
+- Run `list-permutations HelloPermutation` or the chosen shader id.
+- Cook the default and non-default variants and verify distinct stable variant IDs.
+- Inspect package output for variant identity.
 
 Acceptance:
 
@@ -656,12 +824,33 @@ Acceptance:
 
 ### Phase 8: Renderer-Private Shader Runtime Facade
 
-- Extract runtime orchestration out of `RenderPassPipelineTraits`.
-- Suggested name: `RenderPassShaderRuntime`.
-- Inputs: pass name, package definition, expected stages, pipeline kind, PSO state hooks.
-- Outputs: binding layout, pipeline state, loaded package pointer/reference, diagnostics.
-- Move or inject package path locating so pass/reload policy lives in the Renderer facade instead of being hardwired into RHI package cache internals.
-- Keep RHI package binary parsing/validation and backend root signature creation in RHI.
+Prompt:
+
+Implement Phase 8 by extracting pass shader runtime assembly into a narrow Renderer-private facade named `RenderPassShaderRuntime`. Start by tracing `RenderPassPipelineTraits`, `PipelineStateManager`, `CookedShaderPackageCache`, RHI binding layout creation, PSO creation, and editor recook reload flow.
+
+Scope:
+
+- Move package request policy, package locating coordination, generated layout lookup, binding layout compile requests, PSO creation requests, and pass-facing diagnostics behind `RenderPassShaderRuntime`.
+- Keep pass traits focused on shader package intent and pass-specific PSO state.
+- Keep startup and reload on the same facade path.
+- Keep RHI package binary parsing, package validation, bytecode selection, and backend root signature creation in RHI.
+- Shape facade inputs around pass name, package definition, expected stages, pipeline kind, and PSO state hooks.
+- Shape facade outputs around binding layout, pipeline state, loaded package reference, and diagnostics.
+
+Guardrails:
+
+- Do not make the facade a generic Renderer service or material system.
+- Do not move compiler concepts into Renderer.
+- Do not make RHI depend on pass names, editor reload policy, project cooked path policy, or old-package retention decisions.
+- Remove or simplify old pass-trait orchestration as it becomes obsolete.
+
+Validation:
+
+- Build Renderer/RHI/Application targets.
+- Launch the Showcase editor/runtime path that creates render pass PSOs.
+- Trigger or simulate shader reload after recook if the existing workflow supports it.
+- Verify diagnostics identify the pass and package when loading or validation fails.
+- Re-run boundary validation.
 
 Acceptance:
 
@@ -672,9 +861,29 @@ Acceptance:
 
 ### Phase 9: Editor Recook and Hot Reload Hardening
 
-- Replace or harden `recook.signal` with atomic publication and stale-signal detection.
-- Keep previous valid packages active when recook fails.
-- Reload only after process success, signal freshness, and RHI idle.
+Prompt:
+
+Implement Phase 9 by making editor shader recook publication atomic and reload decisions explicit. Start by tracing `ShaderRecookCoordinator`, `ShaderCompilerProcess`, `ShaderRecookSignal`, cooked package reload, RHI idle synchronization, and current failure diagnostics.
+
+Scope:
+
+- Replace or harden `recook.signal` as an atomic JSON result file published through temporary-file write plus rename, with a monotonic cook id or timestamp so stale signals are detectable.
+- Require process success, fresh publication data, and RHI idle before runtime reload.
+- Keep previously valid packages active when recook fails or package validation rejects the new output.
+- Improve failure messages so they distinguish compiler process failure, stale signal, half-written output, RHI-not-idle deferral, and runtime validation rejection.
+
+Guardrails:
+
+- Do not let the editor compile shaders in-process.
+- Do not clear valid runtime packages before the replacement set is validated.
+- Do not reload from partially written packages.
+
+Validation:
+
+- Run a successful editor recook and verify reload occurs only after process success and RHI idle.
+- Simulate or force a compiler failure and verify old packages remain active.
+- Simulate or force stale/partial publication and verify reload is rejected with a precise diagnostic.
+- Re-run shader boundary validation.
 
 Acceptance:
 
@@ -683,10 +892,30 @@ Acceptance:
 
 ### Phase 10: Reviewer Diagnostics and CI
 
-- Extend `inspect-package` output with backend, target/format, reflection counts, layout hash, source identity hash, and variant hash.
-- Include ray tracing package kind, exports, hit groups, payload/attribute metadata, inline ray-query feature flags, and acceleration-structure bindings once Phase 6 lands.
-- Extend `inspect-shader` and `list-permutations` for typed permutation visibility.
-- Extend CI with cold-cache cook, backend/target smoke checks, parameter mismatch negative test, and package inspection proof.
+Prompt:
+
+Implement Phase 10 by making shader packages and CI evidence reviewer-friendly. Start by tracing `inspect-package`, `inspect-shader`, `list-permutations`, shader compiler CI scripts, package inspection helpers, and current cook check scripts.
+
+Scope:
+
+- Extend `inspect-package` with backend name/version, target/format, reflection counts, layout hash, source identity hash, variant hash, bytecode hashes, and package kind.
+- Include RT exports, hit groups, payload/attribute metadata, inline ray-query flags, and acceleration-structure bindings when Phase 6 metadata exists.
+- Extend `inspect-shader` and `list-permutations` so typed permutation domains are easy to review.
+- Extend CI with cold-cache cook, backend/target smoke checks, parameter mismatch negative test, package inspection proof, and boundary validation proof.
+- Include HelloSlang examples in validation once they land, proving Slang emits normal `.sparkshader` packages.
+
+Guardrails:
+
+- Do not make CI depend on machine-specific editor UI state.
+- Do not add heavyweight runtime scenarios when a tool-level smoke test proves the contract.
+- Keep diagnostics factual and tied to package identity, not implementation-only backend details.
+
+Validation:
+
+- Run the shader compiler CI script or its updated equivalent.
+- Run `list-backends`, `list-targets`, `list-shaders --validate`, `list-permutations`, and `inspect-package` manually for at least one package.
+- Verify parameter mismatch remains a negative test.
+- Verify boundary validators pass as part of CI or documented local checks.
 
 Acceptance:
 
@@ -695,13 +924,34 @@ Acceptance:
 
 ### Phase 11: Cleanup
 
-- Run a duplicate-concept audit for shader identity, package layout, package loading, reflection validation, backend selection, debug artifact writing, and runtime reload policy.
+Prompt:
+
+Implement Phase 11 by deleting obsolete shader-system paths after earlier phases have made the active path clear. Start with searches for duplicate owners and stale terms before editing.
+
+Scope:
+
+- Audit shader identity, package layout, package loading, reflection validation, backend selection, debug artifact writing, runtime reload policy, and example shader registration.
 - Merge or delete tiny forwarding files that do not own lifecycle, policy, diagnostics, or a dependency boundary.
-- Remove stale manifest terminology from docs and comments where typed registrations are now authoritative.
+- Remove stale manifest terminology from docs and comments where typed registrations are authoritative.
 - Remove manual layout helper paths once generated layouts fully own cook and runtime.
-- Remove temporary compatibility wrappers after migration.
-- Keep each public shader header justified as a module contract; move implementation-only types private when possible.
-- Keep deferred Vulkan/material/full-RHI-ray-tracing notes labeled as deferred work.
+- Remove temporary compatibility wrappers after their migration condition is satisfied.
+- Keep public shader headers only when they are true module contracts; move implementation-only types private when possible.
+- Keep deferred Vulkan, material, full RHI ray tracing, work graph, and parallel cook notes labeled as deferred work.
+
+Guardrails:
+
+- Do not delete deferred design notes by pretending deferred work is complete.
+- Do not remove compatibility code until the replacement is validated.
+- Do not combine cleanup with a new feature phase.
+- Do not touch unrelated engine modules except to remove stale shader-system references.
+
+Validation:
+
+- Search for stale terms listed in the cleanup inventory and explain any remaining intentional hits.
+- Build the affected targets.
+- Run shader compiler boundary validation.
+- Run shader cook smoke checks.
+- Re-read docs touched by cleanup and make sure they describe implemented state.
 
 Acceptance:
 
@@ -785,22 +1035,23 @@ Expected results after the planned work:
 - Boundary validators pass.
 - `list-backends` reports DXC and Slang clearly.
 - `list-targets` reports DXIL and SPIR-V targets.
-- `list-shaders --validate` reports typed registrations.
+- `list-shaders --validate` reports typed registrations, including the `HelloSlang*` showcase shaders once they land.
 - `list-permutations` reports actual stable vectors.
 - Cold-cache cooks succeed for available backend/target pairs.
+- Slang cold-cache cooks produce normal `.sparkshader` packages for the HelloSlang examples, with no Slang-only runtime path or artifact format.
 - Parameter mismatch self-test fails with a clear diagnostic.
-- Package inspection shows package identity, backend identity, binary format, and reflection counts.
+- Package inspection shows package identity, backend identity, binary format, reflection counts, and the source/backend distinction for HLSL versus Slang examples.
 - Editor startup rejects missing/stale packages loudly.
 - Editor recook reloads only validated cooked packages after RHI idle.
 
-## Open Questions
+## Implementation Defaults For Later Phases
 
-1. Facade name: `RenderPassShaderRuntime`, `RenderShaderRuntime`, or `ShaderPipelineRuntime`?
-2. Multi-format package UX: should `cook --target` accept repeated values, comma lists, or a named profile such as `--target-profile dx12-vulkan`?
-3. Permutation naming: should variant IDs be human-readable, hash-based, or both?
-4. Recook signal shape: atomic JSON result file, monotonic stamp file, or process-result-only reload?
-5. Documentation placement: keep this under `docs/architecture/`, or create a broader docs index as the repo documentation surface grows?
+- Renderer-private facade name: `RenderPassShaderRuntime`.
+- Multi-format cook UX: allow repeated `--target` values while keeping the current single-target form valid; defer named target profiles.
+- Permutation identity: use stable artifact-facing IDs derived from deterministic vectors, and show human-readable vectors in diagnostics and inspection output.
+- Recook publication: prefer an atomic JSON result file written through temporary-file publish plus rename, with a monotonic cook id or timestamp for stale-signal detection.
+- Documentation placement: keep architecture documents under `docs/architecture/` and link them from `docs/README.md` plus relevant workflow READMEs.
 
 ## Recommended Next Step
 
-Start with Phase 2 and Phase 3: boundary validation audit plus reflection-as-contract hardening. Those are the highest confidence changes because they preserve the current architecture, improve correctness, and create immediate reviewer value without expanding runtime scope.
+Start with Phase 6 only: ray tracing shader and inline ray-query readiness. Phases 1 through 5 are complete, so the next implementation prompt should focus on package kind metadata, ray tracing export identity, hit-group records, inline ray-query feature metadata, acceleration-structure binding semantics, backend capability reporting, and inspection surfaces without adding runtime DXR/Vulkan state object execution yet.

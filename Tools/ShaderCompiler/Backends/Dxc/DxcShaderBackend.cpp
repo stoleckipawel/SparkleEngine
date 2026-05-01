@@ -70,6 +70,8 @@ ShaderBackendCapabilities DxcShaderBackend::GetCapabilities() const
 	ShaderBackendCapabilities capabilities;
 	capabilities.SupportsDxil = IsValid();
 	capabilities.SupportsSpirV = IsValid();
+	capabilities.SupportsDxilRayTracingLibrary = IsValid();
+	capabilities.SupportsDxilInlineRayQuery = IsValid();
 	return capabilities;
 }
 
@@ -154,20 +156,19 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	// DXC PDB blob, so SaveShaderSymbols returns an empty path harmlessly.
 	const std::filesystem::path debugArtifactPath = SaveShaderSymbols(result.Get(), options.SourcePath);
 
-	// Reflection failures stay non-fatal.
-	// The binary is still valid; the stage just lands with empty reflection.
 	ShaderReflection reflection;
-	std::string reflectionError;
-	const bool reflectionOk = IsSpirVTarget(options.Target)
-	    ? SpirVReflectionExtractor::Extract(bytecode, options.Stage, reflection, reflectionError)
-	    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, options.Stage, reflection, reflectionError);
-	if (!reflectionOk)
+	if (options.PackageKind != CookedShaderPackageKind::RayTracingLibrary)
 	{
-		SPDLOG_LOGGER_WARN(
-			g_dxcShaderBackendLogger,
-			"Shader reflection extraction failed for '{}': {}",
-			options.SourcePath.filename().string(),
-			reflectionError);
+		std::string reflectionError;
+		const bool reflectionOk = IsSpirVTarget(options.Target)
+		    ? SpirVReflectionExtractor::Extract(bytecode, options.Stage, reflection, reflectionError)
+		    : DxilReflectionExtractor::Extract(*m_utils.Get(), result.Get(), bytecode, options.Stage, reflection, reflectionError);
+		if (!reflectionOk)
+		{
+			return ShaderCompileResult::Failure(
+			    std::string{"DXC reflection extraction failed for target '"} + GetShaderTargetName(options.Target) +
+			    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + reflectionError);
+		}
 	}
 
 	SPDLOG_LOGGER_INFO(
@@ -207,8 +208,11 @@ void DxcShaderBackend::BuildCompileArguments(
 
 	outArgs.push_back(wSourcePath.c_str());
 
-	outArgs.push_back(L"-E");
-	outArgs.push_back(wEntryPoint.c_str());
+	if (options.PackageKind != CookedShaderPackageKind::RayTracingLibrary)
+	{
+		outArgs.push_back(L"-E");
+		outArgs.push_back(wEntryPoint.c_str());
+	}
 
 	outArgs.push_back(L"-T");
 	outArgs.push_back(wTargetProfile.c_str());

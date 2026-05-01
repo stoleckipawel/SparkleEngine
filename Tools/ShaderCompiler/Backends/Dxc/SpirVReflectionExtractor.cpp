@@ -289,6 +289,20 @@ bool SpirVReflectionExtractor::Extract(
 		                                                                            : "");
 		binding.Kind = MapDescriptorType(b->descriptor_type, b->image.dim);
 		binding.Dimension = MapImageDim(b->image.dim, b->image.arrayed, b->image.ms);
+		switch (binding.Kind)
+		{
+			case CookedShaderResourceKind::ConstantBuffer:
+			case CookedShaderResourceKind::StructuredBuffer:
+			case CookedShaderResourceKind::ByteAddressBuffer:
+			case CookedShaderResourceKind::TypedBuffer:
+			case CookedShaderResourceKind::RWStructuredBuffer:
+			case CookedShaderResourceKind::RWByteAddressBuffer:
+			case CookedShaderResourceKind::RWTypedBuffer:
+				binding.Dimension = CookedShaderResourceDimension::Buffer;
+				break;
+			default:
+				break;
+		}
 		binding.IsReadOnly = (binding.Kind != CookedShaderResourceKind::RWTexture &&
 		                     binding.Kind != CookedShaderResourceKind::RWStructuredBuffer &&
 		                     binding.Kind != CookedShaderResourceKind::RWByteAddressBuffer &&

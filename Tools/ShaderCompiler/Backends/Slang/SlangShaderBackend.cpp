@@ -176,15 +176,22 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	diagnosticBlob.setNull();
 	slang::ProgramLayout* layout = linkedProgram->getLayout(0, diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
-	if (layout != nullptr)
+	if (layout == nullptr)
 	{
-		ShaderReflection reflection;
-		std::string reflectionError;
-		if (SlangReflectionExtractor::Extract(*layout, options.Stage, reflection, reflectionError))
-		{
-			result.SetReflection(std::move(reflection));
-		}
+		return ShaderCompileResult::Failure(
+		    "Slang failed to produce reflection layout for target '" + std::string{GetShaderTargetName(options.Target)} +
+		    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + diagnostics);
 	}
+
+	ShaderReflection reflection;
+	std::string reflectionError;
+	if (!SlangReflectionExtractor::Extract(*layout, options.Stage, reflection, reflectionError))
+	{
+		return ShaderCompileResult::Failure(
+		    "Slang reflection extraction failed for target '" + std::string{GetShaderTargetName(options.Target)} +
+		    "' source '" + options.SourcePath.generic_string() + "' entry '" + options.EntryPoint + "' - " + reflectionError);
+	}
+	result.SetReflection(std::move(reflection));
 
 	if (options.CaptureDebugArtifacts)
 	{

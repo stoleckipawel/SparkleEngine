@@ -13,6 +13,7 @@ enum class ShaderParameterSemanticKind : std::uint8_t
 	DepthTarget,
 	UniformData,
 	SamplerSet,
+	AccelerationStructure,
 };
 
 enum class ShaderParameterResourceDomain : std::uint8_t
@@ -22,6 +23,7 @@ enum class ShaderParameterResourceDomain : std::uint8_t
 	Buffer,
 	Uniform,
 	Sampler,
+	AccelerationStructure,
 };
 
 enum class ShaderParameterAccess : std::uint8_t
@@ -57,6 +59,10 @@ struct DepthTarget
 };
 
 struct SamplerSet
+{
+};
+
+struct AccelerationStructure
 {
 };
 
@@ -119,6 +125,13 @@ template <> struct ShaderParameterSemanticTraits<SamplerSet>
 	static constexpr ShaderParameterAccess Access = ShaderParameterAccess::None;
 };
 
+template <> struct ShaderParameterSemanticTraits<AccelerationStructure>
+{
+	static constexpr ShaderParameterSemanticKind Kind = ShaderParameterSemanticKind::AccelerationStructure;
+	static constexpr ShaderParameterResourceDomain ResourceDomain = ShaderParameterResourceDomain::AccelerationStructure;
+	static constexpr ShaderParameterAccess Access = ShaderParameterAccess::Read;
+};
+
 template <typename T> struct ShaderParameterSemanticTraits<UniformData<T>>
 {
 	using ValueType = T;
@@ -156,6 +169,10 @@ template <> struct IsShaderParameterSemantic<DepthTarget> : std::true_type
 };
 
 template <> struct IsShaderParameterSemantic<SamplerSet> : std::true_type
+{
+};
+
+template <> struct IsShaderParameterSemantic<AccelerationStructure> : std::true_type
 {
 };
 

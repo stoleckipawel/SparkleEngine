@@ -14,6 +14,33 @@
 
 #include <format>
 
+static std::string FormatNodeDiagnosticContext(
+	const CookNode& node,
+	std::string_view backendName,
+	ShaderTarget target)
+{
+	return std::format(
+	    "shader package '{}' shader '{}' variant '{}' stage '{}' backend '{}' target '{}'",
+	    node.package->packageId,
+	    node.stage->sourcePath.generic_string(),
+	    node.package->variantId,
+	    GetShaderStagePrefix(node.stage->stage),
+	    backendName,
+	    GetShaderTargetName(target));
+}
+
+static void ApplyCacheDiagnostics(
+	const CookNode& node,
+	std::string_view cacheStatus,
+	CookedStageBuild& compiledStage)
+{
+	compiledStage.sourceHash = node.sourceHash;
+	compiledStage.includeClosureHash = node.includeClosureHash;
+	compiledStage.optionsHash = node.optionsHash;
+	compiledStage.cacheKey = node.cacheKey.value;
+	compiledStage.cacheStatus.assign(cacheStatus);
+}
+
 bool ShaderCookGraphExecutor::Execute(
     const ShaderPackageCookSettings& settings,
     bool writeDebugArtifacts,
@@ -64,6 +91,7 @@ bool ShaderCookGraphExecutor::ExecuteNode(
 		std::string cacheLookupError;
 		if (artifactStore.TryGet(node.cacheKey, compiledStage, cacheLookupError))
 		{
+			ApplyCacheDiagnostics(node, "hit", compiledStage);
 			if (!VerifyParameterStruct(settings, node, compiledStage, nullptr, outErrorMessage))
 			{
 				return false;
@@ -94,10 +122,8 @@ bool ShaderCookGraphExecutor::ExecuteNode(
 	        outErrorMessage))
 	{
 		outErrorMessage = std::format(
-		    "Failed to compile shader package '{}' variant '{}' stage '{}' - {}",
-		    node.package->packageId,
-		    node.package->variantId,
-		    GetShaderStagePrefix(node.stage->stage),
+		    "Failed to compile {} - {}",
+		    FormatNodeDiagnosticContext(node, backend->GetBackendName(), node.compileOptions.Target),
 		    outErrorMessage);
 		return false;
 	}
@@ -106,6 +132,7 @@ bool ShaderCookGraphExecutor::ExecuteNode(
 	{
 		return false;
 	}
+	ApplyCacheDiagnostics(node, settings.useCache ? (writeDebugArtifacts ? "disabled-debug-artifacts" : "miss") : "disabled", compiledStage);
 
 	if (writeDebugArtifacts &&
 	    !ShaderDebugArtifactWriter::Write(
@@ -118,10 +145,8 @@ bool ShaderCookGraphExecutor::ExecuteNode(
 	        outErrorMessage))
 	{
 		outErrorMessage = std::format(
-		    "Failed to write debug artifacts for shader package '{}' variant '{}' stage '{}' - {}",
-		    node.package->packageId,
-		    node.package->variantId,
-		    GetShaderStagePrefix(node.stage->stage),
+		    "Failed to write debug artifacts for {} - {}",
+		    FormatNodeDiagnosticContext(node, compiledStage.backendName, node.compileOptions.Target),
 		    outErrorMessage);
 		return false;
 	}
@@ -149,6 +174,10 @@ bool ShaderCookGraphExecutor::VerifyParameterStruct(
     std::string& outErrorMessage)
 {
 	if (!node.parameterStructDescriptor.has_value())
+	{
+		return true;
+	}
+	if (node.package->packageKind == CookedShaderPackageKind::RayTracingLibrary)
 	{
 		return true;
 	}
@@ -180,10 +209,9 @@ bool ShaderCookGraphExecutor::VerifyParameterStruct(
 	if (!verificationResult.succeeded)
 	{
 		outErrorMessage = std::format(
-		    "SC2001 shader package '{}' variant '{}' stage '{}' parameter-struct verification failed: {}",
-		    node.package->packageId,
-		    node.package->variantId,
-		    GetShaderStagePrefix(node.stage->stage),
+		    "SC2001 {} parameter-struct '{}' verification failed: {}",
+		    FormatNodeDiagnosticContext(node, compiledStage.backendName, node.compileOptions.Target),
+		    descriptor.Name,
 		    verificationResult.diagnostics.empty() ? "unknown mismatch" : verificationResult.diagnostics.front());
 		return false;
 	}

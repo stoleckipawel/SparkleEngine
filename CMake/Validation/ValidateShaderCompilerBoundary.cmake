@@ -14,13 +14,16 @@ cmake_path(NORMAL_PATH SHADER_COMPILER_BOUNDARY_SOURCE_DIR)
 set(SHADER_COMPILER_RUNTIME_SOURCE_ROOTS
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/RHI"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Application"
+    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Editor"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/GameFramework"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Renderer"
 )
 
 set(SHADER_COMPILER_RUNTIME_CMAKE_FILES
+    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/CMakeLists.txt"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Application/CMakeLists.txt"
+    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Editor/CMakeLists.txt"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/GameFramework/CMakeLists.txt"
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Engine/Renderer/CMakeLists.txt"
 )
@@ -33,32 +36,76 @@ set(SHADER_COMPILER_TOOL_CMAKE_FILES
     "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Tools/ShaderCompiler/CMakeLists.txt"
 )
 
+# Architecture invariant: runtime modules consume validated cooked shader
+# packages only. They must not include or link tool-only compiler APIs, DXC or
+# Slang backend implementation details, ShaderCompileOptions, or
+# ShaderCompileResult. The Application shader recook bridge may launch the
+# external ShaderCompiler executable, but it must not turn runtime modules into
+# shader compiler hosts.
 set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
+    "IShaderBackend"
+    "ShaderBackendPool"
+    "ShaderBackendFactory"
+    "BuiltinBackends"
+    "Backend/IShaderBackend.h"
+    "Backend/ShaderBackendPool.h"
+    "Backend/ShaderBackendFactory.h"
+    "Backend/BuiltinBackends.h"
+    "Backend/ShaderTarget.h"
+    "ShaderCompileProfile"
+    "ShaderCacheKey"
+    "ShaderCompileOptionsHasher"
+    "IncludeClosureHasher"
+    "LocalDiskShaderArtifactStore"
+    "ShaderDebugArtifactSet"
     "DxcShaderCompiler"
     "DxcShaderBackend"
     "DxcContext"
     "IDxcCompiler"
     "dxcapi"
+    "DxcCreateInstance"
     "ShaderCompileOptions"
     "ShaderCompileResult"
     "Compiler/DxcShaderCompiler.h"
     "Compiler/DxcContext.h"
     "Backends/Dxc/"
+    "spirv_reflect.h"
+    "SpvReflect"
+    "spvReflect"
+    "SlangShaderBackend"
+    "SlangReflectionExtractor"
+    "slang::"
+    "slang.h"
+    "slang-com-ptr.h"
+    "Backends/Slang/"
     "Tools/ShaderCompiler"
     "ShaderCompiler.exe"
     "SHADER_COMPILER_EXE"
+    "BuiltinShaderPackageLayouts"
+    "BuildPackageBindingLayout"
+    "ShaderPackageLayoutCatalog"
+    "ShaderCookManifest"
+    "ShaderPackages.ini"
+    "inspect-manifest"
+    "cook-shaders"
 )
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS
     "ShaderCompiler"
     "Tools/ShaderCompiler"
     "dxcompiler"
+    "spirv_reflect"
+    "slang::slang"
+    "SLANG_INCLUDE_DIR"
+    "SLANG_SDK_ROOT"
 )
 
 set(FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS
     "RHI/Private/"
     "Engine/RHI/Private/"
     "RHI/Public/D3D12/"
+    "BuiltinShaderPackageLayouts"
+    "BuildPackageBindingLayout"
     "ShaderPackageLayoutCatalog"
     "ShaderCookManifest"
     "Manifest/"
@@ -72,8 +119,9 @@ set(FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS
     "AssetConverter/"
 )
 
-# DXC must be contained to Backends/Dxc/. Any tool source outside that folder
-# that names DXC indicates an orchestration leak.
+# Backend containment invariant: DXC and Slang API details stay inside their
+# backend folders. Tool orchestration talks through IShaderBackend; runtime
+# modules never see backend implementation tokens at all.
 set(FORBIDDEN_DXC_TOKENS_OUTSIDE_BACKEND
     "IDxcCompiler"
     "dxcapi"
@@ -137,7 +185,9 @@ foreach(runtime_root IN LISTS SHADER_COMPILER_RUNTIME_SOURCE_ROOTS)
 
     foreach(runtime_source_file IN LISTS runtime_source_files)
         set(runtime_source_tokens ${FORBIDDEN_RUNTIME_SOURCE_TOKENS})
-        string(FIND "${runtime_source_file}" "/Engine/Application/Private/ShaderRecook/" shader_recook_source_index)
+        set(runtime_source_file_normalized "${runtime_source_file}")
+        cmake_path(NORMAL_PATH runtime_source_file_normalized)
+        string(FIND "${runtime_source_file_normalized}" "/Engine/Application/Private/ShaderRecook/" shader_recook_source_index)
         if(NOT shader_recook_source_index EQUAL -1)
             list(REMOVE_ITEM runtime_source_tokens "ShaderCompiler.exe" "SHADER_COMPILER_EXE")
         endif()
@@ -165,13 +215,16 @@ foreach(tool_root IN LISTS SHADER_COMPILER_TOOL_SOURCE_ROOTS)
     )
 
     foreach(tool_source_file IN LISTS tool_source_files)
+        set(tool_source_file_normalized "${tool_source_file}")
+        cmake_path(NORMAL_PATH tool_source_file_normalized)
+
         check_file_for_tokens(
             "${tool_source_file}"
             TOKENS ${FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS}
         )
 
         # Containment: DXC tokens may only appear under Backends/Dxc/.
-        string(FIND "${tool_source_file}" "/Backends/Dxc/" dxc_backend_index)
+        string(FIND "${tool_source_file_normalized}" "/Backends/Dxc/" dxc_backend_index)
         if(dxc_backend_index EQUAL -1)
             check_file_for_tokens(
                 "${tool_source_file}"
@@ -179,7 +232,7 @@ foreach(tool_root IN LISTS SHADER_COMPILER_TOOL_SOURCE_ROOTS)
             )
         endif()
 
-        string(FIND "${tool_source_file}" "/Backends/Slang/" slang_backend_index)
+        string(FIND "${tool_source_file_normalized}" "/Backends/Slang/" slang_backend_index)
         if(slang_backend_index EQUAL -1)
             check_file_for_tokens(
                 "${tool_source_file}"
@@ -198,8 +251,8 @@ endforeach()
 
 if(SHADER_COMPILER_BOUNDARY_VIOLATIONS)
     string(PREPEND SHADER_COMPILER_BOUNDARY_VIOLATIONS
-        "ShaderCompiler boundary validation failed. Runtime must stay free of tool-only DXC paths, and ShaderCompiler must stay free of runtime-private or high-level engine dependencies.\n")
+        "ShaderCompiler boundary validation failed. Runtime/orchestration modules must consume cooked shader packages without hosting compiler backends, and ShaderCompiler must stay free of runtime-private or high-level engine dependencies.\n")
     message(FATAL_ERROR "${SHADER_COMPILER_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "ShaderCompiler boundary check passed for Engine/RHI, runtime modules, and Tools/ShaderCompiler.")
+message(STATUS "ShaderCompiler boundary check passed for Engine/RHI, high-level engine modules, and Tools/ShaderCompiler.")

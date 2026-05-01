@@ -16,6 +16,11 @@ struct CookedStageBuild final
 	std::string debugArtifact;
 	std::string backendName;
 	std::uint64_t backendVersion = 0;
+	std::uint64_t sourceHash = 0;
+	std::uint64_t includeClosureHash = 0;
+	std::uint64_t optionsHash = 0;
+	std::uint64_t cacheKey = 0;
+	std::string cacheStatus;
 	std::vector<std::uint8_t> bytecode;
 	std::uint64_t bytecodeHash = 0;
 	ShaderReflection reflection;

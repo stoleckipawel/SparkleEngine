@@ -119,7 +119,25 @@ void SlangReflectionExtractor::AddResourceBinding(
     ShaderReflection& outReflection)
 {
 	ShaderReflectionResourceBinding binding;
-	binding.Name = variableLayout.getName() ? variableLayout.getName() : "";
+	const char* bindingName = variableLayout.getName();
+	if (category == slang::ParameterCategory::ConstantBuffer)
+	{
+		slang::TypeLayoutReflection* elementLayout = UnwrapSingleElementContainer(variableLayout.getTypeLayout());
+		if (elementLayout == nullptr)
+		{
+			elementLayout = variableLayout.getTypeLayout();
+		}
+
+		if (elementLayout != nullptr)
+		{
+			const char* typeName = elementLayout->getName();
+			if (typeName != nullptr && typeName[0] != '\0')
+			{
+				bindingName = typeName;
+			}
+		}
+	}
+	binding.Name = bindingName ? bindingName : "";
 	binding.Kind = MapResourceKind(variableLayout.getTypeLayout(), category);
 	binding.Dimension = MapResourceDimension(variableLayout.getTypeLayout());
 	binding.IsReadOnly = binding.Kind != CookedShaderResourceKind::RWTexture &&

@@ -181,8 +181,9 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 				return ShaderParameterSemanticKind::RWBuffer;
 			case CookedShaderResourceKind::Sampler:
 				return ShaderParameterSemanticKind::SamplerSet;
-			case CookedShaderResourceKind::Unknown:
 			case CookedShaderResourceKind::AccelerationStructure:
+				return ShaderParameterSemanticKind::AccelerationStructure;
+			case CookedShaderResourceKind::Unknown:
 			default:
 				return ShaderParameterSemanticKind::ReadTexture;
 		}
@@ -207,8 +208,9 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 				return ShaderParameterResourceDomain::Buffer;
 			case CookedShaderResourceKind::Sampler:
 				return ShaderParameterResourceDomain::Sampler;
-			case CookedShaderResourceKind::Unknown:
 			case CookedShaderResourceKind::AccelerationStructure:
+				return ShaderParameterResourceDomain::AccelerationStructure;
+			case CookedShaderResourceKind::Unknown:
 			default:
 				return ShaderParameterResourceDomain::None;
 		}
@@ -222,6 +224,7 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 			case CookedShaderResourceKind::StructuredBuffer:
 			case CookedShaderResourceKind::ByteAddressBuffer:
 			case CookedShaderResourceKind::TypedBuffer:
+			case CookedShaderResourceKind::AccelerationStructure:
 				return ShaderParameterAccess::Read;
 			case CookedShaderResourceKind::RWTexture:
 			case CookedShaderResourceKind::RWStructuredBuffer:
@@ -232,11 +235,14 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 			case CookedShaderResourceKind::PushConstantBlock:
 			case CookedShaderResourceKind::Sampler:
 			case CookedShaderResourceKind::Unknown:
-			case CookedShaderResourceKind::AccelerationStructure:
 			default:
 				return ShaderParameterAccess::None;
 		}
 	}
+};
+
+struct RaytracingAccelerationStructure final
+{
 };
 
 struct Texture2D final
@@ -306,6 +312,12 @@ template <> struct TShaderParameterResourceTraits<RWTexture2D>
 template <> struct TShaderParameterResourceTraits<SamplerState>
 {
 	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::Sampler;
+	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Unknown;
+};
+
+template <> struct TShaderParameterResourceTraits<RaytracingAccelerationStructure>
+{
+	static constexpr CookedShaderResourceKind Kind = CookedShaderResourceKind::AccelerationStructure;
 	static constexpr CookedShaderResourceDimension Dimension = CookedShaderResourceDimension::Unknown;
 };
 
@@ -462,6 +474,22 @@ SPARKLE_RHI_API std::string BuildShaderParameterStructReport(const ShaderParamet
 	    0u, \
 	    true, \
 	    ::ShaderParameterSamplerBindingPolicy::Shared};
+
+#define SHADER_PARAMETER_ACCELERATION_STRUCTURE(Name) \
+	::RaytracingAccelerationStructure Name{}; \
+	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
+	    #Name, \
+	    #Name, \
+	    ::CookedShaderResourceKind::AccelerationStructure, \
+	    ::CookedShaderResourceDimension::Unknown, \
+	    ::ShaderParameterSemanticKind::AccelerationStructure, \
+	    ::ShaderParameterResourceDomain::AccelerationStructure, \
+	    ::ShaderParameterAccess::Read, \
+	    ::ShaderStageVisibility::None, \
+	    1u, \
+	    0u, \
+	    0u, \
+	    true};
 
 #define SHADER_PARAMETER_UNIQUE_SAMPLER(Type, Name) \
 	::Type Name{}; \

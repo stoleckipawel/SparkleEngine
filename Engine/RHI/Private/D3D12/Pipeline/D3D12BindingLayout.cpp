@@ -51,6 +51,7 @@ class D3D12BindingLayoutCompilerImpl final
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
 				case ShaderParameterSemanticKind::ReadBuffer:
+				case ShaderParameterSemanticKind::AccelerationStructure:
 					CompileDescriptorTableBinding(
 					    builder,
 					    bindings,
@@ -138,6 +139,8 @@ class D3D12BindingLayoutCompilerImpl final
 			case ShaderParameterSemanticKind::ReadBuffer:
 				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer ||
 			       kind == CookedShaderResourceKind::TypedBuffer;
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				return kind == CookedShaderResourceKind::AccelerationStructure;
 			case ShaderParameterSemanticKind::RWTexture:
 				return kind == CookedShaderResourceKind::RWTexture;
 			case ShaderParameterSemanticKind::RWBuffer:
@@ -177,7 +180,13 @@ class D3D12BindingLayoutCompilerImpl final
 		std::vector<ReflectedBindingLocation> locations;
 		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size(); ++reflectionIndex)
 		{
-			const ShaderStage stage = binaryRecords[reflectionIndex].Stage;
+			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
+			if (binaryRecord.Format != CookedShaderBinaryFormat::Dxil)
+			{
+				continue;
+			}
+
+			const ShaderStage stage = binaryRecord.Stage;
 			if (!StageMaskContains(bindingRecord.VisibilityMask, stage))
 			{
 				continue;
