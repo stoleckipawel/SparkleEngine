@@ -37,24 +37,7 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 
 	const TParameters& operator*() const noexcept { return static_cast<const TParameters&>(*this); }
 
-	bool Sync() const { return SyncIfNeeded(); }
-
-	bool HasAllRequiredBindings() const { return SyncIfNeeded(); }
-
-	const std::vector<std::string>& GetMissingBindings() const
-	{
-		SyncIfNeeded();
-		return m_missingBindings;
-	}
-
-	const PassParameterSet& GetPassParameterSet() const
-	{
-		SyncIfNeeded();
-		return m_parameterSet;
-	}
-
-  private:
-	bool SyncIfNeeded() const
+	bool Sync() const
 	{
 		if (!m_isDirty)
 		{
@@ -65,6 +48,19 @@ template <typename TParameters> class TypedPassParameterInstance final : public 
 		return m_metadata->Commit(static_cast<const TParameters&>(*this), m_parameterSet, &m_missingBindings);
 	}
 
+	const std::vector<std::string>& GetMissingBindings() const
+	{
+		Sync();
+		return m_missingBindings;
+	}
+
+	const PassParameterSet& GetPassParameterSet() const
+	{
+		Sync();
+		return m_parameterSet;
+	}
+
+  private:
 	const Metadata* m_metadata = nullptr;
 	mutable bool m_isDirty = true;
 	mutable std::vector<std::string> m_missingBindings;

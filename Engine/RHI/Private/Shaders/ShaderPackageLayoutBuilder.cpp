@@ -34,7 +34,7 @@ bool ShaderPackageLayoutBuilder::Build(
 	bool foundPackage = false;
 	for (const ShaderRegistrationDesc& registration : registrations)
 	{
-		if (GetRegistrationPackageId(registration) != packageId)
+		if (GetShaderRegistrationPackageId(registration) != packageId)
 		{
 			continue;
 		}
@@ -98,11 +98,6 @@ bool BuildRegisteredShaderPackageLayout(
     std::string& outErrorMessage)
 {
 	return ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), outLayout, outErrorMessage);
-}
-
-std::string_view ShaderPackageLayoutBuilder::GetRegistrationPackageId(const ShaderRegistrationDesc& registration) noexcept
-{
-	return registration.PackageName.empty() ? registration.ShaderName : registration.PackageName;
 }
 
 ShaderStageVisibility ShaderPackageLayoutBuilder::GetDefaultVisibility(ShaderStage stage) noexcept
@@ -194,7 +189,7 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 	{
 		outErrorMessage = std::format(
 		    "Shader package '{}' has incompatible binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' declares {}.",
-		    GetRegistrationPackageId(registration),
+		    GetShaderRegistrationPackageId(registration),
 		    parameter.Name,
 		    existing->SourceShaderName,
 		    existing->SourceStructName,

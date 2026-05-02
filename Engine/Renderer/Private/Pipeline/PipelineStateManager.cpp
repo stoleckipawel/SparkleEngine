@@ -2,20 +2,25 @@
 #include "PipelineStateManager.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/Verify.h"
 
 namespace
 {
 	template <typename... TPasses>
-	void InitializeRuntimeStorage(
+	bool InitializeRuntimeStorage(
 	    RenderHardwareInterface& rhi,
 	    CookedShaderPackageCache& shaderPackages,
-	    std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage)
+	    std::tuple<RenderPassRuntimeStorage<TPasses>...>& runtimeStorage,
+	    std::string& outErrorMessage)
 	{
-		(RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(
+		bool success = true;
+		((success = success && RenderPassPipelineTraits<TPasses>::CreateRuntimeStorage(
 		     rhi,
 		     shaderPackages,
-		     std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage)),
+		     std::get<RenderPassRuntimeStorage<TPasses>>(runtimeStorage),
+		     outErrorMessage)),
 		 ...);
+		return success;
 	}
 
 	template <typename... TPasses>
@@ -39,21 +44,49 @@ const RenderPassRuntimeRegistry& PipelineStateManager::GetRuntimeRegistry() cons
 	return *m_runtimeRegistry;
 }
 
-void PipelineStateManager::ReloadCookedShaders() noexcept
+CookedShaderReloadResult PipelineStateManager::ReloadCookedShaders() noexcept
 {
 	static const std::shared_ptr<spdlog::logger>& logger = Logging::GetOrCreateLogger("Renderer");
 	SPDLOG_LOGGER_INFO(logger, "Reloading cooked shader packages and pipeline state runtimes");
 
+	CookedShaderPackageCache nextShaderPackages;
+	PassRuntimeStorageTuple nextRuntimeStorage{};
+	std::string errorMessage;
+	if (!TryInitializePassRuntimes(nextShaderPackages, nextRuntimeStorage, errorMessage))
+	{
+		SPDLOG_LOGGER_ERROR(logger, "Cooked shader reload rejected; keeping previous shader packages active. {}", errorMessage);
+		return CookedShaderReloadResult::Failure(std::move(errorMessage));
+	}
+
 	m_runtimeRegistry.reset();
-	m_runtimeStorage = PassRuntimeStorageTuple{};
-	m_shaderPackages.Clear();
-	InitializePassRuntimes();
+	m_shaderPackages.ReplaceWith(std::move(nextShaderPackages));
+	m_runtimeStorage = std::move(nextRuntimeStorage);
+	m_runtimeRegistry.emplace(BuildRuntimeRegistry(m_runtimeStorage));
 
 	SPDLOG_LOGGER_INFO(logger, "Cooked shader reload complete (generation={})", m_shaderPackages.GetGeneration());
+	return CookedShaderReloadResult::Success();
+}
+
+bool PipelineStateManager::TryInitializePassRuntimes(
+    CookedShaderPackageCache& shaderPackages,
+    PassRuntimeStorageTuple& runtimeStorage,
+    std::string& outErrorMessage)
+{
+	if (!InitializeRuntimeStorage(*m_rhi, shaderPackages, runtimeStorage, outErrorMessage))
+	{
+		return false;
+	}
+
+	outErrorMessage.clear();
+	return true;
 }
 
 void PipelineStateManager::InitializePassRuntimes()
 {
-	InitializeRuntimeStorage(*m_rhi, m_shaderPackages, m_runtimeStorage);
+	std::string errorMessage;
+	if (!TryInitializePassRuntimes(m_shaderPackages, m_runtimeStorage, errorMessage))
+	{
+		Diagnostics::Fail(Logging::GetOrCreateLogger("Renderer"), __FILE__, __LINE__, errorMessage);
+	}
 	m_runtimeRegistry.emplace(BuildRuntimeRegistry(m_runtimeStorage));
 }

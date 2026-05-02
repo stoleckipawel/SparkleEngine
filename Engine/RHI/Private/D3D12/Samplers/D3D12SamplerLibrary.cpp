@@ -1,6 +1,7 @@
 ﻿#include "PCH.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "D3D12/D3D12Rhi.h"
+#include "D3D12/D3D12TypeConversions.h"
 
 static const auto g_samplerLibraryLogger = Logging::GetOrCreateLogger("RHI.D3D12.Samplers");
 
@@ -14,8 +15,8 @@ bool D3D12SamplerLibrary::TryGetSlot(const RhiSamplerDesc& samplerDesc, Slot& ou
 
 	if (samplerDesc.MaxAnisotropy != RhiSamplerAnisotropy::X1)
 	{
-		const bool anisotropyApplies = samplerDesc.MinMagFilter == RhiSamplerMinMagFilter::Linear &&
-		                               samplerDesc.MipFilter == RhiSamplerMipFilter::Linear;
+		const bool anisotropyApplies =
+		    samplerDesc.MinMagFilter == RhiSamplerMinMagFilter::Linear && samplerDesc.MipFilter == RhiSamplerMipFilter::Linear;
 		if (anisotropyApplies)
 		{
 			return TryGetAnisotropicSlot(samplerDesc.MaxAnisotropy, addressMode, outSlot);
@@ -111,8 +112,8 @@ void D3D12SamplerLibrary::CreateSampler(Slot slot, const SamplerConfig& config)
 	desc.MinLOD = 0.0f;
 	desc.MaxLOD = config.mip == MipFilter::None ? 0.0f : D3D12_FLOAT32_MAX;
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle =
-	    ToD3D12CpuDescriptor(m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
+	const D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle = D3D12TypeConversions::ToCpuDescriptor(
+	    m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, static_cast<uint32_t>(slot)));
 
 	m_rhi->GetDevice()->CreateSampler(&desc, cpuHandle);
 }
@@ -146,10 +147,7 @@ bool D3D12SamplerLibrary::TryGetUniformAddressMode(const RhiSamplerDesc& sampler
 	return true;
 }
 
-bool D3D12SamplerLibrary::TryGetPointSlot(
-	RhiSamplerMipFilter mipFilter,
-	RhiSamplerAddressMode addressMode,
-	Slot& outSlot) noexcept
+bool D3D12SamplerLibrary::TryGetPointSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept
 {
 	std::uint32_t addressOffset = 0;
 	if (!TryGetAddressOffset(addressMode, addressOffset))
@@ -177,10 +175,7 @@ bool D3D12SamplerLibrary::TryGetPointSlot(
 	return true;
 }
 
-bool D3D12SamplerLibrary::TryGetLinearSlot(
-	RhiSamplerMipFilter mipFilter,
-	RhiSamplerAddressMode addressMode,
-	Slot& outSlot) noexcept
+bool D3D12SamplerLibrary::TryGetLinearSlot(RhiSamplerMipFilter mipFilter, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept
 {
 	std::uint32_t addressOffset = 0;
 	if (!TryGetAddressOffset(addressMode, addressOffset))
@@ -209,9 +204,9 @@ bool D3D12SamplerLibrary::TryGetLinearSlot(
 }
 
 bool D3D12SamplerLibrary::TryGetAnisotropicSlot(
-	RhiSamplerAnisotropy maxAnisotropy,
-	RhiSamplerAddressMode addressMode,
-	Slot& outSlot) noexcept
+    RhiSamplerAnisotropy maxAnisotropy,
+    RhiSamplerAddressMode addressMode,
+    Slot& outSlot) noexcept
 {
 	std::uint32_t addressOffset = 0;
 	if (!TryGetAddressOffset(addressMode, addressOffset))
@@ -243,11 +238,6 @@ bool D3D12SamplerLibrary::TryGetAnisotropicSlot(
 
 	outSlot = static_cast<Slot>(static_cast<std::uint32_t>(baseSlot) + addressOffset);
 	return true;
-}
-
-D3D12_CPU_DESCRIPTOR_HANDLE D3D12SamplerLibrary::ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
-{
-	return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
 D3D12_FILTER D3D12SamplerLibrary::ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic)

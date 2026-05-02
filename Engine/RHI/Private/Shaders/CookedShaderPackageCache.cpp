@@ -3,61 +3,19 @@
 #include "Shaders/CookedShaderPackageCache.h"
 
 #include "Config/RenderConfig.h"
+#include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "ShaderParameters/PassParameterLayout.h"
 
 #include <array>
-#include <cstring>
 #include <format>
-#include <limits>
-#include <span>
 #include <vector>
 
 namespace
 {
-	std::string FormatStageMask(ShaderStageMask mask)
-	{
-		if (mask == ShaderStageMask::None)
-		{
-			return "None";
-		}
-
-		struct StageLabel
-		{
-			ShaderStageMask Mask;
-			const char* Label;
-		};
-
-		static constexpr std::array<StageLabel, 6> kStageLabels = {{
-		    {ShaderStageMask::Vertex, "Vertex"},
-		    {ShaderStageMask::Pixel, "Pixel"},
-		    {ShaderStageMask::Geometry, "Geometry"},
-		    {ShaderStageMask::Hull, "Hull"},
-		    {ShaderStageMask::Domain, "Domain"},
-		    {ShaderStageMask::Compute, "Compute"},
-		}};
-
-		std::string result;
-		for (const StageLabel& stageLabel : kStageLabels)
-		{
-			if (!HasAnyShaderStageMask(mask, stageLabel.Mask))
-			{
-				continue;
-			}
-
-			if (!result.empty())
-			{
-				result += '|';
-			}
-
-			result += stageLabel.Label;
-		}
-
-		return result.empty() ? "None" : result;
-	}
-
 	const char* FormatCookedShaderBinaryFormat(CookedShaderBinaryFormat format) noexcept
 	{
 		switch (format)
@@ -67,65 +25,6 @@ namespace
 		}
 		return "unknown";
 	}
-
-	class ShaderPackageByteReader final
-	{
-	  public:
-		explicit ShaderPackageByteReader(std::span<const std::uint8_t> bytes) noexcept : m_bytes(bytes) {}
-
-		template <typename T> bool Read(T& outValue, std::string& outErrorMessage)
-		{
-			static_assert(std::is_trivially_copyable_v<T>, "ShaderPackageByteReader::Read requires trivially copyable types.");
-
-			if (!CanRead(sizeof(T)))
-			{
-				outErrorMessage = "Unexpected end of cooked shader package data";
-				return false;
-			}
-
-			std::memcpy(&outValue, m_bytes.data() + m_offset, sizeof(T));
-			m_offset += sizeof(T);
-			return true;
-		}
-
-		template <typename T> bool ReadArray(std::size_t elementCount, std::vector<T>& outValues, std::string& outErrorMessage)
-		{
-			static_assert(std::is_trivially_copyable_v<T>, "ShaderPackageByteReader::ReadArray requires trivially copyable element types.");
-
-			if constexpr (sizeof(T) > 0)
-			{
-				if (elementCount > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
-				{
-					outErrorMessage = "Cooked shader package array size overflow";
-					return false;
-				}
-			}
-
-			const std::size_t byteCount = sizeof(T) * elementCount;
-			if (!CanRead(byteCount))
-			{
-				outErrorMessage = "Unexpected end of cooked shader package array data";
-				return false;
-			}
-
-			outValues.resize(elementCount);
-			if (byteCount > 0)
-			{
-				std::memcpy(outValues.data(), m_bytes.data() + m_offset, byteCount);
-				m_offset += byteCount;
-			}
-
-			return true;
-		}
-
-		std::size_t GetRemainingByteCount() const noexcept { return m_bytes.size() - m_offset; }
-
-	  private:
-		bool CanRead(std::size_t byteCount) const noexcept { return m_offset + byteCount <= m_bytes.size(); }
-
-		std::span<const std::uint8_t> m_bytes;
-		std::size_t m_offset = 0;
-	};
 
 	constexpr std::array<ShaderStage, 6> kKnownShaderStages =
 	    {ShaderStage::Vertex, ShaderStage::Pixel, ShaderStage::Geometry, ShaderStage::Hull, ShaderStage::Domain, ShaderStage::Compute};
@@ -210,6 +109,12 @@ bool LoadedShaderPackage::ContainsBlobRef(CookedShaderBlobRef ref) const noexcep
 void CookedShaderPackageCache::Clear() noexcept
 {
 	m_packages.clear();
+	++m_generation;
+}
+
+void CookedShaderPackageCache::ReplaceWith(CookedShaderPackageCache&& replacement) noexcept
+{
+	m_packages = std::move(replacement.m_packages);
 	++m_generation;
 }
 
@@ -305,8 +210,8 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 		return false;
 	}
 
-	ShaderPackageByteReader reader(fileBytes);
-	if (!reader.Read(outPackage.m_header, outErrorMessage))
+	Files::BinarySpanReader reader(fileBytes);
+	if (!reader.ReadValue(outPackage.m_header, outErrorMessage))
 	{
 		return false;
 	}
@@ -324,11 +229,11 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 		}
 
 		outErrorMessage = std::format(
-		    "Invalid cooked shader package header in '{}': expected magic {:08X} version {}, got magic {:08X} version {}",
+		    "Invalid cooked shader package header in '{}': expected magic {} version {}, got magic {} version {}",
 		    path.string(),
-		    kCookedShaderPackageMagic,
+		    Formatting::FormatHexUInt32(kCookedShaderPackageMagic),
 		    kCookedShaderPackageVersion,
-		    outPackage.m_header.Magic,
+		    Formatting::FormatHexUInt32(outPackage.m_header.Magic),
 		    outPackage.m_header.Version);
 		return false;
 	}
@@ -389,11 +294,11 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().ShaderPackageKey != expectedPackageKey)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderPackageKey expected={:016X} actual={:016X}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderPackageKey expected={} actual={}",
 		    definition.PackageId,
 		    definition.VariantId,
-		    expectedPackageKey,
-		    package.GetHeader().ShaderPackageKey);
+		    Formatting::FormatHexUInt64(expectedPackageKey),
+		    Formatting::FormatHexUInt64(package.GetHeader().ShaderPackageKey));
 		return false;
 	}
 
@@ -401,11 +306,11 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().VariantHash != expectedVariantHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=VariantHash expected={:016X} actual={:016X}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=VariantHash expected={} actual={}",
 		    definition.PackageId,
 		    definition.VariantId,
-		    expectedVariantHash,
-		    package.GetHeader().VariantHash);
+		    Formatting::FormatHexUInt64(expectedVariantHash),
+		    Formatting::FormatHexUInt64(package.GetHeader().VariantHash));
 		return false;
 	}
 
@@ -422,12 +327,12 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().BindingLayoutHash != expectedBindingLayoutHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={:016X} actual={:016X}",
+		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
 		    definition.PackageId,
 		    definition.VariantId,
 		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
-		    expectedBindingLayoutHash,
-		    package.GetHeader().BindingLayoutHash);
+		    Formatting::FormatHexUInt64(expectedBindingLayoutHash),
+		    Formatting::FormatHexUInt64(package.GetHeader().BindingLayoutHash));
 		return false;
 	}
 
@@ -451,8 +356,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=DeclaredStages expected='{}' actual='{}'",
 		    definition.PackageId,
 		    definition.VariantId,
-		    FormatStageMask(definition.ExpectedStages),
-		    FormatStageMask(package.GetHeader().DeclaredStages));
+		    FormatShaderStageMask(definition.ExpectedStages),
+		    FormatShaderStageMask(package.GetHeader().DeclaredStages));
 		return false;
 	}
 

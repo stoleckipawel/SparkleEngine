@@ -1,11 +1,11 @@
 ﻿#include "PCH.h"
 #include "Logger.h"
 
+#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <atomic>
 #include <cstdint>
-#include <cstdlib>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -78,30 +78,6 @@ namespace Logging
 		{
 			static std::atomic<bool> initialized{false};
 			return initialized;
-		}
-
-		bool TryGetEnvironmentValue(const char* name, std::string& outValue) noexcept
-		{
-			outValue.clear();
-			if (name == nullptr)
-			{
-				return false;
-			}
-
-			char* rawValue = nullptr;
-			size_t requiredLength = 0;
-			if (_dupenv_s(&rawValue, &requiredLength, name) != 0 || rawValue == nullptr || requiredLength <= 1)
-			{
-				if (rawValue != nullptr)
-				{
-					std::free(rawValue);
-				}
-				return false;
-			}
-
-			outValue.assign(rawValue, requiredLength - 1);
-			std::free(rawValue);
-			return true;
 		}
 
 #if defined(_WIN32)
@@ -183,7 +159,7 @@ namespace Logging
 			try
 			{
 				std::string configuredFile;
-				TryGetEnvironmentValue("SPARKLE_LOG_FILE", configuredFile);
+				Environment::TryGetVariable("SPARKLE_LOG_FILE", configuredFile);
 				const std::filesystem::path logPath = Paths::LogFile(configuredFile);
 
 				auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logPath.string(), true);

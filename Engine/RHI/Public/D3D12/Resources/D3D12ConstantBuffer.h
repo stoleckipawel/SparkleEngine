@@ -18,7 +18,7 @@ template <typename T> class D3D12ConstantBuffer
 	explicit D3D12ConstantBuffer(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager) :
 	    m_rhi(&rhi),
 	    m_descriptorHeapManager(&descriptorHeapManager),
-	    m_cbvHandle(descriptorHeapManager.AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)),
+	    m_cbvHandle(descriptorHeapManager.GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->Allocate()),
 	    m_constantBufferSize((sizeof(T) + 255) & ~255)
 	{
 		std::memset(&m_constantBufferData, 0, sizeof(T));
@@ -55,7 +55,7 @@ template <typename T> class D3D12ConstantBuffer
 
 		if (m_cbvHandle.IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, m_cbvHandle);
+			m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->Free(m_cbvHandle);
 		}
 	}
 

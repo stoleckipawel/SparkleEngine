@@ -25,7 +25,6 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
   private:
 	struct MergeEntry;
 
-	static std::string_view GetRegistrationPackageId(const ShaderRegistrationDesc& registration) noexcept;
 	static ShaderStageVisibility GetDefaultVisibility(ShaderStage stage) noexcept;
 	static ShaderStageVisibility ResolveVisibility(
 	    const ShaderParameterStructFieldDescriptor& field,

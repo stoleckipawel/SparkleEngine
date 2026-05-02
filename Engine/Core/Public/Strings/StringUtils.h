@@ -10,6 +10,7 @@
 #include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <vector>
 
 namespace Strings
 {
@@ -59,6 +60,29 @@ namespace Strings
 		inline std::string UnquoteCopy(std::string_view str)
 		{
 			return std::string(Unquote(TrimAsciiWhitespace(str)));
+		}
+
+		inline std::vector<std::string_view> Split(std::string_view str, char separator, bool keepEmptyFields = true)
+		{
+			std::vector<std::string_view> fields;
+			std::size_t start = 0;
+			while (start <= str.size())
+			{
+				const std::size_t separatorIndex = str.find(separator, start);
+				const std::size_t end = separatorIndex == std::string_view::npos ? str.size() : separatorIndex;
+				std::string_view field = str.substr(start, end - start);
+				if (keepEmptyFields || !field.empty())
+				{
+					fields.push_back(field);
+				}
+
+				if (separatorIndex == std::string_view::npos)
+				{
+					break;
+				}
+				start = separatorIndex + 1;
+			}
+			return fields;
 		}
 
 		std::string ToLowerCopy(std::string_view str);

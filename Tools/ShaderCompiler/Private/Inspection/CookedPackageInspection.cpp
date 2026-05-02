@@ -2,35 +2,13 @@
 
 #include "Inspection/CookedPackageInspection.h"
 
+#include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
 
-#include <cstring>
 #include <span>
 
 namespace
 {
-	template <typename T>
-	std::span<const T> ReadPackageArray(
-	    std::span<const std::uint8_t> bytes,
-	    std::size_t& cursor,
-	    std::uint32_t count,
-	    std::string& outErrorMessage)
-	{
-		static_assert(std::is_trivially_copyable_v<T>, "Cooked package inspection requires trivially copyable arrays.");
-
-		const std::size_t byteCount = sizeof(T) * static_cast<std::size_t>(count);
-		if (cursor + byteCount > bytes.size())
-		{
-			outErrorMessage = "Cooked shader package arrays are truncated";
-			cursor = bytes.size() + 1;
-			return {};
-		}
-
-		const auto* data = reinterpret_cast<const T*>(bytes.data() + cursor);
-		cursor += byteCount;
-		return std::span<const T>(data, count);
-	}
-
 	std::string_view ResolveString(CookedShaderStringRef ref, std::span<const std::uint8_t> stringTable) noexcept
 	{
 		if (!ref || ref.OffsetInBytes + ref.SizeInBytes > stringTable.size())
@@ -61,40 +39,49 @@ bool CookedPackageInspection::Inspect(
 		return false;
 	}
 
+	Files::BinarySpanReader reader(bytes);
 	CookedShaderPackageHeader header;
-	std::memcpy(&header, bytes.data(), sizeof(header));
+	if (!reader.ReadValue(header, outErrorMessage))
+	{
+		outErrorMessage = "Cooked shader package is too small";
+		return false;
+	}
 	if (!header.Matches(kCookedShaderPackageMagic, kCookedShaderPackageVersion))
 	{
 		outErrorMessage = "Unsupported cooked shader package header";
 		return false;
 	}
 
-	std::size_t cursor = sizeof(CookedShaderPackageHeader);
-	const auto binaries = ReadPackageArray<CookedShaderBinaryRecord>(bytes, cursor, header.BinaryRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderBindingRecord>(bytes, cursor, header.BindingRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderSpecializationInputRecord>(bytes, cursor, header.SpecializationInputCount, outErrorMessage);
-	const auto reflections = ReadPackageArray<CookedShaderReflectionRecord>(bytes, cursor, header.ReflectionRecordCount, outErrorMessage);
-	const auto resourceBindings = ReadPackageArray<CookedShaderResourceBindingRecord>(bytes, cursor, header.ResourceBindingRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderConstantBufferRecord>(bytes, cursor, header.ConstantBufferRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderConstantBufferMemberRecord>(bytes, cursor, header.ConstantBufferMemberRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderInputElementRecord>(bytes, cursor, header.InputElementRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderPushConstantRangeRecord>(bytes, cursor, header.PushConstantRangeRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderSpecializationConstantRecord>(bytes, cursor, header.SpecializationConstantRecordCount, outErrorMessage);
-	const auto rtExports = ReadPackageArray<CookedShaderRayTracingExportRecord>(bytes, cursor, header.RayTracingExportRecordCount, outErrorMessage);
-	const auto rtHitGroups = ReadPackageArray<CookedShaderRayTracingHitGroupRecord>(bytes, cursor, header.RayTracingHitGroupRecordCount, outErrorMessage);
-	ReadPackageArray<CookedShaderRayTracingLocalParameterRecord>(bytes, cursor, header.RayTracingLocalParameterRecordCount, outErrorMessage);
-	if (!outErrorMessage.empty())
+	std::span<const CookedShaderBinaryRecord> binaries;
+	std::span<const CookedShaderReflectionRecord> reflections;
+	std::span<const CookedShaderResourceBindingRecord> resourceBindings;
+	std::span<const CookedShaderRayTracingExportRecord> rtExports;
+	std::span<const CookedShaderRayTracingHitGroupRecord> rtHitGroups;
+	if (!reader.ReadArrayView(header.BinaryRecordCount, binaries, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderBindingRecord>(header.BindingRecordCount, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderSpecializationInputRecord>(header.SpecializationInputCount, outErrorMessage) ||
+	    !reader.ReadArrayView(header.ReflectionRecordCount, reflections, outErrorMessage) ||
+	    !reader.ReadArrayView(header.ResourceBindingRecordCount, resourceBindings, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderConstantBufferRecord>(header.ConstantBufferRecordCount, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderConstantBufferMemberRecord>(header.ConstantBufferMemberRecordCount, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderInputElementRecord>(header.InputElementRecordCount, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderPushConstantRangeRecord>(header.PushConstantRangeRecordCount, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderSpecializationConstantRecord>(header.SpecializationConstantRecordCount, outErrorMessage) ||
+	    !reader.ReadArrayView(header.RayTracingExportRecordCount, rtExports, outErrorMessage) ||
+	    !reader.ReadArrayView(header.RayTracingHitGroupRecordCount, rtHitGroups, outErrorMessage) ||
+	    !reader.SkipArray<CookedShaderRayTracingLocalParameterRecord>(header.RayTracingLocalParameterRecordCount, outErrorMessage))
 	{
+		outErrorMessage = "Cooked shader package arrays are truncated";
 		return false;
 	}
 
-	if (cursor + header.StringTableSizeInBytes > bytes.size())
+	std::span<const std::uint8_t> stringTable;
+	if (!reader.ReadBytes(header.StringTableSizeInBytes, stringTable, outErrorMessage))
 	{
 		outErrorMessage = "Cooked shader package string table is truncated";
 		return false;
 	}
 
-	const std::span<const std::uint8_t> stringTable(bytes.data() + cursor, header.StringTableSizeInBytes);
 	outPackage.packageKey = header.ShaderPackageKey;
 	outPackage.sourceIdentityHash = header.SourceIdentityHash;
 	outPackage.bindingLayoutHash = header.BindingLayoutHash;

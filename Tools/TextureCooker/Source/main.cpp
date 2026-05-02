@@ -3,10 +3,10 @@
 #include "D3D12/Textures/CookedTextureAsset.h"
 #include "TextureCookRequestList.h"
 
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 
 #include <filesystem>
-#include <format>
 #include <iostream>
 #include <string>
 #include <objbase.h>
@@ -37,7 +37,7 @@ static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 	std::cout << "TextureCooker: request file='" << requestFilePath.string() << "' contains " << requests.size() << " texture request(s)\n";
 	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
-		std::cout << "  Texture '" << std::format("{:016X}", request.assetId) << "' colorSpace='"
+		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
 		          << AssetAuthoring::GetTextureColorSpaceName(request.colorSpace) << "' output='"
 		          << request.outputPath.string() << "' source='" << request.sourcePath.string() << "'\n";
 	}
@@ -58,7 +58,7 @@ static bool BuildTextureCookArtifactKey(
 
 	outKey = Cook::CookArtifactKey{
 	    .assetType = "Texture",
-	    .assetId = std::format("{:016X}", request.assetId),
+	    .assetId = Formatting::FormatHexUInt64(request.assetId),
 	    .cookerName = "TextureCooker",
 	    .outputPath = request.outputPath,
 	    .cookedFormatVersion = kCookedTextureAssetVersion,
@@ -164,7 +164,7 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 	          << "'; cooked=" << cookedCount << ", skipped=" << skippedCount << "\n";
 	for (const AssetAuthoring::TextureCookRequest& request : requests)
 	{
-		std::cout << "  Texture '" << std::format("{:016X}", request.assetId) << "' output='" << request.outputPath.string()
+		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' output='" << request.outputPath.string()
 		          << "'\n";
 	}
 

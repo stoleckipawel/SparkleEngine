@@ -4,7 +4,9 @@
 #     2. ShaderCompiler builds in Debug AND Release.
 #     3. ValidateShaderCompilerBoundary passes (custom target runs as part
 #        of the build).
-#     4. ShaderCompiler.exe cook succeeds on the Showcase project.
+#     4. ShaderCompiler.exe exposes reviewer-friendly backend, target, shader,
+#        permutation, package inspection, and negative-test diagnostics.
+#     5. ShaderCompiler.exe cook succeeds on the Showcase project.
 #
 #
 # Usage (from repo root):
@@ -40,6 +42,65 @@ function Invoke-CIStep
     }
 }
 
+function Get-RegistryPackageOutput
+{
+    param(
+        [Parameter(Mandatory=$true)][string]$RegistryPath,
+        [Parameter(Mandatory=$true)][string]$ProjectRoot,
+        [Parameter(Mandatory=$true)][string]$PackageId
+    )
+
+    if (-not (Test-Path $RegistryPath))
+    {
+        Write-Host "[CI][ERROR] Shader package registry not found at $RegistryPath."
+        exit 1
+    }
+
+    $insidePackage = $false
+    foreach ($line in Get-Content -Path $RegistryPath)
+    {
+        if ($line -match '^\[Package\s+(.+)\]$')
+        {
+            $insidePackage = ($Matches[1] -eq $PackageId)
+            continue
+        }
+
+        if ($insidePackage -and $line -match '^Output\s*=\s*(.+)$')
+        {
+            $outputPath = $Matches[1].Trim()
+            if ([System.IO.Path]::IsPathRooted($outputPath))
+            {
+                return $outputPath
+            }
+
+            return Join-Path $ProjectRoot $outputPath
+        }
+    }
+
+    Write-Host "[CI][ERROR] Could not locate package '$PackageId' in $RegistryPath."
+    exit 1
+}
+
+function Invoke-NegativeCIStep
+{
+    param(
+        [Parameter(Mandatory=$true)][string]$Label,
+        [Parameter(Mandatory=$true)][scriptblock]$Action
+    )
+
+    Write-Host ''
+    Write-Host "[CI] $Label"
+    & $Action
+    $actualExitCode = $LASTEXITCODE
+    if ($actualExitCode -eq 0)
+    {
+        Write-Host "[CI][ERROR] $Label unexpectedly succeeded."
+        exit 1
+    }
+    Write-Host "[CI][OK] $Label failed as expected (rc=$actualExitCode)."
+    $global:LASTEXITCODE = 0
+}
+
 # 1. Configure CMake if needed.
 if (-not (Test-Path (Join-Path $RepoRoot 'build')))
 {
@@ -68,8 +129,38 @@ $ShowcaseRoot = Join-Path $RepoRoot 'Projects\Showcase'
 Push-Location $ShowcaseRoot
 try
 {
+    Invoke-CIStep -Label 'Listing shader backends' -Action {
+        & $ShaderCompiler list-backends
+    }
+
+    Invoke-CIStep -Label 'Listing shader targets' -Action {
+        & $ShaderCompiler list-targets
+    }
+
+    Invoke-CIStep -Label 'Validating typed shader registrations' -Action {
+        & $ShaderCompiler list-shaders --validate
+    }
+
+    Invoke-CIStep -Label 'Listing HelloPermutation variants' -Action {
+        & $ShaderCompiler list-permutations HelloPermutation
+    }
+
     Invoke-CIStep -Label 'Cooking shaders for Showcase project' -Action {
-        & $ShaderCompiler cook --no-cache
+        & $ShaderCompiler cook --no-cache --backend dxc --target DxilSm66
+    }
+
+    Invoke-CIStep -Label 'Cooking HelloTriangle multi-format package' -Action {
+        & $ShaderCompiler cook --no-cache --backend dxc --target DxilSm66 --target SpirV16 --shader HelloTriangle
+    }
+
+    $registryPath = Join-Path $RepoRoot 'build\Cooked\Showcase\Shaders\ShaderPackageRegistry.sreg'
+    $helloTrianglePackage = Get-RegistryPackageOutput -RegistryPath $registryPath -ProjectRoot $ShowcaseRoot -PackageId 'HelloTriangle'
+    Invoke-CIStep -Label 'Inspecting HelloTriangle cooked package' -Action {
+        & $ShaderCompiler inspect-package $helloTrianglePackage
+    }
+
+    Invoke-NegativeCIStep -Label 'Running parameter mismatch negative test' -Action {
+        & $ShaderCompiler cook --verification-self-test parameter-mismatch
     }
 }
 finally

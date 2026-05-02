@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Cooking/Cache/IShaderArtifactStore.h"
+#include "Core/Public/Files/BinaryBufferWriter.h"
+#include "Core/Public/Files/BinarySpanReader.h"
 
-#include <cstring>
 #include <filesystem>
-#include <span>
-#include <type_traits>
 #include <vector>
 
 class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
@@ -25,39 +24,15 @@ class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
 	static constexpr std::uint32_t kFormatMagic = 0x31414353;
 	static constexpr std::uint32_t kFormatVersion = 2;
 
-	template <typename T>
-	static void WritePOD(std::vector<std::uint8_t>& outBytes, const T& value)
-	{
-		static_assert(std::is_trivially_copyable_v<T>);
-		const auto* begin = reinterpret_cast<const std::uint8_t*>(&value);
-		outBytes.insert(outBytes.end(), begin, begin + sizeof(T));
-	}
-
-	template <typename T>
-	static bool ReadPOD(std::span<const std::uint8_t> bytes, std::size_t& cursor, T& outValue)
-	{
-		if (cursor + sizeof(T) > bytes.size())
-		{
-			return false;
-		}
-
-		std::memcpy(&outValue, bytes.data() + cursor, sizeof(T));
-		cursor += sizeof(T);
-		return true;
-	}
-
 	std::filesystem::path BuildArtifactPath(const ShaderCacheKey& key) const;
-	static bool WriteString(std::vector<std::uint8_t>& outBytes, const std::string& value, std::string& outErrorMessage);
-	static bool ReadString(std::span<const std::uint8_t> bytes, std::size_t& cursor, std::string& outValue);
 	static bool Serialize(const CookedStageBuild& build, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage);
 	static bool Deserialize(std::span<const std::uint8_t> bytes, CookedStageBuild& outBuild, std::string& outErrorMessage);
 	static bool SerializeReflection(
 	    const struct ShaderReflection& reflection,
-	    std::vector<std::uint8_t>& outBytes,
+	    Files::BinaryBufferWriter& writer,
 	    std::string& outErrorMessage);
 	static bool DeserializeReflection(
-	    std::span<const std::uint8_t> bytes,
-	    std::size_t& cursor,
+	    Files::BinarySpanReader& reader,
 	    struct ShaderReflection& outReflection,
 	    std::string& outErrorMessage);
 

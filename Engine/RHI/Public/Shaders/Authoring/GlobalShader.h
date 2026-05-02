@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <span>
+#include <string>
 #include <string_view>
 
 struct ShaderRegistrationDesc final
@@ -33,10 +34,38 @@ struct RayTracingHitGroupRegistrationDesc final
 {
 	std::string_view PackageName;
 	std::string_view HitGroupName;
-	std::string_view ClosestHitShaderName;
-	std::string_view AnyHitShaderName;
-	std::string_view IntersectionShaderName;
+	std::string_view ClosestHitExportName;
+	std::string_view AnyHitExportName;
+	std::string_view IntersectionExportName;
 };
+
+inline std::string BuildShaderPackageIdFromSourcePath(std::string_view sourcePath)
+{
+	const std::size_t slash = sourcePath.find_last_of("/\\");
+	const std::size_t nameStart = slash == std::string_view::npos ? 0 : slash + 1;
+	const std::size_t dot = sourcePath.find_last_of('.');
+	if (dot != std::string_view::npos && dot > nameStart)
+	{
+		return std::string(sourcePath.substr(nameStart, dot - nameStart));
+	}
+	return nameStart < sourcePath.size() ? std::string(sourcePath.substr(nameStart)) : std::string{};
+}
+
+inline std::string GetShaderRegistrationPackageId(const ShaderRegistrationDesc& shader)
+{
+	if (!shader.PackageName.empty())
+	{
+		return std::string(shader.PackageName);
+	}
+
+	std::string packageId = BuildShaderPackageIdFromSourcePath(shader.SourcePath);
+	return packageId.empty() ? std::string(shader.ShaderName) : packageId;
+}
+
+inline std::string GetShaderRegistrationBindingLayoutId(const ShaderRegistrationDesc& shader)
+{
+	return shader.BindingLayoutId.empty() ? GetShaderRegistrationPackageId(shader) : std::string(shader.BindingLayoutId);
+}
 
 constexpr CookedShaderPackageKind GetDefaultCookedShaderPackageKind(ShaderStage stage) noexcept
 {
@@ -114,14 +143,51 @@ class FRayTracingHitGroup
 {
 };
 
+template <typename TShader> struct TShaderSourceMetadata
+{
+	static constexpr std::string_view kSourcePath = "";
+	static constexpr std::string_view kEntryPoint = "";
+	static constexpr ShaderStage kStage = ShaderStage::Count;
+};
+
 template <typename TShader> class TGlobalShader
 {
   public:
 	using ShaderType = TShader;
 
-	static constexpr std::string_view GetShaderName() noexcept { return TShader::kShaderName; }
-	static constexpr std::string_view GetShaderPackageName() noexcept { return TShader::kShaderPackageName; }
-	static constexpr std::string_view GetBindingLayoutId() noexcept { return TShader::kBindingLayoutId; }
+	static constexpr std::string_view GetShaderName(std::string_view fallbackName) noexcept
+	{
+		if constexpr (requires { TShader::kShaderName; })
+		{
+			return TShader::kShaderName;
+		}
+		else
+		{
+			return fallbackName;
+		}
+	}
+	static constexpr std::string_view GetShaderPackageName() noexcept
+	{
+		if constexpr (requires { TShader::kShaderPackageName; })
+		{
+			return TShader::kShaderPackageName;
+		}
+		else
+		{
+			return {};
+		}
+	}
+	static constexpr std::string_view GetBindingLayoutId() noexcept
+	{
+		if constexpr (requires { TShader::kBindingLayoutId; })
+		{
+			return TShader::kBindingLayoutId;
+		}
+		else
+		{
+			return {};
+		}
+	}
 	static ShaderParameterStructDescriptor GetParameterStructDescriptor()
 	{
 		return TShader::FParameters::GetShaderParameterStructDescriptor();
@@ -154,13 +220,14 @@ template <typename TShader> class TGlobalShaderAutoRegister final
 {
   public:
 	TGlobalShaderAutoRegister(
+	    std::string_view shaderName,
 	    std::string_view sourcePath,
 	    std::string_view entryPoint,
 	    ShaderStage stage,
 	    CookedShaderPackageFeatureFlags packageFeatures = TGlobalShader<TShader>::GetPackageFeatures())
 	{
 		GlobalShaderRegistry::Register(ShaderRegistrationDesc{
-		    .ShaderName = TShader::kShaderName,
+		    .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
 		    .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
 		    .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
 		    .SourcePath = sourcePath,
@@ -178,11 +245,12 @@ template <typename TShader> class TRayTracingShaderAutoRegister final
 {
   public:
 	TRayTracingShaderAutoRegister(
+	    std::string_view shaderName,
 	    std::string_view sourcePath,
 	    std::string_view entryPoint)
 	{
 		GlobalShaderRegistry::Register(ShaderRegistrationDesc{
-		    .ShaderName = TShader::kShaderName,
+		    .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
 		    .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
 		    .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
 		    .SourcePath = sourcePath,
@@ -208,27 +276,29 @@ template <typename THitGroup> class TRayTracingHitGroupAutoRegister final
 	{
 		static_assert(requires { typename THitGroup::ClosestHit; }, "Ray tracing hit groups require a ClosestHit shader type.");
 		using ClosestHit = typename THitGroup::ClosestHit;
+		constexpr std::string_view closestHitExportName = TShaderSourceMetadata<ClosestHit>::kEntryPoint;
+		static_assert(!closestHitExportName.empty(), "Ray tracing hit group closest-hit shader must be registered with IMPLEMENT_RAY_TRACING_SHADER before the hit group.");
 
-		std::string_view anyHitShaderName;
+		std::string_view anyHitExportName;
 		if constexpr (requires { typename THitGroup::AnyHit; })
 		{
 			using AnyHit = typename THitGroup::AnyHit;
-			anyHitShaderName = AnyHit::kShaderName;
+			anyHitExportName = TShaderSourceMetadata<AnyHit>::kEntryPoint;
 		}
 
-		std::string_view intersectionShaderName;
+		std::string_view intersectionExportName;
 		if constexpr (requires { typename THitGroup::Intersection; })
 		{
 			using Intersection = typename THitGroup::Intersection;
-			intersectionShaderName = Intersection::kShaderName;
+			intersectionExportName = TShaderSourceMetadata<Intersection>::kEntryPoint;
 		}
 
 		GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistrationDesc{
 		    .PackageName = THitGroup::kShaderPackageName,
 		    .HitGroupName = THitGroup::kHitGroupName,
-		    .ClosestHitShaderName = ClosestHit::kShaderName,
-		    .AnyHitShaderName = anyHitShaderName,
-		    .IntersectionShaderName = intersectionShaderName});
+		    .ClosestHitExportName = closestHitExportName,
+		    .AnyHitExportName = anyHitExportName,
+		    .IntersectionExportName = intersectionExportName});
 	}
 };
 
@@ -240,28 +310,59 @@ template <typename TShader> class TShaderRef final
 	static TShaderRef Get(ShaderPermutationKey permutationKey = 0) noexcept
 	{
 		TShaderRef ref;
-		ref.m_shaderName = TShader::kShaderName;
+		ref.m_sourcePath = TShaderSourceMetadata<TShader>::kSourcePath;
+		ref.m_entryPoint = TShaderSourceMetadata<TShader>::kEntryPoint;
+		ref.m_stage = TShaderSourceMetadata<TShader>::kStage;
 		ref.m_permutationKey = permutationKey;
 		return ref;
 	}
 
-	std::string_view GetShaderName() const noexcept { return m_shaderName; }
+	std::string_view GetSourcePath() const noexcept { return m_sourcePath; }
+	std::string_view GetEntryPoint() const noexcept { return m_entryPoint; }
+	ShaderStage GetStage() const noexcept { return m_stage; }
+	std::string GetPackageId() const
+	{
+		if constexpr (requires { TShader::kShaderPackageName; })
+		{
+			return std::string(TShader::kShaderPackageName);
+		}
+		else
+		{
+			return BuildShaderPackageIdFromSourcePath(m_sourcePath);
+		}
+	}
 	ShaderPermutationKey GetPermutationKey() const noexcept { return m_permutationKey; }
-	explicit operator bool() const noexcept { return !m_shaderName.empty(); }
+	explicit operator bool() const noexcept { return !m_sourcePath.empty() && !m_entryPoint.empty(); }
 
   private:
-	std::string_view m_shaderName;
+	std::string_view m_sourcePath;
+	std::string_view m_entryPoint;
+	ShaderStage m_stage = ShaderStage::Count;
 	ShaderPermutationKey m_permutationKey = 0;
 };
 
 #define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName) \
+	template <> struct TShaderSourceMetadata<Class> \
+	{ \
+		static constexpr std::string_view kSourcePath = Path; \
+		static constexpr std::string_view kEntryPoint = Entry; \
+		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName; \
+	}; \
 	inline static const ::TGlobalShaderAutoRegister<Class> AutoRegisterGlobalShader_##Class{ \
+	    #Class, \
 	    Path, \
 	    Entry, \
 	    ::ShaderStage::StageName}
 
 #define IMPLEMENT_RAY_TRACING_SHADER(Class, Path, Entry) \
+	template <> struct TShaderSourceMetadata<Class> \
+	{ \
+		static constexpr std::string_view kSourcePath = Path; \
+		static constexpr std::string_view kEntryPoint = Entry; \
+		static constexpr ::ShaderStage kStage = ::ShaderStage::Count; \
+	}; \
 	inline static const ::TRayTracingShaderAutoRegister<Class> AutoRegisterRayTracingShader_##Class{ \
+	    #Class, \
 	    Path, \
 	    Entry}
 

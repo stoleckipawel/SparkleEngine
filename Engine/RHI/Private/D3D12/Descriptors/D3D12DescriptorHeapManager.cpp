@@ -64,7 +64,7 @@ void D3D12DescriptorHeapManager::FreeHandle(
 
 	const SIZE_T byteOffset = cpuHandle.ptr - firstHandle.GetCPU().ptr;
 	const UINT index = static_cast<UINT>(byteOffset / incrementSize);
-	FreeHandle(type, heap->GetHandleAt(index));
+	GetAllocator(type)->Free(heap->GetHandleAt(index));
 }
 
 void D3D12DescriptorHeapManager::FreeContiguous(

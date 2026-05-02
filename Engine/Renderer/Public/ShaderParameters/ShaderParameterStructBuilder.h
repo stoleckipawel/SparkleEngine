@@ -157,8 +157,6 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 		return builder.Build();
 	}
 
-	static PassParameterLayout BuildLayout(const char* debugName) { return BuildMetadata(debugName).GetLayout(); }
-
   private:
 	template <typename TExpectedSemantic, typename TField>
 	std::uint32_t AddField(const char* name, TField TParameters::* member, ShaderStageVisibility visibility)

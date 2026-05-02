@@ -27,7 +27,6 @@ class ShaderCompilerProcess final
   private:
 	static std::filesystem::path ResolveExecutable() noexcept;
 	static std::filesystem::path ResolveProjectDirectory() noexcept;
-	static std::string QuotePath(const std::filesystem::path& path);
 	static ShaderCompilerProcessResult RunCommand(
 	    const std::filesystem::path& executablePath,
 	    const std::filesystem::path& workingDirectory,

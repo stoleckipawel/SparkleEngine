@@ -101,7 +101,7 @@ void D3D12SwapChain::AllocateHandles()
 {
 	for (UINT i = 0; i < RenderConfig::FramesInFlight; i++)
 	{
-		m_rtvHandles[i] = m_descriptorHeapManager->AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		m_rtvHandles[i] = m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)->Allocate();
 	}
 }
 void D3D12SwapChain::CreateRenderTargetViews()
@@ -186,7 +186,7 @@ void D3D12SwapChain::ReleaseRenderTargetHandles() noexcept
 	{
 		if (m_rtvHandles[i].IsValid())
 		{
-			m_descriptorHeapManager->FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, m_rtvHandles[i]);
+			m_descriptorHeapManager->GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)->Free(m_rtvHandles[i]);
 		}
 	}
 }

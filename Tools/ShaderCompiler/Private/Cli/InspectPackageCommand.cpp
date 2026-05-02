@@ -3,6 +3,7 @@
 #include "Cli/InspectPackageCommand.h"
 
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Inspection/CookedPackageInspection.h"
 
 #include <iostream>
@@ -23,7 +24,7 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 		return kExitCodeUsage;
 	}
 
-	std::cout << "Package key=0x" << std::hex << package.packageKey << std::dec
+	std::cout << "Package key=" << Formatting::FormatPrefixedHexUInt64(package.packageKey)
 	          << " kind=" << CookedPackageInspection::GetPackageKindName(package.packageKind)
 	          << " features='" << CookedPackageInspection::FormatPackageFeatures(package.packageFeatures) << "'"
 	          << " binaries=" << package.binaryRecordCount
@@ -31,9 +32,9 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 	          << " rtExports=" << package.rayTracingExports.size()
 	          << " rtHitGroups=" << package.rayTracingHitGroups.size()
 	          << " localParameters=" << package.rayTracingLocalParameterRecordCount << "\n";
-	std::cout << "  hashes source=0x" << std::hex << package.sourceIdentityHash
-	          << " layout=0x" << package.bindingLayoutHash
-	          << " variant=0x" << package.variantHash << std::dec << "\n";
+	std::cout << "  hashes source=" << Formatting::FormatPrefixedHexUInt64(package.sourceIdentityHash)
+	          << " layout=" << Formatting::FormatPrefixedHexUInt64(package.bindingLayoutHash)
+	          << " variant=" << Formatting::FormatPrefixedHexUInt64(package.variantHash) << "\n";
 	if (package.packageKind == CookedShaderPackageKind::RayTracingLibrary)
 	{
 		std::cout << "  rt payloadBytes=" << package.rayTracingPayloadSizeInBytes
@@ -46,8 +47,8 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 		          << " format=" << CookedPackageInspection::GetBinaryFormatName(binary.format)
 		          << " entry=" << binary.entryPoint
 		          << " backend=" << binary.backendName
-		          << " backendVersion=0x" << std::hex << binary.backendVersion
-		          << " bytecodeHash=0x" << binary.bytecodeHash << std::dec
+		          << " backendVersion=" << Formatting::FormatPrefixedHexUInt64(binary.backendVersion)
+		          << " bytecodeHash=" << Formatting::FormatPrefixedHexUInt64(binary.bytecodeHash)
 		          << " bytecode=" << binary.bytecodeSizeInBytes
 		          << " resources=" << binary.resourceBindingCount
 		          << " cbuffers=" << binary.constantBufferCount
@@ -59,7 +60,7 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 		          << " kind=" << CookedPackageInspection::GetRayTracingExportKindName(rtExport.kind)
 		          << " entry=" << rtExport.entryPoint
 		          << " binary=" << rtExport.binaryRecordIndex
-		          << " hash=0x" << std::hex << rtExport.exportHash << std::dec << "\n";
+		          << " hash=" << Formatting::FormatPrefixedHexUInt64(rtExport.exportHash) << "\n";
 	}
 	for (const InspectedCookedRayTracingHitGroup& hitGroup : package.rayTracingHitGroups)
 	{
@@ -68,7 +69,7 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 		          << " closest=" << hitGroup.closestHitExportIndex
 		          << " any=" << hitGroup.anyHitExportIndex
 		          << " intersection=" << hitGroup.intersectionExportIndex
-		          << " hash=0x" << std::hex << hitGroup.hitGroupHash << std::dec << "\n";
+		          << " hash=" << Formatting::FormatPrefixedHexUInt64(hitGroup.hitGroupHash) << "\n";
 	}
 	for (const InspectedCookedAccelerationStructureBinding& binding : package.accelerationStructureBindings)
 	{

@@ -43,3 +43,188 @@ D3D12_COMPARISON_FUNC D3D12TypeConversions::ToComparisonFunc(CompareOp compareOp
 			return D3D12_COMPARISON_FUNC_ALWAYS;
 	}
 }
+
+ID3D12GraphicsCommandList* D3D12TypeConversions::ToGraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept
+{
+	return static_cast<ID3D12GraphicsCommandList*>(handle.Value);
+}
+
+ID3D12Resource* D3D12TypeConversions::ToResource(NativeResourceHandle handle) noexcept
+{
+	return static_cast<ID3D12Resource*>(handle.Value);
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE D3D12TypeConversions::ToCpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
+{
+	return D3D12_CPU_DESCRIPTOR_HANDLE{handle.Value};
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE D3D12TypeConversions::ToGpuDescriptor(RhiGpuDescriptorHandle handle) noexcept
+{
+	return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
+}
+
+D3D12_DESCRIPTOR_HEAP_TYPE D3D12TypeConversions::ToDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept
+{
+	switch (heapType)
+	{
+		case ERhiDescriptorHeapType::RenderTarget:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		case ERhiDescriptorHeapType::DepthStencil:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		case ERhiDescriptorHeapType::Sampler:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+		case ERhiDescriptorHeapType::ShaderResource:
+		default:
+			return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	}
+}
+
+D3D12_RESOURCE_STATES D3D12TypeConversions::ToResourceStates(ResourceState state) noexcept
+{
+	switch (state)
+	{
+		case ResourceState::Common:
+			return D3D12_RESOURCE_STATE_COMMON;
+		case ResourceState::RenderTarget:
+			return D3D12_RESOURCE_STATE_RENDER_TARGET;
+		case ResourceState::DepthWrite:
+			return D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		case ResourceState::DepthRead:
+			return D3D12_RESOURCE_STATE_DEPTH_READ;
+		case ResourceState::ShaderResource:
+			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		case ResourceState::UnorderedAccess:
+			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		case ResourceState::CopySource:
+			return D3D12_RESOURCE_STATE_COPY_SOURCE;
+		case ResourceState::CopyDest:
+			return D3D12_RESOURCE_STATE_COPY_DEST;
+		case ResourceState::Present:
+			return D3D12_RESOURCE_STATE_PRESENT;
+		default:
+			return D3D12_RESOURCE_STATE_COMMON;
+	}
+}
+
+D3D12_PRIMITIVE_TOPOLOGY D3D12TypeConversions::ToPrimitiveTopology(RhiPrimitiveTopology topology) noexcept
+{
+	switch (topology)
+	{
+		case RhiPrimitiveTopology::TriangleList:
+		default:
+			return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	}
+}
+
+DXGI_FORMAT D3D12TypeConversions::ToIndexFormat(RhiIndexFormat format) noexcept
+{
+	switch (format)
+	{
+		case RhiIndexFormat::UInt16:
+			return DXGI_FORMAT_R16_UINT;
+		case RhiIndexFormat::UInt32:
+		default:
+			return DXGI_FORMAT_R32_UINT;
+	}
+}
+
+D3D12_HEAP_FLAGS D3D12TypeConversions::ToHeapFlags(RhiTransientAllocationPool pool) noexcept
+{
+	switch (pool)
+	{
+		case RhiTransientAllocationPool::Buffer:
+			return D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
+		case RhiTransientAllocationPool::Color:
+		case RhiTransientAllocationPool::Depth:
+		default:
+			return D3D12_HEAP_FLAG_ALLOW_ONLY_RT_DS_TEXTURES;
+	}
+}
+
+D3D12_RESOURCE_DESC D3D12TypeConversions::BuildTextureResourceDesc(const RhiTextureResourceDesc& desc) noexcept
+{
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+	resourceDesc.Width = static_cast<UINT64>(desc.Width);
+	resourceDesc.Height = desc.Height;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = desc.MipLevels;
+	resourceDesc.Format = ToDxgiFormat(desc.Format);
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	if (desc.AllowRenderTarget)
+	{
+		resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	}
+	if (desc.AllowDepthStencil)
+	{
+		resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+	if (desc.AllowUnorderedAccess)
+	{
+		resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+	return resourceDesc;
+}
+
+D3D12_RESOURCE_DESC D3D12TypeConversions::BuildBufferResourceDesc(const RhiBufferResourceDesc& desc) noexcept
+{
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+	resourceDesc.Width = desc.SizeInBytes;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.SampleDesc.Quality = 0;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = desc.AllowUnorderedAccess ? D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : D3D12_RESOURCE_FLAG_NONE;
+	return resourceDesc;
+}
+
+D3D12_CLEAR_VALUE D3D12TypeConversions::BuildClearValue(const RhiOptimizedClearValue& clearValue) noexcept
+{
+	D3D12_CLEAR_VALUE nativeClearValue{};
+	nativeClearValue.Format = ToDxgiFormat(clearValue.Format);
+	if (clearValue.ValueType == RhiOptimizedClearValue::Type::DepthStencil)
+	{
+		nativeClearValue.DepthStencil.Depth = clearValue.Depth;
+		nativeClearValue.DepthStencil.Stencil = clearValue.Stencil;
+	}
+	else
+	{
+		for (std::size_t index = 0; index < clearValue.Color.size(); ++index)
+		{
+			nativeClearValue.Color[index] = clearValue.Color[index];
+		}
+	}
+	return nativeClearValue;
+}
+
+D3D12_HEAP_PROPERTIES D3D12TypeConversions::BuildUploadHeapProperties() noexcept
+{
+	D3D12_HEAP_PROPERTIES properties{};
+	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	properties.CreationNodeMask = 1;
+	properties.VisibleNodeMask = 1;
+	return properties;
+}
+
+D3D12_HEAP_PROPERTIES D3D12TypeConversions::BuildReadbackHeapProperties() noexcept
+{
+	D3D12_HEAP_PROPERTIES properties{};
+	properties.Type = D3D12_HEAP_TYPE_READBACK;
+	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	properties.CreationNodeMask = 1;
+	properties.VisibleNodeMask = 1;
+	return properties;
+}

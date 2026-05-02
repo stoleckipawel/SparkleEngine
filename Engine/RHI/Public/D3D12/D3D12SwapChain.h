@@ -39,7 +39,7 @@ class D3D12SwapChain final
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(UINT index) const { return m_rtvHandles[index].GetCPU(); }
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return GetCPUHandle(m_frameInFlightIndex); }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return m_rtvHandles[m_frameInFlightIndex].GetCPU(); }
 
 	ID3D12Resource* GetCurrentResource() const noexcept { return m_buffers[m_frameInFlightIndex].Get(); }
 

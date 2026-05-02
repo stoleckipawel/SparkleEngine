@@ -204,7 +204,7 @@ std::string ShaderConsoleCommands::BuildShaderList()
 		output += std::format(
 		    "{} package={} stage={} source={} entry={} parameters={} permutationDimensions={}",
 		    shader.ShaderName,
-		    shader.PackageName.empty() ? shader.ShaderName : shader.PackageName,
+		    GetShaderRegistrationPackageId(shader),
 		    GetShaderStagePrefix(shader.Stage),
 		    shader.SourcePath,
 		    shader.EntryPoint,
@@ -220,7 +220,7 @@ std::vector<std::string> ShaderConsoleCommands::BuildShaderTargetCompletions(std
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
 		const std::string shaderName(shader.ShaderName);
-		const std::string packageName(shader.PackageName.empty() ? shader.ShaderName : shader.PackageName);
+		const std::string packageName = GetShaderRegistrationPackageId(shader);
 		const std::string sourcePath(shader.SourcePath);
 		if (Strings::StartsWithIgnoreCase(shaderName, prefix))
 		{

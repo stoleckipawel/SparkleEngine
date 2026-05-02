@@ -2,6 +2,8 @@
 
 #include "Verification/ShaderParameterStructVerifier.h"
 
+#include "Core/Public/Json/JsonWriter.h"
+
 #include <format>
 #include <sstream>
 
@@ -43,37 +45,6 @@ static const char* GetResourceDimensionName(CookedShaderResourceDimension dimens
 		case CookedShaderResourceDimension::TextureCubeArray: return "TextureCubeArray";
 	}
 	return "Unknown";
-}
-
-static std::string EscapeJsonString(std::string_view value)
-{
-	std::string result;
-	result.reserve(value.size() + 8);
-	for (const char ch : value)
-	{
-		switch (ch)
-		{
-			case '\\':
-				result += "\\\\";
-				break;
-			case '"':
-				result += "\\\"";
-				break;
-			case '\n':
-				result += "\\n";
-				break;
-			case '\r':
-				result += "\\r";
-				break;
-			case '\t':
-				result += "\\t";
-				break;
-			default:
-				result.push_back(ch);
-				break;
-		}
-	}
-	return result;
 }
 
 static const ShaderReflectionResourceBinding* FindReflectionBinding(
@@ -138,7 +109,7 @@ std::string ShaderParameterStructVerificationResult::BuildJsonReport() const
 	stream << "  \"diagnostics\": [\n";
 	for (std::size_t index = 0; index < diagnostics.size(); ++index)
 	{
-		stream << "    \"" << EscapeJsonString(diagnostics[index]) << "\"";
+		stream << "    " << Json::QuoteString(diagnostics[index]);
 		if (index + 1 < diagnostics.size())
 		{
 			stream << ',';

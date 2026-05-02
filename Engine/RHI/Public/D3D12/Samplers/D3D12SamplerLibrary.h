@@ -101,7 +101,6 @@ class D3D12SamplerLibrary
 	static bool TryGetAnisotropicSlot(RhiSamplerAnisotropy maxAnisotropy, RhiSamplerAddressMode addressMode, Slot& outSlot) noexcept;
 	static D3D12_FILTER ToD3D12Filter(MinMagFilter minMag, MipFilter mip, bool anisotropic);
 	static D3D12_TEXTURE_ADDRESS_MODE ToD3D12Address(AddressMode address);
-	static D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
 
 	bool m_bInitialized = false;
 	D3D12Rhi* m_rhi = nullptr;

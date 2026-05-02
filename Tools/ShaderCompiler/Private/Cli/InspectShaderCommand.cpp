@@ -7,6 +7,34 @@
 
 #include <iostream>
 
+static void PrintPermutationDetails(const ShaderPermutationDomainDescriptor& permutations)
+{
+	if (permutations.Dimensions.empty())
+	{
+		std::cout << "\n";
+		return;
+	}
+
+	const std::vector<ShaderPermutationVector> vectors = EnumerateShaderPermutationVectors(permutations);
+	std::cout << " permutations=" << vectors.size() << "\n";
+	for (const ShaderPermutationDimensionDescriptor& dimension : permutations.Dimensions)
+	{
+		std::cout << "    permutationDimension name='" << dimension.Name
+		          << "' define='" << (dimension.DefineName.empty() ? "<none>" : dimension.DefineName)
+		          << "' values='";
+		for (std::size_t valueIndex = 0; valueIndex < dimension.Values.size(); ++valueIndex)
+		{
+			if (valueIndex > 0)
+			{
+				std::cout << ", ";
+			}
+			const ShaderPermutationValueDescriptor& value = dimension.Values[valueIndex];
+			std::cout << valueIndex << ':' << value.Name << '=' << value.DefineValue;
+		}
+		std::cout << "'\n";
+	}
+}
+
 int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 {
 	if (args.empty())
@@ -18,15 +46,16 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 	bool foundTypedShader = false;
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
-		if (shader.PackageName != args[0] && shader.ShaderName != args[0])
+		const std::string packageName = GetShaderRegistrationPackageId(shader);
+		if (packageName != args[0] && shader.ShaderName != args[0])
 		{
 			continue;
 		}
 
 		if (!foundTypedShader)
 		{
-			std::cout << "Typed shader package '" << shader.PackageName << "'\n";
-			std::cout << "  bindingLayout='" << shader.BindingLayoutId << "'\n";
+			std::cout << "Typed shader package '" << packageName << "'\n";
+			std::cout << "  bindingLayout='" << GetShaderRegistrationBindingLayoutId(shader) << "'\n";
 		}
 		foundTypedShader = true;
 
@@ -38,7 +67,8 @@ int InspectShaderCommand::Run(std::span<const std::string_view> args) const
 		std::cout << "  shader='" << shader.ShaderName << "' " << GetShaderStagePrefix(shader.Stage)
 		          << ": " << shader.SourcePath << " entry=" << shader.EntryPoint
 		          << " parameters=" << parameters.Fields.size()
-		          << " permutationDimensions=" << permutations.Dimensions.size() << "\n";
+		          << " permutationDimensions=" << permutations.Dimensions.size();
+		PrintPermutationDetails(permutations);
 	}
 
 	if (foundTypedShader)

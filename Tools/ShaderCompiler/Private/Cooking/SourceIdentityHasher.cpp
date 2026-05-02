@@ -3,10 +3,10 @@
 #include "Cooking/SourceIdentityHasher.h"
 
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "RHI/Public/Config/RenderConfig.h"
 
-#include <format>
 #include <string>
 
 std::uint64_t SourceIdentityHasher::Compute(
@@ -38,7 +38,7 @@ std::uint64_t SourceIdentityHasher::Compute(
 	for (const ShaderCookRayTracingExportDesc& rtExport : package.rayTracingExports)
 	{
 		canonical += ";rt-export=";
-		canonical += rtExport.shaderName;
+		canonical += rtExport.exportLookupName;
 		canonical += '|';
 		canonical += std::to_string(static_cast<std::uint32_t>(rtExport.kind));
 		canonical += '|';
@@ -52,11 +52,11 @@ std::uint64_t SourceIdentityHasher::Compute(
 		canonical += ";rt-hit-group=";
 		canonical += hitGroup.name;
 		canonical += '|';
-		canonical += hitGroup.closestHitShaderName;
+		canonical += hitGroup.closestHitExportName;
 		canonical += '|';
-		canonical += hitGroup.anyHitShaderName;
+		canonical += hitGroup.anyHitExportName;
 		canonical += '|';
-		canonical += hitGroup.intersectionShaderName;
+		canonical += hitGroup.intersectionExportName;
 	}
 
 	for (const CookedStageBuild& compiledStage : compiledStages)
@@ -68,7 +68,7 @@ std::uint64_t SourceIdentityHasher::Compute(
 		canonical += '|';
 		canonical += compiledStage.entryPoint;
 		canonical += '|';
-		canonical += std::format("{:016X}", compiledStage.bytecodeHash);
+		canonical += Formatting::FormatHexUInt64(compiledStage.bytecodeHash);
 	}
 
 	const std::uint64_t hash = Hash::Fnv1a64(canonical);

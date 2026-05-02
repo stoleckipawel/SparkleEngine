@@ -4,11 +4,11 @@
 
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Cooking/ShaderStageText.h"
+#include "RHI/Public/Shaders/ShaderStage.h"
 
-#include <format>
 #include <fstream>
 
 bool CookedRegistryWriter::Write(
@@ -39,11 +39,11 @@ bool CookedRegistryWriter::Write(
 		output << '[' << kRegistryPackageSectionPrefix << package.packageId << "]\n";
 		output << kRegistryKeyVariant << " = " << package.variantId << '\n';
 		output << kRegistryKeyBindingLayout << " = " << package.bindingLayoutId << '\n';
-		output << kRegistryKeyPackageKey << " = " << std::format("{:016X}", package.packageKey) << '\n';
-		output << kRegistryKeySourceIdentityHash << " = " << std::format("{:016X}", package.sourceIdentityHash) << '\n';
-		output << kRegistryKeyBindingLayoutHash << " = " << std::format("{:016X}", package.bindingLayoutHash) << '\n';
-		output << kRegistryKeyVariantHash << " = " << std::format("{:016X}", package.variantHash) << '\n';
-		output << kRegistryKeyDeclaredStages << " = " << ShaderStageText::FormatMask(package.declaredStages) << '\n';
+		output << kRegistryKeyPackageKey << " = " << Formatting::FormatHexUInt64(package.packageKey) << '\n';
+		output << kRegistryKeySourceIdentityHash << " = " << Formatting::FormatHexUInt64(package.sourceIdentityHash) << '\n';
+		output << kRegistryKeyBindingLayoutHash << " = " << Formatting::FormatHexUInt64(package.bindingLayoutHash) << '\n';
+		output << kRegistryKeyVariantHash << " = " << Formatting::FormatHexUInt64(package.variantHash) << '\n';
+		output << kRegistryKeyDeclaredStages << " = " << FormatShaderStageMask(package.declaredStages) << '\n';
 		output << kRegistryKeyOutput << " = " << MakeProjectRelativeString(package.outputPath) << "\n\n";
 	}
 

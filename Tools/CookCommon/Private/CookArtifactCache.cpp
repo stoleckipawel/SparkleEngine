@@ -1,38 +1,16 @@
 #include "CookArtifactCache.h"
 
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 
-#include <charconv>
-#include <format>
 #include <fstream>
 #include <sstream>
 #include <string_view>
-#include <system_error>
 
 namespace Cook
 {
 	static constexpr std::string_view kCookArtifactMetadataHeader = "CookArtifact|1";
-
-	static std::string FormatHex(std::uint64_t value)
-	{
-		return std::format("{:016X}", value);
-	}
-
-	static bool ParseHex(std::string_view value, std::uint64_t& outValue) noexcept
-	{
-		unsigned long long parsedValue = 0;
-		const char* begin = value.data();
-		const char* end = value.data() + value.size();
-		const auto parseResult = std::from_chars(begin, end, parsedValue, 16);
-		if (parseResult.ec != std::errc() || parseResult.ptr != end)
-		{
-			return false;
-		}
-
-		outValue = static_cast<std::uint64_t>(parsedValue);
-		return true;
-	}
 
 	static bool ReadIdentityHash(
 	    const std::filesystem::path& metadataPath,
@@ -60,7 +38,7 @@ namespace Cook
 			if (line.starts_with(kIdentityHashPrefix))
 			{
 				const std::string_view value(line.data() + kIdentityHashPrefix.size(), line.size() - kIdentityHashPrefix.size());
-				if (!ParseHex(value, outIdentityHash))
+				if (!Formatting::TryParseHexUInt64(value, outIdentityHash))
 				{
 					outErrorMessage = "Cook artifact metadata has an invalid identity hash: '" + metadataPath.string() + "'";
 					return false;
@@ -96,11 +74,11 @@ namespace Cook
 		canonical += '|';
 		canonical += std::to_string(cookerVersion);
 		canonical += '|';
-		canonical += FormatHex(sourceHash);
+		canonical += Formatting::FormatHexUInt64(sourceHash);
 		canonical += '|';
-		canonical += FormatHex(dependencyHash);
+		canonical += Formatting::FormatHexUInt64(dependencyHash);
 		canonical += '|';
-		canonical += FormatHex(settingsHash);
+		canonical += Formatting::FormatHexUInt64(settingsHash);
 		return canonical;
 	}
 
@@ -171,15 +149,15 @@ namespace Cook
 
 		std::ostringstream metadata;
 		metadata << kCookArtifactMetadataHeader << '\n';
-		metadata << "IdentityHash=" << FormatHex(key.ComputeIdentityHash()) << '\n';
+		metadata << "IdentityHash=" << Formatting::FormatHexUInt64(key.ComputeIdentityHash()) << '\n';
 		metadata << "AssetType=" << key.assetType << '\n';
 		metadata << "AssetId=" << key.assetId << '\n';
 		metadata << "CookerName=" << key.cookerName << '\n';
 		metadata << "CookedFormatVersion=" << key.cookedFormatVersion << '\n';
 		metadata << "CookerVersion=" << key.cookerVersion << '\n';
-		metadata << "SourceHash=" << FormatHex(key.sourceHash) << '\n';
-		metadata << "DependencyHash=" << FormatHex(key.dependencyHash) << '\n';
-		metadata << "SettingsHash=" << FormatHex(key.settingsHash) << '\n';
+		metadata << "SourceHash=" << Formatting::FormatHexUInt64(key.sourceHash) << '\n';
+		metadata << "DependencyHash=" << Formatting::FormatHexUInt64(key.dependencyHash) << '\n';
+		metadata << "SettingsHash=" << Formatting::FormatHexUInt64(key.settingsHash) << '\n';
 		metadata << "OutputPath=" << key.outputPath.generic_string() << '\n';
 
 		const std::filesystem::path metadataPath = MetadataPathForOutput(key.outputPath);

@@ -3,6 +3,7 @@
 #include "ShaderRecook/ShaderCompilerProcess.h"
 
 #include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Process/CommandLineUtils.h"
 
 #include <array>
 #include <cstdio>
@@ -37,11 +38,11 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 		}
 
 		arguments += " --shader ";
-		arguments += QuotePath(std::filesystem::path(request.Target));
+		arguments += CommandLine::QuotePath(std::filesystem::path(request.Target));
 	}
 
 	arguments += " --debug-artifacts ";
-	arguments += QuotePath(Paths::ShaderDebugArtifactRoot());
+	arguments += CommandLine::QuotePath(Paths::ShaderDebugArtifactRoot());
 	return RunCommand(executablePath, projectDirectory, arguments);
 }
 
@@ -94,23 +95,6 @@ std::filesystem::path ShaderCompilerProcess::ResolveProjectDirectory() noexcept
 
 	return {};
 }
-std::string ShaderCompilerProcess::QuotePath(const std::filesystem::path& path)
-{
-	std::string text = path.string();
-	std::string quoted;
-	quoted.reserve(text.size() + 2);
-	quoted.push_back('"');
-	for (const char ch : text)
-	{
-		if (ch == '"')
-		{
-			quoted.push_back('\\');
-		}
-		quoted.push_back(ch);
-	}
-	quoted.push_back('"');
-	return quoted;
-}
 
 ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
     const std::filesystem::path& executablePath,
@@ -121,8 +105,8 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 	result.ExecutablePath = executablePath;
 	const std::string command = std::format(
 	    "cd /d {} && {} {} 2>&1",
-	    QuotePath(workingDirectory),
-	    QuotePath(executablePath),
+	    CommandLine::QuotePath(workingDirectory),
+	    CommandLine::QuotePath(executablePath),
 	    arguments);
 	result.CommandLine = command;
 

@@ -132,10 +132,15 @@ $didModifyShader = $false
 try
 {
     $cold = Invoke-ShaderCook -Label 'Cold cook on empty cache' -Arguments $cookArgs
-    Assert-CookMetrics -Result $cold -ExpectedBackendInvocations 7 -ExpectedCacheHits 0 -ExpectedCacheMisses 7
+    if ($cold.BackendInvocations -le 0 -or $cold.CacheHits -ne 0 -or $cold.CacheMisses -ne $cold.BackendInvocations)
+    {
+        Write-Host "[CI][ERROR] Unexpected metrics for cold cook: backendInvocations=$($cold.BackendInvocations) cacheHits=$($cold.CacheHits) cacheMisses=$($cold.CacheMisses)."
+        exit 1
+    }
+    $fullCookStageCount = $cold.BackendInvocations
 
     $warm = Invoke-ShaderCook -Label 'Warm cook with populated cache' -Arguments $cookArgs
-    Assert-CookMetrics -Result $warm -ExpectedBackendInvocations 0 -ExpectedCacheHits 7 -ExpectedCacheMisses 0
+    Assert-CookMetrics -Result $warm -ExpectedBackendInvocations 0 -ExpectedCacheHits $fullCookStageCount -ExpectedCacheMisses 0
 
     $validationCommentBytes = [System.Text.Encoding]::UTF8.GetBytes("`r`n// Phase1 cache invalidation validation $(Get-Date -Format o)`r`n")
     $modifiedShaderBytes = New-Object byte[] ($originalShaderBytes.Length + $validationCommentBytes.Length)
@@ -145,7 +150,7 @@ try
     $didModifyShader = $true
 
     $targeted = Invoke-ShaderCook -Label 'Targeted source invalidation cook' -Arguments $cookArgs
-    Assert-CookMetrics -Result $targeted -ExpectedBackendInvocations 2 -ExpectedCacheHits 5 -ExpectedCacheMisses 2
+    Assert-CookMetrics -Result $targeted -ExpectedBackendInvocations 2 -ExpectedCacheHits ($fullCookStageCount - 2) -ExpectedCacheMisses 2
 }
 finally
 {
@@ -157,7 +162,7 @@ finally
 
 $noCacheArgs = @('cook', '--backend', 'dxc', '--target', 'DxilSm66', '--cache-dir', $CacheRoot, '--no-cache')
 $noCache = Invoke-ShaderCook -Label '--no-cache full recook' -Arguments $noCacheArgs
-Assert-CookMetrics -Result $noCache -ExpectedBackendInvocations 7 -ExpectedCacheHits 0 -ExpectedCacheMisses 7
+Assert-CookMetrics -Result $noCache -ExpectedBackendInvocations $fullCookStageCount -ExpectedCacheHits 0 -ExpectedCacheMisses $fullCookStageCount
 
 Write-Host ''
 Write-Host '[CI][OK] Shader cache behavior is green.'

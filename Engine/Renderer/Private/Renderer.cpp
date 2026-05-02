@@ -55,12 +55,14 @@ const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noex
 	return m_backend->GetRenderHardwareInterface();
 }
 
-void Renderer::ReloadCookedShaders() noexcept
+CookedShaderReloadResult Renderer::ReloadCookedShaders() noexcept
 {
 	if (m_pipelineStateManager != nullptr)
 	{
-		m_pipelineStateManager->ReloadCookedShaders();
+		return m_pipelineStateManager->ReloadCookedShaders();
 	}
+
+	return CookedShaderReloadResult::Failure("Renderer has no pipeline state manager; cooked shader reload was skipped.");
 }
 
 std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept

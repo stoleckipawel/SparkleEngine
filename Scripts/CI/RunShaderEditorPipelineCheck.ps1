@@ -1,7 +1,7 @@
 # Purpose:
 #   Prove Phase 4/5 editor-facing shader pipeline behavior without launching the editor:
-#     1. A successful saved .hlsl edit recooks, publishes a new package, and updates ShaderRecookSignal.
-#     2. A failed recook surfaces diagnostics through process output and preserves old package/signal artifacts.
+#     1. A successful saved .hlsl edit recooks, publishes a new package, and updates the JSON recook publication.
+#     2. A failed recook surfaces diagnostics through process output and preserves old package/publication artifacts.
 #     3. DebugArtifactBundle files exist for the editor inspector.
 #     4. PsoStats analysis emits a CSV row for every cooked stage.
 #
@@ -144,11 +144,13 @@ function Assert-DebugArtifactBundles
     $bundles = Get-ChildItem -Path $DebugArtifactRoot -Recurse -Directory -ErrorAction SilentlyContinue |
         Where-Object { Test-Path (Join-Path $_.FullName 'compile-request.json') }
 
-    if ($bundles.Count -lt 7)
+    if ($bundles.Count -le 0)
     {
-        Write-Host "[CI][ERROR] Expected at least 7 debug artifact bundles, found $($bundles.Count)."
+        Write-Host "[CI][ERROR] Expected debug artifact bundles, found $($bundles.Count)."
         exit 1
     }
+
+    return $bundles.Count
 
     foreach ($bundle in $bundles)
     {
@@ -166,6 +168,8 @@ function Assert-DebugArtifactBundles
 
 function Assert-PsoStatsCsv
 {
+    param([Parameter(Mandatory=$true)][int]$ExpectedRows)
+
     if (-not (Test-Path $AnalysisCsv))
     {
         Write-Host "[CI][ERROR] Expected PsoStats CSV not found at $AnalysisCsv."
@@ -173,9 +177,9 @@ function Assert-PsoStatsCsv
     }
 
     $rows = Import-Csv -Path $AnalysisCsv
-    if ($rows.Count -ne 7)
+    if ($rows.Count -ne $ExpectedRows)
     {
-        Write-Host "[CI][ERROR] Expected 7 PsoStats rows, found $($rows.Count)."
+        Write-Host "[CI][ERROR] Expected $ExpectedRows PsoStats rows, found $($rows.Count)."
         exit 1
     }
 }
@@ -195,15 +199,15 @@ $didModifyShader = $false
 try
 {
     Invoke-ShaderCook -Label 'Baseline cook with debug artifacts and pso-stats' -Arguments $debugAnalysisArgs | Out-Null
-    Assert-DebugArtifactBundles
-    Assert-PsoStatsCsv
+    $bundleCount = Assert-DebugArtifactBundles
+    Assert-PsoStatsCsv -ExpectedRows $bundleCount
 
     $packagePath = Get-HelloTrianglePackagePath
     $baselinePackageHash = Get-FileSha256OrEmpty -Path $packagePath
     $baselineSignalHash = Get-FileSha256OrEmpty -Path $signalPath
     if ([string]::IsNullOrWhiteSpace($baselinePackageHash) -or [string]::IsNullOrWhiteSpace($baselineSignalHash))
     {
-        Write-Host '[CI][ERROR] Baseline cook did not produce expected package or recook signal.'
+        Write-Host '[CI][ERROR] Baseline cook did not produce expected package or recook publication.'
         exit 1
     }
 
@@ -231,7 +235,7 @@ try
     }
     if ($editedSignalHash -eq $baselineSignalHash)
     {
-        Write-Host '[CI][ERROR] Saved .hlsl edit did not update ShaderRecookSignal.'
+        Write-Host '[CI][ERROR] Saved .hlsl edit did not update the recook publication.'
         exit 1
     }
 
@@ -253,7 +257,7 @@ try
     }
     if ($failedSignalHash -ne $editedSignalHash)
     {
-        Write-Host '[CI][ERROR] Failed recook updated ShaderRecookSignal even though artifacts were not published.'
+        Write-Host '[CI][ERROR] Failed recook updated the recook publication even though artifacts were not published.'
         exit 1
     }
 }

@@ -3,7 +3,8 @@
 #include "D3D12/Textures/CookedTextureAsset.h"
 #include "D3D12/Textures/TextureLoaderBackend.h"
 
-#include <cstddef>
+#include "Core/Public/Files/BinarySpanReader.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -15,12 +16,6 @@ class CookedTextureAssetLoader final : public TextureLoaderBackend
 	TextureLoadResult Load(const std::filesystem::path& fileName) const override;
 
   private:
-	static bool ReadBytes(
-	    const std::vector<std::uint8_t>& fileBytes,
-	    std::size_t& byteOffset,
-	    void* destination,
-	    std::size_t byteCount,
-	    std::string& outErrorMessage);
 	static bool ValidateHeader(
 	    const CookedTextureAssetHeader& header,
 	    const std::filesystem::path& resolvedPath,
@@ -31,15 +26,13 @@ class CookedTextureAssetLoader final : public TextureLoaderBackend
 	    const std::filesystem::path& resolvedPath,
 	    std::string& outErrorMessage);
 	static bool ReadMipHeaders(
-	    const std::vector<std::uint8_t>& fileBytes,
-	    std::size_t& byteOffset,
+	    Files::BinarySpanReader& reader,
 	    std::uint32_t mipCount,
 	    const std::filesystem::path& resolvedPath,
 	    std::vector<CookedTextureMipHeader>& outMipHeaders,
 	    std::string& outErrorMessage);
 	static bool ReadMipPayloads(
-	    const std::vector<std::uint8_t>& fileBytes,
-	    std::size_t& byteOffset,
+	    Files::BinarySpanReader& reader,
 	    const std::vector<CookedTextureMipHeader>& mipHeaders,
 	    const std::filesystem::path& resolvedPath,
 	    TextureLoadResult& outLoadResult,

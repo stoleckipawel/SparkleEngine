@@ -35,8 +35,8 @@ int ListShadersCommand::Run(std::span<const std::string_view> args) const
 			const ShaderPermutationDomainDescriptor permutations =
 			    shader.BuildPermutationDomainDescriptor != nullptr ? shader.BuildPermutationDomainDescriptor() : ShaderPermutationDomainDescriptor{};
 
-			std::cout << shader.ShaderName << " package=" << shader.PackageName
-			          << " layout=" << shader.BindingLayoutId
+			std::cout << shader.ShaderName << " package=" << GetShaderRegistrationPackageId(shader)
+			          << " layout=" << GetShaderRegistrationBindingLayoutId(shader)
 			          << " stage=" << GetShaderStagePrefix(shader.Stage)
 			          << " source=" << shader.SourcePath
 			          << " entry=" << shader.EntryPoint

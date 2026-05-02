@@ -4,15 +4,14 @@
 
 #include "Compiler/ShaderCompileProfile.h"
 #include "Constants/ShaderCompilerConstants.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "RHI/Public/Shaders/CookedShaderPackage.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
-#include <format>
-
 std::string ShaderCacheKey::ToHex() const
 {
-	return std::format("{:016X}", value);
+	return Formatting::FormatHexUInt64(value);
 }
 
 ShaderCacheKey ShaderCacheKey::Compute(

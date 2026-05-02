@@ -1,11 +1,10 @@
 ﻿#include "TextureCookRequestList.h"
 
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
 
 #include <algorithm>
-#include <charconv>
-#include <format>
 #include <fstream>
 #include <map>
 #include <sstream>
@@ -39,11 +38,8 @@ namespace AssetAuthoring
 
 	static bool ParseAssetId(std::string_view value, TextureAssetId& outAssetId) noexcept
 	{
-		unsigned long long parsedAssetId = 0;
-		const char* begin = value.data();
-		const char* end = value.data() + value.size();
-		const auto parseResult = std::from_chars(begin, end, parsedAssetId, 16);
-		if (parseResult.ec != std::errc() || parseResult.ptr != end)
+		std::uint64_t parsedAssetId = 0;
+		if (!Formatting::TryParseHexUInt64(value, parsedAssetId))
 		{
 			return false;
 		}
@@ -54,24 +50,13 @@ namespace AssetAuthoring
 
 	static bool ParseRequestLine(std::string_view line, TextureCookRequest& outRequest, std::string& outErrorMessage)
 	{
-		std::string_view fields[4] = {};
-		std::size_t fieldIndex = 0;
-		std::size_t start = 0;
-
-		while (fieldIndex < 3)
+		const std::vector<std::string_view> fields = Strings::Split(line, '|');
+		if (fields.size() != 4)
 		{
-			const std::size_t separatorIndex = line.find('|', start);
-			if (separatorIndex == std::string_view::npos)
-			{
-				outErrorMessage = "Texture cook request entry is malformed.";
-				return false;
-			}
-
-			fields[fieldIndex++] = line.substr(start, separatorIndex - start);
-			start = separatorIndex + 1;
+			outErrorMessage = "Texture cook request entry is malformed.";
+			return false;
 		}
 
-		fields[3] = line.substr(start);
 		if (fields[2].empty())
 		{
 			outErrorMessage = "Texture cook request entry is missing an output path.";
@@ -156,7 +141,7 @@ namespace AssetAuthoring
 				return false;
 			}
 
-			output << std::format("{:016X}", request.assetId) << '|' << GetTextureColorSpaceName(request.colorSpace) << '|'
+			output << Formatting::FormatHexUInt64(request.assetId) << '|' << GetTextureColorSpaceName(request.colorSpace) << '|'
 			       << request.outputPath.generic_string() << '|' << request.sourcePath.generic_string() << '\n';
 		}
 
@@ -221,7 +206,7 @@ namespace AssetAuthoring
 				    existingRequest.colorSpace != request.colorSpace)
 				{
 					outErrorMessage =
-					    "Texture cook request file contains conflicting requests for asset id '" + std::format("{:016X}", request.assetId) +
+					    "Texture cook request file contains conflicting requests for asset id '" + Formatting::FormatHexUInt64(request.assetId) +
 					    "'.";
 					return false;
 				}

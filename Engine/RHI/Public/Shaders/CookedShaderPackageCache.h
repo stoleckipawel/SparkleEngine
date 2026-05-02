@@ -87,6 +87,7 @@ class SPARKLE_RHI_API CookedShaderPackageCache final
   public:
 	std::uint64_t GetGeneration() const noexcept { return m_generation; }
 	void Clear() noexcept;
+	void ReplaceWith(CookedShaderPackageCache&& replacement) noexcept;
 
 	bool LoadPackage(
 	    const ShaderPackageDefinition& definition,

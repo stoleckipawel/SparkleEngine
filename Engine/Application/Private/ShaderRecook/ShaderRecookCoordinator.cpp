@@ -4,10 +4,11 @@
 
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Renderer.h"
+#include "ShaderRecook/ShaderRecookPublicationReader.h"
 
+#include <algorithm>
 #include <exception>
 #include <format>
-#include <system_error>
 #include <utility>
 
 void ShaderRecookCoordinator::SetStatusHandler(StatusHandler handler)
@@ -49,14 +50,15 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		RequestRecook(ShaderRecookRequest{.Type = ShaderRecookRequestType::Changed});
 	}
 
-	if (m_reloadRequested || reloadRequested || HasRecookSignalChanged())
+	if (m_reloadRequested || reloadRequested)
 	{
 		m_reloadRequested = false;
-		ReloadCookedShaders(renderer);
+		HandleManualReload(renderer);
 	}
 
 	if (!m_hasActiveRecook || !m_recookFuture.valid())
 	{
+		HandleExternalRecookPublication(renderer);
 		return;
 	}
 
@@ -74,18 +76,21 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 	catch (const std::exception& exception)
 	{
 		result.RequestId = m_activeRequestId;
+		result.BaselinePublicationId = m_activeBaselinePublicationId;
 		result.Request = m_activeRequest;
 		result.Process.Output = exception.what();
 	}
 	catch (...)
 	{
 		result.RequestId = m_activeRequestId;
+		result.BaselinePublicationId = m_activeBaselinePublicationId;
 		result.Request = m_activeRequest;
 		result.Process.Output = "Unknown shader recook worker failure.";
 	}
 
 	m_hasActiveRecook = false;
 	m_activeRequestId = 0;
+	m_activeBaselinePublicationId = 0;
 	m_activeRequest = {};
 	CompleteRecook(renderer, std::move(result));
 
@@ -96,6 +101,11 @@ void ShaderRecookCoordinator::Update(Renderer& renderer, bool reloadRequested) n
 		m_hasQueuedRecook = false;
 		StartRecook(std::move(queuedRequest));
 	}
+
+	if (!m_hasActiveRecook)
+	{
+		HandleExternalRecookPublication(renderer);
+	}
 }
 
 void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
@@ -103,31 +113,37 @@ void ShaderRecookCoordinator::StartRecook(ShaderRecookRequest request) noexcept
 	try
 	{
 		const std::uint64_t requestId = m_nextRequestId++;
+		const std::uint64_t baselinePublicationId = ReadCurrentPublicationId();
 		m_activeRequestId = requestId;
 		m_latestRequestId = requestId;
+		m_activeBaselinePublicationId = baselinePublicationId;
 		m_activeRequest = request;
 		m_hasActiveRecook = true;
 		m_recookFuture = std::async(
 		    std::launch::async,
 		    &ShaderRecookCoordinator::RunRecookProcess,
 		    requestId,
+		    baselinePublicationId,
 		    request);
 
 		PublishStatus(std::format(
-		    "Shader recook #{} started for {} via the shader compiler process seam.",
+		    "Shader recook #{} started for {} via the shader compiler process seam (baselinePublicationId={}).",
 		    requestId,
-		    DescribeRequest(request)));
+		    DescribeRequest(request),
+		    baselinePublicationId));
 	}
 	catch (const std::exception& exception)
 	{
 		m_hasActiveRecook = false;
 		m_activeRequestId = 0;
+		m_activeBaselinePublicationId = 0;
 		PublishStatus(std::string("Shader recook failed before launch: ") + exception.what());
 	}
 	catch (...)
 	{
 		m_hasActiveRecook = false;
 		m_activeRequestId = 0;
+		m_activeBaselinePublicationId = 0;
 		PublishStatus("Shader recook failed before launch with an unknown error.");
 	}
 }
@@ -141,18 +157,51 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ProcessResult r
 
 	if (result.Process.Succeeded())
 	{
-		ReloadCookedShaders(renderer);
+		const ShaderRecookPublicationReadResult readResult = ReadRecookPublication();
+		ShaderRecookPublication publication;
+		std::string publicationDiagnostic;
+		if (!TryAcceptFreshPublication(readResult, result.BaselinePublicationId, publication, publicationDiagnostic))
+		{
+			PublishStatus(std::format(
+			    "Shader recook #{} ({}) finished with process success, but runtime reload was rejected before touching active packages: {}\nCommand: {}\n\n{}",
+			    result.RequestId,
+			    DescribeRequest(result.Request),
+			    publicationDiagnostic,
+			    result.Process.CommandLine,
+			    result.Process.Output));
+			return;
+		}
+
+		const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
+		if (!reloadResult)
+		{
+			m_lastAcceptedPublicationId = publication.PublicationId;
+			m_hasAcceptedPublication = true;
+			PublishStatus(std::format(
+			    "Shader recook #{} ({}) published fresh result {} but runtime validation rejected the replacement set; previous cooked shader packages remain active. {}\nCommand: {}\n\n{}",
+			    result.RequestId,
+			    DescribeRequest(result.Request),
+			    publication.PublicationId,
+			    reloadResult.ErrorMessage,
+			    result.Process.CommandLine,
+			    result.Process.Output));
+			return;
+		}
+
+		m_lastAcceptedPublicationId = publication.PublicationId;
+		m_hasAcceptedPublication = true;
 		PublishStatus(std::format(
-		    "Shader recook #{} ({}) succeeded. Reloaded cooked shader packages.\nCommand: {}\n\n{}",
+		    "Shader recook #{} ({}) succeeded. Accepted publication {} and reloaded cooked shader packages after RHI idle.\nCommand: {}\n\n{}",
 		    result.RequestId,
 		    DescribeRequest(result.Request),
+		    publication.PublicationId,
 		    result.Process.CommandLine,
 		    result.Process.Output));
 		return;
 	}
 
 	PublishStatus(std::format(
-	    "Shader recook #{} ({}) failed with exit code {}. Previous cooked shader packages remain active; no recook signal was accepted and old artifacts remain loaded.\nCommand: {}\n\n{}",
+	    "Shader recook #{} ({}) failed with exit code {}. Previous cooked shader packages remain active; no recook publication was accepted and old artifacts remain loaded.\nCommand: {}\n\n{}",
 	    result.RequestId,
 	    DescribeRequest(result.Request),
 	    result.Process.ExitCode,
@@ -160,10 +209,92 @@ void ShaderRecookCoordinator::CompleteRecook(Renderer& renderer, ProcessResult r
 	    result.Process.Output));
 }
 
-void ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer) noexcept
+CookedShaderReloadResult ShaderRecookCoordinator::ReloadCookedShaders(Renderer& renderer) noexcept
 {
+	PublishStatus("Shader reload accepted; waiting for RHI idle before replacing shader runtime state.");
 	renderer.GetRenderHardwareInterface().WaitForIdle();
-	renderer.ReloadCookedShaders();
+	return renderer.ReloadCookedShaders();
+}
+
+void ShaderRecookCoordinator::HandleManualReload(Renderer& renderer) noexcept
+{
+	const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
+	if (reloadResult)
+	{
+		PublishStatus(std::format(
+		    "Manual shader reload completed after RHI idle (generation={}).",
+		    renderer.GetShaderPackageGeneration()));
+		return;
+	}
+
+	PublishStatus(std::format(
+	    "Manual shader reload was rejected by runtime validation; previous cooked shader packages remain active. {}",
+	    reloadResult.ErrorMessage));
+}
+
+void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer) noexcept
+{
+	const ShaderRecookPublicationReadResult readResult = ReadRecookPublication();
+	if (readResult.Missing)
+	{
+		return;
+	}
+
+	if (!readResult.Diagnostic.empty())
+	{
+		if (readResult.Diagnostic != m_lastPublicationDiagnostic)
+		{
+			m_lastPublicationDiagnostic = readResult.Diagnostic;
+			PublishStatus(readResult.Diagnostic);
+		}
+		return;
+	}
+
+	if (!readResult.Publication.has_value())
+	{
+		return;
+	}
+
+	if (!m_hasAcceptedPublication)
+	{
+		m_lastAcceptedPublicationId = readResult.Publication->PublicationId;
+		m_hasAcceptedPublication = true;
+		m_lastPublicationDiagnostic.clear();
+		return;
+	}
+
+	ShaderRecookPublication publication;
+	std::string publicationDiagnostic;
+	if (!TryAcceptFreshPublication(readResult, m_lastAcceptedPublicationId, publication, publicationDiagnostic))
+	{
+		if (!publicationDiagnostic.empty() && publicationDiagnostic != m_lastPublicationDiagnostic)
+		{
+			m_lastPublicationDiagnostic = publicationDiagnostic;
+			PublishStatus(publicationDiagnostic);
+		}
+		return;
+	}
+
+	const CookedShaderReloadResult reloadResult = ReloadCookedShaders(renderer);
+	if (!reloadResult)
+	{
+		m_lastAcceptedPublicationId = publication.PublicationId;
+		m_hasAcceptedPublication = true;
+		m_lastPublicationDiagnostic.clear();
+		PublishStatus(std::format(
+		    "External shader recook publication {} was fresh, but runtime validation rejected the replacement set; previous cooked shader packages remain active. {}",
+		    publication.PublicationId,
+		    reloadResult.ErrorMessage));
+		return;
+	}
+
+	m_lastAcceptedPublicationId = publication.PublicationId;
+	m_hasAcceptedPublication = true;
+	m_lastPublicationDiagnostic.clear();
+	PublishStatus(std::format(
+	    "External shader recook publication {} accepted and reloaded after RHI idle (generation={}).",
+	    publication.PublicationId,
+	    renderer.GetShaderPackageGeneration()));
 }
 
 void ShaderRecookCoordinator::PublishStatus(std::string status) noexcept
@@ -196,43 +327,72 @@ std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& 
 	}
 }
 
-bool ShaderRecookCoordinator::HasRecookSignalChanged() noexcept
+std::uint64_t ShaderRecookCoordinator::ReadCurrentPublicationId() noexcept
 {
-	const std::filesystem::path signalPath = Paths::ShaderRecookSignal();
-	std::error_code errorCode;
-	if (!std::filesystem::exists(signalPath, errorCode) || errorCode)
+	const ShaderRecookPublicationReadResult readResult = ReadRecookPublication();
+	if (readResult.Publication.has_value())
 	{
+		m_lastAcceptedPublicationId = readResult.Publication->PublicationId;
+		m_hasAcceptedPublication = true;
+		return readResult.Publication->PublicationId;
+	}
+
+	return m_hasAcceptedPublication ? m_lastAcceptedPublicationId : 0;
+}
+
+ShaderRecookPublicationReadResult ShaderRecookCoordinator::ReadRecookPublication() noexcept
+{
+	return ShaderRecookPublicationReader::Read(Paths::ShaderRecookSignal());
+}
+
+bool ShaderRecookCoordinator::TryAcceptFreshPublication(
+    const ShaderRecookPublicationReadResult& readResult,
+    std::uint64_t minimumPublicationId,
+    ShaderRecookPublication& outPublication,
+    std::string& outDiagnostic) noexcept
+{
+	if (readResult.Missing)
+	{
+		outDiagnostic = "Shader compiler process succeeded, but no recook publication file was found; reload rejected before touching active packages.";
 		return false;
 	}
 
-	const std::filesystem::file_time_type writeTime = std::filesystem::last_write_time(signalPath, errorCode);
-	if (errorCode)
+	if (!readResult.Diagnostic.empty())
 	{
+		outDiagnostic = readResult.Diagnostic;
 		return false;
 	}
 
-	if (!m_hasSignalWriteTime)
+	if (!readResult.Publication.has_value())
 	{
-		m_lastSignalWriteTime = writeTime;
-		m_hasSignalWriteTime = true;
+		outDiagnostic = "Shader recook publication was not readable; reload rejected before touching active packages.";
 		return false;
 	}
 
-	if (writeTime == m_lastSignalWriteTime)
+	const ShaderRecookPublication& publication = *readResult.Publication;
+	const std::uint64_t freshnessFloor = std::max(minimumPublicationId, m_hasAcceptedPublication ? m_lastAcceptedPublicationId : 0ull);
+	if (publication.PublicationId <= freshnessFloor)
 	{
+		outDiagnostic = std::format(
+		    "Shader recook publication {} is stale; expected a publication newer than {}. Reload rejected before touching active packages.",
+		    publication.PublicationId,
+		    freshnessFloor);
 		return false;
 	}
 
-	m_lastSignalWriteTime = writeTime;
+	outPublication = publication;
+	outDiagnostic.clear();
 	return true;
 }
 
 ShaderRecookCoordinator::ProcessResult ShaderRecookCoordinator::RunRecookProcess(
     std::uint64_t requestId,
+	std::uint64_t baselinePublicationId,
 	ShaderRecookRequest request) noexcept
 {
 	ProcessResult result;
 	result.RequestId = requestId;
+	result.BaselinePublicationId = baselinePublicationId;
 	result.Request = request;
 	result.Process = ShaderCompilerProcess::RunCook(request);
 	return result;

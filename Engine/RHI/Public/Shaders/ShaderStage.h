@@ -1,7 +1,9 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 enum class ShaderStage : std::uint8_t
 {
@@ -81,4 +83,45 @@ inline const char* GetShaderStagePrefix(ShaderStage stage)
 		return "lib";
 	}
 	return kPrefixes[static_cast<std::size_t>(stage)];
+}
+
+inline std::string FormatShaderStageMask(ShaderStageMask mask)
+{
+	if (mask == ShaderStageMask::None)
+	{
+		return "None";
+	}
+
+	struct StageLabel
+	{
+		ShaderStageMask Mask;
+		const char* Label;
+	};
+
+	static constexpr std::array<StageLabel, 6> kStageLabels = {{
+	    {ShaderStageMask::Vertex, "Vertex"},
+	    {ShaderStageMask::Pixel, "Pixel"},
+	    {ShaderStageMask::Geometry, "Geometry"},
+	    {ShaderStageMask::Hull, "Hull"},
+	    {ShaderStageMask::Domain, "Domain"},
+	    {ShaderStageMask::Compute, "Compute"},
+	}};
+
+	std::string result;
+	for (const StageLabel& stageLabel : kStageLabels)
+	{
+		if (!HasAnyShaderStageMask(mask, stageLabel.Mask))
+		{
+			continue;
+		}
+
+		if (!result.empty())
+		{
+			result += '|';
+		}
+
+		result += stageLabel.Label;
+	}
+
+	return result.empty() ? "None" : result;
 }

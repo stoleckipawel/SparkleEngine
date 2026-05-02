@@ -66,7 +66,7 @@ D3D12_GPU_VIRTUAL_ADDRESS D3D12ConstantBufferManager::AllocateUniform(const void
 		return 0;
 	}
 
-	D3D12LinearAllocation allocation = m_frameResourceManager->Allocate(sizeInBytes, 256);
+	D3D12LinearAllocation allocation = m_frameResourceManager->GetCurrentAllocator().Allocate(sizeInBytes, 256);
 	std::memcpy(allocation.CpuPtr, data, sizeInBytes);
 	return allocation.GpuAddress;
 }

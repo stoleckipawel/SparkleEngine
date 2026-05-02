@@ -8,6 +8,7 @@
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -34,7 +35,7 @@ namespace AssetAuthoring
 
 		return Cook::CookArtifactKey{
 		    .assetType = "Mesh",
-		    .assetId = std::format("{:016X}", meshAsset.assetId),
+		    .assetId = Formatting::FormatHexUInt64(meshAsset.assetId),
 		    .cookerName = "AssetConverter",
 		    .outputPath = outputPath,
 		    .cookedFormatVersion = Assets::kCookedMeshAssetVersion,
@@ -54,7 +55,7 @@ namespace AssetAuthoring
 
 		return Cook::CookArtifactKey{
 		    .assetType = "Material",
-		    .assetId = std::format("{:016X}", materialAsset.assetId),
+		    .assetId = Formatting::FormatHexUInt64(materialAsset.assetId),
 		    .cookerName = "AssetConverter",
 		    .outputPath = outputPath,
 		    .cookedFormatVersion = Assets::kCookedMaterialAssetVersion,

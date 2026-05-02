@@ -2,10 +2,12 @@
 
 #include "Pipeline/RenderPassPipelineTraits.h"
 #include "FrameGraph/RenderPassRuntime.h"
+#include "Shaders/CookedShaderReloadResult.h"
 
 #include <cassert>
 #include <memory>
 #include <optional>
+#include <string>
 #include <tuple>
 
 class RenderHardwareInterface;
@@ -23,7 +25,7 @@ class PipelineStateManager final
 
 	const RenderPassRuntimeRegistry& GetRuntimeRegistry() const noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
-	void ReloadCookedShaders() noexcept;
+	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
@@ -47,6 +49,10 @@ class PipelineStateManager final
 		return std::get<RenderPassRuntimeStorage<TPass>>(m_runtimeStorage);
 	}
 
+	bool TryInitializePassRuntimes(
+	    CookedShaderPackageCache& shaderPackages,
+	    PassRuntimeStorageTuple& runtimeStorage,
+	    std::string& outErrorMessage);
 	void InitializePassRuntimes();
 
 	RenderHardwareInterface* m_rhi = nullptr;

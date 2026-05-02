@@ -18,11 +18,9 @@ class D3D12DescriptorHeapManager final
 
 	void SetShaderVisibleHeaps(RenderCommandList& commandList) const;
 
-	D3D12DescriptorHandle AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type) { return GetAllocator(type)->Allocate(); }
-	void FreeHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, const D3D12DescriptorHandle& handle) { GetAllocator(type)->Free(handle); }
 	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
 	{
-		const D3D12DescriptorHandle handle = AllocateHandle(type);
+		const D3D12DescriptorHandle handle = GetAllocator(type)->Allocate();
 		cpuHandle = handle.GetCPU();
 		gpuHandle = handle.GetGPU();
 	}

@@ -8,6 +8,7 @@
 #include "Assets/Loaders/MaterialAssetLoader.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <format>
@@ -121,8 +122,8 @@ namespace Assets
 			if (!meshAssetLoader.Load(meshAssetPath, meshData, errorMessage))
 			{
 				errorMessage = std::format(
-				    "Failed to load cooked mesh asset {:016X} from '{}' - {}",
-				    meshReference.meshAssetId,
+				    "Failed to load cooked mesh asset {} from '{}' - {}",
+				    Formatting::FormatHexUInt64(meshReference.meshAssetId),
 				    meshAssetPath.string(),
 				    errorMessage);
 				return false;
@@ -141,8 +142,8 @@ namespace Assets
 			if (!materialAssetLoader.Load(materialAssetPath, materialAsset, errorMessage))
 			{
 				errorMessage = std::format(
-				    "Failed to load cooked material asset {:016X} from '{}' - {}",
-				    materialReference.materialAssetId,
+				    "Failed to load cooked material asset {} from '{}' - {}",
+				    Formatting::FormatHexUInt64(materialReference.materialAssetId),
 				    materialAssetPath.string(),
 				    errorMessage);
 				return false;
@@ -152,8 +153,8 @@ namespace Assets
 			if (!materialAssetTranslator.Translate(materialAsset, runtimeMaterial, errorMessage))
 			{
 				errorMessage = std::format(
-				    "Failed to translate cooked material asset {:016X} from '{}' - {}",
-				    materialReference.materialAssetId,
+				    "Failed to translate cooked material asset {} from '{}' - {}",
+				    Formatting::FormatHexUInt64(materialReference.materialAssetId),
 				    materialAssetPath.string(),
 				    errorMessage);
 				return false;

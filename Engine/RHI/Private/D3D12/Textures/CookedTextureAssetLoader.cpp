@@ -5,8 +5,8 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
 
-#include <cstring>
 #include <format>
+#include <span>
 
 static const auto g_cookedTextureAssetLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
@@ -30,9 +30,9 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 		return {};
 	}
 
-	std::size_t byteOffset = 0;
+	Files::BinarySpanReader reader(fileBytes);
 	CookedTextureAssetHeader header;
-	if (!ReadBytes(fileBytes, byteOffset, &header, sizeof(header), errorMessage) || !ValidateHeader(header, resolvedPath, errorMessage))
+	if (!reader.ReadValue(header, errorMessage) || !ValidateHeader(header, resolvedPath, errorMessage))
 	{
 		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -57,7 +57,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	}
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
-	if (!ReadMipHeaders(fileBytes, byteOffset, header.mipCount, resolvedPath, mipHeaders, errorMessage))
+	if (!ReadMipHeaders(reader, header.mipCount, resolvedPath, mipHeaders, errorMessage))
 	{
 		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -72,7 +72,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	loadResult.height = header.height;
 	loadResult.dxgiFormat = static_cast<DXGI_FORMAT>(header.dxgiFormat);
 	loadResult.formatIntent = formatIntent;
-	if (!ReadMipPayloads(fileBytes, byteOffset, mipHeaders, resolvedPath, loadResult, errorMessage))
+	if (!ReadMipPayloads(reader, mipHeaders, resolvedPath, loadResult, errorMessage))
 	{
 		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -82,7 +82,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 		return {};
 	}
 
-	if (byteOffset != fileBytes.size())
+	if (reader.GetRemainingByteCount() != 0)
 	{
 		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -91,29 +91,11 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 		    std::format(
 		        "CookedTextureAssetLoader: '{}' contains {} unexpected trailing byte(s)",
 		        resolvedPath.string(),
-		        fileBytes.size() - byteOffset));
+		        reader.GetRemainingByteCount()));
 		return {};
 	}
 
 	return loadResult;
-}
-
-bool CookedTextureAssetLoader::ReadBytes(
-    const std::vector<std::uint8_t>& fileBytes,
-    std::size_t& byteOffset,
-    void* destination,
-    std::size_t byteCount,
-    std::string& outErrorMessage)
-{
-	if (byteOffset + byteCount > fileBytes.size())
-	{
-		outErrorMessage = "Cooked texture asset ended before the expected payload could be read.";
-		return false;
-	}
-
-	std::memcpy(destination, fileBytes.data() + byteOffset, byteCount);
-	byteOffset += byteCount;
-	return true;
 }
 
 bool CookedTextureAssetLoader::ValidateHeader(
@@ -163,23 +145,20 @@ bool CookedTextureAssetLoader::ValidateMipHeader(
 }
 
 bool CookedTextureAssetLoader::ReadMipHeaders(
-    const std::vector<std::uint8_t>& fileBytes,
-    std::size_t& byteOffset,
+	Files::BinarySpanReader& reader,
     std::uint32_t mipCount,
     const std::filesystem::path& resolvedPath,
     std::vector<CookedTextureMipHeader>& outMipHeaders,
     std::string& outErrorMessage)
 {
 	outMipHeaders.clear();
-	outMipHeaders.resize(mipCount);
+	if (!reader.ReadArray(mipCount, outMipHeaders, outErrorMessage))
+	{
+		return false;
+	}
 
 	for (std::uint32_t mipIndex = 0; mipIndex < mipCount; ++mipIndex)
 	{
-		if (!ReadBytes(fileBytes, byteOffset, &outMipHeaders[mipIndex], sizeof(CookedTextureMipHeader), outErrorMessage))
-		{
-			return false;
-		}
-
 		if (!ValidateMipHeader(outMipHeaders[mipIndex], mipIndex, resolvedPath, outErrorMessage))
 		{
 			return false;
@@ -190,8 +169,7 @@ bool CookedTextureAssetLoader::ReadMipHeaders(
 }
 
 bool CookedTextureAssetLoader::ReadMipPayloads(
-    const std::vector<std::uint8_t>& fileBytes,
-    std::size_t& byteOffset,
+	Files::BinarySpanReader& reader,
     const std::vector<CookedTextureMipHeader>& mipHeaders,
     const std::filesystem::path& resolvedPath,
     TextureLoadResult& outLoadResult,
@@ -213,12 +191,14 @@ bool CookedTextureAssetLoader::ReadMipPayloads(
 		mipLevel.height = mipHeader.height;
 		mipLevel.rowPitch = mipHeader.rowPitch;
 		mipLevel.slicePitch = mipHeader.slicePitch;
-		mipLevel.data.resize(mipHeader.dataSize);
-		if (!ReadBytes(fileBytes, byteOffset, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
+
+		std::span<const std::uint8_t> mipPayload;
+		if (!reader.ReadBytes(mipHeader.dataSize, mipPayload, outErrorMessage))
 		{
 			outErrorMessage = "Cooked texture asset '" + resolvedPath.string() + "' ended before mip payload data could be read.";
 			return false;
 		}
+		mipLevel.data.assign(mipPayload.begin(), mipPayload.end());
 
 		outLoadResult.mipLevels.push_back(std::move(mipLevel));
 	}

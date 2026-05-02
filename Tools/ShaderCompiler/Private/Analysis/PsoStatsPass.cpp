@@ -3,10 +3,10 @@
 #include "Analysis/PsoStatsPass.h"
 
 #include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Inspection/CookedPackageInspection.h"
 
-#include <format>
 #include <sstream>
 
 bool PsoStatsPass::WriteCsv(
@@ -34,7 +34,7 @@ bool PsoStatsPass::WriteCsv(
 		{
 			csv << Strings::EscapeCsvField(package.packageId) << ','
 			    << Strings::EscapeCsvField(package.variantId) << ','
-			    << std::format("{:016X}", package.packageKey) << ','
+			    << Formatting::FormatHexUInt64(package.packageKey) << ','
 			    << Strings::EscapeCsvField(GetShaderStagePrefix(binary.stage)) << ','
 			    << Strings::EscapeCsvField(CookedPackageInspection::GetBinaryFormatName(binary.format)) << ','
 			    << Strings::EscapeCsvField(binary.backendName) << ','

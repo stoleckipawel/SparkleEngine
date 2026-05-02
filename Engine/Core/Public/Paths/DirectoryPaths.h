@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Public/FileSystemUtils.h"
+#include "Core/Public/Formatting/HexFormat.h"
 
 #include <array>
 #include <chrono>
@@ -358,7 +359,7 @@ namespace Paths
 
 	inline std::filesystem::path CookedShaderPackage(std::uint64_t packageKey)
 	{
-		return CookedShaderPackageRoot() / std::format("{:016X}.sparkshader", packageKey);
+		return CookedShaderPackageRoot() / (Formatting::FormatHexUInt64(packageKey) + ".sparkshader");
 	}
 
 	// Cooked scene/material/mesh/texture files
@@ -382,12 +383,12 @@ namespace Paths
 
 	inline std::filesystem::path CookedMeshAsset(std::uint64_t meshAssetId)
 	{
-		return CookedMeshRoot() / std::format("{:016X}.smsh", meshAssetId);
+		return CookedMeshRoot() / (Formatting::FormatHexUInt64(meshAssetId) + ".smsh");
 	}
 
 	inline std::filesystem::path CookedMaterialAsset(std::uint64_t materialAssetId)
 	{
-		return CookedMaterialRoot() / std::format("{:016X}.smat", materialAssetId);
+		return CookedMaterialRoot() / (Formatting::FormatHexUInt64(materialAssetId) + ".smat");
 	}
 
 	inline std::filesystem::path CookedTextureAsset(std::uint64_t textureAssetId, std::string_view extension = {})
@@ -397,7 +398,7 @@ namespace Paths
 		{
 			normalizedExtension.insert(normalizedExtension.begin(), '.');
 		}
-		return CookedTextureRoot() / std::format("{:016X}{}", textureAssetId, normalizedExtension);
+		return CookedTextureRoot() / (Formatting::FormatHexUInt64(textureAssetId) + normalizedExtension);
 	}
 
 	// Shader cache/control files

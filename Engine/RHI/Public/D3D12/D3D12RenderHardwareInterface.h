@@ -6,10 +6,12 @@
 
 #include <array>
 #include <memory>
+#include <string>
 #include <vector>
 
 class D3D12DescriptorHeapManager;
 class D3D12ConstantBufferManager;
+class D3D12RenderCommandList;
 class D3D12Rhi;
 class D3D12SamplerLibrary;
 class D3D12SwapChain;
@@ -125,7 +127,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
   private:
-	class D3D12RenderCommandList;
+	friend class D3D12RenderCommandList;
 
 	struct DescriptorTableRecord
 	{
@@ -140,10 +142,11 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
+	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
+	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	void BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
-	static D3D12_DESCRIPTOR_HEAP_TYPE ToNativeDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;

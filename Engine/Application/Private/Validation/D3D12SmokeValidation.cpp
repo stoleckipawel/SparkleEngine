@@ -2,16 +2,13 @@
 
 #include "Validation/D3D12SmokeValidation.h"
 
+#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Diagnostics/ScopedLogEvent.h"
 #include "Editor/Public/UI.h"
 #include "Input/InputSystem.h"
 #include "Platform/Public/Window/Window.h"
 #include "ProjectApp.h"
 #include "Renderer.h"
-
-#include <charconv>
-#include <cstdlib>
-#include <string>
 
 struct D3D12SmokeValidationConfig
 {
@@ -20,6 +17,7 @@ struct D3D12SmokeValidationConfig
 	std::uint32_t FrameLimit = 120;
 	std::uint32_t RestoreFrame = 10;
 	std::uint32_t MaximizeFrame = 20;
+	std::uint32_t ShaderReloadFrame = 0;
 };
 
 struct D3D12SmokeValidationState
@@ -37,9 +35,6 @@ class D3D12SmokeValidationRunner final
 	static int RunEditor() noexcept;
 
   private:
-	static bool TryGetEnvironmentValue(const char* name, std::string& outValue) noexcept;
-	static bool GetEnvironmentFlag(const char* name) noexcept;
-	static std::uint32_t GetEnvironmentUint32(const char* name, std::uint32_t fallbackValue) noexcept;
 	static D3D12SmokeValidationConfig LoadConfig() noexcept;
 	static void ApplyLoggingConfig(const D3D12SmokeValidationConfig& config) noexcept;
 	static void LogDiagnosticsCapabilities(
@@ -65,69 +60,20 @@ class D3D12SmokeValidationRunner final
 	static int RunEditorValidation(const D3D12SmokeValidationConfig& config) noexcept;
 };
 
-bool D3D12SmokeValidationRunner::TryGetEnvironmentValue(const char* name, std::string& outValue) noexcept
-{
-	outValue.clear();
-	if (name == nullptr)
-	{
-		return false;
-	}
-
-	char* rawValue = nullptr;
-	size_t requiredLength = 0;
-	if (_dupenv_s(&rawValue, &requiredLength, name) != 0 || rawValue == nullptr || requiredLength <= 1)
-	{
-		if (rawValue != nullptr)
-		{
-			std::free(rawValue);
-		}
-		return false;
-	}
-
-	outValue.assign(rawValue, requiredLength - 1);
-	std::free(rawValue);
-	return true;
-}
-
-bool D3D12SmokeValidationRunner::GetEnvironmentFlag(const char* name) noexcept
-{
-	std::string value;
-	if (!TryGetEnvironmentValue(name, value))
-	{
-		return false;
-	}
-
-	return !value.empty() && value[0] != '0';
-}
-
-std::uint32_t D3D12SmokeValidationRunner::GetEnvironmentUint32(const char* name, std::uint32_t fallbackValue) noexcept
-{
-	std::string value;
-	if (!TryGetEnvironmentValue(name, value))
-	{
-		return fallbackValue;
-	}
-
-	std::uint32_t parsedValue = fallbackValue;
-	const char* parseBegin = value.data();
-	const char* parseEnd = parseBegin + value.size();
-	const auto parseResult = std::from_chars(parseBegin, parseEnd, parsedValue);
-	return parseResult.ec == std::errc{} ? parsedValue : fallbackValue;
-}
-
 D3D12SmokeValidationConfig D3D12SmokeValidationRunner::LoadConfig() noexcept
 {
 	D3D12SmokeValidationConfig config{};
-	config.Enabled = GetEnvironmentFlag("SPARKLE_SMOKE_VALIDATE_D3D12");
+	config.Enabled = Environment::GetFlag("SPARKLE_SMOKE_VALIDATE_D3D12");
 	if (!config.Enabled)
 	{
 		return config;
 	}
 
-	config.TraceLogging = GetEnvironmentFlag("SPARKLE_SMOKE_TRACE");
-	config.FrameLimit = GetEnvironmentUint32("SPARKLE_SMOKE_FRAME_LIMIT", config.FrameLimit);
-	config.RestoreFrame = GetEnvironmentUint32("SPARKLE_SMOKE_RESTORE_FRAME", config.RestoreFrame);
-	config.MaximizeFrame = GetEnvironmentUint32("SPARKLE_SMOKE_MAXIMIZE_FRAME", config.MaximizeFrame);
+	config.TraceLogging = Environment::GetFlag("SPARKLE_SMOKE_TRACE");
+	config.FrameLimit = Environment::GetUInt32("SPARKLE_SMOKE_FRAME_LIMIT", config.FrameLimit);
+	config.RestoreFrame = Environment::GetUInt32("SPARKLE_SMOKE_RESTORE_FRAME", config.RestoreFrame);
+	config.MaximizeFrame = Environment::GetUInt32("SPARKLE_SMOKE_MAXIMIZE_FRAME", config.MaximizeFrame);
+	config.ShaderReloadFrame = Environment::GetUInt32("SPARKLE_SMOKE_SHADER_RELOAD_FRAME", config.ShaderReloadFrame);
 	return config;
 }
 
@@ -243,6 +189,32 @@ void D3D12SmokeValidationRunner::Advance(
 	Window& window = app.GetWindow();
 	++state.CompletedRenderFrames;
 	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
+
+	if (config.ShaderReloadFrame > 0 && state.CompletedRenderFrames == config.ShaderReloadFrame)
+	{
+		Renderer& renderer = app.GetRenderer();
+		renderer.GetRenderHardwareInterface().WaitForIdle();
+		const CookedShaderReloadResult reloadResult = renderer.ReloadCookedShaders();
+		if (appLogger != nullptr)
+		{
+			if (reloadResult)
+			{
+				SPDLOG_LOGGER_INFO(
+				    appLogger,
+				    "D3D12 smoke validation: reloaded cooked shaders on frame {} (generation={})",
+				    state.CompletedRenderFrames,
+				    renderer.GetShaderPackageGeneration());
+			}
+			else
+			{
+				SPDLOG_LOGGER_ERROR(
+				    appLogger,
+				    "D3D12 smoke validation: cooked shader reload was rejected on frame {}. {}",
+				    state.CompletedRenderFrames,
+				    reloadResult.ErrorMessage);
+			}
+		}
+	}
 
 	if (config.RestoreFrame > 0 && state.CompletedRenderFrames == config.RestoreFrame)
 	{

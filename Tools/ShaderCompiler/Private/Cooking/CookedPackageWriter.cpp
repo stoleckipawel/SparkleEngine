@@ -126,10 +126,10 @@ static void BuildRayTracingExportRecords(
 
 static std::uint32_t FindRayTracingExportIndex(
     std::span<const ShaderCookRayTracingExportDesc> exports,
-    std::string_view shaderName,
+    std::string_view exportLookupName,
     CookedShaderRayTracingExportKind expectedKind) noexcept
 {
-	if (shaderName.empty())
+	if (exportLookupName.empty())
 	{
 		return UINT32_MAX;
 	}
@@ -137,7 +137,7 @@ static std::uint32_t FindRayTracingExportIndex(
 	for (std::size_t exportIndex = 0; exportIndex < exports.size(); ++exportIndex)
 	{
 		const ShaderCookRayTracingExportDesc& rtExport = exports[exportIndex];
-		if (rtExport.shaderName == shaderName && rtExport.kind == expectedKind)
+		if (rtExport.exportLookupName == exportLookupName && rtExport.kind == expectedKind)
 		{
 			return static_cast<std::uint32_t>(exportIndex);
 		}
@@ -158,42 +158,42 @@ static bool BuildRayTracingHitGroupRecords(
 	{
 		const std::uint32_t closestHitExportIndex = FindRayTracingExportIndex(
 		    package.rayTracingExports,
-		    hitGroup.closestHitShaderName,
+		    hitGroup.closestHitExportName,
 		    CookedShaderRayTracingExportKind::ClosestHit);
 		if (closestHitExportIndex == UINT32_MAX)
 		{
 			outErrorMessage = std::format(
-			    "Ray tracing hit group '{}' references missing closest-hit shader '{}' in package '{}'",
+			    "Ray tracing hit group '{}' references missing closest-hit export '{}' in package '{}'",
 			    hitGroup.name,
-			    hitGroup.closestHitShaderName,
+			    hitGroup.closestHitExportName,
 			    package.packageId);
 			return false;
 		}
 
 		const std::uint32_t anyHitExportIndex = FindRayTracingExportIndex(
 		    package.rayTracingExports,
-		    hitGroup.anyHitShaderName,
+		    hitGroup.anyHitExportName,
 		    CookedShaderRayTracingExportKind::AnyHit);
-		if (!hitGroup.anyHitShaderName.empty() && anyHitExportIndex == UINT32_MAX)
+		if (!hitGroup.anyHitExportName.empty() && anyHitExportIndex == UINT32_MAX)
 		{
 			outErrorMessage = std::format(
-			    "Ray tracing hit group '{}' references missing any-hit shader '{}' in package '{}'",
+			    "Ray tracing hit group '{}' references missing any-hit export '{}' in package '{}'",
 			    hitGroup.name,
-			    hitGroup.anyHitShaderName,
+			    hitGroup.anyHitExportName,
 			    package.packageId);
 			return false;
 		}
 
 		const std::uint32_t intersectionExportIndex = FindRayTracingExportIndex(
 		    package.rayTracingExports,
-		    hitGroup.intersectionShaderName,
+		    hitGroup.intersectionExportName,
 		    CookedShaderRayTracingExportKind::Intersection);
-		if (!hitGroup.intersectionShaderName.empty() && intersectionExportIndex == UINT32_MAX)
+		if (!hitGroup.intersectionExportName.empty() && intersectionExportIndex == UINT32_MAX)
 		{
 			outErrorMessage = std::format(
-			    "Ray tracing hit group '{}' references missing intersection shader '{}' in package '{}'",
+			    "Ray tracing hit group '{}' references missing intersection export '{}' in package '{}'",
 			    hitGroup.name,
-			    hitGroup.intersectionShaderName,
+			    hitGroup.intersectionExportName,
 			    package.packageId);
 			return false;
 		}

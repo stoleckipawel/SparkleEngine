@@ -6,7 +6,9 @@
 #include "Backend/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
+#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Strings/StringUtils.h"
 
 #include <iostream>
 #include <string>
@@ -43,21 +45,9 @@ namespace
 
 	void AppendAnalysisPasses(std::string_view value, std::vector<std::string>& outPasses)
 	{
-		std::size_t begin = 0;
-		while (begin <= value.size())
+		for (const std::string_view token : Strings::Split(value, ',', false))
 		{
-			const std::size_t end = value.find(',', begin);
-			const std::string_view token = value.substr(begin, end == std::string_view::npos ? std::string_view::npos : end - begin);
-			if (!token.empty())
-			{
-				outPasses.emplace_back(token);
-			}
-
-			if (end == std::string_view::npos)
-			{
-				break;
-			}
-			begin = end + 1;
+			outPasses.emplace_back(token);
 		}
 	}
 }
@@ -249,7 +239,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	for (const CookedShaderPackageOutput& package : cookResult.packages)
 	{
 		std::cout << "  Package '" << package.packageId << "' variant='" << package.variantId << "' bindingLayout='"
-		          << package.bindingLayoutId << "' key=" << std::hex << package.packageKey << std::dec
+		          << package.bindingLayoutId << "' key=" << Formatting::FormatHexUInt64(package.packageKey)
 		          << " output='" << package.outputPath.string() << "'\n";
 	}
 

@@ -7,36 +7,15 @@
 
 #include "Validation/D3D12SmokeValidation.h"
 
+#include "Core/Public/Environment/EnvironmentVariables.h"
+
 #include <cstdlib>
 
 namespace
 {
-	bool IsEnvironmentFlagEnabled(const char* name) noexcept
-	{
-		if (name == nullptr)
-		{
-			return false;
-		}
-
-		char* rawValue = nullptr;
-		size_t requiredLength = 0;
-		if (_dupenv_s(&rawValue, &requiredLength, name) != 0 || rawValue == nullptr || requiredLength <= 1)
-		{
-			if (rawValue != nullptr)
-			{
-				std::free(rawValue);
-			}
-			return false;
-		}
-
-		const bool enabled = rawValue[0] != '0';
-		std::free(rawValue);
-		return enabled;
-	}
-
 	void ConfigureAutomationErrorHandling() noexcept
 	{
-		if (!IsEnvironmentFlagEnabled("SPARKLE_SUPPRESS_CRASH_DIALOGS"))
+		if (!Environment::GetFlag("SPARKLE_SUPPRESS_CRASH_DIALOGS"))
 		{
 			return;
 		}

@@ -29,11 +29,11 @@ void RegisteredShaderListModel::Refresh()
 
 		RegisteredShaderRow row;
 		row.ShaderId = std::string(shader.ShaderName);
-		row.PackageId = shader.PackageName.empty() ? row.ShaderId : std::string(shader.PackageName);
+		row.PackageId = GetShaderRegistrationPackageId(shader);
 		row.SourcePath = std::string(shader.SourcePath);
 		row.EntryPoint = std::string(shader.EntryPoint);
 		row.Stage = GetShaderStagePrefix(shader.Stage);
-		row.BindingLayoutId = shader.BindingLayoutId.empty() ? "Empty" : std::string(shader.BindingLayoutId);
+		row.BindingLayoutId = std::string(GetShaderRegistrationBindingLayoutId(shader));
 		row.ParameterCount = parameters.Fields.size();
 		row.PermutationDimensionCount = permutations.Dimensions.size();
 		row.RuntimeGeneration = generation;
