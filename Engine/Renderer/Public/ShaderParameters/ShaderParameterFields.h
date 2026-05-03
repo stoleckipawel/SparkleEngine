@@ -146,17 +146,23 @@ class ShaderAccelerationStructure final
 	ShaderAccelerationStructure& operator=(RhiGpuVirtualAddress gpuAddress) noexcept
 	{
 		m_gpuAddress = gpuAddress;
+		m_isBound = true;
 		return *this;
 	}
 
 	RhiGpuVirtualAddress GetGpuAddress() const noexcept { return m_gpuAddress; }
 
-	bool IsBound() const noexcept { return m_gpuAddress != 0; }
+	bool IsBound() const noexcept { return m_isBound; }
 
-	void Reset() noexcept { m_gpuAddress = 0; }
+	void Reset() noexcept
+	{
+		m_gpuAddress = 0;
+		m_isBound = false;
+	}
 
   private:
 	RhiGpuVirtualAddress m_gpuAddress = 0;
+	bool m_isBound = false;
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>

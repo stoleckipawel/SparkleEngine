@@ -24,6 +24,7 @@ struct DeferredLightingPassParameters
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferEmissive;
+	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 
@@ -34,6 +35,7 @@ struct DeferredLightingPassParameters
 		builder.ReadTexture("GBufferNormal", &DeferredLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DeferredLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferEmissive", &DeferredLightingPassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferDeviceZ", &DeferredLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DeferredLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DeferredLightingPassParameters::PerView, ShaderStageVisibility::Compute);
 	}

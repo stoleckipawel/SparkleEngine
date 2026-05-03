@@ -43,6 +43,11 @@ namespace FrameGraphFeatures
 		    sceneWidth,
 		    sceneHeight,
 		    RenderConfig::GBuffer::EmissiveFormat));
+		targets.DeviceZ = frameGraph.CreateTexture(FrameGraphTextureDesc::CreateColor(
+		    "GBufferDeviceZ",
+		    sceneWidth,
+		    sceneHeight,
+		    RenderConfig::GBuffer::DeviceZFormat));
 		targets.MainDepth = sceneTargets.MainDepth;
 
 		auto& parameters = frameGraph.AllocPassParameters<GBufferPass>();
@@ -50,6 +55,7 @@ namespace FrameGraphFeatures
 		parameters->Normal = frameGraph.CreateRenderTarget(targets.Normal);
 		parameters->Material = frameGraph.CreateRenderTarget(targets.Material);
 		parameters->Emissive = frameGraph.CreateRenderTarget(targets.Emissive);
+		parameters->DeviceZ = frameGraph.CreateRenderTarget(targets.DeviceZ);
 		parameters->MainDepth = frameGraph.CreateDepthTarget(targets.MainDepth);
 		parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 

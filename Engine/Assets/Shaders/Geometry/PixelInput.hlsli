@@ -4,6 +4,7 @@ namespace PS
 {
 	struct Input
 	{
+		float4 Position : SV_POSITION;
 		float2 TexCoord : TEXCOORD0;
 		float3 PositionWorld : TEXCOORD1;
 		float4 Color : COLOR;

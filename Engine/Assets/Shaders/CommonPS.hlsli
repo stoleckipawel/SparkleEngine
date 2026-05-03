@@ -8,5 +8,4 @@
 #include "Geometry/PixelOutput.hlsli"
 #include "Material/Material.hlsli"
 #include "BRDF/BRDF.hlsli"
-#include "Lighting/LightEvaluation.hlsli"
 #include "Debug/ViewModes.hlsli"

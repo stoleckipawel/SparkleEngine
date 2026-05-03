@@ -9,7 +9,6 @@
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
-#include "SceneData/RayTracing/RayTracingSceneManager.h"
 #include "Textures/TextureManager.h"
 
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
@@ -18,7 +17,6 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     RendererBackendServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
-	RayTracingSceneManager& rayTracingSceneManager,
     RenderSceneSnapshot& sceneSnapshot,
     RenderCamera& renderCamera,
     MaterialCacheManager& materialCache) noexcept :
@@ -26,7 +24,6 @@ SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     m_backendServices(&backendServices),
     m_gpuMeshCache(&gpuMeshCache),
     m_textureManager(&textureManager),
-	m_rayTracingSceneManager(&rayTracingSceneManager),
     m_sceneSnapshot(&sceneSnapshot),
     m_renderCamera(&renderCamera),
     m_materialCache(&materialCache)
@@ -71,11 +68,6 @@ void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept
 	if (m_gpuMeshCache)
 	{
 		m_gpuMeshCache->Clear();
-	}
-
-	if (m_rayTracingSceneManager)
-	{
-		m_rayTracingSceneManager->Reset();
 	}
 
 	if (m_sceneSnapshot)

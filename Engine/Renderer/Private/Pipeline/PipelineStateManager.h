@@ -35,8 +35,6 @@ class PipelineStateManager final
 
   private:
 	using PassRuntimeStorageTuple = std::tuple<
-	    RenderPassRuntimeStorage<ForwardOpaquePass>,
-	    RenderPassRuntimeStorage<ShadowOpaquePass>,
 	    RenderPassRuntimeStorage<GBufferPass>,
 	    RenderPassRuntimeStorage<DeferredLightingPass>,
 	    RenderPassRuntimeStorage<ComputeClearPass>>;

@@ -23,6 +23,7 @@ struct GBufferPassParameters
 	ShaderRenderTarget Normal;
 	ShaderRenderTarget Material;
 	ShaderRenderTarget Emissive;
+	ShaderRenderTarget DeviceZ;
 	ShaderDepthTarget MainDepth;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderSamplerSet SamplerAniso16xWrap;
@@ -33,6 +34,7 @@ struct GBufferPassParameters
 		builder.RenderTarget("Normal", &GBufferPassParameters::Normal, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("Material", &GBufferPassParameters::Material, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("Emissive", &GBufferPassParameters::Emissive, ShaderStageVisibility::AllGraphics);
+		builder.RenderTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
 		builder.DepthTarget("MainDepth", &GBufferPassParameters::MainDepth, ShaderStageVisibility::AllGraphics);
 		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
 		builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);

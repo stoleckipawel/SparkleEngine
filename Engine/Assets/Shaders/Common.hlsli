@@ -16,7 +16,4 @@
 
 #include "BRDF/BRDF.hlsli"
 
-#include "Lighting/LightEvaluation.hlsli"
-
-
 #include "Debug/ViewModes.hlsli"

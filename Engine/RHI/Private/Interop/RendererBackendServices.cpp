@@ -61,7 +61,7 @@ std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& 
 
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateDevice");
-		services->m_impl->rhi = std::make_unique<D3D12Rhi>(true);
+		services->m_impl->rhi = std::make_unique<D3D12Rhi>();
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.CreateDescriptorHeaps");

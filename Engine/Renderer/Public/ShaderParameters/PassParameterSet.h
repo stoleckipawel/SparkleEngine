@@ -45,7 +45,7 @@ struct PassParameterBinding
 			case PassParameterValueKind::DescriptorTable:
 				return static_cast<bool>(DescriptorTable);
 			case PassParameterValueKind::AccelerationStructure:
-				return AccelerationStructureGpuAddress != 0;
+				return true;
 			case PassParameterValueKind::UniformData:
 				return UniformData != nullptr && UniformDataSizeInBytes > 0;
 			case PassParameterValueKind::Sampler:
@@ -221,7 +221,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		if (gpuAddress == 0 || parameter->ArrayCount != 1u)
+		if (parameter->ArrayCount != 1u)
 		{
 			return false;
 		}

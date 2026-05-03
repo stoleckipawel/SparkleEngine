@@ -71,11 +71,12 @@ void GBufferPass::Execute(RenderGraphPassContext& context, ParameterInstance& pa
 
 void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferPass::Parameters& parameters)
 {
-	const std::array<TextureHandle, 4> renderTargets = {
+	const std::array<TextureHandle, 5> renderTargets = {
 	    parameters.BaseColor[0],
 	    parameters.Normal[0],
 	    parameters.Material[0],
-	    parameters.Emissive[0]};
+	    parameters.Emissive[0],
+	    parameters.DeviceZ[0]};
 	context.Graph.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
 	for (TextureHandle renderTarget : renderTargets)
 	{

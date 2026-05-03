@@ -1,6 +1,6 @@
 # Deferred GBuffer With Ray-Traced Shadows System Design
 
-Date: 2026-05-02
+Date: 2026-05-03
 
 ## Executive Summary
 
@@ -34,25 +34,42 @@ Tonemapping is intentionally deferred. The first milestone should keep `SceneCol
 - Vulkan backend implementation.
 - Async acceleration-structure build scheduling or BLAS compaction optimization.
 
-## Current Architecture Snapshot
+## Implementation Status
 
-Sparkle already has several foundations that make this path reasonable:
+Phase 6 is implemented in the current source tree. The normal opaque frame sequence is now:
 
-- [Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.cpp](../../Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.cpp) currently owns the frame sequence and wires shadow, forward, and presentation passes.
+```text
+CreateSceneTargets
+CreateGBufferTargets
+AddGBufferPass
+DeferredLightingPass
+CopySceneColorToBackBuffer
+Present
+```
+
+The active render pass runtime set is `GBufferPass`, `DeferredLightingPass`, and `ComputeClearPass`. `ForwardOpaquePass`, `ShadowOpaquePass`, `ForwardPasses`, `ShadowPasses`, `ShadowFrameBuilder`, `ShadowBuilder`, raster shadow-map shader registrations, and raster shadow-map constant data have been removed. General per-light `CastShadow` metadata remains because deferred inline ray-query shadows still use it.
+
+Validation completed on 2026-05-03 for build, shader registry, and shader cook coverage. Runtime startup reaches the expected DXR capability gate on hardware without DXR tier 1.1 inline ray-query support; visual RT shadow validation still requires a DXR-capable machine.
+
+## Implemented Architecture Snapshot
+
+Sparkle now has the deferred and inline RT shadow foundations needed by this milestone:
+
+- [Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.cpp](../../Engine/Renderer/Private/FrameGraph/Builder/FrameGraphBuilder.cpp) owns the deferred frame sequence and wires GBuffer, deferred lighting, and presentation passes.
 - [Engine/Renderer/Private/FrameGraph/Features/PresentationPasses.cpp](../../Engine/Renderer/Private/FrameGraph/Features/PresentationPasses.cpp) creates `SceneColor`, `BackBuffer`, and `MainDepth` and copies scene color to the back buffer.
-- [Engine/Renderer/Private/Passes/ForwardOpaquePass.cpp](../../Engine/Renderer/Private/Passes/ForwardOpaquePass.cpp) already has the opaque mesh/material draw loop that the new GBuffer pass should reuse.
+- [Engine/Renderer/Private/FrameGraph/Features/GBufferPasses.cpp](../../Engine/Renderer/Private/FrameGraph/Features/GBufferPasses.cpp) creates the GBuffer products, including dedicated `GBufferDeviceZ`.
+- [Engine/Renderer/Private/Passes/GBufferPass.cpp](../../Engine/Renderer/Private/Passes/GBufferPass.cpp) owns the opaque mesh/material draw loop for material attribute export.
+- [Engine/Renderer/Private/Passes/DeferredLightingPass.cpp](../../Engine/Renderer/Private/Passes/DeferredLightingPass.cpp) owns compute deferred lighting, GBuffer reads, TLAS binding, and RT shadow constants.
 - [Engine/Renderer/Private/Passes/PassUtilities.h](../../Engine/Renderer/Private/Passes/PassUtilities.h) provides pass binding helpers and full-screen triangle support.
 - [Engine/Renderer/Public/ShaderParameters/ShaderParameterFields.h](../../Engine/Renderer/Public/ShaderParameters/ShaderParameterFields.h) and [Engine/Renderer/Public/ShaderParameters/PassParameterSet.h](../../Engine/Renderer/Public/ShaderParameters/PassParameterSet.h) already support render targets, depth targets, read textures, RW textures, buffers, uniforms, and samplers.
-- [Engine/RHI/Private/D3D12/Pipeline/D3D12BindingLayout.cpp](../../Engine/RHI/Private/D3D12/Pipeline/D3D12BindingLayout.cpp) already recognizes acceleration-structure shader semantics as SRV descriptor-table bindings.
-- [Engine/Assets/Shaders/BRDF/BRDF.hlsli](../../Engine/Assets/Shaders/BRDF/BRDF.hlsli) and [Engine/Assets/Shaders/Lighting/LightEvaluation.hlsli](../../Engine/Assets/Shaders/Lighting/LightEvaluation.hlsli) already contain direct lighting and BRDF code that can be reused by deferred lighting.
+- [Engine/RHI/Private/D3D12/Pipeline/D3D12BindingLayout.cpp](../../Engine/RHI/Private/D3D12/Pipeline/D3D12BindingLayout.cpp) recognizes acceleration-structure shader semantics as SRV descriptor-table bindings.
+- [Engine/Assets/Shaders/BRDF/BRDF.hlsli](../../Engine/Assets/Shaders/BRDF/BRDF.hlsli) and [Engine/Assets/Shaders/Passes/Deferred/DeferredLighting.hlsl](../../Engine/Assets/Shaders/Passes/Deferred/DeferredLighting.hlsl) contain the BRDF and deferred direct-lighting code used by the compute pass.
 
-Important gaps:
+Remaining gaps:
 
-- [Engine/RHI/Public/Formats/PixelFormat.h](../../Engine/RHI/Public/Formats/PixelFormat.h) lacks HDR and richer render target formats for a useful GBuffer.
 - Depth SRV/typeless view handling is not yet explicit in the public format abstraction.
-- Runtime BLAS/TLAS construction does not exist.
-- Renderer-side acceleration-structure pass binding is incomplete.
-- The current runtime pass registry names `ForwardOpaquePass`, `ShadowOpaquePass`, and `ComputeClearPass`; it must be updated as deferred passes replace forward/shadow.
+- HDR scene color, tonemapping, and exposure remain deferred to Phase 7.
+- Visual RT shadow validation still requires DXR tier 1.1 inline ray-query hardware.
 
 ## Target Framegraph
 
@@ -75,10 +92,11 @@ The first stable version should validate deferred lighting with shadow visibilit
 | `GBufferNormal` | `R16G16B16A16_Float` | World normal XYZ, spare channel A. |
 | `GBufferMaterial` | `R8G8B8A8_UNorm` | Metallic, roughness, occlusion, material flags. |
 | `GBufferEmissive` | `R16G16B16A16_Float` | Emissive RGB, optional spare A. |
-| `MainDepth` | `D24_UNorm_S8_UInt` initially | Depth target for raster; read in deferred if depth SRV support exists. |
+| `GBufferDeviceZ` | `R32_Float` | Raw device Z copied from raster depth for high precision deferred reads. |
+| `MainDepth` | `D24_UNorm_S8_UInt` initially | Depth target for raster depth testing; not sampled by deferred lighting in this phase. |
 | `SceneColor` | `R8G8B8A8_UNorm` initially | Copy-compatible deferred lighting output; HDR moves to the tonemapping phase. |
 
-If depth SRV support is too expensive early, temporarily write linear/view depth into a GBuffer channel or a small color depth texture. Prefer proper depth SRV/typeless view support if it stays contained.
+Deferred shader helpers treat `DeviceZ` as the raw depth-buffer value and reconstruct world position directly from it. Linear depth helpers and depth SRV/typeless support remain deferred until a pass actually needs them.
 
 ## System Components
 
@@ -88,7 +106,7 @@ If depth SRV support is too expensive early, temporarily write linear/view depth
 
 ### Deferred Lighting Pass
 
-`DeferredLightingPass` is a compute pass that reads GBuffer textures and depth, reconstructs position, evaluates direct lighting, applies emissive, and writes `SceneColor` through a UAV. It should start without ray tracing so GBuffer correctness is easy to debug.
+`DeferredLightingPass` is a compute pass that reads GBuffer textures and `GBufferDeviceZ`, reconstructs position, evaluates direct lighting, applies emissive, and writes `SceneColor` through a UAV. It should start without ray tracing so GBuffer correctness is easy to debug.
 
 ### Ray Tracing Scene
 

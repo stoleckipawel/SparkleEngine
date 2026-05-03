@@ -8,7 +8,22 @@
 
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
 
-D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
+static const char* RaytracingTierToString(D3D12_RAYTRACING_TIER tier) noexcept
+{
+	switch (tier)
+	{
+	case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
+		return "NotSupported";
+	case D3D12_RAYTRACING_TIER_1_0:
+		return "Tier1_0";
+	case D3D12_RAYTRACING_TIER_1_1:
+		return "Tier1_1";
+	default:
+		return "Unknown";
+	}
+}
+
+D3D12Rhi::D3D12Rhi() noexcept
 {
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer = std::make_unique<D3D12DebugLayer>();
@@ -19,7 +34,7 @@ D3D12Rhi::D3D12Rhi(bool requireDXRSupport) noexcept
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateDevice");
-		CreateDevice(requireDXRSupport);
+		CreateDevice();
 	}
 
 #if ENGINE_GPU_VALIDATION
@@ -129,7 +144,7 @@ void D3D12Rhi::CreateFactory()
 	CHECK(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(m_dxgiFactory.ReleaseAndGetAddressOf())));
 }
 
-void D3D12Rhi::CreateDevice(bool requireDXRSupport)
+void D3D12Rhi::CreateDevice()
 {
 	SelectAdapter();
 	if (!m_adapter)
@@ -138,10 +153,10 @@ void D3D12Rhi::CreateDevice(bool requireDXRSupport)
 	}
 
 	CHECK(D3D12CreateDevice(m_adapter.Get(), m_desiredD3DFeatureLevel, IID_PPV_ARGS(m_device.ReleaseAndGetAddressOf())));
-	CheckRayTracingSupport(requireDXRSupport);
+	CheckRayTracingSupport();
 }
 
-void D3D12Rhi::CheckRayTracingSupport(bool requireDXRSupport) noexcept
+void D3D12Rhi::CheckRayTracingSupport() noexcept
 {
 	m_rayTracingCapabilities = {};
 	if (!m_device)
@@ -154,17 +169,20 @@ void D3D12Rhi::CheckRayTracingSupport(bool requireDXRSupport) noexcept
 	const HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options5, sizeof(options5));
 	if (SUCCEEDED(hr))
 	{
-		m_rayTracingCapabilities.SupportsRayTracing = options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+		m_rayTracingCapabilities.SupportsRayTracing = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
 		m_rayTracingCapabilities.SupportsInlineRayQuery = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
-	}
 
-	if (requireDXRSupport && !m_rayTracingCapabilities.SupportsInlineRayQuery)
-	{
-		Diagnostics::Fail(
+		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Device does not support DXR tier 1.1 inline ray queries. Minimum required for ray-traced shadows.");
+		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}",
+		    static_cast<int>(options5.RaytracingTier),
+		    RaytracingTierToString(options5.RaytracingTier),
+		    m_rayTracingCapabilities.SupportsRayTracing,
+		    m_rayTracingCapabilities.SupportsInlineRayQuery);
+	}
+	else
+	{
+		SPDLOG_LOGGER_WARN(g_d3d12RhiLogger, "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.", static_cast<uint32_t>(hr));
 	}
 }
 

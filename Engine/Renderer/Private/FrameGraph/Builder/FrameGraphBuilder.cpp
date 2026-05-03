@@ -27,6 +27,7 @@ FrameGraphBuildResult FrameGraphBuilder::Build() const
 	deferredLightingParameters->GBufferNormal = frameGraph->CreateSRV(gBufferTargets.Normal);
 	deferredLightingParameters->GBufferMaterial = frameGraph->CreateSRV(gBufferTargets.Material);
 	deferredLightingParameters->GBufferEmissive = frameGraph->CreateSRV(gBufferTargets.Emissive);
+	deferredLightingParameters->GBufferDeviceZ = frameGraph->CreateSRV(gBufferTargets.DeviceZ);
 	frameGraph->AddComputePass<DeferredLightingPass>(DeferredLightingPass::PassName, deferredLightingParameters);
 
 	if (m_dependencies.presentSceneToBackBuffer)

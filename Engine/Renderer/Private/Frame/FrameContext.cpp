@@ -5,8 +5,6 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
-#include "Frame/Shadow/ShadowBuilder.h"
-#include "Frame/Shadow/ShadowFrameBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Camera/RenderCamera.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
@@ -21,19 +19,12 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
-    ViewLightingBuilder& viewLightingBuilder,
-    ShadowFrameBuilder& shadowFrameBuilder,
-    ShadowBuilder& shadowBuilder)
+	ViewLightingBuilder& viewLightingBuilder)
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
-	const PerViewLightingConstantBufferData baseLighting = viewLightingBuilder.Build(frame.sceneData);
-	ShadowFrameBuildResult shadowFrame =
-	    shadowFrameBuilder
-	        .Build(sceneSnapshot.camera, frame.sceneData, baseLighting, renderHardwareInterface, perViewDataBuilder, shadowBuilder);
-	frame.shadowViews = shadowFrame.shadowViews;
-	frame.shadowViewCount = shadowFrame.shadowViewCount;
-	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, shadowFrame.mainViewLighting, renderHardwareInterface);
+	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
+	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, lighting, renderHardwareInterface);
 
 	frame.mainView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(frame.mainView.perViewData);
 

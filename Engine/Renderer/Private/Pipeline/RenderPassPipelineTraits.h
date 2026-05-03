@@ -8,96 +8,10 @@
 #include "Config/DepthConvention.h"
 #include "Passes/ComputeClearPass.h"
 #include "Passes/DeferredLightingPass.h"
-#include "Passes/ForwardOpaquePass.h"
 #include "Passes/GBufferPass.h"
 #include "Passes/ShaderPass.h"
-#include "Passes/ShadowOpaquePass.h"
 
 template <typename TPass> struct RenderPassPipelineTraits;
-
-template <> struct RenderPassPipelineTraits<ForwardOpaquePass>
-{
-	using RuntimeType = RenderPassRuntimeTraits<ForwardOpaquePass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<ForwardOpaquePass>;
-
-	static bool CreateRuntimeStorage(
-	    RenderHardwareInterface& rhi,
-	    CookedShaderPackageCache& shaderPackageCache,
-	    StorageType& storage,
-	    std::string& outErrorMessage)
-	{
-		return RenderPassShaderRuntime::TryCreateGraphicsRuntime(
-		    rhi,
-		    shaderPackageCache,
-		    RenderPassShaderRuntimeDesc{
-		        .PassName = ForwardOpaquePass::PassName,
-		        .PackageDeclarationName = "PrimaryViewShaderPackage",
-		        .Package = ForwardOpaquePass::DescribePrimaryViewShaderPackage(),
-		        .PipelineKind = RenderPassShaderPipelineKind::Graphics,
-		        .AllowInputAssemblerInputLayout = true,
-		        .BindingLayoutDebugName = L"ForwardOpaque_RootSignature",
-		        .PipelineStateDebugName = L"ForwardOpaque_PipelineState"},
-		    storage,
-		    [](GraphicsPipelineStateDesc& pipelineDesc)
-		    {
-			    pipelineDesc.VertexLayout = RhiVertexLayoutKind::StaticMesh;
-			    pipelineDesc.RenderTargetFormats[0] = RenderConfig::SceneColorFormat;
-			    pipelineDesc.RenderTargetCount = 1;
-			    pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
-			    pipelineDesc.DepthTest.DepthEnable = true;
-			    pipelineDesc.DepthTest.DepthWriteEnable = true;
-			    pipelineDesc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonFuncEqual();
-		    },
-		    outErrorMessage);
-	}
-
-	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
-	{
-		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
-	}
-};
-
-template <> struct RenderPassPipelineTraits<ShadowOpaquePass>
-{
-	using RuntimeType = RenderPassRuntimeTraits<ShadowOpaquePass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<ShadowOpaquePass>;
-
-	static bool CreateRuntimeStorage(
-	    RenderHardwareInterface& rhi,
-	    CookedShaderPackageCache& shaderPackageCache,
-	    StorageType& storage,
-	    std::string& outErrorMessage)
-	{
-		return RenderPassShaderRuntime::TryCreateGraphicsRuntime(
-		    rhi,
-		    shaderPackageCache,
-		    RenderPassShaderRuntimeDesc{
-		        .PassName = ShadowOpaquePass::PassName,
-		        .PackageDeclarationName = "ShadowViewShaderPackage",
-		        .Package = ShadowOpaquePass::DescribeShadowViewShaderPackage(),
-		        .PipelineKind = RenderPassShaderPipelineKind::Graphics,
-		        .AllowInputAssemblerInputLayout = true,
-		        .BindingLayoutDebugName = L"ShadowOpaque_RootSignature",
-		        .PipelineStateDebugName = L"ShadowDepth_PipelineState"},
-		    storage,
-		    [](GraphicsPipelineStateDesc& pipelineDesc)
-		    {
-			    pipelineDesc.VertexLayout = RhiVertexLayoutKind::StaticMesh;
-			    pipelineDesc.DepthTest.DepthEnable = true;
-			    pipelineDesc.DepthTest.DepthWriteEnable = true;
-			    pipelineDesc.DepthTest.DepthFunc = DepthConvention::GetDepthComparisonLessEqualFunc();
-			    pipelineDesc.RenderTargetFormats[0] = RenderConfig::Shadows::ShadowMapFormat;
-			    pipelineDesc.RenderTargetCount = 1;
-			    pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
-		    },
-		    outErrorMessage);
-	}
-
-	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
-	{
-		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
-	}
-};
 
 template <> struct RenderPassPipelineTraits<GBufferPass>
 {
@@ -129,7 +43,8 @@ template <> struct RenderPassPipelineTraits<GBufferPass>
 			    pipelineDesc.RenderTargetFormats[1] = RenderConfig::GBuffer::NormalFormat;
 			    pipelineDesc.RenderTargetFormats[2] = RenderConfig::GBuffer::MaterialFormat;
 			    pipelineDesc.RenderTargetFormats[3] = RenderConfig::GBuffer::EmissiveFormat;
-			    pipelineDesc.RenderTargetCount = 4;
+			    pipelineDesc.RenderTargetFormats[4] = RenderConfig::GBuffer::DeviceZFormat;
+			    pipelineDesc.RenderTargetCount = 5;
 			    pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
 			    pipelineDesc.DepthTest.DepthEnable = true;
 			    pipelineDesc.DepthTest.DepthWriteEnable = true;

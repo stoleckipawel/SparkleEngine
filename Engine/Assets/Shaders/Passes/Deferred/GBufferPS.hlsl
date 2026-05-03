@@ -6,6 +6,7 @@ struct GBufferOutput
 	float4 Normal : SV_Target1;
 	float4 Material : SV_Target2;
 	float4 Emissive : SV_Target3;
+	float DeviceZ : SV_Target4;
 };
 
 void main(in PS::Input Input, out GBufferOutput Output)
@@ -23,4 +24,5 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	    saturate(MatProps.AmbientOcclusion),
 	    saturate((float)MatProps.AlphaMode / 255.0f));
 	Output.Emissive = float4(MatProps.Emissive, 0.0f);
+	Output.DeviceZ = Input.Position.z;
 }

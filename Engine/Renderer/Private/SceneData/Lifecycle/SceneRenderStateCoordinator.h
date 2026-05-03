@@ -5,7 +5,6 @@
 class GPUMeshCache;
 class LevelChangeEvents;
 class MaterialCacheManager;
-class RayTracingSceneManager;
 class RenderCamera;
 class RendererBackendServices;
 class GameScene;
@@ -21,7 +20,6 @@ class SceneRenderStateCoordinator final
 	    RendererBackendServices& backendServices,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
-	    RayTracingSceneManager& rayTracingSceneManager,
 	    RenderSceneSnapshot& sceneSnapshot,
 	    RenderCamera& renderCamera,
 	    MaterialCacheManager& materialCache) noexcept;
@@ -44,7 +42,6 @@ class SceneRenderStateCoordinator final
 	RendererBackendServices* m_backendServices = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;
-	RayTracingSceneManager* m_rayTracingSceneManager = nullptr;
 	RenderSceneSnapshot* m_sceneSnapshot = nullptr;
 	RenderCamera* m_renderCamera = nullptr;
 	MaterialCacheManager* m_materialCache = nullptr;

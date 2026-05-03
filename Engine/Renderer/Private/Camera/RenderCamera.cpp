@@ -71,6 +71,10 @@ PerViewCameraConstantBufferData RenderCamera::GetCameraConstantBufferData() cons
 	data.ViewMTX = m_viewMatrix;
 	data.ProjectionMTX = m_projectionMatrix;
 	data.ViewProjMTX = m_viewProjMatrix;
+	const XMMATRIX invView = XMMatrixInverse(nullptr, XMLoadFloat4x4(&m_viewMatrix));
+	const XMMATRIX invProjection = XMMatrixInverse(nullptr, XMLoadFloat4x4(&m_projectionMatrix));
+	XMStoreFloat4x4(&data.InvViewMTX, invView);
+	XMStoreFloat4x4(&data.InvProjectionMTX, invProjection);
 
 	data.Position = m_snapshot.position;
 	data.Direction = m_snapshot.direction;

@@ -19,7 +19,7 @@ class D3D12DebugLayer;
 class D3D12Rhi final
 {
   public:
-	explicit D3D12Rhi(bool requireDXRSupport = false) noexcept;
+	explicit D3D12Rhi() noexcept;
 
 	~D3D12Rhi() noexcept;
 
@@ -74,8 +74,8 @@ class D3D12Rhi final
   private:
 	void SelectAdapter() noexcept;
 	void CreateFactory();
-	void CreateDevice(bool requireDXRSupport);
-	void CheckRayTracingSupport(bool requireDXRSupport) noexcept;
+	void CreateDevice();
+	void CheckRayTracingSupport() noexcept;
 	void CreateCommandQueue();
 	void CreateCommandAllocators();
 	void CreateCommandLists();
