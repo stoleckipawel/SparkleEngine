@@ -42,7 +42,7 @@ void DeferredLightingPass::Execute(RenderGraphPassContext& context, ParameterIns
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DeferredLighting.Execute");
 
 	const DeferredLightingPassRuntime& runtime = context.Runtime.GetPassRuntime<DeferredLightingPass>();
-	PreparePassParameters(parameters, context.Frame.mainView, context.Runtime);
+	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
@@ -59,10 +59,24 @@ void DeferredLightingPass::Execute(RenderGraphPassContext& context, ParameterIns
 	assert(dispatched);
 }
 
-void DeferredLightingPass::PreparePassParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+void DeferredLightingPass::DeclareResources(
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const GBufferTargets& gbuffer,
+    ParameterInstance& parameters)
+{
+	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
+	parameters->GBufferBaseColor = frameGraph.CreateSRV(gbuffer.BaseColor);
+	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
+	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
+	parameters->GBufferEmissive = frameGraph.CreateSRV(gbuffer.Emissive);
+	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
+}
+
+void DeferredLightingPass::SetParameters(
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;

@@ -62,11 +62,29 @@ void GBufferPass::Execute(RenderGraphPassContext& context, ParameterInstance& pa
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.GBuffer.Execute");
 
 	const GBufferPassRuntime& runtime = context.Runtime.GetPassRuntime<GBufferPass>();
-	PreparePassParameters(parameters, context.Frame.mainView);
+	SetParameters(parameters, context.Frame.mainView);
 	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	BindPassResources(context.Graph, context.Commands, parameters, runtime, context.Runtime);
 	DrawOpaqueMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
+}
+
+void GBufferPass::DeclareResources(FrameGraph& frameGraph, const GBufferTargets& targets, ParameterInstance& parameters)
+{
+	parameters->BaseColor = frameGraph.CreateRenderTarget(targets.BaseColor);
+	parameters->Normal = frameGraph.CreateRenderTarget(targets.Normal);
+	parameters->Material = frameGraph.CreateRenderTarget(targets.Material);
+	parameters->Emissive = frameGraph.CreateRenderTarget(targets.Emissive);
+	parameters->DeviceZ = frameGraph.CreateRenderTarget(targets.DeviceZ);
+	parameters->MainDepth = frameGraph.CreateDepthTarget(targets.MainDepth);
+	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
+}
+
+void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewContext& viewContext)
+{
+	parameters->PerView = viewContext.perViewData;
+	const bool valid = parameters.Sync();
+	assert(valid);
 }
 
 void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferPass::Parameters& parameters)
@@ -83,13 +101,6 @@ void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferP
 		context.Graph.ClearRenderTarget(context.Commands, renderTarget);
 	}
 	context.Graph.ClearDepthStencil(context.Commands, parameters.MainDepth[0]);
-}
-
-void GBufferPass::PreparePassParameters(ParameterInstance& parameters, const RenderViewContext& viewContext)
-{
-	parameters->PerView = viewContext.perViewData;
-	const bool valid = parameters.Sync();
-	assert(valid);
 }
 
 void GBufferPass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)

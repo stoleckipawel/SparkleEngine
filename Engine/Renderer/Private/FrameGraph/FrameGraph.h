@@ -204,6 +204,7 @@ class SPARKLE_RENDERER_API FrameGraph
 	TextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	BufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
 	BufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
+	ResourceState GetTrackedResourceState(ResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
 	    CommandContext& cmd,

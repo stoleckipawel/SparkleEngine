@@ -2,14 +2,14 @@
 
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 
-struct FrameGraphSceneTargets
+struct SceneTargets
 {
 	TextureHandle SceneColor;
 	TextureHandle BackBuffer;
 	TextureHandle MainDepth;
 };
 
-struct FrameGraphGBufferTargets
+struct GBufferTargets
 {
 	TextureHandle BaseColor;
 	TextureHandle Normal;
@@ -17,14 +17,4 @@ struct FrameGraphGBufferTargets
 	TextureHandle Emissive;
 	TextureHandle DeviceZ;
 	TextureHandle MainDepth;
-};
-
-struct FrameGraphPresentationInputs
-{
-	TextureHandle BackBuffer;
-};
-
-struct FrameGraphComputeShowcaseOutputs
-{
-	TextureHandle Color;
 };

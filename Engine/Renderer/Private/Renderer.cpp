@@ -105,7 +105,7 @@ void Renderer::TransitionRenderProduct(
     ResourceState before,
     ResourceState after) const noexcept
 {
-	if (!commandList || !handle || !m_frameGraph || before == after)
+	if (!commandList || !handle || !m_frameGraph)
 	{
 		return;
 	}
@@ -117,7 +117,14 @@ void Renderer::TransitionRenderProduct(
 		return;
 	}
 
-	GetRenderHardwareInterface().TransitionResource(commandList, resource, before, after);
+	const ResourceState trackedBefore = m_frameGraph->GetTrackedResourceState(resourceHandle);
+	const ResourceState resolvedBefore = trackedBefore != after ? trackedBefore : before;
+	if (resolvedBefore == after)
+	{
+		return;
+	}
+
+	GetRenderHardwareInterface().TransitionResource(commandList, resource, resolvedBefore, after);
 	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }
 
@@ -333,7 +340,7 @@ void Renderer::RecordFrame() noexcept
 	const RenderPassContext renderPassContext{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
-	    .RuntimeRegistry = m_pipelineStateManager->GetRuntimeRegistry()};
+	    .RuntimeManager = *m_pipelineStateManager};
 
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
 	CommandContext cmd(commandList);

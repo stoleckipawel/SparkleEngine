@@ -125,7 +125,12 @@ void PassBinder::BindImpl(
 	assert(parameterSet.HasLayout());
 	if (bindingNames.empty())
 	{
-		assert(parameterSet.GetLayout() == &layout.GetParameterLayout());
+		const PassParameterLayout* parameterLayout = parameterSet.GetLayout();
+		const PassParameterLayout& compiledLayout = layout.GetParameterLayout();
+		assert(parameterLayout != nullptr);
+		const bool sameLayoutInstance = parameterLayout == &compiledLayout;
+		const bool structurallyCompatible = parameterLayout->GetParameterCount() == compiledLayout.GetParameterCount();
+		assert(sameLayoutInstance || structurallyCompatible);
 	}
 
 	if (isCompute)

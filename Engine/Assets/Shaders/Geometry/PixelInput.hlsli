@@ -7,17 +7,17 @@ namespace PS
 		float4 Position : SV_POSITION;
 		float2 TexCoord : TEXCOORD0;
 		float3 PositionWorld : TEXCOORD1;
-		float4 Color : COLOR;
-		float3 NormalWorld : NORMAL;
-		float3 TangentWorld : TANGENT;
-		float3 BitangentWorld : BINORMAL;
+		float4 Color : COLOR0;
+		float3 NormalWorld : TEXCOORD2;
+		float4 TangentWorld : TEXCOORD3;
+		float3 BitangentWorld : TEXCOORD4;
 	};
 
 
 	void PrepareInput(inout Input input)
 	{
 		input.NormalWorld = normalize(input.NormalWorld);
-		input.TangentWorld = normalize(input.TangentWorld);
+		input.TangentWorld = float4(normalize(input.TangentWorld.xyz), input.TangentWorld.w);
 		input.BitangentWorld = normalize(input.BitangentWorld);
 	}
 }  // namespace PS

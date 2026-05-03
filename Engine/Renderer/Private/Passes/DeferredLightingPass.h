@@ -4,6 +4,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "FrameGraph/Features/FrameGraphProducts.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
@@ -53,11 +54,14 @@ class DeferredLightingPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
-	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
-
-  private:
-	static void PreparePassParameters(
+	static void DeclareResources(
+	    FrameGraph& frameGraph,
+	    const SceneTargets& sceneTargets,
+	    const GBufferTargets& gbuffer,
+	    ParameterInstance& parameters);
+	static void SetParameters(
 	    ParameterInstance& parameters,
 	    const RenderViewContext& viewContext,
 	    const RenderPassContext& renderPassContext);
+	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 };

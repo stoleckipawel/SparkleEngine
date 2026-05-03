@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RendererAPI.h"
-#include "FrameGraph/RenderPassRuntime.h"
+#include "Pipeline/PipelineStateManager.h"
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
@@ -16,10 +16,10 @@ struct SPARKLE_RENDERER_API RenderPassContext
 {
 	RenderHardwareInterface& HardwareInterface;
 	RenderDiagnostics& BackendDiagnostics;
-	const RenderPassRuntimeRegistry& RuntimeRegistry;
+	const PipelineStateManager& RuntimeManager;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
-		return RuntimeRegistry.GetPassRuntime<TPass>();
+		return RuntimeManager.GetPassRuntime<TPass>();
 	}
 };

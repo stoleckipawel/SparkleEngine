@@ -4,6 +4,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+#include "FrameGraph/Features/FrameGraphProducts.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
@@ -78,11 +79,12 @@ class GBufferPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
+	static void DeclareResources(FrameGraph& frameGraph, const GBufferTargets& targets, ParameterInstance& parameters);
+	static void SetParameters(ParameterInstance& parameters, const RenderViewContext& viewContext);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 
   private:
 	static void PrepareTargets(RenderGraphPassContext& context, const Parameters& parameters);
-	static void PreparePassParameters(ParameterInstance& parameters, const RenderViewContext& viewContext);
 	static void ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext);
 	static void BindPassResources(
 	    const FrameGraph& frameGraph,

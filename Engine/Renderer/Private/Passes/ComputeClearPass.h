@@ -9,6 +9,7 @@
 #include <cstdint>
 
 class CommandContext;
+class FrameGraph;
 class PassParameterLayout;
 struct RenderGraphPassContext;
 
@@ -36,6 +37,7 @@ class ComputeClearPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
+	static void DeclareResources(FrameGraph& frameGraph, TextureHandle outputTexture, ParameterInstance& parameters);
 	static void Execute(
 	    RenderGraphPassContext& context,
 	    const ParameterInstance& parameters,

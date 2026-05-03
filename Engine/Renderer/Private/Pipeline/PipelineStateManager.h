@@ -8,7 +8,8 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <tuple>
+#include <typeindex>
+#include <unordered_map>
 
 class RenderHardwareInterface;
 
@@ -23,40 +24,55 @@ class PipelineStateManager final
 	PipelineStateManager(PipelineStateManager&&) = delete;
 	PipelineStateManager& operator=(PipelineStateManager&&) = delete;
 
-	const RenderPassRuntimeRegistry& GetRuntimeRegistry() const noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
-		assert(m_runtimeRegistry.has_value());
-		return m_runtimeRegistry->GetPassRuntime<TPass>();
+		RuntimeStorageHolder<TPass>& holder = GetOrCreateRuntimeStorageHolder<TPass>();
+		if (!holder.Runtime.has_value())
+		{
+			std::string errorMessage;
+			if (!RenderPassPipelineTraits<TPass>::CreateRuntimeStorage(*m_rhi, m_shaderPackages, holder.Storage, errorMessage))
+			{
+				HandleRuntimeCreationFailure(errorMessage);
+			}
+
+			holder.Runtime.emplace(RenderPassPipelineTraits<TPass>::MakeRuntime(holder.Storage));
+		}
+
+		return *holder.Runtime;
 	}
 
   private:
-	using PassRuntimeStorageTuple = std::tuple<
-	    RenderPassRuntimeStorage<GBufferPass>,
-	    RenderPassRuntimeStorage<DeferredLightingPass>,
-	    RenderPassRuntimeStorage<ComputeClearPass>>;
-
-	template <typename TPass> RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() noexcept
+	struct IRuntimeStorageHolder
 	{
-		return std::get<RenderPassRuntimeStorage<TPass>>(m_runtimeStorage);
+		virtual ~IRuntimeStorageHolder() noexcept = default;
+	};
+
+	template <typename TPass> struct RuntimeStorageHolder final : IRuntimeStorageHolder
+	{
+		RenderPassRuntimeStorage<TPass> Storage;
+		std::optional<typename RenderPassRuntimeTraits<TPass>::RuntimeType> Runtime;
+	};
+
+	template <typename TPass> RuntimeStorageHolder<TPass>& GetOrCreateRuntimeStorageHolder() const noexcept
+	{
+		const std::type_index key = std::type_index(typeid(TPass));
+		auto runtimeIt = m_runtimeStorageByPass.find(key);
+		if (runtimeIt == m_runtimeStorageByPass.end())
+		{
+			runtimeIt = m_runtimeStorageByPass.emplace(key, std::make_unique<RuntimeStorageHolder<TPass>>()).first;
+		}
+
+		auto* typedHolder = static_cast<RuntimeStorageHolder<TPass>*>(runtimeIt->second.get());
+		assert(typedHolder != nullptr);
+		return *typedHolder;
 	}
 
-	template <typename TPass> const RenderPassRuntimeStorage<TPass>& GetRuntimeStorage() const noexcept
-	{
-		return std::get<RenderPassRuntimeStorage<TPass>>(m_runtimeStorage);
-	}
-
-	bool TryInitializePassRuntimes(
-	    CookedShaderPackageCache& shaderPackages,
-	    PassRuntimeStorageTuple& runtimeStorage,
-	    std::string& outErrorMessage);
-	void InitializePassRuntimes();
+	[[noreturn]] void HandleRuntimeCreationFailure(const std::string& errorMessage) const;
 
 	RenderHardwareInterface* m_rhi = nullptr;
-	CookedShaderPackageCache m_shaderPackages;
-	PassRuntimeStorageTuple m_runtimeStorage;
-	std::optional<RenderPassRuntimeRegistry> m_runtimeRegistry;
+	mutable CookedShaderPackageCache m_shaderPackages;
+	mutable std::unordered_map<std::type_index, std::unique_ptr<IRuntimeStorageHolder>> m_runtimeStorageByPass;
 };
