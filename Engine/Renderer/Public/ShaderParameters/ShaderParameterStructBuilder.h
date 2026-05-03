@@ -146,6 +146,15 @@ template <typename TParameters> class ShaderParameterStructBuilder final
 		return AddField<::SamplerSet>(name, member, visibility);
 	}
 
+	template <typename TField>
+	std::uint32_t AccelerationStructure(
+	    const char* name,
+	    TField TParameters::* member,
+	    ShaderStageVisibility visibility = ShaderStageVisibility::All)
+	{
+		return AddField<::AccelerationStructure>(name, member, visibility);
+	}
+
 	const PassParameterLayout& GetLayout() const noexcept { return m_layout; }
 
 	ShaderParameterStructMetadata<TParameters> Build() const { return ShaderParameterStructMetadata<TParameters>(m_layout, m_bindings); }

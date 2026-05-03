@@ -13,6 +13,15 @@ struct FrameGraphSceneTargets
 	TextureHandle MainDepth;
 };
 
+struct FrameGraphGBufferTargets
+{
+	TextureHandle BaseColor;
+	TextureHandle Normal;
+	TextureHandle Material;
+	TextureHandle Emissive;
+	TextureHandle MainDepth;
+};
+
 struct FrameGraphPresentationInputs
 {
 	TextureHandle BackBuffer;

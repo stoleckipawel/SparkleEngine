@@ -80,6 +80,30 @@ void FrameGraph::BindRenderTarget(CommandContext& cmd, TextureHandle renderTarge
 	cmd.SetRenderTarget(renderTargetView, &depthStencilView);
 }
 
+void FrameGraph::BindRenderTargets(
+    CommandContext& cmd,
+    std::span<const TextureHandle> renderTargetHandles,
+    TextureHandle depthStencilHandle) const noexcept
+{
+	assert(!renderTargetHandles.empty());
+	assert(renderTargetHandles.size() <= 8u);
+
+	std::array<RhiCpuDescriptorHandle, 8> renderTargetViews{};
+	for (std::size_t index = 0; index < renderTargetHandles.size(); ++index)
+	{
+		renderTargetViews[index] = ResolveRenderTargetView(renderTargetHandles[index].GetResourceHandle());
+	}
+
+	if (!depthStencilHandle.IsValid())
+	{
+		cmd.SetRenderTargets(static_cast<std::uint32_t>(renderTargetHandles.size()), renderTargetViews.data(), nullptr);
+		return;
+	}
+
+	const RhiCpuDescriptorHandle depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
+	cmd.SetRenderTargets(static_cast<std::uint32_t>(renderTargetHandles.size()), renderTargetViews.data(), &depthStencilView);
+}
+
 RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(TextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());

@@ -30,6 +30,9 @@ class SPARKLE_RENDERER_API GPUMesh final
 
 	RhiVertexBufferView GetVertexBufferView() const noexcept;
 	RhiIndexBufferView GetIndexBufferView() const noexcept;
+	RhiOwnedResourceHandle GetVertexBufferResource() const noexcept { return m_vertexBuffer; }
+	RhiOwnedResourceHandle GetIndexBufferResource() const noexcept { return m_indexBuffer; }
+	RhiRayTracingGeometryDesc GetRayTracingGeometry() const noexcept;
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

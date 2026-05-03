@@ -136,6 +136,29 @@ class ShaderTexture2DUAV final
 	RhiDescriptorTableBinding m_descriptorTable = {};
 };
 
+class ShaderAccelerationStructure final
+{
+  public:
+	using Semantic = AccelerationStructure;
+
+	ShaderAccelerationStructure() = default;
+
+	ShaderAccelerationStructure& operator=(RhiGpuVirtualAddress gpuAddress) noexcept
+	{
+		m_gpuAddress = gpuAddress;
+		return *this;
+	}
+
+	RhiGpuVirtualAddress GetGpuAddress() const noexcept { return m_gpuAddress; }
+
+	bool IsBound() const noexcept { return m_gpuAddress != 0; }
+
+	void Reset() noexcept { m_gpuAddress = 0; }
+
+  private:
+	RhiGpuVirtualAddress m_gpuAddress = 0;
+};
+
 template <typename TValue = void, std::size_t ArrayCount = 1>
 class ShaderRWTexture2D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
 {
@@ -272,6 +295,12 @@ template <> struct ShaderParameterFieldTraits<ShaderTexture2DUAV>
 	static constexpr std::uint32_t FieldArrayCount = 1;
 };
 
+template <> struct ShaderParameterFieldTraits<ShaderAccelerationStructure>
+{
+	using Semantic = AccelerationStructure;
+	static constexpr std::uint32_t FieldArrayCount = 1;
+};
+
 template <typename TValue, std::size_t ArrayCount> struct ShaderParameterFieldTraits<ShaderRWTexture2D<TValue, ArrayCount>>
 {
 	using Semantic = RWTexture;
@@ -386,6 +415,11 @@ inline bool BindParameterField(PassParameterSet& parameterSet, const char* name,
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderTexture2DUAV& field)
 {
 	return parameterSet.SetUnorderedAccessView(name, field.GetDescriptorTable());
+}
+
+inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderAccelerationStructure& field)
+{
+	return field.IsBound() && parameterSet.SetAccelerationStructure(name, field.GetGpuAddress());
 }
 
 template <typename TValue, std::size_t ArrayCount>

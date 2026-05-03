@@ -20,7 +20,7 @@ namespace FrameGraphFeatures
 		const std::uint32_t sceneHeight = sceneExtent.IsValid() ? sceneExtent.Height : height;
 
 		const FrameGraphTextureDesc sceneColorDesc =
-		    FrameGraphTextureDesc::CreateColor("SceneColor", sceneWidth, sceneHeight, RenderConfig::BackBufferFormat);
+		    FrameGraphTextureDesc::CreateColor("SceneColor", sceneWidth, sceneHeight, RenderConfig::SceneColorFormat);
 		const TextureHandle sceneColor = frameGraph.CreateTexture(sceneColorDesc);
 
 		const FrameGraphTextureDesc backBufferDesc =

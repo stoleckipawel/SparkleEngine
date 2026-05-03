@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "Config/RenderConfig.h"
+#include "Interop/RenderHardwareInterface.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -52,6 +53,7 @@ class D3D12Rhi final
 	void CollectCrashDiagnostics() noexcept;
 
 	void CheckShaderModel6Support() const noexcept;
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept { return m_rayTracingCapabilities; }
 
 	const ComPtr<IDXGIFactory7>& GetDxgiFactory() const noexcept { return m_dxgiFactory; }
 	const ComPtr<IDXGIAdapter1>& GetAdapter() const noexcept { return m_adapter; }
@@ -73,6 +75,7 @@ class D3D12Rhi final
 	void SelectAdapter() noexcept;
 	void CreateFactory();
 	void CreateDevice(bool requireDXRSupport);
+	void CheckRayTracingSupport(bool requireDXRSupport) noexcept;
 	void CreateCommandQueue();
 	void CreateCommandAllocators();
 	void CreateCommandLists();
@@ -95,4 +98,5 @@ class D3D12Rhi final
 	ComPtr<ID3D12Fence1> m_fence = nullptr;
 	HANDLE m_fenceEvent = nullptr;
 	D3D_FEATURE_LEVEL m_desiredD3DFeatureLevel = D3D_FEATURE_LEVEL_12_1;
+	RhiRayTracingCapabilities m_rayTracingCapabilities = {};
 };

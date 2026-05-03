@@ -92,6 +92,11 @@ NativeGraphicsCommandListHandle D3D12RenderHardwareInterface::GetGraphicsCommand
 	return NativeGraphicsCommandListHandle{m_rhi != nullptr ? m_rhi->GetCommandList(frameIndex).Get() : nullptr};
 }
 
+RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept
+{
+	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+}
+
 RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() noexcept
 {
 	return *m_diagnostics;
@@ -460,6 +465,189 @@ NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedRes
 	return NativeResourceHandle{resource.Value};
 }
 
+RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
+{
+	ID3D12Resource* const nativeResource = static_cast<ID3D12Resource*>(resource.Value);
+	return nativeResource != nullptr ? nativeResource->GetGPUVirtualAddress() : 0;
+}
+
+RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
+    const RhiRayTracingGeometryDesc& geometry) const noexcept
+{
+	if (m_rhi == nullptr || geometry.VertexBuffer == 0 || geometry.IndexBuffer == 0)
+	{
+		return {};
+	}
+
+	D3D12_RAYTRACING_GEOMETRY_DESC nativeGeometry{};
+	nativeGeometry.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	nativeGeometry.Flags = geometry.Opaque ? D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE : D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+	nativeGeometry.Triangles.Transform3x4 = 0;
+	nativeGeometry.Triangles.IndexFormat = D3D12TypeConversions::ToIndexFormat(geometry.IndexFormat);
+	nativeGeometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	nativeGeometry.Triangles.IndexCount = geometry.IndexCount;
+	nativeGeometry.Triangles.VertexCount = geometry.VertexCount;
+	nativeGeometry.Triangles.IndexBuffer = geometry.IndexBuffer;
+	nativeGeometry.Triangles.VertexBuffer.StartAddress = geometry.VertexBuffer;
+	nativeGeometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStrideInBytes;
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	inputs.NumDescs = 1;
+	inputs.pGeometryDescs = &nativeGeometry;
+
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
+	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
+	return RhiRayTracingAccelerationStructurePrebuildInfo{
+	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
+	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
+	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+}
+
+RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetTopLevelAccelerationStructurePrebuildInfo(
+    std::uint32_t instanceCount) const noexcept
+{
+	if (m_rhi == nullptr || instanceCount == 0)
+	{
+		return {};
+	}
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	inputs.NumDescs = instanceCount;
+
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
+	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
+	return RhiRayTracingAccelerationStructurePrebuildInfo{
+	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
+	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
+	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(
+    std::uint64_t sizeInBytes,
+    std::wstring_view debugName)
+{
+	if (m_rhi == nullptr || sizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const D3D12_RESOURCE_DESC resourceDesc =
+	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+	const D3D12_HEAP_PROPERTIES heapProperties{
+	    .Type = D3D12_HEAP_TYPE_DEFAULT,
+	    .CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	    .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
+	    .CreationNodeMask = 1,
+	    .VisibleNodeMask = 1};
+	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
+	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
+	        &heapProperties,
+	        D3D12_HEAP_FLAG_NONE,
+	        &resourceDesc,
+	        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	        nullptr,
+	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	{
+		return {};
+	}
+
+	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingScratch").c_str());
+	return RhiOwnedResourceHandle{ownedResource.Detach()};
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
+    std::uint64_t sizeInBytes,
+    std::wstring_view debugName)
+{
+	if (m_rhi == nullptr || sizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const D3D12_RESOURCE_DESC resourceDesc =
+	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
+	const D3D12_HEAP_PROPERTIES heapProperties{
+	    .Type = D3D12_HEAP_TYPE_DEFAULT,
+	    .CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+	    .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
+	    .CreationNodeMask = 1,
+	    .VisibleNodeMask = 1};
+	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
+	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
+	        &heapProperties,
+	        D3D12_HEAP_FLAG_NONE,
+	        &resourceDesc,
+	        D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+	        nullptr,
+	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	{
+		return {};
+	}
+
+	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingAccelerationStructure").c_str());
+	return RhiOwnedResourceHandle{ownedResource.Detach()};
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(
+    const RhiRayTracingInstanceDesc* instances,
+    std::uint32_t instanceCount,
+    std::wstring_view debugName)
+{
+	if (m_rhi == nullptr || instances == nullptr || instanceCount == 0)
+	{
+		return {};
+	}
+
+	std::vector<D3D12_RAYTRACING_INSTANCE_DESC> nativeInstances(instanceCount);
+	for (std::uint32_t instanceIndex = 0; instanceIndex < instanceCount; ++instanceIndex)
+	{
+		D3D12_RAYTRACING_INSTANCE_DESC& nativeInstance = nativeInstances[instanceIndex];
+		const RhiRayTracingInstanceDesc& source = instances[instanceIndex];
+		for (std::uint32_t transformIndex = 0; transformIndex < 12; ++transformIndex)
+		{
+			nativeInstance.Transform[transformIndex / 4][transformIndex % 4] = source.Transform[transformIndex];
+		}
+		nativeInstance.InstanceID = source.InstanceID;
+		nativeInstance.InstanceMask = source.InstanceMask;
+		nativeInstance.InstanceContributionToHitGroupIndex = source.InstanceContributionToHitGroupIndex;
+		nativeInstance.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+		nativeInstance.AccelerationStructure = source.AccelerationStructure;
+	}
+
+	const std::uint64_t sizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<std::uint64_t>(nativeInstances.size());
+	D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
+	const D3D12_HEAP_PROPERTIES heapProperties = D3D12TypeConversions::BuildUploadHeapProperties();
+	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
+	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
+	        &heapProperties,
+	        D3D12_HEAP_FLAG_NONE,
+	        &resourceDesc,
+	        D3D12_RESOURCE_STATE_GENERIC_READ,
+	        nullptr,
+	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	{
+		return {};
+	}
+
+	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingInstanceBuffer").c_str());
+	void* mappedData = nullptr;
+	const D3D12_RANGE readRange{0, 0};
+	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
+	{
+		return {};
+	}
+
+	std::memcpy(mappedData, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes));
+	ownedResource->Unmap(0, nullptr);
+	return RhiOwnedResourceHandle{ownedResource.Detach()};
+}
+
 RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
 {
 	if (m_rhi == nullptr)
@@ -731,6 +919,22 @@ void D3D12RenderHardwareInterface::CreateBufferUnorderedAccessView(
 	    nullptr,
 	    &viewDesc,
 	    D3D12TypeConversions::ToCpuDescriptor(destination));
+}
+
+void D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureShaderResourceView(
+    RhiGpuVirtualAddress accelerationStructureGpuAddress,
+    RhiCpuDescriptorHandle destination)
+{
+	if (m_rhi == nullptr || accelerationStructureGpuAddress == 0 || !destination)
+	{
+		return;
+	}
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+	viewDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+	viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	viewDesc.RaytracingAccelerationStructure.Location = accelerationStructureGpuAddress;
+	m_rhi->GetDevice()->CreateShaderResourceView(nullptr, &viewDesc, D3D12TypeConversions::ToCpuDescriptor(destination));
 }
 
 bool D3D12RenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept

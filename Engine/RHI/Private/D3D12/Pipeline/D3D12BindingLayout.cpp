@@ -51,7 +51,6 @@ class D3D12BindingLayoutCompilerImpl final
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
 				case ShaderParameterSemanticKind::ReadBuffer:
-				case ShaderParameterSemanticKind::AccelerationStructure:
 					CompileDescriptorTableBinding(
 					    builder,
 					    bindings,
@@ -62,6 +61,17 @@ class D3D12BindingLayoutCompilerImpl final
 					    parameterDesc,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 					    CompiledBindingType::DescriptorTableShaderResourceView,
+					    srvRegister);
+					break;
+				case ShaderParameterSemanticKind::AccelerationStructure:
+					CompileRootShaderResourceBinding(
+					    builder,
+					    bindings,
+					    bindingNames,
+					    bindingRecord,
+					    bindingName,
+					    shaderPackage,
+					    parameterDesc,
 					    srvRegister);
 					break;
 				case ShaderParameterSemanticKind::RWTexture:
@@ -329,6 +339,42 @@ class D3D12BindingLayoutCompilerImpl final
 			        .RegisterSpace = registerSpace,
 			        .DescriptorCount = descriptorCount});
 			nextShaderRegister = std::max(nextShaderRegister, shaderRegister + descriptorCount);
+		}
+	}
+
+	static void CompileRootShaderResourceBinding(
+	    D3D12RootSignatureBuilder& builder,
+	    std::vector<CompiledBinding>& bindings,
+	    std::vector<std::string>& bindingNames,
+	    const CookedShaderBindingRecord& bindingRecord,
+	    std::string_view bindingName,
+	    const LoadedShaderPackage& shaderPackage,
+	    const PassParameterDesc* parameterDesc,
+	    std::uint32_t& nextShaderRegister)
+	{
+		std::vector<ReflectedBindingLocation> reflectedLocations = FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
+		assert(!reflectedLocations.empty() && "Reflected shader binding is required for root SRV parameters.");
+		if (reflectedLocations.empty())
+		{
+			reflectedLocations.push_back(ReflectedBindingLocation{nextShaderRegister, 0u, bindingRecord.VisibilityMask});
+		}
+
+		for (const ReflectedBindingLocation& reflectedLocation : reflectedLocations)
+		{
+			const D3D12_SHADER_VISIBILITY visibility = ToD3D12Visibility(reflectedLocation.VisibilityMask);
+			bindingNames.emplace_back(bindingName);
+			const std::uint32_t shaderRegister = reflectedLocation.Register;
+			const std::uint32_t registerSpace = reflectedLocation.RegisterSpace;
+			const std::uint32_t rootParameterIndex = builder.AddShaderResourceView(shaderRegister, registerSpace, visibility);
+			bindings.push_back(
+			    CompiledBinding{
+			        .Name = bindingNames.back().c_str(),
+			        .Type = CompiledBindingType::RootShaderResourceView,
+			        .RootParameterIndex = rootParameterIndex,
+			        .ShaderRegister = shaderRegister,
+			        .RegisterSpace = registerSpace,
+			        .DescriptorCount = 1});
+			nextShaderRegister = std::max(nextShaderRegister, shaderRegister + 1u);
 		}
 	}
 

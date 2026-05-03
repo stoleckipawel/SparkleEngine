@@ -199,10 +199,17 @@ void PassBinder::BindCompiledBinding(
 		}
 		case CompiledBindingType::RootShaderResourceView:
 		{
-			assert(overrides != nullptr);
-			const PassBindingOverride* bindingOverride = overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView);
-			assert(bindingOverride != nullptr);
-			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+			const PassBindingOverride* bindingOverride =
+			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView) : nullptr;
+			if (bindingOverride != nullptr)
+			{
+				BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+				return;
+			}
+
+			assert(parameterBinding != nullptr);
+			assert(parameterBinding->Kind == PassParameterValueKind::AccelerationStructure);
+			BindRootGpuAddress(cmd, compiledBinding, parameterBinding->AccelerationStructureGpuAddress, isCompute);
 			return;
 		}
 		case CompiledBindingType::RootUnorderedAccessView:

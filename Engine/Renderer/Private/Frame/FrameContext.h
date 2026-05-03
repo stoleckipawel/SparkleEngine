@@ -3,6 +3,7 @@
 #include "Config/RenderConfig.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "Frame/RenderViewContext.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <array>
@@ -16,4 +17,5 @@ struct SPARKLE_RENDERER_API FrameContext
 	RenderViewContext mainView = {};
 	std::array<RenderViewContext, MaxShadowViews> shadowViews = {};
 	std::size_t shadowViewCount = 0;
+	RhiGpuVirtualAddress rayTracingSceneGpuAddress = 0;
 };

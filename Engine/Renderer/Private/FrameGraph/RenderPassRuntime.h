@@ -7,7 +7,9 @@
 #include <tuple>
 
 class ComputeClearPass;
+class DeferredLightingPass;
 class ForwardOpaquePass;
+class GBufferPass;
 class ShadowOpaquePass;
 
 template <typename TPass> struct RenderPassRuntimeTraits;
@@ -19,6 +21,18 @@ struct SPARKLE_RENDERER_API ForwardOpaquePassRuntime
 };
 
 struct SPARKLE_RENDERER_API ShadowOpaquePassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API GBufferPassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API DeferredLightingPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
@@ -38,6 +52,16 @@ template <> struct RenderPassRuntimeTraits<ForwardOpaquePass>
 template <> struct RenderPassRuntimeTraits<ShadowOpaquePass>
 {
 	using RuntimeType = ShadowOpaquePassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<GBufferPass>
+{
+	using RuntimeType = GBufferPassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<DeferredLightingPass>
+{
+	using RuntimeType = DeferredLightingPassRuntime;
 };
 
 template <> struct RenderPassRuntimeTraits<ComputeClearPass>
@@ -62,4 +86,4 @@ template <typename... TPasses> class TypedRenderPassRuntimeRegistry
 	std::tuple<typename RenderPassRuntimeTraits<TPasses>::RuntimeType...> m_runtimes;
 };
 
-using RenderPassRuntimeRegistry = TypedRenderPassRuntimeRegistry<ForwardOpaquePass, ShadowOpaquePass, ComputeClearPass>;
+using RenderPassRuntimeRegistry = TypedRenderPassRuntimeRegistry<ForwardOpaquePass, ShadowOpaquePass, GBufferPass, DeferredLightingPass, ComputeClearPass>;

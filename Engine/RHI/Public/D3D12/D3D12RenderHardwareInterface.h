@@ -39,6 +39,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept override;
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
@@ -82,6 +83,19 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	    RhiIndexBufferView& outView) override;
 	void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept override;
 	NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept override;
+	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
+	    const RhiRayTracingGeometryDesc& geometry) const noexcept override;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
+	    std::uint32_t instanceCount) const noexcept override;
+	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
+	    std::uint64_t sizeInBytes,
+	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
+	    const RhiRayTracingInstanceDesc* instances,
+	    std::uint32_t instanceCount,
+	    std::wstring_view debugName) override;
 	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
 	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept override;
 	RhiOwnedHeapHandle CreateOwnedHeap(
@@ -113,6 +127,9 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	    NativeResourceHandle resource,
 	    std::uint64_t sizeInBytes,
 	    std::uint32_t strideInBytes,
+	    RhiCpuDescriptorHandle destination) override;
+	void CreateRayTracingAccelerationStructureShaderResourceView(
+	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
 	    RhiCpuDescriptorHandle destination) override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 	void TransitionResource(

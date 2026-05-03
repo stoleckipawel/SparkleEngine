@@ -83,6 +83,15 @@ class SPARKLE_RENDERER_API CommandContext final
 	    std::uint32_t startInstanceLocation) noexcept;
 
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
+	void BuildBottomLevelAccelerationStructure(
+	    const RhiRayTracingGeometryDesc& geometry,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept;
+	void BuildTopLevelAccelerationStructure(
+	    RhiGpuVirtualAddress instanceDescsGpuAddress,
+	    std::uint32_t instanceCount,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept;
 	bool SupportsDiagnosticScopes() const noexcept;
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	void EndDiagnosticScope() noexcept;

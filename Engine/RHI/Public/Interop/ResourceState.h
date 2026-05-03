@@ -10,6 +10,7 @@ enum class ResourceState : std::uint8_t
 	DepthRead,
 	ShaderResource,
 	UnorderedAccess,
+	RayTracingAccelerationStructure,
 	CopySource,
 	CopyDest,
 	Present,
@@ -33,6 +34,8 @@ constexpr const char* ResourceStateToString(ResourceState state) noexcept
 			return "ShaderResource";
 		case ResourceState::UnorderedAccess:
 			return "UnorderedAccess";
+		case ResourceState::RayTracingAccelerationStructure:
+			return "RayTracingAccelerationStructure";
 		case ResourceState::CopySource:
 			return "CopySource";
 		case ResourceState::CopyDest:

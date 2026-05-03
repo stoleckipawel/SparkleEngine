@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-D3D12RenderCommandList::D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList* commandList) noexcept :
+D3D12RenderCommandList::D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList) noexcept :
     m_owner(&owner), m_commandList(commandList)
 {
 }
@@ -376,6 +376,69 @@ void D3D12RenderCommandList::Dispatch(std::uint32_t groupCountX, std::uint32_t g
 	{
 		m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 	}
+}
+
+void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
+    const RhiRayTracingGeometryDesc& geometry,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
+{
+	if (m_commandList == nullptr || scratchGpuAddress == 0 || resultGpuAddress == 0 || geometry.VertexBuffer == 0 ||
+	    geometry.IndexBuffer == 0)
+	{
+		return;
+	}
+
+	D3D12_RAYTRACING_GEOMETRY_DESC nativeGeometry{};
+	nativeGeometry.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	nativeGeometry.Flags = geometry.Opaque ? D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE : D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+	nativeGeometry.Triangles.Transform3x4 = 0;
+	nativeGeometry.Triangles.IndexFormat = D3D12TypeConversions::ToIndexFormat(geometry.IndexFormat);
+	nativeGeometry.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	nativeGeometry.Triangles.IndexCount = geometry.IndexCount;
+	nativeGeometry.Triangles.VertexCount = geometry.VertexCount;
+	nativeGeometry.Triangles.IndexBuffer = geometry.IndexBuffer;
+	nativeGeometry.Triangles.VertexBuffer.StartAddress = geometry.VertexBuffer;
+	nativeGeometry.Triangles.VertexBuffer.StrideInBytes = geometry.VertexStrideInBytes;
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	inputs.NumDescs = 1;
+	inputs.pGeometryDescs = &nativeGeometry;
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc{};
+	buildDesc.Inputs = inputs;
+	buildDesc.ScratchAccelerationStructureData = scratchGpuAddress;
+	buildDesc.DestAccelerationStructureData = resultGpuAddress;
+	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
+}
+
+void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
+    RhiGpuVirtualAddress instanceDescsGpuAddress,
+    std::uint32_t instanceCount,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
+{
+	if (m_commandList == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 || scratchGpuAddress == 0 ||
+	    resultGpuAddress == 0)
+	{
+		return;
+	}
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs{};
+	inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+	inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	inputs.NumDescs = instanceCount;
+	inputs.InstanceDescs = instanceDescsGpuAddress;
+
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC buildDesc{};
+	buildDesc.Inputs = inputs;
+	buildDesc.ScratchAccelerationStructureData = scratchGpuAddress;
+	buildDesc.DestAccelerationStructureData = resultGpuAddress;
+	m_commandList->BuildRaytracingAccelerationStructure(&buildDesc, 0, nullptr);
 }
 
 void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept

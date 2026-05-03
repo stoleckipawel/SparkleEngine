@@ -9,7 +9,7 @@ class D3D12RenderHardwareInterface;
 class D3D12RenderCommandList final : public RenderCommandList
 {
   public:
-	D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList* commandList) noexcept;
+	D3D12RenderCommandList(D3D12RenderHardwareInterface& owner, ID3D12GraphicsCommandList7* commandList) noexcept;
 
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	NativeGraphicsCommandListHandle GetNativeHandle() const noexcept override;
@@ -62,6 +62,15 @@ class D3D12RenderCommandList final : public RenderCommandList
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept override;
 	void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept override;
+	void BuildBottomLevelAccelerationStructure(
+	    const RhiRayTracingGeometryDesc& geometry,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept override;
+	void BuildTopLevelAccelerationStructure(
+	    RhiGpuVirtualAddress instanceDescsGpuAddress,
+	    std::uint32_t instanceCount,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept override;
 	void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept override;
 	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;
 	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
@@ -69,5 +78,5 @@ class D3D12RenderCommandList final : public RenderCommandList
 
   private:
 	D3D12RenderHardwareInterface* m_owner = nullptr;
-	ID3D12GraphicsCommandList* m_commandList = nullptr;
+	ID3D12GraphicsCommandList7* m_commandList = nullptr;
 };

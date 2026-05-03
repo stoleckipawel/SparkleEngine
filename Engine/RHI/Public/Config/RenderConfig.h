@@ -10,6 +10,7 @@ namespace RenderConfig
 	inline constexpr unsigned FramesInFlight = 2u;
 
 	inline constexpr PixelFormat BackBufferFormat = PixelFormat::R8G8B8A8_UNorm;
+	inline constexpr PixelFormat SceneColorFormat = BackBufferFormat;
 
 	inline constexpr PixelFormat DepthStencilFormat = PixelFormat::D24_UNorm_S8_UInt;
 
@@ -33,4 +34,13 @@ namespace RenderConfig
 		inline constexpr float LightPadding = 20.0f;
 		inline constexpr PixelFormat ShadowMapFormat = PixelFormat::R32_Float;
 	}  // namespace Shadows
+
+	namespace GBuffer
+	{
+		inline constexpr PixelFormat BaseColorFormat = PixelFormat::R8G8B8A8_UNorm;
+		inline constexpr PixelFormat NormalFormat = PixelFormat::R16G16B16A16_Float;
+		inline constexpr PixelFormat MaterialFormat = PixelFormat::R8G8B8A8_UNorm;
+		inline constexpr PixelFormat EmissiveFormat = PixelFormat::R16G16B16A16_Float;
+		inline constexpr PixelFormat SceneColorFormat = RenderConfig::SceneColorFormat;
+	}  // namespace GBuffer
 }  // namespace RenderConfig

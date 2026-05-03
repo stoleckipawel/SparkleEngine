@@ -10,6 +10,8 @@ DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 		case PixelFormat::B8G8R8A8_UNorm:
 			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		case PixelFormat::R16G16B16A16_Float:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
 		case PixelFormat::D24_UNorm_S8_UInt:
 			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::R32_Float:
@@ -96,6 +98,8 @@ D3D12_RESOURCE_STATES D3D12TypeConversions::ToResourceStates(ResourceState state
 			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 		case ResourceState::UnorderedAccess:
 			return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		case ResourceState::RayTracingAccelerationStructure:
+			return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 		case ResourceState::CopySource:
 			return D3D12_RESOURCE_STATE_COPY_SOURCE;
 		case ResourceState::CopyDest:

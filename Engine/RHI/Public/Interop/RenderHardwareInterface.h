@@ -224,6 +224,39 @@ struct RhiIndexBufferView
 	RhiIndexFormat Format = RhiIndexFormat::UInt32;
 };
 
+struct RhiRayTracingCapabilities
+{
+	bool SupportsRayTracing = false;
+	bool SupportsInlineRayQuery = false;
+};
+
+struct RhiRayTracingGeometryDesc
+{
+	RhiGpuVirtualAddress VertexBuffer = 0;
+	std::uint32_t VertexStrideInBytes = 0;
+	std::uint32_t VertexCount = 0;
+	RhiGpuVirtualAddress IndexBuffer = 0;
+	std::uint32_t IndexCount = 0;
+	RhiIndexFormat IndexFormat = RhiIndexFormat::UInt32;
+	bool Opaque = true;
+};
+
+struct RhiRayTracingInstanceDesc
+{
+	std::array<float, 12> Transform = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+	std::uint32_t InstanceID = 0;
+	std::uint32_t InstanceMask = 0xFF;
+	std::uint32_t InstanceContributionToHitGroupIndex = 0;
+	RhiGpuVirtualAddress AccelerationStructure = 0;
+};
+
+struct RhiRayTracingAccelerationStructurePrebuildInfo
+{
+	std::uint64_t ResultDataMaxSizeInBytes = 0;
+	std::uint64_t ScratchDataSizeInBytes = 0;
+	std::uint64_t UpdateScratchDataSizeInBytes = 0;
+};
+
 struct RhiViewport
 {
 	float X = 0.0f;
@@ -578,6 +611,15 @@ class SPARKLE_RHI_API RenderCommandList
 	    std::uint32_t startVertexLocation,
 	    std::uint32_t startInstanceLocation) noexcept = 0;
 	virtual void Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept = 0;
+	virtual void BuildBottomLevelAccelerationStructure(
+	    const RhiRayTracingGeometryDesc& geometry,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept = 0;
+	virtual void BuildTopLevelAccelerationStructure(
+	    RhiGpuVirtualAddress instanceDescsGpuAddress,
+	    std::uint32_t instanceCount,
+	    RhiGpuVirtualAddress scratchGpuAddress,
+	    RhiGpuVirtualAddress resultGpuAddress) noexcept = 0;
 	virtual void CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept = 0;
 	virtual void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept = 0;
 	virtual void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept = 0;
@@ -597,6 +639,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
 	virtual NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept = 0;
+	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
@@ -640,6 +683,21 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    RhiIndexBufferView& outView) = 0;
 	virtual void ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept = 0;
 	virtual NativeResourceHandle GetNativeResource(RhiOwnedResourceHandle resource) const noexcept = 0;
+	virtual RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept = 0;
+	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
+	    const RhiRayTracingGeometryDesc& geometry) const noexcept = 0;
+	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
+	    std::uint32_t instanceCount) const noexcept = 0;
+	virtual RhiOwnedResourceHandle CreateRayTracingScratchBuffer(
+	    std::uint64_t sizeInBytes,
+	    std::wstring_view debugName) = 0;
+	virtual RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
+	    std::uint64_t sizeInBytes,
+	    std::wstring_view debugName) = 0;
+	virtual RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
+	    const RhiRayTracingInstanceDesc* instances,
+	    std::uint32_t instanceCount,
+	    std::wstring_view debugName) = 0;
 	virtual RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept = 0;
 	virtual RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept = 0;
 	virtual RhiOwnedHeapHandle CreateOwnedHeap(
@@ -674,6 +732,9 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    NativeResourceHandle resource,
 	    std::uint64_t sizeInBytes,
 	    std::uint32_t strideInBytes,
+	    RhiCpuDescriptorHandle destination) = 0;
+	virtual void CreateRayTracingAccelerationStructureShaderResourceView(
+	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
 	    RhiCpuDescriptorHandle destination) = 0;
 	virtual bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept = 0;
 	virtual void TransitionResource(

@@ -209,6 +209,29 @@ void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCoun
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
+void CommandContext::BuildBottomLevelAccelerationStructure(
+    const RhiRayTracingGeometryDesc& geometry,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->BuildBottomLevelAccelerationStructure(geometry, scratchGpuAddress, resultGpuAddress);
+	}
+}
+
+void CommandContext::BuildTopLevelAccelerationStructure(
+    RhiGpuVirtualAddress instanceDescsGpuAddress,
+    std::uint32_t instanceCount,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
+{
+	if (m_commandList != nullptr)
+	{
+		m_commandList->BuildTopLevelAccelerationStructure(instanceDescsGpuAddress, instanceCount, scratchGpuAddress, resultGpuAddress);
+	}
+}
+
 bool CommandContext::SupportsDiagnosticScopes() const noexcept
 {
 	return m_commandList->SupportsDiagnosticScopes();

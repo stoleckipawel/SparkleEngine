@@ -82,3 +82,15 @@ RhiIndexBufferView GPUMesh::GetIndexBufferView() const noexcept
 {
 	return m_indexBufferView;
 }
+
+RhiRayTracingGeometryDesc GPUMesh::GetRayTracingGeometry() const noexcept
+{
+	return RhiRayTracingGeometryDesc{
+	    .VertexBuffer = m_vertexBufferView.BufferLocation,
+	    .VertexStrideInBytes = m_vertexBufferView.StrideInBytes,
+	    .VertexCount = m_vertexCount,
+	    .IndexBuffer = m_indexBufferView.BufferLocation,
+	    .IndexCount = m_indexCount,
+	    .IndexFormat = m_indexBufferView.Format,
+	    .Opaque = true};
+}

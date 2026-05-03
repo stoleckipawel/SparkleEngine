@@ -25,6 +25,7 @@ class PipelineStateManager;
 class SceneRenderStateCoordinator;
 class MaterialCacheManager;
 class PerViewDataBuilder;
+class RayTracingSceneManager;
 class RenderSceneDataBuilder;
 class ShadowBuilder;
 class ShadowFrameBuilder;
@@ -93,6 +94,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;
+	std::unique_ptr<RayTracingSceneManager> m_rayTracingSceneManager;
 	std::unique_ptr<RenderSceneDataBuilder> m_renderSceneDataBuilder;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;

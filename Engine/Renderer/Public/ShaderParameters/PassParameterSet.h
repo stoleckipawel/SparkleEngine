@@ -18,6 +18,7 @@ enum class PassParameterValueKind : std::uint8_t
 	Texture,
 	Buffer,
 	DescriptorTable,
+	AccelerationStructure,
 	UniformData,
 	Sampler,
 };
@@ -28,6 +29,7 @@ struct PassParameterBinding
 	std::vector<TextureHandle> Textures;
 	std::vector<BufferHandle> Buffers;
 	RhiDescriptorTableBinding DescriptorTable = {};
+	RhiGpuVirtualAddress AccelerationStructureGpuAddress = 0;
 	const void* UniformData = nullptr;
 	std::uint32_t UniformDataSizeInBytes = 0;
 	RhiSamplerDesc Sampler = {};
@@ -42,6 +44,8 @@ struct PassParameterBinding
 				return !Buffers.empty();
 			case PassParameterValueKind::DescriptorTable:
 				return static_cast<bool>(DescriptorTable);
+			case PassParameterValueKind::AccelerationStructure:
+				return AccelerationStructureGpuAddress != 0;
 			case PassParameterValueKind::UniformData:
 				return UniformData != nullptr && UniformDataSizeInBytes > 0;
 			case PassParameterValueKind::Sampler:
@@ -57,6 +61,7 @@ struct PassParameterBinding
 		Textures.clear();
 		Buffers.clear();
 		DescriptorTable = {};
+		AccelerationStructureGpuAddress = 0;
 		UniformData = nullptr;
 		UniformDataSizeInBytes = 0;
 		Sampler = {};
@@ -204,6 +209,27 @@ class PassParameterSet final
 		binding.Reset();
 		binding.Kind = PassParameterValueKind::DescriptorTable;
 		binding.DescriptorTable = descriptorTable;
+		return true;
+	}
+
+	bool SetAccelerationStructure(const char* name, RhiGpuVirtualAddress gpuAddress)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr || parameter->Kind != ShaderParameterSemanticKind::AccelerationStructure)
+		{
+			return false;
+		}
+
+		if (gpuAddress == 0 || parameter->ArrayCount != 1u)
+		{
+			return false;
+		}
+
+		PassParameterBinding& binding = m_bindings[index];
+		binding.Reset();
+		binding.Kind = PassParameterValueKind::AccelerationStructure;
+		binding.AccelerationStructureGpuAddress = gpuAddress;
 		return true;
 	}
 

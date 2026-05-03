@@ -32,6 +32,7 @@
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "SceneData/RayTracing/RayTracingSceneManager.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -153,6 +154,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	SPARKLE_CPU_SCOPE("Renderer.InitializeSceneSystems");
 	m_textureManager = std::make_unique<TextureManager>(GetRenderHardwareInterface());
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
+	m_rayTracingSceneManager = std::make_unique<RayTracingSceneManager>();
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
 	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
@@ -168,6 +170,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	    *m_backend,
 	    *m_gpuMeshCache,
 	    *m_textureManager,
+	    *m_rayTracingSceneManager,
 	    *m_sceneSnapshot,
 	    *m_renderCamera,
 	    *m_materialCacheManager);
@@ -351,6 +354,13 @@ void Renderer::RecordFrame() noexcept
 	    "GPU Frame",
 	    RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255});
 	auto gpuFrameTimer = frameDiagnostics.BeginTimer(cmd, "GPU Frame");
+
+	if (m_rayTracingSceneManager != nullptr)
+	{
+		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.RayTracingScene");
+		m_rayTracingSceneManager->Update(renderHardwareInterface, cmd, frame.sceneData);
+		frame.rayTracingSceneGpuAddress = m_rayTracingSceneManager->GetTopLevelAccelerationStructureGpuAddress();
+	}
 
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
 	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext, frameDiagnostics);

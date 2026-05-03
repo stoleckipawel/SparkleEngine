@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -207,6 +208,10 @@ class SPARKLE_RENDERER_API FrameGraph
 	void BindRenderTarget(
 	    CommandContext& cmd,
 	    TextureHandle renderTargetHandle,
+	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
+	void BindRenderTargets(
+	    CommandContext& cmd,
+	    std::span<const TextureHandle> renderTargetHandles,
 	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
 	void CopyTexture(CommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept;
 	void CopyBuffer(CommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
