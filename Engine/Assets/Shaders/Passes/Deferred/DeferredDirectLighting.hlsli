@@ -13,9 +13,12 @@ namespace DeferredDirectLighting
 		float3 baseColor,
 		float roughness,
 		float metallic,
+		float3 subsurfaceColor,
+		float subsurfaceStrength,
 		uint lightIndex,
 		out float3 outDiffuse,
-		out float3 outSpecular)
+		out float3 outSpecular,
+		out float3 outSubsurface)
 	{
 		const float3 lightDirection = normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
 		BRDF::ShadingData shadingData = BRDF::ComputeShadingData(normalWorld, viewDirWorld, lightDirection);
@@ -24,6 +27,7 @@ namespace DeferredDirectLighting
 		{
 			outDiffuse = 0.0f;
 			outSpecular = 0.0f;
+			outSubsurface = 0.0f;
 			return;
 		}
 
@@ -39,14 +43,15 @@ namespace DeferredDirectLighting
 		    max(roughness, 0.04f),
 		    saturate(metallic),
 		    f0,
-		    float3(0.0f, 0.0f, 0.0f),
-		    0.0f,
+		    subsurfaceColor,
+		    subsurfaceStrength,
 		    outDiffuse,
 		    outSpecular,
-		    directSubsurface);
+		    outSubsurface);
 
 		outDiffuse *= radiance * shadingData.NoL;
 		outSpecular *= radiance * shadingData.NoL;
+		outSubsurface *= radiance * shadingData.NoL;
 	}
 }  // namespace DeferredDirectLighting
 

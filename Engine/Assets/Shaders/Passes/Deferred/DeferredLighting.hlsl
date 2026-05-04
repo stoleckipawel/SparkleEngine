@@ -4,6 +4,35 @@
 
 RWTexture2D<float4> SceneColorTexture;
 
+static const uint ViewModeLit = 0u;
+static const uint ViewModeGBufferDiffuse = 1u;
+static const uint ViewModeGBufferNormal = 2u;
+static const uint ViewModeGBufferRoughness = 3u;
+static const uint ViewModeGBufferMetallic = 4u;
+static const uint ViewModeGBufferEmissive = 5u;
+static const uint ViewModeGBufferAmbientOcclusion = 6u;
+static const uint ViewModeGBufferSubsurfaceColor = 7u;
+static const uint ViewModeGBufferSubsurfaceStrength = 8u;
+static const uint ViewModeDirectDiffuse = 9u;
+static const uint ViewModeDirectSpecular = 10u;
+static const uint ViewModeDirectSubsurface = 11u;
+
+float3 PreviewScalar(float value)
+{
+	return saturate(value).xxx;
+}
+
+float3 PreviewNormal(float3 normalWorld)
+{
+	return normalize(normalWorld) * 0.5f + 0.5f;
+}
+
+float3 PreviewHdr(float3 color)
+{
+	const float3 safeColor = max(color, 0.0f);
+	return safeColor / (1.0f + safeColor);
+}
+
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
 	uint width = 0;
@@ -22,12 +51,14 @@ RWTexture2D<float4> SceneColorTexture;
 
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
+	float3 directSubsurface = 0.0f;
 	const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		float3 lightDiffuse;
 		float3 lightSpecular;
+		float3 lightSubsurface;
 		DeferredDirectLighting::AccumulateDirectionalLight(
 		    positionWorld,
 		    viewDirWorld,
@@ -35,14 +66,60 @@ RWTexture2D<float4> SceneColorTexture;
 		    gBuffer.BaseColor,
 		    gBuffer.Roughness,
 		    gBuffer.Metallic,
+		    gBuffer.SubsurfaceColor,
+		    gBuffer.SubsurfaceStrength,
 		    lightIndex,
 		    lightDiffuse,
-		    lightSpecular);
+		    lightSpecular,
+		    lightSubsurface);
 
 		directDiffuse += lightDiffuse;
 		directSpecular += lightSpecular;
+		directSubsurface += lightSubsurface;
 	}
 
-	const float3 lit = directDiffuse * gBuffer.AmbientOcclusion + directSpecular + gBuffer.Emissive;
-	SceneColorTexture[dispatchThreadId.xy] = float4(lit, gBuffer.Alpha);
+	const float3 lit = (directDiffuse + directSubsurface) * gBuffer.AmbientOcclusion + directSpecular + gBuffer.Emissive;
+
+	float3 outputColor = lit;
+	switch (ViewModeIndex)
+	{
+		case ViewModeGBufferDiffuse:
+			outputColor = saturate(gBuffer.BaseColor);
+			break;
+		case ViewModeGBufferNormal:
+			outputColor = PreviewNormal(gBuffer.NormalWorld);
+			break;
+		case ViewModeGBufferRoughness:
+			outputColor = PreviewScalar(gBuffer.Roughness);
+			break;
+		case ViewModeGBufferMetallic:
+			outputColor = PreviewScalar(gBuffer.Metallic);
+			break;
+		case ViewModeGBufferEmissive:
+			outputColor = PreviewHdr(gBuffer.Emissive);
+			break;
+		case ViewModeGBufferAmbientOcclusion:
+			outputColor = PreviewScalar(gBuffer.AmbientOcclusion);
+			break;
+		case ViewModeGBufferSubsurfaceColor:
+			outputColor = saturate(gBuffer.SubsurfaceColor);
+			break;
+		case ViewModeGBufferSubsurfaceStrength:
+			outputColor = PreviewScalar(gBuffer.SubsurfaceStrength);
+			break;
+		case ViewModeDirectDiffuse:
+			outputColor = PreviewHdr(directDiffuse);
+			break;
+		case ViewModeDirectSpecular:
+			outputColor = PreviewHdr(directSpecular);
+			break;
+		case ViewModeDirectSubsurface:
+			outputColor = PreviewHdr(directSubsurface);
+			break;
+		case ViewModeLit:
+		default:
+			break;
+	}
+
+	SceneColorTexture[dispatchThreadId.xy] = float4(outputColor, gBuffer.Alpha);
 }

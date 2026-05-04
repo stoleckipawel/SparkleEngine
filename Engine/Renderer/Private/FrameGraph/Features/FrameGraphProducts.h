@@ -15,6 +15,7 @@ struct GBufferTargets
 	TextureHandle Normal;
 	TextureHandle Material;
 	TextureHandle Emissive;
+	TextureHandle Subsurface;
 	TextureHandle DeviceZ;
 	TextureHandle MainDepth;
 };

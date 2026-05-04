@@ -25,6 +25,7 @@ class DeferredLightingCS final : public TGlobalShader<DeferredLightingCS>
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferMaterial)
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferEmissive)
+		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferSubsurface)
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
 	END_SHADER_PARAMETER_STRUCT()
 };

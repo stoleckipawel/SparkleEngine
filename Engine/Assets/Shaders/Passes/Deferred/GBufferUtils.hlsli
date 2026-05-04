@@ -5,6 +5,7 @@ Texture2D GBufferBaseColor;
 Texture2D GBufferNormal;
 Texture2D GBufferMaterial;
 Texture2D GBufferEmissive;
+Texture2D GBufferSubsurface;
 Texture2D GBufferDeviceZ;
 
 struct GBufferData
@@ -18,6 +19,8 @@ struct GBufferData
 	float AmbientOcclusion;
 	float MaterialFlags;
 	float3 Emissive;
+	float3 SubsurfaceColor;
+	float SubsurfaceStrength;
 };
 
 float3 DecodeGBufferNormal(float3 normalWorld)
@@ -38,6 +41,7 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	const float4 normalSample = GBufferNormal.Load(pixel);
 	const float4 materialSample = GBufferMaterial.Load(pixel);
 	const float4 emissiveSample = GBufferEmissive.Load(pixel);
+	const float4 subsurfaceSample = GBufferSubsurface.Load(pixel);
 
 	GBufferData gBuffer;
 	gBuffer.BaseColor = saturate(baseColorSample.rgb);
@@ -49,6 +53,8 @@ GBufferData LoadGBuffer(uint2 pixelCoord)
 	gBuffer.AmbientOcclusion = saturate(materialSample.b);
 	gBuffer.MaterialFlags = materialSample.a;
 	gBuffer.Emissive = max(emissiveSample.rgb, 0.0f);
+	gBuffer.SubsurfaceColor = saturate(subsurfaceSample.rgb);
+	gBuffer.SubsurfaceStrength = saturate(subsurfaceSample.a);
 	return gBuffer;
 }
 

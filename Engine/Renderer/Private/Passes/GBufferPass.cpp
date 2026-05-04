@@ -75,6 +75,7 @@ void GBufferPass::DeclareResources(FrameGraph& frameGraph, const GBufferTargets&
 	parameters->Normal = frameGraph.CreateRenderTarget(targets.Normal);
 	parameters->Material = frameGraph.CreateRenderTarget(targets.Material);
 	parameters->Emissive = frameGraph.CreateRenderTarget(targets.Emissive);
+	parameters->Subsurface = frameGraph.CreateRenderTarget(targets.Subsurface);
 	parameters->DeviceZ = frameGraph.CreateRenderTarget(targets.DeviceZ);
 	parameters->MainDepth = frameGraph.CreateDepthTarget(targets.MainDepth);
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
@@ -89,11 +90,12 @@ void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewC
 
 void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferPass::Parameters& parameters)
 {
-	const std::array<TextureHandle, 5> renderTargets = {
+	const std::array<TextureHandle, 6> renderTargets = {
 	    parameters.BaseColor[0],
 	    parameters.Normal[0],
 	    parameters.Material[0],
 	    parameters.Emissive[0],
+		    parameters.Subsurface[0],
 	    parameters.DeviceZ[0]};
 	context.Graph.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
 	for (TextureHandle renderTarget : renderTargets)

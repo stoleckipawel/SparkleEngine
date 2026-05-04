@@ -70,6 +70,7 @@ void DeferredLightingPass::DeclareResources(
 	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
 	parameters->GBufferEmissive = frameGraph.CreateSRV(gbuffer.Emissive);
+	parameters->GBufferSubsurface = frameGraph.CreateSRV(gbuffer.Subsurface);
 	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
 }
 
