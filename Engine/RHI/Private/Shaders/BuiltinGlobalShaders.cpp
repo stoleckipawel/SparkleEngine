@@ -2,7 +2,11 @@
 
 void RegisterHelloTriangleShaders() noexcept;
 void RegisterGBufferShaders() noexcept;
-void RegisterDeferredLightingShaders() noexcept;
+void RegisterDirectLightingShaders() noexcept;
+void RegisterIndirectLightingShaders() noexcept;
+void RegisterLightingCompositeShaders() noexcept;
+void RegisterSkyShaders() noexcept;
+void RegisterVisualizeBuffersShaders() noexcept;
 void RegisterComputeClearShaders() noexcept;
 void RegisterHelloInlineRayQueryCSShader() noexcept;
 void RegisterHelloRayGenShader() noexcept;
@@ -17,7 +21,11 @@ void RegisterBuiltinGlobalShaders() noexcept
 {
 	RegisterHelloTriangleShaders();
 	RegisterGBufferShaders();
-	RegisterDeferredLightingShaders();
+	RegisterDirectLightingShaders();
+	RegisterIndirectLightingShaders();
+	RegisterLightingCompositeShaders();
+	RegisterSkyShaders();
+	RegisterVisualizeBuffersShaders();
 	RegisterComputeClearShaders();
 	RegisterHelloInlineRayQueryCSShader();
 	RegisterHelloRayGenShader();

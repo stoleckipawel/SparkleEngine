@@ -1,0 +1,61 @@
+#pragma once
+
+#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
+#include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
+
+#include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
+
+#include <cstdint>
+
+class FrameGraph;
+struct DirectLightingPassRuntime;
+struct RenderGraphPassContext;
+struct RenderViewContext;
+
+struct DirectLightingPassParameters
+{
+	ShaderRWTexture2D<void> DirectDiffuse;
+	ShaderRWTexture2D<void> DirectSpecular;
+	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderTexture2D<void> GBufferNormal;
+	ShaderTexture2D<void> GBufferMaterial;
+	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderUniform<PerViewConstantBufferData> PerView;
+
+	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
+	{
+		builder.RWTexture("DirectDiffuse", &DirectLightingPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
+		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
+		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferDeviceZ", &DirectLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
+	}
+};
+
+class DirectLightingPass final
+{
+  public:
+	static constexpr const char* PassName = "DirectLighting";
+	static constexpr std::uint32_t ThreadGroupSizeX = 8;
+	static constexpr std::uint32_t ThreadGroupSizeY = 8;
+	using Parameters = DirectLightingPassParameters;
+	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
+	using ParameterInstance = TypedPassParameterInstance<Parameters>;
+
+	static const ParameterMetadata& GetParameterMetadata() noexcept;
+	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
+	static void DeclareResources(
+		FrameGraph& frameGraph,
+		const LightingTargets& lighting,
+		const GBufferTargets& gbuffer,
+		ParameterInstance& parameters);
+	static void SetParameters(
+		ParameterInstance& parameters,
+		const RenderViewContext& viewContext);
+	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
+};

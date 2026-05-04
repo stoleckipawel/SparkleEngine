@@ -5,7 +5,11 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 class GBufferPass;
-class DeferredLightingPass;
+class DirectLightingPass;
+class IndirectLightingPass;
+class LightingCompositePass;
+class SkyPass;
+class VisualizeBuffersPass;
 class ComputeClearPass;
 
 template <typename TPass> struct RenderPassRuntimeTraits;
@@ -16,7 +20,31 @@ struct SPARKLE_RENDERER_API GBufferPassRuntime
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API DeferredLightingPassRuntime
+struct SPARKLE_RENDERER_API DirectLightingPassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API IndirectLightingPassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API LightingCompositePassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API SkyPassRuntime
+{
+	RenderBindingLayout& BindingLayout;
+	RenderPipelineState& PipelineState;
+};
+
+struct SPARKLE_RENDERER_API VisualizeBuffersPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
@@ -33,9 +61,29 @@ template <> struct RenderPassRuntimeTraits<GBufferPass>
 	using RuntimeType = GBufferPassRuntime;
 };
 
-template <> struct RenderPassRuntimeTraits<DeferredLightingPass>
+template <> struct RenderPassRuntimeTraits<DirectLightingPass>
 {
-	using RuntimeType = DeferredLightingPassRuntime;
+	using RuntimeType = DirectLightingPassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<IndirectLightingPass>
+{
+	using RuntimeType = IndirectLightingPassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<LightingCompositePass>
+{
+	using RuntimeType = LightingCompositePassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<SkyPass>
+{
+	using RuntimeType = SkyPassRuntime;
+};
+
+template <> struct RenderPassRuntimeTraits<VisualizeBuffersPass>
+{
+	using RuntimeType = VisualizeBuffersPassRuntime;
 };
 
 template <> struct RenderPassRuntimeTraits<ComputeClearPass>

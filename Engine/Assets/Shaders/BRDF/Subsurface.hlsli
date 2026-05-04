@@ -40,5 +40,10 @@ namespace BRDF
 			return float3(0.0f, 0.0f, 0.0f);
 #endif
 		}
+
+		float3 EvaluateDirectTransport(float roughness, ShadingData sd)
+		{
+			return EvaluateDirect(1.0f.xxx, 1.0f.xxx, roughness, 1.0f, sd);
+		}
 	}  // namespace Subsurface
 }  // namespace BRDF

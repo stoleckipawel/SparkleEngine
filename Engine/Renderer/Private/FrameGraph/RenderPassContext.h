@@ -5,6 +5,8 @@
 
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
+class TextureManager;
+
 // Stable execute-time runtime services exposed to authored render passes.
 //
 // This surface owns the renderer services that remain intentionally global at
@@ -17,6 +19,7 @@ struct SPARKLE_RENDERER_API RenderPassContext
 	RenderHardwareInterface& HardwareInterface;
 	RenderDiagnostics& BackendDiagnostics;
 	const PipelineStateManager& RuntimeManager;
+	const TextureManager* Textures = nullptr;
 
 	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{

@@ -2,15 +2,15 @@
 #include "Frame/DirectLighting.h"
 
 #include "FrameGraph/FrameGraph.h"
-#include "Passes/DeferredLightingPass.h"
+#include "Passes/DirectLightingPass.h"
 
 void BuildDirectLighting(
     FrameGraph& frameGraph,
-    const SceneTargets& sceneTargets,
+	const LightingTargets& lighting,
     const GBufferTargets& gbuffer)
 {
-	auto& parameters = frameGraph.AllocPassParameters<DeferredLightingPass>();
-	DeferredLightingPass::DeclareResources(frameGraph, sceneTargets, gbuffer, parameters);
+	auto& parameters = frameGraph.AllocPassParameters<DirectLightingPass>();
+	DirectLightingPass::DeclareResources(frameGraph, lighting, gbuffer, parameters);
 
-	frameGraph.AddComputePass<DeferredLightingPass>(DeferredLightingPass::PassName, parameters);
+	frameGraph.AddComputePass<DirectLightingPass>(DirectLightingPass::PassName, parameters);
 }

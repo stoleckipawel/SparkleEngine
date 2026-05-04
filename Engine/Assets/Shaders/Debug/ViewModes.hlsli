@@ -14,6 +14,9 @@ namespace ViewMode
 	static const uint DirectDiffuse = 9u;
 	static const uint DirectSpecular = 10u;
 	static const uint DirectSubsurface = 11u;
+	static const uint IndirectDiffuse = 12u;
+	static const uint IndirectSpecular = 13u;
+	static const uint IndirectSubsurface = 14u;
 
 	float3 PreviewScalar(float v)
 	{
@@ -31,7 +34,15 @@ namespace ViewMode
 		return safe / (1.0f + safe);
 	}
 
-	float3 Resolve(float3 lit, Material::Properties matProps, float3 directDiffuse, float3 directSpecular, float3 directSubsurface)
+	float3 Resolve(
+		float3 lit,
+		Material::Properties matProps,
+		float3 directDiffuse,
+		float3 directSpecular,
+		float3 directSubsurface,
+		float3 indirectDiffuse,
+		float3 indirectSpecular,
+		float3 indirectSubsurface)
 	{
 		switch (ViewModeIndex)
 		{
@@ -70,6 +81,15 @@ namespace ViewMode
 
 			case DirectSubsurface:
 				return PreviewHdr(directSubsurface);
+
+			case IndirectDiffuse:
+				return PreviewHdr(indirectDiffuse);
+
+			case IndirectSpecular:
+				return PreviewHdr(indirectSpecular);
+
+			case IndirectSubsurface:
+				return PreviewHdr(indirectSubsurface);
 			default:
 				return lit;
 		}

@@ -4,7 +4,8 @@
 
 class FrameGraph;
 
-void BuildDirectLighting(
-    FrameGraph& frameGraph,
+void BuildVisualizeBuffers(
+	FrameGraph& frameGraph,
+	const SceneTargets& sceneTargets,
 	const LightingTargets& lighting,
-    const GBufferTargets& gbuffer);
+	const GBufferTargets& gbuffer);

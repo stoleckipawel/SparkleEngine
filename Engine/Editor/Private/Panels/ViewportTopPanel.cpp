@@ -43,6 +43,12 @@ namespace
 				return UiUtil::EditorIcon::ViewDirectSpecular;
 			case RenderViewMode::DirectSubsurface:
 				return UiUtil::EditorIcon::ViewDirectSubsurface;
+			case RenderViewMode::IndirectDiffuse:
+				return UiUtil::EditorIcon::ViewDirectDiffuse;
+			case RenderViewMode::IndirectSpecular:
+				return UiUtil::EditorIcon::ViewDirectSpecular;
+			case RenderViewMode::IndirectSubsurface:
+				return UiUtil::EditorIcon::ViewDirectSubsurface;
 			case RenderViewMode::Count:
 				break;
 		}
@@ -96,6 +102,12 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 			return "Direct Specular";
 		case RenderViewMode::DirectSubsurface:
 			return "Direct Subsurface";
+		case RenderViewMode::IndirectDiffuse:
+			return "Indirect Diffuse";
+		case RenderViewMode::IndirectSpecular:
+			return "Indirect Specular";
+		case RenderViewMode::IndirectSubsurface:
+			return "Indirect Subsurface";
 		case RenderViewMode::Count:
 			break;
 	}
@@ -180,6 +192,9 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 		DrawViewModeOption(RenderViewMode::DirectDiffuse, currentViewMode);
 		DrawViewModeOption(RenderViewMode::DirectSpecular, currentViewMode);
 		DrawViewModeOption(RenderViewMode::DirectSubsurface, currentViewMode);
+		DrawViewModeOption(RenderViewMode::IndirectDiffuse, currentViewMode);
+		DrawViewModeOption(RenderViewMode::IndirectSpecular, currentViewMode);
+		DrawViewModeOption(RenderViewMode::IndirectSubsurface, currentViewMode);
 		ImGui::Unindent(8.0f);
 
 		ImGui::EndCombo();

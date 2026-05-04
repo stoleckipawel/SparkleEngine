@@ -6,19 +6,25 @@
 
 #include <string_view>
 
-void RegisterDeferredLightingShaders() noexcept
+void RegisterLightingCompositeShaders() noexcept
 {
 }
 
-class DeferredLightingCS final : public TGlobalShader<DeferredLightingCS>
+class LightingCompositeCS final : public TGlobalShader<LightingCompositeCS>
 {
   public:
-	static constexpr std::string_view kShaderName = "DeferredLightingCS";
-	static constexpr std::string_view kShaderPackageName = "DeferredLighting";
-	static constexpr std::string_view kBindingLayoutId = "DeferredLighting";
+	static constexpr std::string_view kShaderName = "LightingCompositeCS";
+	static constexpr std::string_view kShaderPackageName = "LightingComposite";
+	static constexpr std::string_view kBindingLayoutId = "LightingComposite";
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_UAV_NAMED(RWTexture2D, SceneColor, SceneColorTexture)
+		SHADER_PARAMETER_TEXTURE(Texture2D, DirectDiffuse)
+		SHADER_PARAMETER_TEXTURE(Texture2D, DirectSpecular)
+		SHADER_PARAMETER_TEXTURE(Texture2D, DirectSubsurface)
+		SHADER_PARAMETER_TEXTURE(Texture2D, IndirectDiffuse)
+		SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSpecular)
+		SHADER_PARAMETER_TEXTURE(Texture2D, IndirectSubsurface)
 		SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 		SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferBaseColor)
@@ -30,4 +36,4 @@ class DeferredLightingCS final : public TGlobalShader<DeferredLightingCS>
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(DeferredLightingCS, "Passes/Deferred/DeferredLighting.hlsl", "main", Compute);
+IMPLEMENT_GLOBAL_SHADER(LightingCompositeCS, "Passes/Deferred/LightingComposite.hlsl", "main", Compute);

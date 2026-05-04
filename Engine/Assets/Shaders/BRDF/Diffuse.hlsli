@@ -76,5 +76,10 @@ namespace BRDF
 		{
 			return Lambert(albedo);
 		}
+
+		float3 EvaluateDirectTransport(float roughness, ShadingData sd)
+		{
+			return EvaluateDirect(1.0f.xxx, roughness, sd);
+		}
 	}  // namespace Diffuse
 }  // namespace BRDF

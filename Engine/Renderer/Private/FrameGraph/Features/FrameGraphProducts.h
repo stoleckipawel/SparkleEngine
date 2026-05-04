@@ -19,3 +19,13 @@ struct GBufferTargets
 	TextureHandle DeviceZ;
 	TextureHandle MainDepth;
 };
+
+struct LightingTargets
+{
+	TextureHandle DirectDiffuse;
+	TextureHandle DirectSpecular;
+	TextureHandle DirectSubsurface;
+	TextureHandle IndirectDiffuse;
+	TextureHandle IndirectSpecular;
+	TextureHandle IndirectSubsurface;
+};

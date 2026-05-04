@@ -7,9 +7,13 @@
 
 #include "Config/DepthConvention.h"
 #include "Passes/ComputeClearPass.h"
-#include "Passes/DeferredLightingPass.h"
+#include "Passes/DirectLightingPass.h"
 #include "Passes/GBufferPass.h"
+#include "Passes/IndirectLightingPass.h"
+#include "Passes/LightingCompositePass.h"
 #include "Passes/ShaderPass.h"
+#include "Passes/SkyPass.h"
+#include "Passes/VisualizeBuffersPass.h"
 
 template <typename TPass> struct RenderPassPipelineTraits;
 
@@ -92,10 +96,10 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 	}
 };
 
-template <> struct RenderPassPipelineTraits<DeferredLightingPass>
+template <> struct RenderPassPipelineTraits<DirectLightingPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<DeferredLightingPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<DeferredLightingPass>;
+	using RuntimeType = RenderPassRuntimeTraits<DirectLightingPass>::RuntimeType;
+	using StorageType = RenderPassRuntimeStorage<DirectLightingPass>;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -107,12 +111,140 @@ template <> struct RenderPassPipelineTraits<DeferredLightingPass>
 		    rhi,
 		    shaderPackageCache,
 		    RenderPassShaderRuntimeDesc{
-		        .PassName = DeferredLightingPass::PassName,
-		        .PackageDeclarationName = "DeferredLightingShaderPackage",
-		        .Package = DeferredLightingPass::DescribeShaderPackage(),
+		        .PassName = DirectLightingPass::PassName,
+		        .PackageDeclarationName = "DirectLightingShaderPackage",
+		        .Package = DirectLightingPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"DeferredLighting_RootSignature",
-		        .PipelineStateDebugName = L"DeferredLighting_PipelineState"},
+		        .BindingLayoutDebugName = L"DirectLighting_RootSignature",
+		        .PipelineStateDebugName = L"DirectLighting_PipelineState"},
+		    storage,
+		    [](ComputePipelineStateDesc&) {},
+		    outErrorMessage);
+	}
+
+	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
+	{
+		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
+	}
+};
+
+template <> struct RenderPassPipelineTraits<IndirectLightingPass>
+{
+	using RuntimeType = RenderPassRuntimeTraits<IndirectLightingPass>::RuntimeType;
+	using StorageType = RenderPassRuntimeStorage<IndirectLightingPass>;
+
+	static bool CreateRuntimeStorage(
+	    RenderHardwareInterface& rhi,
+	    CookedShaderPackageCache& shaderPackageCache,
+	    StorageType& storage,
+	    std::string& outErrorMessage)
+	{
+		return RenderPassShaderRuntime::TryCreateComputeRuntime(
+		    rhi,
+		    shaderPackageCache,
+		    RenderPassShaderRuntimeDesc{
+		        .PassName = IndirectLightingPass::PassName,
+		        .PackageDeclarationName = "IndirectLightingShaderPackage",
+		        .Package = IndirectLightingPass::DescribeShaderPackage(),
+		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
+		        .BindingLayoutDebugName = L"IndirectLighting_RootSignature",
+		        .PipelineStateDebugName = L"IndirectLighting_PipelineState"},
+		    storage,
+		    [](ComputePipelineStateDesc&) {},
+		    outErrorMessage);
+	}
+
+	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
+	{
+		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
+	}
+};
+
+template <> struct RenderPassPipelineTraits<LightingCompositePass>
+{
+	using RuntimeType = RenderPassRuntimeTraits<LightingCompositePass>::RuntimeType;
+	using StorageType = RenderPassRuntimeStorage<LightingCompositePass>;
+
+	static bool CreateRuntimeStorage(
+	    RenderHardwareInterface& rhi,
+	    CookedShaderPackageCache& shaderPackageCache,
+	    StorageType& storage,
+	    std::string& outErrorMessage)
+	{
+		return RenderPassShaderRuntime::TryCreateComputeRuntime(
+		    rhi,
+		    shaderPackageCache,
+		    RenderPassShaderRuntimeDesc{
+		        .PassName = LightingCompositePass::PassName,
+		        .PackageDeclarationName = "LightingCompositeShaderPackage",
+		        .Package = LightingCompositePass::DescribeShaderPackage(),
+		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
+		        .BindingLayoutDebugName = L"LightingComposite_RootSignature",
+		        .PipelineStateDebugName = L"LightingComposite_PipelineState"},
+		    storage,
+		    [](ComputePipelineStateDesc&) {},
+		    outErrorMessage);
+	}
+
+	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
+	{
+		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
+	}
+};
+
+template <> struct RenderPassPipelineTraits<SkyPass>
+{
+	using RuntimeType = RenderPassRuntimeTraits<SkyPass>::RuntimeType;
+	using StorageType = RenderPassRuntimeStorage<SkyPass>;
+
+	static bool CreateRuntimeStorage(
+	    RenderHardwareInterface& rhi,
+	    CookedShaderPackageCache& shaderPackageCache,
+	    StorageType& storage,
+	    std::string& outErrorMessage)
+	{
+		return RenderPassShaderRuntime::TryCreateComputeRuntime(
+		    rhi,
+		    shaderPackageCache,
+		    RenderPassShaderRuntimeDesc{
+		        .PassName = SkyPass::PassName,
+		        .PackageDeclarationName = "SkyShaderPackage",
+		        .Package = SkyPass::DescribeShaderPackage(),
+		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
+		        .BindingLayoutDebugName = L"Sky_RootSignature",
+		        .PipelineStateDebugName = L"Sky_PipelineState"},
+		    storage,
+		    [](ComputePipelineStateDesc&) {},
+		    outErrorMessage);
+	}
+
+	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
+	{
+		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
+	}
+};
+
+template <> struct RenderPassPipelineTraits<VisualizeBuffersPass>
+{
+	using RuntimeType = RenderPassRuntimeTraits<VisualizeBuffersPass>::RuntimeType;
+	using StorageType = RenderPassRuntimeStorage<VisualizeBuffersPass>;
+
+	static bool CreateRuntimeStorage(
+	    RenderHardwareInterface& rhi,
+	    CookedShaderPackageCache& shaderPackageCache,
+	    StorageType& storage,
+	    std::string& outErrorMessage)
+	{
+		return RenderPassShaderRuntime::TryCreateComputeRuntime(
+		    rhi,
+		    shaderPackageCache,
+		    RenderPassShaderRuntimeDesc{
+		        .PassName = VisualizeBuffersPass::PassName,
+		        .PackageDeclarationName = "VisualizeBuffersShaderPackage",
+		        .Package = VisualizeBuffersPass::DescribeShaderPackage(),
+		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
+		        .BindingLayoutDebugName = L"VisualizeBuffers_RootSignature",
+		        .PipelineStateDebugName = L"VisualizeBuffers_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&) {},
 		    outErrorMessage);

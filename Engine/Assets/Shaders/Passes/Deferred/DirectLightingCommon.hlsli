@@ -1,20 +1,15 @@
-#ifndef SPARKLE_DEFERRED_DIRECT_LIGHTING_HLSLI
-#define SPARKLE_DEFERRED_DIRECT_LIGHTING_HLSLI
+#ifndef SPARKLE_DIRECT_LIGHTING_COMMON_HLSLI
+#define SPARKLE_DIRECT_LIGHTING_COMMON_HLSLI
 
 #include "Resources/ConstantBuffers.hlsli"
 #include "BRDF/BRDF.hlsli"
 
-namespace DeferredDirectLighting
+namespace DirectLighting
 {
 	void AccumulateDirectionalLight(
-		float3 positionWorld,
 		float3 viewDirWorld,
 		float3 normalWorld,
-		float3 baseColor,
 		float roughness,
-		float metallic,
-		float3 subsurfaceColor,
-		float subsurfaceStrength,
 		uint lightIndex,
 		out float3 outDiffuse,
 		out float3 outSpecular,
@@ -33,26 +28,16 @@ namespace DeferredDirectLighting
 
 		const float3 radiance = ViewLighting.DirectionalLights[lightIndex].Color *
 		    ViewLighting.DirectionalLights[lightIndex].Intensity;
-		const float3 dielectricF0 = float3(0.04f, 0.04f, 0.04f);
-		const float3 f0 = lerp(dielectricF0, baseColor, saturate(metallic));
+		const float clampedRoughness = max(roughness, 0.04f);
 
-		float3 directSubsurface;
-		BRDF::Direct::Evaluate(
-		    shadingData,
-		    baseColor,
-		    max(roughness, 0.04f),
-		    saturate(metallic),
-		    f0,
-		    subsurfaceColor,
-		    subsurfaceStrength,
-		    outDiffuse,
-		    outSpecular,
-		    outSubsurface);
+		outDiffuse = BRDF::Diffuse::EvaluateDirectTransport(clampedRoughness, shadingData);
+		outSpecular = BRDF::Specular::EvaluateDirectTransport(shadingData, clampedRoughness);
+		outSubsurface = BRDF::Subsurface::EvaluateDirectTransport(clampedRoughness, shadingData);
 
 		outDiffuse *= radiance * shadingData.NoL;
 		outSpecular *= radiance * shadingData.NoL;
 		outSubsurface *= radiance * shadingData.NoL;
 	}
-}  // namespace DeferredDirectLighting
+}
 
 #endif

@@ -29,7 +29,7 @@ FrameBuildResult BuildFrame(
 
 	const GBufferTargets gbuffer = BuildGBuffer(frameGraph, sceneExtent, sceneTargets);
 
-	BuildLighting(frameGraph, sceneTargets, gbuffer);
+	BuildLighting(frameGraph, sceneExtent, sceneTargets, gbuffer);
 
 	if (presentToBackBuffer)
 	{
