@@ -5,7 +5,7 @@
 #     3. ValidateShaderCompilerBoundary passes (custom target runs as part
 #        of the build).
 #     4. ShaderCompiler.exe exposes reviewer-friendly backend, target, shader,
-#        permutation, package inspection, and negative-test diagnostics.
+#        package inspection, and negative-test diagnostics.
 #     5. ShaderCompiler.exe cook succeeds on the Showcase project.
 #
 #
@@ -141,8 +141,8 @@ try
         & $ShaderCompiler list-shaders --validate
     }
 
-    Invoke-CIStep -Label 'Listing HelloPermutation variants' -Action {
-        & $ShaderCompiler list-permutations HelloPermutation
+    Invoke-CIStep -Label 'Inspecting HelloTriangle shader registration' -Action {
+        & $ShaderCompiler inspect-shader HelloTriangle
     }
 
     Invoke-CIStep -Label 'Cooking shaders for Showcase project' -Action {

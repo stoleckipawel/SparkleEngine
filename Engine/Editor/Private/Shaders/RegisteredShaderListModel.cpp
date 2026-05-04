@@ -24,8 +24,6 @@ void RegisteredShaderListModel::Refresh()
 	{
 		const ShaderParameterStructDescriptor parameters =
 		    shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
-		const ShaderPermutationDomainDescriptor permutations =
-		    shader.BuildPermutationDomainDescriptor != nullptr ? shader.BuildPermutationDomainDescriptor() : ShaderPermutationDomainDescriptor{};
 
 		RegisteredShaderRow row;
 		row.ShaderId = std::string(shader.ShaderName);
@@ -35,7 +33,6 @@ void RegisteredShaderListModel::Refresh()
 		row.Stage = GetShaderStagePrefix(shader.Stage);
 		row.BindingLayoutId = std::string(GetShaderRegistrationBindingLayoutId(shader));
 		row.ParameterCount = parameters.Fields.size();
-		row.PermutationDimensionCount = permutations.Dimensions.size();
 		row.RuntimeGeneration = generation;
 		row.ArtifactDirectory = FindDebugArtifactDirectoryFor(row.ShaderId, row.PackageId);
 		row.ArtifactAvailable = !row.ArtifactDirectory.empty();

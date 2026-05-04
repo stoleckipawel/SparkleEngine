@@ -4,9 +4,9 @@
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
-#include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <format>
 #include <sstream>
@@ -25,7 +25,6 @@ bool ShaderDebugArtifactWriter::Write(
 	if (!Files::TryWriteAllText(bundleDirectory / "compile-request.json", BuildCompileRequestJson(package, stage, options, compiledStage), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "cache-info.json", BuildCacheInfoJson(options, compiledStage), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "defines.json", Json::WriteStringArray(options.Defines), outErrorMessage) ||
-		!Files::TryWriteAllText(bundleDirectory / "permutation-vector.json", BuildPermutationJson(package), outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "preprocessed-source.hlsl", debugArtifacts.PreprocessedSource, outErrorMessage) ||
 		!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage) ||
 		!Files::TryWriteAllText(
@@ -55,11 +54,10 @@ std::string ShaderDebugArtifactWriter::BuildBundleDirectoryName(
 	const CookedStageBuild& compiledStage)
 {
 	const std::string shaderId = Paths::MakeSafePathComponent(package.packageId + "_" + std::string(GetShaderStagePrefix(stage.stage)));
-	const std::uint64_t permutationHash = Hash::Fnv1a64(package.variantId);
 	return std::format(
 	    "{}__{}__{}__{}",
 	    shaderId,
-	    Formatting::FormatHexUInt64(permutationHash),
+	    Formatting::FormatHexUInt64(BuildShaderPackageKey(package.packageId)),
 	    Paths::MakeSafePathComponent(compiledStage.backendName),
 	    Paths::MakeSafePathComponent(GetShaderTargetName(options.Target)));
 }
@@ -72,7 +70,6 @@ std::string ShaderDebugArtifactWriter::BuildCompileRequestJson(
 {
 	Json::ObjectWriter writer;
 	writer.WriteString("packageId", package.packageId);
-	writer.WriteString("variantId", package.variantId);
 	writer.WriteString("bindingLayoutId", package.bindingLayoutId);
 	writer.WriteString("sourcePath", stage.sourcePath.generic_string());
 	writer.WriteString("entryPoint", stage.entryPoint);
@@ -102,14 +99,6 @@ std::string ShaderDebugArtifactWriter::BuildCacheInfoJson(const ShaderCompileOpt
 	writer.WriteString("format", compiledStage.format == CookedShaderBinaryFormat::SpirV ? "SpirV" : "Dxil");
 	writer.WriteString("backend", compiledStage.backendName);
 	writer.WriteUInt64("backendVersion", compiledStage.backendVersion);
-	return writer.Finish();
-}
-
-std::string ShaderDebugArtifactWriter::BuildPermutationJson(const ShaderCookPackageDesc& package)
-{
-	Json::ObjectWriter writer;
-	writer.WriteString("variantId", package.variantId);
-	writer.WriteHexUInt64("variantHash", Hash::Fnv1a64(package.variantId));
 	return writer.Finish();
 }
 

@@ -194,22 +194,19 @@ std::string ShaderConsoleCommands::BuildShaderList()
 	{
 		const ShaderParameterStructDescriptor parameters =
 		    shader.BuildParameterStructDescriptor != nullptr ? shader.BuildParameterStructDescriptor() : ShaderParameterStructDescriptor{};
-		const ShaderPermutationDomainDescriptor permutations =
-		    shader.BuildPermutationDomainDescriptor != nullptr ? shader.BuildPermutationDomainDescriptor() : ShaderPermutationDomainDescriptor{};
 
 		if (!output.empty())
 		{
 			output += '\n';
 		}
 		output += std::format(
-		    "{} package={} stage={} source={} entry={} parameters={} permutationDimensions={}",
+		    "{} package={} stage={} source={} entry={} parameters={}",
 		    shader.ShaderName,
 		    GetShaderRegistrationPackageId(shader),
 		    GetShaderStagePrefix(shader.Stage),
 		    shader.SourcePath,
 		    shader.EntryPoint,
-		    parameters.Fields.size(),
-		    permutations.Dimensions.size());
+		    parameters.Fields.size());
 	}
 	return output;
 }

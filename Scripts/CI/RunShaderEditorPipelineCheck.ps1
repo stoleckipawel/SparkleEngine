@@ -25,7 +25,6 @@ $TargetShader = Join-Path $RepoRoot 'Engine\Assets\Shaders\HelloWorld\HelloTrian
 $RequiredBundleFiles = @(
     'compile-request.json',
     'defines.json',
-    'permutation-vector.json',
     'preprocessed-source.hlsl',
     'reflection.json',
     'parameter-struct-match.json',

@@ -29,7 +29,6 @@ ShaderPackageDefinition IndirectLightingPass::DescribeShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
 		.PackageId = PassName,
-		.VariantId = "Default",
 		.BindingLayoutId = PassName,
 		.ExpectedStages = ShaderStageMask::Compute};
 }

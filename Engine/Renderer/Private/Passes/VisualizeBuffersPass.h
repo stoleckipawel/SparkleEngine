@@ -30,9 +30,7 @@ struct VisualizeBuffersPassParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferEmissive;
 	ShaderTexture2D<void> GBufferSubsurface;
-	ShaderTexture2D<void> GBufferDeviceZ;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
-	ShaderUniform<PerViewConstantBufferData> PerView;
 
 	static void Describe(ShaderParameterStructBuilder<VisualizeBuffersPassParameters>& builder)
 	{
@@ -48,9 +46,7 @@ struct VisualizeBuffersPassParameters
 		builder.ReadTexture("GBufferMaterial", &VisualizeBuffersPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferEmissive", &VisualizeBuffersPassParameters::GBufferEmissive, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &VisualizeBuffersPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
-		builder.ReadTexture("GBufferDeviceZ", &VisualizeBuffersPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &VisualizeBuffersPassParameters::PerFrame, ShaderStageVisibility::Compute);
-		builder.Uniform("PerView", &VisualizeBuffersPassParameters::PerView, ShaderStageVisibility::Compute);
 	}
 };
 

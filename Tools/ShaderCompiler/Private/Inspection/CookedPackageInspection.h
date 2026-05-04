@@ -55,7 +55,6 @@ struct InspectedCookedShaderPackage final
 	std::uint64_t packageKey = 0;
 	std::uint64_t sourceIdentityHash = 0;
 	std::uint64_t bindingLayoutHash = 0;
-	std::uint64_t variantHash = 0;
 	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
 	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
 	std::uint32_t rayTracingPayloadSizeInBytes = 0;

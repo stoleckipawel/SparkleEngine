@@ -13,15 +13,13 @@ inline constexpr std::size_t kBinaryBlobInitialReserveBytes = 4096;
 
 inline constexpr std::string_view kRegistryHeaderSection = "[ShaderPackageRegistry]";
 inline constexpr std::string_view kRegistryKeyVersion = "Version";
-inline constexpr std::uint32_t kRegistryFormatVersion = 1;
+inline constexpr std::uint32_t kRegistryFormatVersion = 2;
 inline constexpr std::string_view kRegistryKeyPackageCount = "PackageCount";
 inline constexpr std::string_view kRegistryPackageSectionPrefix = "Package ";
-inline constexpr std::string_view kRegistryKeyVariant = "Variant";
 inline constexpr std::string_view kRegistryKeyBindingLayout = "BindingLayout";
 inline constexpr std::string_view kRegistryKeyPackageKey = "PackageKey";
 inline constexpr std::string_view kRegistryKeySourceIdentityHash = "SourceIdentityHash";
 inline constexpr std::string_view kRegistryKeyBindingLayoutHash = "BindingLayoutHash";
-inline constexpr std::string_view kRegistryKeyVariantHash = "VariantHash";
 inline constexpr std::string_view kRegistryKeyDeclaredStages = "DeclaredStages";
 inline constexpr std::string_view kRegistryKeyOutput = "Output";
 
@@ -30,7 +28,6 @@ inline constexpr std::string_view kCommandListBackends = "list-backends";
 inline constexpr std::string_view kCommandListTargets = "list-targets";
 inline constexpr std::string_view kCommandInspectPackage = "inspect-package";
 inline constexpr std::string_view kCommandListShaders = "list-shaders";
-inline constexpr std::string_view kCommandListPermutations = "list-permutations";
 inline constexpr std::string_view kCommandInspectShader = "inspect-shader";
 
 inline constexpr std::string_view kDxcCompilerLoggerCategory = "Tools.ShaderCompiler";

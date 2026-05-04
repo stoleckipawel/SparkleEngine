@@ -37,12 +37,10 @@ bool CookedRegistryWriter::Write(
 	for (const CookedShaderPackageOutput& package : packages)
 	{
 		output << '[' << kRegistryPackageSectionPrefix << package.packageId << "]\n";
-		output << kRegistryKeyVariant << " = " << package.variantId << '\n';
 		output << kRegistryKeyBindingLayout << " = " << package.bindingLayoutId << '\n';
 		output << kRegistryKeyPackageKey << " = " << Formatting::FormatHexUInt64(package.packageKey) << '\n';
 		output << kRegistryKeySourceIdentityHash << " = " << Formatting::FormatHexUInt64(package.sourceIdentityHash) << '\n';
 		output << kRegistryKeyBindingLayoutHash << " = " << Formatting::FormatHexUInt64(package.bindingLayoutHash) << '\n';
-		output << kRegistryKeyVariantHash << " = " << Formatting::FormatHexUInt64(package.variantHash) << '\n';
 		output << kRegistryKeyDeclaredStages << " = " << FormatShaderStageMask(package.declaredStages) << '\n';
 		output << kRegistryKeyOutput << " = " << MakeProjectRelativeString(package.outputPath) << "\n\n";
 	}

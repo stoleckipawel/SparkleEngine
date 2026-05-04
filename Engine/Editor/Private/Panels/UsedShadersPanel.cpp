@@ -161,7 +161,7 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 	    ImGuiTableFlags_Reorderable |
 	    ImGuiTableFlags_ScrollX |
 	    ImGuiTableFlags_ScrollY;
-	if (!ImGui::BeginTable("##UsedShadersTable", 12, tableFlags, ImVec2(0.0f, 0.0f)))
+	if (!ImGui::BeginTable("##UsedShadersTable", 11, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
 	}
@@ -174,7 +174,6 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 	ImGui::TableSetupColumn("Entry");
 	ImGui::TableSetupColumn("Layout");
 	ImGui::TableSetupColumn("Params");
-	ImGui::TableSetupColumn("Permutations");
 	ImGui::TableSetupColumn("Backend/Target");
 	ImGui::TableSetupColumn("Generation");
 	ImGui::TableSetupColumn("Artifacts");
@@ -209,8 +208,6 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 		ImGui::TextUnformatted(row.BindingLayoutId.c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text("%zu", row.ParameterCount);
-		ImGui::TableNextColumn();
-		ImGui::Text("%zu", row.PermutationDimensionCount);
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("auto / DxilSm66");
 		ImGui::TableNextColumn();

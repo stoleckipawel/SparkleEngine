@@ -298,10 +298,9 @@ bool CookedPackageWriter::Write(
 	header.RayTracingPayloadSizeInBytes = package.rayTracingPayloadSizeInBytes;
 	header.RayTracingAttributeSizeInBytes = package.rayTracingAttributeSizeInBytes;
 	header.RayTracingMaxRecursionDepth = package.rayTracingMaxRecursionDepth;
-	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId, package.variantId);
+	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId);
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
 	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
-	header.VariantHash = BuildShaderVariantHash(package.variantId);
 
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
 	const std::filesystem::path tempPackagePath = BuildTemporaryPath(packagePath);
@@ -342,13 +341,11 @@ bool CookedPackageWriter::Write(
 	}
 
 	outPackageOutput.packageId = package.packageId;
-	outPackageOutput.variantId = package.variantId;
 	outPackageOutput.bindingLayoutId = package.bindingLayoutId;
 	outPackageOutput.outputPath = packagePath;
 	outPackageOutput.packageKey = header.ShaderPackageKey;
 	outPackageOutput.sourceIdentityHash = header.SourceIdentityHash;
 	outPackageOutput.bindingLayoutHash = header.BindingLayoutHash;
-	outPackageOutput.variantHash = header.VariantHash;
 	outPackageOutput.declaredStages = header.DeclaredStages;
 	outErrorMessage.clear();
 	return true;

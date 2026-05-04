@@ -6,7 +6,6 @@
 #include "Cli/InspectPackageCommand.h"
 #include "Cli/InspectShaderCommand.h"
 #include "Cli/ListBackendsCommand.h"
-#include "Cli/ListPermutationsCommand.h"
 #include "Cli/ListShadersCommand.h"
 #include "Cli/ListTargetsCommand.h"
 #include "Constants/ShaderCompilerConstants.h"
@@ -43,12 +42,6 @@ CommandRegistry::CommandRegistry()
 	    .verbs = {kCommandListShaders},
 	    .command = std::make_shared<ListShadersCommand>(),
 	    .usageLine = "  ShaderCompiler list-shaders [--validate]",
-	    .legacyUsageLine = {}});
-
-	m_registrations.push_back(Registration{
-	    .verbs = {kCommandListPermutations},
-	    .command = std::make_shared<ListPermutationsCommand>(),
-	    .usageLine = "  ShaderCompiler list-permutations <shader-id>",
 	    .legacyUsageLine = {}});
 
 	m_registrations.push_back(Registration{

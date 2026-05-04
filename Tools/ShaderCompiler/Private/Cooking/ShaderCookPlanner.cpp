@@ -9,56 +9,10 @@
 #include "Shaders/Authoring/GlobalShader.h"
 #include "Shaders/ShaderPackageLayoutBuilder.h"
 
-#include <format>
 #include <algorithm>
+#include <format>
 #include <unordered_map>
 #include <unordered_set>
-
-static ShaderPermutationDomainDescriptor BuildPermutationDomain(const ShaderRegistrationDesc& shader)
-{
-	return shader.BuildPermutationDomainDescriptor != nullptr ? shader.BuildPermutationDomainDescriptor() : ShaderPermutationDomainDescriptor{};
-}
-
-static bool ArePermutationDomainsEqual(
-    const ShaderPermutationDomainDescriptor& lhs,
-    const ShaderPermutationDomainDescriptor& rhs) noexcept
-{
-	if (lhs.Dimensions.size() != rhs.Dimensions.size())
-	{
-		return false;
-	}
-
-	for (std::size_t dimensionIndex = 0; dimensionIndex < lhs.Dimensions.size(); ++dimensionIndex)
-	{
-		const ShaderPermutationDimensionDescriptor& lhsDimension = lhs.Dimensions[dimensionIndex];
-		const ShaderPermutationDimensionDescriptor& rhsDimension = rhs.Dimensions[dimensionIndex];
-		if (lhsDimension.Name != rhsDimension.Name || lhsDimension.DefineName != rhsDimension.DefineName ||
-		    lhsDimension.ValueCount != rhsDimension.ValueCount || lhsDimension.Values.size() != rhsDimension.Values.size())
-		{
-			return false;
-		}
-
-		for (std::size_t valueIndex = 0; valueIndex < lhsDimension.Values.size(); ++valueIndex)
-		{
-			const ShaderPermutationValueDescriptor& lhsValue = lhsDimension.Values[valueIndex];
-			const ShaderPermutationValueDescriptor& rhsValue = rhsDimension.Values[valueIndex];
-			if (lhsValue.Name != rhsValue.Name || lhsValue.DefineValue != rhsValue.DefineValue)
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-static std::string BuildPackageVariantIndexKey(std::string_view packageId, std::string_view variantId)
-{
-	std::string key(packageId);
-	key += "#variant#";
-	key += variantId;
-	return key;
-}
 
 ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStageDesc& stage)
 {
@@ -69,7 +23,6 @@ ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStag
 	options.PackageKind = stage.packageKind;
 	options.PackageFeatures = stage.packageFeatures;
 	options.RayTracingExportKind = stage.rayTracingExportKind;
-	options.Defines = BuildShaderPermutationDefines(stage.permutationDomain, stage.permutationVector);
 
 	const std::filesystem::path& projectShaderRoot = Paths::ShaderSourceRoot(PathRoot::Project);
 	const std::filesystem::path& engineShaderRoot = Paths::ShaderSourceRoot(PathRoot::Engine);
@@ -161,7 +114,6 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildSingleShaderPackage(c
 	package.packageId = settings.singleShaderPath.stem().string();
 	package.bindingLayoutId = "Empty";
 	package.bindingLayout = PassParameterLayout("Empty");
-	package.variantId = "Default";
 	package.stages.push_back(ShaderCookStageDesc{
 	    .stage = ShaderStage::Vertex,
 	    .sourcePath = settings.singleShaderPath,
@@ -187,7 +139,6 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	const std::string requested(requestedPackageId);
 	std::unordered_set<std::string> packageIdsSelectedBySource;
 	std::vector<const ShaderRegistrationDesc*> selectedShaders;
-	std::unordered_map<std::string, ShaderPermutationDomainDescriptor> packagePermutationDomains;
 	if (!requested.empty())
 	{
 		for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
@@ -216,112 +167,79 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		}
 
 		selectedShaders.push_back(&shader);
-		ShaderPermutationDomainDescriptor shaderDomain = BuildPermutationDomain(shader);
-		if (shaderDomain.Dimensions.empty())
-		{
-			continue;
-		}
-
-		auto domainIt = packagePermutationDomains.find(packageId);
-		if (domainIt == packagePermutationDomains.end())
-		{
-			packagePermutationDomains.emplace(packageId, std::move(shaderDomain));
-		}
-		else if (!ArePermutationDomainsEqual(domainIt->second, shaderDomain))
-		{
-			outErrorMessage = std::format("Typed shader package '{}' mixes incompatible permutation domains", packageId);
-			return {};
-		}
 	}
 
 	for (const ShaderRegistrationDesc* shaderPtr : selectedShaders)
 	{
 		const ShaderRegistrationDesc& shader = *shaderPtr;
 		const std::string packageId = GetShaderRegistrationPackageId(shader);
-		const std::string shaderName(shader.ShaderName);
-		const ShaderPermutationDomainDescriptor packageDomain = packagePermutationDomains.contains(packageId)
-		    ? packagePermutationDomains.at(packageId)
-		    : ShaderPermutationDomainDescriptor{};
-		const std::vector<ShaderPermutationVector> permutationVectors = EnumerateShaderPermutationVectors(packageDomain);
-
-		for (const ShaderPermutationVector& permutationVector : permutationVectors)
+		const std::string rayTracingExportName =
+		    shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName);
+		const std::string bindingLayoutId(GetShaderRegistrationBindingLayoutId(shader));
+		auto packageIt = packageIndices.find(packageId);
+		if (packageIt == packageIndices.end())
 		{
-			const std::string rayTracingExportName = shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName);
-			const ShaderPermutationKey permutationKey = BuildShaderPermutationKey(packageDomain, permutationVector);
-			const std::string variantId = BuildShaderPermutationVariantId(permutationKey);
-			const std::string packageVariantKey = BuildPackageVariantIndexKey(packageId, variantId);
-
-			const std::string bindingLayoutId(GetShaderRegistrationBindingLayoutId(shader));
-			auto packageIt = packageIndices.find(packageVariantKey);
-			if (packageIt == packageIndices.end())
+			PassParameterLayout bindingLayout;
+			if (!ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), bindingLayout, outErrorMessage))
 			{
-				PassParameterLayout bindingLayout;
-				if (!ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), bindingLayout, outErrorMessage))
-				{
-					return {};
-				}
-
-				ShaderCookPackageDesc package;
-				package.packageId = packageId;
-				package.bindingLayoutId = bindingLayoutId;
-				package.bindingLayout = std::move(bindingLayout);
-				package.variantId = variantId;
-				package.packageKind = shader.PackageKind;
-				package.packageFeatures = shader.PackageFeatures;
-				package.rayTracingPayloadSizeInBytes = shader.RayTracingPayloadSizeInBytes;
-				package.rayTracingAttributeSizeInBytes = shader.RayTracingAttributeSizeInBytes;
-				package.rayTracingMaxRecursionDepth = shader.RayTracingMaxRecursionDepth;
-				packages.push_back(std::move(package));
-				packageIt = packageIndices.emplace(packageVariantKey, packages.size() - 1).first;
-			}
-
-			ShaderCookPackageDesc& package = packages[packageIt->second];
-			if (package.bindingLayoutId != bindingLayoutId)
-			{
-				outErrorMessage = std::format(
-				    "Typed shader package '{}' mixes binding layouts '{}' and '{}'",
-				    packageId,
-				    package.bindingLayoutId,
-				    bindingLayoutId);
 				return {};
 			}
-			if (package.packageKind != shader.PackageKind)
-			{
-				outErrorMessage = std::format(
-				    "Typed shader package '{}' mixes package kinds {} and {}",
-				    packageId,
-				    static_cast<std::uint32_t>(package.packageKind),
-				    static_cast<std::uint32_t>(shader.PackageKind));
-				return {};
-			}
-			package.packageFeatures |= shader.PackageFeatures;
-			package.rayTracingPayloadSizeInBytes = std::max(package.rayTracingPayloadSizeInBytes, shader.RayTracingPayloadSizeInBytes);
-			package.rayTracingAttributeSizeInBytes = std::max(package.rayTracingAttributeSizeInBytes, shader.RayTracingAttributeSizeInBytes);
-			package.rayTracingMaxRecursionDepth = std::max(package.rayTracingMaxRecursionDepth, shader.RayTracingMaxRecursionDepth);
 
-			const std::uint32_t stageIndex = static_cast<std::uint32_t>(package.stages.size());
-			package.stages.push_back(ShaderCookStageDesc{
-			    .stage = shader.Stage,
-			    .sourcePath = std::filesystem::path(std::string(shader.SourcePath)),
+			ShaderCookPackageDesc package;
+			package.packageId = packageId;
+			package.bindingLayoutId = bindingLayoutId;
+			package.bindingLayout = std::move(bindingLayout);
+			package.packageKind = shader.PackageKind;
+			package.packageFeatures = shader.PackageFeatures;
+			package.rayTracingPayloadSizeInBytes = shader.RayTracingPayloadSizeInBytes;
+			package.rayTracingAttributeSizeInBytes = shader.RayTracingAttributeSizeInBytes;
+			package.rayTracingMaxRecursionDepth = shader.RayTracingMaxRecursionDepth;
+			packages.push_back(std::move(package));
+			packageIt = packageIndices.emplace(packageId, packages.size() - 1).first;
+		}
+
+		ShaderCookPackageDesc& package = packages[packageIt->second];
+		if (package.bindingLayoutId != bindingLayoutId)
+		{
+			outErrorMessage = std::format(
+			    "Typed shader package '{}' mixes binding layouts '{}' and '{}'",
+			    packageId,
+			    package.bindingLayoutId,
+			    bindingLayoutId);
+			return {};
+		}
+		if (package.packageKind != shader.PackageKind)
+		{
+			outErrorMessage = std::format(
+			    "Typed shader package '{}' mixes package kinds {} and {}",
+			    packageId,
+			    static_cast<std::uint32_t>(package.packageKind),
+			    static_cast<std::uint32_t>(shader.PackageKind));
+			return {};
+		}
+		package.packageFeatures |= shader.PackageFeatures;
+		package.rayTracingPayloadSizeInBytes = std::max(package.rayTracingPayloadSizeInBytes, shader.RayTracingPayloadSizeInBytes);
+		package.rayTracingAttributeSizeInBytes = std::max(package.rayTracingAttributeSizeInBytes, shader.RayTracingAttributeSizeInBytes);
+		package.rayTracingMaxRecursionDepth = std::max(package.rayTracingMaxRecursionDepth, shader.RayTracingMaxRecursionDepth);
+
+		const std::uint32_t stageIndex = static_cast<std::uint32_t>(package.stages.size());
+		package.stages.push_back(ShaderCookStageDesc{
+		    .stage = shader.Stage,
+		    .sourcePath = std::filesystem::path(std::string(shader.SourcePath)),
+		    .entryPoint = std::string(shader.EntryPoint),
+		    .packageKind = shader.PackageKind,
+		    .packageFeatures = shader.PackageFeatures,
+		    .rayTracingExportKind = shader.RayTracingExportKind,
+		    .rayTracingExportName = rayTracingExportName});
+
+		if (shader.PackageKind == CookedShaderPackageKind::RayTracingLibrary)
+		{
+			package.rayTracingExports.push_back(ShaderCookRayTracingExportDesc{
+			    .exportLookupName = rayTracingExportName,
+			    .kind = shader.RayTracingExportKind,
+			    .exportName = rayTracingExportName,
 			    .entryPoint = std::string(shader.EntryPoint),
-			    .packageKind = shader.PackageKind,
-			    .packageFeatures = shader.PackageFeatures,
-			    .rayTracingExportKind = shader.RayTracingExportKind,
-			    .rayTracingExportName = shader.RayTracingExportName.empty() ? std::string(shader.EntryPoint) : std::string(shader.RayTracingExportName),
-			    .permutationDomain = packageDomain,
-			    .permutationVector = permutationVector,
-			    .permutationKey = permutationKey,
-			    .permutationVectorName = BuildShaderPermutationVectorName(packageDomain, permutationVector)});
-
-			if (shader.PackageKind == CookedShaderPackageKind::RayTracingLibrary)
-			{
-				package.rayTracingExports.push_back(ShaderCookRayTracingExportDesc{
-				    .exportLookupName = rayTracingExportName,
-				    .kind = shader.RayTracingExportKind,
-				    .exportName = rayTracingExportName,
-				    .entryPoint = std::string(shader.EntryPoint),
-				    .stageIndex = stageIndex});
-			}
+			    .stageIndex = stageIndex});
 		}
 	}
 

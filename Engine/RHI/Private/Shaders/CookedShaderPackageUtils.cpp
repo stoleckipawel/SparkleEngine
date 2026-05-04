@@ -43,16 +43,10 @@ namespace
 	}
 }  // namespace
 
-std::uint64_t BuildShaderPackageKey(std::string_view packageId, std::string_view variantId)
+std::uint64_t BuildShaderPackageKey(std::string_view packageId)
 {
 	const std::string normalizedPackageId = NormalizeShaderPackageToken(packageId);
-	const std::string normalizedVariantId = NormalizeShaderPackageToken(variantId, "default");
-	return Hash::Fnv1a64(normalizedPackageId + "#variant#" + normalizedVariantId);
-}
-
-std::uint64_t BuildShaderVariantHash(std::string_view variantId)
-{
-	return Hash::Fnv1a64(NormalizeShaderPackageToken(variantId, "default"));
+	return Hash::Fnv1a64(normalizedPackageId);
 }
 
 std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)

@@ -32,9 +32,7 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	canonical += '|';
 	canonical += std::to_string(kShaderCacheSchemaVersion);
 	canonical += '|';
-	canonical += std::to_string(static_cast<std::uint64_t>(::BuildShaderPackageKey(package.packageId, package.variantId)));
-	canonical += '|';
-	canonical += package.variantId;
+	canonical += std::to_string(static_cast<std::uint64_t>(::BuildShaderPackageKey(package.packageId)));
 	canonical += '|';
 	canonical += package.bindingLayoutId;
 	canonical += '|';

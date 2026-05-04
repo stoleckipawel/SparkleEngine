@@ -21,6 +21,10 @@
 
 setlocal enabledelayedexpansion
 
+set "ASSET_CONVERTER_EXE="
+set "SHADER_COMPILER_EXE="
+set "TEXTURE_COOKER_EXE="
+
 if /I "%~1"=="PrepareCookTools" (
     set "REQUEST_ASSET_CONVERTER=1"
     set "REQUEST_TEXTURE_COOKER=1"
@@ -63,6 +67,25 @@ call "%~dp0Config.bat"
 set "CONFIG=%~2"
 if "%CONFIG%"=="" set "CONFIG=Debug"
 
+if "!REQUEST_SHADER_COMPILER!"=="1" (
+    call :LOCATE_SHADER_COMPILER_EXE "!CONFIG!"
+    if defined SHADER_COMPILER_EXE (
+        call :IS_SHADER_COMPILER_STALE "!SHADER_COMPILER_EXE!"
+        if "!ERRORLEVEL!"=="0" (
+            echo.
+            echo [LOG] Step 0/3: ShaderCompiler is up to date. Skipping GenerateSolution and build.
+            set "ASSET_COOKING_RC=0"
+            goto :FINISH
+        )
+
+        echo.
+        echo [LOG] Step 0/3: ShaderCompiler inputs changed. Refreshing build files and rebuilding tool...
+    ) else (
+        echo.
+        echo [LOG] Step 0/3: ShaderCompiler.exe missing. Preparing tool build...
+    )
+)
+
 echo.
 echo [LOG] Step 1/3: Validating build tools...
 set "PARENT_BATCH=1"
@@ -99,10 +122,6 @@ for %%T in (!BUILD_TARGETS!) do (
         goto :FINISH
     )
 )
-
-set "ASSET_CONVERTER_EXE="
-set "SHADER_COMPILER_EXE="
-set "TEXTURE_COOKER_EXE="
 if "!REQUEST_ASSET_CONVERTER!"=="1" (
     for %%P in (
         "!BUILD_DIR!\bin\!CONFIG!\AssetConverter.exe"
@@ -142,16 +161,7 @@ if "!REQUEST_TEXTURE_COOKER!"=="1" (
 )
 
 if "!REQUEST_SHADER_COMPILER!"=="1" (
-    for %%P in (
-        "!BUILD_DIR!\bin\!CONFIG!\ShaderCompiler.exe"
-        "!BUILD_DIR!\bin\ShaderCompiler.exe"
-        "!BIN_DIR!\!CONFIG!\ShaderCompiler.exe"
-        "!BIN_DIR!\ShaderCompiler.exe"
-    ) do (
-        if not defined SHADER_COMPILER_EXE (
-            if exist "%%~P" set "SHADER_COMPILER_EXE=%%~fP"
-        )
-    )
+    call :LOCATE_SHADER_COMPILER_EXE "!CONFIG!"
 
     if not defined SHADER_COMPILER_EXE (
         echo [ERROR] ShaderCompiler.exe was not found after build.
@@ -162,6 +172,31 @@ if "!REQUEST_SHADER_COMPILER!"=="1" (
 
 set "ASSET_COOKING_RC=0"
 goto :FINISH
+
+:LOCATE_SHADER_COMPILER_EXE
+set "SHADER_COMPILER_EXE="
+for %%P in (
+    "!BUILD_DIR!\bin\%~1\ShaderCompiler.exe"
+    "!BUILD_DIR!\bin\ShaderCompiler.exe"
+    "!BIN_DIR!\%~1\ShaderCompiler.exe"
+    "!BIN_DIR!\ShaderCompiler.exe"
+) do (
+    if not defined SHADER_COMPILER_EXE (
+        if exist "%%~P" set "SHADER_COMPILER_EXE=%%~fP"
+    )
+)
+exit /B 0
+
+:IS_SHADER_COMPILER_STALE
+set "_STALE_RC=1"
+set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%_POWERSHELL_EXE%" set "_POWERSHELL_EXE=powershell"
+
+"%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0Test-ToolInputsNewerThan.ps1" ^
+    -ReferencePath "%~1" ^
+    -PathList "!ROOT_DIR!\Tools\ShaderCompiler;!ROOT_DIR!\Engine\RHI;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Engine\CMakeLists.txt;!ROOT_DIR!\Engine\RHI\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\ShaderCompiler\CMakeLists.txt"
+set "_STALE_RC=%ERRORLEVEL%"
+exit /B %_STALE_RC%
 
 :FINISH
 set "_TMP_ASSET_CONVERTER_EXE=%ASSET_CONVERTER_EXE%"

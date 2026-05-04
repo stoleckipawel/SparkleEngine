@@ -16,6 +16,9 @@
 
 setlocal enabledelayedexpansion
 
+set "INTERACTIVE=1"
+if defined PARENT_BATCH set "INTERACTIVE=0"
+
 if not defined LOG_CAPTURED (
 	call "%~dp0..\Internal\BootstrapLog.bat" "%~f0" %*
 	set "BOOTSTRAP_RC=!ERRORLEVEL!"
@@ -33,6 +36,7 @@ set "TOTAL_SCENE_COUNT=0"
 set "ENGINE_SCENE_COUNT=0"
 set "PROJECT_SCENE_COUNT=0"
 set "OVERRIDDEN_ENGINE_COUNT=0"
+set "TEXTURE_REQUEST_COUNT=0"
 set "COOK_TEMP_DIR=!BUILD_DIR!\Cook\Temp"
 if not exist "!COOK_TEMP_DIR!" mkdir "!COOK_TEMP_DIR!" >nul 2>&1
 set "SCENE_LIST_FILE=!COOK_TEMP_DIR!\sparkle-cooktextures-%RANDOM%%RANDOM%.txt"
@@ -178,6 +182,10 @@ if errorlevel 1 (
 	goto :FINISH
 )
 
+for /f "usebackq skip=1 delims=" %%L in ("!TEXTURE_REQUEST_FILE!") do (
+	if not "%%~L"=="" set /A "TEXTURE_REQUEST_COUNT+=1"
+)
+
 echo.
 echo [LOG] Cooking texture assets and metadata through standalone TextureCooker...
 pushd "!PROJECT_ROOT!" >nul
@@ -216,4 +224,46 @@ set "EXIT_RC=1"
 if exist "%SCENE_LIST_FILE%" del /q "%SCENE_LIST_FILE%" >nul 2>&1
 if exist "%SCENE_SUMMARY_FILE%" del /q "%SCENE_SUMMARY_FILE%" >nul 2>&1
 if exist "%TEXTURE_REQUEST_FILE%" del /q "%TEXTURE_REQUEST_FILE%" >nul 2>&1
-endlocal & exit /B %EXIT_RC%
+set "_TMP_LOGFILE=%LOGFILE%"
+set "_TMP_RC=%EXIT_RC%"
+set "_TMP_INTERACTIVE=%INTERACTIVE%"
+set "_TMP_TARGET_PROJECT=%TARGET_PROJECT%"
+set "_TMP_CONFIG=%CONFIG%"
+set "_TMP_TOTAL_SCENE_COUNT=%TOTAL_SCENE_COUNT%"
+set "_TMP_TEXTURE_REQUEST_COUNT=%TEXTURE_REQUEST_COUNT%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "_INTERACTIVE=%_TMP_INTERACTIVE%" & set "_TARGET_PROJECT=%_TMP_TARGET_PROJECT%" & set "_CONFIG=%_TMP_CONFIG%" & set "_TOTAL_SCENE_COUNT=%_TMP_TOTAL_SCENE_COUNT%" & set "_TEXTURE_REQUEST_COUNT=%_TMP_TEXTURE_REQUEST_COUNT%"
+
+if "%_INTERACTIVE%"=="0" (
+	set "_INTERACTIVE="
+	set "_TARGET_PROJECT="
+	set "_CONFIG="
+	set "_TOTAL_SCENE_COUNT="
+	set "_TEXTURE_REQUEST_COUNT="
+	exit /B %EXIT_RC%
+)
+set "_INTERACTIVE="
+
+echo.
+echo ============================================================
+if "%EXIT_RC%"=="0" (
+	echo   [SUCCESS] CookTextures completed successfully.
+	echo   Project: %_TARGET_PROJECT%
+	echo   Configuration: %_CONFIG%
+	echo   Scene inputs inspected: %_TOTAL_SCENE_COUNT%
+	echo   Unique texture requests: %_TEXTURE_REQUEST_COUNT%
+	echo   Texture assets: build\Cooked\%_TARGET_PROJECT%\Textures\
+) else (
+	echo   [ERROR] CookTextures completed with errors.
+	echo   Project: %_TARGET_PROJECT%
+	echo   Configuration: %_CONFIG%
+	if not "%_TOTAL_SCENE_COUNT%"=="" echo   Scene inputs inspected: %_TOTAL_SCENE_COUNT%
+)
+echo ============================================================
+echo.
+echo [LOG] Logs: %LOGFILE%
+set "_TARGET_PROJECT="
+set "_CONFIG="
+set "_TOTAL_SCENE_COUNT="
+set "_TEXTURE_REQUEST_COUNT="
+pause
+exit /B %EXIT_RC%

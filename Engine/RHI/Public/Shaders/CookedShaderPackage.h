@@ -16,9 +16,8 @@ constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, cha
 }
 
 constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
-// v4: shader packages describe their pipeline kind and ray tracing readiness
-// metadata. RT export records stay separate from graphics/compute stage masks.
-constexpr std::uint32_t kCookedShaderPackageVersion = 4;
+// v5: shader packages carry only package, binding-layout, and stage metadata.
+constexpr std::uint32_t kCookedShaderPackageVersion = 5;
 
 enum class CookedShaderPackageKind : std::uint8_t
 {
@@ -135,7 +134,6 @@ struct CookedShaderPackageHeader
 	std::uint64_t ShaderPackageKey = 0;
 	std::uint64_t SourceIdentityHash = 0;
 	std::uint64_t BindingLayoutHash = 0;
-	std::uint64_t VariantHash = 0;
 
 	constexpr bool Matches(std::uint32_t expectedMagic, std::uint32_t expectedVersion) const noexcept
 	{

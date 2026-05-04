@@ -15,6 +15,9 @@
 
 setlocal enabledelayedexpansion
 
+set "INTERACTIVE=1"
+if defined PARENT_BATCH set "INTERACTIVE=0"
+
 if not defined LOG_CAPTURED (
 	call "%~dp0..\Internal\BootstrapLog.bat" "%~f0" %*
 	set "BOOTSTRAP_RC=!ERRORLEVEL!"
@@ -169,4 +172,38 @@ echo.
 set "EXIT_RC=1"
 
 :FINISH
-endlocal & exit /B %EXIT_RC%
+set "_TMP_LOGFILE=%LOGFILE%"
+set "_TMP_RC=%EXIT_RC%"
+set "_TMP_INTERACTIVE=%INTERACTIVE%"
+set "_TMP_TARGET_PROJECT=%TARGET_PROJECT%"
+set "_TMP_CONFIG=%CONFIG%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "_INTERACTIVE=%_TMP_INTERACTIVE%" & set "_TARGET_PROJECT=%_TMP_TARGET_PROJECT%" & set "_CONFIG=%_TMP_CONFIG%"
+
+if "%_INTERACTIVE%"=="0" (
+	set "_INTERACTIVE="
+	set "_TARGET_PROJECT="
+	set "_CONFIG="
+	exit /B %EXIT_RC%
+)
+set "_INTERACTIVE="
+
+echo.
+echo ============================================================
+if "%EXIT_RC%"=="0" (
+	echo   [SUCCESS] CookShaders completed successfully.
+	echo   Project: %_TARGET_PROJECT%
+	echo   Configuration: %_CONFIG%
+	echo   Shader packages: build\Cooked\%_TARGET_PROJECT%\Shaders\Packages\
+	echo   Shader registry: build\Cooked\%_TARGET_PROJECT%\Shaders\ShaderPackageRegistry.sreg
+) else (
+	echo   [ERROR] CookShaders completed with errors.
+	echo   Project: %_TARGET_PROJECT%
+	echo   Configuration: %_CONFIG%
+)
+echo ============================================================
+echo.
+echo [LOG] Logs: %LOGFILE%
+set "_TARGET_PROJECT="
+set "_CONFIG="
+pause
+exit /B %EXIT_RC%

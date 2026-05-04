@@ -19,7 +19,7 @@ bool PsoStatsPass::WriteCsv(
 	outResult.outputPath = analysisDirectory / "pso-stats.csv";
 
 	std::ostringstream csv;
-	csv << "packageId,variantId,packageKey,stage,format,backend,entryPoint,bytecodeSize,resourceBindings,constantBuffers,inputElements,pushConstants,specializationConstants\n";
+	csv << "packageId,packageKey,stage,format,backend,entryPoint,bytecodeSize,resourceBindings,constantBuffers,inputElements,pushConstants,specializationConstants\n";
 
 	for (const CookedShaderPackageOutput& package : packages)
 	{
@@ -33,7 +33,6 @@ bool PsoStatsPass::WriteCsv(
 		for (const InspectedCookedShaderBinary& binary : inspectedPackage.binaries)
 		{
 			csv << Strings::EscapeCsvField(package.packageId) << ','
-			    << Strings::EscapeCsvField(package.variantId) << ','
 			    << Formatting::FormatHexUInt64(package.packageKey) << ','
 			    << Strings::EscapeCsvField(GetShaderStagePrefix(binary.stage)) << ','
 			    << Strings::EscapeCsvField(CookedPackageInspection::GetBinaryFormatName(binary.format)) << ','

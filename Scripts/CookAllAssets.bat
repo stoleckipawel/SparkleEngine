@@ -19,6 +19,9 @@
 
 setlocal enabledelayedexpansion
 
+set "INTERACTIVE=1"
+if defined PARENT_BATCH set "INTERACTIVE=0"
+
 call "%~dp0Internal\Config.bat"
 
 set "EXIT_RC=1"
@@ -193,4 +196,42 @@ echo.
 set "EXIT_RC=1"
 
 :FINISH
-endlocal & exit /B %EXIT_RC%
+set "_TMP_RC=%EXIT_RC%"
+set "_TMP_INTERACTIVE=%INTERACTIVE%"
+set "_TMP_TARGET=%SUMMARY_TARGET%"
+set "_TMP_CONFIG=%CONFIG%"
+set "_TMP_COOKED_PROJECT_COUNT=%COOKED_PROJECT_COUNT%"
+set "_TMP_FAILED_PROJECT=%FAILED_PROJECT%"
+endlocal & set "EXIT_RC=%_TMP_RC%" & set "_INTERACTIVE=%_TMP_INTERACTIVE%" & set "_SUMMARY_TARGET=%_TMP_TARGET%" & set "_CONFIG=%_TMP_CONFIG%" & set "_COOKED_PROJECT_COUNT=%_TMP_COOKED_PROJECT_COUNT%" & set "_FAILED_PROJECT=%_TMP_FAILED_PROJECT%"
+
+if "%_INTERACTIVE%"=="0" (
+	set "_INTERACTIVE="
+	set "_SUMMARY_TARGET="
+	set "_CONFIG="
+	set "_COOKED_PROJECT_COUNT="
+	set "_FAILED_PROJECT="
+	exit /B %EXIT_RC%
+)
+set "_INTERACTIVE="
+
+echo.
+echo ============================================================
+if "%EXIT_RC%"=="0" (
+	echo   [SUCCESS] CookAllAssets completed successfully.
+	echo   Target: %_SUMMARY_TARGET%
+	echo   Configuration: %_CONFIG%
+	if not "%_COOKED_PROJECT_COUNT%"=="" echo   Projects cooked: %_COOKED_PROJECT_COUNT%
+) else (
+	echo   [ERROR] CookAllAssets completed with errors.
+	echo   Target: %_SUMMARY_TARGET%
+	echo   Configuration: %_CONFIG%
+	if not "%_FAILED_PROJECT%"=="" echo   Failed project: %_FAILED_PROJECT%
+)
+echo ============================================================
+echo.
+set "_SUMMARY_TARGET="
+set "_CONFIG="
+set "_COOKED_PROJECT_COUNT="
+set "_FAILED_PROJECT="
+pause
+exit /B %EXIT_RC%

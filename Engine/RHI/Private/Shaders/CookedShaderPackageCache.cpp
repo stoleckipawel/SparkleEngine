@@ -132,7 +132,7 @@ bool CookedShaderPackageCache::LoadPackage(
 		return false;
 	}
 
-	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
+	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId);
 	if (auto it = m_packages.find(packageKey); it != m_packages.end())
 	{
 		if (!ValidatePackage(*it->second, definition, expectedBindingLayout, requiredBinaryFormat, outErrorMessage))
@@ -178,7 +178,7 @@ bool CookedShaderPackageCache::ReloadPackage(
 		return false;
 	}
 
-	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
+	const std::uint64_t packageKey = BuildShaderPackageKey(definition.PackageId);
 	auto loadedPackage = std::make_unique<LoadedShaderPackage>();
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(packageKey);
 	if (!LoadPackageFromFile(packagePath, *loadedPackage, outErrorMessage))
@@ -284,42 +284,27 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().PackageKind == CookedShaderPackageKind::RayTracingLibrary)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' is a ray tracing library package; runtime RT state object execution is not implemented yet.",
-		    definition.PackageId,
-		    definition.VariantId);
+		    "Cooked shader package '{}' is a ray tracing library package; runtime RT state object execution is not implemented yet.",
+		    definition.PackageId);
 		return false;
 	}
 
-	const std::uint64_t expectedPackageKey = BuildShaderPackageKey(definition.PackageId, definition.VariantId);
+	const std::uint64_t expectedPackageKey = BuildShaderPackageKey(definition.PackageId);
 	if (package.GetHeader().ShaderPackageKey != expectedPackageKey)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderPackageKey expected={} actual={}",
+		    "Cooked shader package '{}' failed compatibility check: field=ShaderPackageKey expected={} actual={}",
 		    definition.PackageId,
-		    definition.VariantId,
 		    Formatting::FormatHexUInt64(expectedPackageKey),
 		    Formatting::FormatHexUInt64(package.GetHeader().ShaderPackageKey));
-		return false;
-	}
-
-	const std::uint64_t expectedVariantHash = BuildShaderVariantHash(definition.VariantId);
-	if (package.GetHeader().VariantHash != expectedVariantHash)
-	{
-		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=VariantHash expected={} actual={}",
-		    definition.PackageId,
-		    definition.VariantId,
-		    Formatting::FormatHexUInt64(expectedVariantHash),
-		    Formatting::FormatHexUInt64(package.GetHeader().VariantHash));
 		return false;
 	}
 
 	if (package.GetHeader().SourceIdentityHash == 0)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=SourceIdentityHash actual=0",
-		    definition.PackageId,
-		    definition.VariantId);
+		    "Cooked shader package '{}' failed compatibility check: field=SourceIdentityHash actual=0",
+		    definition.PackageId);
 		return false;
 	}
 
@@ -327,9 +312,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().BindingLayoutHash != expectedBindingLayoutHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
+		    "Cooked shader package '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
 		    definition.PackageId,
-		    definition.VariantId,
 		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
 		    Formatting::FormatHexUInt64(expectedBindingLayoutHash),
 		    Formatting::FormatHexUInt64(package.GetHeader().BindingLayoutHash));
@@ -340,9 +324,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 	    package.GetHeader().ShaderModelMinor != static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=ShaderModel expected={}.{} actual={}.{}",
+		    "Cooked shader package '{}' failed compatibility check: field=ShaderModel expected={}.{} actual={}.{}",
 		    definition.PackageId,
-		    definition.VariantId,
 		    RenderConfig::ShaderModelMajor,
 		    RenderConfig::ShaderModelMinor,
 		    package.GetHeader().ShaderModelMajor,
@@ -353,9 +336,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (!HasAllStages(package.GetHeader().DeclaredStages, definition.ExpectedStages))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' failed compatibility check: field=DeclaredStages expected='{}' actual='{}'",
+		    "Cooked shader package '{}' failed compatibility check: field=DeclaredStages expected='{}' actual='{}'",
 		    definition.PackageId,
-		    definition.VariantId,
 		    FormatShaderStageMask(definition.ExpectedStages),
 		    FormatShaderStageMask(package.GetHeader().DeclaredStages));
 		return false;
@@ -365,9 +347,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetBindingRecords().size() != expectedParameters.size())
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' variant '{}' declares {} binding records but runtime layout '{}' expects {}",
+		    "Cooked shader package '{}' declares {} binding records but runtime layout '{}' expects {}",
 		    definition.PackageId,
-		    definition.VariantId,
 		    package.GetBindingRecords().size(),
 		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
 		    expectedParameters.size());
@@ -382,9 +363,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (bindingName.empty())
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' has an invalid binding name string for binding index {}",
+			    "Cooked shader package '{}' has an invalid binding name string for binding index {}",
 			    definition.PackageId,
-			    definition.VariantId,
 			    parameterIndex);
 			return false;
 		}
@@ -397,9 +377,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		    bindingRecord.ValueSizeInBytes != expectedParameter.ValueSizeInBytes)
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' binding record {} does not match runtime layout parameter '{}'",
+			    "Cooked shader package '{}' binding record {} does not match runtime layout parameter '{}'",
 			    definition.PackageId,
-			    definition.VariantId,
 			    parameterIndex,
 			    expectedParameter.Name);
 			return false;
@@ -412,27 +391,24 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (binaryRecord.Stage == ShaderStage::Count)
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' contains an invalid shader stage record",
-			    definition.PackageId,
-			    definition.VariantId);
+			    "Cooked shader package '{}' contains an invalid shader stage record",
+			    definition.PackageId);
 			return false;
 		}
 
 		if (package.ResolveString(binaryRecord.EntryPoint).empty())
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' contains an invalid entry point string",
-			    definition.PackageId,
-			    definition.VariantId);
+			    "Cooked shader package '{}' contains an invalid entry point string",
+			    definition.PackageId);
 			return false;
 		}
 
 		if (binaryRecord.DebugArtifact && package.ResolveString(binaryRecord.DebugArtifact).empty())
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' contains an invalid debug artifact string",
-			    definition.PackageId,
-			    definition.VariantId);
+			    "Cooked shader package '{}' contains an invalid debug artifact string",
+			    definition.PackageId);
 			return false;
 		}
 
@@ -440,9 +416,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (!bytecode.IsValid())
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' contains an invalid bytecode blob for stage {}",
+			    "Cooked shader package '{}' contains an invalid bytecode blob for stage {}",
 			    definition.PackageId,
-			    definition.VariantId,
 			    static_cast<std::uint32_t>(binaryRecord.Stage));
 			return false;
 		}
@@ -450,9 +425,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (Hash::Fnv1a64(bytecode.Data, bytecode.Size) != binaryRecord.BytecodeHash)
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' failed bytecode hash validation for stage {}",
+			    "Cooked shader package '{}' failed bytecode hash validation for stage {}",
 			    definition.PackageId,
-			    definition.VariantId,
 			    static_cast<std::uint32_t>(binaryRecord.Stage));
 			return false;
 		}
@@ -460,9 +434,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (!HasAllStages(package.GetHeader().DeclaredStages, ToShaderStageMask(binaryRecord.Stage)))
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' contains a stage record outside its declared stage mask",
-			    definition.PackageId,
-			    definition.VariantId);
+			    "Cooked shader package '{}' contains a stage record outside its declared stage mask",
+			    definition.PackageId);
 			return false;
 		}
 
@@ -472,9 +445,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 			if (hasRequiredBinaryForStage[stageIndex])
 			{
 				outErrorMessage = std::format(
-				    "Cooked shader package '{}' variant '{}' contains more than one {} binary for stage {}",
+				    "Cooked shader package '{}' contains more than one {} binary for stage {}",
 				    definition.PackageId,
-				    definition.VariantId,
 				    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
 				    stageIndex);
 				return false;
@@ -494,9 +466,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (!hasRequiredBinaryForStage[static_cast<std::size_t>(stage)])
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' variant '{}' is missing the required {} binary for stage {}",
+			    "Cooked shader package '{}' is missing the required {} binary for stage {}",
 			    definition.PackageId,
-			    definition.VariantId,
 			    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
 			    static_cast<std::uint32_t>(stage));
 			return false;

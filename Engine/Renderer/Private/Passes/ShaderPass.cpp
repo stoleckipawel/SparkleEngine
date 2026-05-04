@@ -98,7 +98,10 @@ void BindComputeShaderPass(
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
-    const PassParameterSet& parameterSet) noexcept
+    const PassParameterSet& parameterSet,
+    const char* const* bindingNames,
+    std::uint32_t bindingNameCount,
+    const PassBindingOverrides* overrides) noexcept
 {
 	if (renderHardwareInterface != nullptr)
 	{
@@ -106,7 +109,14 @@ void BindComputeShaderPass(
 	}
 
 	cmd.SetPipelineState(pipelineState);
-	PassBinder::BindCompute(cmd, frameGraph, renderHardwareInterface, bindingLayout, parameterSet);
+	PassBinder::BindCompute(
+		cmd,
+		frameGraph,
+		renderHardwareInterface,
+		bindingLayout,
+		parameterSet,
+		bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
+		overrides);
 }
 
 void BindRasterShaderPass(

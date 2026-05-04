@@ -33,8 +33,7 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 	          << " rtHitGroups=" << package.rayTracingHitGroups.size()
 	          << " localParameters=" << package.rayTracingLocalParameterRecordCount << "\n";
 	std::cout << "  hashes source=" << Formatting::FormatPrefixedHexUInt64(package.sourceIdentityHash)
-	          << " layout=" << Formatting::FormatPrefixedHexUInt64(package.bindingLayoutHash)
-	          << " variant=" << Formatting::FormatPrefixedHexUInt64(package.variantHash) << "\n";
+	          << " layout=" << Formatting::FormatPrefixedHexUInt64(package.bindingLayoutHash) << "\n";
 	if (package.packageKind == CookedShaderPackageKind::RayTracingLibrary)
 	{
 		std::cout << "  rt payloadBytes=" << package.rayTracingPayloadSizeInBytes

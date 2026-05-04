@@ -9,6 +9,33 @@
 
 #include <objbase.h>
 
+static void PrintCookSceneSummary(
+	const std::filesystem::path& sourceScenePath,
+	const SceneImportResult& importResult,
+	const AssetAuthoring::CookedSceneBuild& cookedSceneBuild)
+{
+	std::cout << "AssetConverter Summary:\n"
+	          << "  mode=cook-scene\n"
+	          << "  source='" << sourceScenePath.string() << "'\n"
+	          << "  importer='" << GetSceneImporterTypeName(importResult.importerType) << "'\n"
+	          << "  meshes=" << importResult.GetMeshCount() << "\n"
+	          << "  materials=" << importResult.GetMaterialCount() << "\n"
+	          << "  sceneAsset='" << cookedSceneBuild.sceneAssetId << "'\n"
+	          << "  sceneManifest='" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
+}
+
+static void PrintCollectTextureSummary(
+	const std::filesystem::path& sourceScenePath,
+	std::size_t requestCount,
+	const std::filesystem::path& outputRequestPath)
+{
+	std::cout << "AssetConverter Summary:\n"
+	          << "  mode=collect-texture-requests\n"
+	          << "  source='" << sourceScenePath.string() << "'\n"
+	          << "  uniqueRequests=" << requestCount << "\n"
+	          << "  requestFile='" << outputRequestPath.string() << "'\n";
+}
+
 static int RunWithImportedScene(
     const std::filesystem::path& sourceScenePath,
     const std::function<int(const SceneImportResult&)>& onImportedScene)
@@ -61,6 +88,7 @@ static int RunCookScene(const std::filesystem::path& sourceScenePath)
 			          << GetSceneImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
 			          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
 			          << cookedSceneBuild.sceneAssetId << "' to '" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
+			PrintCookSceneSummary(sourceScenePath, importResult, cookedSceneBuild);
 
 			return 0;
 	    });
@@ -93,6 +121,7 @@ static int RunCollectTextureRequests(
 
 			std::cout << "AssetConverter: collected " << requests.size() << " unique texture request(s) from '"
 			          << sourceScenePath.string() << "' into '" << outputRequestPath.string() << "'\n";
+			PrintCollectTextureSummary(sourceScenePath, requests.size(), outputRequestPath);
 			return 0;
 	    });
 }

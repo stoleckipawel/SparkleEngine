@@ -85,7 +85,6 @@ bool CookedPackageInspection::Inspect(
 	outPackage.packageKey = header.ShaderPackageKey;
 	outPackage.sourceIdentityHash = header.SourceIdentityHash;
 	outPackage.bindingLayoutHash = header.BindingLayoutHash;
-	outPackage.variantHash = header.VariantHash;
 	outPackage.packageKind = header.PackageKind;
 	outPackage.packageFeatures = header.PackageFeatures;
 	outPackage.rayTracingPayloadSizeInBytes = header.RayTracingPayloadSizeInBytes;

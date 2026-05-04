@@ -16,7 +16,6 @@ struct RegisteredShaderRow final
 	std::string Stage;
 	std::string BindingLayoutId;
 	std::size_t ParameterCount = 0;
-	std::size_t PermutationDimensionCount = 0;
 	std::uint64_t RuntimeGeneration = 0;
 	bool ArtifactAvailable = false;
 	std::filesystem::path ArtifactDirectory;

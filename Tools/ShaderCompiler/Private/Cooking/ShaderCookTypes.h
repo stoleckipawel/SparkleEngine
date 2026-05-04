@@ -1,7 +1,6 @@
 #pragma once
 
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "RHI/Public/Shaders/Authoring/ShaderPermutation.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <filesystem>
@@ -17,10 +16,6 @@ struct ShaderCookStageDesc final
 	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
 	CookedShaderRayTracingExportKind rayTracingExportKind = CookedShaderRayTracingExportKind::None;
 	std::string rayTracingExportName;
-	ShaderPermutationDomainDescriptor permutationDomain;
-	ShaderPermutationVector permutationVector;
-	ShaderPermutationKey permutationKey = 0;
-	std::string permutationVectorName;
 };
 
 struct ShaderCookRayTracingExportDesc final
@@ -45,7 +40,6 @@ struct ShaderCookPackageDesc final
 	std::string packageId;
 	std::string bindingLayoutId;
 	PassParameterLayout bindingLayout;
-	std::string variantId = "Default";
 	CookedShaderPackageKind packageKind = CookedShaderPackageKind::Graphics;
 	CookedShaderPackageFeatureFlags packageFeatures = CookedShaderPackageFeatureFlags::None;
 	std::uint32_t rayTracingPayloadSizeInBytes = 0;

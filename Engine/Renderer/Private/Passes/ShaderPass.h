@@ -44,7 +44,10 @@ SPARKLE_RENDERER_API void BindComputeShaderPass(
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
-    const PassParameterSet& parameterSet) noexcept;
+	const PassParameterSet& parameterSet,
+	const char* const* bindingNames = nullptr,
+	std::uint32_t bindingNameCount = 0,
+	const PassBindingOverrides* overrides = nullptr) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
     CommandContext& cmd,
@@ -261,14 +264,26 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	    const RenderPipelineState& pipelineState,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
+	    const char* const* bindingNames = nullptr,
+	    std::uint32_t bindingNameCount = 0,
+	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
-		if (!ValidateExecutionParameters(parameters, passName))
+		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount))
 		{
 			return false;
 		}
 
-		BindComputeShaderPass(cmd, frameGraph, &renderHardwareInterface, bindingLayout, pipelineState, GetPassParameterSet(parameters));
+		BindComputeShaderPass(
+			cmd,
+			frameGraph,
+			&renderHardwareInterface,
+			bindingLayout,
+			pipelineState,
+			GetPassParameterSet(parameters),
+			bindingNames,
+			bindingNameCount,
+			overrides);
 		DispatchComputeShaderPass(cmd, dispatch);
 		return true;
 	}

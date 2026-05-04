@@ -32,7 +32,6 @@ class ShaderDebugArtifactWriter final
 	    const ShaderCompileOptions& options,
 	    const CookedStageBuild& compiledStage);
 	static std::string BuildCacheInfoJson(const ShaderCompileOptions& options, const CookedStageBuild& compiledStage);
-	static std::string BuildPermutationJson(const ShaderCookPackageDesc& package);
 	static std::string BuildReflectionJson(const ShaderReflection& reflection);
 	static std::string BuildParameterMatchJson();
 };

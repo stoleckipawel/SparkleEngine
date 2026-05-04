@@ -32,7 +32,6 @@ ShaderPackageDefinition VisualizeBuffersPass::DescribeShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
 		.PackageId = PassName,
-		.VariantId = "Default",
 		.BindingLayoutId = PassName,
 		.ExpectedStages = ShaderStageMask::Compute};
 }
@@ -56,7 +55,6 @@ void VisualizeBuffersPass::DeclareResources(
 	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
 	parameters->GBufferEmissive = frameGraph.CreateSRV(gbuffer.Emissive);
 	parameters->GBufferSubsurface = frameGraph.CreateSRV(gbuffer.Subsurface);
-	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
 }
 
 void VisualizeBuffersPass::SetParameters(
@@ -64,8 +62,8 @@ void VisualizeBuffersPass::SetParameters(
 	const RenderViewContext& viewContext,
 	const RenderPassContext& renderPassContext)
 {
+	(void)viewContext;
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
-	parameters->PerView = viewContext.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
 }

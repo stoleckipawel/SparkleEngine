@@ -71,9 +71,8 @@ bool ShaderCookGraphBuilder::AddPackageNodes(
 				        validationError))
 				{
 					outErrorMessage = std::format(
-					    "Missing-include verification self-test confirmed unresolved include handling for shader package '{}' variant '{}' stage '{}': {}",
+					    "Missing-include verification self-test confirmed unresolved include handling for shader package '{}' stage '{}': {}",
 					    package.packageId,
-					    package.variantId,
 					    GetShaderStagePrefix(stage.stage),
 					    validationError);
 					return false;
@@ -91,9 +90,8 @@ bool ShaderCookGraphBuilder::AddPackageNodes(
 			if (backendName.empty())
 			{
 				outErrorMessage = std::format(
-				    "Failed to select shader backend for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    "Failed to select shader backend for shader package '{}' stage '{}' target '{}' - {}",
 				    package.packageId,
-				    package.variantId,
 				    GetShaderStagePrefix(stage.stage),
 				    GetShaderTargetName(target),
 				    backendError);
@@ -102,10 +100,9 @@ bool ShaderCookGraphBuilder::AddPackageNodes(
 			if (backend == nullptr)
 			{
 				outErrorMessage = std::format(
-				    "Failed to construct shader backend '{}' for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    "Failed to construct shader backend '{}' for shader package '{}' stage '{}' target '{}' - {}",
 				    backendName,
 				    package.packageId,
-				    package.variantId,
 				    GetShaderStagePrefix(stage.stage),
 				    GetShaderTargetName(target),
 				    backendError);
@@ -116,9 +113,8 @@ bool ShaderCookGraphBuilder::AddPackageNodes(
 			if (!includeHashResult.Succeeded())
 			{
 				outErrorMessage = std::format(
-				    "Failed to compute include closure for shader package '{}' variant '{}' stage '{}' target '{}' - {}",
+				    "Failed to compute include closure for shader package '{}' stage '{}' target '{}' - {}",
 				    package.packageId,
-				    package.variantId,
 				    GetShaderStagePrefix(stage.stage),
 				    GetShaderTargetName(target),
 				    includeHashResult.errorMessage);

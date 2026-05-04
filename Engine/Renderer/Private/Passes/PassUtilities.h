@@ -184,6 +184,35 @@ namespace PassUtilities
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
 	    const ComputeDispatchDesc& dispatch,
+	    const char* passName) noexcept
+	{
+		using Parameters = typename TComputePass::Parameters;
+
+		return ComputeShaderPass<Parameters>::Dispatch(
+		    frameGraph,
+		    cmd,
+		    renderHardwareInterface,
+		    runtime.BindingLayout,
+		    runtime.PipelineState,
+		    parameters,
+		    dispatch,
+		    nullptr,
+		    0,
+		    nullptr,
+		    passName);
+	}
+
+	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
+	bool DispatchComputePassWithRuntime(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const TComputePassRuntime& runtime,
+	    const TParameterBindings& parameters,
+	    const ComputeDispatchDesc& dispatch,
+	    const char* const* bindingNames = nullptr,
+	    std::uint32_t bindingNameCount = 0,
+	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
 		using Parameters = typename TComputePass::Parameters;
@@ -196,6 +225,34 @@ namespace PassUtilities
 		    runtime.PipelineState,
 		    parameters,
 		    dispatch,
+		    bindingNames,
+		    bindingNameCount,
+		    overrides,
+		    passName);
+	}
+
+	template <typename TComputePass, typename TComputePassRuntime>
+	bool DispatchAvailableComputePassWithRuntime(
+	    const FrameGraph& frameGraph,
+	    CommandContext& cmd,
+	    RenderHardwareInterface& renderHardwareInterface,
+	    const TComputePassRuntime& runtime,
+	    const PassParameterSet& parameters,
+	    const ComputeDispatchDesc& dispatch,
+	    const PassBindingOverrides* overrides = nullptr,
+	    const char* passName = nullptr) noexcept
+	{
+		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
+		return DispatchComputePassWithRuntime<TComputePass>(
+		    frameGraph,
+		    cmd,
+		    renderHardwareInterface,
+		    runtime,
+		    parameters,
+		    dispatch,
+		    bindingNames.data(),
+		    static_cast<std::uint32_t>(bindingNames.size()),
+		    overrides,
 		    passName);
 	}
 

@@ -238,7 +238,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 
 	for (const CookedShaderPackageOutput& package : cookResult.packages)
 	{
-		std::cout << "  Package '" << package.packageId << "' variant='" << package.variantId << "' bindingLayout='"
+		std::cout << "  Package '" << package.packageId << "' bindingLayout='"
 		          << package.bindingLayoutId << "' key=" << Formatting::FormatHexUInt64(package.packageKey)
 		          << " output='" << package.outputPath.string() << "'\n";
 	}

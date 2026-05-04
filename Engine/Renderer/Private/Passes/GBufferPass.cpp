@@ -52,7 +52,6 @@ ShaderPackageDefinition GBufferPass::DescribeGBufferShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
 	    .PackageId = PassName,
-	    .VariantId = "Default",
 	    .BindingLayoutId = PassName,
 	    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel};
 }

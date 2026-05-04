@@ -245,9 +245,8 @@ class RenderPassShaderRuntime final
 			const std::string bindingLayoutLabel =
 			    desc.Package.BindingLayoutId != nullptr ? std::string(desc.Package.BindingLayoutId) : bindingLayout.GetDebugName();
 			outErrorMessage = std::format(
-			    "Runtime validation rejected cooked shader package '{}' variant '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - {}",
+			    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - {}",
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
-			    desc.Package.VariantId != nullptr ? desc.Package.VariantId : "<null>",
 			    desc.PassName,
 			    desc.PackageDeclarationName,
 			    bindingLayoutLabel,
@@ -279,11 +278,10 @@ class RenderPassShaderRuntime final
 	{
 		SPDLOG_LOGGER_INFO(
 		    GetLogger(),
-		    "Cooked shader runtime ready: pass='{}' pipeline='{}' package='{}' variant='{}' bindingLayout='{}' expectedStages='{}'",
+		    "Cooked shader runtime ready: pass='{}' pipeline='{}' package='{}' bindingLayout='{}' expectedStages='{}'",
 		    desc.PassName,
 		    FormatPipelineKind(desc.PipelineKind),
 		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
-		    desc.Package.VariantId != nullptr ? desc.Package.VariantId : "<null>",
 		    desc.Package.BindingLayoutId != nullptr ? desc.Package.BindingLayoutId : "<null>",
 		    FormatShaderStageMask(desc.Package.ExpectedStages));
 	}

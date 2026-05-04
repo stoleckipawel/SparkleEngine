@@ -17,8 +17,6 @@ std::uint64_t SourceIdentityHasher::Compute(
 	canonical.reserve(kSourceIdentityCanonicalReserveBytes);
 	canonical += package.packageId;
 	canonical += '|';
-	canonical += package.variantId;
-	canonical += '|';
 	canonical += package.bindingLayoutId;
 	canonical += '|';
 	canonical += std::to_string(static_cast<std::uint32_t>(package.packageKind));

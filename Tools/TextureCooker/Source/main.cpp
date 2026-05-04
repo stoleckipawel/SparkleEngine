@@ -24,6 +24,28 @@ static bool IsCookRequestFileCommand(std::string_view command) noexcept
 	return command == "cook-request-file" || command == "cook";
 }
 
+static void PrintInspectSummary(const std::filesystem::path& requestFilePath, std::size_t requestCount)
+{
+	std::cout << "TextureCooker Summary:\n"
+	          << "  mode=inspect\n"
+	          << "  requestFile='" << requestFilePath.string() << "'\n"
+	          << "  requests=" << requestCount << "\n";
+}
+
+static void PrintCookSummary(
+	const std::filesystem::path& requestFilePath,
+	std::size_t requestCount,
+	std::size_t cookedCount,
+	std::size_t skippedCount)
+{
+	std::cout << "TextureCooker Summary:\n"
+	          << "  mode=cook\n"
+	          << "  requestFile='" << requestFilePath.string() << "'\n"
+	          << "  requests=" << requestCount << "\n"
+	          << "  cooked=" << cookedCount << "\n"
+	          << "  skipped=" << skippedCount << "\n";
+}
+
 static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 {
 	std::vector<AssetAuthoring::TextureCookRequest> requests;
@@ -41,6 +63,7 @@ static int RunInspectRequestFile(const std::filesystem::path& requestFilePath)
 		          << AssetAuthoring::GetTextureColorSpaceName(request.colorSpace) << "' output='"
 		          << request.outputPath.string() << "' source='" << request.sourcePath.string() << "'\n";
 	}
+	PrintInspectSummary(requestFilePath, requests.size());
 
 	return 0;
 }
@@ -167,6 +190,7 @@ static int RunCookRequestFile(const std::filesystem::path& requestFilePath)
 		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' output='" << request.outputPath.string()
 		          << "'\n";
 	}
+	PrintCookSummary(requestFilePath, requests.size(), cookedCount, skippedCount);
 
 	return 0;
 }

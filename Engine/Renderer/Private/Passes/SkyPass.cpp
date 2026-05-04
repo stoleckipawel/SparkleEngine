@@ -2,6 +2,7 @@
 #include "Passes/SkyPass.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewContext.h"
 #include "FrameGraph/FrameGraph.h"
@@ -9,6 +10,7 @@
 #include "GPU/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
+#include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
 #include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
@@ -82,7 +84,6 @@ ShaderPackageDefinition SkyPass::DescribeShaderPackage() noexcept
 {
 	return ShaderPackageDefinition{
 		.PackageId = PassName,
-		.VariantId = "Default",
 		.BindingLayoutId = PassName,
 		.ExpectedStages = ShaderStageMask::Compute};
 }
@@ -104,7 +105,6 @@ void SkyPass::SetParameters(
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
-	parameters->SkyTexture = GetSkyTextureBinding(renderPassContext);
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 		.MinMagFilter = RhiSamplerMinMagFilter::Linear,
 		.MipFilter = RhiSamplerMipFilter::Linear,
@@ -119,17 +119,20 @@ void SkyPass::Execute(RenderGraphPassContext& context, ParameterInstance& parame
 
 	const SkyPassRuntime& runtime = context.Runtime.GetPassRuntime<SkyPass>();
 	SetParameters(parameters, context.Frame.mainView, context.Runtime);
+	PassBindingOverrides overrides;
+	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.Runtime));
 	const ComputeDispatchDesc dispatch{
 		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 		1};
-	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<SkyPass>(
+	const bool dispatched = PassUtilities::DispatchAvailableComputePassWithRuntime<SkyPass>(
 		context.Graph,
 		context.Commands,
 		context.Runtime.HardwareInterface,
 		runtime,
-		parameters,
+		parameters.GetPassParameterSet(),
 		dispatch,
+		&overrides,
 		PassName);
 	assert(dispatched);
 }

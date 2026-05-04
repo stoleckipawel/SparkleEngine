@@ -4,7 +4,6 @@
 #include "../CookedShaderPackage.h"
 #include "../ShaderStage.h"
 #include "ShaderParameterStruct.h"
-#include "ShaderPermutation.h"
 
 #include <cstdint>
 #include <span>
@@ -27,7 +26,6 @@ struct ShaderRegistrationDesc final
 	std::uint32_t RayTracingAttributeSizeInBytes = 0;
 	std::uint32_t RayTracingMaxRecursionDepth = 0;
 	ShaderParameterStructDescriptor (*BuildParameterStructDescriptor)() = nullptr;
-	ShaderPermutationDomainDescriptor (*BuildPermutationDomainDescriptor)() = nullptr;
 };
 
 struct RayTracingHitGroupRegistrationDesc final
@@ -192,17 +190,6 @@ template <typename TShader> class TGlobalShader
 	{
 		return TShader::FParameters::GetShaderParameterStructDescriptor();
 	}
-	static ShaderPermutationDomainDescriptor GetPermutationDomainDescriptor()
-	{
-		if constexpr (requires { typename TShader::FPermutationDomain; })
-		{
-			return TShader::FPermutationDomain::GetDescriptor();
-		}
-		else
-		{
-			return {};
-		}
-	}
 	static constexpr CookedShaderPackageFeatureFlags GetPackageFeatures() noexcept
 	{
 		if constexpr (requires { TShader::kPackageFeatures; })
@@ -236,7 +223,6 @@ template <typename TShader> class TGlobalShaderAutoRegister final
 		    .PackageKind = GetDefaultCookedShaderPackageKind(stage),
 		    .PackageFeatures = packageFeatures,
 		    .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
-		    .BuildPermutationDomainDescriptor = &TGlobalShader<TShader>::GetPermutationDomainDescriptor,
 		});
 	}
 };
@@ -264,7 +250,6 @@ template <typename TShader> class TRayTracingShaderAutoRegister final
 		    .RayTracingAttributeSizeInBytes = TShader::kRayTracingAttributeSizeInBytes,
 		    .RayTracingMaxRecursionDepth = TShader::kRayTracingMaxRecursionDepth,
 		    .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
-		    .BuildPermutationDomainDescriptor = &TGlobalShader<TShader>::GetPermutationDomainDescriptor,
 		});
 	}
 };
@@ -307,13 +292,12 @@ template <typename TShader> class TShaderRef final
   public:
 	TShaderRef() = default;
 
-	static TShaderRef Get(ShaderPermutationKey permutationKey = 0) noexcept
+	static TShaderRef Get() noexcept
 	{
 		TShaderRef ref;
 		ref.m_sourcePath = TShaderSourceMetadata<TShader>::kSourcePath;
 		ref.m_entryPoint = TShaderSourceMetadata<TShader>::kEntryPoint;
 		ref.m_stage = TShaderSourceMetadata<TShader>::kStage;
-		ref.m_permutationKey = permutationKey;
 		return ref;
 	}
 
@@ -331,14 +315,12 @@ template <typename TShader> class TShaderRef final
 			return BuildShaderPackageIdFromSourcePath(m_sourcePath);
 		}
 	}
-	ShaderPermutationKey GetPermutationKey() const noexcept { return m_permutationKey; }
 	explicit operator bool() const noexcept { return !m_sourcePath.empty() && !m_entryPoint.empty(); }
 
   private:
 	std::string_view m_sourcePath;
 	std::string_view m_entryPoint;
 	ShaderStage m_stage = ShaderStage::Count;
-	ShaderPermutationKey m_permutationKey = 0;
 };
 
 #define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName) \
