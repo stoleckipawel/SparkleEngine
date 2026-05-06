@@ -5,6 +5,7 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewContext.h"
 #include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/RenderPassContext.h"
 #include "GPU/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
@@ -44,6 +45,7 @@ void DirectLightingPass::DeclareResources(
 	parameters->DirectDiffuse = frameGraph.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = frameGraph.CreateUAV(lighting.DirectSpecular);
 	parameters->DirectSubsurface = frameGraph.CreateUAV(lighting.DirectSubsurface);
+	parameters->GBufferBaseColor = frameGraph.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
 	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
@@ -51,8 +53,10 @@ void DirectLightingPass::DeclareResources(
 
 void DirectLightingPass::SetParameters(
 	ParameterInstance& parameters,
-	const RenderViewContext& viewContext)
+	const RenderViewContext& viewContext,
+	const RenderPassContext& renderPassContext)
 {
+	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -63,7 +67,7 @@ void DirectLightingPass::Execute(RenderGraphPassContext& context, ParameterInsta
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
 
 	const DirectLightingPassRuntime& runtime = context.Runtime.GetPassRuntime<DirectLightingPass>();
-	SetParameters(parameters, context.Frame.mainView);
+	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 	const ComputeDispatchDesc dispatch{
 		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),

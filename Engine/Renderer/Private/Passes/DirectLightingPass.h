@@ -13,6 +13,7 @@
 class FrameGraph;
 struct DirectLightingPassRuntime;
 struct RenderGraphPassContext;
+struct RenderPassContext;
 struct RenderViewContext;
 
 struct DirectLightingPassParameters
@@ -20,9 +21,11 @@ struct DirectLightingPassParameters
 	ShaderRWTexture2D<void> DirectDiffuse;
 	ShaderRWTexture2D<void> DirectSpecular;
 	ShaderRWTexture2D<void> DirectSubsurface;
+	ShaderTexture2D<void> GBufferBaseColor;
 	ShaderTexture2D<void> GBufferNormal;
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
@@ -30,9 +33,11 @@ struct DirectLightingPassParameters
 		builder.RWTexture("DirectDiffuse", &DirectLightingPassParameters::DirectDiffuse, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSpecular", &DirectLightingPassParameters::DirectSpecular, ShaderStageVisibility::Compute);
 		builder.RWTexture("DirectSubsurface", &DirectLightingPassParameters::DirectSubsurface, ShaderStageVisibility::Compute);
+		builder.ReadTexture("GBufferBaseColor", &DirectLightingPassParameters::GBufferBaseColor, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferNormal", &DirectLightingPassParameters::GBufferNormal, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferDeviceZ", &DirectLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
 	}
 };
@@ -56,6 +61,7 @@ class DirectLightingPass final
 		ParameterInstance& parameters);
 	static void SetParameters(
 		ParameterInstance& parameters,
-		const RenderViewContext& viewContext);
+		const RenderViewContext& viewContext,
+		const RenderPassContext& renderPassContext);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 };

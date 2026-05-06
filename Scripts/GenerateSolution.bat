@@ -89,7 +89,7 @@ if "!INTERACTIVE!"=="1" (
     if /I "!OPEN_VS!"=="Y" (
         echo.
         echo [LOG] Opening: !SOLUTION_FILE!
-        start "" "!SOLUTION_FILE!"
+        call "%~dp0Internal\OpenVisualStudio.bat" "!SOLUTION_FILE!"
         goto :AFTER_VS_PROMPT
     )
     if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT

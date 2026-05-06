@@ -24,6 +24,8 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	const std::string_view backendName,
 	const std::uint64_t backendVersion)
 {
+	const std::uint64_t bindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
+
 	std::string canonical;
 	canonical.reserve(256);
 	canonical += std::string{kShaderCacheBackendVersion};
@@ -35,6 +37,8 @@ ShaderCacheKey ShaderCacheKey::Compute(
 	canonical += std::to_string(static_cast<std::uint64_t>(::BuildShaderPackageKey(package.packageId)));
 	canonical += '|';
 	canonical += package.bindingLayoutId;
+	canonical += '|';
+	canonical += std::to_string(bindingLayoutHash);
 	canonical += '|';
 	canonical += GetShaderStagePrefix(stage.stage);
 	canonical += '|';
