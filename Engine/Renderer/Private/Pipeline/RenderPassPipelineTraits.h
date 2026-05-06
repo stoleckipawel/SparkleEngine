@@ -60,7 +60,7 @@ template <> struct RenderPassPipelineTraits<GBufferPass>
 
 	static RuntimeType MakeRuntime(const StorageType& storage) noexcept
 	{
-		return RuntimeType{*storage.BindingLayout, *storage.PipelineState};
+		return RuntimeType{*storage.BindingLayout, *storage.PipelineState, storage.WireframePipelineState.get()};
 	}
 };
 

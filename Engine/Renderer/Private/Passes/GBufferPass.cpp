@@ -115,7 +115,7 @@ void GBufferPass::BindPassResources(
     const FrameGraph& frameGraph,
     CommandContext& cmd,
     const ParameterInstance& parameters,
-    const GBufferPassRuntime& runtime,
+	const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
@@ -134,7 +134,7 @@ void GBufferPass::DrawOpaqueMeshes(
     const FrameGraph& frameGraph,
     CommandContext& cmd,
     const RenderSceneData& sceneData,
-    const GBufferPassRuntime& runtime,
+	const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;

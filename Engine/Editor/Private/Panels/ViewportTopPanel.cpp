@@ -21,6 +21,8 @@ namespace
 		{
 			case RenderViewMode::Lit:
 				return UiUtil::EditorIcon::ViewLit;
+			case RenderViewMode::Wireframe:
+				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::GBufferDiffuse:
 				return UiUtil::EditorIcon::ViewDiffuse;
 			case RenderViewMode::GBufferNormal:
@@ -80,6 +82,8 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 	{
 		case RenderViewMode::Lit:
 			return "Lit";
+		case RenderViewMode::Wireframe:
+			return "Wireframe";
 		case RenderViewMode::GBufferDiffuse:
 			return "GBuffer Diffuse";
 		case RenderViewMode::GBufferNormal:
@@ -174,6 +178,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 	if (ImGui::BeginCombo("##ViewportViewMode", previewLabel.c_str()))
 	{
 		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
+		DrawViewModeOption(RenderViewMode::Wireframe, currentViewMode);
 
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);

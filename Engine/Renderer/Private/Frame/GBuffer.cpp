@@ -28,7 +28,6 @@ GBufferTargets BuildGBuffer(
 
 	auto& parameters = frameGraph.AllocPassParameters<GBufferPass>();
 	GBufferPass::DeclareResources(frameGraph, targets, parameters);
-
 	frameGraph.AddRasterPass<GBufferPass>(GBufferPass::PassName, parameters);
 	return targets;
 }

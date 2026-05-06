@@ -14,11 +14,14 @@ class ComputeClearPass;
 
 template <typename TPass> struct RenderPassRuntimeTraits;
 
-struct SPARKLE_RENDERER_API GBufferPassRuntime
+struct SPARKLE_RENDERER_API RasterPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
+	RenderPipelineState* WireframePipelineState = nullptr;
 };
+
+using GBufferPassRuntime = RasterPassRuntime;
 
 struct SPARKLE_RENDERER_API DirectLightingPassRuntime
 {

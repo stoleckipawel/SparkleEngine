@@ -36,6 +36,7 @@ struct RenderPassShaderRuntimeStorage
 	PassParameterLayout BindingLayoutDefinition;
 	std::unique_ptr<RenderBindingLayout> BindingLayout;
 	std::unique_ptr<RenderPipelineState> PipelineState;
+	std::unique_ptr<RenderPipelineState> WireframePipelineState;
 	const LoadedShaderPackage* ShaderPackage = nullptr;
 };
 
@@ -90,6 +91,22 @@ class RenderPassShaderRuntime final
 		pipelineDesc.DebugName = desc.PipelineStateDebugName;
 		configurePipelineState(pipelineDesc);
 		storage.PipelineState = rhi.CreateGraphicsPipelineState(pipelineDesc);
+		storage.WireframePipelineState.reset();
+		if (desc.AllowInputAssemblerInputLayout && !pipelineDesc.RenderWireframe)
+		{
+			GraphicsPipelineStateDesc wireframePipelineDesc = pipelineDesc;
+			wireframePipelineDesc.RenderWireframe = true;
+			wireframePipelineDesc.CullMode = ERhiCullMode::None;
+			storage.WireframePipelineState = rhi.CreateGraphicsPipelineState(wireframePipelineDesc);
+			if (!storage.WireframePipelineState)
+			{
+				outErrorMessage = std::format(
+				    "Render pass '{}' failed to create its wireframe graphics pipeline state for package '{}'",
+				    desc.PassName,
+				    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
+				return false;
+			}
+		}
 
 		LogRuntimeReady(desc);
 		outErrorMessage.clear();

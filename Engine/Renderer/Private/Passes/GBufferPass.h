@@ -11,7 +11,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 
 class CommandContext;
-struct GBufferPassRuntime;
+struct RasterPassRuntime;
 class FrameGraph;
 struct RenderGraphPassContext;
 struct RenderSceneData;
@@ -92,12 +92,12 @@ class GBufferPass final
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
 	    const ParameterInstance& parameters,
-	    const GBufferPassRuntime& runtime,
+	    const RasterPassRuntime& runtime,
 	    const RenderPassContext& renderPassContext);
 	static void DrawOpaqueMeshes(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
 	    const RenderSceneData& sceneData,
-	    const GBufferPassRuntime& runtime,
+	    const RasterPassRuntime& runtime,
 	    const RenderPassContext& renderPassContext);
 };

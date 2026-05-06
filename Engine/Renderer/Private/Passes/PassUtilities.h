@@ -11,6 +11,7 @@
 #include "Passes/ShaderPass.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
+#include "Renderer/Public/Debug/RenderViewMode.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 #include <algorithm>
@@ -88,6 +89,24 @@ namespace PassUtilities
 	}
 
 	template <typename TRasterPassRuntime>
+	const RenderPipelineState& ResolveRasterPipelineState(
+	    RenderHardwareInterface* renderHardwareInterface,
+	    const TRasterPassRuntime& runtime) noexcept
+	{
+		if constexpr (requires { runtime.WireframePipelineState; })
+		{
+			if (renderHardwareInterface != nullptr &&
+			    runtime.WireframePipelineState != nullptr &&
+			    renderHardwareInterface->GetPerFrameConstantData().ViewModeIndex == static_cast<std::uint32_t>(RenderViewMode::Wireframe))
+			{
+				return *runtime.WireframePipelineState;
+			}
+		}
+
+		return runtime.PipelineState;
+	}
+
+	template <typename TRasterPassRuntime>
 	bool BindRasterPassWithRuntime(
 	    const FrameGraph& frameGraph,
 	    CommandContext& cmd,
@@ -104,7 +123,7 @@ namespace PassUtilities
 		    cmd,
 		    renderHardwareInterface,
 		    runtime.BindingLayout,
-		    runtime.PipelineState,
+		    ResolveRasterPipelineState(renderHardwareInterface, runtime),
 		    parameters,
 		    bindingNames,
 		    bindingNameCount,
