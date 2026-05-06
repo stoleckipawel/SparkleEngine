@@ -263,6 +263,12 @@ void ShaderRecookCoordinator::HandleExternalRecookPublication(Renderer& renderer
 		return;
 	}
 
+	if (readResult.Publication->PublicationId <= m_lastAcceptedPublicationId)
+	{
+		m_lastPublicationDiagnostic.clear();
+		return;
+	}
+
 	ShaderRecookPublication publication;
 	std::string publicationDiagnostic;
 	if (!TryAcceptFreshPublication(readResult, m_lastAcceptedPublicationId, publication, publicationDiagnostic))
