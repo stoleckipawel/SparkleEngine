@@ -35,6 +35,7 @@ class SPARKLE_ENGINE_API LevelManager final
 	const LevelChangeEvents& GetLevelChangeEvents() const noexcept { return m_levelChangeEvents; }
 
 	void RequestLevelChange(std::string_view requestedLevelName) noexcept;
+	void ProcessPendingLevelChange() noexcept;
 
 	LevelAsset* GetActiveLevel() noexcept { return m_activeLevel; }
 	const LevelAsset* GetActiveLevel() const noexcept { return m_activeLevel; }
@@ -55,5 +56,6 @@ class SPARKLE_ENGINE_API LevelManager final
 	LevelRegistry m_levelRegistry;
 	LevelChangeEvents m_levelChangeEvents;
 	LevelAsset* m_activeLevel = nullptr;
+	LevelAsset* m_pendingLevelChange = nullptr;
 	bool m_bLevelChangeInProgress = false;
 };

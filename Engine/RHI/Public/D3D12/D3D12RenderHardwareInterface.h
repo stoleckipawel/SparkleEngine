@@ -155,6 +155,12 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 		bool IsAllocated() const noexcept { return nativeHandle.IsValid(); }
 	};
 
+	struct PendingOwnedResourceRelease
+	{
+		Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
+		std::uint64_t RetireFenceValue = 0;
+	};
+
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
@@ -162,6 +168,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	void BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept;
+	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 
@@ -174,4 +181,5 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
 	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
+	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
 };

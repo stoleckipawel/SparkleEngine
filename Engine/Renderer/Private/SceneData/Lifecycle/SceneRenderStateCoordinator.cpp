@@ -89,16 +89,6 @@ void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 	{
 		m_renderCamera->ForceUpdate(m_sceneSnapshot->camera);
 	}
-
-	if (m_sceneSnapshot && m_textureManager)
-	{
-		m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
-	}
-
-	if (m_sceneSnapshot && m_materialCache)
-	{
-		m_materialCache->Rebuild(m_sceneSnapshot->materials);
-	}
 }
 
 void SceneRenderStateCoordinator::ReleaseSceneScopedMaterialResources() noexcept

@@ -115,6 +115,11 @@ ProjectAppFrameResult ProjectApp::BeginFrame()
 		return ProjectAppFrameResult::SkipRender;
 	}
 
+	if (m_levelManager)
+	{
+		m_levelManager->ProcessPendingLevelChange();
+	}
+
 	return ProjectAppFrameResult::Ready;
 }
 

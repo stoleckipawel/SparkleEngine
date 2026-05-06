@@ -102,7 +102,37 @@ void LevelManager::RequestLevelChange(std::string_view requestedLevelName) noexc
 		return;
 	}
 
+	if (m_pendingLevelChange != nullptr)
+	{
+		if (m_pendingLevelChange == requestedLevel)
+		{
+			SPDLOG_LOGGER_DEBUG(
+			    g_levelManagerLogger,
+			    "LevelManager: Ignoring duplicate queued level change request to '{}'",
+			    std::string(requestedLevelName));
+			return;
+		}
+
+		SPDLOG_LOGGER_DEBUG(
+		    g_levelManagerLogger,
+		    "LevelManager: Replacing queued level change request from '{}' to '{}'",
+		    std::string(m_pendingLevelChange->GetName()),
+		    std::string(requestedLevelName));
+	}
+
 	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Accepted level change request to '{}'", std::string(requestedLevelName));
+	m_pendingLevelChange = requestedLevel;
+}
+
+void LevelManager::ProcessPendingLevelChange() noexcept
+{
+	if (m_bLevelChangeInProgress || m_pendingLevelChange == nullptr)
+	{
+		return;
+	}
+
+	LevelAsset* requestedLevel = m_pendingLevelChange;
+	m_pendingLevelChange = nullptr;
 	ProcessLevelChangeRequest(*requestedLevel);
 }
 

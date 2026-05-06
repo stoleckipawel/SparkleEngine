@@ -18,6 +18,7 @@
 #include "D3D12/Textures/TextureLoader.h"
 #include "Shaders/CookedShaderPackage.h"
 
+#include <algorithm>
 #include <d3d12.h>
 #include <wrl/client.h>
 #include <cstring>
@@ -69,6 +70,7 @@ void D3D12RenderHardwareInterface::WaitForIdle() noexcept
 	if (m_rhi != nullptr)
 	{
 		m_rhi->Flush();
+		DrainCompletedOwnedResourceReleases();
 	}
 }
 
@@ -84,6 +86,7 @@ NativeGraphicsQueueHandle D3D12RenderHardwareInterface::GetGraphicsQueueHandle()
 
 RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
+	DrainCompletedOwnedResourceReleases();
 	return *m_commandLists[frameIndex];
 }
 
@@ -454,10 +457,47 @@ bool D3D12RenderHardwareInterface::CreateIndexBuffer(
 
 void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
 {
-	if (resource.Value != nullptr)
+	if (resource.Value == nullptr)
 	{
-		static_cast<ID3D12Resource*>(resource.Value)->Release();
+		return;
 	}
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
+	ownedResource.Attach(static_cast<ID3D12Resource*>(resource.Value));
+
+	std::uint64_t retireFenceValue = 0;
+	if (m_rhi != nullptr)
+	{
+		retireFenceValue = m_rhi->GetNextFenceValue();
+	}
+
+	DrainCompletedOwnedResourceReleases();
+	m_pendingOwnedResourceReleases.push_back(PendingOwnedResourceRelease{
+	    .Resource = std::move(ownedResource),
+	    .RetireFenceValue = retireFenceValue});
+}
+
+void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcept
+{
+	if (m_pendingOwnedResourceReleases.empty())
+	{
+		return;
+	}
+
+	std::uint64_t completedFenceValue = UINT64_MAX;
+	if (m_rhi != nullptr && m_rhi->GetFence())
+	{
+		completedFenceValue = m_rhi->GetFence()->GetCompletedValue();
+	}
+
+	auto eraseBegin = std::remove_if(
+	    m_pendingOwnedResourceReleases.begin(),
+	    m_pendingOwnedResourceReleases.end(),
+	    [completedFenceValue](const PendingOwnedResourceRelease& pendingRelease)
+	    {
+			return pendingRelease.Resource == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+	    });
+	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 }
 
 NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept

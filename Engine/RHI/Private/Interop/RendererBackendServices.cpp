@@ -126,7 +126,7 @@ const RenderDiagnostics& RendererBackendServices::GetDiagnostics() const noexcep
 
 void RendererBackendServices::Flush() noexcept
 {
-	m_impl->rhi->Flush();
+	m_impl->renderHardwareInterface->WaitForIdle();
 }
 
 void RendererBackendServices::ResizeSwapChain() noexcept
@@ -179,5 +179,5 @@ void RendererBackendServices::CloseExecuteAndFlushCurrentFrame() noexcept
 	const UINT frameIndex = m_impl->rhi->GetCurrentFrameIndex();
 	m_impl->rhi->CloseCommandList(frameIndex);
 	m_impl->rhi->ExecuteCommandList(frameIndex);
-	m_impl->rhi->Flush();
+	m_impl->renderHardwareInterface->WaitForIdle();
 }
