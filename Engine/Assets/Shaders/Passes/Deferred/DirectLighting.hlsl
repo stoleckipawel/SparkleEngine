@@ -33,6 +33,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	float3 directDiffuse = 0.0f;
 	float3 directSpecular = 0.0f;
 	float3 directSubsurface = 0.0f;
+	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
@@ -44,6 +45,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    viewDirWorld,
 		    gBuffer.NormalWorld,
 		    gBuffer.Roughness,
+		    evaluateSubsurface,
 		    lightIndex,
 		    lightDiffuse,
 		    lightSpecular,

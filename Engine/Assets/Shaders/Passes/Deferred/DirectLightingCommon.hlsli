@@ -10,6 +10,7 @@ namespace DirectLighting
 		float3 viewDirWorld,
 		float3 normalWorld,
 		float roughness,
+		bool evaluateSubsurface,
 		uint lightIndex,
 		out float3 outDiffuse,
 		out float3 outSpecular,
@@ -32,11 +33,14 @@ namespace DirectLighting
 
 		outDiffuse = BRDF::Diffuse::EvaluateDirectTransport(clampedRoughness, shadingData);
 		outSpecular = BRDF::Specular::EvaluateDirectTransport(shadingData, clampedRoughness);
-		outSubsurface = BRDF::Subsurface::EvaluateDirectTransport(clampedRoughness, shadingData);
+		outSubsurface = 0.0f.xxx;
 
 		outDiffuse *= radiance * shadingData.NoL;
 		outSpecular *= radiance * shadingData.NoL;
-		outSubsurface *= radiance * shadingData.NoL;
+		if (evaluateSubsurface)
+		{
+			outSubsurface = BRDF::Subsurface::EvaluateDirectTransport(clampedRoughness, shadingData) * radiance * shadingData.NoL;
+		}
 	}
 }
 

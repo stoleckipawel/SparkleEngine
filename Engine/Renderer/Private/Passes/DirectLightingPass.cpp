@@ -48,6 +48,7 @@ void DirectLightingPass::DeclareResources(
 	parameters->GBufferBaseColor = frameGraph.CreateSRV(gbuffer.BaseColor);
 	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
 	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
+	parameters->GBufferSubsurface = frameGraph.CreateSRV(gbuffer.Subsurface);
 	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
 }
 
