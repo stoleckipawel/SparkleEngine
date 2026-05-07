@@ -12,7 +12,7 @@ namespace
 		const std::uint32_t width = desc.width > 0 ? desc.width : static_cast<std::uint32_t>(window.GetWidth());
 		const std::uint32_t height = desc.height > 0 ? desc.height : static_cast<std::uint32_t>(window.GetHeight());
 		const std::string debugName = desc.name.empty() ? std::string{fallbackName} : desc.name;
-		return FrameGraphTextureDesc{debugName, width, height, desc.format, desc.kind};
+		return FrameGraphTextureDesc{debugName, width, height, desc.format, desc.kind, desc.clearColor};
 	}
 
 	FrameGraphResourceKind ResolveTextureResourceKind(FrameGraphTextureKind kind) noexcept

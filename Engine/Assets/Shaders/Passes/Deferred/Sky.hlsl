@@ -1,4 +1,5 @@
 #include "Resources/ConstantBuffers.hlsli"
+#include "Passes/Deferred/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColorTexture;
 Texture2D GBufferDeviceZ;
@@ -27,7 +28,7 @@ float3 ComputeSkyDirection(uint2 pixelCoord)
 	}
 
 	const float deviceZ = GBufferDeviceZ.Load(int3(dispatchThreadId.xy, 0)).r;
-	if (deviceZ < 0.999999f)
+	if (!IsSkyPixel(deviceZ))
 	{
 		return;
 	}

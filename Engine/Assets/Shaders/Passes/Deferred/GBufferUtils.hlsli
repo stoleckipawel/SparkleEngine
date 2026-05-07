@@ -23,6 +23,16 @@ struct GBufferData
 	float SubsurfaceStrength;
 };
 
+float GetSkyDeviceZValue()
+{
+	return 0.0f;
+}
+
+bool IsSkyPixel(float deviceZ)
+{
+	return deviceZ <= GetSkyDeviceZValue() + 1.0e-6f;
+}
+
 float3 DecodeGBufferNormal(float3 normalWorld)
 {
 	const float lengthSquared = dot(normalWorld, normalWorld);

@@ -18,7 +18,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	}
 
 	const GBufferData gBuffer = LoadGBuffer(dispatchThreadId.xy);
-	if (gBuffer.DeviceZ >= 0.999999f)
+	if (IsSkyPixel(gBuffer.DeviceZ))
 	{
 		DirectDiffuseTexture[dispatchThreadId.xy] = 0.0f.xxxx;
 		DirectSpecularTexture[dispatchThreadId.xy] = 0.0f.xxxx;

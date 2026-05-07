@@ -23,7 +23,7 @@ GBufferTargets BuildGBuffer(
 	targets.Subsurface = frameGraph.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor("GBufferSubsurface", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::SubsurfaceFormat));
 	targets.DeviceZ = frameGraph.CreateTexture(
-	    FrameGraphTextureDesc::CreateColor("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::DeviceZFormat));
+	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::DeviceZFormat));
 	targets.MainDepth = sceneTargets.MainDepth;
 
 	auto& parameters = frameGraph.AllocPassParameters<GBufferPass>();

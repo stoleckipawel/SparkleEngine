@@ -128,7 +128,7 @@ std::array<float, 4> FrameGraph::GetClearColor(ResourceHandle handle) const noex
 {
 	const FrameGraphResourceMetadata& resource = m_resourceRegistry.GetMetadata(handle);
 	assert(resource.kind == FrameGraphResourceKind::BackBuffer || resource.kind == FrameGraphResourceKind::ColorRenderTarget);
-	return {0.0f, 0.0f, 0.0f, 1.0f};
+	return resource.textureDesc.clearColor;
 }
 
 float FrameGraph::GetClearDepth(ResourceHandle handle) const noexcept
