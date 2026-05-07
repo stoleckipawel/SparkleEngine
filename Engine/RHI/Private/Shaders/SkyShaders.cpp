@@ -22,7 +22,7 @@ class SkyCS final : public TGlobalShader<SkyCS>
 		SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 		SHADER_PARAMETER_CBUFFER_NAMED(PerView, PerViewConstantBufferData, PerViewConstantBufferData)
 		SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
-		SHADER_PARAMETER_TEXTURE(TextureCube, SkyTexture)
+		SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
 		SHADER_PARAMETER_SHARED_SAMPLER(SamplerLinearClamp)
 	END_SHADER_PARAMETER_STRUCT()
 };

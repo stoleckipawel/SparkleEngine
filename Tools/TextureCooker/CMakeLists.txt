@@ -7,10 +7,23 @@ set(TEXTURE_COOK_SHARED_PRIVATE_SOURCES
 )
 
 set(TEXTURE_COOKER_PRIVATE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DdsTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ExrTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/HdrTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/RasterTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderUtils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.cpp
 )
 
 set(TEXTURE_COOKER_PRIVATE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DdsTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ExrTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/HdrTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/RasterTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderBackend.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderUtils.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.h
 )
 
@@ -33,6 +46,15 @@ target_link_libraries(TextureCookShared
         SparkleCore
 )
 
+add_library(TextureCookerMiniz STATIC
+    ${FETCHCONTENT_BASE_DIR}/tinyexr-src/deps/miniz/miniz.c
+)
+
+target_include_directories(TextureCookerMiniz
+    PUBLIC
+        ${FETCHCONTENT_BASE_DIR}/tinyexr-src/deps/miniz
+)
+
 add_executable(TextureCooker
     ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp
     ${TEXTURE_COOKER_PRIVATE_SOURCES}
@@ -47,19 +69,20 @@ target_include_directories(TextureCooker
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
+    ${stb_SOURCE_DIR}
+    ${tinyexr_SOURCE_DIR}
 )
 
 target_compile_features(TextureCooker PRIVATE cxx_std_20)
-
-target_precompile_headers(TextureCooker PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
-)
 
 target_link_libraries(TextureCooker
     PRIVATE
     CookCommon
         TextureCookShared
+        TextureCookerMiniz
         SparkleRHI
+    stb
+    tinyexr
 )
 
 set_target_properties(TextureCooker PROPERTIES

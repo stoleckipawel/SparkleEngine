@@ -15,6 +15,53 @@ param(
     [int]$TotalSceneCount
 )
 
+function Get-Fnv1a64Hex {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Text
+    )
+
+    $offset = [System.Numerics.BigInteger]::Parse("14695981039346656037")
+    $prime = [System.Numerics.BigInteger]1099511628211
+    $modulus = [System.Numerics.BigInteger]::Parse("18446744073709551616")
+    $hash = $offset
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+    foreach ($byte in $bytes) {
+        $hash = [System.Numerics.BigInteger]([UInt64]$hash -bxor [UInt64]$byte)
+        $hash = [System.Numerics.BigInteger]::Remainder(($hash * $prime), $modulus)
+    }
+
+    return ([UInt64]$hash).ToString("x16")
+}
+
+function Add-DefaultSkyTextureRequest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectRoot,
+
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Generic.SortedSet[string]]$UniqueRequestLines
+    )
+
+    $projectDirectory = Get-Item -LiteralPath $ProjectRoot
+    $projectsRoot = $projectDirectory.Parent
+    $workspaceRoot = $projectsRoot.Parent.FullName
+    $projectName = $projectDirectory.Name
+
+    $sourcePath = Join-Path $workspaceRoot "Engine\Assets\Textures\Sky\evening_road_01_puresky_4k.exr"
+    $outputPath = Join-Path $workspaceRoot ("build\Cooked\{0}\Textures\Defaults\default_cubemap.stex" -f $projectName)
+    $assetId = Get-Fnv1a64Hex -Text "engine:linear:Assets/Textures/Sky/evening_road_01_puresky_4k.exr"
+
+    if (-not (Test-Path -LiteralPath $sourcePath)) {
+        throw "Default sky source texture was not found: $sourcePath"
+    }
+
+    $requestLine = "{0}|linear|{1}|{2}" -f $assetId, ($outputPath -replace '\\', '/'), ($sourcePath -replace '\\', '/')
+    [void]$UniqueRequestLines.Add($requestLine)
+
+    Write-Host ("[LOG] Added default sky texture request: source='{0}' output='{1}'" -f $sourcePath, $outputPath)
+}
+
 $temporaryParent = Split-Path -Parent $OutputRequestFile
 if ([string]::IsNullOrWhiteSpace($temporaryParent)) {
     $temporaryParent = $ProjectRoot
@@ -83,6 +130,8 @@ try {
     if ($null -eq $header) {
         throw "No texture request header was produced during collection."
     }
+
+    Add-DefaultSkyTextureRequest -ProjectRoot $ProjectRoot -UniqueRequestLines $uniqueRequestLines
 
     $outputLines = @($header)
     $outputLines += $uniqueRequestLines

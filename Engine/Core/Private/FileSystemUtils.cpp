@@ -673,6 +673,14 @@ namespace Filesystem
 			return std::filesystem::exists(inputPath, ec) ? std::make_optional(inputPath) : std::nullopt;
 		}
 
+		if (type == AssetType::Texture && Strings::EqualsIgnoreCase(inputPath.extension().string(), ".stex"))
+		{
+			if (auto result = TryResolveIn(state.cookedAssetRootPath, inputPath, type))
+			{
+				return result;
+			}
+		}
+
 		if (auto result = TryResolveIn(state.projectAssetsPath, inputPath, type))
 		{
 			return result;

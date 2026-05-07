@@ -12,6 +12,7 @@
 #   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI (DX12 + Win32 backends)
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
+#   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
 #   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
@@ -48,13 +49,14 @@ find_program(_git_exe git REQUIRED)
 message(STATUS "")
 message(STATUS "=== Fetching Third-Party Dependencies ===")
 message(STATUS "")
-message(STATUS "  Total download: ~85 MB (shallow clones, LFS skipped)")
+message(STATUS "  Total download: ~86 MB (shallow clones, LFS skipped)")
 message(STATUS "  Expected time:  1-3 minutes depending on connection")
 message(STATUS "")
 message(STATUS "  Dependency sizes:")
 message(STATUS "    imgui            ~7 MB")
 message(STATUS "    cgltf            ~1 MB")
 message(STATUS "    stb              ~5 MB")
+message(STATUS "    tinyexr          ~1 MB")
 message(STATUS "    spdlog           ~3 MB")
 message(STATUS "    assimp          ~15 MB")
 message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
@@ -106,7 +108,7 @@ endfunction()
 # directory, which fails on Windows with "Error removing directory".
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
-foreach(_dep imgui cgltf stb spdlog assimp ktx spirv_reflect)
+foreach(_dep imgui cgltf stb tinyexr spdlog assimp ktx spirv_reflect)
     set(_src_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-src")
     set(_subbuild_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-subbuild")
     if(EXISTS "${_src_dir}" AND NOT EXISTS "${_src_dir}/.git")
@@ -228,13 +230,40 @@ FetchContent_Declare(stb
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [3/9] Fetching stb (~5 MB)...")
+message(STATUS "  [3/10] Fetching stb (~5 MB)...")
 FetchContent_Populate(stb)
 
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
 message(STATUS "  stb:            ${stb_SOURCE_DIR} (~5 MB)")
+
+# ============================================================================
+# tinyexr - Header-only OpenEXR image loader
+# https://github.com/syoyo/tinyexr
+#
+# Target:  tinyexr (INTERFACE)
+# Usage:   target_link_libraries(YourTarget PRIVATE tinyexr)
+#          #define TINYEXR_IMPLEMENTATION (in exactly one .cpp)
+# ============================================================================
+FetchContent_Declare(tinyexr
+    GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
+    GIT_TAG        v1.0.7
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+)
+message(STATUS "  [4/10] Fetching tinyexr v1.0.7 (~1 MB)...")
+FetchContent_Populate(tinyexr)
+
+add_library(tinyexr INTERFACE)
+target_include_directories(tinyexr INTERFACE
+    ${tinyexr_SOURCE_DIR}
+    ${tinyexr_SOURCE_DIR}/deps
+    ${tinyexr_SOURCE_DIR}/deps/miniz
+    ${tinyexr_SOURCE_DIR}/miniz
+)
+
+message(STATUS "  tinyexr:        ${tinyexr_SOURCE_DIR} (~1 MB)")
 
 # ============================================================================
 # spdlog - Repo-owned logging backend
@@ -253,7 +282,7 @@ FetchContent_Declare(spdlog
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [4/9] Fetching spdlog v1.14.1 (~3 MB)...")
+message(STATUS "  [5/10] Fetching spdlog v1.14.1 (~3 MB)...")
 FetchContent_Populate(spdlog)
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)

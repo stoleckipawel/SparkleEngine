@@ -1,9 +1,9 @@
 ﻿#include "PCH.h"
 
 #include "Cooking/TextureAssetCooker.h"
+#include "Cooking/TextureSourceLoader.h"
 
 #include "D3D12/Textures/CookedTextureAsset.h"
-#include "D3D12/Textures/TextureLoader.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
@@ -25,10 +25,9 @@ namespace AssetAuthoring
 			return false;
 		}
 
-		TextureLoadResult loadResult = TextureLoader::Load(request.sourcePath);
+		TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
 		if (!loadResult.IsValid())
 		{
-			outErrorMessage = "Failed to load source texture '" + request.sourcePath.string() + "'";
 			return false;
 		}
 
@@ -170,6 +169,8 @@ namespace AssetAuthoring
 			case DXGI_FORMAT_BC4_SNORM:
 			case DXGI_FORMAT_BC5_UNORM:
 			case DXGI_FORMAT_BC5_SNORM:
+			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
 				if (wantsSrgb)
 				{
 					outErrorMessage = "Requested sRGB cooking for a data texture format that cannot be interpreted as sRGB.";
