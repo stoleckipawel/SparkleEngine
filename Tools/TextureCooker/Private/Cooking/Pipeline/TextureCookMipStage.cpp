@@ -10,6 +10,10 @@
 #include <algorithm>
 #include <cmath>
 
+using AssetAuthoring::TextureCookRequest;
+using AssetAuthoring::TextureMipPolicy;
+using AssetAuthoring::TextureMipFilter;
+
 namespace TextureCookPipeline
 {
 	namespace

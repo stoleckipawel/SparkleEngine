@@ -10,6 +10,10 @@
 #include <array>
 #include <cstring>
 
+using AssetAuthoring::TextureCookRequest;
+using AssetAuthoring::TextureCompressionFamilyPreference;
+using AssetAuthoring::TextureColorSpace;
+
 namespace TextureCookPipeline
 {
 	namespace

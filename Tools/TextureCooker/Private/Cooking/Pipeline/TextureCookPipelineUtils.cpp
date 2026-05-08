@@ -7,6 +7,10 @@
 #include <cmath>
 #include <numbers>
 
+using AssetAuthoring::TextureCookRequest;
+using AssetAuthoring::TextureColorSpace;
+using AssetAuthoring::TextureCompressionFamilyPreference;
+
 namespace TextureCookPipeline
 {
 	DXGI_FORMAT ResolveUncompressedOutputFormat(const TextureCookRequest& request, bool sourceWasFloat) noexcept

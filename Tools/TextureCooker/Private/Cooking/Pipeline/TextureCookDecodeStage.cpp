@@ -9,6 +9,9 @@
 #include <cstring>
 #include <numbers>
 
+using AssetAuthoring::TextureCookRequest;
+using AssetAuthoring::TextureColorSpace;
+
 namespace TextureCookPipeline
 {
 	namespace
