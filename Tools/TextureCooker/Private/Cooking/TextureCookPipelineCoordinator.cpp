@@ -2,10 +2,10 @@
 
 #include "Cooking/TextureCookPipelineCoordinator.h"
 
-#include "Cooking/Pipeline/TextureCookMipStage.h"
-#include "Cooking/Pipeline/TextureCookOutputStage.h"
+#include "Cooking/Pipeline/TextureCookMipGenerationStage.h"
+#include "Cooking/Pipeline/TextureCookCompressionAndOutputStage.h"
 #include "Cooking/Pipeline/TextureCookPipelineUtils.h"
-#include "Cooking/Pipeline/TextureCookDecodeStage.h"
+#include "Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.h"
 
 namespace AssetAuthoring
 {

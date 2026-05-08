@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Cooking/Pipeline/TextureCookMipStage.h"
+#include "Cooking/Pipeline/TextureCookMipGenerationStage.h"
 
 #include "Cooking/Pipeline/TextureCookPipelineUtils.h"
 

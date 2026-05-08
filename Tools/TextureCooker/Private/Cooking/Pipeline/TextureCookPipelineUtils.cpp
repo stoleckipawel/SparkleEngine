@@ -2,10 +2,10 @@
 
 #include "Cooking/Pipeline/TextureCookPipelineUtils.h"
 
+#include "Core/Public/Math/SignalProcessing.h"
+
 #include <algorithm>
-#include <bit>
 #include <cmath>
-#include <numbers>
 
 using AssetAuthoring::TextureCookRequest;
 using AssetAuthoring::TextureColorSpace;
@@ -195,26 +195,6 @@ namespace TextureCookPipeline
 		return true;
 	}
 
-	std::uint8_t EncodeByteChannel(float value, bool srgb) noexcept
-	{
-		const float clampedValue = (std::clamp)(value, 0.0f, 1.0f);
-		const float encodedValue = srgb ? (clampedValue <= 0.0031308f ? clampedValue * 12.92f
-		                                                             : 1.055f * std::pow(clampedValue, 1.0f / 2.4f) - 0.055f)
-		                                : clampedValue;
-		return static_cast<std::uint8_t>((std::clamp)(std::lround(encodedValue * 255.0f), 0l, 255l));
-	}
-
-	float DecodeByteChannel(std::uint8_t value, bool srgb) noexcept
-	{
-		const float normalizedValue = static_cast<float>(value) / 255.0f;
-		if (!srgb)
-		{
-			return normalizedValue;
-		}
-
-		return normalizedValue <= 0.04045f ? normalizedValue / 12.92f : std::pow((normalizedValue + 0.055f) / 1.055f, 2.4f);
-	}
-
 	std::uint32_t ComputeBlockCompressedRowPitch(CompressionTarget target, std::uint32_t width) noexcept
 	{
 		const std::uint32_t blockBytes = target == CompressionTarget::BC1 || target == CompressionTarget::BC4 ? 8u : 16u;
@@ -295,34 +275,6 @@ namespace TextureCookPipeline
 		}
 	}
 
-	namespace
-	{
-		float BesselI0(float value) noexcept
-		{
-			float sum = 1.0f;
-			float term = 1.0f;
-			const float halfValue = value * 0.5f;
-			for (int index = 1; index < 8; ++index)
-			{
-				term *= (halfValue * halfValue) / static_cast<float>(index * index);
-				sum += term;
-			}
-
-			return sum;
-		}
-
-		float Sinc(float value) noexcept
-		{
-			if (std::fabs(value) <= 1e-6f)
-			{
-				return 1.0f;
-			}
-
-			const float angle = std::numbers::pi_v<float> * value;
-			return std::sin(angle) / angle;
-		}
-	}
-
 	float KaiserKernel(float x, float, void*)
 	{
 		constexpr float support = 3.0f;
@@ -334,38 +286,12 @@ namespace TextureCookPipeline
 		}
 
 		const float ratio = absoluteX / support;
-		const float window = BesselI0(beta * std::sqrt((std::max)(0.0f, 1.0f - (ratio * ratio)))) / BesselI0(beta);
-		return Sinc(x) * window;
+		const float window = MathUtils::BesselI0(beta * std::sqrt((std::max)(0.0f, 1.0f - (ratio * ratio)))) / MathUtils::BesselI0(beta);
+		return MathUtils::Sinc(x) * window;
 	}
 
 	float KaiserSupport(float, void*)
 	{
 		return 3.0f;
-	}
-
-	std::uint16_t FloatToHalf(float value) noexcept
-	{
-		const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);
-		const std::uint32_t sign = (bits >> 16u) & 0x8000u;
-		std::int32_t exponent = static_cast<std::int32_t>((bits >> 23u) & 0xffu) - 127 + 15;
-		std::uint32_t mantissa = bits & 0x7fffffu;
-
-		if (exponent <= 0)
-		{
-			if (exponent < -10)
-			{
-				return static_cast<std::uint16_t>(sign);
-			}
-
-			mantissa = (mantissa | 0x800000u) >> (1 - exponent);
-			return static_cast<std::uint16_t>(sign | ((mantissa + 0x1000u) >> 13u));
-		}
-
-		if (exponent >= 31)
-		{
-			return static_cast<std::uint16_t>(sign | 0x7c00u);
-		}
-
-		return static_cast<std::uint16_t>(sign | (static_cast<std::uint32_t>(exponent) << 10u) | ((mantissa + 0x1000u) >> 13u));
 	}
 }

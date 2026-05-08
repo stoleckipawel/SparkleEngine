@@ -26,9 +26,6 @@ namespace TextureCookPipeline
 	bool HasMeaningfulAlpha(const WorkingImage& workingImage) noexcept;
 	bool IsGreyscaleLike(const WorkingImage& workingImage) noexcept;
 
-	std::uint8_t EncodeByteChannel(float value, bool srgb) noexcept;
-	float DecodeByteChannel(std::uint8_t value, bool srgb) noexcept;
-
 	std::uint32_t ComputeBlockCompressedRowPitch(CompressionTarget target, std::uint32_t width) noexcept;
 	std::uint32_t ComputeBlockCompressedSlicePitch(CompressionTarget target, std::uint32_t width, std::uint32_t height) noexcept;
 
@@ -37,5 +34,4 @@ namespace TextureCookPipeline
 
 	float KaiserKernel(float x, float scale, void* userData);
 	float KaiserSupport(float scale, void* userData);
-	std::uint16_t FloatToHalf(float value) noexcept;
 }

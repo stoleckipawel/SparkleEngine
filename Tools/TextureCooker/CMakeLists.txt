@@ -12,9 +12,9 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/InspectTextureCookRequestFileCommand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookPipelineCoordinator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookDecodeStage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipStage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookOutputStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipGenerationStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookCompressionAndOutputStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
@@ -38,9 +38,9 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookPipelineCoordinator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineTypes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineUtils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookDecodeStage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipStage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookOutputStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipGenerationStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookCompressionAndOutputStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.h
@@ -104,6 +104,7 @@ target_link_libraries(TextureCooker
     PRIVATE
     CookCommon
         CMP_Core
+        SparkleCore
         TextureCookShared
         TextureCookerMiniz
         SparkleRHI

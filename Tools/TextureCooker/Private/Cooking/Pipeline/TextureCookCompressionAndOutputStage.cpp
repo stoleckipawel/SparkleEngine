@@ -1,8 +1,11 @@
 #include "PCH.h"
 
-#include "Cooking/Pipeline/TextureCookOutputStage.h"
+#include "Cooking/Pipeline/TextureCookCompressionAndOutputStage.h"
 
 #include "Cooking/Pipeline/TextureCookPipelineUtils.h"
+
+#include "Core/Public/Pixel/FloatConversion.h"
+#include "Core/Public/Pixel/PixelFormat.h"
 
 #include <cmp_core.h>
 
@@ -171,10 +174,10 @@ namespace TextureCookPipeline
 			for (std::uint32_t texelIndex = 0; texelIndex < sourceMip.width * sourceMip.height; ++texelIndex)
 			{
 				const std::size_t pixelOffset = static_cast<std::size_t>(texelIndex) * 4u;
-				outMip.data[pixelOffset + 0u] = EncodeByteChannel(sourceMip.pixels[pixelOffset + 0u], srgbOutput);
-				outMip.data[pixelOffset + 1u] = EncodeByteChannel(sourceMip.pixels[pixelOffset + 1u], srgbOutput);
-				outMip.data[pixelOffset + 2u] = EncodeByteChannel(sourceMip.pixels[pixelOffset + 2u], srgbOutput);
-				outMip.data[pixelOffset + 3u] = EncodeByteChannel(sourceMip.pixels[pixelOffset + 3u], false);
+				outMip.data[pixelOffset + 0u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 0u], srgbOutput);
+				outMip.data[pixelOffset + 1u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 1u], srgbOutput);
+				outMip.data[pixelOffset + 2u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 2u], srgbOutput);
+				outMip.data[pixelOffset + 3u] = Pixel::EncodeByteChannel(sourceMip.pixels[pixelOffset + 3u], false);
 			}
 
 			outErrorMessage.clear();
@@ -217,10 +220,10 @@ namespace TextureCookPipeline
 								const std::uint32_t sampleY = (std::min)(sourceMip.height - 1u, (blockY * 4u) + localY);
 								const std::size_t sourceOffset = (static_cast<std::size_t>(sampleY) * sourceMip.width + sampleX) * 4u;
 								const std::size_t blockOffset = (static_cast<std::size_t>(localY) * 4u + localX) * 4u;
-								rgbaBlock[blockOffset + 0u] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], srgbOutput);
-								rgbaBlock[blockOffset + 1u] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 1u], srgbOutput);
-								rgbaBlock[blockOffset + 2u] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 2u], srgbOutput);
-								rgbaBlock[blockOffset + 3u] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 3u], false);
+								rgbaBlock[blockOffset + 0u] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], srgbOutput);
+								rgbaBlock[blockOffset + 1u] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 1u], srgbOutput);
+								rgbaBlock[blockOffset + 2u] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 2u], srgbOutput);
+								rgbaBlock[blockOffset + 3u] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 3u], false);
 							}
 						}
 
@@ -245,7 +248,7 @@ namespace TextureCookPipeline
 								const std::uint32_t sampleX = (std::min)(sourceMip.width - 1u, (blockX * 4u) + localX);
 								const std::uint32_t sampleY = (std::min)(sourceMip.height - 1u, (blockY * 4u) + localY);
 								const std::size_t sourceOffset = (static_cast<std::size_t>(sampleY) * sourceMip.width + sampleX) * 4u;
-								block[(localY * 4u) + localX] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], false);
+								block[(localY * 4u) + localX] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], false);
 							}
 						}
 
@@ -269,8 +272,8 @@ namespace TextureCookPipeline
 								const std::uint32_t sampleX = (std::min)(sourceMip.width - 1u, (blockX * 4u) + localX);
 								const std::uint32_t sampleY = (std::min)(sourceMip.height - 1u, (blockY * 4u) + localY);
 								const std::size_t sourceOffset = (static_cast<std::size_t>(sampleY) * sourceMip.width + sampleX) * 4u;
-								blockRed[(localY * 4u) + localX] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], false);
-								blockGreen[(localY * 4u) + localX] = EncodeByteChannel(sourceMip.pixels[sourceOffset + 1u], false);
+								blockRed[(localY * 4u) + localX] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 0u], false);
+								blockGreen[(localY * 4u) + localX] = Pixel::EncodeByteChannel(sourceMip.pixels[sourceOffset + 1u], false);
 							}
 						}
 
@@ -292,9 +295,9 @@ namespace TextureCookPipeline
 							const std::uint32_t sampleY = (std::min)(sourceMip.height - 1u, (blockY * 4u) + localY);
 							const std::size_t sourceOffset = (static_cast<std::size_t>(sampleY) * sourceMip.width + sampleX) * 4u;
 							const std::size_t blockOffset = (static_cast<std::size_t>(localY) * 12u) + (localX * 3u);
-							blockHalf[blockOffset + 0u] = FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 0u]));
-							blockHalf[blockOffset + 1u] = FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 1u]));
-							blockHalf[blockOffset + 2u] = FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 2u]));
+							blockHalf[blockOffset + 0u] = Pixel::FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 0u]));
+							blockHalf[blockOffset + 1u] = Pixel::FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 1u]));
+							blockHalf[blockOffset + 2u] = Pixel::FloatToHalf((std::max)(0.0f, sourceMip.pixels[sourceOffset + 2u]));
 						}
 					}
 

@@ -1,8 +1,10 @@
 #include "PCH.h"
 
-#include "Cooking/Pipeline/TextureCookDecodeStage.h"
+#include "Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.h"
 
 #include "Cooking/Pipeline/TextureCookPipelineUtils.h"
+
+#include "Core/Public/Pixel/PixelFormat.h"
 
 #include <algorithm>
 #include <cmath>
@@ -57,10 +59,10 @@ namespace TextureCookPipeline
 				const std::uint8_t blue = sourceIsBgra ? sourceMip.data[sourceOffset + 0u] : sourceMip.data[sourceOffset + 2u];
 				const std::uint8_t alpha = sourceMip.data[sourceOffset + 3u];
 
-				outWorkingMip.pixels[sourceOffset + 0u] = DecodeByteChannel(red, applySrgb);
-				outWorkingMip.pixels[sourceOffset + 1u] = DecodeByteChannel(green, applySrgb);
-				outWorkingMip.pixels[sourceOffset + 2u] = DecodeByteChannel(blue, applySrgb);
-				outWorkingMip.pixels[sourceOffset + 3u] = DecodeByteChannel(alpha, false);
+				outWorkingMip.pixels[sourceOffset + 0u] = Pixel::DecodeByteChannel(red, applySrgb);
+				outWorkingMip.pixels[sourceOffset + 1u] = Pixel::DecodeByteChannel(green, applySrgb);
+				outWorkingMip.pixels[sourceOffset + 2u] = Pixel::DecodeByteChannel(blue, applySrgb);
+				outWorkingMip.pixels[sourceOffset + 3u] = Pixel::DecodeByteChannel(alpha, false);
 			}
 
 			outErrorMessage.clear();
