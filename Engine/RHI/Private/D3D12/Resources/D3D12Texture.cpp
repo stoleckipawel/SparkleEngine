@@ -34,7 +34,7 @@ void D3D12Texture::CreateResource()
 	m_texResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	m_texResourceDesc.Width = static_cast<UINT64>(m_textureLoadResult.width);
 	m_texResourceDesc.Height = static_cast<UINT>(m_textureLoadResult.height);
-	m_texResourceDesc.DepthOrArraySize = 1;
+	m_texResourceDesc.DepthOrArraySize = m_textureLoadResult.GetArraySize();
 	m_texResourceDesc.MipLevels = m_textureLoadResult.GetMipCount();
 	m_texResourceDesc.Format = m_textureLoadResult.dxgiFormat;
 	m_texResourceDesc.SampleDesc.Count = 1;
@@ -52,7 +52,7 @@ void D3D12Texture::CreateResource()
 	    IID_PPV_ARGS(m_textureResource.ReleaseAndGetAddressOf())));
 	m_textureResource->SetName(L"RHI_D3D12Texture");
 
-	const UINT subresourceCount = static_cast<UINT>(m_textureLoadResult.mipLevels.size());
+	const UINT subresourceCount = static_cast<UINT>(m_textureLoadResult.GetSubresourceCount());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);
 
 	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
@@ -69,15 +69,18 @@ void D3D12Texture::CreateResource()
 void D3D12Texture::UploadToGPU()
 {
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	subresources.reserve(m_textureLoadResult.mipLevels.size());
+	subresources.reserve(m_textureLoadResult.GetSubresourceCount());
 
-	for (const auto& mipLevel : m_textureLoadResult.mipLevels)
+	for (const TextureArraySliceData& arraySlice : m_textureLoadResult.arraySlices)
 	{
-		D3D12_SUBRESOURCE_DATA subresource = {};
-		subresource.pData = mipLevel.data.empty() ? nullptr : mipLevel.data.data();
-		subresource.RowPitch = static_cast<LONG_PTR>(mipLevel.rowPitch);
-		subresource.SlicePitch = static_cast<LONG_PTR>(mipLevel.slicePitch);
-		subresources.push_back(subresource);
+		for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+		{
+			D3D12_SUBRESOURCE_DATA subresource = {};
+			subresource.pData = mipLevel.data.empty() ? nullptr : mipLevel.data.data();
+			subresource.RowPitch = static_cast<LONG_PTR>(mipLevel.rowPitch);
+			subresource.SlicePitch = static_cast<LONG_PTR>(mipLevel.slicePitch);
+			subresources.push_back(subresource);
+		}
 	}
 
 	UpdateSubresources(
@@ -105,10 +108,21 @@ D3D12_SHADER_RESOURCE_VIEW_DESC D3D12Texture::BuildShaderResourceViewDesc() cons
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = m_textureLoadResult.dxgiFormat;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = m_textureLoadResult.GetMipCount();
+	if (m_textureLoadResult.IsCube())
+	{
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.TextureCube.MostDetailedMip = 0;
+		srvDesc.TextureCube.MipLevels = m_textureLoadResult.GetMipCount();
+		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+	}
+	else
+	{
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.Texture2D.MipLevels = m_textureLoadResult.GetMipCount();
+		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+	}
 	return srvDesc;
 }
 

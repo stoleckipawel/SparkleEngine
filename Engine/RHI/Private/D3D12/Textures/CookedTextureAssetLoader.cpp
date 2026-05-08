@@ -57,7 +57,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	}
 
 	std::vector<CookedTextureMipHeader> mipHeaders;
-	if (!ReadMipHeaders(reader, header.mipCount, resolvedPath, mipHeaders, errorMessage))
+	if (!ReadMipHeaders(reader, header.mipCount * header.GetArraySize(), resolvedPath, mipHeaders, errorMessage))
 	{
 		Diagnostics::Fail(
 		    g_cookedTextureAssetLoaderLogger,
@@ -70,6 +70,8 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	TextureLoadResult loadResult;
 	loadResult.width = header.width;
 	loadResult.height = header.height;
+	loadResult.arraySize = header.GetArraySize();
+	loadResult.dimension = header.GetDimension();
 	loadResult.dxgiFormat = static_cast<DXGI_FORMAT>(header.dxgiFormat);
 	loadResult.formatIntent = formatIntent;
 	if (!ReadMipPayloads(reader, mipHeaders, resolvedPath, loadResult, errorMessage))
@@ -112,6 +114,24 @@ bool CookedTextureAssetLoader::ValidateHeader(
 	if (header.width == 0 || header.height == 0 || header.mipCount == 0 || header.dxgiFormat == DXGI_FORMAT_UNKNOWN)
 	{
 		outErrorMessage = "Cooked texture asset header has invalid dimensions, mip count, or format for '" + resolvedPath.string() + "'";
+		return false;
+	}
+
+	if (header.GetArraySize() == 0)
+	{
+		outErrorMessage = "Cooked texture asset header has an invalid array size for '" + resolvedPath.string() + "'";
+		return false;
+	}
+
+	if (header.GetDimension() != TextureResourceDimension::Texture2D && header.GetDimension() != TextureResourceDimension::TextureCube)
+	{
+		outErrorMessage = "Cooked texture asset header has an invalid texture dimension for '" + resolvedPath.string() + "'";
+		return false;
+	}
+
+	if (header.GetDimension() == TextureResourceDimension::TextureCube && header.GetArraySize() != 6)
+	{
+		outErrorMessage = "Cooked texture asset header has an invalid cubemap face count for '" + resolvedPath.string() + "'";
 		return false;
 	}
 
@@ -175,13 +195,21 @@ bool CookedTextureAssetLoader::ReadMipPayloads(
     TextureLoadResult& outLoadResult,
     std::string& outErrorMessage)
 {
-	outLoadResult.mipLevels.clear();
-	outLoadResult.mipLevels.reserve(mipHeaders.size());
+	outLoadResult.arraySlices.clear();
+	outLoadResult.arraySlices.resize(outLoadResult.arraySize);
 
-	for (std::uint32_t mipIndex = 0; mipIndex < static_cast<std::uint32_t>(mipHeaders.size()); ++mipIndex)
+	if (mipHeaders.empty() || (mipHeaders.size() % outLoadResult.arraySize) != 0)
 	{
-		const CookedTextureMipHeader& mipHeader = mipHeaders[mipIndex];
-		if (!ValidateMipHeader(mipHeader, mipIndex, resolvedPath, outErrorMessage))
+		outErrorMessage = "Cooked texture asset '" + resolvedPath.string() + "' has an invalid subresource layout.";
+		return false;
+	}
+
+	const std::uint32_t mipCount = static_cast<std::uint32_t>(mipHeaders.size() / outLoadResult.arraySize);
+
+	for (std::uint32_t subresourceIndex = 0; subresourceIndex < static_cast<std::uint32_t>(mipHeaders.size()); ++subresourceIndex)
+	{
+		const CookedTextureMipHeader& mipHeader = mipHeaders[subresourceIndex];
+		if (!ValidateMipHeader(mipHeader, subresourceIndex, resolvedPath, outErrorMessage))
 		{
 			return false;
 		}
@@ -200,7 +228,8 @@ bool CookedTextureAssetLoader::ReadMipPayloads(
 		}
 		mipLevel.data.assign(mipPayload.begin(), mipPayload.end());
 
-		outLoadResult.mipLevels.push_back(std::move(mipLevel));
+		const std::uint32_t arraySliceIndex = subresourceIndex / mipCount;
+		outLoadResult.arraySlices[arraySliceIndex].mipLevels.push_back(std::move(mipLevel));
 	}
 
 	return true;

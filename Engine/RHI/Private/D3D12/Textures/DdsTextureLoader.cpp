@@ -337,9 +337,12 @@ TextureLoadResult DdsTextureLoader::BuildLoadResult(
 	TextureLoadResult loadResult;
 	loadResult.width = header.width;
 	loadResult.height = header.height;
+	loadResult.arraySize = 1;
+	loadResult.dimension = TextureResourceDimension::Texture2D;
 	loadResult.dxgiFormat = dxgiFormat;
 	loadResult.formatIntent = TextureFormatIntent::Unknown;
-	loadResult.mipLevels.reserve(ResolveMipCount(header));
+	loadResult.arraySlices.resize(1);
+	loadResult.arraySlices.front().mipLevels.reserve(ResolveMipCount(header));
 
 	std::size_t byteOffset = ResolvePixelDataOffset(header);
 	std::uint32_t mipWidth = header.width;
@@ -366,9 +369,9 @@ TextureLoadResult DdsTextureLoader::BuildLoadResult(
 		mipLevel.data.assign(
 		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
 		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
-		loadResult.mipLevels.push_back(std::move(mipLevel));
+		loadResult.arraySlices.front().mipLevels.push_back(std::move(mipLevel));
 
-		byteOffset += loadResult.mipLevels.back().slicePitch;
+		byteOffset += loadResult.arraySlices.front().mipLevels.back().slicePitch;
 		mipWidth = (std::max) (1u, mipWidth >> 1u);
 		mipHeight = (std::max) (1u, mipHeight >> 1u);
 	}

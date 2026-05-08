@@ -32,7 +32,12 @@ namespace AssetAuthoring
 		    .sourceHash = sourceHash,
 		    .dependencyHash = 0,
 		    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash(
-		        std::string("ColorSpace=") + GetTextureColorSpaceName(request.colorSpace))};
+		        std::string("ColorSpace=") + GetTextureColorSpaceName(request.colorSpace) +
+		        ";MipPolicy=" + GetTextureMipPolicyName(request.mipPolicy) +
+		        ";MipFilter=" + GetTextureMipFilterName(request.mipFilter) +
+		        ";ColorProcessing=" + GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) +
+		        ";CompressionFamily=" + GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) +
+		        ";Dimension=" + GetTextureDimensionName(request.dimension))};
 		outErrorMessage.clear();
 		return true;
 	}

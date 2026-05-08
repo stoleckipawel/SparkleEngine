@@ -129,14 +129,17 @@ void WicTextureLoader::CalculateBufferLayout()
 	baseMip.rowPitch = static_cast<uint32_t>(stride64);
 	baseMip.slicePitch = static_cast<uint32_t>(slicePitch64);
 	baseMip.data.resize(static_cast<size_t>(baseMip.slicePitch));
-	m_result.mipLevels.clear();
-	m_result.mipLevels.push_back(std::move(baseMip));
+	m_result.arraySize = 1;
+	m_result.dimension = TextureResourceDimension::Texture2D;
+	m_result.arraySlices.clear();
+	m_result.arraySlices.resize(1);
+	m_result.arraySlices.front().mipLevels.push_back(std::move(baseMip));
 }
 
 void WicTextureLoader::CopyPixelData(IWICImagingFactory* wicFactory, IWICBitmapFrameDecode* wicFrame)
 {
 	WICRect copyRect = {0, 0, static_cast<INT>(m_result.width), static_cast<INT>(m_result.height)};
-	TextureMipLevelData& baseMip = m_result.mipLevels.front();
+	TextureMipLevelData& baseMip = m_result.arraySlices.front().mipLevels.front();
 
 	if (!m_requiresFormatConversion)
 	{

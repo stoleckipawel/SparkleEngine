@@ -61,9 +61,12 @@ TextureLoadResult TextureSourceLoaderUtils::BuildByteTextureLoadResult(
 	TextureLoadResult loadResult;
 	loadResult.width = baseMip.width;
 	loadResult.height = baseMip.height;
+	loadResult.arraySize = 1;
+	loadResult.dimension = TextureResourceDimension::Texture2D;
 	loadResult.dxgiFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 	loadResult.formatIntent = TextureFormatIntent::Unknown;
-	loadResult.mipLevels.push_back(std::move(baseMip));
+	loadResult.arraySlices.resize(1);
+	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
 
 	outErrorMessage.clear();
 	return loadResult;
@@ -100,9 +103,12 @@ TextureLoadResult TextureSourceLoaderUtils::BuildFloatTextureLoadResult(
 	TextureLoadResult loadResult;
 	loadResult.width = baseMip.width;
 	loadResult.height = baseMip.height;
+	loadResult.arraySize = 1;
+	loadResult.dimension = TextureResourceDimension::Texture2D;
 	loadResult.dxgiFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	loadResult.formatIntent = TextureFormatIntent::DataLinear;
-	loadResult.mipLevels.push_back(std::move(baseMip));
+	loadResult.arraySlices.resize(1);
+	loadResult.arraySlices.front().mipLevels.push_back(std::move(baseMip));
 
 	outErrorMessage.clear();
 	return loadResult;

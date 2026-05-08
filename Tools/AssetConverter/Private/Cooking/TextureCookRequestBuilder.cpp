@@ -16,24 +16,28 @@ namespace AssetAuthoring
 	    TextureCookRequest& outRequest,
 	    std::string& outErrorMessage)
 	{
-		const TextureColorSpace colorSpace = ResolveColorSpace(semantic);
-
 		std::filesystem::path normalizedSourceTexturePath;
 		if (!NormalizeSourceTexturePath(sourceTexturePath, normalizedSourceTexturePath, outErrorMessage))
 		{
 			return false;
 		}
 
+		outRequest.sourcePath = normalizedSourceTexturePath;
+		outRequest.colorSpace = ResolveColorSpace(semantic);
+		outRequest.mipPolicy = ResolveMipPolicy(semantic);
+		outRequest.mipFilter = ResolveMipFilter(semantic);
+		outRequest.colorProcessingPolicy = ResolveColorProcessingPolicy(semantic);
+		outRequest.compressionFamilyPreference = ResolveCompressionFamilyPreference(semantic);
+		outRequest.dimension = ResolveTextureDimension(semantic);
+
 		std::string textureSourceKey;
-		if (!BuildTextureSourceKey(normalizedSourceTexturePath, colorSpace, textureSourceKey, outErrorMessage))
+		if (!BuildTextureSourceKey(outRequest, textureSourceKey, outErrorMessage))
 		{
 			return false;
 		}
 
 		outRequest.assetId = Hash::Fnv1a64(textureSourceKey);
-		outRequest.sourcePath = normalizedSourceTexturePath;
 		outRequest.outputPath = Paths::CookedTextureAsset(outRequest.assetId);
-		outRequest.colorSpace = colorSpace;
 		outErrorMessage.clear();
 		return true;
 	}
@@ -54,6 +58,62 @@ namespace AssetAuthoring
 		}
 	}
 
+	TextureMipPolicy TextureCookRequestBuilder::ResolveMipPolicy(Assets::CookedTextureSemantic semantic) noexcept
+	{
+		(void)semantic;
+		return TextureMipPolicy::Generate;
+	}
+
+	TextureMipFilter TextureCookRequestBuilder::ResolveMipFilter(Assets::CookedTextureSemantic semantic) noexcept
+	{
+		switch (semantic)
+		{
+			case Assets::CookedTextureSemantic::Albedo:
+				return TextureMipFilter::Kaiser;
+
+			case Assets::CookedTextureSemantic::Normal:
+				return TextureMipFilter::NormalAware;
+
+			case Assets::CookedTextureSemantic::MetallicRoughness:
+			case Assets::CookedTextureSemantic::Occlusion:
+			case Assets::CookedTextureSemantic::Emissive:
+			default:
+				return TextureMipFilter::Regular;
+		}
+	}
+
+	TextureColorProcessingPolicy TextureCookRequestBuilder::ResolveColorProcessingPolicy(
+		Assets::CookedTextureSemantic semantic) noexcept
+	{
+		return ResolveColorSpace(semantic) == TextureColorSpace::Srgb ? TextureColorProcessingPolicy::SrgbLinearize
+		                                                           : TextureColorProcessingPolicy::Linear;
+	}
+
+	TextureCompressionFamilyPreference TextureCookRequestBuilder::ResolveCompressionFamilyPreference(
+		Assets::CookedTextureSemantic semantic) noexcept
+	{
+		switch (semantic)
+		{
+			case Assets::CookedTextureSemantic::Albedo:
+			case Assets::CookedTextureSemantic::Emissive:
+				return TextureCompressionFamilyPreference::Color;
+
+			case Assets::CookedTextureSemantic::Normal:
+				return TextureCompressionFamilyPreference::NormalMap;
+
+			case Assets::CookedTextureSemantic::MetallicRoughness:
+			case Assets::CookedTextureSemantic::Occlusion:
+			default:
+				return TextureCompressionFamilyPreference::Masks;
+		}
+	}
+
+	TextureDimension TextureCookRequestBuilder::ResolveTextureDimension(Assets::CookedTextureSemantic semantic) noexcept
+	{
+		(void)semantic;
+		return TextureDimension::Texture2D;
+	}
+
 	bool TextureCookRequestBuilder::NormalizeSourceTexturePath(
 	    const std::filesystem::path& sourceTexturePath,
 	    std::filesystem::path& outNormalizedSourceTexturePath,
@@ -71,24 +131,33 @@ namespace AssetAuthoring
 	}
 
 	bool TextureCookRequestBuilder::BuildTextureSourceKey(
-	    const std::filesystem::path& normalizedSourceTexturePath,
-	    TextureColorSpace colorSpace,
+	    const TextureCookRequest& request,
 	    std::string& outTextureSourceKey,
 	    std::string& outErrorMessage)
 	{
 		const std::filesystem::path& projectRoot = Paths::ProjectRoot();
-		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(normalizedSourceTexturePath, projectRoot))
+		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
 		{
-			outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "project:srgb:" : "project:linear:") +
+			outTextureSourceKey = std::string("project:") + GetTextureColorSpaceName(request.colorSpace) + ":" +
+			                     GetTextureMipPolicyName(request.mipPolicy) + ":" +
+			                     GetTextureMipFilterName(request.mipFilter) + ":" +
+			                     GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + ":" +
+			                     GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) + ":" +
+			                     GetTextureDimensionName(request.dimension) + ":" +
 			                     relativePath->generic_string();
 			outErrorMessage.clear();
 			return true;
 		}
 
 		const std::filesystem::path& engineRoot = Paths::EngineRoot();
-		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(normalizedSourceTexturePath, engineRoot))
+		if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
 		{
-			outTextureSourceKey = std::string(colorSpace == TextureColorSpace::Srgb ? "engine:srgb:" : "engine:linear:") +
+			outTextureSourceKey = std::string("engine:") + GetTextureColorSpaceName(request.colorSpace) + ":" +
+			                     GetTextureMipPolicyName(request.mipPolicy) + ":" +
+			                     GetTextureMipFilterName(request.mipFilter) + ":" +
+			                     GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + ":" +
+			                     GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) + ":" +
+			                     GetTextureDimensionName(request.dimension) + ":" +
 			                     relativePath->generic_string();
 			outErrorMessage.clear();
 			return true;
@@ -96,7 +165,7 @@ namespace AssetAuthoring
 
 		outErrorMessage =
 		    "Source texture path must be under the project or engine root to derive a stable cooked texture id: '" +
-		    normalizedSourceTexturePath.string() + "'";
+		    request.sourcePath.string() + "'";
 		return false;
 	}
 }

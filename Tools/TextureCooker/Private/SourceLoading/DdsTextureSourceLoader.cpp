@@ -47,7 +47,7 @@ TextureLoadResult DdsTextureSourceLoader::Load(const std::filesystem::path& sour
 		return {};
 	}
 
-	return BuildLoadResult(fileBytes, header, dxgiFormat, resolvedPath, outErrorMessage);
+	return BuildLoadResult(fileBytes, header, dx10HeaderPtr, dxgiFormat, resolvedPath, outErrorMessage);
 }
 
 DdsTextureSourceLoader::DdsHeader DdsTextureSourceLoader::ReadHeader(const std::vector<std::uint8_t>& fileBytes, std::string& outErrorMessage)
@@ -111,9 +111,9 @@ bool DdsTextureSourceLoader::ValidateHeader(
 		return false;
 	}
 
-	if ((header.caps2 & kCaps2Cubemap) != 0)
+	if ((header.caps2 & kCaps2Cubemap) != 0 && (header.caps2 & kCaps2CubemapAllFaces) != kCaps2CubemapAllFaces)
 	{
-		outErrorMessage = std::format("DDS cubemaps are not supported yet: '{}'", resolvedPath.string());
+		outErrorMessage = std::format("DDS cubemap '{}' does not define all six faces", resolvedPath.string());
 		return false;
 	}
 
@@ -125,7 +125,15 @@ bool DdsTextureSourceLoader::ValidateHeader(
 			return false;
 		}
 
-		if (dx10Header->arraySize != 1)
+		if (IsCubemap(header, dx10Header))
+		{
+			if (dx10Header->arraySize != 6)
+			{
+				outErrorMessage = std::format("DDS cubemap '{}' must declare exactly six faces", resolvedPath.string());
+				return false;
+			}
+		}
+		else if (dx10Header->arraySize != 1)
 		{
 			outErrorMessage = std::format("DDS texture arrays are not supported yet: '{}'", resolvedPath.string());
 			return false;
@@ -266,6 +274,31 @@ std::uint32_t DdsTextureSourceLoader::ResolveMipCount(const DdsHeader& header) n
 	return (std::max)(1u, header.mipMapCount);
 }
 
+bool DdsTextureSourceLoader::IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
+{
+	if (dx10Header != nullptr && (dx10Header->miscFlag & kDx10MiscFlagTextureCube) != 0)
+	{
+		return true;
+	}
+
+	return (header.caps2 & kCaps2Cubemap) != 0;
+}
+
+std::uint32_t DdsTextureSourceLoader::ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept
+{
+	if (IsCubemap(header, dx10Header))
+	{
+		return 6;
+	}
+
+	if (dx10Header != nullptr && dx10Header->arraySize > 0)
+	{
+		return dx10Header->arraySize;
+	}
+
+	return 1;
+}
+
 bool DdsTextureSourceLoader::IsBlockCompressed(DXGI_FORMAT format) noexcept
 {
 	switch (format)
@@ -322,6 +355,7 @@ std::size_t DdsTextureSourceLoader::ResolvePixelDataOffset(const DdsHeader& head
 TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
 	const std::vector<std::uint8_t>& fileBytes,
 	const DdsHeader& header,
+	const DdsHeaderDx10* dx10Header,
 	DXGI_FORMAT dxgiFormat,
 	const std::filesystem::path& resolvedPath,
 	std::string& outErrorMessage)
@@ -329,45 +363,60 @@ TextureLoadResult DdsTextureSourceLoader::BuildLoadResult(
 	TextureLoadResult loadResult;
 	loadResult.width = header.width;
 	loadResult.height = header.height;
+	loadResult.arraySize = ResolveArraySize(header, dx10Header);
+	loadResult.dimension = IsCubemap(header, dx10Header)
+	                            ? TextureResourceDimension::TextureCube
+	                            : TextureResourceDimension::Texture2D;
 	loadResult.dxgiFormat = dxgiFormat;
 	loadResult.formatIntent = TextureFormatIntent::Unknown;
-	loadResult.mipLevels.reserve(ResolveMipCount(header));
+	loadResult.arraySlices.resize(loadResult.arraySize);
+	for (TextureArraySliceData& arraySlice : loadResult.arraySlices)
+	{
+		arraySlice.mipLevels.reserve(ResolveMipCount(header));
+	}
 
 	std::size_t byteOffset = ResolvePixelDataOffset(header);
-	std::uint32_t mipWidth = header.width;
-	std::uint32_t mipHeight = header.height;
-
-	for (std::uint32_t mipIndex = 0; mipIndex < ResolveMipCount(header); ++mipIndex)
+	for (std::uint32_t arraySliceIndex = 0; arraySliceIndex < loadResult.arraySize; ++arraySliceIndex)
 	{
-		TextureMipLevelData mipLevel;
-		mipLevel.width = (std::max)(1u, mipWidth);
-		mipLevel.height = (std::max)(1u, mipHeight);
-		mipLevel.rowPitch = ComputeRowPitch(dxgiFormat, mipLevel.width, resolvedPath, outErrorMessage);
-		if (!outErrorMessage.empty())
+		std::uint32_t mipWidth = header.width;
+		std::uint32_t mipHeight = header.height;
+
+		for (std::uint32_t mipIndex = 0; mipIndex < ResolveMipCount(header); ++mipIndex)
 		{
-			return {};
+			TextureMipLevelData mipLevel;
+			mipLevel.width = (std::max)(1u, mipWidth);
+			mipLevel.height = (std::max)(1u, mipHeight);
+			mipLevel.rowPitch = ComputeRowPitch(dxgiFormat, mipLevel.width, resolvedPath, outErrorMessage);
+			if (!outErrorMessage.empty())
+			{
+				return {};
+			}
+
+			mipLevel.slicePitch = ComputeSlicePitch(dxgiFormat, mipLevel.width, mipLevel.height, resolvedPath, outErrorMessage);
+			if (!outErrorMessage.empty())
+			{
+				return {};
+			}
+
+			if (byteOffset + mipLevel.slicePitch > fileBytes.size())
+			{
+				outErrorMessage = std::format(
+				    "DDS texture '{}' ended before slice {} mip {} could be read",
+				    resolvedPath.string(),
+				    arraySliceIndex,
+				    mipIndex);
+				return {};
+			}
+
+			mipLevel.data.assign(
+			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
+			    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
+			loadResult.arraySlices[arraySliceIndex].mipLevels.push_back(std::move(mipLevel));
+
+			byteOffset += loadResult.arraySlices[arraySliceIndex].mipLevels.back().slicePitch;
+			mipWidth = (std::max)(1u, mipWidth >> 1u);
+			mipHeight = (std::max)(1u, mipHeight >> 1u);
 		}
-
-		mipLevel.slicePitch = ComputeSlicePitch(dxgiFormat, mipLevel.width, mipLevel.height, resolvedPath, outErrorMessage);
-		if (!outErrorMessage.empty())
-		{
-			return {};
-		}
-
-		if (byteOffset + mipLevel.slicePitch > fileBytes.size())
-		{
-			outErrorMessage = std::format("DDS texture '{}' ended before mip {} could be read", resolvedPath.string(), mipIndex);
-			return {};
-		}
-
-		mipLevel.data.assign(
-		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset),
-		    fileBytes.begin() + static_cast<std::ptrdiff_t>(byteOffset + mipLevel.slicePitch));
-		loadResult.mipLevels.push_back(std::move(mipLevel));
-
-		byteOffset += loadResult.mipLevels.back().slicePitch;
-		mipWidth = (std::max)(1u, mipWidth >> 1u);
-		mipHeight = (std::max)(1u, mipHeight >> 1u);
 	}
 
 	outErrorMessage.clear();

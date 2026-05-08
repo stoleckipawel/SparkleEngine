@@ -458,14 +458,15 @@ target_include_directories(CMP_Core_AVX512 PRIVATE
 )
 
 # Architecture-specific compiler flags
-if(MSVC)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(CMP_Core        PRIVATE -msse4.1)
+    target_compile_options(CMP_Core_SSE    PRIVATE -msse4.1)
+    target_compile_options(CMP_Core_AVX    PRIVATE -mavx2)
+    target_compile_options(CMP_Core_AVX512 PRIVATE -mavx512f)
+elseif(MSVC)
     # SSE2 is default on x64 MSVC - no flag needed
     target_compile_options(CMP_Core_AVX    PRIVATE /arch:AVX2)
     target_compile_options(CMP_Core_AVX512 PRIVATE /arch:AVX512)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(CMP_Core_SSE    PRIVATE -msse2)
-    target_compile_options(CMP_Core_AVX    PRIVATE -mavx2)
-    target_compile_options(CMP_Core_AVX512 PRIVATE -mavx512f)
 endif()
 
 target_link_libraries(CMP_Core PRIVATE CMP_Core_SSE CMP_Core_AVX CMP_Core_AVX512)

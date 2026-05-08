@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "D3D12/Textures/TextureLoadResult.h"
+#include "RHI/Public/D3D12/Textures/TextureLoadResult.h"
 #include "TextureCookRequestList.h"
 
 #include <dxgiformat.h>
@@ -13,13 +13,5 @@ namespace AssetAuthoring
 	{
 	  public:
 		bool Cook(const TextureCookRequest& request, std::string& outErrorMessage) const;
-
-	  private:
-		static bool ResolveCookedTextureFormat(
-		    DXGI_FORMAT sourceDxgiFormat,
-		    TextureColorSpace colorSpace,
-		    DXGI_FORMAT& outCookedDxgiFormat,
-		    TextureFormatIntent& outFormatIntent,
-		    std::string& outErrorMessage);
 	};
 }

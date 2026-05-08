@@ -3,6 +3,8 @@
 #include "SourceLoading/TextureSourceLoaderBackend.h"
 
 #include <cstdint>
+#include <filesystem>
+#include <string>
 #include <vector>
 
 #include <dxgiformat.h>
@@ -61,6 +63,8 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 	static constexpr std::uint32_t kPixelFormatFlagFourCc = 0x4u;
 	static constexpr std::uint32_t kPixelFormatFlagRgb = 0x40u;
 	static constexpr std::uint32_t kCaps2Cubemap = 0x200u;
+	static constexpr std::uint32_t kCaps2CubemapAllFaces = 0xfc00u;
+	static constexpr std::uint32_t kDx10MiscFlagTextureCube = 0x4u;
 	static constexpr std::uint32_t kResourceDimensionTexture2D = 3u;
 
 	static constexpr std::uint32_t MakeFourCc(char a, char b, char c, char d) noexcept
@@ -87,6 +91,8 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 	static std::uint32_t ResolveBitsPerPixel(DXGI_FORMAT format, const std::filesystem::path& resolvedPath, std::string& outErrorMessage);
 	static std::uint32_t ResolveBlockSize(DXGI_FORMAT format, const std::filesystem::path& resolvedPath, std::string& outErrorMessage);
 	static std::uint32_t ResolveMipCount(const DdsHeader& header) noexcept;
+	static bool IsCubemap(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
+	static std::uint32_t ResolveArraySize(const DdsHeader& header, const DdsHeaderDx10* dx10Header) noexcept;
 	static bool IsBlockCompressed(DXGI_FORMAT format) noexcept;
 	static std::uint32_t ComputeRowPitch(
 	    DXGI_FORMAT format,
@@ -103,6 +109,7 @@ class DdsTextureSourceLoader final : public TextureSourceLoaderBackend
 	static TextureLoadResult BuildLoadResult(
 	    const std::vector<std::uint8_t>& fileBytes,
 	    const DdsHeader& header,
+	    const DdsHeaderDx10* dx10Header,
 	    DXGI_FORMAT dxgiFormat,
 	    const std::filesystem::path& resolvedPath,
 	    std::string& outErrorMessage);

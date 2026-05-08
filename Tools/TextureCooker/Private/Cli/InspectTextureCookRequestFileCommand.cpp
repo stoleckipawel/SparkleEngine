@@ -41,7 +41,11 @@ namespace AssetAuthoring
 	void InspectTextureCookRequestFileCommand::PrintRequest(const TextureCookRequest& request)
 	{
 		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
-		          << GetTextureColorSpaceName(request.colorSpace) << "' output='" << request.outputPath.string() << "' source='"
+		          << GetTextureColorSpaceName(request.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.mipPolicy)
+		          << "' mipFilter='" << GetTextureMipFilterName(request.mipFilter) << "' colorProcessing='"
+		          << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << "' compressionFamily='"
+		          << GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) << "' dimension='"
+		          << GetTextureDimensionName(request.dimension) << "' output='" << request.outputPath.string() << "' source='"
 		          << request.sourcePath.string() << "'\n";
 	}
 
