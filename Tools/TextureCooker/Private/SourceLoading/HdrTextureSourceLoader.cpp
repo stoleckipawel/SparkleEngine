@@ -1,18 +1,17 @@
 #include "PCH.h"
 
-#include "Cooking/RasterTextureSourceLoader.h"
+#include "SourceLoading/HdrTextureSourceLoader.h"
 
-#include "Cooking/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoaderUtils.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-bool RasterTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
+bool HdrTextureSourceLoader::SupportsFormat(TextureSourceFormat format) const noexcept
 {
-	return format == TextureSourceFormat::StandardRaster;
+	return format == TextureSourceFormat::RadianceHdr;
 }
 
-TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const
+TextureLoadResult HdrTextureSourceLoader::Load(const std::filesystem::path& sourcePath, std::string& outErrorMessage) const
 {
 	std::filesystem::path resolvedPath;
 	std::vector<std::uint8_t> fileBytes;
@@ -24,7 +23,7 @@ TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& s
 	int width = 0;
 	int height = 0;
 	int sourceChannels = 0;
-	stbi_uc* pixels = stbi_load_from_memory(
+	float* pixels = stbi_loadf_from_memory(
 	    fileBytes.data(),
 	    static_cast<int>(fileBytes.size()),
 	    &width,
@@ -34,13 +33,13 @@ TextureLoadResult RasterTextureSourceLoader::Load(const std::filesystem::path& s
 	if (pixels == nullptr)
 	{
 		outErrorMessage = std::format(
-		    "Failed to decode raster texture '{}': {}",
+		    "Failed to decode HDR texture '{}': {}",
 		    resolvedPath.string(),
 		    stbi_failure_reason() != nullptr ? stbi_failure_reason() : "unknown stb_image error");
 		return {};
 	}
 
-	TextureLoadResult loadResult = TextureSourceLoaderUtils::BuildByteTextureLoadResult(
+	TextureLoadResult loadResult = TextureSourceLoaderUtils::BuildFloatTextureLoadResult(
 	    width,
 	    height,
 	    pixels,

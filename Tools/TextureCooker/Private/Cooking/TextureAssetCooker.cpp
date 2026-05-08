@@ -1,7 +1,7 @@
 ﻿#include "PCH.h"
 
 #include "Cooking/TextureAssetCooker.h"
-#include "Cooking/TextureSourceLoader.h"
+#include "SourceLoading/TextureSourceLoader.h"
 
 #include "D3D12/Textures/CookedTextureAsset.h"
 

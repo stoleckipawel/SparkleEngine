@@ -1,8 +1,8 @@
 #include "PCH.h"
 
-#include "Cooking/DdsTextureSourceLoader.h"
+#include "SourceLoading/DdsTextureSourceLoader.h"
 
-#include "Cooking/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoaderUtils.h"
 
 #include <algorithm>
 #include <cstring>

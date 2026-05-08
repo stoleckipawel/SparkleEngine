@@ -1,11 +1,11 @@
 #include "PCH.h"
 
-#include "Cooking/TextureSourceLoader.h"
+#include "SourceLoading/TextureSourceLoader.h"
 
-#include "Cooking/DdsTextureSourceLoader.h"
-#include "Cooking/ExrTextureSourceLoader.h"
-#include "Cooking/HdrTextureSourceLoader.h"
-#include "Cooking/RasterTextureSourceLoader.h"
+#include "SourceLoading/DdsTextureSourceLoader.h"
+#include "SourceLoading/ExrTextureSourceLoader.h"
+#include "SourceLoading/HdrTextureSourceLoader.h"
+#include "SourceLoading/RasterTextureSourceLoader.h"
 #include "Core/Public/Paths/PathUtils.h"
 
 #include <array>

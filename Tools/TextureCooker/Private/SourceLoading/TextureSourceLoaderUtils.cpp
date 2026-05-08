@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Cooking/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoaderUtils.h"
 
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Files/FileUtils.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cooking/TextureSourceLoaderBackend.h"
+#include "SourceLoading/TextureSourceLoaderBackend.h"
 
 #include <cstdint>
 #include <vector>

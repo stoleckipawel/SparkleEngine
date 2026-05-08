@@ -1,4 +1,4 @@
-﻿#include "TextureCookRequestList.h"
+#include "TextureCookRequestList.h"
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"

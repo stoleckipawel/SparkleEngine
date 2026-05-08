@@ -1,8 +1,8 @@
 #include "PCH.h"
 
-#include "Cooking/ExrTextureSourceLoader.h"
+#include "SourceLoading/ExrTextureSourceLoader.h"
 
-#include "Cooking/TextureSourceLoaderUtils.h"
+#include "SourceLoading/TextureSourceLoaderUtils.h"
 
 #define TINYEXR_IMPLEMENTATION
 #include <tinyexr.h>

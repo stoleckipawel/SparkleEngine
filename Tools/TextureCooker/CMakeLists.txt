@@ -3,28 +3,42 @@ set(TEXTURE_COOK_SHARED_PUBLIC_HEADERS
 )
 
 set(TEXTURE_COOK_SHARED_PRIVATE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/TextureCookRequestList.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Requests/TextureCookRequestList.cpp
 )
 
 set(TEXTURE_COOKER_PRIVATE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DdsTextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ExrTextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/HdrTextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/RasterTextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/App/TextureCookerApplication.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/CookTextureCookRequestFileCommand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/InspectTextureCookRequestFileCommand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/ExrTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/HdrTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/RasterTextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderUtils.cpp
 )
 
 set(TEXTURE_COOKER_PRIVATE_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/DdsTextureSourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/ExrTextureSourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/HdrTextureSourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/RasterTextureSourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoader.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderBackend.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureSourceLoaderUtils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/App/TextureCookerApplication.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/CookTextureCookRequestFileCommand.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/InspectTextureCookRequestFileCommand.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommand.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Constants/TextureCookerConstants.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/ExrTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/HdrTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/RasterTextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoader.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderBackend.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/TextureSourceLoaderUtils.h
 )
 
 add_library(TextureCookShared STATIC
