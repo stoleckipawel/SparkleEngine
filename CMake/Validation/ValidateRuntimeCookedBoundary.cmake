@@ -19,7 +19,6 @@ set(RUNTIME_MODULE_CMAKE_FILES
 set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "SceneImporter"
     "SceneImportResult"
-    "CookedSceneCooker"
     "KtxTextureCooker"
     "AssetAuthoring"
     "cgltf"

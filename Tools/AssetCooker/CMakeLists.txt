@@ -47,10 +47,24 @@ target_include_directories(AssetCookerCore
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
+        ${CMAKE_SOURCE_DIR}/Engine
+        ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
 
 target_compile_features(AssetCookerCore PUBLIC cxx_std_20)
 target_compile_definitions(AssetCookerCore PUBLIC ASSET_COOKER_BUILDING_STATIC)
+target_link_libraries(AssetCookerCore
+    PRIVATE
+        ole32
+        CookCommon
+        SourceImportAdapters
+        MeshCooker
+        MaterialCooker
+        SceneCooker
+        TextureCookShared
+        SparkleCore
+        SparkleGameFramework
+)
 
 add_library(AssetCookerDll SHARED
     ${ASSET_COOKER_PUBLIC_HEADERS}

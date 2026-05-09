@@ -73,7 +73,6 @@ set(FORBIDDEN_ASSET_CONVERTER_CMAKE_TOKENS
 set(FORBIDDEN_TEXTURE_COOKER_SOURCE_TOKENS
     "SceneImporter"
     "SceneImportResult"
-    "CookedSceneCooker"
     "TextureCookRequestBuilder"
     "CookedTextureAssetUtils.h"
     "CookedTextureReference.h"

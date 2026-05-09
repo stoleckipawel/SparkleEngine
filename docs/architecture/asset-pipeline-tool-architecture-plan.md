@@ -251,25 +251,20 @@ Current cooking is split across scripts and tools:
 Scripts
   CookAllAssets.bat
     |
-    +--> CookShaders.bat
-    |      +--> ShaderCompiler
-    |
-    +--> CookTextures.bat
-    |      +--> AssetConverter collect-texture-request-list
-    |      +--> TextureCooker
-    |
-    +--> CookAssets.bat
-         +--> AssetConverter cook-scene-list
+    +--> AssetCooker
+           +--> ShaderCompiler
+           +--> TextureCooker
+           +--> SourceImportAdapters
+           +--> MeshCooker / MaterialCooker / SceneCooker
 ```
 
-Problems to remove:
+Problems removed by the completed phases:
 
 - Scripts own too much architecture.
 - Scene enumeration happens more than once.
-- Texture dependencies still move through temporary request files instead of one project model.
-- Texture request list aggregation and generated/default request policy are now owned by `AssetConverter` as a Phase 1 bridge, but they still need to move into `AssetCooker` planning later.
-- `AssetConverter` mixes source scene import, material dependency discovery, mesh cooking, material cooking, and scene manifest writing.
-- There is no explicit owner for project-level planning.
+- Texture request list aggregation and generated/default request policy lived in the temporary `AssetConverter` bridge.
+- Project-level scene, mesh, material, and texture orchestration lived outside `AssetCooker`.
+- There was no explicit owner for project-level planning.
 
 ## Target Responsibilities
 
@@ -530,18 +525,18 @@ Phase status must be updated in this document as work lands. When a phase is com
 | Phase 1: Thin The Launch Shims | Done | Scripts hand scene-list cooking and texture request aggregation to `AssetConverter`; deleted script orchestration helpers are gone. |
 | Phase 2: Introduce AssetCooker As Planner | Done | Mark `Done` only after `AssetCooker` is the visible project cook entrypoint, scripts delegate to it, and the minimal public API facade exists. |
 | Phase 3: Extract Source Import And Category Cookers | Done | Mark `Done` only after source import and mesh/material/scene cooker ownership is explicit in folders, names, and contracts. |
-| Final: Deferred Validation And Fix Pass | Not started | Mark `Done` only after the deferred build, cook, and validation pass succeeds or remaining risks are documented. |
+| Final: Deferred Validation And Fix Pass | Done | Mark `Done` only after the deferred build, cook, and validation pass succeeds or remaining risks are documented. |
 
 ### Phase 1 Prompt: Thin The Launch Shims (Status: Done)
 
-Target shape for this phase:
+Historical bridge shape for this completed phase:
 
 ```text
 Launch shim
   -> current ShaderCompiler
-  -> current AssetConverter collect-texture-request-list
+  -> current AssetConverter texture-request bridge
   -> current TextureCooker
-  -> current AssetConverter cook-scene-list
+  -> current AssetConverter scene-cook bridge
 ```
 
 Copy-ready prompt:
@@ -725,7 +720,7 @@ Stop when:
 - You have not run build/cook/test validation; save that for the final validation phase.
 ```
 
-### Final Prompt: Deferred Validation And Fix Pass (Status: Not started)
+### Final Prompt: Deferred Validation And Fix Pass (Status: Done)
 
 Use this only after the implementation phases are complete.
 

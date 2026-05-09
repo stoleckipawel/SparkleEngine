@@ -12,7 +12,7 @@
 
 namespace TextureCookPipeline
 {
-	static constexpr float kBlockCompressionQuality = 1.0f;
+	static constexpr float kBlockCompressionQuality = 0.35f;
 
 	BCCompressor::BCCompressor(CompressionTarget target) noexcept : target_(target) {}
 
@@ -32,21 +32,21 @@ namespace TextureCookPipeline
 				result = CreateOptionsBC1(&options_);
 				if (result == 0)
 				{
-					SetQualityBC1(options_, 1.0f);
+					SetQualityBC1(options_, kBlockCompressionQuality);
 				}
 				break;
 			case CompressionTarget::BC4:
 				result = CreateOptionsBC4(&options_);
 				if (result == 0)
 				{
-					SetQualityBC4(options_, 1.0f);
+					SetQualityBC4(options_, kBlockCompressionQuality);
 				}
 				break;
 			case CompressionTarget::BC5:
 				result = CreateOptionsBC5(&options_);
 				if (result == 0)
 				{
-					SetQualityBC5(options_, 1.0f);
+					SetQualityBC5(options_, kBlockCompressionQuality);
 				}
 				break;
 			case CompressionTarget::BC6H:

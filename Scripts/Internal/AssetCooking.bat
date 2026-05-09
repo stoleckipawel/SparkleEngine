@@ -40,11 +40,10 @@ if /I "%~1"=="PrepareCookTools" (
 
 if /I "%~1"=="PrepareAssetCooker" (
     set "REQUEST_ASSET_COOKER=1"
-    set "REQUEST_ASSET_CONVERTER=1"
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=AssetCooker AssetCookerDll AssetConverter TextureCooker ShaderCompiler"
-    set "BUILD_LABEL=AssetCooker, AssetCookerDll, AssetConverter, TextureCooker, and ShaderCompiler"
+    set "BUILD_TARGETS=AssetCooker AssetCookerDll TextureCooker ShaderCompiler"
+    set "BUILD_LABEL=AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
 
@@ -56,10 +55,9 @@ if /I "%~1"=="PrepareShaderCompiler" (
 )
 
 if /I "%~1"=="PrepareTextureCooker" (
-    set "REQUEST_ASSET_CONVERTER=1"
     set "REQUEST_TEXTURE_COOKER=1"
-    set "BUILD_TARGETS=AssetConverter TextureCooker"
-    set "BUILD_LABEL=AssetConverter and TextureCooker"
+    set "BUILD_TARGETS=TextureCooker"
+    set "BUILD_LABEL=TextureCooker"
     goto :PREPARE_SELECTED_TOOLS
 )
 

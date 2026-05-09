@@ -1,12 +1,24 @@
 #include "AssetCookerDispatcher.h"
 
 #include "AssetCookerToolProcess.h"
+#include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
+#include "MaterialCooker.h"
+#include "MeshCooker.h"
+#include "SceneCooker.h"
+#include "SourceSceneImporter.h"
+#include "TextureCookRequestList.h"
 
 #include <chrono>
-#include <fstream>
 #include <iostream>
+#include <map>
+#include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
+
+#include <objbase.h>
 
 static bool AssetCookerFileExists(const std::filesystem::path& path)
 {
@@ -50,38 +62,257 @@ static std::filesystem::path AssetCookerMakeTempPath(
 	       (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 
-static bool AssetCookerWriteSceneList(
-    const AssetCookerProjectCookPlan& plan,
-    const std::filesystem::path& sceneListPath,
-    AssetCookerDiagnostics& diagnostics)
-{
-	std::error_code createError;
-	std::filesystem::create_directories(sceneListPath.parent_path(), createError);
-	if (createError)
-	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Failed to create scene-list temp directory.", sceneListPath.parent_path());
-		return false;
-	}
-
-	std::ofstream output(sceneListPath, std::ios::binary);
-	if (!output.is_open())
-	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Failed to write scene-list temp file.", sceneListPath);
-		return false;
-	}
-
-	for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
-	{
-		output << sceneEntry.origin << "|" << sceneEntry.relativePath << "|" << sceneEntry.sourcePath.string() << "\n";
-	}
-
-	return true;
-}
-
 static void AssetCookerRemoveTempFile(const std::filesystem::path& path)
 {
 	std::error_code removeError;
 	std::filesystem::remove(path, removeError);
+}
+
+static bool AssetCookerTextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
+{
+	return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath &&
+	       lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter &&
+	       lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup &&
+	       lhs.dimension == rhs.dimension && lhs.channelMask == rhs.channelMask;
+}
+
+static bool AssetCookerAddUniqueTextureCookRequest(
+    const TextureCookRequest& request,
+    std::map<TextureAssetId, TextureCookRequest>& requestsById,
+    std::vector<TextureCookRequest>& outRequests,
+    std::string& outErrorMessage)
+{
+	const auto existingRequest = requestsById.find(request.assetId);
+	if (existingRequest == requestsById.end())
+	{
+		requestsById.emplace(request.assetId, request);
+		outRequests.push_back(request);
+		outErrorMessage.clear();
+		return true;
+	}
+
+	if (!AssetCookerTextureCookRequestsMatch(existingRequest->second, request))
+	{
+		outErrorMessage = "Texture request conflict for asset id " + std::to_string(request.assetId) + ".";
+		return false;
+	}
+
+	outErrorMessage.clear();
+	return true;
+}
+
+static bool AssetCookerAppendDefaultSkyTextureRequest(
+    std::map<TextureAssetId, TextureCookRequest>& requestsById,
+    std::vector<TextureCookRequest>& outRequests,
+    std::string& outErrorMessage)
+{
+	const std::filesystem::path sourcePath =
+	    (Paths::EngineRoot() / "Assets" / "Textures" / "Sky" / "evening_road_01_puresky_4k.exr").lexically_normal();
+	std::error_code existsError;
+	if (!std::filesystem::exists(sourcePath, existsError))
+	{
+		outErrorMessage = "Default sky source texture was not found: " + sourcePath.string();
+		return false;
+	}
+
+	TextureCookRequest request;
+	request.assetId = Hash::Fnv1a64("engine:linear:Assets/Textures/Sky/evening_road_01_puresky_4k.exr");
+	request.sourcePath = sourcePath;
+	request.outputPath = (Paths::CookedTextureRoot() / "Defaults" / "default_cubemap.stex").lexically_normal();
+	request.colorSpace = TextureColorSpace::Linear;
+	request.mipPolicy = TextureMipPolicy::Generate;
+	request.mipFilter = TextureMipFilter::Regular;
+	request.colorProcessingPolicy = TextureColorProcessingPolicy::Linear;
+	request.textureGroup = TextureGroup::Default;
+	request.dimension = TextureDimension::Texture2D;
+	request.channelMask = TextureChannelMask::Rgba;
+
+	if (!AssetCookerAddUniqueTextureCookRequest(request, requestsById, outRequests, outErrorMessage))
+	{
+		return false;
+	}
+
+	std::cout << "[LOG] Added default sky texture request: source='" << request.sourcePath.string() << "' output='"
+	          << request.outputPath.string() << "'\n";
+	outErrorMessage.clear();
+	return true;
+}
+
+template <typename ImportedSceneHandler>
+static bool AssetCookerRunWithImportedScene(
+    const AssetCookerSceneEntry& sceneEntry,
+    AssetCookerCategory category,
+    AssetCookerDiagnostics& diagnostics,
+    ImportedSceneHandler&& importedSceneHandler)
+{
+	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(coInitializeResult) && coInitializeResult != RPC_E_CHANGED_MODE)
+	{
+		diagnostics.AddError(category, "Failed to initialize COM for source import.", sceneEntry.sourcePath);
+		return false;
+	}
+
+	SourceImportResult importResult = SourceSceneImporter::Import(sceneEntry.sourcePath);
+	if (!importResult.IsValid())
+	{
+		if (SUCCEEDED(coInitializeResult))
+		{
+			CoUninitialize();
+		}
+
+		diagnostics.AddError(category, "Failed to import source scene.", sceneEntry.sourcePath);
+		return false;
+	}
+
+	const bool result = importedSceneHandler(importResult);
+	if (SUCCEEDED(coInitializeResult))
+	{
+		CoUninitialize();
+	}
+
+	return result;
+}
+
+static bool AssetCookerCookImportedScene(
+    const AssetCookerSceneEntry& sceneEntry,
+    const SourceImportResult& importResult,
+    AssetCookerDiagnostics& diagnostics)
+{
+	CookedSceneBuild build;
+	if (!importResult.IsValid())
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Scene import result is not valid.", sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!SceneCooker::ResolveSceneAsset(sceneEntry.sourcePath, build.sceneAssetId, build.sceneManifestPath, build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	MeshCooker::BuildMeshAssets(importResult, build.sceneAssetId, build.meshAssets, build.meshAssetReferences);
+	if (!MaterialCooker::BuildMaterialAssets(
+	        importResult,
+	        build.sceneAssetId,
+	        build.materialAssets,
+	        build.materialAssetReferences,
+	        build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Material, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!SceneCooker::BuildManifest(importResult, build, build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!MeshCooker::WriteMeshAssets(build.meshAssets, build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Mesh, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!MaterialCooker::WriteMaterialAssets(build.materialAssets, build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Material, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!SceneCooker::WriteSceneManifestAndRegistry(build, build.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	std::cout << "AssetCooker: imported '" << sceneEntry.sourcePath.string() << "' via "
+	          << GetSourceImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
+	          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '" << build.sceneAssetId
+	          << "' to '" << build.sceneManifestPath.string() << "'\n";
+	std::cout << "AssetCooker Scene Summary:\n"
+	          << "  source='" << sceneEntry.sourcePath.string() << "'\n"
+	          << "  importer='" << GetSourceImporterTypeName(importResult.importerType) << "'\n"
+	          << "  meshes=" << importResult.GetMeshCount() << "\n"
+	          << "  materials=" << importResult.GetMaterialCount() << "\n"
+	          << "  sceneManifest='" << build.sceneManifestPath.string() << "'\n";
+	return true;
+}
+
+static bool AssetCookerCollectTextureRequests(
+    const AssetCookerProjectCookPlan& plan,
+    AssetCookerDiagnostics& diagnostics,
+    const std::filesystem::path& textureRequestPath)
+{
+	std::map<TextureAssetId, TextureCookRequest> requestsById;
+	std::vector<TextureCookRequest> requests;
+	std::vector<std::string> failedScenes;
+	int collectedSceneCount = 0;
+	std::string errorMessage;
+
+	for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
+	{
+		std::cout << "\n[LOG] Collecting texture requests [" << (collectedSceneCount + 1) << "/" << plan.sceneEntries.size()
+		          << "] " << sceneEntry.origin << ": " << sceneEntry.relativePath << "\n";
+
+		std::vector<TextureCookRequest> sceneRequests;
+		const bool collected = AssetCookerRunWithImportedScene(
+		    sceneEntry,
+		    AssetCookerCategory_Textures,
+		    diagnostics,
+		    [&](const SourceImportResult& importResult) -> bool
+		    {
+			    if (!MaterialCooker::CollectTextureCookRequests(importResult, sceneRequests, errorMessage))
+			    {
+				    diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
+				    return false;
+			    }
+
+			    return true;
+		    });
+		if (!collected)
+		{
+			failedScenes.push_back(sceneEntry.origin + ":" + sceneEntry.relativePath);
+			++collectedSceneCount;
+			continue;
+		}
+
+		for (const TextureCookRequest& request : sceneRequests)
+		{
+			if (!AssetCookerAddUniqueTextureCookRequest(request, requestsById, requests, errorMessage))
+			{
+				diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
+				return false;
+			}
+		}
+
+		++collectedSceneCount;
+	}
+
+	if (!failedScenes.empty())
+	{
+		diagnostics.AddError(
+		    AssetCookerCategory_Textures,
+		    "Texture request collection failed for " + std::to_string(failedScenes.size()) + " scene(s).");
+		return false;
+	}
+
+	if (!AssetCookerAppendDefaultSkyTextureRequest(requestsById, requests, errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Textures, errorMessage);
+		return false;
+	}
+
+	if (!WriteTextureCookRequestList(textureRequestPath, requests, errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, textureRequestPath);
+		return false;
+	}
+
+	std::cout << "\n[LOG] Collected " << requests.size() << " unique texture request(s) into " << textureRequestPath.string()
+	          << "\n";
+	return true;
 }
 
 static bool AssetCookerRunShaders(
@@ -125,31 +356,24 @@ static bool AssetCookerRunTextures(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	const std::filesystem::path assetConverterPath = AssetCookerResolveToolPath(plan, "AssetConverter");
 	const std::filesystem::path textureCookerPath = AssetCookerResolveToolPath(plan, "TextureCooker");
-	const std::filesystem::path sceneListPath = AssetCookerMakeTempPath(plan, "assetcooker-scenes", ".txt");
 	const std::filesystem::path textureRequestPath = AssetCookerMakeTempPath(plan, "assetcooker-texture-requests", ".txt");
 
-	if (!AssetCookerWriteSceneList(plan, sceneListPath, diagnostics))
+	std::error_code createError;
+	std::filesystem::create_directories(textureRequestPath.parent_path(), createError);
+	if (createError)
 	{
+		diagnostics.AddError(AssetCookerCategory_Textures, "Failed to create texture-request temp directory.", textureRequestPath.parent_path());
 		return false;
 	}
 
-	const std::wstring totalSceneCount = std::to_wstring(plan.sceneEntries.size());
-	int exitCode = AssetCookerToolProcess::Run(
-	    assetConverterPath,
-	    {L"collect-texture-request-list", sceneListPath.wstring(), totalSceneCount, textureRequestPath.wstring()},
-	    plan.projectRoot);
-	if (exitCode != 0)
+	if (!AssetCookerCollectTextureRequests(plan, diagnostics, textureRequestPath))
 	{
-		diagnostics.AddError(AssetCookerCategory_Textures, "Texture request collection failed.");
-		AssetCookerRemoveTempFile(sceneListPath);
 		AssetCookerRemoveTempFile(textureRequestPath);
 		return false;
 	}
 
-	exitCode = AssetCookerToolProcess::Run(textureCookerPath, {L"cook-request-file", textureRequestPath.wstring()}, plan.projectRoot);
-	AssetCookerRemoveTempFile(sceneListPath);
+	const int exitCode = AssetCookerToolProcess::Run(textureCookerPath, {L"cook-request-file", textureRequestPath.wstring()}, plan.projectRoot);
 	AssetCookerRemoveTempFile(textureRequestPath);
 	if (exitCode != 0)
 	{
@@ -171,22 +395,35 @@ static bool AssetCookerRunSceneAssets(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
-	const std::filesystem::path assetConverterPath = AssetCookerResolveToolPath(plan, "AssetConverter");
-	const std::filesystem::path sceneListPath = AssetCookerMakeTempPath(plan, "assetcooker-scenes", ".txt");
-	if (!AssetCookerWriteSceneList(plan, sceneListPath, diagnostics))
+	std::vector<std::string> failedScenes;
+	int cookedSceneCount = 0;
+	for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
 	{
-		return false;
+		std::cout << "\n[LOG] Cooking [" << (cookedSceneCount + 1) << "/" << plan.sceneEntries.size() << "] "
+		          << sceneEntry.origin << ": " << sceneEntry.relativePath << "\n";
+
+		const bool cooked = AssetCookerRunWithImportedScene(
+		    sceneEntry,
+		    AssetCookerCategory_SceneAssets,
+		    diagnostics,
+		    [&](const SourceImportResult& importResult) -> bool
+		    {
+			    return AssetCookerCookImportedScene(sceneEntry, importResult, diagnostics);
+		    });
+		if (!cooked)
+		{
+			failedScenes.push_back(sceneEntry.origin + ":" + sceneEntry.relativePath);
+			continue;
+		}
+
+		++cookedSceneCount;
 	}
 
-	const std::wstring totalSceneCount = std::to_wstring(plan.sceneEntries.size());
-	const int exitCode = AssetCookerToolProcess::Run(
-	    assetConverterPath,
-	    {L"cook-scene-list", sceneListPath.wstring(), totalSceneCount},
-	    plan.projectRoot);
-	AssetCookerRemoveTempFile(sceneListPath);
-	if (exitCode != 0)
+	if (!failedScenes.empty())
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, "Scene, mesh, and material asset cooking failed.");
+		diagnostics.AddError(
+		    AssetCookerCategory_SceneAssets,
+		    "Scene, mesh, and material asset cooking failed for " + std::to_string(failedScenes.size()) + " scene(s).");
 		return false;
 	}
 
@@ -230,26 +467,10 @@ bool AssetCookerDispatcher::ValidateCapabilities(
 
 	if (AssetCookerPlanUsesStep(plan, AssetCookerPlanStep::Textures))
 	{
-		const std::filesystem::path assetConverterPath = AssetCookerResolveToolPath(plan, "AssetConverter");
 		const std::filesystem::path textureCookerPath = AssetCookerResolveToolPath(plan, "TextureCooker");
-		if (!AssetCookerFileExists(assetConverterPath))
-		{
-			diagnostics.AddError(AssetCookerCategory_Textures, "AssetConverter executable was not found.", assetConverterPath);
-			result = false;
-		}
 		if (!AssetCookerFileExists(textureCookerPath))
 		{
 			diagnostics.AddError(AssetCookerCategory_Textures, "TextureCooker executable was not found.", textureCookerPath);
-			result = false;
-		}
-	}
-
-	if (AssetCookerPlanUsesStep(plan, AssetCookerPlanStep::SceneAssets))
-	{
-		const std::filesystem::path assetConverterPath = AssetCookerResolveToolPath(plan, "AssetConverter");
-		if (!AssetCookerFileExists(assetConverterPath))
-		{
-			diagnostics.AddError(AssetCookerCategory_SceneAssets, "AssetConverter executable was not found.", assetConverterPath);
 			result = false;
 		}
 	}
