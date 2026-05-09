@@ -1,6 +1,7 @@
 #include "AssetCookerDispatcher.h"
 
 #include "AssetCookerToolProcess.h"
+#include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "MaterialCooker.h"
@@ -585,6 +586,8 @@ bool AssetCookerDispatcher::DispatchPlan(
     AssetCookerDiagnostics& diagnostics,
     std::vector<AssetCookerOutputRecord>& outOutputs)
 {
+	Filesystem::ConfigureProjectRoot(plan.projectRoot);
+
 	std::cout << "AssetCooker Plan:\n"
 	          << "  project=" << plan.projectName << "\n"
 	          << "  configuration=" << plan.configuration << "\n"

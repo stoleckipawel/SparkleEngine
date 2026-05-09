@@ -33,6 +33,7 @@ namespace Filesystem
 	const std::filesystem::path& GetProjectAssetsPath();
 	const std::filesystem::path& GetEnginePath();
 	const std::filesystem::path& GetEngineAssetsPath();
+	void ConfigureProjectRoot(const std::filesystem::path& projectRoot);
 
 	// Generated cooked/cache/output roots
 	const std::filesystem::path& GetCookedAssetRootPath();

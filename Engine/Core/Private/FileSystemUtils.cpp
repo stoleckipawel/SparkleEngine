@@ -109,6 +109,9 @@ namespace
 
 	void InitializeTypedPaths(AssetPathState& state)
 	{
+		state.projectTypedPaths.fill({});
+		state.engineTypedPaths.fill({});
+
 		auto buildTypedPaths =
 		    [](const std::filesystem::path& root, std::array<std::filesystem::path, AssetPathState::kAssetTypeCount>& paths)
 		{
@@ -127,6 +130,23 @@ namespace
 
 		buildTypedPaths(state.projectAssetsPath, state.projectTypedPaths);
 		buildTypedPaths(state.engineAssetsPath, state.engineTypedPaths);
+	}
+
+	void InitializeProjectOutputPaths(AssetPathState& state)
+	{
+		const std::filesystem::path cookedProjectName =
+		    !state.projectPath.empty() ? state.projectPath.filename() : std::filesystem::path("Shared");
+
+		state.cookedAssetRootPath = Paths::Normalize(state.buildOutputRootPath / "Cooked" / cookedProjectName);
+		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
+		state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
+		state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");
+		state.cookedTextureRootPath = Paths::Normalize(state.cookedAssetRootPath / "Textures");
+		state.cookedSceneManifestRootPath = Paths::Normalize(state.cookedAssetRootPath / "SceneManifests");
+		state.cookedMeshRootPath = Paths::Normalize(state.cookedAssetRootPath / "Meshes");
+		state.cookedMaterialRootPath = Paths::Normalize(state.cookedAssetRootPath / "Materials");
+		state.sceneAssetRegistryPath = Paths::Normalize(state.cookedAssetRootPath / "SceneAssetRegistry.sreg");
+		state.shaderSymbolsOutputPath = Paths::Normalize(state.buildOutputRootPath / "ShaderSymbols" / cookedProjectName);
 	}
 
 	void InitializeOutputPaths(AssetPathState& state)
@@ -269,24 +289,12 @@ namespace
 		state.enginePath = Paths::Normalize(state.enginePath);
 		state.engineAssetsPath = Paths::Normalize(state.engineAssetsPath);
 
-		const std::filesystem::path cookedProjectName =
-		    !state.projectPath.empty() ? state.projectPath.filename() : std::filesystem::path("Shared");
 		state.buildOutputRootPath = Filesystem::ResolveBuildOutputRootPath();
 		state.logsRootPath = Filesystem::ResolveLogsRootPath();
-		state.cookedAssetRootPath = Paths::Normalize(state.buildOutputRootPath / "Cooked" / cookedProjectName);
-		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
-		state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
-		state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");
-		state.cookedTextureRootPath = Paths::Normalize(state.cookedAssetRootPath / "Textures");
-		state.cookedSceneManifestRootPath = Paths::Normalize(state.cookedAssetRootPath / "SceneManifests");
-		state.cookedMeshRootPath = Paths::Normalize(state.cookedAssetRootPath / "Meshes");
-		state.cookedMaterialRootPath = Paths::Normalize(state.cookedAssetRootPath / "Materials");
-		state.sceneAssetRegistryPath = Paths::Normalize(state.cookedAssetRootPath / "SceneAssetRegistry.sreg");
 		state.shaderCacheRootPath = Paths::Normalize(state.buildOutputRootPath / "Cache" / "Shaders");
 		state.shaderDebugArtifactRootPath = Paths::Normalize(state.shaderCacheRootPath / "Debug");
 		state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.shaderCacheRootPath);
-		state.shaderSymbolsOutputPath = Paths::Normalize(
-		    state.buildOutputRootPath / "ShaderSymbols" / cookedProjectName);
+		InitializeProjectOutputPaths(state);
 
 		InitializeTypedPaths(state);
 		InitializeOutputPaths(state);
@@ -513,6 +521,19 @@ namespace Filesystem
 	const std::filesystem::path& GetEngineAssetsPath()
 	{
 		return GetAssetPathState().engineAssetsPath;
+	}
+
+	void ConfigureProjectRoot(const std::filesystem::path& projectRoot)
+	{
+		AssetPathState& state = GetAssetPathState();
+		state.projectPath = Paths::Normalize(projectRoot);
+		state.projectAssetsPath =
+		    state.projectPath.empty() ? std::filesystem::path{} : Paths::Normalize(state.projectPath / "Assets");
+
+		InitializeProjectOutputPaths(state);
+		InitializeTypedPaths(state);
+		InitializeOutputPaths(state);
+		ValidatePaths(state);
 	}
 
 	std::optional<std::filesystem::path> FindAncestorWithMarker(
