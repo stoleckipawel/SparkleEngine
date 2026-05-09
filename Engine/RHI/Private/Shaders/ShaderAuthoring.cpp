@@ -15,7 +15,7 @@ static void EnsureGlobalShaderRegistrationBootstrap() noexcept
 		RegisterBuiltinGlobalShaders();
 		return true;
 	}();
-	(void)initialized;
+	(void) initialized;
 }
 
 static std::vector<ShaderRegistrationDesc>& MutableGlobalShaderRegistrations()
@@ -101,13 +101,10 @@ std::string BuildShaderParameterStructReport(const ShaderParameterStructDescript
 	for (const ShaderParameterStructFieldDescriptor& field : descriptor.Fields)
 	{
 		stream << "\n  layout=" << field.GetLayoutName() << " shader=" << field.GetShaderName()
-		       << " kind=" << static_cast<std::uint32_t>(field.Kind)
-		       << " dimension=" << static_cast<std::uint32_t>(field.Dimension)
+		       << " kind=" << static_cast<std::uint32_t>(field.Kind) << " dimension=" << static_cast<std::uint32_t>(field.Dimension)
 		       << " semantic=" << static_cast<std::uint32_t>(field.SemanticKind)
-		       << " domain=" << static_cast<std::uint32_t>(field.ResourceDomain)
-		       << " access=" << static_cast<std::uint32_t>(field.Access)
-		       << " visibility=" << static_cast<std::uint32_t>(field.Visibility)
-		       << " array=" << field.ArrayCount;
+		       << " domain=" << static_cast<std::uint32_t>(field.ResourceDomain) << " access=" << static_cast<std::uint32_t>(field.Access)
+		       << " visibility=" << static_cast<std::uint32_t>(field.Visibility) << " array=" << field.ArrayCount;
 		if (field.ValueSizeInBytes > 0)
 		{
 			stream << " size=" << field.ValueSizeInBytes;

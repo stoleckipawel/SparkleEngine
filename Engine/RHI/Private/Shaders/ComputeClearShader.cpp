@@ -4,9 +4,7 @@
 
 #include <string_view>
 
-void RegisterComputeClearShaders() noexcept
-{
-}
+void RegisterComputeClearShaders() noexcept {}
 
 class ComputeClearCS final : public TGlobalShader<ComputeClearCS>
 {
@@ -16,7 +14,7 @@ class ComputeClearCS final : public TGlobalShader<ComputeClearCS>
 	static constexpr std::string_view kBindingLayoutId = "ComputeClear";
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_UAV_NAMED(RWTexture2D, Output, OutputTexture)
+	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, Output, OutputTexture)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

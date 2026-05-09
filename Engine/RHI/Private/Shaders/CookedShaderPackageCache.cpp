@@ -21,8 +21,10 @@ namespace
 	{
 		switch (format)
 		{
-			case CookedShaderBinaryFormat::Dxil:  return "DXIL";
-			case CookedShaderBinaryFormat::SpirV: return "SPIR-V";
+			case CookedShaderBinaryFormat::Dxil:
+				return "DXIL";
+			case CookedShaderBinaryFormat::SpirV:
+				return "SPIR-V";
 		}
 		return "unknown";
 	}
@@ -59,18 +61,30 @@ namespace
 	{
 		switch (kind)
 		{
-			case CookedShaderResourceKind::ConstantBuffer: return "ConstantBuffer";
-			case CookedShaderResourceKind::Texture: return "Texture";
-			case CookedShaderResourceKind::StructuredBuffer: return "StructuredBuffer";
-			case CookedShaderResourceKind::ByteAddressBuffer: return "ByteAddressBuffer";
-			case CookedShaderResourceKind::TypedBuffer: return "TypedBuffer";
-			case CookedShaderResourceKind::RWTexture: return "RWTexture";
-			case CookedShaderResourceKind::RWStructuredBuffer: return "RWStructuredBuffer";
-			case CookedShaderResourceKind::RWByteAddressBuffer: return "RWByteAddressBuffer";
-			case CookedShaderResourceKind::RWTypedBuffer: return "RWTypedBuffer";
-			case CookedShaderResourceKind::Sampler: return "Sampler";
-			case CookedShaderResourceKind::AccelerationStructure: return "AccelerationStructure";
-			case CookedShaderResourceKind::PushConstantBlock: return "PushConstantBlock";
+			case CookedShaderResourceKind::ConstantBuffer:
+				return "ConstantBuffer";
+			case CookedShaderResourceKind::Texture:
+				return "Texture";
+			case CookedShaderResourceKind::StructuredBuffer:
+				return "StructuredBuffer";
+			case CookedShaderResourceKind::ByteAddressBuffer:
+				return "ByteAddressBuffer";
+			case CookedShaderResourceKind::TypedBuffer:
+				return "TypedBuffer";
+			case CookedShaderResourceKind::RWTexture:
+				return "RWTexture";
+			case CookedShaderResourceKind::RWStructuredBuffer:
+				return "RWStructuredBuffer";
+			case CookedShaderResourceKind::RWByteAddressBuffer:
+				return "RWByteAddressBuffer";
+			case CookedShaderResourceKind::RWTypedBuffer:
+				return "RWTypedBuffer";
+			case CookedShaderResourceKind::Sampler:
+				return "Sampler";
+			case CookedShaderResourceKind::AccelerationStructure:
+				return "AccelerationStructure";
+			case CookedShaderResourceKind::PushConstantBlock:
+				return "PushConstantBlock";
 			case CookedShaderResourceKind::Unknown:
 			default:
 				return "Unknown";
@@ -81,16 +95,26 @@ namespace
 	{
 		switch (dimension)
 		{
-			case CookedShaderResourceDimension::Buffer: return "Buffer";
-			case CookedShaderResourceDimension::Texture1D: return "Texture1D";
-			case CookedShaderResourceDimension::Texture1DArray: return "Texture1DArray";
-			case CookedShaderResourceDimension::Texture2D: return "Texture2D";
-			case CookedShaderResourceDimension::Texture2DArray: return "Texture2DArray";
-			case CookedShaderResourceDimension::Texture2DMS: return "Texture2DMS";
-			case CookedShaderResourceDimension::Texture2DMSArray: return "Texture2DMSArray";
-			case CookedShaderResourceDimension::Texture3D: return "Texture3D";
-			case CookedShaderResourceDimension::TextureCube: return "TextureCube";
-			case CookedShaderResourceDimension::TextureCubeArray: return "TextureCubeArray";
+			case CookedShaderResourceDimension::Buffer:
+				return "Buffer";
+			case CookedShaderResourceDimension::Texture1D:
+				return "Texture1D";
+			case CookedShaderResourceDimension::Texture1DArray:
+				return "Texture1DArray";
+			case CookedShaderResourceDimension::Texture2D:
+				return "Texture2D";
+			case CookedShaderResourceDimension::Texture2DArray:
+				return "Texture2DArray";
+			case CookedShaderResourceDimension::Texture2DMS:
+				return "Texture2DMS";
+			case CookedShaderResourceDimension::Texture2DMSArray:
+				return "Texture2DMSArray";
+			case CookedShaderResourceDimension::Texture3D:
+				return "Texture3D";
+			case CookedShaderResourceDimension::TextureCube:
+				return "TextureCube";
+			case CookedShaderResourceDimension::TextureCubeArray:
+				return "TextureCubeArray";
 			case CookedShaderResourceDimension::Unknown:
 			default:
 				return "Unknown";
@@ -101,12 +125,18 @@ namespace
 	{
 		switch (visibility)
 		{
-			case ShaderStageVisibility::None: return "None";
-			case ShaderStageVisibility::Vertex: return "Vertex";
-			case ShaderStageVisibility::Pixel: return "Pixel";
-			case ShaderStageVisibility::Compute: return "Compute";
-			case ShaderStageVisibility::AllGraphics: return "AllGraphics";
-			case ShaderStageVisibility::All: return "All";
+			case ShaderStageVisibility::None:
+				return "None";
+			case ShaderStageVisibility::Vertex:
+				return "Vertex";
+			case ShaderStageVisibility::Pixel:
+				return "Pixel";
+			case ShaderStageVisibility::Compute:
+				return "Compute";
+			case ShaderStageVisibility::AllGraphics:
+				return "AllGraphics";
+			case ShaderStageVisibility::All:
+				return "All";
 			default:
 				return "Unknown";
 		}
@@ -116,15 +146,24 @@ namespace
 	{
 		switch (kind)
 		{
-			case ShaderParameterSemanticKind::ReadTexture: return "ReadTexture";
-			case ShaderParameterSemanticKind::ReadBuffer: return "ReadBuffer";
-			case ShaderParameterSemanticKind::RWTexture: return "RWTexture";
-			case ShaderParameterSemanticKind::RWBuffer: return "RWBuffer";
-			case ShaderParameterSemanticKind::RenderTarget: return "RenderTarget";
-			case ShaderParameterSemanticKind::DepthTarget: return "DepthTarget";
-			case ShaderParameterSemanticKind::UniformData: return "UniformData";
-			case ShaderParameterSemanticKind::SamplerSet: return "SamplerSet";
-			case ShaderParameterSemanticKind::AccelerationStructure: return "AccelerationStructure";
+			case ShaderParameterSemanticKind::ReadTexture:
+				return "ReadTexture";
+			case ShaderParameterSemanticKind::ReadBuffer:
+				return "ReadBuffer";
+			case ShaderParameterSemanticKind::RWTexture:
+				return "RWTexture";
+			case ShaderParameterSemanticKind::RWBuffer:
+				return "RWBuffer";
+			case ShaderParameterSemanticKind::RenderTarget:
+				return "RenderTarget";
+			case ShaderParameterSemanticKind::DepthTarget:
+				return "DepthTarget";
+			case ShaderParameterSemanticKind::UniformData:
+				return "UniformData";
+			case ShaderParameterSemanticKind::SamplerSet:
+				return "SamplerSet";
+			case ShaderParameterSemanticKind::AccelerationStructure:
+				return "AccelerationStructure";
 			default:
 				return "Unknown";
 		}
@@ -168,10 +207,12 @@ namespace
 		const std::vector<CookedShaderResourceBindingRecord>& resourceBindings = package.GetResourceBindings();
 
 		std::string result;
-		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size(); ++reflectionIndex)
+		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size();
+		     ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
-			if (binaryRecord.Format != requiredBinaryFormat || !HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
+			if (binaryRecord.Format != requiredBinaryFormat ||
+			    !HasAllStages(definition.ExpectedStages, ToShaderStageMask(binaryRecord.Stage)))
 			{
 				continue;
 			}
@@ -191,8 +232,8 @@ namespace
 				}
 
 				const CookedShaderResourceBindingRecord& resourceBinding = resourceBindings[bindingIndex];
-				const std::string_view resourceName = package.ResolveString(
-				    CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
+				const std::string_view resourceName =
+				    package.ResolveString(CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
 				if (!result.empty())
 				{
 					result += "; ";
@@ -240,8 +281,7 @@ namespace
 				return resourceKind == CookedShaderResourceKind::Texture;
 			case ShaderParameterSemanticKind::ReadBuffer:
 				return resourceKind == CookedShaderResourceKind::StructuredBuffer ||
-				       resourceKind == CookedShaderResourceKind::ByteAddressBuffer ||
-				       resourceKind == CookedShaderResourceKind::TypedBuffer;
+				       resourceKind == CookedShaderResourceKind::ByteAddressBuffer || resourceKind == CookedShaderResourceKind::TypedBuffer;
 			case ShaderParameterSemanticKind::RWTexture:
 			case ShaderParameterSemanticKind::RenderTarget:
 			case ShaderParameterSemanticKind::DepthTarget:
@@ -340,8 +380,8 @@ namespace
 				}
 
 				const CookedShaderResourceBindingRecord& resourceBinding = resourceBindings[bindingIndex];
-				const std::string_view resourceName = package.ResolveString(
-				    CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
+				const std::string_view resourceName =
+				    package.ResolveString(CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
 				if (resourceName.empty())
 				{
 					outErrorMessage = std::format(
@@ -355,7 +395,8 @@ namespace
 				{
 					outErrorMessage = AddBindingDiagnostics(
 					    std::format(
-					        "Cooked shader package '{}' failed compatibility check: stage {} reflects unexpected {} '{}' for backend {}. Recook shaders to refresh stale package metadata.",
+					        "Cooked shader package '{}' failed compatibility check: stage {} reflects unexpected {} '{}' for backend {}. "
+					        "Recook shaders to refresh stale package metadata.",
 					        definition.PackageId,
 					        static_cast<std::uint32_t>(binaryRecord.Stage),
 					        FormatCookedShaderResourceKind(resourceBinding.Kind),
@@ -401,8 +442,8 @@ namespace
 					}
 
 					const CookedShaderResourceBindingRecord& resourceBinding = resourceBindings[bindingIndex];
-					const std::string_view resourceName = package.ResolveString(
-					    CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
+					const std::string_view resourceName =
+					    package.ResolveString(CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
 					if (resourceName == expectedParameter.GetShaderName() &&
 					    ResourceKindMatchesSemantic(resourceBinding.Kind, expectedParameter.Kind))
 					{
@@ -416,7 +457,8 @@ namespace
 			{
 				outErrorMessage = AddBindingDiagnostics(
 				    std::format(
-				        "Cooked shader package '{}' failed compatibility check: runtime parameter '{}' (shader='{}') is missing reflected backend {} bindings. Recook shaders to refresh stale package metadata.",
+				        "Cooked shader package '{}' failed compatibility check: runtime parameter '{}' (shader='{}') is missing reflected "
+				        "backend {} bindings. Recook shaders to refresh stale package metadata.",
 				        definition.PackageId,
 				        expectedParameter.Name,
 				        expectedParameter.GetShaderName(),
@@ -499,7 +541,7 @@ void CookedShaderPackageCache::ReplaceWith(CookedShaderPackageCache&& replacemen
 bool CookedShaderPackageCache::LoadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
-	CookedShaderBinaryFormat requiredBinaryFormat,
+    CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage,
     const LoadedShaderPackage*& outPackage)
 {
@@ -545,7 +587,7 @@ bool CookedShaderPackageCache::LoadPackage(
 bool CookedShaderPackageCache::ReloadPackage(
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
-	CookedShaderBinaryFormat requiredBinaryFormat,
+    CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage,
     const LoadedShaderPackage*& outPackage)
 {
@@ -628,7 +670,8 @@ bool CookedShaderPackageCache::LoadPackageFromFile(
 	    !reader.ReadArray(outPackage.m_header.SpecializationConstantRecordCount, outPackage.m_specializationConstants, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.RayTracingExportRecordCount, outPackage.m_rayTracingExports, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.RayTracingHitGroupRecordCount, outPackage.m_rayTracingHitGroups, outErrorMessage) ||
-	    !reader.ReadArray(outPackage.m_header.RayTracingLocalParameterRecordCount, outPackage.m_rayTracingLocalParameters, outErrorMessage) ||
+	    !reader
+	         .ReadArray(outPackage.m_header.RayTracingLocalParameterRecordCount, outPackage.m_rayTracingLocalParameters, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.StringTableSizeInBytes, outPackage.m_stringTable, outErrorMessage) ||
 	    !reader.ReadArray(outPackage.m_header.BinaryBlobSizeInBytes, outPackage.m_binaryBlob, outErrorMessage))
 	{
@@ -650,7 +693,7 @@ bool CookedShaderPackageCache::ValidatePackage(
     const LoadedShaderPackage& package,
     const ShaderPackageDefinition& definition,
     const PassParameterLayout& expectedBindingLayout,
-	CookedShaderBinaryFormat requiredBinaryFormat,
+    CookedShaderBinaryFormat requiredBinaryFormat,
     std::string& outErrorMessage)
 {
 	if (!package.IsValid())
@@ -680,9 +723,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 
 	if (package.GetHeader().SourceIdentityHash == 0)
 	{
-		outErrorMessage = std::format(
-		    "Cooked shader package '{}' failed compatibility check: field=SourceIdentityHash actual=0",
-		    definition.PackageId);
+		outErrorMessage =
+		    std::format("Cooked shader package '{}' failed compatibility check: field=SourceIdentityHash actual=0", definition.PackageId);
 		return false;
 	}
 
@@ -773,25 +815,19 @@ bool CookedShaderPackageCache::ValidatePackage(
 	{
 		if (binaryRecord.Stage == ShaderStage::Count)
 		{
-			outErrorMessage = std::format(
-			    "Cooked shader package '{}' contains an invalid shader stage record",
-			    definition.PackageId);
+			outErrorMessage = std::format("Cooked shader package '{}' contains an invalid shader stage record", definition.PackageId);
 			return false;
 		}
 
 		if (package.ResolveString(binaryRecord.EntryPoint).empty())
 		{
-			outErrorMessage = std::format(
-			    "Cooked shader package '{}' contains an invalid entry point string",
-			    definition.PackageId);
+			outErrorMessage = std::format("Cooked shader package '{}' contains an invalid entry point string", definition.PackageId);
 			return false;
 		}
 
 		if (binaryRecord.DebugArtifact && package.ResolveString(binaryRecord.DebugArtifact).empty())
 		{
-			outErrorMessage = std::format(
-			    "Cooked shader package '{}' contains an invalid debug artifact string",
-			    definition.PackageId);
+			outErrorMessage = std::format("Cooked shader package '{}' contains an invalid debug artifact string", definition.PackageId);
 			return false;
 		}
 
@@ -816,9 +852,8 @@ bool CookedShaderPackageCache::ValidatePackage(
 
 		if (!HasAllStages(package.GetHeader().DeclaredStages, ToShaderStageMask(binaryRecord.Stage)))
 		{
-			outErrorMessage = std::format(
-			    "Cooked shader package '{}' contains a stage record outside its declared stage mask",
-			    definition.PackageId);
+			outErrorMessage =
+			    std::format("Cooked shader package '{}' contains a stage record outside its declared stage mask", definition.PackageId);
 			return false;
 		}
 

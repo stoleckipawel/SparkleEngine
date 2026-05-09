@@ -7,148 +7,160 @@
 namespace Strings
 {
 	std::string ToLowerCopy(std::string_view str)
+	{
+		std::string lowered(str);
+		std::transform(
+		    lowered.begin(),
+		    lowered.end(),
+		    lowered.begin(),
+		    [](unsigned char ch)
+		    {
+			    return static_cast<char>(std::tolower(ch));
+		    });
+		return lowered;
+	}
+
+	std::string EscapeCsvField(std::string_view str)
+	{
+		std::string result;
+		result.reserve(str.size() + 2);
+		result.push_back('"');
+		for (const char character : str)
 		{
-			std::string lowered(str);
-			std::transform(
-			    lowered.begin(),
-			    lowered.end(),
-			    lowered.begin(),
-			    [](unsigned char ch)
-			    {
-				    return static_cast<char>(std::tolower(ch));
-			    });
-			return lowered;
+			if (character == '"')
+			{
+				result.push_back('"');
+			}
+			result.push_back(character);
 		}
+		result.push_back('"');
+		return result;
+	}
 
-		std::string EscapeCsvField(std::string_view str)
+	std::string EscapeJsonString(std::string_view str)
+	{
+		std::string result;
+		result.reserve(str.size() + 8);
+		for (const char character : str)
 		{
-			std::string result;
-			result.reserve(str.size() + 2);
-			result.push_back('"');
-			for (const char character : str)
+			switch (character)
 			{
-				if (character == '"')
-				{
-					result.push_back('"');
-				}
-				result.push_back(character);
+				case '\\':
+					result += "\\\\";
+					break;
+				case '"':
+					result += "\\\"";
+					break;
+				case '\n':
+					result += "\\n";
+					break;
+				case '\r':
+					result += "\\r";
+					break;
+				case '\t':
+					result += "\\t";
+					break;
+				default:
+					result.push_back(character);
+					break;
 			}
-			result.push_back('"');
-			return result;
 		}
+		return result;
+	}
 
-		std::string EscapeJsonString(std::string_view str)
+	bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept
+	{
+		if (lhs.size() != rhs.size())
 		{
-			std::string result;
-			result.reserve(str.size() + 8);
-			for (const char character : str)
-			{
-				switch (character)
-				{
-					case '\\': result += "\\\\"; break;
-					case '"': result += "\\\""; break;
-					case '\n': result += "\\n"; break;
-					case '\r': result += "\\r"; break;
-					case '\t': result += "\\t"; break;
-					default: result.push_back(character); break;
-				}
-			}
-			return result;
-		}
-
-		bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) noexcept
-		{
-			if (lhs.size() != rhs.size())
-			{
-				return false;
-			}
-
-			for (std::size_t index = 0; index < lhs.size(); ++index)
-			{
-				const unsigned char lhsChar = static_cast<unsigned char>(lhs[index]);
-				const unsigned char rhsChar = static_cast<unsigned char>(rhs[index]);
-				if (std::tolower(lhsChar) != std::tolower(rhsChar))
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept
-		{
-			if (prefix.size() > value.size())
-			{
-				return false;
-			}
-
-			for (std::size_t index = 0; index < prefix.size(); ++index)
-			{
-				const unsigned char valueCharacter = static_cast<unsigned char>(value[index]);
-				const unsigned char prefixCharacter = static_cast<unsigned char>(prefix[index]);
-				if (std::tolower(valueCharacter) != std::tolower(prefixCharacter))
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-
-		bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept
-		{
-			if (needle.empty())
-			{
-				return true;
-			}
-
-			const std::string loweredHaystack = ToLowerCopy(haystack);
-			const std::string loweredNeedle = ToLowerCopy(needle);
-			return loweredHaystack.find(loweredNeedle) != std::string::npos;
-		}
-
-		bool TryParseBool(std::string_view str, bool& outValue)
-		{
-			const std::string normalized = ToLowerCopy(TrimAsciiWhitespace(str));
-			if (normalized == "true" || normalized == "1" || normalized == "yes" || normalized == "on")
-			{
-				outValue = true;
-				return true;
-			}
-
-			if (normalized == "false" || normalized == "0" || normalized == "no" || normalized == "off")
-			{
-				outValue = false;
-				return true;
-			}
-
 			return false;
 		}
 
-		bool TrySplitKeyValue(std::string_view str, char separator, std::string_view& outKey, std::string_view& outValue) noexcept
+		for (std::size_t index = 0; index < lhs.size(); ++index)
 		{
-			const std::size_t separatorIndex = str.find(separator);
-			if (separatorIndex == std::string::npos)
+			const unsigned char lhsChar = static_cast<unsigned char>(lhs[index]);
+			const unsigned char rhsChar = static_cast<unsigned char>(rhs[index]);
+			if (std::tolower(lhsChar) != std::tolower(rhsChar))
 			{
 				return false;
 			}
+		}
 
-			outKey = TrimAsciiWhitespace(str.substr(0, separatorIndex));
-			outValue = TrimAsciiWhitespace(str.substr(separatorIndex + 1));
+		return true;
+	}
+
+	bool StartsWithIgnoreCase(std::string_view value, std::string_view prefix) noexcept
+	{
+		if (prefix.size() > value.size())
+		{
+			return false;
+		}
+
+		for (std::size_t index = 0; index < prefix.size(); ++index)
+		{
+			const unsigned char valueCharacter = static_cast<unsigned char>(value[index]);
+			const unsigned char prefixCharacter = static_cast<unsigned char>(prefix[index]);
+			if (std::tolower(valueCharacter) != std::tolower(prefixCharacter))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool ContainsIgnoreCase(std::string_view haystack, std::string_view needle) noexcept
+	{
+		if (needle.empty())
+		{
 			return true;
 		}
 
-		std::string Join(std::span<const std::string_view> values, std::string_view separator, std::size_t firstValueIndex)
+		const std::string loweredHaystack = ToLowerCopy(haystack);
+		const std::string loweredNeedle = ToLowerCopy(needle);
+		return loweredHaystack.find(loweredNeedle) != std::string::npos;
+	}
+
+	bool TryParseBool(std::string_view str, bool& outValue)
+	{
+		const std::string normalized = ToLowerCopy(TrimAsciiWhitespace(str));
+		if (normalized == "true" || normalized == "1" || normalized == "yes" || normalized == "on")
 		{
-			std::string output;
-			for (std::size_t index = firstValueIndex; index < values.size(); ++index)
-			{
-				if (index > firstValueIndex)
-				{
-					output += separator;
-				}
-				output += values[index];
-			}
-			return output;
+			outValue = true;
+			return true;
 		}
+
+		if (normalized == "false" || normalized == "0" || normalized == "no" || normalized == "off")
+		{
+			outValue = false;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool TrySplitKeyValue(std::string_view str, char separator, std::string_view& outKey, std::string_view& outValue) noexcept
+	{
+		const std::size_t separatorIndex = str.find(separator);
+		if (separatorIndex == std::string::npos)
+		{
+			return false;
+		}
+
+		outKey = TrimAsciiWhitespace(str.substr(0, separatorIndex));
+		outValue = TrimAsciiWhitespace(str.substr(separatorIndex + 1));
+		return true;
+	}
+
+	std::string Join(std::span<const std::string_view> values, std::string_view separator, std::size_t firstValueIndex)
+	{
+		std::string output;
+		for (std::size_t index = firstValueIndex; index < values.size(); ++index)
+		{
+			if (index > firstValueIndex)
+			{
+				output += separator;
+			}
+			output += values[index];
+		}
+		return output;
+	}
 }  // namespace Strings

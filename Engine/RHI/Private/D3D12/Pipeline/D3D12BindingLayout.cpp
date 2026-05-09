@@ -47,7 +47,16 @@ class D3D12BindingLayoutCompilerImpl final
 			switch (bindingRecord.SemanticKind)
 			{
 				case ShaderParameterSemanticKind::UniformData:
-					CompileUniformBinding(builder, bindings, bindingNames, bindingRecord, bindingName, shaderPackage, parameterDesc, desc, cbvRegister);
+					CompileUniformBinding(
+					    builder,
+					    bindings,
+					    bindingNames,
+					    bindingRecord,
+					    bindingName,
+					    shaderPackage,
+					    parameterDesc,
+					    desc,
+					    cbvRegister);
 					break;
 				case ShaderParameterSemanticKind::ReadTexture:
 				case ShaderParameterSemanticKind::ReadBuffer:
@@ -148,14 +157,14 @@ class D3D12BindingLayoutCompilerImpl final
 				return kind == CookedShaderResourceKind::Texture;
 			case ShaderParameterSemanticKind::ReadBuffer:
 				return kind == CookedShaderResourceKind::StructuredBuffer || kind == CookedShaderResourceKind::ByteAddressBuffer ||
-			       kind == CookedShaderResourceKind::TypedBuffer;
+				       kind == CookedShaderResourceKind::TypedBuffer;
 			case ShaderParameterSemanticKind::AccelerationStructure:
 				return kind == CookedShaderResourceKind::AccelerationStructure;
 			case ShaderParameterSemanticKind::RWTexture:
 				return kind == CookedShaderResourceKind::RWTexture;
 			case ShaderParameterSemanticKind::RWBuffer:
 				return kind == CookedShaderResourceKind::RWStructuredBuffer || kind == CookedShaderResourceKind::RWByteAddressBuffer ||
-			       kind == CookedShaderResourceKind::RWTypedBuffer;
+				       kind == CookedShaderResourceKind::RWTypedBuffer;
 			case ShaderParameterSemanticKind::SamplerSet:
 				return kind == CookedShaderResourceKind::Sampler;
 			default:
@@ -188,7 +197,8 @@ class D3D12BindingLayoutCompilerImpl final
 		const std::vector<CookedShaderReflectionRecord>& reflectionRecords = shaderPackage.GetReflectionRecords();
 		const std::vector<CookedShaderResourceBindingRecord>& resourceBindings = shaderPackage.GetResourceBindings();
 		std::vector<ReflectedBindingLocation> locations;
-		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size(); ++reflectionIndex)
+		for (std::size_t reflectionIndex = 0; reflectionIndex < reflectionRecords.size() && reflectionIndex < binaryRecords.size();
+		     ++reflectionIndex)
 		{
 			const CookedShaderBinaryRecord& binaryRecord = binaryRecords[reflectionIndex];
 			if (binaryRecord.Format != CookedShaderBinaryFormat::Dxil)
@@ -217,8 +227,8 @@ class D3D12BindingLayoutCompilerImpl final
 					continue;
 				}
 
-				const std::string_view resourceName = shaderPackage.ResolveString(
-				    CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
+				const std::string_view resourceName =
+				    shaderPackage.ResolveString(CookedShaderStringRef{resourceBinding.NameOffsetInBytes, resourceBinding.NameSizeInBytes});
 				if (resourceName != shaderName)
 				{
 					continue;
@@ -256,7 +266,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    std::uint32_t& cbvRegister)
 	{
 		assert(bindingRecord.ValueSizeInBytes > 0);
-		std::vector<ReflectedBindingLocation> reflectedLocations = FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
+		std::vector<ReflectedBindingLocation> reflectedLocations =
+		    FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
 		assert(!reflectedLocations.empty() && "Reflected shader binding is required for uniform parameters.");
 		if (reflectedLocations.empty())
 		{
@@ -316,7 +327,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    std::uint32_t& nextShaderRegister)
 	{
 		const std::uint32_t descriptorCount = bindingRecord.ArrayCount;
-		std::vector<ReflectedBindingLocation> reflectedLocations = FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
+		std::vector<ReflectedBindingLocation> reflectedLocations =
+		    FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
 		assert(!reflectedLocations.empty() && "Reflected shader binding is required for descriptor table parameters.");
 		if (reflectedLocations.empty())
 		{
@@ -329,7 +341,8 @@ class D3D12BindingLayoutCompilerImpl final
 			bindingNames.emplace_back(bindingName);
 			const std::uint32_t shaderRegister = reflectedLocation.Register;
 			const std::uint32_t registerSpace = reflectedLocation.RegisterSpace;
-			const std::uint32_t rootParameterIndex = builder.AddDescriptorTable(rangeType, descriptorCount, shaderRegister, registerSpace, visibility);
+			const std::uint32_t rootParameterIndex =
+			    builder.AddDescriptorTable(rangeType, descriptorCount, shaderRegister, registerSpace, visibility);
 			bindings.push_back(
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
@@ -352,7 +365,8 @@ class D3D12BindingLayoutCompilerImpl final
 	    const PassParameterDesc* parameterDesc,
 	    std::uint32_t& nextShaderRegister)
 	{
-		std::vector<ReflectedBindingLocation> reflectedLocations = FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
+		std::vector<ReflectedBindingLocation> reflectedLocations =
+		    FindReflectedBindingLocations(shaderPackage, bindingRecord, parameterDesc);
 		assert(!reflectedLocations.empty() && "Reflected shader binding is required for root SRV parameters.");
 		if (reflectedLocations.empty())
 		{

@@ -4,9 +4,7 @@
 
 #include <string_view>
 
-void RegisterHelloInlineRayQueryCSShader() noexcept
-{
-}
+void RegisterHelloInlineRayQueryCSShader() noexcept {}
 
 class HelloInlineRayQueryCS final : public FComputeShader
 {
@@ -18,13 +16,9 @@ class HelloInlineRayQueryCS final : public FComputeShader
 	    CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneAccelerationStructure)
-		SHADER_PARAMETER_UAV(RWTexture2D, OutputTexture)
+	SHADER_PARAMETER_ACCELERATION_STRUCTURE(SceneAccelerationStructure)
+	SHADER_PARAMETER_UAV(RWTexture2D, OutputTexture)
 	END_SHADER_PARAMETER_STRUCT()
 };
 
-IMPLEMENT_GLOBAL_SHADER(
-    HelloInlineRayQueryCS,
-    "HelloWorld/HelloInlineRayQueryCS.hlsl",
-    "main",
-	Compute);
+IMPLEMENT_GLOBAL_SHADER(HelloInlineRayQueryCS, "HelloWorld/HelloInlineRayQueryCS.hlsl", "main", Compute);

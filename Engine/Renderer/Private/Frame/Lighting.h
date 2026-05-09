@@ -7,6 +7,6 @@ class FrameGraph;
 
 void BuildLighting(
     FrameGraph& frameGraph,
-	RenderViewportExtent sceneExtent,
+    RenderViewportExtent sceneExtent,
     const SceneTargets& sceneTargets,
     const GBufferTargets& gbuffer);

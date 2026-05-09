@@ -100,10 +100,7 @@ class FrameExecutionDiagnostics final
 	bool SupportsGpuEvents() const noexcept;
 	bool SupportsTimestampQueries() const noexcept;
 
-	ScopedGpuEvent BeginGpuEvent(
-	    CommandContext& commands,
-	    std::string_view label,
-	    RhiDiagnosticLabelColor color = {}) noexcept;
+	ScopedGpuEvent BeginGpuEvent(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuEvent BeginGpuEvent(
 	    CommandContext& commands,
 	    const Diagnostics::DiagnosticName& name,
@@ -111,7 +108,8 @@ class FrameExecutionDiagnostics final
 	ScopedGpuTimer BeginTimer(CommandContext& commands, std::string_view label) noexcept;
 	ScopedGpuTimer BeginTimer(CommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept;
 	void InsertGpuMarker(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
-	void InsertGpuMarker(CommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {}) const noexcept;
+	void InsertGpuMarker(CommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {})
+	    const noexcept;
 	void ResolveTimings() noexcept;
 
 	const std::vector<GpuTimingScope>& GetRecordedTimings() const noexcept { return m_recordedTimers; }
@@ -123,7 +121,11 @@ class FrameExecutionDiagnostics final
 	RhiTimestampQueryHandle AllocateTimestampQuery() noexcept;
 	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept;
 	bool WriteTimestamp(CommandContext& commands, RhiTimestampQueryHandle query) noexcept;
-	void RecordCompletedTimer(std::string label, RhiTimestampQueryHandle beginQuery, RhiTimestampQueryHandle endQuery, std::uint16_t depth) noexcept;
+	void RecordCompletedTimer(
+	    std::string label,
+	    RhiTimestampQueryHandle beginQuery,
+	    RhiTimestampQueryHandle endQuery,
+	    std::uint16_t depth) noexcept;
 	std::uint16_t AcquireTimerDepth() noexcept;
 	void ReleaseTimerDepth() noexcept;
 	void ResetRecordedTimers() noexcept;
@@ -136,5 +138,9 @@ class FrameExecutionDiagnostics final
 };
 
 #ifndef SPARKLE_DIAGNOSTIC_NAME
-#define SPARKLE_DIAGNOSTIC_NAME(name) ::Diagnostics::DiagnosticName{(name)}
+	#define SPARKLE_DIAGNOSTIC_NAME(name) \
+		::Diagnostics::DiagnosticName     \
+		{                                 \
+			(name)                        \
+		}
 #endif

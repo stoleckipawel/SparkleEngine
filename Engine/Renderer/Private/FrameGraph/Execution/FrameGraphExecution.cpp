@@ -15,8 +15,8 @@ void FrameGraph::Execute(
     const CompiledPlan& plan,
     CommandContext& cmd,
     const FrameContext& frame,
-	const RenderPassContext& renderPassContext,
-	FrameExecutionDiagnostics& frameDiagnostics) const
+    const RenderPassContext& renderPassContext,
+    FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	cmd.EnableDrawDispatchDiagnostics();
 

@@ -9,10 +9,7 @@
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
-FrameBuildResult BuildFrame(
-	FrameGraph& frameGraph,
-	RenderViewportExtent sceneExtent,
-	bool presentToBackBuffer)
+FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, bool presentToBackBuffer)
 {
 	const FrameGraphTextureDesc sceneColorDesc =
 	    FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
@@ -22,7 +19,8 @@ FrameBuildResult BuildFrame(
 	    FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, RenderConfig::BackBufferFormat);
 	const TextureHandle backBuffer = frameGraph.ImportTexture(backBufferDesc, ResourceState::Present);
 
-	const FrameGraphTextureDesc mainDepthDesc = FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
+	const FrameGraphTextureDesc mainDepthDesc =
+	    FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
 	const TextureHandle mainDepth = frameGraph.CreateTexture(mainDepthDesc);
 
 	const SceneTargets sceneTargets{.SceneColor = sceneColor, .BackBuffer = backBuffer, .MainDepth = mainDepth};

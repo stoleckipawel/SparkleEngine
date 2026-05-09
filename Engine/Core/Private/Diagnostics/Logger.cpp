@@ -129,11 +129,12 @@ namespace Logging
 		  protected:
 			void sink_it_(const spdlog::details::log_msg& msg) override
 			{
-				PublishLogRecord(LogRecord{
-				    .LoggerName = std::string(msg.logger_name.data(), msg.logger_name.size()),
-				    .Level = msg.level,
-				    .Message = std::string(msg.payload.data(), msg.payload.size()),
-				});
+				PublishLogRecord(
+				    LogRecord{
+				        .LoggerName = std::string(msg.logger_name.data(), msg.logger_name.size()),
+				        .Level = msg.level,
+				        .Message = std::string(msg.payload.data(), msg.payload.size()),
+				    });
 			}
 
 			void flush_() override {}

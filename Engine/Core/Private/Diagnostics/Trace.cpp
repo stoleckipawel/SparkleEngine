@@ -36,7 +36,10 @@ namespace Diagnostics
 
 			std::size_t operator()(std::string_view value) const noexcept { return std::hash<std::string_view>{}(value); }
 			std::size_t operator()(const std::string& value) const noexcept { return (*this)(std::string_view(value)); }
-			std::size_t operator()(const char* value) const noexcept { return (*this)(value != nullptr ? std::string_view(value) : std::string_view{}); }
+			std::size_t operator()(const char* value) const noexcept
+			{
+				return (*this)(value != nullptr ? std::string_view(value) : std::string_view{});
+			}
 		};
 
 		struct TransparentStringEqual final
@@ -101,20 +104,11 @@ namespace Diagnostics
 			FlushInternal(false, shouldExport);
 		}
 
-		void Flush() noexcept
-		{
-			FlushInternal(true, true);
-		}
+		void Flush() noexcept { FlushInternal(true, true); }
 
-		bool IsSessionActive() const noexcept
-		{
-			return m_sessionActive.load(std::memory_order_acquire);
-		}
+		bool IsSessionActive() const noexcept { return m_sessionActive.load(std::memory_order_acquire); }
 
-		std::uint32_t BeginScope(
-		    std::string_view name,
-		    ETraceCategory category,
-		    std::uint64_t& outBeginTimestampMicroseconds) noexcept
+		std::uint32_t BeginScope(std::string_view name, ETraceCategory category, std::uint64_t& outBeginTimestampMicroseconds) noexcept
 		{
 			outBeginTimestampMicroseconds = 0;
 			if (!IsSessionActive() || name.empty())
@@ -124,12 +118,13 @@ namespace Diagnostics
 
 			const std::uint64_t timestamp = GetTimestampMicroseconds();
 			const std::uint32_t nameId = InternName(name);
-			AppendEvent(TraceEventRecord{
-			    .TimestampMicroseconds = timestamp,
-			    .ThreadId = GetCurrentThreadIdValue(),
-			    .NameId = nameId,
-			    .Category = category,
-			    .Phase = 'B'});
+			AppendEvent(
+			    TraceEventRecord{
+			        .TimestampMicroseconds = timestamp,
+			        .ThreadId = GetCurrentThreadIdValue(),
+			        .NameId = nameId,
+			        .Category = category,
+			        .Phase = 'B'});
 
 			outBeginTimestampMicroseconds = timestamp;
 
@@ -145,10 +140,7 @@ namespace Diagnostics
 			return nameId;
 		}
 
-		void EndScope(
-		    std::uint32_t nameId,
-		    ETraceCategory category,
-		    std::uint64_t beginTimestampMicroseconds) noexcept
+		void EndScope(std::uint32_t nameId, ETraceCategory category, std::uint64_t beginTimestampMicroseconds) noexcept
 		{
 			if (!IsSessionActive() || nameId == 0)
 			{
@@ -156,12 +148,13 @@ namespace Diagnostics
 			}
 
 			const std::uint64_t endTimestamp = GetTimestampMicroseconds();
-			AppendEvent(TraceEventRecord{
-			    .TimestampMicroseconds = endTimestamp,
-			    .ThreadId = GetCurrentThreadIdValue(),
-			    .NameId = nameId,
-			    .Category = category,
-			    .Phase = 'E'});
+			AppendEvent(
+			    TraceEventRecord{
+			        .TimestampMicroseconds = endTimestamp,
+			        .ThreadId = GetCurrentThreadIdValue(),
+			        .NameId = nameId,
+			        .Category = category,
+			        .Phase = 'E'});
 
 			if (m_logMirroringEnabled)
 			{
@@ -169,8 +162,7 @@ namespace Diagnostics
 				if (logger != nullptr && logger->should_log(spdlog::level::info))
 				{
 					const std::string name = LookupName(nameId);
-					const double elapsedMs =
-					    static_cast<double>(endTimestamp - beginTimestampMicroseconds) / 1000.0;
+					const double elapsedMs = static_cast<double>(endTimestamp - beginTimestampMicroseconds) / 1000.0;
 					SPDLOG_LOGGER_INFO(logger, "{} end ({:.3f} ms)", name, elapsedMs);
 				}
 			}
@@ -185,10 +177,7 @@ namespace Diagnostics
 			m_sessionStart = Clock::now();
 		}
 
-		static std::uint32_t GetCurrentThreadIdValue() noexcept
-		{
-			return static_cast<std::uint32_t>(::GetCurrentThreadId());
-		}
+		static std::uint32_t GetCurrentThreadIdValue() noexcept { return static_cast<std::uint32_t>(::GetCurrentThreadId()); }
 
 		static ThreadBuffer& GetThreadBuffer() noexcept
 		{
@@ -350,9 +339,9 @@ namespace Diagnostics
 		}
 
 		void ExportTrace(
-			std::vector<TraceEventRecord>& events,
-			const std::vector<std::string>& names,
-			const std::filesystem::path& outputPath) const noexcept
+		    std::vector<TraceEventRecord>& events,
+		    const std::vector<std::string>& names,
+		    const std::filesystem::path& outputPath) const noexcept
 		{
 			std::stable_sort(
 			    events.begin(),
@@ -514,8 +503,8 @@ namespace Diagnostics
 		if (m_liveProfilerActive)
 		{
 			const auto elapsed = std::chrono::steady_clock::now() - m_beginTime;
-			const auto elapsedMicroseconds = static_cast<std::uint64_t>(
-			    std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
+			const auto elapsedMicroseconds =
+			    static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
 			LiveProfiler::Get().EndCpuScope(elapsedMicroseconds);
 		}
 	}

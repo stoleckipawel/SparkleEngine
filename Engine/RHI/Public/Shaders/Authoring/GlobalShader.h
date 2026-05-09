@@ -213,44 +213,44 @@ template <typename TShader> class TGlobalShaderAutoRegister final
 	    ShaderStage stage,
 	    CookedShaderPackageFeatureFlags packageFeatures = TGlobalShader<TShader>::GetPackageFeatures())
 	{
-		GlobalShaderRegistry::Register(ShaderRegistrationDesc{
-		    .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
-		    .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
-		    .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
-		    .SourcePath = sourcePath,
-		    .EntryPoint = entryPoint,
-		    .Stage = stage,
-		    .PackageKind = GetDefaultCookedShaderPackageKind(stage),
-		    .PackageFeatures = packageFeatures,
-		    .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
-		});
+		GlobalShaderRegistry::Register(
+		    ShaderRegistrationDesc{
+		        .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
+		        .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
+		        .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
+		        .SourcePath = sourcePath,
+		        .EntryPoint = entryPoint,
+		        .Stage = stage,
+		        .PackageKind = GetDefaultCookedShaderPackageKind(stage),
+		        .PackageFeatures = packageFeatures,
+		        .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
+		    });
 	}
 };
 
 template <typename TShader> class TRayTracingShaderAutoRegister final
 {
   public:
-	TRayTracingShaderAutoRegister(
-	    std::string_view shaderName,
-	    std::string_view sourcePath,
-	    std::string_view entryPoint)
+	TRayTracingShaderAutoRegister(std::string_view shaderName, std::string_view sourcePath, std::string_view entryPoint)
 	{
-		GlobalShaderRegistry::Register(ShaderRegistrationDesc{
-		    .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
-		    .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
-		    .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
-		    .SourcePath = sourcePath,
-		    .EntryPoint = entryPoint,
-		    .Stage = ShaderStage::Count,
-		    .PackageKind = CookedShaderPackageKind::RayTracingLibrary,
-		    .PackageFeatures = TGlobalShader<TShader>::GetPackageFeatures() | CookedShaderPackageFeatureFlags::UsesAccelerationStructure,
-		    .RayTracingExportKind = TShader::kRayTracingExportKind,
-		    .RayTracingExportName = entryPoint,
-		    .RayTracingPayloadSizeInBytes = TShader::kRayTracingPayloadSizeInBytes,
-		    .RayTracingAttributeSizeInBytes = TShader::kRayTracingAttributeSizeInBytes,
-		    .RayTracingMaxRecursionDepth = TShader::kRayTracingMaxRecursionDepth,
-		    .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
-		});
+		GlobalShaderRegistry::Register(
+		    ShaderRegistrationDesc{
+		        .ShaderName = TGlobalShader<TShader>::GetShaderName(shaderName),
+		        .PackageName = TGlobalShader<TShader>::GetShaderPackageName(),
+		        .BindingLayoutId = TGlobalShader<TShader>::GetBindingLayoutId(),
+		        .SourcePath = sourcePath,
+		        .EntryPoint = entryPoint,
+		        .Stage = ShaderStage::Count,
+		        .PackageKind = CookedShaderPackageKind::RayTracingLibrary,
+		        .PackageFeatures =
+		            TGlobalShader<TShader>::GetPackageFeatures() | CookedShaderPackageFeatureFlags::UsesAccelerationStructure,
+		        .RayTracingExportKind = TShader::kRayTracingExportKind,
+		        .RayTracingExportName = entryPoint,
+		        .RayTracingPayloadSizeInBytes = TShader::kRayTracingPayloadSizeInBytes,
+		        .RayTracingAttributeSizeInBytes = TShader::kRayTracingAttributeSizeInBytes,
+		        .RayTracingMaxRecursionDepth = TShader::kRayTracingMaxRecursionDepth,
+		        .BuildParameterStructDescriptor = &TGlobalShader<TShader>::GetParameterStructDescriptor,
+		    });
 	}
 };
 
@@ -262,7 +262,9 @@ template <typename THitGroup> class TRayTracingHitGroupAutoRegister final
 		static_assert(requires { typename THitGroup::ClosestHit; }, "Ray tracing hit groups require a ClosestHit shader type.");
 		using ClosestHit = typename THitGroup::ClosestHit;
 		constexpr std::string_view closestHitExportName = TShaderSourceMetadata<ClosestHit>::kEntryPoint;
-		static_assert(!closestHitExportName.empty(), "Ray tracing hit group closest-hit shader must be registered with IMPLEMENT_RAY_TRACING_SHADER before the hit group.");
+		static_assert(
+		    !closestHitExportName.empty(),
+		    "Ray tracing hit group closest-hit shader must be registered with IMPLEMENT_RAY_TRACING_SHADER before the hit group.");
 
 		std::string_view anyHitExportName;
 		if constexpr (requires { typename THitGroup::AnyHit; })
@@ -278,12 +280,13 @@ template <typename THitGroup> class TRayTracingHitGroupAutoRegister final
 			intersectionExportName = TShaderSourceMetadata<Intersection>::kEntryPoint;
 		}
 
-		GlobalShaderRegistry::RegisterRayTracingHitGroup(RayTracingHitGroupRegistrationDesc{
-		    .PackageName = THitGroup::kShaderPackageName,
-		    .HitGroupName = THitGroup::kHitGroupName,
-		    .ClosestHitExportName = closestHitExportName,
-		    .AnyHitExportName = anyHitExportName,
-		    .IntersectionExportName = intersectionExportName});
+		GlobalShaderRegistry::RegisterRayTracingHitGroup(
+		    RayTracingHitGroupRegistrationDesc{
+		        .PackageName = THitGroup::kShaderPackageName,
+		        .HitGroupName = THitGroup::kHitGroupName,
+		        .ClosestHitExportName = closestHitExportName,
+		        .AnyHitExportName = anyHitExportName,
+		        .IntersectionExportName = intersectionExportName});
 	}
 };
 
@@ -323,30 +326,29 @@ template <typename TShader> class TShaderRef final
 	ShaderStage m_stage = ShaderStage::Count;
 };
 
-#define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName) \
-	template <> struct TShaderSourceMetadata<Class> \
-	{ \
-		static constexpr std::string_view kSourcePath = Path; \
-		static constexpr std::string_view kEntryPoint = Entry; \
-		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName; \
-	}; \
-	inline static const ::TGlobalShaderAutoRegister<Class> AutoRegisterGlobalShader_##Class{ \
-	    #Class, \
-	    Path, \
-	    Entry, \
-	    ::ShaderStage::StageName}
+#define IMPLEMENT_GLOBAL_SHADER(Class, Path, Entry, StageName)                              \
+	template <> struct TShaderSourceMetadata<Class>                                         \
+	{                                                                                       \
+		static constexpr std::string_view kSourcePath = Path;                               \
+		static constexpr std::string_view kEntryPoint = Entry;                              \
+		static constexpr ::ShaderStage kStage = ::ShaderStage::StageName;                   \
+	};                                                                                      \
+	inline static const ::TGlobalShaderAutoRegister<Class> AutoRegisterGlobalShader_##Class \
+	{                                                                                       \
+		#Class, Path, Entry, ::ShaderStage::StageName                                       \
+	}
 
-#define IMPLEMENT_RAY_TRACING_SHADER(Class, Path, Entry) \
-	template <> struct TShaderSourceMetadata<Class> \
-	{ \
-		static constexpr std::string_view kSourcePath = Path; \
-		static constexpr std::string_view kEntryPoint = Entry; \
-		static constexpr ::ShaderStage kStage = ::ShaderStage::Count; \
-	}; \
-	inline static const ::TRayTracingShaderAutoRegister<Class> AutoRegisterRayTracingShader_##Class{ \
-	    #Class, \
-	    Path, \
-	    Entry}
+#define IMPLEMENT_RAY_TRACING_SHADER(Class, Path, Entry)                                            \
+	template <> struct TShaderSourceMetadata<Class>                                                 \
+	{                                                                                               \
+		static constexpr std::string_view kSourcePath = Path;                                       \
+		static constexpr std::string_view kEntryPoint = Entry;                                      \
+		static constexpr ::ShaderStage kStage = ::ShaderStage::Count;                               \
+	};                                                                                              \
+	inline static const ::TRayTracingShaderAutoRegister<Class> AutoRegisterRayTracingShader_##Class \
+	{                                                                                               \
+		#Class, Path, Entry                                                                         \
+	}
 
 #define IMPLEMENT_RAY_TRACING_HIT_GROUP(Class) \
-	inline static const ::TRayTracingHitGroupAutoRegister<Class> AutoRegisterRayTracingHitGroup_##Class{}
+	inline static const ::TRayTracingHitGroupAutoRegister<Class> AutoRegisterRayTracingHitGroup_##Class {}

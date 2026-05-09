@@ -26,12 +26,8 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
 	struct MergeEntry;
 
 	static ShaderStageVisibility GetDefaultVisibility(ShaderStage stage) noexcept;
-	static ShaderStageVisibility ResolveVisibility(
-	    const ShaderParameterStructFieldDescriptor& field,
-	    ShaderStage stage) noexcept;
-	static PassParameterDesc BuildParameterDesc(
-	    const ShaderParameterStructFieldDescriptor& field,
-	    ShaderStage stage);
+	static ShaderStageVisibility ResolveVisibility(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage) noexcept;
+	static PassParameterDesc BuildParameterDesc(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage);
 	static std::uint32_t GetOrderingCategory(const PassParameterDesc& parameter) noexcept;
 	static bool MergeParameter(
 	    std::vector<MergeEntry>& entries,
@@ -46,6 +42,6 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
 };
 
 SPARKLE_RHI_API bool BuildRegisteredShaderPackageLayout(
-	std::string_view packageId,
-	PassParameterLayout& outLayout,
-	std::string& outErrorMessage);
+    std::string_view packageId,
+    PassParameterLayout& outLayout,
+    std::string& outErrorMessage);

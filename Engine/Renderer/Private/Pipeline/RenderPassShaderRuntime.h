@@ -72,8 +72,7 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Graphics, outErrorMessage) ||
-		    !ValidateExpectedStages(desc, outErrorMessage) ||
-		    !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
+		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
 		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage))
 		{
 			return false;
@@ -138,8 +137,7 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Compute, outErrorMessage) ||
-		    !ValidateExpectedStages(desc, outErrorMessage) ||
-		    !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
+		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
 		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage))
 		{
 			return false;
@@ -170,8 +168,10 @@ class RenderPassShaderRuntime final
 	{
 		switch (kind)
 		{
-			case RenderPassShaderPipelineKind::Graphics: return "graphics";
-			case RenderPassShaderPipelineKind::Compute:  return "compute";
+			case RenderPassShaderPipelineKind::Graphics:
+				return "graphics";
+			case RenderPassShaderPipelineKind::Compute:
+				return "compute";
 		}
 
 		return "unknown";
@@ -257,12 +257,14 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		outLoadedPackage = nullptr;
-		if (!shaderPackageCache.LoadPackage(desc.Package, bindingLayout, rhi.GetRequiredShaderBinaryFormat(), outErrorMessage, outLoadedPackage))
+		if (!shaderPackageCache
+		         .LoadPackage(desc.Package, bindingLayout, rhi.GetRequiredShaderBinaryFormat(), outErrorMessage, outLoadedPackage))
 		{
 			const std::string bindingLayoutLabel =
 			    desc.Package.BindingLayoutId != nullptr ? std::string(desc.Package.BindingLayoutId) : bindingLayout.GetDebugName();
 			outErrorMessage = std::format(
-			    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - {}",
+			    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - "
+			    "{}",
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    desc.PassName,
 			    desc.PackageDeclarationName,

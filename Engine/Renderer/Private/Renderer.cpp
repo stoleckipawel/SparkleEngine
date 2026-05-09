@@ -348,10 +348,8 @@ void Renderer::RecordFrame() noexcept
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.
-	auto gpuFrameScope = frameDiagnostics.BeginGpuEvent(
-	    cmd,
-	    "GPU Frame",
-	    RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255});
+	auto gpuFrameScope =
+	    frameDiagnostics.BeginGpuEvent(cmd, "GPU Frame", RhiDiagnosticLabelColor{.Red = 180, .Green = 200, .Blue = 220, .Alpha = 255});
 	auto gpuFrameTimer = frameDiagnostics.BeginTimer(cmd, "GPU Frame");
 
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
@@ -388,9 +386,7 @@ const FrameExecutionDiagnostics& Renderer::GetCurrentFrameDiagnostics() const no
 	return *m_frameExecutionDiagnostics[GetRenderHardwareInterface().GetCurrentFrameIndex()];
 }
 
-void Renderer::ReportResolvedTimings(
-	std::uint32_t frameIndex,
-	const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
+void Renderer::ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept
 {
 	const auto& resolvedTimers = frameDiagnostics.GetResolvedTimings();
 
@@ -437,10 +433,11 @@ void Renderer::PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resol
 	entries.reserve(resolvedTimers.size());
 	for (const ResolvedGpuTiming& resolvedTimer : resolvedTimers)
 	{
-		entries.push_back(Diagnostics::LiveProfiler::GpuTimingEntry{
-		    .Label = std::string_view(resolvedTimer.Label),
-		    .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
-		    .Depth = resolvedTimer.Depth});
+		entries.push_back(
+		    Diagnostics::LiveProfiler::GpuTimingEntry{
+		        .Label = std::string_view(resolvedTimer.Label),
+		        .DurationMicroseconds = static_cast<std::uint64_t>(resolvedTimer.DurationMilliseconds * 1000.0),
+		        .Depth = resolvedTimer.Depth});
 	}
 
 	profiler.SubmitGpuFrame(entries.data(), entries.size());

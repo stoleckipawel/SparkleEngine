@@ -142,10 +142,7 @@ namespace Files
 			return true;
 		}
 
-		bool CanRead(std::size_t byteCount) const noexcept
-		{
-			return byteCount <= m_bytes.size() - m_offset;
-		}
+		bool CanRead(std::size_t byteCount) const noexcept { return byteCount <= m_bytes.size() - m_offset; }
 
 		std::span<const std::uint8_t> m_bytes;
 		std::size_t m_offset = 0;

@@ -135,9 +135,7 @@ void D3D12RenderCommandList::BindGraphicsUnorderedAccess(std::uint32_t rootParam
 	}
 }
 
-void D3D12RenderCommandList::BindGraphicsDescriptorTable(
-    std::uint32_t rootParameterIndex,
-    RhiDescriptorTableBinding tableBinding) noexcept
+void D3D12RenderCommandList::BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	if (m_commandList == nullptr || m_owner == nullptr || !tableBinding)
 	{
@@ -193,9 +191,7 @@ void D3D12RenderCommandList::BindComputeUnorderedAccess(std::uint32_t rootParame
 	}
 }
 
-void D3D12RenderCommandList::BindComputeDescriptorTable(
-    std::uint32_t rootParameterIndex,
-    RhiDescriptorTableBinding tableBinding) noexcept
+void D3D12RenderCommandList::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	if (m_commandList == nullptr || m_owner == nullptr || !tableBinding)
 	{
@@ -271,7 +267,8 @@ void D3D12RenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const R
 	}
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE nativeRtv = D3D12TypeConversions::ToCpuDescriptor(rtv);
-	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
+	    dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
 	m_commandList->OMSetRenderTargets(1, &nativeRtv, FALSE, dsv != nullptr ? &nativeDsv : nullptr);
 }
 
@@ -291,7 +288,8 @@ void D3D12RenderCommandList::SetRenderTargets(
 		nativeRtvs[index] = D3D12TypeConversions::ToCpuDescriptor(rtvs[index]);
 	}
 
-	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv = dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDsv =
+	    dsv != nullptr ? D3D12TypeConversions::ToCpuDescriptor(*dsv) : D3D12_CPU_DESCRIPTOR_HANDLE{};
 	m_commandList->OMSetRenderTargets(numRTVs, nativeRtvs.data(), FALSE, dsv != nullptr ? &nativeDsv : nullptr);
 }
 
@@ -354,7 +352,8 @@ void D3D12RenderCommandList::DrawIndexedInstanced(
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
+		m_commandList
+		    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 	}
 }
 
@@ -421,8 +420,7 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	if (m_commandList == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 || scratchGpuAddress == 0 ||
-	    resultGpuAddress == 0)
+	if (m_commandList == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 || scratchGpuAddress == 0 || resultGpuAddress == 0)
 	{
 		return;
 	}
@@ -445,7 +443,9 @@ void D3D12RenderCommandList::CopyResource(NativeResourceHandle destinationResour
 {
 	if (m_commandList != nullptr)
 	{
-		m_commandList->CopyResource(D3D12TypeConversions::ToResource(destinationResource), D3D12TypeConversions::ToResource(sourceResource));
+		m_commandList->CopyResource(
+		    D3D12TypeConversions::ToResource(destinationResource),
+		    D3D12TypeConversions::ToResource(sourceResource));
 	}
 }
 

@@ -9,54 +9,72 @@
 
 void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry, ConsoleVariableRegistry& cvarRegistry)
 {
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "Help",
-	    .Help = "Lists console commands or filters command help.",
-	    .ArgumentSyntax = "[filter]",
-	    .Scope = ConsoleCommandScope::Runtime,
-	    .Execute = [&commandRegistry](const ConsoleCommandContext& context, std::span<const std::string_view> arguments) {
-		    return ExecuteHelp(commandRegistry, context, arguments);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "Help",
+	        .Help = "Lists console commands or filters command help.",
+	        .ArgumentSyntax = "[filter]",
+	        .Scope = ConsoleCommandScope::Runtime,
+	        .Execute =
+	            [&commandRegistry](const ConsoleCommandContext& context, std::span<const std::string_view> arguments)
+	        {
+		        return ExecuteHelp(commandRegistry, context, arguments);
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "ListCVars",
-	    .Help = "Lists registered console variables.",
-	    .ArgumentSyntax = "[filter]",
-	    .Scope = ConsoleCommandScope::Runtime,
-	    .Execute = [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments) {
-		    return ExecuteListCVars(cvarRegistry, arguments);
-	    },
-	    .Complete = [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request) {
-		    return CompleteCVarName(cvarRegistry, request.CurrentToken);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "ListCVars",
+	        .Help = "Lists registered console variables.",
+	        .ArgumentSyntax = "[filter]",
+	        .Scope = ConsoleCommandScope::Runtime,
+	        .Execute =
+	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	        {
+		        return ExecuteListCVars(cvarRegistry, arguments);
+	        },
+	        .Complete =
+	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	        {
+		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "GetCVar",
-	    .Help = "Prints a console variable value.",
-	    .ArgumentSyntax = "<name>",
-	    .Scope = ConsoleCommandScope::Runtime,
-	    .Execute = [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments) {
-		    return ExecuteGetCVar(cvarRegistry, arguments);
-	    },
-	    .Complete = [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request) {
-		    return CompleteCVarName(cvarRegistry, request.CurrentToken);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "GetCVar",
+	        .Help = "Prints a console variable value.",
+	        .ArgumentSyntax = "<name>",
+	        .Scope = ConsoleCommandScope::Runtime,
+	        .Execute =
+	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	        {
+		        return ExecuteGetCVar(cvarRegistry, arguments);
+	        },
+	        .Complete =
+	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	        {
+		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "SetCVar",
-	    .Help = "Sets a console variable value.",
-	    .ArgumentSyntax = "<name> <value>",
-	    .Scope = ConsoleCommandScope::Runtime,
-	    .Execute = [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments) {
-		    return ExecuteSetCVar(cvarRegistry, arguments);
-	    },
-	    .Complete = [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request) {
-		    return CompleteCVarName(cvarRegistry, request.CurrentToken);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "SetCVar",
+	        .Help = "Sets a console variable value.",
+	        .ArgumentSyntax = "<name> <value>",
+	        .Scope = ConsoleCommandScope::Runtime,
+	        .Execute =
+	            [&cvarRegistry](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	        {
+		        return ExecuteSetCVar(cvarRegistry, arguments);
+	        },
+	        .Complete =
+	            [&cvarRegistry](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	        {
+		        return CompleteCVarName(cvarRegistry, request.CurrentToken);
+	        },
+	    });
 }
 
 void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry)
@@ -65,17 +83,16 @@ void ConsoleBuiltinCommands::Register(ConsoleCommandRegistry& commandRegistry)
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
-	const ConsoleCommandRegistry& commandRegistry,
-	const ConsoleCommandContext& context,
-	std::span<const std::string_view> arguments)
+    const ConsoleCommandRegistry& commandRegistry,
+    const ConsoleCommandContext& context,
+    std::span<const std::string_view> arguments)
 {
 	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
 	std::string output;
 	for (const ConsoleCommandDescriptor& command : commandRegistry.GetCommands())
 	{
-		const bool scopeAllowed = command.Scope == ConsoleCommandScope::Runtime ||
-		    context.Scope == ConsoleCommandScope::Developer ||
-		    (command.Scope == ConsoleCommandScope::Editor && context.Scope == ConsoleCommandScope::Editor);
+		const bool scopeAllowed = command.Scope == ConsoleCommandScope::Runtime || context.Scope == ConsoleCommandScope::Developer ||
+		                          (command.Scope == ConsoleCommandScope::Editor && context.Scope == ConsoleCommandScope::Editor);
 		if (!scopeAllowed)
 		{
 			continue;
@@ -100,8 +117,8 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteHelp(
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
-	const ConsoleVariableRegistry& cvarRegistry,
-	std::span<const std::string_view> arguments)
+    const ConsoleVariableRegistry& cvarRegistry,
+    std::span<const std::string_view> arguments)
 {
 	const std::string_view filter = arguments.empty() ? std::string_view{} : arguments.front();
 	std::string output;
@@ -111,7 +128,8 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
 		{
 			continue;
 		}
-		if (!filter.empty() && !Strings::ContainsIgnoreCase(variable->GetName(), filter) && !Strings::ContainsIgnoreCase(variable->GetDescription(), filter))
+		if (!filter.empty() && !Strings::ContainsIgnoreCase(variable->GetName(), filter) &&
+		    !Strings::ContainsIgnoreCase(variable->GetDescription(), filter))
 		{
 			continue;
 		}
@@ -131,8 +149,8 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteListCVars(
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
-	const ConsoleVariableRegistry& cvarRegistry,
-	std::span<const std::string_view> arguments)
+    const ConsoleVariableRegistry& cvarRegistry,
+    std::span<const std::string_view> arguments)
 {
 	if (arguments.size() != 1)
 	{
@@ -149,8 +167,8 @@ ConsoleCommandResult ConsoleBuiltinCommands::ExecuteGetCVar(
 }
 
 ConsoleCommandResult ConsoleBuiltinCommands::ExecuteSetCVar(
-	ConsoleVariableRegistry& cvarRegistry,
-	std::span<const std::string_view> arguments)
+    ConsoleVariableRegistry& cvarRegistry,
+    std::span<const std::string_view> arguments)
 {
 	if (arguments.size() < 2)
 	{

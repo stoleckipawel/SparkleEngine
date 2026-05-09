@@ -301,10 +301,16 @@ void OutputLogPanel::DrawInputLine(bool disableInteraction)
 
 	ImGui::SetNextItemWidth(-1.0f);
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, SparkleUiPalette::ConsoleInputBackground());
-	const ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue |
-	    ImGuiInputTextFlags_CallbackHistory |
-	    ImGuiInputTextFlags_CallbackCompletion;
-	if (ImGui::InputTextWithHint("##OutputLogCommandInput", "Enter command", m_inputBuffer.data(), m_inputBuffer.size(), flags, &HandleInputTextCallback, this))
+	const ImGuiInputTextFlags flags =
+	    ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion;
+	if (ImGui::InputTextWithHint(
+	        "##OutputLogCommandInput",
+	        "Enter command",
+	        m_inputBuffer.data(),
+	        m_inputBuffer.size(),
+	        flags,
+	        &HandleInputTextCallback,
+	        this))
 	{
 		SubmitInput();
 	}
@@ -389,10 +395,7 @@ void OutputLogPanel::DrainPendingRecords()
 		return;
 	}
 
-	m_records.insert(
-	    m_records.end(),
-	    std::make_move_iterator(pendingRecords.begin()),
-	    std::make_move_iterator(pendingRecords.end()));
+	m_records.insert(m_records.end(), std::make_move_iterator(pendingRecords.begin()), std::make_move_iterator(pendingRecords.end()));
 	while (m_records.size() > kMaxOutputLogRecords)
 	{
 		m_records.erase(m_records.begin(), m_records.begin() + (std::min) (m_records.size() - kMaxOutputLogRecords, m_records.size()));

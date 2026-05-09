@@ -17,10 +17,10 @@ namespace Diagnostics
 	[[noreturn]] SPARKLE_CORE_API void CheckHResult(long hr, const char* expression, const char* file, std::uint32_t line) noexcept;
 }
 
-#define CHECK(hr)                                                              \
-	do                                                                         \
-	{                                                                          \
-		const long _hr = static_cast<long>(hr);                                \
-		if (_hr < 0)                                                           \
+#define CHECK(hr)                                                      \
+	do                                                                 \
+	{                                                                  \
+		const long _hr = static_cast<long>(hr);                        \
+		if (_hr < 0)                                                   \
 			::Diagnostics::CheckHResult(_hr, #hr, __FILE__, __LINE__); \
 	} while (0)

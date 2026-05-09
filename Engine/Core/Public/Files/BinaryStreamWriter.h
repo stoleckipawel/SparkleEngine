@@ -28,8 +28,7 @@ namespace Files
 			return false;
 		}
 
-		template <typename T>
-		static bool WriteValue(std::ofstream& output, const T& value, std::string& outErrorMessage)
+		template <typename T> static bool WriteValue(std::ofstream& output, const T& value, std::string& outErrorMessage)
 		{
 			static_assert(std::is_trivially_copyable_v<T>, "BinaryStreamWriter requires trivially-copyable values");
 			output.write(reinterpret_cast<const char*>(&value), sizeof(T));
@@ -42,8 +41,7 @@ namespace Files
 			return false;
 		}
 
-		template <typename T>
-		static bool WriteArray(std::ofstream& output, const std::vector<T>& values, std::string& outErrorMessage)
+		template <typename T> static bool WriteArray(std::ofstream& output, const std::vector<T>& values, std::string& outErrorMessage)
 		{
 			static_assert(std::is_trivially_copyable_v<T>, "BinaryStreamWriter requires trivially-copyable values");
 			if (values.empty())
@@ -51,9 +49,7 @@ namespace Files
 				return true;
 			}
 
-			output.write(
-			    reinterpret_cast<const char*>(values.data()),
-			    static_cast<std::streamsize>(sizeof(T) * values.size()));
+			output.write(reinterpret_cast<const char*>(values.data()), static_cast<std::streamsize>(sizeof(T) * values.size()));
 			if (output.good())
 			{
 				return true;

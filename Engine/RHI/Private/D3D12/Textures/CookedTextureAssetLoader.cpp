@@ -22,11 +22,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	std::string errorMessage;
 	if (!Files::TryReadAllBytes(resolvedPath, fileBytes, errorMessage))
 	{
-		Diagnostics::Fail(
-		    g_cookedTextureAssetLoaderLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Diagnostics::Fail(g_cookedTextureAssetLoaderLogger, __FILE__, __LINE__, std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -34,11 +30,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	CookedTextureAssetHeader header;
 	if (!reader.ReadValue(header, errorMessage) || !ValidateHeader(header, resolvedPath, errorMessage))
 	{
-		Diagnostics::Fail(
-		    g_cookedTextureAssetLoaderLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Diagnostics::Fail(g_cookedTextureAssetLoaderLogger, __FILE__, __LINE__, std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -59,11 +51,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	std::vector<CookedTextureMipHeader> mipHeaders;
 	if (!ReadMipHeaders(reader, header.mipCount * header.GetArraySize(), resolvedPath, mipHeaders, errorMessage))
 	{
-		Diagnostics::Fail(
-		    g_cookedTextureAssetLoaderLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Diagnostics::Fail(g_cookedTextureAssetLoaderLogger, __FILE__, __LINE__, std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -76,11 +64,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	loadResult.formatIntent = formatIntent;
 	if (!ReadMipPayloads(reader, mipHeaders, resolvedPath, loadResult, errorMessage))
 	{
-		Diagnostics::Fail(
-		    g_cookedTextureAssetLoaderLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("CookedTextureAssetLoader: {}", errorMessage));
+		Diagnostics::Fail(g_cookedTextureAssetLoaderLogger, __FILE__, __LINE__, std::format("CookedTextureAssetLoader: {}", errorMessage));
 		return {};
 	}
 
@@ -165,7 +149,7 @@ bool CookedTextureAssetLoader::ValidateMipHeader(
 }
 
 bool CookedTextureAssetLoader::ReadMipHeaders(
-	Files::BinarySpanReader& reader,
+    Files::BinarySpanReader& reader,
     std::uint32_t mipCount,
     const std::filesystem::path& resolvedPath,
     std::vector<CookedTextureMipHeader>& outMipHeaders,
@@ -189,7 +173,7 @@ bool CookedTextureAssetLoader::ReadMipHeaders(
 }
 
 bool CookedTextureAssetLoader::ReadMipPayloads(
-	Files::BinarySpanReader& reader,
+    Files::BinarySpanReader& reader,
     const std::vector<CookedTextureMipHeader>& mipHeaders,
     const std::filesystem::path& resolvedPath,
     TextureLoadResult& outLoadResult,

@@ -30,17 +30,14 @@ const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMet
 
 ShaderPackageDefinition DirectLightingPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-		.PackageId = PassName,
-		.BindingLayoutId = PassName,
-		.ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void DirectLightingPass::DeclareResources(
-	FrameGraph& frameGraph,
-	const LightingTargets& lighting,
-	const GBufferTargets& gbuffer,
-	ParameterInstance& parameters)
+    FrameGraph& frameGraph,
+    const LightingTargets& lighting,
+    const GBufferTargets& gbuffer,
+    ParameterInstance& parameters)
 {
 	parameters->DirectDiffuse = frameGraph.CreateUAV(lighting.DirectDiffuse);
 	parameters->DirectSpecular = frameGraph.CreateUAV(lighting.DirectSpecular);
@@ -53,9 +50,9 @@ void DirectLightingPass::DeclareResources(
 }
 
 void DirectLightingPass::SetParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
@@ -70,16 +67,16 @@ void DirectLightingPass::Execute(RenderGraphPassContext& context, ParameterInsta
 	const DirectLightingPassRuntime& runtime = context.Runtime.GetPassRuntime<DirectLightingPass>();
 	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 	const ComputeDispatchDesc dispatch{
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-		1};
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
+	    1};
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<DirectLightingPass>(
-		context.Graph,
-		context.Commands,
-		context.Runtime.HardwareInterface,
-		runtime,
-		parameters,
-		dispatch,
-		PassName);
+	    context.Graph,
+	    context.Commands,
+	    context.Runtime.HardwareInterface,
+	    runtime,
+	    parameters,
+	    dispatch,
+	    PassName);
 	assert(dispatched);
 }

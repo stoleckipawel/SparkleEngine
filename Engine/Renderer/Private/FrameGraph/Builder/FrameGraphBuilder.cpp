@@ -13,10 +13,7 @@ FrameGraphBuildResult FrameGraphBuilder::Build() const
 	auto frameGraph =
 	    std::make_unique<FrameGraph>(&m_dependencies.renderHardwareInterface, &m_dependencies.window, m_dependencies.sceneExtent);
 
-	const FrameBuildResult frameLoop = BuildFrame(
-	    *frameGraph,
-	    m_dependencies.sceneExtent,
-	    m_dependencies.presentSceneToBackBuffer);
+	const FrameBuildResult frameLoop = BuildFrame(*frameGraph, m_dependencies.sceneExtent, m_dependencies.presentSceneToBackBuffer);
 
 	FrameGraphBuildResult result{};
 	result.SceneColor = frameLoop.Targets.SceneColor;

@@ -26,54 +26,71 @@ namespace
 
 void ShaderConsoleCommands::Register(ConsoleCommandRegistry& commandRegistry, Handlers handlers)
 {
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "RecompileShaders",
-	    .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, or <path-or-id>.",
-	    .ArgumentSyntax = "Global|Changed|<path-or-id>",
-	    .Scope = ConsoleCommandScope::Editor,
-	    .Execute = [handlers](const ConsoleCommandContext&, std::span<const std::string_view> arguments) {
-		    return ExecuteRecompileShaders(handlers, arguments);
-	    },
-	    .Complete = [](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request) {
-		    return CompleteRecompileShaders(request);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "RecompileShaders",
+	        .Help = "Queues an out-of-process shader recook. Targets: Global, Changed, or <path-or-id>.",
+	        .ArgumentSyntax = "Global|Changed|<path-or-id>",
+	        .Scope = ConsoleCommandScope::Editor,
+	        .Execute =
+	            [handlers](const ConsoleCommandContext&, std::span<const std::string_view> arguments)
+	        {
+		        return ExecuteRecompileShaders(handlers, arguments);
+	        },
+	        .Complete =
+	            [](const ConsoleCommandContext&, const ConsoleAutocompleteRequest& request)
+	        {
+		        return CompleteRecompileShaders(request);
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "ReloadShaders",
-	    .Help = "Reloads currently cooked shader packages without recooking.",
-	    .Scope = ConsoleCommandScope::Editor,
-	    .Execute = [handlers](const ConsoleCommandContext&, std::span<const std::string_view>) {
-		    return ExecuteReloadShaders(handlers);
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "ReloadShaders",
+	        .Help = "Reloads currently cooked shader packages without recooking.",
+	        .Scope = ConsoleCommandScope::Editor,
+	        .Execute =
+	            [handlers](const ConsoleCommandContext&, std::span<const std::string_view>)
+	        {
+		        return ExecuteReloadShaders(handlers);
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "ListShaders",
-	    .Help = "Lists registered global shaders from the typed shader registry.",
-	    .Scope = ConsoleCommandScope::Editor,
-	    .Execute = [](const ConsoleCommandContext&, std::span<const std::string_view>) {
-		    return ExecuteListShaders();
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "ListShaders",
+	        .Help = "Lists registered global shaders from the typed shader registry.",
+	        .Scope = ConsoleCommandScope::Editor,
+	        .Execute =
+	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	        {
+		        return ExecuteListShaders();
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "ListShaderBackends",
-	    .Help = "Lists shader compiler backends mirrored from the tool surface.",
-	    .Scope = ConsoleCommandScope::Editor,
-	    .Execute = [](const ConsoleCommandContext&, std::span<const std::string_view>) {
-		    return ExecuteListShaderBackends();
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "ListShaderBackends",
+	        .Help = "Lists shader compiler backends mirrored from the tool surface.",
+	        .Scope = ConsoleCommandScope::Editor,
+	        .Execute =
+	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	        {
+		        return ExecuteListShaderBackends();
+	        },
+	    });
 
-	commandRegistry.Register(ConsoleCommandDescriptor{
-	    .Name = "ListShaderTargets",
-	    .Help = "Lists shader target names accepted by the shader compiler.",
-	    .Scope = ConsoleCommandScope::Editor,
-	    .Execute = [](const ConsoleCommandContext&, std::span<const std::string_view>) {
-		    return ExecuteListShaderTargets();
-	    },
-	});
+	commandRegistry.Register(
+	    ConsoleCommandDescriptor{
+	        .Name = "ListShaderTargets",
+	        .Help = "Lists shader target names accepted by the shader compiler.",
+	        .Scope = ConsoleCommandScope::Editor,
+	        .Execute =
+	            [](const ConsoleCommandContext&, std::span<const std::string_view>)
+	        {
+		        return ExecuteListShaderTargets();
+	        },
+	    });
 }
 
 void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coordinator)
@@ -93,11 +110,13 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 		Register(
 		    consoleSystem->GetCommandRegistry(),
 		    Handlers{
-		        .RequestRecook = [&coordinator](ShaderRecookRequest request)
+		        .RequestRecook =
+		            [&coordinator](ShaderRecookRequest request)
 		        {
 			        coordinator.RequestRecook(std::move(request));
 		        },
-		        .RequestReload = [&coordinator]()
+		        .RequestReload =
+		            [&coordinator]()
 		        {
 			        coordinator.RequestReload();
 		        },
@@ -128,7 +147,8 @@ ConsoleCommandResult ShaderConsoleCommands::ExecuteRecompileShaders(const Handle
 	}
 
 	handlers.RequestRecook(request);
-	return ConsoleCommandResult::Success("queued " + ShaderRecookCoordinator::DescribeRequest(request) + " through out-of-process ShaderCompiler.exe cook");
+	return ConsoleCommandResult::Success(
+	    "queued " + ShaderRecookCoordinator::DescribeRequest(request) + " through out-of-process ShaderCompiler.exe cook");
 }
 
 ConsoleCommandResult ShaderConsoleCommands::ExecuteReloadShaders(const Handlers& handlers)

@@ -46,9 +46,8 @@ class PassExecutionDiagnostics final
 };
 
 #ifndef SPARKLE_GPU_PASS_SCOPE
-#define SPARKLE_GPU_PASS_SCOPE(diagnostics, nameStr)                                                         \
-	const auto SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__) = SPARKLE_DIAGNOSTIC_NAME(nameStr);                  \
-	SPARKLE_CPU_SCOPE(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__));                                            \
-	auto SPARKLE_PP_CONCAT(_gpuPassScope_, __LINE__) = (diagnostics).BeginGpuEvent(                      \
-	    SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__))
+	#define SPARKLE_GPU_PASS_SCOPE(diagnostics, nameStr)                                          \
+		const auto SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__) = SPARKLE_DIAGNOSTIC_NAME(nameStr); \
+		SPARKLE_CPU_SCOPE(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__));                            \
+		auto SPARKLE_PP_CONCAT(_gpuPassScope_, __LINE__) = (diagnostics).BeginGpuEvent(SPARKLE_PP_CONCAT(_gpuPassName_, __LINE__))
 #endif

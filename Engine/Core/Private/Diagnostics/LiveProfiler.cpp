@@ -72,8 +72,7 @@ namespace Diagnostics
 				}
 				else
 				{
-					AverageDurationMicroseconds =
-					    (AverageDurationMicroseconds * (1.0 - kEmaAlpha)) + (sample * kEmaAlpha);
+					AverageDurationMicroseconds = (AverageDurationMicroseconds * (1.0 - kEmaAlpha)) + (sample * kEmaAlpha);
 				}
 				++TotalCallCount;
 			}
@@ -191,10 +190,7 @@ namespace Diagnostics
 		profile->CurrentNode = profile->CurrentNode->Parent != nullptr ? profile->CurrentNode->Parent : profile->Root.get();
 	}
 
-	void LiveProfiler::AccumulateDrawCall(
-	    std::uint32_t vertexCountPerInstance,
-	    std::uint32_t instanceCount,
-	    bool indexed) noexcept
+	void LiveProfiler::AccumulateDrawCall(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, bool indexed) noexcept
 	{
 		if (!IsEnabled() || m_state == nullptr)
 		{

@@ -23,7 +23,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	    saturate(MatProps.Metallic),
 	    saturate(MatProps.Roughness),
 	    saturate(MatProps.AmbientOcclusion),
-	    saturate((float)MatProps.AlphaMode / 255.0f));
+	    saturate((float) MatProps.AlphaMode / 255.0f));
 	Output.Emissive = float4(MatProps.Emissive, 0.0f);
 	Output.Subsurface = float4(saturate(MatProps.SubsurfaceColor), saturate(MatProps.SubsurfaceStrength));
 	Output.DeviceZ = Input.Position.z;

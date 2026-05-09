@@ -688,12 +688,8 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept = 0;
 	virtual RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount) const noexcept = 0;
-	virtual RhiOwnedResourceHandle CreateRayTracingScratchBuffer(
-	    std::uint64_t sizeInBytes,
-	    std::wstring_view debugName) = 0;
-	virtual RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
-	    std::uint64_t sizeInBytes,
-	    std::wstring_view debugName) = 0;
+	virtual RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) = 0;
+	virtual RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) = 0;
 	virtual RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,

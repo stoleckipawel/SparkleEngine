@@ -48,7 +48,8 @@ struct SPARKLE_CORE_API ConsoleAutocompleteRequest final
 };
 
 using ConsoleCommandCallback = std::function<ConsoleCommandResult(const ConsoleCommandContext&, std::span<const std::string_view>)>;
-using ConsoleAutocompleteCallback = std::function<std::vector<std::string>(const ConsoleCommandContext&, const ConsoleAutocompleteRequest&)>;
+using ConsoleAutocompleteCallback =
+    std::function<std::vector<std::string>(const ConsoleCommandContext&, const ConsoleAutocompleteRequest&)>;
 
 struct SPARKLE_CORE_API ConsoleCommandDescriptor final
 {

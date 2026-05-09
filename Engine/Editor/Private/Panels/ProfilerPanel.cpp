@@ -88,8 +88,8 @@ void ProfilerPanel::RenderToolbar() noexcept
 	// Right-aligned summary: thread + GPU pass counts. We collapse a single GPU
 	// "Frame" root into its children so the count matches what the table shows.
 	const std::size_t gpuPassCount = !m_snapshot.GpuRoots.empty() && m_snapshot.GpuRoots.size() == 1
-	    ? m_snapshot.GpuRoots[0].Children.size()
-	    : m_snapshot.GpuRoots.size();
+	                                     ? m_snapshot.GpuRoots[0].Children.size()
+	                                     : m_snapshot.GpuRoots.size();
 
 	char summaryBuf[96];
 	std::snprintf(
@@ -124,8 +124,7 @@ void ProfilerPanel::RenderCpuTab() const
 		char threadLabel[96] = {};
 		ProfilerSnapshotUtils::FormatThreadLabel(threadLabel, sizeof(threadLabel), thread);
 
-		const ImGuiTreeNodeFlags threadFlags =
-		    ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+		const ImGuiTreeNodeFlags threadFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 		if (!ImGui::CollapsingHeader(threadLabel, threadFlags))
 		{
 			continue;
@@ -159,9 +158,8 @@ void ProfilerPanel::RenderGpuTab() const
 	// Charts: focused-children if the user clicked a row, otherwise auto-drill
 	// down through any single-child wrappers (the "GPU Frame" root) so we land
 	// on the actual passes.
-	const Diagnostics::ProfilerSnapshotNode* gpuFocus = m_chartFocusNodeName.empty()
-	    ? nullptr
-	    : ProfilerSnapshotUtils::FindNodeByName(m_snapshot.GpuRoots, m_chartFocusNodeName);
+	const Diagnostics::ProfilerSnapshotNode* gpuFocus =
+	    m_chartFocusNodeName.empty() ? nullptr : ProfilerSnapshotUtils::FindNodeByName(m_snapshot.GpuRoots, m_chartFocusNodeName);
 	if (gpuFocus != nullptr && m_hiddenScopes.count(gpuFocus->Name) == 0 && gpuFocus->Children.size() >= 2)
 	{
 		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;
@@ -260,9 +258,8 @@ void ProfilerPanel::RenderChartsForBucket(
 {
 	// Drill into the focused node's children when the user clicked a row that
 	// belongs to *this* bucket. Anything else falls back to the bucket itself.
-	const Diagnostics::ProfilerSnapshotNode* focusNode = m_chartFocusNodeName.empty()
-	    ? nullptr
-	    : ProfilerSnapshotUtils::FindNodeInBucket(bucket, m_chartFocusNodeName);
+	const Diagnostics::ProfilerSnapshotNode* focusNode =
+	    m_chartFocusNodeName.empty() ? nullptr : ProfilerSnapshotUtils::FindNodeInBucket(bucket, m_chartFocusNodeName);
 	if (focusNode != nullptr && m_hiddenScopes.count(focusNode->Name) == 0 && focusNode->Children.size() >= 2)
 	{
 		std::vector<const Diagnostics::ProfilerSnapshotNode*> chartBucket;

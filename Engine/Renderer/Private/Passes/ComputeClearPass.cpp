@@ -33,10 +33,7 @@ const PassParameterLayout& ComputeClearPass::GetParameterLayout() noexcept
 
 ShaderPackageDefinition ComputeClearPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-	    .PackageId = PassName,
-	    .BindingLayoutId = PassName,
-	    .ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void ComputeClearPass::DeclareResources(FrameGraph& frameGraph, TextureHandle outputTexture, ParameterInstance& parameters)

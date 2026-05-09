@@ -75,10 +75,7 @@ namespace Diagnostics
 
 		// Attributes a draw or dispatch to the current CPU scope on this thread.
 		// Safe to call when no CPU scope is active (the call is dropped).
-		void AccumulateDrawCall(
-		    std::uint32_t vertexCountPerInstance,
-		    std::uint32_t instanceCount,
-		    bool indexed) noexcept;
+		void AccumulateDrawCall(std::uint32_t vertexCountPerInstance, std::uint32_t instanceCount, bool indexed) noexcept;
 		void AccumulateDispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept;
 
 		// GPU producer surface. Entries must be ordered by submission and carry

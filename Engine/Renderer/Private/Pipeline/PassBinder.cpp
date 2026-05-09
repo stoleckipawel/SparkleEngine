@@ -91,7 +91,7 @@ const PassBindingOverride* PassBindingOverrides::Find(const char* name, PassBind
 void PassBinder::BindGraphics(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
+    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
@@ -103,7 +103,7 @@ void PassBinder::BindGraphics(
 void PassBinder::BindCompute(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
+    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
@@ -115,7 +115,7 @@ void PassBinder::BindCompute(
 void PassBinder::BindImpl(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
+    RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
@@ -147,7 +147,14 @@ void PassBinder::BindImpl(
 		for (std::size_t bindingIndex = 0; bindingIndex < layout.GetBindingCount(); ++bindingIndex)
 		{
 			const CompiledBinding& compiledBinding = layout.GetBindings()[bindingIndex];
-			BindCompiledBinding(cmd, frameGraph, renderHardwareInterface, compiledBinding, parameterSet.FindBinding(compiledBinding.Name), overrides, isCompute);
+			BindCompiledBinding(
+			    cmd,
+			    frameGraph,
+			    renderHardwareInterface,
+			    compiledBinding,
+			    parameterSet.FindBinding(compiledBinding.Name),
+			    overrides,
+			    isCompute);
 		}
 		return;
 	}
@@ -163,7 +170,14 @@ void PassBinder::BindImpl(
 				continue;
 			}
 
-			BindCompiledBinding(cmd, frameGraph, renderHardwareInterface, compiledBinding, parameterSet.FindBinding(bindingName), overrides, isCompute);
+			BindCompiledBinding(
+			    cmd,
+			    frameGraph,
+			    renderHardwareInterface,
+			    compiledBinding,
+			    parameterSet.FindBinding(bindingName),
+			    overrides,
+			    isCompute);
 			boundAny = true;
 		}
 
@@ -174,7 +188,7 @@ void PassBinder::BindImpl(
 void PassBinder::BindCompiledBinding(
     CommandContext& cmd,
     const FrameGraph& frameGraph,
-	RenderHardwareInterface* renderHardwareInterface,
+    RenderHardwareInterface* renderHardwareInterface,
     const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
     const PassBindingOverrides* overrides,
@@ -198,7 +212,9 @@ void PassBinder::BindCompiledBinding(
 			BindRootGpuAddress(
 			    cmd,
 			    compiledBinding,
-			    renderHardwareInterface->AllocateUniformConstantBuffer(parameterBinding->UniformData, parameterBinding->UniformDataSizeInBytes),
+			    renderHardwareInterface->AllocateUniformConstantBuffer(
+			        parameterBinding->UniformData,
+			        parameterBinding->UniformDataSizeInBytes),
 			    isCompute);
 			return;
 		}

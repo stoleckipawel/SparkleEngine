@@ -86,7 +86,9 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 		        .BindingLayoutDebugName = L"ComputeClear_RootSignature",
 		        .PipelineStateDebugName = L"ComputeClear_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 
@@ -118,7 +120,9 @@ template <> struct RenderPassPipelineTraits<DirectLightingPass>
 		        .BindingLayoutDebugName = L"DirectLighting_RootSignature",
 		        .PipelineStateDebugName = L"DirectLighting_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 
@@ -150,7 +154,9 @@ template <> struct RenderPassPipelineTraits<IndirectLightingPass>
 		        .BindingLayoutDebugName = L"IndirectLighting_RootSignature",
 		        .PipelineStateDebugName = L"IndirectLighting_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 
@@ -182,7 +188,9 @@ template <> struct RenderPassPipelineTraits<LightingCompositePass>
 		        .BindingLayoutDebugName = L"LightingComposite_RootSignature",
 		        .PipelineStateDebugName = L"LightingComposite_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 
@@ -214,7 +222,9 @@ template <> struct RenderPassPipelineTraits<SkyPass>
 		        .BindingLayoutDebugName = L"Sky_RootSignature",
 		        .PipelineStateDebugName = L"Sky_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 
@@ -246,7 +256,9 @@ template <> struct RenderPassPipelineTraits<VisualizeBuffersPass>
 		        .BindingLayoutDebugName = L"VisualizeBuffers_RootSignature",
 		        .PipelineStateDebugName = L"VisualizeBuffers_PipelineState"},
 		    storage,
-		    [](ComputePipelineStateDesc&) {},
+		    [](ComputePipelineStateDesc&)
+		    {
+		    },
 		    outErrorMessage);
 	}
 

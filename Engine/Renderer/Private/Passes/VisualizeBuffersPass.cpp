@@ -30,18 +30,15 @@ const VisualizeBuffersPass::ParameterMetadata& VisualizeBuffersPass::GetParamete
 
 ShaderPackageDefinition VisualizeBuffersPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-		.PackageId = PassName,
-		.BindingLayoutId = PassName,
-		.ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void VisualizeBuffersPass::DeclareResources(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const LightingTargets& lighting,
-	const GBufferTargets& gbuffer,
-	ParameterInstance& parameters)
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const LightingTargets& lighting,
+    const GBufferTargets& gbuffer,
+    ParameterInstance& parameters)
 {
 	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
 	parameters->DirectDiffuse = frameGraph.CreateSRV(lighting.DirectDiffuse);
@@ -58,11 +55,11 @@ void VisualizeBuffersPass::DeclareResources(
 }
 
 void VisualizeBuffersPass::SetParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
-	(void)viewContext;
+	(void) viewContext;
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	const bool valid = parameters.Sync();
 	assert(valid);
@@ -75,16 +72,16 @@ void VisualizeBuffersPass::Execute(RenderGraphPassContext& context, ParameterIns
 	const VisualizeBuffersPassRuntime& runtime = context.Runtime.GetPassRuntime<VisualizeBuffersPass>();
 	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 	const ComputeDispatchDesc dispatch{
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-		1};
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
+	    1};
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<VisualizeBuffersPass>(
-		context.Graph,
-		context.Commands,
-		context.Runtime.HardwareInterface,
-		runtime,
-		parameters,
-		dispatch,
-		PassName);
+	    context.Graph,
+	    context.Commands,
+	    context.Runtime.HardwareInterface,
+	    runtime,
+	    parameters,
+	    dispatch,
+	    PassName);
 	assert(dispatched);
 }

@@ -11,7 +11,4 @@ struct FrameBuildResult
 	GBufferTargets GBuffer;
 };
 
-FrameBuildResult BuildFrame(
-    FrameGraph& frameGraph,
-    RenderViewportExtent sceneExtent,
-    bool presentToBackBuffer);
+FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, bool presentToBackBuffer);

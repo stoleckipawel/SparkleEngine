@@ -175,7 +175,12 @@ bool ProjectApp::Tick()
 
 	if (m_runtimeConsoleHost != nullptr)
 	{
-		m_runtimeConsoleHost->TickFrame(*m_renderer, [this]() { UpdateRuntime(); });
+		m_runtimeConsoleHost->TickFrame(
+		    *m_renderer,
+		    [this]()
+		    {
+			    UpdateRuntime();
+		    });
 	}
 	else
 	{

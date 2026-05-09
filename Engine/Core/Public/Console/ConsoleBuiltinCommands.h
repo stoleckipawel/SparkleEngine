@@ -24,15 +24,9 @@ class SPARKLE_CORE_API ConsoleBuiltinCommands final
 	    const ConsoleCommandRegistry& commandRegistry,
 	    const ConsoleCommandContext& context,
 	    std::span<const std::string_view> arguments);
-	static ConsoleCommandResult ExecuteListCVars(
-	    const ConsoleVariableRegistry& cvarRegistry,
-	    std::span<const std::string_view> arguments);
-	static ConsoleCommandResult ExecuteGetCVar(
-	    const ConsoleVariableRegistry& cvarRegistry,
-	    std::span<const std::string_view> arguments);
-	static ConsoleCommandResult ExecuteSetCVar(
-	    ConsoleVariableRegistry& cvarRegistry,
-	    std::span<const std::string_view> arguments);
+	static ConsoleCommandResult ExecuteListCVars(const ConsoleVariableRegistry& cvarRegistry, std::span<const std::string_view> arguments);
+	static ConsoleCommandResult ExecuteGetCVar(const ConsoleVariableRegistry& cvarRegistry, std::span<const std::string_view> arguments);
+	static ConsoleCommandResult ExecuteSetCVar(ConsoleVariableRegistry& cvarRegistry, std::span<const std::string_view> arguments);
 
 	static std::vector<std::string> CompleteCVarName(const ConsoleVariableRegistry& cvarRegistry, std::string_view prefix);
 	static std::string FormatCommandHelp(std::string_view name, std::string_view arguments, std::string_view help);

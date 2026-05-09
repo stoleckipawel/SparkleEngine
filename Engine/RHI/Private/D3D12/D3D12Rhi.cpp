@@ -12,14 +12,14 @@ static const char* RaytracingTierToString(D3D12_RAYTRACING_TIER tier) noexcept
 {
 	switch (tier)
 	{
-	case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
-		return "NotSupported";
-	case D3D12_RAYTRACING_TIER_1_0:
-		return "Tier1_0";
-	case D3D12_RAYTRACING_TIER_1_1:
-		return "Tier1_1";
-	default:
-		return "Unknown";
+		case D3D12_RAYTRACING_TIER_NOT_SUPPORTED:
+			return "NotSupported";
+		case D3D12_RAYTRACING_TIER_1_0:
+			return "Tier1_0";
+		case D3D12_RAYTRACING_TIER_1_1:
+			return "Tier1_1";
+		default:
+			return "Unknown";
 	}
 }
 
@@ -126,11 +126,7 @@ void D3D12Rhi::CheckShaderModel6Support() const noexcept
 	HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
 	if (FAILED(hr) || shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_0)
 	{
-		Diagnostics::Fail(
-		    g_d3d12RhiLogger,
-		    __FILE__,
-		    __LINE__,
-		    "Device does not support Shader Model 6.0. Minimum required for engine.");
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "Device does not support Shader Model 6.0. Minimum required for engine.");
 	}
 }
 
@@ -182,7 +178,10 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 	}
 	else
 	{
-		SPDLOG_LOGGER_WARN(g_d3d12RhiLogger, "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.", static_cast<uint32_t>(hr));
+		SPDLOG_LOGGER_WARN(
+		    g_d3d12RhiLogger,
+		    "CheckFeatureSupport(OPTIONS5) failed hr={:#010x}; ray tracing assumed unsupported.",
+		    static_cast<uint32_t>(hr));
 	}
 }
 
@@ -319,69 +318,69 @@ void D3D12Rhi::Flush() noexcept
 
 bool D3D12Rhi::SupportsDebugMessages() const noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	return m_debugLayer != nullptr && m_debugLayer->SupportsDebugMessages();
-	#else
+#else
 	return false;
-	#endif
+#endif
 }
 
 bool D3D12Rhi::TryPopDebugMessage(RhiDiagnosticMessage& outMessage) noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	return m_debugLayer != nullptr && m_debugLayer->TryPopMessage(outMessage);
-	#else
+#else
 	static_cast<void>(outMessage);
 	return false;
-	#endif
+#endif
 }
 
 void D3D12Rhi::ClearDebugMessages() noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	if (m_debugLayer != nullptr)
 	{
 		m_debugLayer->ClearMessages();
 	}
-	#endif
+#endif
 }
 
 bool D3D12Rhi::SupportsLiveObjectReports() const noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	return m_debugLayer != nullptr && m_debugLayer->SupportsLiveObjectReports();
-	#else
+#else
 	return false;
-	#endif
+#endif
 }
 
 bool D3D12Rhi::SupportsCrashDiagnostics() const noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	return m_debugLayer != nullptr && m_debugLayer->SupportsCrashDiagnostics();
-	#else
+#else
 	return false;
-	#endif
+#endif
 }
 
 void D3D12Rhi::ReportLiveObjects() noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	if (m_debugLayer != nullptr)
 	{
 		m_debugLayer->ReportLiveObjects(m_device.Get());
 	}
-	#endif
+#endif
 }
 
 void D3D12Rhi::CollectCrashDiagnostics() noexcept
 {
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	if (m_debugLayer != nullptr)
 	{
 		m_debugLayer->CollectCrashDiagnostics(m_device.Get());
 	}
-	#endif
+#endif
 }
 
 D3D12Rhi::~D3D12Rhi() noexcept
@@ -402,9 +401,9 @@ D3D12Rhi::~D3D12Rhi() noexcept
 	m_fence.Reset();
 	m_cmdQueue.Reset();
 
-	#if ENGINE_GPU_VALIDATION
+#if ENGINE_GPU_VALIDATION
 	m_debugLayer.reset();
-	#endif
+#endif
 
 	m_device.Reset();
 	m_adapter.Reset();

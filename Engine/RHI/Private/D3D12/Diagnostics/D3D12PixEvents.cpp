@@ -48,8 +48,8 @@ namespace D3D12PixEvents
 
 	UINT64 ToColor(RhiDiagnosticLabelColor color) noexcept
 	{
-		return (static_cast<UINT64>(0xFFu) << 24u) | (static_cast<UINT64>(color.Red) << 16u) |
-		       (static_cast<UINT64>(color.Green) << 8u) | static_cast<UINT64>(color.Blue);
+		return (static_cast<UINT64>(0xFFu) << 24u) | (static_cast<UINT64>(color.Red) << 16u) | (static_cast<UINT64>(color.Green) << 8u) |
+		       static_cast<UINT64>(color.Blue);
 	}
 
 	void BeginEvent(ID3D12GraphicsCommandList* commandList, UINT64 color, const char* label) noexcept

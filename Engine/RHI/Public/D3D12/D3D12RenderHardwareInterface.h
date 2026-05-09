@@ -89,9 +89,7 @@ class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardware
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount) const noexcept override;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
-	    std::uint64_t sizeInBytes,
-	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,

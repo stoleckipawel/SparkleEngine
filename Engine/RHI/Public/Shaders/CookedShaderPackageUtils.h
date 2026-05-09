@@ -15,10 +15,7 @@ struct ShaderPackageDefinition final
 	const char* BindingLayoutId = nullptr;
 	ShaderStageMask ExpectedStages = ShaderStageMask::None;
 
-	bool IsValid() const noexcept
-	{
-		return PackageId != nullptr && PackageId[0] != '\0' && ExpectedStages != ShaderStageMask::None;
-	}
+	bool IsValid() const noexcept { return PackageId != nullptr && PackageId[0] != '\0' && ExpectedStages != ShaderStageMask::None; }
 
 	explicit operator bool() const noexcept { return IsValid(); }
 };

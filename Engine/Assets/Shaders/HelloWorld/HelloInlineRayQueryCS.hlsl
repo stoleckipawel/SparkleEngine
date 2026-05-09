@@ -1,8 +1,7 @@
 RaytracingAccelerationStructure SceneAccelerationStructure;
 RWTexture2D<float4> OutputTexture;
 
-[numthreads(8, 8, 1)]
-void main(uint3 DispatchThreadId : SV_DispatchThreadID)
+[numthreads(8, 8, 1)] void main(uint3 DispatchThreadId : SV_DispatchThreadID)
 {
 	RayDesc Ray;
 	Ray.Origin = float3(0.0f, 0.0f, -2.0f);

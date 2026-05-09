@@ -5,7 +5,4 @@
 
 class FrameGraph;
 
-GBufferTargets BuildGBuffer(
-    FrameGraph& frameGraph,
-    RenderViewportExtent sceneExtent,
-    const SceneTargets& sceneTargets);
+GBufferTargets BuildGBuffer(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets);

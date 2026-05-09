@@ -28,7 +28,8 @@ class ShaderRecookPublicationReader final
 		std::string readErrorMessage;
 		if (!Files::TryReadAllBytes(publicationPath, bytes, readErrorMessage))
 		{
-			result.Diagnostic = "Shader recook publication could not be read; reload rejected before touching active packages. " + readErrorMessage;
+			result.Diagnostic =
+			    "Shader recook publication could not be read; reload rejected before touching active packages. " + readErrorMessage;
 			return result;
 		}
 
@@ -54,30 +55,29 @@ class ShaderRecookPublicationReader final
 		std::uint64_t publicationId = 0;
 		std::uint64_t publishedAtUnixMs = 0;
 		std::uint64_t registryHash = 0;
-		if (!Json::TryReadStringProperty(text, "schema", schema) ||
-		    !Json::TryReadUInt64Property(text, "schemaVersion", schemaVersion) ||
-		    !Json::TryReadStringProperty(text, "status", status) ||
-		    !Json::TryReadUInt64Property(text, "publicationId", publicationId) ||
+		if (!Json::TryReadStringProperty(text, "schema", schema) || !Json::TryReadUInt64Property(text, "schemaVersion", schemaVersion) ||
+		    !Json::TryReadStringProperty(text, "status", status) || !Json::TryReadUInt64Property(text, "publicationId", publicationId) ||
 		    !Json::TryReadUInt64Property(text, "publishedAtUnixMs", publishedAtUnixMs) ||
 		    !Json::TryReadStringProperty(text, "registry", registry) ||
 		    !Json::TryReadStringProperty(text, "registryHash", registryHashText) ||
 		    !Json::TryParseHexUInt64(registryHashText, registryHash))
 		{
-			result.Diagnostic = "Shader recook publication is invalid or partially written; reload rejected before touching active packages.";
+			result.Diagnostic =
+			    "Shader recook publication is invalid or partially written; reload rejected before touching active packages.";
 			return result;
 		}
 
 		if (schema != "sparkle.shaderRecookResult" || schemaVersion != 1)
 		{
-			result.Diagnostic =
-			    "Shader recook publication has unsupported schema '" + schema + "' version " + std::to_string(schemaVersion) +
-			    "; reload rejected before touching active packages.";
+			result.Diagnostic = "Shader recook publication has unsupported schema '" + schema + "' version " +
+			                    std::to_string(schemaVersion) + "; reload rejected before touching active packages.";
 			return result;
 		}
 
 		if (status != "succeeded")
 		{
-			result.Diagnostic = "Shader recook publication status is '" + status + "', not 'succeeded'; reload rejected before touching active packages.";
+			result.Diagnostic =
+			    "Shader recook publication status is '" + status + "', not 'succeeded'; reload rejected before touching active packages.";
 			return result;
 		}
 

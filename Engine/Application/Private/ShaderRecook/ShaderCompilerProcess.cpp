@@ -68,8 +68,7 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunToolCommand(std::string_vi
 
 std::filesystem::path ShaderCompilerProcess::ResolveExecutable() noexcept
 {
-	const std::array<std::filesystem::path, 3> candidates =
-	    Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
+	const std::array<std::filesystem::path, 3> candidates = Paths::ExecutableLookupCandidates("ShaderCompiler.exe");
 
 	std::error_code errorCode;
 	for (const std::filesystem::path& candidate : candidates)
@@ -103,11 +102,8 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCommand(
 {
 	ShaderCompilerProcessResult result;
 	result.ExecutablePath = executablePath;
-	const std::string command = std::format(
-	    "cd /d {} && {} {} 2>&1",
-	    CommandLine::QuotePath(workingDirectory),
-	    CommandLine::QuotePath(executablePath),
-	    arguments);
+	const std::string command =
+	    std::format("cd /d {} && {} {} 2>&1", CommandLine::QuotePath(workingDirectory), CommandLine::QuotePath(executablePath), arguments);
 	result.CommandLine = command;
 
 	FILE* pipe = _popen(command.c_str(), "r");

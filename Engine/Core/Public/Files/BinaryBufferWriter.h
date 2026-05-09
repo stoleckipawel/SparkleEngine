@@ -34,10 +34,7 @@ namespace Files
 			m_bytes.insert(m_bytes.end(), begin, begin + sizeof(T) * values.size());
 		}
 
-		void WriteBytes(std::span<const std::uint8_t> values)
-		{
-			m_bytes.insert(m_bytes.end(), values.begin(), values.end());
-		}
+		void WriteBytes(std::span<const std::uint8_t> values) { m_bytes.insert(m_bytes.end(), values.begin(), values.end()); }
 
 		bool WriteStringWithUInt32Length(std::string_view value, std::string& outErrorMessage)
 		{

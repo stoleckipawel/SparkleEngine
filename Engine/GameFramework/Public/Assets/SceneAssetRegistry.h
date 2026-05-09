@@ -21,6 +21,7 @@ namespace Assets
 		void Clear() noexcept;
 		void Upsert(std::string sceneAssetId, std::filesystem::path sceneManifestRelativePath);
 		std::optional<std::filesystem::path> Resolve(std::string_view sceneAssetId) const;
+
 	  private:
 		std::map<std::string, std::filesystem::path, std::less<>> m_entries;
 	};

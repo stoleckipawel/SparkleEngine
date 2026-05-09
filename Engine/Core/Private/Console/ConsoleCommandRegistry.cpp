@@ -110,11 +110,13 @@ std::vector<std::string> ConsoleCommandRegistry::CompleteLine(std::string_view i
 
 	const std::vector<std::string_view> argumentViews = BuildArgumentViews(parsedInput.Arguments);
 	const std::string_view currentToken = argumentViews.empty() ? std::string_view{} : argumentViews.back();
-	return descriptor->Complete(context, ConsoleAutocompleteRequest{
-	                                    .CommandName = descriptor->Name,
-	                                    .Arguments = argumentViews,
-	                                    .CurrentToken = currentToken,
-	                                });
+	return descriptor->Complete(
+	    context,
+	    ConsoleAutocompleteRequest{
+	        .CommandName = descriptor->Name,
+	        .Arguments = argumentViews,
+	        .CurrentToken = currentToken,
+	    });
 }
 
 bool ConsoleCommandRegistry::IsScopeAllowed(ConsoleCommandScope commandScope, ConsoleCommandScope contextScope) noexcept

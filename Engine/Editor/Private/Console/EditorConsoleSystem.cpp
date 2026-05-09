@@ -154,10 +154,8 @@ void EditorConsoleSystem::BuildDockedUI(float left, float bottom, float width, f
 	ImGui::PushStyleColor(ImGuiCol_Tab, SparkleUiPalette::TabBackground());
 	ImGui::PushStyleColor(ImGuiCol_TabHovered, SparkleUiPalette::TabBackgroundHovered());
 	ImGui::PushStyleColor(ImGuiCol_TabActive, SparkleUiPalette::TabBackgroundActive());
-	const ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoMove |
-	    ImGuiWindowFlags_NoCollapse |
-	    ImGuiWindowFlags_NoTitleBar |
-	    ImGuiWindowFlags_NoSavedSettings;
+	const ImGuiWindowFlags windowFlags =
+	    ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
 	if (!ImGui::Begin("Viewport Console Dock", nullptr, windowFlags))
 	{
 		ImGui::End();

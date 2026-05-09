@@ -110,13 +110,13 @@ void BindComputeShaderPass(
 
 	cmd.SetPipelineState(pipelineState);
 	PassBinder::BindCompute(
-		cmd,
-		frameGraph,
-		renderHardwareInterface,
-		bindingLayout,
-		parameterSet,
-		bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
-		overrides);
+	    cmd,
+	    frameGraph,
+	    renderHardwareInterface,
+	    bindingLayout,
+	    parameterSet,
+	    bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
+	    overrides);
 }
 
 void BindRasterShaderPass(

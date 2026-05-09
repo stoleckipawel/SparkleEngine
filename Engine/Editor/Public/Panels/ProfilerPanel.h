@@ -39,9 +39,8 @@ class SPARKLE_EDITOR_API ProfilerPanel final
 	void RenderCpuTab() const;
 	void RenderGpuTab() const;
 	void RenderGroupedNodes(const std::vector<Diagnostics::ProfilerSnapshotNode>& nodes) const;
-	void RenderChartsForBucket(
-	    const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
-	    std::string_view defaultModuleName) const;
+	void RenderChartsForBucket(const std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket, std::string_view defaultModuleName)
+	    const;
 	ProfilerTreeTable::State MakeTableState() const noexcept;
 
 	Diagnostics::ProfilerSnapshot m_snapshot;

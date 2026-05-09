@@ -47,13 +47,13 @@ class SkyPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(
-		FrameGraph& frameGraph,
-		const SceneTargets& sceneTargets,
-		const GBufferTargets& gbuffer,
-		ParameterInstance& parameters);
+	    FrameGraph& frameGraph,
+	    const SceneTargets& sceneTargets,
+	    const GBufferTargets& gbuffer,
+	    ParameterInstance& parameters);
 	static void SetParameters(
-		ParameterInstance& parameters,
-		const RenderViewContext& viewContext,
-		const RenderPassContext& renderPassContext);
+	    ParameterInstance& parameters,
+	    const RenderViewContext& viewContext,
+	    const RenderPassContext& renderPassContext);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 };

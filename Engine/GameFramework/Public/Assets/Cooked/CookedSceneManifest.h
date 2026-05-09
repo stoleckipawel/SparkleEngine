@@ -41,15 +41,9 @@ namespace Assets
 	};
 }
 
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedSceneMeshAssetRef>,
-    "CookedSceneMeshAssetRef must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedSceneMeshAssetRef>, "CookedSceneMeshAssetRef must stay trivially copyable.");
 static_assert(
     std::is_trivially_copyable_v<Assets::CookedSceneMaterialAssetRef>,
     "CookedSceneMaterialAssetRef must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedSceneInstanceRecord>,
-    "CookedSceneInstanceRecord must stay trivially copyable.");
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedSceneManifestHeader>,
-    "CookedSceneManifestHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedSceneInstanceRecord>, "CookedSceneInstanceRecord must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedSceneManifestHeader>, "CookedSceneManifestHeader must stay trivially copyable.");

@@ -104,58 +104,59 @@ template <typename TParameters> class TShaderParameterFieldAutoRegister final
 {
   public:
 	TShaderParameterFieldAutoRegister(
-		std::string_view layoutName,
-		std::string_view shaderName,
-		CookedShaderResourceKind kind,
-		CookedShaderResourceDimension dimension,
-		ShaderParameterSemanticKind semanticKind,
-		ShaderParameterResourceDomain resourceDomain,
-		ShaderParameterAccess access,
-		ShaderStageVisibility visibility,
-		std::uint32_t arrayCount,
-		std::uint32_t valueSizeInBytes,
-		std::uint32_t valueAlignmentInBytes,
-		bool reflected,
-		ShaderParameterSamplerBindingPolicy samplerPolicy = ShaderParameterSamplerBindingPolicy::None)
+	    std::string_view layoutName,
+	    std::string_view shaderName,
+	    CookedShaderResourceKind kind,
+	    CookedShaderResourceDimension dimension,
+	    ShaderParameterSemanticKind semanticKind,
+	    ShaderParameterResourceDomain resourceDomain,
+	    ShaderParameterAccess access,
+	    ShaderStageVisibility visibility,
+	    std::uint32_t arrayCount,
+	    std::uint32_t valueSizeInBytes,
+	    std::uint32_t valueAlignmentInBytes,
+	    bool reflected,
+	    ShaderParameterSamplerBindingPolicy samplerPolicy = ShaderParameterSamplerBindingPolicy::None)
 	{
-		TShaderParameterStructRegistry<TParameters>::AddField(ShaderParameterStructFieldDescriptor{
-		    .Name = std::string(shaderName.empty() ? layoutName : shaderName),
-		    .LayoutName = std::string(layoutName),
-		    .ShaderName = std::string(shaderName.empty() ? layoutName : shaderName),
-		    .Kind = kind,
-		    .Dimension = dimension,
-		    .SemanticKind = semanticKind,
-		    .ResourceDomain = resourceDomain,
-		    .Access = access,
-		    .Visibility = visibility,
-		    .ArrayCount = arrayCount,
-		    .ValueSizeInBytes = valueSizeInBytes,
-		    .ValueAlignmentInBytes = valueAlignmentInBytes,
-		    .Reflected = reflected,
-		    .SamplerPolicy = samplerPolicy,
-		});
+		TShaderParameterStructRegistry<TParameters>::AddField(
+		    ShaderParameterStructFieldDescriptor{
+		        .Name = std::string(shaderName.empty() ? layoutName : shaderName),
+		        .LayoutName = std::string(layoutName),
+		        .ShaderName = std::string(shaderName.empty() ? layoutName : shaderName),
+		        .Kind = kind,
+		        .Dimension = dimension,
+		        .SemanticKind = semanticKind,
+		        .ResourceDomain = resourceDomain,
+		        .Access = access,
+		        .Visibility = visibility,
+		        .ArrayCount = arrayCount,
+		        .ValueSizeInBytes = valueSizeInBytes,
+		        .ValueAlignmentInBytes = valueAlignmentInBytes,
+		        .Reflected = reflected,
+		        .SamplerPolicy = samplerPolicy,
+		    });
 	}
 
 	TShaderParameterFieldAutoRegister(
-		std::string_view name,
-		CookedShaderResourceKind kind,
-		CookedShaderResourceDimension dimension,
-		std::uint32_t arrayCount,
-		std::uint32_t valueSizeInBytes,
-		std::uint32_t valueAlignmentInBytes)
-	    : TShaderParameterFieldAutoRegister(
-	          name,
-	          name,
-	          kind,
-	          dimension,
-	          GetShaderParameterSemanticKind(kind),
-	          GetShaderParameterResourceDomain(kind),
-	          GetShaderParameterAccess(kind),
-	          ShaderStageVisibility::None,
-	          arrayCount,
-	          valueSizeInBytes,
-	          valueAlignmentInBytes,
-	          true)
+	    std::string_view name,
+	    CookedShaderResourceKind kind,
+	    CookedShaderResourceDimension dimension,
+	    std::uint32_t arrayCount,
+	    std::uint32_t valueSizeInBytes,
+	    std::uint32_t valueAlignmentInBytes) :
+	    TShaderParameterFieldAutoRegister(
+	        name,
+	        name,
+	        kind,
+	        dimension,
+	        GetShaderParameterSemanticKind(kind),
+	        GetShaderParameterResourceDomain(kind),
+	        GetShaderParameterAccess(kind),
+	        ShaderStageVisibility::None,
+	        arrayCount,
+	        valueSizeInBytes,
+	        valueAlignmentInBytes,
+	        true)
 	{
 	}
 
@@ -323,241 +324,236 @@ template <> struct TShaderParameterResourceTraits<RaytracingAccelerationStructur
 
 SPARKLE_RHI_API std::string BuildShaderParameterStructReport(const ShaderParameterStructDescriptor& descriptor);
 
-#define BEGIN_SHADER_PARAMETER_STRUCT(StructName, Prefix) \
-	struct StructName \
-	{ \
-		using ThisShaderParameterStruct = StructName; \
-		static ::ShaderParameterStructDescriptor GetShaderParameterStructDescriptor() \
-		{ \
+#define BEGIN_SHADER_PARAMETER_STRUCT(StructName, Prefix)                                                     \
+	struct StructName                                                                                         \
+	{                                                                                                         \
+		using ThisShaderParameterStruct = StructName;                                                         \
+		static ::ShaderParameterStructDescriptor GetShaderParameterStructDescriptor()                         \
+		{                                                                                                     \
 			return ::TShaderParameterStructRegistry<ThisShaderParameterStruct>::BuildDescriptor(#StructName); \
 		}
 
-#define SHADER_PARAMETER(Type, Name) \
-	Type Name{}; \
+#define SHADER_PARAMETER(Type, Name)                                                                                 \
+	Type Name{};                                                                                                     \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    ::CookedShaderResourceKind::ConstantBuffer, \
-	    ::CookedShaderResourceDimension::Buffer, \
-	    1u, \
-	    static_cast<std::uint32_t>(sizeof(Type)), \
+	    #Name,                                                                                                       \
+	    ::CookedShaderResourceKind::ConstantBuffer,                                                                  \
+	    ::CookedShaderResourceDimension::Buffer,                                                                     \
+	    1u,                                                                                                          \
+	    static_cast<std::uint32_t>(sizeof(Type)),                                                                    \
 	    static_cast<std::uint32_t>(alignof(Type))};
 
-#define SHADER_PARAMETER_CBUFFER(LayoutName, Type) \
-	Type LayoutName{}; \
+#define SHADER_PARAMETER_CBUFFER(LayoutName, Type)                                                                         \
+	Type LayoutName{};                                                                                                     \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##LayoutName{ \
-	    #LayoutName, \
-	    #Type, \
-	    ::CookedShaderResourceKind::ConstantBuffer, \
-	    ::CookedShaderResourceDimension::Buffer, \
-	    ::ShaderParameterSemanticKind::UniformData, \
-	    ::ShaderParameterResourceDomain::Uniform, \
-	    ::ShaderParameterAccess::None, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    static_cast<std::uint32_t>(sizeof(Type)), \
-	    static_cast<std::uint32_t>(alignof(Type)), \
+	    #LayoutName,                                                                                                       \
+	    #Type,                                                                                                             \
+	    ::CookedShaderResourceKind::ConstantBuffer,                                                                        \
+	    ::CookedShaderResourceDimension::Buffer,                                                                           \
+	    ::ShaderParameterSemanticKind::UniformData,                                                                        \
+	    ::ShaderParameterResourceDomain::Uniform,                                                                          \
+	    ::ShaderParameterAccess::None,                                                                                     \
+	    ::ShaderStageVisibility::None,                                                                                     \
+	    1u,                                                                                                                \
+	    static_cast<std::uint32_t>(sizeof(Type)),                                                                          \
+	    static_cast<std::uint32_t>(alignof(Type)),                                                                         \
 	    true};
 
-#define SHADER_PARAMETER_CBUFFER_NAMED(LayoutName, ShaderName, Type) \
-	Type LayoutName{}; \
+#define SHADER_PARAMETER_CBUFFER_NAMED(LayoutName, ShaderName, Type)                                                       \
+	Type LayoutName{};                                                                                                     \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##LayoutName{ \
-	    #LayoutName, \
-	    #ShaderName, \
-	    ::CookedShaderResourceKind::ConstantBuffer, \
-	    ::CookedShaderResourceDimension::Buffer, \
-	    ::ShaderParameterSemanticKind::UniformData, \
-	    ::ShaderParameterResourceDomain::Uniform, \
-	    ::ShaderParameterAccess::None, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    static_cast<std::uint32_t>(sizeof(Type)), \
-	    static_cast<std::uint32_t>(alignof(Type)), \
+	    #LayoutName,                                                                                                       \
+	    #ShaderName,                                                                                                       \
+	    ::CookedShaderResourceKind::ConstantBuffer,                                                                        \
+	    ::CookedShaderResourceDimension::Buffer,                                                                           \
+	    ::ShaderParameterSemanticKind::UniformData,                                                                        \
+	    ::ShaderParameterResourceDomain::Uniform,                                                                          \
+	    ::ShaderParameterAccess::None,                                                                                     \
+	    ::ShaderStageVisibility::None,                                                                                     \
+	    1u,                                                                                                                \
+	    static_cast<std::uint32_t>(sizeof(Type)),                                                                          \
+	    static_cast<std::uint32_t>(alignof(Type)),                                                                         \
 	    true};
 
-#define SHADER_PARAMETER_TEXTURE(Type, Name) \
-	::Type Name{}; \
+#define SHADER_PARAMETER_TEXTURE(Type, Name)                                                                         \
+	::Type Name{};                                                                                                   \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    1u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                              \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                         \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
 	    0u};
 
-#define SHADER_PARAMETER_TEXTURE_NAMED(Type, LayoutName, ShaderName) \
-	::Type LayoutName{}; \
+#define SHADER_PARAMETER_TEXTURE_NAMED(Type, LayoutName, ShaderName)                                                       \
+	::Type LayoutName{};                                                                                                   \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##LayoutName{ \
-	    #LayoutName, \
-	    #ShaderName, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    ::ShaderParameterSemanticKind::ReadTexture, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::Read, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #LayoutName,                                                                                                       \
+	    #ShaderName,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                                    \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                               \
+	    ::ShaderParameterSemanticKind::ReadTexture,                                                                        \
+	    ::ShaderParameterResourceDomain::Texture,                                                                          \
+	    ::ShaderParameterAccess::Read,                                                                                     \
+	    ::ShaderStageVisibility::None,                                                                                     \
+	    1u,                                                                                                                \
+	    0u,                                                                                                                \
+	    0u,                                                                                                                \
 	    true};
 
-#define SHADER_PARAMETER_TEXTURE_ARRAY(Type, Name, Count) \
-	::Type Name[Count]{}; \
+#define SHADER_PARAMETER_TEXTURE_ARRAY(Type, Name, Count)                                                            \
+	::Type Name[Count]{};                                                                                            \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    #Name, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    ::ShaderParameterSemanticKind::ReadTexture, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::Read, \
-	    ::ShaderStageVisibility::None, \
-	    static_cast<std::uint32_t>(Count), \
-	    0u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    #Name,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                              \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                         \
+	    ::ShaderParameterSemanticKind::ReadTexture,                                                                  \
+	    ::ShaderParameterResourceDomain::Texture,                                                                    \
+	    ::ShaderParameterAccess::Read,                                                                               \
+	    ::ShaderStageVisibility::None,                                                                               \
+	    static_cast<std::uint32_t>(Count),                                                                           \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
 	    true};
 
-#define SHADER_PARAMETER_UAV(Type, Name) \
-	::Type Name{}; \
+#define SHADER_PARAMETER_UAV(Type, Name)                                                                             \
+	::Type Name{};                                                                                                   \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    #Name, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    ::ShaderParameterSemanticKind::RWTexture, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::ReadWrite, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    #Name,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                              \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                         \
+	    ::ShaderParameterSemanticKind::RWTexture,                                                                    \
+	    ::ShaderParameterResourceDomain::Texture,                                                                    \
+	    ::ShaderParameterAccess::ReadWrite,                                                                          \
+	    ::ShaderStageVisibility::None,                                                                               \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
 	    true};
 
-#define SHADER_PARAMETER_UAV_NAMED(Type, LayoutName, ShaderName) \
-	::Type LayoutName{}; \
+#define SHADER_PARAMETER_UAV_NAMED(Type, LayoutName, ShaderName)                                                           \
+	::Type LayoutName{};                                                                                                   \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##LayoutName{ \
-	    #LayoutName, \
-	    #ShaderName, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    ::ShaderParameterSemanticKind::RWTexture, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::ReadWrite, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #LayoutName,                                                                                                       \
+	    #ShaderName,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                                    \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                               \
+	    ::ShaderParameterSemanticKind::RWTexture,                                                                          \
+	    ::ShaderParameterResourceDomain::Texture,                                                                          \
+	    ::ShaderParameterAccess::ReadWrite,                                                                                \
+	    ::ShaderStageVisibility::None,                                                                                     \
+	    1u,                                                                                                                \
+	    0u,                                                                                                                \
+	    0u,                                                                                                                \
 	    true};
 
-#define SHADER_PARAMETER_SAMPLER(Type, Name) \
-	::Type Name{}; \
-	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    ::CookedShaderResourceKind::Sampler, \
-	    ::CookedShaderResourceDimension::Unknown, \
-	    1u, \
-	    0u, \
-	    0u};
+#define SHADER_PARAMETER_SAMPLER(Type, Name)                                           \
+	::Type Name{};                                                                     \
+	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> \
+	    AutoRegisterParameter_##Name{#Name, ::CookedShaderResourceKind::Sampler, ::CookedShaderResourceDimension::Unknown, 1u, 0u, 0u};
 
-#define SHADER_PARAMETER_SHARED_SAMPLER(Name) \
-	::SamplerState Name{}; \
+#define SHADER_PARAMETER_SHARED_SAMPLER(Name)                                                                        \
+	::SamplerState Name{};                                                                                           \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    #Name, \
-	    ::CookedShaderResourceKind::Sampler, \
-	    ::CookedShaderResourceDimension::Unknown, \
-	    ::ShaderParameterSemanticKind::SamplerSet, \
-	    ::ShaderParameterResourceDomain::Sampler, \
-	    ::ShaderParameterAccess::None, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
-	    true, \
+	    #Name,                                                                                                       \
+	    #Name,                                                                                                       \
+	    ::CookedShaderResourceKind::Sampler,                                                                         \
+	    ::CookedShaderResourceDimension::Unknown,                                                                    \
+	    ::ShaderParameterSemanticKind::SamplerSet,                                                                   \
+	    ::ShaderParameterResourceDomain::Sampler,                                                                    \
+	    ::ShaderParameterAccess::None,                                                                               \
+	    ::ShaderStageVisibility::None,                                                                               \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
+	    true,                                                                                                        \
 	    ::ShaderParameterSamplerBindingPolicy::Shared};
 
-#define SHADER_PARAMETER_ACCELERATION_STRUCTURE(Name) \
-	::RaytracingAccelerationStructure Name{}; \
+#define SHADER_PARAMETER_ACCELERATION_STRUCTURE(Name)                                                                \
+	::RaytracingAccelerationStructure Name{};                                                                        \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    #Name, \
-	    ::CookedShaderResourceKind::AccelerationStructure, \
-	    ::CookedShaderResourceDimension::Unknown, \
-	    ::ShaderParameterSemanticKind::AccelerationStructure, \
-	    ::ShaderParameterResourceDomain::AccelerationStructure, \
-	    ::ShaderParameterAccess::Read, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    #Name,                                                                                                       \
+	    ::CookedShaderResourceKind::AccelerationStructure,                                                           \
+	    ::CookedShaderResourceDimension::Unknown,                                                                    \
+	    ::ShaderParameterSemanticKind::AccelerationStructure,                                                        \
+	    ::ShaderParameterResourceDomain::AccelerationStructure,                                                      \
+	    ::ShaderParameterAccess::Read,                                                                               \
+	    ::ShaderStageVisibility::None,                                                                               \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
 	    true};
 
-#define SHADER_PARAMETER_UNIQUE_SAMPLER(Type, Name) \
-	::Type Name{}; \
+#define SHADER_PARAMETER_UNIQUE_SAMPLER(Type, Name)                                                                  \
+	::Type Name{};                                                                                                   \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    #Name, \
-	    ::TShaderParameterResourceTraits<::Type>::Kind, \
-	    ::TShaderParameterResourceTraits<::Type>::Dimension, \
-	    ::ShaderParameterSemanticKind::SamplerSet, \
-	    ::ShaderParameterResourceDomain::Sampler, \
-	    ::ShaderParameterAccess::None, \
-	    ::ShaderStageVisibility::None, \
-	    1u, \
-	    0u, \
-	    0u, \
-	    true, \
+	    #Name,                                                                                                       \
+	    #Name,                                                                                                       \
+	    ::TShaderParameterResourceTraits<::Type>::Kind,                                                              \
+	    ::TShaderParameterResourceTraits<::Type>::Dimension,                                                         \
+	    ::ShaderParameterSemanticKind::SamplerSet,                                                                   \
+	    ::ShaderParameterResourceDomain::Sampler,                                                                    \
+	    ::ShaderParameterAccess::None,                                                                               \
+	    ::ShaderStageVisibility::None,                                                                               \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
+	    true,                                                                                                        \
 	    ::ShaderParameterSamplerBindingPolicy::Unique};
 
-#define SHADER_PARAMETER_RENDER_TARGET(Name) \
-	::ShaderRenderTargetParameter Name{}; \
+#define SHADER_PARAMETER_RENDER_TARGET(Name)                                                                         \
+	::ShaderRenderTargetParameter Name{};                                                                            \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    "", \
-	    ::CookedShaderResourceKind::Unknown, \
-	    ::CookedShaderResourceDimension::Texture2D, \
-	    ::ShaderParameterSemanticKind::RenderTarget, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::Write, \
-	    ::ShaderStageVisibility::AllGraphics, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    "",                                                                                                          \
+	    ::CookedShaderResourceKind::Unknown,                                                                         \
+	    ::CookedShaderResourceDimension::Texture2D,                                                                  \
+	    ::ShaderParameterSemanticKind::RenderTarget,                                                                 \
+	    ::ShaderParameterResourceDomain::Texture,                                                                    \
+	    ::ShaderParameterAccess::Write,                                                                              \
+	    ::ShaderStageVisibility::AllGraphics,                                                                        \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
 	    false};
 
-#define SHADER_PARAMETER_DEPTH_TARGET(Name) \
-	::ShaderDepthTargetParameter Name{}; \
+#define SHADER_PARAMETER_DEPTH_TARGET(Name)                                                                          \
+	::ShaderDepthTargetParameter Name{};                                                                             \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    "", \
-	    ::CookedShaderResourceKind::Unknown, \
-	    ::CookedShaderResourceDimension::Texture2D, \
-	    ::ShaderParameterSemanticKind::DepthTarget, \
-	    ::ShaderParameterResourceDomain::Texture, \
-	    ::ShaderParameterAccess::Write, \
-	    ::ShaderStageVisibility::AllGraphics, \
-	    1u, \
-	    0u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    "",                                                                                                          \
+	    ::CookedShaderResourceKind::Unknown,                                                                         \
+	    ::CookedShaderResourceDimension::Texture2D,                                                                  \
+	    ::ShaderParameterSemanticKind::DepthTarget,                                                                  \
+	    ::ShaderParameterResourceDomain::Texture,                                                                    \
+	    ::ShaderParameterAccess::Write,                                                                              \
+	    ::ShaderStageVisibility::AllGraphics,                                                                        \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
+	    0u,                                                                                                          \
 	    false};
 
-#define SHADER_PARAMETER_RDG_BUFFER_SRV(Type, Name) \
-	::StructuredBuffer<Type> Name{}; \
+#define SHADER_PARAMETER_RDG_BUFFER_SRV(Type, Name)                                                                  \
+	::StructuredBuffer<Type> Name{};                                                                                 \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    ::CookedShaderResourceKind::StructuredBuffer, \
-	    ::CookedShaderResourceDimension::Buffer, \
-	    1u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    ::CookedShaderResourceKind::StructuredBuffer,                                                                \
+	    ::CookedShaderResourceDimension::Buffer,                                                                     \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
 	    0u};
 
-#define SHADER_PARAMETER_RDG_BUFFER_UAV(Type, Name) \
-	::RWStructuredBuffer<Type> Name{}; \
+#define SHADER_PARAMETER_RDG_BUFFER_UAV(Type, Name)                                                                  \
+	::RWStructuredBuffer<Type> Name{};                                                                               \
 	inline static const ::TShaderParameterFieldAutoRegister<ThisShaderParameterStruct> AutoRegisterParameter_##Name{ \
-	    #Name, \
-	    ::CookedShaderResourceKind::RWStructuredBuffer, \
-	    ::CookedShaderResourceDimension::Buffer, \
-	    1u, \
-	    0u, \
+	    #Name,                                                                                                       \
+	    ::CookedShaderResourceKind::RWStructuredBuffer,                                                              \
+	    ::CookedShaderResourceDimension::Buffer,                                                                     \
+	    1u,                                                                                                          \
+	    0u,                                                                                                          \
 	    0u};
 
 #define SHADER_PARAMETER_RDG_TEXTURE_SRV(Type, Name) SHADER_PARAMETER_TEXTURE(Type, Name)
@@ -565,4 +561,5 @@ SPARKLE_RHI_API std::string BuildShaderParameterStructReport(const ShaderParamet
 #define SHADER_PARAMETER_RDG_TEXTURE_UAV(Type, Name) SHADER_PARAMETER_UAV(Type, Name)
 
 #define END_SHADER_PARAMETER_STRUCT() \
-	};
+	}                                 \
+	;

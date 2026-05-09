@@ -4,9 +4,7 @@
 
 #include <cstdint>
 
-void RegisterHelloTriangleShaders() noexcept
-{
-}
+void RegisterHelloTriangleShaders() noexcept {}
 
 class HelloTriangleVS final : public TGlobalShader<HelloTriangleVS>
 {
@@ -25,4 +23,3 @@ class HelloTrianglePS final : public TGlobalShader<HelloTrianglePS>
 };
 
 IMPLEMENT_GLOBAL_SHADER(HelloTrianglePS, "HelloWorld/HelloTriangle.hlsl", "PSMain", Pixel);
-

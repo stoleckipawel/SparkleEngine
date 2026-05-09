@@ -5,10 +5,10 @@
 #include "Passes/LightingCompositePass.h"
 
 void BuildLightingComposite(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const LightingTargets& lighting,
-	const GBufferTargets& gbuffer)
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const LightingTargets& lighting,
+    const GBufferTargets& gbuffer)
 {
 	auto& parameters = frameGraph.AllocPassParameters<LightingCompositePass>();
 	LightingCompositePass::DeclareResources(frameGraph, sceneTargets, lighting, gbuffer, parameters);

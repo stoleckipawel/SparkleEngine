@@ -92,10 +92,7 @@ bool ShaderPackageLayoutBuilder::Build(
 	return true;
 }
 
-bool BuildRegisteredShaderPackageLayout(
-    std::string_view packageId,
-    PassParameterLayout& outLayout,
-    std::string& outErrorMessage)
+bool BuildRegisteredShaderPackageLayout(std::string_view packageId, PassParameterLayout& outLayout, std::string& outErrorMessage)
 {
 	return ShaderPackageLayoutBuilder::Build(packageId, GlobalShaderRegistry::GetRegistrations(), outLayout, outErrorMessage);
 }
@@ -127,9 +124,7 @@ ShaderStageVisibility ShaderPackageLayoutBuilder::ResolveVisibility(
 	return field.Visibility == ShaderStageVisibility::None ? GetDefaultVisibility(stage) : field.Visibility;
 }
 
-PassParameterDesc ShaderPackageLayoutBuilder::BuildParameterDesc(
-    const ShaderParameterStructFieldDescriptor& field,
-    ShaderStage stage)
+PassParameterDesc ShaderPackageLayoutBuilder::BuildParameterDesc(const ShaderParameterStructFieldDescriptor& field, ShaderStage stage)
 {
 	PassParameterDesc parameter{};
 	parameter.Name = std::string(field.GetLayoutName());
@@ -175,20 +170,22 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 
 	if (existing == entries.end())
 	{
-		entries.push_back(MergeEntry{
-		    .Parameter = std::move(parameter),
-		    .ValueAlignmentInBytes = valueAlignmentInBytes,
-		    .SourceShaderName = std::string(registration.ShaderName),
-		    .SourceStructName = std::string(shaderStructName),
-		    .SourceStage = registration.Stage,
-		});
+		entries.push_back(
+		    MergeEntry{
+		        .Parameter = std::move(parameter),
+		        .ValueAlignmentInBytes = valueAlignmentInBytes,
+		        .SourceShaderName = std::string(registration.ShaderName),
+		        .SourceStructName = std::string(shaderStructName),
+		        .SourceStage = registration.Stage,
+		    });
 		return true;
 	}
 
 	if (!AreCompatible(*existing, parameter, valueAlignmentInBytes))
 	{
 		outErrorMessage = std::format(
-		    "Shader package '{}' has incompatible binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' declares {}.",
+		    "Shader package '{}' has incompatible binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' "
+		    "declares {}.",
 		    GetShaderRegistrationPackageId(registration),
 		    parameter.Name,
 		    existing->SourceShaderName,
@@ -210,8 +207,9 @@ bool ShaderPackageLayoutBuilder::AreCompatible(
     std::uint32_t incomingAlignment) noexcept
 {
 	const PassParameterDesc& current = existing.Parameter;
-	if (current.ShaderName != incoming.ShaderName || current.Kind != incoming.Kind || current.ResourceDomain != incoming.ResourceDomain || current.Access != incoming.Access ||
-	    current.ArrayCount != incoming.ArrayCount || current.ValueSizeInBytes != incoming.ValueSizeInBytes)
+	if (current.ShaderName != incoming.ShaderName || current.Kind != incoming.Kind || current.ResourceDomain != incoming.ResourceDomain ||
+	    current.Access != incoming.Access || current.ArrayCount != incoming.ArrayCount ||
+	    current.ValueSizeInBytes != incoming.ValueSizeInBytes)
 	{
 		return false;
 	}

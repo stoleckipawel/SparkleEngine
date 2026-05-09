@@ -5,7 +5,7 @@
 class FrameGraph;
 
 void BuildVisualizeBuffers(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const LightingTargets& lighting,
-	const GBufferTargets& gbuffer);
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const LightingTargets& lighting,
+    const GBufferTargets& gbuffer);

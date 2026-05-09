@@ -30,18 +30,15 @@ const LightingCompositePass::ParameterMetadata& LightingCompositePass::GetParame
 
 ShaderPackageDefinition LightingCompositePass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-		.PackageId = PassName,
-		.BindingLayoutId = PassName,
-		.ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void LightingCompositePass::DeclareResources(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const LightingTargets& lighting,
-	const GBufferTargets& gbuffer,
-	ParameterInstance& parameters)
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const LightingTargets& lighting,
+    const GBufferTargets& gbuffer,
+    ParameterInstance& parameters)
 {
 	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
 	parameters->DirectDiffuse = frameGraph.CreateSRV(lighting.DirectDiffuse);
@@ -59,9 +56,9 @@ void LightingCompositePass::DeclareResources(
 }
 
 void LightingCompositePass::SetParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+    ParameterInstance& parameters,
+    const RenderViewContext& viewContext,
+    const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
@@ -76,16 +73,16 @@ void LightingCompositePass::Execute(RenderGraphPassContext& context, ParameterIn
 	const LightingCompositePassRuntime& runtime = context.Runtime.GetPassRuntime<LightingCompositePass>();
 	SetParameters(parameters, context.Frame.mainView, context.Runtime);
 	const ComputeDispatchDesc dispatch{
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-		1};
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
+	    1};
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<LightingCompositePass>(
-		context.Graph,
-		context.Commands,
-		context.Runtime.HardwareInterface,
-		runtime,
-		parameters,
-		dispatch,
-		PassName);
+	    context.Graph,
+	    context.Commands,
+	    context.Runtime.HardwareInterface,
+	    runtime,
+	    parameters,
+	    dispatch,
+	    PassName);
 	assert(dispatched);
 }

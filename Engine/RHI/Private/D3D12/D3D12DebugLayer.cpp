@@ -3,9 +3,9 @@
 
 #if ENGINE_GPU_VALIDATION
 
-#include "Core/Public/Formatting/HexFormat.h"
+	#include "Core/Public/Formatting/HexFormat.h"
 
-#include <format>
+	#include <format>
 
 static const auto g_d3d12DiagnosticsLogger = Logging::GetOrCreateLogger("RHI.D3D12.Diagnostics");
 

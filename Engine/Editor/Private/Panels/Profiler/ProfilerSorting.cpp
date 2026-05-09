@@ -27,9 +27,7 @@ namespace ProfilerSorting
 		return static_cast<int>(sizeof(kSortModeLabels) / sizeof(kSortModeLabels[0]));
 	}
 
-	void SortBucket(
-	    std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
-	    SortMode mode) noexcept
+	void SortBucket(std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket, SortMode mode) noexcept
 	{
 		if (mode == SortMode::Hierarchy)
 		{
@@ -38,8 +36,7 @@ namespace ProfilerSorting
 		std::stable_sort(
 		    bucket.begin(),
 		    bucket.end(),
-		    [mode](const Diagnostics::ProfilerSnapshotNode* lhs,
-		           const Diagnostics::ProfilerSnapshotNode* rhs)
+		    [mode](const Diagnostics::ProfilerSnapshotNode* lhs, const Diagnostics::ProfilerSnapshotNode* rhs)
 		    {
 			    switch (mode)
 			    {
@@ -50,8 +47,8 @@ namespace ProfilerSorting
 				    case SortMode::InclusiveDescending:
 					    return lhs->AverageDurationMicroseconds > rhs->AverageDurationMicroseconds;
 				    case SortMode::ExclusiveDescending:
-					    return ProfilerSnapshotUtils::ComputeExclusiveMicroseconds(*lhs)
-					           > ProfilerSnapshotUtils::ComputeExclusiveMicroseconds(*rhs);
+					    return ProfilerSnapshotUtils::ComputeExclusiveMicroseconds(*lhs) >
+					           ProfilerSnapshotUtils::ComputeExclusiveMicroseconds(*rhs);
 				    case SortMode::MaxDescending:
 					    return lhs->MaxDurationMicroseconds > rhs->MaxDurationMicroseconds;
 				    case SortMode::CallsDescending:

@@ -27,16 +27,10 @@ const IndirectLightingPass::ParameterMetadata& IndirectLightingPass::GetParamete
 
 ShaderPackageDefinition IndirectLightingPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-		.PackageId = PassName,
-		.BindingLayoutId = PassName,
-		.ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
-void IndirectLightingPass::DeclareResources(
-	FrameGraph& frameGraph,
-	const LightingTargets& lighting,
-	ParameterInstance& parameters)
+void IndirectLightingPass::DeclareResources(FrameGraph& frameGraph, const LightingTargets& lighting, ParameterInstance& parameters)
 {
 	parameters->IndirectDiffuse = frameGraph.CreateUAV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = frameGraph.CreateUAV(lighting.IndirectSpecular);
@@ -49,16 +43,16 @@ void IndirectLightingPass::Execute(RenderGraphPassContext& context, ParameterIns
 
 	const IndirectLightingPassRuntime& runtime = context.Runtime.GetPassRuntime<IndirectLightingPass>();
 	const ComputeDispatchDesc dispatch{
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-		1};
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
+	    1};
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<IndirectLightingPass>(
-		context.Graph,
-		context.Commands,
-		context.Runtime.HardwareInterface,
-		runtime,
-		parameters,
-		dispatch,
-		PassName);
+	    context.Graph,
+	    context.Commands,
+	    context.Runtime.HardwareInterface,
+	    runtime,
+	    parameters,
+	    dispatch,
+	    PassName);
 	assert(dispatched);
 }

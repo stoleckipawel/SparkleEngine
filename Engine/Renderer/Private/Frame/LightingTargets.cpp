@@ -7,19 +7,14 @@
 
 namespace
 {
-	TextureHandle CreateLightingTexture(
-		FrameGraph& frameGraph,
-		const char* name,
-		RenderViewportExtent sceneExtent)
+	TextureHandle CreateLightingTexture(FrameGraph& frameGraph, const char* name, RenderViewportExtent sceneExtent)
 	{
 		return frameGraph.CreateTexture(
 		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat));
 	}
 }
 
-LightingTargets CreateLightingTargets(
-	FrameGraph& frameGraph,
-	RenderViewportExtent sceneExtent)
+LightingTargets CreateLightingTargets(FrameGraph& frameGraph, RenderViewportExtent sceneExtent)
 {
 	LightingTargets lighting{};
 	lighting.DirectDiffuse = CreateLightingTexture(frameGraph, "DirectDiffuse", sceneExtent);

@@ -82,33 +82,27 @@ const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
 
 ShaderPackageDefinition SkyPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{
-		.PackageId = PassName,
-		.BindingLayoutId = PassName,
-		.ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
 void SkyPass::DeclareResources(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const GBufferTargets& gbuffer,
-	ParameterInstance& parameters)
+    FrameGraph& frameGraph,
+    const SceneTargets& sceneTargets,
+    const GBufferTargets& gbuffer,
+    ParameterInstance& parameters)
 {
 	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
 	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
 }
 
-void SkyPass::SetParameters(
-	ParameterInstance& parameters,
-	const RenderViewContext& viewContext,
-	const RenderPassContext& renderPassContext)
+void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewContext& viewContext, const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewContext.perViewData;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
-		.MinMagFilter = RhiSamplerMinMagFilter::Linear,
-		.MipFilter = RhiSamplerMipFilter::Linear,
-		.Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
+	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
+	    .MipFilter = RhiSamplerMipFilter::Linear,
+	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
@@ -122,17 +116,17 @@ void SkyPass::Execute(RenderGraphPassContext& context, ParameterInstance& parame
 	PassBindingOverrides overrides;
 	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.Runtime));
 	const ComputeDispatchDesc dispatch{
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
-		MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
-		1};
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
+	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
+	    1};
 	const bool dispatched = PassUtilities::DispatchAvailableComputePassWithRuntime<SkyPass>(
-		context.Graph,
-		context.Commands,
-		context.Runtime.HardwareInterface,
-		runtime,
-		parameters.GetPassParameterSet(),
-		dispatch,
-		&overrides,
-		PassName);
+	    context.Graph,
+	    context.Commands,
+	    context.Runtime.HardwareInterface,
+	    runtime,
+	    parameters.GetPassParameterSet(),
+	    dispatch,
+	    &overrides,
+	    PassName);
 	assert(dispatched);
 }

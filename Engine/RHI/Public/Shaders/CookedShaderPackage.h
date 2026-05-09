@@ -217,14 +217,14 @@ static_assert(std::is_trivially_copyable_v<CookedShaderBlobRef>, "CookedShaderBl
 static_assert(std::is_trivially_copyable_v<CookedShaderPackageHeader>, "CookedShaderPackageHeader must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderBinaryRecord>, "CookedShaderBinaryRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<CookedShaderRayTracingExportRecord>,
-	"CookedShaderRayTracingExportRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<CookedShaderRayTracingExportRecord>,
+    "CookedShaderRayTracingExportRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<CookedShaderRayTracingHitGroupRecord>,
-	"CookedShaderRayTracingHitGroupRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<CookedShaderRayTracingHitGroupRecord>,
+    "CookedShaderRayTracingHitGroupRecord must stay trivially copyable.");
 static_assert(
-	std::is_trivially_copyable_v<CookedShaderRayTracingLocalParameterRecord>,
-	"CookedShaderRayTracingLocalParameterRecord must stay trivially copyable.");
+    std::is_trivially_copyable_v<CookedShaderRayTracingLocalParameterRecord>,
+    "CookedShaderRayTracingLocalParameterRecord must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderBindingRecord>, "CookedShaderBindingRecord must stay trivially copyable.");
 static_assert(
     std::is_trivially_copyable_v<CookedShaderSpecializationInputRecord>,

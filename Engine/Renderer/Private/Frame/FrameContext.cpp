@@ -19,7 +19,7 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
-	ViewLightingBuilder& viewLightingBuilder)
+    ViewLightingBuilder& viewLightingBuilder)
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);

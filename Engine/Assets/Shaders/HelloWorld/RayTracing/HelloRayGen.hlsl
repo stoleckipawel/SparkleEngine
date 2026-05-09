@@ -6,8 +6,7 @@ struct HelloRayPayload
 RaytracingAccelerationStructure SceneAccelerationStructure;
 RWTexture2D<float4> OutputTexture;
 
-[shader("raygeneration")]
-void HelloRayGen()
+[shader("raygeneration")] void HelloRayGen()
 {
 	uint2 Pixel = DispatchRaysIndex().xy;
 	uint2 Extent = DispatchRaysDimensions().xy;

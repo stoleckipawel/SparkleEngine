@@ -36,7 +36,7 @@ std::uint32_t D3D12RootSignatureBuilder::AddDescriptorTable(
     D3D12_DESCRIPTOR_RANGE_TYPE rangeType,
     std::uint32_t descriptorCount,
     std::uint32_t baseShaderRegister,
-	std::uint32_t registerSpace,
+    std::uint32_t registerSpace,
     D3D12_SHADER_VISIBILITY visibility)
 {
 	const auto index = static_cast<std::uint32_t>(m_entries.size());

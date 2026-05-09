@@ -28,9 +28,7 @@ namespace Paths
 		return !relativePathString.empty() && !relativePathString.starts_with("..");
 	}
 
-	std::optional<std::filesystem::path> TryMakeRelativeUnderRoot(
-	    const std::filesystem::path& path,
-	    const std::filesystem::path& root)
+	std::optional<std::filesystem::path> TryMakeRelativeUnderRoot(const std::filesystem::path& path, const std::filesystem::path& root)
 	{
 		if (!IsUnderRoot(path, root))
 		{

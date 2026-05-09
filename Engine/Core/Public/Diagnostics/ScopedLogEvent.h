@@ -33,8 +33,7 @@ namespace Diagnostics
 				return;
 			}
 
-			const double elapsedMilliseconds =
-			    std::chrono::duration<double, std::milli>(Clock::now() - m_startTime).count();
+			const double elapsedMilliseconds = std::chrono::duration<double, std::milli>(Clock::now() - m_startTime).count();
 			SPDLOG_LOGGER_CALL(m_logger.get(), m_level, "{} end ({:.3f} ms)", m_label, elapsedMilliseconds);
 		}
 
@@ -55,6 +54,9 @@ namespace Diagnostics
 }
 
 #ifndef SPARKLE_LOG_SCOPE
-#define SPARKLE_LOG_SCOPE(logger, level, label) \
-	::Diagnostics::ScopedLogEvent SPARKLE_PP_CONCAT(_sparkleScopedLogEvent_, __LINE__){(logger), (level), (label)}
+	#define SPARKLE_LOG_SCOPE(logger, level, label)                                        \
+		::Diagnostics::ScopedLogEvent SPARKLE_PP_CONCAT(_sparkleScopedLogEvent_, __LINE__) \
+		{                                                                                  \
+			(logger), (level), (label)                                                     \
+		}
 #endif

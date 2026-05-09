@@ -34,7 +34,9 @@ static_assert(
     offsetof(DirectionalLightConstantBufferData, Intensity) == 12,
     "DirectionalLightConstantBufferData::Intensity must be at c0.w");
 static_assert(offsetof(DirectionalLightConstantBufferData, Color) == 16, "DirectionalLightConstantBufferData::Color must start at c1.xyz");
-static_assert(offsetof(DirectionalLightConstantBufferData, CastShadow) == 28, "DirectionalLightConstantBufferData::CastShadow must be at c1.w");
+static_assert(
+    offsetof(DirectionalLightConstantBufferData, CastShadow) == 28,
+    "DirectionalLightConstantBufferData::CastShadow must be at c1.w");
 static_assert(sizeof(PerViewLightingConstantBufferData) == 80, "Per-view lighting constant buffer data must match the shader layout");
 static_assert(
     offsetof(PerViewLightingConstantBufferData, DirectionalLightCount) == 0,

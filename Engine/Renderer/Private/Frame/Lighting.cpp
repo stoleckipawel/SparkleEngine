@@ -10,9 +10,9 @@
 
 void BuildLighting(
     FrameGraph& frameGraph,
-	RenderViewportExtent sceneExtent,
-	const SceneTargets& sceneTargets,
-	const GBufferTargets& gbuffer)
+    RenderViewportExtent sceneExtent,
+    const SceneTargets& sceneTargets,
+    const GBufferTargets& gbuffer)
 {
 	const LightingTargets lighting = CreateLightingTargets(frameGraph, sceneExtent);
 

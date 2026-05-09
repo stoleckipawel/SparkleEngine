@@ -117,21 +117,20 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		        .textureDesc = transientResource.textureDesc,
 		        .bufferDesc = transientResource.bufferDesc,
 		        .kind = resourceMetadata.kind,
-		        .physicalAllocation =
-		            CompiledTransientResourcePlan::PhysicalAllocationPlan{
-		                .allocationIndex = allocationIndex,
-		                .physicalBlockIndex = INVALID_RESOURCE_INDEX,
-		                .pool = ResolveTransientAllocationPool(resourceMetadata.kind),
-		                .sizeInBytes = allocationInfo.SizeInBytes,
-		                .alignment = allocationInfo.Alignment,
-		                .heapOffset = 0,
-		                .textureResourceDesc = textureResourceDesc,
-		                .bufferResourceDesc = bufferResourceDesc,
-		                .optimizedClearValue =
-		                    isBuffer ? RhiOptimizedClearValue{}
-		                             : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
-		                .hasOptimizedClearValue = !isBuffer,
-		                .initialState = resourceMetadata.initialState}});
+		        .physicalAllocation = CompiledTransientResourcePlan::PhysicalAllocationPlan{
+		            .allocationIndex = allocationIndex,
+		            .physicalBlockIndex = INVALID_RESOURCE_INDEX,
+		            .pool = ResolveTransientAllocationPool(resourceMetadata.kind),
+		            .sizeInBytes = allocationInfo.SizeInBytes,
+		            .alignment = allocationInfo.Alignment,
+		            .heapOffset = 0,
+		            .textureResourceDesc = textureResourceDesc,
+		            .bufferResourceDesc = bufferResourceDesc,
+		            .optimizedClearValue = isBuffer
+		                                       ? RhiOptimizedClearValue{}
+		                                       : BuildTransientOptimizedClearValue(transientResource.textureDesc, resourceMetadata.kind),
+		            .hasOptimizedClearValue = !isBuffer,
+		            .initialState = resourceMetadata.initialState}});
 	}
 }
 

@@ -7,8 +7,7 @@
 #include <algorithm>
 #include <utility>
 
-ScopedGpuEvent::ScopedGpuEvent(CommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept :
-	m_commands(&commands)
+ScopedGpuEvent::ScopedGpuEvent(CommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept : m_commands(&commands)
 {
 	if (label.empty())
 	{
@@ -51,12 +50,12 @@ void ScopedGpuEvent::Reset() noexcept
 }
 
 ScopedGpuTimer::ScopedGpuTimer(
-	FrameExecutionDiagnostics& owner,
-	CommandContext& commands,
-	std::string label,
-	RhiTimestampQueryHandle beginQuery,
-	RhiTimestampQueryHandle endQuery) noexcept :
-	m_owner(&owner), m_commands(&commands), m_label(std::move(label)), m_beginQuery(beginQuery), m_endQuery(endQuery)
+    FrameExecutionDiagnostics& owner,
+    CommandContext& commands,
+    std::string label,
+    RhiTimestampQueryHandle beginQuery,
+    RhiTimestampQueryHandle endQuery) noexcept :
+    m_owner(&owner), m_commands(&commands), m_label(std::move(label)), m_beginQuery(beginQuery), m_endQuery(endQuery)
 {
 	if (m_label.empty() || !m_beginQuery || !m_endQuery || !m_owner->WriteTimestamp(commands, m_beginQuery))
 	{
@@ -94,13 +93,13 @@ ScopedGpuTimer::~ScopedGpuTimer() noexcept
 }
 
 ScopedGpuTimer::ScopedGpuTimer(ScopedGpuTimer&& other) noexcept :
-	m_owner(other.m_owner),
-	m_commands(other.m_commands),
-	m_label(std::move(other.m_label)),
-	m_beginQuery(other.m_beginQuery),
-	m_endQuery(other.m_endQuery),
-	m_depth(other.m_depth),
-	m_depthAccounted(other.m_depthAccounted)
+    m_owner(other.m_owner),
+    m_commands(other.m_commands),
+    m_label(std::move(other.m_label)),
+    m_beginQuery(other.m_beginQuery),
+    m_endQuery(other.m_endQuery),
+    m_depth(other.m_depth),
+    m_depthAccounted(other.m_depthAccounted)
 {
 	other.m_owner = nullptr;
 	other.m_commands = nullptr;
@@ -155,7 +154,7 @@ void ScopedGpuTimer::Reset() noexcept
 }
 
 FrameExecutionDiagnostics::FrameExecutionDiagnostics(RenderDiagnostics& backendDiagnostics) noexcept :
-	m_backendDiagnostics(&backendDiagnostics), m_timingDiagnostics(backendDiagnostics.GetTimingDiagnostics())
+    m_backendDiagnostics(&backendDiagnostics), m_timingDiagnostics(backendDiagnostics.GetTimingDiagnostics())
 {
 }
 
@@ -175,9 +174,9 @@ bool FrameExecutionDiagnostics::SupportsTimestampQueries() const noexcept
 }
 
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
-	CommandContext& commands,
-	std::string_view label,
-	RhiDiagnosticLabelColor color) noexcept
+    CommandContext& commands,
+    std::string_view label,
+    RhiDiagnosticLabelColor color) noexcept
 {
 	if (!SupportsGpuEvents() || label.empty())
 	{
@@ -207,24 +206,20 @@ ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(CommandContext& commands, s
 }
 
 ScopedGpuEvent FrameExecutionDiagnostics::BeginGpuEvent(
-	CommandContext& commands,
-	const Diagnostics::DiagnosticName& name,
-	RhiDiagnosticLabelColor color) noexcept
+    CommandContext& commands,
+    const Diagnostics::DiagnosticName& name,
+    RhiDiagnosticLabelColor color) noexcept
 {
 	return BeginGpuEvent(commands, name.GetCanonicalName(), color);
 }
 
-ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(
-	CommandContext& commands,
-	const Diagnostics::DiagnosticName& name) noexcept
+ScopedGpuTimer FrameExecutionDiagnostics::BeginTimer(CommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept
 {
 	return BeginTimer(commands, name.GetCanonicalName());
 }
 
-void FrameExecutionDiagnostics::InsertGpuMarker(
-	CommandContext& commands,
-	std::string_view label,
-	RhiDiagnosticLabelColor color) const noexcept
+void FrameExecutionDiagnostics::InsertGpuMarker(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color)
+    const noexcept
 {
 	if (!SupportsGpuEvents() || label.empty())
 	{
@@ -235,9 +230,9 @@ void FrameExecutionDiagnostics::InsertGpuMarker(
 }
 
 void FrameExecutionDiagnostics::InsertGpuMarker(
-	CommandContext& commands,
-	const Diagnostics::DiagnosticName& name,
-	RhiDiagnosticLabelColor color) const noexcept
+    CommandContext& commands,
+    const Diagnostics::DiagnosticName& name,
+    RhiDiagnosticLabelColor color) const noexcept
 {
 	InsertGpuMarker(commands, name.GetCanonicalName(), color);
 }
@@ -265,13 +260,14 @@ void FrameExecutionDiagnostics::ResolveTimings() noexcept
 		const std::uint64_t durationTicks = endTicks - beginTicks;
 		const double durationMilliseconds =
 		    frequencyHz > 0 ? (static_cast<double>(durationTicks) * 1000.0) / static_cast<double>(frequencyHz) : 0.0;
-		m_resolvedTimers.push_back(ResolvedGpuTiming{
-		    .Label = record.Label,
-		    .BeginTicks = beginTicks,
-		    .EndTicks = endTicks,
-		    .DurationTicks = durationTicks,
-		    .DurationMilliseconds = durationMilliseconds,
-		    .Depth = record.Depth});
+		m_resolvedTimers.push_back(
+		    ResolvedGpuTiming{
+		        .Label = record.Label,
+		        .BeginTicks = beginTicks,
+		        .EndTicks = endTicks,
+		        .DurationTicks = durationTicks,
+		        .DurationMilliseconds = durationMilliseconds,
+		        .Depth = record.Depth});
 	}
 
 	// Records are pushed in scope-end order (inner timers end before their parents),
@@ -313,10 +309,10 @@ bool FrameExecutionDiagnostics::WriteTimestamp(CommandContext& commands, RhiTime
 }
 
 void FrameExecutionDiagnostics::RecordCompletedTimer(
-	std::string label,
-	RhiTimestampQueryHandle beginQuery,
-	RhiTimestampQueryHandle endQuery,
-	std::uint16_t depth) noexcept
+    std::string label,
+    RhiTimestampQueryHandle beginQuery,
+    RhiTimestampQueryHandle endQuery,
+    std::uint16_t depth) noexcept
 {
 	m_recordedTimers.push_back(GpuTimingScope{.Label = std::move(label), .BeginQuery = beginQuery, .EndQuery = endQuery, .Depth = depth});
 }

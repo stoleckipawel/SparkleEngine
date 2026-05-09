@@ -69,10 +69,8 @@ namespace Assets
 
 		if (!m_sceneAssetRegistry.Load(errorMessage))
 		{
-			errorMessage = std::format(
-			    "Failed to load scene asset registry from '{}' - {}",
-			    Paths::SceneAssetRegistry().string(),
-			    errorMessage);
+			errorMessage =
+			    std::format("Failed to load scene asset registry from '{}' - {}", Paths::SceneAssetRegistry().string(), errorMessage);
 			return false;
 		}
 

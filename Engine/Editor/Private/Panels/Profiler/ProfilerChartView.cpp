@@ -130,7 +130,10 @@ bool ProfilerChartView::Render(
 	std::sort(
 	    barOrder.begin(),
 	    barOrder.end(),
-	    [&slices](std::size_t a, std::size_t b) { return slices[a].ValueMs > slices[b].ValueMs; });
+	    [&slices](std::size_t a, std::size_t b)
+	    {
+		    return slices[a].ValueMs > slices[b].ValueMs;
+	    });
 
 	const float availWidth = ImGui::GetContentRegionAvail().x;
 	if (availWidth < kMinChartWidth)
@@ -268,10 +271,7 @@ bool ProfilerChartView::Render(
 		char captionBuf[48];
 		std::snprintf(captionBuf, sizeof(captionBuf), "%zu items", slices.size());
 		const ImVec2 capSz = ImGui::CalcTextSize(captionBuf);
-		dl->AddText(
-		    ImVec2(pieCenter.x - capSz.x * 0.5f, chartTop + chartContentH - pieCaptionH),
-		    colTextDim,
-		    captionBuf);
+		dl->AddText(ImVec2(pieCenter.x - capSz.x * 0.5f, chartTop + chartContentH - pieCaptionH), colTextDim, captionBuf);
 	}
 
 	// ---- Column bar chart ----
@@ -370,17 +370,19 @@ bool ProfilerChartView::Render(
 	// ---- Footer ----
 	{
 		const float footY = cardOrigin.y + cardH - kOuterPadding - footerH + 2.0f;
-		dl->AddLine(
-		    ImVec2(cx, footY - kInnerPadding * 0.5f),
-		    ImVec2(cx + innerWidth, footY - kInnerPadding * 0.5f),
-		    colDivider);
+		dl->AddLine(ImVec2(cx, footY - kInnerPadding * 0.5f), ImVec2(cx + innerWidth, footY - kInnerPadding * 0.5f), colDivider);
 
 		char totalBuf[64];
 		std::snprintf(totalBuf, sizeof(totalBuf), "Total inclusive: %.3f ms", totalMs);
 		dl->AddText(ImVec2(cx, footY), colTextMuted, totalBuf);
 
 		char rightBuf[64];
-		std::snprintf(rightBuf, sizeof(rightBuf), "Peak: %.3f ms  \xC2\xB7  Avg: %.3f ms", maxMs, totalMs / static_cast<double>(slices.size()));
+		std::snprintf(
+		    rightBuf,
+		    sizeof(rightBuf),
+		    "Peak: %.3f ms  \xC2\xB7  Avg: %.3f ms",
+		    maxMs,
+		    totalMs / static_cast<double>(slices.size()));
 		const ImVec2 rSz = ImGui::CalcTextSize(rightBuf);
 		dl->AddText(ImVec2(cx + innerWidth - rSz.x, footY), colTextDim, rightBuf);
 	}

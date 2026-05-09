@@ -71,16 +71,14 @@ float3 ComposeDiffuseLighting(LightingTerms terms, SurfaceResponse response)
 float3 ComposeSpecularLighting(LightingTerms terms, SurfaceResponse response)
 {
 	const float3 directSpecular = terms.DirectSpecular * response.Fresnel;
-	const float3 indirectSpecular =
-	    terms.IndirectSpecular * response.Fresnel * response.IndirectSpecularOcclusion;
+	const float3 indirectSpecular = terms.IndirectSpecular * response.Fresnel * response.IndirectSpecularOcclusion;
 	return directSpecular + indirectSpecular;
 }
 
 float3 ComposeSubsurfaceLighting(LightingTerms terms, SurfaceResponse response)
 {
 	const float3 directSubsurface = terms.DirectSubsurface * response.SubsurfaceColor;
-	const float3 indirectSubsurface =
-	    terms.IndirectSubsurface * response.SubsurfaceColor * response.IndirectSubsurfaceOcclusion;
+	const float3 indirectSubsurface = terms.IndirectSubsurface * response.SubsurfaceColor * response.IndirectSubsurfaceOcclusion;
 	return directSubsurface + indirectSubsurface;
 }
 

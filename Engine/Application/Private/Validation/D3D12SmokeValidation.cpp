@@ -46,16 +46,9 @@ class D3D12SmokeValidationRunner final
 	    ProjectApp& app,
 	    const ViewportRenderProducts& viewportProducts,
 	    D3D12SmokeValidationState& state) noexcept;
-	static void Advance(
-	    const D3D12SmokeValidationConfig& config,
-	    ProjectApp& app,
-	    D3D12SmokeValidationState& state) noexcept;
+	static void Advance(const D3D12SmokeValidationConfig& config, ProjectApp& app, D3D12SmokeValidationState& state) noexcept;
 	static bool TickRuntime(ProjectApp& app, const D3D12SmokeValidationConfig& config, D3D12SmokeValidationState& state) noexcept;
-	static bool TickEditor(
-	    ProjectApp& app,
-	    UI& ui,
-	    const D3D12SmokeValidationConfig& config,
-	    D3D12SmokeValidationState& state) noexcept;
+	static bool TickEditor(ProjectApp& app, UI& ui, const D3D12SmokeValidationConfig& config, D3D12SmokeValidationState& state) noexcept;
 	static int RunProjectValidation(const D3D12SmokeValidationConfig& config) noexcept;
 	static int RunEditorValidation(const D3D12SmokeValidationConfig& config) noexcept;
 };
@@ -86,9 +79,9 @@ void D3D12SmokeValidationRunner::ApplyLoggingConfig(const D3D12SmokeValidationCo
 }
 
 void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
-	const D3D12SmokeValidationConfig& config,
-	ProjectApp& app,
-	D3D12SmokeValidationState& state) noexcept
+    const D3D12SmokeValidationConfig& config,
+    ProjectApp& app,
+    D3D12SmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || state.DiagnosticsLogged)
 	{
@@ -105,7 +98,8 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 	const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
-	    "D3D12 smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} crashDiagnostics={}",
+	    "D3D12 smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "
+	    "crashDiagnostics={}",
 	    capabilities.SupportsObjectNames,
 	    capabilities.SupportsGpuEvents,
 	    capabilities.SupportsTimestampQueries,
@@ -117,7 +111,8 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: command scopes are unavailable because WinPixEventRuntime.dll was not found or did not expose the PIX event ABI.");
+		    "D3D12 smoke validation: command scopes are unavailable because WinPixEventRuntime.dll was not found or did not expose the PIX "
+		    "event ABI.");
 	}
 	if (!capabilities.SupportsTimestampQueries)
 	{
@@ -127,29 +122,32 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: debug messages are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete environment or runtime reason.");
+		    "D3D12 smoke validation: debug messages are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
+		    "environment or runtime reason.");
 	}
 	if (!capabilities.SupportsLiveObjectReports)
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: live object reporting is unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete environment or runtime reason.");
+		    "D3D12 smoke validation: live object reporting is unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
+		    "environment or runtime reason.");
 	}
 	if (!capabilities.SupportsCrashDiagnostics)
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: crash diagnostics are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete environment or runtime reason.");
+		    "D3D12 smoke validation: crash diagnostics are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
+		    "environment or runtime reason.");
 	}
 
 	state.DiagnosticsLogged = true;
 }
 
 void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
-	const D3D12SmokeValidationConfig& config,
-	ProjectApp& app,
-	const ViewportRenderProducts& viewportProducts,
-	D3D12SmokeValidationState& state) noexcept
+    const D3D12SmokeValidationConfig& config,
+    ProjectApp& app,
+    const ViewportRenderProducts& viewportProducts,
+    D3D12SmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || state.EditorViewportEvidenceLogged)
 	{
@@ -177,9 +175,9 @@ void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
 }
 
 void D3D12SmokeValidationRunner::Advance(
-	const D3D12SmokeValidationConfig& config,
-	ProjectApp& app,
-	D3D12SmokeValidationState& state) noexcept
+    const D3D12SmokeValidationConfig& config,
+    ProjectApp& app,
+    D3D12SmokeValidationState& state) noexcept
 {
 	if (!config.Enabled)
 	{
@@ -245,9 +243,9 @@ void D3D12SmokeValidationRunner::Advance(
 }
 
 bool D3D12SmokeValidationRunner::TickRuntime(
-	ProjectApp& app,
-	const D3D12SmokeValidationConfig& config,
-	D3D12SmokeValidationState& state) noexcept
+    ProjectApp& app,
+    const D3D12SmokeValidationConfig& config,
+    D3D12SmokeValidationState& state) noexcept
 {
 	switch (app.BeginFrame())
 	{
@@ -268,10 +266,10 @@ bool D3D12SmokeValidationRunner::TickRuntime(
 }
 
 bool D3D12SmokeValidationRunner::TickEditor(
-	ProjectApp& app,
-	UI& ui,
-	const D3D12SmokeValidationConfig& config,
-	D3D12SmokeValidationState& state) noexcept
+    ProjectApp& app,
+    UI& ui,
+    const D3D12SmokeValidationConfig& config,
+    D3D12SmokeValidationState& state) noexcept
 {
 	switch (app.BeginFrame())
 	{

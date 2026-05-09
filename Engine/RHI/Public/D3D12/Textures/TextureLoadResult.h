@@ -49,10 +49,7 @@ struct TextureLoadResult
 
 	std::uint16_t GetArraySize() const noexcept { return static_cast<std::uint16_t>(arraySize); }
 
-	std::uint32_t GetSubresourceCount() const noexcept
-	{
-		return static_cast<std::uint32_t>(GetMipCount()) * arraySize;
-	}
+	std::uint32_t GetSubresourceCount() const noexcept { return static_cast<std::uint32_t>(GetMipCount()) * arraySize; }
 
 	bool IsCube() const noexcept { return dimension == TextureResourceDimension::TextureCube; }
 

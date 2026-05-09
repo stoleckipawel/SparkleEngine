@@ -7,14 +7,14 @@
 namespace DirectLighting
 {
 	void AccumulateDirectionalLight(
-		float3 viewDirWorld,
-		float3 normalWorld,
-		float roughness,
-		bool evaluateSubsurface,
-		uint lightIndex,
-		out float3 outDiffuse,
-		out float3 outSpecular,
-		out float3 outSubsurface)
+	    float3 viewDirWorld,
+	    float3 normalWorld,
+	    float roughness,
+	    bool evaluateSubsurface,
+	    uint lightIndex,
+	    out float3 outDiffuse,
+	    out float3 outSpecular,
+	    out float3 outSubsurface)
 	{
 		const float3 lightDirection = normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
 		BRDF::ShadingData shadingData = BRDF::ComputeShadingData(normalWorld, viewDirWorld, lightDirection);
@@ -27,8 +27,7 @@ namespace DirectLighting
 			return;
 		}
 
-		const float3 radiance = ViewLighting.DirectionalLights[lightIndex].Color *
-		    ViewLighting.DirectionalLights[lightIndex].Intensity;
+		const float3 radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
 		const float clampedRoughness = max(roughness, 0.04f);
 
 		outDiffuse = BRDF::Diffuse::EvaluateDirectTransport(clampedRoughness, shadingData);

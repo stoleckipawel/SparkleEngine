@@ -10,7 +10,7 @@ static const auto g_d3d12TextureLogger = Logging::GetOrCreateLogger("RHI.Texture
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
     m_textureLoadResult(std::move(textureLoadResult)),
-	m_srvHandle(descriptorHeapManager.GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->Allocate()),
+    m_srvHandle(descriptorHeapManager.GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->Allocate()),
     m_descriptorHeapManager(&descriptorHeapManager)
 {
 	if (!m_srvHandle.IsValid())

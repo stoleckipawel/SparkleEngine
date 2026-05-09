@@ -472,9 +472,8 @@ void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle r
 	}
 
 	DrainCompletedOwnedResourceReleases();
-	m_pendingOwnedResourceReleases.push_back(PendingOwnedResourceRelease{
-	    .Resource = std::move(ownedResource),
-	    .RetireFenceValue = retireFenceValue});
+	m_pendingOwnedResourceReleases.push_back(
+	    PendingOwnedResourceRelease{.Resource = std::move(ownedResource), .RetireFenceValue = retireFenceValue});
 }
 
 void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcept
@@ -495,7 +494,7 @@ void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcep
 	    m_pendingOwnedResourceReleases.end(),
 	    [completedFenceValue](const PendingOwnedResourceRelease& pendingRelease)
 	    {
-			return pendingRelease.Resource == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+		    return pendingRelease.Resource == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 }
@@ -568,9 +567,7 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::Get
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
 }
 
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(
-    std::uint64_t sizeInBytes,
-    std::wstring_view debugName)
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
 	if (m_rhi == nullptr || sizeInBytes == 0)
 	{

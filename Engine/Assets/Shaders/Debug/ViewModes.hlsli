@@ -36,14 +36,14 @@ namespace ViewMode
 	}
 
 	float3 Resolve(
-		float3 lit,
-		Material::Properties matProps,
-		float3 directDiffuse,
-		float3 directSpecular,
-		float3 directSubsurface,
-		float3 indirectDiffuse,
-		float3 indirectSpecular,
-		float3 indirectSubsurface)
+	    float3 lit,
+	    Material::Properties matProps,
+	    float3 directDiffuse,
+	    float3 directSpecular,
+	    float3 directSubsurface,
+	    float3 indirectDiffuse,
+	    float3 indirectSpecular,
+	    float3 indirectSubsurface)
 	{
 		switch (ViewModeIndex)
 		{

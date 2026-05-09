@@ -23,7 +23,5 @@ namespace ProfilerSorting
 
 	// Stable-sorts a flat bucket of node pointers in place. `Hierarchy` is a
 	// no-op (preserves capture order so the table mirrors the call tree).
-	void SortBucket(
-	    std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket,
-	    SortMode mode) noexcept;
+	void SortBucket(std::vector<const Diagnostics::ProfilerSnapshotNode*>& bucket, SortMode mode) noexcept;
 }

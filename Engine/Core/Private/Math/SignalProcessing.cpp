@@ -18,8 +18,11 @@ namespace MathUtils
 
 		const float y = 3.75f / x;
 		return (std::exp(x) / std::sqrt(x)) *
-		       (0.39894228f + y * (0.01328592f + y * (0.00225319f + y * (-0.00157565f + y * (0.00916281f + y * (-0.02057706f +
-		                                                                                            y * (0.02635537f + y * (-0.01647633f + y * 0.00392377f))))))));
+		       (0.39894228f +
+		        y * (0.01328592f +
+		             y * (0.00225319f +
+		                  y * (-0.00157565f +
+		                       y * (0.00916281f + y * (-0.02057706f + y * (0.02635537f + y * (-0.01647633f + y * 0.00392377f))))))));
 	}
 
 	float Sinc(float x) noexcept
@@ -34,7 +37,7 @@ namespace MathUtils
 
 	float KaiserKernel(float x, float beta, void* reserved) noexcept
 	{
-		(void)reserved;
+		(void) reserved;
 
 		const float bx = beta * std::sqrt(1.0f - (x * x));
 		if (bx > 40.0f)

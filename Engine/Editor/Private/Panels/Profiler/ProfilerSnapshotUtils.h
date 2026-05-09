@@ -40,13 +40,9 @@ namespace ProfilerSnapshotUtils
 	ExclusiveResult ComputeExclusiveWithStatus(const ProfilerSnapshotNode& node) noexcept;
 
 	// ---- Tree traversal ----
-	const ProfilerSnapshotNode* FindNodeByName(
-	    const std::vector<ProfilerSnapshotNode>& nodes,
-	    std::string_view name) noexcept;
+	const ProfilerSnapshotNode* FindNodeByName(const std::vector<ProfilerSnapshotNode>& nodes, std::string_view name) noexcept;
 
-	const ProfilerSnapshotNode* FindNodeInBucket(
-	    const std::vector<const ProfilerSnapshotNode*>& bucket,
-	    std::string_view name) noexcept;
+	const ProfilerSnapshotNode* FindNodeInBucket(const std::vector<const ProfilerSnapshotNode*>& bucket, std::string_view name) noexcept;
 
 	// ---- Naming helpers ----
 	// Strips a `[Kind #] ` prefix (GPU) or dotted namespace (CPU) so the remaining
@@ -61,8 +57,5 @@ namespace ProfilerSnapshotUtils
 
 	// Renders a thread label like `Render Thread (TID 12345)` or `Thread 12345`.
 	// The buffer must hold at least 96 bytes for the longest expected names.
-	void FormatThreadLabel(
-	    char* buffer,
-	    std::size_t bufferSize,
-	    const Diagnostics::ProfilerThreadSnapshot& thread) noexcept;
+	void FormatThreadLabel(char* buffer, std::size_t bufferSize, const Diagnostics::ProfilerThreadSnapshot& thread) noexcept;
 }

@@ -4,7 +4,4 @@
 
 class FrameGraph;
 
-void BuildSky(
-	FrameGraph& frameGraph,
-	const SceneTargets& sceneTargets,
-	const GBufferTargets& gbuffer);
+void BuildSky(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer);

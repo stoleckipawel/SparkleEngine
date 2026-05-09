@@ -1,5 +1,4 @@
-[shader("intersection")]
-void HelloIntersection()
+[shader("intersection")] void HelloIntersection()
 {
 	BuiltInTriangleIntersectionAttributes Attributes;
 	Attributes.barycentrics = float2(0.0f, 0.0f);

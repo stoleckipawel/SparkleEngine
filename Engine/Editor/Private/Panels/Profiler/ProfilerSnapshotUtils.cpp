@@ -37,9 +37,7 @@ namespace ProfilerSnapshotUtils
 		return result;
 	}
 
-	const ProfilerSnapshotNode* FindNodeByName(
-	    const std::vector<ProfilerSnapshotNode>& nodes,
-	    std::string_view name) noexcept
+	const ProfilerSnapshotNode* FindNodeByName(const std::vector<ProfilerSnapshotNode>& nodes, std::string_view name) noexcept
 	{
 		for (const ProfilerSnapshotNode& node : nodes)
 		{
@@ -55,9 +53,7 @@ namespace ProfilerSnapshotUtils
 		return nullptr;
 	}
 
-	const ProfilerSnapshotNode* FindNodeInBucket(
-	    const std::vector<const ProfilerSnapshotNode*>& bucket,
-	    std::string_view name) noexcept
+	const ProfilerSnapshotNode* FindNodeInBucket(const std::vector<const ProfilerSnapshotNode*>& bucket, std::string_view name) noexcept
 	{
 		for (const ProfilerSnapshotNode* node : bucket)
 		{
@@ -104,10 +100,7 @@ namespace ProfilerSnapshotUtils
 		return scopeName;
 	}
 
-	void FormatThreadLabel(
-	    char* buffer,
-	    std::size_t bufferSize,
-	    const Diagnostics::ProfilerThreadSnapshot& thread) noexcept
+	void FormatThreadLabel(char* buffer, std::size_t bufferSize, const Diagnostics::ProfilerThreadSnapshot& thread) noexcept
 	{
 		if (!thread.ThreadName.empty())
 		{

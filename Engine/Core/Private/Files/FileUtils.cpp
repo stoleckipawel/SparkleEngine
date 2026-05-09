@@ -203,9 +203,8 @@ namespace Files
 			std::filesystem::remove(finalPath, ec);
 			if (ec)
 			{
-				outErrorMessage = std::format(
-				    "Failed to replace existing output '{}'. The destination file may still be in use.",
-				    finalPath.string());
+				outErrorMessage =
+				    std::format("Failed to replace existing output '{}'. The destination file may still be in use.", finalPath.string());
 				return false;
 			}
 

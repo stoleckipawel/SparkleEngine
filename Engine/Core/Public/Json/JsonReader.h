@@ -66,15 +66,32 @@ namespace Json
 
 			switch (objectText[cursor])
 			{
-				case '"': value.push_back('"'); break;
-				case '\\': value.push_back('\\'); break;
-				case '/': value.push_back('/'); break;
-				case 'b': value.push_back('\b'); break;
-				case 'f': value.push_back('\f'); break;
-				case 'n': value.push_back('\n'); break;
-				case 'r': value.push_back('\r'); break;
-				case 't': value.push_back('\t'); break;
-				default: return false;
+				case '"':
+					value.push_back('"');
+					break;
+				case '\\':
+					value.push_back('\\');
+					break;
+				case '/':
+					value.push_back('/');
+					break;
+				case 'b':
+					value.push_back('\b');
+					break;
+				case 'f':
+					value.push_back('\f');
+					break;
+				case 'n':
+					value.push_back('\n');
+					break;
+				case 'r':
+					value.push_back('\r');
+					break;
+				case 't':
+					value.push_back('\t');
+					break;
+				default:
+					return false;
 			}
 		}
 

@@ -3,18 +3,18 @@
 #include "GPU/PassExecutionDiagnostics.h"
 
 PassExecutionDiagnostics::PassExecutionDiagnostics(
-	FrameExecutionDiagnostics& frameDiagnostics,
-	CommandContext& commands,
-	std::string_view diagnosticName,
-	std::string_view passDisplayLabel,
-	std::string_view passScopeLabel,
-	EFrameGraphPassFlags passKind) noexcept :
-	m_frameDiagnostics(&frameDiagnostics),
-	m_commands(&commands),
-	m_diagnosticName(diagnosticName),
-	m_passDisplayLabel(passDisplayLabel),
-	m_passScopeLabel(passScopeLabel),
-	m_passColor(GetPassEventColor(passKind))
+    FrameExecutionDiagnostics& frameDiagnostics,
+    CommandContext& commands,
+    std::string_view diagnosticName,
+    std::string_view passDisplayLabel,
+    std::string_view passScopeLabel,
+    EFrameGraphPassFlags passKind) noexcept :
+    m_frameDiagnostics(&frameDiagnostics),
+    m_commands(&commands),
+    m_diagnosticName(diagnosticName),
+    m_passDisplayLabel(passDisplayLabel),
+    m_passScopeLabel(passScopeLabel),
+    m_passColor(GetPassEventColor(passKind))
 {
 }
 

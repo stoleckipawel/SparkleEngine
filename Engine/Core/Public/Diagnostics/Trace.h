@@ -75,5 +75,9 @@ namespace Diagnostics
 }
 
 #ifndef SPARKLE_CPU_SCOPE
-#define SPARKLE_CPU_SCOPE(name) ::Diagnostics::ScopedTrace SPARKLE_PP_CONCAT(_sparkleCpuScope_, __LINE__){(name)}
+	#define SPARKLE_CPU_SCOPE(name)                                               \
+		::Diagnostics::ScopedTrace SPARKLE_PP_CONCAT(_sparkleCpuScope_, __LINE__) \
+		{                                                                         \
+			(name)                                                                \
+		}
 #endif

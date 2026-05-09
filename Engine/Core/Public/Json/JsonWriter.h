@@ -25,10 +25,7 @@ namespace Json
 	class ObjectWriter final
 	{
 	  public:
-		explicit ObjectWriter(std::string indent = "  ") : m_indent(std::move(indent))
-		{
-			m_stream << "{\n";
-		}
+		explicit ObjectWriter(std::string indent = "  ") : m_indent(std::move(indent)) { m_stream << "{\n"; }
 
 		void WriteString(std::string_view name, std::string_view value)
 		{

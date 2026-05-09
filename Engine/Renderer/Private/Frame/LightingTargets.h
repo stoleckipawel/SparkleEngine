@@ -5,6 +5,4 @@
 
 class FrameGraph;
 
-LightingTargets CreateLightingTargets(
-	FrameGraph& frameGraph,
-	RenderViewportExtent sceneExtent);
+LightingTargets CreateLightingTargets(FrameGraph& frameGraph, RenderViewportExtent sceneExtent);

@@ -95,8 +95,7 @@ namespace PassUtilities
 	{
 		if constexpr (requires { runtime.WireframePipelineState; })
 		{
-			if (renderHardwareInterface != nullptr &&
-			    runtime.WireframePipelineState != nullptr &&
+			if (renderHardwareInterface != nullptr && runtime.WireframePipelineState != nullptr &&
 			    renderHardwareInterface->GetPerFrameConstantData().ViewModeIndex == static_cast<std::uint32_t>(RenderViewMode::Wireframe))
 			{
 				return *runtime.WireframePipelineState;
