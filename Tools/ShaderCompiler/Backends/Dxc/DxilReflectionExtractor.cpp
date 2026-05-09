@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <wrl/client.h>
 
-using Microsoft::WRL::ComPtr;
-
 CookedShaderResourceKind DxilReflectionExtractor::MapResourceKind(D3D_SHADER_INPUT_TYPE type, D3D_SRV_DIMENSION dim)
 {
 	switch (type)
@@ -158,7 +156,7 @@ bool DxilReflectionExtractor::Extract(
 
 	// DXC exposes reflection as a separate output blob.
 	// Query DXC_OUT_REFLECTION directly instead of walking the container.
-	ComPtr<IDxcBlob> reflectionBlob;
+	Microsoft::WRL::ComPtr<IDxcBlob> reflectionBlob;
 	HRESULT hr = result->GetOutput(
 	    DXC_OUT_REFLECTION, IID_PPV_ARGS(reflectionBlob.ReleaseAndGetAddressOf()), nullptr);
 	if (FAILED(hr) || !reflectionBlob || reflectionBlob->GetBufferSize() == 0)
@@ -172,7 +170,7 @@ bool DxilReflectionExtractor::Extract(
 	reflectionBuffer.Size = reflectionBlob->GetBufferSize();
 	reflectionBuffer.Encoding = 0;
 
-	ComPtr<ID3D12ShaderReflection> shaderReflection;
+	Microsoft::WRL::ComPtr<ID3D12ShaderReflection> shaderReflection;
 	hr = utils.CreateReflection(&reflectionBuffer, IID_PPV_ARGS(shaderReflection.ReleaseAndGetAddressOf()));
 	if (FAILED(hr) || !shaderReflection)
 	{

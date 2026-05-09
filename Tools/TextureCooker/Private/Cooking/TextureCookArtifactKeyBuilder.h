@@ -5,8 +5,6 @@
 
 #include <string>
 
-namespace AssetAuthoring
-{
 	class TextureCookArtifactKeyBuilder final
 	{
 	  public:
@@ -15,4 +13,3 @@ namespace AssetAuthoring
 			Cook::CookArtifactKey& outKey,
 			std::string& outErrorMessage);
 	};
-}

@@ -5,8 +5,6 @@
 #include "Constants/TextureCookerConstants.h"
 #include "Cooking/TextureCookRequestBatchProcessor.h"
 
-namespace AssetAuthoring
-{
 	bool CookTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
 	{
 		return commandName == TextureCookerConstants::CookRequestFileCommand ||
@@ -18,4 +16,3 @@ namespace AssetAuthoring
 		TextureCookRequestBatchProcessor batchProcessor;
 		return batchProcessor.CookRequestFile(requestFilePath);
 	}
-}

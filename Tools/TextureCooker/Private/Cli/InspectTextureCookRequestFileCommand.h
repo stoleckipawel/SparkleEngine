@@ -8,8 +8,6 @@
 #include <filesystem>
 #include <string_view>
 
-namespace AssetAuthoring
-{
 	class InspectTextureCookRequestFileCommand final : public TextureCookerCommand
 	{
 	  public:
@@ -21,4 +19,3 @@ namespace AssetAuthoring
 		static void PrintRequest(const TextureCookRequest& request);
 		static void PrintSummary(const std::filesystem::path& requestFilePath, std::size_t requestCount);
 	};
-}

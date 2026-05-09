@@ -9,8 +9,6 @@
 #include <iostream>
 #include <vector>
 
-namespace AssetAuthoring
-{
 	bool InspectTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
 	{
 		return commandName == TextureCookerConstants::InspectRequestFileCommand ||
@@ -27,8 +25,8 @@ namespace AssetAuthoring
 			return TextureCookerConstants::ExitInspectRequestFileFailed;
 		}
 
-		std::cout << TextureCookerConstants::ToolName << ": request file='" << requestFilePath.string() << "' contains "
-		          << requests.size() << " texture request(s)\n";
+		std::cout << TextureCookerConstants::ToolName << ": request file='" << requestFilePath.string() << "' contains " << requests.size()
+		          << " texture request(s)\n";
 		for (const TextureCookRequest& request : requests)
 		{
 			PrintRequest(request);
@@ -43,19 +41,16 @@ namespace AssetAuthoring
 		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
 		          << GetTextureColorSpaceName(request.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.mipPolicy)
 		          << "' mipFilter='" << GetTextureMipFilterName(request.mipFilter) << "' colorProcessing='"
-		          << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << "' compressionFamily='"
-		          << GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) << "' dimension='"
-		          << GetTextureDimensionName(request.dimension) << "' output='" << request.outputPath.string() << "' source='"
-		          << request.sourcePath.string() << "'\n";
+		          << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << "' textureGroup='"
+		          << GetTextureGroupName(request.textureGroup) << "' dimension='" << GetTextureDimensionName(request.dimension)
+		          << "' channelMask='" << GetTextureChannelMaskName(request.channelMask) << "' output='" << request.outputPath.string()
+		          << "' source='" << request.sourcePath.string() << "'\n";
 	}
 
-	void InspectTextureCookRequestFileCommand::PrintSummary(
-		const std::filesystem::path& requestFilePath,
-		std::size_t requestCount)
+	void InspectTextureCookRequestFileCommand::PrintSummary(const std::filesystem::path& requestFilePath, std::size_t requestCount)
 	{
 		std::cout << TextureCookerConstants::ToolName << " Summary:\n"
 		          << "  mode=inspect\n"
 		          << "  requestFile='" << requestFilePath.string() << "'\n"
 		          << "  requests=" << requestCount << "\n";
 	}
-}

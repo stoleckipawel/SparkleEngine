@@ -6,7 +6,7 @@
 #include <functional>
 #include <string>
 
-using CookNodeVisitor = std::function<bool(const CookNode& node, std::string& outErrorMessage)>;
+typedef std::function<bool(const CookNode& node, std::string& outErrorMessage)> CookNodeVisitor;
 
 class ICookExecutor
 {

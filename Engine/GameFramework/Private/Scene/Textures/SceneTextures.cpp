@@ -8,7 +8,7 @@
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {
 	std::vector<std::filesystem::path> referencedTexturePaths;
-	referencedTexturePaths.reserve(materialDescs.size() * 5);
+	referencedTexturePaths.reserve(materialDescs.size() * 8);
 
 	auto appendOptionalTexturePath = [&referencedTexturePaths](const std::optional<std::filesystem::path>& texturePath)
 	{
@@ -24,9 +24,12 @@ void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDe
 	{
 		appendOptionalTexturePath(materialDesc.albedoTexture);
 		appendOptionalTexturePath(materialDesc.normalTexture);
-		appendOptionalTexturePath(materialDesc.metallicRoughnessTexture);
+		appendOptionalTexturePath(materialDesc.roughnessTexture);
+		appendOptionalTexturePath(materialDesc.metallicTexture);
 		appendOptionalTexturePath(materialDesc.occlusionTexture);
 		appendOptionalTexturePath(materialDesc.emissiveTexture);
+		appendOptionalTexturePath(materialDesc.subsurfaceColorTexture);
+		appendOptionalTexturePath(materialDesc.subsurfaceStrengthTexture);
 	}
 
 	AppendTexturePaths(referencedTexturePaths);

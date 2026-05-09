@@ -10,15 +10,15 @@
 #include <sstream>
 #include <string_view>
 
-namespace AssetAuthoring
-{
 	static constexpr std::string_view kTextureCookRequestHeaderV2 = "TextureCookRequests|2";
 	static constexpr std::string_view kTextureCookRequestHeaderV3 = "TextureCookRequests|3";
+	static constexpr std::string_view kTextureCookRequestHeaderV4 = "TextureCookRequests|4";
 
 	enum class TextureCookRequestFileVersion : std::uint8_t
 	{
 		Version2 = 2,
 		Version3 = 3,
+		Version4 = 4,
 	};
 
 	static std::filesystem::path NormalizeRequestPath(std::string_view pathText)
@@ -96,8 +96,8 @@ namespace AssetAuthoring
 	}
 
 	static bool TryParseTextureColorProcessingPolicy(
-		std::string_view value,
-		TextureColorProcessingPolicy& outColorProcessingPolicy) noexcept
+	    std::string_view value,
+	    TextureColorProcessingPolicy& outColorProcessingPolicy) noexcept
 	{
 		if (Strings::EqualsIgnoreCase(value, "linear"))
 		{
@@ -114,43 +114,69 @@ namespace AssetAuthoring
 		return false;
 	}
 
-	static bool TryParseTextureCompressionFamilyPreference(
-		std::string_view value,
-		TextureCompressionFamilyPreference& outCompressionFamilyPreference) noexcept
+	static bool TryParseTextureGroup(std::string_view value, TextureGroup& outTextureGroup) noexcept
 	{
-		if (Strings::EqualsIgnoreCase(value, "none"))
+		if (Strings::EqualsIgnoreCase(value, "default") || Strings::EqualsIgnoreCase(value, "none"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::None;
+			outTextureGroup = TextureGroup::Default;
 			return true;
 		}
 
-		if (Strings::EqualsIgnoreCase(value, "color"))
+		if (Strings::EqualsIgnoreCase(value, "diffuse") || Strings::EqualsIgnoreCase(value, "albedo") ||
+		    Strings::EqualsIgnoreCase(value, "base-color") || Strings::EqualsIgnoreCase(value, "basecolor") ||
+		    Strings::EqualsIgnoreCase(value, "color"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::Color;
+			outTextureGroup = TextureGroup::Diffuse;
 			return true;
 		}
 
-		if (Strings::EqualsIgnoreCase(value, "masks"))
+		if (Strings::EqualsIgnoreCase(value, "roughness"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::Masks;
+			outTextureGroup = TextureGroup::Roughness;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "metallic") || Strings::EqualsIgnoreCase(value, "metalness"))
+		{
+			outTextureGroup = TextureGroup::Metallic;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "ambient-occlusion") || Strings::EqualsIgnoreCase(value, "ambientocclusion") ||
+		    Strings::EqualsIgnoreCase(value, "occlusion") || Strings::EqualsIgnoreCase(value, "ao") ||
+		    Strings::EqualsIgnoreCase(value, "masks"))
+		{
+			outTextureGroup = TextureGroup::AmbientOcclusion;
 			return true;
 		}
 
 		if (Strings::EqualsIgnoreCase(value, "normal-map") || Strings::EqualsIgnoreCase(value, "normalmap"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::NormalMap;
+			outTextureGroup = TextureGroup::NormalMap;
 			return true;
 		}
 
 		if (Strings::EqualsIgnoreCase(value, "hdr-color") || Strings::EqualsIgnoreCase(value, "hdrcolor"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::HdrColor;
+			outTextureGroup = TextureGroup::HdrColor;
 			return true;
 		}
 
-		if (Strings::EqualsIgnoreCase(value, "cube-color") || Strings::EqualsIgnoreCase(value, "cubecolor"))
+		if (Strings::EqualsIgnoreCase(value, "emissive") || Strings::EqualsIgnoreCase(value, "emission"))
 		{
-			outCompressionFamilyPreference = TextureCompressionFamilyPreference::CubeColor;
+			outTextureGroup = TextureGroup::Emissive;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "subsurface-color") || Strings::EqualsIgnoreCase(value, "subsurfacecolor"))
+		{
+			outTextureGroup = TextureGroup::SubsurfaceColor;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "subsurface-strength") || Strings::EqualsIgnoreCase(value, "subsurfacestrength"))
+		{
+			outTextureGroup = TextureGroup::SubsurfaceStrength;
 			return true;
 		}
 
@@ -174,6 +200,41 @@ namespace AssetAuthoring
 		return false;
 	}
 
+	static bool TryParseTextureChannelMask(std::string_view value, TextureChannelMask& outChannelMask) noexcept
+	{
+		if (Strings::EqualsIgnoreCase(value, "rgba") || Strings::EqualsIgnoreCase(value, "all") || Strings::EqualsIgnoreCase(value, "none"))
+		{
+			outChannelMask = TextureChannelMask::Rgba;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "r") || Strings::EqualsIgnoreCase(value, "red"))
+		{
+			outChannelMask = TextureChannelMask::Red;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "g") || Strings::EqualsIgnoreCase(value, "green"))
+		{
+			outChannelMask = TextureChannelMask::Green;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "b") || Strings::EqualsIgnoreCase(value, "blue"))
+		{
+			outChannelMask = TextureChannelMask::Blue;
+			return true;
+		}
+
+		if (Strings::EqualsIgnoreCase(value, "a") || Strings::EqualsIgnoreCase(value, "alpha"))
+		{
+			outChannelMask = TextureChannelMask::Alpha;
+			return true;
+		}
+
+		return false;
+	}
+
 	static bool ParseAssetId(std::string_view value, TextureAssetId& outAssetId) noexcept
 	{
 		std::uint64_t parsedAssetId = 0;
@@ -187,21 +248,27 @@ namespace AssetAuthoring
 	}
 
 	static bool ParseRequestLine(
-		std::string_view line,
-		TextureCookRequestFileVersion version,
-		TextureCookRequest& outRequest,
-		std::string& outErrorMessage)
+	    std::string_view line,
+	    TextureCookRequestFileVersion version,
+	    TextureCookRequest& outRequest,
+	    std::string& outErrorMessage)
 	{
 		const std::vector<std::string_view> fields = Strings::Split(line, '|');
-		const std::size_t expectedFieldCount = version == TextureCookRequestFileVersion::Version3 ? 9u : 4u;
+		const std::size_t expectedFieldCount = version == TextureCookRequestFileVersion::Version4   ? 10u
+		                                       : version == TextureCookRequestFileVersion::Version3 ? 9u
+		                                                                                            : 4u;
 		if (fields.size() != expectedFieldCount)
 		{
 			outErrorMessage = "Texture cook request entry is malformed.";
 			return false;
 		}
 
-		const std::size_t outputPathIndex = version == TextureCookRequestFileVersion::Version3 ? 7u : 2u;
-		const std::size_t sourcePathIndex = version == TextureCookRequestFileVersion::Version3 ? 8u : 3u;
+		const std::size_t outputPathIndex = version == TextureCookRequestFileVersion::Version4   ? 8u
+		                                    : version == TextureCookRequestFileVersion::Version3 ? 7u
+		                                                                                         : 2u;
+		const std::size_t sourcePathIndex = version == TextureCookRequestFileVersion::Version4   ? 9u
+		                                    : version == TextureCookRequestFileVersion::Version3 ? 8u
+		                                                                                         : 3u;
 
 		if (fields[outputPathIndex].empty())
 		{
@@ -227,7 +294,7 @@ namespace AssetAuthoring
 			return false;
 		}
 
-		if (version == TextureCookRequestFileVersion::Version3)
+		if (version == TextureCookRequestFileVersion::Version3 || version == TextureCookRequestFileVersion::Version4)
 		{
 			if (!TryParseTextureMipPolicy(fields[2], outRequest.mipPolicy))
 			{
@@ -247,15 +314,21 @@ namespace AssetAuthoring
 				return false;
 			}
 
-			if (!TryParseTextureCompressionFamilyPreference(fields[5], outRequest.compressionFamilyPreference))
+			if (!TryParseTextureGroup(fields[5], outRequest.textureGroup))
 			{
-				outErrorMessage = "Texture cook request entry has an unknown compression family preference '" + std::string(fields[5]) + "'.";
+				outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
 				return false;
 			}
 
 			if (!TryParseTextureDimension(fields[6], outRequest.dimension))
 			{
 				outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
+				return false;
+			}
+
+			if (version == TextureCookRequestFileVersion::Version4 && !TryParseTextureChannelMask(fields[7], outRequest.channelMask))
+			{
+				outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
 				return false;
 			}
 		}
@@ -272,9 +345,7 @@ namespace AssetAuthoring
 		return true;
 	}
 
-	static bool TryParseRequestFileVersion(
-		std::string_view headerLine,
-		TextureCookRequestFileVersion& outVersion) noexcept
+	static bool TryParseRequestFileVersion(std::string_view headerLine, TextureCookRequestFileVersion& outVersion) noexcept
 	{
 		if (headerLine == kTextureCookRequestHeaderV2)
 		{
@@ -285,6 +356,12 @@ namespace AssetAuthoring
 		if (headerLine == kTextureCookRequestHeaderV3)
 		{
 			outVersion = TextureCookRequestFileVersion::Version3;
+			return true;
+		}
+
+		if (headerLine == kTextureCookRequestHeaderV4)
+		{
+			outVersion = TextureCookRequestFileVersion::Version4;
 			return true;
 		}
 
@@ -349,26 +426,33 @@ namespace AssetAuthoring
 		return "linear";
 	}
 
-	const char* GetTextureCompressionFamilyPreferenceName(
-		TextureCompressionFamilyPreference compressionFamilyPreference) noexcept
+	const char* GetTextureGroupName(TextureGroup textureGroup) noexcept
 	{
-		switch (compressionFamilyPreference)
+		switch (textureGroup)
 		{
-			case TextureCompressionFamilyPreference::None:
-				return "none";
-			case TextureCompressionFamilyPreference::Color:
-				return "color";
-			case TextureCompressionFamilyPreference::Masks:
-				return "masks";
-			case TextureCompressionFamilyPreference::NormalMap:
+			case TextureGroup::Default:
+				return "default";
+			case TextureGroup::Diffuse:
+				return "diffuse";
+			case TextureGroup::NormalMap:
 				return "normal-map";
-			case TextureCompressionFamilyPreference::HdrColor:
+			case TextureGroup::Roughness:
+				return "roughness";
+			case TextureGroup::Metallic:
+				return "metallic";
+			case TextureGroup::AmbientOcclusion:
+				return "ambient-occlusion";
+			case TextureGroup::Emissive:
+				return "emissive";
+			case TextureGroup::SubsurfaceColor:
+				return "subsurface-color";
+			case TextureGroup::SubsurfaceStrength:
+				return "subsurface-strength";
+			case TextureGroup::HdrColor:
 				return "hdr-color";
-			case TextureCompressionFamilyPreference::CubeColor:
-				return "cube-color";
 		}
 
-		return "none";
+		return "default";
 	}
 
 	const char* GetTextureDimensionName(TextureDimension dimension) noexcept
@@ -382,6 +466,25 @@ namespace AssetAuthoring
 		}
 
 		return "2d";
+	}
+
+	const char* GetTextureChannelMaskName(TextureChannelMask channelMask) noexcept
+	{
+		switch (channelMask)
+		{
+			case TextureChannelMask::Rgba:
+				return "rgba";
+			case TextureChannelMask::Red:
+				return "red";
+			case TextureChannelMask::Green:
+				return "green";
+			case TextureChannelMask::Blue:
+				return "blue";
+			case TextureChannelMask::Alpha:
+				return "alpha";
+		}
+
+		return "rgba";
 	}
 
 	bool WriteTextureCookRequestList(
@@ -410,7 +513,7 @@ namespace AssetAuthoring
 		    });
 
 		std::ostringstream output;
-		output << kTextureCookRequestHeaderV3 << '\n';
+		output << kTextureCookRequestHeaderV4 << '\n';
 		for (const TextureCookRequest& request : sortedRequests)
 		{
 			if (!request.IsValid())
@@ -421,9 +524,8 @@ namespace AssetAuthoring
 
 			output << Formatting::FormatHexUInt64(request.assetId) << '|' << GetTextureColorSpaceName(request.colorSpace) << '|'
 			       << GetTextureMipPolicyName(request.mipPolicy) << '|' << GetTextureMipFilterName(request.mipFilter) << '|'
-			       << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << '|'
-			       << GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) << '|'
-			       << GetTextureDimensionName(request.dimension) << '|'
+			       << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << '|' << GetTextureGroupName(request.textureGroup)
+			       << '|' << GetTextureDimensionName(request.dimension) << '|' << GetTextureChannelMaskName(request.channelMask) << '|'
 			       << request.outputPath.generic_string() << '|' << request.sourcePath.generic_string() << '\n';
 		}
 
@@ -489,12 +591,11 @@ namespace AssetAuthoring
 				    existingRequest.colorSpace != request.colorSpace || existingRequest.mipPolicy != request.mipPolicy ||
 				    existingRequest.mipFilter != request.mipFilter ||
 				    existingRequest.colorProcessingPolicy != request.colorProcessingPolicy ||
-				    existingRequest.compressionFamilyPreference != request.compressionFamilyPreference ||
-				    existingRequest.dimension != request.dimension)
+				    existingRequest.textureGroup != request.textureGroup || existingRequest.dimension != request.dimension ||
+				    existingRequest.channelMask != request.channelMask)
 				{
-					outErrorMessage =
-					    "Texture cook request file contains conflicting requests for asset id '" + Formatting::FormatHexUInt64(request.assetId) +
-					    "'.";
+					outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
+					                  Formatting::FormatHexUInt64(request.assetId) + "'.";
 					return false;
 				}
 
@@ -519,4 +620,3 @@ namespace AssetAuthoring
 		outErrorMessage.clear();
 		return true;
 	}
-}

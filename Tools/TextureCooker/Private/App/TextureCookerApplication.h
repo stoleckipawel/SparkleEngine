@@ -2,8 +2,6 @@
 
 #include <filesystem>
 
-namespace AssetAuthoring
-{
 	class TextureCookerApplication final
 	{
 	  public:
@@ -12,4 +10,3 @@ namespace AssetAuthoring
 	  private:
 		static int RunCommand(const std::filesystem::path& requestFilePath, const char* commandName);
 	};
-}

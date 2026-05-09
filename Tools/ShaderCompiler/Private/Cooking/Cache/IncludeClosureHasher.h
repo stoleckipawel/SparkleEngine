@@ -30,7 +30,7 @@ class IncludeClosureHasher final
 		std::string& outErrorMessage);
 
   private:
-	using HashPair = std::pair<std::wstring, std::uint64_t>;
+	typedef std::pair<std::wstring, std::uint64_t> HashPair;
 
 	static std::optional<std::filesystem::path> ResolveIncludePath(
 		const std::filesystem::path& includerPath,

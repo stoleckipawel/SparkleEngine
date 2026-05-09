@@ -7,17 +7,23 @@
 
 Texture2D TextureBaseColor;
 Texture2D TextureNormal;
-Texture2D TextureMetallicRoughness;
+Texture2D TextureRoughness;
+Texture2D TextureMetallic;
 Texture2D TextureOcclusion;
 Texture2D TextureEmissive;
+Texture2D TextureSubsurfaceColor;
+Texture2D TextureSubsurfaceStrength;
 
 namespace Material
 {
-	static const uint TextureFlagAlbedo = 0x01u;
-	static const uint TextureFlagNormal = 0x02u;
-	static const uint TextureFlagMetallicRoughness = 0x04u;
-	static const uint TextureFlagOcclusion = 0x08u;
-	static const uint TextureFlagEmissive = 0x10u;
+	static const uint TextureGroupDiffuse = 1u;
+	static const uint TextureGroupNormalMap = 2u;
+	static const uint TextureGroupRoughness = 3u;
+	static const uint TextureGroupMetallic = 4u;
+	static const uint TextureGroupAmbientOcclusion = 5u;
+	static const uint TextureGroupEmissive = 6u;
+	static const uint TextureGroupSubsurfaceColor = 7u;
+	static const uint TextureGroupSubsurfaceStrength = 8u;
 
 	static const uint AlphaModeOpaque = 0u;
 	static const uint AlphaModeMask = 1u;
@@ -29,9 +35,14 @@ namespace Material
 		return saturate(EncodedF0) * 0.08f;
 	}
 
-	bool HasTexture(uint textureFlag)
+	uint TextureGroupFlag(uint textureGroup)
 	{
-		return (TextureFlags & textureFlag) != 0u;
+		return 1u << textureGroup;
+	}
+
+	bool HasTexture(uint textureGroup)
+	{
+		return (TextureFlags & TextureGroupFlag(textureGroup)) != 0u;
 	}
 
 	float4 SampleBaseColorTexture(float2 uv)
@@ -92,12 +103,12 @@ namespace Material
 
 	float4 SampleBaseColor(float2 UV)
 	{
-		return HasTexture(TextureFlagAlbedo) ? SampleBaseColorTexture(UV) * BaseColor : BaseColor;
+		return HasTexture(TextureGroupDiffuse) ? SampleBaseColorTexture(UV) * BaseColor : BaseColor;
 	}
 
 	float3 SampleNormalTangent(float2 UV)
 	{
-		if (!HasTexture(TextureFlagNormal))
+		if (!HasTexture(TextureGroupNormalMap))
 		{
 			return float3(0.0f, 0.0f, 1.0f);
 		}
@@ -107,17 +118,17 @@ namespace Material
 
 	float SampleRoughness(float2 UV)
 	{
-		if (!HasTexture(TextureFlagMetallicRoughness))
+		if (!HasTexture(TextureGroupRoughness))
 		{
 			return Roughness;
 		}
 
-		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).g * Roughness;
+		return TextureRoughness.Sample(SamplerAniso16xWrap, UV).r * Roughness;
 	}
 
 	float3 SampleEmissive(float2 UV)
 	{
-		if (!HasTexture(TextureFlagEmissive))
+		if (!HasTexture(TextureGroupEmissive))
 		{
 			return EmissiveColor;
 		}
@@ -127,12 +138,12 @@ namespace Material
 
 	float SampleMetallic(float2 UV)
 	{
-		if (!HasTexture(TextureFlagMetallicRoughness))
+		if (!HasTexture(TextureGroupMetallic))
 		{
 			return Metallic;
 		}
 
-		return TextureMetallicRoughness.Sample(SamplerAniso16xWrap, UV).b * Metallic;
+		return TextureMetallic.Sample(SamplerAniso16xWrap, UV).r * Metallic;
 	}
 
 	float SampleDielectricF0(float2 UV)
@@ -142,7 +153,7 @@ namespace Material
 
 	float SampleAmbientOcclusion(float2 UV)
 	{
-		if (!HasTexture(TextureFlagOcclusion))
+		if (!HasTexture(TextureGroupAmbientOcclusion))
 		{
 			return 1.0f;
 		}
@@ -152,12 +163,22 @@ namespace Material
 
 	float3 SampleSubsurfaceColor(float2 UV)
 	{
-		return float3(0.0f, 0.0f, 0.0f);
+		if (!HasTexture(TextureGroupSubsurfaceColor))
+		{
+			return SubsurfaceColor;
+		}
+
+		return TextureSubsurfaceColor.Sample(SamplerAniso16xWrap, UV).rgb * SubsurfaceColor;
 	}
 
 	float SampleSubsurfaceStrength(float2 UV)
 	{
-		return 0.0f;
+		if (!HasTexture(TextureGroupSubsurfaceStrength))
+		{
+			return SubsurfaceStrength;
+		}
+
+		return TextureSubsurfaceStrength.Sample(SamplerAniso16xWrap, UV).r * SubsurfaceStrength;
 	}
 
 	Properties Sample(PS::Input Input)

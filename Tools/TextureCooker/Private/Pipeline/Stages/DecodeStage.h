@@ -1,17 +1,15 @@
 #pragma once
 
-#include "Cooking/Pipeline/TextureCookPipelineTypes.h"
+#include "Pipeline/WorkingTexture.h"
 #include "TextureCookRequestList.h"
 
 #include <string>
 
-using AssetAuthoring::TextureCookRequest;
-
 namespace TextureCookPipeline
 {
-	bool BuildWorkingImage(
+	bool BuildWorkingTexture(
 	    const TextureCookRequest& request,
 	    const TextureLoadResult& sourceTexture,
-	    WorkingImage& outWorkingImage,
+	    WorkingTexture& outWorkingTexture,
 	    std::string& outErrorMessage);
 }

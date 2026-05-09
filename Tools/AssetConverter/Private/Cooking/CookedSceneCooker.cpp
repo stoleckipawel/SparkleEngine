@@ -20,8 +20,6 @@
 #include <optional>
 #include <unordered_set>
 
-namespace AssetAuthoring
-{
 	static constexpr std::uint32_t kAssetConverterCookerVersion = 1;
 
 	static Cook::CookArtifactKey BuildMeshCookArtifactKey(
@@ -131,18 +129,22 @@ namespace AssetAuthoring
 	{
 		outRequests.clear();
 		std::unordered_set<TextureAssetId> referencedTextureAssetIds;
-		referencedTextureAssetIds.reserve(importResult.materials.size() * 5);
+		referencedTextureAssetIds.reserve(importResult.materials.size() * 8);
 
-		auto appendTextureRequest =
-		    [&](const std::optional<std::filesystem::path>& texturePath, Assets::CookedTextureSemantic semantic) -> bool
+		auto appendTextureRequest = [&](const SceneImportResult::MaterialTextureSource& textureSource) -> bool
 		{
-			if (!texturePath)
+			if (textureSource.sourcePath.empty())
 			{
 				return true;
 			}
 
 			TextureCookRequest request;
-			if (!TextureCookRequestBuilder::Build(*texturePath, semantic, request, outErrorMessage))
+			if (!TextureCookRequestBuilder::Build(
+			        textureSource.sourcePath,
+			        textureSource.textureGroup,
+			        request,
+			        outErrorMessage,
+			        textureSource.channelMask))
 			{
 				return false;
 			}
@@ -155,15 +157,45 @@ namespace AssetAuthoring
 			return true;
 		};
 
-		for (const MaterialDesc& materialDesc : importResult.materials)
+		auto appendFallbackTextureRequest = [&](const std::optional<std::filesystem::path>& texturePath,
+		                                        TextureGroup textureGroup,
+		                                        TextureChannelMask channelMask = TextureChannelMask::Rgba) -> bool
 		{
-			if (!appendTextureRequest(materialDesc.albedoTexture, Assets::CookedTextureSemantic::Albedo) ||
-			    !appendTextureRequest(materialDesc.normalTexture, Assets::CookedTextureSemantic::Normal) ||
-			    !appendTextureRequest(
-			        materialDesc.metallicRoughnessTexture,
-			        Assets::CookedTextureSemantic::MetallicRoughness) ||
-			    !appendTextureRequest(materialDesc.occlusionTexture, Assets::CookedTextureSemantic::Occlusion) ||
-			    !appendTextureRequest(materialDesc.emissiveTexture, Assets::CookedTextureSemantic::Emissive))
+			if (!texturePath)
+			{
+				return true;
+			}
+
+			return appendTextureRequest({textureGroup, *texturePath, channelMask});
+		};
+
+		for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
+		{
+			if (materialIndex < importResult.materialTextureSources.size() && !importResult.materialTextureSources[materialIndex].empty())
+			{
+				for (const SceneImportResult::MaterialTextureSource& textureSource : importResult.materialTextureSources[materialIndex])
+				{
+					if (!appendTextureRequest(textureSource))
+					{
+						return false;
+					}
+				}
+
+				continue;
+			}
+
+			const MaterialDesc& materialDesc = importResult.materials[materialIndex];
+			if (!appendFallbackTextureRequest(materialDesc.albedoTexture, TextureGroup::Diffuse) ||
+			    !appendFallbackTextureRequest(materialDesc.normalTexture, TextureGroup::NormalMap) ||
+			    !appendFallbackTextureRequest(materialDesc.roughnessTexture, TextureGroup::Roughness, TextureChannelMask::Red) ||
+			    !appendFallbackTextureRequest(materialDesc.metallicTexture, TextureGroup::Metallic, TextureChannelMask::Red) ||
+			    !appendFallbackTextureRequest(materialDesc.occlusionTexture, TextureGroup::AmbientOcclusion, TextureChannelMask::Red) ||
+			    !appendFallbackTextureRequest(materialDesc.emissiveTexture, TextureGroup::Emissive) ||
+			    !appendFallbackTextureRequest(materialDesc.subsurfaceColorTexture, TextureGroup::SubsurfaceColor) ||
+			    !appendFallbackTextureRequest(
+			        materialDesc.subsurfaceStrengthTexture,
+			        TextureGroup::SubsurfaceStrength,
+			        TextureChannelMask::Red))
 			{
 				return false;
 			}
@@ -205,9 +237,8 @@ namespace AssetAuthoring
 
 		if (!relativePath)
 		{
-			outErrorMessage =
-			    "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
-			    resolvedSourceScenePath.string() + "'";
+			outErrorMessage = "Source scene path must be under a Sparkle mesh asset root to derive a stable scene asset id: '" +
+			                  resolvedSourceScenePath.string() + "'";
 			return false;
 		}
 
@@ -224,9 +255,7 @@ namespace AssetAuthoring
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#mesh#" + std::to_string(meshIndex));
 	}
 
-	Assets::CookedAssetId CookedSceneCooker::BuildMaterialAssetId(
-	    std::string_view sceneAssetId,
-	    std::size_t materialIndex) noexcept
+	Assets::CookedAssetId CookedSceneCooker::BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept
 	{
 		return Hash::Fnv1a64(std::string(sceneAssetId) + "#material#" + std::to_string(materialIndex));
 	}
@@ -286,25 +315,40 @@ namespace AssetAuthoring
 		outBuild.materialAssets.reserve(importResult.materials.size());
 		outBuild.materialAssetReferences.reserve(importResult.materials.size());
 
-		auto appendTextureReference =
-		    [&](const std::optional<std::filesystem::path>& texturePath,
-		        Assets::CookedTextureSemantic semantic,
-		        CookedMaterialAssetBuild& materialAsset) -> bool
+		auto appendTextureReference = [&](const SceneImportResult::MaterialTextureSource& textureSource,
+		                                  CookedMaterialAssetBuild& materialAsset) -> bool
+		{
+			if (textureSource.sourcePath.empty())
+			{
+				return true;
+			}
+
+			TextureCookRequest request;
+			if (!TextureCookRequestBuilder::Build(
+			        textureSource.sourcePath,
+			        textureSource.textureGroup,
+			        request,
+			        outErrorMessage,
+			        textureSource.channelMask))
+			{
+				return false;
+			}
+
+			materialAsset.textureReferences.push_back({static_cast<Assets::CookedAssetId>(request.assetId), textureSource.textureGroup});
+			return true;
+		};
+
+		auto appendFallbackTextureReference = [&](const std::optional<std::filesystem::path>& texturePath,
+		                                          TextureGroup textureGroup,
+		                                          CookedMaterialAssetBuild& materialAsset,
+		                                          TextureChannelMask channelMask = TextureChannelMask::Rgba) -> bool
 		{
 			if (!texturePath)
 			{
 				return true;
 			}
 
-			TextureCookRequest request;
-			if (!TextureCookRequestBuilder::Build(*texturePath, semantic, request, outErrorMessage))
-			{
-				return false;
-			}
-
-			materialAsset.textureReferences.push_back(
-			    {static_cast<Assets::CookedAssetId>(request.assetId), semantic});
-			return true;
+			return appendTextureReference({textureGroup, *texturePath, channelMask}, materialAsset);
 		};
 
 		for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
@@ -320,17 +364,46 @@ namespace AssetAuthoring
 			materialAsset.header.metallic = materialDesc.metallic;
 			materialAsset.header.roughness = materialDesc.roughness;
 			materialAsset.header.f0 = materialDesc.f0;
+			materialAsset.header.subsurfaceColor = materialDesc.subsurfaceColor;
+			materialAsset.header.subsurfaceStrength = materialDesc.subsurfaceStrength;
 			materialAsset.header.alphaCutoff = materialDesc.alphaCutoff;
 			materialAsset.header.emissiveColor = materialDesc.emissiveColor;
 
-			if (!appendTextureReference(materialDesc.albedoTexture, Assets::CookedTextureSemantic::Albedo, materialAsset) ||
-			    !appendTextureReference(materialDesc.normalTexture, Assets::CookedTextureSemantic::Normal, materialAsset) ||
-			    !appendTextureReference(
-			        materialDesc.metallicRoughnessTexture,
-			        Assets::CookedTextureSemantic::MetallicRoughness,
-			        materialAsset) ||
-			    !appendTextureReference(materialDesc.occlusionTexture, Assets::CookedTextureSemantic::Occlusion, materialAsset) ||
-			    !appendTextureReference(materialDesc.emissiveTexture, Assets::CookedTextureSemantic::Emissive, materialAsset))
+			if (materialIndex < importResult.materialTextureSources.size() && !importResult.materialTextureSources[materialIndex].empty())
+			{
+				for (const SceneImportResult::MaterialTextureSource& textureSource : importResult.materialTextureSources[materialIndex])
+				{
+					if (!appendTextureReference(textureSource, materialAsset))
+					{
+						return false;
+					}
+				}
+			}
+			else if (
+			    !appendFallbackTextureReference(materialDesc.albedoTexture, TextureGroup::Diffuse, materialAsset) ||
+			    !appendFallbackTextureReference(materialDesc.normalTexture, TextureGroup::NormalMap, materialAsset) ||
+			    !appendFallbackTextureReference(
+			        materialDesc.roughnessTexture,
+			        TextureGroup::Roughness,
+			        materialAsset,
+			        TextureChannelMask::Red) ||
+			    !appendFallbackTextureReference(
+			        materialDesc.metallicTexture,
+			        TextureGroup::Metallic,
+			        materialAsset,
+			        TextureChannelMask::Red) ||
+			    !appendFallbackTextureReference(
+			        materialDesc.occlusionTexture,
+			        TextureGroup::AmbientOcclusion,
+			        materialAsset,
+			        TextureChannelMask::Red) ||
+			    !appendFallbackTextureReference(materialDesc.emissiveTexture, TextureGroup::Emissive, materialAsset) ||
+			    !appendFallbackTextureReference(materialDesc.subsurfaceColorTexture, TextureGroup::SubsurfaceColor, materialAsset) ||
+			    !appendFallbackTextureReference(
+			        materialDesc.subsurfaceStrengthTexture,
+			        TextureGroup::SubsurfaceStrength,
+			        materialAsset,
+			        TextureChannelMask::Red))
 			{
 				return false;
 			}
@@ -345,10 +418,7 @@ namespace AssetAuthoring
 		return true;
 	}
 
-	bool CookedSceneCooker::BuildManifest(
-	    const SceneImportResult& importResult,
-	    CookedSceneBuild& outBuild,
-	    std::string& outErrorMessage)
+	bool CookedSceneCooker::BuildManifest(const SceneImportResult& importResult, CookedSceneBuild& outBuild, std::string& outErrorMessage)
 	{
 		outBuild.instances.reserve(importResult.meshes.size());
 
@@ -550,4 +620,3 @@ namespace AssetAuthoring
 		outErrorMessage.clear();
 		return true;
 	}
-}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Assets/TextureGroup.h"
+#include "Core/Public/Assets/TextureProperties.h"
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
@@ -7,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string_view>
 #include <vector>
 
@@ -33,8 +36,16 @@ constexpr std::string_view GetSceneImporterTypeName(SceneImporterType importerTy
 
 struct SceneImportResult
 {
+	struct MaterialTextureSource
+	{
+		TextureGroup textureGroup = TextureGroup::Default;
+		std::filesystem::path sourcePath;
+		TextureChannelMask channelMask = TextureChannelMask::Rgba;
+	};
+
 	std::vector<MeshData> meshes;
 	std::vector<MaterialDesc> materials;
+	std::vector<std::vector<MaterialTextureSource>> materialTextureSources;
 	std::vector<Transform> transforms;
 	std::vector<MaterialHandle> materialHandles;
 	SceneImporterType importerType = SceneImporterType::None;

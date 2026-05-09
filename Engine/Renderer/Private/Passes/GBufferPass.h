@@ -50,9 +50,12 @@ struct GBufferDrawParameters
 	ShaderUniform<PerObjectPSConstantBufferData> PerObjectPS;
 	ShaderTexture2DSRV TextureBaseColor;
 	ShaderTexture2DSRV TextureNormal;
-	ShaderTexture2DSRV TextureMetallicRoughness;
+	ShaderTexture2DSRV TextureRoughness;
+	ShaderTexture2DSRV TextureMetallic;
 	ShaderTexture2DSRV TextureOcclusion;
 	ShaderTexture2DSRV TextureEmissive;
+	ShaderTexture2DSRV TextureSubsurfaceColor;
+	ShaderTexture2DSRV TextureSubsurfaceStrength;
 
 	static void Describe(ShaderParameterStructBuilder<GBufferDrawParameters>& builder)
 	{
@@ -60,9 +63,12 @@ struct GBufferDrawParameters
 		builder.Uniform("PerObjectPS", &GBufferDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureBaseColor", &GBufferDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureNormal", &GBufferDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);
-		builder.ReadTexture("TextureMetallicRoughness", &GBufferDrawParameters::TextureMetallicRoughness, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureRoughness", &GBufferDrawParameters::TextureRoughness, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureMetallic", &GBufferDrawParameters::TextureMetallic, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureOcclusion", &GBufferDrawParameters::TextureOcclusion, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureEmissive", &GBufferDrawParameters::TextureEmissive, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureSubsurfaceColor", &GBufferDrawParameters::TextureSubsurfaceColor, ShaderStageVisibility::Pixel);
+		builder.ReadTexture("TextureSubsurfaceStrength", &GBufferDrawParameters::TextureSubsurfaceStrength, ShaderStageVisibility::Pixel);
 	}
 };
 

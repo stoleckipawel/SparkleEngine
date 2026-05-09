@@ -2,29 +2,41 @@
 
 #include "Scene/Materials/MaterialDesc.h"
 
-void MaterialDesc::SetTexturePath(MaterialTextureType textureType, const std::optional<std::filesystem::path>& texturePath)
+void MaterialDesc::SetTexturePath(TextureGroup textureGroup, const std::optional<std::filesystem::path>& texturePath)
 {
 	if (!texturePath)
 	{
 		return;
 	}
 
-	switch (textureType)
+	switch (textureGroup)
 	{
-		case MaterialTextureType::Albedo:
+		case TextureGroup::Diffuse:
 			albedoTexture = *texturePath;
 			break;
-		case MaterialTextureType::Normal:
+		case TextureGroup::NormalMap:
 			normalTexture = *texturePath;
 			break;
-		case MaterialTextureType::MetallicRoughness:
-			metallicRoughnessTexture = *texturePath;
+		case TextureGroup::Roughness:
+			roughnessTexture = *texturePath;
 			break;
-		case MaterialTextureType::Occlusion:
+		case TextureGroup::Metallic:
+			metallicTexture = *texturePath;
+			break;
+		case TextureGroup::AmbientOcclusion:
 			occlusionTexture = *texturePath;
 			break;
-		case MaterialTextureType::Emissive:
+		case TextureGroup::Emissive:
 			emissiveTexture = *texturePath;
+			break;
+		case TextureGroup::SubsurfaceColor:
+			subsurfaceColorTexture = *texturePath;
+			break;
+		case TextureGroup::SubsurfaceStrength:
+			subsurfaceStrengthTexture = *texturePath;
+			break;
+		case TextureGroup::Default:
+		case TextureGroup::HdrColor:
 			break;
 	}
 }

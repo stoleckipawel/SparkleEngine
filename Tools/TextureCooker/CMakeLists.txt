@@ -10,11 +10,16 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/App/TextureCookerApplication.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/CookTextureCookRequestFileCommand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/InspectTextureCookRequestFileCommand.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookPipelineCoordinator.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineUtils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipGenerationStage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookCompressionAndOutputStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/TexturePipeline.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/FormatPolicy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/ImageOps.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Compression/CompressionPolicy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Compression/BCCompressor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/DecodeStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/ChannelStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/ShapeStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/MipStage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
@@ -35,12 +40,17 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Constants/TextureCookerConstants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookPipelineCoordinator.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineTypes.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookPipelineUtils.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookTexture2DAndCubeOnlyDecodeStage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookMipGenerationStage.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/Pipeline/TextureCookCompressionAndOutputStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/TexturePipeline.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/WorkingTexture.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/FormatPolicy.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/ImageOps.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Compression/CompressionPolicy.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Compression/BCCompressor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/DecodeStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/ChannelStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/ShapeStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/MipStage.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.h
@@ -67,7 +77,7 @@ target_include_directories(TextureCookShared
 target_compile_features(TextureCookShared PUBLIC cxx_std_20)
 
 target_link_libraries(TextureCookShared
-    PRIVATE
+    PUBLIC
         SparkleCore
 )
 
@@ -94,22 +104,22 @@ target_include_directories(TextureCooker
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         ${CMAKE_SOURCE_DIR}/Engine
         ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
-    ${stb_SOURCE_DIR}
-    ${tinyexr_SOURCE_DIR}
+        ${stb_SOURCE_DIR}
+        ${tinyexr_SOURCE_DIR}
 )
 
 target_compile_features(TextureCooker PRIVATE cxx_std_20)
 
 target_link_libraries(TextureCooker
     PRIVATE
-    CookCommon
+        CookCommon
         CMP_Core
         SparkleCore
         TextureCookShared
         TextureCookerMiniz
         SparkleRHI
-    stb
-    tinyexr
+        stb
+        tinyexr
 )
 
 set_target_properties(TextureCooker PROPERTIES

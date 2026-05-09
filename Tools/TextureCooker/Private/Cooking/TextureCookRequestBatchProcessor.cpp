@@ -11,8 +11,6 @@
 #include <iostream>
 #include <objbase.h>
 
-namespace AssetAuthoring
-{
 	TextureCookRequestBatchProcessor::ScopedComInitializer::~ScopedComInitializer()
 	{
 		if (SUCCEEDED(m_result))
@@ -145,4 +143,3 @@ namespace AssetAuthoring
 		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' output='" << request.outputPath.string()
 		          << "'\n";
 	}
-}

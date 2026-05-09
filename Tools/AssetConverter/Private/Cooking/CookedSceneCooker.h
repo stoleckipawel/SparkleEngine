@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-namespace AssetAuthoring
-{
 	struct CookedMeshAssetBuild
 	{
 		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
@@ -73,4 +71,3 @@ namespace AssetAuthoring
 		static bool UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage);
 		static bool WriteBuildOutputs(const CookedSceneBuild& build, std::string& outErrorMessage);
 	};
-}

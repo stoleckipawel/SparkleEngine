@@ -6,8 +6,6 @@
 
 #include <format>
 
-using namespace DirectX;
-
 static const auto g_gltfGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Gltf");
 
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
@@ -41,7 +39,7 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SceneImportRes
 			continue;
 		}
 
-		const XMMATRIX worldTransform = ComputeNodeWorldTransform(&node);
+		const DirectX::XMMATRIX worldTransform = ComputeNodeWorldTransform(&node);
 
 		for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
 		{
@@ -120,42 +118,42 @@ void GltfGeometryImporter::ReadIndices(const cgltf_accessor* accessor, std::vect
 	}
 }
 
-XMFLOAT2 GltfGeometryImporter::ReadFloat2(const cgltf_accessor* accessor, std::size_t index)
+DirectX::XMFLOAT2 GltfGeometryImporter::ReadFloat2(const cgltf_accessor* accessor, std::size_t index)
 {
-	XMFLOAT2 element{};
+	DirectX::XMFLOAT2 element{};
 	if (accessor && index < accessor->count)
 	{
-		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(XMFLOAT2) / sizeof(float));
+		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(DirectX::XMFLOAT2) / sizeof(float));
 	}
 
 	return element;
 }
 
-XMFLOAT3 GltfGeometryImporter::ReadFloat3(const cgltf_accessor* accessor, std::size_t index)
+DirectX::XMFLOAT3 GltfGeometryImporter::ReadFloat3(const cgltf_accessor* accessor, std::size_t index)
 {
-	XMFLOAT3 element{};
+	DirectX::XMFLOAT3 element{};
 	if (accessor && index < accessor->count)
 	{
-		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(XMFLOAT3) / sizeof(float));
+		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(DirectX::XMFLOAT3) / sizeof(float));
 	}
 
 	return element;
 }
 
-XMFLOAT4 GltfGeometryImporter::ReadFloat4(const cgltf_accessor* accessor, std::size_t index)
+DirectX::XMFLOAT4 GltfGeometryImporter::ReadFloat4(const cgltf_accessor* accessor, std::size_t index)
 {
-	XMFLOAT4 element{};
+	DirectX::XMFLOAT4 element{};
 	if (accessor && index < accessor->count)
 	{
-		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(XMFLOAT4) / sizeof(float));
+		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), sizeof(DirectX::XMFLOAT4) / sizeof(float));
 	}
 
 	return element;
 }
 
-XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_node* node)
+DirectX::XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_node* node)
 {
-	XMMATRIX worldTransform = XMMatrixIdentity();
+	DirectX::XMMATRIX worldTransform = DirectX::XMMatrixIdentity();
 
 	const cgltf_node* nodeChain[64];
 	int depth = 0;
@@ -168,8 +166,8 @@ XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_node* node)
 	{
 		float localMatrix[16];
 		cgltf_node_transform_local(nodeChain[chainIndex], localMatrix);
-		const XMMATRIX localTransform = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(localMatrix));
-		worldTransform = XMMatrixMultiply(worldTransform, localTransform);
+		const DirectX::XMMATRIX localTransform = DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(localMatrix));
+		worldTransform = DirectX::XMMatrixMultiply(worldTransform, localTransform);
 	}
 
 	return worldTransform;

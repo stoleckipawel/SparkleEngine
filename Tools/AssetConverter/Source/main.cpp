@@ -1,4 +1,4 @@
-﻿#include "Assets/Import/SceneImporter.h"
+#include "Assets/Import/SceneImporter.h"
 #include "Cooking/CookedSceneCooker.h"
 #include "TextureCookRequestList.h"
 
@@ -6,13 +6,14 @@
 #include <functional>
 #include <iostream>
 #include <string_view>
+#include <vector>
 
 #include <objbase.h>
 
 static void PrintCookSceneSummary(
-	const std::filesystem::path& sourceScenePath,
-	const SceneImportResult& importResult,
-	const AssetAuthoring::CookedSceneBuild& cookedSceneBuild)
+    const std::filesystem::path& sourceScenePath,
+    const SceneImportResult& importResult,
+    const CookedSceneBuild& cookedSceneBuild)
 {
 	std::cout << "AssetConverter Summary:\n"
 	          << "  mode=cook-scene\n"
@@ -20,14 +21,13 @@ static void PrintCookSceneSummary(
 	          << "  importer='" << GetSceneImporterTypeName(importResult.importerType) << "'\n"
 	          << "  meshes=" << importResult.GetMeshCount() << "\n"
 	          << "  materials=" << importResult.GetMaterialCount() << "\n"
-	          << "  sceneAsset='" << cookedSceneBuild.sceneAssetId << "'\n"
 	          << "  sceneManifest='" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
 }
 
 static void PrintCollectTextureSummary(
-	const std::filesystem::path& sourceScenePath,
-	std::size_t requestCount,
-	const std::filesystem::path& outputRequestPath)
+    const std::filesystem::path& sourceScenePath,
+    std::size_t requestCount,
+    const std::filesystem::path& outputRequestPath)
 {
 	std::cout << "AssetConverter Summary:\n"
 	          << "  mode=collect-texture-requests\n"
@@ -75,8 +75,8 @@ static int RunCookScene(const std::filesystem::path& sourceScenePath)
 	    sourceScenePath,
 	    [&](const SceneImportResult& importResult) -> int
 	    {
-			AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-			const AssetAuthoring::CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
+			CookedSceneCooker cookedSceneCooker;
+			const CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
 			if (!cookedSceneBuild.Succeeded())
 			{
 				std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
@@ -102,8 +102,8 @@ static int RunCollectTextureRequests(
 	    sourceScenePath,
 	    [&](const SceneImportResult& importResult) -> int
 	    {
-			AssetAuthoring::CookedSceneCooker cookedSceneCooker;
-			std::vector<AssetAuthoring::TextureCookRequest> requests;
+			CookedSceneCooker cookedSceneCooker;
+			std::vector<TextureCookRequest> requests;
 			std::string errorMessage;
 			if (!cookedSceneCooker.CollectTextureCookRequests(importResult, requests, errorMessage))
 			{
@@ -112,7 +112,7 @@ static int RunCollectTextureRequests(
 				return 5;
 			}
 
-			if (!AssetAuthoring::WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
+			if (!WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
 			{
 				std::cerr << "AssetConverter: failed to write texture request file '" << outputRequestPath.string() << "' - "
 				          << errorMessage << "\n";

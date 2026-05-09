@@ -5,8 +5,6 @@
 #include <filesystem>
 #include <string_view>
 
-namespace AssetAuthoring
-{
 	class CookTextureCookRequestFileCommand final : public TextureCookerCommand
 	{
 	  public:
@@ -14,4 +12,3 @@ namespace AssetAuthoring
 
 		int Execute(const std::filesystem::path& requestFilePath) const override;
 	};
-}

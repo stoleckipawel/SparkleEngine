@@ -218,12 +218,6 @@ bool CookedPackageWriter::Write(
 	CookedShaderPackageOutput& outPackageOutput,
 	std::string& outErrorMessage)
 {
-	using Files::BinaryStreamWriter;
-	using Files::BuildTemporaryPath;
-	using Files::TryCloseOutput;
-	using Files::TryFinalizeTemporaryFile;
-	using Files::TryOpenBinaryOutput;
-
 	Strings::StringTableBuilder stringTable;
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
 	std::vector<CookedShaderBindingRecord> bindingRecords;
@@ -303,39 +297,39 @@ bool CookedPackageWriter::Write(
 	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
 
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
-	const std::filesystem::path tempPackagePath = BuildTemporaryPath(packagePath);
+	const std::filesystem::path tempPackagePath = Files::BuildTemporaryPath(packagePath);
 	std::ofstream output;
-	if (!TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(tempPackagePath, output, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, binaryRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, bindingRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, specializationInputs, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBuffers, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBufferMembers, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, rayTracingExportRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, rayTracingHitGroupRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, rayTracingLocalParameterRecords, outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
-	    !BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
+	if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, binaryRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, bindingRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, specializationInputs, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBuffers, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.constantBufferMembers, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.inputElements, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.pushConstantRanges, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.specializationConstants, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingExportRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingHitGroupRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, rayTracingLocalParameterRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, stringTable.GetBytes(), outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, binaryBlob, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!TryCloseOutput(output, tempPackagePath, outErrorMessage))
+	if (!Files::TryCloseOutput(output, tempPackagePath, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!TryFinalizeTemporaryFile(tempPackagePath, packagePath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempPackagePath, packagePath, outErrorMessage))
 	{
 		return false;
 	}

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/Public/Assets/TextureGroup.h"
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 
 #include <cstdint>
@@ -7,21 +8,12 @@
 
 namespace Assets
 {
-	enum class CookedTextureSemantic : std::uint8_t
-	{
-		Albedo = 0,
-		Normal = 1,
-		MetallicRoughness = 2,
-		Occlusion = 3,
-		Emissive = 4,
-	};
-
-	inline constexpr std::uint32_t kCookedTextureReferenceVersion = 1;
+	inline constexpr std::uint32_t kCookedTextureReferenceVersion = 2;
 
 	struct SPARKLE_ENGINE_API CookedTextureReference
 	{
 		CookedAssetId textureAssetId = InvalidCookedAssetId;
-		CookedTextureSemantic semantic = CookedTextureSemantic::Albedo;
+		TextureGroup textureGroup = TextureGroup::Diffuse;
 		std::uint8_t reserved[7] = {};
 	};
 }

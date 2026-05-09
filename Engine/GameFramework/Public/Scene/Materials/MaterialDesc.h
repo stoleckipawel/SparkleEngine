@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Core/Public/Assets/TextureGroup.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <DirectXMath.h>
-#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -14,16 +14,6 @@ enum class AlphaMode : std::uint32_t
 	Mask = 1,
 	Blend = 2,
 };
-
-enum class MaterialTextureType : std::uint8_t
-{
-	Albedo,
-	Normal,
-	MetallicRoughness,
-	Occlusion,
-	Emissive
-};
-
 struct SPARKLE_ENGINE_API MaterialDesc
 {
 	std::string name;
@@ -32,15 +22,20 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	float metallic = 0.0f;
 	float roughness = 0.5f;
 	float f0 = 0.04f;
+	DirectX::XMFLOAT3 subsurfaceColor = {0.0f, 0.0f, 0.0f};
+	float subsurfaceStrength = 0.0f;
 	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
 	AlphaMode alphaMode = AlphaMode::Opaque;
 	float alphaCutoff = 0.5f;
 
 	std::optional<std::filesystem::path> albedoTexture;
 	std::optional<std::filesystem::path> normalTexture;
-	std::optional<std::filesystem::path> metallicRoughnessTexture;
+	std::optional<std::filesystem::path> roughnessTexture;
+	std::optional<std::filesystem::path> metallicTexture;
 	std::optional<std::filesystem::path> occlusionTexture;
 	std::optional<std::filesystem::path> emissiveTexture;
+	std::optional<std::filesystem::path> subsurfaceColorTexture;
+	std::optional<std::filesystem::path> subsurfaceStrengthTexture;
 
-	void SetTexturePath(MaterialTextureType textureType, const std::optional<std::filesystem::path>& texturePath);
+	void SetTexturePath(TextureGroup textureGroup, const std::optional<std::filesystem::path>& texturePath);
 };

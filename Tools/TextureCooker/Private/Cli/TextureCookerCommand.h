@@ -2,8 +2,6 @@
 
 #include <filesystem>
 
-namespace AssetAuthoring
-{
 	class TextureCookerCommand
 	{
 	  public:
@@ -11,4 +9,3 @@ namespace AssetAuthoring
 
 		virtual int Execute(const std::filesystem::path& requestFilePath) const = 0;
 	};
-}

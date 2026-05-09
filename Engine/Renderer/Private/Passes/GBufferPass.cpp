@@ -94,7 +94,7 @@ void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferP
 	    parameters.Normal[0],
 	    parameters.Material[0],
 	    parameters.Emissive[0],
-		    parameters.Subsurface[0],
+	    parameters.Subsurface[0],
 	    parameters.DeviceZ[0]};
 	context.Graph.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
 	for (TextureHandle renderTarget : renderTargets)
@@ -115,7 +115,7 @@ void GBufferPass::BindPassResources(
     const FrameGraph& frameGraph,
     CommandContext& cmd,
     const ParameterInstance& parameters,
-	const RasterPassRuntime& runtime,
+    const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
@@ -134,7 +134,7 @@ void GBufferPass::DrawOpaqueMeshes(
     const FrameGraph& frameGraph,
     CommandContext& cmd,
     const RenderSceneData& sceneData,
-	const RasterPassRuntime& runtime,
+    const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)
 {
 	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
@@ -170,9 +170,13 @@ void GBufferPass::DrawOpaqueMeshes(
 		drawParameters->PerObjectPS = perObjectPS;
 		drawParameters->TextureBaseColor = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::BaseColor};
 		drawParameters->TextureNormal = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Normal};
-		drawParameters->TextureMetallicRoughness = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::MetallicRoughness};
+		drawParameters->TextureRoughness = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Roughness};
+		drawParameters->TextureMetallic = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Metallic};
 		drawParameters->TextureOcclusion = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Occlusion};
 		drawParameters->TextureEmissive = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Emissive};
+		drawParameters->TextureSubsurfaceColor = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::SubsurfaceColor};
+		drawParameters->TextureSubsurfaceStrength =
+		    RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::SubsurfaceStrength};
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    frameGraph,
 		    cmd,

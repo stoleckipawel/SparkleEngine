@@ -41,5 +41,8 @@ cbuffer PerObjectPSConstantBufferData
 	uint AlphaMode;
 
 	uint TextureFlags;
+	float3 SubsurfaceColor;
+
+	float SubsurfaceStrength;
 	float3 _padPerObjectPS0;
 };

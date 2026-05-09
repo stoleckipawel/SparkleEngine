@@ -19,13 +19,18 @@ namespace MaterialCacheUtils
 	{
 		return left.name == right.name && left.baseColor.x == right.baseColor.x && left.baseColor.y == right.baseColor.y &&
 		       left.baseColor.z == right.baseColor.z && left.baseColor.w == right.baseColor.w && left.metallic == right.metallic &&
-		       left.roughness == right.roughness && left.f0 == right.f0 && left.emissiveColor.x == right.emissiveColor.x &&
+		       left.roughness == right.roughness && left.f0 == right.f0 && left.subsurfaceColor.x == right.subsurfaceColor.x &&
+		       left.subsurfaceColor.y == right.subsurfaceColor.y && left.subsurfaceColor.z == right.subsurfaceColor.z &&
+		       left.subsurfaceStrength == right.subsurfaceStrength && left.emissiveColor.x == right.emissiveColor.x &&
 		       left.emissiveColor.y == right.emissiveColor.y && left.emissiveColor.z == right.emissiveColor.z &&
 		       left.alphaMode == right.alphaMode && left.alphaCutoff == right.alphaCutoff &&
 		       OptionalPathEquals(left.albedoTexture, right.albedoTexture) && OptionalPathEquals(left.normalTexture, right.normalTexture) &&
-		       OptionalPathEquals(left.metallicRoughnessTexture, right.metallicRoughnessTexture) &&
+		       OptionalPathEquals(left.roughnessTexture, right.roughnessTexture) &&
+		       OptionalPathEquals(left.metallicTexture, right.metallicTexture) &&
 		       OptionalPathEquals(left.occlusionTexture, right.occlusionTexture) &&
-		       OptionalPathEquals(left.emissiveTexture, right.emissiveTexture);
+		       OptionalPathEquals(left.emissiveTexture, right.emissiveTexture) &&
+		       OptionalPathEquals(left.subsurfaceColorTexture, right.subsurfaceColorTexture) &&
+		       OptionalPathEquals(left.subsurfaceStrengthTexture, right.subsurfaceStrengthTexture);
 	}
 
 	std::uint32_t ResolveMaterialSlot(MaterialHandle materialHandle, std::size_t materialCount)

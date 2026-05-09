@@ -1,7 +1,7 @@
 #include "PCH.h"
 
 #include "Cooking/TextureAssetCooker.h"
-#include "Cooking/TextureCookPipelineCoordinator.h"
+#include "Pipeline/TexturePipeline.h"
 #include "SourceLoading/TextureSourceLoader.h"
 
 #include "D3D12/Textures/CookedTextureAsset.h"
@@ -14,8 +14,6 @@
 #include <fstream>
 #include <limits>
 
-namespace AssetAuthoring
-{
 	bool TextureAssetCooker::Cook(const TextureCookRequest& request, std::string& outErrorMessage) const
 	{
 		SPARKLE_CPU_SCOPE("Tools.TextureCook.Cook");
@@ -33,7 +31,7 @@ namespace AssetAuthoring
 		}
 
 		TextureLoadResult cookedTexture;
-		if (!TextureCookPipelineCoordinator::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
+		if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
 		{
 			return false;
 		}
@@ -125,4 +123,3 @@ namespace AssetAuthoring
 		outErrorMessage.clear();
 		return true;
 	}
-}

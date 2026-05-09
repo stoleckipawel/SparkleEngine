@@ -7,8 +7,6 @@
 #include <string>
 #include <vector>
 
-namespace AssetAuthoring
-{
 	class TextureAssetCooker;
 
 	class TextureCookRequestBatchProcessor final
@@ -49,4 +47,3 @@ namespace AssetAuthoring
 
 		static void PrintProcessedRequest(const TextureCookRequest& request);
 	};
-}

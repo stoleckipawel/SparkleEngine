@@ -7,11 +7,8 @@
 
 #include <string>
 
-namespace AssetAuthoring
-{
 	class TextureAssetCooker final
 	{
 	  public:
 		bool Cook(const TextureCookRequest& request, std::string& outErrorMessage) const;
 	};
-}

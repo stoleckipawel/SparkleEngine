@@ -15,8 +15,6 @@ bool StageCompiler::Compile(
 	ShaderDebugArtifactSet* outDebugArtifacts,
 	std::string& outErrorMessage)
 {
-	using Paths::MakeProjectRelativeString;
-
 	const ShaderBackendCapabilities capabilities = backend.GetCapabilities();
 	if (!capabilities.SupportsTarget(options.Target))
 	{
@@ -60,7 +58,7 @@ bool StageCompiler::Compile(
 		: CookedShaderBinaryFormat::Dxil;
 	outCompiledStage.sourcePath = stage.sourcePath.generic_string();
 	outCompiledStage.entryPoint = stage.entryPoint;
-	outCompiledStage.debugArtifact = MakeProjectRelativeString(compileResult.GetDebugArtifactPath());
+	outCompiledStage.debugArtifact = Paths::MakeProjectRelativeString(compileResult.GetDebugArtifactPath());
 	outCompiledStage.backendName.assign(backend.GetBackendName());
 	outCompiledStage.backendVersion = backend.GetBackendVersion();
 	outCompiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);

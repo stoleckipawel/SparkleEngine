@@ -6,8 +6,6 @@
 
 #include <format>
 
-using namespace DirectX;
-
 static const auto g_fbxGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.AssetConverter.Fbx");
 
 std::size_t FbxGeometryImporter::CountImportedMeshInstances(const aiNode& node) noexcept
@@ -124,26 +122,26 @@ void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, MeshData& meshDat
 	for (unsigned int vertexIndex = 0; vertexIndex < mesh.mNumVertices; ++vertexIndex)
 	{
 		VertexData& vertex = meshData.vertices[vertexIndex];
-		vertex.position = XMFLOAT3(mesh.mVertices[vertexIndex].x, mesh.mVertices[vertexIndex].y, mesh.mVertices[vertexIndex].z);
+		vertex.position = DirectX::XMFLOAT3(mesh.mVertices[vertexIndex].x, mesh.mVertices[vertexIndex].y, mesh.mVertices[vertexIndex].z);
 
 		if (mesh.HasNormals())
 		{
-			vertex.normal = XMFLOAT3(mesh.mNormals[vertexIndex].x, mesh.mNormals[vertexIndex].y, mesh.mNormals[vertexIndex].z);
+			vertex.normal = DirectX::XMFLOAT3(mesh.mNormals[vertexIndex].x, mesh.mNormals[vertexIndex].y, mesh.mNormals[vertexIndex].z);
 		}
 
 		if (mesh.HasTextureCoords(0))
 		{
-			vertex.uv = XMFLOAT2(mesh.mTextureCoords[0][vertexIndex].x, mesh.mTextureCoords[0][vertexIndex].y);
+			vertex.uv = DirectX::XMFLOAT2(mesh.mTextureCoords[0][vertexIndex].x, mesh.mTextureCoords[0][vertexIndex].y);
 		}
 
 		if (mesh.HasTangentsAndBitangents())
 		{
-			vertex.tangent = XMFLOAT4(mesh.mTangents[vertexIndex].x, mesh.mTangents[vertexIndex].y, mesh.mTangents[vertexIndex].z, 1.0f);
+			vertex.tangent = DirectX::XMFLOAT4(mesh.mTangents[vertexIndex].x, mesh.mTangents[vertexIndex].y, mesh.mTangents[vertexIndex].z, 1.0f);
 		}
 
 		if (mesh.HasVertexColors(0))
 		{
-			vertex.color = XMFLOAT4(
+			vertex.color = DirectX::XMFLOAT4(
 			    mesh.mColors[0][vertexIndex].r,
 			    mesh.mColors[0][vertexIndex].g,
 			    mesh.mColors[0][vertexIndex].b,
@@ -216,7 +214,7 @@ std::string FbxGeometryImporter::GetMeshName(const aiMesh& mesh)
 
 Transform FbxGeometryImporter::ConvertTransform(const aiMatrix4x4& matrix) noexcept
 {
-	return Transform(XMMATRIX(
+	return Transform(DirectX::XMMATRIX(
 	    matrix.a1,
 	    matrix.a2,
 	    matrix.a3,

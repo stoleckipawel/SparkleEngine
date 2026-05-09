@@ -38,7 +38,7 @@ struct alignas(256) PerViewConstantBufferData
 CBV_CHECK(PerViewConstantBufferData);
 static_assert(offsetof(PerViewConstantBufferData, Camera) == 0, "PerViewConstantBufferData::Camera must start at c0");
 static_assert(
-	offsetof(PerViewConstantBufferData, ViewLighting) == 352,
+    offsetof(PerViewConstantBufferData, ViewLighting) == 352,
     "PerViewConstantBufferData::ViewLighting must start after camera data");
 static_assert(sizeof(PerViewConstantBufferData) == 512, "PerViewConstantBufferData must fit in aligned CBV slots");
 
@@ -62,6 +62,9 @@ struct alignas(256) PerObjectPSConstantBufferData
 	uint32_t AlphaMode;
 
 	uint32_t TextureFlags;
+	DirectX::XMFLOAT3 SubsurfaceColor = {0.0f, 0.0f, 0.0f};
+
+	float SubsurfaceStrength = 0.0f;
 	DirectX::XMFLOAT3 _padPerObjectPS0 = {0.0f, 0.0f, 0.0f};
 };
 CBV_CHECK(PerObjectPSConstantBufferData);
@@ -77,3 +80,9 @@ static_assert(offsetof(PerObjectPSConstantBufferData, AlphaMode) == 44, "PerObje
 static_assert(
     offsetof(PerObjectPSConstantBufferData, TextureFlags) == 48,
     "PerObjectPSConstantBufferData::TextureFlags must start at c3.x");
+static_assert(
+    offsetof(PerObjectPSConstantBufferData, SubsurfaceColor) == 52,
+    "PerObjectPSConstantBufferData::SubsurfaceColor must start at c3.y");
+static_assert(
+    offsetof(PerObjectPSConstantBufferData, SubsurfaceStrength) == 64,
+    "PerObjectPSConstantBufferData::SubsurfaceStrength must start at c4.x");

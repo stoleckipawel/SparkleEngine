@@ -16,16 +16,10 @@ bool CookedRegistryWriter::Write(
 	std::filesystem::path& outRegistryPath,
 	std::string& outErrorMessage)
 {
-	using Files::TryOpenTextOutput;
-	using Files::BuildTemporaryPath;
-	using Files::TryCloseOutput;
-	using Files::TryFinalizeTemporaryFile;
-	using Paths::MakeProjectRelativeString;
-
 	outRegistryPath = Paths::CookedShaderRegistry();
-	const std::filesystem::path tempRegistryPath = BuildTemporaryPath(outRegistryPath);
+	const std::filesystem::path tempRegistryPath = Files::BuildTemporaryPath(outRegistryPath);
 	std::ofstream output;
-	if (!TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
+	if (!Files::TryOpenTextOutput(tempRegistryPath, output, outErrorMessage))
 	{
 		return false;
 	}
@@ -42,7 +36,7 @@ bool CookedRegistryWriter::Write(
 		output << kRegistryKeySourceIdentityHash << " = " << Formatting::FormatHexUInt64(package.sourceIdentityHash) << '\n';
 		output << kRegistryKeyBindingLayoutHash << " = " << Formatting::FormatHexUInt64(package.bindingLayoutHash) << '\n';
 		output << kRegistryKeyDeclaredStages << " = " << FormatShaderStageMask(package.declaredStages) << '\n';
-		output << kRegistryKeyOutput << " = " << MakeProjectRelativeString(package.outputPath) << "\n\n";
+		output << kRegistryKeyOutput << " = " << Paths::MakeProjectRelativeString(package.outputPath) << "\n\n";
 	}
 
 	if (!output.good())
@@ -51,12 +45,12 @@ bool CookedRegistryWriter::Write(
 		return false;
 	}
 
-	if (!TryCloseOutput(output, tempRegistryPath, outErrorMessage))
+	if (!Files::TryCloseOutput(output, tempRegistryPath, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!TryFinalizeTemporaryFile(tempRegistryPath, outRegistryPath, outErrorMessage))
+	if (!Files::TryFinalizeTemporaryFile(tempRegistryPath, outRegistryPath, outErrorMessage))
 	{
 		return false;
 	}

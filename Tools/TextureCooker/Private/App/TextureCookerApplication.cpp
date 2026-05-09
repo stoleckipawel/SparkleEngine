@@ -9,8 +9,6 @@
 #include <memory>
 #include <string_view>
 
-namespace AssetAuthoring
-{
 	int TextureCookerApplication::Run(int argc, char** argv) const
 	{
 		if (argc != 3)
@@ -34,4 +32,3 @@ namespace AssetAuthoring
 
 		return commandHandler->Execute(requestFilePath);
 	}
-}

@@ -15,6 +15,5 @@ namespace Assets
 
 	  private:
 		static AlphaMode TranslateAlphaMode(CookedAlphaMode alphaMode) noexcept;
-		static MaterialTextureType TranslateTextureType(CookedTextureSemantic semantic) noexcept;
 	};
 }

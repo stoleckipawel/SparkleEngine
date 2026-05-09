@@ -7,8 +7,6 @@
 
 #include <memory>
 
-namespace AssetAuthoring
-{
 	std::unique_ptr<TextureCookerCommand> TextureCookerCommandRegistry::Create(std::string_view commandName)
 	{
 		if (InspectTextureCookRequestFileCommand::MatchesName(commandName))
@@ -34,4 +32,3 @@ namespace AssetAuthoring
 		       << "  TextureCooker inspect <request-file-path>\n"
 		       << "  TextureCooker cook <request-file-path>\n";
 	}
-}

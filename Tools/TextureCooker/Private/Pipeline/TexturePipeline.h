@@ -5,9 +5,7 @@
 
 #include <string>
 
-namespace AssetAuthoring
-{
-	class TextureCookPipelineCoordinator final
+	class TexturePipeline final
 	{
 	  public:
 		static bool Process(
@@ -16,4 +14,3 @@ namespace AssetAuthoring
 		    TextureLoadResult& outProcessedTexture,
 		    std::string& outErrorMessage);
 	};
-}

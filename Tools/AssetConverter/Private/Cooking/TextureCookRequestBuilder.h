@@ -1,29 +1,26 @@
 ﻿#pragma once
 
-#include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
 #include "TextureCookRequestList.h"
 
 #include <filesystem>
 #include <string>
 
-namespace AssetAuthoring
-{
 	class TextureCookRequestBuilder final
 	{
 	  public:
 		static bool Build(
 		    const std::filesystem::path& sourceTexturePath,
-		    Assets::CookedTextureSemantic semantic,
+		    TextureGroup textureGroup,
 		    TextureCookRequest& outRequest,
-		    std::string& outErrorMessage);
+		    std::string& outErrorMessage,
+		    TextureChannelMask channelMask = TextureChannelMask::Rgba);
 
 	  private:
-		static TextureColorSpace ResolveColorSpace(Assets::CookedTextureSemantic semantic) noexcept;
-		static TextureMipPolicy ResolveMipPolicy(Assets::CookedTextureSemantic semantic) noexcept;
-		static TextureMipFilter ResolveMipFilter(Assets::CookedTextureSemantic semantic) noexcept;
-		static TextureColorProcessingPolicy ResolveColorProcessingPolicy(Assets::CookedTextureSemantic semantic) noexcept;
-		static TextureCompressionFamilyPreference ResolveCompressionFamilyPreference(Assets::CookedTextureSemantic semantic) noexcept;
-		static TextureDimension ResolveTextureDimension(Assets::CookedTextureSemantic semantic) noexcept;
+		static TextureColorSpace ResolveColorSpace(TextureGroup textureGroup) noexcept;
+		static TextureMipPolicy ResolveMipPolicy(TextureGroup textureGroup) noexcept;
+		static TextureMipFilter ResolveMipFilter(TextureGroup textureGroup) noexcept;
+		static TextureColorProcessingPolicy ResolveColorProcessingPolicy(TextureGroup textureGroup) noexcept;
+		static TextureDimension ResolveTextureDimension(TextureGroup textureGroup) noexcept;
 		static bool NormalizeSourceTexturePath(
 		    const std::filesystem::path& sourceTexturePath,
 		    std::filesystem::path& outNormalizedSourceTexturePath,
@@ -33,4 +30,3 @@ namespace AssetAuthoring
 		    std::string& outTextureSourceKey,
 		    std::string& outErrorMessage);
 	};
-}

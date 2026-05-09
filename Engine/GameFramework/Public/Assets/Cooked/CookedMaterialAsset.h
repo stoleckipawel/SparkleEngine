@@ -18,7 +18,7 @@ namespace Assets
 	};
 
 	inline constexpr std::uint32_t kCookedMaterialAssetMagic = MakeCookedAssetMagic('S', 'M', 'A', 'T');
-	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 1;
+	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 2;
 
 	struct SPARKLE_ENGINE_API CookedMaterialAssetHeader
 	{
@@ -31,12 +31,11 @@ namespace Assets
 		float metallic = 0.0f;
 		float roughness = 0.5f;
 		float f0 = 0.04f;
+		DirectX::XMFLOAT3 subsurfaceColor = {0.0f, 0.0f, 0.0f};
+		float subsurfaceStrength = 0.0f;
 		float alphaCutoff = 0.5f;
 		DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
-		float reserved = 0.0f;
 	};
 }
 
-static_assert(
-    std::is_trivially_copyable_v<Assets::CookedMaterialAssetHeader>,
-    "CookedMaterialAssetHeader must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedMaterialAssetHeader>, "CookedMaterialAssetHeader must stay trivially copyable.");

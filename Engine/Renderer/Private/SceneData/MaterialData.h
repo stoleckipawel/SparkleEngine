@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Assets/TextureGroup.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
@@ -9,23 +10,17 @@
 
 struct MaterialDesc;
 
-namespace MaterialTextureFlags
-{
-	constexpr std::uint32_t Albedo = 0x01;
-	constexpr std::uint32_t Normal = 0x02;
-	constexpr std::uint32_t MetallicRoughness = 0x04;
-	constexpr std::uint32_t Occlusion = 0x08;
-	constexpr std::uint32_t Emissive = 0x10;
-}  // namespace MaterialTextureFlags
-
 namespace MaterialTextureSlots
 {
 	constexpr std::uint32_t BaseColor = 0;
 	constexpr std::uint32_t Normal = 1;
-	constexpr std::uint32_t MetallicRoughness = 2;
-	constexpr std::uint32_t Occlusion = 3;
-	constexpr std::uint32_t Emissive = 4;
-	constexpr std::uint32_t Count = 5;
+	constexpr std::uint32_t Roughness = 2;
+	constexpr std::uint32_t Metallic = 3;
+	constexpr std::uint32_t Occlusion = 4;
+	constexpr std::uint32_t Emissive = 5;
+	constexpr std::uint32_t SubsurfaceColor = 6;
+	constexpr std::uint32_t SubsurfaceStrength = 7;
+	constexpr std::uint32_t Count = 8;
 }
 
 struct SPARKLE_RENDERER_API MaterialData
@@ -34,6 +29,8 @@ struct SPARKLE_RENDERER_API MaterialData
 	float metallic = 0.0f;
 	float roughness = 0.5f;
 	float f0 = 0.04f;
+	DirectX::XMFLOAT3 subsurfaceColor = {0.0f, 0.0f, 0.0f};
+	float subsurfaceStrength = 0.0f;
 	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
 	std::uint32_t alphaMode = 0;
 	float alphaCutoff = 0.5f;
@@ -54,6 +51,8 @@ struct SPARKLE_RENDERER_API MaterialData
 		data.AlphaCutoff = alphaCutoff;
 		data.AlphaMode = alphaMode;
 		data.TextureFlags = textureFlags;
+		data.SubsurfaceColor = subsurfaceColor;
+		data.SubsurfaceStrength = subsurfaceStrength;
 		return data;
 	}
 };

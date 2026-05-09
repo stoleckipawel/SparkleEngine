@@ -3,13 +3,11 @@
 #include <cstdint>
 #include <string_view>
 
-namespace AssetAuthoring
-{
 	class TextureCookerConstants final
 	{
 	  public:
 		static constexpr std::string_view ToolName = "TextureCooker";
-		static constexpr std::uint32_t CookerVersion = 1;
+		static constexpr std::uint32_t CookerVersion = 2;
 
 		static constexpr int ExitSuccess = 0;
 		static constexpr int ExitUsageError = 1;
@@ -23,4 +21,3 @@ namespace AssetAuthoring
 		static constexpr std::string_view CookRequestFileCommand = "cook-request-file";
 		static constexpr std::string_view CookRequestFileAlias = "cook";
 	};
-}

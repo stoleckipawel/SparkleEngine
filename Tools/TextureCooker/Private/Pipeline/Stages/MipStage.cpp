@@ -1,18 +1,14 @@
 #include "PCH.h"
 
-#include "Cooking/Pipeline/TextureCookMipGenerationStage.h"
+#include "Pipeline/Stages/MipStage.h"
 
-#include "Cooking/Pipeline/TextureCookPipelineUtils.h"
+#include "Pipeline/ImageOps.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include <stb_image_resize2.h>
 
 #include <algorithm>
 #include <cmath>
-
-using AssetAuthoring::TextureCookRequest;
-using AssetAuthoring::TextureMipPolicy;
-using AssetAuthoring::TextureMipFilter;
 
 namespace TextureCookPipeline
 {
@@ -101,7 +97,11 @@ namespace TextureCookPipeline
 			return true;
 		}
 
-		bool GenerateNextMip(TextureMipFilter mipFilter, const WorkingMipLevel& sourceMip, WorkingMipLevel& outMip, std::string& outErrorMessage)
+		bool GenerateNextMip(
+		    TextureMipFilter mipFilter,
+		    const WorkingMipLevel& sourceMip,
+		    WorkingMipLevel& outMip,
+		    std::string& outErrorMessage)
 		{
 			outMip.width = (std::max)(1u, sourceMip.width >> 1u);
 			outMip.height = (std::max)(1u, sourceMip.height >> 1u);
@@ -116,9 +116,9 @@ namespace TextureCookPipeline
 			return ResizeFloatMipLevel(mipFilter, sourceMip, outMip, outErrorMessage);
 		}
 
-		bool GenerateMipChain(const TextureCookRequest& request, WorkingImage& workingImage, std::string& outErrorMessage)
+		bool GenerateMipChain(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
 		{
-			for (auto& arraySlice : workingImage.arraySlices)
+			for (auto& arraySlice : workingTexture.arraySlices)
 			{
 				if (arraySlice.empty())
 				{
@@ -148,12 +148,12 @@ namespace TextureCookPipeline
 		}
 	}
 
-	bool ApplyMipPolicy(const TextureCookRequest& request, WorkingImage& workingImage, std::string& outErrorMessage)
+	bool ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
 	{
 		switch (request.mipPolicy)
 		{
 			case TextureMipPolicy::NoMips:
-				for (auto& arraySlice : workingImage.arraySlices)
+				for (auto& arraySlice : workingTexture.arraySlices)
 				{
 					if (arraySlice.size() > 1)
 					{
@@ -166,7 +166,7 @@ namespace TextureCookPipeline
 				outErrorMessage.clear();
 				return true;
 			case TextureMipPolicy::Generate:
-				return GenerateMipChain(request, workingImage, outErrorMessage);
+				return GenerateMipChain(request, workingTexture, outErrorMessage);
 		}
 
 		outErrorMessage = "Unknown texture mip policy.";

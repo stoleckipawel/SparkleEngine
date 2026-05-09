@@ -9,12 +9,10 @@
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 
-namespace AssetAuthoring
-{
 	bool TextureCookArtifactKeyBuilder::TryBuild(
-		const TextureCookRequest& request,
-		Cook::CookArtifactKey& outKey,
-		std::string& outErrorMessage)
+	    const TextureCookRequest& request,
+	    Cook::CookArtifactKey& outKey,
+	    std::string& outErrorMessage)
 	{
 		std::uint64_t sourceHash = 0;
 		if (!Hash::TryFnv1a64File(request.sourcePath, sourceHash, outErrorMessage))
@@ -33,12 +31,10 @@ namespace AssetAuthoring
 		    .dependencyHash = 0,
 		    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash(
 		        std::string("ColorSpace=") + GetTextureColorSpaceName(request.colorSpace) +
-		        ";MipPolicy=" + GetTextureMipPolicyName(request.mipPolicy) +
-		        ";MipFilter=" + GetTextureMipFilterName(request.mipFilter) +
+		        ";MipPolicy=" + GetTextureMipPolicyName(request.mipPolicy) + ";MipFilter=" + GetTextureMipFilterName(request.mipFilter) +
 		        ";ColorProcessing=" + GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) +
-		        ";CompressionFamily=" + GetTextureCompressionFamilyPreferenceName(request.compressionFamilyPreference) +
-		        ";Dimension=" + GetTextureDimensionName(request.dimension))};
+		        ";TextureGroup=" + GetTextureGroupName(request.textureGroup) + ";Dimension=" + GetTextureDimensionName(request.dimension) +
+		        ";ChannelMask=" + GetTextureChannelMaskName(request.channelMask))};
 		outErrorMessage.clear();
 		return true;
 	}
-}
