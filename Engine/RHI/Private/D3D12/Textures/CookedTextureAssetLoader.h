@@ -1,19 +1,21 @@
 #pragma once
 
 #include "D3D12/Textures/CookedTextureAsset.h"
-#include "D3D12/Textures/TextureLoaderBackend.h"
+#include "D3D12/Textures/TextureLoadResult.h"
 
 #include "Core/Public/Files/BinarySpanReader.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
-class CookedTextureAssetLoader final : public TextureLoaderBackend
+class CookedTextureAssetLoader final
 {
   public:
-	bool SupportsExtension(std::wstring_view extension) const noexcept override;
-	TextureLoadResult Load(const std::filesystem::path& fileName) const override;
+	bool SupportsExtension(std::wstring_view extension) const noexcept;
+	TextureLoadResult Load(const std::filesystem::path& fileName) const;
 
   private:
 	static bool ValidateHeader(

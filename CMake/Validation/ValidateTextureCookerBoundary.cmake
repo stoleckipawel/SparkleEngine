@@ -48,6 +48,8 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "TEXTURE_COOKER_EXE"
     "TextureCookRequestList.h"
     "KtxTextureLoader"
+    "DdsTextureLoader"
+    "WicTextureLoader"
 )
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS

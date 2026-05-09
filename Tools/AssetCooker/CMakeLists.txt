@@ -53,17 +53,21 @@ target_include_directories(AssetCookerCore
 
 target_compile_features(AssetCookerCore PUBLIC cxx_std_20)
 target_compile_definitions(AssetCookerCore PUBLIC ASSET_COOKER_BUILDING_STATIC)
+set(ASSET_COOKER_COOKING_LINK_LIBRARIES
+    ole32
+    CookCommon
+    SourceImportAdapters
+    MeshCooker
+    MaterialCooker
+    SceneCooker
+    TextureCookShared
+    SparkleCore
+    SparkleGameFramework
+)
+
 target_link_libraries(AssetCookerCore
     PRIVATE
-        ole32
-        CookCommon
-        SourceImportAdapters
-        MeshCooker
-        MaterialCooker
-        SceneCooker
-        TextureCookShared
-        SparkleCore
-        SparkleGameFramework
+        ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
 )
 
 add_library(AssetCookerDll SHARED
@@ -80,7 +84,11 @@ target_include_directories(AssetCookerDll
 
 target_compile_features(AssetCookerDll PUBLIC cxx_std_20)
 target_compile_definitions(AssetCookerDll PRIVATE ASSET_COOKER_BUILDING_DLL)
-target_link_libraries(AssetCookerDll PRIVATE AssetCookerCore)
+target_link_libraries(AssetCookerDll
+    PRIVATE
+        AssetCookerCore
+        ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
+)
 set_target_properties(AssetCookerDll PROPERTIES
     OUTPUT_NAME AssetCookerApi
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
@@ -101,7 +109,11 @@ target_include_directories(AssetCooker
 
 target_compile_features(AssetCooker PRIVATE cxx_std_20)
 target_compile_definitions(AssetCooker PRIVATE ASSET_COOKER_BUILDING_STATIC)
-target_link_libraries(AssetCooker PRIVATE AssetCookerCore)
+target_link_libraries(AssetCooker
+    PRIVATE
+        AssetCookerCore
+        ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
+)
 set_target_properties(AssetCooker PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

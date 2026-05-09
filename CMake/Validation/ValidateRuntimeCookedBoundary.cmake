@@ -8,12 +8,14 @@ set(RUNTIME_MODULE_SOURCE_ROOTS
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/Application"
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/GameFramework"
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/Renderer"
+    "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/RHI"
 )
 
 set(RUNTIME_MODULE_CMAKE_FILES
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/Application/CMakeLists.txt"
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/GameFramework/CMakeLists.txt"
     "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/Renderer/CMakeLists.txt"
+    "${RUNTIME_BOUNDARY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt"
 )
 
 set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
@@ -24,6 +26,8 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "cgltf"
     "assimp"
     "SparkleAssetAuthoring"
+    "DdsTextureLoader"
+    "WicTextureLoader"
 )
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS

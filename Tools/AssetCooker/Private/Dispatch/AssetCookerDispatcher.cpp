@@ -101,30 +101,36 @@ static bool AssetCookerAddUniqueTextureCookRequest(
 	return true;
 }
 
-static bool AssetCookerAppendDefaultSkyTextureRequest(
+static bool AssetCookerAppendDefaultTextureRequest(
+    std::string_view sourceRelativePath,
+    std::string_view outputRelativePath,
+    TextureColorSpace colorSpace,
+    TextureMipFilter mipFilter,
+    TextureColorProcessingPolicy colorProcessingPolicy,
+    TextureGroup textureGroup,
+    TextureDimension dimension,
     std::map<TextureAssetId, TextureCookRequest>& requestsById,
     std::vector<TextureCookRequest>& outRequests,
     std::string& outErrorMessage)
 {
-	const std::filesystem::path sourcePath =
-	    (Paths::EngineRoot() / "Assets" / "Textures" / "Sky" / "evening_road_01_puresky_4k.exr").lexically_normal();
+	const std::filesystem::path sourcePath = (Paths::EngineRoot() / std::filesystem::path(std::string(sourceRelativePath))).lexically_normal();
 	std::error_code existsError;
 	if (!std::filesystem::exists(sourcePath, existsError))
 	{
-		outErrorMessage = "Default sky source texture was not found: " + sourcePath.string();
+		outErrorMessage = "Default source texture was not found: " + sourcePath.string();
 		return false;
 	}
 
 	TextureCookRequest request;
-	request.assetId = Hash::Fnv1a64("engine:linear:Assets/Textures/Sky/evening_road_01_puresky_4k.exr");
+	request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(outputRelativePath));
 	request.sourcePath = sourcePath;
-	request.outputPath = (Paths::CookedTextureRoot() / "Defaults" / "default_cubemap.stex").lexically_normal();
-	request.colorSpace = TextureColorSpace::Linear;
+	request.outputPath = (Paths::CookedTextureRoot() / std::filesystem::path(std::string(outputRelativePath))).lexically_normal();
+	request.colorSpace = colorSpace;
 	request.mipPolicy = TextureMipPolicy::Generate;
-	request.mipFilter = TextureMipFilter::Regular;
-	request.colorProcessingPolicy = TextureColorProcessingPolicy::Linear;
-	request.textureGroup = TextureGroup::Default;
-	request.dimension = TextureDimension::Texture2D;
+	request.mipFilter = mipFilter;
+	request.colorProcessingPolicy = colorProcessingPolicy;
+	request.textureGroup = textureGroup;
+	request.dimension = dimension;
 	request.channelMask = TextureChannelMask::Rgba;
 
 	if (!AssetCookerAddUniqueTextureCookRequest(request, requestsById, outRequests, outErrorMessage))
@@ -132,8 +138,104 @@ static bool AssetCookerAppendDefaultSkyTextureRequest(
 		return false;
 	}
 
-	std::cout << "[LOG] Added default sky texture request: source='" << request.sourcePath.string() << "' output='"
+	std::cout << "[LOG] Added default texture request: source='" << request.sourcePath.string() << "' output='"
 	          << request.outputPath.string() << "'\n";
+	outErrorMessage.clear();
+	return true;
+}
+
+static bool AssetCookerAppendDefaultTextureRequests(
+    std::map<TextureAssetId, TextureCookRequest>& requestsById,
+    std::vector<TextureCookRequest>& outRequests,
+    std::string& outErrorMessage)
+{
+	struct DefaultTextureCookDesc final
+	{
+		std::string_view sourceRelativePath;
+		std::string_view outputRelativePath;
+		TextureColorSpace colorSpace;
+		TextureMipFilter mipFilter;
+		TextureColorProcessingPolicy colorProcessingPolicy;
+		TextureGroup textureGroup;
+		TextureDimension dimension;
+	};
+
+	constexpr DefaultTextureCookDesc defaultTextures[] = {
+	    {"Assets/Textures/Defaults/default_checkerboard.png",
+	     "Defaults/default_checkerboard.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Kaiser,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_white.png",
+	     "Defaults/default_white.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_black.png",
+	     "Defaults/default_black.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_red.png",
+	     "Defaults/default_red.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_green.png",
+	     "Defaults/default_green.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_blue.png",
+	     "Defaults/default_blue.stex",
+	     TextureColorSpace::Srgb,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::SrgbLinearize,
+	     TextureGroup::Diffuse,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Defaults/default_normal.png",
+	     "Defaults/default_normal.stex",
+	     TextureColorSpace::Linear,
+	     TextureMipFilter::NormalAware,
+	     TextureColorProcessingPolicy::Linear,
+	     TextureGroup::NormalMap,
+	     TextureDimension::Texture2D},
+	    {"Assets/Textures/Sky/evening_road_01_puresky_4k.exr",
+	     "Defaults/default_cubemap.stex",
+	     TextureColorSpace::Linear,
+	     TextureMipFilter::Regular,
+	     TextureColorProcessingPolicy::Linear,
+	     TextureGroup::Default,
+	     TextureDimension::Texture2D}};
+
+	for (const DefaultTextureCookDesc& defaultTexture : defaultTextures)
+	{
+		if (!AssetCookerAppendDefaultTextureRequest(
+		        defaultTexture.sourceRelativePath,
+		        defaultTexture.outputRelativePath,
+		        defaultTexture.colorSpace,
+		        defaultTexture.mipFilter,
+		        defaultTexture.colorProcessingPolicy,
+		        defaultTexture.textureGroup,
+		        defaultTexture.dimension,
+		        requestsById,
+		        outRequests,
+		        outErrorMessage))
+		{
+			return false;
+		}
+	}
+
 	outErrorMessage.clear();
 	return true;
 }
@@ -298,7 +400,7 @@ static bool AssetCookerCollectTextureRequests(
 		return false;
 	}
 
-	if (!AssetCookerAppendDefaultSkyTextureRequest(requestsById, requests, errorMessage))
+	if (!AssetCookerAppendDefaultTextureRequests(requestsById, requests, errorMessage))
 	{
 		diagnostics.AddError(AssetCookerCategory_Textures, errorMessage);
 		return false;

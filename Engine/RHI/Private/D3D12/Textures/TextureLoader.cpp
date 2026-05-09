@@ -4,10 +4,7 @@
 #include "D3D12/Textures/TextureLoader.h"
 
 #include "Core/Public/Paths/PathUtils.h"
-#include "D3D12/Textures/DdsTextureLoader.h"
-#include "D3D12/Textures/WicTextureLoader.h"
 
-#include <array>
 #include <format>
 
 static const auto g_textureLoaderLogger = Logging::GetOrCreateLogger("RHI.Textures");
@@ -15,26 +12,17 @@ static const auto g_textureLoaderLogger = Logging::GetOrCreateLogger("RHI.Textur
 TextureLoadResult TextureLoader::Load(const std::filesystem::path& fileName)
 {
 	static const CookedTextureAssetLoader cookedTextureAssetLoader;
-	static const DdsTextureLoader ddsTextureLoader;
-	static const WicTextureLoader wicTextureLoader;
-	static const std::array<const TextureLoaderBackend*, 3> textureLoaderBackends = {
-	    &cookedTextureAssetLoader,
-	    &ddsTextureLoader,
-	    &wicTextureLoader};
 
 	const std::wstring extension = Paths::GetLowercaseExtension(fileName);
-	for (const TextureLoaderBackend* textureLoaderBackend : textureLoaderBackends)
+	if (cookedTextureAssetLoader.SupportsExtension(extension))
 	{
-		if (textureLoaderBackend->SupportsExtension(extension))
-		{
-			return textureLoaderBackend->Load(fileName);
-		}
+		return cookedTextureAssetLoader.Load(fileName);
 	}
 
 	Diagnostics::Fail(
 	    g_textureLoaderLogger,
 	    __FILE__,
 	    __LINE__,
-	    std::format("TextureLoader: No registered texture loader supports '{}'", fileName.string()));
-	return textureLoaderBackends.back()->Load(fileName);
+	    std::format("TextureLoader: Runtime texture loading only accepts cooked Sparkle texture packages: '{}'", fileName.string()));
+	return {};
 }

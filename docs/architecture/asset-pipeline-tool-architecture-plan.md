@@ -262,8 +262,8 @@ Problems removed by the completed phases:
 
 - Scripts own too much architecture.
 - Scene enumeration happens more than once.
-- Texture request list aggregation and generated/default request policy lived in the temporary `AssetConverter` bridge.
-- Project-level scene, mesh, material, and texture orchestration lived outside `AssetCooker`.
+- Texture request list aggregation and generated/default request policy now live in `AssetCooker`.
+- Project-level scene, mesh, material, and texture orchestration now lives in `AssetCooker`.
 - There was no explicit owner for project-level planning.
 
 ## Target Responsibilities
@@ -522,21 +522,21 @@ Phase status must be updated in this document as work lands. When a phase is com
 
 | Phase | Status | Completion Rule |
 |---|---|---|
-| Phase 1: Thin The Launch Shims | Done | Scripts hand scene-list cooking and texture request aggregation to `AssetConverter`; deleted script orchestration helpers are gone. |
+| Phase 1: Thin The Launch Shims | Done | Scripts no longer own project cook planning, cook order, or request-file construction; deleted script orchestration helpers are gone. |
 | Phase 2: Introduce AssetCooker As Planner | Done | Mark `Done` only after `AssetCooker` is the visible project cook entrypoint, scripts delegate to it, and the minimal public API facade exists. |
 | Phase 3: Extract Source Import And Category Cookers | Done | Mark `Done` only after source import and mesh/material/scene cooker ownership is explicit in folders, names, and contracts. |
 | Final: Deferred Validation And Fix Pass | Done | Mark `Done` only after the deferred build, cook, and validation pass succeeds or remaining risks are documented. |
 
 ### Phase 1 Prompt: Thin The Launch Shims (Status: Done)
 
-Historical bridge shape for this completed phase:
+Retired bridge shape for this completed phase:
 
 ```text
 Launch shim
   -> current ShaderCompiler
-  -> current AssetConverter texture-request bridge
+  -> temporary texture-request bridge
   -> current TextureCooker
-  -> current AssetConverter scene-cook bridge
+  -> temporary scene-cook bridge
 ```
 
 Copy-ready prompt:
@@ -572,8 +572,8 @@ Implementation rules:
 Expected end state:
 - The script layer is visibly closer to launch-shim-only behavior.
 - Any remaining script orchestration is documented as temporary and mechanically narrow.
-- `AssetConverter` owns scene-list iteration for texture request collection and scene cooking.
-- `AssetConverter` writes texture request files through the current `TextureCookRequestList` writer instead of scripts constructing request lines.
+- The current tool boundary owns scene-list iteration for texture request collection and scene cooking.
+- Texture request files are written through the current `TextureCookRequestList` writer instead of scripts constructing request lines.
 - Existing tools can still be invoked directly for debugging.
 - No new monolithic AssetTool or AssetActions abstraction is introduced.
 - The direction remains compatible with a later AssetCooker owning ProjectCookPlan creation.
@@ -787,21 +787,16 @@ Expected end state:
 
 ## Container Diagram Summary
 
-Current script-heavy shape to move away from:
+Retired script-heavy shape:
 
 ```text
 User / CI
   |
   v
 Batch / PowerShell scripts
-  |          |              |
-  v          v              v
-ShaderCompiler  AssetConverter  TextureCooker
-  |             |      |       |
-  |             |      |       +--> .stex
-  |             |      +----------> request files
-  |             +-----------------> cooked scene/mesh/material
-  +------------------------------> shader packages + registry
+  |
+  v
+multiple tool-specific orchestration paths
 
 Problem:
   scripts own orchestration, request merging, generated defaults, and phase order

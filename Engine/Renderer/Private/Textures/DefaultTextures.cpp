@@ -4,13 +4,13 @@
 namespace
 {
 	constexpr DefaultTextureDesc kDefaultTextureDescs[] = {
-	    {"Checkerboard", "Defaults/default_checkerboard.png"},
-	    {"White", "Defaults/default_white.png"},
-	    {"Black", "Defaults/default_black.png"},
-	    {"Red", "Defaults/default_red.png"},
-	    {"Green", "Defaults/default_green.png"},
-	    {"Blue", "Defaults/default_blue.png"},
-	    {"Normal", "Defaults/default_normal.png"},
+	    {"Checkerboard", "Defaults/default_checkerboard.stex"},
+	    {"White", "Defaults/default_white.stex"},
+	    {"Black", "Defaults/default_black.stex"},
+	    {"Red", "Defaults/default_red.stex"},
+	    {"Green", "Defaults/default_green.stex"},
+	    {"Blue", "Defaults/default_blue.stex"},
+	    {"Normal", "Defaults/default_normal.stex"},
 	    {"Cubemap", "Defaults/default_cubemap.stex"}};
 
 	constexpr DefaultTextureDesc kUnknownDefaultTextureDesc{};
