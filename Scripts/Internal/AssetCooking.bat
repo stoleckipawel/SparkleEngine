@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 :: ============================================================================
 :: AssetCooking.bat - Shared cook-tool preparation helpers
 :: ============================================================================
@@ -8,11 +8,13 @@
 ::
 :: Usage:
 ::   call "Internal\AssetCooking.bat" PrepareCookTools <Configuration>
+::   call "Internal\AssetCooking.bat" PrepareAssetCooker <Configuration>
 ::   call "Internal\AssetCooking.bat" PrepareShaderCompiler <Configuration>
 ::   call "Internal\AssetCooking.bat" PrepareTextureCooker <Configuration>
 ::   call "Internal\AssetCooking.bat" PrepareAssetConverter <Configuration>
 ::
 :: Outputs:
+::   ASSET_COOKER_EXE    - Absolute path to AssetCooker.exe
 ::   ASSET_CONVERTER_EXE - Absolute path to AssetConverter.exe
 ::   SHADER_COMPILER_EXE - Absolute path to ShaderCompiler.exe
 ::   TEXTURE_COOKER_EXE  - Absolute path to TextureCooker.exe
@@ -21,16 +23,28 @@
 
 setlocal enabledelayedexpansion
 
+set "ASSET_COOKER_EXE="
 set "ASSET_CONVERTER_EXE="
 set "SHADER_COMPILER_EXE="
 set "TEXTURE_COOKER_EXE="
 
 if /I "%~1"=="PrepareCookTools" (
+    set "REQUEST_ASSET_COOKER=1"
     set "REQUEST_ASSET_CONVERTER=1"
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=AssetConverter TextureCooker ShaderCompiler"
-    set "BUILD_LABEL=AssetConverter, TextureCooker, and ShaderCompiler"
+    set "BUILD_TARGETS=AssetCooker AssetCookerDll AssetConverter TextureCooker ShaderCompiler"
+    set "BUILD_LABEL=AssetCooker, AssetCookerDll, AssetConverter, TextureCooker, and ShaderCompiler"
+    goto :PREPARE_SELECTED_TOOLS
+)
+
+if /I "%~1"=="PrepareAssetCooker" (
+    set "REQUEST_ASSET_COOKER=1"
+    set "REQUEST_ASSET_CONVERTER=1"
+    set "REQUEST_TEXTURE_COOKER=1"
+    set "REQUEST_SHADER_COMPILER=1"
+    set "BUILD_TARGETS=AssetCooker AssetCookerDll AssetConverter TextureCooker ShaderCompiler"
+    set "BUILD_LABEL=AssetCooker, AssetCookerDll, AssetConverter, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
 
@@ -57,7 +71,7 @@ if /I "%~1"=="PrepareAssetConverter" (
 )
 
 echo [ERROR] AssetCooking.bat requires a valid command.
-echo         Supported commands: PrepareCookTools, PrepareShaderCompiler, PrepareTextureCooker, PrepareAssetConverter
+echo         Supported commands: PrepareCookTools, PrepareAssetCooker, PrepareShaderCompiler, PrepareTextureCooker, PrepareAssetConverter
 set "ASSET_COOKING_RC=1"
 goto :FINISH
 
@@ -67,7 +81,7 @@ call "%~dp0Config.bat"
 set "CONFIG=%~2"
 if "%CONFIG%"=="" set "CONFIG=Debug"
 
-if "!REQUEST_SHADER_COMPILER!"=="1" (
+if "!REQUEST_SHADER_COMPILER!"=="1" if "!REQUEST_ASSET_COOKER!" NEQ "1" if "!REQUEST_ASSET_CONVERTER!" NEQ "1" if "!REQUEST_TEXTURE_COOKER!" NEQ "1" (
     call :LOCATE_SHADER_COMPILER_EXE "!CONFIG!"
     if defined SHADER_COMPILER_EXE (
         call :IS_SHADER_COMPILER_STALE "!SHADER_COMPILER_EXE!"
@@ -141,6 +155,25 @@ if "!REQUEST_ASSET_CONVERTER!"=="1" (
     )
 )
 
+if "!REQUEST_ASSET_COOKER!"=="1" (
+    for %%P in (
+        "!BUILD_DIR!\bin\!CONFIG!\AssetCooker.exe"
+        "!BUILD_DIR!\bin\AssetCooker.exe"
+        "!BIN_DIR!\!CONFIG!\AssetCooker.exe"
+        "!BIN_DIR!\AssetCooker.exe"
+    ) do (
+        if not defined ASSET_COOKER_EXE (
+            if exist "%%~P" set "ASSET_COOKER_EXE=%%~fP"
+        )
+    )
+
+    if not defined ASSET_COOKER_EXE (
+        echo [ERROR] AssetCooker.exe was not found after build.
+        set "ASSET_COOKING_RC=1"
+        goto :FINISH
+    )
+)
+
 if "!REQUEST_TEXTURE_COOKER!"=="1" (
     for %%P in (
         "!BUILD_DIR!\bin\!CONFIG!\TextureCooker.exe"
@@ -199,8 +232,9 @@ set "_STALE_RC=%ERRORLEVEL%"
 exit /B %_STALE_RC%
 
 :FINISH
+set "_TMP_ASSET_COOKER_EXE=%ASSET_COOKER_EXE%"
 set "_TMP_ASSET_CONVERTER_EXE=%ASSET_CONVERTER_EXE%"
 set "_TMP_SHADER_COMPILER_EXE=%SHADER_COMPILER_EXE%"
 set "_TMP_TEXTURE_COOKER_EXE=%TEXTURE_COOKER_EXE%"
 set "_TMP_RC=%ASSET_COOKING_RC%"
-endlocal & set "ASSET_CONVERTER_EXE=%_TMP_ASSET_CONVERTER_EXE%" & set "SHADER_COMPILER_EXE=%_TMP_SHADER_COMPILER_EXE%" & set "TEXTURE_COOKER_EXE=%_TMP_TEXTURE_COOKER_EXE%" & set "ASSET_COOKING_RC=%_TMP_RC%" & exit /B %_TMP_RC%
+endlocal & set "ASSET_COOKER_EXE=%_TMP_ASSET_COOKER_EXE%" & set "ASSET_CONVERTER_EXE=%_TMP_ASSET_CONVERTER_EXE%" & set "SHADER_COMPILER_EXE=%_TMP_SHADER_COMPILER_EXE%" & set "TEXTURE_COOKER_EXE=%_TMP_TEXTURE_COOKER_EXE%" & set "ASSET_COOKING_RC=%_TMP_RC%" & exit /B %_TMP_RC%

@@ -22,7 +22,7 @@ namespace TextureCookPipeline
 			case TextureGroup::Metallic:
 			case TextureGroup::AmbientOcclusion:
 			case TextureGroup::SubsurfaceStrength:
-				return IsGreyscaleLike(workingTexture) ? CompressionTarget::BC4 : CompressionTarget::BC7;
+				return IsGreyscaleLike(workingTexture) ? CompressionTarget::BC4 : CompressionTarget::None;
 			case TextureGroup::Diffuse:
 			case TextureGroup::Emissive:
 			case TextureGroup::SubsurfaceColor:
@@ -32,7 +32,7 @@ namespace TextureCookPipeline
 					return CompressionTarget::BC6H;
 				}
 
-				return HasMeaningfulAlpha(workingTexture) ? CompressionTarget::BC7 : CompressionTarget::BC1;
+				return HasMeaningfulAlpha(workingTexture) ? CompressionTarget::None : CompressionTarget::BC1;
 		}
 	}
 

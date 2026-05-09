@@ -1,129 +1,34 @@
-#include "Assets/Import/SceneImporter.h"
-#include "Cooking/CookedSceneCooker.h"
-#include "TextureCookRequestList.h"
+﻿#include "Cli/AssetConverterCommands.h"
 
+#include <charconv>
 #include <filesystem>
-#include <functional>
 #include <iostream>
 #include <string_view>
-#include <vector>
+#include <system_error>
 
-#include <objbase.h>
-
-static void PrintCookSceneSummary(
-    const std::filesystem::path& sourceScenePath,
-    const SceneImportResult& importResult,
-    const CookedSceneBuild& cookedSceneBuild)
+static bool TryParseNonNegativeInt(std::string_view value, int& outValue) noexcept
 {
-	std::cout << "AssetConverter Summary:\n"
-	          << "  mode=cook-scene\n"
-	          << "  source='" << sourceScenePath.string() << "'\n"
-	          << "  importer='" << GetSceneImporterTypeName(importResult.importerType) << "'\n"
-	          << "  meshes=" << importResult.GetMeshCount() << "\n"
-	          << "  materials=" << importResult.GetMaterialCount() << "\n"
-	          << "  sceneManifest='" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
-}
-
-static void PrintCollectTextureSummary(
-    const std::filesystem::path& sourceScenePath,
-    std::size_t requestCount,
-    const std::filesystem::path& outputRequestPath)
-{
-	std::cout << "AssetConverter Summary:\n"
-	          << "  mode=collect-texture-requests\n"
-	          << "  source='" << sourceScenePath.string() << "'\n"
-	          << "  uniqueRequests=" << requestCount << "\n"
-	          << "  requestFile='" << outputRequestPath.string() << "'\n";
-}
-
-static int RunWithImportedScene(
-    const std::filesystem::path& sourceScenePath,
-    const std::function<int(const SceneImportResult&)>& onImportedScene)
-{
-	const HRESULT coInitializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-	if (FAILED(coInitializeResult) && coInitializeResult != RPC_E_CHANGED_MODE)
+	int parsedValue = 0;
+	const std::from_chars_result result = std::from_chars(value.data(), value.data() + value.size(), parsedValue);
+	if (result.ec != std::errc{} || result.ptr != value.data() + value.size() || parsedValue < 0)
 	{
-		std::cerr << "AssetConverter: failed to initialize COM for source texture loading\n";
-		return 4;
+		return false;
 	}
 
-	SceneImportResult importResult = SceneImporter::Import(sourceScenePath);
-	if (!importResult.IsValid())
-	{
-		if (SUCCEEDED(coInitializeResult))
-		{
-			CoUninitialize();
-		}
-
-		std::cerr << "AssetConverter: failed to import '" << sourceScenePath.string() << "'\n";
-		return 2;
-	}
-
-	const int exitCode = onImportedScene(importResult);
-
-	if (SUCCEEDED(coInitializeResult))
-	{
-		CoUninitialize();
-	}
-
-	return exitCode;
+	outValue = parsedValue;
+	return true;
 }
 
-static int RunCookScene(const std::filesystem::path& sourceScenePath)
+static void PrintUsage()
 {
-	return RunWithImportedScene(
-	    sourceScenePath,
-	    [&](const SceneImportResult& importResult) -> int
-	    {
-			CookedSceneCooker cookedSceneCooker;
-			const CookedSceneBuild cookedSceneBuild = cookedSceneCooker.Cook(sourceScenePath, importResult);
-			if (!cookedSceneBuild.Succeeded())
-			{
-				std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
-				          << cookedSceneBuild.errorMessage << "\n";
-				return 3;
-			}
-
-			std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
-			          << GetSceneImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
-			          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
-			          << cookedSceneBuild.sceneAssetId << "' to '" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
-			PrintCookSceneSummary(sourceScenePath, importResult, cookedSceneBuild);
-
-			return 0;
-	    });
-}
-
-static int RunCollectTextureRequests(
-    const std::filesystem::path& sourceScenePath,
-    const std::filesystem::path& outputRequestPath)
-{
-	return RunWithImportedScene(
-	    sourceScenePath,
-	    [&](const SceneImportResult& importResult) -> int
-	    {
-			CookedSceneCooker cookedSceneCooker;
-			std::vector<TextureCookRequest> requests;
-			std::string errorMessage;
-			if (!cookedSceneCooker.CollectTextureCookRequests(importResult, requests, errorMessage))
-			{
-				std::cerr << "AssetConverter: failed to collect texture requests for '" << sourceScenePath.string() << "' - "
-				          << errorMessage << "\n";
-				return 5;
-			}
-
-			if (!WriteTextureCookRequestList(outputRequestPath, requests, errorMessage))
-			{
-				std::cerr << "AssetConverter: failed to write texture request file '" << outputRequestPath.string() << "' - "
-				          << errorMessage << "\n";
-				return 6;
-			}
-
-			std::cout << "AssetConverter: collected " << requests.size() << " unique texture request(s) from '"
-			          << sourceScenePath.string() << "' into '" << outputRequestPath.string() << "'\n";
-			PrintCollectTextureSummary(sourceScenePath, requests.size(), outputRequestPath);
-			return 0;
-	    });
+	std::cerr << "Usage:\n"
+	          << "  AssetConverter cook-scene <source-scene-path>\n"
+	          << "  AssetConverter collect-texture-requests <source-scene-path> <request-file-path>\n"
+	          << "  AssetConverter cook-scene-list <scene-list-file> <total-scene-count>\n"
+	          << "  AssetConverter collect-texture-request-list <scene-list-file> <total-scene-count> <request-file-path>\n"
+	          << "\n"
+	          << "Compatibility:\n"
+	          << "  AssetConverter <source-scene-path>\n";
 }
 
 int main(int argc, char** argv)
@@ -133,7 +38,7 @@ int main(int argc, char** argv)
 		const std::string_view argument(argv[1]);
 		if (argument != "cook-scene")
 		{
-			return RunCookScene(std::filesystem::path(argv[1]));
+			return AssetConverterCommands::RunCookScene(std::filesystem::path(argv[1]));
 		}
 	}
 
@@ -142,7 +47,7 @@ int main(int argc, char** argv)
 		const std::string_view command(argv[1]);
 		if (command == "cook-scene")
 		{
-			return RunCookScene(std::filesystem::path(argv[2]));
+			return AssetConverterCommands::RunCookScene(std::filesystem::path(argv[2]));
 		}
 	}
 
@@ -151,15 +56,41 @@ int main(int argc, char** argv)
 		const std::string_view command(argv[1]);
 		if (command == "collect-texture-requests")
 		{
-			return RunCollectTextureRequests(std::filesystem::path(argv[2]), std::filesystem::path(argv[3]));
+			return AssetConverterCommands::RunCollectTextureRequests(std::filesystem::path(argv[2]), std::filesystem::path(argv[3]));
+		}
+
+		if (command == "cook-scene-list")
+		{
+			int totalSceneCount = 0;
+			if (!TryParseNonNegativeInt(argv[3], totalSceneCount))
+			{
+				std::cerr << "AssetConverter: total scene count must be a non-negative integer.\n";
+				return 1;
+			}
+
+			return AssetConverterCommands::RunCookSceneList(std::filesystem::path(argv[2]), totalSceneCount);
 		}
 	}
 
-	std::cerr << "Usage:\n"
-	          << "  AssetConverter cook-scene <source-scene-path>\n"
-	          << "  AssetConverter collect-texture-requests <source-scene-path> <request-file-path>\n"
-	          << "\n"
-	          << "Compatibility:\n"
-	          << "  AssetConverter <source-scene-path>\n";
+	if (argc == 5)
+	{
+		const std::string_view command(argv[1]);
+		int totalSceneCount = 0;
+		if (!TryParseNonNegativeInt(argv[3], totalSceneCount))
+		{
+			std::cerr << "AssetConverter: total scene count must be a non-negative integer.\n";
+			return 1;
+		}
+
+		if (command == "collect-texture-request-list")
+		{
+			return AssetConverterCommands::RunCollectTextureRequestList(
+			    std::filesystem::path(argv[2]),
+			    std::filesystem::path(argv[4]),
+			    totalSceneCount);
+		}
+	}
+
+	PrintUsage();
 	return 1;
 }

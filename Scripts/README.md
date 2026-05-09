@@ -1,4 +1,4 @@
-# Scripts
+﻿# Scripts
 
 This folder is the contributor-facing command surface for SparkleEngine.
 
@@ -11,10 +11,10 @@ If you are trying to figure out what to run for what, start here. If a file is u
 | `SetupWorkspace.bat` | First-time bootstrap | Fresh clone, or when you want the normal first-run setup path |
 | `GenerateSolution.bat` | Advanced build-tree refresh | Usually only after CMake changes, project creation, or when the build tree is stale |
 | `BuildProject.bat` | Build one project's editor/runtime launch targets | Build `ShowcaseEditor`, `ShowcaseRuntime`, or both for one selected project |
-| `CookAllAssets.bat` | Preferred full cook entrypoint | Run the full shader, texture, and scene cook flow for a project from the top-level `Scripts/` folder |
-| `Cook/CookShaders.bat` | Cook shader packages for a project | Validate the merged shader manifest and emit cooked shader packages plus the registry |
-| `Cook/CookTextures.bat` | Cook texture assets for a project | Collect texture requests from source scenes and emit cooked texture assets |
-| `Cook/CookAssets.bat` | Cook scene assets for a project | Batch-convert supported source scenes into cooked scene manifests, mesh assets, and material assets |
+| `CookAllAssets.bat` | Preferred full cook entrypoint | Prepare `AssetCooker` and forward a full project cook request |
+| `Cook/CookShaders.bat` | Cook shader packages for a project | Prepare `AssetCooker` and forward the shader cook request |
+| `Cook/CookTextures.bat` | Cook texture assets for a project | Prepare `AssetCooker` and forward the texture cook request |
+| `Cook/CookAssets.bat` | Cook scene assets for a project | Prepare `AssetCooker` and forward the scene, mesh, and material cook request |
 | `RunClangFormat.bat` | Run `clang-format` | Apply repo formatting to `Engine/` and `Projects/` sources |
 | `CleanWorkspace.bat` | Remove generated artifacts | Clear build outputs, third-party cache, or return to the tracked repo state |
 
@@ -58,10 +58,9 @@ Each prerequisite folder keeps a timestamped log plus `Latest.txt` for that spec
 - `BuildProject.bat` understands the split project targets introduced by the current host model: `<Project>Editor` and `<Project>Runtime`.
 - `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior, but most users will reach it indirectly through the higher-level commands.
 - Toolchain validation and dependency repair helpers live under `Scripts/Internal` and are invoked through the public workflow scripts.
-- `CookAllAssets.bat` is the preferred single-file full cook command in the top-level `Scripts/` folder.
-- `Scripts\Cook\CookShaders.bat` validates the merged shader manifest and emits cooked shader packages required for normal runtime startup.
-- `Scripts\Cook\CookTextures.bat` enumerates supported source scenes, collects texture cook requests, and emits cooked texture assets.
-- `Scripts\Cook\CookAssets.bat` cooks only scene manifests plus cooked mesh/material outputs. Use `CookAllAssets.bat` for the full shader + texture + scene pipeline.
+- `CookAllAssets.bat` is the preferred single-file full cook command in the top-level `Scripts/` folder and delegates project planning to `AssetCooker`.
+- `Scripts\Cook\CookShaders.bat`, `Scripts\Cook\CookTextures.bat`, and `Scripts\Cook\CookAssets.bat` are narrow launch shims over `AssetCooker` category requests.
+- `AssetCooker` discovers supported scenes, builds the Phase 2 project cook plan, dispatches the focused tools, and aggregates diagnostics at the tool boundary.
 - Build outputs and cooked assets are generated under `build/`; runtime/editor and prerequisite logs are generated under the structured `logs/` hierarchy.
 - `CleanWorkspace.bat PRISTINE` removes generated outputs only. It does not delete tracked project assets.
 - Runtime boundary validation is a CMake target, not a user-run batch command. It lives under `CMake/Validation/` and runs as part of the engine build wiring.

@@ -1,4 +1,4 @@
-file(GLOB_RECURSE ASSET_CONVERTER_PRIVATE_SOURCES CONFIGURE_DEPENDS
+﻿file(GLOB_RECURSE ASSET_CONVERTER_PRIVATE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.cpp
 )
 
@@ -12,9 +12,8 @@ add_executable(AssetConverter
     ${ASSET_CONVERTER_PRIVATE_HEADERS}
 )
 
-# AssetConverter is the tool-side seam for source import and scene cooking.
-# Keep scene-authoring implementation and headers private to this executable
-# target.
+# AssetConverter remains a direct debug command surface. Source import and
+# cooked output category work are owned by the focused tool modules it links.
 target_include_directories(AssetConverter
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
@@ -32,11 +31,13 @@ target_link_libraries(AssetConverter
     PRIVATE
         ole32
         CookCommon
+    SourceImportAdapters
+    MeshCooker
+    MaterialCooker
+    SceneCooker
         TextureCookShared
         SparkleCore
         SparkleGameFramework
-        cgltf
-        assimp::assimp
 )
 
 set_target_properties(AssetConverter PROPERTIES

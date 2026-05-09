@@ -1,8 +1,8 @@
 # SparkleEditor Module
 # Editor UI system: panels, tools, viewport chrome, and editor-facing controls.
 # Dependencies: SparkleCore, SparklePlatform, SparkleRHI, SparkleGameFramework
-# Editor stays above runtime but should not depend on the broad tool-side
-# authoring module by default. Source import and cooking remain under AssetConverter.
+# Editor stays above runtime and does not include private cook-tool internals.
+# Source import and cooking remain behind AssetCooker and focused tool modules.
 
 file(GLOB_RECURSE SPARKLE_EDITOR_PUBLIC_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h

@@ -52,12 +52,30 @@
 		TextureAssetCooker cooker;
 		std::size_t cookedCount = 0;
 		std::size_t skippedCount = 0;
-		for (const TextureCookRequest& request : requests)
+		for (std::size_t requestIndex = 0; requestIndex < requests.size(); ++requestIndex)
 		{
+			const TextureCookRequest& request = requests[requestIndex];
+			std::cout << TextureCookerConstants::ToolName << ": [" << (requestIndex + 1u) << "/" << requests.size()
+			          << "] processing texture '" << Formatting::FormatHexUInt64(request.assetId) << "' source='"
+			          << request.sourcePath.string() << "'\n";
+
+			const std::size_t previousCookedCount = cookedCount;
+			const std::size_t previousSkippedCount = skippedCount;
 			if (!TryProcessRequest(request, cooker, cookedCount, skippedCount, errorMessage))
 			{
 				std::cerr << TextureCookerConstants::ToolName << ": " << errorMessage << "\n";
 				return TextureCookerConstants::ExitCookFailed;
+			}
+
+			if (cookedCount != previousCookedCount)
+			{
+				std::cout << TextureCookerConstants::ToolName << ": [" << (requestIndex + 1u) << "/" << requests.size()
+				          << "] cooked texture '" << Formatting::FormatHexUInt64(request.assetId) << "'\n";
+			}
+			else if (skippedCount != previousSkippedCount)
+			{
+				std::cout << TextureCookerConstants::ToolName << ": [" << (requestIndex + 1u) << "/" << requests.size()
+				          << "] skipped current texture '" << Formatting::FormatHexUInt64(request.assetId) << "'\n";
 			}
 		}
 

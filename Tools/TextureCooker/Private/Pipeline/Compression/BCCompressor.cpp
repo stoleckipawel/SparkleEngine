@@ -12,6 +12,8 @@
 
 namespace TextureCookPipeline
 {
+	static constexpr float kBlockCompressionQuality = 1.0f;
+
 	BCCompressor::BCCompressor(CompressionTarget target) noexcept : target_(target) {}
 
 	BCCompressor::~BCCompressor()
@@ -51,7 +53,7 @@ namespace TextureCookPipeline
 				result = CreateOptionsBC6(&options_);
 				if (result == 0)
 				{
-					SetQualityBC6(options_, 1.0f);
+					SetQualityBC6(options_, kBlockCompressionQuality);
 					SetSignedBC6(options_, false);
 				}
 				break;
@@ -59,7 +61,7 @@ namespace TextureCookPipeline
 				result = CreateOptionsBC7(&options_);
 				if (result == 0)
 				{
-					SetQualityBC7(options_, 1.0f);
+					SetQualityBC7(options_, kBlockCompressionQuality);
 					SetMaskBC7(options_, 0xffu);
 					SetAlphaOptionsBC7(options_, imageNeedsAlpha, false, false);
 				}

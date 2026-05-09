@@ -1,4 +1,4 @@
-if(NOT DEFINED TOOLS_ARCHITECTURE_SOURCE_DIR)
+﻿if(NOT DEFINED TOOLS_ARCHITECTURE_SOURCE_DIR)
     set(TOOLS_ARCHITECTURE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -41,7 +41,20 @@ function(check_tools_file_for_tokens file_path)
 endfunction()
 
 set(ALLOWED_TOOL_PUBLIC_HEADERS
+    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerApi.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerDll.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookRequest.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookResult.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerTypes.h"
     "${TOOLS_ARCHITECTURE_ROOT}/CookCommon/Public/CookArtifactCache.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceImportResult.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceSceneImporter.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/MeshCooker/Public/CookedMeshAssetBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/MeshCooker/Public/MeshCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/MaterialCooker/Public/CookedMaterialAssetBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/MaterialCooker/Public/MaterialCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/CookedSceneBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/SceneCooker.h"
     "${TOOLS_ARCHITECTURE_ROOT}/TextureCooker/Public/TextureCookRequestList.h"
 )
 
@@ -74,7 +87,6 @@ set(FORBIDDEN_TOOL_PUBLIC_HEADER_TOKENS
     "TextureCooker/Private"
     "RHI/Public/D3D12/"
     "D3D12/"
-    "GameFramework/"
     "Core/Public/Diagnostics"
     "Logging::"
 )
@@ -151,11 +163,21 @@ file(GLOB_RECURSE all_tool_source_files
 
 set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "Tools/AssetConverter/Private"
+    "Tools/AssetCooker/Private"
+    "Tools/SourceImportAdapters/Private"
+    "Tools/MeshCooker/Private"
+    "Tools/MaterialCooker/Private"
+    "Tools/SceneCooker/Private"
     "Tools/TextureCooker/Private"
     "Tools/ShaderCompiler/Private"
     "Tools/CookCommon/Private"
     "Tools/ConsoleDiagnostics/Private"
     "AssetConverter/Private"
+    "AssetCooker/Private"
+    "SourceImportAdapters/Private"
+    "MeshCooker/Private"
+    "MaterialCooker/Private"
+    "SceneCooker/Private"
     "TextureCooker/Private"
     "ShaderCompiler/Private"
     "CookCommon/Private"
