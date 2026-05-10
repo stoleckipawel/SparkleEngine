@@ -14,6 +14,7 @@
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
 #   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
 #   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
+#   - zlib           (v1.3.1)   - Compression backend for Assimp
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
 #   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
@@ -49,7 +50,7 @@ find_program(_git_exe git REQUIRED)
 message(STATUS "")
 message(STATUS "=== Fetching Third-Party Dependencies ===")
 message(STATUS "")
-message(STATUS "  Total download: ~86 MB (shallow clones, LFS skipped)")
+message(STATUS "  Total download: ~87 MB (shallow clones, LFS skipped)")
 message(STATUS "  Expected time:  1-3 minutes depending on connection")
 message(STATUS "")
 message(STATUS "  Dependency sizes:")
@@ -58,6 +59,7 @@ message(STATUS "    cgltf            ~1 MB")
 message(STATUS "    stb              ~5 MB")
 message(STATUS "    tinyexr          ~1 MB")
 message(STATUS "    spdlog           ~3 MB")
+message(STATUS "    zlib             ~1 MB")
 message(STATUS "    assimp          ~15 MB")
 message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
 message(STATUS "    KTX-Software    ~46 MB  (largest)")
@@ -108,7 +110,7 @@ endfunction()
 # directory, which fails on Windows with "Error removing directory".
 # ---------------------------------------------------------------------------
 # Note: compressonator is handled separately below via sparse checkout.
-foreach(_dep imgui cgltf stb tinyexr spdlog assimp ktx spirv_reflect)
+foreach(_dep imgui cgltf stb tinyexr spdlog zlib assimp ktx spirv_reflect)
     set(_src_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-src")
     set(_subbuild_dir "${FETCHCONTENT_BASE_DIR}/${_dep}-subbuild")
     if(EXISTS "${_src_dir}" AND NOT EXISTS "${_src_dir}/.git")
@@ -147,7 +149,7 @@ FetchContent_Declare(imgui
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [1/9] Fetching Dear ImGui v1.92.5 (~7 MB)...")
+message(STATUS "  [1/11] Fetching Dear ImGui v1.92.5 (~7 MB)...")
 FetchContent_Populate(imgui)
 
 add_library(imgui STATIC
@@ -200,7 +202,7 @@ FetchContent_Declare(cgltf
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [2/9] Fetching cgltf v1.15 (~1 MB)...")
+message(STATUS "  [2/11] Fetching cgltf v1.15 (~1 MB)...")
 FetchContent_Populate(cgltf)
 
 add_library(cgltf INTERFACE)
@@ -230,7 +232,7 @@ FetchContent_Declare(stb
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [3/10] Fetching stb (~5 MB)...")
+message(STATUS "  [3/11] Fetching stb (~5 MB)...")
 FetchContent_Populate(stb)
 
 add_library(stb INTERFACE)
@@ -252,7 +254,7 @@ FetchContent_Declare(tinyexr
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [4/10] Fetching tinyexr v1.0.7 (~1 MB)...")
+message(STATUS "  [4/11] Fetching tinyexr v1.0.7 (~1 MB)...")
 FetchContent_Populate(tinyexr)
 
 add_library(tinyexr INTERFACE)
@@ -282,7 +284,7 @@ FetchContent_Declare(spdlog
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [5/10] Fetching spdlog v1.14.1 (~3 MB)...")
+message(STATUS "  [5/11] Fetching spdlog v1.14.1 (~3 MB)...")
 FetchContent_Populate(spdlog)
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
@@ -312,6 +314,49 @@ endif()
 message(STATUS "  spdlog:         ${spdlog_SOURCE_DIR} (~3 MB)")
 
 # ============================================================================
+# zlib - Compression backend for Assimp
+# https://github.com/madler/zlib
+#
+# Assimp's bundled zlib is 1.2.13 and still uses K&R-style function
+# definitions that clang-cl reports as deprecated non-prototype definitions.
+# Keep zlib as an explicit pinned dependency so Assimp links the modernized
+# 1.3.1 source instead of building its bundled copy.
+#
+# Target:  zlibstatic
+# Usage:   target_link_libraries(YourTarget PRIVATE zlibstatic)
+# ============================================================================
+FetchContent_Declare(zlib
+    GIT_REPOSITORY https://github.com/madler/zlib.git
+    GIT_TAG        v1.3.1
+    GIT_SHALLOW    TRUE
+    GIT_PROGRESS   TRUE
+)
+message(STATUS "  [6/11] Fetching zlib v1.3.1 (~1 MB)...")
+FetchContent_Populate(zlib)
+
+set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+if(TARGET zlibstatic AND NOT TARGET ZLIB::ZLIB)
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+endif()
+
+if(TARGET zlib)
+    set_target_properties(zlib PROPERTIES FOLDER "ThirdParty/zlib")
+endif()
+
+if(TARGET zlibstatic)
+    set_target_properties(zlibstatic PROPERTIES FOLDER "ThirdParty/zlib")
+endif()
+
+set(ZLIB_FOUND TRUE)
+set(ZLIB_LIBRARIES zlibstatic)
+set(ZLIB_INCLUDE_DIR ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
+
+message(STATUS "  zlib:           ${zlib_SOURCE_DIR} (~1 MB)")
+
+# ============================================================================
 # Assimp - Open Asset Import Library
 # https://github.com/assimp/assimp
 #
@@ -328,7 +373,7 @@ FetchContent_Declare(assimp
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [5/9] Fetching Assimp v5.4.3 (~15 MB)...")
+message(STATUS "  [7/11] Fetching Assimp v5.4.3 (~15 MB)...")
 FetchContent_Populate(assimp)
 
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -367,7 +412,7 @@ message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
 # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
 # ============================================================================
 message(STATUS "")
-message(STATUS "  [6/9] Fetching Compressonator (sparse checkout, ~5 MB)...")
+message(STATUS "  [8/11] Fetching Compressonator (sparse checkout, ~5 MB)...")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -510,7 +555,7 @@ FetchContent_Declare(ktx
     GIT_SUBMODULES ""
 )
 message(STATUS "")
-message(STATUS "  [7/9] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
+message(STATUS "  [9/11] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need
@@ -561,7 +606,7 @@ FetchContent_Declare(spirv_reflect
     GIT_SHALLOW    TRUE
     GIT_PROGRESS   TRUE
 )
-message(STATUS "  [8/9] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
+message(STATUS "  [10/11] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
 FetchContent_Populate(spirv_reflect)
 
 add_library(spirv_reflect STATIC
@@ -590,7 +635,7 @@ message(STATUS "  SPIRV-Reflect:  ${spirv_reflect_SOURCE_DIR} (~2 MB)")
 # semantic icon mapping in editor code.
 # ============================================================================
 message(STATUS "")
-message(STATUS "  [9/9] Fetching Font Awesome Free Solid v6.7.1 icon assets (~0.5 MB)...")
+message(STATUS "  [11/11] Fetching Font Awesome Free Solid v6.7.1 icon assets (~0.5 MB)...")
 
 set(_sparkle_editor_icons_dir "${FETCHCONTENT_BASE_DIR}/editor-icons/fontawesome-6.7.1")
 set(SPARKLE_FONT_AWESOME_SOLID_TTF "${_sparkle_editor_icons_dir}/fa-solid-900.ttf" CACHE FILEPATH "Font Awesome Free Solid TTF path" FORCE)

@@ -174,13 +174,11 @@ echo [LOG] Host target type: !HOST_MODE!
 echo [LOG] Build configuration: !CONFIG!
 
 echo.
-echo [LOG] Refreshing build files before build...
-set "PARENT_BATCH=1"
-call "%~dp0GenerateSolution.bat" CONTINUE
-set "CONFIGURE_RC=!ERRORLEVEL!"
-set "PARENT_BATCH="
-if "!CONFIGURE_RC!" NEQ "0" (
-    echo [ERROR] GenerateSolution step failed. Cannot build.
+echo [LOG] Ensuring build files are current...
+call "%~dp0Internal\EnsureBuildFiles.bat"
+set "ENSURE_RC=!ERRORLEVEL!"
+if "!ENSURE_RC!" NEQ "0" (
+    echo [ERROR] Build-file preparation failed. Cannot build.
     goto :FINISH
 )
 

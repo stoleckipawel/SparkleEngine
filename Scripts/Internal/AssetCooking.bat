@@ -29,7 +29,7 @@ if /I "%~1"=="PrepareCookTools" (
     set "REQUEST_ASSET_COOKER=1"
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=AssetCooker AssetCookerDll TextureCooker ShaderCompiler"
+    set "BUILD_TARGETS=SparkleCookTools"
     set "BUILD_LABEL=AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
@@ -38,7 +38,7 @@ if /I "%~1"=="PrepareAssetCooker" (
     set "REQUEST_ASSET_COOKER=1"
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=AssetCooker AssetCookerDll TextureCooker ShaderCompiler"
+    set "BUILD_TARGETS=SparkleCookTools"
     set "BUILD_LABEL=AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
@@ -100,28 +100,24 @@ if "!TOOLCHAIN_RC!" NEQ "0" (
 )
 
 echo.
-echo [LOG] Step 2/3: Refreshing build files and syncing third-party dependencies...
-set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\GenerateSolution.bat" CONTINUE
-set "CONFIGURE_RC=!ERRORLEVEL!"
-set "PARENT_BATCH="
-if "!CONFIGURE_RC!" NEQ "0" (
-    echo [ERROR] GenerateSolution step failed.
+echo [LOG] Step 2/3: Ensuring build files are current...
+call "!SCRIPTS_DIR!\Internal\EnsureBuildFiles.bat"
+set "ENSURE_RC=!ERRORLEVEL!"
+if "!ENSURE_RC!" NEQ "0" (
+    echo [ERROR] Build-file preparation failed.
     set "ASSET_COOKING_RC=1"
     goto :FINISH
 )
 
 echo.
 echo [LOG] Step 3/3: Building !BUILD_LABEL!...
-for %%T in (!BUILD_TARGETS!) do (
-    echo [LOG] Building target %%T...
-    call "%~dp0CMakeHelpers.bat" BuildTargets !CONFIG! %%T
-    set "BUILD_RC=!ERRORLEVEL!"
-    if "!BUILD_RC!" NEQ "0" (
-        echo [ERROR] Failed to build target %%T.
-        set "ASSET_COOKING_RC=1"
-        goto :FINISH
-    )
+echo [LOG] Building targets !BUILD_TARGETS!...
+call "%~dp0CMakeHelpers.bat" BuildTargets !CONFIG! !BUILD_TARGETS!
+set "BUILD_RC=!ERRORLEVEL!"
+if "!BUILD_RC!" NEQ "0" (
+    echo [ERROR] Failed to build targets !BUILD_TARGETS!.
+    set "ASSET_COOKING_RC=1"
+    goto :FINISH
 )
 if "!REQUEST_ASSET_COOKER!"=="1" (
     for %%P in (

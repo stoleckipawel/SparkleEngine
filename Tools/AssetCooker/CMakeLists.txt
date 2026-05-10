@@ -105,6 +105,8 @@ target_include_directories(AssetCooker
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
+        ${CMAKE_SOURCE_DIR}/Engine
+        ${CMAKE_SOURCE_DIR}/Engine/Core/Public/Diagnostics
 )
 
 target_compile_features(AssetCooker PRIVATE cxx_std_20)

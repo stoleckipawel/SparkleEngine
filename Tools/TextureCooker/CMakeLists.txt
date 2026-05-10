@@ -110,6 +110,10 @@ target_include_directories(TextureCooker
 
 target_compile_features(TextureCooker PRIVATE cxx_std_20)
 
+target_precompile_headers(TextureCooker PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
 target_link_libraries(TextureCooker
     PRIVATE
         CookCommon

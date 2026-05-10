@@ -1,5 +1,9 @@
 #include "AssetCookerToolProcess.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/ScopedLogEvent.h"
+#include "Core/Public/Diagnostics/Trace.h"
+
 #include <cwctype>
 #include <iostream>
 
@@ -82,6 +86,11 @@ int AssetCookerToolProcess::Run(
     const std::vector<std::wstring>& arguments,
     const std::filesystem::path& workingDirectory)
 {
+	static const auto toolProcessLogger = Logging::GetOrCreateLogger("Tools.AssetCooker.Process");
+	const std::string processScopeName = "AssetCooker.ToolProcess." + executablePath.filename().string();
+	SPARKLE_CPU_SCOPE(processScopeName);
+	SPARKLE_LOG_SCOPE(toolProcessLogger, spdlog::level::info, processScopeName);
+
 	std::wcout << L"[LOG] Running: " << executablePath.wstring();
 	for (const std::wstring& argument : arguments)
 	{
@@ -111,6 +120,7 @@ int AssetCookerToolProcess::Run(
 	if (!createdProcess)
 	{
 		std::wcerr << L"AssetCooker: failed to launch '" << executablePath.wstring() << L"'.\n";
+		SPDLOG_LOGGER_ERROR(toolProcessLogger, "Failed to launch process '{}'", executablePath.string());
 		return 1;
 	}
 
@@ -119,10 +129,13 @@ int AssetCookerToolProcess::Run(
 	GetExitCodeProcess(processInformation.hProcess, &exitCode);
 	CloseHandle(processInformation.hThread);
 	CloseHandle(processInformation.hProcess);
+	SPDLOG_LOGGER_INFO(toolProcessLogger, "Process '{}' exited with code {}", executablePath.string(), exitCode);
 	return static_cast<int>(exitCode);
 #else
 	const std::wstring commandLine = AssetCookerBuildCommandLine(executablePath, arguments);
 	const std::string narrowCommandLine(commandLine.begin(), commandLine.end());
-	return std::system(narrowCommandLine.c_str());
+	const int exitCode = std::system(narrowCommandLine.c_str());
+	SPDLOG_LOGGER_INFO(toolProcessLogger, "Process '{}' exited with code {}", executablePath.string(), exitCode);
+	return exitCode;
 #endif
 }

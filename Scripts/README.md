@@ -22,6 +22,8 @@ If you are trying to figure out what to run for what, start here. If a file is u
 
 - First-time setup: run `Scripts\SetupWorkspace.bat`
 - Build one project: run `Scripts\BuildProject.bat Showcase Both Debug`
+- Run all CMake validation gates explicitly: run `cmake --build build --config Debug --target sparkle_validation_check`
+- Run the CMake dry-run format check explicitly: run `cmake --build build --config Debug --target clang_format_check`
 - Run the full cook from the top-level scripts folder: run `Scripts\CookAllAssets.bat Showcase Debug`
 - Cook shaders for a project: run `Scripts\Cook\CookShaders.bat Showcase Debug`
 - Cook textures for a project: run `Scripts\Cook\CookTextures.bat Showcase Debug`
@@ -56,7 +58,9 @@ Each prerequisite folder keeps a timestamped log plus `Latest.txt` for that spec
 ## Notes
 
 - `BuildProject.bat` understands the split project targets introduced by the current host model: `<Project>Editor` and `<Project>Runtime`.
-- `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior, but most users will reach it indirectly through the higher-level commands.
+- `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior. Normal build/cook scripts call `Scripts\Internal\EnsureBuildFiles.bat`, which skips `GenerateSolution.bat` when the generated build files are current.
+- Set `SPARKLE_FORCE_CONFIGURE=1` before running a build/cook script to force `GenerateSolution.bat` even when the freshness check says the build files are current.
+- Normal local builds do not run boundary validation or clang-format checks as target dependencies by default. Configure with `-DSPARKLE_BUILD_VALIDATION_ON_BUILD=ON` and/or `-DSPARKLE_RUN_CLANG_FORMAT_ON_BUILD=ON` for CI-style build-integrated checks, or run `sparkle_validation_check` and `clang_format_check` explicitly.
 - Toolchain validation and dependency repair helpers live under `Scripts/Internal` and are invoked through the public workflow scripts.
 - `CookAllAssets.bat` is the preferred single-file full cook command in the top-level `Scripts/` folder and delegates project planning to `AssetCooker`.
 - `Scripts\Cook\CookShaders.bat`, `Scripts\Cook\CookTextures.bat`, and `Scripts\Cook\CookAssets.bat` are narrow launch shims over `AssetCooker` category requests.

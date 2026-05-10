@@ -7,6 +7,8 @@
 #include "D3D12/Textures/CookedTextureAsset.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Core/Public/Diagnostics/Logger.h"
+#include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 
@@ -16,7 +18,10 @@
 
 	bool TextureAssetCooker::Cook(const TextureCookRequest& request, std::string& outErrorMessage) const
 	{
+		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
+		const std::string scopeName = "Tools.TextureCooker.CookAsset." + request.sourcePath.filename().string();
 		SPARKLE_CPU_SCOPE("Tools.TextureCook.Cook");
+		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, scopeName);
 
 		if (!request.IsValid())
 		{
@@ -24,15 +29,32 @@
 			return false;
 		}
 
-		TextureLoadResult loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
+		TextureLoadResult loadResult;
+		{
+			const std::string phaseScopeName = "Tools.TextureCooker.LoadSource." + request.sourcePath.filename().string();
+			SPARKLE_CPU_SCOPE(phaseScopeName);
+			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
+			loadResult = TextureSourceLoader::Load(request.sourcePath, outErrorMessage);
+		}
 		if (!loadResult.IsValid())
 		{
 			return false;
 		}
 
 		TextureLoadResult cookedTexture;
-		if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
 		{
+			const std::string phaseScopeName = "Tools.TextureCooker.ProcessTexture." + request.sourcePath.filename().string();
+			SPARKLE_CPU_SCOPE(phaseScopeName);
+			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
+			if (!TexturePipeline::Process(request, std::move(loadResult), cookedTexture, outErrorMessage))
+			{
+				return false;
+			}
+		}
+
+		if (!cookedTexture.IsValid())
+		{
+			outErrorMessage = "Texture pipeline produced an invalid cooked texture.";
 			return false;
 		}
 
@@ -72,52 +94,62 @@
 		Files::CleanupTemporaryFile(temporaryOutputPath);
 
 		std::ofstream output;
-		if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
 		{
-			return false;
-		}
-
-		if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteBytes(
-		        output,
-		        mipHeaders.data(),
-		        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
-		        outErrorMessage))
-		{
-			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-			return false;
-		}
-
-		for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
-		{
-			for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+			const std::string phaseScopeName = "Tools.TextureCooker.WriteTexture." + request.sourcePath.filename().string();
+			SPARKLE_CPU_SCOPE(phaseScopeName);
+			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
+			if (!Files::TryOpenBinaryOutput(temporaryOutputPath, output, outErrorMessage))
 			{
-				if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
+				return false;
+			}
+
+			if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
+			    !Files::BinaryStreamWriter::WriteBytes(
+			        output,
+			        mipHeaders.data(),
+			        sizeof(CookedTextureMipHeader) * mipHeaders.size(),
+			        outErrorMessage))
+			{
+				Files::CleanupTemporaryFile(temporaryOutputPath, &output);
+				return false;
+			}
+
+			for (const TextureArraySliceData& arraySlice : cookedTexture.arraySlices)
+			{
+				for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
 				{
-					Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-					return false;
+					if (!Files::BinaryStreamWriter::WriteBytes(output, mipLevel.data.data(), mipLevel.data.size(), outErrorMessage))
+					{
+						Files::CleanupTemporaryFile(temporaryOutputPath, &output);
+						return false;
+					}
 				}
+			}
+
+			output.flush();
+			if (!output.good())
+			{
+				Files::CleanupTemporaryFile(temporaryOutputPath, &output);
+				outErrorMessage = "Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'";
+				return false;
+			}
+
+			if (!Files::TryCloseOutput(output, temporaryOutputPath, outErrorMessage))
+			{
+				Files::CleanupTemporaryFile(temporaryOutputPath);
+				return false;
 			}
 		}
 
-		output.flush();
-		if (!output.good())
 		{
-			Files::CleanupTemporaryFile(temporaryOutputPath, &output);
-			outErrorMessage = "Failed to flush cooked texture output '" + temporaryOutputPath.string() + "'";
-			return false;
-		}
-
-		if (!Files::TryCloseOutput(output, temporaryOutputPath, outErrorMessage))
-		{
-			Files::CleanupTemporaryFile(temporaryOutputPath);
-			return false;
-		}
-
-		if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
-		{
-			Files::CleanupTemporaryFile(temporaryOutputPath);
-			return false;
+			const std::string phaseScopeName = "Tools.TextureCooker.FinalizeTexture." + request.sourcePath.filename().string();
+			SPARKLE_CPU_SCOPE(phaseScopeName);
+			SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, phaseScopeName);
+			if (!Files::TryFinalizeTemporaryFile(temporaryOutputPath, request.outputPath, outErrorMessage))
+			{
+				Files::CleanupTemporaryFile(temporaryOutputPath);
+				return false;
+			}
 		}
 
 		outErrorMessage.clear();

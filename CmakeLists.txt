@@ -61,6 +61,12 @@ if(ENABLE_STRICT_WARNINGS)
 endif()
 
 # ---------------------------
+# Optional: local iteration gates
+# ---------------------------
+option(SPARKLE_BUILD_VALIDATION_ON_BUILD "Run Sparkle validation targets as dependencies of normal builds" OFF)
+option(SPARKLE_RUN_CLANG_FORMAT_ON_BUILD "Run clang-format checks as dependencies of normal builds" OFF)
+
+# ---------------------------
 # Output directories
 # ---------------------------
 # For multi-config generators (Visual Studio), set per-configuration output dirs.
@@ -89,6 +95,12 @@ endif()
 add_subdirectory(Engine)
 add_subdirectory(Tools)
 
+function(add_sparkle_validation_dependency target_name validation_target)
+    if(SPARKLE_BUILD_VALIDATION_ON_BUILD AND TARGET ${target_name} AND TARGET ${validation_target})
+        add_dependencies(${target_name} ${validation_target})
+    endif()
+endfunction()
+
 add_custom_target(
     runtime_cooked_boundary_check
     COMMAND ${CMAKE_COMMAND}
@@ -98,9 +110,9 @@ add_custom_target(
     COMMENT "Validating cooked-only runtime boundaries for Application, GameFramework, and Renderer..."
 )
 
-add_dependencies(SparkleApplication runtime_cooked_boundary_check)
-add_dependencies(SparkleGameFramework runtime_cooked_boundary_check)
-add_dependencies(SparkleRenderer runtime_cooked_boundary_check)
+add_sparkle_validation_dependency(SparkleApplication runtime_cooked_boundary_check)
+add_sparkle_validation_dependency(SparkleGameFramework runtime_cooked_boundary_check)
+add_sparkle_validation_dependency(SparkleRenderer runtime_cooked_boundary_check)
 
 add_custom_target(
     shader_compiler_boundary_check
@@ -111,11 +123,11 @@ add_custom_target(
     COMMENT "Validating runtime and ShaderCompiler boundary ownership..."
 )
 
-add_dependencies(SparkleRHI shader_compiler_boundary_check)
-add_dependencies(SparkleApplication shader_compiler_boundary_check)
-add_dependencies(SparkleGameFramework shader_compiler_boundary_check)
-add_dependencies(SparkleRenderer shader_compiler_boundary_check)
-add_dependencies(ShaderCompiler shader_compiler_boundary_check)
+add_sparkle_validation_dependency(SparkleRHI shader_compiler_boundary_check)
+add_sparkle_validation_dependency(SparkleApplication shader_compiler_boundary_check)
+add_sparkle_validation_dependency(SparkleGameFramework shader_compiler_boundary_check)
+add_sparkle_validation_dependency(SparkleRenderer shader_compiler_boundary_check)
+add_sparkle_validation_dependency(ShaderCompiler shader_compiler_boundary_check)
 
 add_custom_target(
     texture_cooker_boundary_check
@@ -126,14 +138,14 @@ add_custom_target(
     COMMENT "Validating AssetConverter and TextureCooker boundary ownership..."
 )
 
-add_dependencies(SparkleRHI texture_cooker_boundary_check)
-add_dependencies(SparkleApplication texture_cooker_boundary_check)
-add_dependencies(SparkleGameFramework texture_cooker_boundary_check)
-add_dependencies(SparkleRenderer texture_cooker_boundary_check)
-add_dependencies(AssetConverter texture_cooker_boundary_check)
-add_dependencies(MaterialCooker texture_cooker_boundary_check)
-add_dependencies(TextureCookShared texture_cooker_boundary_check)
-add_dependencies(TextureCooker texture_cooker_boundary_check)
+add_sparkle_validation_dependency(SparkleRHI texture_cooker_boundary_check)
+add_sparkle_validation_dependency(SparkleApplication texture_cooker_boundary_check)
+add_sparkle_validation_dependency(SparkleGameFramework texture_cooker_boundary_check)
+add_sparkle_validation_dependency(SparkleRenderer texture_cooker_boundary_check)
+add_sparkle_validation_dependency(AssetConverter texture_cooker_boundary_check)
+add_sparkle_validation_dependency(MaterialCooker texture_cooker_boundary_check)
+add_sparkle_validation_dependency(TextureCookShared texture_cooker_boundary_check)
+add_sparkle_validation_dependency(TextureCooker texture_cooker_boundary_check)
 
 add_custom_target(
     tools_architecture_boundary_check
@@ -144,19 +156,19 @@ add_custom_target(
     COMMENT "Validating Tools public seams, private implementation boundaries, and shared cook services..."
 )
 
-add_dependencies(CookCommon tools_architecture_boundary_check)
-add_dependencies(AssetCookerCore tools_architecture_boundary_check)
-add_dependencies(AssetCookerDll tools_architecture_boundary_check)
-add_dependencies(AssetCooker tools_architecture_boundary_check)
-add_dependencies(SourceImportAdapters tools_architecture_boundary_check)
-add_dependencies(MeshCooker tools_architecture_boundary_check)
-add_dependencies(MaterialCooker tools_architecture_boundary_check)
-add_dependencies(SceneCooker tools_architecture_boundary_check)
-add_dependencies(TextureCookShared tools_architecture_boundary_check)
-add_dependencies(TextureCooker tools_architecture_boundary_check)
-add_dependencies(AssetConverter tools_architecture_boundary_check)
-add_dependencies(ShaderCompiler tools_architecture_boundary_check)
-add_dependencies(ConsoleDiagnostics tools_architecture_boundary_check)
+add_sparkle_validation_dependency(CookCommon tools_architecture_boundary_check)
+add_sparkle_validation_dependency(AssetCookerCore tools_architecture_boundary_check)
+add_sparkle_validation_dependency(AssetCookerDll tools_architecture_boundary_check)
+add_sparkle_validation_dependency(AssetCooker tools_architecture_boundary_check)
+add_sparkle_validation_dependency(SourceImportAdapters tools_architecture_boundary_check)
+add_sparkle_validation_dependency(MeshCooker tools_architecture_boundary_check)
+add_sparkle_validation_dependency(MaterialCooker tools_architecture_boundary_check)
+add_sparkle_validation_dependency(SceneCooker tools_architecture_boundary_check)
+add_sparkle_validation_dependency(TextureCookShared tools_architecture_boundary_check)
+add_sparkle_validation_dependency(TextureCooker tools_architecture_boundary_check)
+add_sparkle_validation_dependency(AssetConverter tools_architecture_boundary_check)
+add_sparkle_validation_dependency(ShaderCompiler tools_architecture_boundary_check)
+add_sparkle_validation_dependency(ConsoleDiagnostics tools_architecture_boundary_check)
 
 add_custom_target(
     logging_boundary_check
@@ -168,9 +180,7 @@ add_custom_target(
 )
 
 function(add_logging_boundary_dependency_if_target target_name)
-    if(TARGET ${target_name})
-        add_dependencies(${target_name} logging_boundary_check)
-    endif()
+    add_sparkle_validation_dependency(${target_name} logging_boundary_check)
 endfunction()
 
 add_logging_boundary_dependency_if_target(SparkleCore)
@@ -193,6 +203,16 @@ add_logging_boundary_dependency_if_target(TextureCooker)
 add_logging_boundary_dependency_if_target(ShaderCompiler)
 add_logging_boundary_dependency_if_target(CookCommon)
 add_logging_boundary_dependency_if_target(ConsoleDiagnostics)
+
+add_custom_target(
+    sparkle_validation_check
+    DEPENDS
+        runtime_cooked_boundary_check
+        shader_compiler_boundary_check
+        texture_cooker_boundary_check
+        tools_architecture_boundary_check
+        logging_boundary_check
+)
 
 # ---------------------------
 # Auto-discover projects via .sparkle-project marker
@@ -264,11 +284,11 @@ endif()
 # Apply clang-format to targets
 # ---------------------------
 
-if(CLANG_FORMAT_EXE)
-    # Make all targets depend on clang_format_check
+if(CLANG_FORMAT_EXE AND SPARKLE_RUN_CLANG_FORMAT_ON_BUILD)
+    # Optionally make normal targets depend on clang_format_check.
     get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(t ${all_targets})
-        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "texture_cooker_boundary_check" AND NOT t STREQUAL "tools_architecture_boundary_check" AND NOT t STREQUAL "logging_boundary_check")
+        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "sparkle_validation_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "texture_cooker_boundary_check" AND NOT t STREQUAL "tools_architecture_boundary_check" AND NOT t STREQUAL "logging_boundary_check")
             add_dependencies(${t} clang_format_check)
         endif()
     endforeach()
