@@ -6,7 +6,6 @@
 enum class AssetType : uint8_t
 {
 	Shader,
-	ShaderSymbols,
 	Texture,
 	Mesh,
 
@@ -19,8 +18,6 @@ constexpr std::string_view GetAssetSubdirectory(AssetType type) noexcept
 	{
 		case AssetType::Shader:
 			return "Shaders";
-		case AssetType::ShaderSymbols:
-			return "Shaders/ShaderSymbols";
 		case AssetType::Texture:
 			return "Textures";
 		case AssetType::Mesh:
@@ -37,8 +34,6 @@ constexpr std::string_view GetAssetTypeName(AssetType type) noexcept
 	{
 		case AssetType::Shader:
 			return "Shader";
-		case AssetType::ShaderSymbols:
-			return "ShaderSymbols";
 		case AssetType::Texture:
 			return "Texture";
 		case AssetType::Mesh:

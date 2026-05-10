@@ -11,19 +11,19 @@
 #   Game       - builds editorless runtime launch targets.
 
 set(SPARKLE_BUILD_CONFIGURATIONS
+                   DevelopmentEditor
+    DevelopmentGame
     DebugEditor
     DebugGame
-    DevelopmentEditor
-    DevelopmentGame
-    ShippingEditor
+    ShippingEditor                                                             
     ShippingGame
 )
 
 set(SPARKLE_DEBUG_CONFIGURATIONS DebugEditor DebugGame)
 set(SPARKLE_DEVELOPMENT_CONFIGURATIONS DevelopmentEditor DevelopmentGame)
 set(SPARKLE_SHIPPING_CONFIGURATIONS ShippingEditor ShippingGame)
-set(SPARKLE_EDITOR_CONFIGURATIONS DebugEditor DevelopmentEditor ShippingEditor)
-set(SPARKLE_GAME_CONFIGURATIONS DebugGame DevelopmentGame ShippingGame)
+set(SPARKLE_EDITOR_CONFIGURATIONS DevelopmentEditor DebugEditor ShippingEditor)
+set(SPARKLE_GAME_CONFIGURATIONS DevelopmentGame DebugGame ShippingGame)
 
 set(SPARKLE_DEFAULT_CONFIGURATION DevelopmentEditor)
 
@@ -52,23 +52,6 @@ endfunction()
 function(sparkle_join_profile_options option_list output_variable)
     list(JOIN ${option_list} " " joined_options)
     set(${output_variable} "${joined_options}" PARENT_SCOPE)
-endfunction()
-
-function(sparkle_remove_legacy_profile_cache_entries)
-    foreach(legacy_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
-        foreach(cache_entry
-            CMAKE_C_FLAGS_${legacy_config}
-            CMAKE_CXX_FLAGS_${legacy_config}
-            CMAKE_EXE_LINKER_FLAGS_${legacy_config}
-            CMAKE_SHARED_LINKER_FLAGS_${legacy_config}
-            CMAKE_MODULE_LINKER_FLAGS_${legacy_config}
-            CMAKE_STATIC_LINKER_FLAGS_${legacy_config}
-            CMAKE_RC_FLAGS_${legacy_config}
-        )
-            unset(${cache_entry} CACHE)
-            unset(${cache_entry})
-        endforeach()
-    endforeach()
 endfunction()
 
 set(SPARKLE_MSVC_DEBUG_COMPILE_OPTIONS
@@ -138,16 +121,23 @@ foreach(profile IN LISTS SPARKLE_SHIPPING_CONFIGURATIONS)
     endif()
 endforeach()
 
-sparkle_remove_legacy_profile_cache_entries()
-
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:Debug>DLL")
 
 add_compile_definitions(
-    $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPARKLE_BUILD_DEBUG=1;SPARKLE_BUILD_DEVELOPMENT=0;SPARKLE_BUILD_SHIPPING=0>
-    $<$<OR:$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:SPARKLE_BUILD_DEBUG=0;SPARKLE_BUILD_DEVELOPMENT=1;SPARKLE_BUILD_SHIPPING=0>
-    $<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPARKLE_BUILD_DEBUG=0;SPARKLE_BUILD_DEVELOPMENT=0;SPARKLE_BUILD_SHIPPING=1>
-    $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>,$<CONFIG:ShippingEditor>>:SPARKLE_TARGET_EDITOR=1;SPARKLE_TARGET_GAME=0>
-    $<$<OR:$<CONFIG:DebugGame>,$<CONFIG:DevelopmentGame>,$<CONFIG:ShippingGame>>:SPARKLE_TARGET_EDITOR=0;SPARKLE_TARGET_GAME=1>
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPARKLE_BUILD_DEBUG=1>"
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPARKLE_BUILD_DEVELOPMENT=0>"
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPARKLE_BUILD_SHIPPING=0>"
+    "$<$<OR:$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:SPARKLE_BUILD_DEBUG=0>"
+    "$<$<OR:$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:SPARKLE_BUILD_DEVELOPMENT=1>"
+    "$<$<OR:$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:SPARKLE_BUILD_SHIPPING=0>"
+    "$<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPARKLE_BUILD_DEBUG=0>"
+    "$<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPARKLE_BUILD_DEVELOPMENT=0>"
+    "$<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPARKLE_BUILD_SHIPPING=1>"
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>,$<CONFIG:ShippingEditor>>:SPARKLE_TARGET_EDITOR=1>"
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DevelopmentEditor>,$<CONFIG:ShippingEditor>>:SPARKLE_TARGET_GAME=0>"
+    "$<$<OR:$<CONFIG:DebugGame>,$<CONFIG:DevelopmentGame>,$<CONFIG:ShippingGame>>:SPARKLE_TARGET_EDITOR=0>"
+    "$<$<OR:$<CONFIG:DebugGame>,$<CONFIG:DevelopmentGame>,$<CONFIG:ShippingGame>>:SPARKLE_TARGET_GAME=1>"
 )
 
-message(STATUS "Sparkle build profiles: ${SPARKLE_BUILD_CONFIGURATIONS}")
+list(JOIN SPARKLE_BUILD_CONFIGURATIONS ", " SPARKLE_BUILD_CONFIGURATION_LIST)
+message(STATUS "Sparkle build profiles: default=${SPARKLE_DEFAULT_CONFIGURATION}; available=${SPARKLE_BUILD_CONFIGURATION_LIST}")

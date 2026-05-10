@@ -8,23 +8,11 @@ static void PrintUsage()
 {
 	std::cerr << "Usage:\n"
 	          << "  AssetConverter cook-scene <source-scene-path>\n"
-	          << "  AssetConverter collect-texture-requests <source-scene-path> <request-file-path>\n"
-	          << "\n"
-	          << "Compatibility:\n"
-	          << "  AssetConverter <source-scene-path>\n";
+	          << "  AssetConverter collect-texture-requests <source-scene-path> <request-file-path>\n";
 }
 
 int main(int argc, char** argv)
 {
-	if (argc == 2)
-	{
-		const std::string_view argument(argv[1]);
-		if (argument != "cook-scene")
-		{
-			return AssetConverterCommands::RunCookScene(std::filesystem::path(argv[1]));
-		}
-	}
-
 	if (argc == 3)
 	{
 		const std::string_view command(argv[1]);

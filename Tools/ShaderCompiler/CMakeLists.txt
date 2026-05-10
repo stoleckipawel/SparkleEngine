@@ -46,6 +46,7 @@ target_precompile_headers(ShaderCompiler PRIVATE
 
 target_link_libraries(ShaderCompiler
     PRIVATE
+        CookCommon
         SparkleCore
     # ShaderCompiler is allowed to depend only on the shared cooked-shader
     # contract surface from SparkleRHI. Offline DXC ownership stays inside

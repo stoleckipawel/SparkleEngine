@@ -28,8 +28,14 @@ call "%~dp0..\Core\Config.bat"
 
 set "DESIRED_GENERATOR=!GENERATOR!"
 set "DESIRED_PLATFORM=!ARCH!"
-set "DESIRED_TOOLSET="
-if "!USE_CLANG!"=="1" set "DESIRED_TOOLSET=ClangCL"
+set "DESIRED_TOOLSET=!CMAKE_TOOLSET!"
+
+if not defined DESIRED_GENERATOR (
+    echo [ERROR] No supported Visual Studio CMake generator was resolved.
+    echo         Run Scripts\Internal\Toolchain\CheckToolchain.bat for dependency details.
+    set "HELPER_RC=1"
+    goto :FINISH
+)
 
 if not exist "!BUILD_DIR!" (
     echo [LOG] Creating build directory: !BUILD_DIR!
@@ -73,9 +79,9 @@ if exist "!BUILD_DIR!\CMakeCache.txt" (
 )
 
 pushd "!BUILD_DIR!"
-if "!USE_CLANG!"=="1" (
-    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -T ClangCL -Wno-dev
-    cmake -G "!GENERATOR!" -A !ARCH! -T ClangCL -Wno-dev "!ROOT_DIR!"
+if defined CMAKE_TOOLSET (
+    echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -T "!CMAKE_TOOLSET!" -Wno-dev
+    cmake -G "!GENERATOR!" -A !ARCH! -T "!CMAKE_TOOLSET!" -Wno-dev "!ROOT_DIR!"
 ) else (
     echo [LOG] CMake: -G "!GENERATOR!" -A !ARCH! -Wno-dev
     cmake -G "!GENERATOR!" -A !ARCH! -Wno-dev "!ROOT_DIR!"

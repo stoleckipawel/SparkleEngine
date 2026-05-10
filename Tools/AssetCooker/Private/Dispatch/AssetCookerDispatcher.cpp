@@ -13,6 +13,7 @@
 #include "MeshCooker.h"
 #include "SceneCooker.h"
 #include "SourceSceneImporter.h"
+#include "ToolConsole.h"
 #include "TextureCookRequestList.h"
 
 #include <algorithm>
@@ -84,6 +85,20 @@ static const char* AssetCookerCategoryName(AssetCookerCategory category) noexcep
 	}
 }
 
+static std::string AssetCookerBuildPlanStepList(const std::vector<AssetCookerPlanStep>& steps)
+{
+	std::ostringstream output;
+	for (std::size_t stepIndex = 0; stepIndex < steps.size(); ++stepIndex)
+	{
+		if (stepIndex > 0u)
+		{
+			output << ", ";
+		}
+		output << AssetCookerPlanStepName(steps[stepIndex]);
+	}
+	return output.str();
+}
+
 static bool AssetCookerWriteTimingSummary(
     const AssetCookerProjectCookPlan& plan,
     const std::vector<AssetCookerStageTiming>& stageTimings,
@@ -118,8 +133,7 @@ static bool AssetCookerWriteTimingSummary(
 		              << "\"category\": " << Json::QuoteString(AssetCookerCategoryName(output.category)) << ", "
 		              << "\"assetId\": " << Json::QuoteString(output.assetId) << ", "
 		              << "\"path\": " << Json::QuoteString(std::filesystem::path(output.path).generic_string()) << ", "
-		              << "\"reloadHint\": " << Json::QuoteString(output.reloadHint) << ", "
-		              << "\"version\": " << output.version << "}";
+		              << "\"reloadHint\": " << Json::QuoteString(output.reloadHint) << "}";
 		if (outputIndex + 1u < outputs.size())
 		{
 			outputRecords << ',';
@@ -163,12 +177,16 @@ static void AssetCookerPrintTopStageTimings(const std::vector<AssetCookerStageTi
 		return;
 	}
 
-	std::cout << "AssetCooker Top Stages:\n";
+	ToolConsole::ListHeader(std::cout, "AssetCooker stage timings");
 	for (std::size_t timingIndex = 0; timingIndex < sortedTimings.size(); ++timingIndex)
 	{
 		const AssetCookerStageTiming& timing = sortedTimings[timingIndex];
-		std::cout << "  " << (timingIndex + 1u) << ") elapsedMs=" << timing.elapsedMilliseconds
-		          << " status=" << (timing.succeeded ? "succeeded" : "failed") << " stage=" << timing.name << "\n";
+		ToolConsole::ListItem(
+		    std::cout,
+		    timingIndex + 1u,
+		    {ToolConsole::Field("stage", timing.name),
+		     ToolConsole::Field("elapsedMs", std::to_string(timing.elapsedMilliseconds)),
+		     ToolConsole::Field("status", timing.succeeded ? "succeeded" : "failed")});
 	}
 }
 
@@ -296,8 +314,12 @@ static bool AssetCookerAppendDefaultTextureRequest(
 		return false;
 	}
 
-	std::cout << "[LOG] Added default texture request: source='" << request.sourcePath.string() << "' output='"
-	          << request.outputPath.string() << "'\n";
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Queued default texture",
+	    {ToolConsole::QuotedField("name", ToolConsole::PathDisplayName(request.sourcePath)),
+	     ToolConsole::PathField("output", request.outputPath)});
 	outErrorMessage.clear();
 	return true;
 }
@@ -495,16 +517,15 @@ static bool AssetCookerCookImportedScene(
 		return false;
 	}
 
-	std::cout << "AssetCooker: imported '" << sceneEntry.sourcePath.string() << "' via "
-	          << GetSourceImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
-	          << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '" << build.sceneAssetId
-	          << "' to '" << build.sceneManifestPath.string() << "'\n";
-	std::cout << "AssetCooker Scene Summary:\n"
-	          << "  source='" << sceneEntry.sourcePath.string() << "'\n"
-	          << "  importer='" << GetSourceImporterTypeName(importResult.importerType) << "'\n"
-	          << "  meshes=" << importResult.GetMeshCount() << "\n"
-	          << "  materials=" << importResult.GetMaterialCount() << "\n"
-	          << "  sceneManifest='" << build.sceneManifestPath.string() << "'\n";
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Cooked scene",
+	    {ToolConsole::QuotedField("name", sceneEntry.relativePath),
+	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.importerType)),
+	     ToolConsole::Field("meshes", std::to_string(importResult.GetMeshCount())),
+	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
+	     ToolConsole::PathField("manifest", build.sceneManifestPath)});
 	return true;
 }
 
@@ -524,8 +545,14 @@ static bool AssetCookerCollectTextureRequests(
 
 	for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
 	{
-		std::cout << "\n[LOG] Collecting texture requests [" << (collectedSceneCount + 1) << "/" << plan.sceneEntries.size()
-		          << "] " << sceneEntry.origin << ": " << sceneEntry.relativePath << "\n";
+		ToolConsole::Progress(
+		    std::cout,
+		    "Collecting",
+		    "texture-references",
+		    collectedSceneCount + 1u,
+		    plan.sceneEntries.size(),
+		    sceneEntry.relativePath,
+		    {ToolConsole::Field("origin", sceneEntry.origin)});
 
 		std::vector<TextureCookRequest> sceneRequests;
 		const bool collected = AssetCookerRunWithImportedScene(
@@ -558,6 +585,13 @@ static bool AssetCookerCollectTextureRequests(
 			}
 		}
 
+		ToolConsole::Message(
+		    std::cout,
+		    ToolConsoleSeverity::Info,
+		    "Queued texture references",
+		    {ToolConsole::Field("textures", std::to_string(sceneRequests.size())),
+		     ToolConsole::QuotedField("scene", sceneEntry.relativePath)});
+
 		++collectedSceneCount;
 	}
 
@@ -581,8 +615,11 @@ static bool AssetCookerCollectTextureRequests(
 		return false;
 	}
 
-	std::cout << "\n[LOG] Collected " << requests.size() << " unique texture request(s) into " << textureRequestPath.string()
-	          << "\n";
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Texture request plan",
+	    {ToolConsole::Field("textures", std::to_string(requests.size())), ToolConsole::PathField("requestFile", textureRequestPath)});
 	return true;
 }
 
@@ -595,6 +632,7 @@ static bool AssetCookerRunShaders(
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.Stage.Shaders");
 
 	const std::filesystem::path shaderCompilerPath = AssetCookerResolveToolPath(plan, "ShaderCompiler");
+	ToolConsole::Info("Cooking shaders: validating package registry...");
 	int exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"list-shaders", L"--validate"}, plan.projectRoot);
 	if (exitCode != 0)
 	{
@@ -602,6 +640,7 @@ static bool AssetCookerRunShaders(
 		return false;
 	}
 
+	ToolConsole::Info("Cooking shaders: writing package payloads...");
 	exitCode = AssetCookerToolProcess::Run(shaderCompilerPath, {L"cook"}, plan.projectRoot);
 	if (exitCode != 0)
 	{
@@ -635,6 +674,7 @@ static bool AssetCookerRunTextures(
 
 	const std::filesystem::path textureCookerPath = AssetCookerResolveToolPath(plan, "TextureCooker");
 	const std::filesystem::path textureRequestPath = AssetCookerMakeTempPath(plan, "assetcooker-texture-requests", ".txt");
+	ToolConsole::Info("Cooking textures: building request plan from scene materials...");
 
 	std::error_code createError;
 	std::filesystem::create_directories(textureRequestPath.parent_path(), createError);
@@ -682,8 +722,14 @@ static bool AssetCookerRunSceneAssets(
 	int cookedSceneCount = 0;
 	for (const AssetCookerSceneEntry& sceneEntry : plan.sceneEntries)
 	{
-		std::cout << "\n[LOG] Cooking [" << (cookedSceneCount + 1) << "/" << plan.sceneEntries.size() << "] "
-		          << sceneEntry.origin << ": " << sceneEntry.relativePath << "\n";
+		ToolConsole::Progress(
+		    std::cout,
+		    "Cooking",
+		    "scene",
+		    cookedSceneCount + 1u,
+		    plan.sceneEntries.size(),
+		    sceneEntry.relativePath,
+		    {ToolConsole::Field("origin", sceneEntry.origin)});
 
 		const bool cooked = AssetCookerRunWithImportedScene(
 		    sceneEntry,
@@ -783,19 +829,24 @@ bool AssetCookerDispatcher::DispatchPlan(
 	    plan.projectSceneCount,
 	    plan.overriddenEngineSceneCount);
 
-	std::cout << "AssetCooker Plan:\n"
-	          << "  project=" << plan.projectName << "\n"
-	          << "  configuration=" << plan.configuration << "\n"
-	          << "  engineScenes=" << plan.engineSceneCount << "\n"
-	          << "  projectScenes=" << plan.projectSceneCount << "\n"
-	          << "  overrides=" << plan.overriddenEngineSceneCount << "\n"
-	          << "  finalScenes=" << plan.sceneEntries.size() << "\n";
+	ToolConsole::Summary(
+	    std::cout,
+	    "AssetCooker plan",
+	    {ToolConsole::QuotedField("project", plan.projectName),
+	     ToolConsole::QuotedField("configuration", plan.configuration),
+	     ToolConsole::QuotedField("steps", AssetCookerBuildPlanStepList(plan.steps)),
+	     ToolConsole::Field("scenes", std::to_string(plan.sceneEntries.size())),
+	     ToolConsole::Field("engineScenes", std::to_string(plan.engineSceneCount)),
+	     ToolConsole::Field("projectScenes", std::to_string(plan.projectSceneCount)),
+	     ToolConsole::Field("overrides", std::to_string(plan.overriddenEngineSceneCount))});
 
-	for (const AssetCookerPlanStep step : plan.steps)
+	for (std::size_t stepIndex = 0; stepIndex < plan.steps.size(); ++stepIndex)
 	{
+		const AssetCookerPlanStep step = plan.steps[stepIndex];
 		AssetCookerStageTiming stageTiming;
 		stageTiming.name = AssetCookerPlanStepName(step);
 		const auto stageStartTime = std::chrono::steady_clock::now();
+		ToolConsole::Progress(std::cout, "Cooking", "stage", stepIndex + 1u, plan.steps.size(), stageTiming.name);
 
 		if (step == AssetCookerPlanStep::Shaders)
 		{
@@ -812,6 +863,13 @@ bool AssetCookerDispatcher::DispatchPlan(
 
 		stageTiming.elapsedMilliseconds = AssetCookerElapsedMilliseconds(stageStartTime);
 		stageTimings.push_back(std::move(stageTiming));
+		ToolConsole::Message(
+		    std::cout,
+		    ToolConsoleSeverity::Info,
+		    "Stage finished",
+		    {ToolConsole::QuotedField("name", stageTimings.back().name),
+		     ToolConsole::Field("status", stageTimings.back().succeeded ? "completed" : "failed"),
+		     ToolConsole::Field("elapsedMs", std::to_string(stageTimings.back().elapsedMilliseconds))});
 		if (!stageTimings.back().succeeded)
 		{
 			AssetCookerPrintTopStageTimings(stageTimings);
@@ -829,7 +887,6 @@ bool AssetCookerDispatcher::DispatchPlan(
 			else
 			{
 				diagnostics.AddInfo(AssetCookerCategory_All, "Timing summary written to " + plan.summaryPath.string() + ".");
-				std::cout << "AssetCooker: timing summary written to '" << plan.summaryPath.string() << "'\n";
 			}
 			return false;
 		}
@@ -850,7 +907,6 @@ bool AssetCookerDispatcher::DispatchPlan(
 	else
 	{
 		diagnostics.AddInfo(AssetCookerCategory_All, "Timing summary written to " + plan.summaryPath.string() + ".");
-		std::cout << "AssetCooker: timing summary written to '" << plan.summaryPath.string() << "'\n";
 	}
 
 	return true;

@@ -1,4 +1,4 @@
-﻿if(NOT DEFINED TEXTURE_COOKER_BOUNDARY_SOURCE_DIR)
+if(NOT DEFINED TEXTURE_COOKER_BOUNDARY_SOURCE_DIR)
     set(TEXTURE_COOKER_BOUNDARY_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -185,7 +185,7 @@ endforeach()
 
 if(TEXTURE_COOKER_BOUNDARY_VIOLATIONS)
     string(PREPEND TEXTURE_COOKER_BOUNDARY_VIOLATIONS
-        "TextureCooker boundary validation failed. Runtime modules must stay free of TextureCooker tool references and legacy KTX runtime loading, AssetConverter must stay free of low-level texture loading and serialization implementation, and TextureCooker must stay free of scene-import and GameFramework-specific ownership.\n")
+        "TextureCooker boundary validation failed. Runtime modules must stay free of TextureCooker tool references and KTX runtime loading, AssetConverter must stay free of low-level texture loading and serialization implementation, and TextureCooker must stay free of scene-import and GameFramework-specific ownership.\n")
     message(FATAL_ERROR "${TEXTURE_COOKER_BOUNDARY_VIOLATIONS}")
 endif()
 

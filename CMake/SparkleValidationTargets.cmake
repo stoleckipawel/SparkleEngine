@@ -56,10 +56,9 @@ add_custom_target(
         -DTOOLS_ARCHITECTURE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
         -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateToolsArchitectureBoundary.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Validating Tools public seams, private implementation boundaries, and shared cook services..."
+    COMMENT "Validating Tools public seams and private implementation boundaries..."
 )
 
-add_sparkle_validation_dependency(CookCommon tools_architecture_boundary_check)
 add_sparkle_validation_dependency(AssetCookerCore tools_architecture_boundary_check)
 add_sparkle_validation_dependency(AssetCooker tools_architecture_boundary_check)
 add_sparkle_validation_dependency(SourceImportAdapters tools_architecture_boundary_check)
@@ -77,7 +76,7 @@ add_custom_target(
         -DLOGGING_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
         -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateLoggingBoundary.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Validating repo-wide logging ownership, logger acquisition, and legacy logging removal..."
+    COMMENT "Validating repo-wide logging ownership, logger acquisition, and deleted logging facade guard..."
 )
 
 function(add_logging_boundary_dependency_if_target target_name)
@@ -101,7 +100,6 @@ add_logging_boundary_dependency_if_target(SceneCooker)
 add_logging_boundary_dependency_if_target(TextureCookShared)
 add_logging_boundary_dependency_if_target(TextureCooker)
 add_logging_boundary_dependency_if_target(ShaderCompiler)
-add_logging_boundary_dependency_if_target(CookCommon)
 
 add_custom_target(
     sparkle_validation_check

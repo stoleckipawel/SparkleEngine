@@ -13,14 +13,15 @@ obj/
 !Scripts/Internal/Build/
 !Scripts/Internal/Build/**
 
-# Build results
-[Dd]ebug*/
-[Dd]ebugPublic/
-[Rr]elease*/
-[Rr]eleases/
-x64/
-x86/
-[Aa][Rr][Mm]*/
+# Build results accidentally emitted at the repository root.
+# Nested source folders named Debug/Release are real code and must remain visible.
+/[Dd]ebug*/
+/[Dd]ebugPublic/
+/[Rr]elease*/
+/[Rr]eleases/
+/x64/
+/x86/
+/[Aa][Rr][Mm]*/
 
 # Keep shader debug include files tracked.
 !Engine/Assets/Shaders/Debug/

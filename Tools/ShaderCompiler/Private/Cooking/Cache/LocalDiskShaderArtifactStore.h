@@ -19,10 +19,8 @@ class LocalDiskShaderArtifactStore final : public IShaderArtifactStore
 	bool Put(const ShaderCacheKey& key, const CookedStageBuild& build, std::string& outErrorMessage) override;
 
   private:
-	// v2 adds backend identity and ShaderReflection per cached stage.
-	// The version bump protects against stray on-disk v1 artifacts.
 	static constexpr std::uint32_t kFormatMagic = 0x31414353;
-	static constexpr std::uint32_t kFormatVersion = 2;
+	static constexpr std::uint32_t kFormatVersion = 1;
 
 	std::filesystem::path BuildArtifactPath(const ShaderCacheKey& key) const;
 	static bool Serialize(const CookedStageBuild& build, std::vector<std::uint8_t>& outBytes, std::string& outErrorMessage);

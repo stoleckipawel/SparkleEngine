@@ -10,6 +10,7 @@
 #include "Cooking/ShaderPackageCooker.h"
 #include "Cooking/StageCompiler.h"
 #include "ShaderDebugArtifactSet.h"
+#include "ToolConsole.h"
 #include "Verification/ShaderParameterStructVerifier.h"
 
 #include <iostream>
@@ -24,9 +25,13 @@ namespace
 
 	void PrintCookPlanSummary(const ShaderCookPipelinePlan& plan, const ShaderPackageCookSettings& settings)
 	{
-		std::cout << "ShaderCompiler: cooking " << plan.packages.size() << " package(s), "
-		          << plan.graph.Size() << " stage job(s), backend='" << settings.backendName
-		          << "', cache=" << (settings.useCache ? "enabled" : "disabled") << "\n";
+		ToolConsole::Summary(
+		    std::cout,
+		    "ShaderCompiler cook plan",
+		    {ToolConsole::Field("packages", std::to_string(plan.packages.size())),
+		     ToolConsole::Field("stageJobs", std::to_string(plan.graph.Size())),
+		     ToolConsole::QuotedField("backend", settings.backendName),
+		     ToolConsole::Field("cache", settings.useCache ? "enabled" : "disabled")});
 	}
 
 	void PrintPackageProgress(
@@ -35,9 +40,14 @@ namespace
 		const CookNode& node)
 	{
 		const ShaderCookPackageDesc& package = plan.packages[node.packageIndex];
-		std::cout << "ShaderCompiler: package [" << (node.packageIndex + 1) << '/' << plan.packages.size() << "] '"
-		          << package.packageId << "' jobs="
-		          << CountPackageJobs(package, settings) << "\n";
+		ToolConsole::Progress(
+		    std::cout,
+		    "Cooking",
+		    "shader-package",
+		    node.packageIndex + 1u,
+		    plan.packages.size(),
+		    package.packageId,
+		    {ToolConsole::Field("jobs", std::to_string(CountPackageJobs(package, settings)))});
 	}
 
 	void PrintStageProgress(
@@ -47,13 +57,18 @@ namespace
 		std::string_view backendName,
 		std::string_view status)
 	{
-		std::cout << "  [" << (counters.processedNodeCount + 1) << '/' << plan.graph.Size() << "] "
-		          << status
-		          << " package='" << node.package->packageId
-		          << "' stage='" << GetShaderStagePrefix(node.stage->stage)
-		          << "' target='" << GetShaderTargetName(node.compileOptions.Target)
-		          << "' backend='" << backendName << "'"
-		          << " source='" << node.stage->sourcePath.generic_string() << "'\n";
+		ToolConsole::Progress(
+		    std::cout,
+		    "Processing",
+		    "shader-stage",
+		    counters.processedNodeCount + 1u,
+		    plan.graph.Size(),
+		    node.package->packageId,
+		    {ToolConsole::Field("status", std::string(status)),
+		     ToolConsole::Field("stage", GetShaderStagePrefix(node.stage->stage)),
+		     ToolConsole::Field("target", GetShaderTargetName(node.compileOptions.Target)),
+		     ToolConsole::QuotedField("backend", std::string(backendName)),
+		     ToolConsole::QuotedField("source", node.stage->sourcePath.generic_string())});
 	}
 }
 

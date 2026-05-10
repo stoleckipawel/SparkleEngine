@@ -80,6 +80,32 @@ namespace Logging
 			return initialized;
 		}
 
+		spdlog::level::level_enum ReadConfiguredLogLevel() noexcept
+		{
+			std::string configuredLevel;
+			if (!Environment::TryGetVariable("SPARKLE_LOG_LEVEL", configuredLevel))
+			{
+				return spdlog::level::info;
+			}
+
+			for (char& character : configuredLevel)
+			{
+				if (character >= 'A' && character <= 'Z')
+				{
+					character = static_cast<char>(character - 'A' + 'a');
+				}
+			}
+
+			if (configuredLevel == "trace") return spdlog::level::trace;
+			if (configuredLevel == "debug") return spdlog::level::debug;
+			if (configuredLevel == "info") return spdlog::level::info;
+			if (configuredLevel == "warn" || configuredLevel == "warning") return spdlog::level::warn;
+			if (configuredLevel == "err" || configuredLevel == "error") return spdlog::level::err;
+			if (configuredLevel == "critical") return spdlog::level::critical;
+			if (configuredLevel == "off") return spdlog::level::off;
+			return spdlog::level::info;
+		}
+
 #if defined(_WIN32)
 		class DebugOutputSink final : public spdlog::sinks::base_sink<std::mutex>
 		{
@@ -200,6 +226,7 @@ namespace Logging
 			}
 
 			GetSharedSinks() = CreateDefaultSinks();
+			GetLevelStorage().store(static_cast<int>(ReadConfiguredLogLevel()), std::memory_order_relaxed);
 			auto coreLogger = CreateLogger(kCoreLoggerName);
 			GetNamedLoggers().emplace(std::string(kCoreLoggerName), coreLogger);
 			spdlog::set_default_logger(coreLogger);

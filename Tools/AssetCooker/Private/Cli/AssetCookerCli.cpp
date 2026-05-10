@@ -5,6 +5,7 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Diagnostics/Trace.h"
+#include "ToolConsole.h"
 
 #include <iostream>
 #include <string>
@@ -225,19 +226,33 @@ static void AssetCookerCliPrintResult(const AssetCookerServiceResult& result)
 {
 	for (const AssetCookerDiagnosticRecord& diagnostic : result.diagnostics)
 	{
-		const char* prefix = diagnostic.severity == AssetCookerDiagnosticSeverity_Error ? "[ERROR]" :
-		                     diagnostic.severity == AssetCookerDiagnosticSeverity_Warning ? "[WARN]" :
-		                                                                                     "[LOG]";
-		std::cout << prefix << " " << diagnostic.message << "\n";
+		const ToolConsoleSeverity severity = diagnostic.severity == AssetCookerDiagnosticSeverity_Error ? ToolConsoleSeverity::Error :
+		                                     diagnostic.severity == AssetCookerDiagnosticSeverity_Warning ? ToolConsoleSeverity::Warning :
+		                                                                                                     ToolConsoleSeverity::Info;
+		if (diagnostic.sourcePath.empty())
+		{
+			ToolConsole::Message(severity == ToolConsoleSeverity::Error ? std::cerr : std::cout, severity, diagnostic.message);
+		}
+		else
+		{
+			ToolConsole::Message(
+			    severity == ToolConsoleSeverity::Error ? std::cerr : std::cout,
+			    severity,
+			    diagnostic.message,
+			    {ToolConsole::QuotedField("source", diagnostic.sourcePath)});
+		}
 	}
 
 	for (const AssetCookerOutputRecord& output : result.outputs)
 	{
-		std::cout << "[LOG] Output: category=" << AssetCookerCliGetCategoryName(output.category)
-		          << " assetId='" << output.assetId << "'"
-		          << " path='" << output.path << "'"
-		          << " reloadHint='" << output.reloadHint << "'"
-		          << " version=" << output.version << "\n";
+		ToolConsole::Message(
+		    std::cout,
+		    ToolConsoleSeverity::Info,
+		    "Cooked output",
+		    {ToolConsole::Field("type", AssetCookerCliGetCategoryName(output.category)),
+		     ToolConsole::QuotedField("name", output.assetId),
+		     ToolConsole::QuotedField("path", output.path),
+		     ToolConsole::QuotedField("reload", output.reloadHint)});
 	}
 }
 

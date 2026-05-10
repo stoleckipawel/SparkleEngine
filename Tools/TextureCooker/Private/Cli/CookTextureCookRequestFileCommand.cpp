@@ -7,8 +7,7 @@
 
 	bool CookTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
 	{
-		return commandName == TextureCookerConstants::CookRequestFileCommand ||
-		       commandName == TextureCookerConstants::CookRequestFileAlias;
+		return commandName == TextureCookerConstants::CookRequestFileCommand;
 	}
 
 	int CookTextureCookRequestFileCommand::Execute(

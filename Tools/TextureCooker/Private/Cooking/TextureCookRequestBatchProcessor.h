@@ -14,8 +14,6 @@
 	{
 		std::uint64_t elapsedMilliseconds = 0;
 		TextureAssetId assetId = InvalidTextureAssetId;
-		bool cooked = false;
-		bool skipped = false;
 		std::filesystem::path sourcePath;
 	};
 
@@ -48,14 +46,12 @@
 			const TextureCookRequest& request,
 			TextureAssetCooker& cooker,
 			std::size_t& outCookedCount,
-			std::size_t& outSkippedCount,
 			std::string& outErrorMessage) const;
 
 		static void PrintSummary(
 			const std::filesystem::path& requestFilePath,
 			std::size_t requestCount,
 			std::size_t cookedCount,
-			std::size_t skippedCount,
 			std::uint64_t elapsedMilliseconds,
 			const std::vector<TextureCookRequestTiming>& requestTimings);
 
@@ -64,10 +60,8 @@
 			const std::filesystem::path& requestFilePath,
 			std::size_t requestCount,
 			std::size_t cookedCount,
-			std::size_t skippedCount,
 			std::uint64_t elapsedMilliseconds,
 			const std::vector<TextureCookRequestTiming>& requestTimings,
 			std::string& outErrorMessage);
 
-		static void PrintProcessedRequest(const TextureCookRequest& request);
 	};

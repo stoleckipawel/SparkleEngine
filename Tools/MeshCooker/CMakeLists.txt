@@ -36,8 +36,6 @@ target_link_libraries(MeshCooker
         SourceImportAdapters
         SparkleCore
         SparkleGameFramework
-    PRIVATE
-        CookCommon
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${MESH_COOKER_PUBLIC_HEADERS})

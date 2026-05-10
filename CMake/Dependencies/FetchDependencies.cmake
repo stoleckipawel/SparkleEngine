@@ -31,7 +31,61 @@ if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
 endif()
 
-set(FETCHCONTENT_QUIET OFF)
+option(SPARKLE_VERBOSE_DEPENDENCIES "Show detailed third-party dependency configure output" OFF)
+if(SPARKLE_VERBOSE_DEPENDENCIES)
+    set(FETCHCONTENT_QUIET OFF)
+else()
+    set(FETCHCONTENT_QUIET ON)
+endif()
+option(SPARKLE_GIT_PROGRESS "Show raw Git object transfer progress while fetching third-party dependencies" OFF)
+if(SPARKLE_GIT_PROGRESS)
+    set(_sparkle_git_progress TRUE)
+    set(_sparkle_git_progress_args --progress)
+else()
+    set(_sparkle_git_progress FALSE)
+    set(_sparkle_git_progress_args)
+endif()
+
+function(sparkle_log_dependency_step step total name ref size purpose repository)
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "")
+        message(STATUS "  [${step}/${total}] ${name} ${ref}")
+        message(STATUS "        Purpose: ${purpose}")
+        message(STATUS "        Source:  ${repository}")
+        message(STATUS "        Expected download: ${size}")
+    endif()
+endfunction()
+
+function(sparkle_log_dependency_ready name source size)
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "  ${name}: ${source} (${size})")
+    endif()
+endfunction()
+
+function(sparkle_add_dependency_subdirectory source_dir binary_dir)
+    if(DEFINED CMAKE_MESSAGE_LOG_LEVEL)
+        set(_sparkle_previous_message_log_level "${CMAKE_MESSAGE_LOG_LEVEL}")
+        set(_sparkle_had_message_log_level TRUE)
+    else()
+        set(_sparkle_had_message_log_level FALSE)
+    endif()
+
+    if(NOT SPARKLE_VERBOSE_DEPENDENCIES)
+        set(CMAKE_MESSAGE_LOG_LEVEL WARNING)
+    endif()
+
+    if(ARGC GREATER 2 AND "${ARGV2}" STREQUAL "EXCLUDE_FROM_ALL")
+        add_subdirectory(${source_dir} ${binary_dir} EXCLUDE_FROM_ALL)
+    else()
+        add_subdirectory(${source_dir} ${binary_dir})
+    endif()
+
+    if(_sparkle_had_message_log_level)
+        set(CMAKE_MESSAGE_LOG_LEVEL "${_sparkle_previous_message_log_level}")
+    else()
+        unset(CMAKE_MESSAGE_LOG_LEVEL)
+    endif()
+endfunction()
 
 # Skip Git LFS entirely - we only need source code, not test assets.
 # Prevents multi-GB LFS pulls from compressonator and KTX repos.
@@ -47,25 +101,17 @@ set(ENV{GIT_CONFIG_PARAMETERS} "'filter.lfs.process=' 'filter.lfs.smudge=' 'filt
 # Locate git once - used by recovery loop and compressonator sparse checkout.
 find_program(_git_exe git REQUIRED)
 
-message(STATUS "")
-message(STATUS "=== Fetching Third-Party Dependencies ===")
-message(STATUS "")
-message(STATUS "  Total download: ~87 MB (shallow clones, LFS skipped)")
-message(STATUS "  Expected time:  1-3 minutes depending on connection")
-message(STATUS "")
-message(STATUS "  Dependency sizes:")
-message(STATUS "    imgui            ~7 MB")
-message(STATUS "    cgltf            ~1 MB")
-message(STATUS "    stb              ~5 MB")
-message(STATUS "    tinyexr          ~1 MB")
-message(STATUS "    spdlog           ~3 MB")
-message(STATUS "    zlib             ~1 MB")
-message(STATUS "    assimp          ~15 MB")
-message(STATUS "    Compressonator   ~5 MB  (sparse checkout - cmp_core only)")
-message(STATUS "    KTX-Software    ~46 MB  (largest)")
-message(STATUS "    SPIRV-Reflect   ~2 MB")
-message(STATUS "    Editor Icons   ~0.5 MB  (Font Awesome Solid font asset only)")
-message(STATUS "")
+if(SPARKLE_VERBOSE_DEPENDENCIES)
+    message(STATUS "")
+    message(STATUS "=== Third-Party Dependencies ===")
+    message(STATUS "")
+    message(STATUS "  Total download on fresh cache: ~87 MB (shallow clones, LFS skipped)")
+    message(STATUS "  Output mode: detailed dependency context")
+    message(STATUS "  Git progress: ${SPARKLE_GIT_PROGRESS}")
+    message(STATUS "")
+else()
+    message(STATUS "Third-party dependencies: checking cache (set SPARKLE_VERBOSE_DEPENDENCIES=ON for details)")
+endif()
 
 function(download_sparkle_editor_asset url output_path display_name)
     set(_needs_download TRUE)
@@ -130,7 +176,9 @@ foreach(_dep imgui cgltf stb tinyexr spdlog zlib assimp ktx spirv_reflect)
                 RESULT_VARIABLE _git_rc
                 OUTPUT_QUIET ERROR_QUIET
             )
-            message(STATUS "  Reusing existing clone: ${_dep}-src")
+            if(SPARKLE_VERBOSE_DEPENDENCIES)
+                message(STATUS "  Reusing existing clone: ${_dep}-src")
+            endif()
             set(FETCHCONTENT_SOURCE_DIR_${_dep_upper} "${_src_dir}" CACHE PATH "" FORCE)
         endif()
     endif()
@@ -147,9 +195,9 @@ FetchContent_Declare(imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG        v1.92.5
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [1/11] Fetching Dear ImGui v1.92.5 (~7 MB)...")
+sparkle_log_dependency_step(1 11 "Dear ImGui" "v1.92.5" "~7 MB" "Immediate-mode UI core and Win32 platform backend" "https://github.com/ocornut/imgui.git")
 FetchContent_Populate(imgui)
 
 add_library(imgui STATIC
@@ -180,7 +228,7 @@ if(MSVC)
 endif()
 
 set_target_properties(imgui PROPERTIES FOLDER "ThirdParty")
-message(STATUS "  imgui:          ${imgui_SOURCE_DIR} (~7 MB)")
+sparkle_log_dependency_ready("imgui" "${imgui_SOURCE_DIR}" "~7 MB")
 
 # ============================================================================
 # cgltf - Single-header glTF 2.0 parser
@@ -196,9 +244,9 @@ FetchContent_Declare(cgltf
     GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
     GIT_TAG        v1.15
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [2/11] Fetching cgltf v1.15 (~1 MB)...")
+sparkle_log_dependency_step(2 11 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
 FetchContent_Populate(cgltf)
 
 add_library(cgltf INTERFACE)
@@ -210,7 +258,7 @@ if(MSVC)
     target_compile_options(cgltf INTERFACE /wd4996)
 endif()
 
-message(STATUS "  cgltf:          ${cgltf_SOURCE_DIR} (~1 MB)")
+sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
 
 # ============================================================================
 # stb - Header-only image loading and resizing
@@ -226,15 +274,15 @@ FetchContent_Declare(stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
     GIT_TAG        master
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [3/11] Fetching stb (~5 MB)...")
+sparkle_log_dependency_step(3 11 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
 FetchContent_Populate(stb)
 
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
-message(STATUS "  stb:            ${stb_SOURCE_DIR} (~5 MB)")
+sparkle_log_dependency_ready("stb" "${stb_SOURCE_DIR}" "~5 MB")
 
 # ============================================================================
 # tinyexr - Header-only OpenEXR image loader
@@ -248,9 +296,9 @@ FetchContent_Declare(tinyexr
     GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
     GIT_TAG        v1.0.7
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [4/11] Fetching tinyexr v1.0.7 (~1 MB)...")
+sparkle_log_dependency_step(4 11 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
 FetchContent_Populate(tinyexr)
 
 add_library(tinyexr INTERFACE)
@@ -261,15 +309,14 @@ target_include_directories(tinyexr INTERFACE
     ${tinyexr_SOURCE_DIR}/miniz
 )
 
-message(STATUS "  tinyexr:        ${tinyexr_SOURCE_DIR} (~1 MB)")
+sparkle_log_dependency_ready("tinyexr" "${tinyexr_SOURCE_DIR}" "~1 MB")
 
 # ============================================================================
 # spdlog - Repo-owned logging backend
 # https://github.com/gabime/spdlog
 #
-# SparkleCore owns logger bootstrap and named logger lifetime, while repo
-# callsites gradually migrate toward direct spdlog usage after logger lookup.
-# That means SparkleCore now exposes spdlog-backed public logging headers.
+# SparkleCore owns logger bootstrap, named logger lifetime, and public
+# spdlog-backed logging headers used by repo callsites.
 #
 # Target:  spdlog::spdlog_header_only
 # Usage:   target_link_libraries(YourTarget PRIVATE spdlog::spdlog_header_only)
@@ -278,9 +325,9 @@ FetchContent_Declare(spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG        v1.14.1
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [5/11] Fetching spdlog v1.14.1 (~3 MB)...")
+sparkle_log_dependency_step(5 11 "spdlog" "v1.14.1" "~3 MB" "Repo-wide logging backend" "https://github.com/gabime/spdlog.git")
 FetchContent_Populate(spdlog)
 
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
@@ -293,7 +340,7 @@ set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_BENCH_HO OFF CACHE BOOL "" FORCE)
 set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
+sparkle_add_dependency_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
 
 if(TARGET spdlog_header_only AND NOT TARGET spdlog::spdlog_header_only)
     add_library(spdlog::spdlog_header_only ALIAS spdlog_header_only)
@@ -301,20 +348,22 @@ endif()
 
 if(TARGET spdlog)
     set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
+    target_compile_definitions(spdlog PUBLIC FMT_CONSTEVAL=constexpr)
 endif()
 
 if(TARGET spdlog_header_only)
     set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
+    target_compile_definitions(spdlog_header_only INTERFACE FMT_CONSTEVAL=constexpr)
 endif()
 
-message(STATUS "  spdlog:         ${spdlog_SOURCE_DIR} (~3 MB)")
+sparkle_log_dependency_ready("spdlog" "${spdlog_SOURCE_DIR}" "~3 MB")
 
 # ============================================================================
 # zlib - Compression backend for Assimp
 # https://github.com/madler/zlib
 #
 # Assimp's bundled zlib is 1.2.13 and still uses K&R-style function
-# definitions that clang-cl reports as deprecated non-prototype definitions.
+# definitions that clang-cl warns about as non-prototype definitions.
 # Keep zlib as an explicit pinned dependency so Assimp links the modernized
 # 1.3.1 source instead of building its bundled copy.
 #
@@ -325,13 +374,13 @@ FetchContent_Declare(zlib
     GIT_REPOSITORY https://github.com/madler/zlib.git
     GIT_TAG        v1.3.1
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [6/11] Fetching zlib v1.3.1 (~1 MB)...")
+sparkle_log_dependency_step(6 11 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
 FetchContent_Populate(zlib)
 
 set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-add_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+sparkle_add_dependency_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 if(TARGET zlibstatic AND NOT TARGET ZLIB::ZLIB)
     add_library(ZLIB::ZLIB ALIAS zlibstatic)
@@ -350,15 +399,14 @@ set(ZLIB_LIBRARIES zlibstatic)
 set(ZLIB_INCLUDE_DIR ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
 set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
 
-message(STATUS "  zlib:           ${zlib_SOURCE_DIR} (~1 MB)")
+sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
 
 # ============================================================================
 # Assimp - Open Asset Import Library
 # https://github.com/assimp/assimp
 #
-# Provides FBX and other DCC format import for the transitional runtime path.
-# This remains a private dependency of GameFramework and should move to the
-# converter tool in the final pipeline.
+# Provides FBX and other DCC format import through the GameFramework scene
+# import path. This remains a private dependency of GameFramework.
 #
 # Target:  assimp::assimp
 # Usage:   target_link_libraries(YourTarget PRIVATE assimp::assimp)
@@ -367,9 +415,9 @@ FetchContent_Declare(assimp
     GIT_REPOSITORY https://github.com/assimp/assimp.git
     GIT_TAG        v5.4.3
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [7/11] Fetching Assimp v5.4.3 (~15 MB)...")
+sparkle_log_dependency_step(7 11 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
 FetchContent_Populate(assimp)
 
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -377,7 +425,7 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
-add_subdirectory(${assimp_SOURCE_DIR} ${assimp_BINARY_DIR})
+sparkle_add_dependency_subdirectory(${assimp_SOURCE_DIR} ${assimp_BINARY_DIR})
 
 if(TARGET assimp AND NOT TARGET assimp::assimp)
     add_library(assimp::assimp ALIAS assimp)
@@ -387,7 +435,7 @@ if(TARGET assimp)
     set_target_properties(assimp PROPERTIES FOLDER "ThirdParty/Assimp")
 endif()
 
-message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
+sparkle_log_dependency_ready("assimp" "${assimp_SOURCE_DIR}" "~15 MB")
 
 # ============================================================================
 # AMD Compressonator - BC1-BC7 texture block compression
@@ -407,8 +455,7 @@ message(STATUS "  assimp:         ${assimp_SOURCE_DIR} (~15 MB)")
 #          #include "cmp_core.h"
 # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
 # ============================================================================
-message(STATUS "")
-message(STATUS "  [8/11] Fetching Compressonator (sparse checkout, ~5 MB)...")
+sparkle_log_dependency_step(8 11 "Compressonator" "master (sparse)" "~5 MB" "AMD BC1-BC7 texture block compression; sparse checkout of cmp_core only" "https://github.com/GPUOpen-Tools/compressonator.git")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -419,10 +466,12 @@ if(NOT EXISTS "${_comp_src}/cmp_core/source/cmp_core.cpp")
     # --depth=1           = shallow (single commit, no history)
     file(REMOVE_RECURSE "${_comp_src}")
 
-    message(STATUS "    Cloning (partial + sparse)...")
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "    Cloning (partial + sparse)...")
+    endif()
     execute_process(
         COMMAND "${_git_exe}" clone
-            --depth=1 --filter=blob:none --sparse --progress
+            --depth=1 --filter=blob:none --sparse ${_sparkle_git_progress_args}
             https://github.com/GPUOpen-Tools/compressonator.git
             "${_comp_src}"
         RESULT_VARIABLE _rc
@@ -431,7 +480,9 @@ if(NOT EXISTS "${_comp_src}/cmp_core/source/cmp_core.cpp")
         message(FATAL_ERROR "Failed to clone compressonator (exit code ${_rc})")
     endif()
 
-    message(STATUS "    Setting sparse checkout paths: cmp_core, applications/_libs/cmp_math")
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "    Setting sparse checkout paths: cmp_core, applications/_libs/cmp_math")
+    endif()
     execute_process(
         COMMAND "${_git_exe}" sparse-checkout set
             cmp_core
@@ -443,7 +494,9 @@ if(NOT EXISTS "${_comp_src}/cmp_core/source/cmp_core.cpp")
         message(FATAL_ERROR "Failed to set sparse checkout for compressonator (exit code ${_rc})")
     endif()
 else()
-    message(STATUS "    Reusing existing sparse clone")
+    if(SPARKLE_VERBOSE_DEPENDENCIES)
+        message(STATUS "    Reusing existing sparse clone")
+    endif()
 endif()
 
 set(compressonator_SOURCE_DIR "${_comp_src}")
@@ -529,7 +582,7 @@ set_target_properties(CMP_Core CMP_Core_SSE CMP_Core_AVX CMP_Core_AVX512
     PROPERTIES FOLDER "ThirdParty/Compressonator"
 )
 
-message(STATUS "  Compressonator: ${compressonator_SOURCE_DIR}/cmp_core (~5 MB, sparse)")
+sparkle_log_dependency_ready("Compressonator" "${compressonator_SOURCE_DIR}/cmp_core" "~5 MB, sparse")
 
 # ============================================================================
 # KTX-Software - KTX2 texture container read/write
@@ -547,11 +600,10 @@ FetchContent_Declare(ktx
     GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
     GIT_TAG        v4.3.2
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
     GIT_SUBMODULES ""
 )
-message(STATUS "")
-message(STATUS "  [9/11] Fetching KTX-Software v4.3.2 (~46 MB) - largest dependency...")
+sparkle_log_dependency_step(9 11 "KTX-Software" "v4.3.2" "~46 MB (largest dependency)" "KTX2 texture container read/write, with tests/tools/docs/JNI/Python disabled" "https://github.com/KhronosGroup/KTX-Software.git")
 FetchContent_Populate(ktx)
 
 # Disable features we don't need
@@ -572,7 +624,7 @@ file(MAKE_DIRECTORY "${ktx_BINARY_DIR}")
 file(MAKE_DIRECTORY "${ktx_BINARY_DIR}/CMakeFiles")
 
 # Build from root CMakeLists.txt (v4.3.2 has no lib/CMakeLists.txt)
-add_subdirectory(${ktx_SOURCE_DIR} ${ktx_BINARY_DIR})
+sparkle_add_dependency_subdirectory(${ktx_SOURCE_DIR} ${ktx_BINARY_DIR})
 
 if(TARGET ktx)
     set_target_properties(ktx PROPERTIES FOLDER "ThirdParty/KTX")
@@ -581,7 +633,7 @@ if(TARGET ktx_read)
     set_target_properties(ktx_read PROPERTIES FOLDER "ThirdParty/KTX")
 endif()
 
-message(STATUS "  KTX-Software:   ${ktx_SOURCE_DIR} (~46 MB)")
+sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
 
 # ============================================================================
 # SPIRV-Reflect - SPIR-V reflection (Khronos)
@@ -600,9 +652,9 @@ FetchContent_Declare(spirv_reflect
     GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect.git
     GIT_TAG        vulkan-sdk-1.3.290.0
     GIT_SHALLOW    TRUE
-    GIT_PROGRESS   TRUE
+    GIT_PROGRESS   ${_sparkle_git_progress}
 )
-message(STATUS "  [10/11] Fetching SPIRV-Reflect vulkan-sdk-1.3.290.0 (~2 MB)...")
+sparkle_log_dependency_step(10 11 "SPIRV-Reflect" "vulkan-sdk-1.3.290.0" "~2 MB" "SPIR-V reflection for offline shader compiler backends" "https://github.com/KhronosGroup/SPIRV-Reflect.git")
 FetchContent_Populate(spirv_reflect)
 
 add_library(spirv_reflect STATIC
@@ -620,7 +672,7 @@ if(MSVC)
 endif()
 
 set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty")
-message(STATUS "  SPIRV-Reflect:  ${spirv_reflect_SOURCE_DIR} (~2 MB)")
+sparkle_log_dependency_ready("SPIRV-Reflect" "${spirv_reflect_SOURCE_DIR}" "~2 MB")
 
 # ============================================================================
 # Font Awesome Free Solid - Editor icon font asset only
@@ -630,8 +682,7 @@ message(STATUS "  SPIRV-Reflect:  ${spirv_reflect_SOURCE_DIR} (~2 MB)")
 # code dependency or cloning the full icon repository. Sparkle owns the small
 # semantic icon mapping in editor code.
 # ============================================================================
-message(STATUS "")
-message(STATUS "  [11/11] Fetching Font Awesome Free Solid v6.7.1 icon assets (~0.5 MB)...")
+sparkle_log_dependency_step(11 11 "Font Awesome Free Solid" "v6.7.1" "~0.5 MB" "Editor icon font asset and license only" "https://github.com/FortAwesome/Font-Awesome")
 
 set(_sparkle_editor_icons_dir "${FETCHCONTENT_BASE_DIR}/editor-icons/fontawesome-6.7.1")
 set(SPARKLE_FONT_AWESOME_SOLID_TTF "${_sparkle_editor_icons_dir}/fa-solid-900.ttf" CACHE FILEPATH "Font Awesome Free Solid TTF path" FORCE)
@@ -648,7 +699,7 @@ download_sparkle_editor_asset(
     "Font Awesome Free license"
 )
 
-message(STATUS "  Font Awesome:   ${SPARKLE_FONT_AWESOME_SOLID_TTF} (~0.5 MB asset-only)")
+sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" "~0.5 MB asset-only")
 
 # ============================================================================
 # Restore LFS behavior
@@ -656,6 +707,10 @@ message(STATUS "  Font Awesome:   ${SPARKLE_FONT_AWESOME_SOLID_TTF} (~0.5 MB ass
 unset(ENV{GIT_LFS_SKIP_SMUDGE})
 unset(ENV{GIT_CONFIG_PARAMETERS})
 
-message(STATUS "")
-message(STATUS "=== Third-Party Dependencies Ready ===")
-message(STATUS "")
+if(SPARKLE_VERBOSE_DEPENDENCIES)
+    message(STATUS "")
+    message(STATUS "=== Third-Party Dependencies Ready ===")
+    message(STATUS "")
+else()
+    message(STATUS "Third-party dependencies: ready")
+endif()

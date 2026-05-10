@@ -2,12 +2,10 @@
 
 #include "MaterialCooker.h"
 
-#include "CookArtifactCache.h"
 #include "TextureCookRequestBuilder.h"
 
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
@@ -16,28 +14,6 @@
 #include <optional>
 #include <unordered_set>
 #include <utility>
-
-static constexpr std::uint32_t kMaterialCookerVersion = 1;
-
-static Cook::CookArtifactKey BuildMaterialCookArtifactKey(
-    const CookedMaterialAssetBuild& materialAsset,
-    const std::filesystem::path& outputPath)
-{
-	std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, materialAsset.header);
-	contentHash = Hash::ContinueFnv1a64(contentHash, materialAsset.name.data(), materialAsset.name.size());
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, materialAsset.textureReferences);
-
-	return Cook::CookArtifactKey{
-	    .assetType = "Material",
-	    .assetId = Formatting::FormatHexUInt64(materialAsset.assetId),
-	    .cookerName = "MaterialCooker",
-	    .outputPath = outputPath,
-	    .cookedFormatVersion = Assets::kCookedMaterialAssetVersion,
-	    .cookerVersion = kMaterialCookerVersion,
-	    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
-	    .dependencyHash = 0,
-	    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedMaterialAsset")};
-}
 
 bool MaterialCooker::BuildMaterialAssets(
     const SourceImportResult& importResult,
@@ -244,18 +220,6 @@ bool MaterialCooker::WriteMaterialAssets(
 	for (const CookedMaterialAssetBuild& materialAsset : materialAssets)
 	{
 		const std::filesystem::path outputPath = Paths::CookedMaterialAsset(materialAsset.assetId);
-		const Cook::CookArtifactKey artifactKey = BuildMaterialCookArtifactKey(materialAsset, outputPath);
-		bool isCurrent = false;
-		isCurrent = Cook::CookArtifactCache::IsCurrent(artifactKey, outErrorMessage);
-		if (!isCurrent && !outErrorMessage.empty())
-		{
-			return false;
-		}
-		if (isCurrent)
-		{
-			continue;
-		}
-
 		std::ofstream output;
 		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
 		{
@@ -283,11 +247,6 @@ bool MaterialCooker::WriteMaterialAssets(
 		}
 
 		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!Cook::CookArtifactCache::Publish(artifactKey, outErrorMessage))
 		{
 			return false;
 		}

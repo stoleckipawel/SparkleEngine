@@ -181,10 +181,10 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 		return true;
 	}
 
-	if (!AreCompatible(*existing, parameter, valueAlignmentInBytes))
+	if (!MatchesExistingBinding(*existing, parameter, valueAlignmentInBytes))
 	{
 		outErrorMessage = std::format(
-		    "Shader package '{}' has incompatible binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' "
+		    "Shader package '{}' has conflicting binding '{}': first declared by shader '{}' struct '{}' as {}; shader '{}' struct '{}' "
 		    "declares {}.",
 		    GetShaderRegistrationPackageId(registration),
 		    parameter.Name,
@@ -201,7 +201,7 @@ bool ShaderPackageLayoutBuilder::MergeParameter(
 	return true;
 }
 
-bool ShaderPackageLayoutBuilder::AreCompatible(
+bool ShaderPackageLayoutBuilder::MatchesExistingBinding(
     const MergeEntry& existing,
     const PassParameterDesc& incoming,
     std::uint32_t incomingAlignment) noexcept

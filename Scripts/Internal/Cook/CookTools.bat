@@ -3,11 +3,17 @@
 :: CookTools.bat - Shared cook-tool preparation helpers
 :: ============================================================================
 :: Internal helper module that keeps the asset and shader cooking entrypoints
-:: on one preflight path for toolchain validation, configure/sync, cook-tool
-:: build, and executable discovery.
+:: on one preflight path for executable discovery and optional cook-tool builds.
+:: By default, cook commands do not compile tools; set
+:: SPARKLE_AUTO_BUILD_COOK_TOOLS=1 to allow this helper to build missing or
+:: stale cook tools before cooking.
 ::
 :: Usage:
 ::   call "Internal\Cook\CookTools.bat" PrepareCookTools <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareProjectCook <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareSceneCook <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareTextureCook <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareShaderCook <Configuration>
 ::   call "Internal\Cook\CookTools.bat" PrepareAssetCooker <Configuration>
 ::   call "Internal\Cook\CookTools.bat" PrepareShaderCompiler <Configuration>
 ::   call "Internal\Cook\CookTools.bat" PrepareTextureCooker <Configuration>
@@ -24,43 +30,51 @@ setlocal enabledelayedexpansion
 set "ASSET_COOKER_EXE="
 set "SHADER_COMPILER_EXE="
 set "TEXTURE_COOKER_EXE="
+set "BUILD_TARGETS="
+set "BUILD_LABEL="
+set "REQUESTED_COOK_TOOLS="
 
-if /I "%~1"=="PrepareCookTools" (
-    set "REQUEST_ASSET_COOKER=1"
-    set "REQUEST_TEXTURE_COOKER=1"
-    set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=SparkleCookTools"
-    set "BUILD_LABEL=AssetCooker, TextureCooker, and ShaderCompiler"
-    goto :PREPARE_SELECTED_TOOLS
-)
-
-if /I "%~1"=="PrepareAssetCooker" (
-    set "REQUEST_ASSET_COOKER=1"
-    set "REQUEST_TEXTURE_COOKER=1"
-    set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=SparkleCookTools"
-    set "BUILD_LABEL=AssetCooker, TextureCooker, and ShaderCompiler"
-    goto :PREPARE_SELECTED_TOOLS
-)
-
-if /I "%~1"=="PrepareShaderCompiler" (
-    set "REQUEST_SHADER_COMPILER=1"
-    set "BUILD_TARGETS=ShaderCompiler"
-    set "BUILD_LABEL=ShaderCompiler"
-    goto :PREPARE_SELECTED_TOOLS
-)
-
-if /I "%~1"=="PrepareTextureCooker" (
-    set "REQUEST_TEXTURE_COOKER=1"
-    set "BUILD_TARGETS=TextureCooker"
-    set "BUILD_LABEL=TextureCooker"
-    goto :PREPARE_SELECTED_TOOLS
-)
+if /I "%~1"=="PrepareCookTools" goto :REQUEST_PROJECT_COOK
+if /I "%~1"=="PrepareProjectCook" goto :REQUEST_PROJECT_COOK
+if /I "%~1"=="PrepareSceneCook" goto :REQUEST_SCENE_COOK
+if /I "%~1"=="PrepareTextureCook" goto :REQUEST_TEXTURE_COOK
+if /I "%~1"=="PrepareShaderCook" goto :REQUEST_SHADER_COOK
+if /I "%~1"=="PrepareAssetCooker" goto :REQUEST_ASSET_COOKER
+if /I "%~1"=="PrepareTextureCooker" goto :REQUEST_TEXTURE_COOKER
+if /I "%~1"=="PrepareShaderCompiler" goto :REQUEST_SHADER_COMPILER
 
 echo [ERROR] CookTools.bat requires a valid command.
-echo         Supported commands: PrepareCookTools, PrepareAssetCooker, PrepareShaderCompiler, PrepareTextureCooker
+echo         Supported commands: PrepareCookTools, PrepareProjectCook, PrepareSceneCook, PrepareTextureCook, PrepareShaderCook, PrepareAssetCooker, PrepareShaderCompiler, PrepareTextureCooker
 set "ASSET_COOKING_RC=1"
 goto :FINISH
+
+:REQUEST_PROJECT_COOK
+set "REQUESTED_COOK_TOOLS=AssetCooker TextureCooker ShaderCompiler"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_SCENE_COOK
+set "REQUESTED_COOK_TOOLS=AssetCooker"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_TEXTURE_COOK
+set "REQUESTED_COOK_TOOLS=AssetCooker TextureCooker"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_SHADER_COOK
+set "REQUESTED_COOK_TOOLS=AssetCooker ShaderCompiler"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_ASSET_COOKER
+set "REQUESTED_COOK_TOOLS=AssetCooker"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_TEXTURE_COOKER
+set "REQUESTED_COOK_TOOLS=TextureCooker"
+goto :PREPARE_SELECTED_TOOLS
+
+:REQUEST_SHADER_COMPILER
+set "REQUESTED_COOK_TOOLS=ShaderCompiler"
+goto :PREPARE_SELECTED_TOOLS
 
 :PREPARE_SELECTED_TOOLS
 call "%~dp0..\Core\Config.bat"
@@ -68,24 +82,45 @@ call "%~dp0..\Core\Config.bat"
 set "CONFIG=%~2"
 if "%CONFIG%"=="" set "CONFIG=Debug"
 
-if "!REQUEST_SHADER_COMPILER!"=="1" if "!REQUEST_ASSET_COOKER!" NEQ "1" if "!REQUEST_TEXTURE_COOKER!" NEQ "1" (
-    call :LOCATE_SHADER_COMPILER_EXE "!CONFIG!"
-    if defined SHADER_COMPILER_EXE (
-        call :IS_SHADER_COMPILER_STALE "!SHADER_COMPILER_EXE!"
-        if "!ERRORLEVEL!"=="0" (
-            echo.
-            echo [LOG] Step 0/3: ShaderCompiler is up to date. Skipping GenerateSolution and build.
-            set "ASSET_COOKING_RC=0"
+call :LOCATE_REQUESTED_TOOLS "!CONFIG!"
+
+if /I "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" (
+    set "BUILD_TARGETS="
+    set "BUILD_LABEL="
+    for %%T in (!REQUESTED_COOK_TOOLS!) do call :ADD_BUILD_TARGET %%T %%T
+    echo [LOG] SPARKLE_FORCE_COOK_TOOL_BUILD=1. Rebuilding requested cook tools.
+)
+
+if /I not "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" (
+    if /I "!SPARKLE_AUTO_BUILD_COOK_TOOLS!"=="1" (
+        call :PLAN_REQUESTED_TOOL_BUILD
+    ) else (
+        call :VALIDATE_REQUESTED_TOOLS_EXIST
+        if "!ERRORLEVEL!" NEQ "0" (
+            set "ASSET_COOKING_RC=1"
             goto :FINISH
         )
-
-        echo.
-        echo [LOG] Step 0/3: ShaderCompiler inputs changed. Refreshing build files and rebuilding tool...
-    ) else (
-        echo.
-        echo [LOG] Step 0/3: ShaderCompiler.exe missing. Preparing tool build...
     )
 )
+
+if not defined BUILD_TARGETS (
+    echo [LOG] Required cook tools are present. Skipping toolchain validation, GenerateSolution, and build.
+    set "ASSET_COOKING_RC=0"
+    goto :FINISH
+)
+
+if /I "!SPARKLE_AUTO_BUILD_COOK_TOOLS!"=="1" goto :AUTO_BUILD_ALLOWED
+if /I "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" goto :AUTO_BUILD_ALLOWED
+
+echo [ERROR] Cook tools are missing or stale: !BUILD_LABEL!.
+echo         Cook commands do not auto-build tools by default.
+echo         Build tools intentionally, then re-run the cook command.
+echo         To let this command build them once, set SPARKLE_AUTO_BUILD_COOK_TOOLS=1 and re-run it.
+set "ASSET_COOKING_RC=1"
+goto :FINISH
+
+:AUTO_BUILD_ALLOWED
+echo [LOG] SPARKLE_AUTO_BUILD_COOK_TOOLS=1. Preparing missing or stale cook tools: !BUILD_LABEL!.
 
 echo.
 echo [LOG] Step 1/3: Validating build tools...
@@ -119,56 +154,153 @@ if "!BUILD_RC!" NEQ "0" (
     set "ASSET_COOKING_RC=1"
     goto :FINISH
 )
-if "!REQUEST_ASSET_COOKER!"=="1" (
-    for %%P in (
-        "!BUILD_DIR!\bin\!CONFIG!\AssetCooker.exe"
-        "!BUILD_DIR!\bin\AssetCooker.exe"
-        "!BIN_DIR!\!CONFIG!\AssetCooker.exe"
-        "!BIN_DIR!\AssetCooker.exe"
-    ) do (
-        if not defined ASSET_COOKER_EXE (
-            if exist "%%~P" set "ASSET_COOKER_EXE=%%~fP"
-        )
-    )
-
-    if not defined ASSET_COOKER_EXE (
-        echo [ERROR] AssetCooker.exe was not found after build.
-        set "ASSET_COOKING_RC=1"
-        goto :FINISH
-    )
-)
-
-if "!REQUEST_TEXTURE_COOKER!"=="1" (
-    for %%P in (
-        "!BUILD_DIR!\bin\!CONFIG!\TextureCooker.exe"
-        "!BUILD_DIR!\bin\TextureCooker.exe"
-        "!BIN_DIR!\!CONFIG!\TextureCooker.exe"
-        "!BIN_DIR!\TextureCooker.exe"
-    ) do (
-        if not defined TEXTURE_COOKER_EXE (
-            if exist "%%~P" set "TEXTURE_COOKER_EXE=%%~fP"
-        )
-    )
-
-    if not defined TEXTURE_COOKER_EXE (
-        echo [ERROR] TextureCooker.exe was not found after build.
-        set "ASSET_COOKING_RC=1"
-        goto :FINISH
-    )
-)
-
-if "!REQUEST_SHADER_COMPILER!"=="1" (
-    call :LOCATE_SHADER_COMPILER_EXE "!CONFIG!"
-
-    if not defined SHADER_COMPILER_EXE (
-        echo [ERROR] ShaderCompiler.exe was not found after build.
-        set "ASSET_COOKING_RC=1"
-        goto :FINISH
-    )
+call :LOCATE_REQUESTED_TOOLS "!CONFIG!"
+call :VALIDATE_REQUESTED_TOOLS_BUILT
+if "!ERRORLEVEL!" NEQ "0" (
+    set "ASSET_COOKING_RC=1"
+    goto :FINISH
 )
 
 set "ASSET_COOKING_RC=0"
 goto :FINISH
+
+:LOCATE_REQUESTED_TOOLS
+for %%T in (!REQUESTED_COOK_TOOLS!) do (
+    if /I "%%T"=="AssetCooker" call :LOCATE_ASSET_COOKER_EXE "%~1"
+    if /I "%%T"=="TextureCooker" call :LOCATE_TEXTURE_COOKER_EXE "%~1"
+    if /I "%%T"=="ShaderCompiler" call :LOCATE_SHADER_COMPILER_EXE "%~1"
+)
+exit /B 0
+
+:VALIDATE_REQUESTED_TOOLS_EXIST
+set "_MISSING_LABEL="
+for %%T in (!REQUESTED_COOK_TOOLS!) do (
+    set "_TOOL_PRESENT=0"
+    if /I "%%T"=="AssetCooker" if defined ASSET_COOKER_EXE set "_TOOL_PRESENT=1"
+    if /I "%%T"=="TextureCooker" if defined TEXTURE_COOKER_EXE set "_TOOL_PRESENT=1"
+    if /I "%%T"=="ShaderCompiler" if defined SHADER_COMPILER_EXE set "_TOOL_PRESENT=1"
+    if "!_TOOL_PRESENT!" NEQ "1" (
+        if defined _MISSING_LABEL (set "_MISSING_LABEL=!_MISSING_LABEL!, %%T") else (set "_MISSING_LABEL=%%T")
+    )
+)
+
+if defined _MISSING_LABEL (
+    echo [ERROR] Required cook tools are missing: !_MISSING_LABEL!.
+    echo         Cook commands do not auto-build tools by default.
+    echo         Build the missing tool targets intentionally, then re-run the cook command.
+    echo         To let this command build them once, set SPARKLE_AUTO_BUILD_COOK_TOOLS=1 and re-run it.
+    exit /B 1
+)
+exit /B 0
+
+:VALIDATE_REQUESTED_TOOLS_BUILT
+set "_MISSING_LABEL="
+for %%T in (!REQUESTED_COOK_TOOLS!) do (
+    set "_TOOL_PRESENT=0"
+    if /I "%%T"=="AssetCooker" if defined ASSET_COOKER_EXE set "_TOOL_PRESENT=1"
+    if /I "%%T"=="TextureCooker" if defined TEXTURE_COOKER_EXE set "_TOOL_PRESENT=1"
+    if /I "%%T"=="ShaderCompiler" if defined SHADER_COMPILER_EXE set "_TOOL_PRESENT=1"
+    if "!_TOOL_PRESENT!" NEQ "1" (
+        if defined _MISSING_LABEL (set "_MISSING_LABEL=!_MISSING_LABEL!, %%T") else (set "_MISSING_LABEL=%%T")
+    )
+)
+
+if defined _MISSING_LABEL (
+    echo [ERROR] Cook tools were not found after build: !_MISSING_LABEL!.
+    exit /B 1
+)
+exit /B 0
+
+:PLAN_REQUESTED_TOOL_BUILD
+for %%T in (!REQUESTED_COOK_TOOLS!) do (
+    if /I "%%T"=="AssetCooker" call :PLAN_ASSET_COOKER_BUILD
+    if /I "%%T"=="TextureCooker" call :PLAN_TEXTURE_COOKER_BUILD
+    if /I "%%T"=="ShaderCompiler" call :PLAN_SHADER_COMPILER_BUILD
+)
+exit /B 0
+
+:PLAN_ASSET_COOKER_BUILD
+    if defined ASSET_COOKER_EXE (
+        call :IS_ASSET_COOKER_STALE "!ASSET_COOKER_EXE!"
+        if "!ERRORLEVEL!" NEQ "0" (
+            echo [LOG] AssetCooker inputs changed. Tool rebuild required.
+            call :ADD_BUILD_TARGET AssetCooker AssetCooker
+        )
+    ) else (
+        echo [LOG] AssetCooker.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET AssetCooker AssetCooker
+    )
+exit /B 0
+
+:PLAN_TEXTURE_COOKER_BUILD
+    if defined TEXTURE_COOKER_EXE (
+        call :IS_TEXTURE_COOKER_STALE "!TEXTURE_COOKER_EXE!"
+        if "!ERRORLEVEL!" NEQ "0" (
+            echo [LOG] TextureCooker inputs changed. Tool rebuild required.
+            call :ADD_BUILD_TARGET TextureCooker TextureCooker
+        )
+    ) else (
+        echo [LOG] TextureCooker.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET TextureCooker TextureCooker
+    )
+exit /B 0
+
+:PLAN_SHADER_COMPILER_BUILD
+    if defined SHADER_COMPILER_EXE (
+        call :IS_SHADER_COMPILER_STALE "!SHADER_COMPILER_EXE!"
+        if "!ERRORLEVEL!" NEQ "0" (
+            echo [LOG] ShaderCompiler inputs changed. Tool rebuild required.
+            call :ADD_BUILD_TARGET ShaderCompiler ShaderCompiler
+        )
+    ) else (
+        echo [LOG] ShaderCompiler.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET ShaderCompiler ShaderCompiler
+    )
+exit /B 0
+
+:ADD_BUILD_TARGET
+if not defined BUILD_TARGETS (
+    set "BUILD_TARGETS=%~1"
+) else (
+    echo !BUILD_TARGETS! | findstr /r /c:"\<%~1\>" >nul 2>&1
+    if errorlevel 1 set "BUILD_TARGETS=!BUILD_TARGETS! %~1"
+)
+
+if not defined BUILD_LABEL (
+    set "BUILD_LABEL=%~2"
+) else (
+    echo !BUILD_LABEL! | findstr /r /c:"\<%~2\>" >nul 2>&1
+    if errorlevel 1 set "BUILD_LABEL=!BUILD_LABEL!, %~2"
+)
+exit /B 0
+
+:LOCATE_ASSET_COOKER_EXE
+set "ASSET_COOKER_EXE="
+for %%P in (
+    "!BUILD_DIR!\bin\%~1\AssetCooker.exe"
+    "!BUILD_DIR!\bin\AssetCooker.exe"
+    "!BIN_DIR!\%~1\AssetCooker.exe"
+    "!BIN_DIR!\AssetCooker.exe"
+) do (
+    if not defined ASSET_COOKER_EXE (
+        if exist "%%~P" set "ASSET_COOKER_EXE=%%~fP"
+    )
+)
+exit /B 0
+
+:LOCATE_TEXTURE_COOKER_EXE
+set "TEXTURE_COOKER_EXE="
+for %%P in (
+    "!BUILD_DIR!\bin\%~1\TextureCooker.exe"
+    "!BUILD_DIR!\bin\TextureCooker.exe"
+    "!BIN_DIR!\%~1\TextureCooker.exe"
+    "!BIN_DIR!\TextureCooker.exe"
+) do (
+    if not defined TEXTURE_COOKER_EXE (
+        if exist "%%~P" set "TEXTURE_COOKER_EXE=%%~fP"
+    )
+)
+exit /B 0
 
 :LOCATE_SHADER_COMPILER_EXE
 set "SHADER_COMPILER_EXE="
@@ -184,6 +316,28 @@ for %%P in (
 )
 exit /B 0
 
+:IS_ASSET_COOKER_STALE
+set "_STALE_RC=1"
+set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%_POWERSHELL_EXE%" set "_POWERSHELL_EXE=powershell"
+
+"%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\Build\Test-ToolInputsNewerThan.ps1" ^
+    -ReferencePath "%~1" ^
+    -PathList "!ROOT_DIR!\Tools\AssetCooker;!ROOT_DIR!\Tools\CookCommon;!ROOT_DIR!\Tools\SourceImportAdapters;!ROOT_DIR!\Tools\MeshCooker;!ROOT_DIR!\Tools\MaterialCooker;!ROOT_DIR!\Tools\SceneCooker;!ROOT_DIR!\Tools\TextureCooker\Public;!ROOT_DIR!\Engine\Core;!ROOT_DIR!\Engine\GameFramework;!ROOT_DIR!\Engine\RHI;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\AssetCooker\CMakeLists.txt"
+set "_STALE_RC=%ERRORLEVEL%"
+exit /B %_STALE_RC%
+
+:IS_TEXTURE_COOKER_STALE
+set "_STALE_RC=1"
+set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%_POWERSHELL_EXE%" set "_POWERSHELL_EXE=powershell"
+
+"%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\Build\Test-ToolInputsNewerThan.ps1" ^
+    -ReferencePath "%~1" ^
+    -PathList "!ROOT_DIR!\Tools\TextureCooker;!ROOT_DIR!\Tools\CookCommon;!ROOT_DIR!\Engine\Core\Public;!ROOT_DIR!\Engine\RHI\Public\D3D12\Textures;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\TextureCooker\CMakeLists.txt"
+set "_STALE_RC=%ERRORLEVEL%"
+exit /B %_STALE_RC%
+
 :IS_SHADER_COMPILER_STALE
 set "_STALE_RC=1"
 set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -191,7 +345,7 @@ if not exist "%_POWERSHELL_EXE%" set "_POWERSHELL_EXE=powershell"
 
 "%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\Build\Test-ToolInputsNewerThan.ps1" ^
     -ReferencePath "%~1" ^
-    -PathList "!ROOT_DIR!\Tools\ShaderCompiler;!ROOT_DIR!\Engine\RHI;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Engine\CMakeLists.txt;!ROOT_DIR!\Engine\RHI\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\ShaderCompiler\CMakeLists.txt"
+    -PathList "!ROOT_DIR!\Tools\ShaderCompiler;!ROOT_DIR!\Tools\CookCommon;!ROOT_DIR!\Engine\Core\Public;!ROOT_DIR!\Engine\RHI\Public\Shaders;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\ShaderCompiler\CMakeLists.txt"
 set "_STALE_RC=%ERRORLEVEL%"
 exit /B %_STALE_RC%
 

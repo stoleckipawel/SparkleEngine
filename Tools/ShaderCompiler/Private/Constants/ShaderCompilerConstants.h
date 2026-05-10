@@ -13,7 +13,7 @@ inline constexpr std::size_t kBinaryBlobInitialReserveBytes = 4096;
 
 inline constexpr std::string_view kRegistryHeaderSection = "[ShaderPackageRegistry]";
 inline constexpr std::string_view kRegistryKeyVersion = "Version";
-inline constexpr std::uint32_t kRegistryFormatVersion = 2;
+inline constexpr std::uint32_t kRegistryFormatVersion = 1;
 inline constexpr std::string_view kRegistryKeyPackageCount = "PackageCount";
 inline constexpr std::string_view kRegistryPackageSectionPrefix = "Package ";
 inline constexpr std::string_view kRegistryKeyBindingLayout = "BindingLayout";
@@ -32,4 +32,4 @@ inline constexpr std::string_view kCommandInspectShader = "inspect-shader";
 
 inline constexpr std::string_view kDxcCompilerLoggerCategory = "Tools.ShaderCompiler";
 inline constexpr std::string_view kShaderCacheBackendVersion = "dxc-v1";
-inline constexpr std::uint32_t kShaderCacheSchemaVersion = 2;
+inline constexpr std::uint32_t kShaderCacheSchemaVersion = 1;

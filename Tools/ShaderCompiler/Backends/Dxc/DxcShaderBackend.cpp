@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "DxcShaderBackend.h"
 
@@ -385,8 +385,8 @@ std::string DxcShaderBackend::ExtractDisassembly(
 		return disassembly;
 	}
 
-	Microsoft::WRL::ComPtr<IDxcCompiler> legacyCompiler;
-	if (FAILED(compiler.QueryInterface(IID_PPV_ARGS(legacyCompiler.ReleaseAndGetAddressOf()))) || !legacyCompiler)
+	Microsoft::WRL::ComPtr<IDxcCompiler> disassemblyCompiler;
+	if (FAILED(compiler.QueryInterface(IID_PPV_ARGS(disassemblyCompiler.ReleaseAndGetAddressOf()))) || !disassemblyCompiler)
 	{
 		return {};
 	}
@@ -401,15 +401,15 @@ std::string DxcShaderBackend::ExtractDisassembly(
 		return {};
 	}
 
-	Microsoft::WRL::ComPtr<IDxcBlobEncoding> legacyDisassembly;
-	if (FAILED(legacyCompiler->Disassemble(objectBlob.Get(), legacyDisassembly.ReleaseAndGetAddressOf())) || !legacyDisassembly)
+	Microsoft::WRL::ComPtr<IDxcBlobEncoding> disassemblyBlob;
+	if (FAILED(disassemblyCompiler->Disassemble(objectBlob.Get(), disassemblyBlob.ReleaseAndGetAddressOf())) || !disassemblyBlob)
 	{
 		return {};
 	}
 
 	return std::string(
-	    static_cast<const char*>(legacyDisassembly->GetBufferPointer()),
-	    static_cast<std::size_t>(legacyDisassembly->GetBufferSize()));
+	    static_cast<const char*>(disassemblyBlob->GetBufferPointer()),
+	    static_cast<std::size_t>(disassemblyBlob->GetBufferSize()));
 }
 
 void DxcShaderBackend::CaptureDebugArtifacts(

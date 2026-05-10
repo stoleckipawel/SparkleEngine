@@ -21,7 +21,6 @@ set(TEXTURE_COOKER_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/MipStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/Stages/EncodeStage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookRequestBatchProcessor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureAssetCooker.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/SourceLoading/DdsTextureSourceLoader.cpp
@@ -39,7 +38,6 @@ set(TEXTURE_COOKER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommand.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/TextureCookerCommandRegistry.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Constants/TextureCookerConstants.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cooking/TextureCookArtifactKeyBuilder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/TexturePipeline.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/WorkingTexture.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Pipeline/FormatPolicy.h
@@ -116,8 +114,8 @@ target_precompile_headers(TextureCooker PRIVATE
 
 target_link_libraries(TextureCooker
     PRIVATE
-        CookCommon
         CMP_Core
+        CookCommon
         SparkleCore
         TextureCookShared
         TextureCookerMiniz

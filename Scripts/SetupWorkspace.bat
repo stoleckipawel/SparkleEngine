@@ -10,8 +10,9 @@
 :: Usage: SetupWorkspace.bat
 ::
 :: Flow:
-::   1. Validate required build tools (CMake, MSBuild, git)
-::   2. Run GenerateSolution.bat to generate or refresh the build files
+::   1. Validate required build tools (PowerShell, CMake, Visual Studio/MSBuild,
+::      Windows SDK, git, and fresh-clone dependency access)
+::   2. Ensure build files are current, refreshing only when needed
 ::   3. Display next steps
 ::
 :: Environment:
@@ -24,6 +25,7 @@
 :: ============================================================================
 
 setlocal enabledelayedexpansion
+set "SETUP_PARENT_BATCH=%PARENT_BATCH%"
 
 :: ---------------------------------------------------------------------------
 :: Logging bootstrap
@@ -53,7 +55,7 @@ echo.
 set "PARENT_BATCH=1"
 call "!SCRIPTS_DIR!\Internal\Toolchain\CheckToolchain.bat" CONTINUE
 set "DEP_RC=!ERRORLEVEL!"
-set "PARENT_BATCH="
+set "PARENT_BATCH=!SETUP_PARENT_BATCH!"
 
 if "!DEP_RC!" NEQ "0" (
     echo.
@@ -68,17 +70,17 @@ if "!DEP_RC!" NEQ "0" (
 :: Step 2: Configure build files
 :: ---------------------------------------------------------------------------
 echo.
-echo [LOG] Step 2/2: Refreshing build files and syncing dependencies...
+echo [LOG] Step 2/2: Ensuring build files are current...
 echo.
 set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\GenerateSolution.bat" CONTINUE
-set "GEN_RC=!ERRORLEVEL!"
-set "PARENT_BATCH="
+call "!SCRIPTS_DIR!\Internal\Build\EnsureBuildFiles.bat"
+set "ENSURE_RC=!ERRORLEVEL!"
+set "PARENT_BATCH=!SETUP_PARENT_BATCH!"
 
-if "!GEN_RC!" NEQ "0" (
+if "!ENSURE_RC!" NEQ "0" (
     echo.
-    echo [ERROR] GenerateSolution step failed.
-    echo         Check the CMake output above for the root cause.
+    echo [ERROR] Build-file preparation failed.
+    echo         Check the output above for the root cause.
     echo         Possible fixes:
     echo           - Clean stale cache: Scripts\CleanWorkspace.bat BUILD
     echo           - Full reset:        Scripts\CleanWorkspace.bat ALL
@@ -110,6 +112,8 @@ echo ============================================================
 :: ---------------------------------------------------------------------------
 :: Prompt to open VS solution (SetupWorkspace.bat is always interactive)
 :: ---------------------------------------------------------------------------
+if defined SETUP_PARENT_BATCH goto :AFTER_VS_PROMPT
+
 echo.
 echo ============================================================
 echo   Open Visual Studio?
@@ -146,7 +150,8 @@ goto :FINISH
 :FINISH
 set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_RC=%EXIT_RC%"
-endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
+set "_TMP_SETUP_PARENT_BATCH=%SETUP_PARENT_BATCH%"
+endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%" & set "_SETUP_PARENT_BATCH=%_TMP_SETUP_PARENT_BATCH%"
 
 echo.
 if "%EXIT_RC%"=="0" (
@@ -155,5 +160,6 @@ if "%EXIT_RC%"=="0" (
     echo [ERROR] SetupWorkspace failed. See output above for details.
 )
 echo [LOG] Logs: %LOGFILE%
-pause
+if not defined _SETUP_PARENT_BATCH pause
+set "_SETUP_PARENT_BATCH="
 exit /B %EXIT_RC%

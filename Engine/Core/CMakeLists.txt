@@ -27,7 +27,7 @@ foreach(forbidden_logging_file IN LISTS SPARKLE_CORE_FORBIDDEN_LOGGING_FILES)
     if(EXISTS "${forbidden_logging_file}")
         cmake_path(RELATIVE_PATH forbidden_logging_file BASE_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE forbidden_logging_relative_path)
         message(FATAL_ERROR
-            "Legacy logging facade file '${forbidden_logging_relative_path}' was reintroduced. Keep Sparkle logging on Diagnostics/Logger.h and Diagnostics/Verify.h instead.")
+            "Deleted logging facade file '${forbidden_logging_relative_path}' was reintroduced. Keep Sparkle logging on Diagnostics/Logger.h and Diagnostics/Verify.h instead.")
     endif()
 endforeach()
 

@@ -20,7 +20,6 @@ class CommandRegistry final
 		std::vector<std::string_view> verbs;
 		std::shared_ptr<ICommand> command;
 		std::string_view usageLine;
-		std::string_view legacyUsageLine;
 	};
 
 	std::vector<Registration> m_registrations;

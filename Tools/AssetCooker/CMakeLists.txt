@@ -48,12 +48,12 @@ target_include_directories(AssetCookerCore
 target_compile_features(AssetCookerCore PUBLIC cxx_std_20)
 set(ASSET_COOKER_COOKING_LINK_LIBRARIES
     ole32
-    CookCommon
     SourceImportAdapters
     MeshCooker
     MaterialCooker
     SceneCooker
     TextureCookShared
+    CookCommon
     SparkleCore
     SparkleGameFramework
 )

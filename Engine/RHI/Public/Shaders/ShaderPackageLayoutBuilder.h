@@ -36,7 +36,7 @@ class SPARKLE_RHI_API ShaderPackageLayoutBuilder final
 	    const ShaderRegistrationDesc& registration,
 	    std::string_view shaderStructName,
 	    std::string& outErrorMessage);
-	static bool AreCompatible(const MergeEntry& existing, const PassParameterDesc& incoming, std::uint32_t incomingAlignment) noexcept;
+	static bool MatchesExistingBinding(const MergeEntry& existing, const PassParameterDesc& incoming, std::uint32_t incomingAlignment) noexcept;
 	static std::string FormatParameterDesc(const PassParameterDesc& parameter, std::uint32_t alignmentInBytes);
 	static void AppendCategory(PassParameterLayout& layout, const std::vector<MergeEntry>& entries, std::uint32_t category);
 };

@@ -7,7 +7,6 @@
 	{
 	  public:
 		static constexpr std::string_view ToolName = "TextureCooker";
-		static constexpr std::uint32_t CookerVersion = 2;
 
 		static constexpr int ExitSuccess = 0;
 		static constexpr int ExitUsageError = 1;
@@ -17,7 +16,5 @@
 		static constexpr int ExitCookFailed = 7;
 
 		static constexpr std::string_view InspectRequestFileCommand = "inspect-request-file";
-		static constexpr std::string_view InspectRequestFileAlias = "inspect";
 		static constexpr std::string_view CookRequestFileCommand = "cook-request-file";
-		static constexpr std::string_view CookRequestFileAlias = "cook";
 	};

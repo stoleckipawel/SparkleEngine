@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Shaders/CookedShaderPackageCache.h"
 
@@ -346,7 +346,7 @@ namespace
 		if (reflectionRecords.size() != binaryRecords.size())
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' failed compatibility check: reflection count {} does not match binary count {}",
+			    "Cooked shader package '{}' failed package contract check: reflection count {} does not match binary count {}",
 			    definition.PackageId,
 			    reflectionRecords.size(),
 			    binaryRecords.size());
@@ -373,7 +373,7 @@ namespace
 				if (bindingIndex >= resourceBindings.size())
 				{
 					outErrorMessage = std::format(
-					    "Cooked shader package '{}' failed compatibility check: reflection resource binding index {} is out of range",
+					    "Cooked shader package '{}' failed package contract check: reflection resource binding index {} is out of range",
 					    definition.PackageId,
 					    bindingIndex);
 					return false;
@@ -385,7 +385,7 @@ namespace
 				if (resourceName.empty())
 				{
 					outErrorMessage = std::format(
-					    "Cooked shader package '{}' failed compatibility check: reflection resource {} has an invalid name string",
+					    "Cooked shader package '{}' failed package contract check: reflection resource {} has an invalid name string",
 					    definition.PackageId,
 					    bindingIndex);
 					return false;
@@ -395,7 +395,7 @@ namespace
 				{
 					outErrorMessage = AddBindingDiagnostics(
 					    std::format(
-					        "Cooked shader package '{}' failed compatibility check: stage {} reflects unexpected {} '{}' for backend {}. "
+					        "Cooked shader package '{}' failed package contract check: stage {} reflects unexpected {} '{}' for backend {}. "
 					        "Recook shaders to refresh stale package metadata.",
 					        definition.PackageId,
 					        static_cast<std::uint32_t>(binaryRecord.Stage),
@@ -435,7 +435,7 @@ namespace
 					if (bindingIndex >= resourceBindings.size())
 					{
 						outErrorMessage = std::format(
-						    "Cooked shader package '{}' failed compatibility check: reflection resource binding index {} is out of range",
+						    "Cooked shader package '{}' failed package contract check: reflection resource binding index {} is out of range",
 						    definition.PackageId,
 						    bindingIndex);
 						return false;
@@ -457,7 +457,7 @@ namespace
 			{
 				outErrorMessage = AddBindingDiagnostics(
 				    std::format(
-				        "Cooked shader package '{}' failed compatibility check: runtime parameter '{}' (shader='{}') is missing reflected "
+				        "Cooked shader package '{}' failed package contract check: runtime parameter '{}' (shader='{}') is missing reflected "
 				        "backend {} bindings. Recook shaders to refresh stale package metadata.",
 				        definition.PackageId,
 				        expectedParameter.Name,
@@ -714,7 +714,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().ShaderPackageKey != expectedPackageKey)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' failed compatibility check: field=ShaderPackageKey expected={} actual={}",
+		    "Cooked shader package '{}' failed package contract check: field=ShaderPackageKey expected={} actual={}",
 		    definition.PackageId,
 		    Formatting::FormatHexUInt64(expectedPackageKey),
 		    Formatting::FormatHexUInt64(package.GetHeader().ShaderPackageKey));
@@ -724,7 +724,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().SourceIdentityHash == 0)
 	{
 		outErrorMessage =
-		    std::format("Cooked shader package '{}' failed compatibility check: field=SourceIdentityHash actual=0", definition.PackageId);
+		    std::format("Cooked shader package '{}' failed package contract check: field=SourceIdentityHash actual=0", definition.PackageId);
 		return false;
 	}
 
@@ -732,7 +732,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (package.GetHeader().BindingLayoutHash != expectedBindingLayoutHash)
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' failed compatibility check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
+		    "Cooked shader package '{}' failed package contract check: field=BindingLayoutHash bindingLayout='{}' expected={} actual={}",
 		    definition.PackageId,
 		    definition.BindingLayoutId != nullptr ? definition.BindingLayoutId : expectedBindingLayout.GetDebugName().c_str(),
 		    Formatting::FormatHexUInt64(expectedBindingLayoutHash),
@@ -744,7 +744,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	    package.GetHeader().ShaderModelMinor != static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' failed compatibility check: field=ShaderModel expected={}.{} actual={}.{}",
+		    "Cooked shader package '{}' failed package contract check: field=ShaderModel expected={}.{} actual={}.{}",
 		    definition.PackageId,
 		    RenderConfig::ShaderModelMajor,
 		    RenderConfig::ShaderModelMinor,
@@ -756,7 +756,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 	if (!HasAllStages(package.GetHeader().DeclaredStages, definition.ExpectedStages))
 	{
 		outErrorMessage = std::format(
-		    "Cooked shader package '{}' failed compatibility check: field=DeclaredStages expected='{}' actual='{}'",
+		    "Cooked shader package '{}' failed package contract check: field=DeclaredStages expected='{}' actual='{}'",
 		    definition.PackageId,
 		    FormatShaderStageMask(definition.ExpectedStages),
 		    FormatShaderStageMask(package.GetHeader().DeclaredStages));

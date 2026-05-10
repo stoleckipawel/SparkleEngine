@@ -663,11 +663,6 @@ namespace Filesystem
 		return GetTypedPath(AssetType::Shader, root);
 	}
 
-	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root) noexcept
-	{
-		return GetTypedPath(AssetType::ShaderSymbols, root);
-	}
-
 	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type)
 	{
 		if (auto resolved = ResolveAssetPath(inputPath, type))

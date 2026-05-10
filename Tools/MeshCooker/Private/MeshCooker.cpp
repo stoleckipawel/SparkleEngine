@@ -2,40 +2,14 @@
 
 #include "MeshCooker.h"
 
-#include "CookArtifactCache.h"
-
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
-#include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <filesystem>
 #include <fstream>
 #include <utility>
-
-static constexpr std::uint32_t kMeshCookerVersion = 1;
-
-static Cook::CookArtifactKey BuildMeshCookArtifactKey(
-    const CookedMeshAssetBuild& meshAsset,
-    const Assets::CookedMeshAssetHeader& header,
-    const std::filesystem::path& outputPath)
-{
-	std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, header);
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, meshAsset.vertices);
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, meshAsset.indices);
-
-	return Cook::CookArtifactKey{
-	    .assetType = "Mesh",
-	    .assetId = Formatting::FormatHexUInt64(meshAsset.assetId),
-	    .cookerName = "MeshCooker",
-	    .outputPath = outputPath,
-	    .cookedFormatVersion = Assets::kCookedMeshAssetVersion,
-	    .cookerVersion = kMeshCookerVersion,
-	    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
-	    .dependencyHash = 0,
-	    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedMeshAsset")};
-}
 
 void MeshCooker::BuildMeshAssets(
     const SourceImportResult& importResult,
@@ -82,18 +56,6 @@ bool MeshCooker::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAs
 		    .indexCount = static_cast<std::uint32_t>(meshAsset.indices.size()),
 		    .vertexStride = sizeof(Assets::CookedMeshVertex),
 		    .indexStride = sizeof(std::uint32_t)};
-		const Cook::CookArtifactKey artifactKey = BuildMeshCookArtifactKey(meshAsset, header, outputPath);
-		bool isCurrent = false;
-		isCurrent = Cook::CookArtifactCache::IsCurrent(artifactKey, outErrorMessage);
-		if (!isCurrent && !outErrorMessage.empty())
-		{
-			return false;
-		}
-		if (isCurrent)
-		{
-			continue;
-		}
-
 		std::ofstream output;
 		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
 		{
@@ -108,11 +70,6 @@ bool MeshCooker::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAs
 		}
 
 		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!Cook::CookArtifactCache::Publish(artifactKey, outErrorMessage))
 		{
 			return false;
 		}

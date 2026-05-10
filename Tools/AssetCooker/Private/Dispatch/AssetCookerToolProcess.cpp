@@ -3,6 +3,7 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Diagnostics/Trace.h"
+#include "ToolConsole.h"
 
 #include <cwctype>
 #include <iostream>
@@ -91,12 +92,13 @@ int AssetCookerToolProcess::Run(
 	SPARKLE_CPU_SCOPE(processScopeName);
 	SPARKLE_LOG_SCOPE(toolProcessLogger, spdlog::level::info, processScopeName);
 
-	std::wcout << L"[LOG] Running: " << executablePath.wstring();
-	for (const std::wstring& argument : arguments)
-	{
-		std::wcout << L" " << AssetCookerQuoteCommandArgument(argument);
-	}
-	std::wcout << L"\n";
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Running tool",
+	    {ToolConsole::QuotedField("tool", executablePath.filename().string()),
+	     ToolConsole::PathField("path", executablePath),
+	     ToolConsole::PathField("workingDir", workingDirectory)});
 
 #if defined(_WIN32)
 	std::wstring commandLine = AssetCookerBuildCommandLine(executablePath, arguments);
@@ -119,7 +121,11 @@ int AssetCookerToolProcess::Run(
 
 	if (!createdProcess)
 	{
-		std::wcerr << L"AssetCooker: failed to launch '" << executablePath.wstring() << L"'.\n";
+		ToolConsole::Message(
+		    std::cerr,
+		    ToolConsoleSeverity::Error,
+		    "Failed to launch tool",
+		    {ToolConsole::QuotedField("tool", executablePath.filename().string()), ToolConsole::PathField("path", executablePath)});
 		SPDLOG_LOGGER_ERROR(toolProcessLogger, "Failed to launch process '{}'", executablePath.string());
 		return 1;
 	}

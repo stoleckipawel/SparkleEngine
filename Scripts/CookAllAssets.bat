@@ -2,7 +2,7 @@
 :: ============================================================================
 :: CookAllAssets.bat - Preferred top-level full asset cook entrypoint
 :: ============================================================================
-:: Launch shim for the AssetCooker project planner.
+:: Launch entrypoint for the AssetCooker project planner.
 ::
 :: Usage:
 ::   CookAllAssets.bat [ProjectName|ALL] [DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]
@@ -35,15 +35,23 @@ if /I "%TARGET_PROJECT%"=="--help" goto :USAGE
 if not defined TARGET_PROJECT set "TARGET_PROJECT=ALL"
 if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 
-echo [LOG] Project target: !TARGET_PROJECT!
-echo [LOG] Configuration: !CONFIG!
+echo.
+echo [LOG] Asset cook request:
+echo [LOG]   Target project: !TARGET_PROJECT!
+echo [LOG]   Configuration: !CONFIG!
+echo [LOG]   Repository: !ROOT_DIR!
 
-call "%~dp0Internal\Cook\CookTools.bat" PrepareAssetCooker !CONFIG!
+echo.
+echo [LOG] Checking cook tools...
+call "%~dp0Internal\Cook\CookTools.bat" PrepareProjectCook !CONFIG!
 if errorlevel 1 (
 	set "EXIT_RC=1"
 	goto :FINISH
 )
 
+echo.
+echo [LOG] Cooking assets for target '!TARGET_PROJECT!' using !CONFIG!...
+if not defined SPARKLE_LOG_LEVEL set "SPARKLE_LOG_LEVEL=warn"
 "!ASSET_COOKER_EXE!" cook-project "!TARGET_PROJECT!" "!CONFIG!" --root "!ROOT_DIR!"
 set "EXIT_RC=!ERRORLEVEL!"
 goto :FINISH
@@ -58,7 +66,7 @@ echo   Scripts\CookAllAssets.bat ALL
 echo   Scripts\CookAllAssets.bat Showcase
 echo   Scripts\CookAllAssets.bat Showcase DevelopmentGame
 echo.
-echo This shim prepares AssetCooker and forwards the full project cook request.
+echo This entrypoint prepares AssetCooker and forwards the full project cook request.
 set "EXIT_RC=1"
 
 :FINISH
@@ -87,6 +95,7 @@ echo   Target: %_TARGET_PROJECT%
 echo   Configuration: %_CONFIG%
 echo ============================================================
 echo.
+echo [LOG] Logs: %LOGFILE%
 set "_TARGET_PROJECT="
 set "_CONFIG="
 pause

@@ -16,8 +16,7 @@ constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, cha
 }
 
 constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
-// v5: shader packages carry only package, binding-layout, and stage metadata.
-constexpr std::uint32_t kCookedShaderPackageVersion = 5;
+constexpr std::uint32_t kCookedShaderPackageVersion = 1;
 
 enum class CookedShaderPackageKind : std::uint8_t
 {
@@ -111,10 +110,8 @@ struct CookedShaderPackageHeader
 	std::uint32_t SpecializationInputCount = 0;
 	std::uint32_t StringTableSizeInBytes = 0;
 	std::uint32_t BinaryBlobSizeInBytes = 0;
-	// v2: per-binary reflection block + typed reflection arrays. The
 	// ReflectionRecordCount equals BinaryRecordCount when reflection is
-	// present, or 0 when extraction failed/was disabled (writer always
-	// emits one block per binary today).
+	// present, or 0 when extraction failed/was disabled.
 	std::uint32_t ReflectionRecordCount = 0;
 	std::uint32_t ResourceBindingRecordCount = 0;
 	std::uint32_t ConstantBufferRecordCount = 0;
@@ -151,9 +148,9 @@ struct CookedShaderBinaryRecord
 	std::uint16_t Reserved = 0;
 	std::uint32_t Flags = 0;
 	std::uint64_t BytecodeHash = 0;
-	// v2: producer identity. BackendName is interned in the package string
-	// table ("dxc", "slang", ...). BackendVersion is the backend's reported
-	// version stamp; renderers/tools must not parse it but may display it.
+	// Producer identity. BackendName is interned in the package string table
+	// ("dxc", "slang", ...). BackendVersion is the backend's reported version
+	// stamp; renderers/tools must not parse it but may display it.
 	CookedShaderStringRef BackendName = {};
 	std::uint64_t BackendVersion = 0;
 };

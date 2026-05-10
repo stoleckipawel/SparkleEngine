@@ -20,7 +20,6 @@ struct AssetCookerOutputRecord final
 	std::string assetId;
 	std::string path;
 	std::string reloadHint;
-	std::uint32_t version = 1;
 };
 
 struct AssetCookerServiceResult final

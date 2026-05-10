@@ -44,7 +44,6 @@ set(ALLOWED_TOOL_PUBLIC_HEADERS
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookRequest.h"
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookResult.h"
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerTypes.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/CookCommon/Public/CookArtifactCache.h"
     "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceImportResult.h"
     "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceSceneImporter.h"
     "${TOOLS_ARCHITECTURE_ROOT}/MeshCooker/Public/CookedMeshAssetBuild.h"
@@ -97,61 +96,6 @@ foreach(public_header IN LISTS tool_public_headers)
     )
 endforeach()
 
-set(COOK_COMMON_SOURCE_ROOT "${TOOLS_ARCHITECTURE_ROOT}/CookCommon")
-file(GLOB_RECURSE cook_common_source_files
-    "${COOK_COMMON_SOURCE_ROOT}/*.h"
-    "${COOK_COMMON_SOURCE_ROOT}/*.hpp"
-    "${COOK_COMMON_SOURCE_ROOT}/*.cpp"
-    "${COOK_COMMON_SOURCE_ROOT}/*.cxx"
-)
-
-set(FORBIDDEN_COOK_COMMON_SOURCE_TOKENS
-    "RHI/"
-    "GameFramework/"
-    "Application/"
-    "Renderer/"
-    "Editor/"
-    "AssetConverter"
-    "TextureCooker"
-    "ShaderCompiler"
-    "D3D12/"
-    "cgltf"
-    "assimp"
-    "dxcompiler"
-    "slang"
-)
-
-foreach(cook_common_source_file IN LISTS cook_common_source_files)
-    check_tools_file_for_tokens(
-        "${cook_common_source_file}"
-        CONTEXT "CookCommon must remain generic"
-        TOKENS ${FORBIDDEN_COOK_COMMON_SOURCE_TOKENS}
-    )
-endforeach()
-
-set(FORBIDDEN_COOK_COMMON_CMAKE_TOKENS
-    "SparkleRHI"
-    "SparkleGameFramework"
-    "SparkleApplication"
-    "SparkleRenderer"
-    "SparkleEditor"
-    "SparklePlatform"
-    "TextureCookShared"
-    "TextureCooker"
-    "AssetConverter"
-    "ShaderCompiler"
-    "cgltf"
-    "assimp"
-    "dxcompiler"
-    "slang"
-)
-
-check_tools_file_for_tokens(
-    "${COOK_COMMON_SOURCE_ROOT}/CMakeLists.txt"
-    CONTEXT "CookCommon CMake dependency surface"
-    TOKENS ${FORBIDDEN_COOK_COMMON_CMAKE_TOKENS}
-)
-
 file(GLOB_RECURSE all_tool_source_files
     "${TOOLS_ARCHITECTURE_ROOT}/*.h"
     "${TOOLS_ARCHITECTURE_ROOT}/*.hpp"
@@ -168,7 +112,6 @@ set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "Tools/SceneCooker/Private"
     "Tools/TextureCooker/Private"
     "Tools/ShaderCompiler/Private"
-    "Tools/CookCommon/Private"
     "AssetConverter/Private"
     "AssetCooker/Private"
     "SourceImportAdapters/Private"
@@ -177,7 +120,6 @@ set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "SceneCooker/Private"
     "TextureCooker/Private"
     "ShaderCompiler/Private"
-    "CookCommon/Private"
 )
 
 foreach(tool_source_file IN LISTS all_tool_source_files)
@@ -192,8 +134,8 @@ get_property(TOOLS_ARCHITECTURE_VIOLATIONS GLOBAL PROPERTY TOOLS_ARCHITECTURE_VI
 
 if(TOOLS_ARCHITECTURE_VIOLATIONS)
     string(PREPEND TOOLS_ARCHITECTURE_VIOLATIONS
-        "Tools architecture validation failed. Tool implementation must stay private, shared seams must be narrow and explicit, and CookCommon must remain a generic tool-side service.\n")
+        "Tools architecture validation failed. Tool implementation must stay private and shared seams must be narrow and explicit.\n")
     message(FATAL_ERROR "${TOOLS_ARCHITECTURE_VIOLATIONS}")
 endif()
 
-message(STATUS "Tools architecture boundary check passed for public tool seams, cross-tool private includes, and CookCommon generic ownership.")
+message(STATUS "Tools architecture boundary check passed for public tool seams and cross-tool private includes.")

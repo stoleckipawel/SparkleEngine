@@ -18,7 +18,6 @@ struct AssetCookedOutput
 	const char* assetId;
 	const char* path;
 	const char* reloadHint;
-	std::uint32_t version;
 };
 
 struct AssetCookResult

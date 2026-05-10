@@ -129,8 +129,8 @@ void PassBinder::BindImpl(
 		const PassParameterLayout& compiledLayout = layout.GetParameterLayout();
 		assert(parameterLayout != nullptr);
 		const bool sameLayoutInstance = parameterLayout == &compiledLayout;
-		const bool structurallyCompatible = parameterLayout->GetParameterCount() == compiledLayout.GetParameterCount();
-		assert(sameLayoutInstance || structurallyCompatible);
+		const bool matchingParameterShape = parameterLayout->GetParameterCount() == compiledLayout.GetParameterCount();
+		assert(sameLayoutInstance || matchingParameterShape);
 	}
 
 	if (isCompute)

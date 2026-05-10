@@ -17,38 +17,32 @@ CommandRegistry::CommandRegistry()
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandCook},
 	    .command = std::make_shared<CookShadersCommand>(),
-	    .usageLine = "  ShaderCompiler cook [--shader <path>] [--no-cache] [--cache-dir <path>] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>]",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler cook [--shader <path>] [--no-cache] [--cache-dir <path>] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>]"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandListBackends},
 	    .command = std::make_shared<ListBackendsCommand>(),
-	    .usageLine = "  ShaderCompiler list-backends",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler list-backends"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandListTargets},
 	    .command = std::make_shared<ListTargetsCommand>(),
-	    .usageLine = "  ShaderCompiler list-targets",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler list-targets"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandInspectPackage},
 	    .command = std::make_shared<InspectPackageCommand>(),
-	    .usageLine = "  ShaderCompiler inspect-package <path>",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler inspect-package <path>"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandListShaders},
 	    .command = std::make_shared<ListShadersCommand>(),
-	    .usageLine = "  ShaderCompiler list-shaders [--validate]",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler list-shaders [--validate]"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandInspectShader},
 	    .command = std::make_shared<InspectShaderCommand>(),
-	    .usageLine = "  ShaderCompiler inspect-shader <shader-id>",
-	    .legacyUsageLine = {}});
+	    .usageLine = "  ShaderCompiler inspect-shader <shader-id>"});
 }
 
 const ICommand* CommandRegistry::Find(std::string_view verb) const noexcept
@@ -74,24 +68,4 @@ void CommandRegistry::PrintUsage(std::ostream& output) const
 		output << registration.usageLine << '\n';
 	}
 
-	const bool hasLegacyUsage = std::any_of(
-	    m_registrations.begin(),
-	    m_registrations.end(),
-	    [](const Registration& registration)
-	    {
-		    return !registration.legacyUsageLine.empty();
-	    });
-	if (!hasLegacyUsage)
-	{
-		return;
-	}
-
-	output << "\nCompatibility:\n";
-	for (const Registration& registration : m_registrations)
-	{
-		if (!registration.legacyUsageLine.empty())
-		{
-			output << registration.legacyUsageLine << '\n';
-		}
-	}
 }

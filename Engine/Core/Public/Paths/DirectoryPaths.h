@@ -151,11 +151,6 @@ namespace Paths
 		return Filesystem::GetShaderPath(root);
 	}
 
-	inline const std::filesystem::path& ShaderSymbolsSourceRoot(PathRoot root = PathRoot::Any)
-	{
-		return Filesystem::GetShaderSymbolsPath(root);
-	}
-
 	inline std::filesystem::path ProjectLevelsRoot()
 	{
 		return ProjectRoot() / "Levels";

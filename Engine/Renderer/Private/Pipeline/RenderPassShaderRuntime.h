@@ -208,7 +208,7 @@ class RenderPassShaderRuntime final
 		}
 
 		outErrorMessage = std::format(
-		    "Render pass '{}' declares incompatible expected stages '{}' for {} shader package '{}' ({})",
+		    "Render pass '{}' declares conflicting expected stages '{}' for {} shader package '{}' ({})",
 		    desc.PassName,
 		    FormatShaderStageMask(desc.Package.ExpectedStages),
 		    FormatPipelineKind(desc.PipelineKind),

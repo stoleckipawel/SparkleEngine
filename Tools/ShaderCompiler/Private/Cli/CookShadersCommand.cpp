@@ -9,6 +9,7 @@
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "ToolConsole.h"
 
 #include <iostream>
 #include <string>
@@ -214,7 +215,11 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	std::string parseErrorMessage;
 	if (!TryParseArguments(args, settings, parseErrorMessage))
 	{
-		std::cerr << "ShaderCompiler: invalid cook arguments - " << parseErrorMessage << "\n";
+		ToolConsole::Message(
+		    std::cerr,
+		    ToolConsoleSeverity::Error,
+		    "Invalid shader cook arguments",
+		    {ToolConsole::QuotedField("reason", parseErrorMessage)});
 		return kExitCodeUsage;
 	}
 
@@ -222,25 +227,38 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 	const ShaderPackageCookResult cookResult = cooker.CookAll(settings);
 	if (!cookResult.Succeeded())
 	{
-		std::cerr << "ShaderCompiler: failed to cook shader packages - " << cookResult.errorMessage << "\n";
+		ToolConsole::Message(
+		    std::cerr,
+		    ToolConsoleSeverity::Error,
+		    "Failed to cook shader packages",
+		    {ToolConsole::QuotedField("reason", cookResult.errorMessage)});
 		return kExitCodeCookFailure;
 	}
 
-	std::cout << "ShaderCompiler: cooked " << cookResult.packages.size() << " shader package(s) under '"
-	          << Paths::CookedShaderPackageRoot().string() << "'"
-	          << " and registry '" << cookResult.registryPath.string() << "'"
-	          << "; targets='" << FormatTargets(settings.targets) << "'"
-	          << "; recookSignal='" << cookResult.recookSignalPath.string() << "'"
-	          << "; backendInvocations=" << cookResult.backendInvocationCount
-	          << ", cacheHits=" << cookResult.cacheHitCount
-	          << ", cacheMisses=" << cookResult.cacheMissCount
-	          << ", cacheDir='" << cookResult.cacheDirectory.string() << "'\n";
+	ToolConsole::Summary(
+	    std::cout,
+	    "ShaderCompiler summary",
+	    {ToolConsole::Field("packages", std::to_string(cookResult.packages.size())),
+	     ToolConsole::PathField("packageRoot", Paths::CookedShaderPackageRoot()),
+	     ToolConsole::PathField("registry", cookResult.registryPath),
+	     ToolConsole::QuotedField("targets", FormatTargets(settings.targets)),
+	     ToolConsole::PathField("recookSignal", cookResult.recookSignalPath),
+	     ToolConsole::Field("backendInvocations", std::to_string(cookResult.backendInvocationCount)),
+	     ToolConsole::Field("cacheHits", std::to_string(cookResult.cacheHitCount)),
+	     ToolConsole::Field("cacheMisses", std::to_string(cookResult.cacheMissCount)),
+	     ToolConsole::PathField("cacheDir", cookResult.cacheDirectory)});
 
-	for (const CookedShaderPackageOutput& package : cookResult.packages)
+	ToolConsole::ListHeader(std::cout, "Cooked shader packages");
+	for (std::size_t packageIndex = 0; packageIndex < cookResult.packages.size(); ++packageIndex)
 	{
-		std::cout << "  Package '" << package.packageId << "' bindingLayout='"
-		          << package.bindingLayoutId << "' key=" << Formatting::FormatHexUInt64(package.packageKey)
-		          << " output='" << package.outputPath.string() << "'\n";
+		const CookedShaderPackageOutput& package = cookResult.packages[packageIndex];
+		ToolConsole::ListItem(
+		    std::cout,
+		    packageIndex + 1u,
+		    {ToolConsole::QuotedField("name", package.packageId),
+		     ToolConsole::QuotedField("bindingLayout", package.bindingLayoutId),
+		     ToolConsole::Field("key", Formatting::FormatHexUInt64(package.packageKey)),
+		     ToolConsole::PathField("output", package.outputPath)});
 	}
 
 	for (const std::string& analysisPass : settings.analysisPasses)
@@ -255,16 +273,29 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 			        analysisResult,
 			        analysisErrorMessage))
 			{
-				std::cerr << "ShaderCompiler: failed to run analysis pass 'pso-stats' - " << analysisErrorMessage << "\n";
+				ToolConsole::Message(
+				    std::cerr,
+				    ToolConsoleSeverity::Error,
+				    "Failed to run analysis pass",
+				    {ToolConsole::QuotedField("analysis", "pso-stats"), ToolConsole::QuotedField("reason", analysisErrorMessage)});
 				return kExitCodeCookFailure;
 			}
 
-			std::cout << "ShaderCompiler: analysis 'pso-stats' wrote " << analysisResult.rowCount
-			          << " row(s) to '" << analysisResult.outputPath.string() << "'\n";
+			ToolConsole::Message(
+			    std::cout,
+			    ToolConsoleSeverity::Info,
+			    "Analysis pass wrote output",
+			    {ToolConsole::QuotedField("analysis", "pso-stats"),
+			     ToolConsole::Field("rows", std::to_string(analysisResult.rowCount)),
+			     ToolConsole::PathField("output", analysisResult.outputPath)});
 			continue;
 		}
 
-		std::cerr << "ShaderCompiler: unknown analysis pass '" << analysisPass << "'\n";
+		ToolConsole::Message(
+		    std::cerr,
+		    ToolConsoleSeverity::Error,
+		    "Unknown analysis pass",
+		    {ToolConsole::QuotedField("analysis", analysisPass)});
 		return kExitCodeUsage;
 	}
 

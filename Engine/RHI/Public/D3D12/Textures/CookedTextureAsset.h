@@ -17,31 +17,21 @@ constexpr std::uint32_t MakeCookedTextureAssetMagic(char a, char b, char c, char
 inline constexpr std::string_view kCookedTextureAssetExtension = ".stex";
 inline constexpr std::wstring_view kCookedTextureAssetExtensionWide = L".stex";
 inline constexpr std::uint32_t kCookedTextureAssetMagic = MakeCookedTextureAssetMagic('S', 'T', 'E', 'X');
-inline constexpr std::uint32_t kCookedTextureAssetVersion = 2;
+inline constexpr std::uint32_t kCookedTextureAssetVersion = 1;
 
 constexpr std::uint32_t PackCookedTextureLayout(TextureResourceDimension dimension, std::uint16_t arraySize) noexcept
 {
 	return static_cast<std::uint32_t>(arraySize) | (static_cast<std::uint32_t>(dimension) << 16u);
 }
 
-constexpr std::uint16_t UnpackCookedTextureArraySize(std::uint32_t packedLayout, std::uint32_t version) noexcept
+constexpr std::uint16_t UnpackCookedTextureArraySize(std::uint32_t packedLayout) noexcept
 {
-	if (version < 2u)
-	{
-		return 1;
-	}
-
 	const std::uint16_t arraySize = static_cast<std::uint16_t>(packedLayout & 0xffffu);
 	return arraySize == 0 ? 1 : arraySize;
 }
 
-constexpr TextureResourceDimension UnpackCookedTextureDimension(std::uint32_t packedLayout, std::uint32_t version) noexcept
+constexpr TextureResourceDimension UnpackCookedTextureDimension(std::uint32_t packedLayout) noexcept
 {
-	if (version < 2u)
-	{
-		return TextureResourceDimension::Texture2D;
-	}
-
 	return static_cast<TextureResourceDimension>((packedLayout >> 16u) & 0xffu);
 }
 
@@ -58,11 +48,11 @@ struct SPARKLE_RHI_API CookedTextureAssetHeader
 
 	constexpr bool MatchesExpectedLayout() const noexcept
 	{
-		return magic == kCookedTextureAssetMagic && version >= 1u && version <= kCookedTextureAssetVersion;
+		return magic == kCookedTextureAssetMagic && version == kCookedTextureAssetVersion;
 	}
 
-	constexpr std::uint16_t GetArraySize() const noexcept { return UnpackCookedTextureArraySize(packedLayout, version); }
-	constexpr TextureResourceDimension GetDimension() const noexcept { return UnpackCookedTextureDimension(packedLayout, version); }
+	constexpr std::uint16_t GetArraySize() const noexcept { return UnpackCookedTextureArraySize(packedLayout); }
+	constexpr TextureResourceDimension GetDimension() const noexcept { return UnpackCookedTextureDimension(packedLayout); }
 };
 
 struct SPARKLE_RHI_API CookedTextureMipHeader

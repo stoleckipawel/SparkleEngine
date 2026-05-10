@@ -19,11 +19,14 @@
 ::   ENGINE_DIR    - Engine source (ROOT_DIR\Engine)
 ::   SCRIPTS_DIR   - Scripts directory (ROOT_DIR\Scripts)
 ::   CMAKE_DIR     - Repo CMake modules root (ROOT_DIR\CMake)
-::   GENERATOR     - Required CMake generator (Visual Studio 18 2026)
+::   GENERATOR     - Resolved CMake Visual Studio generator
 ::   ARCH          - Target architecture (x64)
+::   CMAKE_TOOLSET - Optional CMake toolset override
 ::   VSWHERE_EXE   - Visual Studio Installer discovery tool
-::   VS_VERSION_RANGE - Required Visual Studio major version range
+::   VS_VERSION_RANGE - Resolved Visual Studio major version range
 ::   VS_CPP_COMPONENT - Required Visual Studio C++ workload component
+::   CMAKE_MINIMUM_VERSION - Minimum CMake version required by root CMakeLists.txt
+::   GIT_MINIMUM_VERSION   - Minimum Git version required for FetchContent/sparse checkout
 ::   USE_CLANG     - 1 if Clang available, 0 otherwise
 ::   PROJECT_NAME  - Project name from root CMakeLists.txt project() call
 ::   SOLUTION_FILE - Full path to the VS solution file
@@ -52,18 +55,50 @@ set "CMAKE_VALIDATION_DIR=!CMAKE_DIR!\Validation"
 :: ---------------------------------------------------------------------------
 :: Build settings
 :: ---------------------------------------------------------------------------
-set "GENERATOR=Visual Studio 18 2026"
 set "ARCH=x64"
+if defined SPARKLE_CMAKE_ARCH set "ARCH=%SPARKLE_CMAKE_ARCH%"
+
 set "VSWHERE_EXE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-set "VS_VERSION_RANGE=[18.0,19.0)"
+if not exist "!VSWHERE_EXE!" if defined ProgramFiles set "VSWHERE_EXE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
+if defined SPARKLE_VSWHERE_EXE set "VSWHERE_EXE=%SPARKLE_VSWHERE_EXE%"
+
 set "VS_CPP_COMPONENT=Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
+set "VS_MINIMUM_MAJOR=17"
+if defined SPARKLE_MIN_VS_MAJOR set "VS_MINIMUM_MAJOR=%SPARKLE_MIN_VS_MAJOR%"
+set "CMAKE_MINIMUM_VERSION=3.20.0"
+set "GIT_MINIMUM_VERSION=2.25.0"
+set "VS_VERSION_RANGE=[!VS_MINIMUM_MAJOR!.0,)"
+set "VS_INSTALLATION_PATH="
+set "VS_INSTALLATION_VERSION="
+set "VS_DISPLAY_NAME=Visual Studio"
+
+set "GENERATOR="
+set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "!_POWERSHELL_EXE!" set "_POWERSHELL_EXE=powershell"
+set "_RESOLVE_TOOLCHAIN_PS1=%~dp0..\Toolchain\ResolveVisualStudioToolchain.ps1"
+if exist "!_RESOLVE_TOOLCHAIN_PS1!" if exist "!VSWHERE_EXE!" (
+    where cmake >nul 2>&1
+    if not errorlevel 1 (
+        for /f "usebackq delims=" %%I in (`""!_POWERSHELL_EXE!" -NoProfile -ExecutionPolicy Bypass -File "!_RESOLVE_TOOLCHAIN_PS1!" -VswherePath "!VSWHERE_EXE!" -CMakeCommand cmake -ComponentId "!VS_CPP_COMPONENT!" -MinimumMajor !VS_MINIMUM_MAJOR! -PreferredGenerator "!SPARKLE_CMAKE_GENERATOR!""`) do (
+            %%I
+        )
+    )
+)
+set "_RESOLVE_TOOLCHAIN_PS1="
+set "_POWERSHELL_EXE="
+
+set "CMAKE_TOOLSET="
+if defined SPARKLE_CMAKE_TOOLSET set "CMAKE_TOOLSET=%SPARKLE_CMAKE_TOOLSET%"
+if /I "%SPARKLE_USE_CLANGCL%"=="1" set "CMAKE_TOOLSET=ClangCL"
 
 :: ---------------------------------------------------------------------------
 :: Toolset detection
 :: ---------------------------------------------------------------------------
 set "USE_CLANG=0"
-where clang >nul 2>&1
-if not errorlevel 1 set "USE_CLANG=1"
+if /I "!CMAKE_TOOLSET!"=="ClangCL" (
+    where clang-cl >nul 2>&1
+    if not errorlevel 1 set "USE_CLANG=1"
+)
 
 :: ---------------------------------------------------------------------------
 :: Project name (extracted from root CMakeLists.txt project() call)

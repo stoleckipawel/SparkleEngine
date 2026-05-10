@@ -11,8 +11,7 @@ setlocal enabledelayedexpansion
 call "%~dp0..\Core\Config.bat"
 
 set "HELPER_RC=1"
-set "DESIRED_TOOLSET="
-if "!USE_CLANG!"=="1" set "DESIRED_TOOLSET=ClangCL"
+set "DESIRED_TOOLSET=!CMAKE_TOOLSET!"
 
 if /I "!SPARKLE_FORCE_CONFIGURE!"=="1" (
     echo [LOG] SPARKLE_FORCE_CONFIGURE=1. Refreshing build files...

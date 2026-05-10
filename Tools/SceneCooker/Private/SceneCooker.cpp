@@ -2,40 +2,16 @@
 
 #include "SceneCooker.h"
 
-#include "CookArtifactCache.h"
-
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
-#include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "Assets/SceneAssetRegistry.h"
 
 #include <fstream>
 #include <optional>
-
-static constexpr std::uint32_t kSceneCookerVersion = 1;
-
-static Cook::CookArtifactKey BuildSceneManifestCookArtifactKey(const CookedSceneBuild& build)
-{
-	std::uint64_t contentHash = Hash::ContinueFnv1a64Value(Hash::kFnv64OffsetBasis, build.manifestHeader);
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.meshAssetReferences);
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.materialAssetReferences);
-	contentHash = Hash::ContinueFnv1a64Vector(contentHash, build.instances);
-
-	return Cook::CookArtifactKey{
-	    .assetType = "SceneManifest",
-	    .assetId = build.sceneAssetId,
-	    .cookerName = "SceneCooker",
-	    .outputPath = build.sceneManifestPath,
-	    .cookedFormatVersion = Assets::kCookedSceneManifestVersion,
-	    .cookerVersion = kSceneCookerVersion,
-	    .sourceHash = Hash::FinalizeFnv1a64(contentHash),
-	    .dependencyHash = 0,
-	    .settingsHash = Cook::CookArtifactCache::ComputeSettingsHash("CookedSceneManifest")};
-}
 
 bool SceneCooker::ResolveSceneAsset(
     const std::filesystem::path& sourceScenePath,
@@ -99,38 +75,23 @@ bool SceneCooker::BuildManifest(
 
 bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
 {
-	const Cook::CookArtifactKey manifestArtifactKey = BuildSceneManifestCookArtifactKey(build);
-	bool manifestIsCurrent = false;
-	manifestIsCurrent = Cook::CookArtifactCache::IsCurrent(manifestArtifactKey, outErrorMessage);
-	if (!manifestIsCurrent && !outErrorMessage.empty())
+	std::ofstream manifestOutput;
+	if (!Files::TryOpenBinaryOutput(build.sceneManifestPath, manifestOutput, outErrorMessage))
 	{
 		return false;
 	}
-	if (!manifestIsCurrent)
+
+	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifestHeader, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.instances, outErrorMessage))
 	{
-		std::ofstream manifestOutput;
-		if (!Files::TryOpenBinaryOutput(build.sceneManifestPath, manifestOutput, outErrorMessage))
-		{
-			return false;
-		}
+		return false;
+	}
 
-		if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifestHeader, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.instances, outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!Files::TryCloseOutput(manifestOutput, build.sceneManifestPath, outErrorMessage))
-		{
-			return false;
-		}
-
-		if (!Cook::CookArtifactCache::Publish(manifestArtifactKey, outErrorMessage))
-		{
-			return false;
-		}
+	if (!Files::TryCloseOutput(manifestOutput, build.sceneManifestPath, outErrorMessage))
+	{
+		return false;
 	}
 
 	if (!UpdateSceneAssetRegistry(build, outErrorMessage))

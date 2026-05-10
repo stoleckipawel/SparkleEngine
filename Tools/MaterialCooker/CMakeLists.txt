@@ -37,8 +37,6 @@ target_link_libraries(MaterialCooker
         TextureCookShared
         SparkleCore
         SparkleGameFramework
-    PRIVATE
-        CookCommon
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${MATERIAL_COOKER_PUBLIC_HEADERS})

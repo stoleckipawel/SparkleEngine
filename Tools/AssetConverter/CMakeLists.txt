@@ -30,7 +30,6 @@ target_precompile_headers(AssetConverter PRIVATE
 target_link_libraries(AssetConverter
     PRIVATE
         ole32
-        CookCommon
     SourceImportAdapters
     MeshCooker
     MaterialCooker

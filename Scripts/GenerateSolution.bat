@@ -40,20 +40,23 @@ if "!INTERACTIVE!"=="1" (
     set "PARENT_BATCH="
 )
 
-if "!USE_CLANG!"=="1" (
-    echo [LOG] Toolset: ClangCL
-) else (
-    echo [LOG] Toolset: MSVC ^(Clang not found^)
-)
-echo [LOG] Project: !PROJECT_NAME!
-
+set "TOOLSET_LABEL=MSVC default"
+if defined CMAKE_TOOLSET set "TOOLSET_LABEL=!CMAKE_TOOLSET!"
+set "CONFIGURE_REASON=Incremental configure requested."
 if not exist "!BUILD_DIR!\CMakeCache.txt" (
-    echo [LOG] No CMake cache found. Running full configure...
+    set "CONFIGURE_REASON=CMake cache missing; running full configure."
 ) else if not exist "!SOLUTION_FILE!" (
-    echo [LOG] Solution file missing. Regenerating...
-) else (
-    echo [LOG] Running incremental configure...
+    set "CONFIGURE_REASON=Solution file missing; regenerating build files."
 )
+
+echo.
+echo [LOG] Solution generation request:
+echo [LOG]   Project: !PROJECT_NAME!
+if defined GENERATOR echo [LOG]   Generator: !GENERATOR! ^(!ARCH!^)
+echo [LOG]   Toolset: !TOOLSET_LABEL!
+echo [LOG]   Build dir: !BUILD_DIR!
+echo [LOG]   Output: !SOLUTION_FILE!
+echo [LOG]   Reason: !CONFIGURE_REASON!
 
 call "%~dp0Internal\Build\CMakeHelpers.bat" Configure
 set "CONFIGURE_RC=!ERRORLEVEL!"

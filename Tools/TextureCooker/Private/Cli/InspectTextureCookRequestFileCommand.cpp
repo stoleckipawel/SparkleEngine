@@ -11,8 +11,7 @@
 
 	bool InspectTextureCookRequestFileCommand::MatchesName(std::string_view commandName) noexcept
 	{
-		return commandName == TextureCookerConstants::InspectRequestFileCommand ||
-		       commandName == TextureCookerConstants::InspectRequestFileAlias;
+		return commandName == TextureCookerConstants::InspectRequestFileCommand;
 	}
 
 	int InspectTextureCookRequestFileCommand::Execute(

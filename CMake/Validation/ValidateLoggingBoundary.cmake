@@ -39,7 +39,7 @@ set(LOGGING_BOUNDARY_FORBIDDEN_FILES
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/Core/Private/Diagnostics/Logging/LogFormatting.h"
 )
 
-set(FORBIDDEN_LEGACY_SOURCE_TOKENS
+set(FORBIDDEN_DELETED_LOGGING_SOURCE_TOKENS
     "Diagnostics/Log.h"
     "#include \"Log.h\""
     "LogLevel"
@@ -87,7 +87,7 @@ set(FORBIDDEN_BOOTSTRAP_SOURCE_TOKENS
     "spdlog::apply_all("
 )
 
-set(FORBIDDEN_LEGACY_CMAKE_TOKENS
+set(FORBIDDEN_DELETED_LOGGING_CMAKE_TOKENS
     "Diagnostics/Log.h"
     "Diagnostics/Log.cpp"
     "Diagnostics/Logging/LogBuffer.h"
@@ -128,7 +128,7 @@ foreach(forbidden_file IN LISTS LOGGING_BOUNDARY_FORBIDDEN_FILES)
     if(EXISTS "${forbidden_file}")
         cmake_path(RELATIVE_PATH forbidden_file BASE_DIRECTORY "${LOGGING_BOUNDARY_SOURCE_DIR}" OUTPUT_VARIABLE relative_path)
         set(LOGGING_BOUNDARY_VIOLATIONS
-            "${LOGGING_BOUNDARY_VIOLATIONS}${relative_path}: forbidden legacy logging file exists\n")
+            "${LOGGING_BOUNDARY_VIOLATIONS}${relative_path}: forbidden deleted logging facade file exists\n")
     endif()
 endforeach()
 
@@ -147,7 +147,7 @@ foreach(source_root IN LISTS LOGGING_BOUNDARY_SOURCE_ROOTS)
     foreach(logging_source_file IN LISTS logging_source_files)
         check_file_for_tokens(
             "${logging_source_file}"
-            TOKENS ${FORBIDDEN_LEGACY_SOURCE_TOKENS}
+            TOKENS ${FORBIDDEN_DELETED_LOGGING_SOURCE_TOKENS}
         )
 
         check_file_for_tokens(
@@ -177,7 +177,7 @@ foreach(logging_cmake_file IN LISTS LOGGING_BOUNDARY_CMAKE_FILES)
     if(EXISTS "${logging_cmake_file}")
         check_file_for_tokens(
             "${logging_cmake_file}"
-            TOKENS ${FORBIDDEN_LEGACY_CMAKE_TOKENS}
+            TOKENS ${FORBIDDEN_DELETED_LOGGING_CMAKE_TOKENS}
             ALLOWED_RELATIVE_PATHS
                 "Engine/Core/CMakeLists.txt"
         )
@@ -186,7 +186,7 @@ endforeach()
 
 if(LOGGING_BOUNDARY_VIOLATIONS)
     string(PREPEND LOGGING_BOUNDARY_VIOLATIONS
-        "Logging boundary validation failed. SparkleCore must remain the only bootstrap owner, repo callsites must keep using named engine-owned loggers with native spdlog logging macros, and the deleted legacy logging facade must not return.\n")
+        "Logging boundary validation failed. SparkleCore must remain the only bootstrap owner, repo callsites must keep using named engine-owned loggers with native spdlog logging macros, and the deleted logging facade must not return.\n")
     message(FATAL_ERROR "${LOGGING_BOUNDARY_VIOLATIONS}")
 endif()
 

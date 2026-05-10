@@ -15,11 +15,16 @@ file(GLOB_RECURSE SPARKLE_RHI_PRIVATE_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
+set(SPARKLE_RHI_THIRD_PARTY_SOURCES
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
+)
+
 if(SPARKLE_BUILD_SHARED)
     add_library(SparkleRHI SHARED
         ${SPARKLE_RHI_PUBLIC_HEADERS}
         ${SPARKLE_RHI_PRIVATE_SOURCES}
         ${SPARKLE_RHI_PRIVATE_HEADERS}
+        ${SPARKLE_RHI_THIRD_PARTY_SOURCES}
     )
     target_compile_definitions(SparkleRHI PRIVATE SPARKLE_RHI_EXPORTS)
 else()
@@ -27,14 +32,17 @@ else()
         ${SPARKLE_RHI_PUBLIC_HEADERS}
         ${SPARKLE_RHI_PRIVATE_SOURCES}
         ${SPARKLE_RHI_PRIVATE_HEADERS}
+        ${SPARKLE_RHI_THIRD_PARTY_SOURCES}
     )
     target_compile_definitions(SparkleRHI PUBLIC SPARKLE_STATIC)
 endif()
 
 target_compile_definitions(SparkleRHI
 	PRIVATE
-        $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>,$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:ENGINE_GPU_VALIDATION=1;ENGINE_REPORT_LIVE_OBJECTS=1>
-        $<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:ENGINE_GPU_VALIDATION=0;ENGINE_REPORT_LIVE_OBJECTS=0>
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>,$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:ENGINE_GPU_VALIDATION=1>"
+    "$<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>,$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:ENGINE_REPORT_LIVE_OBJECTS=1>"
+    "$<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:ENGINE_GPU_VALIDATION=0>"
+    "$<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:ENGINE_REPORT_LIVE_OBJECTS=0>"
 )
 
 target_include_directories(SparkleRHI
@@ -63,6 +71,7 @@ target_link_libraries(SparkleRHI
     PRIVATE
         SparklePlatform
         # D3D12 system libraries
+        imgui
         d3d12
         dxgi
         d3dcompiler
@@ -82,3 +91,4 @@ set_target_properties(SparkleRHI PROPERTIES
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RHI_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_RHI_PRIVATE_SOURCES} ${SPARKLE_RHI_PRIVATE_HEADERS})
+source_group("ThirdParty\\ImGui" FILES ${SPARKLE_RHI_THIRD_PARTY_SOURCES})

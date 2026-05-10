@@ -2,7 +2,7 @@
 :: ============================================================================
 :: CookShaders.bat - Cook shader packages for a project
 :: ============================================================================
-:: Launch shim for the AssetCooker shader plan step.
+:: Launch entrypoint for the AssetCooker shader plan step.
 :: ============================================================================
 
 setlocal enabledelayedexpansion
@@ -34,9 +34,11 @@ if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 echo [LOG] Project: !TARGET_PROJECT!
 echo [LOG] Configuration: !CONFIG!
 
-call "%~dp0..\Internal\Cook\CookTools.bat" PrepareAssetCooker !CONFIG!
+echo [LOG] Checking cook tools...
+call "%~dp0..\Internal\Cook\CookTools.bat" PrepareShaderCook !CONFIG!
 if errorlevel 1 goto :FINISH
 
+if not defined SPARKLE_LOG_LEVEL set "SPARKLE_LOG_LEVEL=warn"
 "!ASSET_COOKER_EXE!" cook-shaders "!TARGET_PROJECT!" "!CONFIG!" --root "!ROOT_DIR!"
 set "EXIT_RC=!ERRORLEVEL!"
 goto :FINISH
@@ -49,7 +51,7 @@ echo Examples:
 echo   Scripts\Cook\CookShaders.bat Showcase
 echo   Scripts\Cook\CookShaders.bat Showcase DevelopmentGame
 echo.
-echo This shim forwards shader cooking to AssetCooker.
+echo This entrypoint forwards shader cooking to AssetCooker.
 set "EXIT_RC=1"
 
 :FINISH

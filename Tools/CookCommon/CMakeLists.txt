@@ -1,9 +1,9 @@
 set(COOK_COMMON_PUBLIC_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/CookArtifactCache.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/ToolConsole.h
 )
 
 set(COOK_COMMON_PRIVATE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CookArtifactCache.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/ToolConsole.cpp
 )
 
 add_library(CookCommon STATIC
@@ -14,16 +14,9 @@ add_library(CookCommon STATIC
 target_include_directories(CookCommon
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/Engine
 )
 
-target_compile_features(CookCommon PRIVATE cxx_std_20)
-
-target_link_libraries(CookCommon
-    PRIVATE
-        SparkleCore
-)
+target_compile_features(CookCommon PUBLIC cxx_std_20)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${COOK_COMMON_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${COOK_COMMON_PRIVATE_SOURCES})

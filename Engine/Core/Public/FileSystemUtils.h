@@ -65,7 +65,6 @@ namespace Filesystem
 	// Source asset roots
 	const std::filesystem::path& GetTypedPath(AssetType type, PathRoot root = PathRoot::Any) noexcept;
 	const std::filesystem::path& GetShaderPath(PathRoot root = PathRoot::Any) noexcept;
-	const std::filesystem::path& GetShaderSymbolsPath(PathRoot root = PathRoot::Any) noexcept;
 
 	// Source asset resolution
 	std::optional<std::filesystem::path> ResolveAssetPathNormalized(const std::filesystem::path& inputPath, AssetType type);

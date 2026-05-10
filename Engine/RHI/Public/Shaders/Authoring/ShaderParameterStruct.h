@@ -21,9 +21,8 @@ enum class ShaderParameterSamplerBindingPolicy : std::uint8_t
 
 struct ShaderParameterStructFieldDescriptor final
 {
-	// Compatibility name used by the current reflection verifier. New code should
-	// prefer LayoutName for engine binding identity and ShaderName for reflected
-	// HLSL symbols.
+	// Shared default used when layout and shader names are identical.
+	// Prefer LayoutName for engine binding identity and ShaderName for reflected HLSL symbols.
 	std::string Name;
 	std::string LayoutName;
 	std::string ShaderName;

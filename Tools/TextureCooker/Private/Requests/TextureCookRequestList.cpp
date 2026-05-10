@@ -10,16 +10,8 @@
 #include <sstream>
 #include <string_view>
 
-	static constexpr std::string_view kTextureCookRequestHeaderV2 = "TextureCookRequests|2";
-	static constexpr std::string_view kTextureCookRequestHeaderV3 = "TextureCookRequests|3";
-	static constexpr std::string_view kTextureCookRequestHeaderV4 = "TextureCookRequests|4";
-
-	enum class TextureCookRequestFileVersion : std::uint8_t
-	{
-		Version2 = 2,
-		Version3 = 3,
-		Version4 = 4,
-	};
+	static constexpr std::string_view kTextureCookRequestHeader = "TextureCookRequests|1";
+	static constexpr std::size_t kTextureCookRequestFieldCount = 10;
 
 	static std::filesystem::path NormalizeRequestPath(std::string_view pathText)
 	{
@@ -249,34 +241,23 @@
 
 	static bool ParseRequestLine(
 	    std::string_view line,
-	    TextureCookRequestFileVersion version,
 	    TextureCookRequest& outRequest,
 	    std::string& outErrorMessage)
 	{
 		const std::vector<std::string_view> fields = Strings::Split(line, '|');
-		const std::size_t expectedFieldCount = version == TextureCookRequestFileVersion::Version4   ? 10u
-		                                       : version == TextureCookRequestFileVersion::Version3 ? 9u
-		                                                                                            : 4u;
-		if (fields.size() != expectedFieldCount)
+		if (fields.size() != kTextureCookRequestFieldCount)
 		{
 			outErrorMessage = "Texture cook request entry is malformed.";
 			return false;
 		}
 
-		const std::size_t outputPathIndex = version == TextureCookRequestFileVersion::Version4   ? 8u
-		                                    : version == TextureCookRequestFileVersion::Version3 ? 7u
-		                                                                                         : 2u;
-		const std::size_t sourcePathIndex = version == TextureCookRequestFileVersion::Version4   ? 9u
-		                                    : version == TextureCookRequestFileVersion::Version3 ? 8u
-		                                                                                         : 3u;
-
-		if (fields[outputPathIndex].empty())
+		if (fields[8].empty())
 		{
 			outErrorMessage = "Texture cook request entry is missing an output path.";
 			return false;
 		}
 
-		if (fields[sourcePathIndex].empty())
+		if (fields[9].empty())
 		{
 			outErrorMessage = "Texture cook request entry is missing a source path.";
 			return false;
@@ -294,47 +275,44 @@
 			return false;
 		}
 
-		if (version == TextureCookRequestFileVersion::Version3 || version == TextureCookRequestFileVersion::Version4)
+		if (!TryParseTextureMipPolicy(fields[2], outRequest.mipPolicy))
 		{
-			if (!TryParseTextureMipPolicy(fields[2], outRequest.mipPolicy))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown mip policy '" + std::string(fields[2]) + "'.";
-				return false;
-			}
-
-			if (!TryParseTextureMipFilter(fields[3], outRequest.mipFilter))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown mip filter '" + std::string(fields[3]) + "'.";
-				return false;
-			}
-
-			if (!TryParseTextureColorProcessingPolicy(fields[4], outRequest.colorProcessingPolicy))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown color processing policy '" + std::string(fields[4]) + "'.";
-				return false;
-			}
-
-			if (!TryParseTextureGroup(fields[5], outRequest.textureGroup))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
-				return false;
-			}
-
-			if (!TryParseTextureDimension(fields[6], outRequest.dimension))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
-				return false;
-			}
-
-			if (version == TextureCookRequestFileVersion::Version4 && !TryParseTextureChannelMask(fields[7], outRequest.channelMask))
-			{
-				outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
-				return false;
-			}
+			outErrorMessage = "Texture cook request entry has an unknown mip policy '" + std::string(fields[2]) + "'.";
+			return false;
 		}
 
-		outRequest.outputPath = NormalizeRequestPath(fields[outputPathIndex]);
-		outRequest.sourcePath = NormalizeRequestPath(fields[sourcePathIndex]);
+		if (!TryParseTextureMipFilter(fields[3], outRequest.mipFilter))
+		{
+			outErrorMessage = "Texture cook request entry has an unknown mip filter '" + std::string(fields[3]) + "'.";
+			return false;
+		}
+
+		if (!TryParseTextureColorProcessingPolicy(fields[4], outRequest.colorProcessingPolicy))
+		{
+			outErrorMessage = "Texture cook request entry has an unknown color processing policy '" + std::string(fields[4]) + "'.";
+			return false;
+		}
+
+		if (!TryParseTextureGroup(fields[5], outRequest.textureGroup))
+		{
+			outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
+			return false;
+		}
+
+		if (!TryParseTextureDimension(fields[6], outRequest.dimension))
+		{
+			outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
+			return false;
+		}
+
+		if (!TryParseTextureChannelMask(fields[7], outRequest.channelMask))
+		{
+			outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
+			return false;
+		}
+
+		outRequest.outputPath = NormalizeRequestPath(fields[8]);
+		outRequest.sourcePath = NormalizeRequestPath(fields[9]);
 		if (!outRequest.IsValid())
 		{
 			outErrorMessage = "Texture cook request entry is invalid after parsing.";
@@ -345,27 +323,9 @@
 		return true;
 	}
 
-	static bool TryParseRequestFileVersion(std::string_view headerLine, TextureCookRequestFileVersion& outVersion) noexcept
+	static bool IsExpectedRequestHeader(std::string_view headerLine) noexcept
 	{
-		if (headerLine == kTextureCookRequestHeaderV2)
-		{
-			outVersion = TextureCookRequestFileVersion::Version2;
-			return true;
-		}
-
-		if (headerLine == kTextureCookRequestHeaderV3)
-		{
-			outVersion = TextureCookRequestFileVersion::Version3;
-			return true;
-		}
-
-		if (headerLine == kTextureCookRequestHeaderV4)
-		{
-			outVersion = TextureCookRequestFileVersion::Version4;
-			return true;
-		}
-
-		return false;
+		return headerLine == kTextureCookRequestHeader;
 	}
 
 	const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
@@ -513,7 +473,7 @@
 		    });
 
 		std::ostringstream output;
-		output << kTextureCookRequestHeaderV4 << '\n';
+		output << kTextureCookRequestHeader << '\n';
 		for (const TextureCookRequest& request : sortedRequests)
 		{
 			if (!request.IsValid())
@@ -553,7 +513,6 @@
 		outRequests.clear();
 		std::map<TextureAssetId, TextureCookRequest> requestsById;
 		bool foundHeader = false;
-		TextureCookRequestFileVersion fileVersion = TextureCookRequestFileVersion::Version3;
 		std::size_t lineNumber = 0;
 
 		for (std::string line; std::getline(input, line);)
@@ -567,7 +526,7 @@
 
 			if (!foundHeader)
 			{
-				if (!TryParseRequestFileVersion(trimmedLine, fileVersion))
+				if (!IsExpectedRequestHeader(trimmedLine))
 				{
 					outErrorMessage = "Texture cook request file '" + inputPath.string() + "' has an invalid header.";
 					return false;
@@ -578,7 +537,7 @@
 			}
 
 			TextureCookRequest request;
-			if (!ParseRequestLine(trimmedLine, fileVersion, request, outErrorMessage))
+			if (!ParseRequestLine(trimmedLine, request, outErrorMessage))
 			{
 				outErrorMessage += " File: '" + inputPath.string() + "', line " + std::to_string(lineNumber);
 				return false;
