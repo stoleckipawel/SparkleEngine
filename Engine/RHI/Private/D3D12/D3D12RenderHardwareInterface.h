@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Config/RenderConfig.h"
+#include "Config/RenderConfig.h"
 #include "Descriptors/D3D12DescriptorHandle.h"
-#include "../Interop/RenderHardwareInterface.h"
+#include "Interop/RenderHardwareInterface.h"
 
 #include <array>
 #include <memory>
@@ -16,7 +16,7 @@ class D3D12Rhi;
 class D3D12SamplerLibrary;
 class D3D12SwapChain;
 
-class SPARKLE_RHI_API D3D12RenderHardwareInterface final : public RenderHardwareInterface
+class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 {
   public:
 	D3D12RenderHardwareInterface(

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../RHIAPI.h"
-#include "../../Interop/RenderHardwareInterface.h"
+#include "Interop/RenderHardwareInterface.h"
 #include "D3D12RootSignature.h"
 
 #include <memory>
@@ -11,7 +10,7 @@
 class D3D12Rhi;
 class PassParameterLayout;
 
-class SPARKLE_RHI_API D3D12BindingLayout final : public RenderBindingLayout
+class D3D12BindingLayout final : public RenderBindingLayout
 {
   public:
 	D3D12BindingLayout(
@@ -39,7 +38,7 @@ class SPARKLE_RHI_API D3D12BindingLayout final : public RenderBindingLayout
 	std::vector<std::string> m_bindingNames;
 };
 
-class SPARKLE_RHI_API D3D12BindingLayoutCompiler final
+class D3D12BindingLayoutCompiler final
 {
   public:
 	static std::unique_ptr<D3D12BindingLayout> Compile(D3D12Rhi& rhi, const RenderBindingLayoutCompileDesc& desc);

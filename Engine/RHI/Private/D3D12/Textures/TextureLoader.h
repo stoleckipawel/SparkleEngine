@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../RHIAPI.h"
-#include "TextureLoadResult.h"
+#include "D3D12/Textures/TextureLoadResult.h"
+#include "RHIAPI.h"
 
 #include <filesystem>
 #include <string>

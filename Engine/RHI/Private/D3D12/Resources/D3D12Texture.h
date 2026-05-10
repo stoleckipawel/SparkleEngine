@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Textures/TextureLoadResult.h"
+#include "D3D12/Textures/TextureLoadResult.h"
 #include "../Descriptors/D3D12DescriptorHandle.h"
 #include "Resources/Texture.h"
 #include <d3d12.h>

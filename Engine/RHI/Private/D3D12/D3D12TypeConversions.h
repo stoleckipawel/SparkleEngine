@@ -1,14 +1,13 @@
 #pragma once
 
-#include "../RHIAPI.h"
-#include "../Formats/CompareOp.h"
-#include "../Formats/PixelFormat.h"
-#include "../Interop/RenderHardwareInterface.h"
+#include "Formats/CompareOp.h"
+#include "Formats/PixelFormat.h"
+#include "Interop/RenderHardwareInterface.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
-class SPARKLE_RHI_API D3D12TypeConversions final
+class D3D12TypeConversions final
 {
   public:
 	static DXGI_FORMAT ToDxgiFormat(PixelFormat format) noexcept;

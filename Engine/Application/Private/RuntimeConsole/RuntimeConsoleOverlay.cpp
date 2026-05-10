@@ -5,7 +5,6 @@
 #include "Core/Public/Console/ConsoleSession.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Config/RenderConfig.h"
-#include "D3D12/D3D12TypeConversions.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -163,8 +162,8 @@ bool RuntimeConsoleOverlay::InitializeNativeGraphicsBackend()
 	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
 	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
 	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
-	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
-	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(RenderConfig::DepthStencilFormat);
+	initInfo.RTVFormat = ToD3D12Format(m_renderHardware->GetPresentColorFormat());
+	initInfo.DSVFormat = ToD3D12Format(RenderConfig::DepthStencilFormat);
 	initInfo.SrvDescriptorHeap = ToD3D12DescriptorHeap(m_renderHardware->GetShaderResourceHeapHandle());
 	initInfo.SrvDescriptorAllocFn = &RuntimeConsoleOverlay::AllocateImGuiDescriptor;
 	initInfo.SrvDescriptorFreeFn = &RuntimeConsoleOverlay::ReleaseImGuiDescriptor;
@@ -514,6 +513,26 @@ ID3D12DescriptorHeap* RuntimeConsoleOverlay::ToD3D12DescriptorHeap(NativeDescrip
 ID3D12GraphicsCommandList* RuntimeConsoleOverlay::ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept
 {
 	return static_cast<ID3D12GraphicsCommandList*>(handle.Value);
+}
+
+DXGI_FORMAT RuntimeConsoleOverlay::ToD3D12Format(PixelFormat format) noexcept
+{
+	switch (format)
+	{
+		case PixelFormat::R8G8B8A8_UNorm:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case PixelFormat::B8G8R8A8_UNorm:
+			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		case PixelFormat::R16G16B16A16_Float:
+			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case PixelFormat::D24_UNorm_S8_UInt:
+			return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case PixelFormat::R32_Float:
+			return DXGI_FORMAT_R32_FLOAT;
+		case PixelFormat::Unknown:
+		default:
+			return DXGI_FORMAT_UNKNOWN;
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RuntimeConsoleOverlay::ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
