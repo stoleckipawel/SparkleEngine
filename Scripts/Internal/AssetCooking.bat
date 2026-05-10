@@ -30,7 +30,7 @@ if /I "%~1"=="PrepareCookTools" (
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
     set "BUILD_TARGETS=SparkleCookTools"
-    set "BUILD_LABEL=AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler"
+    set "BUILD_LABEL=AssetCooker, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
 
@@ -39,7 +39,7 @@ if /I "%~1"=="PrepareAssetCooker" (
     set "REQUEST_TEXTURE_COOKER=1"
     set "REQUEST_SHADER_COMPILER=1"
     set "BUILD_TARGETS=SparkleCookTools"
-    set "BUILD_LABEL=AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler"
+    set "BUILD_LABEL=AssetCooker, TextureCooker, and ShaderCompiler"
     goto :PREPARE_SELECTED_TOOLS
 )
 

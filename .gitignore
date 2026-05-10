@@ -35,6 +35,7 @@ mono_crash.*
 # Editor files
 .history
 imgui.ini
+Projects/**/imgui.ini
 .vscode/
 .vscode/*.code-workspace
 .vscode/settings.json
@@ -94,8 +95,12 @@ Makefile
 .tmp
 .cache
 
-# Generated logs from scripts/bootstrap logging
+# Generated logs and measurement captures stay out of commits.
+# If a performance investigation needs to be preserved, move the artifact to a
+# deliberate docs/attachment location instead of committing it from logs/.
 logs/.*
 logs/*
 logs/Scripts/.*
 logs/Scripts/*
+Projects/**/build/
+Projects/**/logs/

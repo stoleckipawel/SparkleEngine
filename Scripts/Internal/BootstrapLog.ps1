@@ -33,7 +33,13 @@ function Get-LineColor {
 $env:LOG_CAPTURED = '1'
 $env:LOGFILE = $LogFile
 
-$commandLine = '"{0}"{1}' -f $Caller, $RemainingArgs
+$trimmedRemainingArgs = $RemainingArgs.Trim()
+$commandLine = if ([string]::IsNullOrEmpty($trimmedRemainingArgs)) {
+    '"{0}"' -f $Caller
+}
+else {
+    '"{0}" {1}' -f $Caller, $trimmedRemainingArgs
+}
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 $writer = [System.IO.StreamWriter]::new($LogFile, $false, $utf8NoBom)
 

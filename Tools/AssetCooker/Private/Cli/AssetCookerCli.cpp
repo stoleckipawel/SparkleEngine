@@ -1,6 +1,6 @@
 #include "AssetCookerCli.h"
 
-#include "../../Public/AssetCookerApi.h"
+#include "../Api/AssetCookerService.h"
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
@@ -221,24 +221,22 @@ static bool AssetCookerCliParse(int argc, char** argv, AssetCookerCliArguments& 
 	return false;
 }
 
-static void AssetCookerCliPrintResult(const AssetCookResult& result)
+static void AssetCookerCliPrintResult(const AssetCookerServiceResult& result)
 {
-	for (std::uint32_t index = 0; index < result.diagnosticCount; ++index)
+	for (const AssetCookerDiagnosticRecord& diagnostic : result.diagnostics)
 	{
-		const AssetCookDiagnostic& diagnostic = result.diagnostics[index];
 		const char* prefix = diagnostic.severity == AssetCookerDiagnosticSeverity_Error ? "[ERROR]" :
 		                     diagnostic.severity == AssetCookerDiagnosticSeverity_Warning ? "[WARN]" :
 		                                                                                     "[LOG]";
-		std::cout << prefix << " " << (diagnostic.message != nullptr ? diagnostic.message : "") << "\n";
+		std::cout << prefix << " " << diagnostic.message << "\n";
 	}
 
-	for (std::uint32_t index = 0; index < result.outputCount; ++index)
+	for (const AssetCookerOutputRecord& output : result.outputs)
 	{
-		const AssetCookedOutput& output = result.outputs[index];
 		std::cout << "[LOG] Output: category=" << AssetCookerCliGetCategoryName(output.category)
-		          << " assetId='" << (output.assetId != nullptr ? output.assetId : "") << "'"
-		          << " path='" << (output.path != nullptr ? output.path : "") << "'"
-		          << " reloadHint='" << (output.reloadHint != nullptr ? output.reloadHint : "") << "'"
+		          << " assetId='" << output.assetId << "'"
+		          << " path='" << output.path << "'"
+		          << " reloadHint='" << output.reloadHint << "'"
 		          << " version=" << output.version << "\n";
 	}
 }
@@ -268,17 +266,11 @@ int AssetCookerCli::Run(int argc, char** argv) const
 	    arguments.configuration,
 	    AssetCookerCliGetCategoryName(arguments.category));
 
-	AssetCookerContext* context = AssetCookerCreateContext(&config);
-	if (context == nullptr)
-	{
-		std::cerr << "AssetCooker: failed to create context.\n";
-		return 1;
-	}
+	AssetCookerService service(&config);
 
 	if (arguments.command == "capabilities")
 	{
-		AssetCookerCapabilities capabilities = {};
-		const int exitCode = AssetCookerQueryCapabilities(context, &capabilities);
+		const AssetCookerCapabilities capabilities = service.QueryCapabilities();
 		std::cout << "AssetCooker Capabilities:\n"
 		          << "  projectCook=" << capabilities.supportsProjectCook << "\n"
 		          << "  selectedRecook=" << capabilities.supportsSelectedRecook << "\n"
@@ -286,11 +278,10 @@ int AssetCookerCli::Run(int argc, char** argv) const
 		          << "  textureCook=" << capabilities.supportsTextureCook << "\n"
 		          << "  sceneAssetCook=" << capabilities.supportsSceneAssetCook << "\n"
 		          << "  hotReloadOutputs=" << capabilities.supportsHotReloadOutputs << "\n";
-		AssetCookerDestroyContext(context);
-		return exitCode;
+		return 0;
 	}
 
-	AssetCookResult result = {};
+	AssetCookerServiceResult result;
 	int exitCode = 1;
 	if (arguments.command == "recook")
 	{
@@ -301,7 +292,7 @@ int AssetCookerCli::Run(int argc, char** argv) const
 		request.configuration = arguments.configuration.c_str();
 		request.assets = &recookAsset;
 		request.assetCount = 1;
-		exitCode = AssetCookerRecookAssets(context, &request, &result);
+		result = service.RecookAssets(&request);
 	}
 	else
 	{
@@ -309,11 +300,12 @@ int AssetCookerCli::Run(int argc, char** argv) const
 		request.category = arguments.category;
 		request.projectName = arguments.projectName.empty() ? nullptr : arguments.projectName.c_str();
 		request.configuration = arguments.configuration.c_str();
-		exitCode = AssetCookerCookProject(context, &request, &result);
+		result = service.CookProject(&request);
 	}
 
+	exitCode = result.exitCode;
+
 	AssetCookerCliPrintResult(result);
-	AssetCookerDestroyContext(context);
 	SPDLOG_LOGGER_INFO(assetCookerLogger, "AssetCooker command='{}' completed with exitCode={}", arguments.command, exitCode);
 	return exitCode;
 }

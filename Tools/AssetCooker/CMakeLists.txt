@@ -1,6 +1,4 @@
 set(ASSET_COOKER_PUBLIC_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookerApi.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookerDll.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookRequest.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookResult.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/AssetCookerTypes.h
@@ -21,10 +19,6 @@ set(ASSET_COOKER_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerDispatcher.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Dispatch/AssetCookerToolProcess.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Planning/ProjectCookPlan.h
-)
-
-set(ASSET_COOKER_API_SOURCE
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Api/AssetCookerApi.cpp
 )
 
 set(ASSET_COOKER_CLI_SOURCES
@@ -52,7 +46,6 @@ target_include_directories(AssetCookerCore
 )
 
 target_compile_features(AssetCookerCore PUBLIC cxx_std_20)
-target_compile_definitions(AssetCookerCore PUBLIC ASSET_COOKER_BUILDING_STATIC)
 set(ASSET_COOKER_COOKING_LINK_LIBRARIES
     ole32
     CookCommon
@@ -70,33 +63,8 @@ target_link_libraries(AssetCookerCore
         ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
 )
 
-add_library(AssetCookerDll SHARED
-    ${ASSET_COOKER_PUBLIC_HEADERS}
-    ${ASSET_COOKER_API_SOURCE}
-)
-
-target_include_directories(AssetCookerDll
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private
-)
-
-target_compile_features(AssetCookerDll PUBLIC cxx_std_20)
-target_compile_definitions(AssetCookerDll PRIVATE ASSET_COOKER_BUILDING_DLL)
-target_link_libraries(AssetCookerDll
-    PRIVATE
-        AssetCookerCore
-        ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
-)
-set_target_properties(AssetCookerDll PROPERTIES
-    OUTPUT_NAME AssetCookerApi
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
-
 add_executable(AssetCooker
     ${ASSET_COOKER_PUBLIC_HEADERS}
-    ${ASSET_COOKER_API_SOURCE}
     ${ASSET_COOKER_CLI_SOURCES}
     ${ASSET_COOKER_CLI_HEADERS}
 )
@@ -110,7 +78,6 @@ target_include_directories(AssetCooker
 )
 
 target_compile_features(AssetCooker PRIVATE cxx_std_20)
-target_compile_definitions(AssetCooker PRIVATE ASSET_COOKER_BUILDING_STATIC)
 target_link_libraries(AssetCooker
     PRIVATE
         AssetCookerCore
@@ -121,5 +88,5 @@ set_target_properties(AssetCooker PROPERTIES
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${ASSET_COOKER_PUBLIC_HEADERS})
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${ASSET_COOKER_CORE_SOURCES} ${ASSET_COOKER_CORE_HEADERS} ${ASSET_COOKER_API_SOURCE} ${ASSET_COOKER_CLI_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${ASSET_COOKER_CORE_SOURCES} ${ASSET_COOKER_CORE_HEADERS} ${ASSET_COOKER_CLI_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)

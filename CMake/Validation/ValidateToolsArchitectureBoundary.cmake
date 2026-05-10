@@ -41,8 +41,6 @@ function(check_tools_file_for_tokens file_path)
 endfunction()
 
 set(ALLOWED_TOOL_PUBLIC_HEADERS
-    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerApi.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerDll.h"
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookRequest.h"
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookResult.h"
     "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerTypes.h"

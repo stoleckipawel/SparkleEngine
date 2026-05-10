@@ -43,16 +43,16 @@ Safe to remove from the working tree when not needed for active debugging:
 
 Current scan notes:
 
-- `Projects/Showcase/logs/trace.json` is tracked and should be removed from git tracking unless it is intentionally used as a committed fixture.
+- `Projects/Showcase/logs/trace.json` was tracked generated output and has been removed from git tracking.
 - `imgui.ini` and `Projects/Showcase/imgui.ini` are ignored local state.
 - Root `build/`, root `logs/`, and project-local build/log directories exist as workspace clutter and should stay disposable.
 
 Recommended action:
 
-1. Remove `Projects/Showcase/logs/trace.json` from tracking if no test consumes it.
-2. Harden `.gitignore` for project-local generated output, not only root output.
+1. Keep `Projects/Showcase/logs/trace.json` untracked; it is generated output, not a committed fixture.
+2. Keep `.gitignore` explicit about project-local generated output, not only root output.
 3. Keep generated measurement logs out of commits unless they are explicitly attached to a performance investigation.
-4. Make `Scripts/CleanWorkspace.bat` the one sanctioned cleanup entry point if cleanup automation is expanded.
+4. Use `Scripts/CleanWorkspace.bat` as the sanctioned cleanup entry point for disposable root and project-local generated output.
 
 ### Debug Tool Surfaces
 
@@ -68,7 +68,7 @@ Recommended stance:
 - `TextureCooker` and `ShaderCompiler` should remain standalone specialist tools.
 - `AssetConverter` should become internal/debug-only, or be folded behind `AssetCooker` flows.
 - `ConsoleDiagnostics` has been removed because it was an isolated debug utility with no clear workflow ownership.
-- `AssetCookerDll` should exist only if editor hosting or external integration is planned soon. Otherwise it is extra API surface and build context.
+- `AssetCookerDll` and the `AssetCookerApi` C surface have been removed; the CLI now talks directly to internal service ownership.
 
 ### Tool Aggregates
 
@@ -79,7 +79,7 @@ Recommended action:
 1. Decide the public cook surface.
 2. Make the aggregate target match that surface.
 3. Move debug utilities behind opt-in targets or a separate internal aggregate.
-4. Update scripts that describe the aggregate as `AssetCooker, AssetCookerDll, TextureCooker, and ShaderCompiler` if the DLL is removed or hidden.
+4. Keep scripts and aggregate labels aligned with the public cook surface: `AssetCooker`, `TextureCooker`, and `ShaderCompiler`.
 
 ### Repeated Tool Boilerplate
 
@@ -129,14 +129,14 @@ These are high-signal architecture, even if they add file count.
 
 ### Phase 1: Repository Hygiene
 
-1. Remove tracked generated output, starting with `Projects/Showcase/logs/trace.json` if it has no fixture role.
-2. Harden `.gitignore` for project-local generated output.
-3. Clean local build/log/editor state from the working tree.
+1. Keep tracked generated output out of the repo, starting with `Projects/Showcase/logs/trace.json`.
+2. Keep `.gitignore` explicit about project-local generated output and generated measurement logs.
+3. Clean local build/log/editor state from the working tree through `Scripts/CleanWorkspace.bat`.
 4. Confirm `git status` contains only intentional source changes.
 
 ### Phase 2: Tool Surface Reduction
 
-1. Decide whether `AssetCookerDll` is still needed.
+1. Keep `AssetCooker` as the public cook entry point and keep `AssetCookerDll` removed.
 2. Decide whether `AssetConverter` remains a public executable.
 3. Keep `ConsoleDiagnostics` removed unless a concrete diagnostic workflow justifies bringing back a focused replacement.
 4. Update `Tools/CMakeLists.txt`, scripts, and validation rules to reflect those decisions.
@@ -149,9 +149,9 @@ These are high-signal architecture, even if they add file count.
 
 ### Phase 4: CMake Surface Cleanup
 
-1. Normalize root `CmakeLists.txt` to `CMakeLists.txt` if tooling and scripts support it cleanly.
-2. Consider extracting validation wiring from the root file.
-3. Add a narrow tool-target helper only after tool ownership is settled.
+1. Keep the root entrypoint normalized as `CMakeLists.txt` and keep script/tooling references aligned to that name.
+2. Keep validation target wiring extracted from the root file into `CMake/SparkleValidationTargets.cmake`.
+3. Revisit a narrow tool-target helper only after tool ownership is fully settled.
 
 ### Phase 5: Runtime Public Surface Audit
 
@@ -176,5 +176,9 @@ Run these after relevant changes:
 - `AssetCooker` is the preferred public cook story.
 - `TextureCooker` and `ShaderCompiler` are specialist tools worth keeping visible.
 - `ConsoleDiagnostics` was removed as low-value debug surface.
-- `AssetConverter` and `AssetCookerDll` need justification to remain prominent.
+- `AssetCookerDll` and the `AssetCookerApi` C surface were removed after confirming the tool CLI could call `AssetCookerService` directly.
+- `Projects/Showcase/logs/trace.json` was removed from tracking as generated output.
+- `AssetConverter` still needs justification to remain prominent.
+- Validation target wiring now lives in `CMake/SparkleValidationTargets.cmake` instead of the root file.
+- Root tracked filename is now normalized as `CMakeLists.txt`, and script/tooling references are aligned to that name.
 - Documentation polish is secondary to architectural clarity and repository hygiene.
