@@ -6,7 +6,6 @@
 
 #include <Windows.h>
 #include <array>
-#include <d3d12.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,7 +13,6 @@
 class ConsoleSession;
 class Timer;
 class Window;
-struct ImGui_ImplDX12_InitInfo;
 struct ImGuiInputTextCallbackData;
 struct ImVec4;
 struct WindowMessageEvent;
@@ -40,7 +38,6 @@ class RuntimeConsoleOverlay final
 	bool InitializeImGuiContext();
 	bool InitializeWin32Backend();
 	bool InitializeGraphicsBackend();
-	bool InitializeNativeGraphicsBackend();
 	void SetupDPIScaling() noexcept;
 	bool IsReady() const noexcept;
 	void ToggleVisibility() noexcept;
@@ -60,22 +57,6 @@ class RuntimeConsoleOverlay final
 	static ImVec4 GetSeverityColor(ConsoleCommandSeverity severity) noexcept;
 	static std::size_t FindCompletionTokenStart(const std::string& input) noexcept;
 	static void ReplaceInputText(ImGuiInputTextCallbackData& data, const std::string& text);
-
-	static ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept;
-	static ID3D12CommandQueue* ToD3D12CommandQueue(NativeGraphicsQueueHandle handle) noexcept;
-	static ID3D12DescriptorHeap* ToD3D12DescriptorHeap(NativeDescriptorHeapHandle handle) noexcept;
-	static ID3D12GraphicsCommandList* ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept;
-	static DXGI_FORMAT ToD3D12Format(PixelFormat format) noexcept;
-	static D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
-	static D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept;
-	static void AllocateImGuiDescriptor(
-	    ImGui_ImplDX12_InitInfo* info,
-	    D3D12_CPU_DESCRIPTOR_HANDLE* outCpuHandle,
-	    D3D12_GPU_DESCRIPTOR_HANDLE* outGpuHandle);
-	static void ReleaseImGuiDescriptor(
-	    ImGui_ImplDX12_InitInfo* info,
-	    D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-	    D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle);
 
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;

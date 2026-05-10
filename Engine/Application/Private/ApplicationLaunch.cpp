@@ -5,7 +5,7 @@
 #include "EditorApp.h"
 #include "ProjectApp.h"
 
-#include "Validation/D3D12SmokeValidation.h"
+#include "Validation/RhiSmokeValidation.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
 
@@ -36,9 +36,9 @@ int ApplicationLaunch::RunProject() noexcept
 {
 	ConfigureAutomationErrorHandling();
 
-	if (D3D12SmokeValidation::IsRequested())
+	if (RhiSmokeValidation::IsRequested())
 	{
-		return D3D12SmokeValidation::RunProject();
+		return RhiSmokeValidation::RunProject();
 	}
 
 	ProjectApp app;
@@ -50,9 +50,9 @@ int ApplicationLaunch::RunEditor() noexcept
 {
 	ConfigureAutomationErrorHandling();
 
-	if (D3D12SmokeValidation::IsRequested())
+	if (RhiSmokeValidation::IsRequested())
 	{
-		return D3D12SmokeValidation::RunEditor();
+		return RhiSmokeValidation::RunEditor();
 	}
 
 	EditorApp app;

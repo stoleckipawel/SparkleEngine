@@ -74,8 +74,6 @@ class SPARKLE_EDITOR_API UI final
 	bool InitializeWin32Backend();
 	bool InitializeGraphicsBackend();
 
-	bool InitializeNativeGraphicsBackend();
-
 	void InitializeDefaultPanels();
 	void ConfigureMainMenuBarShaderActions();
 

@@ -103,13 +103,19 @@ Recommended action:
 
 ### Backend-Public Runtime Headers
 
-`Engine/RHI/Public/D3D12` is acceptable for a D3D12-first engine, but it increases public surface area and makes the RHI look less abstract.
+`Engine/RHI/Public/D3D12` is now intentionally narrow. The only remaining public D3D12 headers are cooked texture contract headers shared with the cook pipeline.
+
+Current state:
+
+- `D3D12/Textures/CookedTextureAsset.h` remains public as the `.stex` file contract.
+- `D3D12/Textures/TextureLoadResult.h` remains public as the shared loaded texture data contract.
+- Concrete D3D12 RHI, descriptor, pipeline, resource, sampler, texture loader/factory, and ImGui renderer integration headers live under `Engine/RHI/Private/D3D12`.
+- Editor UI and runtime console code initialize and render ImGui through backend-agnostic `RenderHardwareInterface` calls instead of including or casting D3D12 types.
 
 Recommended action:
 
-- Leave it alone until after tool and artifact cleanup.
-- Then audit which D3D12 headers are true backend contracts versus implementation detail.
-- Move implementation-only headers under `Private` or a clearly backend-internal include surface.
+- Keep new backend integrations, including Vulkan UI rendering, behind the same RHI ImGui backend surface.
+- Do not reintroduce D3D12 implementation includes into editor, application UI, renderer, or tool code.
 
 ## Keep Sharp
 
@@ -155,9 +161,10 @@ These are high-signal architecture, even if they add file count.
 
 ### Phase 5: Runtime Public Surface Audit
 
-1. Audit `Engine/RHI/Public/D3D12`.
-2. Move backend implementation details private where practical.
-3. Preserve runtime cooked-data and no-source-import validation.
+1. Keep `Engine/RHI/Public/D3D12` limited to cooked texture contracts.
+2. Keep concrete D3D12 backend headers under `Engine/RHI/Private/D3D12`.
+3. Keep editor UI and runtime console graphics-backend interaction routed through `RenderHardwareInterface`.
+4. Preserve runtime cooked-data and no-source-import validation.
 
 ## Validation Gates
 
@@ -181,4 +188,6 @@ Run these after relevant changes:
 - `AssetConverter` still needs justification to remain prominent.
 - Validation target wiring now lives in `CMake/SparkleValidationTargets.cmake` instead of the root file.
 - Root tracked filename is now normalized as `CMakeLists.txt`, and script/tooling references are aligned to that name.
+- D3D12 backend implementation headers were moved private; the public D3D12 surface is now limited to cooked texture contracts.
+- D3D12 ImGui renderer glue now lives under `Engine/RHI/Private/D3D12/UI`; editor UI and runtime console use backend-agnostic RHI ImGui calls.
 - Documentation polish is secondary to architectural clarity and repository hygiene.

@@ -1,6 +1,6 @@
 ﻿#include "PCH.h"
 
-#include "Validation/D3D12SmokeValidation.h"
+#include "Validation/RhiSmokeValidation.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Diagnostics/ScopedLogEvent.h"
@@ -10,7 +10,7 @@
 #include "ProjectApp.h"
 #include "Renderer.h"
 
-struct D3D12SmokeValidationConfig
+struct RhiSmokeValidationConfig
 {
 	bool Enabled = false;
 	bool TraceLogging = false;
@@ -20,14 +20,14 @@ struct D3D12SmokeValidationConfig
 	std::uint32_t ShaderReloadFrame = 0;
 };
 
-struct D3D12SmokeValidationState
+struct RhiSmokeValidationState
 {
 	std::uint32_t CompletedRenderFrames = 0;
 	bool DiagnosticsLogged = false;
 	bool EditorViewportEvidenceLogged = false;
 };
 
-class D3D12SmokeValidationRunner final
+class RhiSmokeValidationRunner final
 {
   public:
 	static bool IsRequested() noexcept;
@@ -35,8 +35,8 @@ class D3D12SmokeValidationRunner final
 	static int RunEditor() noexcept;
 
   private:
-	static D3D12SmokeValidationConfig LoadConfig() noexcept;
-	static void ApplyLoggingConfig(const D3D12SmokeValidationConfig& config) noexcept;
+	static RhiSmokeValidationConfig LoadConfig() noexcept;
+	static void ApplyLoggingConfig(const RhiSmokeValidationConfig& config) noexcept;
 	static void LogDiagnosticsCapabilities(
 	    const D3D12SmokeValidationConfig& config,
 	    ProjectApp& app,

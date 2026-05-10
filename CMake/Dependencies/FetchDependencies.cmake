@@ -9,7 +9,7 @@
 # versions for reproducible builds.
 #
 # Managed dependencies:
-#   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI (DX12 + Win32 backends)
+#   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI core + Win32 platform backend
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
 #   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
@@ -158,8 +158,7 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    # DX12 + Win32 backends only (the full repo has many more)
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
+    # Platform backend shared by editor/runtime UI. Renderer backends are owned by RHI implementations.
     ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
 )
 
@@ -169,9 +168,6 @@ target_include_directories(imgui PUBLIC
 )
 
 target_link_libraries(imgui PUBLIC
-    d3d12
-    dxgi
-    dxguid
     user32
     imm32
     winmm

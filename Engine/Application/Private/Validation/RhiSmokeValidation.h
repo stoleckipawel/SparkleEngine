@@ -1,6 +1,6 @@
 #pragma once
 
-class D3D12SmokeValidation final
+class RhiSmokeValidation final
 {
   public:
 	static bool IsRequested() noexcept;

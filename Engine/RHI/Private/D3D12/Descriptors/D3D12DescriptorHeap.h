@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../D3D12Rhi.h"
+#include "D3D12/D3D12Rhi.h"
 #include "D3D12DescriptorHandle.h"
 
 using Microsoft::WRL::ComPtr;

@@ -19,6 +19,7 @@ class PassParameterLayout;
 class LoadedShaderPackage;
 class Texture;
 class RenderCommandList;
+struct ImDrawData;
 enum class CookedShaderBinaryFormat : std::uint8_t;
 
 enum class ERhiBackendApi : std::uint8_t
@@ -642,6 +643,10 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
+	virtual bool InitializeImGuiBackend() = 0;
+	virtual void BeginImGuiFrame() noexcept = 0;
+	virtual void RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept = 0;
+	virtual void ShutdownImGuiBackend() noexcept = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;

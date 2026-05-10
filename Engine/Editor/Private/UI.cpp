@@ -1,7 +1,6 @@
 ﻿#include "PCH.h"
 #include "UI.h"
 #include "Window/Window.h"
-#include "Config/RenderConfig.h"
 #include "Input/InputSystem.h"
 #include "Level/LevelManager.h"
 #include "Scene/GameScene.h"
@@ -19,11 +18,8 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
-#include <backends/imgui_impl_dx12.h>
 
 #include <algorithm>
 #include <utility>
@@ -35,86 +31,6 @@ namespace
 	constexpr float SceneOutlinerWidth = 320.0f;
 	constexpr float SceneInspectorWidth = 560.0f;
 	constexpr float MinimumViewportExtent = 64.0f;
-
-	ID3D12Device* ToD3D12Device(NativeGraphicsDeviceHandle handle) noexcept
-	{
-		return static_cast<ID3D12Device*>(handle.Value);
-	}
-
-	ID3D12CommandQueue* ToD3D12CommandQueue(NativeGraphicsQueueHandle handle) noexcept
-	{
-		return static_cast<ID3D12CommandQueue*>(handle.Value);
-	}
-
-	ID3D12DescriptorHeap* ToD3D12DescriptorHeap(NativeDescriptorHeapHandle handle) noexcept
-	{
-		return static_cast<ID3D12DescriptorHeap*>(handle.Value);
-	}
-
-	ID3D12GraphicsCommandList* ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept
-	{
-		return static_cast<ID3D12GraphicsCommandList*>(handle.Value);
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE ToD3D12CpuDescriptor(RhiCpuDescriptorHandle handle) noexcept
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE nativeHandle{};
-		nativeHandle.ptr = handle.Value;
-		return nativeHandle;
-	}
-
-	D3D12_GPU_DESCRIPTOR_HANDLE ToD3D12GpuDescriptor(RhiGpuDescriptorHandle handle) noexcept
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE nativeHandle{};
-		nativeHandle.ptr = handle.Value;
-		return nativeHandle;
-	}
-
-	DXGI_FORMAT ToD3D12Format(PixelFormat format) noexcept
-	{
-		switch (format)
-		{
-			case PixelFormat::R8G8B8A8_UNorm:
-				return DXGI_FORMAT_R8G8B8A8_UNORM;
-			case PixelFormat::B8G8R8A8_UNorm:
-				return DXGI_FORMAT_B8G8R8A8_UNORM;
-			case PixelFormat::R16G16B16A16_Float:
-				return DXGI_FORMAT_R16G16B16A16_FLOAT;
-			case PixelFormat::D24_UNorm_S8_UInt:
-				return DXGI_FORMAT_D24_UNORM_S8_UINT;
-			case PixelFormat::R32_Float:
-				return DXGI_FORMAT_R32_FLOAT;
-			case PixelFormat::Unknown:
-			default:
-				return DXGI_FORMAT_UNKNOWN;
-		}
-	}
-}
-
-static void AllocSRV(
-    ImGui_ImplDX12_InitInfo* info,
-    D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle,
-    D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle)
-{
-	auto* renderHardware = static_cast<RenderHardwareInterface*>(info->UserData);
-	RhiCpuDescriptorHandle cpuHandle{};
-	RhiGpuDescriptorHandle gpuHandle{};
-	renderHardware->AllocateShaderResourceDescriptor(cpuHandle, gpuHandle);
-	*out_cpu_handle = ToD3D12CpuDescriptor(cpuHandle);
-	*out_gpu_handle = ToD3D12GpuDescriptor(gpuHandle);
-}
-
-static void FreeSRV(ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
-{
-	auto* renderHardware = static_cast<RenderHardwareInterface*>(info->UserData);
-	static const auto editorLogger = Logging::GetOrCreateLogger("Editor");
-	SPDLOG_LOGGER_INFO(
-	    editorLogger,
-	    "UI::FreeSRV releasing cpu={} gpu={}",
-	    static_cast<unsigned long long>(cpu_handle.ptr),
-	    static_cast<unsigned long long>(gpu_handle.ptr));
-	renderHardware->ReleaseShaderResourceDescriptor(RhiCpuDescriptorHandle{cpu_handle.ptr}, RhiGpuDescriptorHandle{gpu_handle.ptr});
-	SPDLOG_LOGGER_INFO(editorLogger, "UI::FreeSRV release complete");
 }
 
 void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
@@ -270,57 +186,18 @@ bool UI::InitializeGraphicsBackend()
 		return false;
 	}
 
-	switch (m_renderHardware->GetBackendApi())
-	{
-		case ERhiBackendApi::D3D12:
-			return InitializeNativeGraphicsBackend();
-		default:
-			Diagnostics::Fail(
-			    g_editorLogger,
-			    __FILE__,
-			    __LINE__,
-			    "UI::InitializeGraphicsBackend: editor UI backend is only implemented for D3D12");
-			return false;
-	}
-}
-
-bool UI::InitializeNativeGraphicsBackend()
-{
-	if (m_renderHardware == nullptr || m_renderHardware->GetBackendApi() != ERhiBackendApi::D3D12)
+	if (m_renderHardware->GetBackendApi() == ERhiBackendApi::Unknown)
 	{
 		Diagnostics::Fail(
 		    g_editorLogger,
 		    __FILE__,
 		    __LINE__,
-		    "UI::InitializeNativeGraphicsBackend: invalid render backend for current editor UI initialization");
+		    "UI::InitializeGraphicsBackend: editor UI backend is not implemented for the active RHI backend");
 		return false;
 	}
 
-	ImGui_ImplDX12_InitInfo initInfo = {};
-	initInfo.Device = ToD3D12Device(m_renderHardware->GetDeviceHandle());
-	initInfo.CommandQueue = ToD3D12CommandQueue(m_renderHardware->GetGraphicsQueueHandle());
-	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
-	initInfo.RTVFormat = ToD3D12Format(m_renderHardware->GetPresentColorFormat());
-	initInfo.DSVFormat = ToD3D12Format(RenderConfig::DepthStencilFormat);
-	initInfo.SrvDescriptorHeap = ToD3D12DescriptorHeap(m_renderHardware->GetShaderResourceHeapHandle());
-	initInfo.SrvDescriptorAllocFn = &AllocSRV;
-	initInfo.SrvDescriptorFreeFn = &FreeSRV;
-	initInfo.UserData = m_renderHardware;
-
-	if (initInfo.Device == nullptr || initInfo.CommandQueue == nullptr || initInfo.SrvDescriptorHeap == nullptr)
-	{
-		Diagnostics::Fail(
-		    g_editorLogger,
-		    __FILE__,
-		    __LINE__,
-		    "UI::InitializeNativeGraphicsBackend: missing native device/queue/descriptor-heap");
-		return false;
-	}
-
-	ImGui_ImplDX12_Init(&initInfo);
-	m_isGraphicsBackendInitialized = true;
-
-	return true;
+	m_isGraphicsBackendInitialized = m_renderHardware->InitializeImGuiBackend();
+	return m_isGraphicsBackendInitialized;
 }
 
 void UI::InitializeDefaultPanels()
@@ -415,7 +292,7 @@ void UI::NewFrame()
 	io.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
 	io.DisplaySize = ImVec2(m_window->GetWidth(), m_window->GetHeight());
 
-	ImGui_ImplDX12_NewFrame();
+	m_renderHardware->BeginImGuiFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
@@ -557,13 +434,7 @@ void UI::Render(NativeGraphicsCommandListHandle commandList) noexcept
 		return;
 	}
 
-	ID3D12GraphicsCommandList* nativeCommandList = ToD3D12GraphicsCommandList(commandList);
-	if (nativeCommandList == nullptr)
-	{
-		return;
-	}
-
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), nativeCommandList);
+	m_renderHardware->RenderImGuiDrawData(commandList, ImGui::GetDrawData());
 }
 
 UI::~UI() noexcept
@@ -584,9 +455,8 @@ UI::~UI() noexcept
 		    g_editorLogger,
 		    "UI::~UI graphics backend invalidate begin (context={})",
 		    static_cast<const void*>(ImGui::GetCurrentContext()));
-		ImGui_ImplDX12_InvalidateDeviceObjects();
+		m_renderHardware->ShutdownImGuiBackend();
 		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend invalidate complete");
-		ImGui_ImplDX12_Shutdown();
 		m_isGraphicsBackendInitialized = false;
 		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend shutdown complete");
 	}

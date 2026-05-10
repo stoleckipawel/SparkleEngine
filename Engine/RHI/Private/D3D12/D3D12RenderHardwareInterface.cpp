@@ -13,6 +13,7 @@
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
+#include "D3D12/UI/D3D12ImGuiBackend.h"
 #include "Resources/Texture.h"
 #include "D3D12/Textures/TextureFactory.h"
 #include "D3D12/Textures/TextureLoader.h"
@@ -38,7 +39,10 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 	}
 
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
+	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);
 }
+
+D3D12RenderHardwareInterface::~D3D12RenderHardwareInterface() noexcept = default;
 
 ERhiBackendApi D3D12RenderHardwareInterface::GetBackendApi() const noexcept
 {
@@ -108,6 +112,35 @@ RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() noexcept
 const RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() const noexcept
 {
 	return *m_diagnostics;
+}
+
+bool D3D12RenderHardwareInterface::InitializeImGuiBackend()
+{
+	return m_imguiBackend != nullptr && m_imguiBackend->Initialize();
+}
+
+void D3D12RenderHardwareInterface::BeginImGuiFrame() noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->BeginFrame();
+	}
+}
+
+void D3D12RenderHardwareInterface::RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->Render(commandList, drawData);
+	}
+}
+
+void D3D12RenderHardwareInterface::ShutdownImGuiBackend() noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->Shutdown();
+	}
 }
 
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)

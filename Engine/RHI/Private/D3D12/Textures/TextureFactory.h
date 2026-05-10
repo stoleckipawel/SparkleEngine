@@ -1,7 +1,6 @@
 #pragma once
 
 #include "D3D12/Textures/TextureLoadResult.h"
-#include "RHIAPI.h"
 
 #include <memory>
 
@@ -9,7 +8,7 @@ class D3D12DescriptorHeapManager;
 class D3D12Rhi;
 class Texture;
 
-class SPARKLE_RHI_API TextureFactory
+class TextureFactory
 {
   public:
 	virtual ~TextureFactory() noexcept = default;

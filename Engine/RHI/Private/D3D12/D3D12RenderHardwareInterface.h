@@ -11,6 +11,7 @@
 
 class D3D12DescriptorHeapManager;
 class D3D12ConstantBufferManager;
+class D3D12ImGuiBackend;
 class D3D12RenderCommandList;
 class D3D12Rhi;
 class D3D12SamplerLibrary;
@@ -24,7 +25,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12SwapChain& swapChain,
 	    D3D12ConstantBufferManager& constantBufferManager) noexcept;
-	~D3D12RenderHardwareInterface() noexcept override = default;
+	~D3D12RenderHardwareInterface() noexcept override;
 
 	D3D12RenderHardwareInterface(const D3D12RenderHardwareInterface&) = delete;
 	D3D12RenderHardwareInterface& operator=(const D3D12RenderHardwareInterface&) = delete;
@@ -42,6 +43,10 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
+	bool InitializeImGuiBackend() override;
+	void BeginImGuiFrame() noexcept override;
+	void RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept override;
+	void ShutdownImGuiBackend() noexcept override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;
@@ -174,6 +179,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
+	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
 	RhiDescriptorTableHandle m_samplerTableHandle = {};
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
