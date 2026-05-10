@@ -2,15 +2,16 @@
 :: ============================================================================
 :: BuildProject.bat - Build one project editor/runtime targets
 :: ============================================================================
-:: Builds one project's launch targets using the current split host model:
-::   <Project>Editor, <Project>Runtime, or both.
+:: Builds one project's launch target using the Unreal-style Sparkle profile:
+::   *Editor profiles build <Project>Editor.
+::   *Game profiles build <Project>Runtime.
 ::
 :: Usage:
-::   BuildProject.bat <ProjectName> [Editor|Runtime|Both] [Debug|Release|RelWithDebInfo|All]
+::   BuildProject.bat <ProjectName> [DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]
 ::
 :: Examples:
-::   BuildProject.bat Showcase Editor Debug
-::   BuildProject.bat Showcase Both Release
+::   BuildProject.bat Showcase DevelopmentEditor
+::   BuildProject.bat Showcase ShippingGame
 :: ============================================================================
 
 setlocal enabledelayedexpansion
@@ -25,10 +26,8 @@ call "%~dp0Internal\Config.bat"
 
 set "EXIT_RC=1"
 set "SELECTED_PROJECT=%~1"
-set "HOST_MODE=%~2"
-set "CONFIG=%~3"
+set "CONFIG=%~2"
 if defined SELECTED_PROJECT set "SELECTED_PROJECT=!SELECTED_PROJECT: =!"
-if defined HOST_MODE set "HOST_MODE=!HOST_MODE: =!"
 if defined CONFIG set "CONFIG=!CONFIG: =!"
 
 if /I "%SELECTED_PROJECT%"=="/h" goto :USAGE
@@ -60,7 +59,7 @@ if "!PROJECT_FOUND!"=="0" (
     echo [ERROR] Unknown project '!SELECTED_PROJECT!'.
     goto :USAGE
 )
-goto :HOST_MENU
+goto :CONFIG_MENU
 
 :PROJECT_MENU
 echo.
@@ -91,34 +90,6 @@ for /L %%I in (1,1,!PROJECT_COUNT!) do (
     if "%%I"=="!PROJ_SEL!" set "SELECTED_PROJECT=!PROJECT_%%I!"
 )
 
-:HOST_MENU
-if defined PARENT_BATCH if not defined HOST_MODE goto :USAGE
-if defined HOST_MODE goto :CONFIG_MENU
-
-echo.
-echo ============================================================
-echo   Select Host Target Type
-echo ============================================================
-echo.
-echo   1^) Editor
-echo   2^) Runtime
-echo   3^) Both
-echo.
-echo ============================================================
-
-set "HOST_SEL="
-set /P "HOST_SEL=Enter choice [1-3]: "
-if "!HOST_SEL!"=="" set "HOST_SEL=3"
-
-if "!HOST_SEL!"=="1" set "HOST_MODE=Editor"
-if "!HOST_SEL!"=="2" set "HOST_MODE=Runtime"
-if "!HOST_SEL!"=="3" set "HOST_MODE=Both"
-
-if not defined HOST_MODE (
-    echo [ERROR] Invalid host selection.
-    goto :HOST_MENU
-)
-
 :CONFIG_MENU
 if defined PARENT_BATCH if not defined CONFIG goto :USAGE
 if defined CONFIG goto :VALIDATE_ARGS
@@ -128,21 +99,25 @@ echo ============================================================
 echo   Select Build Configuration
 echo ============================================================
 echo.
-echo   1^) Debug
-echo   2^) Release
-echo   3^) RelWithDebInfo
-echo   4^) All Configurations
+echo   1^) DebugEditor
+echo   2^) DebugGame
+echo   3^) DevelopmentEditor
+echo   4^) DevelopmentGame
+echo   5^) ShippingEditor
+echo   6^) ShippingGame
 echo.
 echo ============================================================
 
 set "CONFIG_SEL="
-set /P "CONFIG_SEL=Enter choice [1-4]: "
-if "!CONFIG_SEL!"=="" set "CONFIG_SEL=1"
+set /P "CONFIG_SEL=Enter choice [1-6]: "
+if "!CONFIG_SEL!"=="" set "CONFIG_SEL=3"
 
-if "!CONFIG_SEL!"=="1" set "CONFIG=Debug"
-if "!CONFIG_SEL!"=="2" set "CONFIG=Release"
-if "!CONFIG_SEL!"=="3" set "CONFIG=RelWithDebInfo"
-if "!CONFIG_SEL!"=="4" set "CONFIG=All"
+if "!CONFIG_SEL!"=="1" set "CONFIG=DebugEditor"
+if "!CONFIG_SEL!"=="2" set "CONFIG=DebugGame"
+if "!CONFIG_SEL!"=="3" set "CONFIG=DevelopmentEditor"
+if "!CONFIG_SEL!"=="4" set "CONFIG=DevelopmentGame"
+if "!CONFIG_SEL!"=="5" set "CONFIG=ShippingEditor"
+if "!CONFIG_SEL!"=="6" set "CONFIG=ShippingGame"
 
 if not defined CONFIG (
     echo [ERROR] Invalid configuration selection.
@@ -150,28 +125,21 @@ if not defined CONFIG (
 )
 
 :VALIDATE_ARGS
-set "VALID_HOST=0"
-for %%H in (Editor Runtime Both) do (
-    if /I "!HOST_MODE!"=="%%H" set "VALID_HOST=1"
-)
-if "!VALID_HOST!"=="0" (
-    echo [ERROR] Unsupported host mode '!HOST_MODE!'.
-    goto :USAGE
-)
-
 set "VALID_CONFIG=0"
-for %%C in (Debug Release RelWithDebInfo All) do (
-    if /I "!CONFIG!"=="%%C" set "VALID_CONFIG=1"
+for %%C in (DebugEditor DebugGame DevelopmentEditor DevelopmentGame ShippingEditor ShippingGame) do (
+    if /I "!CONFIG!"=="%%C" (
+        set "CONFIG=%%C"
+        set "VALID_CONFIG=1"
+    )
 )
 if "!VALID_CONFIG!"=="0" (
-    echo [ERROR] Unsupported configuration '!CONFIG!'.
+    echo [ERROR] Unsupported build profile '!CONFIG!'.
     goto :USAGE
 )
 
 echo.
 echo [LOG] Project selection: !SELECTED_PROJECT!
-echo [LOG] Host target type: !HOST_MODE!
-echo [LOG] Build configuration: !CONFIG!
+echo [LOG] Build profile: !CONFIG!
 
 echo.
 echo [LOG] Ensuring build files are current...
@@ -182,50 +150,10 @@ if "!ENSURE_RC!" NEQ "0" (
     goto :FINISH
 )
 
-call "%~dp0Internal\ProjectDiscovery.bat" ResolveTargets "!SELECTED_PROJECT!" "!HOST_MODE!"
-if errorlevel 1 goto :FINISH
-
-if "!TARGET_COUNT!"=="0" (
-    echo [ERROR] No build targets resolved for '!SELECTED_PROJECT!' / '!HOST_MODE!'.
-    goto :FINISH
-)
-
-set "TARGET_ARGS="
-for /L %%I in (1,1,!TARGET_COUNT!) do (
-    set "TARGET_ARGS=!TARGET_ARGS! !TARGET_%%I!"
-)
-
 set "HAS_SUCCESS=0"
 set "EXIT_RC=0"
 
-if /I "!CONFIG!"=="All" (
-    set "RC_Debug=1"
-    set "RC_Release=1"
-    set "RC_RelWithDebInfo=1"
-
-    for %%C in (Debug Release RelWithDebInfo) do (
-        echo.
-        echo ========================================
-        echo [LOG] Building %%C targets: !TARGET_ARGS!
-        echo ========================================
-        call "%~dp0Internal\CMakeHelpers.bat" BuildTargets %%C !TARGET_ARGS!
-        set "CFG_RC=!ERRORLEVEL!"
-        set "RC_%%C=!CFG_RC!"
-        if "!CFG_RC!"=="0" (
-            set "HAS_SUCCESS=1"
-        ) else (
-            echo [ERROR] %%C build failed with code !CFG_RC!
-            set "EXIT_RC=!CFG_RC!"
-        )
-    )
-    goto :MAYBE_LAUNCH
-)
-
-echo.
-echo ========================================
-echo [LOG] Building targets: !TARGET_ARGS!
-echo ========================================
-call "%~dp0Internal\CMakeHelpers.bat" BuildTargets !CONFIG! !TARGET_ARGS!
+call :BUILD_PROFILE !CONFIG!
 set "EXIT_RC=!ERRORLEVEL!"
 if "!EXIT_RC!"=="0" set "HAS_SUCCESS=1"
 
@@ -257,16 +185,6 @@ goto :LAUNCH_PROMPT
 
 :DO_LAUNCH
 set "RUN_CONFIG=!CONFIG!"
-if /I "!CONFIG!"=="All" (
-    if "!RC_Release!"=="0" (
-        set "RUN_CONFIG=Release"
-    ) else if "!RC_Debug!"=="0" (
-        set "RUN_CONFIG=Debug"
-    ) else (
-        set "RUN_CONFIG=RelWithDebInfo"
-    )
-)
-
 set "TARGET_EXE=!BIN_DIR!\!RUN_CONFIG!\!TARGET_1!.exe"
 set "PROJECT_WORKDIR=!PROJECTS_DIR!\!SELECTED_PROJECT!"
 
@@ -285,13 +203,50 @@ echo [LOG] Working directory: !PROJECT_WORKDIR!
 start "" /D "!PROJECT_WORKDIR!" "!TARGET_EXE!"
 goto :FINISH
 
+:BUILD_PROFILE
+set "CURRENT_PROFILE=%~1"
+call :RESOLVE_PROFILE_TARGETS "!CURRENT_PROFILE!"
+if errorlevel 1 exit /B 1
+
+echo.
+echo ========================================
+echo [LOG] Building !CURRENT_PROFILE! targets: !TARGET_ARGS!
+echo ========================================
+call "%~dp0Internal\CMakeHelpers.bat" BuildTargets !CURRENT_PROFILE! !TARGET_ARGS!
+exit /B !ERRORLEVEL!
+
+:RESOLVE_PROFILE_TARGETS
+set "PROFILE_TO_RESOLVE=%~1"
+set "HOST_MODE="
+if /I "!PROFILE_TO_RESOLVE:~-6!"=="Editor" set "HOST_MODE=Editor"
+if /I "!PROFILE_TO_RESOLVE:~-4!"=="Game" set "HOST_MODE=Runtime"
+
+if not defined HOST_MODE (
+    echo [ERROR] Build profile '!PROFILE_TO_RESOLVE!' does not end in Editor or Game.
+    exit /B 1
+)
+
+call "%~dp0Internal\ProjectDiscovery.bat" ResolveTargets "!SELECTED_PROJECT!" "!HOST_MODE!"
+if errorlevel 1 exit /B 1
+
+if "!TARGET_COUNT!"=="0" (
+    echo [ERROR] No build targets resolved for '!SELECTED_PROJECT!' / '!HOST_MODE!'.
+    exit /B 1
+)
+
+set "TARGET_ARGS="
+for /L %%I in (1,1,!TARGET_COUNT!) do (
+    set "TARGET_ARGS=!TARGET_ARGS! !TARGET_%%I!"
+)
+exit /B 0
+
 :USAGE
 echo.
-echo Usage: Scripts\BuildProject.bat ^<ProjectName^> [Editor^|Runtime^|Both] [Debug^|Release^|RelWithDebInfo^|All]
+echo Usage: Scripts\BuildProject.bat ^<ProjectName^> [DebugEditor^|DebugGame^|DevelopmentEditor^|DevelopmentGame^|ShippingEditor^|ShippingGame]
 echo.
 echo Examples:
-echo   Scripts\BuildProject.bat Showcase Editor Debug
-echo   Scripts\BuildProject.bat Showcase Both Release
+echo   Scripts\BuildProject.bat Showcase DevelopmentEditor
+echo   Scripts\BuildProject.bat Showcase ShippingGame
 echo.
 echo You must provide or select one specific project.
 echo.

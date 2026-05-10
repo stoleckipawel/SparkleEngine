@@ -77,11 +77,3 @@ add_subdirectory(Editor)         # SparkleEditor.dll   - Editor UI, panels, tool
 #       SparkleCore
 #   )
 
-# Set compiler flags for debug builds
-if (MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /Zi")
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /Od /Zi")
-else()
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
-    set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-endif()

@@ -11,20 +11,14 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/ScopedLogEvent.h"
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Core/Public/Files/FileUtils.h"
+#include "Core/Public/Json/JsonWriter.h"
 
 #include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <objbase.h>
-
-struct TextureCookRequestTiming final
-{
-	std::uint64_t elapsedMilliseconds = 0;
-	TextureAssetId assetId = InvalidTextureAssetId;
-	bool cooked = false;
-	bool skipped = false;
-	std::filesystem::path sourcePath;
-};
+#include <sstream>
 
 static std::uint64_t TextureCookerElapsedMilliseconds(std::chrono::steady_clock::time_point startTime) noexcept
 {
@@ -53,12 +47,15 @@ static std::uint64_t TextureCookerElapsedMilliseconds(std::chrono::steady_clock:
 		return true;
 	}
 
-	int TextureCookRequestBatchProcessor::CookRequestFile(const std::filesystem::path& requestFilePath) const
+	int TextureCookRequestBatchProcessor::CookRequestFile(
+		const std::filesystem::path& requestFilePath,
+		const std::filesystem::path& summaryPath) const
 	{
 		static const auto textureCookerLogger = Logging::GetOrCreateLogger("Tools.TextureCooker");
 		SPARKLE_CPU_SCOPE("Tools.TextureCooker.CookRequestFile");
 		SPARKLE_LOG_SCOPE(textureCookerLogger, spdlog::level::info, "TextureCooker.CookRequestFile");
 		SPDLOG_LOGGER_INFO(textureCookerLogger, "TextureCooker requestFile='{}' loading", requestFilePath.string());
+		const auto batchStartTime = std::chrono::steady_clock::now();
 
 		std::string errorMessage;
 		ScopedComInitializer comInitializer;
@@ -160,7 +157,27 @@ static std::uint64_t TextureCookerElapsedMilliseconds(std::chrono::steady_clock:
 			    timing.sourcePath.string());
 		}
 
-		PrintSummary(requestFilePath, requests.size(), cookedCount, skippedCount);
+		const std::uint64_t elapsedMilliseconds = TextureCookerElapsedMilliseconds(batchStartTime);
+		PrintSummary(requestFilePath, requests.size(), cookedCount, skippedCount, elapsedMilliseconds, requestTimings);
+		if (!summaryPath.empty())
+		{
+			std::string summaryError;
+			if (!WriteSummary(
+			        summaryPath,
+			        requestFilePath,
+			        requests.size(),
+			        cookedCount,
+			        skippedCount,
+			        elapsedMilliseconds,
+			        requestTimings,
+			        summaryError))
+			{
+				std::cerr << TextureCookerConstants::ToolName << ": failed to write timing summary - " << summaryError << "\n";
+				return TextureCookerConstants::ExitCookFailed;
+			}
+
+			std::cout << TextureCookerConstants::ToolName << ": timing summary written to '" << summaryPath.string() << "'\n";
+		}
 		return TextureCookerConstants::ExitSuccess;
 	}
 
@@ -240,14 +257,77 @@ static std::uint64_t TextureCookerElapsedMilliseconds(std::chrono::steady_clock:
 		const std::filesystem::path& requestFilePath,
 		std::size_t requestCount,
 		std::size_t cookedCount,
-		std::size_t skippedCount)
+		std::size_t skippedCount,
+		std::uint64_t elapsedMilliseconds,
+		const std::vector<TextureCookRequestTiming>& requestTimings)
 	{
 		std::cout << TextureCookerConstants::ToolName << " Summary:\n"
 		          << "  mode=cook\n"
 		          << "  requestFile='" << requestFilePath.string() << "'\n"
+		          << "  elapsedMs=" << elapsedMilliseconds << "\n"
 		          << "  requests=" << requestCount << "\n"
 		          << "  cooked=" << cookedCount << "\n"
 		          << "  skipped=" << skippedCount << "\n";
+
+		const std::size_t topCount = (std::min<std::size_t>)(requestTimings.size(), 10u);
+		if (topCount > 0u)
+		{
+			std::cout << TextureCookerConstants::ToolName << " Top Requests:\n";
+			for (std::size_t timingIndex = 0; timingIndex < topCount; ++timingIndex)
+			{
+				const TextureCookRequestTiming& timing = requestTimings[timingIndex];
+				std::cout << "  " << (timingIndex + 1u) << ") elapsedMs=" << timing.elapsedMilliseconds
+				          << " status=" << (timing.cooked ? "cooked" : timing.skipped ? "skipped" : "unchanged")
+				          << " assetId=" << Formatting::FormatHexUInt64(timing.assetId) << " source='" << timing.sourcePath.string()
+				          << "'\n";
+			}
+		}
+	}
+
+	bool TextureCookRequestBatchProcessor::WriteSummary(
+		const std::filesystem::path& summaryPath,
+		const std::filesystem::path& requestFilePath,
+		std::size_t requestCount,
+		std::size_t cookedCount,
+		std::size_t skippedCount,
+		std::uint64_t elapsedMilliseconds,
+		const std::vector<TextureCookRequestTiming>& requestTimings,
+		std::string& outErrorMessage)
+	{
+		std::ostringstream topRequests;
+		topRequests << "[\n";
+		const std::size_t topCount = (std::min<std::size_t>)(requestTimings.size(), 10u);
+		for (std::size_t timingIndex = 0; timingIndex < topCount; ++timingIndex)
+		{
+			const TextureCookRequestTiming& timing = requestTimings[timingIndex];
+			topRequests << "    {"
+			            << "\"rank\": " << (timingIndex + 1u) << ", "
+			            << "\"elapsedMs\": " << timing.elapsedMilliseconds << ", "
+			            << "\"assetId\": " << Json::QuoteString(Formatting::FormatHexUInt64(timing.assetId)) << ", "
+			            << "\"status\": " << Json::QuoteString(timing.cooked ? "cooked" : timing.skipped ? "skipped" : "unchanged") << ", "
+			            << "\"source\": " << Json::QuoteString(timing.sourcePath.generic_string()) << "}";
+			if (timingIndex + 1u < topCount)
+			{
+				topRequests << ',';
+			}
+			topRequests << "\n";
+		}
+		topRequests << "  ]";
+
+		Json::ObjectWriter writer;
+		writer.WriteString("schema", "texture-cooker-summary-v1");
+		writer.WriteString("tool", TextureCookerConstants::ToolName);
+		writer.WriteString("mode", "cook-request-file");
+		writer.WriteString("requestFile", requestFilePath.generic_string());
+		writer.WriteUInt64("elapsedMs", elapsedMilliseconds);
+		writer.WriteUInt64("requestCount", static_cast<std::uint64_t>(requestCount));
+		writer.WriteUInt64("cookedCount", static_cast<std::uint64_t>(cookedCount));
+		writer.WriteUInt64("skippedCount", static_cast<std::uint64_t>(skippedCount));
+		writer.WriteUInt64("cacheHitCount", static_cast<std::uint64_t>(skippedCount));
+		writer.WriteUInt64("cacheMissCount", static_cast<std::uint64_t>(cookedCount));
+		writer.WriteRaw("topRequests", topRequests.str());
+
+		return Files::TryWriteAllTextAtomic(summaryPath, writer.Finish(), outErrorMessage);
 	}
 
 	void TextureCookRequestBatchProcessor::PrintProcessedRequest(const TextureCookRequest& request)

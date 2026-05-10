@@ -3,16 +3,28 @@
 #include "TextureCookRequestList.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
 
 	class TextureAssetCooker;
 
+	struct TextureCookRequestTiming final
+	{
+		std::uint64_t elapsedMilliseconds = 0;
+		TextureAssetId assetId = InvalidTextureAssetId;
+		bool cooked = false;
+		bool skipped = false;
+		std::filesystem::path sourcePath;
+	};
+
 	class TextureCookRequestBatchProcessor final
 	{
 	  public:
-		int CookRequestFile(const std::filesystem::path& requestFilePath) const;
+		int CookRequestFile(
+			const std::filesystem::path& requestFilePath,
+			const std::filesystem::path& summaryPath = {}) const;
 
 	  private:
 		class ScopedComInitializer final
@@ -43,7 +55,19 @@
 			const std::filesystem::path& requestFilePath,
 			std::size_t requestCount,
 			std::size_t cookedCount,
-			std::size_t skippedCount);
+			std::size_t skippedCount,
+			std::uint64_t elapsedMilliseconds,
+			const std::vector<TextureCookRequestTiming>& requestTimings);
+
+		static bool WriteSummary(
+			const std::filesystem::path& summaryPath,
+			const std::filesystem::path& requestFilePath,
+			std::size_t requestCount,
+			std::size_t cookedCount,
+			std::size_t skippedCount,
+			std::uint64_t elapsedMilliseconds,
+			const std::vector<TextureCookRequestTiming>& requestTimings,
+			std::string& outErrorMessage);
 
 		static void PrintProcessedRequest(const TextureCookRequest& request);
 	};

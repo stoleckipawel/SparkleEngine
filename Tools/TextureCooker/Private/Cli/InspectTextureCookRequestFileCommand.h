@@ -13,7 +13,7 @@
 	  public:
 		static bool MatchesName(std::string_view commandName) noexcept;
 
-		int Execute(const std::filesystem::path& requestFilePath) const override;
+		int Execute(const std::filesystem::path& requestFilePath, const TextureCookerCommandOptions& options) const override;
 
 	  private:
 		static void PrintRequest(const TextureCookRequest& request);

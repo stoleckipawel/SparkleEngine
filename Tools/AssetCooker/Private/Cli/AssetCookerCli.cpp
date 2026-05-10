@@ -14,9 +14,21 @@ struct AssetCookerCliArguments final
 {
 	std::string command;
 	std::string projectName;
-	std::string configuration = "Debug";
+	std::string configuration = "DevelopmentGame";
 	std::string repositoryRoot;
 	AssetCookerCategory category = AssetCookerCategory_All;
+};
+
+static constexpr std::string_view kAssetCookerProfileUsage =
+	"[DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]";
+
+static constexpr std::string_view kAssetCookerProfiles[] = {
+	"DebugEditor",
+	"DebugGame",
+	"DevelopmentEditor",
+	"DevelopmentGame",
+	"ShippingEditor",
+	"ShippingGame",
 };
 
 static bool AssetCookerCliIsHelp(std::string_view argument)
@@ -26,18 +38,25 @@ static bool AssetCookerCliIsHelp(std::string_view argument)
 
 static bool AssetCookerCliIsConfiguration(std::string_view argument)
 {
-	return argument == "Debug" || argument == "Release" || argument == "RelWithDebInfo";
+	for (const std::string_view profile : kAssetCookerProfiles)
+	{
+		if (argument == profile)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 static void AssetCookerCliPrintUsage(std::ostream& output)
 {
 	output << "Usage:\n"
-	       << "  AssetCooker cook-project [ProjectName|ALL] [Debug|Release|RelWithDebInfo] [--root <repo-root>]\n"
-	       << "  AssetCooker cook-shaders <ProjectName> [Debug|Release|RelWithDebInfo] [--root <repo-root>]\n"
-	       << "  AssetCooker cook-textures <ProjectName> [Debug|Release|RelWithDebInfo] [--root <repo-root>]\n"
-	       << "  AssetCooker cook-assets <ProjectName> [Debug|Release|RelWithDebInfo] [--root <repo-root>]\n"
+	       << "  AssetCooker cook-project [ProjectName|ALL] " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
+	       << "  AssetCooker cook-shaders <ProjectName> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
+	       << "  AssetCooker cook-textures <ProjectName> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
+	       << "  AssetCooker cook-assets <ProjectName> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n"
 	       << "  AssetCooker capabilities [--root <repo-root>]\n"
-	       << "  AssetCooker recook <ProjectName> <shader|texture|mesh|material|scene|all> [Debug|Release|RelWithDebInfo] [--root <repo-root>]\n";
+	       << "  AssetCooker recook <ProjectName> <shader|texture|mesh|material|scene|all> " << kAssetCookerProfileUsage << " [--root <repo-root>]\n";
 }
 
 static bool AssetCookerCliParseCategory(std::string_view value, AssetCookerCategory& outCategory)

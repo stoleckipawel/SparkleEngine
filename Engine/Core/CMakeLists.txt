@@ -91,8 +91,9 @@ target_link_libraries(SparkleCore
 
 target_compile_definitions(SparkleCore
     PUBLIC
-        $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE>
-        $<$<NOT:$<CONFIG:Debug>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+    $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE>
+    $<$<OR:$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO>
+    $<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_WARN>
 )
 
 # Set output directories

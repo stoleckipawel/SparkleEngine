@@ -8,5 +8,8 @@
 		int Run(int argc, char** argv) const;
 
 	  private:
-		static int RunCommand(const std::filesystem::path& requestFilePath, const char* commandName);
+		static int RunCommand(
+			const std::filesystem::path& requestFilePath,
+			const char* commandName,
+			const std::filesystem::path& summaryPath);
 	};

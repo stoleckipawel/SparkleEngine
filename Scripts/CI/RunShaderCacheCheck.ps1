@@ -5,7 +5,7 @@
 #     3. Editing one shader source invalidates only that shader's stages.
 #     4. --no-cache forces a full backend recook.
 #
-# Usage (from repo root, after building Debug ShaderCompiler):
+# Usage (from repo root, after building DevelopmentEditor ShaderCompiler):
 #   pwsh -NoProfile -ExecutionPolicy Bypass -File Scripts\CI\RunShaderCacheCheck.ps1
 # ============================================================================
 
@@ -15,14 +15,14 @@ param()
 $ErrorActionPreference = 'Stop'
 
 $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$ShaderCompiler = Join-Path $RepoRoot 'build\bin\Debug\ShaderCompiler.exe'
+$ShaderCompiler = Join-Path $RepoRoot 'build\bin\DevelopmentEditor\ShaderCompiler.exe'
 $ShowcaseRoot = Join-Path $RepoRoot 'Projects\Showcase'
 $CacheRoot = Join-Path $RepoRoot 'build\Cache\Shaders\Phase1CacheValidation'
 $TargetShader = Join-Path $RepoRoot 'Engine\Assets\Shaders\HelloWorld\HelloTriangle.hlsl'
 
 if (-not (Test-Path $ShaderCompiler))
 {
-    Write-Host "[CI][ERROR] ShaderCompiler.exe not found at $ShaderCompiler. Build Debug ShaderCompiler before running this check."
+    Write-Host "[CI][ERROR] ShaderCompiler.exe not found at $ShaderCompiler. Build DevelopmentEditor ShaderCompiler before running this check."
     exit 1
 }
 

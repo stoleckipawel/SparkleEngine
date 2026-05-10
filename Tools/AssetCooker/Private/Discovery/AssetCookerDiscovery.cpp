@@ -154,7 +154,8 @@ bool AssetCookerDiscovery::TryFindRepositoryRoot(
 
 bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
 {
-	return configuration == "Debug" || configuration == "Release" || configuration == "RelWithDebInfo";
+	return configuration == "DebugEditor" || configuration == "DebugGame" || configuration == "DevelopmentEditor" ||
+	       configuration == "DevelopmentGame" || configuration == "ShippingEditor" || configuration == "ShippingGame";
 }
 
 std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
@@ -214,6 +215,10 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
 	outPlan.cookedRoot = repositoryRoot / "build" / "Cooked" / outPlan.projectName;
 	outPlan.planPath = repositoryRoot / "build" / "Cook" / "Plans" / (outPlan.projectName + ".assetcookplan.txt");
+	outPlan.summaryPath = repositoryRoot / "build" / "Cook" / "Summaries" /
+	                      (outPlan.projectName + "-" + outPlan.configuration + "-assetcook-summary.json");
+	outPlan.textureSummaryPath = repositoryRoot / "build" / "Cook" / "Summaries" /
+	                             (outPlan.projectName + "-" + outPlan.configuration + "-texturecook-summary.json");
 	AssetCookerAddPlanSteps(category, outPlan.steps);
 
 	if (!AssetCookerPathExists(outPlan.projectRoot / ".sparkle-project"))
@@ -279,6 +284,8 @@ bool AssetCookerDiscovery::WritePlanSummary(
 	output << "schema=asset-cooker-plan-v1\n";
 	output << "project=" << plan.projectName << "\n";
 	output << "configuration=" << plan.configuration << "\n";
+	output << "summaryPath=" << plan.summaryPath.string() << "\n";
+	output << "textureSummaryPath=" << plan.textureSummaryPath.string() << "\n";
 	output << "engineSceneCount=" << plan.engineSceneCount << "\n";
 	output << "projectSceneCount=" << plan.projectSceneCount << "\n";
 	output << "overriddenEngineSceneCount=" << plan.overriddenEngineSceneCount << "\n";

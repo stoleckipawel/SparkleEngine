@@ -1,7 +1,7 @@
 # Purpose:
 #   Prove on every PR that the shader cooker baseline is green:
 #     1. CMake configures.
-#     2. ShaderCompiler builds in Debug AND Release.
+#     2. ShaderCompiler builds in DevelopmentEditor and ShippingGame.
 #     3. ValidateShaderCompilerBoundary passes (custom target runs as part
 #        of the build).
 #     4. ShaderCompiler.exe exposes reviewer-friendly backend, target, shader,
@@ -109,16 +109,16 @@ if (-not (Test-Path (Join-Path $RepoRoot 'build')))
     }
 }
 
-# 2. Build Debug + Release. The boundary validator runs as part of the build.
-foreach ($config in @('Debug', 'Release'))
+# 2. Build representative development and shipping profiles.
+foreach ($config in @('DevelopmentEditor', 'ShippingGame'))
 {
     Invoke-CIStep -Label "Building ShaderCompiler ($config)" -Action {
         cmake --build build --config $config --target ShaderCompiler -- /nologo /v:minimal /m:1 /p:UseMultiToolTask=false /p:TrackFileAccess=false /nodeReuse:false
     }
 }
 
-# 3. Cook the Showcase project using the Debug binary.
-$ShaderCompiler = Join-Path $RepoRoot 'build\bin\Debug\ShaderCompiler.exe'
+# 3. Cook the Showcase project using the development editor-profile binary.
+$ShaderCompiler = Join-Path $RepoRoot 'build\bin\DevelopmentEditor\ShaderCompiler.exe'
 if (-not (Test-Path $ShaderCompiler))
 {
     Write-Host "[CI][ERROR] ShaderCompiler.exe not found at $ShaderCompiler."

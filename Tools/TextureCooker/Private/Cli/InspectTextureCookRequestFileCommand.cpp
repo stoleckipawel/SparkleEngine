@@ -15,8 +15,11 @@
 		       commandName == TextureCookerConstants::InspectRequestFileAlias;
 	}
 
-	int InspectTextureCookRequestFileCommand::Execute(const std::filesystem::path& requestFilePath) const
+	int InspectTextureCookRequestFileCommand::Execute(
+		const std::filesystem::path& requestFilePath,
+		const TextureCookerCommandOptions& options) const
 	{
+		(void)options;
 		std::vector<TextureCookRequest> requests;
 		std::string errorMessage;
 		if (!LoadTextureCookRequestList(requestFilePath, requests, errorMessage))

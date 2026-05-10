@@ -3,6 +3,8 @@ project(Sparkle LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildProfiles.cmake)
+
 # ---------------------------
 # Optional: sanitizer support
 # ---------------------------
@@ -81,9 +83,6 @@ if(CMAKE_CONFIGURATION_TYPES)
     endforeach()
 else()
     # Single-config generator (Ninja, Makefiles)
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose build type" FORCE)
-    endif()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}")
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")

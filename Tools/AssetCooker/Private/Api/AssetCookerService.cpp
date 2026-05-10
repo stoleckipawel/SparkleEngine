@@ -223,7 +223,7 @@ std::string AssetCookerService::ResolveConfiguration(const char* requestConfigur
 	{
 		return configuredConfiguration;
 	}
-	return "Debug";
+	return "DevelopmentGame";
 }
 
 AssetCookerCategory AssetCookerService::ResolveRecookCategory(

@@ -713,50 +713,79 @@ Expected impact:
 
 ### 11. Add Cook Quality Profiles
 
+Status: implemented as the Sparkle build-profile matrix.
+
 What:
 
-- Add profiles such as `Debug`, `Development`, and `Shipping` for texture and asset cooking.
+- Replaced the previous standalone build configurations with exactly six profiles: `DebugEditor`, `DebugGame`, `DevelopmentEditor`, `DevelopmentGame`, `ShippingEditor`, and `ShippingGame`.
+- Added `CMake/SparkleBuildProfiles.cmake` as the inspectable source of truth for profile names, profile groups, compiler flags, and target-shape definitions.
 
 Why:
 
 - Local iteration does not always need final compression effort or final-quality derived data.
 - Production engines commonly distinguish fast editor/dev cooks from shipping cooks.
+- Editor and editorless game runtimes need to be selectable from the build profile itself, matching the two-keyword model used by Unreal-style configurations.
 
 Who owns it:
 
 - Rendering owner and asset pipeline owner.
+- Build owner for the profile matrix and target selection semantics.
 
 How it works:
 
-- `Debug` can use lower compression effort, faster intermediate formats, or reduced processing where acceptable.
-- `Shipping` keeps final quality and deterministic release outputs.
-- Runtime records or validates the cook profile so shipping builds do not accidentally consume preview assets.
+- `Debug*` profiles use no optimization and full debug information.
+- `Development*` profiles use optimized builds with debug information and developer diagnostics.
+- `Shipping*` profiles use optimized shipping-style builds and the leanest diagnostics policy.
+- `*Editor` profiles build editor-capable launch targets; `*Game` profiles build editorless runtime targets.
+- Cook scripts and `AssetCooker` accept only the six named profiles, keeping cooked outputs aligned with the selected build profile.
 
 Expected impact:
 
 - Improves artist/programmer iteration on visual assets.
 - Keeps final quality protected by explicit profile selection and CI validation.
+- Removes ambiguous standalone `Debug`, development, or shipping choices that do not say whether the output is editor-capable or editorless runtime.
 
 ### 12. Produce Machine-Readable Timing Summaries
 
+Status: implemented first pass for C++ cook tools; repository-wide coverage is still incomplete.
+
 What:
 
-- Keep the current C++ timing scopes, but also emit compact structured summaries for builds and cooks.
+- Keep the current C++ timing scopes, but also emit compact structured summaries for cooks.
+- AssetCooker writes `build/Cook/Summaries/<Project>-<Profile>-assetcook-summary.json`.
+- TextureCooker writes `build/Cook/Summaries/<Project>-<Profile>-texturecook-summary.json` when launched by AssetCooker.
+- Treat these as cook-stage summaries, not full repository build/cook summaries yet.
 
 Why:
 
 - Production teams track iteration time as a product metric.
 - The current findings document is useful, but manual analysis should not be the only way to catch regressions.
+- JSON summaries let local tools and CI consume the same timing evidence that humans see in logs.
+- Full repository coverage must include build-file freshness checks, CMake configure/generate time, target build time, cook-tool preparation, child cook tools, and final cooked output counts.
 
 Who owns it:
 
 - Tools/CI owner.
+- AssetCooker and TextureCooker own the C++ summary emission.
 
 How it works:
 
-- Each build/cook writes JSON or structured log rows with stage, target, elapsed time, cache hits, cache misses, cooked/skipped counts, and top offenders.
-- Local scripts print the top offenders at the end.
-- CI stores summaries as artifacts and can compare against baselines.
+- AssetCooker records project, profile, plan path, total elapsed time, scene counts, output records, and per-stage elapsed times.
+- TextureCooker records request file, total elapsed time, request count, cooked count, skipped/cache-hit count, cooked/cache-miss count, and the top ten slowest requests.
+- The local console path prints AssetCooker top stages and TextureCooker top requests from C++ before exiting.
+- CI can store the JSON files under `build/Cook/Summaries/` as artifacts and compare them against baselines.
+- Build summaries remain a follow-up unless build timing is moved behind an engine/tool executable; MSBuild logs are currently outside the C++ timing infrastructure.
+
+Coverage map:
+
+| Area | Current coverage | Gap |
+| --- | --- | --- |
+| AssetCooker project cook | JSON summary with total time, per-stage times, scene counts, output records | Need aggregate summary across multiple projects when cooking `ALL` |
+| TextureCooker request batch | JSON summary with request counts, cooked/skipped counts, cache hit/miss counts, and top requests | Need the same structured model for ShaderCompiler and scene/material/mesh stages |
+| Cook-tool preparation | Human-readable MSBuild output only | Need machine-readable prepare/build step summary |
+| Build-file freshness/configure | Human-readable script/CMake output only | Need machine-readable stale reason and configure/generate elapsed time |
+| Project/engine builds | MSBuild can emit performance summaries, but they are not normalized into Sparkle JSON | Need repository build summary covering target, project, task, and top offender timings |
+| CI comparison | Summary files can be stored as artifacts | Need baseline comparison tooling after summaries are complete |
 
 Expected impact:
 

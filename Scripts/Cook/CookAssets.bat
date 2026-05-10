@@ -29,7 +29,7 @@ if /I "%TARGET_PROJECT%"=="-h" goto :USAGE
 if /I "%TARGET_PROJECT%"=="/help" goto :USAGE
 if /I "%TARGET_PROJECT%"=="--help" goto :USAGE
 if not defined TARGET_PROJECT goto :USAGE
-if "%CONFIG%"=="" set "CONFIG=Debug"
+if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 
 echo [LOG] Project: !TARGET_PROJECT!
 echo [LOG] Configuration: !CONFIG!
@@ -43,11 +43,11 @@ goto :FINISH
 
 :USAGE
 echo.
-echo Usage: Scripts\Cook\CookAssets.bat ^<ProjectName^> [Debug^|Release^|RelWithDebInfo]
+echo Usage: Scripts\Cook\CookAssets.bat ^<ProjectName^> [DebugEditor^|DebugGame^|DevelopmentEditor^|DevelopmentGame^|ShippingEditor^|ShippingGame]
 echo.
 echo Examples:
 echo   Scripts\Cook\CookAssets.bat Showcase
-echo   Scripts\Cook\CookAssets.bat Showcase Release
+echo   Scripts\Cook\CookAssets.bat Showcase DevelopmentGame
 echo.
 echo This shim forwards scene, mesh, and material asset cooking to AssetCooker.
 set "EXIT_RC=1"

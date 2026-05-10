@@ -5,7 +5,7 @@
 :: Launch shim for the AssetCooker project planner.
 ::
 :: Usage:
-::   CookAllAssets.bat [ProjectName|ALL] [Debug|Release|RelWithDebInfo]
+::   CookAllAssets.bat [ProjectName|ALL] [DebugEditor|DebugGame|DevelopmentEditor|DevelopmentGame|ShippingEditor|ShippingGame]
 :: ============================================================================
 
 setlocal enabledelayedexpansion
@@ -27,7 +27,7 @@ if /I "%TARGET_PROJECT%"=="/help" goto :USAGE
 if /I "%TARGET_PROJECT%"=="--help" goto :USAGE
 
 if not defined TARGET_PROJECT set "TARGET_PROJECT=ALL"
-if "%CONFIG%"=="" set "CONFIG=Debug"
+if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 
 echo [LOG] Project target: !TARGET_PROJECT!
 echo [LOG] Configuration: !CONFIG!
@@ -44,13 +44,13 @@ goto :FINISH
 
 :USAGE
 echo.
-echo Usage: Scripts\CookAllAssets.bat [^<ProjectName^>^|ALL] [Debug^|Release^|RelWithDebInfo]
+echo Usage: Scripts\CookAllAssets.bat [^<ProjectName^>^|ALL] [DebugEditor^|DebugGame^|DevelopmentEditor^|DevelopmentGame^|ShippingEditor^|ShippingGame]
 echo.
 echo Examples:
 echo   Scripts\CookAllAssets.bat
 echo   Scripts\CookAllAssets.bat ALL
 echo   Scripts\CookAllAssets.bat Showcase
-echo   Scripts\CookAllAssets.bat Showcase Release
+echo   Scripts\CookAllAssets.bat Showcase DevelopmentGame
 echo.
 echo This shim prepares AssetCooker and forwards the full project cook request.
 set "EXIT_RC=1"

@@ -33,8 +33,8 @@ endif()
 
 target_compile_definitions(SparkleRHI
 	PRIVATE
-		$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:ENGINE_GPU_VALIDATION=1;ENGINE_REPORT_LIVE_OBJECTS=1>
-		$<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>>:ENGINE_GPU_VALIDATION=0;ENGINE_REPORT_LIVE_OBJECTS=0>
+        $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>,$<CONFIG:DevelopmentEditor>,$<CONFIG:DevelopmentGame>>:ENGINE_GPU_VALIDATION=1;ENGINE_REPORT_LIVE_OBJECTS=1>
+        $<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:ENGINE_GPU_VALIDATION=0;ENGINE_REPORT_LIVE_OBJECTS=0>
 )
 
 target_include_directories(SparkleRHI
