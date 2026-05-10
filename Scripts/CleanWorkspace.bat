@@ -3,15 +3,15 @@
 :: CleanWorkspace.bat - Unified build artifact cleanup utility
 :: ============================================================================
 :: Removes generated build artifacts with fine-grained control:
-::   1) Build artifacts only - build/ (except _deps/), project-local build/, legacy bin/, .vs/
+::   1) Build artifacts only - build/ (except _deps/), project-local build/, .vs/
 ::   2) Third-party deps only - build/_deps/
-::   3) Everything - full clean (build/, project-local generated output, legacy bin/, .vs/ including _deps/)
-::   4) Pristine - tracked repo state (build/, project-local generated output, legacy bin/, .vs/, logs/)
+::   3) Everything - full clean (build/, project-local generated output, .vs/ including _deps/)
+::   4) Pristine - tracked repo state (build/, project-local generated output, .vs/, logs/)
 ::
 :: Usage: CleanWorkspace.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
 ::   DEPS     - Remove third-party dependencies only
-::   ALL      - Remove everything (build + deps + bin)
+::   ALL      - Remove everything (build + deps + generated project output)
 ::   PRISTINE - Remove generated outputs and return to tracked repo state
 ::   (no arg) - Show interactive menu
 ::
@@ -61,17 +61,17 @@ echo ============================================================
 echo   Clean Options
 echo ============================================================
 echo.
-echo   1^) Build artifacts only   ^(build/, Projects/*/build/, legacy bin/, .vs/^)
+echo   1^) Build artifacts only   ^(build/, Projects/*/build/, .vs/^)
 echo      Preserves third-party deps in build\_deps\.
 echo.
 echo   2^) Third-party deps only  ^(build/_deps/, ~64 MB^)
 echo      Re-download required on next cmake configure.
 echo.
-echo   3^) Everything             ^(build + deps + project-local generated output + bin^)
+echo   3^) Everything             ^(build + deps + project-local generated output^)
 echo      Full rebuild required after this.
 echo.
 echo   4^) Pristine               ^(tracked repo state^)
-echo      Removes build/, logs/, imgui.ini, project-local generated output, bin/, .vs/
+echo      Removes build/, logs/, imgui.ini, project-local generated output, .vs/
 echo      and keeps tracked project assets.
 echo.
 echo ============================================================
@@ -98,18 +98,18 @@ if defined PARENT_BATCH goto :EXECUTE_CLEAN
 echo.
 if "!CLEAN_MODE!"=="BUILD" (
     echo [LOG] Selected: Build artifacts only
-    echo       Will remove: build/ ^(except _deps/^), Projects/*/build/, legacy bin/, .vs/
+    echo       Will remove: build/ ^(except _deps/^), Projects/*/build/, .vs/
 ) else if "!CLEAN_MODE!"=="DEPS" (
     echo [LOG] Selected: Third-party deps only
     echo       Will remove: build/_deps/
     echo       Re-download: ~64 MB, 1-3 min to re-sync
 ) else if "!CLEAN_MODE!"=="ALL" (
     echo [LOG] Selected: Everything
-    echo       Will remove: build/, project-local build/log/imgui.ini, root imgui.ini, legacy bin/, .vs/
+    echo       Will remove: build/, project-local build/log/imgui.ini, root imgui.ini, .vs/
     echo       Includes all third-party deps ^(~64 MB re-download^)
 ) else (
     echo [LOG] Selected: Pristine ^(tracked repo state^)
-    echo       Will remove: build/, logs/, imgui.ini, project-local build/log/imgui.ini, legacy bin/, .vs/
+    echo       Will remove: build/, logs/, imgui.ini, project-local build/log/imgui.ini, .vs/
     echo       Will keep tracked project assets, including committed cooked content.
 )
 
@@ -155,7 +155,6 @@ if "!CLEAN_MODE!"=="PRISTINE" goto :CLEAN_PRISTINE
 :: Mode: Build artifacts only (preserve _deps/)
 :: ---------------------------------------------------------------------------
 :CLEAN_BUILD_ONLY
-call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :CLEAN_PROJECT_GENERATED_OUTPUTS BUILD
 
@@ -215,7 +214,6 @@ goto :CLEAN_SUMMARY
 :: ---------------------------------------------------------------------------
 :CLEAN_ALL
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
-call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :CLEAN_PROJECT_GENERATED_OUTPUTS PRISTINE
 call :REMOVE_FILE "!ROOT_DIR!\imgui.ini" "imgui.ini"
@@ -227,7 +225,6 @@ goto :CLEAN_SUMMARY
 :: ---------------------------------------------------------------------------
 :CLEAN_PRISTINE
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
-call :REMOVE_DIR "!ROOT_DIR!\bin" "legacy bin\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :REMOVE_DIR "!ROOT_DIR!\logs" "logs\"
 call :CLEAN_PROJECT_GENERATED_OUTPUTS PRISTINE

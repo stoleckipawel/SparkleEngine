@@ -38,25 +38,25 @@ class RhiSmokeValidationRunner final
 	static RhiSmokeValidationConfig LoadConfig() noexcept;
 	static void ApplyLoggingConfig(const RhiSmokeValidationConfig& config) noexcept;
 	static void LogDiagnosticsCapabilities(
-	    const D3D12SmokeValidationConfig& config,
+	    const RhiSmokeValidationConfig& config,
 	    ProjectApp& app,
-	    D3D12SmokeValidationState& state) noexcept;
+	    RhiSmokeValidationState& state) noexcept;
 	static void LogEditorViewportEvidence(
-	    const D3D12SmokeValidationConfig& config,
+	    const RhiSmokeValidationConfig& config,
 	    ProjectApp& app,
 	    const ViewportRenderProducts& viewportProducts,
-	    D3D12SmokeValidationState& state) noexcept;
-	static void Advance(const D3D12SmokeValidationConfig& config, ProjectApp& app, D3D12SmokeValidationState& state) noexcept;
-	static bool TickRuntime(ProjectApp& app, const D3D12SmokeValidationConfig& config, D3D12SmokeValidationState& state) noexcept;
-	static bool TickEditor(ProjectApp& app, UI& ui, const D3D12SmokeValidationConfig& config, D3D12SmokeValidationState& state) noexcept;
-	static int RunProjectValidation(const D3D12SmokeValidationConfig& config) noexcept;
-	static int RunEditorValidation(const D3D12SmokeValidationConfig& config) noexcept;
+	    RhiSmokeValidationState& state) noexcept;
+	static void Advance(const RhiSmokeValidationConfig& config, ProjectApp& app, RhiSmokeValidationState& state) noexcept;
+	static bool TickRuntime(ProjectApp& app, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
+	static bool TickEditor(ProjectApp& app, UI& ui, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
+	static int RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept;
+	static int RunEditorValidation(const RhiSmokeValidationConfig& config) noexcept;
 };
 
-D3D12SmokeValidationConfig D3D12SmokeValidationRunner::LoadConfig() noexcept
+RhiSmokeValidationConfig RhiSmokeValidationRunner::LoadConfig() noexcept
 {
-	D3D12SmokeValidationConfig config{};
-	config.Enabled = Environment::GetFlag("SPARKLE_SMOKE_VALIDATE_D3D12");
+	RhiSmokeValidationConfig config{};
+	config.Enabled = Environment::GetFlag("SPARKLE_SMOKE_VALIDATE_RHI");
 	if (!config.Enabled)
 	{
 		return config;
@@ -70,7 +70,7 @@ D3D12SmokeValidationConfig D3D12SmokeValidationRunner::LoadConfig() noexcept
 	return config;
 }
 
-void D3D12SmokeValidationRunner::ApplyLoggingConfig(const D3D12SmokeValidationConfig& config) noexcept
+void RhiSmokeValidationRunner::ApplyLoggingConfig(const RhiSmokeValidationConfig& config) noexcept
 {
 	if (config.Enabled && config.TraceLogging)
 	{
@@ -78,10 +78,10 @@ void D3D12SmokeValidationRunner::ApplyLoggingConfig(const D3D12SmokeValidationCo
 	}
 }
 
-void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
-    const D3D12SmokeValidationConfig& config,
+void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
+    const RhiSmokeValidationConfig& config,
     ProjectApp& app,
-    D3D12SmokeValidationState& state) noexcept
+    RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || state.DiagnosticsLogged)
 	{
@@ -98,7 +98,7 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 	const RhiDiagnosticsCapabilities capabilities = renderHardware.GetDiagnostics().GetCapabilities();
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
-	    "D3D12 smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "
+	    "RHI smoke diagnostics capabilities: objectNames={} commandScopes={} timestampQueries={} debugMessages={} liveObjectReports={} "
 	    "crashDiagnostics={}",
 	    capabilities.SupportsObjectNames,
 	    capabilities.SupportsGpuEvents,
@@ -111,43 +111,40 @@ void D3D12SmokeValidationRunner::LogDiagnosticsCapabilities(
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: command scopes are unavailable because WinPixEventRuntime.dll was not found or did not expose the PIX "
-		    "event ABI.");
+		    "RHI smoke validation: command scopes are unavailable because the active backend could not initialize GPU event markers.");
 	}
 	if (!capabilities.SupportsTimestampQueries)
 	{
-		SPDLOG_LOGGER_WARN(appLogger, "D3D12 smoke validation: timestamp queries are unavailable on the current backend/device path.");
+		SPDLOG_LOGGER_WARN(appLogger, "RHI smoke validation: timestamp queries are unavailable on the current backend/device path.");
 	}
 	if (!capabilities.SupportsDebugMessages)
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: debug messages are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
+		    "RHI smoke validation: debug messages are unavailable; inspect the active backend diagnostics log lines for the concrete "
 		    "environment or runtime reason.");
 	}
 	if (!capabilities.SupportsLiveObjectReports)
 	{
 		SPDLOG_LOGGER_WARN(
-		    appLogger,
-		    "D3D12 smoke validation: live object reporting is unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
-		    "environment or runtime reason.");
+		    appLogger, "RHI smoke validation: live object reporting is unavailable; inspect the active backend diagnostics log lines for the concrete environment or runtime reason.");
 	}
 	if (!capabilities.SupportsCrashDiagnostics)
 	{
 		SPDLOG_LOGGER_WARN(
 		    appLogger,
-		    "D3D12 smoke validation: crash diagnostics are unavailable; inspect the RHI.D3D12.Diagnostics log lines for the concrete "
+		    "RHI smoke validation: crash diagnostics are unavailable; inspect the active backend diagnostics log lines for the concrete "
 		    "environment or runtime reason.");
 	}
 
 	state.DiagnosticsLogged = true;
 }
 
-void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
-    const D3D12SmokeValidationConfig& config,
+void RhiSmokeValidationRunner::LogEditorViewportEvidence(
+	const RhiSmokeValidationConfig& config,
     ProjectApp& app,
     const ViewportRenderProducts& viewportProducts,
-    D3D12SmokeValidationState& state) noexcept
+	RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || state.EditorViewportEvidenceLogged)
 	{
@@ -164,7 +161,7 @@ void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
 	const std::uint64_t sceneColorTextureId = renderer.ResolveRenderProductTextureId(viewportProducts.SceneColor.Handle);
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
-	    "D3D12 editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={}",
+	    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={}",
 	    viewportProducts.SceneColor.Handle.Value,
 	    sceneColorTextureId,
 	    viewportProducts.SceneColor.Extent.Width,
@@ -174,10 +171,10 @@ void D3D12SmokeValidationRunner::LogEditorViewportEvidence(
 	state.EditorViewportEvidenceLogged = true;
 }
 
-void D3D12SmokeValidationRunner::Advance(
-    const D3D12SmokeValidationConfig& config,
+void RhiSmokeValidationRunner::Advance(
+	const RhiSmokeValidationConfig& config,
     ProjectApp& app,
-    D3D12SmokeValidationState& state) noexcept
+	RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled)
 	{
@@ -199,7 +196,7 @@ void D3D12SmokeValidationRunner::Advance(
 			{
 				SPDLOG_LOGGER_INFO(
 				    appLogger,
-				    "D3D12 smoke validation: reloaded cooked shaders on frame {} (generation={})",
+				    "RHI smoke validation: reloaded cooked shaders on frame {} (generation={})",
 				    state.CompletedRenderFrames,
 				    renderer.GetShaderPackageGeneration());
 			}
@@ -207,7 +204,7 @@ void D3D12SmokeValidationRunner::Advance(
 			{
 				SPDLOG_LOGGER_ERROR(
 				    appLogger,
-				    "D3D12 smoke validation: cooked shader reload was rejected on frame {}. {}",
+				    "RHI smoke validation: cooked shader reload was rejected on frame {}. {}",
 				    state.CompletedRenderFrames,
 				    reloadResult.ErrorMessage);
 			}
@@ -218,7 +215,7 @@ void D3D12SmokeValidationRunner::Advance(
 	{
 		if (appLogger != nullptr)
 		{
-			SPDLOG_LOGGER_INFO(appLogger, "D3D12 smoke validation: restoring window on frame {}", state.CompletedRenderFrames);
+			SPDLOG_LOGGER_INFO(appLogger, "RHI smoke validation: restoring window on frame {}", state.CompletedRenderFrames);
 		}
 		window.Restore();
 	}
@@ -227,7 +224,7 @@ void D3D12SmokeValidationRunner::Advance(
 	{
 		if (appLogger != nullptr)
 		{
-			SPDLOG_LOGGER_INFO(appLogger, "D3D12 smoke validation: maximizing window on frame {}", state.CompletedRenderFrames);
+			SPDLOG_LOGGER_INFO(appLogger, "RHI smoke validation: maximizing window on frame {}", state.CompletedRenderFrames);
 		}
 		window.Maximize();
 	}
@@ -236,16 +233,16 @@ void D3D12SmokeValidationRunner::Advance(
 	{
 		if (appLogger != nullptr)
 		{
-			SPDLOG_LOGGER_INFO(appLogger, "D3D12 smoke validation: reached frame limit {}, requesting shutdown", config.FrameLimit);
+			SPDLOG_LOGGER_INFO(appLogger, "RHI smoke validation: reached frame limit {}, requesting shutdown", config.FrameLimit);
 		}
 		window.RequestClose();
 	}
 }
 
-bool D3D12SmokeValidationRunner::TickRuntime(
+bool RhiSmokeValidationRunner::TickRuntime(
     ProjectApp& app,
-    const D3D12SmokeValidationConfig& config,
-    D3D12SmokeValidationState& state) noexcept
+	const RhiSmokeValidationConfig& config,
+	RhiSmokeValidationState& state) noexcept
 {
 	switch (app.BeginFrame())
 	{
@@ -265,11 +262,11 @@ bool D3D12SmokeValidationRunner::TickRuntime(
 	return true;
 }
 
-bool D3D12SmokeValidationRunner::TickEditor(
+bool RhiSmokeValidationRunner::TickEditor(
     ProjectApp& app,
     UI& ui,
-    const D3D12SmokeValidationConfig& config,
-    D3D12SmokeValidationState& state) noexcept
+	const RhiSmokeValidationConfig& config,
+	RhiSmokeValidationState& state) noexcept
 {
 	switch (app.BeginFrame())
 	{
@@ -322,10 +319,10 @@ bool D3D12SmokeValidationRunner::TickEditor(
 	return true;
 }
 
-int D3D12SmokeValidationRunner::RunProjectValidation(const D3D12SmokeValidationConfig& config) noexcept
+int RhiSmokeValidationRunner::RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept
 {
 	ProjectApp app;
-	D3D12SmokeValidationState state{};
+	RhiSmokeValidationState state{};
 	ApplyLoggingConfig(config);
 	app.Initialize();
 	LogDiagnosticsCapabilities(config, app, state);
@@ -338,17 +335,17 @@ int D3D12SmokeValidationRunner::RunProjectValidation(const D3D12SmokeValidationC
 	return 0;
 }
 
-int D3D12SmokeValidationRunner::RunEditorValidation(const D3D12SmokeValidationConfig& config) noexcept
+int RhiSmokeValidationRunner::RunEditorValidation(const RhiSmokeValidationConfig& config) noexcept
 {
 	ProjectApp app;
-	D3D12SmokeValidationState state{};
+	RhiSmokeValidationState state{};
 	ApplyLoggingConfig(config);
 	app.Initialize();
 	LogDiagnosticsCapabilities(config, app, state);
 	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
 
 	{
-		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "D3D12 editor smoke UI scope");
+		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "RHI editor smoke UI scope");
 		Renderer& renderer = app.GetRenderer();
 		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
 		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
@@ -362,36 +359,36 @@ int D3D12SmokeValidationRunner::RunEditorValidation(const D3D12SmokeValidationCo
 	}
 
 	app.Shutdown();
-	SPDLOG_LOGGER_INFO(appLogger, "D3D12 editor smoke: ProjectApp shutdown complete");
+	SPDLOG_LOGGER_INFO(appLogger, "RHI editor smoke: ProjectApp shutdown complete");
 	return 0;
 }
 
-bool D3D12SmokeValidationRunner::IsRequested() noexcept
+bool RhiSmokeValidationRunner::IsRequested() noexcept
 {
 	return LoadConfig().Enabled;
 }
 
-int D3D12SmokeValidationRunner::RunProject() noexcept
+int RhiSmokeValidationRunner::RunProject() noexcept
 {
 	return RunProjectValidation(LoadConfig());
 }
 
-int D3D12SmokeValidationRunner::RunEditor() noexcept
+int RhiSmokeValidationRunner::RunEditor() noexcept
 {
 	return RunEditorValidation(LoadConfig());
 }
 
-bool D3D12SmokeValidation::IsRequested() noexcept
+bool RhiSmokeValidation::IsRequested() noexcept
 {
-	return D3D12SmokeValidationRunner::IsRequested();
+	return RhiSmokeValidationRunner::IsRequested();
 }
 
-int D3D12SmokeValidation::RunProject() noexcept
+int RhiSmokeValidation::RunProject() noexcept
 {
-	return D3D12SmokeValidationRunner::RunProject();
+	return RhiSmokeValidationRunner::RunProject();
 }
 
-int D3D12SmokeValidation::RunEditor() noexcept
+int RhiSmokeValidation::RunEditor() noexcept
 {
-	return D3D12SmokeValidationRunner::RunEditor();
+	return RhiSmokeValidationRunner::RunEditor();
 }
