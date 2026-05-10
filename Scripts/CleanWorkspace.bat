@@ -6,7 +6,7 @@
 ::   1) Build artifacts only - build/ (except _deps/), project-local build/, .vs/
 ::   2) Third-party deps only - build/_deps/
 ::   3) Everything - full clean (build/, project-local generated output, .vs/ including _deps/)
-::   4) Pristine - tracked repo state (build/, project-local generated output, .vs/, logs/)
+::   4) Pristine - tracked repo state (build/, generated shader symbols, project-local generated output, .vs/, .vscode/, logs/)
 ::
 :: Usage: CleanWorkspace.bat [BUILD|DEPS|ALL|PRISTINE]
 ::   BUILD    - Remove build artifacts only (preserve third-party deps)
@@ -17,8 +17,6 @@
 ::
 :: Environment:
 ::   PARENT_BATCH  - When set, suppresses pause on completion
-::   LOG_CAPTURED  - Indicates logging is already active
-::   LOGFILE       - Path to current log file
 ::
 :: Exit Codes:
 ::   0 - Cleanup completed (or nothing to clean, or user cancelled)
@@ -28,13 +26,10 @@
 setlocal enabledelayedexpansion
 
 :: ---------------------------------------------------------------------------
-:: Logging bootstrap
+:: CleanWorkspace intentionally does not bootstrap logging. PRISTINE removes the
+:: logs directory, so creating a log file inside that tree would lock the very
+:: artifact this script is expected to delete.
 :: ---------------------------------------------------------------------------
-if not defined LOG_CAPTURED (
-    call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
-    set "BOOTSTRAP_RC=!ERRORLEVEL!"
-    exit /B !BOOTSTRAP_RC!
-)
 
 :: ---------------------------------------------------------------------------
 :: Load shared configuration
@@ -71,7 +66,7 @@ echo   3^) Everything             ^(build + deps + project-local generated outpu
 echo      Full rebuild required after this.
 echo.
 echo   4^) Pristine               ^(tracked repo state^)
-echo      Removes build/, logs/, imgui.ini, project-local generated output, .vs/
+echo      Removes build/, logs/, imgui.ini, shader symbols, project-local generated output, .vs/, .vscode/
 echo      and keeps tracked project assets.
 echo.
 echo ============================================================
@@ -109,7 +104,7 @@ if "!CLEAN_MODE!"=="BUILD" (
     echo       Includes all third-party deps ^(~64 MB re-download^)
 ) else (
     echo [LOG] Selected: Pristine ^(tracked repo state^)
-    echo       Will remove: build/, logs/, imgui.ini, project-local build/log/imgui.ini, .vs/
+    echo       Will remove: build/, logs/, imgui.ini, shader symbols, project-local build/log/imgui.ini, .vs/, .vscode/
     echo       Will keep tracked project assets, including committed cooked content.
 )
 
@@ -216,6 +211,7 @@ goto :CLEAN_SUMMARY
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
 call :CLEAN_PROJECT_GENERATED_OUTPUTS PRISTINE
+call :CLEAN_SHADER_SYMBOLS
 call :REMOVE_FILE "!ROOT_DIR!\imgui.ini" "imgui.ini"
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
@@ -226,8 +222,10 @@ goto :CLEAN_SUMMARY
 :CLEAN_PRISTINE
 call :REMOVE_DIR "!BUILD_DIR!" "build\"
 call :REMOVE_DIR "!ROOT_DIR!\.vs" ".vs\"
+call :REMOVE_DIR "!ROOT_DIR!\.vscode" ".vscode\"
 call :REMOVE_DIR "!ROOT_DIR!\logs" "logs\"
 call :CLEAN_PROJECT_GENERATED_OUTPUTS PRISTINE
+call :CLEAN_SHADER_SYMBOLS
 call :REMOVE_FILE "!ROOT_DIR!\imgui.ini" "imgui.ini"
 call :CLEAN_ROOT_ARTIFACTS
 goto :CLEAN_SUMMARY
@@ -245,6 +243,18 @@ for /D %%P in ("!PROJECTS_DIR!\*") do (
         call :REMOVE_DIR "%%~fP\logs" "Projects\%%~nxP\logs\"
         call :REMOVE_FILE "%%~fP\imgui.ini" "Projects\%%~nxP\imgui.ini"
     )
+)
+goto :EOF
+
+:: ============================================================================
+:: Subroutine: Remove generated shader symbols
+:: ============================================================================
+:CLEAN_SHADER_SYMBOLS
+call :REMOVE_DIR "!ENGINE_DIR!\Assets\Shaders\ShaderSymbols" "Engine\Assets\Shaders\ShaderSymbols\"
+
+if not exist "!PROJECTS_DIR!" goto :EOF
+for /D %%P in ("!PROJECTS_DIR!\*") do (
+    call :REMOVE_DIR "%%~fP\Assets\Shaders\ShaderSymbols" "Projects\%%~nxP\Assets\Shaders\ShaderSymbols\"
 )
 goto :EOF
 
@@ -360,11 +370,7 @@ set "_TMP_LOGFILE=%LOGFILE%"
 set "_TMP_RC=%EXIT_RC%"
 endlocal & set "LOGFILE=%_TMP_LOGFILE%" & set "EXIT_RC=%_TMP_RC%"
 
-if defined PARENT_BATCH (
-    exit /B %EXIT_RC%
-)
+if defined PARENT_BATCH exit /B %EXIT_RC%
 
-echo.
-echo [LOG] Logs: %LOGFILE%
 pause
 exit /B %EXIT_RC%
