@@ -171,7 +171,6 @@ set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "Tools/TextureCooker/Private"
     "Tools/ShaderCompiler/Private"
     "Tools/CookCommon/Private"
-    "Tools/ConsoleDiagnostics/Private"
     "AssetConverter/Private"
     "AssetCooker/Private"
     "SourceImportAdapters/Private"
@@ -181,7 +180,6 @@ set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "TextureCooker/Private"
     "ShaderCompiler/Private"
     "CookCommon/Private"
-    "ConsoleDiagnostics/Private"
 )
 
 foreach(tool_source_file IN LISTS all_tool_source_files)

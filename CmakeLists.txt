@@ -167,7 +167,6 @@ add_sparkle_validation_dependency(TextureCookShared tools_architecture_boundary_
 add_sparkle_validation_dependency(TextureCooker tools_architecture_boundary_check)
 add_sparkle_validation_dependency(AssetConverter tools_architecture_boundary_check)
 add_sparkle_validation_dependency(ShaderCompiler tools_architecture_boundary_check)
-add_sparkle_validation_dependency(ConsoleDiagnostics tools_architecture_boundary_check)
 
 add_custom_target(
     logging_boundary_check
@@ -201,7 +200,6 @@ add_logging_boundary_dependency_if_target(TextureCookShared)
 add_logging_boundary_dependency_if_target(TextureCooker)
 add_logging_boundary_dependency_if_target(ShaderCompiler)
 add_logging_boundary_dependency_if_target(CookCommon)
-add_logging_boundary_dependency_if_target(ConsoleDiagnostics)
 
 add_custom_target(
     sparkle_validation_check
