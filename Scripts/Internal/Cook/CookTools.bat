@@ -3,10 +3,11 @@
 :: CookTools.bat - Shared cook-tool preparation helpers
 :: ============================================================================
 :: Internal helper module that keeps the asset and shader cooking entrypoints
-:: on one preflight path for executable discovery and optional cook-tool builds.
-:: By default, cook commands do not compile tools; set
-:: SPARKLE_AUTO_BUILD_COOK_TOOLS=1 to allow this helper to build missing or
-:: stale cook tools before cooking.
+:: on one preflight path for executable discovery, missing-tool builds, and
+:: optional stale-tool rebuilds. Requested tools that are already present are
+:: used as-is. Requested tools that are missing are built before cooking.
+:: Set SPARKLE_AUTO_BUILD_COOK_TOOLS=1 to also rebuild stale cook tools before
+:: cooking.
 ::
 :: Usage:
 ::   call "Internal\Cook\CookTools.bat" PrepareCookTools <Configuration>
@@ -95,11 +96,7 @@ if /I not "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" (
     if /I "!SPARKLE_AUTO_BUILD_COOK_TOOLS!"=="1" (
         call :PLAN_REQUESTED_TOOL_BUILD
     ) else (
-        call :VALIDATE_REQUESTED_TOOLS_EXIST
-        if "!ERRORLEVEL!" NEQ "0" (
-            set "ASSET_COOKING_RC=1"
-            goto :FINISH
-        )
+        call :PLAN_MISSING_REQUESTED_TOOL_BUILD
     )
 )
 
@@ -109,18 +106,16 @@ if not defined BUILD_TARGETS (
     goto :FINISH
 )
 
-if /I "!SPARKLE_AUTO_BUILD_COOK_TOOLS!"=="1" goto :AUTO_BUILD_ALLOWED
-if /I "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" goto :AUTO_BUILD_ALLOWED
+goto :BUILD_REQUESTED_TOOLS
 
-echo [ERROR] Cook tools are missing or stale: !BUILD_LABEL!.
-echo         Cook commands do not auto-build tools by default.
-echo         Build tools intentionally, then re-run the cook command.
-echo         To let this command build them once, set SPARKLE_AUTO_BUILD_COOK_TOOLS=1 and re-run it.
-set "ASSET_COOKING_RC=1"
-goto :FINISH
-
-:AUTO_BUILD_ALLOWED
-echo [LOG] SPARKLE_AUTO_BUILD_COOK_TOOLS=1. Preparing missing or stale cook tools: !BUILD_LABEL!.
+:BUILD_REQUESTED_TOOLS
+if /I "!SPARKLE_FORCE_COOK_TOOL_BUILD!"=="1" (
+    echo [LOG] Preparing requested cook tools: !BUILD_LABEL!.
+) else if /I "!SPARKLE_AUTO_BUILD_COOK_TOOLS!"=="1" (
+    echo [LOG] Preparing missing or stale cook tools: !BUILD_LABEL!.
+) else (
+    echo [LOG] Missing cook tools detected. Building required targets: !BUILD_LABEL!.
+)
 
 echo.
 echo [LOG] Step 1/3: Validating build tools...
@@ -172,27 +167,6 @@ for %%T in (!REQUESTED_COOK_TOOLS!) do (
 )
 exit /B 0
 
-:VALIDATE_REQUESTED_TOOLS_EXIST
-set "_MISSING_LABEL="
-for %%T in (!REQUESTED_COOK_TOOLS!) do (
-    set "_TOOL_PRESENT=0"
-    if /I "%%T"=="AssetCooker" if defined ASSET_COOKER_EXE set "_TOOL_PRESENT=1"
-    if /I "%%T"=="TextureCooker" if defined TEXTURE_COOKER_EXE set "_TOOL_PRESENT=1"
-    if /I "%%T"=="ShaderCompiler" if defined SHADER_COMPILER_EXE set "_TOOL_PRESENT=1"
-    if "!_TOOL_PRESENT!" NEQ "1" (
-        if defined _MISSING_LABEL (set "_MISSING_LABEL=!_MISSING_LABEL!, %%T") else (set "_MISSING_LABEL=%%T")
-    )
-)
-
-if defined _MISSING_LABEL (
-    echo [ERROR] Required cook tools are missing: !_MISSING_LABEL!.
-    echo         Cook commands do not auto-build tools by default.
-    echo         Build the missing tool targets intentionally, then re-run the cook command.
-    echo         To let this command build them once, set SPARKLE_AUTO_BUILD_COOK_TOOLS=1 and re-run it.
-    exit /B 1
-)
-exit /B 0
-
 :VALIDATE_REQUESTED_TOOLS_BUILT
 set "_MISSING_LABEL="
 for %%T in (!REQUESTED_COOK_TOOLS!) do (
@@ -216,6 +190,23 @@ for %%T in (!REQUESTED_COOK_TOOLS!) do (
     if /I "%%T"=="AssetCooker" call :PLAN_ASSET_COOKER_BUILD
     if /I "%%T"=="TextureCooker" call :PLAN_TEXTURE_COOKER_BUILD
     if /I "%%T"=="ShaderCompiler" call :PLAN_SHADER_COMPILER_BUILD
+)
+exit /B 0
+
+:PLAN_MISSING_REQUESTED_TOOL_BUILD
+for %%T in (!REQUESTED_COOK_TOOLS!) do (
+    if /I "%%T"=="AssetCooker" if not defined ASSET_COOKER_EXE (
+        echo [LOG] AssetCooker.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET AssetCooker AssetCooker
+    )
+    if /I "%%T"=="TextureCooker" if not defined TEXTURE_COOKER_EXE (
+        echo [LOG] TextureCooker.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET TextureCooker TextureCooker
+    )
+    if /I "%%T"=="ShaderCompiler" if not defined SHADER_COMPILER_EXE (
+        echo [LOG] ShaderCompiler.exe missing. Tool build required.
+        call :ADD_BUILD_TARGET ShaderCompiler ShaderCompiler
+    )
 )
 exit /B 0
 

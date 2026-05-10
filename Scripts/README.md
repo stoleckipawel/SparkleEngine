@@ -42,7 +42,7 @@ Dependency sync output is concise by default: configure reports that it is check
 
 Optional tools are reported separately: `clang-cl` is available for explicit `ClangCL` builds, `clang-format` powers formatting commands, `clang-tidy` is for local static-analysis workflows, and `git-lfs` is not required because dependency fetches skip LFS blobs.
 
-Cook scripts do not compile cook tools by default. They check only the executables required by the requested cook mode and fail fast if those tools are missing. Build the missing tool targets intentionally, or set `SPARKLE_AUTO_BUILD_COOK_TOOLS=1` for one run when you explicitly want the cook command to build stale or missing cook tools before cooking.
+Cook scripts check only the executables required by the requested cook mode. If a required cook tool is missing, the script builds that tool target and then continues cooking. If the required tools already exist, the script skips toolchain validation, solution generation, and build work. Set `SPARKLE_AUTO_BUILD_COOK_TOOLS=1` when you explicitly want a cook command to rebuild stale cook tools before cooking.
 
 Cook scripts default internal engine/tool logging to warnings with `SPARKLE_LOG_LEVEL=warn`, while keeping cook progress, asset names, summaries, and cooked outputs on the console. Set `SPARKLE_LOG_LEVEL=info` or `debug` when you intentionally need lower-level diagnostics.
 
