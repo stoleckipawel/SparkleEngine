@@ -6,8 +6,8 @@
 :: current editor/runtime launch target names from the .sparkle-project layout.
 ::
 :: Usage:
-::   call "Internal\ProjectDiscovery.bat" ListProjects
-::   call "Internal\ProjectDiscovery.bat" ResolveTargets <ProjectName|ALL> <Editor|Runtime|Both>
+::   call "Internal\Projects\ProjectDiscovery.bat" ListProjects
+::   call "Internal\Projects\ProjectDiscovery.bat" ResolveTargets <ProjectName|ALL> <Editor|Runtime|Both>
 ::
 :: Outputs:
 ::   PROJECT_COUNT / PROJECT_<n>
@@ -25,7 +25,7 @@ set "DISCOVERY_RC=1"
 goto :FINISH
 
 :LIST_PROJECTS
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 call :COLLECT_PROJECTS
 
 set "EXPORTS=set PROJECT_COUNT=!PROJECT_COUNT!"
@@ -39,7 +39,7 @@ set "DISCOVERY_RC=0"
 goto :FINISH_WITH_EXPORTS
 
 :RESOLVE_TARGETS
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "TARGET_PROJECT=%~2"
 set "HOST_MODE=%~3"

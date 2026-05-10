@@ -6,8 +6,8 @@
 :: generator selection, and target builds consistent.
 ::
 :: Usage:
-::   call "Internal\CMakeHelpers.bat" Configure
-::   call "Internal\CMakeHelpers.bat" BuildTargets <Configuration> <Target...>
+::   call "Internal\Build\CMakeHelpers.bat" Configure
+::   call "Internal\Build\CMakeHelpers.bat" BuildTargets <Configuration> <Target...>
 ::
 :: Outputs:
 ::   CMAKE_HELPERS_RC - Return code from the requested operation
@@ -24,7 +24,7 @@ set "HELPER_RC=1"
 goto :FINISH
 
 :CONFIGURE
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "DESIRED_GENERATOR=!GENERATOR!"
 set "DESIRED_PLATFORM=!ARCH!"
@@ -64,6 +64,7 @@ if exist "!BUILD_DIR!\CMakeCache.txt" (
         if exist "!BUILD_DIR!\CMakeCache.txt" del /q "!BUILD_DIR!\CMakeCache.txt"
         if exist "!BUILD_DIR!\CMakeFiles" rmdir /s /q "!BUILD_DIR!\CMakeFiles"
         if exist "!BUILD_DIR!\*.sln" del /q "!BUILD_DIR!\*.sln"
+        if exist "!BUILD_DIR!\*.slnx" del /q "!BUILD_DIR!\*.slnx"
         if exist "!BUILD_DIR!\*.vcxproj" del /q "!BUILD_DIR!\*.vcxproj"
         if exist "!BUILD_DIR!\*.vcxproj.filters" del /q "!BUILD_DIR!\*.vcxproj.filters"
         if exist "!BUILD_DIR!\ZERO_CHECK.vcxproj" del /q "!BUILD_DIR!\ZERO_CHECK.vcxproj"
@@ -84,7 +85,7 @@ popd
 goto :FINISH
 
 :BUILD_TARGETS
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "BUILD_CONFIG=%~2"
 if "%BUILD_CONFIG%"=="" (

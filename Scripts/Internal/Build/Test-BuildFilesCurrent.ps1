@@ -63,8 +63,8 @@ function Get-BuildInputPaths {
     $buildInputFiles = New-Object System.Collections.Generic.List[string]
     $explicitFiles = @(
         'CMakeLists.txt',
-        'Scripts\Internal\Config.bat',
-        'Scripts\Internal\CMakeHelpers.bat'
+        'Scripts\Internal\Core\Config.bat',
+        'Scripts\Internal\Build\CMakeHelpers.bat'
     )
 
     foreach ($relativePath in $explicitFiles) {

@@ -34,9 +34,15 @@ If you are trying to figure out what to run for what, start here. If a file is u
 
 ## Structure
 
-- `Scripts/` contains user-facing workflow commands.
-- `Scripts/Cook/` contains user-facing cook commands for shader-only, texture-only, and full asset cooking flows.
-- `Scripts/Internal/` contains reusable helper modules used by the public commands. Do not treat these as stable user entrypoints.
+- `Scripts/` contains user-facing workflow commands. These files should stay thin: parse arguments, print user-facing status, and delegate work.
+- `Scripts/Cook/` contains user-facing cook commands for focused asset cooking flows. Cook planning and execution stay in `AssetCooker`.
+- `Scripts/Internal/` contains implementation modules used by the public commands. Do not treat these as stable user entrypoints.
+- `Scripts/Internal/Core/` contains shared path configuration and logging bootstrap.
+- `Scripts/Internal/Build/` contains CMake configure/build orchestration and build-file freshness checks.
+- `Scripts/Internal/Toolchain/` contains Visual Studio 2026, CMake, MSBuild, and optional tool validation helpers.
+- `Scripts/Internal/Cook/` contains cook-tool preparation helpers only; actual cook behavior belongs in C++ tools.
+- `Scripts/Internal/Projects/` contains project and target discovery helpers for script orchestration.
+- `Scripts/Internal/Utilities/` contains narrow fallback utilities used by scripts.
 - `CMake/Dependencies/` contains configure-time dependency modules.
 - `CMake/Validation/` contains build-time validation modules such as runtime boundary checks.
 
@@ -61,10 +67,11 @@ Each prerequisite folder keeps a timestamped log plus `Latest.txt` for that spec
 
 - The supported build profiles are defined in `CMake/SparkleBuildProfiles.cmake`: `DebugEditor`, `DebugGame`, `DevelopmentEditor`, `DevelopmentGame`, `ShippingEditor`, and `ShippingGame`.
 - `BuildProject.bat` derives the launch target from the profile suffix: `*Editor` builds `<Project>Editor`, and `*Game` builds `<Project>Runtime`.
-- `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior. Normal build/cook scripts call `Scripts\Internal\EnsureBuildFiles.bat`, which skips `GenerateSolution.bat` when the generated build files are current.
+- `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior. Normal build/cook scripts call `Scripts\Internal\Build\EnsureBuildFiles.bat`, which skips `GenerateSolution.bat` when the generated build files are current.
+- The required local Windows toolchain is Visual Studio 2026 with the C++ workload. The CMake generator is `Visual Studio 18 2026`.
 - Set `SPARKLE_FORCE_CONFIGURE=1` before running a build/cook script to force `GenerateSolution.bat` even when the freshness check says the build files are current.
 - Normal local builds do not run boundary validation or clang-format checks as target dependencies by default. Configure with `-DSPARKLE_BUILD_VALIDATION_ON_BUILD=ON` and/or `-DSPARKLE_RUN_CLANG_FORMAT_ON_BUILD=ON` for CI-style build-integrated checks, or run `sparkle_validation_check` and `clang_format_check` explicitly.
-- Toolchain validation and dependency repair helpers live under `Scripts/Internal` and are invoked through the public workflow scripts.
+- Toolchain validation lives under `Scripts/Internal/Toolchain` and is invoked through the public workflow scripts.
 - `CookAllAssets.bat` is the preferred single-file full cook command in the top-level `Scripts/` folder and delegates project planning to `AssetCooker`.
 - `Scripts\Cook\CookShaders.bat`, `Scripts\Cook\CookTextures.bat`, and `Scripts\Cook\CookAssets.bat` are narrow launch shims over `AssetCooker` category requests.
 - `AssetCooker` discovers supported scenes, builds the Phase 2 project cook plan, dispatches the focused tools, and aggregates diagnostics at the tool boundary.

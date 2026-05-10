@@ -19,17 +19,17 @@ if defined PARENT_BATCH set "INTERACTIVE=0"
 if /I "%~1"=="CONTINUE" set "INTERACTIVE=0"
 
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+    call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
     set "BOOTSTRAP_RC=!ERRORLEVEL!"
     exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Internal\Config.bat"
+call "%~dp0Internal\Core\Config.bat"
 
 if "!INTERACTIVE!"=="1" (
     echo [LOG] Checking build toolchain...
     set "PARENT_BATCH=1"
-    call "%~dp0Internal\CheckToolchain.bat" CONTINUE
+    call "%~dp0Internal\Toolchain\CheckToolchain.bat" CONTINUE
     if errorlevel 1 (
         set "PARENT_BATCH="
         echo [ERROR] Toolchain validation failed. Install the missing tools above.
@@ -55,7 +55,7 @@ if not exist "!BUILD_DIR!\CMakeCache.txt" (
     echo [LOG] Running incremental configure...
 )
 
-call "%~dp0Internal\CMakeHelpers.bat" Configure
+call "%~dp0Internal\Build\CMakeHelpers.bat" Configure
 set "CONFIGURE_RC=!ERRORLEVEL!"
 
 if "!CONFIGURE_RC!" NEQ "0" (
@@ -89,7 +89,7 @@ if "!INTERACTIVE!"=="1" (
     if /I "!OPEN_VS!"=="Y" (
         echo.
         echo [LOG] Opening: !SOLUTION_FILE!
-        call "%~dp0Internal\OpenVisualStudio.bat" "!SOLUTION_FILE!"
+        call "%~dp0Internal\Toolchain\OpenVisualStudio.bat" "!SOLUTION_FILE!"
         goto :AFTER_VS_PROMPT
     )
     if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT

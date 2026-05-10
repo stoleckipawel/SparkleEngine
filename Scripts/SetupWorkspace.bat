@@ -29,7 +29,7 @@ setlocal enabledelayedexpansion
 :: Logging bootstrap
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+    call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
     set "BOOTSTRAP_RC=!ERRORLEVEL!"
     exit /B !BOOTSTRAP_RC!
 )
@@ -37,7 +37,7 @@ if not defined LOG_CAPTURED (
 :: ---------------------------------------------------------------------------
 :: Load shared configuration
 :: ---------------------------------------------------------------------------
-call "%~dp0Internal\Config.bat"
+call "%~dp0Internal\Core\Config.bat"
 
 echo.
 echo ============================================================
@@ -51,7 +51,7 @@ echo.
 echo [LOG] Step 1/2: Validating build tools...
 echo.
 set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\Internal\CheckToolchain.bat" CONTINUE
+call "!SCRIPTS_DIR!\Internal\Toolchain\CheckToolchain.bat" CONTINUE
 set "DEP_RC=!ERRORLEVEL!"
 set "PARENT_BATCH="
 
@@ -115,7 +115,7 @@ echo ============================================================
 echo   Open Visual Studio?
 echo ============================================================
 echo.
-echo   Y^) Yes - Open !PROJECT_NAME!.sln in Visual Studio
+echo   Y^) Yes - Open !PROJECT_NAME!.slnx in Visual Studio
 echo   N^) No  - Exit
 echo.
 echo ============================================================
@@ -127,7 +127,7 @@ set /P "OPEN_VS=Enter choice [Y/N]: "
 if /I "!OPEN_VS!"=="Y" (
     echo.
     echo [LOG] Opening: !SOLUTION_FILE!
-    call "%~dp0Internal\OpenVisualStudio.bat" "!SOLUTION_FILE!"
+    call "%~dp0Internal\Toolchain\OpenVisualStudio.bat" "!SOLUTION_FILE!"
     goto :AFTER_VS_PROMPT
 )
 if /I "!OPEN_VS!"=="N" goto :AFTER_VS_PROMPT

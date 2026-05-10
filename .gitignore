@@ -10,6 +10,8 @@
 bld/
 bin/
 obj/
+!Scripts/Internal/Build/
+!Scripts/Internal/Build/**
 
 # Build results
 [Dd]ebug*/
@@ -54,29 +56,21 @@ Projects/**/imgui.ini
 .vs/.vscode/launch.json
 .vs/.vscode/extensions.json
 
-# Visual Studio 2019/2022
-.vs2019/
-.vs2019/*
-.vs2019/.*
-.vs2019/.vscode/*
-.vs2019/.vscode/*.code-workspace
-.vs2019/.vscode/settings.json
-.vs2019/.vscode/tasks.json
-.vs2019/.vscode/launch.json
-.vs2019/.vscode/extensions.json
-.vs2022/
-.vs2022/*
-.vs2022/.*
-.vs2022/.vscode/*
-.vs2022/.vscode/*.code-workspace
-.vs2022/.vscode/settings.json
-.vs2022/.vscode/tasks.json
-.vs2022/.vscode/launch.json
-.vs2022/.vscode/extensions.json
+# Visual Studio versioned local folders
+.vs20*/
+.vs20*/*
+.vs20*/.*
+.vs20*/.vscode/*
+.vs20*/.vscode/*.code-workspace
+.vs20*/.vscode/settings.json
+.vs20*/.vscode/tasks.json
+.vs20*/.vscode/launch.json
+.vs20*/.vscode/extensions.json
 
 # CMake and build system files
 *.vcxproj*
 *.sln
+*.slnx
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake

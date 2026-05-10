@@ -10,12 +10,12 @@
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+	call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
 	set "BOOTSTRAP_RC=!ERRORLEVEL!"
 	exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Internal\Config.bat"
+call "%~dp0Internal\Core\Config.bat"
 
 set /A TOTAL=0
 set /A IDX=0

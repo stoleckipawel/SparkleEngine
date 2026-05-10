@@ -8,7 +8,7 @@
 
 setlocal enabledelayedexpansion
 
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "HELPER_RC=1"
 set "DESIRED_TOOLSET="

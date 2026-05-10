@@ -52,12 +52,12 @@ goto :COLLECT_ARGS
 :: Resolve repository root directory
 :: ---------------------------------------------------------------------------
 :: Prefer the caller's directory if it contains LICENSE.txt (repo root marker).
-:: Otherwise fall back to this script's directory (Scripts\Internal).
+:: Otherwise fall back to this script's directory (Scripts\Internal\Core).
 for %%F in ("%CALLER%") do set "CALLER_DIR=%%~dpF"
 
 set "ROOT_DIR="
 if exist "%CALLER_DIR%LICENSE.txt" set "ROOT_DIR=%CALLER_DIR%"
-if not defined ROOT_DIR set "ROOT_DIR=!SELF_DIR!..\.."
+if not defined ROOT_DIR set "ROOT_DIR=!SELF_DIR!..\..\.."
 :: Normalize to absolute path with trailing backslash
 pushd "%ROOT_DIR%" >nul 2>&1
 set "ROOT_DIR=%CD%\"
@@ -75,12 +75,12 @@ set "LOG_SCOPE=%PRIMARY_ARG%"
 if /I "%CALLER_NAME%"=="SetupWorkspace"    set "LOG_ACTION=WorkspaceSetupLog"     & set "LOG_STEM=WorkspaceSetupLog"     & set "LOG_SCOPE=Workspace"
 if /I "%CALLER_NAME%"=="GenerateSolution"  set "LOG_ACTION=SolutionGenerationLog" & set "LOG_STEM=SolutionGenerationLog" & set "LOG_SCOPE=Workspace"
 if /I "%CALLER_NAME%"=="BuildProject"      set "LOG_ACTION=BuildLog"              & set "LOG_STEM=BuildLog"
+if /I "%CALLER_NAME%"=="CookAllAssets"     set "LOG_ACTION=AssetCookingLog"       & set "LOG_STEM=AssetCookingLog"
 if /I "%CALLER_NAME%"=="CookShaders"       set "LOG_ACTION=ShaderCompilationLog"  & set "LOG_STEM=ShaderCompilationLog"
 if /I "%CALLER_NAME%"=="CookTextures"      set "LOG_ACTION=TextureCookingLog"     & set "LOG_STEM=TextureCookingLog"
 if /I "%CALLER_NAME%"=="CookAssets"        set "LOG_ACTION=AssetCookingLog"       & set "LOG_STEM=AssetCookingLog"
 if /I "%CALLER_NAME%"=="RunClangFormat"    set "LOG_ACTION=FormatCheckLog"        & set "LOG_STEM=FormatCheckLog"        & set "LOG_SCOPE=Workspace"
 if /I "%CALLER_NAME%"=="CheckToolchain"    set "LOG_ACTION=ToolchainCheckLog"     & set "LOG_STEM=ToolchainCheckLog"     & set "LOG_SCOPE=Workspace"
-if /I "%CALLER_NAME%"=="SyncThirdParty"    set "LOG_ACTION=ThirdPartySyncLog"     & set "LOG_STEM=ThirdPartySyncLog"     & set "LOG_SCOPE=Workspace"
 if /I "%CALLER_NAME%"=="CleanWorkspace"    set "LOG_ACTION=WorkspaceCleanupLog"   & set "LOG_STEM=WorkspaceCleanupLog"   & set "LOG_SCOPE=Workspace"
 
 if not defined LOG_SCOPE set "LOG_SCOPE=Workspace"

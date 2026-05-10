@@ -1,16 +1,16 @@
-﻿@echo off
+@echo off
 :: ============================================================================
-:: AssetCooking.bat - Shared cook-tool preparation helpers
+:: CookTools.bat - Shared cook-tool preparation helpers
 :: ============================================================================
 :: Internal helper module that keeps the asset and shader cooking entrypoints
 :: on one preflight path for toolchain validation, configure/sync, cook-tool
 :: build, and executable discovery.
 ::
 :: Usage:
-::   call "Internal\AssetCooking.bat" PrepareCookTools <Configuration>
-::   call "Internal\AssetCooking.bat" PrepareAssetCooker <Configuration>
-::   call "Internal\AssetCooking.bat" PrepareShaderCompiler <Configuration>
-::   call "Internal\AssetCooking.bat" PrepareTextureCooker <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareCookTools <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareAssetCooker <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareShaderCompiler <Configuration>
+::   call "Internal\Cook\CookTools.bat" PrepareTextureCooker <Configuration>
 ::
 :: Outputs:
 ::   ASSET_COOKER_EXE    - Absolute path to AssetCooker.exe
@@ -57,13 +57,13 @@ if /I "%~1"=="PrepareTextureCooker" (
     goto :PREPARE_SELECTED_TOOLS
 )
 
-echo [ERROR] AssetCooking.bat requires a valid command.
+echo [ERROR] CookTools.bat requires a valid command.
 echo         Supported commands: PrepareCookTools, PrepareAssetCooker, PrepareShaderCompiler, PrepareTextureCooker
 set "ASSET_COOKING_RC=1"
 goto :FINISH
 
 :PREPARE_SELECTED_TOOLS
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "CONFIG=%~2"
 if "%CONFIG%"=="" set "CONFIG=Debug"
@@ -90,7 +90,7 @@ if "!REQUEST_SHADER_COMPILER!"=="1" if "!REQUEST_ASSET_COOKER!" NEQ "1" if "!REQ
 echo.
 echo [LOG] Step 1/3: Validating build tools...
 set "PARENT_BATCH=1"
-call "!SCRIPTS_DIR!\Internal\CheckToolchain.bat" CONTINUE
+call "!SCRIPTS_DIR!\Internal\Toolchain\CheckToolchain.bat" CONTINUE
 set "TOOLCHAIN_RC=!ERRORLEVEL!"
 set "PARENT_BATCH="
 if "!TOOLCHAIN_RC!" NEQ "0" (
@@ -101,7 +101,7 @@ if "!TOOLCHAIN_RC!" NEQ "0" (
 
 echo.
 echo [LOG] Step 2/3: Ensuring build files are current...
-call "!SCRIPTS_DIR!\Internal\EnsureBuildFiles.bat"
+call "!SCRIPTS_DIR!\Internal\Build\EnsureBuildFiles.bat"
 set "ENSURE_RC=!ERRORLEVEL!"
 if "!ENSURE_RC!" NEQ "0" (
     echo [ERROR] Build-file preparation failed.
@@ -112,7 +112,7 @@ if "!ENSURE_RC!" NEQ "0" (
 echo.
 echo [LOG] Step 3/3: Building !BUILD_LABEL!...
 echo [LOG] Building targets !BUILD_TARGETS!...
-call "%~dp0CMakeHelpers.bat" BuildTargets !CONFIG! !BUILD_TARGETS!
+call "%~dp0..\Build\CMakeHelpers.bat" BuildTargets !CONFIG! !BUILD_TARGETS!
 set "BUILD_RC=!ERRORLEVEL!"
 if "!BUILD_RC!" NEQ "0" (
     echo [ERROR] Failed to build targets !BUILD_TARGETS!.
@@ -189,7 +189,7 @@ set "_STALE_RC=1"
 set "_POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 if not exist "%_POWERSHELL_EXE%" set "_POWERSHELL_EXE=powershell"
 
-"%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0Test-ToolInputsNewerThan.ps1" ^
+"%_POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\Build\Test-ToolInputsNewerThan.ps1" ^
     -ReferencePath "%~1" ^
     -PathList "!ROOT_DIR!\Tools\ShaderCompiler;!ROOT_DIR!\Engine\RHI;!ROOT_DIR!\CMake;!ROOT_DIR!\CMakeLists.txt;!ROOT_DIR!\Engine\CMakeLists.txt;!ROOT_DIR!\Engine\RHI\CMakeLists.txt;!ROOT_DIR!\Tools\CMakeLists.txt;!ROOT_DIR!\Tools\ShaderCompiler\CMakeLists.txt"
 set "_STALE_RC=%ERRORLEVEL%"

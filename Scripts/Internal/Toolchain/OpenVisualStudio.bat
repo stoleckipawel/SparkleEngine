@@ -14,11 +14,12 @@ if not exist "!SOLUTION_FILE!" (
     exit /B 1
 )
 
-set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+call "%~dp0..\Core\Config.bat"
+
 set "DEVENV_EXE="
 
-if exist "!VSWHERE!" (
-    for /f "usebackq delims=" %%I in (`"!VSWHERE!" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find Common7\IDE\devenv.exe`) do (
+if exist "!VSWHERE_EXE!" (
+    for /f "usebackq delims=" %%I in (`"!VSWHERE_EXE!" -latest -products * -version "!VS_VERSION_RANGE!" -requires "!VS_CPP_COMPONENT!" -find Common7\IDE\devenv.exe`) do (
         if not defined DEVENV_EXE set "DEVENV_EXE=%%~fI"
     )
 )
@@ -27,8 +28,8 @@ if defined DEVENV_EXE (
     start "" "!DEVENV_EXE!" "!SOLUTION_FILE!"
     set "OPEN_RC=!ERRORLEVEL!"
 ) else (
-    start "" "!SOLUTION_FILE!"
-    set "OPEN_RC=!ERRORLEVEL!"
+    echo [ERROR] Visual Studio 2026 was not found. Install Visual Studio 2026 with the C++ workload.
+    set "OPEN_RC=1"
 )
 
 endlocal & exit /B %OPEN_RC%

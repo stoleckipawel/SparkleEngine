@@ -31,7 +31,7 @@ setlocal enabledelayedexpansion
 :: Logging bootstrap
 :: ---------------------------------------------------------------------------
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+    call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
     set "BOOTSTRAP_RC=!ERRORLEVEL!"
     exit /B !BOOTSTRAP_RC!
 )
@@ -39,7 +39,7 @@ if not defined LOG_CAPTURED (
 :: ---------------------------------------------------------------------------
 :: Load shared configuration
 :: ---------------------------------------------------------------------------
-call "%~dp0Internal\Config.bat"
+call "%~dp0Internal\Core\Config.bat"
 
 :: ---------------------------------------------------------------------------
 :: Parse argument or show menu
@@ -261,7 +261,7 @@ rmdir /S /Q "%~1" 2>nul
 if not exist "%~1" goto :EOF
 
 :: Retry with the PowerShell helper for trees that cmd/rmdir fails to remove cleanly.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Internal\RemoveDirectory.ps1" -TargetPath "%~1" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Internal\Utilities\RemoveDirectory.ps1" -TargetPath "%~1" >nul 2>&1
 if exist "%~1" (
     echo [ERROR] Failed to remove: %~2  ^(files may be locked^)
     set /A "CLEAN_ERRORS+=1"
@@ -294,6 +294,7 @@ goto :EOF
 :CLEAN_ROOT_ARTIFACTS
 echo [CLEAN] Removing VS project files from root...
 del /F /Q "!ROOT_DIR!\*.sln" 2>nul
+del /F /Q "!ROOT_DIR!\*.slnx" 2>nul
 del /F /Q "!ROOT_DIR!\*.vcxproj" 2>nul
 del /F /Q "!ROOT_DIR!\*.vcxproj.filters" 2>nul
 del /F /Q "!ROOT_DIR!\*.vcxproj.user" 2>nul

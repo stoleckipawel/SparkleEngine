@@ -17,12 +17,12 @@
 setlocal enabledelayedexpansion
 
 if not defined LOG_CAPTURED (
-    call "%~dp0Internal\BootstrapLog.bat" "%~f0" %*
+    call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
     set "BOOTSTRAP_RC=!ERRORLEVEL!"
     exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Internal\Config.bat"
+call "%~dp0Internal\Core\Config.bat"
 
 set "EXIT_RC=1"
 set "SELECTED_PROJECT=%~1"
@@ -35,7 +35,7 @@ if /I "%SELECTED_PROJECT%"=="-h" goto :USAGE
 if /I "%SELECTED_PROJECT%"=="/help" goto :USAGE
 if /I "%SELECTED_PROJECT%"=="--help" goto :USAGE
 
-call "%~dp0Internal\ProjectDiscovery.bat" ListProjects
+call "%~dp0Internal\Projects\ProjectDiscovery.bat" ListProjects
 if errorlevel 1 (
     echo [ERROR] Failed to discover runnable projects.
     goto :FINISH
@@ -143,7 +143,7 @@ echo [LOG] Build profile: !CONFIG!
 
 echo.
 echo [LOG] Ensuring build files are current...
-call "%~dp0Internal\EnsureBuildFiles.bat"
+call "%~dp0Internal\Build\EnsureBuildFiles.bat"
 set "ENSURE_RC=!ERRORLEVEL!"
 if "!ENSURE_RC!" NEQ "0" (
     echo [ERROR] Build-file preparation failed. Cannot build.
@@ -212,7 +212,7 @@ echo.
 echo ========================================
 echo [LOG] Building !CURRENT_PROFILE! targets: !TARGET_ARGS!
 echo ========================================
-call "%~dp0Internal\CMakeHelpers.bat" BuildTargets !CURRENT_PROFILE! !TARGET_ARGS!
+call "%~dp0Internal\Build\CMakeHelpers.bat" BuildTargets !CURRENT_PROFILE! !TARGET_ARGS!
 exit /B !ERRORLEVEL!
 
 :RESOLVE_PROFILE_TARGETS
@@ -226,7 +226,7 @@ if not defined HOST_MODE (
     exit /B 1
 )
 
-call "%~dp0Internal\ProjectDiscovery.bat" ResolveTargets "!SELECTED_PROJECT!" "!HOST_MODE!"
+call "%~dp0Internal\Projects\ProjectDiscovery.bat" ResolveTargets "!SELECTED_PROJECT!" "!HOST_MODE!"
 if errorlevel 1 exit /B 1
 
 if "!TARGET_COUNT!"=="0" (

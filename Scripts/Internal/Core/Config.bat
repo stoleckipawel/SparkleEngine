@@ -6,8 +6,8 @@
 :: BootstrapLog. Provides a single source of truth for all paths, tool
 :: detection, and build settings.
 ::
-:: Usage: call "%~dp0Internal\Config.bat"   (from Scripts/)
-::        call "%~dp0Config.bat"            (from Scripts/Internal/)
+:: Usage: call "%~dp0Internal\Core\Config.bat"   (from Scripts/)
+::        call "%~dp0..\Core\Config.bat"          (from Scripts/Internal/<Category>/)
 ::
 :: Sets:
 ::   ROOT_DIR      - Repository root (parent of Scripts/)
@@ -19,8 +19,11 @@
 ::   ENGINE_DIR    - Engine source (ROOT_DIR\Engine)
 ::   SCRIPTS_DIR   - Scripts directory (ROOT_DIR\Scripts)
 ::   CMAKE_DIR     - Repo CMake modules root (ROOT_DIR\CMake)
-::   GENERATOR     - CMake generator (Visual Studio 17 2022)
+::   GENERATOR     - Required CMake generator (Visual Studio 18 2026)
 ::   ARCH          - Target architecture (x64)
+::   VSWHERE_EXE   - Visual Studio Installer discovery tool
+::   VS_VERSION_RANGE - Required Visual Studio major version range
+::   VS_CPP_COMPONENT - Required Visual Studio C++ workload component
 ::   USE_CLANG     - 1 if Clang available, 0 otherwise
 ::   PROJECT_NAME  - Project name from root CMakeLists.txt project() call
 ::   SOLUTION_FILE - Full path to the VS solution file
@@ -29,8 +32,8 @@
 :: ---------------------------------------------------------------------------
 :: Resolve repository root
 :: ---------------------------------------------------------------------------
-:: This script lives in Scripts\Internal\, so repo root is two levels up.
-for %%I in ("%~dp0..\..") do set "ROOT_DIR=%%~fI"
+:: This script lives in Scripts\Internal\Core\, so repo root is three levels up.
+for %%I in ("%~dp0..\..\..") do set "ROOT_DIR=%%~fI"
 
 :: ---------------------------------------------------------------------------
 :: Directory paths (all derived from ROOT_DIR)
@@ -49,8 +52,11 @@ set "CMAKE_VALIDATION_DIR=!CMAKE_DIR!\Validation"
 :: ---------------------------------------------------------------------------
 :: Build settings
 :: ---------------------------------------------------------------------------
-set "GENERATOR=Visual Studio 17 2022"
+set "GENERATOR=Visual Studio 18 2026"
 set "ARCH=x64"
+set "VSWHERE_EXE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+set "VS_VERSION_RANGE=[18.0,19.0)"
+set "VS_CPP_COMPONENT=Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
 
 :: ---------------------------------------------------------------------------
 :: Toolset detection
@@ -80,5 +86,5 @@ if "!PROJECT_NAME!"=="" (
     set "PROJECT_NAME=Sparkle"
 )
 
-set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.sln"
+set "SOLUTION_FILE=!BUILD_DIR!\!PROJECT_NAME!.slnx"
 

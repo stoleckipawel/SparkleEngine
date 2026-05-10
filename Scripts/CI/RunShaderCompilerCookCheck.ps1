@@ -101,12 +101,9 @@ function Invoke-NegativeCIStep
     $global:LASTEXITCODE = 0
 }
 
-# 1. Configure CMake if needed.
-if (-not (Test-Path (Join-Path $RepoRoot 'build')))
-{
-    Invoke-CIStep -Label 'Configuring CMake (Visual Studio 17 2022, x64)' -Action {
-        cmake -S . -B build -G 'Visual Studio 17 2022' -A x64
-    }
+# 1. Ensure CMake build files are present and current.
+Invoke-CIStep -Label 'Ensuring CMake build files' -Action {
+    & (Join-Path $RepoRoot 'Scripts\Internal\Build\EnsureBuildFiles.bat')
 }
 
 # 2. Build representative development and shipping profiles.

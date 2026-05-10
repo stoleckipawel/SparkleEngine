@@ -5,7 +5,7 @@
 :: Verifies required and optional host build tools are available in PATH.
 :: This is an internal helper used by the user-facing workflow scripts.
 ::
-:: Required: CMake, MSBuild, git
+:: Required: CMake, Visual Studio 2026 with C++ tools, MSBuild, git
 :: Optional: Clang (for ClangCL), clang-format, clang-tidy, git-lfs
 ::
 :: Usage: CheckToolchain.bat [CONTINUE]
@@ -17,12 +17,12 @@ setlocal enabledelayedexpansion
 if /I "%~1"=="CONTINUE" if not defined PARENT_BATCH set "PARENT_BATCH=1"
 
 if not defined LOG_CAPTURED (
-    call "%~dp0BootstrapLog.bat" "%~f0" %*
+    call "%~dp0..\Core\BootstrapLog.bat" "%~f0" %*
     set "BOOTSTRAP_RC=!ERRORLEVEL!"
     exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0Config.bat"
+call "%~dp0..\Core\Config.bat"
 
 set "RC=0"
 
@@ -41,30 +41,46 @@ if errorlevel 1 (
     for /f "tokens=3" %%V in ('cmake --version 2^>nul ^| findstr /i /c:"cmake version"') do (
         echo [OK] CMake %%V
     )
+
+    cmake --help 2>nul | findstr /c:"!GENERATOR!" >nul
+    if errorlevel 1 (
+        echo [ERROR] CMake does not expose the required generator: !GENERATOR!
+        echo         Install or update CMake with Visual Studio 2026 generator support.
+        set "RC=1"
+    ) else (
+        echo [OK] CMake generator !GENERATOR!
+    )
 )
 
-where msbuild >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] MSBuild not found. Install Visual Studio with C++ workload.
+if not exist "!VSWHERE_EXE!" (
+    echo [ERROR] vswhere not found. Install Visual Studio 2026 with the C++ workload.
     echo         Run Visual Studio Installer ^> Modify ^> Desktop development with C++.
     set "RC=1"
 ) else (
-    echo [OK] MSBuild
-)
-
-set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-if exist "!VSWHERE!" (
-    "!VSWHERE!" -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath >nul 2>&1
+    "!VSWHERE_EXE!" -latest -products * -version "!VS_VERSION_RANGE!" -requires "!VS_CPP_COMPONENT!" -property installationPath >nul 2>&1
     if errorlevel 1 (
-        echo [ERROR] Visual Studio C++ tools not found.
+        echo [ERROR] Visual Studio 2026 C++ tools not found.
         echo         Run Visual Studio Installer ^> Modify ^> Desktop development with C++.
         set "RC=1"
     ) else (
-        echo [OK] Visual Studio C++ tools
+        echo [OK] Visual Studio 2026 C++ tools
     )
+)
+
+set "MSBUILD_EXE="
+where msbuild >nul 2>&1
+if not errorlevel 1 set "MSBUILD_EXE=msbuild"
+if not defined MSBUILD_EXE if exist "!VSWHERE_EXE!" (
+    for /f "usebackq delims=" %%I in (`"!VSWHERE_EXE!" -latest -products * -version "!VS_VERSION_RANGE!" -requires "!VS_CPP_COMPONENT!" -find MSBuild\Current\Bin\MSBuild.exe`) do (
+        if not defined MSBUILD_EXE set "MSBUILD_EXE=%%~fI"
+    )
+)
+if defined MSBUILD_EXE (
+    echo [OK] MSBuild
 ) else (
-    echo [WARN] vswhere not found - cannot verify Visual Studio installation.
-    echo        Ensure Visual Studio 2022+ with C++ workload is installed.
+    echo [ERROR] MSBuild not found in PATH or the Visual Studio 2026 installation.
+    echo         Run Visual Studio Installer ^> Modify ^> Desktop development with C++.
+    set "RC=1"
 )
 
 where clang >nul 2>&1

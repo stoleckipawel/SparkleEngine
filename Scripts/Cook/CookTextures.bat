@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 :: ============================================================================
 :: CookTextures.bat - Cook texture assets for a project
 :: ============================================================================
@@ -11,12 +11,12 @@ set "INTERACTIVE=1"
 if defined PARENT_BATCH set "INTERACTIVE=0"
 
 if not defined LOG_CAPTURED (
-	call "%~dp0..\Internal\BootstrapLog.bat" "%~f0" %*
+	call "%~dp0..\Internal\Core\BootstrapLog.bat" "%~f0" %*
 	set "BOOTSTRAP_RC=!ERRORLEVEL!"
 	exit /B !BOOTSTRAP_RC!
 )
 
-call "%~dp0..\Internal\Config.bat"
+call "%~dp0..\Internal\Core\Config.bat"
 
 set "EXIT_RC=1"
 set "TARGET_PROJECT=%~1"
@@ -34,7 +34,7 @@ if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 echo [LOG] Project: !TARGET_PROJECT!
 echo [LOG] Configuration: !CONFIG!
 
-call "%~dp0..\Internal\AssetCooking.bat" PrepareAssetCooker !CONFIG!
+call "%~dp0..\Internal\Cook\CookTools.bat" PrepareAssetCooker !CONFIG!
 if errorlevel 1 goto :FINISH
 
 "!ASSET_COOKER_EXE!" cook-textures "!TARGET_PROJECT!" "!CONFIG!" --root "!ROOT_DIR!"

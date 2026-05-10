@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 :: ============================================================================
 :: CookAllAssets.bat - Preferred top-level full asset cook entrypoint
 :: ============================================================================
@@ -13,7 +13,13 @@ setlocal enabledelayedexpansion
 set "INTERACTIVE=1"
 if defined PARENT_BATCH set "INTERACTIVE=0"
 
-call "%~dp0Internal\Config.bat"
+if not defined LOG_CAPTURED (
+	call "%~dp0Internal\Core\BootstrapLog.bat" "%~f0" %*
+	set "BOOTSTRAP_RC=!ERRORLEVEL!"
+	exit /B !BOOTSTRAP_RC!
+)
+
+call "%~dp0Internal\Core\Config.bat"
 
 set "EXIT_RC=1"
 set "TARGET_PROJECT=%~1"
@@ -32,7 +38,7 @@ if "%CONFIG%"=="" set "CONFIG=DevelopmentGame"
 echo [LOG] Project target: !TARGET_PROJECT!
 echo [LOG] Configuration: !CONFIG!
 
-call "%~dp0Internal\AssetCooking.bat" PrepareAssetCooker !CONFIG!
+call "%~dp0Internal\Cook\CookTools.bat" PrepareAssetCooker !CONFIG!
 if errorlevel 1 (
 	set "EXIT_RC=1"
 	goto :FINISH
