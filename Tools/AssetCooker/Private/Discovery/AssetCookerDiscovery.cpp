@@ -4,6 +4,8 @@
 #include <cctype>
 #include <fstream>
 #include <map>
+#include <string>
+#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -158,6 +160,19 @@ bool AssetCookerDiscovery::ValidateConfiguration(std::string_view configuration)
 	       configuration == "DevelopmentGame" || configuration == "ShippingEditor" || configuration == "ShippingGame";
 }
 
+static std::string AssetCookerResolveToolConfiguration(std::string_view configuration)
+{
+	std::string toolConfiguration(configuration);
+	constexpr std::string_view gameSuffix = "Game";
+	if (toolConfiguration.size() >= gameSuffix.size() &&
+	    std::string_view(toolConfiguration).substr(toolConfiguration.size() - gameSuffix.size()) == gameSuffix)
+	{
+		toolConfiguration.resize(toolConfiguration.size() - gameSuffix.size());
+		toolConfiguration += "Editor";
+	}
+	return toolConfiguration;
+}
+
 std::vector<std::string> AssetCookerDiscovery::DiscoverProjects(
     const std::filesystem::path& repositoryRoot,
     AssetCookerDiagnostics& diagnostics)
@@ -211,6 +226,7 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 	outPlan = AssetCookerProjectCookPlan();
 	outPlan.projectName = std::string(projectName);
 	outPlan.configuration = std::string(configuration);
+	outPlan.toolConfiguration = AssetCookerResolveToolConfiguration(configuration);
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
 	outPlan.cookedRoot = repositoryRoot / "build" / "Cooked" / outPlan.projectName;
@@ -284,6 +300,7 @@ bool AssetCookerDiscovery::WritePlanSummary(
 	output << "schema=asset-cooker-plan-v1\n";
 	output << "project=" << plan.projectName << "\n";
 	output << "configuration=" << plan.configuration << "\n";
+	output << "toolConfiguration=" << plan.toolConfiguration << "\n";
 	output << "summaryPath=" << plan.summaryPath.string() << "\n";
 	output << "textureSummaryPath=" << plan.textureSummaryPath.string() << "\n";
 	output << "engineSceneCount=" << plan.engineSceneCount << "\n";

@@ -147,6 +147,7 @@ static bool AssetCookerWriteTimingSummary(
 	writer.WriteString("tool", "AssetCooker");
 	writer.WriteString("project", plan.projectName);
 	writer.WriteString("configuration", plan.configuration);
+	writer.WriteString("toolConfiguration", plan.toolConfiguration);
 	writer.WriteString("planPath", plan.planPath.generic_string());
 	writer.WriteString("textureSummaryPath", plan.textureSummaryPath.generic_string());
 	writer.WriteRaw("succeeded", succeeded ? "true" : "false");
@@ -207,13 +208,7 @@ static std::filesystem::path AssetCookerResolveToolPath(
     std::string_view executableName)
 {
 	const std::string fileName = std::string(executableName) + ".exe";
-	const std::filesystem::path configuredPath = plan.repositoryRoot / "build" / "bin" / plan.configuration / fileName;
-	if (AssetCookerFileExists(configuredPath))
-	{
-		return configuredPath;
-	}
-
-	return plan.repositoryRoot / "build" / "bin" / fileName;
+	return plan.repositoryRoot / "build" / "bin" / plan.toolConfiguration / fileName;
 }
 
 static bool AssetCookerPlanUsesStep(const AssetCookerProjectCookPlan& plan, AssetCookerPlanStep step)
@@ -820,9 +815,10 @@ bool AssetCookerDispatcher::DispatchPlan(
 	Filesystem::ConfigureProjectRoot(plan.projectRoot);
 	SPDLOG_LOGGER_INFO(
 	    AssetCookerGetLogger(),
-	    "AssetCooker plan project='{}' configuration='{}' steps={} finalScenes={} engineScenes={} projectScenes={} overrides={}",
+	    "AssetCooker plan project='{}' configuration='{}' toolConfiguration='{}' steps={} finalScenes={} engineScenes={} projectScenes={} overrides={}",
 	    plan.projectName,
 	    plan.configuration,
+	    plan.toolConfiguration,
 	    plan.steps.size(),
 	    plan.sceneEntries.size(),
 	    plan.engineSceneCount,
@@ -834,6 +830,7 @@ bool AssetCookerDispatcher::DispatchPlan(
 	    "AssetCooker plan",
 	    {ToolConsole::QuotedField("project", plan.projectName),
 	     ToolConsole::QuotedField("configuration", plan.configuration),
+	     ToolConsole::QuotedField("toolConfiguration", plan.toolConfiguration),
 	     ToolConsole::QuotedField("steps", AssetCookerBuildPlanStepList(plan.steps)),
 	     ToolConsole::Field("scenes", std::to_string(plan.sceneEntries.size())),
 	     ToolConsole::Field("engineScenes", std::to_string(plan.engineSceneCount)),
