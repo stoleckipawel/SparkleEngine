@@ -42,7 +42,7 @@ target_include_directories(SparklePlatform
 target_compile_features(SparklePlatform PUBLIC cxx_std_20)
 
 # Precompiled header (per-module PCH)
-target_precompile_headers(SparklePlatform PRIVATE
+sparkle_target_precompile_headers(SparklePlatform
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

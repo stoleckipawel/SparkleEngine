@@ -15,6 +15,7 @@ add_library(SourceImportAdapters STATIC
     ${SOURCE_IMPORT_ADAPTER_PRIVATE_SOURCES}
     ${SOURCE_IMPORT_ADAPTER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(SourceImportAdapters)
 
 target_include_directories(SourceImportAdapters
     PUBLIC
@@ -27,7 +28,7 @@ target_include_directories(SourceImportAdapters
 
 target_compile_features(SourceImportAdapters PUBLIC cxx_std_20)
 
-target_precompile_headers(SourceImportAdapters PRIVATE
+sparkle_target_precompile_headers(SourceImportAdapters
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

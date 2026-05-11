@@ -11,6 +11,7 @@ add_executable(AssetConverter
     ${ASSET_CONVERTER_PRIVATE_SOURCES}
     ${ASSET_CONVERTER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(AssetConverter)
 
 # AssetConverter remains a direct debug command surface. Source import and
 # cooked output category work are owned by the focused tool modules it links.
@@ -23,7 +24,7 @@ target_include_directories(AssetConverter
 
 target_compile_features(AssetConverter PRIVATE cxx_std_20)
 
-target_precompile_headers(AssetConverter PRIVATE
+sparkle_target_precompile_headers(AssetConverter
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

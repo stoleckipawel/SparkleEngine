@@ -45,7 +45,7 @@ target_include_directories(SparkleRenderer
 target_compile_features(SparkleRenderer PUBLIC cxx_std_20)
 
 # Precompiled header (per-module PCH)
-target_precompile_headers(SparkleRenderer PRIVATE
+sparkle_target_precompile_headers(SparkleRenderer
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

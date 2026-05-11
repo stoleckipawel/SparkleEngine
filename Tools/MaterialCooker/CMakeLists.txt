@@ -15,6 +15,7 @@ add_library(MaterialCooker STATIC
     ${MATERIAL_COOKER_PRIVATE_SOURCES}
     ${MATERIAL_COOKER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(MaterialCooker)
 
 target_include_directories(MaterialCooker
     PUBLIC
@@ -27,7 +28,7 @@ target_include_directories(MaterialCooker
 
 target_compile_features(MaterialCooker PUBLIC cxx_std_20)
 
-target_precompile_headers(MaterialCooker PRIVATE
+sparkle_target_precompile_headers(MaterialCooker
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

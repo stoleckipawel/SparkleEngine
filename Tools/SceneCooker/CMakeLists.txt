@@ -15,6 +15,7 @@ add_library(SceneCooker STATIC
     ${SCENE_COOKER_PRIVATE_SOURCES}
     ${SCENE_COOKER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(SceneCooker)
 
 target_include_directories(SceneCooker
     PUBLIC
@@ -27,7 +28,7 @@ target_include_directories(SceneCooker
 
 target_compile_features(SceneCooker PUBLIC cxx_std_20)
 
-target_precompile_headers(SceneCooker PRIVATE
+sparkle_target_precompile_headers(SceneCooker
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

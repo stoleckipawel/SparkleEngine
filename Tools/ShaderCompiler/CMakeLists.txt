@@ -13,6 +13,7 @@ add_executable(ShaderCompiler
     ${SHADER_COMPILER_PRIVATE_SOURCES}
     ${SHADER_COMPILER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(ShaderCompiler)
 
 set(SLANG_SDK_ROOT "$ENV{VULKAN_SDK}" CACHE PATH "Slang SDK root")
 find_path(SLANG_INCLUDE_DIR NAMES slang.h PATHS "${SLANG_SDK_ROOT}/Include/slang" REQUIRED)
@@ -40,7 +41,7 @@ target_include_directories(ShaderCompiler
 
 target_compile_features(ShaderCompiler PRIVATE cxx_std_20)
 
-target_precompile_headers(ShaderCompiler PRIVATE
+sparkle_target_precompile_headers(ShaderCompiler
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

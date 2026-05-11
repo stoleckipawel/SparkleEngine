@@ -58,7 +58,7 @@ target_compile_definitions(SparkleEditor PRIVATE
 )
 
 # Precompiled header (per-module PCH)
-target_precompile_headers(SparkleEditor PRIVATE
+sparkle_target_precompile_headers(SparkleEditor
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

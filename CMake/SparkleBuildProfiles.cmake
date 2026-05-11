@@ -11,11 +11,11 @@
 #   Game       - builds editorless runtime launch targets.
 
 set(SPARKLE_BUILD_CONFIGURATIONS
-                   DevelopmentEditor
+    DevelopmentEditor
     DevelopmentGame
     DebugEditor
     DebugGame
-    ShippingEditor                                                             
+    ShippingEditor
     ShippingGame
 )
 

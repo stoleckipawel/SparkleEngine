@@ -6,6 +6,7 @@
 #include "Fbx/FbxImporter.h"
 #include "Gltf/GltfImporter.h"
 #include "Core/Public/Paths/PathUtils.h"
+#include "Core/Public/Strings/StringUtils.h"
 
 #include <array>
 #include <format>
@@ -41,7 +42,7 @@ SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& file
 		    "{}",
 		    std::format(
 		        "SourceSceneImporter: Unsupported asset extension '{}' for '{}'",
-		        extension.empty() ? std::string("<none>") : std::string(extension.begin(), extension.end()),
+		        extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
 		        filePath.string()));
 	}
 

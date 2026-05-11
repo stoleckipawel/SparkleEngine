@@ -10,6 +10,7 @@ add_library(CookCommon STATIC
     ${COOK_COMMON_PUBLIC_HEADERS}
     ${COOK_COMMON_PRIVATE_SOURCES}
 )
+sparkle_configure_host_tool_target(CookCommon)
 
 target_include_directories(CookCommon
     PUBLIC

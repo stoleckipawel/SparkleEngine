@@ -57,7 +57,7 @@ target_include_directories(SparkleGameFramework
 target_compile_features(SparkleGameFramework PUBLIC cxx_std_20)
 
 # Precompiled header (per-module PCH)
-target_precompile_headers(SparkleGameFramework PRIVATE
+sparkle_target_precompile_headers(SparkleGameFramework
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

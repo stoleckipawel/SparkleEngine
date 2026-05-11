@@ -167,6 +167,12 @@ namespace Strings
 
 	inline std::string ToNarrow(std::wstring_view str)
 	{
-		return std::string(str.begin(), str.end());
+		std::string result;
+		result.reserve(str.size());
+		for (const wchar_t character : str)
+		{
+			result.push_back(static_cast<char>(character));
+		}
+		return result;
 	}
 }  // namespace Strings

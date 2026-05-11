@@ -35,6 +35,7 @@ add_library(AssetCookerCore STATIC
     ${ASSET_COOKER_CORE_SOURCES}
     ${ASSET_COOKER_CORE_HEADERS}
 )
+sparkle_configure_host_tool_target(AssetCookerCore)
 
 target_include_directories(AssetCookerCore
     PUBLIC
@@ -68,6 +69,7 @@ add_executable(AssetCooker
     ${ASSET_COOKER_CLI_SOURCES}
     ${ASSET_COOKER_CLI_HEADERS}
 )
+sparkle_configure_host_tool_target(AssetCooker)
 
 target_include_directories(AssetCooker
     PRIVATE

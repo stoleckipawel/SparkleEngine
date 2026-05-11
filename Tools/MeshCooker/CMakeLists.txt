@@ -15,6 +15,7 @@ add_library(MeshCooker STATIC
     ${MESH_COOKER_PRIVATE_SOURCES}
     ${MESH_COOKER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(MeshCooker)
 
 target_include_directories(MeshCooker
     PUBLIC
@@ -27,7 +28,7 @@ target_include_directories(MeshCooker
 
 target_compile_features(MeshCooker PUBLIC cxx_std_20)
 
-target_precompile_headers(MeshCooker PRIVATE
+sparkle_target_precompile_headers(MeshCooker
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

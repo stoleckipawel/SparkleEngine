@@ -42,7 +42,7 @@ Dependency sync output is concise by default: configure reports that it is check
 
 Optional tools are reported separately: `clang-cl` is available for explicit `ClangCL` builds, `clang-format` powers formatting commands, `clang-tidy` is for local static-analysis workflows, and `git-lfs` is not required because dependency fetches skip LFS blobs.
 
-Cook scripts check only the executables required by the requested cook mode. If a required cook tool is missing, the script builds that tool target and then continues cooking. If the required tools already exist, the script skips toolchain validation, solution generation, and build work. Set `SPARKLE_AUTO_BUILD_COOK_TOOLS=1` when you explicitly want a cook command to rebuild stale cook tools before cooking.
+Cook scripts check only the executables required by the requested cook mode. Cook output can target either editor or game profiles, but the cook tools themselves are editor-only targets: `DebugGame` uses tools from `DebugEditor`, `DevelopmentGame` uses tools from `DevelopmentEditor`, and `ShippingGame` uses tools from `ShippingEditor`. If a required cook tool is missing, the script builds that editor-profile tool target and then continues cooking. If the required tools already exist, the script skips toolchain validation, solution generation, and build work. Set `SPARKLE_FORCE_COOK_TOOL_BUILD=1` when you explicitly want a cook command to rebuild the requested tools before cooking.
 
 Cook scripts default internal engine/tool logging to warnings with `SPARKLE_LOG_LEVEL=warn`, while keeping cook progress, asset names, summaries, and cooked outputs on the console. Set `SPARKLE_LOG_LEVEL=info` or `debug` when you intentionally need lower-level diagnostics.
 
@@ -90,6 +90,7 @@ Each prerequisite folder keeps a timestamped log plus `Latest.txt` for that spec
 ## Notes
 
 - The supported build profiles are defined in `CMake/SparkleBuildProfiles.cmake`: `DebugEditor`, `DebugGame`, `DevelopmentEditor`, `DevelopmentGame`, `ShippingEditor`, and `ShippingGame`.
+- Tool targets are intentionally editor-profile only. Build `AssetCooker`, `TextureCooker`, `ShaderCompiler`, `AssetConverter`, and supporting tool libraries with `DebugEditor`, `DevelopmentEditor`, or `ShippingEditor`; game profiles are runtime/cook-output profiles, not tool binary profiles.
 - `BuildProject.bat` derives the launch target from the profile suffix: `*Editor` builds `<Project>Editor`, and `*Game` builds `<Project>Runtime`.
 - `GenerateSolution.bat` is the single public owner of generator/toolset selection and incremental CMake configure behavior. Normal build/cook scripts call `Scripts\Internal\Build\EnsureBuildFiles.bat`, which skips `GenerateSolution.bat` when the generated build files are current.
 - The required local Windows toolchain is Visual Studio 2022 or newer with the C++ workload and a Windows SDK. Scripts resolve the newest installed Visual Studio generator that is also exposed by CMake.

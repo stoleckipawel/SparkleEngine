@@ -59,7 +59,7 @@ target_include_directories(SparkleRHI
 target_compile_features(SparkleRHI PUBLIC cxx_std_20)
 
 # Precompiled header (per-module PCH)
-target_precompile_headers(SparkleRHI PRIVATE
+sparkle_target_precompile_headers(SparkleRHI
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

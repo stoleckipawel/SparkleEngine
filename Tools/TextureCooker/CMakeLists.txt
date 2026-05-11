@@ -64,6 +64,7 @@ add_library(TextureCookShared STATIC
     ${TEXTURE_COOK_SHARED_PUBLIC_HEADERS}
     ${TEXTURE_COOK_SHARED_PRIVATE_SOURCES}
 )
+sparkle_configure_host_tool_target(TextureCookShared)
 
 target_include_directories(TextureCookShared
     PUBLIC
@@ -93,6 +94,7 @@ add_executable(TextureCooker
     ${TEXTURE_COOKER_PRIVATE_SOURCES}
     ${TEXTURE_COOKER_PRIVATE_HEADERS}
 )
+sparkle_configure_host_tool_target(TextureCooker)
 
 # TextureCooker owns source-texture loading plus cooked texture-asset emission.
 # Keep the source-decode and serialization implementation private to this
@@ -108,7 +110,7 @@ target_include_directories(TextureCooker
 
 target_compile_features(TextureCooker PRIVATE cxx_std_20)
 
-target_precompile_headers(TextureCooker PRIVATE
+sparkle_target_precompile_headers(TextureCooker
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
 )
 

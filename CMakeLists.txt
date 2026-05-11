@@ -47,6 +47,17 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+function(sparkle_target_precompile_headers target_name)
+    target_precompile_headers(${target_name} PRIVATE ${ARGN})
+
+    if(MSVC AND CMAKE_GENERATOR MATCHES "^Visual Studio ")
+        target_compile_options(${target_name}
+            PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:/Fp${CMAKE_CURRENT_BINARY_DIR}/${target_name}.dir/$<CONFIG>/cmake_pch.pch>
+        )
+    endif()
+endfunction()
+
 # ---------------------------
 # Optional: strict warnings
 # ---------------------------
