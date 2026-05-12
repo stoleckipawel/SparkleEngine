@@ -53,7 +53,6 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
-	void SetShaderRecookStatus(std::string status);
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
@@ -66,7 +65,6 @@ class SPARKLE_EDITOR_API UI final
 	void NewFrame();
 
 	void Build();
-	void BuildShaderRecookStatusWindow(bool disableInteraction) noexcept;
 	bool IsReady() const noexcept;
 
 	void InitializeImGuiContext();
@@ -97,10 +95,8 @@ class SPARKLE_EDITOR_API UI final
 	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
-	std::string m_shaderRecookStatus;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
-	bool m_showShaderRecookStatus = false;
 	bool m_isImGuiContextInitialized = false;
 	bool m_isWin32BackendInitialized = false;
 	bool m_isGraphicsBackendInitialized = false;

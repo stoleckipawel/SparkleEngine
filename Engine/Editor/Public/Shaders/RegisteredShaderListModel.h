@@ -19,7 +19,6 @@ struct RegisteredShaderRow final
 	std::uint64_t RuntimeGeneration = 0;
 	bool ArtifactAvailable = false;
 	std::filesystem::path ArtifactDirectory;
-	std::string LastStatus;
 };
 
 class RegisteredShaderListModel final
@@ -29,7 +28,6 @@ class RegisteredShaderListModel final
 
 	void SetGenerationProvider(GenerationProvider provider);
 	void Refresh();
-	void SetLastStatus(std::string status);
 
 	const std::vector<RegisteredShaderRow>& GetRows() const noexcept { return m_rows; }
 
@@ -38,5 +36,4 @@ class RegisteredShaderListModel final
 
 	GenerationProvider m_generationProvider;
 	std::vector<RegisteredShaderRow> m_rows;
-	std::string m_lastStatus;
 };

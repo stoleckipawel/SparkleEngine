@@ -100,9 +100,10 @@ void ShaderConsoleCommands::ConnectEditor(UI& ui, ShaderRecookCoordinator& coord
 	    {
 		    if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())
 		    {
-			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = ResolveRecookStatusSeverity(status), .Text = status});
+			    const ConsoleCommandSeverity severity = ResolveRecookStatusSeverity(status);
+			    consoleSystem->AppendOutput(ConsoleOutputRecord{.Severity = severity, .Text = std::move(status)});
+			    consoleSystem->OpenOutputLog();
 		    }
-		    ui.SetShaderRecookStatus(std::move(status));
 	    });
 
 	if (EditorConsoleSystem* consoleSystem = ui.GetEditorConsoleSystem())

@@ -19,7 +19,6 @@ class UsedShadersPanel final
 	void SetReloadHandler(CommandHandler handler);
 	void SetRecookAllHandler(CommandHandler handler);
 	void SetRecookHandler(RecookHandler handler);
-	void SetLastStatus(std::string status);
 	void BuildUI(bool disableInteraction);
 
   private:

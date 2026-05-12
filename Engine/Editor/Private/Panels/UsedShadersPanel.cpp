@@ -33,11 +33,6 @@ void UsedShadersPanel::SetRecookHandler(RecookHandler handler)
 	m_recookHandler = std::move(handler);
 }
 
-void UsedShadersPanel::SetLastStatus(std::string status)
-{
-	m_model.SetLastStatus(std::move(status));
-}
-
 void UsedShadersPanel::BuildUI(bool disableInteraction)
 {
 	if (!m_isOpen)
@@ -161,7 +156,7 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 {
 	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
 	                                   ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-	if (!ImGui::BeginTable("##UsedShadersTable", 11, tableFlags, ImVec2(0.0f, 0.0f)))
+	if (!ImGui::BeginTable("##UsedShadersTableV2", 10, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
 	}
@@ -177,7 +172,6 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 	ImGui::TableSetupColumn("Backend/Target");
 	ImGui::TableSetupColumn("Generation");
 	ImGui::TableSetupColumn("Artifacts");
-	ImGui::TableSetupColumn("Last Recook Status");
 	ImGui::TableHeadersRow();
 
 	ImGui::BeginDisabled(disableInteraction);
@@ -214,8 +208,6 @@ void UsedShadersPanel::DrawTable(bool disableInteraction)
 		ImGui::Text("%llu", static_cast<unsigned long long>(row.RuntimeGeneration));
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.ArtifactAvailable ? "available" : "missing");
-		ImGui::TableNextColumn();
-		ImGui::TextWrapped("%s", row.LastStatus.c_str());
 	}
 	ImGui::EndDisabled();
 	ImGui::EndTable();

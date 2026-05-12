@@ -105,16 +105,6 @@ bool UI::ConsumeShaderReloadRequest() noexcept
 	return requested;
 }
 
-void UI::SetShaderRecookStatus(std::string status)
-{
-	m_shaderRecookStatus = std::move(status);
-	m_showShaderRecookStatus = !m_shaderRecookStatus.empty();
-	if (m_usedShadersPanel)
-	{
-		m_usedShadersPanel->SetLastStatus(m_shaderRecookStatus);
-	}
-}
-
 bool UI::ConsumeShaderRecookRequest() noexcept
 {
 	const bool requested = m_shaderRecookRequested;
@@ -384,8 +374,6 @@ void UI::Build()
 		    disableInteraction);
 	}
 
-	BuildShaderRecookStatusWindow(disableInteraction);
-
 #if USE_IMGUI_DEMO_WINDOW
 	bool showDemoWindow = true;
 	ImGui::ShowDemoWindow(&showDemoWindow);
@@ -393,27 +381,6 @@ void UI::Build()
 
 	ImGui::Render();
 }
-
-void UI::BuildShaderRecookStatusWindow(bool disableInteraction) noexcept
-{
-	if (!m_showShaderRecookStatus)
-	{
-		return;
-	}
-
-	ImGui::SetNextWindowSize(ImVec2(640.0f, 240.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Shader Recook Status", &m_showShaderRecookStatus))
-	{
-		ImGui::End();
-		return;
-	}
-
-	ImGui::BeginDisabled(disableInteraction);
-	ImGui::TextWrapped("%s", m_shaderRecookStatus.c_str());
-	ImGui::EndDisabled();
-	ImGui::End();
-}
-
 void UI::Update()
 {
 	SPARKLE_CPU_SCOPE("Editor.UI.Update");

@@ -36,17 +36,7 @@ void RegisteredShaderListModel::Refresh()
 		row.RuntimeGeneration = generation;
 		row.ArtifactDirectory = FindDebugArtifactDirectoryFor(row.ShaderId, row.PackageId);
 		row.ArtifactAvailable = !row.ArtifactDirectory.empty();
-		row.LastStatus = m_lastStatus;
 		m_rows.push_back(std::move(row));
-	}
-}
-
-void RegisteredShaderListModel::SetLastStatus(std::string status)
-{
-	m_lastStatus = std::move(status);
-	for (RegisteredShaderRow& row : m_rows)
-	{
-		row.LastStatus = m_lastStatus;
 	}
 }
 
