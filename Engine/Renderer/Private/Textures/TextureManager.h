@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/Textures/DefaultTextures.h"
+#include "Renderer/Public/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "Scene/Textures/TextureSnapshot.h"
 
@@ -55,12 +56,14 @@ class SPARKLE_RENDERER_API TextureManager final
 	bool IsLoaded(TextureId id) const noexcept;
 
 	std::size_t GetLoadedCount() const noexcept;
+	TextureDiagnosticsSnapshot CaptureDiagnosticsSnapshot() const;
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 
 	static constexpr std::size_t kTextureCount = static_cast<std::size_t>(TextureId::Count);
 	using TextureCacheKey = std::wstring;
+
 	std::array<std::unique_ptr<Texture>, kTextureCount> m_textures{};
 	std::unordered_map<TextureCacheKey, std::unique_ptr<Texture>> m_pathTextures;
 	std::unordered_set<TextureCacheKey> m_defaultPathTextureKeys;
@@ -70,4 +73,8 @@ class SPARKLE_RENDERER_API TextureManager final
 	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const;
 	const Texture* FindPathTexture(const std::filesystem::path& texturePath) const noexcept;
 	void RegisterDefaultPathTexture(const std::filesystem::path& texturePath);
+	static TextureDiagnosticsRow BuildDiagnosticsRow(
+	    const Texture& texture,
+	    TextureDiagnosticsKind kind,
+	    const std::string& key);
 };

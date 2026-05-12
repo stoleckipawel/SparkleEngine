@@ -6,6 +6,7 @@
 #include "../../RHI/Public/Interop/RenderHardwareInterface.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
+#include "Textures/TextureDiagnostics.h"
 
 #include <cstdint>
 #include <memory>
@@ -50,6 +51,7 @@ class SPARKLE_RENDERER_API Renderer final
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
+	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;

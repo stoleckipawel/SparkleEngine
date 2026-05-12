@@ -90,6 +90,11 @@ void MainMenuBarPanel::SetShaderToolsOpenHandler(std::function<void()> handler)
 	m_shaderToolsOpenHandler = std::move(handler);
 }
 
+void MainMenuBarPanel::SetTextureToolsOpenHandler(std::function<void()> handler)
+{
+	m_textureToolsOpenHandler = std::move(handler);
+}
+
 void MainMenuBarPanel::SetProfilerOpenHandler(std::function<void()> handler)
 {
 	m_profilerOpenHandler = std::move(handler);
@@ -156,6 +161,12 @@ void MainMenuBarPanel::BuildWindowsMenu() noexcept
 	if (ImGui::MenuItem(shadersLabel.c_str(), nullptr, false, static_cast<bool>(m_shaderToolsOpenHandler)))
 	{
 		m_shaderToolsOpenHandler();
+	}
+
+	const std::string texturesLabel = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Material, "Textures");
+	if (ImGui::MenuItem(texturesLabel.c_str(), nullptr, false, static_cast<bool>(m_textureToolsOpenHandler)))
+	{
+		m_textureToolsOpenHandler();
 	}
 }
 

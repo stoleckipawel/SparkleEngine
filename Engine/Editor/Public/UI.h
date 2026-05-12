@@ -3,6 +3,7 @@
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../RHI/Public/Interop/RenderHardwareInterface.h"
+#include "../../Renderer/Public/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 
@@ -22,6 +23,7 @@ class ViewportPanel;
 class ViewportTopPanel;
 class ProfilerPanel;
 class UsedShadersPanel;
+class UsedTexturesPanel;
 class InputSystem;
 class LevelManager;
 class GameScene;
@@ -53,6 +55,7 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
+	void SetTextureDiagnosticsProvider(std::function<TextureDiagnosticsSnapshot()> provider);
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
@@ -73,7 +76,7 @@ class SPARKLE_EDITOR_API UI final
 	bool InitializeGraphicsBackend();
 
 	void InitializeDefaultPanels();
-	void ConfigureMainMenuBarShaderActions();
+	void ConfigureMainMenuBarWindowActions();
 
 	void SubscribeToWindowEvents(Window& window);
 
@@ -87,6 +90,7 @@ class SPARKLE_EDITOR_API UI final
 	std::unique_ptr<ViewportPanel> m_viewportPanel;
 	std::unique_ptr<ProfilerPanel> m_profilerPanel;
 	std::unique_ptr<UsedShadersPanel> m_usedShadersPanel;
+	std::unique_ptr<UsedTexturesPanel> m_usedTexturesPanel;
 	Timer* m_timer = nullptr;
 	LevelManager* m_levelManager = nullptr;
 	GameScene* m_gameScene = nullptr;
@@ -95,6 +99,7 @@ class SPARKLE_EDITOR_API UI final
 	InputSystem* m_inputSystem = nullptr;
 	SceneObjectSelection m_sceneSelection = SceneObjectSelection::None();
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
+	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

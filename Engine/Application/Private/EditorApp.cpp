@@ -53,6 +53,11 @@ void EditorApp::Initialize()
 		    {
 			    return renderer.GetShaderPackageGeneration();
 		    });
+		m_ui->SetTextureDiagnosticsProvider(
+		    [&renderer]()
+		    {
+			    return renderer.CaptureTextureDiagnostics();
+		    });
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
 

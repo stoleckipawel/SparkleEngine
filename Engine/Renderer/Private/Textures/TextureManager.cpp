@@ -7,6 +7,7 @@
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Resources/Texture.h"
 
+#include <algorithm>
 #include <format>
 
 static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
@@ -229,6 +230,55 @@ std::size_t TextureManager::GetLoadedCount() const noexcept
 	return count + m_pathTextures.size();
 }
 
+TextureDiagnosticsSnapshot TextureManager::CaptureDiagnosticsSnapshot() const
+{
+	TextureDiagnosticsSnapshot snapshot;
+	snapshot.Rows.reserve(kTextureCount + m_pathTextures.size());
+
+	for (std::size_t index = 0; index < kTextureCount; ++index)
+	{
+		const std::unique_ptr<Texture>& texture = m_textures[index];
+		if (!texture)
+		{
+			continue;
+		}
+
+		snapshot.Rows.push_back(BuildDiagnosticsRow(
+		    *texture,
+		    TextureDiagnosticsKind::DefaultSlot,
+		    std::format("slot:{}", index)));
+	}
+
+	for (const auto& [cacheKey, texture] : m_pathTextures)
+	{
+		if (!texture)
+		{
+			continue;
+		}
+
+		const bool defaultOrFallback = m_defaultPathTextureKeys.contains(cacheKey);
+		const TextureDiagnosticsKind kind = defaultOrFallback ? TextureDiagnosticsKind::DefaultPath : TextureDiagnosticsKind::Scene;
+		snapshot.Rows.push_back(BuildDiagnosticsRow(
+		    *texture,
+		    kind,
+		    std::filesystem::path(cacheKey).generic_string()));
+	}
+
+	std::sort(
+	    snapshot.Rows.begin(),
+	    snapshot.Rows.end(),
+	    [](const TextureDiagnosticsRow& lhs, const TextureDiagnosticsRow& rhs) noexcept
+	    {
+		    if (lhs.Kind != rhs.Kind)
+		    {
+			    return static_cast<std::uint8_t>(lhs.Kind) < static_cast<std::uint8_t>(rhs.Kind);
+		    }
+		    return lhs.Key < rhs.Key;
+	    });
+
+	return snapshot;
+}
+
 void TextureManager::LoadDefaultTextures()
 {
 	for (std::uint8_t index = 0; index < static_cast<std::uint8_t>(DefaultTexture::Count); ++index)
@@ -284,4 +334,28 @@ const Texture* TextureManager::FindPathTexture(const std::filesystem::path& text
 	}
 
 	return nullptr;
+}
+
+TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
+    const Texture& texture,
+    TextureDiagnosticsKind kind,
+	const std::string& key)
+{
+	const TextureRuntimeInfo textureInfo = texture.GetRuntimeInfo();
+	TextureDiagnosticsRow row;
+	row.Key = key;
+	row.Kind = kind;
+	row.Dimension = textureInfo.Dimension;
+	row.FormatIntent = textureInfo.FormatIntent;
+	row.ResidencyState = textureInfo.IsValid ? TextureDiagnosticsResidencyState::Resident : TextureDiagnosticsResidencyState::Unloaded;
+	row.Width = textureInfo.Width;
+	row.Height = textureInfo.Height;
+	row.ArraySize = textureInfo.ArraySize;
+	row.DxgiFormat = textureInfo.DxgiFormat;
+	row.MipCount = textureInfo.MipCount;
+	row.EstimatedByteSize = textureInfo.EstimatedByteSize;
+	row.GpuShaderResourceViewId = textureInfo.GpuShaderResourceViewId;
+	row.Loaded = textureInfo.IsValid;
+	row.StreamManaged = false;
+	return row;
 }

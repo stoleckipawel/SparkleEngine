@@ -12,6 +12,7 @@
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
 #include "Panels/UsedShadersPanel.h"
+#include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/ViewportTopPanel.h"
 #include "Style/SparkleUiTheme.h"
@@ -95,7 +96,17 @@ void UI::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provi
 	{
 		m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
 	}
-	ConfigureMainMenuBarShaderActions();
+	ConfigureMainMenuBarWindowActions();
+}
+
+void UI::SetTextureDiagnosticsProvider(std::function<TextureDiagnosticsSnapshot()> provider)
+{
+	m_textureDiagnosticsProvider = std::move(provider);
+	if (m_usedTexturesPanel)
+	{
+		m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
+	}
+	ConfigureMainMenuBarWindowActions();
 }
 
 bool UI::ConsumeShaderReloadRequest() noexcept
@@ -193,13 +204,15 @@ bool UI::InitializeGraphicsBackend()
 void UI::InitializeDefaultPanels()
 {
 	m_mainMenuBar = std::make_unique<MainMenuBarPanel>(m_levelManager, m_window);
-	ConfigureMainMenuBarShaderActions();
+	ConfigureMainMenuBarWindowActions();
 	m_editorConsoleSystem = std::make_unique<EditorConsoleSystem>();
 	m_viewportTopPanel = std::make_unique<ViewportTopPanel>(m_levelManager);
 	m_viewportPanel = std::make_unique<ViewportPanel>(SceneOutlinerWidth, SceneInspectorWidth);
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	m_usedTexturesPanel = std::make_unique<UsedTexturesPanel>();
+	m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
 	m_usedShadersPanel->SetReloadHandler(
 	    [this]()
 	    {
@@ -235,7 +248,7 @@ void UI::InitializeDefaultPanels()
 	}
 }
 
-void UI::ConfigureMainMenuBarShaderActions()
+void UI::ConfigureMainMenuBarWindowActions()
 {
 	if (!m_mainMenuBar)
 	{
@@ -248,6 +261,14 @@ void UI::ConfigureMainMenuBarShaderActions()
 		    if (m_usedShadersPanel)
 		    {
 			    m_usedShadersPanel->SetOpen(true);
+		    }
+	    });
+	m_mainMenuBar->SetTextureToolsOpenHandler(
+	    [this]()
+	    {
+		    if (m_usedTexturesPanel)
+		    {
+			    m_usedTexturesPanel->SetOpen(true);
 		    }
 	    });
 	m_mainMenuBar->SetProfilerOpenHandler(
@@ -357,6 +378,11 @@ void UI::Build()
 	if (m_usedShadersPanel)
 	{
 		m_usedShadersPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_usedTexturesPanel)
+	{
+		m_usedTexturesPanel->BuildUI(disableInteraction);
 	}
 
 	if (m_profilerPanel)

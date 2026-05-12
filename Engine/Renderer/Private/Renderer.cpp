@@ -68,6 +68,11 @@ std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept
 	return m_pipelineStateManager != nullptr ? m_pipelineStateManager->GetShaderPackageGeneration() : 0;
 }
 
+TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const
+{
+	return m_textureManager != nullptr ? m_textureManager->CaptureDiagnosticsSnapshot() : TextureDiagnosticsSnapshot{};
+}
+
 void Renderer::PrepareHostFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.PrepareHostFrame");

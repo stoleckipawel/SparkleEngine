@@ -7,6 +7,19 @@
 
 static const auto g_d3d12TextureLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
+static std::uint64_t D3D12TextureCalculatePayloadBytes(const TextureLoadResult& textureLoadResult) noexcept
+{
+	std::uint64_t byteCount = 0;
+	for (const TextureArraySliceData& arraySlice : textureLoadResult.arraySlices)
+	{
+		for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+		{
+			byteCount += static_cast<std::uint64_t>(mipLevel.data.size());
+		}
+	}
+	return byteCount;
+}
+
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
     m_textureLoadResult(std::move(textureLoadResult)),
@@ -132,6 +145,22 @@ void D3D12Texture::WriteShaderResourceView(RhiCpuDescriptorHandle destination) c
 	nativeDestination.ptr = destination.Value;
 	const D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = BuildShaderResourceViewDesc();
 	m_rhi.GetDevice()->CreateShaderResourceView(m_textureResource.Get(), &srvDesc, nativeDestination);
+}
+
+TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
+{
+	TextureRuntimeInfo info;
+	info.Width = m_textureLoadResult.width;
+	info.Height = m_textureLoadResult.height;
+	info.ArraySize = m_textureLoadResult.GetArraySize();
+	info.Dimension = m_textureLoadResult.dimension;
+	info.DxgiFormat = static_cast<std::uint32_t>(m_textureLoadResult.dxgiFormat);
+	info.FormatIntent = m_textureLoadResult.formatIntent;
+	info.MipCount = m_textureLoadResult.GetMipCount();
+	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureLoadResult);
+	info.GpuShaderResourceViewId = m_srvHandle.IsValid() ? m_srvHandle.GetGPU().ptr : 0;
+	info.IsValid = m_textureLoadResult.IsValid() && m_textureResource != nullptr;
+	return info;
 }
 
 D3D12Texture::~D3D12Texture() noexcept
