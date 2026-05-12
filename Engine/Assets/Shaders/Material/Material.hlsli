@@ -50,9 +50,11 @@ namespace Material
 		return TextureBaseColor.Sample(SamplerAniso16xWrap, uv);
 	}
 
-	float3 UnpackNormal(float3 encodedNormal)
+	float3 UnpackNormal(float2 encodedNormal)
 	{
-		return normalize(encodedNormal * 2.0f - 1.0f);
+		const float2 normalXY = encodedNormal * 2.0f - 1.0f;
+		const float normalZ = sqrt(saturate(1.0f - dot(normalXY, normalXY)));
+		return normalize(float3(normalXY, normalZ));
 	}
 
 	void ApplyAlphaMode(float alpha)
@@ -113,7 +115,7 @@ namespace Material
 			return float3(0.0f, 0.0f, 1.0f);
 		}
 
-		return UnpackNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).xyz);
+		return UnpackNormal(TextureNormal.Sample(SamplerAniso16xWrap, UV).xy);
 	}
 
 	float SampleRoughness(float2 UV)
