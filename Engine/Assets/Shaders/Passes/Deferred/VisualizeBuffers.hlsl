@@ -1,4 +1,5 @@
 #include "Resources/ConstantBuffers.hlsli"
+#include "Debug/RenderViewModeConstants.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
 
 RWTexture2D<float4> SceneColorTexture;
@@ -8,22 +9,6 @@ Texture2D DirectSubsurface;
 Texture2D IndirectDiffuse;
 Texture2D IndirectSpecular;
 Texture2D IndirectSubsurface;
-
-static const uint ViewModeLit = 0u;
-static const uint ViewModeGBufferDiffuse = 1u;
-static const uint ViewModeGBufferNormal = 2u;
-static const uint ViewModeGBufferRoughness = 3u;
-static const uint ViewModeGBufferMetallic = 4u;
-static const uint ViewModeGBufferEmissive = 5u;
-static const uint ViewModeGBufferAmbientOcclusion = 6u;
-static const uint ViewModeGBufferSubsurfaceColor = 7u;
-static const uint ViewModeGBufferSubsurfaceStrength = 8u;
-static const uint ViewModeDirectDiffuse = 9u;
-static const uint ViewModeDirectSpecular = 10u;
-static const uint ViewModeDirectSubsurface = 11u;
-static const uint ViewModeIndirectDiffuse = 12u;
-static const uint ViewModeIndirectSpecular = 13u;
-static const uint ViewModeIndirectSubsurface = 14u;
 
 float3 PreviewScalar(float value)
 {
@@ -43,7 +28,7 @@ float3 PreviewHdr(float3 color)
 
 [numthreads(8, 8, 1)] void main(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
-	if (ViewModeIndex == ViewModeLit)
+	if (ViewModeIndex == ViewMode::Lit)
 	{
 		return;
 	}
@@ -69,46 +54,46 @@ float3 PreviewHdr(float3 color)
 	float3 outputColor = 0.0f;
 	switch (ViewModeIndex)
 	{
-		case ViewModeGBufferDiffuse:
+		case ViewMode::GBufferDiffuse:
 			outputColor = saturate(gBuffer.BaseColor);
 			break;
-		case ViewModeGBufferNormal:
+		case ViewMode::GBufferNormal:
 			outputColor = PreviewNormal(gBuffer.NormalWorld);
 			break;
-		case ViewModeGBufferRoughness:
+		case ViewMode::GBufferRoughness:
 			outputColor = PreviewScalar(gBuffer.Roughness);
 			break;
-		case ViewModeGBufferMetallic:
+		case ViewMode::GBufferMetallic:
 			outputColor = PreviewScalar(gBuffer.Metallic);
 			break;
-		case ViewModeGBufferEmissive:
+		case ViewMode::GBufferEmissive:
 			outputColor = PreviewHdr(gBuffer.Emissive);
 			break;
-		case ViewModeGBufferAmbientOcclusion:
+		case ViewMode::GBufferAmbientOcclusion:
 			outputColor = PreviewScalar(gBuffer.AmbientOcclusion);
 			break;
-		case ViewModeGBufferSubsurfaceColor:
+		case ViewMode::GBufferSubsurfaceColor:
 			outputColor = saturate(gBuffer.SubsurfaceColor);
 			break;
-		case ViewModeGBufferSubsurfaceStrength:
+		case ViewMode::GBufferSubsurfaceStrength:
 			outputColor = PreviewScalar(gBuffer.SubsurfaceStrength);
 			break;
-		case ViewModeDirectDiffuse:
+		case ViewMode::DirectDiffuse:
 			outputColor = PreviewHdr(directDiffuse);
 			break;
-		case ViewModeDirectSpecular:
+		case ViewMode::DirectSpecular:
 			outputColor = PreviewHdr(directSpecular);
 			break;
-		case ViewModeDirectSubsurface:
+		case ViewMode::DirectSubsurface:
 			outputColor = PreviewHdr(directSubsurface);
 			break;
-		case ViewModeIndirectDiffuse:
+		case ViewMode::IndirectDiffuse:
 			outputColor = PreviewHdr(indirectDiffuse);
 			break;
-		case ViewModeIndirectSpecular:
+		case ViewMode::IndirectSpecular:
 			outputColor = PreviewHdr(indirectSpecular);
 			break;
-		case ViewModeIndirectSubsurface:
+		case ViewMode::IndirectSubsurface:
 			outputColor = PreviewHdr(indirectSubsurface);
 			break;
 		default:
