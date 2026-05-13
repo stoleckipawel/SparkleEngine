@@ -11,6 +11,7 @@
 #include "Panels/ProfilerPanel.h"
 #include "Panels/SceneInspectorPanel.h"
 #include "Panels/SceneOutlinerPanel.h"
+#include "Panels/UsedMeshesPanel.h"
 #include "Panels/UsedShadersPanel.h"
 #include "Panels/UsedTexturesPanel.h"
 #include "Panels/ViewportPanel.h"
@@ -18,6 +19,10 @@
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Scene/Meshes/Mesh.h"
+#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/MeshData.h"
+#include "Scene/Meshes/SceneMeshes.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_win32.h>
@@ -95,6 +100,16 @@ void UI::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provi
 	if (m_usedShadersPanel)
 	{
 		m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	}
+	ConfigureMainMenuBarWindowActions();
+}
+
+void UI::SetMeshDiagnosticsProvider(std::function<MeshDiagnosticsSnapshot()> provider)
+{
+	m_meshDiagnosticsProvider = std::move(provider);
+	if (m_usedMeshesPanel)
+	{
+		m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
 	}
 	ConfigureMainMenuBarWindowActions();
 }
@@ -211,6 +226,13 @@ void UI::InitializeDefaultPanels()
 	m_profilerPanel = std::make_unique<ProfilerPanel>();
 	m_usedShadersPanel = std::make_unique<UsedShadersPanel>();
 	m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
+	m_usedMeshesPanel = std::make_unique<UsedMeshesPanel>();
+	m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
+	m_usedMeshesPanel->SetPreviewGeometryProvider(
+	    [this](std::uintptr_t meshRuntimeId)
+	    {
+		    return BuildMeshPreviewGeometry(meshRuntimeId);
+	    });
 	m_usedTexturesPanel = std::make_unique<UsedTexturesPanel>();
 	m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
 	m_usedShadersPanel->SetReloadHandler(
@@ -271,6 +293,14 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_usedTexturesPanel->SetOpen(true);
 		    }
 	    });
+	m_mainMenuBar->SetMeshToolsOpenHandler(
+	    [this]()
+	    {
+		    if (m_usedMeshesPanel)
+		    {
+			    m_usedMeshesPanel->SetOpen(true);
+		    }
+	    });
 	m_mainMenuBar->SetProfilerOpenHandler(
 	    [this]()
 	    {
@@ -279,6 +309,42 @@ void UI::ConfigureMainMenuBarWindowActions()
 			    m_profilerPanel->SetOpen(true);
 		    }
 	    });
+}
+
+MeshPreviewGeometry UI::BuildMeshPreviewGeometry(std::uintptr_t meshRuntimeId) const
+{
+	MeshPreviewGeometry geometry;
+	if (m_gameScene == nullptr || meshRuntimeId == 0)
+	{
+		return geometry;
+	}
+
+	const SceneMeshes& sceneMeshes = m_gameScene->GetMeshes();
+	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
+	{
+		const MeshComponent* meshComponent = sceneMeshes.GetMeshComponent(meshIndex);
+		if (meshComponent == nullptr)
+		{
+			continue;
+		}
+
+		const Mesh* mesh = meshComponent->GetMesh();
+		if (mesh == nullptr || reinterpret_cast<std::uintptr_t>(mesh) != meshRuntimeId)
+		{
+			continue;
+		}
+
+		const MeshData& meshData = mesh->GetMeshData();
+		geometry.Vertices.reserve(meshData.vertices.size());
+		for (const VertexData& vertex : meshData.vertices)
+		{
+			geometry.Vertices.push_back(MeshPreviewVertex{vertex.position.x, vertex.position.y, vertex.position.z});
+		}
+		geometry.Indices.assign(meshData.indices.begin(), meshData.indices.end());
+		return geometry;
+	}
+
+	return geometry;
 }
 
 void UI::SubscribeToWindowEvents(Window& window)
@@ -378,6 +444,11 @@ void UI::Build()
 	if (m_usedShadersPanel)
 	{
 		m_usedShadersPanel->BuildUI(disableInteraction);
+	}
+
+	if (m_usedMeshesPanel)
+	{
+		m_usedMeshesPanel->BuildUI(disableInteraction);
 	}
 
 	if (m_usedTexturesPanel)

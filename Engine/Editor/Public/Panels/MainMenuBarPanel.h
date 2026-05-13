@@ -22,6 +22,7 @@ class MainMenuBarPanel final
 	void SetLevelManager(LevelManager* levelManager) noexcept;
 	void SetWindow(Window* window) noexcept;
 	void SetShaderToolsOpenHandler(std::function<void()> handler);
+	void SetMeshToolsOpenHandler(std::function<void()> handler);
 	void SetTextureToolsOpenHandler(std::function<void()> handler);
 	void SetProfilerOpenHandler(std::function<void()> handler);
 	void BuildUI() noexcept;
@@ -45,6 +46,7 @@ class MainMenuBarPanel final
 	LevelManager* m_levelManager = nullptr;
 	Window* m_window = nullptr;
 	std::function<void()> m_shaderToolsOpenHandler;
+	std::function<void()> m_meshToolsOpenHandler;
 	std::function<void()> m_textureToolsOpenHandler;
 	std::function<void()> m_profilerOpenHandler;
 	float m_heightPixels = 0.0f;

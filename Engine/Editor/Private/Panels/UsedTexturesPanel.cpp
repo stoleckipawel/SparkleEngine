@@ -6,7 +6,6 @@
 #include "Util/UiUtil.h"
 
 #include <algorithm>
-#include <array>
 #include <filesystem>
 #include <format>
 
@@ -15,8 +14,6 @@
 
 namespace
 {
-	constexpr std::array<const char*, 4> kPreviewModes = {"Color", "Alpha", "Normal", "Single Channel"};
-
 	std::string FormatTextureDisplayName(const TextureDiagnosticsRow& row)
 	{
 		const std::string filename = std::filesystem::path(row.Key).filename().generic_string();
@@ -221,7 +218,11 @@ void UsedTexturesPanel::BuildUI(bool disableInteraction)
 		DrawTextureTable(disableInteraction);
 		ImGui::EndChild();
 		ImGui::TableSetColumnIndex(1);
-		ImGui::BeginChild("##TexturePreviewPane", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
+		ImGui::BeginChild(
+		    "##TexturePreviewPane",
+		    ImVec2(0.0f, 0.0f),
+		    ImGuiChildFlags_None,
+		    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		DrawSelectedTextureInspector(disableInteraction);
 		ImGui::EndChild();
 		ImGui::EndTable();
@@ -286,7 +287,6 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 		if (ImGui::Selectable(displayName.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 		{
 			m_selectedKey = row.Key;
-			m_selectedMip = 0;
 		}
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(FormatTextureKind(row.Kind));
@@ -321,35 +321,11 @@ void UsedTexturesPanel::DrawSelectedTextureInspector(bool disableInteraction)
 	ImGui::TextUnformatted(FormatTextureDisplayName(*selectedRow).c_str());
 	ImGui::TextDisabled("%s", FormatTexturePath(*selectedRow).c_str());
 	ImGui::Separator();
-	DrawPreviewControls(disableInteraction, *selectedRow);
 	DrawPreview(*selectedRow);
 	ImGui::SeparatorText("Runtime Properties");
+	ImGui::BeginChild("##TextureDetailsPane", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
 	DrawSelectedTextureDetails(*selectedRow);
-}
-
-void UsedTexturesPanel::DrawPreviewControls(bool disableInteraction, const TextureDiagnosticsRow& row)
-{
-	ImGui::BeginDisabled(disableInteraction || row.GpuShaderResourceViewId == 0 || row.Dimension != TextureResourceDimension::Texture2D);
-	ImGui::SetNextItemWidth(150.0f);
-	ImGui::Combo("Mode", &m_previewModeIndex, kPreviewModes.data(), static_cast<int>(kPreviewModes.size()));
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(120.0f);
-	const int maxMip = row.MipCount > 0 ? static_cast<int>(row.MipCount) - 1 : 0;
-	m_selectedMip = std::clamp(m_selectedMip, 0, maxMip);
-	ImGui::SliderInt("Mip", &m_selectedMip, 0, maxMip);
-	ImGui::Checkbox("R", &m_channelR);
-	ImGui::SameLine();
-	ImGui::Checkbox("G", &m_channelG);
-	ImGui::SameLine();
-	ImGui::Checkbox("B", &m_channelB);
-	ImGui::SameLine();
-	ImGui::Checkbox("A", &m_channelA);
-	ImGui::EndDisabled();
-
-	if (m_previewModeIndex != 0 || m_selectedMip != 0 || !m_channelR || !m_channelG || !m_channelB || !m_channelA)
-	{
-		ImGui::TextDisabled("Preview controls are staged for the texture preview shader; raw selected texture preview is active.");
-	}
+	ImGui::EndChild();
 }
 
 void UsedTexturesPanel::DrawPreview(const TextureDiagnosticsRow& row) const

@@ -53,6 +53,11 @@ void EditorApp::Initialize()
 		    {
 			    return renderer.GetShaderPackageGeneration();
 		    });
+		m_ui->SetMeshDiagnosticsProvider(
+		    [&renderer]()
+		    {
+			    return renderer.CaptureMeshDiagnostics();
+		    });
 		m_ui->SetTextureDiagnosticsProvider(
 		    [&renderer]()
 		    {

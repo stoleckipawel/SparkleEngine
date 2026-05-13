@@ -26,6 +26,7 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 
 	std::size_t GetCachedCount() const noexcept { return m_cache.size(); }
 	bool Contains(const Mesh& cpuMesh) const noexcept;
+	const GPUMesh* Find(const Mesh& cpuMesh) const noexcept;
 
   private:
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

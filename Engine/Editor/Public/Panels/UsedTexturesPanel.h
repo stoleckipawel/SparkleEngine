@@ -21,7 +21,6 @@ class UsedTexturesPanel final
 	void DrawToolbar();
 	void DrawTextureTable(bool disableInteraction);
 	void DrawSelectedTextureInspector(bool disableInteraction);
-	void DrawPreviewControls(bool disableInteraction, const TextureDiagnosticsRow& row);
 	void DrawPreview(const TextureDiagnosticsRow& row) const;
 	void DrawSelectedTextureDetails(const TextureDiagnosticsRow& row) const;
 	const TextureDiagnosticsRow* GetSelectedRow() const noexcept;
@@ -31,11 +30,5 @@ class UsedTexturesPanel final
 	TextureDiagnosticsSnapshot m_snapshot;
 	std::array<char, 160> m_filterBuffer{};
 	std::string m_selectedKey;
-	int m_previewModeIndex = 0;
-	int m_selectedMip = 0;
-	bool m_channelR = true;
-	bool m_channelG = true;
-	bool m_channelB = true;
-	bool m_channelA = true;
 	bool m_isOpen = false;
 };

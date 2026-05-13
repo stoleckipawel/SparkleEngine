@@ -42,3 +42,13 @@ bool GPUMeshCache::Contains(const Mesh& cpuMesh) const noexcept
 {
 	return m_cache.contains(&cpuMesh);
 }
+
+const GPUMesh* GPUMeshCache::Find(const Mesh& cpuMesh) const noexcept
+{
+	if (auto it = m_cache.find(&cpuMesh); it != m_cache.end())
+	{
+		return it->second.get();
+	}
+
+	return nullptr;
+}
