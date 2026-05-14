@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../RHIAPI.h"
-#include "TextureLoadResult.h"
+#include "Resources/TextureTypes.h"
 
 #include <cstdint>
 #include <string_view>
