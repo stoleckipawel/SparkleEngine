@@ -9,13 +9,17 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
-#include <optional>
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
 
 class RenderHardwareInterface;
 class Texture;
+
+namespace Assets
+{
+	struct CookedTextureReference;
+}
 
 enum class TextureId : uint8_t
 {
@@ -51,7 +55,9 @@ class SPARKLE_RENDERER_API TextureManager final
 	const Texture* GetTexture(TextureId id) const noexcept;
 	Texture* GetSceneTexture(const std::filesystem::path& texturePath) noexcept;
 	const Texture* GetSceneTexture(const std::filesystem::path& texturePath) const noexcept;
-	const Texture* ResolveTextureOrDefault(const std::optional<std::filesystem::path>& texturePath, DefaultTexture fallbackType) const;
+	const Texture* ResolveTextureReferenceOrDefault(
+	    const Assets::CookedTextureReference* textureReference,
+	    DefaultTexture fallbackType) const;
 
 	bool IsLoaded(TextureId id) const noexcept;
 

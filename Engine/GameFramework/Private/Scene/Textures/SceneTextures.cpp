@@ -8,28 +8,22 @@
 void SceneTextures::AppendMaterialTextureReferences(const std::vector<MaterialDesc>& materialDescs)
 {
 	std::vector<std::filesystem::path> referencedTexturePaths;
-	referencedTexturePaths.reserve(materialDescs.size() * 8);
-
-	auto appendOptionalTexturePath = [&referencedTexturePaths](const std::optional<std::filesystem::path>& texturePath)
+	std::size_t textureReferenceCount = 0;
+	for (const MaterialDesc& materialDesc : materialDescs)
 	{
-		if (!texturePath)
-		{
-			return;
-		}
-
-		referencedTexturePaths.push_back(*texturePath);
-	};
+		textureReferenceCount += materialDesc.textureReferences.size();
+	}
+	referencedTexturePaths.reserve(textureReferenceCount);
 
 	for (const MaterialDesc& materialDesc : materialDescs)
 	{
-		appendOptionalTexturePath(materialDesc.albedoTexture);
-		appendOptionalTexturePath(materialDesc.normalTexture);
-		appendOptionalTexturePath(materialDesc.roughnessTexture);
-		appendOptionalTexturePath(materialDesc.metallicTexture);
-		appendOptionalTexturePath(materialDesc.occlusionTexture);
-		appendOptionalTexturePath(materialDesc.emissiveTexture);
-		appendOptionalTexturePath(materialDesc.subsurfaceColorTexture);
-		appendOptionalTexturePath(materialDesc.subsurfaceStrengthTexture);
+		for (const Assets::CookedTextureReference& textureReference : materialDesc.textureReferences)
+		{
+			if (textureReference.IsValid())
+			{
+				referencedTexturePaths.emplace_back(textureReference.texturePath);
+			}
+		}
 	}
 
 	AppendTexturePaths(referencedTexturePaths);

@@ -22,6 +22,8 @@ namespace Assets
 		outMaterialDesc.emissiveColor = materialAsset.header.emissiveColor;
 		outMaterialDesc.alphaMode = TranslateAlphaMode(materialAsset.header.alphaMode);
 		outMaterialDesc.alphaCutoff = materialAsset.header.alphaCutoff;
+		outMaterialDesc.textureReferences.clear();
+		outMaterialDesc.textureReferences.reserve(materialAsset.textureReferences.size());
 
 		for (const CookedTextureReference& textureReference : materialAsset.textureReferences)
 		{
@@ -34,7 +36,7 @@ namespace Assets
 				return false;
 			}
 
-			outMaterialDesc.SetTexturePath(textureReference.textureGroup, textureReference.texturePath);
+			outMaterialDesc.AddTextureReference(textureReference);
 		}
 
 		outErrorMessage.clear();

@@ -2,41 +2,62 @@
 
 #include "Scene/Materials/MaterialDesc.h"
 
-void MaterialDesc::SetTexturePath(TextureGroup textureGroup, const std::optional<std::filesystem::path>& texturePath)
+#include <utility>
+
+static bool IsMaterialTextureGroup(TextureGroup textureGroup) noexcept
 {
-	if (!texturePath)
+	switch (textureGroup)
+	{
+		case TextureGroup::Diffuse:
+		case TextureGroup::NormalMap:
+		case TextureGroup::Roughness:
+		case TextureGroup::Metallic:
+		case TextureGroup::AmbientOcclusion:
+		case TextureGroup::Emissive:
+		case TextureGroup::SubsurfaceColor:
+		case TextureGroup::SubsurfaceStrength:
+			return true;
+		case TextureGroup::Default:
+		case TextureGroup::HdrColor:
+			return false;
+	}
+
+	return false;
+}
+
+void MaterialDesc::AddTextureReference(Assets::CookedTextureReference textureReference)
+{
+	if (!textureReference.IsValid() || !IsMaterialTextureGroup(textureReference.textureGroup))
 	{
 		return;
 	}
 
-	switch (textureGroup)
+	for (Assets::CookedTextureReference& existingTextureReference : textureReferences)
 	{
-		case TextureGroup::Diffuse:
-			albedoTexture = *texturePath;
-			break;
-		case TextureGroup::NormalMap:
-			normalTexture = *texturePath;
-			break;
-		case TextureGroup::Roughness:
-			roughnessTexture = *texturePath;
-			break;
-		case TextureGroup::Metallic:
-			metallicTexture = *texturePath;
-			break;
-		case TextureGroup::AmbientOcclusion:
-			occlusionTexture = *texturePath;
-			break;
-		case TextureGroup::Emissive:
-			emissiveTexture = *texturePath;
-			break;
-		case TextureGroup::SubsurfaceColor:
-			subsurfaceColorTexture = *texturePath;
-			break;
-		case TextureGroup::SubsurfaceStrength:
-			subsurfaceStrengthTexture = *texturePath;
-			break;
-		case TextureGroup::Default:
-		case TextureGroup::HdrColor:
-			break;
+		if (existingTextureReference.textureGroup == textureReference.textureGroup)
+		{
+			existingTextureReference = std::move(textureReference);
+			return;
+		}
 	}
+
+	textureReferences.push_back(std::move(textureReference));
+}
+
+const Assets::CookedTextureReference* MaterialDesc::FindTextureReference(TextureGroup textureGroup) const noexcept
+{
+	for (const Assets::CookedTextureReference& textureReference : textureReferences)
+	{
+		if (textureReference.textureGroup == textureGroup)
+		{
+			return &textureReference;
+		}
+	}
+
+	return nullptr;
+}
+
+bool MaterialDesc::HasTextureReference(TextureGroup textureGroup) const noexcept
+{
+	return FindTextureReference(textureGroup) != nullptr;
 }

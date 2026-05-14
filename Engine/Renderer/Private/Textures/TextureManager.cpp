@@ -2,6 +2,7 @@
 
 #include "Textures/TextureManager.h"
 
+#include "Assets/Cooked/CookedTextureReference.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Interop/RenderHardwareInterface.h"
@@ -182,12 +183,13 @@ const Texture* TextureManager::GetSceneTexture(const std::filesystem::path& text
 	return FindPathTexture(texturePath);
 }
 
-const Texture* TextureManager::ResolveTextureOrDefault(const std::optional<std::filesystem::path>& texturePath, DefaultTexture fallbackType)
-    const
+const Texture* TextureManager::ResolveTextureReferenceOrDefault(
+    const Assets::CookedTextureReference* textureReference,
+    DefaultTexture fallbackType) const
 {
-	if (texturePath)
+	if (textureReference && textureReference->IsValid())
 	{
-		if (const Texture* texture = GetSceneTexture(*texturePath))
+		if (const Texture* texture = GetSceneTexture(textureReference->texturePath))
 		{
 			return texture;
 		}

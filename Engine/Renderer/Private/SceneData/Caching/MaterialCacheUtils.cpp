@@ -5,14 +5,21 @@ static const auto g_materialCacheUtilsLogger = Logging::GetOrCreateLogger("Rende
 
 namespace MaterialCacheUtils
 {
-	static bool OptionalPathEquals(const std::optional<std::filesystem::path>& left, const std::optional<std::filesystem::path>& right)
+	static bool TextureReferenceEquals(const MaterialDesc& left, const MaterialDesc& right, TextureGroup textureGroup)
 	{
-		if (left.has_value() != right.has_value())
+		const Assets::CookedTextureReference* leftTextureReference = left.FindTextureReference(textureGroup);
+		const Assets::CookedTextureReference* rightTextureReference = right.FindTextureReference(textureGroup);
+		if ((leftTextureReference == nullptr) != (rightTextureReference == nullptr))
 		{
 			return false;
 		}
 
-		return !left.has_value() || *left == *right;
+		if (!leftTextureReference)
+		{
+			return true;
+		}
+
+		return leftTextureReference->texturePath == rightTextureReference->texturePath;
 	}
 
 	static bool MaterialDescEquals(const MaterialDesc& left, const MaterialDesc& right)
@@ -24,13 +31,14 @@ namespace MaterialCacheUtils
 		       left.subsurfaceStrength == right.subsurfaceStrength && left.emissiveColor.x == right.emissiveColor.x &&
 		       left.emissiveColor.y == right.emissiveColor.y && left.emissiveColor.z == right.emissiveColor.z &&
 		       left.alphaMode == right.alphaMode && left.alphaCutoff == right.alphaCutoff &&
-		       OptionalPathEquals(left.albedoTexture, right.albedoTexture) && OptionalPathEquals(left.normalTexture, right.normalTexture) &&
-		       OptionalPathEquals(left.roughnessTexture, right.roughnessTexture) &&
-		       OptionalPathEquals(left.metallicTexture, right.metallicTexture) &&
-		       OptionalPathEquals(left.occlusionTexture, right.occlusionTexture) &&
-		       OptionalPathEquals(left.emissiveTexture, right.emissiveTexture) &&
-		       OptionalPathEquals(left.subsurfaceColorTexture, right.subsurfaceColorTexture) &&
-		       OptionalPathEquals(left.subsurfaceStrengthTexture, right.subsurfaceStrengthTexture);
+		       TextureReferenceEquals(left, right, TextureGroup::Diffuse) &&
+		       TextureReferenceEquals(left, right, TextureGroup::NormalMap) &&
+		       TextureReferenceEquals(left, right, TextureGroup::Roughness) &&
+		       TextureReferenceEquals(left, right, TextureGroup::Metallic) &&
+		       TextureReferenceEquals(left, right, TextureGroup::AmbientOcclusion) &&
+		       TextureReferenceEquals(left, right, TextureGroup::Emissive) &&
+		       TextureReferenceEquals(left, right, TextureGroup::SubsurfaceColor) &&
+		       TextureReferenceEquals(left, right, TextureGroup::SubsurfaceStrength);
 	}
 
 	std::uint32_t ResolveMaterialSlot(MaterialHandle materialHandle, std::size_t materialCount)

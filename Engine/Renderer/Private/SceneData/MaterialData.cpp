@@ -15,22 +15,22 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 	mat.alphaMode = static_cast<std::uint32_t>(desc.alphaMode);
 	mat.alphaCutoff = desc.alphaCutoff;
 
-	auto setTextureFlag = [&mat](const std::optional<std::filesystem::path>& texturePath, TextureGroup textureGroup)
+	auto setTextureFlag = [&mat, &desc](TextureGroup textureGroup)
 	{
-		if (texturePath)
+		if (desc.HasTextureReference(textureGroup))
 		{
 			mat.textureFlags |= GetTextureGroupFlag(textureGroup);
 		}
 	};
 
-	setTextureFlag(desc.albedoTexture, TextureGroup::Diffuse);
-	setTextureFlag(desc.normalTexture, TextureGroup::NormalMap);
-	setTextureFlag(desc.roughnessTexture, TextureGroup::Roughness);
-	setTextureFlag(desc.metallicTexture, TextureGroup::Metallic);
-	setTextureFlag(desc.occlusionTexture, TextureGroup::AmbientOcclusion);
-	setTextureFlag(desc.emissiveTexture, TextureGroup::Emissive);
-	setTextureFlag(desc.subsurfaceColorTexture, TextureGroup::SubsurfaceColor);
-	setTextureFlag(desc.subsurfaceStrengthTexture, TextureGroup::SubsurfaceStrength);
+	setTextureFlag(TextureGroup::Diffuse);
+	setTextureFlag(TextureGroup::NormalMap);
+	setTextureFlag(TextureGroup::Roughness);
+	setTextureFlag(TextureGroup::Metallic);
+	setTextureFlag(TextureGroup::AmbientOcclusion);
+	setTextureFlag(TextureGroup::Emissive);
+	setTextureFlag(TextureGroup::SubsurfaceColor);
+	setTextureFlag(TextureGroup::SubsurfaceStrength);
 
 	return mat;
 }

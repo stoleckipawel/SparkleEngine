@@ -65,14 +65,14 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		MaterialData material = MaterialData::FromDesc(desc);
 
 		const Texture* textures[MaterialTextureSlots::Count] = {
-		    m_textureManager->ResolveTextureOrDefault(desc.albedoTexture, DefaultTexture::White),
-		    m_textureManager->ResolveTextureOrDefault(desc.normalTexture, DefaultTexture::Normal),
-		    m_textureManager->ResolveTextureOrDefault(desc.roughnessTexture, DefaultTexture::White),
-		    m_textureManager->ResolveTextureOrDefault(desc.metallicTexture, DefaultTexture::Black),
-		    m_textureManager->ResolveTextureOrDefault(desc.occlusionTexture, DefaultTexture::White),
-		    m_textureManager->ResolveTextureOrDefault(desc.emissiveTexture, DefaultTexture::Black),
-		    m_textureManager->ResolveTextureOrDefault(desc.subsurfaceColorTexture, DefaultTexture::Black),
-		    m_textureManager->ResolveTextureOrDefault(desc.subsurfaceStrengthTexture, DefaultTexture::Black)};
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Diffuse), DefaultTexture::White),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::NormalMap), DefaultTexture::Normal),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Roughness), DefaultTexture::White),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Metallic), DefaultTexture::Black),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::AmbientOcclusion), DefaultTexture::White),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::Emissive), DefaultTexture::Black),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceColor), DefaultTexture::Black),
+		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceStrength), DefaultTexture::Black)};
 
 		const RhiDescriptorTableHandle tableHandle =
 		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);

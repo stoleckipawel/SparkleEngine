@@ -49,18 +49,18 @@ bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayl
 	                                              ? MaterialHandle::Invalid()
 	                                              : m_materials.AppendMaterials(std::move(runtimeScenePayload.materials));
 
-	std::vector<std::unique_ptr<MeshComponent>> importedMeshes;
-	importedMeshes.reserve(runtimeScenePayload.meshInstances.size());
+	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
+	meshComponents.reserve(runtimeScenePayload.meshInstances.size());
 	for (RuntimeScenePayload::MeshInstance& meshInstance : runtimeScenePayload.meshInstances)
 	{
 		auto mesh = std::make_unique<CookedMesh>(std::move(meshInstance.mesh), meshInstance.assetId);
 		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()
 		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + meshInstance.material.GetIndex())
 		                                          : m_materials.GetOrCreateDefaultMaterialHandle();
-		importedMeshes.push_back(std::make_unique<MeshComponent>(std::move(mesh), meshInstance.transform, materialHandle));
+		meshComponents.push_back(std::make_unique<MeshComponent>(std::move(mesh), meshInstance.transform, materialHandle));
 	}
 
-	m_meshes.AppendMeshComponents(std::move(importedMeshes));
+	m_meshes.AppendMeshComponents(std::move(meshComponents));
 
 	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loaded {} meshes, {} materials", m_meshes.GetMeshCount(), m_materials.GetMaterialCount());
 

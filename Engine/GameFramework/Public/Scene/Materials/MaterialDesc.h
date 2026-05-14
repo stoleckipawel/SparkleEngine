@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Core/Public/Assets/TextureGroup.h"
+#include "GameFramework/Public/Assets/Cooked/CookedTextureReference.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <DirectXMath.h>
-#include <filesystem>
-#include <optional>
+#include <cstdint>
 #include <string>
+#include <vector>
 
 enum class AlphaMode : std::uint32_t
 {
@@ -28,14 +29,9 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	AlphaMode alphaMode = AlphaMode::Opaque;
 	float alphaCutoff = 0.5f;
 
-	std::optional<std::filesystem::path> albedoTexture;
-	std::optional<std::filesystem::path> normalTexture;
-	std::optional<std::filesystem::path> roughnessTexture;
-	std::optional<std::filesystem::path> metallicTexture;
-	std::optional<std::filesystem::path> occlusionTexture;
-	std::optional<std::filesystem::path> emissiveTexture;
-	std::optional<std::filesystem::path> subsurfaceColorTexture;
-	std::optional<std::filesystem::path> subsurfaceStrengthTexture;
+	std::vector<Assets::CookedTextureReference> textureReferences;
 
-	void SetTexturePath(TextureGroup textureGroup, const std::optional<std::filesystem::path>& texturePath);
+	void AddTextureReference(Assets::CookedTextureReference textureReference);
+	const Assets::CookedTextureReference* FindTextureReference(TextureGroup textureGroup) const noexcept;
+	bool HasTextureReference(TextureGroup textureGroup) const noexcept;
 };
