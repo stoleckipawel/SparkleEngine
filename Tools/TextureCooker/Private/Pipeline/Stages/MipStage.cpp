@@ -131,7 +131,7 @@ namespace TextureCookPipeline
 			while (currentMip.width > 1u || currentMip.height > 1u)
 			{
 				WorkingMipLevel nextMip;
-				if (!GenerateNextMip(request.mipFilter, currentMip, nextMip, outErrorMessage))
+				if (!GenerateNextMip(request.policy.mipFilter, currentMip, nextMip, outErrorMessage))
 				{
 					return false;
 				}
@@ -147,7 +147,7 @@ namespace TextureCookPipeline
 
 	bool ApplyMipPolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
 	{
-		switch (request.mipPolicy)
+		switch (request.policy.mipPolicy)
 		{
 			case TextureMipPolicy::NoMips:
 				for (auto& arraySlice : workingTexture.arraySlices)

@@ -10,7 +10,7 @@ namespace TextureCookPipeline
 {
 	CompressionTarget ResolveCompressionTarget(const TextureCookRequest& request, const WorkingTexture& workingTexture) noexcept
 	{
-		switch (request.textureGroup)
+		switch (request.policy.textureGroup)
 		{
 			case TextureGroup::Default:
 				return CompressionTarget::None;
@@ -44,7 +44,7 @@ namespace TextureCookPipeline
 		switch (target)
 		{
 			case CompressionTarget::BC1:
-				return request.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM;
+				return request.policy.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC1_UNORM_SRGB : DXGI_FORMAT_BC1_UNORM;
 			case CompressionTarget::BC4:
 				return DXGI_FORMAT_BC4_UNORM;
 			case CompressionTarget::BC5:
@@ -52,13 +52,13 @@ namespace TextureCookPipeline
 			case CompressionTarget::BC6H:
 				return DXGI_FORMAT_BC6H_UF16;
 			case CompressionTarget::BC7:
-				if (request.textureGroup == TextureGroup::Roughness || request.textureGroup == TextureGroup::Metallic ||
-				    request.textureGroup == TextureGroup::AmbientOcclusion || request.textureGroup == TextureGroup::SubsurfaceStrength)
+				if (request.policy.textureGroup == TextureGroup::Roughness || request.policy.textureGroup == TextureGroup::Metallic ||
+				    request.policy.textureGroup == TextureGroup::AmbientOcclusion || request.policy.textureGroup == TextureGroup::SubsurfaceStrength)
 				{
 					return DXGI_FORMAT_BC7_UNORM;
 				}
 
-				return request.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC7_UNORM_SRGB : DXGI_FORMAT_BC7_UNORM;
+				return request.policy.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_BC7_UNORM_SRGB : DXGI_FORMAT_BC7_UNORM;
 			case CompressionTarget::None:
 			default:
 				return ResolveUncompressedOutputFormat(request, workingTexture.sourceWasFloat);

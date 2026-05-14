@@ -14,7 +14,7 @@ namespace TextureCookPipeline
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		}
 
-		return request.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+		return request.policy.colorSpace == TextureColorSpace::Srgb ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
 
 	TextureFormatIntent ResolveFormatIntent(DXGI_FORMAT format) noexcept

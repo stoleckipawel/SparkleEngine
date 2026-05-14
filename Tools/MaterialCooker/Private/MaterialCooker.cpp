@@ -14,7 +14,6 @@
 #include <fstream>
 #include <limits>
 #include <optional>
-#include <unordered_set>
 #include <utility>
 
 namespace
@@ -164,8 +163,7 @@ bool MaterialCooker::CollectTextureCookRequests(
     std::string& outErrorMessage)
 {
 	outRequests.clear();
-	std::unordered_set<TextureAssetId> referencedTextureAssetIds;
-	referencedTextureAssetIds.reserve(importResult.materials.size() * 8);
+	TextureCookRequestSet requestSet;
 
 	auto appendTextureRequest = [&](const SourceImportResult::TextureSource& textureSource) -> bool
 	{
@@ -185,9 +183,9 @@ bool MaterialCooker::CollectTextureCookRequests(
 			return false;
 		}
 
-		if (referencedTextureAssetIds.insert(request.assetId).second)
+		if (!requestSet.Add(request, outErrorMessage))
 		{
-			outRequests.push_back(std::move(request));
+			return false;
 		}
 
 		return true;
@@ -238,6 +236,7 @@ bool MaterialCooker::CollectTextureCookRequests(
 		}
 	}
 
+	requestSet.MoveRequestsTo(outRequests);
 	outErrorMessage.clear();
 	return true;
 }

@@ -100,7 +100,7 @@ namespace TextureCookPipeline
 
 		const std::uint32_t blockCountX = (std::max)(1u, (sourceMip.width + 3u) / 4u);
 		const std::uint32_t blockCountY = (std::max)(1u, (sourceMip.height + 3u) / 4u);
-		const bool srgbOutput = request.colorSpace == TextureColorSpace::Srgb;
+		const bool srgbOutput = request.policy.colorSpace == TextureColorSpace::Srgb;
 
 		for (std::uint32_t blockY = 0; blockY < blockCountY; ++blockY)
 		{

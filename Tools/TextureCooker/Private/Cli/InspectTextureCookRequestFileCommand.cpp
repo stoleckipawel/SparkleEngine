@@ -1,4 +1,4 @@
-#include "PCH.h"
+﻿#include "PCH.h"
 
 #include "Cli/InspectTextureCookRequestFileCommand.h"
 
@@ -41,11 +41,11 @@
 	void InspectTextureCookRequestFileCommand::PrintRequest(const TextureCookRequest& request)
 	{
 		std::cout << "  Texture '" << Formatting::FormatHexUInt64(request.assetId) << "' colorSpace='"
-		          << GetTextureColorSpaceName(request.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.mipPolicy)
-		          << "' mipFilter='" << GetTextureMipFilterName(request.mipFilter) << "' colorProcessing='"
-		          << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << "' textureGroup='"
-		          << GetTextureGroupName(request.textureGroup) << "' dimension='" << GetTextureDimensionName(request.dimension)
-		          << "' channelMask='" << GetTextureChannelMaskName(request.channelMask) << "' output='" << request.outputPath.string()
+		          << GetTextureColorSpaceName(request.policy.colorSpace) << "' mipPolicy='" << GetTextureMipPolicyName(request.policy.mipPolicy)
+		          << "' mipFilter='" << GetTextureMipFilterName(request.policy.mipFilter) << "' colorProcessing='"
+		          << GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) << "' textureGroup='"
+		          << GetTextureGroupName(request.policy.textureGroup) << "' dimension='" << GetTextureDimensionName(request.policy.dimension)
+		          << "' channelMask='" << GetTextureChannelMaskName(request.policy.channelMask) << "' output='" << request.outputPath.string()
 		          << "' source='" << request.sourcePath.string() << "'\n";
 	}
 

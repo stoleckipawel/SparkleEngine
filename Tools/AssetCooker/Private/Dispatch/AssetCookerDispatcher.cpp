@@ -20,7 +20,6 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <map>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -239,39 +238,6 @@ static void AssetCookerRemoveTempFile(const std::filesystem::path& path)
 	std::filesystem::remove(path, removeError);
 }
 
-static bool AssetCookerTextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
-{
-	return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath &&
-	       lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter &&
-	       lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup &&
-	       lhs.dimension == rhs.dimension && lhs.channelMask == rhs.channelMask;
-}
-
-static bool AssetCookerAddUniqueTextureCookRequest(
-    const TextureCookRequest& request,
-    std::map<TextureAssetId, TextureCookRequest>& requestsById,
-    std::vector<TextureCookRequest>& outRequests,
-    std::string& outErrorMessage)
-{
-	const auto existingRequest = requestsById.find(request.assetId);
-	if (existingRequest == requestsById.end())
-	{
-		requestsById.emplace(request.assetId, request);
-		outRequests.push_back(request);
-		outErrorMessage.clear();
-		return true;
-	}
-
-	if (!AssetCookerTextureCookRequestsMatch(existingRequest->second, request))
-	{
-		outErrorMessage = "Texture request conflict for asset id " + std::to_string(request.assetId) + ".";
-		return false;
-	}
-
-	outErrorMessage.clear();
-	return true;
-}
-
 static bool AssetCookerAppendDefaultTextureRequest(
     std::string_view sourceRelativePath,
     std::string_view outputRelativePath,
@@ -280,8 +246,7 @@ static bool AssetCookerAppendDefaultTextureRequest(
     TextureColorProcessingPolicy colorProcessingPolicy,
     TextureGroup textureGroup,
     TextureDimension dimension,
-    std::map<TextureAssetId, TextureCookRequest>& requestsById,
-    std::vector<TextureCookRequest>& outRequests,
+	TextureCookRequestSet& requestSet,
     std::string& outErrorMessage)
 {
 	const std::filesystem::path sourcePath = (Paths::EngineRoot() / std::filesystem::path(std::string(sourceRelativePath))).lexically_normal();
@@ -296,15 +261,15 @@ static bool AssetCookerAppendDefaultTextureRequest(
 	request.assetId = Hash::Fnv1a64(std::string("engine-default-texture:") + std::string(outputRelativePath));
 	request.sourcePath = sourcePath;
 	request.outputPath = (Paths::CookedTextureRoot() / std::filesystem::path(std::string(outputRelativePath))).lexically_normal();
-	request.colorSpace = colorSpace;
-	request.mipPolicy = TextureMipPolicy::Generate;
-	request.mipFilter = mipFilter;
-	request.colorProcessingPolicy = colorProcessingPolicy;
-	request.textureGroup = textureGroup;
-	request.dimension = dimension;
-	request.channelMask = TextureChannelMask::Rgba;
+	request.policy.colorSpace = colorSpace;
+	request.policy.mipPolicy = TextureMipPolicy::Generate;
+	request.policy.mipFilter = mipFilter;
+	request.policy.colorProcessingPolicy = colorProcessingPolicy;
+	request.policy.textureGroup = textureGroup;
+	request.policy.dimension = dimension;
+	request.policy.channelMask = TextureChannelMask::Rgba;
 
-	if (!AssetCookerAddUniqueTextureCookRequest(request, requestsById, outRequests, outErrorMessage))
+	if (!requestSet.Add(request, outErrorMessage))
 	{
 		return false;
 	}
@@ -319,10 +284,7 @@ static bool AssetCookerAppendDefaultTextureRequest(
 	return true;
 }
 
-static bool AssetCookerAppendDefaultTextureRequests(
-    std::map<TextureAssetId, TextureCookRequest>& requestsById,
-    std::vector<TextureCookRequest>& outRequests,
-    std::string& outErrorMessage)
+static bool AssetCookerAppendDefaultTextureRequests(TextureCookRequestSet& requestSet, std::string& outErrorMessage)
 {
 	struct DefaultTextureCookDesc final
 	{
@@ -403,8 +365,7 @@ static bool AssetCookerAppendDefaultTextureRequests(
 		        defaultTexture.colorProcessingPolicy,
 		        defaultTexture.textureGroup,
 		        defaultTexture.dimension,
-		        requestsById,
-		        outRequests,
+		        requestSet,
 		        outErrorMessage))
 		{
 			return false;
@@ -532,8 +493,7 @@ static bool AssetCookerCollectTextureRequests(
 	SPARKLE_CPU_SCOPE("Tools.AssetCooker.CollectTextureRequests");
 	SPARKLE_LOG_SCOPE(AssetCookerGetLogger(), spdlog::level::info, "AssetCooker.CollectTextureRequests");
 
-	std::map<TextureAssetId, TextureCookRequest> requestsById;
-	std::vector<TextureCookRequest> requests;
+	TextureCookRequestSet requestSet;
 	std::vector<std::string> failedScenes;
 	int collectedSceneCount = 0;
 	std::string errorMessage;
@@ -573,7 +533,7 @@ static bool AssetCookerCollectTextureRequests(
 
 		for (const TextureCookRequest& request : sceneRequests)
 		{
-			if (!AssetCookerAddUniqueTextureCookRequest(request, requestsById, requests, errorMessage))
+			if (!requestSet.Add(request, errorMessage))
 			{
 				diagnostics.AddError(AssetCookerCategory_Textures, errorMessage, sceneEntry.sourcePath);
 				return false;
@@ -598,11 +558,14 @@ static bool AssetCookerCollectTextureRequests(
 		return false;
 	}
 
-	if (!AssetCookerAppendDefaultTextureRequests(requestsById, requests, errorMessage))
+	if (!AssetCookerAppendDefaultTextureRequests(requestSet, errorMessage))
 	{
 		diagnostics.AddError(AssetCookerCategory_Textures, errorMessage);
 		return false;
 	}
+
+	std::vector<TextureCookRequest> requests;
+	requestSet.MoveRequestsTo(requests);
 
 	if (!WriteTextureCookRequestList(textureRequestPath, requests, errorMessage))
 	{

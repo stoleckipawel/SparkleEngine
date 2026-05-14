@@ -100,8 +100,8 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 			    requests.size(),
 			    TextureCookerGetRequestDisplayName(request),
 			    {ToolConsole::Field("assetId", Formatting::FormatHexUInt64(request.assetId)),
-			     ToolConsole::Field("group", GetTextureGroupName(request.textureGroup)),
-			     ToolConsole::Field("dimension", GetTextureDimensionName(request.dimension)),
+			     ToolConsole::Field("group", GetTextureGroupName(request.policy.textureGroup)),
+			     ToolConsole::Field("dimension", GetTextureDimensionName(request.policy.dimension)),
 			     ToolConsole::PathField("source", request.sourcePath),
 			     ToolConsole::PathField("output", request.outputPath)});
 

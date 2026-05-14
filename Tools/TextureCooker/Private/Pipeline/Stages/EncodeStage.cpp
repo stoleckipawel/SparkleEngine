@@ -139,26 +139,26 @@ namespace TextureCookPipeline
 	    TextureLoadResult& outProcessedTexture,
 	    std::string& outErrorMessage)
 	{
-		if (request.mipPolicy == TextureMipPolicy::Generate)
+		if (request.policy.mipPolicy == TextureMipPolicy::Generate)
 		{
 			outErrorMessage = "Generating mips from compressed source DDS content is not supported yet.";
 			return false;
 		}
 
-		if (request.dimension == TextureDimension::TextureCube && !sourceTexture.IsCube())
+		if (request.policy.dimension == TextureDimension::TextureCube && !sourceTexture.IsCube())
 		{
 			outErrorMessage = "Compressed source texture does not contain cubemap data.";
 			return false;
 		}
 
-		if (request.dimension == TextureDimension::Texture2D && sourceTexture.IsCube())
+		if (request.policy.dimension == TextureDimension::Texture2D && sourceTexture.IsCube())
 		{
 			outErrorMessage = "Cannot cook cubemap DDS content as a 2D texture.";
 			return false;
 		}
 
 		outProcessedTexture = std::move(sourceTexture);
-		if (request.mipPolicy == TextureMipPolicy::NoMips)
+		if (request.policy.mipPolicy == TextureMipPolicy::NoMips)
 		{
 			for (TextureArraySliceData& arraySlice : outProcessedTexture.arraySlices)
 			{
@@ -169,7 +169,7 @@ namespace TextureCookPipeline
 			}
 		}
 
-		outProcessedTexture.dxgiFormat = ApplyRequestedColorSpace(outProcessedTexture.dxgiFormat, request.colorSpace);
+		outProcessedTexture.dxgiFormat = ApplyRequestedColorSpace(outProcessedTexture.dxgiFormat, request.policy.colorSpace);
 		outProcessedTexture.formatIntent = ResolveFormatIntent(outProcessedTexture.dxgiFormat);
 		outErrorMessage.clear();
 		return true;

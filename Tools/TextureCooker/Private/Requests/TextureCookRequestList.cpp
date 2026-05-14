@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <map>
 #include <sstream>
 #include <string_view>
 
@@ -269,43 +268,43 @@
 			return false;
 		}
 
-		if (!TryParseTextureColorSpace(fields[1], outRequest.colorSpace))
+		if (!TryParseTextureColorSpace(fields[1], outRequest.policy.colorSpace))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown color space '" + std::string(fields[1]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureMipPolicy(fields[2], outRequest.mipPolicy))
+		if (!TryParseTextureMipPolicy(fields[2], outRequest.policy.mipPolicy))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown mip policy '" + std::string(fields[2]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureMipFilter(fields[3], outRequest.mipFilter))
+		if (!TryParseTextureMipFilter(fields[3], outRequest.policy.mipFilter))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown mip filter '" + std::string(fields[3]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureColorProcessingPolicy(fields[4], outRequest.colorProcessingPolicy))
+		if (!TryParseTextureColorProcessingPolicy(fields[4], outRequest.policy.colorProcessingPolicy))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown color processing policy '" + std::string(fields[4]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureGroup(fields[5], outRequest.textureGroup))
+		if (!TryParseTextureGroup(fields[5], outRequest.policy.textureGroup))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown texture group '" + std::string(fields[5]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureDimension(fields[6], outRequest.dimension))
+		if (!TryParseTextureDimension(fields[6], outRequest.policy.dimension))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown texture dimension '" + std::string(fields[6]) + "'.";
 			return false;
 		}
 
-		if (!TryParseTextureChannelMask(fields[7], outRequest.channelMask))
+		if (!TryParseTextureChannelMask(fields[7], outRequest.policy.channelMask))
 		{
 			outErrorMessage = "Texture cook request entry has an unknown channel mask '" + std::string(fields[7]) + "'.";
 			return false;
@@ -326,6 +325,53 @@
 	static bool IsExpectedRequestHeader(std::string_view headerLine) noexcept
 	{
 		return headerLine == kTextureCookRequestHeader;
+	}
+
+	bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept
+	{
+		return lhs.colorSpace == rhs.colorSpace && lhs.mipPolicy == rhs.mipPolicy && lhs.mipFilter == rhs.mipFilter &&
+		       lhs.colorProcessingPolicy == rhs.colorProcessingPolicy && lhs.textureGroup == rhs.textureGroup &&
+		       lhs.dimension == rhs.dimension && lhs.channelMask == rhs.channelMask;
+	}
+
+	bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
+	{
+		return lhs.assetId == rhs.assetId && lhs.sourcePath == rhs.sourcePath && lhs.outputPath == rhs.outputPath &&
+		       TextureCookPoliciesMatch(lhs.policy, rhs.policy);
+	}
+
+	void TextureCookRequestSet::Clear() noexcept
+	{
+		requestsById.clear();
+		requests.clear();
+	}
+
+	bool TextureCookRequestSet::Add(const TextureCookRequest& request, std::string& outErrorMessage)
+	{
+		const auto existingRequest = requestsById.find(request.assetId);
+		if (existingRequest == requestsById.end())
+		{
+			requestsById.emplace(request.assetId, request);
+			requests.push_back(request);
+			outErrorMessage.clear();
+			return true;
+		}
+
+		if (!TextureCookRequestsMatch(existingRequest->second, request))
+		{
+			outErrorMessage = "Texture cook request conflict for asset id '" + Formatting::FormatHexUInt64(request.assetId) + "'.";
+			return false;
+		}
+
+		outErrorMessage.clear();
+		return true;
+	}
+
+	void TextureCookRequestSet::MoveRequestsTo(std::vector<TextureCookRequest>& outRequests)
+	{
+		outRequests = std::move(requests);
+		requestsById.clear();
+		requests.clear();
 	}
 
 	const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept
@@ -482,10 +528,11 @@
 				return false;
 			}
 
-			output << Formatting::FormatHexUInt64(request.assetId) << '|' << GetTextureColorSpaceName(request.colorSpace) << '|'
-			       << GetTextureMipPolicyName(request.mipPolicy) << '|' << GetTextureMipFilterName(request.mipFilter) << '|'
-			       << GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) << '|' << GetTextureGroupName(request.textureGroup)
-			       << '|' << GetTextureDimensionName(request.dimension) << '|' << GetTextureChannelMaskName(request.channelMask) << '|'
+			output << Formatting::FormatHexUInt64(request.assetId) << '|' << GetTextureColorSpaceName(request.policy.colorSpace) << '|'
+			       << GetTextureMipPolicyName(request.policy.mipPolicy) << '|' << GetTextureMipFilterName(request.policy.mipFilter) << '|'
+			       << GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) << '|'
+			       << GetTextureGroupName(request.policy.textureGroup) << '|' << GetTextureDimensionName(request.policy.dimension) << '|'
+			       << GetTextureChannelMaskName(request.policy.channelMask) << '|'
 			       << request.outputPath.generic_string() << '|' << request.sourcePath.generic_string() << '\n';
 		}
 
@@ -511,7 +558,7 @@
 		}
 
 		outRequests.clear();
-		std::map<TextureAssetId, TextureCookRequest> requestsById;
+		TextureCookRequestSet requestSet;
 		bool foundHeader = false;
 		std::size_t lineNumber = 0;
 
@@ -543,25 +590,12 @@
 				return false;
 			}
 
-			if (auto it = requestsById.find(request.assetId); it != requestsById.end())
+			if (!requestSet.Add(request, outErrorMessage))
 			{
-				const TextureCookRequest& existingRequest = it->second;
-				if (existingRequest.sourcePath != request.sourcePath || existingRequest.outputPath != request.outputPath ||
-				    existingRequest.colorSpace != request.colorSpace || existingRequest.mipPolicy != request.mipPolicy ||
-				    existingRequest.mipFilter != request.mipFilter ||
-				    existingRequest.colorProcessingPolicy != request.colorProcessingPolicy ||
-				    existingRequest.textureGroup != request.textureGroup || existingRequest.dimension != request.dimension ||
-				    existingRequest.channelMask != request.channelMask)
-				{
-					outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
-					                  Formatting::FormatHexUInt64(request.assetId) + "'.";
-					return false;
-				}
-
-				continue;
+				outErrorMessage = "Texture cook request file contains conflicting requests for asset id '" +
+				                  Formatting::FormatHexUInt64(request.assetId) + "'.";
+				return false;
 			}
-
-			requestsById.emplace(request.assetId, std::move(request));
 		}
 
 		if (!foundHeader)
@@ -570,11 +604,13 @@
 			return false;
 		}
 
-		outRequests.reserve(requestsById.size());
-		for (auto& [_, request] : requestsById)
-		{
-			outRequests.push_back(std::move(request));
-		}
+		requestSet.MoveRequestsTo(outRequests);
+		std::ranges::sort(
+		    outRequests,
+		    [](const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept
+		    {
+			    return lhs.assetId < rhs.assetId;
+		    });
 
 		outErrorMessage.clear();
 		return true;

@@ -6,7 +6,7 @@ namespace TextureCookPipeline
 {
 	bool ApplyShapePolicy(const TextureCookRequest& request, WorkingTexture& workingTexture, std::string& outErrorMessage)
 	{
-		if (request.dimension == TextureDimension::Texture2D)
+		if (request.policy.dimension == TextureDimension::Texture2D)
 		{
 			if (workingTexture.dimension != TextureResourceDimension::Texture2D)
 			{

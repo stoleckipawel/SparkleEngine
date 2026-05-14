@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -33,11 +34,8 @@ enum class TextureColorProcessingPolicy : std::uint8_t
 	SrgbLinearize = 1,
 };
 
-struct TextureCookRequest final
+struct TextureCookPolicy final
 {
-	TextureAssetId assetId = InvalidTextureAssetId;
-	std::filesystem::path sourcePath;
-	std::filesystem::path outputPath;
 	TextureColorSpace colorSpace = TextureColorSpace::Linear;
 	TextureMipPolicy mipPolicy = TextureMipPolicy::Generate;
 	TextureMipFilter mipFilter = TextureMipFilter::Regular;
@@ -46,11 +44,38 @@ struct TextureCookRequest final
 	TextureDimension dimension = TextureDimension::Texture2D;
 	TextureChannelMask channelMask = TextureChannelMask::Rgba;
 
-	bool IsValid() const noexcept { return assetId != InvalidTextureAssetId && !sourcePath.empty() && !outputPath.empty(); }
 	bool IsSrgb() const noexcept { return colorSpace == TextureColorSpace::Srgb; }
 	bool IsCube() const noexcept { return dimension == TextureDimension::TextureCube; }
+};
+
+struct TextureCookRequest final
+{
+	TextureAssetId assetId = InvalidTextureAssetId;
+	std::filesystem::path sourcePath;
+	std::filesystem::path outputPath;
+	TextureCookPolicy policy;
+
+	bool IsValid() const noexcept { return assetId != InvalidTextureAssetId && !sourcePath.empty() && !outputPath.empty(); }
+	bool IsSrgb() const noexcept { return policy.IsSrgb(); }
+	bool IsCube() const noexcept { return policy.IsCube(); }
 	explicit operator bool() const noexcept { return IsValid(); }
 };
+
+class TextureCookRequestSet final
+{
+public:
+	void Clear() noexcept;
+	bool Add(const TextureCookRequest& request, std::string& outErrorMessage);
+	void MoveRequestsTo(std::vector<TextureCookRequest>& outRequests);
+	const std::vector<TextureCookRequest>& Requests() const noexcept { return requests; }
+
+private:
+	std::map<TextureAssetId, TextureCookRequest> requestsById;
+	std::vector<TextureCookRequest> requests;
+};
+
+bool TextureCookPoliciesMatch(const TextureCookPolicy& lhs, const TextureCookPolicy& rhs) noexcept;
+bool TextureCookRequestsMatch(const TextureCookRequest& lhs, const TextureCookRequest& rhs) noexcept;
 
 const char* GetTextureColorSpaceName(TextureColorSpace colorSpace) noexcept;
 const char* GetTextureMipPolicyName(TextureMipPolicy mipPolicy) noexcept;

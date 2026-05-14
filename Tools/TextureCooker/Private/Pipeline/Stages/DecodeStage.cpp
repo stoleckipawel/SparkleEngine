@@ -76,7 +76,7 @@ namespace TextureCookPipeline
 			}
 
 			const std::uint32_t mipCountToDecode =
-			    request.mipPolicy == TextureMipPolicy::PreserveExisting ? sourceTexture.GetMipCount() : 1u;
+			    request.policy.mipPolicy == TextureMipPolicy::PreserveExisting ? sourceTexture.GetMipCount() : 1u;
 			outWorkingTexture.dimension = sourceTexture.dimension;
 			outWorkingTexture.arraySize = sourceTexture.arraySize;
 			outWorkingTexture.sourceWasFloat = IsFloatFormat(sourceTexture.dxgiFormat);
@@ -95,7 +95,7 @@ namespace TextureCookPipeline
 					if (!DecodeMipLevel(
 					        sourceSlice.mipLevels[mipIndex],
 					        sourceTexture.dxgiFormat,
-					        request.colorProcessingPolicy,
+					        request.policy.colorProcessingPolicy,
 					        workingMip,
 					        outErrorMessage))
 					{

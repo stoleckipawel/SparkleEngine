@@ -22,13 +22,13 @@ bool TextureCookRequestBuilder::Build(
 	}
 
 	outRequest.sourcePath = normalizedSourceTexturePath;
-	outRequest.colorSpace = ResolveColorSpace(textureGroup);
-	outRequest.mipPolicy = ResolveMipPolicy(textureGroup);
-	outRequest.mipFilter = ResolveMipFilter(textureGroup);
-	outRequest.colorProcessingPolicy = ResolveColorProcessingPolicy(textureGroup);
-	outRequest.textureGroup = textureGroup;
-	outRequest.dimension = ResolveTextureDimension(textureGroup);
-	outRequest.channelMask = channelMask;
+	outRequest.policy.colorSpace = ResolveColorSpace(textureGroup);
+	outRequest.policy.mipPolicy = ResolveMipPolicy(textureGroup);
+	outRequest.policy.mipFilter = ResolveMipFilter(textureGroup);
+	outRequest.policy.colorProcessingPolicy = ResolveColorProcessingPolicy(textureGroup);
+	outRequest.policy.textureGroup = textureGroup;
+	outRequest.policy.dimension = ResolveTextureDimension(textureGroup);
+	outRequest.policy.channelMask = channelMask;
 
 	std::string textureSourceKey;
 	if (!BuildTextureSourceKey(outRequest, textureSourceKey, outErrorMessage))
@@ -131,11 +131,11 @@ bool TextureCookRequestBuilder::BuildTextureSourceKey(
 	const std::filesystem::path& projectRoot = Paths::ProjectRoot();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
 	{
-		outTextureSourceKey = std::string("project:") + GetTextureColorSpaceName(request.colorSpace) + ":" +
-		                      GetTextureMipPolicyName(request.mipPolicy) + ":" + GetTextureMipFilterName(request.mipFilter) + ":" +
-		                      GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + ":" +
-		                      GetTextureGroupName(request.textureGroup) + ":" + GetTextureDimensionName(request.dimension) + ":" +
-		                      GetTextureChannelMaskName(request.channelMask) + ":" + relativePath->generic_string();
+		outTextureSourceKey = std::string("project:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
+		                      GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) +
+		                      ":" + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
+		                      GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) +
+		                      ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath->generic_string();
 		outErrorMessage.clear();
 		return true;
 	}
@@ -143,11 +143,11 @@ bool TextureCookRequestBuilder::BuildTextureSourceKey(
 	const std::filesystem::path& engineRoot = Paths::EngineRoot();
 	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
 	{
-		outTextureSourceKey = std::string("engine:") + GetTextureColorSpaceName(request.colorSpace) + ":" +
-		                      GetTextureMipPolicyName(request.mipPolicy) + ":" + GetTextureMipFilterName(request.mipFilter) + ":" +
-		                      GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + ":" +
-		                      GetTextureGroupName(request.textureGroup) + ":" + GetTextureDimensionName(request.dimension) + ":" +
-		                      GetTextureChannelMaskName(request.channelMask) + ":" + relativePath->generic_string();
+		outTextureSourceKey = std::string("engine:") + GetTextureColorSpaceName(request.policy.colorSpace) + ":" +
+		                      GetTextureMipPolicyName(request.policy.mipPolicy) + ":" + GetTextureMipFilterName(request.policy.mipFilter) +
+		                      ":" + GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + ":" +
+		                      GetTextureGroupName(request.policy.textureGroup) + ":" + GetTextureDimensionName(request.policy.dimension) +
+		                      ":" + GetTextureChannelMaskName(request.policy.channelMask) + ":" + relativePath->generic_string();
 		outErrorMessage.clear();
 		return true;
 	}
@@ -189,10 +189,10 @@ bool TextureCookRequestBuilder::BuildTextureOutputPath(
 
 std::string TextureCookRequestBuilder::BuildTextureVariantSuffix(const TextureCookRequest& request)
 {
-	return std::string(".") + GetTextureGroupName(request.textureGroup) + "." + GetTextureColorSpaceName(request.colorSpace) + "." +
-	       GetTextureMipPolicyName(request.mipPolicy) + "." + GetTextureMipFilterName(request.mipFilter) + "." +
-	       GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + "." + GetTextureDimensionName(request.dimension) + "." +
-	       GetTextureChannelMaskName(request.channelMask);
+	return std::string(".") + GetTextureGroupName(request.policy.textureGroup) + "." + GetTextureColorSpaceName(request.policy.colorSpace) +
+	       "." + GetTextureMipPolicyName(request.policy.mipPolicy) + "." + GetTextureMipFilterName(request.policy.mipFilter) + "." +
+	       GetTextureColorProcessingPolicyName(request.policy.colorProcessingPolicy) + "." +
+	       GetTextureDimensionName(request.policy.dimension) + "." + GetTextureChannelMaskName(request.policy.channelMask);
 }
 
 
