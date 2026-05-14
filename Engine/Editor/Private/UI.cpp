@@ -19,6 +19,7 @@
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
+#include "RHI/Public/Interop/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"
@@ -37,31 +38,6 @@ namespace
 	constexpr float SceneOutlinerWidth = 320.0f;
 	constexpr float SceneInspectorWidth = 560.0f;
 	constexpr float MinimumViewportExtent = 64.0f;
-}
-
-void UI::HandleWindowMessage(WindowMessageEvent& event) noexcept
-{
-	if (ProcessWindowMessage(event.hWnd, event.msg, event.wParam, event.lParam))
-	{
-		event.handled = true;
-	}
-}
-
-bool UI::ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
-{
-	if (!m_isWin32BackendInitialized)
-	{
-		return false;
-	}
-
-	if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr &&
-	    m_editorConsoleSystem
-	        ->HandleShortcut(static_cast<std::uint32_t>(msg), static_cast<std::uintptr_t>(wParam), ImGui::GetIO().WantTextInput))
-	{
-		return true;
-	}
-
-	return ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam);
 }
 
 const ViewportRenderRequest& UI::GetViewportRenderRequest() const noexcept
@@ -94,29 +70,22 @@ void UI::SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept
 	}
 }
 
-void UI::SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider)
+void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 {
-	m_shaderPackageGenerationProvider = std::move(provider);
+	m_shaderPackageGenerationProvider = std::move(providers.ShaderPackageGeneration);
+	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
+	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
+
 	if (m_usedShadersPanel)
 	{
 		m_usedShadersPanel->SetGenerationProvider(m_shaderPackageGenerationProvider);
 	}
-	ConfigureMainMenuBarWindowActions();
-}
 
-void UI::SetMeshDiagnosticsProvider(std::function<MeshDiagnosticsSnapshot()> provider)
-{
-	m_meshDiagnosticsProvider = std::move(provider);
 	if (m_usedMeshesPanel)
 	{
 		m_usedMeshesPanel->SetDiagnosticsProvider(m_meshDiagnosticsProvider);
 	}
-	ConfigureMainMenuBarWindowActions();
-}
 
-void UI::SetTextureDiagnosticsProvider(std::function<TextureDiagnosticsSnapshot()> provider)
-{
-	m_textureDiagnosticsProvider = std::move(provider);
 	if (m_usedTexturesPanel)
 	{
 		m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
@@ -138,20 +107,14 @@ bool UI::ConsumeShaderRecookRequest() noexcept
 	return requested;
 }
 
-UI::UI(
-    Timer& timer,
-    LevelManager* levelManager,
-    GameScene* gameScene,
-    RenderHardwareInterface& renderHardware,
-    Window& window,
-    InputSystem& inputSystem) :
-    m_timer(&timer),
-    m_levelManager(levelManager),
-    m_gameScene(gameScene),
-    m_renderHardware(&renderHardware),
-    m_window(&window),
-    m_inputSystem(&inputSystem),
-    m_sceneSelection(SceneObjectSelection::None())
+UI::UI(EditorHostServices hostServices) :
+	m_timer(&hostServices.RuntimeTimer),
+	m_levelManager(hostServices.Levels),
+	m_gameScene(hostServices.Scene),
+	m_renderHardware(&hostServices.RenderHardware),
+	m_window(&hostServices.HostWindow),
+	m_inputSystem(&hostServices.Input),
+	m_sceneSelection(SceneObjectSelection::None())
 {
 	InitializeImGuiContext();
 	SetupDPIScaling();
@@ -163,7 +126,7 @@ UI::UI(
 		return;
 
 	InitializeDefaultPanels();
-	SubscribeToWindowEvents(window);
+	SubscribeToWindowEvents(hostServices.HostWindow);
 }
 
 void UI::InitializeImGuiContext()
@@ -352,7 +315,25 @@ void UI::SubscribeToWindowEvents(Window& window)
 	auto handle = window.OnWindowMessage.Add(
 	    [this](WindowMessageEvent& event)
 	    {
-		    HandleWindowMessage(event);
+		    if (!m_isWin32BackendInitialized)
+		    {
+			    return;
+		    }
+
+		    if (m_editorConsoleSystem != nullptr && ImGui::GetCurrentContext() != nullptr &&
+		        m_editorConsoleSystem->HandleShortcut(
+		            static_cast<std::uint32_t>(event.msg),
+		            static_cast<std::uintptr_t>(event.wParam),
+		            ImGui::GetIO().WantTextInput))
+		    {
+			    event.handled = true;
+			    return;
+		    }
+
+		    if (ImGui_ImplWin32_WndProcHandler(event.hWnd, event.msg, event.wParam, event.lParam) != 0)
+		    {
+			    event.handled = true;
+		    }
 	    });
 	m_windowMessageHandle = ScopedEventHandle(window.OnWindowMessage, handle);
 }
@@ -490,14 +471,16 @@ void UI::Update()
 	Build();
 }
 
-void UI::Render(NativeGraphicsCommandListHandle commandList) noexcept
+void UI::Render() noexcept
 {
 	SPARKLE_CPU_SCOPE("Editor.UI.Render");
-	if (!IsReady())
+	if (!IsReady() || m_renderHardware == nullptr)
 	{
 		return;
 	}
 
+	const NativeGraphicsCommandListHandle commandList =
+	    m_renderHardware->GetGraphicsCommandListHandle(m_renderHardware->GetCurrentFrameIndex());
 	m_renderHardware->RenderImGuiDrawData(commandList, ImGui::GetDrawData());
 }
 

@@ -135,14 +135,14 @@ void ViewportPanel::BuildUI(bool disableInteraction)
 	const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 	UpdateRequestedExtent(availableRegion.x, availableRegion.y);
 
-	if (m_sceneColorTextureId == 0 || !m_renderProducts.SceneColor.Handle)
+	const RenderProduct* sceneColor = m_renderProducts.FindProduct(RenderOutputFlags::SceneColor);
+	if (m_sceneColorTextureId == 0 || sceneColor == nullptr)
 	{
 		BuildEmptyState();
 	}
 	else
 	{
-		const RenderProduct& sceneColor = m_renderProducts.SceneColor;
-		const ImVec2 imageSize = ComputeViewportImageSize(availableRegion, sceneColor.Extent);
+		const ImVec2 imageSize = ComputeViewportImageSize(availableRegion, sceneColor->Extent);
 		const ImVec2 start = ImGui::GetCursorPos();
 		if (availableRegion.x > imageSize.x)
 		{

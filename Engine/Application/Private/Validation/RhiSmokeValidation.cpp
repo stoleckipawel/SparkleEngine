@@ -158,15 +158,16 @@ void RhiSmokeValidationRunner::LogEditorViewportEvidence(
 	}
 
 	Renderer& renderer = app.GetRenderer();
-	const std::uint64_t sceneColorTextureId = renderer.ResolveRenderProductTextureId(viewportProducts.SceneColor.Handle);
+	const RenderProduct& sceneColor = viewportProducts.GetSceneColor();
+	const std::uint64_t sceneColorTextureId = renderer.ResolveRenderProductTextureId(sceneColor.Handle);
 	SPDLOG_LOGGER_INFO(
 	    appLogger,
 	    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={}",
-	    viewportProducts.SceneColor.Handle.Value,
+	    sceneColor.Handle.Value,
 	    sceneColorTextureId,
-	    viewportProducts.SceneColor.Extent.Width,
-	    viewportProducts.SceneColor.Extent.Height,
-	    static_cast<std::uint32_t>(viewportProducts.AvailableOutputs));
+	    sceneColor.Extent.Width,
+	    sceneColor.Extent.Height,
+	    static_cast<std::uint32_t>(viewportProducts.GetAvailableOutputs()));
 
 	state.EditorViewportEvidenceLogged = true;
 }
@@ -288,7 +289,7 @@ bool RhiSmokeValidationRunner::TickEditor(
 
 	const ViewportRenderProducts& viewportProducts = app.GetViewportRenderProducts();
 	ui.SetViewportRenderProducts(viewportProducts);
-	ui.SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.SceneColor.Handle));
+	ui.SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
 	LogEditorViewportEvidence(config, app, viewportProducts, state);
 	ui.Update();
 
@@ -298,18 +299,18 @@ bool RhiSmokeValidationRunner::TickEditor(
 
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
-	    viewportProducts.SceneColor.Handle,
+	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::RenderTarget,
 	    ResourceState::ShaderResource);
 
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
 	renderHardware.BeginPresentRenderPass(commandListHandle, editorClearColor);
-	ui.Render(commandListHandle);
+	ui.Render();
 	renderHardware.EndPresentRenderPass(commandListHandle);
 
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
-	    viewportProducts.SceneColor.Handle,
+	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::ShaderResource,
 	    ResourceState::Common);
 
@@ -350,7 +351,13 @@ int RhiSmokeValidationRunner::RunEditorValidation(const RhiSmokeValidationConfig
 		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
 		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
 		app.GetInputSystem().BeginInputRoutingFrame(false, false);
-		UI ui(app.GetTimer(), app.GetLevelManager(), app.GetGameScene(), renderHardware, app.GetWindow(), app.GetInputSystem());
+		UI ui(EditorHostServices{
+		    .RuntimeTimer = app.GetTimer(),
+		    .Levels = app.GetLevelManager(),
+		    .Scene = app.GetGameScene(),
+		    .RenderHardware = renderHardware,
+		    .HostWindow = app.GetWindow(),
+		    .Input = app.GetInputSystem()});
 
 		while (TickEditor(app, ui, config, state))
 		{

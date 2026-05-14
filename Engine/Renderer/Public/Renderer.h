@@ -106,6 +106,8 @@ class SPARKLE_RENDERER_API Renderer final
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
+	RenderProductHandle m_viewportSceneColorHandle = {};
+	RenderProductHandle m_viewportSceneDepthHandle = {};
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

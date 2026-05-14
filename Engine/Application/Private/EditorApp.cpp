@@ -41,28 +41,26 @@ void EditorApp::Initialize()
 	{
 		Renderer& renderer = m_projectApp->GetRenderer();
 		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-		m_ui = std::make_unique<UI>(
-		    m_projectApp->GetTimer(),
-		    m_projectApp->GetLevelManager(),
-		    m_projectApp->GetGameScene(),
-		    renderHardware,
-		    m_projectApp->GetWindow(),
-		    m_projectApp->GetInputSystem());
-		m_ui->SetShaderPackageGenerationProvider(
-		    [&renderer]() noexcept
+		m_ui = std::make_unique<UI>(EditorHostServices{
+		    .RuntimeTimer = m_projectApp->GetTimer(),
+		    .Levels = m_projectApp->GetLevelManager(),
+		    .Scene = m_projectApp->GetGameScene(),
+		    .RenderHardware = renderHardware,
+		    .HostWindow = m_projectApp->GetWindow(),
+		    .Input = m_projectApp->GetInputSystem()});
+		m_ui->SetDiagnosticsProviders(EditorDiagnosticsProviders{
+		    .ShaderPackageGeneration = [&renderer]() noexcept
 		    {
 			    return renderer.GetShaderPackageGeneration();
-		    });
-		m_ui->SetMeshDiagnosticsProvider(
-		    [&renderer]()
+		    },
+		    .MeshDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureMeshDiagnostics();
-		    });
-		m_ui->SetTextureDiagnosticsProvider(
-		    [&renderer]()
+		    },
+		    .TextureDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureTextureDiagnostics();
-		    });
+		    }});
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
 
@@ -107,7 +105,7 @@ bool EditorApp::Tick()
 
 	const ViewportRenderProducts& viewportProducts = m_projectApp->GetViewportRenderProducts();
 	m_ui->SetViewportRenderProducts(viewportProducts);
-	m_ui->SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.SceneColor.Handle));
+	m_ui->SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
 	m_ui->Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
@@ -117,19 +115,19 @@ bool EditorApp::Tick()
 
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
-	    viewportProducts.SceneColor.Handle,
+	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::RenderTarget,
 	    ResourceState::ShaderResource);
 
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
 	renderHardware.BeginPresentRenderPass(commandListHandle, editorClearColor);
-	m_ui->Render(commandListHandle);
+	m_ui->Render();
 
 	renderHardware.EndPresentRenderPass(commandListHandle);
 
 	renderer.TransitionRenderProduct(
 	    commandListHandle,
-	    viewportProducts.SceneColor.Handle,
+	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::ShaderResource,
 	    ResourceState::Common);
 

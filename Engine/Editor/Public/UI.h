@@ -2,18 +2,14 @@
 
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
-#include "../../RHI/Public/Interop/RenderHardwareInterface.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 
-#include <Windows.h>
-
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <string>
 
 class Timer;
 class MainMenuBarPanel;
@@ -30,18 +26,30 @@ class InputSystem;
 class LevelManager;
 class GameScene;
 class Window;
+class RenderHardwareInterface;
 struct MeshPreviewGeometry;
-struct WindowMessageEvent;
+
+struct EditorHostServices final
+{
+	Timer& RuntimeTimer;
+	LevelManager* Levels = nullptr;
+	GameScene* Scene = nullptr;
+	RenderHardwareInterface& RenderHardware;
+	Window& HostWindow;
+	InputSystem& Input;
+};
+
+struct EditorDiagnosticsProviders final
+{
+	std::function<std::uint64_t()> ShaderPackageGeneration;
+	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
+	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
+};
 
 class SPARKLE_EDITOR_API UI final
 {
   public:
-	UI(Timer& timer,
-	   LevelManager* levelManager,
-	   GameScene* gameScene,
-	   RenderHardwareInterface& renderHardware,
-	   Window& window,
-	   InputSystem& inputSystem);
+	explicit UI(EditorHostServices hostServices);
 
 	~UI() noexcept;
 
@@ -50,23 +58,17 @@ class SPARKLE_EDITOR_API UI final
 	UI(UI&&) = delete;
 	UI& operator=(UI&&) = delete;
 
-	void HandleWindowMessage(WindowMessageEvent& event) noexcept;
-
-	bool ProcessWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-
 	const ViewportRenderRequest& GetViewportRenderRequest() const noexcept;
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
-	void SetShaderPackageGenerationProvider(std::function<std::uint64_t()> provider);
-	void SetMeshDiagnosticsProvider(std::function<MeshDiagnosticsSnapshot()> provider);
-	void SetTextureDiagnosticsProvider(std::function<TextureDiagnosticsSnapshot()> provider);
+	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
 
 	void Update();
 
-	void Render(NativeGraphicsCommandListHandle commandList) noexcept;
+	void Render() noexcept;
 
   private:
 	void NewFrame();

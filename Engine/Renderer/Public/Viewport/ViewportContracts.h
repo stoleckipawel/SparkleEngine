@@ -126,10 +126,113 @@ struct SPARKLE_RENDERER_API ViewportRenderRequest
 
 struct SPARKLE_RENDERER_API ViewportRenderProducts
 {
-	RenderOutputFlags AvailableOutputs = RenderOutputFlags::None;
-	RenderProduct SceneColor = {};
-	RenderProduct SceneDepth = {};
-	RenderProduct ObjectId = {};
-	RenderProduct Normals = {};
-	RenderProduct OverlayMask = {};
+	RenderOutputFlags GetAvailableOutputs() const noexcept { return m_availableOutputs; }
+	bool HasOutput(RenderOutputFlags output) const noexcept { return HasAnyRenderOutputFlags(m_availableOutputs, output); }
+
+	const RenderProduct* FindProduct(RenderOutputFlags output) const noexcept
+	{
+		const RenderProduct* product = SelectProduct(output);
+		return product != nullptr && HasOutput(output) ? product : nullptr;
+	}
+
+	const RenderProduct& GetSceneColor() const noexcept { return m_sceneColor; }
+	const RenderProduct& GetSceneDepth() const noexcept { return m_sceneDepth; }
+	const RenderProduct& GetObjectId() const noexcept { return m_objectId; }
+	const RenderProduct& GetNormals() const noexcept { return m_normals; }
+	const RenderProduct& GetOverlayMask() const noexcept { return m_overlayMask; }
+
+	void Clear() noexcept
+	{
+		m_availableOutputs = RenderOutputFlags::None;
+		m_sceneColor = {};
+		m_sceneDepth = {};
+		m_objectId = {};
+		m_normals = {};
+		m_overlayMask = {};
+	}
+
+	void ClearProduct(RenderOutputFlags output) noexcept
+	{
+		RenderProduct* product = SelectProduct(output);
+		if (product == nullptr)
+		{
+			return;
+		}
+
+		*product = {};
+		RemoveAvailableOutput(output);
+	}
+
+	void SetProduct(RenderOutputFlags output, RenderProduct product) noexcept
+	{
+		RenderProduct* target = SelectProduct(output);
+		if (target == nullptr)
+		{
+			return;
+		}
+
+		*target = product;
+		if (product.Handle)
+		{
+			m_availableOutputs |= output;
+		}
+		else
+		{
+			RemoveAvailableOutput(output);
+		}
+	}
+
+  private:
+	RenderProduct* SelectProduct(RenderOutputFlags output) noexcept
+	{
+		switch (output)
+		{
+			case RenderOutputFlags::SceneColor:
+				return &m_sceneColor;
+			case RenderOutputFlags::SceneDepth:
+				return &m_sceneDepth;
+			case RenderOutputFlags::ObjectId:
+				return &m_objectId;
+			case RenderOutputFlags::Normals:
+				return &m_normals;
+			case RenderOutputFlags::OverlayMask:
+				return &m_overlayMask;
+			case RenderOutputFlags::None:
+			default:
+				return nullptr;
+		}
+	}
+
+	const RenderProduct* SelectProduct(RenderOutputFlags output) const noexcept
+	{
+		switch (output)
+		{
+			case RenderOutputFlags::SceneColor:
+				return &m_sceneColor;
+			case RenderOutputFlags::SceneDepth:
+				return &m_sceneDepth;
+			case RenderOutputFlags::ObjectId:
+				return &m_objectId;
+			case RenderOutputFlags::Normals:
+				return &m_normals;
+			case RenderOutputFlags::OverlayMask:
+				return &m_overlayMask;
+			case RenderOutputFlags::None:
+			default:
+				return nullptr;
+		}
+	}
+
+	void RemoveAvailableOutput(RenderOutputFlags output) noexcept
+	{
+		m_availableOutputs = static_cast<RenderOutputFlags>(
+		    static_cast<std::uint16_t>(m_availableOutputs) & ~static_cast<std::uint16_t>(output));
+	}
+
+	RenderOutputFlags m_availableOutputs = RenderOutputFlags::None;
+	RenderProduct m_sceneColor = {};
+	RenderProduct m_sceneDepth = {};
+	RenderProduct m_objectId = {};
+	RenderProduct m_normals = {};
+	RenderProduct m_overlayMask = {};
 };

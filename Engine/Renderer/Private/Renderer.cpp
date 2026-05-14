@@ -344,11 +344,11 @@ void Renderer::InitializeFrameGraph() noexcept
 	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 
-	m_viewportRenderProducts.SceneColor.Handle =
+	m_viewportSceneColorHandle =
 	    buildResult.SceneColor.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
-	m_viewportRenderProducts.SceneDepth.Handle =
+	m_viewportSceneDepthHandle =
 	    buildResult.SceneDepth.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
@@ -422,26 +422,18 @@ void Renderer::SetupFrame() noexcept
 
 void Renderer::RefreshViewportRenderProducts() noexcept
 {
-	const RenderProductHandle sceneColorHandle = m_viewportRenderProducts.SceneColor.Handle;
-	const RenderProductHandle sceneDepthHandle = m_viewportRenderProducts.SceneDepth.Handle;
 	const RenderViewportExtent extent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
 
-	m_viewportRenderProducts = {};
-	m_viewportRenderProducts.AvailableOutputs = RenderOutputFlags::SceneColor;
-	m_viewportRenderProducts.SceneColor.Handle = sceneColorHandle;
-	m_viewportRenderProducts.SceneColor.Extent = extent;
-	m_viewportRenderProducts.SceneColor.Format = RenderProductFormat::ColorLdr;
+	m_viewportRenderProducts.Clear();
+	m_viewportRenderProducts.SetProduct(
+	    RenderOutputFlags::SceneColor,
+	    RenderProduct{m_viewportSceneColorHandle, extent, RenderProductFormat::ColorLdr});
 
-	if (sceneDepthHandle)
+	if (m_viewportSceneDepthHandle && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
-		m_viewportRenderProducts.SceneDepth.Handle = sceneDepthHandle;
-		m_viewportRenderProducts.SceneDepth.Extent = extent;
-		m_viewportRenderProducts.SceneDepth.Format = RenderProductFormat::DepthStencil;
-
-		if (HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
-		{
-			m_viewportRenderProducts.AvailableOutputs |= RenderOutputFlags::SceneDepth;
-		}
+		m_viewportRenderProducts.SetProduct(
+		    RenderOutputFlags::SceneDepth,
+		    RenderProduct{m_viewportSceneDepthHandle, extent, RenderProductFormat::DepthStencil});
 	}
 }
 
