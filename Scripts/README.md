@@ -25,7 +25,7 @@ If you are trying to figure out what to run for what, start here. If a file is u
 - Build one project editorless game runtime: run `Scripts\BuildProject.bat Showcase DevelopmentGame`
 - Run all CMake validation gates explicitly: run `cmake --build build --config DevelopmentEditor --target sparkle_validation_check`
 - Run the CMake dry-run format check explicitly: run `cmake --build build --config DevelopmentEditor --target clang_format_check`
-- Run the full cook from the top-level scripts folder: run `Scripts\CookAllAssets.bat Showcase DevelopmentGame`
+- Run the full cook from the top-level scripts folder: run `Scripts\CookAllAssets.bat Showcase DevelopmentGame`, then choose incremental or force recook when prompted
 - Cook shaders for a project: run `Scripts\Cook\CookShaders.bat Showcase DevelopmentGame`
 - Cook textures for a project: run `Scripts\Cook\CookTextures.bat Showcase DevelopmentGame`
 - Cook scene assets for a project: run `Scripts\Cook\CookAssets.bat Showcase DevelopmentGame`
@@ -43,6 +43,8 @@ Dependency sync output is concise by default: configure reports that it is check
 Optional tools are reported separately: `clang-cl` is available for explicit `ClangCL` builds, `clang-format` powers formatting commands, `clang-tidy` is for local static-analysis workflows, and `git-lfs` is not required because dependency fetches skip LFS blobs.
 
 Cook scripts check only the executables required by the requested cook mode. Cook output can target either editor or game profiles, but the cook tools themselves are editor-only targets: `DebugGame` uses tools from `DebugEditor`, `DevelopmentGame` uses tools from `DevelopmentEditor`, and `ShippingGame` uses tools from `ShippingEditor`. If a required cook tool is missing, the script builds that editor-profile tool target and then continues cooking. If the required tools already exist, the script skips toolchain validation, solution generation, and build work. Set `SPARKLE_FORCE_COOK_TOOL_BUILD=1` when you explicitly want a cook command to rebuild the requested tools before cooking.
+
+`CookAllAssets.bat` prompts for incremental or force recook when run directly. Incremental keeps existing cooked outputs and caches. Force recook removes the target cooked output folder and rebuilds the requested cook tools before cooking. Set `SPARKLE_COOK_MODE=incremental` or `SPARKLE_COOK_MODE=force` to bypass the prompt in automation.
 
 Cook scripts default internal engine/tool logging to warnings with `SPARKLE_LOG_LEVEL=warn`, while keeping cook progress, asset names, summaries, and cooked outputs on the console. Set `SPARKLE_LOG_LEVEL=info` or `debug` when you intentionally need lower-level diagnostics.
 
