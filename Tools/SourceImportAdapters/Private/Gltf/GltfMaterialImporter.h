@@ -2,10 +2,10 @@
 
 #include "SourceImportResult.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string_view>
-#include <vector>
 
 struct cgltf_data;
 struct cgltf_material;
@@ -17,51 +17,46 @@ class GltfMaterialImporter final
 	static void ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result);
 
   private:
-	static MaterialDesc ExtractMaterial(
+	static ImportedMaterial ExtractMaterial(
 	    const cgltf_material& material,
-	    unsigned int materialIndex,
+	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
 	    SourceImportResult& result);
-	static void CollectMaterialWarnings(const cgltf_material& material, MaterialHandle materialHandle, SourceImportResult& result);
-	static void ApplyMaterialProperties(const cgltf_material& material, MaterialDesc& materialDesc);
+	static void CollectMaterialWarnings(const cgltf_material& material, ImportedMaterialIndex materialIndex, SourceImportResult& result);
+	static void ApplyMaterialProperties(const cgltf_material& material, ImportedMaterial& importedMaterial);
 	static void ApplyTextureMappings(
 	    const cgltf_material& material,
-	    MaterialHandle materialHandle,
+	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
+	    ImportedMaterial& importedMaterial,
 	    SourceImportResult& result);
 	static void AssignPackedMetallicRoughness(
 	    const cgltf_material& material,
-	    MaterialHandle materialHandle,
+	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
+	    ImportedMaterial& importedMaterial,
 	    SourceImportResult& result);
 	static std::optional<std::filesystem::path> ResolveTexturePath(
 	    const cgltf_texture_view& textureView,
-	    MaterialHandle materialHandle,
+	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
 	    std::string_view slotName,
 	    SourceImportResult& result);
 	static void AssignTextureByType(
 	    const cgltf_material& material,
-	    MaterialHandle materialHandle,
+	    ImportedMaterialIndex materialIndex,
 	    const std::filesystem::path& sourceDirectory,
 	    TextureGroup textureGroup,
-	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
+	    ImportedMaterial& importedMaterial,
 	    SourceImportResult& result);
 	static void SetTextureSource(
-	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
+	    ImportedMaterial& importedMaterial,
 	    TextureGroup textureGroup,
 	    const std::optional<std::filesystem::path>& texturePath,
-		    TextureChannelMask channelMask = TextureChannelMask::Rgba);
+	    TextureChannelMask channelMask = TextureChannelMask::Rgba);
 	static std::optional<std::filesystem::path> NormalizeTexturePath(
 	    std::filesystem::path texturePath,
-	    MaterialHandle materialHandle,
+	    ImportedMaterialIndex materialIndex,
 	    std::string_view slotName);
 };
 

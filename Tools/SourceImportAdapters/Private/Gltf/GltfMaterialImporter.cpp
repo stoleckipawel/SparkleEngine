@@ -15,35 +15,30 @@ void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::fi
 {
 	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
-		SourceImportResult::MaterialEntry materialEntry;
-		materialEntry.description = ExtractMaterial(
+		result.scene.materials.push_back(ExtractMaterial(
 		    data->materials[materialIndex],
-		    static_cast<unsigned int>(materialIndex),
+		    static_cast<ImportedMaterialIndex>(materialIndex),
 		    sourceDirectory,
-		    materialEntry.textures,
-		    result);
-		result.materials.push_back(std::move(materialEntry));
+		    result));
 	}
 }
 
-MaterialDesc GltfMaterialImporter::ExtractMaterial(
+ImportedMaterial GltfMaterialImporter::ExtractMaterial(
     const cgltf_material& material,
-    unsigned int materialIndex,
+    ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
-	const MaterialHandle materialHandle(materialIndex);
-	MaterialDesc materialDesc;
-	CollectMaterialWarnings(material, materialHandle, result);
-	ApplyMaterialProperties(material, materialDesc);
-	ApplyTextureMappings(material, materialHandle, sourceDirectory, materialDesc, outTextureSources, result);
-	return materialDesc;
+	ImportedMaterial importedMaterial;
+	CollectMaterialWarnings(material, materialIndex, result);
+	ApplyMaterialProperties(material, importedMaterial);
+	ApplyTextureMappings(material, materialIndex, sourceDirectory, importedMaterial, result);
+	return importedMaterial;
 }
 
 std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
     const cgltf_texture_view& textureView,
-    MaterialHandle materialHandle,
+    ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
     std::string_view slotName,
     SourceImportResult& result)
@@ -71,13 +66,13 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 			    "{}",
 			    std::format(
 			        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-			        materialHandle.GetIndex(),
+			        materialIndex,
 			        slotName,
 			        texturePathString));
 			return std::nullopt;
 		}
 
-		return NormalizeTexturePath(*resolvedTexturePath, materialHandle, slotName);
+			return NormalizeTexturePath(*resolvedTexturePath, materialIndex, slotName);
 	}
 
 	if (texture.image && texture.image->buffer_view)
@@ -87,7 +82,7 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 		    "{}",
 		    std::format(
 		        "GltfImporter: Material handle {} uses an embedded {} texture which is not supported yet",
-		        materialHandle.GetIndex(),
+		        materialIndex,
 		        slotName));
 		return std::nullopt;
 	}
@@ -99,14 +94,14 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 		    "{}",
 		    std::format(
 		        "GltfImporter: Material handle {} uses {} texture sources that are not supported by the runtime importer yet",
-		        materialHandle.GetIndex(),
+		        materialIndex,
 		        slotName));
 	}
 
 	return std::nullopt;
 }
 
-void GltfMaterialImporter::CollectMaterialWarnings(const cgltf_material& material, MaterialHandle materialHandle, SourceImportResult& result)
+void GltfMaterialImporter::CollectMaterialWarnings(const cgltf_material& material, ImportedMaterialIndex materialIndex, SourceImportResult& result)
 {
 	std::string unsupportedFeatures;
 	auto appendFeature = [&unsupportedFeatures](std::string_view featureName)
@@ -192,95 +187,92 @@ void GltfMaterialImporter::CollectMaterialWarnings(const cgltf_material& materia
 		    std::format(
 		        "GltfImporter: Material handle {} uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR "
 		        "defaults",
-		        materialHandle.GetIndex(),
+		        materialIndex,
 		        unsupportedFeatures));
 	}
 }
 
-void GltfMaterialImporter::ApplyMaterialProperties(const cgltf_material& material, MaterialDesc& materialDesc)
+void GltfMaterialImporter::ApplyMaterialProperties(const cgltf_material& material, ImportedMaterial& importedMaterial)
 {
-	materialDesc.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
-	materialDesc.alphaCutoff = material.alpha_cutoff;
+	importedMaterial.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
+	importedMaterial.alphaCutoff = material.alpha_cutoff;
 
 	switch (material.alpha_mode)
 	{
 		case cgltf_alpha_mode_mask:
-			materialDesc.alphaMode = AlphaMode::Mask;
+			importedMaterial.alphaMode = ImportedAlphaMode::Mask;
 			break;
 		case cgltf_alpha_mode_blend:
-			materialDesc.alphaMode = AlphaMode::Blend;
+			importedMaterial.alphaMode = ImportedAlphaMode::Blend;
 			break;
 		case cgltf_alpha_mode_opaque:
 		default:
-			materialDesc.alphaMode = AlphaMode::Opaque;
+			importedMaterial.alphaMode = ImportedAlphaMode::Opaque;
 			break;
 	}
 
 	if (material.has_pbr_metallic_roughness)
 	{
 		const cgltf_pbr_metallic_roughness& pbr = material.pbr_metallic_roughness;
-		materialDesc.baseColor =
+		importedMaterial.baseColor =
 		    DirectX::XMFLOAT4(pbr.base_color_factor[0], pbr.base_color_factor[1], pbr.base_color_factor[2], pbr.base_color_factor[3]);
-		materialDesc.metallic = pbr.metallic_factor;
-		materialDesc.roughness = pbr.roughness_factor;
+		importedMaterial.metallic = pbr.metallic_factor;
+		importedMaterial.roughness = pbr.roughness_factor;
 	}
 	else if (material.has_pbr_specular_glossiness)
 	{
 		const cgltf_pbr_specular_glossiness& specGloss = material.pbr_specular_glossiness;
-		materialDesc.baseColor =
+		importedMaterial.baseColor =
 		    DirectX::XMFLOAT4(
 		        specGloss.diffuse_factor[0],
 		        specGloss.diffuse_factor[1],
 		        specGloss.diffuse_factor[2],
 		        specGloss.diffuse_factor[3]);
-		materialDesc.metallic = 0.0f;
-		materialDesc.roughness = 1.0f - specGloss.glossiness_factor;
+		importedMaterial.metallic = 0.0f;
+		importedMaterial.roughness = 1.0f - specGloss.glossiness_factor;
 	}
 }
 
 void GltfMaterialImporter::ApplyTextureMappings(
     const cgltf_material& material,
-    MaterialHandle materialHandle,
+    ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-    MaterialDesc& materialDesc,
-	std::vector<SourceImportResult::TextureSource>& outTextureSources,
+    ImportedMaterial& importedMaterial,
     SourceImportResult& result)
 {
-	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::Diffuse, materialDesc, outTextureSources, result);
-	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::NormalMap, materialDesc, outTextureSources, result);
-	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::AmbientOcclusion, materialDesc, outTextureSources, result);
-	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::Emissive, materialDesc, outTextureSources, result);
-	AssignPackedMetallicRoughness(material, materialHandle, sourceDirectory, materialDesc, outTextureSources, result);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Diffuse, importedMaterial, result);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::NormalMap, importedMaterial, result);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::AmbientOcclusion, importedMaterial, result);
+	AssignTextureByType(material, materialIndex, sourceDirectory, TextureGroup::Emissive, importedMaterial, result);
+	AssignPackedMetallicRoughness(material, materialIndex, sourceDirectory, importedMaterial, result);
 }
 
 void GltfMaterialImporter::AssignPackedMetallicRoughness(
     const cgltf_material& material,
-    MaterialHandle materialHandle,
+    ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
-    MaterialDesc& materialDesc,
-	std::vector<SourceImportResult::TextureSource>& outTextureSources,
+    ImportedMaterial& importedMaterial,
     SourceImportResult& result)
 {
 	if (material.has_pbr_metallic_roughness && material.pbr_metallic_roughness.metallic_roughness_texture.texture)
 	{
 		const std::optional<std::filesystem::path> texturePath = ResolveTexturePath(
 		    material.pbr_metallic_roughness.metallic_roughness_texture,
-		    materialHandle,
+		    materialIndex,
 		    sourceDirectory,
 		    "metallic-roughness",
 		    result);
-		SetTextureSource(materialDesc, outTextureSources, TextureGroup::Roughness, texturePath, TextureChannelMask::Green);
-		SetTextureSource(materialDesc, outTextureSources, TextureGroup::Metallic, texturePath, TextureChannelMask::Blue);
+		SetTextureSource(importedMaterial, TextureGroup::Roughness, texturePath, TextureChannelMask::Green);
+		SetTextureSource(importedMaterial, TextureGroup::Metallic, texturePath, TextureChannelMask::Blue);
 	}
 }
 
 void GltfMaterialImporter::AssignTextureByType(
     const cgltf_material& material,
-    MaterialHandle materialHandle,
+    ImportedMaterialIndex materialIndex,
     const std::filesystem::path& sourceDirectory,
     TextureGroup textureGroup,
-    MaterialDesc& materialDesc,
-	std::vector<SourceImportResult::TextureSource>& outTextureSources,
+    ImportedMaterial& importedMaterial,
     SourceImportResult& result)
 {
 	switch (textureGroup)
@@ -289,12 +281,11 @@ void GltfMaterialImporter::AssignTextureByType(
 			if (material.has_pbr_metallic_roughness)
 			{
 				SetTextureSource(
-				    materialDesc,
-				    outTextureSources,
+				    importedMaterial,
 				    textureGroup,
 				    ResolveTexturePath(
 				        material.pbr_metallic_roughness.base_color_texture,
-				        materialHandle,
+				        materialIndex,
 				        sourceDirectory,
 				        "base-color",
 				        result));
@@ -302,12 +293,11 @@ void GltfMaterialImporter::AssignTextureByType(
 			else if (material.has_pbr_specular_glossiness)
 			{
 				SetTextureSource(
-				    materialDesc,
-				    outTextureSources,
+				    importedMaterial,
 				    textureGroup,
 				    ResolveTexturePath(
 				        material.pbr_specular_glossiness.diffuse_texture,
-				        materialHandle,
+				        materialIndex,
 				        sourceDirectory,
 				        "diffuse",
 				        result));
@@ -324,34 +314,30 @@ void GltfMaterialImporter::AssignTextureByType(
 
 		case TextureGroup::NormalMap:
 			SetTextureSource(
-			    materialDesc,
-			    outTextureSources,
+			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.normal_texture, materialHandle, sourceDirectory, "normal", result));
+			    ResolveTexturePath(material.normal_texture, materialIndex, sourceDirectory, "normal", result));
 			break;
 
 		case TextureGroup::AmbientOcclusion:
 			SetTextureSource(
-			    materialDesc,
-			    outTextureSources,
+			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.occlusion_texture, materialHandle, sourceDirectory, "occlusion", result),
+			    ResolveTexturePath(material.occlusion_texture, materialIndex, sourceDirectory, "occlusion", result),
 			    TextureChannelMask::Red);
 			break;
 
 		case TextureGroup::Emissive:
 			SetTextureSource(
-			    materialDesc,
-			    outTextureSources,
+			    importedMaterial,
 			    textureGroup,
-			    ResolveTexturePath(material.emissive_texture, materialHandle, sourceDirectory, "emissive", result));
+			    ResolveTexturePath(material.emissive_texture, materialIndex, sourceDirectory, "emissive", result));
 			break;
 	}
 }
 
 void GltfMaterialImporter::SetTextureSource(
-    MaterialDesc& materialDesc,
-	std::vector<SourceImportResult::TextureSource>& outTextureSources,
+    ImportedMaterial& importedMaterial,
     TextureGroup textureGroup,
     const std::optional<std::filesystem::path>& texturePath,
 	TextureChannelMask channelMask)
@@ -361,13 +347,12 @@ void GltfMaterialImporter::SetTextureSource(
 		return;
 	}
 
-	materialDesc.SetTexturePath(textureGroup, texturePath);
-	outTextureSources.push_back({textureGroup, *texturePath, channelMask});
+	importedMaterial.textureSources.push_back({textureGroup, *texturePath, channelMask});
 }
 
 std::optional<std::filesystem::path> GltfMaterialImporter::NormalizeTexturePath(
     std::filesystem::path texturePath,
-    MaterialHandle materialHandle,
+    ImportedMaterialIndex materialIndex,
     std::string_view slotName)
 {
 	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
@@ -378,7 +363,7 @@ std::optional<std::filesystem::path> GltfMaterialImporter::NormalizeTexturePath(
 		    "{}",
 		    std::format(
 		        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-		        materialHandle.GetIndex(),
+		        materialIndex,
 		        slotName,
 		        texturePath.string()));
 		return std::nullopt;

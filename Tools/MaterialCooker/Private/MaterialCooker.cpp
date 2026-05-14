@@ -43,10 +43,10 @@ bool MaterialCooker::BuildMaterialAssets(
 {
 	outOutput.assets.clear();
 	outOutput.assetReferences.clear();
-	outOutput.assets.reserve(importResult.materials.size());
-	outOutput.assetReferences.reserve(importResult.materials.size());
+	outOutput.assets.reserve(importResult.scene.materials.size());
+	outOutput.assetReferences.reserve(importResult.scene.materials.size());
 
-	auto appendTextureReference = [&](const SourceImportResult::TextureSource& textureSource,
+	auto appendTextureReference = [&](const ImportedTextureSource& textureSource,
 	                                  CookedMaterialAssetBuild& materialAsset) -> bool
 	{
 		if (textureSource.sourcePath.empty())
@@ -75,75 +75,30 @@ bool MaterialCooker::BuildMaterialAssets(
 		return true;
 	};
 
-	auto appendFallbackTextureReference = [&](const std::optional<std::filesystem::path>& texturePath,
-	                                          TextureGroup textureGroup,
-	                                          CookedMaterialAssetBuild& materialAsset,
-	                                          TextureChannelMask channelMask = TextureChannelMask::Rgba) -> bool
+	for (std::size_t materialIndex = 0; materialIndex < importResult.scene.materials.size(); ++materialIndex)
 	{
-		if (!texturePath)
-		{
-			return true;
-		}
-
-		return appendTextureReference({textureGroup, *texturePath, channelMask}, materialAsset);
-	};
-
-	for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
-	{
-		const SourceImportResult::MaterialEntry& materialEntry = importResult.materials[materialIndex];
-		const MaterialDesc& materialDesc = materialEntry.description;
+		const ImportedMaterial& importedMaterial = importResult.scene.materials[materialIndex];
 		CookedMaterialAssetBuild materialAsset;
 		materialAsset.assetId = BuildMaterialAssetId(sceneAssetId, materialIndex);
-		materialAsset.name = materialDesc.name;
+		materialAsset.name = importedMaterial.name;
 		materialAsset.header.nameByteCount = static_cast<std::uint32_t>(materialAsset.name.size());
 		materialAsset.header.textureReferenceCount = 0;
-		materialAsset.header.alphaMode = TranslateAlphaMode(materialDesc.alphaMode);
-		materialAsset.header.baseColor = materialDesc.baseColor;
-		materialAsset.header.metallic = materialDesc.metallic;
-		materialAsset.header.roughness = materialDesc.roughness;
-		materialAsset.header.f0 = materialDesc.f0;
-		materialAsset.header.subsurfaceColor = materialDesc.subsurfaceColor;
-		materialAsset.header.subsurfaceStrength = materialDesc.subsurfaceStrength;
-		materialAsset.header.alphaCutoff = materialDesc.alphaCutoff;
-		materialAsset.header.emissiveColor = materialDesc.emissiveColor;
+		materialAsset.header.alphaMode = TranslateAlphaMode(importedMaterial.alphaMode);
+		materialAsset.header.baseColor = importedMaterial.baseColor;
+		materialAsset.header.metallic = importedMaterial.metallic;
+		materialAsset.header.roughness = importedMaterial.roughness;
+		materialAsset.header.f0 = importedMaterial.f0;
+		materialAsset.header.subsurfaceColor = importedMaterial.subsurfaceColor;
+		materialAsset.header.subsurfaceStrength = importedMaterial.subsurfaceStrength;
+		materialAsset.header.alphaCutoff = importedMaterial.alphaCutoff;
+		materialAsset.header.emissiveColor = importedMaterial.emissiveColor;
 
-		if (!materialEntry.textures.empty())
+		for (const ImportedTextureSource& textureSource : importedMaterial.textureSources)
 		{
-			for (const SourceImportResult::TextureSource& textureSource : materialEntry.textures)
+			if (!appendTextureReference(textureSource, materialAsset))
 			{
-				if (!appendTextureReference(textureSource, materialAsset))
-				{
-					return false;
-				}
+				return false;
 			}
-		}
-		else if (
-		    !appendFallbackTextureReference(materialDesc.albedoTexture, TextureGroup::Diffuse, materialAsset) ||
-		    !appendFallbackTextureReference(materialDesc.normalTexture, TextureGroup::NormalMap, materialAsset) ||
-		    !appendFallbackTextureReference(
-		        materialDesc.roughnessTexture,
-		        TextureGroup::Roughness,
-		        materialAsset,
-		        TextureChannelMask::Red) ||
-		    !appendFallbackTextureReference(
-		        materialDesc.metallicTexture,
-		        TextureGroup::Metallic,
-		        materialAsset,
-		        TextureChannelMask::Red) ||
-		    !appendFallbackTextureReference(
-		        materialDesc.occlusionTexture,
-		        TextureGroup::AmbientOcclusion,
-		        materialAsset,
-		        TextureChannelMask::Red) ||
-		    !appendFallbackTextureReference(materialDesc.emissiveTexture, TextureGroup::Emissive, materialAsset) ||
-		    !appendFallbackTextureReference(materialDesc.subsurfaceColorTexture, TextureGroup::SubsurfaceColor, materialAsset) ||
-		    !appendFallbackTextureReference(
-		        materialDesc.subsurfaceStrengthTexture,
-		        TextureGroup::SubsurfaceStrength,
-		        materialAsset,
-		        TextureChannelMask::Red))
-		{
-			return false;
 		}
 
 		materialAsset.header.textureReferenceCount = static_cast<std::uint32_t>(materialAsset.textureReferences.size());
@@ -164,7 +119,7 @@ bool MaterialCooker::CollectTextureCookRequests(
 	outRequests.clear();
 	TextureCookRequestSet requestSet;
 
-	auto appendTextureRequest = [&](const SourceImportResult::TextureSource& textureSource) -> bool
+	auto appendTextureRequest = [&](const ImportedTextureSource& textureSource) -> bool
 	{
 		if (textureSource.sourcePath.empty())
 		{
@@ -190,48 +145,15 @@ bool MaterialCooker::CollectTextureCookRequests(
 		return true;
 	};
 
-	auto appendFallbackTextureRequest = [&](const std::optional<std::filesystem::path>& texturePath,
-	                                        TextureGroup textureGroup,
-	                                        TextureChannelMask channelMask = TextureChannelMask::Rgba) -> bool
+	for (std::size_t materialIndex = 0; materialIndex < importResult.scene.materials.size(); ++materialIndex)
 	{
-		if (!texturePath)
+		const ImportedMaterial& importedMaterial = importResult.scene.materials[materialIndex];
+		for (const ImportedTextureSource& textureSource : importedMaterial.textureSources)
 		{
-			return true;
-		}
-
-		return appendTextureRequest({textureGroup, *texturePath, channelMask});
-	};
-
-	for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
-	{
-		const SourceImportResult::MaterialEntry& materialEntry = importResult.materials[materialIndex];
-		if (!materialEntry.textures.empty())
-		{
-			for (const SourceImportResult::TextureSource& textureSource : materialEntry.textures)
+			if (!appendTextureRequest(textureSource))
 			{
-				if (!appendTextureRequest(textureSource))
-				{
-					return false;
-				}
+				return false;
 			}
-
-			continue;
-		}
-
-		const MaterialDesc& materialDesc = materialEntry.description;
-		if (!appendFallbackTextureRequest(materialDesc.albedoTexture, TextureGroup::Diffuse) ||
-		    !appendFallbackTextureRequest(materialDesc.normalTexture, TextureGroup::NormalMap) ||
-		    !appendFallbackTextureRequest(materialDesc.roughnessTexture, TextureGroup::Roughness, TextureChannelMask::Red) ||
-		    !appendFallbackTextureRequest(materialDesc.metallicTexture, TextureGroup::Metallic, TextureChannelMask::Red) ||
-		    !appendFallbackTextureRequest(materialDesc.occlusionTexture, TextureGroup::AmbientOcclusion, TextureChannelMask::Red) ||
-		    !appendFallbackTextureRequest(materialDesc.emissiveTexture, TextureGroup::Emissive) ||
-		    !appendFallbackTextureRequest(materialDesc.subsurfaceColorTexture, TextureGroup::SubsurfaceColor) ||
-		    !appendFallbackTextureRequest(
-		        materialDesc.subsurfaceStrengthTexture,
-		        TextureGroup::SubsurfaceStrength,
-		        TextureChannelMask::Red))
-		{
-			return false;
 		}
 	}
 
@@ -315,15 +237,15 @@ Assets::CookedAssetId MaterialCooker::BuildMaterialAssetId(std::string_view scen
 	return Hash::Fnv1a64(std::string(sceneAssetId) + "#material#" + std::to_string(materialIndex));
 }
 
-Assets::CookedAlphaMode MaterialCooker::TranslateAlphaMode(AlphaMode alphaMode) noexcept
+Assets::CookedAlphaMode MaterialCooker::TranslateAlphaMode(ImportedAlphaMode alphaMode) noexcept
 {
 	switch (alphaMode)
 	{
-		case AlphaMode::Opaque:
+		case ImportedAlphaMode::Opaque:
 			return Assets::CookedAlphaMode::Opaque;
-		case AlphaMode::Mask:
+		case ImportedAlphaMode::Mask:
 			return Assets::CookedAlphaMode::Mask;
-		case AlphaMode::Blend:
+		case ImportedAlphaMode::Blend:
 			return Assets::CookedAlphaMode::Blend;
 	}
 

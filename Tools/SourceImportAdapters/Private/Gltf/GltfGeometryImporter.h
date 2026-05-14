@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "SourceImportResult.h"
 
@@ -28,13 +28,11 @@ class GltfGeometryImporter final
 	static DirectX::XMFLOAT3 ReadFloat3(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMFLOAT4 ReadFloat4(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
-	static MaterialHandle ResolveMaterialHandle(
+	static ImportedMaterialIndex ResolveMaterialIndex(
 	    const cgltf_primitive& primitive,
 	    const cgltf_data* data,
 	    std::string_view primitiveLabel,
 	    SourceImportResult& result);
-	static MeshData ExtractMeshGeometry(const cgltf_primitive& primitive);
+	static ImportedMeshGeometry ExtractMeshGeometry(const cgltf_primitive& primitive);
 	static std::string BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex);
 };
-
-

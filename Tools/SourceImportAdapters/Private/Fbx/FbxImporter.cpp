@@ -20,8 +20,8 @@ bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.importerType = SourceImporterType::Fbx;
-	result.sourceScenePath = filePath;
+	result.scene.importerType = SourceImporterType::Fbx;
+	result.scene.sourcePath = filePath;
 
 	Assimp::Importer importer;
 	const aiScene* scene = nullptr;
@@ -30,14 +30,14 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 		return result;
 	}
 
-	result.materials.reserve(scene->mNumMaterials);
+	result.scene.materials.reserve(scene->mNumMaterials);
 	result.ReserveMeshes(FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode));
 
 	FbxSceneReader::CollectSceneWarnings(*scene, result);
 	FbxMaterialImporter::ImportMaterials(*scene, filePath.parent_path(), result);
 	FbxGeometryImporter::ImportGeometry(*scene, result);
 
-	if (result.meshes.empty())
+	if (result.scene.meshes.empty())
 	{
 		SPDLOG_LOGGER_ERROR(g_fbxImporterLogger, "{}", std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string()));
 		return result;
@@ -51,8 +51,8 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 	    std::format(
 	        "FbxImporter: Loaded '{}' - {} meshes, {} materials",
 	        filePath.filename().string(),
-	        result.meshes.size(),
-	        result.materials.size()));
+	        result.scene.meshes.size(),
+	        result.scene.materials.size()));
 
 	return result;
 }

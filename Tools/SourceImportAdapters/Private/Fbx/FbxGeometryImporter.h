@@ -5,6 +5,7 @@
 #include <assimp/scene.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 
 class FbxGeometryImporter final
@@ -16,14 +17,14 @@ class FbxGeometryImporter final
   private:
 	static void ExtractNodeMeshes(const aiScene& scene, const aiNode& node, const aiMatrix4x4& parentTransform, SourceImportResult& result);
 	static void AppendMeshInstance(const aiNode& node, const aiMesh& mesh, const aiMatrix4x4& worldTransform, SourceImportResult& result);
-	static MeshData ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result);
-	static void PopulateVertices(const aiMesh& mesh, MeshData& meshData);
-	static void AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, SourceImportResult& result);
-	static MaterialHandle ResolveMaterialHandle(const aiMesh& mesh, SourceImportResult& result) noexcept;
+	static ImportedMeshGeometry ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result);
+	static void PopulateVertices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry);
+	static void AppendTriangleIndices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry, SourceImportResult& result);
+	static ImportedMaterialIndex ResolveMaterialIndex(const aiMesh& mesh, SourceImportResult& result) noexcept;
 	static std::string BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh);
 	static std::string GetNodeName(const aiNode& node);
 	static std::string GetMeshName(const aiMesh& mesh);
-	static Transform ConvertTransform(const aiMatrix4x4& matrix) noexcept;
+	static DirectX::XMFLOAT4X4 ConvertTransform(const aiMatrix4x4& matrix) noexcept;
 };
 
 

@@ -20,8 +20,8 @@ bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.importerType = SourceImporterType::Gltf;
-	result.sourceScenePath = filePath;
+	result.scene.importerType = SourceImporterType::Gltf;
+	result.scene.sourcePath = filePath;
 
 	GltfScene scene;
 	if (!GltfSceneReader::LoadScene(filePath, scene, result))
@@ -32,14 +32,14 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	GltfSceneReader::CollectSceneWarnings(scene.data, result);
 
 	const std::filesystem::path sourceDirectory = filePath.parent_path();
-	result.materials.reserve(scene.data->materials_count);
+	result.scene.materials.reserve(scene.data->materials_count);
 	GltfMaterialImporter::ImportMaterials(scene.data, sourceDirectory, result);
 
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
 	result.ReserveMeshes(importedMeshInstanceCount);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 
-	if (result.meshes.empty())
+	if (result.scene.meshes.empty())
 	{
 		SPDLOG_LOGGER_ERROR(g_gltfImporterLogger, "{}", std::format("GltfImporter: No supported mesh primitives found in '{}'", filePath.string()));
 		return result;
@@ -53,8 +53,8 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	    std::format(
 	        "GltfImporter: Loaded '{}' - {} meshes, {} materials",
 	        filePath.filename().string(),
-	        result.meshes.size(),
-	        result.materials.size()));
+	        result.scene.meshes.size(),
+	        result.scene.materials.size()));
 
 	return result;
 }

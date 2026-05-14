@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Gltf/GltfGeometryImporter.h"
 
@@ -74,8 +74,8 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				    std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
 			}
 
-			MeshData meshData = ExtractMeshGeometry(primitive);
-			if (!meshData.IsValid())
+			ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(primitive);
+			if (!meshGeometry.IsValid())
 			{
 				SPDLOG_LOGGER_WARN(
 				    g_gltfGeometryImporterLogger,
@@ -84,12 +84,12 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				continue;
 			}
 
-			SourceImportResult::MeshEntry meshEntry;
-			meshEntry.geometry = std::move(meshData);
+			ImportedMesh meshEntry;
+			meshEntry.geometry = std::move(meshGeometry);
 			meshEntry.displayName = primitiveLabel;
-			meshEntry.transform = Transform(worldTransform);
-			meshEntry.material = ResolveMaterialHandle(primitive, data, primitiveLabel, result);
-			result.meshes.push_back(std::move(meshEntry));
+			DirectX::XMStoreFloat4x4(&meshEntry.worldTransform, worldTransform);
+			meshEntry.materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
+			result.scene.meshes.push_back(std::move(meshEntry));
 		}
 	}
 }
@@ -176,21 +176,21 @@ DirectX::XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_no
 	return worldTransform;
 }
 
-MaterialHandle GltfGeometryImporter::ResolveMaterialHandle(
+ImportedMaterialIndex GltfGeometryImporter::ResolveMaterialIndex(
 	const cgltf_primitive& primitive,
 	const cgltf_data* data,
 	std::string_view primitiveLabel,
 	SourceImportResult& result)
 {
-	if (!primitive.material || result.materials.empty())
+	if (!primitive.material || result.scene.materials.empty())
 	{
-		return MaterialHandle::Invalid();
+		return kInvalidImportedMaterialIndex;
 	}
 
 	const std::uint32_t materialIndex = static_cast<std::uint32_t>(primitive.material - data->materials);
-	if (materialIndex < result.materials.size())
+	if (materialIndex < result.scene.materials.size())
 	{
-		return MaterialHandle(materialIndex);
+		return materialIndex;
 	}
 
 	SPDLOG_LOGGER_WARN(
@@ -200,10 +200,10 @@ MaterialHandle GltfGeometryImporter::ResolveMaterialHandle(
 	        "GltfImporter: {} references invalid material index {} and will use the default material",
 	        primitiveLabel,
 	        materialIndex));
-	return MaterialHandle::Invalid();
+	return kInvalidImportedMaterialIndex;
 }
 
-MeshData GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primitive& primitive)
+ImportedMeshGeometry GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primitive& primitive)
 {
 	const cgltf_accessor* positions = FindAttribute(primitive, cgltf_attribute_type_position);
 	const cgltf_accessor* normals = FindAttribute(primitive, cgltf_attribute_type_normal);
@@ -216,13 +216,13 @@ MeshData GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primitive& primit
 	}
 
 	const std::uint32_t vertexCount = static_cast<std::uint32_t>(positions->count);
-	MeshData meshData;
-	meshData.Reserve(vertexCount, primitive.indices ? static_cast<std::uint32_t>(primitive.indices->count) : 0);
-	meshData.vertices.resize(vertexCount);
+	ImportedMeshGeometry meshGeometry;
+	meshGeometry.Reserve(vertexCount, primitive.indices ? static_cast<std::uint32_t>(primitive.indices->count) : 0);
+	meshGeometry.vertices.resize(vertexCount);
 
 	for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
-		VertexData& vertex = meshData.vertices[vertexIndex];
+		ImportedVertex& vertex = meshGeometry.vertices[vertexIndex];
 		vertex.position = ReadFloat3(positions, vertexIndex);
 		vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -242,8 +242,6 @@ MeshData GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primitive& primit
 		}
 	}
 
-	ReadIndices(primitive.indices, meshData.indices);
-	return meshData;
+	ReadIndices(primitive.indices, meshGeometry.indices);
+	return meshGeometry;
 }
-
-

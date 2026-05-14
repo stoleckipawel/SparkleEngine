@@ -59,21 +59,21 @@ void FbxGeometryImporter::AppendMeshInstance(
 	const aiMatrix4x4& worldTransform,
 	SourceImportResult& result)
 {
-	MeshData meshData = ExtractMeshGeometry(mesh, node, result);
-	if (!meshData.IsValid())
+	ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(mesh, node, result);
+	if (!meshGeometry.IsValid())
 	{
 		return;
 	}
 
-	SourceImportResult::MeshEntry meshEntry;
-	meshEntry.geometry = std::move(meshData);
+	ImportedMesh meshEntry;
+	meshEntry.geometry = std::move(meshGeometry);
 	meshEntry.displayName = BuildMeshDisplayName(node, mesh);
-	meshEntry.transform = ConvertTransform(worldTransform);
-	meshEntry.material = ResolveMaterialHandle(mesh, result);
-	result.meshes.push_back(std::move(meshEntry));
+	meshEntry.worldTransform = ConvertTransform(worldTransform);
+	meshEntry.materialIndex = ResolveMaterialIndex(mesh, result);
+	result.scene.meshes.push_back(std::move(meshEntry));
 }
 
-MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result)
+ImportedMeshGeometry FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result)
 {
 	if (!mesh.HasPositions())
 	{
@@ -103,13 +103,13 @@ MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNo
 		    std::format("FbxImporter: Mesh '{}' contains morph targets which will be ignored", GetMeshName(mesh)));
 	}
 
-	MeshData meshData;
-	meshData.Reserve(mesh.mNumVertices, mesh.mNumFaces * 3);
-	meshData.vertices.resize(mesh.mNumVertices);
-	PopulateVertices(mesh, meshData);
-	AppendTriangleIndices(mesh, meshData, result);
+	ImportedMeshGeometry meshGeometry;
+	meshGeometry.Reserve(mesh.mNumVertices, mesh.mNumFaces * 3);
+	meshGeometry.vertices.resize(mesh.mNumVertices);
+	PopulateVertices(mesh, meshGeometry);
+	AppendTriangleIndices(mesh, meshGeometry, result);
 
-	if (!meshData.IsValid())
+	if (!meshGeometry.IsValid())
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_fbxGeometryImporterLogger,
@@ -117,14 +117,14 @@ MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNo
 		    std::format("FbxImporter: Mesh '{}' did not produce valid triangle geometry", GetMeshName(mesh)));
 	}
 
-	return meshData;
+	return meshGeometry;
 }
 
-void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, MeshData& meshData)
+void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry)
 {
 	for (unsigned int vertexIndex = 0; vertexIndex < mesh.mNumVertices; ++vertexIndex)
 	{
-		VertexData& vertex = meshData.vertices[vertexIndex];
+		ImportedVertex& vertex = meshGeometry.vertices[vertexIndex];
 		vertex.position = DirectX::XMFLOAT3(mesh.mVertices[vertexIndex].x, mesh.mVertices[vertexIndex].y, mesh.mVertices[vertexIndex].z);
 
 		if (mesh.HasNormals())
@@ -153,7 +153,7 @@ void FbxGeometryImporter::PopulateVertices(const aiMesh& mesh, MeshData& meshDat
 	}
 }
 
-void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, SourceImportResult& result)
+void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, ImportedMeshGeometry& meshGeometry, SourceImportResult& result)
 {
 	for (unsigned int faceIndex = 0; faceIndex < mesh.mNumFaces; ++faceIndex)
 	{
@@ -167,22 +167,22 @@ void FbxGeometryImporter::AppendTriangleIndices(const aiMesh& mesh, MeshData& me
 			continue;
 		}
 
-		meshData.indices.push_back(face.mIndices[0]);
-		meshData.indices.push_back(face.mIndices[1]);
-		meshData.indices.push_back(face.mIndices[2]);
+		meshGeometry.indices.push_back(face.mIndices[0]);
+		meshGeometry.indices.push_back(face.mIndices[1]);
+		meshGeometry.indices.push_back(face.mIndices[2]);
 	}
 }
 
-MaterialHandle FbxGeometryImporter::ResolveMaterialHandle(const aiMesh& mesh, SourceImportResult& result) noexcept
+ImportedMaterialIndex FbxGeometryImporter::ResolveMaterialIndex(const aiMesh& mesh, SourceImportResult& result) noexcept
 {
-	if (result.materials.empty())
+	if (result.scene.materials.empty())
 	{
-		return MaterialHandle::Invalid();
+		return kInvalidImportedMaterialIndex;
 	}
 
-	if (mesh.mMaterialIndex < result.materials.size())
+	if (mesh.mMaterialIndex < result.scene.materials.size())
 	{
-		return MaterialHandle(mesh.mMaterialIndex);
+		return static_cast<ImportedMaterialIndex>(mesh.mMaterialIndex);
 	}
 
 	SPDLOG_LOGGER_WARN(
@@ -192,7 +192,7 @@ MaterialHandle FbxGeometryImporter::ResolveMaterialHandle(const aiMesh& mesh, So
 	        "FbxImporter: '{}' references invalid material index {} and will use the default material",
 	        GetMeshName(mesh),
 	        mesh.mMaterialIndex));
-	return MaterialHandle::Invalid();
+	return kInvalidImportedMaterialIndex;
 }
 
 std::string FbxGeometryImporter::BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh)
@@ -230,25 +230,29 @@ std::string FbxGeometryImporter::GetMeshName(const aiMesh& mesh)
 	return std::string("<unnamed-mesh>");
 }
 
-Transform FbxGeometryImporter::ConvertTransform(const aiMatrix4x4& matrix) noexcept
+DirectX::XMFLOAT4X4 FbxGeometryImporter::ConvertTransform(const aiMatrix4x4& matrix) noexcept
 {
-	return Transform(DirectX::XMMATRIX(
-	    matrix.a1,
-	    matrix.a2,
-	    matrix.a3,
-	    matrix.a4,
-	    matrix.b1,
-	    matrix.b2,
-	    matrix.b3,
-	    matrix.b4,
-	    matrix.c1,
-	    matrix.c2,
-	    matrix.c3,
-	    matrix.c4,
-	    matrix.d1,
-	    matrix.d2,
-	    matrix.d3,
-	    matrix.d4));
+	DirectX::XMFLOAT4X4 transform{};
+	DirectX::XMStoreFloat4x4(
+	    &transform,
+	    DirectX::XMMATRIX(
+	        matrix.a1,
+	        matrix.a2,
+	        matrix.a3,
+	        matrix.a4,
+	        matrix.b1,
+	        matrix.b2,
+	        matrix.b3,
+	        matrix.b4,
+	        matrix.c1,
+	        matrix.c2,
+	        matrix.c3,
+	        matrix.c4,
+	        matrix.d1,
+	        matrix.d2,
+	        matrix.d3,
+	        matrix.d4));
+	return transform;
 }
 
 

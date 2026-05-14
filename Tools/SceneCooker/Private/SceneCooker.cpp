@@ -40,17 +40,16 @@ bool SceneCooker::BuildManifest(
     std::string& outErrorMessage)
 {
 	outBuild.manifest.instances.clear();
-	outBuild.manifest.instances.reserve(importResult.meshes.size());
+	outBuild.manifest.instances.reserve(importResult.scene.meshes.size());
 
-	for (std::size_t meshIndex = 0; meshIndex < importResult.meshes.size(); ++meshIndex)
+	for (std::size_t meshIndex = 0; meshIndex < importResult.scene.meshes.size(); ++meshIndex)
 	{
-		const SourceImportResult::MeshEntry& meshEntry = importResult.meshes[meshIndex];
-		const Transform& instanceTransform = meshEntry.transform;
+		const ImportedMesh& importedMesh = importResult.scene.meshes[meshIndex];
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (meshEntry.material.IsValid())
+		if (importedMesh.HasMaterialBinding())
 		{
-			materialAssetIndex = meshEntry.material.GetIndex();
+			materialAssetIndex = importedMesh.materialIndex;
 			if (materialAssetIndex >= outBuild.outputs.materialAssets.size())
 			{
 				outErrorMessage = "Imported mesh instance references a material index outside the imported material set";
@@ -62,7 +61,7 @@ bool SceneCooker::BuildManifest(
 		    Assets::CookedSceneInstanceRecord{
 		        .meshAssetIndex = static_cast<std::uint32_t>(meshIndex),
 		        .materialAssetIndex = materialAssetIndex,
-		        .worldTransform = instanceTransform.GetWorldMatrix4x4()});
+		        .worldTransform = importedMesh.worldTransform});
 	}
 
 	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());

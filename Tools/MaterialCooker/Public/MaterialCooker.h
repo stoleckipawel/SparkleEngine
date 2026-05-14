@@ -27,5 +27,5 @@ public:
 
 private:
 	static Assets::CookedAssetId BuildMaterialAssetId(std::string_view sceneAssetId, std::size_t materialIndex) noexcept;
-	static Assets::CookedAlphaMode TranslateAlphaMode(AlphaMode alphaMode) noexcept;
+	static Assets::CookedAlphaMode TranslateAlphaMode(ImportedAlphaMode alphaMode) noexcept;
 };

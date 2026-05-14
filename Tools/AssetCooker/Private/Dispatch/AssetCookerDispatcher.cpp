@@ -475,7 +475,7 @@ static bool AssetCookerCookImportedScene(
 	    ToolConsoleSeverity::Info,
 	    "Cooked scene",
 	    {ToolConsole::QuotedField("name", sceneEntry.relativePath),
-	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.importerType)),
+	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.scene.importerType)),
 	     ToolConsole::Field("meshes", std::to_string(importResult.GetMeshCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
 	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
