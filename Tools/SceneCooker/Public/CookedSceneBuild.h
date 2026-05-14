@@ -6,19 +6,54 @@
 
 #include <filesystem>
 #include <string>
+#include <utility>
 #include <vector>
 
-struct CookedSceneBuild
+struct CookedSceneIdentity final
 {
-	std::string sceneAssetId;
-	std::filesystem::path sceneManifestPath;
-	Assets::CookedSceneManifestHeader manifestHeader;
+	std::string assetId;
+	std::filesystem::path manifestPath;
+};
+
+struct CookedSceneManifestBuildData final
+{
+	Assets::CookedSceneManifestHeader header;
 	std::vector<Assets::CookedSceneMeshAssetRef> meshAssetReferences;
 	std::vector<Assets::CookedSceneMaterialAssetRef> materialAssetReferences;
 	std::vector<Assets::CookedSceneInstanceRecord> instances;
+};
+
+struct CookedSceneAssetOutputs final
+{
 	std::vector<CookedMeshAssetBuild> meshAssets;
 	std::vector<CookedMaterialAssetBuild> materialAssets;
+};
+
+struct CookedSceneBuildStatus final
+{
 	std::string errorMessage;
 
 	bool Succeeded() const noexcept { return errorMessage.empty(); }
+};
+
+struct CookedSceneBuild final
+{
+	CookedSceneIdentity identity;
+	CookedSceneManifestBuildData manifest;
+	CookedSceneAssetOutputs outputs;
+	CookedSceneBuildStatus status;
+
+	bool Succeeded() const noexcept { return status.Succeeded(); }
+
+	void ApplyMeshOutput(MeshCookOutput&& meshOutput)
+	{
+		manifest.meshAssetReferences = std::move(meshOutput.assetReferences);
+		outputs.meshAssets = std::move(meshOutput.assets);
+	}
+
+	void ApplyMaterialOutput(MaterialCookOutput&& materialOutput)
+	{
+		manifest.materialAssetReferences = std::move(materialOutput.assetReferences);
+		outputs.materialAssets = std::move(materialOutput.assets);
+	}
 };

@@ -33,16 +33,11 @@ namespace
 	}
 }
 
-void MeshCooker::BuildMeshAssets(
-    const SourceImportResult& importResult,
-    std::string_view sceneAssetId,
-    std::vector<CookedMeshAssetBuild>& outMeshAssets,
-    std::vector<Assets::CookedSceneMeshAssetRef>& outMeshAssetReferences)
+MeshCookOutput MeshCooker::BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId)
 {
-	outMeshAssets.clear();
-	outMeshAssetReferences.clear();
-	outMeshAssets.reserve(importResult.meshes.size());
-	outMeshAssetReferences.reserve(importResult.meshes.size());
+	MeshCookOutput output;
+	output.assets.reserve(importResult.meshes.size());
+	output.assetReferences.reserve(importResult.meshes.size());
 
 	for (std::size_t meshIndex = 0; meshIndex < importResult.meshes.size(); ++meshIndex)
 	{
@@ -65,9 +60,11 @@ void MeshCooker::BuildMeshAssets(
 		}
 		meshAsset.indices = meshData.indices;
 
-		outMeshAssetReferences.push_back({meshAsset.assetId});
-		outMeshAssets.push_back(std::move(meshAsset));
+		output.assetReferences.push_back({meshAsset.assetId});
+		output.assets.push_back(std::move(meshAsset));
 	}
+
+	return output;
 }
 
 bool MeshCooker::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAssets, std::string& outErrorMessage)

@@ -13,10 +13,9 @@
 #include <fstream>
 #include <optional>
 
-bool SceneCooker::ResolveSceneAsset(
+bool SceneCooker::ResolveSceneIdentity(
     const std::filesystem::path& sourceScenePath,
-    std::string& outSceneAssetId,
-    std::filesystem::path& outSceneManifestPath,
+	CookedSceneIdentity& outIdentity,
     std::string& outErrorMessage)
 {
 	std::filesystem::path resolvedSourceScenePath;
@@ -25,12 +24,12 @@ bool SceneCooker::ResolveSceneAsset(
 		return false;
 	}
 
-	if (!BuildSceneAssetId(resolvedSourceScenePath, outSceneAssetId, outErrorMessage))
+	if (!BuildSceneAssetId(resolvedSourceScenePath, outIdentity.assetId, outErrorMessage))
 	{
 		return false;
 	}
 
-	outSceneManifestPath = Paths::CookedSceneManifest(outSceneAssetId);
+	outIdentity.manifestPath = Paths::CookedSceneManifest(outIdentity.assetId);
 	outErrorMessage.clear();
 	return true;
 }
@@ -40,8 +39,8 @@ bool SceneCooker::BuildManifest(
     CookedSceneBuild& outBuild,
     std::string& outErrorMessage)
 {
-	outBuild.instances.clear();
-	outBuild.instances.reserve(importResult.meshes.size());
+	outBuild.manifest.instances.clear();
+	outBuild.manifest.instances.reserve(importResult.meshes.size());
 
 	for (std::size_t meshIndex = 0; meshIndex < importResult.meshes.size(); ++meshIndex)
 	{
@@ -52,23 +51,23 @@ bool SceneCooker::BuildManifest(
 		if (meshEntry.material.IsValid())
 		{
 			materialAssetIndex = meshEntry.material.GetIndex();
-			if (materialAssetIndex >= outBuild.materialAssets.size())
+			if (materialAssetIndex >= outBuild.outputs.materialAssets.size())
 			{
 				outErrorMessage = "Imported mesh instance references a material index outside the imported material set";
 				return false;
 			}
 		}
 
-		outBuild.instances.push_back(
+		outBuild.manifest.instances.push_back(
 		    Assets::CookedSceneInstanceRecord{
 		        .meshAssetIndex = static_cast<std::uint32_t>(meshIndex),
 		        .materialAssetIndex = materialAssetIndex,
 		        .worldTransform = instanceTransform.GetWorldMatrix4x4()});
 	}
 
-	outBuild.manifestHeader.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.meshAssetReferences.size());
-	outBuild.manifestHeader.materialAssetReferenceCount = static_cast<std::uint32_t>(outBuild.materialAssetReferences.size());
-	outBuild.manifestHeader.instanceCount = static_cast<std::uint32_t>(outBuild.instances.size());
+	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());
+	outBuild.manifest.header.materialAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.materialAssetReferences.size());
+	outBuild.manifest.header.instanceCount = static_cast<std::uint32_t>(outBuild.manifest.instances.size());
 	outErrorMessage.clear();
 	return true;
 }
@@ -76,20 +75,20 @@ bool SceneCooker::BuildManifest(
 bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, std::string& outErrorMessage)
 {
 	std::ofstream manifestOutput;
-	if (!Files::TryOpenBinaryOutput(build.sceneManifestPath, manifestOutput, outErrorMessage))
+	if (!Files::TryOpenBinaryOutput(build.identity.manifestPath, manifestOutput, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifestHeader, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.meshAssetReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.materialAssetReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.instances, outErrorMessage))
+	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, outErrorMessage))
 	{
 		return false;
 	}
 
-	if (!Files::TryCloseOutput(manifestOutput, build.sceneManifestPath, outErrorMessage))
+	if (!Files::TryCloseOutput(manifestOutput, build.identity.manifestPath, outErrorMessage))
 	{
 		return false;
 	}
@@ -152,10 +151,10 @@ bool SceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::s
 {
 	const std::filesystem::path manifestRoot = Paths::CookedSceneManifestRoot();
 	const std::optional<std::filesystem::path> manifestRelativePath =
-	    Paths::TryMakeRelativeUnderRoot(build.sceneManifestPath, manifestRoot);
+	    Paths::TryMakeRelativeUnderRoot(build.identity.manifestPath, manifestRoot);
 	if (!manifestRelativePath)
 	{
-		outErrorMessage = "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.sceneAssetId + "'";
+		outErrorMessage = "Failed to derive a relative cooked scene manifest path for scene asset id '" + build.identity.assetId + "'";
 		return false;
 	}
 
@@ -165,7 +164,7 @@ bool SceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::s
 		return false;
 	}
 
-	sceneAssetRegistry.Upsert(build.sceneAssetId, *manifestRelativePath);
+	sceneAssetRegistry.Upsert(build.identity.assetId, *manifestRelativePath);
 	if (!sceneAssetRegistry.Save(outErrorMessage))
 	{
 		return false;

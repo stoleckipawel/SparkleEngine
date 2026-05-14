@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CookedMaterialAssetBuild.h"
-#include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
 #include "SourceImportResult.h"
 #include "TextureCookRequestList.h"
 
@@ -16,8 +15,7 @@ public:
 	static bool BuildMaterialAssets(
 	    const SourceImportResult& importResult,
 	    std::string_view sceneAssetId,
-	    std::vector<CookedMaterialAssetBuild>& outMaterialAssets,
-	    std::vector<Assets::CookedSceneMaterialAssetRef>& outMaterialAssetReferences,
+	    MaterialCookOutput& outOutput,
 	    std::string& outErrorMessage);
 	static bool CollectTextureCookRequests(
 	    const SourceImportResult& importResult,

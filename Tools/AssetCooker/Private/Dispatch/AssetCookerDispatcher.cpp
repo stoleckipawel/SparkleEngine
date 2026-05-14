@@ -431,45 +431,42 @@ static bool AssetCookerCookImportedScene(
 		return false;
 	}
 
-	if (!SceneCooker::ResolveSceneAsset(sceneEntry.sourcePath, build.sceneAssetId, build.sceneManifestPath, build.errorMessage))
+	if (!SceneCooker::ResolveSceneIdentity(sceneEntry.sourcePath, build.identity, build.status.errorMessage))
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 
-	MeshCooker::BuildMeshAssets(importResult, build.sceneAssetId, build.meshAssets, build.meshAssetReferences);
-	if (!MaterialCooker::BuildMaterialAssets(
-	        importResult,
-	        build.sceneAssetId,
-	        build.materialAssets,
-	        build.materialAssetReferences,
-	        build.errorMessage))
+	build.ApplyMeshOutput(MeshCooker::BuildMeshAssets(importResult, build.identity.assetId));
+	MaterialCookOutput materialOutput;
+	if (!MaterialCooker::BuildMaterialAssets(importResult, build.identity.assetId, materialOutput, build.status.errorMessage))
 	{
-		diagnostics.AddError(AssetCookerCategory_Material, build.errorMessage, sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_Material, build.status.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+	build.ApplyMaterialOutput(std::move(materialOutput));
+
+	if (!SceneCooker::BuildManifest(importResult, build, build.status.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 
-	if (!SceneCooker::BuildManifest(importResult, build, build.errorMessage))
+	if (!MeshCooker::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage))
 	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_Mesh, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 
-	if (!MeshCooker::WriteMeshAssets(build.meshAssets, build.errorMessage))
+	if (!MaterialCooker::WriteMaterialAssets(build.outputs.materialAssets, build.status.errorMessage))
 	{
-		diagnostics.AddError(AssetCookerCategory_Mesh, build.errorMessage, sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_Material, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 
-	if (!MaterialCooker::WriteMaterialAssets(build.materialAssets, build.errorMessage))
+	if (!SceneCooker::WriteSceneManifestAndRegistry(build, build.status.errorMessage))
 	{
-		diagnostics.AddError(AssetCookerCategory_Material, build.errorMessage, sceneEntry.sourcePath);
-		return false;
-	}
-
-	if (!SceneCooker::WriteSceneManifestAndRegistry(build, build.errorMessage))
-	{
-		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.errorMessage, sceneEntry.sourcePath);
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 
@@ -481,7 +478,7 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.importerType)),
 	     ToolConsole::Field("meshes", std::to_string(importResult.GetMeshCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
-	     ToolConsole::PathField("manifest", build.sceneManifestPath)});
+	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 	return true;
 }
 

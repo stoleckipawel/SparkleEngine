@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "CookedMeshAssetBuild.h"
-#include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
 #include "SourceImportResult.h"
 
 #include <cstddef>
@@ -12,11 +11,7 @@
 class MeshCooker final
 {
 public:
-	static void BuildMeshAssets(
-	    const SourceImportResult& importResult,
-	    std::string_view sceneAssetId,
-	    std::vector<CookedMeshAssetBuild>& outMeshAssets,
-	    std::vector<Assets::CookedSceneMeshAssetRef>& outMeshAssetReferences);
+	static MeshCookOutput BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId);
 	static bool WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAssets, std::string& outErrorMessage);
 
 private:

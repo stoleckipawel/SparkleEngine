@@ -38,14 +38,13 @@ namespace
 bool MaterialCooker::BuildMaterialAssets(
     const SourceImportResult& importResult,
     std::string_view sceneAssetId,
-    std::vector<CookedMaterialAssetBuild>& outMaterialAssets,
-    std::vector<Assets::CookedSceneMaterialAssetRef>& outMaterialAssetReferences,
+    MaterialCookOutput& outOutput,
     std::string& outErrorMessage)
 {
-	outMaterialAssets.clear();
-	outMaterialAssetReferences.clear();
-	outMaterialAssets.reserve(importResult.materials.size());
-	outMaterialAssetReferences.reserve(importResult.materials.size());
+	outOutput.assets.clear();
+	outOutput.assetReferences.clear();
+	outOutput.assets.reserve(importResult.materials.size());
+	outOutput.assetReferences.reserve(importResult.materials.size());
 
 	auto appendTextureReference = [&](const SourceImportResult::TextureSource& textureSource,
 	                                  CookedMaterialAssetBuild& materialAsset) -> bool
@@ -149,8 +148,8 @@ bool MaterialCooker::BuildMaterialAssets(
 
 		materialAsset.header.textureReferenceCount = static_cast<std::uint32_t>(materialAsset.textureReferences.size());
 
-		outMaterialAssetReferences.push_back({materialAsset.assetId});
-		outMaterialAssets.push_back(std::move(materialAsset));
+		outOutput.assetReferences.push_back({materialAsset.assetId});
+		outOutput.assets.push_back(std::move(materialAsset));
 	}
 
 	outErrorMessage.clear();

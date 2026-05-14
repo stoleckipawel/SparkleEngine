@@ -8,6 +8,7 @@
 #include "SourceSceneImporter.h"
 
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include <objbase.h>
@@ -23,7 +24,7 @@ void AssetConverterCommands::PrintCookSceneSummary(
 	          << "  importer='" << GetSourceImporterTypeName(importResult.importerType) << "'\n"
 	          << "  meshes=" << importResult.GetMeshCount() << "\n"
 	          << "  materials=" << importResult.GetMaterialCount() << "\n"
-	          << "  sceneManifest='" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
+	          << "  sceneManifest='" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 }
 
 void AssetConverterCommands::PrintCollectTextureSummary(
@@ -78,34 +79,31 @@ CookedSceneBuild AssetConverterCommands::CookImportedScene(
 	CookedSceneBuild build;
 	if (!importResult.IsValid())
 	{
-		build.errorMessage = "Scene import result is not valid";
+		build.status.errorMessage = "Scene import result is not valid";
 		return build;
 	}
 
-	if (!SceneCooker::ResolveSceneAsset(sourceScenePath, build.sceneAssetId, build.sceneManifestPath, build.errorMessage))
+	if (!SceneCooker::ResolveSceneIdentity(sourceScenePath, build.identity, build.status.errorMessage))
 	{
 		return build;
 	}
 
-	MeshCooker::BuildMeshAssets(importResult, build.sceneAssetId, build.meshAssets, build.meshAssetReferences);
-	if (!MaterialCooker::BuildMaterialAssets(
-	        importResult,
-	        build.sceneAssetId,
-	        build.materialAssets,
-	        build.materialAssetReferences,
-	        build.errorMessage))
+	build.ApplyMeshOutput(MeshCooker::BuildMeshAssets(importResult, build.identity.assetId));
+	MaterialCookOutput materialOutput;
+	if (!MaterialCooker::BuildMaterialAssets(importResult, build.identity.assetId, materialOutput, build.status.errorMessage))
+	{
+		return build;
+	}
+	build.ApplyMaterialOutput(std::move(materialOutput));
+
+	if (!SceneCooker::BuildManifest(importResult, build, build.status.errorMessage))
 	{
 		return build;
 	}
 
-	if (!SceneCooker::BuildManifest(importResult, build, build.errorMessage))
-	{
-		return build;
-	}
-
-	if (!MeshCooker::WriteMeshAssets(build.meshAssets, build.errorMessage) ||
-	    !MaterialCooker::WriteMaterialAssets(build.materialAssets, build.errorMessage) ||
-	    !SceneCooker::WriteSceneManifestAndRegistry(build, build.errorMessage))
+	if (!MeshCooker::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage) ||
+	    !MaterialCooker::WriteMaterialAssets(build.outputs.materialAssets, build.status.errorMessage) ||
+	    !SceneCooker::WriteSceneManifestAndRegistry(build, build.status.errorMessage))
 	{
 		return build;
 	}
@@ -123,14 +121,14 @@ int AssetConverterCommands::RunCookScene(const std::filesystem::path& sourceScen
 		    if (!cookedSceneBuild.Succeeded())
 		    {
 			    std::cerr << "AssetConverter: failed to cook '" << sourceScenePath.string() << "' - "
-			              << cookedSceneBuild.errorMessage << "\n";
+			              << cookedSceneBuild.status.errorMessage << "\n";
 			    return 3;
 		    }
 
 		    std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
 		              << GetSourceImporterTypeName(importResult.importerType) << " with " << importResult.GetMeshCount()
 		              << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
-		              << cookedSceneBuild.sceneAssetId << "' to '" << cookedSceneBuild.sceneManifestPath.string() << "'\n";
+		              << cookedSceneBuild.identity.assetId << "' to '" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 		    PrintCookSceneSummary(sourceScenePath, importResult, cookedSceneBuild);
 
 		    return 0;

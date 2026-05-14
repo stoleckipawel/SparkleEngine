@@ -9,10 +9,9 @@
 class SceneCooker final
 {
 public:
-	static bool ResolveSceneAsset(
+	static bool ResolveSceneIdentity(
 	    const std::filesystem::path& sourceScenePath,
-	    std::string& outSceneAssetId,
-	    std::filesystem::path& outSceneManifestPath,
+	    CookedSceneIdentity& outIdentity,
 	    std::string& outErrorMessage);
 	static bool BuildManifest(
 	    const SourceImportResult& importResult,
