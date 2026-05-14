@@ -151,24 +151,26 @@ ResourceUsage PassBuilder::GetFrameGraphUsage(const PassParameterDesc& parameter
 void PassBuilder::DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
 {
 	assert(parameter.ResourceDomain == ShaderParameterResourceDomain::Texture);
-	assert(binding.Kind == PassParameterValueKind::Texture);
+	const PassParameterTextureBindingData* textureData = binding.AsTextureData();
+	assert(textureData != nullptr);
 
 	const ResourceUsage usage = GetFrameGraphUsage(parameter);
-	for (std::uint32_t arrayIndex = 0; arrayIndex < static_cast<std::uint32_t>(binding.Textures.size()); ++arrayIndex)
+	for (std::uint32_t arrayIndex = 0; arrayIndex < static_cast<std::uint32_t>(textureData->Handles.size()); ++arrayIndex)
 	{
-		DeclareResourceHandle(binding.Textures[arrayIndex].GetResourceHandle(), usage, parameter, arrayIndex);
+		DeclareResourceHandle(textureData->Handles[arrayIndex].GetResourceHandle(), usage, parameter, arrayIndex);
 	}
 }
 
 void PassBuilder::DeclareBufferBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
 {
 	assert(parameter.ResourceDomain == ShaderParameterResourceDomain::Buffer);
-	assert(binding.Kind == PassParameterValueKind::Buffer);
+	const PassParameterBufferBindingData* bufferData = binding.AsBufferData();
+	assert(bufferData != nullptr);
 
 	const ResourceUsage usage = GetFrameGraphUsage(parameter);
-	for (std::uint32_t arrayIndex = 0; arrayIndex < static_cast<std::uint32_t>(binding.Buffers.size()); ++arrayIndex)
+	for (std::uint32_t arrayIndex = 0; arrayIndex < static_cast<std::uint32_t>(bufferData->Handles.size()); ++arrayIndex)
 	{
-		DeclareResourceHandle(binding.Buffers[arrayIndex].GetResourceHandle(), usage, parameter, arrayIndex);
+		DeclareResourceHandle(bufferData->Handles[arrayIndex].GetResourceHandle(), usage, parameter, arrayIndex);
 	}
 }
 

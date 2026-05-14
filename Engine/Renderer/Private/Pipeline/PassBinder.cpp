@@ -208,13 +208,14 @@ void PassBinder::BindCompiledBinding(
 
 			assert(renderHardwareInterface != nullptr);
 			assert(parameterBinding != nullptr);
-			assert(parameterBinding->Kind == PassParameterValueKind::UniformData);
+			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
+			assert(uniformData != nullptr);
 			BindRootGpuAddress(
 			    cmd,
 			    compiledBinding,
 			    renderHardwareInterface->AllocateUniformConstantBuffer(
-			        parameterBinding->UniformData,
-			        parameterBinding->UniformDataSizeInBytes),
+			        uniformData->Data,
+			        uniformData->SizeInBytes),
 			    isCompute);
 			return;
 		}
@@ -229,8 +230,10 @@ void PassBinder::BindCompiledBinding(
 			}
 
 			assert(parameterBinding != nullptr);
-			assert(parameterBinding->Kind == PassParameterValueKind::AccelerationStructure);
-			BindRootGpuAddress(cmd, compiledBinding, parameterBinding->AccelerationStructureGpuAddress, isCompute);
+			const PassParameterAccelerationStructureBindingData* accelerationStructureData =
+			    parameterBinding->AsAccelerationStructureData();
+			assert(accelerationStructureData != nullptr);
+			BindRootGpuAddress(cmd, compiledBinding, accelerationStructureData->GpuAddress, isCompute);
 			return;
 		}
 		case CompiledBindingType::RootUnorderedAccessView:
@@ -250,22 +253,23 @@ void PassBinder::BindCompiledBinding(
 			}
 
 			assert(parameterBinding != nullptr);
-			if (parameterBinding->Kind == PassParameterValueKind::DescriptorTable)
+			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
 			{
-				BindDescriptorTable(cmd, compiledBinding, parameterBinding->DescriptorTable, isCompute);
+				BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
 				return;
 			}
 
-			if (parameterBinding->Kind == PassParameterValueKind::Texture)
+			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
 			{
-				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Textures[0]), isCompute);
+				assert(textureData->Handles.size() == 1);
+				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(textureData->Handles[0]), isCompute);
 				return;
 			}
 
-			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
-			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(parameterBinding->Buffers[0]), isCompute);
+			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
+			assert(bufferData != nullptr);
+			assert(bufferData->Handles.size() == 1);
+			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(bufferData->Handles[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableUnorderedAccessView:
@@ -276,22 +280,23 @@ void PassBinder::BindCompiledBinding(
 			}
 
 			assert(parameterBinding != nullptr);
-			if (parameterBinding->Kind == PassParameterValueKind::DescriptorTable)
+			if (const PassParameterDescriptorTableBindingData* descriptorTableData = parameterBinding->AsDescriptorTableData())
 			{
-				BindDescriptorTable(cmd, compiledBinding, parameterBinding->DescriptorTable, isCompute);
+				BindDescriptorTable(cmd, compiledBinding, descriptorTableData->Table, isCompute);
 				return;
 			}
 
-			if (parameterBinding->Kind == PassParameterValueKind::Texture)
+			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
 			{
-				assert(parameterBinding->Textures.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Textures[0]), isCompute);
+				assert(textureData->Handles.size() == 1);
+				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(textureData->Handles[0]), isCompute);
 				return;
 			}
 
-			assert(parameterBinding->Kind == PassParameterValueKind::Buffer);
-			assert(parameterBinding->Buffers.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(parameterBinding->Buffers[0]), isCompute);
+			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
+			assert(bufferData != nullptr);
+			assert(bufferData->Handles.size() == 1);
+			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(bufferData->Handles[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableSampler:
@@ -303,8 +308,9 @@ void PassBinder::BindCompiledBinding(
 
 			assert(renderHardwareInterface != nullptr);
 			assert(parameterBinding != nullptr);
-			assert(parameterBinding->Kind == PassParameterValueKind::Sampler);
-			const RhiDescriptorTableBinding samplerBinding = renderHardwareInterface->GetSharedSamplerBinding(parameterBinding->Sampler);
+			const PassParameterSamplerBindingData* samplerData = parameterBinding->AsSamplerData();
+			assert(samplerData != nullptr);
+			const RhiDescriptorTableBinding samplerBinding = renderHardwareInterface->GetSharedSamplerBinding(samplerData->Desc);
 			assert(static_cast<bool>(samplerBinding));
 			BindDescriptorTable(cmd, compiledBinding, samplerBinding, isCompute);
 			return;
@@ -320,12 +326,13 @@ void PassBinder::BindCompiledBinding(
 			}
 
 			assert(parameterBinding != nullptr);
-			assert(parameterBinding->Kind == PassParameterValueKind::UniformData);
+			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
+			assert(uniformData != nullptr);
 			BindRootConstants(
 			    cmd,
 			    compiledBinding,
-			    parameterBinding->UniformData,
-			    parameterBinding->UniformDataSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
+			    uniformData->Data,
+			    uniformData->SizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
 			    isCompute);
 			return;
 		}

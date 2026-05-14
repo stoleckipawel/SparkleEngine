@@ -10,6 +10,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 enum class PassParameterValueKind : std::uint8_t
@@ -23,49 +24,154 @@ enum class PassParameterValueKind : std::uint8_t
 	Sampler,
 };
 
+struct PassParameterTextureBindingData
+{
+	std::vector<TextureHandle> Handles;
+
+	bool IsBound() const noexcept { return !Handles.empty(); }
+};
+
+struct PassParameterBufferBindingData
+{
+	std::vector<BufferHandle> Handles;
+
+	bool IsBound() const noexcept { return !Handles.empty(); }
+};
+
+struct PassParameterDescriptorTableBindingData
+{
+	RhiDescriptorTableBinding Table = {};
+
+	bool IsBound() const noexcept { return static_cast<bool>(Table); }
+};
+
+struct PassParameterAccelerationStructureBindingData
+{
+	RhiGpuVirtualAddress GpuAddress = 0;
+
+	bool IsBound() const noexcept { return true; }
+};
+
+struct PassParameterUniformBindingData
+{
+	const void* Data = nullptr;
+	std::uint32_t SizeInBytes = 0;
+
+	bool IsBound() const noexcept { return Data != nullptr && SizeInBytes > 0; }
+};
+
+struct PassParameterSamplerBindingData
+{
+	RhiSamplerDesc Desc = {};
+
+	bool IsBound() const noexcept { return true; }
+};
+
+using PassParameterBindingValue = std::variant<
+	std::monostate,
+	PassParameterTextureBindingData,
+	PassParameterBufferBindingData,
+	PassParameterDescriptorTableBindingData,
+	PassParameterAccelerationStructureBindingData,
+	PassParameterUniformBindingData,
+	PassParameterSamplerBindingData>;
+
 struct PassParameterBinding
 {
-	PassParameterValueKind Kind = PassParameterValueKind::None;
-	std::vector<TextureHandle> Textures;
-	std::vector<BufferHandle> Buffers;
-	RhiDescriptorTableBinding DescriptorTable = {};
-	RhiGpuVirtualAddress AccelerationStructureGpuAddress = 0;
-	const void* UniformData = nullptr;
-	std::uint32_t UniformDataSizeInBytes = 0;
-	RhiSamplerDesc Sampler = {};
+	PassParameterValueKind GetKind() const noexcept
+	{
+		return std::visit(
+		    [](const auto& value) noexcept -> PassParameterValueKind
+		    {
+			    using ValueType = std::decay_t<decltype(value)>;
+			    if constexpr (std::is_same_v<ValueType, PassParameterTextureBindingData>)
+			    {
+				    return PassParameterValueKind::Texture;
+			    }
+			    else if constexpr (std::is_same_v<ValueType, PassParameterBufferBindingData>)
+			    {
+				    return PassParameterValueKind::Buffer;
+			    }
+			    else if constexpr (std::is_same_v<ValueType, PassParameterDescriptorTableBindingData>)
+			    {
+				    return PassParameterValueKind::DescriptorTable;
+			    }
+			    else if constexpr (std::is_same_v<ValueType, PassParameterAccelerationStructureBindingData>)
+			    {
+				    return PassParameterValueKind::AccelerationStructure;
+			    }
+			    else if constexpr (std::is_same_v<ValueType, PassParameterUniformBindingData>)
+			    {
+				    return PassParameterValueKind::UniformData;
+			    }
+			    else if constexpr (std::is_same_v<ValueType, PassParameterSamplerBindingData>)
+			    {
+				    return PassParameterValueKind::Sampler;
+			    }
+			    else
+			    {
+				    return PassParameterValueKind::None;
+			    }
+		    },
+		    m_value);
+	}
 
 	bool IsBound() const noexcept
 	{
-		switch (Kind)
-		{
-			case PassParameterValueKind::Texture:
-				return !Textures.empty();
-			case PassParameterValueKind::Buffer:
-				return !Buffers.empty();
-			case PassParameterValueKind::DescriptorTable:
-				return static_cast<bool>(DescriptorTable);
-			case PassParameterValueKind::AccelerationStructure:
-				return true;
-			case PassParameterValueKind::UniformData:
-				return UniformData != nullptr && UniformDataSizeInBytes > 0;
-			case PassParameterValueKind::Sampler:
-				return true;
-			default:
-				return false;
-		}
+		return std::visit(
+		    [](const auto& value) noexcept -> bool
+		    {
+			    using ValueType = std::decay_t<decltype(value)>;
+			    if constexpr (std::is_same_v<ValueType, std::monostate>)
+			    {
+				    return false;
+			    }
+			    else
+			    {
+				    return value.IsBound();
+			    }
+		    },
+		    m_value);
 	}
 
-	void Reset() noexcept
+	const PassParameterTextureBindingData* AsTextureData() const noexcept
 	{
-		Kind = PassParameterValueKind::None;
-		Textures.clear();
-		Buffers.clear();
-		DescriptorTable = {};
-		AccelerationStructureGpuAddress = 0;
-		UniformData = nullptr;
-		UniformDataSizeInBytes = 0;
-		Sampler = {};
+		return std::get_if<PassParameterTextureBindingData>(&m_value);
 	}
+
+	const PassParameterBufferBindingData* AsBufferData() const noexcept
+	{
+		return std::get_if<PassParameterBufferBindingData>(&m_value);
+	}
+
+	const PassParameterDescriptorTableBindingData* AsDescriptorTableData() const noexcept
+	{
+		return std::get_if<PassParameterDescriptorTableBindingData>(&m_value);
+	}
+
+	const PassParameterAccelerationStructureBindingData* AsAccelerationStructureData() const noexcept
+	{
+		return std::get_if<PassParameterAccelerationStructureBindingData>(&m_value);
+	}
+
+	const PassParameterUniformBindingData* AsUniformData() const noexcept
+	{
+		return std::get_if<PassParameterUniformBindingData>(&m_value);
+	}
+
+	const PassParameterSamplerBindingData* AsSamplerData() const noexcept
+	{
+		return std::get_if<PassParameterSamplerBindingData>(&m_value);
+	}
+
+  private:
+	friend class PassParameterSet;
+
+	void Reset() noexcept { m_value.emplace<std::monostate>(); }
+
+	void SetValue(PassParameterBindingValue value) { m_value = std::move(value); }
+
+	PassParameterBindingValue m_value;
 };
 
 class PassParameterSet final
@@ -133,11 +239,13 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::Texture;
-		binding.Textures = handles;
-		return ValidateTextureBinding(binding.Textures, *parameter);
+		if (!ValidateTextureBinding(handles, *parameter))
+		{
+			return false;
+		}
+
+		m_bindings[index].SetValue(PassParameterTextureBindingData{.Handles = handles});
+		return true;
 	}
 
 	bool SetBuffer(const char* name, BufferHandle handle)
@@ -161,11 +269,13 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::Buffer;
-		binding.Buffers = handles;
-		return ValidateBufferBinding(binding.Buffers, *parameter);
+		if (!ValidateBufferBinding(handles, *parameter))
+		{
+			return false;
+		}
+
+		m_bindings[index].SetValue(PassParameterBufferBindingData{.Handles = handles});
+		return true;
 	}
 
 	bool SetShaderResourceView(const char* name, RhiDescriptorTableBinding descriptorTable)
@@ -183,10 +293,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::DescriptorTable;
-		binding.DescriptorTable = descriptorTable;
+		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
 		return true;
 	}
 
@@ -205,10 +312,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::DescriptorTable;
-		binding.DescriptorTable = descriptorTable;
+		m_bindings[index].SetValue(PassParameterDescriptorTableBindingData{.Table = descriptorTable});
 		return true;
 	}
 
@@ -226,10 +330,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::AccelerationStructure;
-		binding.AccelerationStructureGpuAddress = gpuAddress;
+		m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.GpuAddress = gpuAddress});
 		return true;
 	}
 
@@ -255,11 +356,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::UniformData;
-		binding.UniformData = data;
-		binding.UniformDataSizeInBytes = sizeInBytes;
+		m_bindings[index].SetValue(PassParameterUniformBindingData{.Data = data, .SizeInBytes = sizeInBytes});
 		return true;
 	}
 
@@ -272,10 +369,7 @@ class PassParameterSet final
 			return false;
 		}
 
-		PassParameterBinding& binding = m_bindings[index];
-		binding.Reset();
-		binding.Kind = PassParameterValueKind::Sampler;
-		binding.Sampler = sampler;
+		m_bindings[index].SetValue(PassParameterSamplerBindingData{.Desc = sampler});
 		return true;
 	}
 
