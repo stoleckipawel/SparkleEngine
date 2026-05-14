@@ -23,6 +23,7 @@ struct SPARKLE_RENDERER_API MeshDiagnosticsRow final
 {
 	std::uintptr_t MeshRuntimeId = 0;
 	std::uintptr_t GpuMeshRuntimeId = 0;
+	std::uint64_t MeshAssetId = 0;
 	MeshDiagnosticsResidencyState ResidencyState = MeshDiagnosticsResidencyState::Unloaded;
 	std::uint32_t VertexCount = 0;
 	std::uint32_t IndexCount = 0;

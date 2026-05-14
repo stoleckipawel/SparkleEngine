@@ -21,6 +21,7 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 {
 	SourceImportResult result;
 	result.importerType = SourceImporterType::Fbx;
+	result.sourceScenePath = filePath;
 
 	Assimp::Importer importer;
 	const aiScene* scene = nullptr;
@@ -30,7 +31,7 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 	}
 
 	result.materials.reserve(scene->mNumMaterials);
-	result.Reserve(FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode));
+	result.ReserveMeshes(FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode));
 
 	FbxSceneReader::CollectSceneWarnings(*scene, result);
 	FbxMaterialImporter::ImportMaterials(*scene, filePath.parent_path(), result);
@@ -42,7 +43,7 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 		return result;
 	}
 
-	result.bSuccess = true;
+	result.succeeded = true;
 
 	SPDLOG_LOGGER_INFO(
 	    g_fbxImporterLogger,

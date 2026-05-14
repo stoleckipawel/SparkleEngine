@@ -20,7 +20,7 @@ class FbxMaterialImporter final
 	    const aiMaterial& material,
 	    unsigned int materialIndex,
 	    const std::filesystem::path& sourceDirectory,
-	    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
 	    SourceImportResult& result);
 	static void CollectMaterialWarnings(const aiMaterial& material, MaterialHandle materialHandle, SourceImportResult& result);
 	static void ApplyMaterialProperties(const aiMaterial& material, MaterialDesc& materialDesc);
@@ -29,7 +29,7 @@ class FbxMaterialImporter final
 	    MaterialHandle materialHandle,
 	    const std::filesystem::path& sourceDirectory,
 	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
 	    SourceImportResult& result);
 	static void AssignTextureByType(
 	    const aiMaterial& material,
@@ -37,11 +37,11 @@ class FbxMaterialImporter final
 	    const std::filesystem::path& sourceDirectory,
 	    TextureGroup textureGroup,
 	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
 	    SourceImportResult& result);
 	static void SetTextureSource(
 	    MaterialDesc& materialDesc,
-	    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	    std::vector<SourceImportResult::TextureSource>& outTextureSources,
 	    TextureGroup textureGroup,
 	    const std::optional<std::filesystem::path>& texturePath,
 		    TextureChannelMask channelMask = TextureChannelMask::Rgba);

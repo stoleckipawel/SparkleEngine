@@ -50,19 +50,14 @@ bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayl
 	                                              : m_materials.AppendMaterials(std::move(runtimeScenePayload.materials));
 
 	std::vector<std::unique_ptr<MeshComponent>> importedMeshes;
-	importedMeshes.reserve(runtimeScenePayload.meshes.size());
-	for (std::size_t meshIndex = 0; meshIndex < runtimeScenePayload.meshes.size(); ++meshIndex)
+	importedMeshes.reserve(runtimeScenePayload.meshInstances.size());
+	for (RuntimeScenePayload::MeshInstance& meshInstance : runtimeScenePayload.meshInstances)
 	{
-		auto mesh = std::make_unique<CookedMesh>(std::move(runtimeScenePayload.meshes[meshIndex]));
-		const MaterialHandle localMaterialHandle = meshIndex < runtimeScenePayload.materialHandles.size()
-		                                               ? runtimeScenePayload.materialHandles[meshIndex]
-		                                               : MaterialHandle::Invalid();
-		const Transform importedTransform =
-		    meshIndex < runtimeScenePayload.transforms.size() ? runtimeScenePayload.transforms[meshIndex] : Transform();
-		const MaterialHandle materialHandle = localMaterialHandle.IsValid() && materialBaseHandle.IsValid()
-		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + localMaterialHandle.GetIndex())
+		auto mesh = std::make_unique<CookedMesh>(std::move(meshInstance.mesh), meshInstance.assetId);
+		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()
+		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + meshInstance.material.GetIndex())
 		                                          : m_materials.GetOrCreateDefaultMaterialHandle();
-		importedMeshes.push_back(std::make_unique<MeshComponent>(std::move(mesh), importedTransform, materialHandle));
+		importedMeshes.push_back(std::make_unique<MeshComponent>(std::move(mesh), meshInstance.transform, materialHandle));
 	}
 
 	m_meshes.AppendMeshComponents(std::move(importedMeshes));

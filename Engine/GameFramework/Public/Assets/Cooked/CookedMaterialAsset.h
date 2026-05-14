@@ -18,7 +18,7 @@ namespace Assets
 	};
 
 	inline constexpr std::uint32_t kCookedMaterialAssetMagic = MakeCookedAssetMagic('S', 'M', 'A', 'T');
-	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 1;
+	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 2;
 
 	struct SPARKLE_ENGINE_API CookedMaterialAssetHeader
 	{

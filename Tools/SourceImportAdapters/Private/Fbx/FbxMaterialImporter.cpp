@@ -10,13 +10,11 @@ static const auto g_fbxMaterialImporterLogger = Logging::GetOrCreateLogger("Tool
 
 void FbxMaterialImporter::ImportMaterials(const aiScene& scene, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
 {
-	result.materialTextureSources.reserve(scene.mNumMaterials);
 	for (unsigned int materialIndex = 0; materialIndex < scene.mNumMaterials; ++materialIndex)
 	{
-		std::vector<SourceImportResult::MaterialTextureSource> textureSources;
-		result.materials.push_back(
-		    ExtractMaterial(*scene.mMaterials[materialIndex], materialIndex, sourceDirectory, textureSources, result));
-		result.materialTextureSources.push_back(std::move(textureSources));
+		SourceImportResult::MaterialEntry materialEntry;
+		materialEntry.description = ExtractMaterial(*scene.mMaterials[materialIndex], materialIndex, sourceDirectory, materialEntry.textures, result);
+		result.materials.push_back(std::move(materialEntry));
 	}
 }
 
@@ -24,7 +22,7 @@ MaterialDesc FbxMaterialImporter::ExtractMaterial(
     const aiMaterial& material,
     unsigned int materialIndex,
     const std::filesystem::path& sourceDirectory,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	const MaterialHandle materialHandle(materialIndex);
@@ -103,7 +101,7 @@ void FbxMaterialImporter::ApplyTextureMappings(
     MaterialHandle materialHandle,
     const std::filesystem::path& sourceDirectory,
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::Diffuse, materialDesc, outTextureSources, result);
@@ -120,7 +118,7 @@ void FbxMaterialImporter::AssignTextureByType(
     const std::filesystem::path& sourceDirectory,
     TextureGroup textureGroup,
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	switch (textureGroup)
@@ -220,7 +218,7 @@ void FbxMaterialImporter::AssignTextureByType(
 
 void FbxMaterialImporter::SetTextureSource(
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     TextureGroup textureGroup,
     const std::optional<std::filesystem::path>& texturePath,
 	TextureChannelMask channelMask)

@@ -2,8 +2,6 @@
 
 #include "Assets/MaterialAssetTranslator.h"
 
-#include "Core/Public/Paths/DirectoryPaths.h"
-
 #include <format>
 
 namespace Assets
@@ -27,16 +25,16 @@ namespace Assets
 
 		for (const CookedTextureReference& textureReference : materialAsset.textureReferences)
 		{
-			if (textureReference.textureAssetId == InvalidCookedAssetId)
+			if (!textureReference.IsValid())
 			{
 				outErrorMessage = std::format(
-				    "Cooked material '{}' contains an invalid texture asset id for texture group {}",
+				    "Cooked material '{}' contains an invalid texture path for texture group {}",
 				    materialAsset.name,
 				    static_cast<std::uint32_t>(textureReference.textureGroup));
 				return false;
 			}
 
-			outMaterialDesc.SetTexturePath(textureReference.textureGroup, Paths::CookedTextureAsset(textureReference.textureAssetId));
+			outMaterialDesc.SetTexturePath(textureReference.textureGroup, textureReference.texturePath);
 		}
 
 		outErrorMessage.clear();

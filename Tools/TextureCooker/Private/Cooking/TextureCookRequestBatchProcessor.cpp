@@ -115,6 +115,7 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 			timing.elapsedMilliseconds = TextureCookerElapsedMilliseconds(requestStartTime);
 			timing.assetId = request.assetId;
 			timing.sourcePath = request.sourcePath;
+			timing.outputPath = request.outputPath;
 			requestTimings.push_back(timing);
 			SPDLOG_LOGGER_INFO(
 			    textureCookerLogger,
@@ -254,26 +255,34 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		const std::vector<TextureCookRequestTiming>& requestTimings,
 		std::string& outErrorMessage)
 	{
-		std::ostringstream topRequests;
-		topRequests << "[\n";
-		const std::size_t topCount = (std::min<std::size_t>)(requestTimings.size(), 10u);
-		for (std::size_t timingIndex = 0; timingIndex < topCount; ++timingIndex)
+		auto writeRequests = [](const std::vector<TextureCookRequestTiming>& timings, std::size_t count)
 		{
-			const TextureCookRequestTiming& timing = requestTimings[timingIndex];
-			topRequests << "    {"
-			            << "\"rank\": " << (timingIndex + 1u) << ", "
-			            << "\"name\": " << Json::QuoteString(ToolConsole::PathDisplayName(timing.sourcePath)) << ", "
-			            << "\"elapsedMs\": " << timing.elapsedMilliseconds << ", "
-			            << "\"assetId\": " << Json::QuoteString(Formatting::FormatHexUInt64(timing.assetId)) << ", "
-			            << "\"status\": " << Json::QuoteString("cooked") << ", "
-			            << "\"source\": " << Json::QuoteString(timing.sourcePath.generic_string()) << "}";
-			if (timingIndex + 1u < topCount)
+			std::ostringstream requests;
+			requests << "[\n";
+			for (std::size_t timingIndex = 0; timingIndex < count; ++timingIndex)
 			{
-				topRequests << ',';
+				const TextureCookRequestTiming& timing = timings[timingIndex];
+				requests << "    {"
+				         << "\"rank\": " << (timingIndex + 1u) << ", "
+				         << "\"name\": " << Json::QuoteString(ToolConsole::PathDisplayName(timing.sourcePath)) << ", "
+				         << "\"elapsedMs\": " << timing.elapsedMilliseconds << ", "
+				         << "\"assetId\": " << Json::QuoteString(Formatting::FormatHexUInt64(timing.assetId)) << ", "
+				         << "\"status\": " << Json::QuoteString("cooked") << ", "
+				         << "\"source\": " << Json::QuoteString(timing.sourcePath.generic_string()) << ", "
+				         << "\"output\": " << Json::QuoteString(timing.outputPath.generic_string()) << "}";
+				if (timingIndex + 1u < count)
+				{
+					requests << ',';
+				}
+				requests << "\n";
 			}
-			topRequests << "\n";
-		}
-		topRequests << "  ]";
+			requests << "  ]";
+			return requests.str();
+		};
+
+		const std::size_t topCount = (std::min<std::size_t>)(requestTimings.size(), 10u);
+		const std::string topRequests = writeRequests(requestTimings, topCount);
+		const std::string allRequests = writeRequests(requestTimings, requestTimings.size());
 
 		Json::ObjectWriter writer;
 		writer.WriteString("schema", "texture-cooker-summary-v1");
@@ -283,7 +292,8 @@ static std::string TextureCookerGetRequestDisplayName(const TextureCookRequest& 
 		writer.WriteUInt64("elapsedMs", elapsedMilliseconds);
 		writer.WriteUInt64("requestCount", static_cast<std::uint64_t>(requestCount));
 		writer.WriteUInt64("cookedCount", static_cast<std::uint64_t>(cookedCount));
-		writer.WriteRaw("topRequests", topRequests.str());
+		writer.WriteRaw("topRequests", topRequests);
+		writer.WriteRaw("allRequests", allRequests);
 
 		return Files::TryWriteAllTextAtomic(summaryPath, writer.Finish(), outErrorMessage);
 	}

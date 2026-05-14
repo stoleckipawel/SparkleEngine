@@ -6,6 +6,8 @@
 #include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Core/Public/Files/FileUtils.h"
 
+#include <utility>
+
 namespace Assets
 {
 	bool MaterialAssetLoader::Load(const std::filesystem::path& path, LoadedMaterialAsset& outMaterialAsset, std::string& outErrorMessage)
@@ -29,10 +31,25 @@ namespace Assets
 			return false;
 		}
 
+		std::vector<CookedTextureReferenceRecord> textureReferenceRecords;
 		if (!reader.ReadString(outMaterialAsset.header.nameByteCount, outMaterialAsset.name, outErrorMessage) ||
-		    !reader.ReadArray(outMaterialAsset.header.textureReferenceCount, outMaterialAsset.textureReferences, outErrorMessage))
+		    !reader.ReadArray(outMaterialAsset.header.textureReferenceCount, textureReferenceRecords, outErrorMessage))
 		{
 			return false;
+		}
+
+		outMaterialAsset.textureReferences.clear();
+		outMaterialAsset.textureReferences.reserve(textureReferenceRecords.size());
+		for (const CookedTextureReferenceRecord& textureReferenceRecord : textureReferenceRecords)
+		{
+			CookedTextureReference textureReference;
+			textureReference.textureGroup = textureReferenceRecord.textureGroup;
+			if (!reader.ReadString(textureReferenceRecord.texturePathByteCount, textureReference.texturePath, outErrorMessage))
+			{
+				return false;
+			}
+
+			outMaterialAsset.textureReferences.push_back(std::move(textureReference));
 		}
 
 		if (reader.GetRemainingByteCount() != 0)

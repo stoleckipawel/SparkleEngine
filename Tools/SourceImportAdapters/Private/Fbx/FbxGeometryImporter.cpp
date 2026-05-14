@@ -65,9 +65,12 @@ void FbxGeometryImporter::AppendMeshInstance(
 		return;
 	}
 
-	result.materialHandles.push_back(ResolveMaterialHandle(mesh, result));
-	result.transforms.push_back(ConvertTransform(worldTransform));
-	result.meshes.push_back(std::move(meshData));
+	SourceImportResult::MeshEntry meshEntry;
+	meshEntry.geometry = std::move(meshData);
+	meshEntry.displayName = BuildMeshDisplayName(node, mesh);
+	meshEntry.transform = ConvertTransform(worldTransform);
+	meshEntry.material = ResolveMaterialHandle(mesh, result);
+	result.meshes.push_back(std::move(meshEntry));
 }
 
 MeshData FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result)
@@ -190,6 +193,21 @@ MaterialHandle FbxGeometryImporter::ResolveMaterialHandle(const aiMesh& mesh, So
 	        GetMeshName(mesh),
 	        mesh.mMaterialIndex));
 	return MaterialHandle::Invalid();
+}
+
+std::string FbxGeometryImporter::BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh)
+{
+	const std::string nodeName = GetNodeName(node);
+	const std::string meshName = GetMeshName(mesh);
+	if (nodeName == meshName || meshName == "<unnamed-mesh>")
+	{
+		return nodeName;
+	}
+	if (nodeName == "<unnamed-node>")
+	{
+		return meshName;
+	}
+	return std::format("{} / {}", nodeName, meshName);
 }
 
 std::string FbxGeometryImporter::GetNodeName(const aiNode& node)

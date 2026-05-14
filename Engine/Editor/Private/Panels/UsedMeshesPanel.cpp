@@ -2,14 +2,22 @@
 
 #include "Panels/UsedMeshesPanel.h"
 
+#include "Core/Public/Json/JsonReader.h"
+#include "Core/Public/Paths/DirectoryPaths.h"
 #include "Core/Public/Strings/StringUtils.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <format>
+#include <fstream>
 #include <limits>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 
 #include <imgui.h>
@@ -25,9 +33,116 @@ namespace
 		return std::format("0x{:016X}", static_cast<std::uint64_t>(id));
 	}
 
+	std::string FormatAssetId(std::uint64_t id)
+	{
+		return std::format("0x{:016X}", id);
+	}
+
+	struct MeshDisplayMetadata final
+	{
+		std::string DisplayName;
+		std::string SourcePath;
+	};
+
+	std::filesystem::path BuildCookedMeshMetadataPath(std::uint64_t meshAssetId)
+	{
+		std::filesystem::path metadataPath = Paths::CookedMeshAsset(meshAssetId);
+		metadataPath += ".meta.json";
+		return metadataPath;
+	}
+
+	bool TryReadTextFile(const std::filesystem::path& path, std::string& outText)
+	{
+		std::ifstream input(path, std::ios::binary | std::ios::ate);
+		if (!input)
+		{
+			return false;
+		}
+
+		const std::ifstream::pos_type fileSize = input.tellg();
+		if (fileSize == std::ifstream::pos_type(-1))
+		{
+			return false;
+		}
+
+		outText.resize(static_cast<std::size_t>(fileSize));
+		input.seekg(0, std::ios::beg);
+		if (!outText.empty())
+		{
+			input.read(outText.data(), static_cast<std::streamsize>(outText.size()));
+		}
+		return static_cast<bool>(input);
+	}
+
+	std::optional<MeshDisplayMetadata> LoadCookedMeshMetadata(std::uint64_t meshAssetId)
+	{
+		std::string metadataText;
+		if (!TryReadTextFile(BuildCookedMeshMetadataPath(meshAssetId), metadataText))
+		{
+			return std::nullopt;
+		}
+
+		std::string schema;
+		if (!Json::TryReadStringProperty(metadataText, "schema", schema) || schema != "cooked-mesh-metadata-v1")
+		{
+			return std::nullopt;
+		}
+
+		MeshDisplayMetadata metadata;
+		Json::TryReadStringProperty(metadataText, "displayName", metadata.DisplayName);
+		Json::TryReadStringProperty(metadataText, "source", metadata.SourcePath);
+		return metadata;
+	}
+
+	const MeshDisplayMetadata* FindMeshDisplayMetadata(const MeshDiagnosticsRow& row)
+	{
+		if (row.MeshAssetId == 0)
+		{
+			return nullptr;
+		}
+
+		static std::unordered_map<std::uint64_t, std::optional<MeshDisplayMetadata>> metadataCache;
+		auto [metadataIt, inserted] = metadataCache.try_emplace(row.MeshAssetId);
+		if (inserted)
+		{
+			metadataIt->second = LoadCookedMeshMetadata(row.MeshAssetId);
+		}
+
+		return metadataIt->second ? &*metadataIt->second : nullptr;
+	}
+
 	std::string FormatMeshDisplayName(const MeshDiagnosticsRow& row)
 	{
-		return std::format("Mesh {}", FormatRuntimeId(row.MeshRuntimeId));
+		if (const MeshDisplayMetadata* metadata = FindMeshDisplayMetadata(row))
+		{
+			if (!metadata->DisplayName.empty())
+			{
+				return metadata->DisplayName;
+			}
+		}
+
+		return std::format("Mesh {} verts / {} tris", row.VertexCount, row.TriangleCount);
+	}
+
+	std::string FormatMeshSourcePath(const MeshDiagnosticsRow& row)
+	{
+		if (const MeshDisplayMetadata* metadata = FindMeshDisplayMetadata(row))
+		{
+			if (!metadata->SourcePath.empty())
+			{
+				return metadata->SourcePath;
+			}
+		}
+		return row.MeshAssetId != 0 ? FormatAssetId(row.MeshAssetId) : std::string("unknown");
+	}
+
+	void DrawWrappedDisabledText(const std::string& text)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+		ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x);
+		ImGui::TextUnformatted(text.c_str());
+		ImGui::PopTextWrapPos();
+		ImGui::PopStyleColor();
 	}
 
 	const char* FormatResidency(MeshDiagnosticsResidencyState state) noexcept
@@ -213,7 +328,11 @@ void UsedMeshesPanel::BuildUI(bool disableInteraction)
 		DrawMeshTable(disableInteraction);
 		ImGui::EndChild();
 		ImGui::TableSetColumnIndex(1);
-		ImGui::BeginChild("##MeshPreviewPane", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
+		ImGui::BeginChild(
+		    "##MeshPreviewPane",
+		    ImVec2(0.0f, 0.0f),
+		    ImGuiChildFlags_None,
+		    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		DrawSelectedMeshInspector(disableInteraction);
 		ImGui::EndChild();
 		ImGui::EndTable();
@@ -244,7 +363,7 @@ void UsedMeshesPanel::RefreshPreviewGeometry(const MeshDiagnosticsRow& row)
 void UsedMeshesPanel::DrawToolbar()
 {
 	ImGui::SetNextItemWidth(300.0f);
-	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter mesh/id/material");
+	const std::string filterHint = UiUtil::MakeIconLabel(UiUtil::EditorIcon::Search, "Filter mesh/source/id/material");
 	ImGui::InputTextWithHint("##UsedMeshesFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled(
@@ -259,13 +378,14 @@ void UsedMeshesPanel::DrawMeshTable(bool disableInteraction)
 {
 	const ImGuiTableFlags tableFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
 	                                   ImGuiTableFlags_Reorderable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-	if (!ImGui::BeginTable("##UsedMeshesTable", 8, tableFlags, ImVec2(0.0f, 0.0f)))
+	if (!ImGui::BeginTable("##UsedMeshesTable", 9, tableFlags, ImVec2(0.0f, 0.0f)))
 	{
 		return;
 	}
 
 	ImGui::TableSetupScrollFreeze(0, 1);
 	ImGui::TableSetupColumn("Mesh");
+	ImGui::TableSetupColumn("Source");
 	ImGui::TableSetupColumn("Uploaded");
 	ImGui::TableSetupColumn("Vertices");
 	ImGui::TableSetupColumn("Indices");
@@ -293,6 +413,9 @@ void UsedMeshesPanel::DrawMeshTable(bool disableInteraction)
 			m_previewGeometryMeshRuntimeId = 0;
 			m_previewGeometry = {};
 		}
+		ImGui::TableNextColumn();
+		const std::string sourcePath = FormatMeshSourcePath(row);
+		ImGui::TextUnformatted(sourcePath.c_str());
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(row.GpuResident ? "yes" : "no");
 		ImGui::TableNextColumn();
@@ -325,13 +448,17 @@ void UsedMeshesPanel::DrawSelectedMeshInspector(bool disableInteraction)
 	}
 
 	RefreshPreviewGeometry(*selectedRow);
-	ImGui::TextUnformatted(FormatMeshDisplayName(*selectedRow).c_str());
-	ImGui::TextDisabled("%s", FormatRuntimeId(selectedRow->MeshRuntimeId).c_str());
+	const std::string displayName = FormatMeshDisplayName(*selectedRow);
+	const std::string sourcePath = FormatMeshSourcePath(*selectedRow);
+	ImGui::TextUnformatted(displayName.c_str());
+	DrawWrappedDisabledText(sourcePath);
 	ImGui::Separator();
 	DrawPreviewControls(disableInteraction);
 	DrawPreview(*selectedRow);
 	ImGui::SeparatorText("Runtime Properties");
+	ImGui::BeginChild("##MeshDetailsPane", ImVec2(0.0f, 0.0f), ImGuiChildFlags_None);
 	DrawSelectedMeshDetails(*selectedRow);
+	ImGui::EndChild();
 }
 
 void UsedMeshesPanel::DrawPreviewControls(bool disableInteraction)
@@ -419,6 +546,15 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 	const std::size_t previewTriangleCount = (std::min) (triangleCount, kMaxPreviewTriangles);
 	if (drawSolid)
 	{
+		const ImDrawListFlags previousDrawListFlags = drawList->Flags;
+		if (!drawWire)
+		{
+			drawList->Flags &= ~ImDrawListFlags_AntiAliasedFill;
+		}
+
+		const ImU32 solidColor = row.GpuResident
+		                         ? (drawWire ? IM_COL32(89, 142, 199, 84) : IM_COL32(89, 142, 199, 230))
+		                         : (drawWire ? IM_COL32(128, 128, 128, 72) : IM_COL32(128, 128, 128, 220));
 		for (std::size_t triangleIndex = 0; triangleIndex < previewTriangleCount; ++triangleIndex)
 		{
 			const std::uint32_t index0 = m_previewGeometry.Indices[(triangleIndex * 3) + 0];
@@ -434,8 +570,9 @@ void UsedMeshesPanel::DrawPreview(const MeshDiagnosticsRow& row) const
 			    projectVertex(m_previewGeometry.Vertices[index0]),
 			    projectVertex(m_previewGeometry.Vertices[index1]),
 			    projectVertex(m_previewGeometry.Vertices[index2]),
-			    row.GpuResident ? IM_COL32(89, 142, 199, 56) : IM_COL32(128, 128, 128, 46));
+			    solidColor);
 		}
+		drawList->Flags = previousDrawListFlags;
 	}
 
 	if (drawWire)
@@ -476,6 +613,7 @@ void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) con
 {
 	const std::string meshRuntimeId = FormatRuntimeId(row.MeshRuntimeId);
 	const std::string gpuRuntimeId = row.GpuMeshRuntimeId != 0 ? FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
+	const std::string meshAssetId = row.MeshAssetId != 0 ? FormatAssetId(row.MeshAssetId) : std::string("none");
 	const std::string vertices = std::to_string(row.VertexCount);
 	const std::string indices = std::to_string(row.IndexCount);
 	const std::string triangles = std::to_string(row.TriangleCount);
@@ -490,6 +628,10 @@ void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) con
 	const std::string boundsMax = row.Bounds.IsValid ? FormatBoundsPoint(row.Bounds.Max) : std::string("unknown");
 	const std::string boundsExtent = FormatBoundsExtent(row.Bounds);
 
+	if (const MeshDisplayMetadata* metadata = FindMeshDisplayMetadata(row); metadata != nullptr && !metadata->SourcePath.empty())
+	{
+		UiUtil::DrawKeyValueRow("Source", metadata->SourcePath.c_str());
+	}
 	UiUtil::DrawKeyValueRow("CPU Loaded", row.CpuLoaded ? "yes" : "no");
 	UiUtil::DrawKeyValueRow("GPU Resident", row.GpuResident ? "yes" : "no");
 	UiUtil::DrawKeyValueRow("Residency", FormatResidency(row.ResidencyState));
@@ -506,6 +648,7 @@ void UsedMeshesPanel::DrawSelectedMeshDetails(const MeshDiagnosticsRow& row) con
 	UiUtil::DrawKeyValueRow("Bounds Min", boundsMin.c_str());
 	UiUtil::DrawKeyValueRow("Bounds Max", boundsMax.c_str());
 	UiUtil::DrawKeyValueRow("Bounds Extent", boundsExtent.c_str());
+	UiUtil::DrawKeyValueRow("Mesh Asset ID", meshAssetId.c_str());
 	UiUtil::DrawKeyValueRow("Mesh ID", meshRuntimeId.c_str());
 	UiUtil::DrawKeyValueRow("GPU Mesh ID", gpuRuntimeId.c_str());
 }
@@ -533,10 +676,14 @@ bool UsedMeshesPanel::MatchesFilter(const MeshDiagnosticsRow& row) const
 	const std::string displayName = FormatMeshDisplayName(row);
 	const std::string meshRuntimeId = FormatRuntimeId(row.MeshRuntimeId);
 	const std::string gpuRuntimeId = row.GpuMeshRuntimeId != 0 ? FormatRuntimeId(row.GpuMeshRuntimeId) : std::string("none");
+	const std::string meshAssetId = row.MeshAssetId != 0 ? FormatAssetId(row.MeshAssetId) : std::string("none");
+	const std::string sourcePath = FormatMeshSourcePath(row);
 	const std::string residency = FormatResidency(row.ResidencyState);
 	const std::string material = FormatMaterial(row);
 	const std::string memory = FormatMemorySummary(row);
-	return Strings::ContainsIgnoreCase(displayName, filter) || Strings::ContainsIgnoreCase(meshRuntimeId, filter) ||
+	return Strings::ContainsIgnoreCase(displayName, filter) || Strings::ContainsIgnoreCase(sourcePath, filter) ||
+	       Strings::ContainsIgnoreCase(meshAssetId, filter) ||
+	       Strings::ContainsIgnoreCase(meshRuntimeId, filter) ||
 	       Strings::ContainsIgnoreCase(gpuRuntimeId, filter) || Strings::ContainsIgnoreCase(residency, filter) ||
 	       Strings::ContainsIgnoreCase(material, filter) || Strings::ContainsIgnoreCase(memory, filter);
 }

@@ -1,21 +1,30 @@
 ﻿#pragma once
 
 #include "Core/Public/Assets/TextureGroup.h"
-#include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <cstdint>
+#include <string>
 #include <type_traits>
 
 namespace Assets
 {
-	inline constexpr std::uint32_t kCookedTextureReferenceVersion = 1;
+	inline constexpr std::uint32_t kCookedTextureReferenceVersion = 2;
+
+	struct SPARKLE_ENGINE_API CookedTextureReferenceRecord
+	{
+		std::uint32_t texturePathByteCount = 0;
+		TextureGroup textureGroup = TextureGroup::Diffuse;
+		std::uint8_t reserved[4] = {};
+	};
 
 	struct SPARKLE_ENGINE_API CookedTextureReference
 	{
-		CookedAssetId textureAssetId = InvalidCookedAssetId;
+		std::string texturePath;
 		TextureGroup textureGroup = TextureGroup::Diffuse;
-		std::uint8_t reserved[7] = {};
+
+		bool IsValid() const noexcept { return !texturePath.empty(); }
 	};
 }
 
-static_assert(std::is_trivially_copyable_v<Assets::CookedTextureReference>, "CookedTextureReference must stay trivially copyable.");
+static_assert(std::is_trivially_copyable_v<Assets::CookedTextureReferenceRecord>, "CookedTextureReferenceRecord must stay trivially copyable.");

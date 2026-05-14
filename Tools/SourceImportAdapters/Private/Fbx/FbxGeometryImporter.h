@@ -20,6 +20,7 @@ class FbxGeometryImporter final
 	static void PopulateVertices(const aiMesh& mesh, MeshData& meshData);
 	static void AppendTriangleIndices(const aiMesh& mesh, MeshData& meshData, SourceImportResult& result);
 	static MaterialHandle ResolveMaterialHandle(const aiMesh& mesh, SourceImportResult& result) noexcept;
+	static std::string BuildMeshDisplayName(const aiNode& node, const aiMesh& mesh);
 	static std::string GetNodeName(const aiNode& node);
 	static std::string GetMeshName(const aiMesh& mesh);
 	static Transform ConvertTransform(const aiMatrix4x4& matrix) noexcept;

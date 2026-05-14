@@ -15,6 +15,7 @@
 		std::uint64_t elapsedMilliseconds = 0;
 		TextureAssetId assetId = InvalidTextureAssetId;
 		std::filesystem::path sourcePath;
+		std::filesystem::path outputPath;
 	};
 
 	class TextureCookRequestBatchProcessor final

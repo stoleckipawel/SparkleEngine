@@ -386,16 +386,6 @@ namespace Paths
 		return CookedMaterialRoot() / (Formatting::FormatHexUInt64(materialAssetId) + ".smat");
 	}
 
-	inline std::filesystem::path CookedTextureAsset(std::uint64_t textureAssetId, std::string_view extension = {})
-	{
-		std::string normalizedExtension(extension.empty() ? ".stex" : extension);
-		if (!normalizedExtension.starts_with('.'))
-		{
-			normalizedExtension.insert(normalizedExtension.begin(), '.');
-		}
-		return CookedTextureRoot() / (Formatting::FormatHexUInt64(textureAssetId) + normalizedExtension);
-	}
-
 	// Shader cache/control files
 
 	inline const std::filesystem::path& ShaderRecookSignal()

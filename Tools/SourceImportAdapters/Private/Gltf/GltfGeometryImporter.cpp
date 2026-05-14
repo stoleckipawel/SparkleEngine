@@ -84,9 +84,12 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				continue;
 			}
 
-			result.materialHandles.push_back(ResolveMaterialHandle(primitive, data, primitiveLabel, result));
-			result.transforms.emplace_back(worldTransform);
-			result.meshes.push_back(std::move(meshData));
+			SourceImportResult::MeshEntry meshEntry;
+			meshEntry.geometry = std::move(meshData);
+			meshEntry.displayName = primitiveLabel;
+			meshEntry.transform = worldTransform;
+			meshEntry.material = ResolveMaterialHandle(primitive, data, primitiveLabel, result);
+			result.meshes.push_back(std::move(meshEntry));
 		}
 	}
 }

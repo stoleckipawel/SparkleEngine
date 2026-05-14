@@ -45,13 +45,13 @@ bool SceneCooker::BuildManifest(
 
 	for (std::size_t meshIndex = 0; meshIndex < importResult.meshes.size(); ++meshIndex)
 	{
-		const Transform instanceTransform =
-		    meshIndex < importResult.transforms.size() ? importResult.transforms[meshIndex] : Transform();
+		const SourceImportResult::MeshEntry& meshEntry = importResult.meshes[meshIndex];
+		const Transform& instanceTransform = meshEntry.transform;
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (meshIndex < importResult.materialHandles.size() && importResult.materialHandles[meshIndex].IsValid())
+		if (meshEntry.material.IsValid())
 		{
-			materialAssetIndex = importResult.materialHandles[meshIndex].GetIndex();
+			materialAssetIndex = meshEntry.material.GetIndex();
 			if (materialAssetIndex >= outBuild.materialAssets.size())
 			{
 				outErrorMessage = "Imported mesh instance references a material index outside the imported material set";

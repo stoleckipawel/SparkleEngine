@@ -5,11 +5,33 @@
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
+#include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <utility>
+
+namespace
+{
+	std::filesystem::path BuildCookedMeshMetadataPath(Assets::CookedAssetId assetId)
+	{
+		std::filesystem::path metadataPath = Paths::CookedMeshAsset(assetId);
+		metadataPath += ".meta.json";
+		return metadataPath;
+	}
+
+	bool WriteMeshMetadata(const CookedMeshAssetBuild& meshAsset, std::string& outErrorMessage)
+	{
+		Json::ObjectWriter writer;
+		writer.WriteString("schema", "cooked-mesh-metadata-v1");
+		writer.WriteHexUInt64("assetId", meshAsset.assetId);
+		writer.WriteString("displayName", meshAsset.displayName);
+		writer.WriteString("source", meshAsset.sourcePath.generic_string());
+		return Files::TryWriteAllTextAtomic(BuildCookedMeshMetadataPath(meshAsset.assetId), writer.Finish(), outErrorMessage);
+	}
+}
 
 void MeshCooker::BuildMeshAssets(
     const SourceImportResult& importResult,
@@ -24,9 +46,12 @@ void MeshCooker::BuildMeshAssets(
 
 	for (std::size_t meshIndex = 0; meshIndex < importResult.meshes.size(); ++meshIndex)
 	{
-		const MeshData& meshData = importResult.meshes[meshIndex];
+		const SourceImportResult::MeshEntry& meshEntry = importResult.meshes[meshIndex];
+		const MeshData& meshData = meshEntry.geometry;
 		CookedMeshAssetBuild meshAsset;
 		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, meshIndex);
+		meshAsset.displayName = meshEntry.displayName;
+		meshAsset.sourcePath = importResult.sourceScenePath;
 		meshAsset.vertices.reserve(meshData.vertices.size());
 		for (const VertexData& vertex : meshData.vertices)
 		{
@@ -70,6 +95,11 @@ bool MeshCooker::WriteMeshAssets(const std::vector<CookedMeshAssetBuild>& meshAs
 		}
 
 		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))
+		{
+			return false;
+		}
+
+		if (!WriteMeshMetadata(meshAsset, outErrorMessage))
 		{
 			return false;
 		}

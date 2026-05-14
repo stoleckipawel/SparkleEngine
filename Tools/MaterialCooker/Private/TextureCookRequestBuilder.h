@@ -29,5 +29,10 @@ private:
 	    const TextureCookRequest& request,
 	    std::string& outTextureSourceKey,
 	    std::string& outErrorMessage);
+	static bool BuildTextureOutputPath(
+	    const TextureCookRequest& request,
+	    std::filesystem::path& outTextureOutputPath,
+	    std::string& outErrorMessage);
+	static std::string BuildTextureVariantSuffix(const TextureCookRequest& request);
 };
 

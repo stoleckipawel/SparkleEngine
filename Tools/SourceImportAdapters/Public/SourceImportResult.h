@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -36,31 +37,41 @@ constexpr std::string_view GetSourceImporterTypeName(SourceImporterType importer
 
 struct SourceImportResult
 {
-	struct MaterialTextureSource
+	struct TextureSource
 	{
 		TextureGroup textureGroup = TextureGroup::Default;
 		std::filesystem::path sourcePath;
 		TextureChannelMask channelMask = TextureChannelMask::Rgba;
 	};
 
-	std::vector<MeshData> meshes;
-	std::vector<MaterialDesc> materials;
-	std::vector<std::vector<MaterialTextureSource>> materialTextureSources;
-	std::vector<Transform> transforms;
-	std::vector<MaterialHandle> materialHandles;
+	struct MeshEntry
+	{
+		MeshData geometry;
+		std::string displayName;
+		Transform transform;
+		MaterialHandle material;
+	};
+
+	struct MaterialEntry
+	{
+		MaterialDesc description;
+		std::vector<TextureSource> textures;
+	};
+
+	std::vector<MeshEntry> meshes;
+	std::vector<MaterialEntry> materials;
+	std::filesystem::path sourceScenePath;
 	SourceImporterType importerType = SourceImporterType::None;
 
-	bool bSuccess = false;
+	bool succeeded = false;
 
-	bool IsValid() const noexcept { return bSuccess && !meshes.empty(); }
+	bool IsValid() const noexcept { return succeeded && !meshes.empty(); }
 	std::size_t GetMeshCount() const noexcept { return meshes.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
 
-	void Reserve(std::size_t primitiveCount)
+	void ReserveMeshes(std::size_t meshCount)
 	{
-		meshes.reserve(primitiveCount);
-		transforms.reserve(primitiveCount);
-		materialHandles.reserve(primitiveCount);
+		meshes.reserve(meshCount);
 	}
 };
 

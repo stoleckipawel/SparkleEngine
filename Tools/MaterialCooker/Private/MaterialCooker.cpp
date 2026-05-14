@@ -8,12 +8,33 @@
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
+#include "Core/Public/Paths/PathUtils.h"
 
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <optional>
 #include <unordered_set>
 #include <utility>
+
+namespace
+{
+	bool BuildCookedTextureReferencePath(
+	    const TextureCookRequest& request,
+	    std::string& outTextureReferencePath,
+	    std::string& outErrorMessage)
+	{
+		const std::optional<std::filesystem::path> relativePath = Paths::TryMakeRelativeUnderRoot(request.outputPath, Paths::CookedAssetRoot());
+		if (!relativePath)
+		{
+			outErrorMessage = "Cooked texture output path is outside the cooked asset root: '" + request.outputPath.string() + "'";
+			return false;
+		}
+
+		outTextureReferencePath = relativePath->generic_string();
+		return true;
+	}
+}
 
 bool MaterialCooker::BuildMaterialAssets(
     const SourceImportResult& importResult,
@@ -27,7 +48,7 @@ bool MaterialCooker::BuildMaterialAssets(
 	outMaterialAssets.reserve(importResult.materials.size());
 	outMaterialAssetReferences.reserve(importResult.materials.size());
 
-	auto appendTextureReference = [&](const SourceImportResult::MaterialTextureSource& textureSource,
+	auto appendTextureReference = [&](const SourceImportResult::TextureSource& textureSource,
 	                                  CookedMaterialAssetBuild& materialAsset) -> bool
 	{
 		if (textureSource.sourcePath.empty())
@@ -46,7 +67,13 @@ bool MaterialCooker::BuildMaterialAssets(
 			return false;
 		}
 
-		materialAsset.textureReferences.push_back({static_cast<Assets::CookedAssetId>(request.assetId), textureSource.textureGroup});
+		std::string textureReferencePath;
+		if (!BuildCookedTextureReferencePath(request, textureReferencePath, outErrorMessage))
+		{
+			return false;
+		}
+
+		materialAsset.textureReferences.push_back({std::move(textureReferencePath), textureSource.textureGroup});
 		return true;
 	};
 
@@ -65,7 +92,8 @@ bool MaterialCooker::BuildMaterialAssets(
 
 	for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
 	{
-		const MaterialDesc& materialDesc = importResult.materials[materialIndex];
+		const SourceImportResult::MaterialEntry& materialEntry = importResult.materials[materialIndex];
+		const MaterialDesc& materialDesc = materialEntry.description;
 		CookedMaterialAssetBuild materialAsset;
 		materialAsset.assetId = BuildMaterialAssetId(sceneAssetId, materialIndex);
 		materialAsset.name = materialDesc.name;
@@ -81,9 +109,9 @@ bool MaterialCooker::BuildMaterialAssets(
 		materialAsset.header.alphaCutoff = materialDesc.alphaCutoff;
 		materialAsset.header.emissiveColor = materialDesc.emissiveColor;
 
-		if (materialIndex < importResult.materialTextureSources.size() && !importResult.materialTextureSources[materialIndex].empty())
+		if (!materialEntry.textures.empty())
 		{
-			for (const SourceImportResult::MaterialTextureSource& textureSource : importResult.materialTextureSources[materialIndex])
+			for (const SourceImportResult::TextureSource& textureSource : materialEntry.textures)
 			{
 				if (!appendTextureReference(textureSource, materialAsset))
 				{
@@ -139,7 +167,7 @@ bool MaterialCooker::CollectTextureCookRequests(
 	std::unordered_set<TextureAssetId> referencedTextureAssetIds;
 	referencedTextureAssetIds.reserve(importResult.materials.size() * 8);
 
-	auto appendTextureRequest = [&](const SourceImportResult::MaterialTextureSource& textureSource) -> bool
+	auto appendTextureRequest = [&](const SourceImportResult::TextureSource& textureSource) -> bool
 	{
 		if (textureSource.sourcePath.empty())
 		{
@@ -179,9 +207,10 @@ bool MaterialCooker::CollectTextureCookRequests(
 
 	for (std::size_t materialIndex = 0; materialIndex < importResult.materials.size(); ++materialIndex)
 	{
-		if (materialIndex < importResult.materialTextureSources.size() && !importResult.materialTextureSources[materialIndex].empty())
+		const SourceImportResult::MaterialEntry& materialEntry = importResult.materials[materialIndex];
+		if (!materialEntry.textures.empty())
 		{
-			for (const SourceImportResult::MaterialTextureSource& textureSource : importResult.materialTextureSources[materialIndex])
+			for (const SourceImportResult::TextureSource& textureSource : materialEntry.textures)
 			{
 				if (!appendTextureRequest(textureSource))
 				{
@@ -192,7 +221,7 @@ bool MaterialCooker::CollectTextureCookRequests(
 			continue;
 		}
 
-		const MaterialDesc& materialDesc = importResult.materials[materialIndex];
+		const MaterialDesc& materialDesc = materialEntry.description;
 		if (!appendFallbackTextureRequest(materialDesc.albedoTexture, TextureGroup::Diffuse) ||
 		    !appendFallbackTextureRequest(materialDesc.normalTexture, TextureGroup::NormalMap) ||
 		    !appendFallbackTextureRequest(materialDesc.roughnessTexture, TextureGroup::Roughness, TextureChannelMask::Red) ||
@@ -241,9 +270,36 @@ bool MaterialCooker::WriteMaterialAssets(
 			}
 		}
 
-		if (!Files::BinaryStreamWriter::WriteArray(output, materialAsset.textureReferences, outErrorMessage))
+		std::vector<Assets::CookedTextureReferenceRecord> textureReferenceRecords;
+		textureReferenceRecords.reserve(materialAsset.textureReferences.size());
+		for (const Assets::CookedTextureReference& textureReference : materialAsset.textureReferences)
+		{
+			if (textureReference.texturePath.size() > (std::numeric_limits<std::uint32_t>::max)())
+			{
+				outErrorMessage = "Cooked material texture reference path is too large to serialize";
+				return false;
+			}
+
+			textureReferenceRecords.push_back(
+			    {.texturePathByteCount = static_cast<std::uint32_t>(textureReference.texturePath.size()),
+			     .textureGroup = textureReference.textureGroup});
+		}
+
+		if (!Files::BinaryStreamWriter::WriteArray(output, textureReferenceRecords, outErrorMessage))
 		{
 			return false;
+		}
+
+		for (const Assets::CookedTextureReference& textureReference : materialAsset.textureReferences)
+		{
+			if (!Files::BinaryStreamWriter::WriteBytes(
+			        output,
+			        textureReference.texturePath.data(),
+			        textureReference.texturePath.size(),
+			        outErrorMessage))
+			{
+				return false;
+			}
 		}
 
 		if (!Files::TryCloseOutput(output, outputPath, outErrorMessage))

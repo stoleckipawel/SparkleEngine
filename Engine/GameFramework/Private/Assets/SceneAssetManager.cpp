@@ -111,13 +111,18 @@ namespace Assets
 		}
 
 		MeshAssetLoader meshAssetLoader;
-		std::vector<MeshData> loadedMeshes;
+		struct LoadedMeshAsset final
+		{
+			MeshData mesh;
+			CookedAssetId assetId = InvalidCookedAssetId;
+		};
+		std::vector<LoadedMeshAsset> loadedMeshes;
 		loadedMeshes.reserve(sceneManifest.meshAssetReferences.size());
 		for (const CookedSceneMeshAssetRef& meshReference : sceneManifest.meshAssetReferences)
 		{
-			MeshData meshData;
+			LoadedMeshAsset loadedMesh;
 			const std::filesystem::path meshAssetPath = Paths::CookedMeshAsset(meshReference.meshAssetId);
-			if (!meshAssetLoader.Load(meshAssetPath, meshData, errorMessage))
+			if (!meshAssetLoader.Load(meshAssetPath, loadedMesh.mesh, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to load cooked mesh asset {} from '{}' - {}",
@@ -127,7 +132,8 @@ namespace Assets
 				return false;
 			}
 
-			loadedMeshes.push_back(std::move(meshData));
+			loadedMesh.assetId = meshReference.meshAssetId;
+			loadedMeshes.push_back(std::move(loadedMesh));
 		}
 
 		MaterialAssetLoader materialAssetLoader;
@@ -161,9 +167,7 @@ namespace Assets
 			payload.materials.push_back(std::move(runtimeMaterial));
 		}
 
-		payload.meshes.reserve(payload.meshes.size() + sceneManifest.instances.size());
-		payload.transforms.reserve(payload.transforms.size() + sceneManifest.instances.size());
-		payload.materialHandles.reserve(payload.materialHandles.size() + sceneManifest.instances.size());
+		payload.meshInstances.reserve(payload.meshInstances.size() + sceneManifest.instances.size());
 
 		for (const CookedSceneInstanceRecord& instanceRecord : sceneManifest.instances)
 		{
@@ -188,12 +192,15 @@ namespace Assets
 				return false;
 			}
 
-			payload.meshes.push_back(loadedMeshes[instanceRecord.meshAssetIndex]);
-			payload.transforms.emplace_back(DirectX::XMLoadFloat4x4(&instanceRecord.worldTransform));
-			payload.materialHandles.emplace_back(
-			    instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
-			        ? MaterialHandle::Invalid()
-			        : MaterialHandle(materialBaseIndex + instanceRecord.materialAssetIndex));
+			const LoadedMeshAsset& loadedMesh = loadedMeshes[instanceRecord.meshAssetIndex];
+			RuntimeScenePayload::MeshInstance meshInstance;
+			meshInstance.mesh = loadedMesh.mesh;
+			meshInstance.assetId = loadedMesh.assetId;
+			meshInstance.transform = Transform(DirectX::XMLoadFloat4x4(&instanceRecord.worldTransform));
+			meshInstance.material = instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
+			                            ? MaterialHandle::Invalid()
+			                            : MaterialHandle(materialBaseIndex + instanceRecord.materialAssetIndex);
+			payload.meshInstances.push_back(std::move(meshInstance));
 		}
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());

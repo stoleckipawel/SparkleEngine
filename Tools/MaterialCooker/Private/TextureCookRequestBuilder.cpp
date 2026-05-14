@@ -37,7 +37,10 @@ bool TextureCookRequestBuilder::Build(
 	}
 
 	outRequest.assetId = Hash::Fnv1a64(textureSourceKey);
-	outRequest.outputPath = Paths::CookedTextureAsset(outRequest.assetId);
+	if (!BuildTextureOutputPath(outRequest, outRequest.outputPath, outErrorMessage))
+	{
+		return false;
+	}
 	outErrorMessage.clear();
 	return true;
 }
@@ -152,6 +155,44 @@ bool TextureCookRequestBuilder::BuildTextureSourceKey(
 	outErrorMessage = "Source texture path must be under the project or engine root to derive a stable cooked texture id: '" +
 	                  request.sourcePath.string() + "'";
 	return false;
+}
+
+bool TextureCookRequestBuilder::BuildTextureOutputPath(
+    const TextureCookRequest& request,
+    std::filesystem::path& outTextureOutputPath,
+    std::string& outErrorMessage)
+{
+	const std::filesystem::path& projectRoot = Paths::ProjectRoot();
+	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, projectRoot))
+	{
+		std::filesystem::path cookedRelativePath = std::filesystem::path("Project") / *relativePath;
+		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
+		outTextureOutputPath = Paths::CookedTextureRoot() / cookedRelativePath;
+		outErrorMessage.clear();
+		return true;
+	}
+
+	const std::filesystem::path& engineRoot = Paths::EngineRoot();
+	if (const auto relativePath = Paths::TryMakeRelativeUnderRoot(request.sourcePath, engineRoot))
+	{
+		std::filesystem::path cookedRelativePath = std::filesystem::path("Engine") / *relativePath;
+		cookedRelativePath.replace_extension(BuildTextureVariantSuffix(request) + ".stex");
+		outTextureOutputPath = Paths::CookedTextureRoot() / cookedRelativePath;
+		outErrorMessage.clear();
+		return true;
+	}
+
+	outErrorMessage = "Source texture path must be under the project or engine root to derive a cooked texture output path: '" +
+	                  request.sourcePath.string() + "'";
+	return false;
+}
+
+std::string TextureCookRequestBuilder::BuildTextureVariantSuffix(const TextureCookRequest& request)
+{
+	return std::string(".") + GetTextureGroupName(request.textureGroup) + "." + GetTextureColorSpaceName(request.colorSpace) + "." +
+	       GetTextureMipPolicyName(request.mipPolicy) + "." + GetTextureMipFilterName(request.mipFilter) + "." +
+	       GetTextureColorProcessingPolicyName(request.colorProcessingPolicy) + "." + GetTextureDimensionName(request.dimension) + "." +
+	       GetTextureChannelMaskName(request.channelMask);
 }
 
 

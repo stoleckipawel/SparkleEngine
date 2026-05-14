@@ -13,17 +13,16 @@ static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Too
 
 void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
 {
-	result.materialTextureSources.reserve(data->materials_count);
 	for (cgltf_size materialIndex = 0; materialIndex < data->materials_count; ++materialIndex)
 	{
-		std::vector<SourceImportResult::MaterialTextureSource> textureSources;
-		result.materials.push_back(ExtractMaterial(
+		SourceImportResult::MaterialEntry materialEntry;
+		materialEntry.description = ExtractMaterial(
 		    data->materials[materialIndex],
 		    static_cast<unsigned int>(materialIndex),
 		    sourceDirectory,
-		    textureSources,
-		    result));
-		result.materialTextureSources.push_back(std::move(textureSources));
+		    materialEntry.textures,
+		    result);
+		result.materials.push_back(std::move(materialEntry));
 	}
 }
 
@@ -31,7 +30,7 @@ MaterialDesc GltfMaterialImporter::ExtractMaterial(
     const cgltf_material& material,
     unsigned int materialIndex,
     const std::filesystem::path& sourceDirectory,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	const MaterialHandle materialHandle(materialIndex);
@@ -244,7 +243,7 @@ void GltfMaterialImporter::ApplyTextureMappings(
     MaterialHandle materialHandle,
     const std::filesystem::path& sourceDirectory,
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	AssignTextureByType(material, materialHandle, sourceDirectory, TextureGroup::Diffuse, materialDesc, outTextureSources, result);
@@ -259,7 +258,7 @@ void GltfMaterialImporter::AssignPackedMetallicRoughness(
     MaterialHandle materialHandle,
     const std::filesystem::path& sourceDirectory,
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	if (material.has_pbr_metallic_roughness && material.pbr_metallic_roughness.metallic_roughness_texture.texture)
@@ -281,7 +280,7 @@ void GltfMaterialImporter::AssignTextureByType(
     const std::filesystem::path& sourceDirectory,
     TextureGroup textureGroup,
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     SourceImportResult& result)
 {
 	switch (textureGroup)
@@ -352,7 +351,7 @@ void GltfMaterialImporter::AssignTextureByType(
 
 void GltfMaterialImporter::SetTextureSource(
     MaterialDesc& materialDesc,
-    std::vector<SourceImportResult::MaterialTextureSource>& outTextureSources,
+	std::vector<SourceImportResult::TextureSource>& outTextureSources,
     TextureGroup textureGroup,
     const std::optional<std::filesystem::path>& texturePath,
 	TextureChannelMask channelMask)

@@ -21,6 +21,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 {
 	SourceImportResult result;
 	result.importerType = SourceImporterType::Gltf;
+	result.sourceScenePath = filePath;
 
 	GltfScene scene;
 	if (!GltfSceneReader::LoadScene(filePath, scene, result))
@@ -35,7 +36,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	GltfMaterialImporter::ImportMaterials(scene.data, sourceDirectory, result);
 
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
-	result.Reserve(importedMeshInstanceCount);
+	result.ReserveMeshes(importedMeshInstanceCount);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 
 	if (result.meshes.empty())
@@ -44,7 +45,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 		return result;
 	}
 
-	result.bSuccess = true;
+	result.succeeded = true;
 
 	SPDLOG_LOGGER_INFO(
 	    g_gltfImporterLogger,

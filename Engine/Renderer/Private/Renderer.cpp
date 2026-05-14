@@ -23,6 +23,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Scene/Meshes/SceneMeshes.h"
 
@@ -112,6 +113,10 @@ MeshDiagnosticsSnapshot Renderer::CaptureMeshDiagnostics() const
 		{
 			const MeshData& meshData = mesh->GetMeshData();
 			MeshDiagnosticsRow newRow;
+			if (const CookedMesh* cookedMesh = dynamic_cast<const CookedMesh*>(mesh))
+			{
+				newRow.MeshAssetId = cookedMesh->GetAssetId();
+			}
 			newRow.MeshRuntimeId = reinterpret_cast<std::uintptr_t>(mesh);
 			newRow.CpuLoaded = meshData.IsValid();
 			newRow.VertexCount = meshData.GetVertexCount();
@@ -187,6 +192,10 @@ MeshDiagnosticsSnapshot Renderer::CaptureMeshDiagnostics() const
 		    if (lhs.EstimatedCpuByteSize != rhs.EstimatedCpuByteSize)
 		    {
 			    return lhs.EstimatedCpuByteSize > rhs.EstimatedCpuByteSize;
+		    }
+		    if (lhs.MeshAssetId != rhs.MeshAssetId)
+		    {
+			    return lhs.MeshAssetId < rhs.MeshAssetId;
 		    }
 		    return lhs.MeshRuntimeId < rhs.MeshRuntimeId;
 	    });

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
@@ -11,14 +12,18 @@
 
 struct SPARKLE_ENGINE_API RuntimeScenePayload
 {
-	std::vector<MeshData> meshes;
+	struct MeshInstance
+	{
+		MeshData mesh;
+		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
+		Transform transform;
+		MaterialHandle material;
+	};
+
+	std::vector<MeshInstance> meshInstances;
 	std::vector<MaterialDesc> materials;
-	std::vector<Transform> transforms;
-	std::vector<MaterialHandle> materialHandles;
 
 	bool HasMeshes() const noexcept;
 	std::size_t GetMeshCount() const noexcept;
 	std::size_t GetMaterialCount() const noexcept;
-
-	void Reserve(std::size_t meshCount);
 };
