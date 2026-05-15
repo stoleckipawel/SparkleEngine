@@ -38,8 +38,6 @@ endif()
 target_include_directories(SparkleGameFramework
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/Scene
-        ${CMAKE_CURRENT_SOURCE_DIR}/Public/Scene/Camera
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private
         # Engine root for module-prefixed includes
@@ -49,9 +47,6 @@ target_include_directories(SparkleGameFramework
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Math
         ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Time
-        # Subdirectories for internal includes
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Scene/Camera
 )
 
 target_compile_features(SparkleGameFramework PUBLIC cxx_std_20)
@@ -62,11 +57,11 @@ sparkle_target_precompile_headers(SparkleGameFramework
 )
 
 # GameFramework depends on lower-level modules only and the shared render config owner (NO Renderer)
-target_link_libraries(SparkleGameFramework 
-    PUBLIC 
+target_link_libraries(SparkleGameFramework
+    PUBLIC
         SparkleCore
         SparklePlatform
-		SparkleRHI
+        SparkleRHI
 )
 
 set_target_properties(SparkleGameFramework PROPERTIES
