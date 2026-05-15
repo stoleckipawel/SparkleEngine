@@ -1,6 +1,6 @@
-﻿#pragma once
+#pragma once
 
-#include "GPU/FrameExecutionDiagnostics.h"
+#include "Diagnostics/FrameExecutionDiagnostics.h"
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 
@@ -14,7 +14,7 @@ class PassExecutionDiagnostics final
   public:
 	PassExecutionDiagnostics(
 	    FrameExecutionDiagnostics& frameDiagnostics,
-	    CommandContext& commands,
+	    RenderCommandContext& commands,
 	    std::string_view diagnosticName,
 	    std::string_view passDisplayLabel,
 	    std::string_view passScopeLabel,
@@ -38,7 +38,7 @@ class PassExecutionDiagnostics final
 	std::string FormatEventScopeLabel(std::string_view label) const;
 
 	FrameExecutionDiagnostics* m_frameDiagnostics = nullptr;
-	CommandContext* m_commands = nullptr;
+	RenderCommandContext* m_commands = nullptr;
 	std::string m_diagnosticName;
 	std::string m_passDisplayLabel;
 	std::string m_passScopeLabel;

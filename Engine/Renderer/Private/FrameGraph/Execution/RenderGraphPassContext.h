@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/RendererAPI.h"
 
-class CommandContext;
+class RenderCommandContext;
 class FrameGraph;
 class PassExecutionDiagnostics;
 struct FrameContext;
@@ -10,7 +10,7 @@ struct RenderPassContext;
 
 struct SPARKLE_RENDERER_API RenderGraphPassContext
 {
-	CommandContext& Commands;
+	RenderCommandContext& Commands;
 	const FrameContext& Frame;
 	const RenderPassContext& Runtime;
 	PassExecutionDiagnostics& Diagnostics;

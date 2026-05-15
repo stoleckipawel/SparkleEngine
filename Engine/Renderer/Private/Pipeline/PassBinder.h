@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <span>
 
-class CommandContext;
+class RenderCommandContext;
 class FrameGraph;
 struct PassParameterBinding;
 class PassParameterSet;
@@ -15,7 +15,7 @@ class PassBinder final
 {
   public:
 	static void BindGraphics(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const FrameGraph& frameGraph,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -24,7 +24,7 @@ class PassBinder final
 	    const PassBindingOverrides* overrides = nullptr);
 
 	static void BindCompute(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const FrameGraph& frameGraph,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -34,7 +34,7 @@ class PassBinder final
 
   private:
 	static void BindImpl(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const FrameGraph& frameGraph,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
@@ -43,7 +43,7 @@ class PassBinder final
 	    const PassBindingOverrides* overrides,
 	    bool isCompute);
 	static void BindCompiledBinding(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const FrameGraph& frameGraph,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const CompiledBinding& compiledBinding,
@@ -51,27 +51,27 @@ class PassBinder final
 	    const PassBindingOverrides* overrides,
 	    bool isCompute);
 	static void BindRootGpuAddress(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuVirtualAddress gpuAddress,
 	    bool isCompute);
 	static bool TryBindDescriptorTableOverride(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    const PassBindingOverrides* overrides,
 	    bool isCompute);
 	static void BindDescriptorTable(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuDescriptorHandle descriptorTable,
 	    bool isCompute);
 	static void BindDescriptorTable(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    RhiDescriptorTableBinding descriptorTable,
 	    bool isCompute);
 	static void BindRootConstants(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    const void* data,
 	    std::uint32_t constantCount,

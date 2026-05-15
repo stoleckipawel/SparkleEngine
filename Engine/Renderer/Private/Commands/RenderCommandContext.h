@@ -7,16 +7,16 @@
 #include <cstdint>
 #include <string_view>
 
-class SPARKLE_RENDERER_API CommandContext final
+class SPARKLE_RENDERER_API RenderCommandContext final
 {
   public:
-	explicit CommandContext(RenderCommandList& commandList) noexcept;
-	~CommandContext() noexcept = default;
+	explicit RenderCommandContext(RenderCommandList& commandList) noexcept;
+	~RenderCommandContext() noexcept = default;
 
-	CommandContext(const CommandContext&) = delete;
-	CommandContext& operator=(const CommandContext&) = delete;
-	CommandContext(CommandContext&&) = delete;
-	CommandContext& operator=(CommandContext&&) = delete;
+	RenderCommandContext(const RenderCommandContext&) = delete;
+	RenderCommandContext& operator=(const RenderCommandContext&) = delete;
+	RenderCommandContext(RenderCommandContext&&) = delete;
+	RenderCommandContext& operator=(RenderCommandContext&&) = delete;
 
 	void EnableDrawDispatchDiagnostics() noexcept;
 	bool IsDrawDispatchDiagnosticsEnabled() const noexcept { return m_drawDispatchDiagnosticsEnabled; }

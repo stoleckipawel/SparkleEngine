@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "GPU/GPUMeshCache.h"
+#include "Meshes/GPUMeshCache.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"

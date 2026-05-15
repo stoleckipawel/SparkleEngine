@@ -1,53 +1,53 @@
-﻿#include "PCH.h"
-#include "GPU/CommandContext.h"
+#include "PCH.h"
+#include "Commands/RenderCommandContext.h"
 
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 
 #include <cstdio>
 
-CommandContext::CommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
+RenderCommandContext::RenderCommandContext(RenderCommandList& commandList) noexcept : m_commandList(&commandList) {}
 
-void CommandContext::EnableDrawDispatchDiagnostics() noexcept
+void RenderCommandContext::EnableDrawDispatchDiagnostics() noexcept
 {
 	m_drawDispatchDiagnosticsEnabled = SupportsDiagnosticScopes();
 }
 
-void CommandContext::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
+void RenderCommandContext::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
 {
 	m_commandList->SetPipelineState(pipelineState);
 }
 
-void CommandContext::SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
+void RenderCommandContext::SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
 {
 	m_commandList->SetGraphicsBindingLayout(bindingLayout);
 }
 
-void CommandContext::SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
+void RenderCommandContext::SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
 {
 	m_commandList->SetComputeBindingLayout(bindingLayout);
 }
 
-void CommandContext::SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept
+void RenderCommandContext::SetPrimitiveTopology(RhiPrimitiveTopology topology) noexcept
 {
 	m_commandList->SetPrimitiveTopology(topology);
 }
 
-void CommandContext::BindVertexBuffer(const RhiVertexBufferView& view) noexcept
+void RenderCommandContext::BindVertexBuffer(const RhiVertexBufferView& view) noexcept
 {
 	m_commandList->BindVertexBuffer(view);
 }
 
-void CommandContext::BindIndexBuffer(const RhiIndexBufferView& view) noexcept
+void RenderCommandContext::BindIndexBuffer(const RhiIndexBufferView& view) noexcept
 {
 	m_commandList->BindIndexBuffer(view);
 }
 
-void CommandContext::BindConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindGraphicsConstantBuffer(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::SetRoot32BitConstants(
+void RenderCommandContext::SetRoot32BitConstants(
     std::uint32_t rootParameterIndex,
     std::uint32_t num32BitValues,
     const void* data,
@@ -56,42 +56,42 @@ void CommandContext::SetRoot32BitConstants(
 	m_commandList->SetGraphicsRootConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
 
-void CommandContext::BindRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindGraphicsShaderResource(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindGraphicsUnorderedAccess(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+void RenderCommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
 	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, baseDescriptor);
 }
 
-void CommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+void RenderCommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableBinding);
 }
 
-void CommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindComputeConstantBuffer(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
 	m_commandList->BindComputeDescriptorTable(rootParameterIndex, baseDescriptor);
 }
 
-void CommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
 	m_commandList->BindComputeDescriptorTable(rootParameterIndex, tableBinding);
 }
 
-void CommandContext::SetComputeRoot32BitConstants(
+void RenderCommandContext::SetComputeRoot32BitConstants(
     std::uint32_t rootParameterIndex,
     std::uint32_t num32BitValues,
     const void* data,
@@ -100,76 +100,76 @@ void CommandContext::SetComputeRoot32BitConstants(
 	m_commandList->SetComputeRootConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
 
-void CommandContext::BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindComputeShaderResource(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
 	m_commandList->BindComputeUnorderedAccess(rootParameterIndex, gpuAddress);
 }
 
-void CommandContext::SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept
+void RenderCommandContext::SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept
 {
 	m_commandList->SetDescriptorHeaps(heapCount, heaps);
 }
 
-void CommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
+void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
 {
 	m_commandList->SetRenderTarget(rtv, dsv);
 }
 
-void CommandContext::SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept
+void RenderCommandContext::SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv) noexcept
 {
 	m_commandList->SetRenderTargets(numRTVs, rtvs, dsv);
 }
 
-void CommandContext::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
+void RenderCommandContext::ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept
 {
 	m_commandList->ClearRenderTarget(rtv, color);
 }
 
-void CommandContext::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
+void RenderCommandContext::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
 {
 	m_commandList->ClearDepthStencil(dsv, depth, stencil);
 }
 
-void CommandContext::SetViewport(const RhiViewport& viewport) noexcept
+void RenderCommandContext::SetViewport(const RhiViewport& viewport) noexcept
 {
 	m_commandList->SetViewport(viewport);
 }
 
-void CommandContext::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) noexcept
+void RenderCommandContext::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) noexcept
 {
 	SetViewport(RhiViewport{.X = x, .Y = y, .Width = width, .Height = height, .MinDepth = minDepth, .MaxDepth = maxDepth});
 }
 
-void CommandContext::SetScissorRect(const RhiRect& scissorRect) noexcept
+void RenderCommandContext::SetScissorRect(const RhiRect& scissorRect) noexcept
 {
 	m_commandList->SetScissorRect(scissorRect);
 }
 
-void CommandContext::SetScissorRect(std::int32_t left, std::int32_t top, std::int32_t right, std::int32_t bottom) noexcept
+void RenderCommandContext::SetScissorRect(std::int32_t left, std::int32_t top, std::int32_t right, std::int32_t bottom) noexcept
 {
 	SetScissorRect(RhiRect{.Left = left, .Top = top, .Right = right, .Bottom = bottom});
 }
 
-void CommandContext::EmitDrawMarker() noexcept
+void RenderCommandContext::EmitDrawMarker() noexcept
 {
 	char label[32];
 	std::snprintf(label, sizeof(label), "Draw.%u", m_drawCount++);
 	m_commandList->InsertDiagnosticMarker(label, {});
 }
 
-void CommandContext::EmitDispatchMarker(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
+void RenderCommandContext::EmitDispatchMarker(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
 {
 	char label[64];
 	std::snprintf(label, sizeof(label), "Dispatch.%u.%ux%ux%u", m_dispatchCount++, groupCountX, groupCountY, groupCountZ);
 	m_commandList->InsertDiagnosticMarker(label, {});
 }
 
-void CommandContext::DrawIndexedInstanced(
+void RenderCommandContext::DrawIndexedInstanced(
     std::uint32_t indexCountPerInstance,
     std::uint32_t instanceCount,
     std::uint32_t startIndexLocation,
@@ -185,7 +185,7 @@ void CommandContext::DrawIndexedInstanced(
 	    ->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
-void CommandContext::DrawInstanced(
+void RenderCommandContext::DrawInstanced(
     std::uint32_t vertexCountPerInstance,
     std::uint32_t instanceCount,
     std::uint32_t startVertexLocation,
@@ -199,7 +199,7 @@ void CommandContext::DrawInstanced(
 	m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
-void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
+void RenderCommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCountY, std::uint32_t groupCountZ) noexcept
 {
 	if (m_drawDispatchDiagnosticsEnabled)
 	{
@@ -209,7 +209,7 @@ void CommandContext::Dispatch(std::uint32_t groupCountX, std::uint32_t groupCoun
 	m_commandList->Dispatch(groupCountX, groupCountY, groupCountZ);
 }
 
-void CommandContext::BuildBottomLevelAccelerationStructure(
+void RenderCommandContext::BuildBottomLevelAccelerationStructure(
     const RhiRayTracingGeometryDesc& geometry,
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
@@ -220,7 +220,7 @@ void CommandContext::BuildBottomLevelAccelerationStructure(
 	}
 }
 
-void CommandContext::BuildTopLevelAccelerationStructure(
+void RenderCommandContext::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress instanceDescsGpuAddress,
     std::uint32_t instanceCount,
     RhiGpuVirtualAddress scratchGpuAddress,
@@ -232,42 +232,42 @@ void CommandContext::BuildTopLevelAccelerationStructure(
 	}
 }
 
-bool CommandContext::SupportsDiagnosticScopes() const noexcept
+bool RenderCommandContext::SupportsDiagnosticScopes() const noexcept
 {
 	return m_commandList->SupportsDiagnosticScopes();
 }
 
-void CommandContext::BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept
+void RenderCommandContext::BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
 	m_commandList->BeginDiagnosticScope(label, color);
 }
 
-void CommandContext::EndDiagnosticScope() noexcept
+void RenderCommandContext::EndDiagnosticScope() noexcept
 {
 	m_commandList->EndDiagnosticScope();
 }
 
-void CommandContext::InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept
+void RenderCommandContext::InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
 	m_commandList->InsertDiagnosticMarker(label, color);
 }
 
-void CommandContext::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
+void RenderCommandContext::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
 {
 	m_commandList->CopyResource(destinationResource, sourceResource);
 }
 
-void CommandContext::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
+void RenderCommandContext::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
 {
 	m_commandList->AliasResource(beforeResource, afterResource);
 }
 
-void CommandContext::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
+void RenderCommandContext::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {
 	m_commandList->TransitionResource(resource, before, after);
 }
 
-void CommandContext::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
+void RenderCommandContext::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
 {
 	m_commandList->UnorderedAccessBarrier(resource);
 }

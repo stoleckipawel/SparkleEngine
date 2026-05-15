@@ -13,7 +13,7 @@
 class FrameGraph;
 struct RenderGraphPassContext;
 struct RenderPassContext;
-struct RenderViewContext;
+struct RenderViewData;
 struct SkyPassRuntime;
 
 struct SkyPassParameters
@@ -53,7 +53,7 @@ class SkyPass final
 	    ParameterInstance& parameters);
 	static void SetParameters(
 	    ParameterInstance& parameters,
-	    const RenderViewContext& viewContext,
+	    const RenderViewData& viewData,
 	    const RenderPassContext& renderPassContext);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 };

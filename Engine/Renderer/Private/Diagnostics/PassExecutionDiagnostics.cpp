@@ -1,10 +1,10 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 
 PassExecutionDiagnostics::PassExecutionDiagnostics(
     FrameExecutionDiagnostics& frameDiagnostics,
-    CommandContext& commands,
+    RenderCommandContext& commands,
     std::string_view diagnosticName,
     std::string_view passDisplayLabel,
     std::string_view passScopeLabel,

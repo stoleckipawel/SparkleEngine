@@ -1,8 +1,8 @@
 #include "../PCH.h"
 #include "Passes/ComputeClearPass.h"
 
-#include "GPU/CommandContext.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Commands/RenderCommandContext.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"

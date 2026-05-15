@@ -1,11 +1,11 @@
 #include "../PCH.h"
 #include "Passes/GBufferPass.h"
 
-#include "GPU/CommandContext.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Commands/RenderCommandContext.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Trace.h"
-#include "Frame/RenderViewContext.h"
+#include "Frame/RenderViewData.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
@@ -14,7 +14,7 @@
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/MaterialData.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
-#include "GPU/GPUMesh.h"
+#include "Meshes/GPUMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
@@ -80,9 +80,9 @@ void GBufferPass::DeclareResources(FrameGraph& frameGraph, const GBufferTargets&
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 }
 
-void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewContext& viewContext)
+void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData)
 {
-	parameters->PerView = viewContext.perViewData;
+	parameters->PerView = viewData.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
@@ -104,16 +104,16 @@ void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferP
 	context.Graph.ClearDepthStencil(context.Commands, parameters.MainDepth[0]);
 }
 
-void GBufferPass::ConfigurePipeline(CommandContext& cmd, const RenderViewContext& viewContext)
+void GBufferPass::ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData)
 {
-	cmd.SetViewport(viewContext.viewport);
-	cmd.SetScissorRect(viewContext.scissorRect);
+	cmd.SetViewport(viewData.viewport);
+	cmd.SetScissorRect(viewData.scissorRect);
 	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 }
 
 void GBufferPass::BindPassResources(
     const FrameGraph& frameGraph,
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const ParameterInstance& parameters,
     const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)
@@ -132,7 +132,7 @@ void GBufferPass::BindPassResources(
 
 void GBufferPass::DrawOpaqueMeshes(
     const FrameGraph& frameGraph,
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
     const RasterPassRuntime& runtime,
     const RenderPassContext& renderPassContext)

@@ -1,23 +1,23 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
-#include "GPU/CommandContext.h"
+#include "Commands/RenderCommandContext.h"
 
 #include <cassert>
 
 static const auto g_frameGraphBarrierLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept
 {
 	EmitCompiledBarriers(cmd, "Unknown", barriers);
 }
 
-void FrameGraph::EmitCompiledAliasingBarriers(CommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
+void FrameGraph::EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
 {
 	EmitCompiledAliasingBarriers(cmd, "Unknown", barriers);
 }
 
 void FrameGraph::EmitCompiledAliasingBarriers(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     std::string_view passName,
     const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
 {
@@ -42,7 +42,7 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 	}
 }
 
-void FrameGraph::EmitCompiledBarriers(CommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers)
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers)
     const noexcept
 {
 	for (const CompiledBarrier& barrier : barriers)

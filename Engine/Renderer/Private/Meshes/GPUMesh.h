@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-class CommandContext;
+class RenderCommandContext;
 struct MeshData;
 
 class SPARKLE_RENDERER_API GPUMesh final
@@ -21,7 +21,7 @@ class SPARKLE_RENDERER_API GPUMesh final
 
 	bool Upload(RenderHardwareInterface& renderHardwareInterface, const MeshData& meshData);
 
-	void Bind(CommandContext& cmd) const noexcept;
+	void Bind(RenderCommandContext& cmd) const noexcept;
 
 	std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
 	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }

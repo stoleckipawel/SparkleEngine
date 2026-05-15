@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Frame/RenderViewContext.h"
+#include "Frame/RenderViewData.h"
 
 class RenderCamera;
 class RenderHardwareInterface;
@@ -17,13 +17,13 @@ class PerViewDataBuilder final
 	PerViewDataBuilder(PerViewDataBuilder&&) = delete;
 	PerViewDataBuilder& operator=(PerViewDataBuilder&&) = delete;
 
-	RenderViewContext BuildView(
+	RenderViewData BuildView(
 	    const PerViewCameraConstantBufferData& cameraData,
 	    const PerViewLightingConstantBufferData& lightingData,
 	    const RhiViewport& viewport,
 	    const RhiRect& scissorRect) const noexcept;
 
-	RenderViewContext BuildMainView(
+	RenderViewData BuildMainView(
 	    const RenderCamera& renderCamera,
 	    const PerViewLightingConstantBufferData& lightingData,
 	    const RenderHardwareInterface& renderHardwareInterface) const noexcept;

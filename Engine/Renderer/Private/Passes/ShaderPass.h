@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-class CommandContext;
+class RenderCommandContext;
 class FrameGraph;
 class PassBuilder;
 class PassParameterLayout;
@@ -33,13 +33,13 @@ struct ComputeDispatchDesc
 };
 
 SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept;
-SPARKLE_RENDERER_API void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
+SPARKLE_RENDERER_API void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
     ShaderPassKind passKind,
     const char* passName) noexcept;
 SPARKLE_RENDERER_API void BindComputeShaderPass(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
@@ -50,7 +50,7 @@ SPARKLE_RENDERER_API void BindComputeShaderPass(
     const PassBindingOverrides* overrides = nullptr) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
@@ -258,7 +258,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	template <typename TParameterBindings>
 	static bool Dispatch(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
 	    const RenderPipelineState& pipelineState,
@@ -288,7 +288,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 		return true;
 	}
 
-	void Dispatch(CommandContext& cmd, const ComputeDispatchDesc& dispatch) const noexcept { DispatchComputeShaderPass(cmd, dispatch); }
+	void Dispatch(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) const noexcept { DispatchComputeShaderPass(cmd, dispatch); }
 };
 
 template <typename TParameters> class RasterShaderPass : public ShaderPass
@@ -307,7 +307,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	template <typename TParameterBindings>
 	static bool Bind(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
 	    const RenderPipelineState& pipelineState,

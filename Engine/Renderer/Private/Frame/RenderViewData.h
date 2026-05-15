@@ -3,7 +3,7 @@
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
-struct RenderViewContext
+struct RenderViewData
 {
 	PerViewConstantBufferData perViewData = {};
 	RhiGpuVirtualAddress perViewGpuAddress = 0;

@@ -1,7 +1,7 @@
 #include "../PCH.h"
 #include "Pipeline/PassBinder.h"
 
-#include "GPU/CommandContext.h"
+#include "Commands/RenderCommandContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -89,7 +89,7 @@ const PassBindingOverride* PassBindingOverrides::Find(const char* name, PassBind
 }
 
 void PassBinder::BindGraphics(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
@@ -101,7 +101,7 @@ void PassBinder::BindGraphics(
 }
 
 void PassBinder::BindCompute(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
@@ -113,7 +113,7 @@ void PassBinder::BindCompute(
 }
 
 void PassBinder::BindImpl(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
@@ -186,7 +186,7 @@ void PassBinder::BindImpl(
 }
 
 void PassBinder::BindCompiledBinding(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const CompiledBinding& compiledBinding,
@@ -343,7 +343,7 @@ void PassBinder::BindCompiledBinding(
 }
 
 bool PassBinder::TryBindDescriptorTableOverride(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     const PassBindingOverrides* overrides,
     bool isCompute)
@@ -367,7 +367,7 @@ bool PassBinder::TryBindDescriptorTableOverride(
 }
 
 void PassBinder::BindRootGpuAddress(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     RhiGpuVirtualAddress gpuAddress,
     bool isCompute)
@@ -409,7 +409,7 @@ void PassBinder::BindRootGpuAddress(
 }
 
 void PassBinder::BindDescriptorTable(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     RhiGpuDescriptorHandle descriptorTable,
     bool isCompute)
@@ -424,7 +424,7 @@ void PassBinder::BindDescriptorTable(
 }
 
 void PassBinder::BindDescriptorTable(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     RhiDescriptorTableBinding descriptorTable,
     bool isCompute)
@@ -439,7 +439,7 @@ void PassBinder::BindDescriptorTable(
 }
 
 void PassBinder::BindRootConstants(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     const void* data,
     std::uint32_t constantCount,

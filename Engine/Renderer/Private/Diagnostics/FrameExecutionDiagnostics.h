@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-class CommandContext;
+class RenderCommandContext;
 
 struct GpuTimingScope
 {
@@ -36,7 +36,7 @@ class ScopedGpuEvent final
 {
   public:
 	ScopedGpuEvent() noexcept = default;
-	ScopedGpuEvent(CommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept;
+	ScopedGpuEvent(RenderCommandContext& commands, std::string label, RhiDiagnosticLabelColor color) noexcept;
 	~ScopedGpuEvent() noexcept;
 
 	ScopedGpuEvent(const ScopedGpuEvent&) = delete;
@@ -49,7 +49,7 @@ class ScopedGpuEvent final
   private:
 	void Reset() noexcept;
 
-	CommandContext* m_commands = nullptr;
+	RenderCommandContext* m_commands = nullptr;
 };
 
 class ScopedGpuTimer final
@@ -58,7 +58,7 @@ class ScopedGpuTimer final
 	ScopedGpuTimer() noexcept = default;
 	ScopedGpuTimer(
 	    FrameExecutionDiagnostics& owner,
-	    CommandContext& commands,
+	    RenderCommandContext& commands,
 	    std::string label,
 	    RhiTimestampQueryHandle beginQuery,
 	    RhiTimestampQueryHandle endQuery) noexcept;
@@ -75,7 +75,7 @@ class ScopedGpuTimer final
 	void Reset() noexcept;
 
 	FrameExecutionDiagnostics* m_owner = nullptr;
-	CommandContext* m_commands = nullptr;
+	RenderCommandContext* m_commands = nullptr;
 	std::string m_label;
 	RhiTimestampQueryHandle m_beginQuery = {};
 	RhiTimestampQueryHandle m_endQuery = {};
@@ -100,15 +100,15 @@ class FrameExecutionDiagnostics final
 	bool SupportsGpuEvents() const noexcept;
 	bool SupportsTimestampQueries() const noexcept;
 
-	ScopedGpuEvent BeginGpuEvent(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
+	ScopedGpuEvent BeginGpuEvent(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept;
 	ScopedGpuEvent BeginGpuEvent(
-	    CommandContext& commands,
+	    RenderCommandContext& commands,
 	    const Diagnostics::DiagnosticName& name,
 	    RhiDiagnosticLabelColor color = {}) noexcept;
-	ScopedGpuTimer BeginTimer(CommandContext& commands, std::string_view label) noexcept;
-	ScopedGpuTimer BeginTimer(CommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept;
-	void InsertGpuMarker(CommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
-	void InsertGpuMarker(CommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {})
+	ScopedGpuTimer BeginTimer(RenderCommandContext& commands, std::string_view label) noexcept;
+	ScopedGpuTimer BeginTimer(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name) noexcept;
+	void InsertGpuMarker(RenderCommandContext& commands, std::string_view label, RhiDiagnosticLabelColor color = {}) const noexcept;
+	void InsertGpuMarker(RenderCommandContext& commands, const Diagnostics::DiagnosticName& name, RhiDiagnosticLabelColor color = {})
 	    const noexcept;
 	void ResolveTimings() noexcept;
 
@@ -120,7 +120,7 @@ class FrameExecutionDiagnostics final
 
 	RhiTimestampQueryHandle AllocateTimestampQuery() noexcept;
 	void ReleaseTimestampQuery(RhiTimestampQueryHandle query) noexcept;
-	bool WriteTimestamp(CommandContext& commands, RhiTimestampQueryHandle query) noexcept;
+	bool WriteTimestamp(RenderCommandContext& commands, RhiTimestampQueryHandle query) noexcept;
 	void RecordCompletedTimer(
 	    std::string label,
 	    RhiTimestampQueryHandle beginQuery,

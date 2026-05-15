@@ -2,7 +2,7 @@
 #include "Passes/ShaderPass.h"
 
 #include "FrameGraph/Builder/PassBuilder.h"
-#include "GPU/CommandContext.h"
+#include "Commands/RenderCommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -40,7 +40,7 @@ void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterS
 	builder.DeclareParameterUsages(parameterSet);
 }
 
-void DispatchComputeShaderPass(CommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept
+void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept
 {
 	assert(dispatch.GroupCountX > 0);
 	assert(dispatch.GroupCountY > 0);
@@ -93,7 +93,7 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 }
 
 void BindComputeShaderPass(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
@@ -120,7 +120,7 @@ void BindComputeShaderPass(
 }
 
 void BindRasterShaderPass(
-    CommandContext& cmd,
+    RenderCommandContext& cmd,
     const FrameGraph& frameGraph,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,

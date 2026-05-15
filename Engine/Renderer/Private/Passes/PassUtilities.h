@@ -6,7 +6,7 @@
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
-#include "GPU/CommandContext.h"
+#include "Commands/RenderCommandContext.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Passes/ShaderPass.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -23,7 +23,7 @@
 
 namespace PassUtilities
 {
-	inline void DrawFullscreenTriangle(CommandContext& cmd) noexcept
+	inline void DrawFullscreenTriangle(RenderCommandContext& cmd) noexcept
 	{
 		cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 		cmd.DrawInstanced(3, 1, 0, 0);
@@ -108,7 +108,7 @@ namespace PassUtilities
 	template <typename TRasterPassRuntime>
 	bool BindRasterPassWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const PassParameterSet& parameters,
@@ -133,7 +133,7 @@ namespace PassUtilities
 	template <typename TRasterPassRuntime>
 	bool BindAvailableRasterPassWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const PassParameterSet& parameters,
@@ -156,7 +156,7 @@ namespace PassUtilities
 	template <typename TRasterPassRuntime, std::size_t N>
 	bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const std::array<const char*, N>& bindingNames,
@@ -178,7 +178,7 @@ namespace PassUtilities
 	template <typename TRasterPassRuntime>
 	bool BindRasterPassOverridesWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const TRasterPassRuntime& runtime,
 	    const PassBindingOverrides& overrides,
@@ -197,7 +197,7 @@ namespace PassUtilities
 	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
 	bool DispatchComputePassWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
@@ -223,7 +223,7 @@ namespace PassUtilities
 	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
 	bool DispatchComputePassWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const TParameterBindings& parameters,
@@ -252,7 +252,7 @@ namespace PassUtilities
 	template <typename TComputePass, typename TComputePassRuntime>
 	bool DispatchAvailableComputePassWithRuntime(
 	    const FrameGraph& frameGraph,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
 	    const PassParameterSet& parameters,

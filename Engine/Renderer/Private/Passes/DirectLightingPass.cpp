@@ -3,10 +3,10 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "Frame/RenderViewContext.h"
+#include "Frame/RenderViewData.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPassContext.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
@@ -51,11 +51,11 @@ void DirectLightingPass::DeclareResources(
 
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
-    const RenderViewContext& viewContext,
+    const RenderViewData& viewData,
     const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
-	parameters->PerView = viewContext.perViewData;
+	parameters->PerView = viewData.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
 }

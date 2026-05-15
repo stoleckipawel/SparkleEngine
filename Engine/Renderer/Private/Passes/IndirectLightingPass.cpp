@@ -3,7 +3,7 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/RenderPassPipelineTraits.h"

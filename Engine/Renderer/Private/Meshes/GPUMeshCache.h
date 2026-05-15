@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "GPU/GPUMesh.h"
+#include "Meshes/GPUMesh.h"
 
 #include <memory>
 #include <unordered_map>

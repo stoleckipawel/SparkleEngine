@@ -8,7 +8,7 @@
 
 #include <cstdint>
 
-class CommandContext;
+class RenderCommandContext;
 class FrameGraph;
 class PassParameterLayout;
 struct RenderGraphPassContext;

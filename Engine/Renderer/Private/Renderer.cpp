@@ -6,14 +6,14 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 #include "Textures/TextureManager.h"
-#include "GPU/GPUMeshCache.h"
+#include "Meshes/GPUMeshCache.h"
 #include "Scene/GameScene.h"
 #include "Time/Timer.h"
 #include "Camera/RenderCamera.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
 #include "Config/RenderConfig.h"
-#include "GPU/CommandContext.h"
-#include "GPU/FrameExecutionDiagnostics.h"
+#include "Commands/RenderCommandContext.h"
+#include "Diagnostics/FrameExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/FrameContext.h"
@@ -474,7 +474,7 @@ void Renderer::RecordFrame() noexcept
 	    .Textures = m_textureManager.get()};
 
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
-	CommandContext cmd(commandList);
+	RenderCommandContext cmd(commandList);
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.

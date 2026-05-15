@@ -1,7 +1,7 @@
-﻿#include "PCH.h"
-#include "GPU/GPUMesh.h"
+#include "PCH.h"
+#include "Meshes/GPUMesh.h"
 
-#include "GPU/CommandContext.h"
+#include "Commands/RenderCommandContext.h"
 #include "Scene/Meshes/MeshData.h"
 
 static const auto g_gpuMeshLogger = Logging::GetOrCreateLogger("Renderer.GPUMesh");
@@ -66,7 +66,7 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 	return true;
 }
 
-void GPUMesh::Bind(CommandContext& cmd) const noexcept
+void GPUMesh::Bind(RenderCommandContext& cmd) const noexcept
 {
 	cmd.SetPrimitiveTopology(RhiPrimitiveTopology::TriangleList);
 	cmd.BindVertexBuffer(GetVertexBufferView());

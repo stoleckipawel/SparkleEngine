@@ -15,20 +15,20 @@ PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
 	return perViewData;
 }
 
-RenderViewContext PerViewDataBuilder::BuildView(
+RenderViewData PerViewDataBuilder::BuildView(
     const PerViewCameraConstantBufferData& cameraData,
     const PerViewLightingConstantBufferData& lightingData,
     const RhiViewport& viewport,
     const RhiRect& scissorRect) const noexcept
 {
-	RenderViewContext viewContext{};
-	viewContext.perViewData = BuildPerViewData(cameraData, lightingData);
-	viewContext.viewport = viewport;
-	viewContext.scissorRect = scissorRect;
-	return viewContext;
+	RenderViewData viewData{};
+	viewData.perViewData = BuildPerViewData(cameraData, lightingData);
+	viewData.viewport = viewport;
+	viewData.scissorRect = scissorRect;
+	return viewData;
 }
 
-RenderViewContext PerViewDataBuilder::BuildMainView(
+RenderViewData PerViewDataBuilder::BuildMainView(
     const RenderCamera& renderCamera,
     const PerViewLightingConstantBufferData& lightingData,
     const RenderHardwareInterface& renderHardwareInterface) const noexcept

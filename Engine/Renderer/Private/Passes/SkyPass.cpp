@@ -4,10 +4,10 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "Frame/RenderViewContext.h"
+#include "Frame/RenderViewData.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPassContext.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassBindingOverrides.h"
@@ -95,10 +95,10 @@ void SkyPass::DeclareResources(
 	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewContext& viewContext, const RenderPassContext& renderPassContext)
+void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const RenderPassContext& renderPassContext)
 {
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
-	parameters->PerView = viewContext.perViewData;
+	parameters->PerView = viewData.perViewData;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
 	    .MipFilter = RhiSamplerMipFilter::Linear,

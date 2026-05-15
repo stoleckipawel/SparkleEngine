@@ -2,7 +2,7 @@
 
 #include "SceneRenderStateCoordinator.h"
 
-#include "GPU/GPUMeshCache.h"
+#include "Meshes/GPUMeshCache.h"
 #include "Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"

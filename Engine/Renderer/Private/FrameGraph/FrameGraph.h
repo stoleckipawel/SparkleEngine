@@ -29,7 +29,7 @@
 #include <utility>
 #include <vector>
 
-class CommandContext;
+class RenderCommandContext;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
 struct RenderPassContext;
@@ -159,7 +159,7 @@ class SPARKLE_RENDERER_API FrameGraph
 
 	void Execute(
 	    const CompiledPlan& plan,
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
 	    const RenderPassContext& renderPassContext,
 	    FrameExecutionDiagnostics& frameDiagnostics) const;
@@ -207,17 +207,17 @@ class SPARKLE_RENDERER_API FrameGraph
 	ResourceState GetTrackedResourceState(ResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    TextureHandle renderTargetHandle,
 	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
 	void BindRenderTargets(
-	    CommandContext& cmd,
+	    RenderCommandContext& cmd,
 	    std::span<const TextureHandle> renderTargetHandles,
 	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
-	void CopyTexture(CommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(CommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
-	void ClearRenderTarget(CommandContext& cmd, TextureHandle handle) const noexcept;
-	void ClearDepthStencil(CommandContext& cmd, TextureHandle handle) const noexcept;
+	void CopyTexture(RenderCommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(RenderCommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
+	void ClearRenderTarget(RenderCommandContext& cmd, TextureHandle handle) const noexcept;
+	void ClearDepthStencil(RenderCommandContext& cmd, TextureHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(TextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(TextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(BufferHandle handle) const noexcept;
@@ -523,16 +523,16 @@ class SPARKLE_RENDERER_API FrameGraph
 	float GetClearDepth(ResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(ResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
-	void CopyResource(CommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept;
+	void CopyResource(RenderCommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const CompiledPlan& plan) const noexcept;
 	void ReleaseExternalViewDescriptors() noexcept;
-	void EmitCompiledAliasingBarriers(CommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept;
-	void EmitCompiledAliasingBarriers(CommandContext& cmd, std::string_view passName, const std::vector<CompiledAliasingBarrier>& barriers)
+	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept;
+	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledAliasingBarrier>& barriers)
 	    const noexcept;
-	void EmitCompiledBarriers(CommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(CommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers) const noexcept;
 	ResourceHandle AllocateDynamicResourceHandle() noexcept;
 
 	struct VirtualTransientResource

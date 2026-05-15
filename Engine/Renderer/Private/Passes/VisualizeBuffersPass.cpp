@@ -3,10 +3,10 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
-#include "Frame/RenderViewContext.h"
+#include "Frame/RenderViewData.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/RenderPassContext.h"
-#include "GPU/PassExecutionDiagnostics.h"
+#include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
@@ -56,10 +56,10 @@ void VisualizeBuffersPass::DeclareResources(
 
 void VisualizeBuffersPass::SetParameters(
     ParameterInstance& parameters,
-    const RenderViewContext& viewContext,
+    const RenderViewData& viewData,
     const RenderPassContext& renderPassContext)
 {
-	(void) viewContext;
+	(void) viewData;
 	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
 	const bool valid = parameters.Sync();
 	assert(valid);
