@@ -1,7 +1,7 @@
 #pragma once
 
 #if ENGINE_GPU_VALIDATION
-	#include "Interop/RenderHardwareInterface.h"
+	#include "Device/RenderHardwareInterface.h"
 
 	#include <deque>
 	#include <wrl/client.h>

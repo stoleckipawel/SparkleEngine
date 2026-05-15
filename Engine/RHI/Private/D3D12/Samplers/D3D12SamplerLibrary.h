@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 #include <d3d12.h>
 
 #include <cstdint>

@@ -1,11 +1,11 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "Textures/TextureManager.h"
 
 #include "Assets/Cooked/CookedTextureReference.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Texture.h"
 
 #include <algorithm>
@@ -353,7 +353,7 @@ TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
 	row.Width = textureInfo.Width;
 	row.Height = textureInfo.Height;
 	row.ArraySize = textureInfo.ArraySize;
-	row.DxgiFormat = textureInfo.DxgiFormat;
+	row.Format = textureInfo.Format;
 	row.MipCount = textureInfo.MipCount;
 	row.EstimatedByteSize = textureInfo.EstimatedByteSize;
 	row.GpuShaderResourceViewId = textureInfo.GpuShaderResourceViewId;

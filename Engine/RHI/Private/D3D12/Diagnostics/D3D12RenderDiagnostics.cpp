@@ -6,7 +6,7 @@
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 
 #include <array>
 #include <cstring>

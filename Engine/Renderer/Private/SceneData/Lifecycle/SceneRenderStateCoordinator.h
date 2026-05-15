@@ -6,7 +6,7 @@ class GPUMeshCache;
 class LevelChangeEvents;
 class MaterialCacheManager;
 class RenderCamera;
-class RendererBackendServices;
+class RenderDeviceServices;
 class GameScene;
 struct RenderSceneSnapshot;
 class TextureManager;
@@ -17,7 +17,7 @@ class SceneRenderStateCoordinator final
 	SceneRenderStateCoordinator(
 	    LevelChangeEvents& levelChangeEvents,
 	    GameScene& gameScene,
-	    RendererBackendServices& backendServices,
+	    RenderDeviceServices& backendServices,
 	    GPUMeshCache& gpuMeshCache,
 	    TextureManager& textureManager,
 	    RenderSceneSnapshot& sceneSnapshot,
@@ -39,7 +39,7 @@ class SceneRenderStateCoordinator final
 	void ReleaseSceneScopedMaterialResources() noexcept;
 
 	GameScene* m_gameScene = nullptr;
-	RendererBackendServices* m_backendServices = nullptr;
+	RenderDeviceServices* m_backendServices = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;
 	TextureManager* m_textureManager = nullptr;
 	RenderSceneSnapshot* m_sceneSnapshot = nullptr;

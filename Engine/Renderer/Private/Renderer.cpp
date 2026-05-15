@@ -1,9 +1,9 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Renderer.h"
 
 #include "Level/LevelManager.h"
-#include "RHI/Public/Interop/RendererBackendServices.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderDeviceServices.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 #include "Textures/TextureManager.h"
 #include "GPU/GPUMeshCache.h"
@@ -274,7 +274,7 @@ void Renderer::InitializeCoreSystems() noexcept
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");
-		m_backend = RendererBackendServices::Create(*m_timer, *m_window);
+		m_backend = RenderDeviceServices::Create(*m_timer, *m_window);
 	}
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreatePipelineStateManager");

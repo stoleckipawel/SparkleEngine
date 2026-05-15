@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 #include "D3D12RootSignature.h"
 
 #include <memory>

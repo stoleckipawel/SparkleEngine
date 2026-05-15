@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "Config/RenderConfig.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 
 using Microsoft::WRL::ComPtr;
 

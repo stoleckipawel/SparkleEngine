@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "Pipeline/PipelineStateManager.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 class TextureManager;
 

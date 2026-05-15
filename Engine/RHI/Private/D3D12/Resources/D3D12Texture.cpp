@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Resources/D3D12Texture.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
@@ -154,7 +154,7 @@ TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 	info.Height = m_textureLoadResult.height;
 	info.ArraySize = m_textureLoadResult.GetArraySize();
 	info.Dimension = m_textureLoadResult.dimension;
-	info.DxgiFormat = static_cast<std::uint32_t>(m_textureLoadResult.dxgiFormat);
+	info.Format = static_cast<std::uint32_t>(m_textureLoadResult.dxgiFormat);
 	info.FormatIntent = m_textureLoadResult.formatIntent;
 	info.MipCount = m_textureLoadResult.GetMipCount();
 	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureLoadResult);

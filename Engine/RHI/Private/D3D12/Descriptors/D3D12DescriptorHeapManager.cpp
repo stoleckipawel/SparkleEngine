@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {

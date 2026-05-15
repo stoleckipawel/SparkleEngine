@@ -1,10 +1,10 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Window/Window.h"
 
 static const auto g_frameGraphLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/D3D12/Textures/TextureLoadResult.h"
+#include "RHI/Private/D3D12/Textures/TextureLoadResult.h"
 
 #include <vector>
 

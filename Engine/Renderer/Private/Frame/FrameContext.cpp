@@ -2,7 +2,7 @@
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/FrameContext.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"

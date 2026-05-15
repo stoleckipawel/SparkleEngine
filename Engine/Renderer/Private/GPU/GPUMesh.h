@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>
 

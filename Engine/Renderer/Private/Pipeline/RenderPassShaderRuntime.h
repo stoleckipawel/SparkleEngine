@@ -2,7 +2,7 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
 #include "RHI/Public/Shaders/ShaderPackageLayoutBuilder.h"

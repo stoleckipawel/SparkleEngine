@@ -2,7 +2,7 @@
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <Windows.h>
 #include <array>

@@ -1,7 +1,7 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <algorithm>
 #include <cassert>

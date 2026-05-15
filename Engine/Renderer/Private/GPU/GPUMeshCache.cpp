@@ -1,7 +1,7 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "GPU/GPUMeshCache.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 
 static const auto g_gpuMeshCacheLogger = Logging::GetOrCreateLogger("Renderer.GPUMeshCache");

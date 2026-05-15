@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "Interop/RendererBackendServices.h"
+#include "Device/RenderDeviceServices.h"
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12Rhi.h"
@@ -15,7 +15,7 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
-struct RendererBackendServices::Impl
+struct RenderDeviceServices::Impl
 {
 	std::unique_ptr<D3D12Rhi> rhi;
 	std::unique_ptr<D3D12DescriptorHeapManager> descriptorHeapManager;
@@ -26,9 +26,9 @@ struct RendererBackendServices::Impl
 	std::unique_ptr<D3D12SamplerLibrary> samplerLibrary;
 };
 
-RendererBackendServices::RendererBackendServices() noexcept = default;
+RenderDeviceServices::RenderDeviceServices() noexcept = default;
 
-RendererBackendServices::~RendererBackendServices() noexcept
+RenderDeviceServices::~RenderDeviceServices() noexcept
 {
 	if (m_impl != nullptr)
 	{
@@ -53,10 +53,10 @@ RendererBackendServices::~RendererBackendServices() noexcept
 	}
 }
 
-std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& timer, Window& window) noexcept
+std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer, Window& window) noexcept
 {
 	SPARKLE_CPU_SCOPE("RHI.CreateBackend");
-	auto services = std::unique_ptr<RendererBackendServices>(new RendererBackendServices());
+	auto services = std::unique_ptr<RenderDeviceServices>(new RenderDeviceServices());
 	services->m_impl = std::make_unique<Impl>();
 
 	{
@@ -104,37 +104,37 @@ std::unique_ptr<RendererBackendServices> RendererBackendServices::Create(Timer& 
 	return services;
 }
 
-RenderHardwareInterface& RendererBackendServices::GetRenderHardwareInterface() noexcept
+RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() noexcept
 {
 	return *m_impl->renderHardwareInterface;
 }
 
-const RenderHardwareInterface& RendererBackendServices::GetRenderHardwareInterface() const noexcept
+const RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() const noexcept
 {
 	return *m_impl->renderHardwareInterface;
 }
 
-RenderDiagnostics& RendererBackendServices::GetDiagnostics() noexcept
+RenderDiagnostics& RenderDeviceServices::GetDiagnostics() noexcept
 {
 	return m_impl->renderHardwareInterface->GetDiagnostics();
 }
 
-const RenderDiagnostics& RendererBackendServices::GetDiagnostics() const noexcept
+const RenderDiagnostics& RenderDeviceServices::GetDiagnostics() const noexcept
 {
 	return m_impl->renderHardwareInterface->GetDiagnostics();
 }
 
-void RendererBackendServices::Flush() noexcept
+void RenderDeviceServices::Flush() noexcept
 {
 	m_impl->renderHardwareInterface->WaitForIdle();
 }
 
-void RendererBackendServices::ResizeSwapChain() noexcept
+void RenderDeviceServices::ResizeSwapChain() noexcept
 {
 	m_impl->swapChain->Resize();
 }
 
-void RendererBackendServices::BeginFrame() noexcept
+void RenderDeviceServices::BeginFrame() noexcept
 {
 	const UINT frameIndex = m_impl->swapChain->GetFrameInFlightIndex();
 	m_impl->rhi->SetCurrentFrameIndex(frameIndex);
@@ -144,17 +144,17 @@ void RendererBackendServices::BeginFrame() noexcept
 	m_impl->rhi->ResetCommandList(frameIndex);
 }
 
-RenderCommandList& RendererBackendServices::GetCurrentGraphicsCommandList() noexcept
+RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
 	return m_impl->renderHardwareInterface->GetGraphicsCommandList(m_impl->rhi->GetCurrentFrameIndex());
 }
 
-NativeGraphicsCommandListHandle RendererBackendServices::GetCurrentGraphicsCommandListHandle() const noexcept
+NativeGraphicsCommandListHandle RenderDeviceServices::GetCurrentGraphicsCommandListHandle() const noexcept
 {
 	return m_impl->renderHardwareInterface->GetGraphicsCommandListHandle(m_impl->rhi->GetCurrentFrameIndex());
 }
 
-void RendererBackendServices::SubmitFrame() noexcept
+void RenderDeviceServices::SubmitFrame() noexcept
 {
 	const UINT frameIndex = m_impl->rhi->GetCurrentFrameIndex();
 	m_impl->rhi->CloseCommandList(frameIndex);
@@ -164,17 +164,17 @@ void RendererBackendServices::SubmitFrame() noexcept
 	m_impl->swapChain->Present();
 }
 
-void RendererBackendServices::AdvanceFrameInFlight() noexcept
+void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 {
 	m_impl->swapChain->UpdateFrameInFlightIndex();
 }
 
-void RendererBackendServices::UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept
+void RenderDeviceServices::UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept
 {
 	m_impl->constantBufferManager->UpdatePerFrame(renderViewMode);
 }
 
-void RendererBackendServices::CloseExecuteAndFlushCurrentFrame() noexcept
+void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
 	const UINT frameIndex = m_impl->rhi->GetCurrentFrameIndex();
 	m_impl->rhi->CloseCommandList(frameIndex);

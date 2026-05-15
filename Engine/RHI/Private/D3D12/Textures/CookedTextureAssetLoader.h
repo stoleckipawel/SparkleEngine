@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12/Textures/CookedTextureAsset.h"
+#include "Textures/CookedTextureAsset.h"
 #include "D3D12/Textures/TextureLoadResult.h"
 
 #include "Core/Public/Files/BinarySpanReader.h"

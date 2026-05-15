@@ -3,7 +3,7 @@
 #include "Core/Public/Assets/TextureGroup.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <DirectXMath.h>
 #include <cstdint>

@@ -2,7 +2,7 @@
 
 #include "Config/RenderConfig.h"
 #include "Descriptors/D3D12DescriptorHandle.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 
 #include <array>
 #include <memory>

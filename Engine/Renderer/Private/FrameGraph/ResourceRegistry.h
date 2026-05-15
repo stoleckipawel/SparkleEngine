@@ -6,7 +6,7 @@
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <string>
 #include <string_view>

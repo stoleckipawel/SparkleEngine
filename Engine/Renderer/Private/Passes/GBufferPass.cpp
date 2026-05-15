@@ -18,7 +18,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
 #include "Pipeline/PassBinder.h"
 

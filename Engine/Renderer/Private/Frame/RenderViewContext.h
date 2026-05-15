@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 struct RenderViewContext
 {

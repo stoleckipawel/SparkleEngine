@@ -4,7 +4,7 @@
 #include "GPU/CommandContext.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cassert>
 

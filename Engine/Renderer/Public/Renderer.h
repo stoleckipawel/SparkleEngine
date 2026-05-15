@@ -3,7 +3,7 @@
 #include "RendererAPI.h"
 #include "../../RHI/Public/Interop/ResourceState.h"
 #include "Viewport/ViewportContracts.h"
-#include "../../RHI/Public/Interop/RenderHardwareInterface.h"
+#include "../../RHI/Public/Device/RenderHardwareInterface.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Meshes/MeshDiagnostics.h"
@@ -14,7 +14,7 @@
 #include <vector>
 
 class Timer;
-class RendererBackendServices;
+class RenderDeviceServices;
 
 class FrameGraph;
 class GPUMeshCache;
@@ -90,7 +90,7 @@ class SPARKLE_RENDERER_API Renderer final
 	GameScene* m_gameScene = nullptr;
 	Window* m_window = nullptr;
 
-	std::unique_ptr<RendererBackendServices> m_backend;
+	std::unique_ptr<RenderDeviceServices> m_backend;
 	std::unique_ptr<PipelineStateManager> m_pipelineStateManager;
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;

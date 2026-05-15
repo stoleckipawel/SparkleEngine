@@ -4,7 +4,7 @@
 #include "Pipeline/TexturePipeline.h"
 #include "SourceLoading/TextureSourceLoader.h"
 
-#include "D3D12/Textures/CookedTextureAsset.h"
+#include "Textures/CookedTextureAsset.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Diagnostics/Logger.h"
@@ -85,7 +85,7 @@
 		header.version = kCookedTextureAssetVersion;
 		header.width = cookedTexture.width;
 		header.height = cookedTexture.height;
-		header.dxgiFormat = static_cast<std::uint32_t>(cookedTexture.dxgiFormat);
+		header.format = static_cast<std::uint32_t>(cookedTexture.dxgiFormat);
 		header.formatIntent = static_cast<std::uint32_t>(cookedTexture.formatIntent);
 		header.mipCount = cookedTexture.GetMipCount();
 		header.packedLayout = PackCookedTextureLayout(cookedTexture.dimension, cookedTexture.GetArraySize());

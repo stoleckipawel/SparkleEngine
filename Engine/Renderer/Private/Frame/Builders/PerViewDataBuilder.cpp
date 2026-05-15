@@ -3,7 +3,7 @@
 #include "PerViewDataBuilder.h"
 
 #include "Camera/RenderCamera.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 PerViewConstantBufferData PerViewDataBuilder::BuildPerViewData(
     const PerViewCameraConstantBufferData& cameraData,

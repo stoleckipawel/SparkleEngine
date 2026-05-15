@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "UI.h"
 #include "Window/Window.h"
 #include "Input/InputSystem.h"
@@ -19,7 +19,7 @@
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"

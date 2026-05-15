@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Config/RenderConfig.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 #include "D3D12RootSignature.h"
 
 #include <d3d12.h>

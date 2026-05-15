@@ -2,7 +2,7 @@
 
 #include "Formats/CompareOp.h"
 #include "Formats/PixelFormat.h"
-#include "Interop/RenderHardwareInterface.h"
+#include "Device/RenderHardwareInterface.h"
 
 #include <d3d12.h>
 #include <dxgi1_6.h>

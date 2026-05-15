@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "D3D12/Textures/CookedTextureAssetLoader.h"
 
@@ -60,7 +60,7 @@ TextureLoadResult CookedTextureAssetLoader::Load(const std::filesystem::path& fi
 	loadResult.height = header.height;
 	loadResult.arraySize = header.GetArraySize();
 	loadResult.dimension = header.GetDimension();
-	loadResult.dxgiFormat = static_cast<DXGI_FORMAT>(header.dxgiFormat);
+	loadResult.dxgiFormat = static_cast<DXGI_FORMAT>(header.format);
 	loadResult.formatIntent = formatIntent;
 	if (!ReadMipPayloads(reader, mipHeaders, resolvedPath, loadResult, errorMessage))
 	{
@@ -95,7 +95,7 @@ bool CookedTextureAssetLoader::ValidateHeader(
 		return false;
 	}
 
-	if (header.width == 0 || header.height == 0 || header.mipCount == 0 || header.dxgiFormat == DXGI_FORMAT_UNKNOWN)
+	if (header.width == 0 || header.height == 0 || header.mipCount == 0 || header.format == DXGI_FORMAT_UNKNOWN)
 	{
 		outErrorMessage = "Cooked texture asset header has invalid dimensions, mip count, or format for '" + resolvedPath.string() + "'";
 		return false;

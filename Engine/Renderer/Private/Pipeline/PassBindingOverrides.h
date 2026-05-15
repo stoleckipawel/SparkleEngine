@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cstdint>
 #include <span>

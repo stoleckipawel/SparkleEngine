@@ -64,7 +64,7 @@ set(FORBIDDEN_ASSET_CONVERTER_SOURCE_TOKENS
     "D3D12/Textures/TextureLoader.h"
     "TextureLoader::Load"
     "ktxTexture"
-    "D3D12/Textures/CookedTextureAsset.h"
+    "Textures/CookedTextureAsset.h"
 )
 
 set(FORBIDDEN_ASSET_CONVERTER_CMAKE_TOKENS

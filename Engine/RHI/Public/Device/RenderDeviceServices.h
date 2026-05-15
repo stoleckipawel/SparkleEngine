@@ -3,23 +3,23 @@
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
+#include <cstdint>
 #include <memory>
 
 class Timer;
 class Window;
 
-class SPARKLE_RHI_API RendererBackendServices final
+class SPARKLE_RHI_API RenderDeviceServices final
 {
   public:
-	// Keep the public seam focused on orchestration and backend-neutral handles.
-	static std::unique_ptr<RendererBackendServices> Create(Timer& timer, Window& window) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Timer& timer, Window& window) noexcept;
 
-	~RendererBackendServices() noexcept;
+	~RenderDeviceServices() noexcept;
 
-	RendererBackendServices(const RendererBackendServices&) = delete;
-	RendererBackendServices& operator=(const RendererBackendServices&) = delete;
-	RendererBackendServices(RendererBackendServices&&) = delete;
-	RendererBackendServices& operator=(RendererBackendServices&&) = delete;
+	RenderDeviceServices(const RenderDeviceServices&) = delete;
+	RenderDeviceServices& operator=(const RenderDeviceServices&) = delete;
+	RenderDeviceServices(RenderDeviceServices&&) = delete;
+	RenderDeviceServices& operator=(RenderDeviceServices&&) = delete;
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
@@ -36,7 +36,7 @@ class SPARKLE_RHI_API RendererBackendServices final
 	void CloseExecuteAndFlushCurrentFrame() noexcept;
 
   private:
-	RendererBackendServices() noexcept;
+	RenderDeviceServices() noexcept;
 
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;

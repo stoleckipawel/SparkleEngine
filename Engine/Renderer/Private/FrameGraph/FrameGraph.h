@@ -15,7 +15,7 @@
 #include "Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <array>
 #include <cstdint>

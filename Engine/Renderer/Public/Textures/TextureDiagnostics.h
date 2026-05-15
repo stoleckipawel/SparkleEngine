@@ -30,7 +30,7 @@ struct SPARKLE_RENDERER_API TextureDiagnosticsRow final
 	std::uint32_t Width = 0;
 	std::uint32_t Height = 0;
 	std::uint32_t ArraySize = 0;
-	std::uint32_t DxgiFormat = 0;
+	std::uint32_t Format = 0;
 	std::uint16_t MipCount = 0;
 	std::uint64_t EstimatedByteSize = 0;
 	std::uint64_t GpuShaderResourceViewId = 0;

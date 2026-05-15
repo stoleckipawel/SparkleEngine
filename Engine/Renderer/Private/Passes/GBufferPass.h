@@ -8,7 +8,7 @@
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 class CommandContext;
 struct RasterPassRuntime;

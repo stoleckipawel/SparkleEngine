@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Interop/RenderHardwareInterface.h"
+#include "../Descriptors/RhiDescriptorHandles.h"
+#include "../RHIAPI.h"
 #include "Resources/TextureTypes.h"
 
 class SPARKLE_RHI_API Texture

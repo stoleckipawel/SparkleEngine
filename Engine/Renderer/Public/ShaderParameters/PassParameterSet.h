@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../../../RHI/Public/ShaderParameters/PassParameterLayout.h"
-#include "../../../RHI/Public/Interop/RenderHardwareInterface.h"
+#include "../../../RHI/Public/Descriptors/RhiDescriptorHandles.h"
+#include "../../../RHI/Public/Resources/RhiResourceDesc.h"
+#include "../../../RHI/Public/Samplers/RhiSamplerDesc.h"
 #include "../FrameGraph/BufferHandle.h"
 #include "../FrameGraph/TextureHandle.h"
 

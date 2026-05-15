@@ -603,7 +603,7 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(FormatResidency(row.ResidencyState));
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(FormatDxgiFormat(row.DxgiFormat));
+		ImGui::TextUnformatted(FormatDxgiFormat(row.Format));
 		ImGui::TableNextColumn();
 		const std::string extent = FormatExtent(row);
 		ImGui::TextUnformatted(extent.c_str());
@@ -674,7 +674,7 @@ void UsedTexturesPanel::DrawSelectedTextureDetails(const TextureDiagnosticsRow& 
 	const std::string memory = FormatBytes(row.EstimatedByteSize);
 	const std::string mips = std::to_string(row.MipCount);
 	const std::string arraySize = std::to_string(row.ArraySize);
-	const std::string dxgiFormat = std::format("{} ({})", FormatDxgiFormat(row.DxgiFormat), row.DxgiFormat);
+	const std::string dxgiFormat = std::format("{} ({})", FormatDxgiFormat(row.Format), row.Format);
 
 	if (const TextureDisplayMetadata* metadata = FindTextureDisplayMetadata(row); metadata != nullptr && !metadata->SourcePath.empty())
 	{
@@ -712,6 +712,6 @@ bool UsedTexturesPanel::MatchesFilter(const TextureDiagnosticsRow& row) const no
 	const std::string_view filter(m_filterBuffer.data());
 	return filter.empty() || Strings::ContainsIgnoreCase(FormatTextureDisplayName(row), filter) ||
 	       Strings::ContainsIgnoreCase(FormatTexturePath(row), filter) || Strings::ContainsIgnoreCase(row.Key, filter) ||
-	       Strings::ContainsIgnoreCase(FormatDxgiFormat(row.DxgiFormat), filter) ||
+	       Strings::ContainsIgnoreCase(FormatDxgiFormat(row.Format), filter) ||
 	       Strings::ContainsIgnoreCase(FormatTextureKind(row.Kind), filter);
 }

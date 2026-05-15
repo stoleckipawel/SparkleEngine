@@ -2,7 +2,7 @@
 
 #include "RendererAPI.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 class GBufferPass;
 class DirectLightingPass;

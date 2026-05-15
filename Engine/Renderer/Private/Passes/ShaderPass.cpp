@@ -1,11 +1,11 @@
-﻿#include "../PCH.h"
+#include "../PCH.h"
 #include "Passes/ShaderPass.h"
 
 #include "Renderer/Public/FrameGraph/PassBuilder.h"
 #include "GPU/CommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
-#include "RHI/Public/Interop/RenderHardwareInterface.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include "Core/Public/Diagnostics/Logger.h"

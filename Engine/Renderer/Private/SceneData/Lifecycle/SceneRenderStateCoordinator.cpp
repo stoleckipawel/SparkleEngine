@@ -5,7 +5,7 @@
 #include "GPU/GPUMeshCache.h"
 #include "Camera/RenderCamera.h"
 #include "Level/LevelChangeEvents.h"
-#include "RHI/Public/Interop/RendererBackendServices.h"
+#include "RHI/Public/Device/RenderDeviceServices.h"
 #include "Scene/GameScene.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -14,7 +14,7 @@
 SceneRenderStateCoordinator::SceneRenderStateCoordinator(
     LevelChangeEvents& levelChangeEvents,
     GameScene& gameScene,
-    RendererBackendServices& backendServices,
+    RenderDeviceServices& backendServices,
     GPUMeshCache& gpuMeshCache,
     TextureManager& textureManager,
     RenderSceneSnapshot& sceneSnapshot,

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../RHIAPI.h"
-#include "Resources/TextureTypes.h"
+#include "../Resources/TextureTypes.h"
+#include "../RHIAPI.h"
 
 #include <cstdint>
 #include <string_view>
@@ -41,7 +41,7 @@ struct SPARKLE_RHI_API CookedTextureAssetHeader
 	std::uint32_t version = kCookedTextureAssetVersion;
 	std::uint32_t width = 0;
 	std::uint32_t height = 0;
-	std::uint32_t dxgiFormat = 0;
+	std::uint32_t format = 0;
 	std::uint32_t formatIntent = static_cast<std::uint32_t>(TextureFormatIntent::Unknown);
 	std::uint32_t mipCount = 0;
 	std::uint32_t packedLayout = PackCookedTextureLayout(TextureResourceDimension::Texture2D, 1);
