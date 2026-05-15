@@ -2,9 +2,10 @@
 
 #include "Assets/SceneAssetManager.h"
 
-#include "Assets/MaterialAssetTranslator.h"
+#include "Assets/Cooked/LoadedMaterialAsset.h"
+#include "Assets/Cooked/LoadedSceneManifest.h"
+#include "Assets/CookedAssembly/CookedMaterialTranslator.h"
 #include "Assets/SceneAssetRegistry.h"
-#include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Assets/Loaders/MaterialAssetLoader.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
@@ -24,7 +25,7 @@ namespace Assets
 		}
 
 		std::uint32_t materialBaseIndex = 0;
-		if (AppendSceneAssetToPayload(sceneAssetId, result.payload, materialBaseIndex, result.errorMessage))
+		if (AppendSceneAssetToPayload(sceneAssetId, result.sceneAssetPayload, materialBaseIndex, result.errorMessage))
 		{
 			m_loadedSceneAssetIds.push_back(sceneAssetId.value);
 		}
@@ -43,7 +44,7 @@ namespace Assets
 
 		for (const SceneAssetId& sceneAssetId : sceneAssetIds)
 		{
-			if (!AppendSceneAssetToPayload(sceneAssetId, result.payload, materialBaseIndex, result.errorMessage))
+			if (!AppendSceneAssetToPayload(sceneAssetId, result.sceneAssetPayload, materialBaseIndex, result.errorMessage))
 			{
 				return result;
 			}
@@ -81,7 +82,7 @@ namespace Assets
 
 	bool SceneAssetManager::AppendSceneAssetToPayload(
 	    const SceneAssetId& sceneAssetId,
-	    RuntimeScenePayload& payload,
+	    SceneAssetPayload& sceneAssetPayload,
 	    std::uint32_t& materialBaseIndex,
 	    std::string& errorMessage)
 	{
@@ -137,8 +138,8 @@ namespace Assets
 		}
 
 		MaterialAssetLoader materialAssetLoader;
-		MaterialAssetTranslator materialAssetTranslator;
-		payload.materials.reserve(payload.materials.size() + sceneManifest.materialAssetReferences.size());
+		CookedMaterialTranslator materialTranslator;
+		sceneAssetPayload.materials.reserve(sceneAssetPayload.materials.size() + sceneManifest.materialAssetReferences.size());
 		for (const CookedSceneMaterialAssetRef& materialReference : sceneManifest.materialAssetReferences)
 		{
 			LoadedMaterialAsset materialAsset;
@@ -154,7 +155,7 @@ namespace Assets
 			}
 
 			MaterialDesc runtimeMaterial;
-			if (!materialAssetTranslator.Translate(materialAsset, runtimeMaterial, errorMessage))
+			if (!materialTranslator.Translate(materialAsset, runtimeMaterial, errorMessage))
 			{
 				errorMessage = std::format(
 				    "Failed to translate cooked material asset {} from '{}' - {}",
@@ -164,10 +165,10 @@ namespace Assets
 				return false;
 			}
 
-			payload.materials.push_back(std::move(runtimeMaterial));
+			sceneAssetPayload.materials.push_back(std::move(runtimeMaterial));
 		}
 
-		payload.meshInstances.reserve(payload.meshInstances.size() + sceneManifest.instances.size());
+		sceneAssetPayload.meshInstances.reserve(sceneAssetPayload.meshInstances.size() + sceneManifest.instances.size());
 
 		for (const CookedSceneInstanceRecord& instanceRecord : sceneManifest.instances)
 		{
@@ -193,14 +194,14 @@ namespace Assets
 			}
 
 			const LoadedMeshAsset& loadedMesh = loadedMeshes[instanceRecord.meshAssetIndex];
-			RuntimeScenePayload::MeshInstance meshInstance;
+			SceneAssetPayload::MeshInstance meshInstance;
 			meshInstance.mesh = loadedMesh.mesh;
 			meshInstance.assetId = loadedMesh.assetId;
 			meshInstance.transform = Transform(DirectX::XMLoadFloat4x4(&instanceRecord.worldTransform));
 			meshInstance.material = instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
 			                            ? MaterialHandle::Invalid()
 			                            : MaterialHandle(materialBaseIndex + instanceRecord.materialAssetIndex);
-			payload.meshInstances.push_back(std::move(meshInstance));
+			sceneAssetPayload.meshInstances.push_back(std::move(meshInstance));
 		}
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());

@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <vector>
 
-struct SPARKLE_ENGINE_API RuntimeScenePayload
+struct SPARKLE_ENGINE_API SceneAssetPayload
 {
 	struct MeshInstance
 	{

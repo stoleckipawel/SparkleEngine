@@ -194,10 +194,11 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	if (sceneAssetLoadResult.payload.HasMeshes() && !m_gameScene->AppendRuntimeScenePayload(std::move(sceneAssetLoadResult.payload)))
+	if (sceneAssetLoadResult.sceneAssetPayload.HasMeshes() &&
+	    !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;
-		loadResult.errorMessage = "GameScene rejected the loaded runtime scene payload";
+		loadResult.errorMessage = "GameScene rejected the loaded scene asset payload";
 		return loadResult;
 	}
 

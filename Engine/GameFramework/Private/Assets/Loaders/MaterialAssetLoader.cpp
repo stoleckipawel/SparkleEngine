@@ -2,8 +2,8 @@
 
 #include "Assets/Loaders/MaterialAssetLoader.h"
 
+#include "Assets/Cooked/LoadedMaterialAsset.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
-#include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Core/Public/Files/FileUtils.h"
 
 #include <utility>

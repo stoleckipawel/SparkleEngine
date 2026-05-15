@@ -1,12 +1,12 @@
 ﻿#include "PCH.h"
 
-#include "Assets/MaterialAssetTranslator.h"
+#include "Assets/CookedAssembly/CookedMaterialTranslator.h"
 
 #include <format>
 
 namespace Assets
 {
-	bool MaterialAssetTranslator::Translate(
+	bool CookedMaterialTranslator::Translate(
 	    const LoadedMaterialAsset& materialAsset,
 	    MaterialDesc& outMaterialDesc,
 	    std::string& outErrorMessage) const
@@ -43,7 +43,7 @@ namespace Assets
 		return true;
 	}
 
-	AlphaMode MaterialAssetTranslator::TranslateAlphaMode(CookedAlphaMode alphaMode) noexcept
+	AlphaMode CookedMaterialTranslator::TranslateAlphaMode(CookedAlphaMode alphaMode) noexcept
 	{
 		switch (alphaMode)
 		{

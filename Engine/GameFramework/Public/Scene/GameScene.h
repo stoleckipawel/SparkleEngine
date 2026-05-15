@@ -1,12 +1,12 @@
 #pragma once
 
+#include "GameFramework/Public/Assets/SceneAssetPayload.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "GameFramework/Public/Scene/Camera/SceneCamera.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
-#include "GameFramework/Public/Scene/RuntimeScenePayload.h"
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 
 #include <cstdint>
@@ -46,7 +46,7 @@ class SPARKLE_ENGINE_API GameScene final
 
 	GameSceneLoadResult LoadLevel(const LevelAsset& level);
 	GameSceneLoadResult LoadLevel(const LevelDesc& desc);
-	bool AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayload);
+	bool AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload);
 
 	void Clear();
 

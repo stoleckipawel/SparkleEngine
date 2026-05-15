@@ -33,25 +33,25 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 	return result;
 }
 
-bool GameScene::AppendRuntimeScenePayload(RuntimeScenePayload&& runtimeScenePayload)
+bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!runtimeScenePayload.HasMeshes())
+	if (!sceneAssetPayload.HasMeshes())
 	{
 		return false;
 	}
 
-	if (!runtimeScenePayload.materials.empty())
+	if (!sceneAssetPayload.materials.empty())
 	{
-		m_textures.AppendMaterialTextureReferences(runtimeScenePayload.materials);
+		m_textures.AppendMaterialTextureReferences(sceneAssetPayload.materials);
 	}
 
-	const MaterialHandle materialBaseHandle = runtimeScenePayload.materials.empty()
+	const MaterialHandle materialBaseHandle = sceneAssetPayload.materials.empty()
 	                                              ? MaterialHandle::Invalid()
-	                                              : m_materials.AppendMaterials(std::move(runtimeScenePayload.materials));
+	                                              : m_materials.AppendMaterials(std::move(sceneAssetPayload.materials));
 
 	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
-	meshComponents.reserve(runtimeScenePayload.meshInstances.size());
-	for (RuntimeScenePayload::MeshInstance& meshInstance : runtimeScenePayload.meshInstances)
+	meshComponents.reserve(sceneAssetPayload.meshInstances.size());
+	for (SceneAssetPayload::MeshInstance& meshInstance : sceneAssetPayload.meshInstances)
 	{
 		auto mesh = std::make_unique<CookedMesh>(std::move(meshInstance.mesh), meshInstance.assetId);
 		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()

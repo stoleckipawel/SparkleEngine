@@ -1,14 +1,13 @@
 ﻿#pragma once
 
-#include "Assets/Loaders/LoadedCookedAssets.h"
+#include "Assets/Cooked/LoadedMaterialAsset.h"
 #include "Scene/Materials/MaterialDesc.h"
 
-#include <filesystem>
 #include <string>
 
 namespace Assets
 {
-	class MaterialAssetTranslator final
+	class CookedMaterialTranslator final
 	{
 	  public:
 		bool Translate(const LoadedMaterialAsset& materialAsset, MaterialDesc& outMaterialDesc, std::string& outErrorMessage) const;

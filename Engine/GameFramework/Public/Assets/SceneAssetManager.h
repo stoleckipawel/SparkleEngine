@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Assets/SceneAssetPayload.h"
 #include "GameFramework/Public/Assets/SceneAssetRegistry.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
-#include "GameFramework/Public/Scene/RuntimeScenePayload.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -17,7 +17,7 @@ namespace Assets
 {
 	struct SPARKLE_ENGINE_API SceneAssetLoadResult
 	{
-		RuntimeScenePayload payload;
+		SceneAssetPayload sceneAssetPayload;
 		std::string errorMessage;
 
 		bool Succeeded() const noexcept { return errorMessage.empty(); }
@@ -42,7 +42,7 @@ namespace Assets
 		bool EnsureRegistryLoaded(std::string& errorMessage);
 		bool AppendSceneAssetToPayload(
 		    const SceneAssetId& sceneAssetId,
-		    RuntimeScenePayload& payload,
+		    SceneAssetPayload& sceneAssetPayload,
 		    std::uint32_t& materialBaseIndex,
 		    std::string& errorMessage);
 

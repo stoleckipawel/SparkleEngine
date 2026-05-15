@@ -2,8 +2,8 @@
 
 #include "Assets/Loaders/SceneManifestLoader.h"
 
+#include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/CookedAssetByteReader.h"
-#include "Assets/Loaders/LoadedCookedAssets.h"
 #include "Core/Public/Files/FileUtils.h"
 
 namespace Assets
