@@ -6,7 +6,7 @@
 #include "Passes/GBufferPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
-GBufferTargets BuildGBuffer(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets)
+GBufferTargets CreateGBufferTargets(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets)
 {
 	GBufferTargets targets{};
 	targets.BaseColor = frameGraph.CreateTexture(
@@ -38,9 +38,12 @@ GBufferTargets BuildGBuffer(FrameGraph& frameGraph, RenderViewportExtent sceneEx
 	targets.DeviceZ = frameGraph.CreateTexture(
 	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::DeviceZFormat));
 	targets.MainDepth = sceneTargets.MainDepth;
+	return targets;
+}
 
+void AddGBufferPass(FrameGraph& frameGraph, const GBufferTargets& targets)
+{
 	auto& parameters = frameGraph.AllocPassParameters<GBufferPass>();
 	GBufferPass::DeclareResources(frameGraph, targets, parameters);
 	frameGraph.AddRasterPass<GBufferPass>(GBufferPass::PassName, parameters);
-	return targets;
 }

@@ -4,7 +4,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/DirectLightingPass.h"
 
-void BuildDirectLighting(FrameGraph& frameGraph, const LightingTargets& lighting, const GBufferTargets& gbuffer)
+void AddDirectLightingPass(FrameGraph& frameGraph, const LightingTargets& lighting, const GBufferTargets& gbuffer)
 {
 	auto& parameters = frameGraph.AllocPassParameters<DirectLightingPass>();
 	DirectLightingPass::DeclareResources(frameGraph, lighting, gbuffer, parameters);

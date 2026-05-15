@@ -4,7 +4,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/VisualizeBuffersPass.h"
 
-void BuildVisualizeBuffers(
+void AddVisualizeBuffersPass(
     FrameGraph& frameGraph,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,

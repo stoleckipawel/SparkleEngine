@@ -4,4 +4,4 @@
 
 class FrameGraph;
 
-void BuildIndirectLighting(FrameGraph& frameGraph, const LightingTargets& lighting);
+void AddIndirectLightingPass(FrameGraph& frameGraph, const LightingTargets& lighting);

@@ -4,7 +4,7 @@
 
 class FrameGraph;
 
-void BuildLightingComposite(
+void AddLightingCompositePass(
     FrameGraph& frameGraph,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,

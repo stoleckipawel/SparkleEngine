@@ -4,7 +4,7 @@
 
 class FrameGraph;
 
-void BuildVisualizeBuffers(
+void AddVisualizeBuffersPass(
     FrameGraph& frameGraph,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,

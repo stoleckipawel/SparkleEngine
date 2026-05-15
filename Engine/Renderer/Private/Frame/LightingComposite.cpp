@@ -4,7 +4,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/LightingCompositePass.h"
 
-void BuildLightingComposite(
+void AddLightingCompositePass(
     FrameGraph& frameGraph,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,

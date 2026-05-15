@@ -8,8 +8,18 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
+#include <array>
 #include <cassert>
 #include <string>
+
+struct FrameGraphFramebuffer final
+{
+	std::array<RhiCpuDescriptorHandle, 8> renderTargetViews = {};
+	std::uint32_t renderTargetCount = 0;
+	RhiCpuDescriptorHandle depthStencilView = {};
+
+	bool HasDepthStencil() const noexcept { return static_cast<bool>(depthStencilView); }
+};
 
 void FrameGraph::Execute(
     const CompiledPlan& plan,
@@ -69,15 +79,17 @@ void FrameGraph::Execute(
 
 void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, TextureHandle renderTargetHandle, TextureHandle depthStencilHandle) const noexcept
 {
-	const RhiCpuDescriptorHandle renderTargetView = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
-	if (!depthStencilHandle.IsValid())
+	FrameGraphFramebuffer framebuffer{};
+	framebuffer.renderTargetViews[0] = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
+	framebuffer.renderTargetCount = 1u;
+	if (depthStencilHandle.IsValid())
 	{
-		cmd.SetRenderTarget(renderTargetView, nullptr);
-		return;
+		framebuffer.depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
 	}
 
-	const RhiCpuDescriptorHandle depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
-	cmd.SetRenderTarget(renderTargetView, &depthStencilView);
+	cmd.SetRenderTarget(
+	    framebuffer.renderTargetViews[0],
+	    framebuffer.HasDepthStencil() ? &framebuffer.depthStencilView : nullptr);
 }
 
 void FrameGraph::BindRenderTargets(
@@ -88,20 +100,22 @@ void FrameGraph::BindRenderTargets(
 	assert(!renderTargetHandles.empty());
 	assert(renderTargetHandles.size() <= 8u);
 
-	std::array<RhiCpuDescriptorHandle, 8> renderTargetViews{};
+	FrameGraphFramebuffer framebuffer{};
+	framebuffer.renderTargetCount = static_cast<std::uint32_t>(renderTargetHandles.size());
 	for (std::size_t index = 0; index < renderTargetHandles.size(); ++index)
 	{
-		renderTargetViews[index] = ResolveRenderTargetView(renderTargetHandles[index].GetResourceHandle());
+		framebuffer.renderTargetViews[index] = ResolveRenderTargetView(renderTargetHandles[index].GetResourceHandle());
 	}
 
-	if (!depthStencilHandle.IsValid())
+	if (depthStencilHandle.IsValid())
 	{
-		cmd.SetRenderTargets(static_cast<std::uint32_t>(renderTargetHandles.size()), renderTargetViews.data(), nullptr);
-		return;
+		framebuffer.depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
 	}
 
-	const RhiCpuDescriptorHandle depthStencilView = ResolveDepthStencilView(depthStencilHandle.GetResourceHandle());
-	cmd.SetRenderTargets(static_cast<std::uint32_t>(renderTargetHandles.size()), renderTargetViews.data(), &depthStencilView);
+	cmd.SetRenderTargets(
+	    framebuffer.renderTargetCount,
+	    framebuffer.renderTargetViews.data(),
+	    framebuffer.HasDepthStencil() ? &framebuffer.depthStencilView : nullptr);
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(TextureHandle handle) const noexcept

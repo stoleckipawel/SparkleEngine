@@ -4,7 +4,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "Passes/SkyPass.h"
 
-void BuildSky(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer)
+void AddSkyPass(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer)
 {
 	auto& parameters = frameGraph.AllocPassParameters<SkyPass>();
 	SkyPass::DeclareResources(frameGraph, sceneTargets, gbuffer, parameters);

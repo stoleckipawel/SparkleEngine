@@ -4,6 +4,7 @@
 #include "Config/RenderConfig.h"
 #include "Frame/GBuffer.h"
 #include "Frame/Lighting.h"
+#include "Frame/LightingTargets.h"
 #include "Frame/Presentation.h"
 #include "FrameGraph/FrameGraph.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
@@ -25,13 +26,15 @@ FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneEx
 
 	const SceneTargets sceneTargets{.SceneColor = sceneColor, .BackBuffer = backBuffer, .MainDepth = mainDepth};
 
-	const GBufferTargets gbuffer = BuildGBuffer(frameGraph, sceneExtent, sceneTargets);
+	const GBufferTargets gbuffer = CreateGBufferTargets(frameGraph, sceneExtent, sceneTargets);
+	AddGBufferPass(frameGraph, gbuffer);
 
-	BuildLighting(frameGraph, sceneExtent, sceneTargets, gbuffer);
+	const LightingTargets lighting = CreateLightingTargets(frameGraph, sceneExtent);
+	AddLightingPasses(frameGraph, sceneTargets, lighting, gbuffer);
 
 	if (presentToBackBuffer)
 	{
-		BuildPresentation(frameGraph, sceneTargets);
+		AddPresentationPass(frameGraph, sceneTargets);
 	}
 
 	return FrameBuildResult{.Targets = sceneTargets, .GBuffer = gbuffer};

@@ -4,4 +4,4 @@
 
 class FrameGraph;
 
-void BuildPresentation(FrameGraph& frameGraph, const SceneTargets& sceneTargets);
+void AddPresentationPass(FrameGraph& frameGraph, const SceneTargets& sceneTargets);
