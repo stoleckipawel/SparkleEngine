@@ -10,7 +10,7 @@
 
 namespace
 {
-	bool RequiresUnorderedAccess(const FrameGraph::CompiledPlan& plan, ResourceHandle handle) noexcept
+	bool RequiresUnorderedAccess(const FrameGraph::CompiledPlan& plan, FrameGraphResourceHandle handle) noexcept
 	{
 		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
 		{

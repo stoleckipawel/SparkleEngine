@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Frame/FrameContext.h"
@@ -114,12 +114,12 @@ void FrameGraph::Setup(const FrameContext& frame)
 	m_activePassDeclarations.clear();
 }
 
-ResourceHandle FrameGraph::Read(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle FrameGraph::Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	return Read(handle, usage, {});
 }
 
-ResourceHandle FrameGraph::Read(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+FrameGraphResourceHandle FrameGraph::Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_isSettingUpPass);
 	assert(IsReadOnlyUsage(usage));
@@ -127,12 +127,12 @@ ResourceHandle FrameGraph::Read(ResourceHandle handle, ResourceUsage usage, std:
 	return handle;
 }
 
-ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle FrameGraph::Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	return Write(handle, usage, {});
 }
 
-ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+FrameGraphResourceHandle FrameGraph::Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_isSettingUpPass);
 	assert(IsWriteOnlyUsage(usage));
@@ -140,12 +140,12 @@ ResourceHandle FrameGraph::Write(ResourceHandle handle, ResourceUsage usage, std
 	return handle;
 }
 
-ResourceHandle FrameGraph::Use(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle FrameGraph::Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	return Use(handle, usage, {});
 }
 
-ResourceHandle FrameGraph::Use(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
+FrameGraphResourceHandle FrameGraph::Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
 {
 	assert(m_isSettingUpPass);
 	assert(IsReadWriteUsage(usage));

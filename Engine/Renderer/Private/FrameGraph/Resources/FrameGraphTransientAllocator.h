@@ -12,7 +12,7 @@ class FrameGraphTransientAllocator final
   public:
 	struct AllocationRecord
 	{
-		ResourceHandle handle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		FrameGraphResourceKind kind = FrameGraphResourceKind::ColorRenderTarget;
 		std::uint32_t allocationIndex = FrameGraph::INVALID_RESOURCE_INDEX;
 		std::uint32_t physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
@@ -53,10 +53,10 @@ class FrameGraphTransientAllocator final
 
 	void Reset() noexcept;
 	AllocationRecord& Materialize(const FrameGraph::CompiledTransientResourcePlan& transientPlan);
-	const AllocationRecord* FindAllocation(ResourceHandle handle) const noexcept;
-	const AllocationRecord* FindDepthAllocation(ResourceHandle handle) const noexcept;
-	const AllocationRecord* FindColorAllocation(ResourceHandle handle) const noexcept;
-	const AllocationRecord* FindBufferAllocation(ResourceHandle handle) const noexcept;
+	const AllocationRecord* FindAllocation(FrameGraphResourceHandle handle) const noexcept;
+	const AllocationRecord* FindDepthAllocation(FrameGraphResourceHandle handle) const noexcept;
+	const AllocationRecord* FindColorAllocation(FrameGraphResourceHandle handle) const noexcept;
+	const AllocationRecord* FindBufferAllocation(FrameGraphResourceHandle handle) const noexcept;
 
   private:
 	using AllocationList = std::vector<AllocationRecord>;
@@ -69,7 +69,7 @@ class FrameGraphTransientAllocator final
 	const AllocationList& GetAllocationList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept;
 	BlockList& GetBlockList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept;
 	const BlockList& GetBlockList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept;
-	const AllocationRecord* FindAllocationInList(const AllocationList& allocations, ResourceHandle handle) const noexcept;
+	const AllocationRecord* FindAllocationInList(const AllocationList& allocations, FrameGraphResourceHandle handle) const noexcept;
 	PhysicalBlockRecord* FindPhysicalBlock(BlockList& blocks, std::uint32_t physicalBlockIndex) noexcept;
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

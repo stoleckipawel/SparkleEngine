@@ -77,7 +77,7 @@ void FrameGraph::Execute(
 	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
 }
 
-void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, TextureHandle renderTargetHandle, TextureHandle depthStencilHandle) const noexcept
+void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle renderTargetHandle, FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
 	FrameGraphFramebuffer framebuffer{};
 	framebuffer.renderTargetViews[0] = ResolveRenderTargetView(renderTargetHandle.GetResourceHandle());
@@ -94,8 +94,8 @@ void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, TextureHandle rende
 
 void FrameGraph::BindRenderTargets(
     RenderCommandContext& cmd,
-    std::span<const TextureHandle> renderTargetHandles,
-    TextureHandle depthStencilHandle) const noexcept
+    std::span<const FrameGraphTextureHandle> renderTargetHandles,
+    FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
 	assert(!renderTargetHandles.empty());
 	assert(renderTargetHandles.size() <= 8u);
@@ -118,64 +118,64 @@ void FrameGraph::BindRenderTargets(
 	    framebuffer.HasDepthStencil() ? &framebuffer.depthStencilView : nullptr);
 }
 
-RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(TextureHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveShaderResourceView(handle.GetResourceHandle());
 }
 
-RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(BufferHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveShaderResourceView(handle.GetResourceHandle());
 }
 
-RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(TextureHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
 }
 
-RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(BufferHandle handle) const noexcept
+RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
 }
 
-void FrameGraph::CopyTexture(RenderCommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept
+void FrameGraph::CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
 	CopyResource(cmd, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
 }
 
-void FrameGraph::CopyBuffer(RenderCommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept
+void FrameGraph::CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());
 	CopyResource(cmd, destinationHandle.GetResourceHandle(), sourceHandle.GetResourceHandle());
 }
 
-void FrameGraph::ClearRenderTarget(RenderCommandContext& cmd, TextureHandle handle) const noexcept
+void FrameGraph::ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
 {
-	const ResourceHandle resourceHandle = handle.GetResourceHandle();
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	const std::array<float, 4> clearColor = GetClearColor(resourceHandle);
 	cmd.ClearRenderTarget(ResolveRenderTargetView(resourceHandle), clearColor.data());
 }
 
-void FrameGraph::ClearDepthStencil(RenderCommandContext& cmd, TextureHandle handle) const noexcept
+void FrameGraph::ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
 {
-	const ResourceHandle resourceHandle = handle.GetResourceHandle();
+	const FrameGraphResourceHandle resourceHandle = handle.GetResourceHandle();
 	cmd.ClearDepthStencil(ResolveDepthStencilView(resourceHandle), GetClearDepth(resourceHandle));
 }
 
-NativeResourceHandle FrameGraph::ResolveResource(TextureHandle handle) const noexcept
+NativeResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle) const noexcept
 {
 	assert(handle.IsValid());
 	return ResolveResource(handle.GetResourceHandle());
 }
 
-void FrameGraph::CopyResource(RenderCommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept
+void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept
 {
 	assert(destinationHandle.IsValid());
 	assert(sourceHandle.IsValid());

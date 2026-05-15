@@ -167,7 +167,7 @@ FrameGraphTransientAllocator::AllocationRecord& FrameGraphTransientAllocator::Ma
 	return allocations.back();
 }
 
-const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocation(ResourceHandle handle) const noexcept
+const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocation(FrameGraphResourceHandle handle) const noexcept
 {
 	if (const AllocationRecord* depthAllocation = FindDepthAllocation(handle))
 	{
@@ -183,19 +183,19 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindDepthAllocation(
-    ResourceHandle handle) const noexcept
+    FrameGraphResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_depthAllocations, handle);
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindColorAllocation(
-    ResourceHandle handle) const noexcept
+    FrameGraphResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_colorAllocations, handle);
 }
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindBufferAllocation(
-    ResourceHandle handle) const noexcept
+    FrameGraphResourceHandle handle) const noexcept
 {
 	return FindAllocationInList(m_bufferAllocations, handle);
 }
@@ -258,7 +258,7 @@ const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator
 
 const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocator::FindAllocationInList(
     const AllocationList& allocations,
-    ResourceHandle handle) const noexcept
+    FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    allocations.begin(),

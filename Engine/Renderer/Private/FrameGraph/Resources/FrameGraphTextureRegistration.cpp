@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
 #include "Window/Window.h"
@@ -33,15 +33,15 @@ namespace
 	}
 }  // namespace
 
-TextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
+FrameGraphTextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "BackBuffer");
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterBackBuffer(handle, resolvedDesc, initialState);
-	return TextureHandle{handle};
+	return FrameGraphTextureHandle{handle};
 }
 
-TextureHandle FrameGraph::ImportTexture(
+FrameGraphTextureHandle FrameGraph::ImportTexture(
     const FrameGraphTextureDesc& desc,
     NativeResourceHandle resource,
     ResourceState initialState) noexcept
@@ -49,20 +49,20 @@ TextureHandle FrameGraph::ImportTexture(
 	if (!resource)
 	{
 		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportTexture: imported texture has no backing resource.");
-		return TextureHandle::Invalid();
+		return FrameGraphTextureHandle::Invalid();
 	}
 
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "ImportedTexture");
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), resource, initialState);
-	return TextureHandle{handle};
+	return FrameGraphTextureHandle{handle};
 }
 
-TextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
+FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
 {
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "Texture");
 	const FrameGraphResourceKind kind = ResolveTextureResourceKind(desc.kind);
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_virtualTransientResources.push_back(
 	    VirtualTransientResource{.handle = handle, .resourceClass = FrameGraphResourceClass::Texture, .textureDesc = resolvedDesc});
 	m_resourceRegistry.RegisterTransientTexture(
@@ -70,36 +70,36 @@ TextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexc
 	    resolvedDesc,
 	    kind,
 	    kind == FrameGraphResourceKind::DepthStencil ? ResourceState::DepthRead : ResourceState::Common);
-	return TextureHandle{handle};
+	return FrameGraphTextureHandle{handle};
 }
 
-BufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
+FrameGraphBufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept
 {
 	if (!resource)
 	{
 		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportBuffer: imported buffer has no backing resource.");
-		return BufferHandle::Invalid();
+		return FrameGraphBufferHandle::Invalid();
 	}
 
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "ImportedBuffer");
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterImportedBuffer(handle, resolvedDesc, resource, initialState);
-	return BufferHandle{handle};
+	return FrameGraphBufferHandle{handle};
 }
 
-BufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept
+FrameGraphBufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept
 {
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "Buffer");
-	const ResourceHandle handle = AllocateDynamicResourceHandle();
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_virtualTransientResources.push_back(
 	    VirtualTransientResource{.handle = handle, .resourceClass = FrameGraphResourceClass::Buffer, .bufferDesc = resolvedDesc});
 	m_resourceRegistry.RegisterTransientBuffer(handle, resolvedDesc, ResourceState::Common);
-	return BufferHandle{handle};
+	return FrameGraphBufferHandle{handle};
 }
 
-ResourceHandle FrameGraph::AllocateDynamicResourceHandle() noexcept
+FrameGraphResourceHandle FrameGraph::AllocateDynamicResourceHandle() noexcept
 {
-	const ResourceHandle handle{m_nextDynamicResourceIndex};
+	const FrameGraphResourceHandle handle{m_nextDynamicResourceIndex};
 	++m_nextDynamicResourceIndex;
 	return handle;
 }

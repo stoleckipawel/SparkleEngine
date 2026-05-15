@@ -2,7 +2,7 @@
 
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
-#include "Renderer/Public/FrameGraph/ResourceHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -46,7 +46,7 @@ struct FrameGraphResourceAccess
 
 struct FrameGraphResourceMetadata
 {
-	ResourceHandle handle = ResourceHandle::Invalid();
+	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 	FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
 	FrameGraphResourceKind kind = FrameGraphResourceKind::BackBuffer;
 	FrameGraphResourceOwnership ownership = FrameGraphResourceOwnership::Transient;
@@ -75,41 +75,41 @@ class ResourceRegistry final
 
 	void Clear() noexcept;
 	void ResetCurrentStates() noexcept;
-	void RegisterBackBuffer(ResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
+	void RegisterBackBuffer(FrameGraphResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	void RegisterTransientTexture(
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
 	    ResourceState initialState) noexcept;
 	void RegisterImportedTexture(
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    const FrameGraphTextureDesc& desc,
 	    FrameGraphResourceKind kind,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
-	void RegisterTransientBuffer(ResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
+	void RegisterTransientBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
 	void RegisterImportedBuffer(
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    const FrameGraphBufferDesc& desc,
 	    NativeResourceHandle resource,
 	    ResourceState initialState) noexcept;
-	void SetBoundaryStates(ResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
-	void UpdateCurrentState(ResourceHandle handle, ResourceState currentState) noexcept;
-	void ClearResolvedAccess(ResourceHandle handle) noexcept;
-	bool IsRegistered(ResourceHandle handle) const noexcept;
+	void SetBoundaryStates(FrameGraphResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
+	void UpdateCurrentState(FrameGraphResourceHandle handle, ResourceState currentState) noexcept;
+	void ClearResolvedAccess(FrameGraphResourceHandle handle) noexcept;
+	bool IsRegistered(FrameGraphResourceHandle handle) const noexcept;
 
-	FrameGraphResourceMetadata& GetMetadata(ResourceHandle handle) noexcept;
-	const FrameGraphResourceMetadata& GetMetadata(ResourceHandle handle) const noexcept;
-	FrameGraphResourceRuntimeState& GetRuntimeState(ResourceHandle handle) noexcept;
-	const FrameGraphResourceRuntimeState& GetRuntimeState(ResourceHandle handle) const noexcept;
-	FrameGraphResourceAccess& GetResolvedAccess(ResourceHandle handle) noexcept;
-	const FrameGraphResourceAccess& GetResolvedAccess(ResourceHandle handle) const noexcept;
-	const std::vector<ResourceHandle>& GetRegisteredHandles() const noexcept { return m_registeredHandles; }
+	FrameGraphResourceMetadata& GetMetadata(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraphResourceMetadata& GetMetadata(FrameGraphResourceHandle handle) const noexcept;
+	FrameGraphResourceRuntimeState& GetRuntimeState(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraphResourceRuntimeState& GetRuntimeState(FrameGraphResourceHandle handle) const noexcept;
+	FrameGraphResourceAccess& GetResolvedAccess(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraphResourceAccess& GetResolvedAccess(FrameGraphResourceHandle handle) const noexcept;
+	const std::vector<FrameGraphResourceHandle>& GetRegisteredHandles() const noexcept { return m_registeredHandles; }
 
   private:
-	void EnsureStorage(ResourceHandle handle) noexcept;
+	void EnsureStorage(FrameGraphResourceHandle handle) noexcept;
 	FrameGraphResourceMetadata& RegisterMetadata(
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    FrameGraphResourceClass resourceClass,
 	    FrameGraphResourceKind kind,
 	    FrameGraphResourceOwnership ownership,
@@ -120,5 +120,5 @@ class ResourceRegistry final
 	std::vector<FrameGraphResourceMetadata> m_metadataEntries;
 	std::vector<FrameGraphResourceRuntimeState> m_runtimeStates;
 	std::vector<FrameGraphResourceAccess> m_resolvedAccessEntries;
-	std::vector<ResourceHandle> m_registeredHandles;
+	std::vector<FrameGraphResourceHandle> m_registeredHandles;
 };

@@ -89,7 +89,7 @@ void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewD
 
 void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferPass::Parameters& parameters)
 {
-	const std::array<TextureHandle, 6> renderTargets = {
+	const std::array<FrameGraphTextureHandle, 6> renderTargets = {
 	    parameters.BaseColor[0],
 	    parameters.Normal[0],
 	    parameters.Material[0],
@@ -97,7 +97,7 @@ void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferP
 	    parameters.Subsurface[0],
 	    parameters.DeviceZ[0]};
 	context.Graph.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
-	for (TextureHandle renderTarget : renderTargets)
+	for (FrameGraphTextureHandle renderTarget : renderTargets)
 	{
 		context.Graph.ClearRenderTarget(context.Commands, renderTarget);
 	}

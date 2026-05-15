@@ -36,7 +36,7 @@ ShaderPackageDefinition ComputeClearPass::DescribeShaderPackage() noexcept
 	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
-void ComputeClearPass::DeclareResources(FrameGraph& frameGraph, TextureHandle outputTexture, ParameterInstance& parameters)
+void ComputeClearPass::DeclareResources(FrameGraph& frameGraph, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters)
 {
 	parameters->Output = frameGraph.CreateUAV(outputTexture);
 }

@@ -9,7 +9,7 @@ static const auto g_frameGraphExternalLogger = Logging::GetOrCreateLogger("Rende
 
 namespace
 {
-	bool RequiresUnorderedAccessView(const FrameGraph::CompiledPlan& plan, ResourceHandle handle) noexcept
+	bool RequiresUnorderedAccessView(const FrameGraph::CompiledPlan& plan, FrameGraphResourceHandle handle) noexcept
 	{
 		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
 		{
@@ -30,7 +30,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 {
 	assert(m_renderHardwareInterface != nullptr);
 
-	for (const ResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
+	for (const FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
 		FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 		FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
@@ -156,7 +156,7 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		return;
 	}
 
-	for (const ResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
+	for (const FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
 		FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
 		if (access.renderTargetView)

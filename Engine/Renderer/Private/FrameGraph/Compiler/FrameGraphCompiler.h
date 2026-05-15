@@ -43,10 +43,10 @@ class FrameGraphCompiler final
 	void RegisterWriteDependency(CompilePassRecord& passRecord, CompileResourceEntry& resource) noexcept;
 	ResourceVersion& GetCurrentResourceVersion(CompileResourceEntry& resource) noexcept;
 	const ResourceVersion& GetCurrentResourceVersion(const CompileResourceEntry& resource) const noexcept;
-	CompileResourceEntry& GetCompiledResourceEntry(ResourceHandle handle) noexcept;
-	const CompileResourceEntry& GetCompiledResourceEntry(ResourceHandle handle) const noexcept;
-	FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(ResourceHandle handle) noexcept;
-	const FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(ResourceHandle handle) const noexcept;
+	CompileResourceEntry& GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept;
+	const CompileResourceEntry& GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept;
+	FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept;
 
 	FrameGraph::CompiledPlan& m_plan;
 	ResourceRegistry& m_resourceRegistry;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -37,7 +37,7 @@ class ComputeClearPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
-	static void DeclareResources(FrameGraph& frameGraph, TextureHandle outputTexture, ParameterInstance& parameters);
+	static void DeclareResources(FrameGraph& frameGraph, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
 	static void Execute(
 	    RenderGraphPassContext& context,
 	    const ParameterInstance& parameters,

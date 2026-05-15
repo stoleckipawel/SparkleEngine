@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Frame/FrameContext.h"
-#include "Renderer/Public/FrameGraph/BufferHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Commands/RenderCommandContext.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Passes/ShaderPass.h"
@@ -277,8 +277,8 @@ namespace PassUtilities
 	inline void AddCopyTexturePass(
 	    FrameGraph& frameGraph,
 	    std::string_view name,
-	    TextureHandle destinationHandle,
-	    TextureHandle sourceHandle)
+	    FrameGraphTextureHandle destinationHandle,
+	    FrameGraphTextureHandle sourceHandle)
 	{
 		frameGraph.AddPass(
 		    name,
@@ -294,7 +294,7 @@ namespace PassUtilities
 		    });
 	}
 
-	inline void AddCopyBufferPass(FrameGraph& frameGraph, std::string_view name, BufferHandle destinationHandle, BufferHandle sourceHandle)
+	inline void AddCopyBufferPass(FrameGraph& frameGraph, std::string_view name, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
 	{
 		frameGraph.AddPass(
 		    name,

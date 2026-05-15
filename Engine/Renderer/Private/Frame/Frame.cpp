@@ -14,15 +14,15 @@ FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneEx
 {
 	const FrameGraphTextureDesc sceneColorDesc =
 	    FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
-	const TextureHandle sceneColor = frameGraph.CreateTexture(sceneColorDesc);
+	const FrameGraphTextureHandle sceneColor = frameGraph.CreateTexture(sceneColorDesc);
 
 	const FrameGraphTextureDesc backBufferDesc =
 	    FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, RenderConfig::BackBufferFormat);
-	const TextureHandle backBuffer = frameGraph.ImportTexture(backBufferDesc, ResourceState::Present);
+	const FrameGraphTextureHandle backBuffer = frameGraph.ImportTexture(backBufferDesc, ResourceState::Present);
 
 	const FrameGraphTextureDesc mainDepthDesc =
 	    FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
-	const TextureHandle mainDepth = frameGraph.CreateTexture(mainDepthDesc);
+	const FrameGraphTextureHandle mainDepth = frameGraph.CreateTexture(mainDepthDesc);
 
 	const SceneTargets sceneTargets{.SceneColor = sceneColor, .BackBuffer = backBuffer, .MainDepth = mainDepth};
 

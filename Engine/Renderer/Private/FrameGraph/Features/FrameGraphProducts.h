@@ -1,31 +1,31 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 
 struct SceneTargets
 {
-	TextureHandle SceneColor;
-	TextureHandle BackBuffer;
-	TextureHandle MainDepth;
+	FrameGraphTextureHandle SceneColor;
+	FrameGraphTextureHandle BackBuffer;
+	FrameGraphTextureHandle MainDepth;
 };
 
 struct GBufferTargets
 {
-	TextureHandle BaseColor;
-	TextureHandle Normal;
-	TextureHandle Material;
-	TextureHandle Emissive;
-	TextureHandle Subsurface;
-	TextureHandle DeviceZ;
-	TextureHandle MainDepth;
+	FrameGraphTextureHandle BaseColor;
+	FrameGraphTextureHandle Normal;
+	FrameGraphTextureHandle Material;
+	FrameGraphTextureHandle Emissive;
+	FrameGraphTextureHandle Subsurface;
+	FrameGraphTextureHandle DeviceZ;
+	FrameGraphTextureHandle MainDepth;
 };
 
 struct LightingTargets
 {
-	TextureHandle DirectDiffuse;
-	TextureHandle DirectSpecular;
-	TextureHandle DirectSubsurface;
-	TextureHandle IndirectDiffuse;
-	TextureHandle IndirectSpecular;
-	TextureHandle IndirectSubsurface;
+	FrameGraphTextureHandle DirectDiffuse;
+	FrameGraphTextureHandle DirectSpecular;
+	FrameGraphTextureHandle DirectSubsurface;
+	FrameGraphTextureHandle IndirectDiffuse;
+	FrameGraphTextureHandle IndirectSpecular;
+	FrameGraphTextureHandle IndirectSubsurface;
 };

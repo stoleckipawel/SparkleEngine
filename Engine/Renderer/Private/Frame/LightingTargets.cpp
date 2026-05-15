@@ -7,7 +7,7 @@
 
 namespace
 {
-	TextureHandle CreateLightingTexture(FrameGraph& frameGraph, const char* name, RenderViewportExtent sceneExtent)
+	FrameGraphTextureHandle CreateLightingTexture(FrameGraph& frameGraph, const char* name, RenderViewportExtent sceneExtent)
 	{
 		return frameGraph.CreateTexture(
 		    FrameGraphTextureDesc::CreateColor(name, sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat));

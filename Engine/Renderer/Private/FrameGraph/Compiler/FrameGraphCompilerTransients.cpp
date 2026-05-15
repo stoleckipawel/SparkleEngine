@@ -274,7 +274,7 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 
 		std::vector<const FrameGraph::CompiledTransientResourcePlan*> orderedPlans;
 		orderedPlans.reserve(block.handles.size());
-		for (const ResourceHandle handle : block.handles)
+		for (const FrameGraphResourceHandle handle : block.handles)
 		{
 			const FrameGraph::CompiledTransientResourcePlan* transientPlan = FindTransientResourcePlan(handle);
 			assert(transientPlan != nullptr);

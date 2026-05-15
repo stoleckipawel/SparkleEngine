@@ -235,8 +235,8 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 		return 0;
 	}
 
-	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).Value;
+	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	return m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}).Value;
 }
 
 void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept
@@ -246,8 +246,8 @@ void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState
 		return;
 	}
 
-	const ResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	const NativeResourceHandle resource = m_frameGraph->ResolveResource(TextureHandle{resourceHandle});
+	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	const NativeResourceHandle resource = m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
 	if (!resource)
 	{
 		return;

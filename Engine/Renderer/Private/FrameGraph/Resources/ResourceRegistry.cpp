@@ -13,14 +13,14 @@ void ResourceRegistry::Clear() noexcept
 
 void ResourceRegistry::ResetCurrentStates() noexcept
 {
-	for (const ResourceHandle handle : m_registeredHandles)
+	for (const FrameGraphResourceHandle handle : m_registeredHandles)
 	{
 		FrameGraphResourceRuntimeState& runtimeState = GetRuntimeState(handle);
 		runtimeState.currentState = GetMetadata(handle).initialState;
 	}
 }
 
-void ResourceRegistry::RegisterBackBuffer(ResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
+void ResourceRegistry::RegisterBackBuffer(FrameGraphResourceHandle handle, const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
 	    handle,
@@ -37,7 +37,7 @@ void ResourceRegistry::RegisterBackBuffer(ResourceHandle handle, const FrameGrap
 }
 
 void ResourceRegistry::RegisterTransientTexture(
-    ResourceHandle handle,
+    FrameGraphResourceHandle handle,
     const FrameGraphTextureDesc& desc,
     FrameGraphResourceKind kind,
     ResourceState initialState) noexcept
@@ -56,7 +56,7 @@ void ResourceRegistry::RegisterTransientTexture(
 }
 
 void ResourceRegistry::RegisterImportedTexture(
-    ResourceHandle handle,
+    FrameGraphResourceHandle handle,
     const FrameGraphTextureDesc& desc,
     FrameGraphResourceKind kind,
     NativeResourceHandle resource,
@@ -78,7 +78,7 @@ void ResourceRegistry::RegisterImportedTexture(
 	access.externalResource = resource;
 }
 
-void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
+void ResourceRegistry::RegisterTransientBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = RegisterMetadata(
 	    handle,
@@ -94,7 +94,7 @@ void ResourceRegistry::RegisterTransientBuffer(ResourceHandle handle, const Fram
 }
 
 void ResourceRegistry::RegisterImportedBuffer(
-    ResourceHandle handle,
+    FrameGraphResourceHandle handle,
     const FrameGraphBufferDesc& desc,
     NativeResourceHandle resource,
     ResourceState initialState) noexcept
@@ -115,7 +115,7 @@ void ResourceRegistry::RegisterImportedBuffer(
 	access.externalResource = resource;
 }
 
-void ResourceRegistry::SetBoundaryStates(ResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept
+void ResourceRegistry::SetBoundaryStates(FrameGraphResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept
 {
 	FrameGraphResourceMetadata& metadata = GetMetadata(handle);
 	metadata.initialState = initialState;
@@ -123,58 +123,58 @@ void ResourceRegistry::SetBoundaryStates(ResourceHandle handle, ResourceState in
 	GetRuntimeState(handle).currentState = initialState;
 }
 
-void ResourceRegistry::UpdateCurrentState(ResourceHandle handle, ResourceState currentState) noexcept
+void ResourceRegistry::UpdateCurrentState(FrameGraphResourceHandle handle, ResourceState currentState) noexcept
 {
 	GetRuntimeState(handle).currentState = currentState;
 }
 
-void ResourceRegistry::ClearResolvedAccess(ResourceHandle handle) noexcept
+void ResourceRegistry::ClearResolvedAccess(FrameGraphResourceHandle handle) noexcept
 {
 	GetResolvedAccess(handle) = {};
 }
 
-bool ResourceRegistry::IsRegistered(ResourceHandle handle) const noexcept
+bool ResourceRegistry::IsRegistered(FrameGraphResourceHandle handle) const noexcept
 {
 	return handle.IsValid() && handle.index < m_metadataEntries.size() && m_metadataEntries[handle.index].handle == handle;
 }
 
-FrameGraphResourceMetadata& ResourceRegistry::GetMetadata(ResourceHandle handle) noexcept
+FrameGraphResourceMetadata& ResourceRegistry::GetMetadata(FrameGraphResourceHandle handle) noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_metadataEntries[handle.index];
 }
 
-const FrameGraphResourceMetadata& ResourceRegistry::GetMetadata(ResourceHandle handle) const noexcept
+const FrameGraphResourceMetadata& ResourceRegistry::GetMetadata(FrameGraphResourceHandle handle) const noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_metadataEntries[handle.index];
 }
 
-FrameGraphResourceRuntimeState& ResourceRegistry::GetRuntimeState(ResourceHandle handle) noexcept
+FrameGraphResourceRuntimeState& ResourceRegistry::GetRuntimeState(FrameGraphResourceHandle handle) noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_runtimeStates[handle.index];
 }
 
-const FrameGraphResourceRuntimeState& ResourceRegistry::GetRuntimeState(ResourceHandle handle) const noexcept
+const FrameGraphResourceRuntimeState& ResourceRegistry::GetRuntimeState(FrameGraphResourceHandle handle) const noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_runtimeStates[handle.index];
 }
 
-FrameGraphResourceAccess& ResourceRegistry::GetResolvedAccess(ResourceHandle handle) noexcept
+FrameGraphResourceAccess& ResourceRegistry::GetResolvedAccess(FrameGraphResourceHandle handle) noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_resolvedAccessEntries[handle.index];
 }
 
-const FrameGraphResourceAccess& ResourceRegistry::GetResolvedAccess(ResourceHandle handle) const noexcept
+const FrameGraphResourceAccess& ResourceRegistry::GetResolvedAccess(FrameGraphResourceHandle handle) const noexcept
 {
 	assert(IsRegistered(handle) && "FrameGraph resource handle is not registered.");
 	return m_resolvedAccessEntries[handle.index];
 }
 
-void ResourceRegistry::EnsureStorage(ResourceHandle handle) noexcept
+void ResourceRegistry::EnsureStorage(FrameGraphResourceHandle handle) noexcept
 {
 	assert(handle.IsValid());
 	const std::size_t requiredSize = static_cast<std::size_t>(handle.index) + 1;
@@ -187,7 +187,7 @@ void ResourceRegistry::EnsureStorage(ResourceHandle handle) noexcept
 }
 
 FrameGraphResourceMetadata& ResourceRegistry::RegisterMetadata(
-    ResourceHandle handle,
+    FrameGraphResourceHandle handle,
     FrameGraphResourceClass resourceClass,
     FrameGraphResourceKind kind,
     FrameGraphResourceOwnership ownership,

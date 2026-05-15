@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/BufferHandle.h"
-#include "Renderer/Public/FrameGraph/ResourceHandle.h"
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "FrameGraph/ResourceUsage.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
@@ -19,15 +19,15 @@ class PassBuilder final
 	PassBuilder(PassBuilder&&) = delete;
 	PassBuilder& operator=(PassBuilder&&) = delete;
 
-	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage) noexcept;
-	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage) noexcept;
-	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage) noexcept;
-	TextureHandle Read(TextureHandle handle, ResourceUsage usage) noexcept;
-	TextureHandle Write(TextureHandle handle, ResourceUsage usage) noexcept;
-	TextureHandle Use(TextureHandle handle, ResourceUsage usage) noexcept;
-	BufferHandle Read(BufferHandle handle, ResourceUsage usage) noexcept;
-	BufferHandle Write(BufferHandle handle, ResourceUsage usage) noexcept;
-	BufferHandle Use(BufferHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphTextureHandle Read(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphTextureHandle Write(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphTextureHandle Use(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphBufferHandle Read(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphBufferHandle Write(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphBufferHandle Use(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
 	void DeclareParameterUsages(const PassParameterSet& parameterSet) noexcept;
 
   private:
@@ -36,7 +36,7 @@ class PassBuilder final
 	void DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 	void DeclareBufferBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept;
 	void DeclareResourceHandle(
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    ResourceUsage usage,
 	    const PassParameterDesc& parameter,
 	    std::uint32_t arrayIndex) noexcept;

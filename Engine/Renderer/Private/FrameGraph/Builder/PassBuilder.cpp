@@ -8,61 +8,61 @@
 
 PassBuilder::PassBuilder(FrameGraph& frameGraph) noexcept : m_frameGraph(&frameGraph) {}
 
-ResourceHandle PassBuilder::Read(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle PassBuilder::Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	assert(m_frameGraph != nullptr);
 	assert(IsReadOnlyUsage(usage));
 	return m_frameGraph->Read(handle, usage);
 }
 
-ResourceHandle PassBuilder::Write(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle PassBuilder::Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	assert(m_frameGraph != nullptr);
 	assert(IsWriteOnlyUsage(usage));
 	return m_frameGraph->Write(handle, usage);
 }
 
-ResourceHandle PassBuilder::Use(ResourceHandle handle, ResourceUsage usage) noexcept
+FrameGraphResourceHandle PassBuilder::Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
 {
 	assert(m_frameGraph != nullptr);
 	assert(IsReadWriteUsage(usage));
 	return m_frameGraph->Use(handle, usage);
 }
 
-TextureHandle PassBuilder::Read(TextureHandle handle, ResourceUsage usage) noexcept
+FrameGraphTextureHandle PassBuilder::Read(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return TextureHandle{Read(handle.GetResourceHandle(), usage)};
+	return FrameGraphTextureHandle{Read(handle.GetResourceHandle(), usage)};
 }
 
-TextureHandle PassBuilder::Write(TextureHandle handle, ResourceUsage usage) noexcept
+FrameGraphTextureHandle PassBuilder::Write(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return TextureHandle{Write(handle.GetResourceHandle(), usage)};
+	return FrameGraphTextureHandle{Write(handle.GetResourceHandle(), usage)};
 }
 
-TextureHandle PassBuilder::Use(TextureHandle handle, ResourceUsage usage) noexcept
+FrameGraphTextureHandle PassBuilder::Use(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return TextureHandle{Use(handle.GetResourceHandle(), usage)};
+	return FrameGraphTextureHandle{Use(handle.GetResourceHandle(), usage)};
 }
 
-BufferHandle PassBuilder::Read(BufferHandle handle, ResourceUsage usage) noexcept
+FrameGraphBufferHandle PassBuilder::Read(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return BufferHandle{Read(handle.GetResourceHandle(), usage)};
+	return FrameGraphBufferHandle{Read(handle.GetResourceHandle(), usage)};
 }
 
-BufferHandle PassBuilder::Write(BufferHandle handle, ResourceUsage usage) noexcept
+FrameGraphBufferHandle PassBuilder::Write(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return BufferHandle{Write(handle.GetResourceHandle(), usage)};
+	return FrameGraphBufferHandle{Write(handle.GetResourceHandle(), usage)};
 }
 
-BufferHandle PassBuilder::Use(BufferHandle handle, ResourceUsage usage) noexcept
+FrameGraphBufferHandle PassBuilder::Use(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept
 {
 	assert(handle.IsValid());
-	return BufferHandle{Use(handle.GetResourceHandle(), usage)};
+	return FrameGraphBufferHandle{Use(handle.GetResourceHandle(), usage)};
 }
 
 void PassBuilder::DeclareParameterUsages(const PassParameterSet& parameterSet) noexcept
@@ -175,7 +175,7 @@ void PassBuilder::DeclareBufferBinding(const PassParameterDesc& parameter, const
 }
 
 void PassBuilder::DeclareResourceHandle(
-    ResourceHandle handle,
+    FrameGraphResourceHandle handle,
     ResourceUsage usage,
     const PassParameterDesc& parameter,
     std::uint32_t arrayIndex) noexcept

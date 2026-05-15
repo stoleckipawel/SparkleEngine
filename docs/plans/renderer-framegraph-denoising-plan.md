@@ -824,6 +824,29 @@ Key searches before and after:
 Validation is grep/file-search/git diff --check only. The phase is complete when public graph handle names are unmistakably FrameGraph-owned and no new RenderGraph public vocabulary has been introduced.
 ```
 
+Phase 2 findings:
+
+Source checks performed:
+
+- The public graph handle contracts were the only generic public FrameGraph handles that needed renaming.
+- `FrameGraphTextureDesc` and `FrameGraphBufferDesc` were already FrameGraph-prefixed and backend-neutral, so this phase kept those descriptor names unchanged.
+- Public FrameGraph descriptors still do not expose `D3D12`, `DXGI`, `ID3D12`, or `ComPtr` vocabulary.
+- No public `RenderGraph*` vocabulary was introduced. Existing private execution-context names remain deferred to Phase 7.
+
+Code change made in Phase 2:
+
+- Renamed public handle types:
+  - `ResourceHandle` -> `FrameGraphResourceHandle`
+  - `TextureHandle` -> `FrameGraphTextureHandle`
+  - `BufferHandle` -> `FrameGraphBufferHandle`
+- Renamed public handle headers without adding old-path forwarding headers:
+  - `ResourceHandle.h` -> `FrameGraphResourceHandle.h`
+  - `TextureHandle.h` -> `FrameGraphTextureHandle.h`
+  - `BufferHandle.h` -> `FrameGraphBufferHandle.h`
+- Updated Renderer public shader parameter wrappers and private FrameGraph, frame assembly, pass, pipeline/binding, resource registry, compiler, execution, and diagnostics call sites to use the FrameGraph-prefixed handle names.
+
+Phase 2 result: the public graph handle vocabulary is now unambiguously FrameGraph-owned while the public folder remains `Engine/Renderer/Public/FrameGraph`. Descriptor vocabulary stayed backend-neutral, no compatibility headers were kept, and `RenderGraph` cleanup remains assigned to the later execution-context phase.
+
 ## Phase 3: Separate Setup-Time Authoring From Graph Storage
 
 Goal: align Sparkle with RDG's setup timeline and remove the `PassBuilder` friendship pressure.

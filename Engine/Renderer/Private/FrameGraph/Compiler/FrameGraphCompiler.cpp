@@ -9,7 +9,7 @@ namespace
 {
 	bool HasCompiledBarrier(
 	    const FrameGraph::CompilePassRecord& passRecord,
-	    ResourceHandle handle,
+	    FrameGraphResourceHandle handle,
 	    FrameGraph::CompiledBarrier::Type type) noexcept
 	{
 		const auto it = std::find_if(
@@ -148,10 +148,10 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 	m_plan.resources.clear();
 	m_plan.resources.reserve(m_resourceRegistry.GetRegisteredHandles().size());
 
-	const std::vector<ResourceHandle>& registeredHandles = m_resourceRegistry.GetRegisteredHandles();
+	const std::vector<FrameGraphResourceHandle>& registeredHandles = m_resourceRegistry.GetRegisteredHandles();
 	for (std::size_t resourceIndex = 0; resourceIndex < registeredHandles.size(); ++resourceIndex)
 	{
-		const ResourceHandle handle = registeredHandles[resourceIndex];
+		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(handle);
 		m_plan.resources.push_back(
@@ -252,7 +252,7 @@ const FrameGraph::ResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion
 	return resource.versions[resource.currentVersion];
 }
 
-FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(ResourceHandle handle) noexcept
+FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.resources.begin(),
@@ -265,7 +265,7 @@ FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(R
 	return *it;
 }
 
-const FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(ResourceHandle handle) const noexcept
+const FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.resources.begin(),
@@ -278,7 +278,7 @@ const FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceE
 	return *it;
 }
 
-FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(ResourceHandle handle) noexcept
+FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.transientResources.begin(),
@@ -291,7 +291,7 @@ FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientReso
 	return it != m_plan.transientResources.end() ? &(*it) : nullptr;
 }
 
-const FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(ResourceHandle handle) const noexcept
+const FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.transientResources.begin(),

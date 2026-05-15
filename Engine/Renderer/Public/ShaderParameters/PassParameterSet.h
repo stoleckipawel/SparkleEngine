@@ -4,8 +4,8 @@
 #include "../../../RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "../../../RHI/Public/Resources/RhiResourceDesc.h"
 #include "../../../RHI/Public/Samplers/RhiSamplerDesc.h"
-#include "../FrameGraph/BufferHandle.h"
-#include "../FrameGraph/TextureHandle.h"
+#include "../FrameGraph/FrameGraphBufferHandle.h"
+#include "../FrameGraph/FrameGraphTextureHandle.h"
 
 #include <cassert>
 #include <cstdint>
@@ -28,14 +28,14 @@ enum class PassParameterValueKind : std::uint8_t
 
 struct PassParameterTextureBindingData
 {
-	std::vector<TextureHandle> Handles;
+	std::vector<FrameGraphTextureHandle> Handles;
 
 	bool IsBound() const noexcept { return !Handles.empty(); }
 };
 
 struct PassParameterBufferBindingData
 {
-	std::vector<BufferHandle> Handles;
+	std::vector<FrameGraphBufferHandle> Handles;
 
 	bool IsBound() const noexcept { return !Handles.empty(); }
 };
@@ -220,14 +220,14 @@ class PassParameterSet final
 		return binding != nullptr && binding->IsBound();
 	}
 
-	bool SetTexture(const char* name, TextureHandle handle)
+	bool SetTexture(const char* name, FrameGraphTextureHandle handle)
 	{
-		std::vector<TextureHandle> handles;
+		std::vector<FrameGraphTextureHandle> handles;
 		handles.push_back(handle);
 		return SetTextureArray(name, handles);
 	}
 
-	bool SetTextureArray(const char* name, const std::vector<TextureHandle>& handles)
+	bool SetTextureArray(const char* name, const std::vector<FrameGraphTextureHandle>& handles)
 	{
 		std::uint32_t index = 0;
 		const PassParameterDesc* parameter = FindParameter(name, index);
@@ -250,14 +250,14 @@ class PassParameterSet final
 		return true;
 	}
 
-	bool SetBuffer(const char* name, BufferHandle handle)
+	bool SetBuffer(const char* name, FrameGraphBufferHandle handle)
 	{
-		std::vector<BufferHandle> handles;
+		std::vector<FrameGraphBufferHandle> handles;
 		handles.push_back(handle);
 		return SetBufferArray(name, handles);
 	}
 
-	bool SetBufferArray(const char* name, const std::vector<BufferHandle>& handles)
+	bool SetBufferArray(const char* name, const std::vector<FrameGraphBufferHandle>& handles)
 	{
 		std::uint32_t index = 0;
 		const PassParameterDesc* parameter = FindParameter(name, index);
@@ -451,14 +451,14 @@ class PassParameterSet final
 		return parameter.ArrayCount == static_cast<std::uint32_t>(actualCount);
 	}
 
-	static bool ValidateTextureBinding(const std::vector<TextureHandle>& handles, const PassParameterDesc& parameter) noexcept
+	static bool ValidateTextureBinding(const std::vector<FrameGraphTextureHandle>& handles, const PassParameterDesc& parameter) noexcept
 	{
 		if (!ValidateArrayCount(parameter, handles.size()))
 		{
 			return false;
 		}
 
-		for (const TextureHandle& handle : handles)
+		for (const FrameGraphTextureHandle& handle : handles)
 		{
 			if (!handle.IsValid())
 			{
@@ -469,14 +469,14 @@ class PassParameterSet final
 		return true;
 	}
 
-	static bool ValidateBufferBinding(const std::vector<BufferHandle>& handles, const PassParameterDesc& parameter) noexcept
+	static bool ValidateBufferBinding(const std::vector<FrameGraphBufferHandle>& handles, const PassParameterDesc& parameter) noexcept
 	{
 		if (!ValidateArrayCount(parameter, handles.size()))
 		{
 			return false;
 		}
 
-		for (const BufferHandle& handle : handles)
+		for (const FrameGraphBufferHandle& handle : handles)
 		{
 			if (!handle.IsValid())
 			{

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraph;
@@ -20,8 +20,8 @@ struct FrameGraphDependencies
 struct FrameGraphBuildResult
 {
 	std::unique_ptr<FrameGraph> Graph;
-	TextureHandle SceneColor;
-	TextureHandle SceneDepth;
+	FrameGraphTextureHandle SceneColor;
+	FrameGraphTextureHandle SceneDepth;
 };
 
 class FrameGraphBuilder final

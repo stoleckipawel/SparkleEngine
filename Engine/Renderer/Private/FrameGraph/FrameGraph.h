@@ -5,11 +5,11 @@
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/Builder/PassBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
-#include "Renderer/Public/FrameGraph/BufferHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "FrameGraph/ResourceRegistry.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
-#include "Renderer/Public/FrameGraph/ResourceHandle.h"
-#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 #include "Passes/ShaderPass.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -198,74 +198,74 @@ class FrameGraph
 		return instance;
 	}
 
-	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
-	TextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	TextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
-	BufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
-	BufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
-	ResourceState GetTrackedResourceState(ResourceHandle handle) const noexcept;
-	void UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept;
+	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
+	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
+	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
+	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
+	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
 	    RenderCommandContext& cmd,
-	    TextureHandle renderTargetHandle,
-	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
+	    FrameGraphTextureHandle renderTargetHandle,
+	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
 	void BindRenderTargets(
 	    RenderCommandContext& cmd,
-	    std::span<const TextureHandle> renderTargetHandles,
-	    TextureHandle depthStencilHandle = TextureHandle::Invalid()) const noexcept;
-	void CopyTexture(RenderCommandContext& cmd, TextureHandle destinationHandle, TextureHandle sourceHandle) const noexcept;
-	void CopyBuffer(RenderCommandContext& cmd, BufferHandle destinationHandle, BufferHandle sourceHandle) const noexcept;
-	void ClearRenderTarget(RenderCommandContext& cmd, TextureHandle handle) const noexcept;
-	void ClearDepthStencil(RenderCommandContext& cmd, TextureHandle handle) const noexcept;
-	NativeResourceHandle ResolveResource(TextureHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveShaderResourceView(TextureHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveShaderResourceView(BufferHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(TextureHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(BufferHandle handle) const noexcept;
+	    std::span<const FrameGraphTextureHandle> renderTargetHandles,
+	    FrameGraphTextureHandle depthStencilHandle = FrameGraphTextureHandle::Invalid()) const noexcept;
+	void CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept;
+	void CopyBuffer(RenderCommandContext& cmd, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle) const noexcept;
+	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
+	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
+	NativeResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
 
-	template <typename TValue = void> ShaderTexture2D<TValue> Read(TextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
 		ShaderTexture2D<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(TextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderTexture2D<TValue> CreateSRV(FrameGraphTextureHandle handle) const noexcept
 	{
 		return Read<TValue>(handle);
 	}
 
-	template <typename TValue = void> ShaderBuffer<TValue> Read(BufferHandle handle) const noexcept
+	template <typename TValue = void> ShaderBuffer<TValue> Read(FrameGraphBufferHandle handle) const noexcept
 	{
 		ShaderBuffer<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(BufferHandle handle) const noexcept { return Read<TValue>(handle); }
+	template <typename TValue = void> ShaderBuffer<TValue> CreateSRV(FrameGraphBufferHandle handle) const noexcept { return Read<TValue>(handle); }
 
-	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(TextureHandle handle) const noexcept
+	template <typename TValue = void> ShaderRWTexture2D<TValue> CreateUAV(FrameGraphTextureHandle handle) const noexcept
 	{
 		ShaderRWTexture2D<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(BufferHandle handle) const noexcept
+	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(FrameGraphBufferHandle handle) const noexcept
 	{
 		ShaderRWBuffer<TValue> field;
 		field = handle;
 		return field;
 	}
 
-	ShaderRenderTarget CreateRenderTarget(TextureHandle handle) const noexcept
+	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
 	{
 		ShaderRenderTarget field;
 		field = handle;
 		return field;
 	}
 
-	ShaderDepthTarget CreateDepthTarget(TextureHandle handle) const noexcept
+	ShaderDepthTarget CreateDepthTarget(FrameGraphTextureHandle handle) const noexcept
 	{
 		ShaderDepthTarget field;
 		field = handle;
@@ -292,7 +292,7 @@ class FrameGraph
 			UnorderedAccess
 		};
 
-		ResourceHandle handle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		Type type = Type::Transition;
 		ResourceState before = ResourceState::Common;
 		ResourceState after = ResourceState::Common;
@@ -301,15 +301,15 @@ class FrameGraph
 	struct CompiledAliasingBarrier
 	{
 		std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
-		ResourceHandle beforeHandle = ResourceHandle::Invalid();
-		ResourceHandle afterHandle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle beforeHandle = FrameGraphResourceHandle::Invalid();
+		FrameGraphResourceHandle afterHandle = FrameGraphResourceHandle::Invalid();
 		PassIndex executeBeforePass = INVALID_PASS_INDEX;
 		PassIndex executeAfterPass = INVALID_PASS_INDEX;
 	};
 
 	struct ResourceVersion
 	{
-		ResourceHandle handle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		std::uint32_t version = 0;
 		PassIndex writerPass = INVALID_PASS_INDEX;
 		std::vector<PassIndex> readerPasses;
@@ -336,7 +336,7 @@ class FrameGraph
 	struct CompileResourceEntry
 	{
 		ResourceIndex index = INVALID_RESOURCE_INDEX;
-		ResourceHandle handle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
 		FrameGraphResourceKind kind = FrameGraphResourceKind::BackBuffer;
 		FrameGraphResourceOwnership ownership = FrameGraphResourceOwnership::Transient;
@@ -372,7 +372,7 @@ class FrameGraph
 			ResourceState initialState = ResourceState::Common;
 		};
 
-		ResourceHandle handle = ResourceHandle::Invalid();
+		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
 		FrameGraphTextureDesc textureDesc{};
 		FrameGraphBufferDesc bufferDesc{};
@@ -400,7 +400,7 @@ class FrameGraph
 		bool hasOptimizedClearValue = false;
 		PassIndex firstExecutionIndex = INVALID_PASS_INDEX;
 		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
-		std::vector<ResourceHandle> handles;
+		std::vector<FrameGraphResourceHandle> handles;
 	};
 
 	struct CompiledPlan
@@ -503,26 +503,26 @@ class FrameGraph
 	void BeginPassSetup() noexcept;
 	void EndPassSetup() noexcept;
 	void RecordDeclaration(PassResourceDeclaration declaration) noexcept;
-	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage) noexcept;
-	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage) noexcept;
-	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage) noexcept;
-	ResourceHandle Read(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-	ResourceHandle Write(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-	ResourceHandle Use(ResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 
-	RhiCpuDescriptorHandle ResolveRenderTargetView(ResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveDepthStencilView(ResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveShaderResourceView(ResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveUnorderedAccessView(ResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveTransientRenderTargetView(ResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveTransientDepthStencilView(ResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveTransientShaderResourceView(ResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveTransientUnorderedAccessView(ResourceHandle handle) const noexcept;
-	std::array<float, 4> GetClearColor(ResourceHandle handle) const noexcept;
-	float GetClearDepth(ResourceHandle handle) const noexcept;
-	NativeResourceHandle ResolveResource(ResourceHandle handle) const noexcept;
-	NativeResourceHandle ResolveTransientResource(ResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
-	void CopyResource(RenderCommandContext& cmd, ResourceHandle destinationHandle, ResourceHandle sourceHandle) const noexcept;
+	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveTransientRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
+	RhiCpuDescriptorHandle ResolveTransientDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveTransientShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuDescriptorHandle ResolveTransientUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
+	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
+	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
+	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
+	NativeResourceHandle ResolveTransientResource(FrameGraphResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
+	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const CompiledPlan& plan) const noexcept;
@@ -532,11 +532,11 @@ class FrameGraph
 	    const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers) const noexcept;
-	ResourceHandle AllocateDynamicResourceHandle() noexcept;
+	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
 
 	struct VirtualTransientResource
 	{
-		ResourceHandle handle;
+		FrameGraphResourceHandle handle;
 		FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
 		FrameGraphTextureDesc textureDesc{};
 		FrameGraphBufferDesc bufferDesc{};

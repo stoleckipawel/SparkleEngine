@@ -55,10 +55,10 @@ namespace ShaderParameterFields
 }  // namespace ShaderParameterFields
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderTexture2D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+class ShaderTexture2D final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>;
 	using Semantic = ReadTexture;
 	using ValueType = TValue;
 	using Base::operator=;
@@ -66,10 +66,10 @@ class ShaderTexture2D final : public ShaderParameterFields::ResourceArrayField<T
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderTexture3D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+class ShaderTexture3D final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>;
 	using Semantic = ReadTexture;
 	using ValueType = TValue;
 	using Base::operator=;
@@ -77,10 +77,10 @@ class ShaderTexture3D final : public ShaderParameterFields::ResourceArrayField<T
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderTextureCube final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+class ShaderTextureCube final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>;
 	using Semantic = ReadTexture;
 	using ValueType = TValue;
 	using Base::operator=;
@@ -166,39 +166,39 @@ class ShaderAccelerationStructure final
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderRWTexture2D final : public ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>
+class ShaderRWTexture2D final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, ArrayCount>;
 	using Semantic = RWTexture;
 	using ValueType = TValue;
 	using Base::operator=;
 	using Base::Base;
 };
 
-class ShaderRenderTarget final : public ShaderParameterFields::ResourceArrayField<TextureHandle, 1>
+class ShaderRenderTarget final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, 1>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>;
 	using Semantic = RenderTarget;
 	using Base::operator=;
 	using Base::Base;
 };
 
-class ShaderDepthTarget final : public ShaderParameterFields::ResourceArrayField<TextureHandle, 1>
+class ShaderDepthTarget final : public ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<TextureHandle, 1>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphTextureHandle, 1>;
 	using Semantic = DepthTarget;
 	using Base::operator=;
 	using Base::Base;
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderBuffer final : public ShaderParameterFields::ResourceArrayField<BufferHandle, ArrayCount>
+class ShaderBuffer final : public ShaderParameterFields::ResourceArrayField<FrameGraphBufferHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<BufferHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphBufferHandle, ArrayCount>;
 	using Semantic = ReadBuffer;
 	using ValueType = TValue;
 	using Base::operator=;
@@ -206,10 +206,10 @@ class ShaderBuffer final : public ShaderParameterFields::ResourceArrayField<Buff
 };
 
 template <typename TValue = void, std::size_t ArrayCount = 1>
-class ShaderRWBuffer final : public ShaderParameterFields::ResourceArrayField<BufferHandle, ArrayCount>
+class ShaderRWBuffer final : public ShaderParameterFields::ResourceArrayField<FrameGraphBufferHandle, ArrayCount>
 {
   public:
-	using Base = ShaderParameterFields::ResourceArrayField<BufferHandle, ArrayCount>;
+	using Base = ShaderParameterFields::ResourceArrayField<FrameGraphBufferHandle, ArrayCount>;
 	using Semantic = RWBuffer;
 	using ValueType = TValue;
 	using Base::operator=;

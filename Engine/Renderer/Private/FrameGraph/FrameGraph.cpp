@@ -39,7 +39,7 @@ FrameGraph::CompiledPlan FrameGraph::Compile()
 	return m_compiledPlan;
 }
 
-ResourceState FrameGraph::GetTrackedResourceState(ResourceHandle handle) const noexcept
+ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept
 {
 	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
 	{
@@ -49,7 +49,7 @@ ResourceState FrameGraph::GetTrackedResourceState(ResourceHandle handle) const n
 	return m_resourceRegistry.GetRuntimeState(handle).currentState;
 }
 
-void FrameGraph::UpdateTrackedResourceState(ResourceHandle handle, ResourceState currentState) const noexcept
+void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept
 {
 	if (!handle.IsValid() || !m_resourceRegistry.IsRegistered(handle))
 	{
