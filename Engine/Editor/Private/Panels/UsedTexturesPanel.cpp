@@ -18,7 +18,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include <dxgi1_6.h>
 #include <imgui.h>
 
 namespace
@@ -387,42 +386,9 @@ namespace
 		}
 	}
 
-	const char* FormatDxgiFormat(std::uint32_t format) noexcept
+	const char* FormatTextureFormat(const std::string& format) noexcept
 	{
-		switch (static_cast<DXGI_FORMAT>(format))
-		{
-			case DXGI_FORMAT_R8G8B8A8_UNORM:
-				return "R8G8B8A8_UNORM";
-			case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-				return "R8G8B8A8_UNORM_SRGB";
-			case DXGI_FORMAT_B8G8R8A8_UNORM:
-				return "B8G8R8A8_UNORM";
-			case DXGI_FORMAT_BC1_UNORM:
-				return "BC1_UNORM";
-			case DXGI_FORMAT_BC1_UNORM_SRGB:
-				return "BC1_UNORM_SRGB";
-			case DXGI_FORMAT_BC2_UNORM:
-				return "BC2_UNORM";
-			case DXGI_FORMAT_BC2_UNORM_SRGB:
-				return "BC2_UNORM_SRGB";
-			case DXGI_FORMAT_BC3_UNORM:
-				return "BC3_UNORM";
-			case DXGI_FORMAT_BC3_UNORM_SRGB:
-				return "BC3_UNORM_SRGB";
-			case DXGI_FORMAT_BC4_UNORM:
-				return "BC4_UNORM";
-			case DXGI_FORMAT_BC5_UNORM:
-				return "BC5_UNORM";
-			case DXGI_FORMAT_BC6H_UF16:
-				return "BC6H_UF16";
-			case DXGI_FORMAT_BC7_UNORM:
-				return "BC7_UNORM";
-			case DXGI_FORMAT_BC7_UNORM_SRGB:
-				return "BC7_UNORM_SRGB";
-			case DXGI_FORMAT_UNKNOWN:
-			default:
-				return "Unknown";
-		}
+		return format.empty() ? "Unknown" : format.c_str();
 	}
 
 	std::string FormatExtent(const TextureDiagnosticsRow& row)
@@ -603,7 +569,7 @@ void UsedTexturesPanel::DrawTextureTable(bool disableInteraction)
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(FormatResidency(row.ResidencyState));
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(FormatDxgiFormat(row.Format));
+		ImGui::TextUnformatted(FormatTextureFormat(row.Format));
 		ImGui::TableNextColumn();
 		const std::string extent = FormatExtent(row);
 		ImGui::TextUnformatted(extent.c_str());
@@ -674,7 +640,7 @@ void UsedTexturesPanel::DrawSelectedTextureDetails(const TextureDiagnosticsRow& 
 	const std::string memory = FormatBytes(row.EstimatedByteSize);
 	const std::string mips = std::to_string(row.MipCount);
 	const std::string arraySize = std::to_string(row.ArraySize);
-	const std::string dxgiFormat = std::format("{} ({})", FormatDxgiFormat(row.Format), row.Format);
+	const char* textureFormat = FormatTextureFormat(row.Format);
 
 	if (const TextureDisplayMetadata* metadata = FindTextureDisplayMetadata(row); metadata != nullptr && !metadata->SourcePath.empty())
 	{
@@ -689,7 +655,7 @@ void UsedTexturesPanel::DrawSelectedTextureDetails(const TextureDiagnosticsRow& 
 	UiUtil::DrawKeyValueRow("Size", extent.c_str());
 	UiUtil::DrawKeyValueRow("Array", arraySize.c_str());
 	UiUtil::DrawKeyValueRow("Mips", mips.c_str());
-	UiUtil::DrawKeyValueRow("Format", dxgiFormat.c_str());
+	UiUtil::DrawKeyValueRow("Format", textureFormat);
 	UiUtil::DrawKeyValueRow("Intent", FormatTextureIntent(row.FormatIntent));
 	UiUtil::DrawKeyValueRow("Memory", memory.c_str());
 	UiUtil::DrawKeyValueRow("Key", row.Key.c_str());
@@ -712,6 +678,6 @@ bool UsedTexturesPanel::MatchesFilter(const TextureDiagnosticsRow& row) const no
 	const std::string_view filter(m_filterBuffer.data());
 	return filter.empty() || Strings::ContainsIgnoreCase(FormatTextureDisplayName(row), filter) ||
 	       Strings::ContainsIgnoreCase(FormatTexturePath(row), filter) || Strings::ContainsIgnoreCase(row.Key, filter) ||
-	       Strings::ContainsIgnoreCase(FormatDxgiFormat(row.Format), filter) ||
+	       Strings::ContainsIgnoreCase(FormatTextureFormat(row.Format), filter) ||
 	       Strings::ContainsIgnoreCase(FormatTextureKind(row.Kind), filter);
 }

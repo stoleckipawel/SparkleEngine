@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/Textures/TextureDiagnostics.h"
+#include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 
 #include <array>
 #include <functional>

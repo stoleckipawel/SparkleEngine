@@ -20,6 +20,44 @@ static std::uint64_t D3D12TextureCalculatePayloadBytes(const TextureLoadResult& 
 	return byteCount;
 }
 
+static const char* D3D12TextureFormatName(DXGI_FORMAT format) noexcept
+{
+	switch (format)
+	{
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+			return "R8G8B8A8_UNORM";
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+			return "R8G8B8A8_UNORM_SRGB";
+		case DXGI_FORMAT_B8G8R8A8_UNORM:
+			return "B8G8R8A8_UNORM";
+		case DXGI_FORMAT_BC1_UNORM:
+			return "BC1_UNORM";
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+			return "BC1_UNORM_SRGB";
+		case DXGI_FORMAT_BC2_UNORM:
+			return "BC2_UNORM";
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+			return "BC2_UNORM_SRGB";
+		case DXGI_FORMAT_BC3_UNORM:
+			return "BC3_UNORM";
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+			return "BC3_UNORM_SRGB";
+		case DXGI_FORMAT_BC4_UNORM:
+			return "BC4_UNORM";
+		case DXGI_FORMAT_BC5_UNORM:
+			return "BC5_UNORM";
+		case DXGI_FORMAT_BC6H_UF16:
+			return "BC6H_UF16";
+		case DXGI_FORMAT_BC7_UNORM:
+			return "BC7_UNORM";
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			return "BC7_UNORM_SRGB";
+		case DXGI_FORMAT_UNKNOWN:
+		default:
+			return "Unknown";
+	}
+}
+
 D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
     m_textureLoadResult(std::move(textureLoadResult)),
@@ -154,7 +192,7 @@ TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 	info.Height = m_textureLoadResult.height;
 	info.ArraySize = m_textureLoadResult.GetArraySize();
 	info.Dimension = m_textureLoadResult.dimension;
-	info.Format = static_cast<std::uint32_t>(m_textureLoadResult.dxgiFormat);
+	info.FormatName = D3D12TextureFormatName(m_textureLoadResult.dxgiFormat);
 	info.FormatIntent = m_textureLoadResult.formatIntent;
 	info.MipCount = m_textureLoadResult.GetMipCount();
 	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureLoadResult);

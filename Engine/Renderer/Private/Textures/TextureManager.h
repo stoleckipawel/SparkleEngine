@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Renderer/Public/Textures/DefaultTextures.h"
-#include "Renderer/Public/Textures/TextureDiagnostics.h"
+#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "Scene/Textures/TextureSnapshot.h"
 

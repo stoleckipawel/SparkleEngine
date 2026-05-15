@@ -3,7 +3,7 @@
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
-#include "../../Renderer/Public/Textures/TextureDiagnostics.h"
+#include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 #include "Scene/SceneObjectSelection.h"
 

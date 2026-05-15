@@ -7,7 +7,7 @@
 #include "Resources/Texture.h"
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
-#include "Renderer/Public/Textures/DefaultTextures.h"
+#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
 

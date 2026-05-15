@@ -353,7 +353,7 @@ TextureDiagnosticsRow TextureManager::BuildDiagnosticsRow(
 	row.Width = textureInfo.Width;
 	row.Height = textureInfo.Height;
 	row.ArraySize = textureInfo.ArraySize;
-	row.Format = textureInfo.Format;
+	row.Format = textureInfo.FormatName;
 	row.MipCount = textureInfo.MipCount;
 	row.EstimatedByteSize = textureInfo.EstimatedByteSize;
 	row.GpuShaderResourceViewId = textureInfo.GpuShaderResourceViewId;

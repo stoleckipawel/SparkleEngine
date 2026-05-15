@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/Textures/DefaultTextures.h"
+#include "Renderer/Public/Resources/Textures/DefaultTextures.h"
 
 namespace
 {

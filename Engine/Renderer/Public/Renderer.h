@@ -7,7 +7,7 @@
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Meshes/MeshDiagnostics.h"
-#include "Textures/TextureDiagnostics.h"
+#include "Resources/Textures/TextureDiagnostics.h"
 
 #include <cstdint>
 #include <memory>
