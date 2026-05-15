@@ -1,14 +1,12 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
-
 class RenderCommandContext;
 class FrameGraph;
 class PassExecutionDiagnostics;
 struct FrameContext;
 struct RenderPassContext;
 
-struct SPARKLE_RENDERER_API RenderGraphPassContext
+struct RenderGraphPassContext
 {
 	RenderCommandContext& Commands;
 	const FrameContext& Frame;

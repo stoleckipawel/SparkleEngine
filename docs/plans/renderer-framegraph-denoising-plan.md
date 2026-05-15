@@ -750,6 +750,34 @@ Remove accidental DLL export markers from private framegraph implementation type
 Before editing, confirm no public Renderer header includes these private headers. If a public header does, repair the include boundary instead of leaving the private type exported. Remove SPARKLE_RENDERER_API only from private implementation types; do not touch Renderer public API exports. Preserve all names and behavior in this phase. Validate with grep for SPARKLE_RENDERER_API under Engine/Renderer/Private/FrameGraph/**, grep public headers for private FrameGraph includes, and git diff --check. Skip compile/build.
 ```
 
+Phase 1 findings:
+
+Source checks performed:
+
+- `Engine/Renderer/Public/**/*.h` does not include the private FrameGraph implementation headers listed in this phase.
+- Public Renderer headers only include public FrameGraph handle contracts where expected, such as `PassParameterSet.h` including public `BufferHandle.h` and `TextureHandle.h`.
+- The accidental private export markers were limited to `FrameGraph`, `PassBuilder`, `ResourceRegistry`, `RenderPassContext`, `RenderGraphPassContext`, and the pass runtime structs in `RenderPassRuntime.h`.
+- Public Renderer API exports remain in public contracts such as `Renderer`, viewport products, diagnostics snapshots, public scene data, texture diagnostics, and `RendererAPI.h` itself.
+
+Code change made in Phase 1:
+
+- Removed `SPARKLE_RENDERER_API` from private-only FrameGraph implementation types:
+  - `FrameGraph`
+  - `PassBuilder`
+  - `ResourceRegistry`
+  - `RenderPassContext`
+  - `RenderGraphPassContext`
+  - `RasterPassRuntime`
+  - `DirectLightingPassRuntime`
+  - `IndirectLightingPassRuntime`
+  - `LightingCompositePassRuntime`
+  - `SkyPassRuntime`
+  - `VisualizeBuffersPassRuntime`
+  - `ComputeClearPassRuntime`
+- Removed now-unused `RendererAPI.h` includes from those private headers where the macro was the only reason for the include.
+
+Phase 1 result: private FrameGraph implementation types no longer look like Renderer DLL surface. No public include boundary had to be repaired, and no public Renderer exports were changed.
+
 ## Phase 2: Choose And Apply The Public FrameGraph Vocabulary
 
 Goal: make the public graph contract vendor-readable and unambiguous.

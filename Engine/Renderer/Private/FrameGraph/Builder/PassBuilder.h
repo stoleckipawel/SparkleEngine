@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
@@ -9,7 +8,7 @@
 
 class FrameGraph;
 
-class SPARKLE_RENDERER_API PassBuilder final
+class PassBuilder final
 {
   public:
 	explicit PassBuilder(FrameGraph& frameGraph) noexcept;

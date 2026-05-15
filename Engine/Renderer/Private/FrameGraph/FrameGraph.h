@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "FrameGraph/FrameGraphPassFlags.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "FrameGraph/PassResourceDeclaration.h"
@@ -36,7 +35,7 @@ struct RenderPassContext;
 class Window;
 struct FrameContext;
 
-class SPARKLE_RENDERER_API FrameGraph
+class FrameGraph
 {
   public:
 	struct CompiledPlan;

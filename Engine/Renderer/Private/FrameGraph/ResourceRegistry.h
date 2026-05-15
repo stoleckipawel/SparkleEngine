@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Renderer/Public/RendererAPI.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
@@ -63,7 +62,7 @@ struct FrameGraphResourceRuntimeState
 	ResourceState currentState = ResourceState::Common;
 };
 
-class SPARKLE_RENDERER_API ResourceRegistry final
+class ResourceRegistry final
 {
   public:
 	ResourceRegistry() = default;

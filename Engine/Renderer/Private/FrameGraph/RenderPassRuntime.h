@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RendererAPI.h"
-
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 class GBufferPass;
@@ -14,7 +12,7 @@ class ComputeClearPass;
 
 template <typename TPass> struct RenderPassRuntimeTraits;
 
-struct SPARKLE_RENDERER_API RasterPassRuntime
+struct RasterPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
@@ -23,37 +21,37 @@ struct SPARKLE_RENDERER_API RasterPassRuntime
 
 using GBufferPassRuntime = RasterPassRuntime;
 
-struct SPARKLE_RENDERER_API DirectLightingPassRuntime
+struct DirectLightingPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API IndirectLightingPassRuntime
+struct IndirectLightingPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API LightingCompositePassRuntime
+struct LightingCompositePassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API SkyPassRuntime
+struct SkyPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API VisualizeBuffersPassRuntime
+struct VisualizeBuffersPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;
 };
 
-struct SPARKLE_RENDERER_API ComputeClearPassRuntime
+struct ComputeClearPassRuntime
 {
 	RenderBindingLayout& BindingLayout;
 	RenderPipelineState& PipelineState;

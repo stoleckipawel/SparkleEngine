@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RendererAPI.h"
 #include "Pipeline/PipelineStateManager.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -14,7 +13,7 @@ class TextureManager;
 //
 // Keep this struct focused. New fields should only be added when they are
 // genuinely stable execute-time services shared across authored passes.
-struct SPARKLE_RENDERER_API RenderPassContext
+struct RenderPassContext
 {
 	RenderHardwareInterface& HardwareInterface;
 	RenderDiagnostics& BackendDiagnostics;
