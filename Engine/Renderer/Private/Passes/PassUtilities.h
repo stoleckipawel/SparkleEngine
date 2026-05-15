@@ -3,7 +3,7 @@
 #include "Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 #include "GPU/CommandContext.h"

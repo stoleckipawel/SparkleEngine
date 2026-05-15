@@ -149,11 +149,6 @@ RenderCommandList& RenderDeviceServices::GetCurrentGraphicsCommandList() noexcep
 	return m_impl->renderHardwareInterface->GetGraphicsCommandList(m_impl->rhi->GetCurrentFrameIndex());
 }
 
-NativeGraphicsCommandListHandle RenderDeviceServices::GetCurrentGraphicsCommandListHandle() const noexcept
-{
-	return m_impl->renderHardwareInterface->GetGraphicsCommandListHandle(m_impl->rhi->GetCurrentFrameIndex());
-}
-
 void RenderDeviceServices::SubmitFrame() noexcept
 {
 	const UINT frameIndex = m_impl->rhi->GetCurrentFrameIndex();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ResourceHandle.h"
+#include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "ResourceUsage.h"
 
 #include <string>

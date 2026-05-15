@@ -7,7 +7,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/RenderViewContext.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"

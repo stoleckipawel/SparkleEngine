@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../RendererAPI.h"
-#include "BufferHandle.h"
-#include "ResourceHandle.h"
-#include "TextureHandle.h"
-#include "ResourceUsage.h"
-#include "../ShaderParameters/PassParameterSet.h"
+#include "Renderer/Public/RendererAPI.h"
+#include "Renderer/Public/FrameGraph/BufferHandle.h"
+#include "Renderer/Public/FrameGraph/ResourceHandle.h"
+#include "Renderer/Public/FrameGraph/TextureHandle.h"
+#include "FrameGraph/ResourceUsage.h"
+#include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
 class FrameGraph;
 

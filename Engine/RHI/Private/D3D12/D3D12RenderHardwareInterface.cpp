@@ -94,11 +94,6 @@ RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uin
 	return *m_commandLists[frameIndex];
 }
 
-NativeGraphicsCommandListHandle D3D12RenderHardwareInterface::GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept
-{
-	return NativeGraphicsCommandListHandle{m_rhi != nullptr ? m_rhi->GetCommandList(frameIndex).Get() : nullptr};
-}
-
 RhiRayTracingCapabilities D3D12RenderHardwareInterface::GetRayTracingCapabilities() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
@@ -127,11 +122,12 @@ void D3D12RenderHardwareInterface::BeginImGuiFrame() noexcept
 	}
 }
 
-void D3D12RenderHardwareInterface::RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept
+void D3D12RenderHardwareInterface::RenderImGuiDrawData(ImDrawData* drawData) noexcept
 {
 	if (m_imguiBackend != nullptr)
 	{
-		m_imguiBackend->Render(commandList, drawData);
+		RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
+		m_imguiBackend->Render(commandList.GetNativeHandle(), drawData);
 	}
 }
 
@@ -1012,136 +1008,66 @@ bool D3D12RenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle 
 	return ResourceSupportsUnorderedAccess(D3D12TypeConversions::ToResource(resource));
 }
 
-void D3D12RenderHardwareInterface::TransitionResource(
-    NativeGraphicsCommandListHandle commandList,
-    NativeResourceHandle resource,
-    ResourceState before,
-    ResourceState after) const noexcept
+void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor[4]) noexcept
 {
-	ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList);
-	ID3D12Resource* const nativeResource = D3D12TypeConversions::ToResource(resource);
-	if (nativeCommandList == nullptr || nativeResource == nullptr)
+	if (m_swapChain == nullptr)
 	{
 		return;
 	}
 
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = nativeResource;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12TypeConversions::ToResourceStates(before);
-	barrier.Transition.StateAfter = D3D12TypeConversions::ToResourceStates(after);
-	nativeCommandList->ResourceBarrier(1, &barrier);
-}
-
-void D3D12RenderHardwareInterface::BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4])
-    const noexcept
-{
-	if (m_swapChain == nullptr || !commandList)
+	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	if (!presentTexture)
 	{
 		return;
 	}
 
-	auto* nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList);
-	ID3D12Resource* presentTexture = m_swapChain->GetCurrentResource();
-	if (nativeCommandList == nullptr || presentTexture == nullptr)
-	{
-		return;
-	}
+	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
+	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
+	SetShaderVisibleDescriptorHeaps(commandList);
 
-	D3D12_RESOURCE_BARRIER transitionToRenderTarget{};
-	transitionToRenderTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	transitionToRenderTarget.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	transitionToRenderTarget.Transition.pResource = presentTexture;
-	transitionToRenderTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	transitionToRenderTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	transitionToRenderTarget.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	nativeCommandList->ResourceBarrier(1, &transitionToRenderTarget);
-
-	BindPresentDescriptorHeaps(*nativeCommandList);
-
-	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_swapChain->GetCPUHandle();
-	nativeCommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
+	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
+	commandList.SetRenderTarget(renderTargetView);
 
 	static constexpr float defaultClearColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-	nativeCommandList->ClearRenderTargetView(renderTargetView, clearColor != nullptr ? clearColor : defaultClearColor, 0, nullptr);
+	commandList.ClearRenderTarget(renderTargetView, clearColor != nullptr ? clearColor : defaultClearColor);
 }
 
-void D3D12RenderHardwareInterface::BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept
+void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 {
-	if (m_swapChain == nullptr || !commandList)
+	if (m_swapChain == nullptr)
 	{
 		return;
 	}
 
-	auto* nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList);
-	ID3D12Resource* presentTexture = m_swapChain->GetCurrentResource();
-	if (nativeCommandList == nullptr || presentTexture == nullptr)
+	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	if (!presentTexture)
 	{
 		return;
 	}
 
-	D3D12_RESOURCE_BARRIER transitionToRenderTarget{};
-	transitionToRenderTarget.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	transitionToRenderTarget.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	transitionToRenderTarget.Transition.pResource = presentTexture;
-	transitionToRenderTarget.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	transitionToRenderTarget.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	transitionToRenderTarget.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	nativeCommandList->ResourceBarrier(1, &transitionToRenderTarget);
+	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
+	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
+	SetShaderVisibleDescriptorHeaps(commandList);
 
-	BindPresentDescriptorHeaps(*nativeCommandList);
-
-	const D3D12_CPU_DESCRIPTOR_HANDLE renderTargetView = m_swapChain->GetCPUHandle();
-	nativeCommandList->OMSetRenderTargets(1, &renderTargetView, FALSE, nullptr);
+	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
+	commandList.SetRenderTarget(renderTargetView);
 }
 
-void D3D12RenderHardwareInterface::EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept
+void D3D12RenderHardwareInterface::EndPresentRenderPass() noexcept
 {
-	if (m_swapChain == nullptr || !commandList)
+	if (m_swapChain == nullptr)
 	{
 		return;
 	}
 
-	auto* nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList);
-	ID3D12Resource* presentTexture = m_swapChain->GetCurrentResource();
-	if (nativeCommandList == nullptr || presentTexture == nullptr)
+	NativeResourceHandle presentTexture{m_swapChain->GetCurrentResource()};
+	if (!presentTexture)
 	{
 		return;
 	}
 
-	D3D12_RESOURCE_BARRIER transitionToPresent{};
-	transitionToPresent.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	transitionToPresent.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	transitionToPresent.Transition.pResource = presentTexture;
-	transitionToPresent.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	transitionToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	transitionToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	nativeCommandList->ResourceBarrier(1, &transitionToPresent);
-}
-
-void D3D12RenderHardwareInterface::BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept
-{
-	ID3D12DescriptorHeap* heaps[2] = {};
-	UINT heapCount = 0;
-	if (m_descriptorHeapManager != nullptr)
-	{
-		if (D3D12DescriptorHeap* srvHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV))
-		{
-			heaps[heapCount++] = srvHeap->GetRaw();
-		}
-
-		if (D3D12DescriptorHeap* samplerHeap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER))
-		{
-			heaps[heapCount++] = samplerHeap->GetRaw();
-		}
-	}
-
-	if (heapCount > 0)
-	{
-		commandList.SetDescriptorHeaps(heapCount, heaps);
-	}
+	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
+	commandList.TransitionResource(presentTexture, ResourceState::RenderTarget, ResourceState::Present);
 }
 
 PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept

@@ -35,11 +35,9 @@ void RuntimeConsoleHost::RenderFrameWithOverlay(Renderer& renderer, RuntimeUpdat
 	m_overlay->Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-	const NativeGraphicsCommandListHandle commandListHandle =
-	    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
-	renderHardware.BeginPresentOverlayPass(commandListHandle);
-	m_overlay->Render(commandListHandle);
-	renderHardware.EndPresentRenderPass(commandListHandle);
+	renderHardware.BeginPresentOverlayPass();
+	m_overlay->Render();
+	renderHardware.EndPresentRenderPass();
 
 	renderer.SubmitHostFrame();
 }

@@ -35,13 +35,12 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;
 	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
-	virtual NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept = 0;
 	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual bool InitializeImGuiBackend() = 0;
 	virtual void BeginImGuiFrame() noexcept = 0;
-	virtual void RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept = 0;
+	virtual void RenderImGuiDrawData(ImDrawData* drawData) noexcept = 0;
 	virtual void ShutdownImGuiBackend() noexcept = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
@@ -134,13 +133,8 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
 	    RhiCpuDescriptorHandle destination) = 0;
 	virtual bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept = 0;
-	virtual void TransitionResource(
-	    NativeGraphicsCommandListHandle commandList,
-	    NativeResourceHandle resource,
-	    ResourceState before,
-	    ResourceState after) const noexcept = 0;
-	virtual void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept = 0;
-	virtual void BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept = 0;
-	virtual void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept = 0;
+	virtual void BeginPresentRenderPass(const float clearColor[4]) noexcept = 0;
+	virtual void BeginPresentOverlayPass() noexcept = 0;
+	virtual void EndPresentRenderPass() noexcept = 0;
 	virtual PixelFormat GetPresentColorFormat() const noexcept = 0;
 };

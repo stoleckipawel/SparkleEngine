@@ -33,9 +33,9 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(queue.Value), debugName);
 	}
 
-	void SetDebugName(NativeGraphicsCommandListHandle commandList, std::wstring_view debugName) noexcept override
+	void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept override
 	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(commandList.Value), debugName);
+		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(commandList.GetNativeHandle().Value), debugName);
 	}
 
 	void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept override

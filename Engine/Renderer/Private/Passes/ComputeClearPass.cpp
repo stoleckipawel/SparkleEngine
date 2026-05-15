@@ -5,7 +5,7 @@
 #include "GPU/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "FrameGraph/FrameGraph.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Passes/PassUtilities.h"

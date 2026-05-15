@@ -29,7 +29,7 @@ class RuntimeConsoleOverlay final
 	RuntimeConsoleOverlay& operator=(RuntimeConsoleOverlay&&) = delete;
 
 	void Update();
-	void Render(NativeGraphicsCommandListHandle commandList) noexcept;
+	void Render() noexcept;
 	bool IsVisible() const noexcept { return m_isVisible; }
 
   private:

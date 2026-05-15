@@ -12,7 +12,7 @@
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassBindingOverrides.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"

@@ -239,13 +239,9 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	return m_frameGraph->ResolveShaderResourceView(TextureHandle{resourceHandle}).Value;
 }
 
-void Renderer::TransitionRenderProduct(
-    NativeGraphicsCommandListHandle commandList,
-    RenderProductHandle handle,
-    ResourceState before,
-    ResourceState after) const noexcept
+void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept
 {
-	if (!commandList || !handle || !m_frameGraph)
+	if (!handle || !m_frameGraph)
 	{
 		return;
 	}
@@ -264,7 +260,9 @@ void Renderer::TransitionRenderProduct(
 		return;
 	}
 
-	GetRenderHardwareInterface().TransitionResource(commandList, resource, resolvedBefore, after);
+	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
+	RenderCommandList& commandList = renderHardware.GetGraphicsCommandList(renderHardware.GetCurrentFrameIndex());
+	commandList.TransitionResource(resource, resolvedBefore, after);
 	m_frameGraph->UpdateTrackedResourceState(resourceHandle, after);
 }
 

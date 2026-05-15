@@ -39,13 +39,12 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
-	NativeGraphicsCommandListHandle GetGraphicsCommandListHandle(std::uint32_t frameIndex) const noexcept override;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	bool InitializeImGuiBackend() override;
 	void BeginImGuiFrame() noexcept override;
-	void RenderImGuiDrawData(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept override;
+	void RenderImGuiDrawData(ImDrawData* drawData) noexcept override;
 	void ShutdownImGuiBackend() noexcept override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
@@ -135,14 +134,9 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
 	    RhiCpuDescriptorHandle destination) override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
-	void TransitionResource(
-	    NativeGraphicsCommandListHandle commandList,
-	    NativeResourceHandle resource,
-	    ResourceState before,
-	    ResourceState after) const noexcept override;
-	void BeginPresentRenderPass(NativeGraphicsCommandListHandle commandList, const float clearColor[4]) const noexcept override;
-	void BeginPresentOverlayPass(NativeGraphicsCommandListHandle commandList) const noexcept override;
-	void EndPresentRenderPass(NativeGraphicsCommandListHandle commandList) const noexcept override;
+	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
+	void BeginPresentOverlayPass() noexcept override;
+	void EndPresentRenderPass() noexcept override;
 	PixelFormat GetPresentColorFormat() const noexcept override;
 	void SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept;
 
@@ -170,7 +164,6 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
-	void BindPresentDescriptorHeaps(ID3D12GraphicsCommandList& commandList) const noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;

@@ -7,7 +7,7 @@
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include <cassert>

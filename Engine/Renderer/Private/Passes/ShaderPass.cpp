@@ -1,7 +1,7 @@
 #include "../PCH.h"
 #include "Passes/ShaderPass.h"
 
-#include "Renderer/Public/FrameGraph/PassBuilder.h"
+#include "FrameGraph/Builder/PassBuilder.h"
 #include "GPU/CommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 

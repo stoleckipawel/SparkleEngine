@@ -192,14 +192,14 @@ void RuntimeConsoleOverlay::Update()
 	ImGui::Render();
 }
 
-void RuntimeConsoleOverlay::Render(NativeGraphicsCommandListHandle commandList) noexcept
+void RuntimeConsoleOverlay::Render() noexcept
 {
 	if (!IsReady() || !m_isVisible)
 	{
 		return;
 	}
 
-	m_renderHardware->RenderImGuiDrawData(commandList, ImGui::GetDrawData());
+	m_renderHardware->RenderImGuiDrawData(ImGui::GetDrawData());
 }
 
 void RuntimeConsoleOverlay::BuildUI()

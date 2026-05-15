@@ -294,22 +294,17 @@ bool RhiSmokeValidationRunner::TickEditor(
 	ui.Update();
 
 	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-	const NativeGraphicsCommandListHandle commandListHandle =
-	    renderHardware.GetGraphicsCommandListHandle(renderHardware.GetCurrentFrameIndex());
-
 	renderer.TransitionRenderProduct(
-	    commandListHandle,
 	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::RenderTarget,
 	    ResourceState::ShaderResource);
 
 	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	renderHardware.BeginPresentRenderPass(commandListHandle, editorClearColor);
+	renderHardware.BeginPresentRenderPass(editorClearColor);
 	ui.Render();
-	renderHardware.EndPresentRenderPass(commandListHandle);
+	renderHardware.EndPresentRenderPass();
 
 	renderer.TransitionRenderProduct(
-	    commandListHandle,
 	    viewportProducts.GetSceneColor().Handle,
 	    ResourceState::ShaderResource,
 	    ResourceState::Common);

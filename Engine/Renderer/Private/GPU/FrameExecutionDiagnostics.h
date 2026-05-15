@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Public/FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassFlags.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"

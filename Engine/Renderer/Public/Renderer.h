@@ -58,11 +58,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
 	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept;
-	void TransitionRenderProduct(
-	    NativeGraphicsCommandListHandle commandList,
-	    RenderProductHandle handle,
-	    ResourceState before,
-	    ResourceState after) const noexcept;
+	void TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept;
 
 	void OnRender() noexcept;
 

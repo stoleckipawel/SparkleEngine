@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Renderer/Public/RendererAPI.h"
-#include "Renderer/Public/FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphPassFlags.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
-#include "Renderer/Public/FrameGraph/PassResourceDeclaration.h"
-#include "Renderer/Public/FrameGraph/PassBuilder.h"
+#include "FrameGraph/PassResourceDeclaration.h"
+#include "FrameGraph/Builder/PassBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/BufferHandle.h"
 #include "FrameGraph/ResourceRegistry.h"
-#include "Renderer/Public/FrameGraph/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/ResourceHandle.h"
 #include "Renderer/Public/FrameGraph/TextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"

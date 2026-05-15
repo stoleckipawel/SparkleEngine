@@ -1,5 +1,5 @@
 #include "PCH.h"
-#include "Renderer/Public/FrameGraph/PassBuilder.h"
+#include "FrameGraph/Builder/PassBuilder.h"
 
 #include "FrameGraph/FrameGraph.h"
 

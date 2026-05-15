@@ -479,9 +479,7 @@ void UI::Render() noexcept
 		return;
 	}
 
-	const NativeGraphicsCommandListHandle commandList =
-	    m_renderHardware->GetGraphicsCommandListHandle(m_renderHardware->GetCurrentFrameIndex());
-	m_renderHardware->RenderImGuiDrawData(commandList, ImGui::GetDrawData());
+	m_renderHardware->RenderImGuiDrawData(ImGui::GetDrawData());
 }
 
 UI::~UI() noexcept
