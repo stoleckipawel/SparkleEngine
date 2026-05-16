@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Core/RhiBackendSelection.h"
 #include "../RHIAPI.h"
 #include "RenderHardwareInterface.h"
 
@@ -13,6 +14,7 @@ class SPARKLE_RHI_API RenderDeviceServices final
 {
   public:
 	static std::unique_ptr<RenderDeviceServices> Create(Timer& timer, Window& window) noexcept;
+	static std::unique_ptr<RenderDeviceServices> Create(Timer& timer, Window& window, RhiBackendSelection selection) noexcept;
 
 	~RenderDeviceServices() noexcept;
 

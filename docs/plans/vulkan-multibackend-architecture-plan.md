@@ -17,7 +17,7 @@ The goal is not to bolt Vulkan beside D3D12. The goal is to force a cleaner, por
 | Binding model | Bindful first, bindless-ready later | Descriptor/binding APIs must not block descriptor indexing or direct heap indexing later |
 | Memory | D3D12MA for D3D12, VMA for Vulkan | Shared RHI memory diagnostics and categories; backend-private allocator engines |
 | Threading | Single-threaded now, multithreading-ready | Avoid global mutable backend state that blocks command recording parallelism later |
-| Build cadence | No build after every phase | Code phases are source-gated; full validation happens after large milestones or at the end |
+| Build cadence | No build after every prompt | Code phases are source-gated; build/runtime validation happens only at milestone checkpoints or by explicit request |
 
 ## What We Are Optimizing For
 
@@ -337,7 +337,7 @@ The migration should be done intentionally as part of Vulkan-readiness, not as a
 
 ## Implementation Roadmap
 
-This roadmap uses phases that can be coded without running full builds after each prompt. Use source gates and focused validation while coding. Full build/runtime validation happens at milestone boundaries.
+This roadmap uses phases that can be coded without building after each prompt. Use source gates and focused validation while coding. Build/runtime validation happens at milestone boundaries or by explicit user request.
 
 The phases are intentionally numerous. This is not the shortest route to a Vulkan backend; it is the route that makes each concept visible while coding. Each phase should produce one concrete artifact that can be inspected in the repo: a boundary script, a neutral RHI type, a backend service, a Vulkan object owner, a translation table, a diagnostic snapshot, or a deleted legacy path.
 
@@ -349,7 +349,7 @@ Name the concept being learned.
 Make the smallest architectural change that teaches that concept.
 Add or update a source validation gate when the concept affects boundaries.
 Mark the phase coding done.
-Do not run full builds until the milestone checkpoint unless explicitly requested.
+Do not build the project until the milestone checkpoint unless explicitly requested.
 ```
 
 Each phase should answer three questions before moving on:
@@ -943,7 +943,9 @@ Every implementation prompt in this plan should preserve these rules unless the 
 7. Use D3D12MA for D3D12 allocations and VMA for Vulkan allocations from the first real backend resource phase.
 8. Keep bindful rendering working first, but do not block descriptor indexing, bindless tables, or direct heap indexing later.
 9. Keep the current single-threaded execution path simple, but avoid global ownership that would block future per-thread command pools or descriptor pages.
-10. Do not run full solution builds after every prompt. Use source gates and focused checks during implementation; reserve full validation for milestone checkpoints.
+10. Do not build the project after each prompt. Prompt-level validation should use source gates, text checks, docs checks, and targeted script checks only. Build and runtime validation are reserved for milestone checkpoints or an explicit user request.
+
+Prompt validation is intentionally not the same as build validation. If a phase changes signatures, CMake structure, or runtime behavior enough that a build will be needed, record that as a milestone validation item instead of running it at the end of the prompt.
 
 Each prompt should end with:
 
@@ -979,6 +981,7 @@ Constraints:
 1. Do not run a full build.
 2. Do not refactor implementation code yet.
 3. Do not mark a feature unsupported silently. Every gap must have a reason.
+4. Do not build the project after this prompt; mark build-sensitive findings for the next milestone checkpoint.
 
 Deliverables:
 1. Parity inventory with feature status.
@@ -989,6 +992,7 @@ Deliverables:
 Validation:
 1. Run text/source checks relevant to the inventory.
 2. Run trailing whitespace check on edited docs.
+3. Record any build-sensitive findings for milestone validation instead of building now.
 ```
 
 ### Phase 1 Execution Prompt
@@ -1020,7 +1024,7 @@ Deliverables:
 
 Validation:
 1. Run source boundary checks.
-2. Run focused compile only if signatures changed broadly; otherwise defer build to milestone.
+2. Do not build after this prompt; record broad signature changes for the M1 milestone build.
 ```
 
 ### Phase 2 Execution Prompt
@@ -1052,7 +1056,7 @@ Deliverables:
 
 Validation:
 1. Run CMake/source validation scripts that do not require a full build.
-2. Defer full target builds to M1 unless the CMake graph cannot be reasoned about from source.
+2. Do not build after this prompt; record CMake graph risks for the M1 milestone build.
 ```
 
 ### Phase 3 Execution Prompt
@@ -1180,7 +1184,7 @@ Deliverables:
 
 Validation:
 1. Run shader package/source validation.
-2. Defer full shader rebuild unless this phase changes the cook tools directly.
+2. Do not build or rebuild shaders after this prompt; record shader rebuild needs for milestone validation.
 ```
 
 ### Phase 7 Execution Prompt
@@ -1212,7 +1216,7 @@ Deliverables:
 
 Validation:
 1. Run source validation and CMake configure validation if available.
-2. Do not run a full build unless CMake changes require a focused configure/build checkpoint.
+2. Do not build after this prompt; record configure/build risks for the M2 milestone checkpoint.
 ```
 
 ### Phase 8 Execution Prompt
@@ -1245,7 +1249,7 @@ Deliverables:
 
 Validation:
 1. Run source boundary gates.
-2. Run a focused Vulkan backend build/startup smoke only at the M2 checkpoint or if the user asks.
+2. Do not build after this prompt; record Vulkan startup risks for the M2 milestone checkpoint.
 ```
 
 ### Phase 9 Execution Prompt
@@ -1278,7 +1282,7 @@ Deliverables:
 
 Validation:
 1. Run source gates.
-2. Defer runtime smoke until the M2 checkpoint unless explicitly requested.
+2. Do not run runtime smoke after this prompt; record present-flow risks for the M2 milestone checkpoint.
 ```
 
 ### Phase 10 Execution Prompt
@@ -1310,7 +1314,7 @@ Deliverables:
 
 Validation:
 1. Run source gates.
-2. Run focused backend build at M2 checkpoint.
+2. Do not build after this prompt; this phase contributes to the M2 milestone build checklist.
 ```
 
 ### Phase 11 Execution Prompt
@@ -1637,8 +1641,8 @@ Deliverables:
 
 Validation:
 1. Run all source gates.
-2. Run focused D3D12 and Vulkan builds.
-3. Run final runtime smoke for both backends when available.
+2. Add focused D3D12 and Vulkan builds to the M5 milestone validation checklist.
+3. Add final runtime smoke for both backends to the M5 milestone validation checklist when available.
 ```
 
 ## Suggested Milestones
@@ -1653,15 +1657,15 @@ Validation:
 
 ## Validation Strategy
 
-The user preference is coding-first, no full build after every phase. The plan follows that.
+The user preference is coding-first, with no project build after every prompt. The plan follows that.
 
 During coding phases:
 
 ```text
 Run source boundary gates.
 Run format/diff checks.
-Run focused builds only at milestone edges or when signatures change heavily.
-Avoid full solution builds until the end of a milestone or explicit user request.
+Do not build during ordinary prompt-level validation, even when signatures change heavily; record those risks for the milestone checkpoint.
+Avoid project builds until the end of a milestone or explicit user request.
 ```
 
 End-of-milestone validation:
