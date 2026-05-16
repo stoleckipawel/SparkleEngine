@@ -14,6 +14,7 @@
 #include "Config/RenderConfig.h"
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
+#include "Diagnostics/RendererMemoryMonitor.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/FrameContext.h"
@@ -208,6 +209,11 @@ TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const
 	return m_textureManager != nullptr ? m_textureManager->CaptureDiagnosticsSnapshot() : TextureDiagnosticsSnapshot{};
 }
 
+RendererMemoryDiagnosticsSnapshot Renderer::CaptureMemoryDiagnostics() const
+{
+	return m_memoryMonitor != nullptr ? m_memoryMonitor->GetLatestSnapshot() : RendererMemoryDiagnosticsSnapshot{};
+}
+
 void Renderer::PrepareHostFrame() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.PrepareHostFrame");
@@ -284,6 +290,7 @@ void Renderer::InitializeCoreSystems() noexcept
 	}
 
 	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
+	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
 	{
@@ -408,6 +415,10 @@ void Renderer::SetupFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame begin");
 
 	m_timer->Tick();
+	if (m_memoryMonitor != nullptr)
+	{
+		m_memoryMonitor->Tick(m_timer->GetFrameCount());
+	}
 	RefreshViewportRenderProducts();
 
 	m_sceneSnapshot->Capture(*m_gameScene);

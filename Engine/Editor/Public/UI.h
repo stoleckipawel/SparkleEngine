@@ -2,6 +2,7 @@
 
 #include "EditorAPI.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
+#include "../../Renderer/Public/Diagnostics/RendererMemoryDiagnostics.h"
 #include "../../Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "../../Renderer/Public/Resources/Textures/TextureDiagnostics.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
@@ -44,6 +45,7 @@ struct EditorDiagnosticsProviders final
 	std::function<std::uint64_t()> ShaderPackageGeneration;
 	std::function<MeshDiagnosticsSnapshot()> MeshDiagnostics;
 	std::function<TextureDiagnosticsSnapshot()> TextureDiagnostics;
+	std::function<RendererMemoryDiagnosticsSnapshot()> MemoryDiagnostics;
 };
 
 class SPARKLE_EDITOR_API UI final
@@ -62,6 +64,7 @@ class SPARKLE_EDITOR_API UI final
 	void SetViewportRenderProducts(const ViewportRenderProducts& products) noexcept;
 	void SetViewportSceneColorTextureId(std::uint64_t textureId) noexcept;
 	void SetDiagnosticsProviders(EditorDiagnosticsProviders providers);
+	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	EditorConsoleSystem* GetEditorConsoleSystem() noexcept { return m_editorConsoleSystem.get(); }
 	bool ConsumeShaderReloadRequest() noexcept;
 	bool ConsumeShaderRecookRequest() noexcept;
@@ -109,6 +112,7 @@ class SPARKLE_EDITOR_API UI final
 	std::function<std::uint64_t()> m_shaderPackageGenerationProvider;
 	std::function<MeshDiagnosticsSnapshot()> m_meshDiagnosticsProvider;
 	std::function<TextureDiagnosticsSnapshot()> m_textureDiagnosticsProvider;
+	std::function<RendererMemoryDiagnosticsSnapshot()> m_memoryDiagnosticsProvider;
 	bool m_shaderReloadRequested = false;
 	bool m_shaderRecookRequested = false;
 	bool m_isImGuiContextInitialized = false;

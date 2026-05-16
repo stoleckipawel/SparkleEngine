@@ -6,6 +6,7 @@
 #include "../../RHI/Public/Device/RenderHardwareInterface.h"
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
+#include "Diagnostics/RendererMemoryDiagnostics.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 
@@ -30,6 +31,7 @@ class PerViewDataBuilder;
 class RenderSceneDataBuilder;
 class ViewLightingBuilder;
 class FrameExecutionDiagnostics;
+class RendererMemoryMonitor;
 struct RenderSceneSnapshot;
 struct ResolvedGpuTiming;
 
@@ -54,6 +56,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;
 	TextureDiagnosticsSnapshot CaptureTextureDiagnostics() const;
+	RendererMemoryDiagnosticsSnapshot CaptureMemoryDiagnostics() const;
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
@@ -88,6 +91,7 @@ class SPARKLE_RENDERER_API Renderer final
 
 	std::unique_ptr<RenderDeviceServices> m_backend;
 	std::unique_ptr<PipelineStateManager> m_pipelineStateManager;
+	std::unique_ptr<RendererMemoryMonitor> m_memoryMonitor;
 	std::unique_ptr<GPUMeshCache> m_gpuMeshCache;
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;

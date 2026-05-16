@@ -75,6 +75,7 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 	m_shaderPackageGenerationProvider = std::move(providers.ShaderPackageGeneration);
 	m_meshDiagnosticsProvider = std::move(providers.MeshDiagnostics);
 	m_textureDiagnosticsProvider = std::move(providers.TextureDiagnostics);
+	m_memoryDiagnosticsProvider = std::move(providers.MemoryDiagnostics);
 
 	if (m_usedShadersPanel)
 	{
@@ -91,6 +92,11 @@ void UI::SetDiagnosticsProviders(EditorDiagnosticsProviders providers)
 		m_usedTexturesPanel->SetDiagnosticsProvider(m_textureDiagnosticsProvider);
 	}
 	ConfigureMainMenuBarWindowActions();
+}
+
+RendererMemoryDiagnosticsSnapshot UI::CaptureMemoryDiagnostics() const
+{
+	return m_memoryDiagnosticsProvider ? m_memoryDiagnosticsProvider() : RendererMemoryDiagnosticsSnapshot{};
 }
 
 bool UI::ConsumeShaderReloadRequest() noexcept

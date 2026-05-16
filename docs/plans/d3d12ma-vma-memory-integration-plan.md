@@ -565,6 +565,8 @@ Diagnostics output contract:
 
 ### Phase 5 Prompt: Budget-Aware Streaming Hooks
 
+Status: implemented. Renderer now polls `RenderMemoryDiagnostics` on a fixed frame cadence through `RendererMemoryMonitor`, classifies category pressure, exposes a backend-neutral memory diagnostics snapshot, provides texture streaming pressure decisions, and makes scene/model memory reports plus largest named allocations available through Renderer and the editor diagnostics provider seam.
+
 ```text
 Implement Phase 5 of docs/plans/d3d12ma-vma-memory-integration-plan.md: consume memory diagnostics in renderer/asset policy hooks without making D3D12MA own streaming decisions.
 

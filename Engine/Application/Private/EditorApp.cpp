@@ -60,6 +60,10 @@ void EditorApp::Initialize()
 		    .TextureDiagnostics = [&renderer]()
 		    {
 			    return renderer.CaptureTextureDiagnostics();
+		    },
+		    .MemoryDiagnostics = [&renderer]()
+		    {
+			    return renderer.CaptureMemoryDiagnostics();
 		    }});
 		ShaderConsoleCommands::ConnectEditor(*m_ui, *m_shaderRecookCoordinator);
 	}
