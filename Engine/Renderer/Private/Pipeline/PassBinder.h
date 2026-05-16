@@ -50,7 +50,7 @@ class PassBinder final
 	    const PassParameterBinding* parameterBinding,
 	    const PassBindingOverrides* overrides,
 	    bool isCompute);
-	static void BindRootGpuAddress(
+	static void BindGpuAddress(
 	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    RhiGpuVirtualAddress gpuAddress,
@@ -70,7 +70,7 @@ class PassBinder final
 	    const CompiledBinding& compiledBinding,
 	    RhiDescriptorTableBinding descriptorTable,
 	    bool isCompute);
-	static void BindRootConstants(
+	static void BindPushConstants(
 	    RenderCommandContext& cmd,
 	    const CompiledBinding& compiledBinding,
 	    const void* data,

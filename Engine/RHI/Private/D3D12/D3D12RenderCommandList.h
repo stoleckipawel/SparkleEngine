@@ -22,23 +22,23 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
-	void BindGraphicsConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindGraphicsShaderResource(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindGraphicsUnorderedAccess(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
-	void BindGraphicsDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
-	void SetGraphicsRootConstants(
-	    std::uint32_t rootParameterIndex,
+	void BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
+	void BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
+	void SetGraphicsPushConstants(
+	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept override;
-	void BindComputeConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindComputeShaderResource(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindComputeUnorderedAccess(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
-	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
-	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
-	void SetComputeRootConstants(
-	    std::uint32_t rootParameterIndex,
+	void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindComputeShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept override;
+	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept override;
+	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept override;
+	void SetComputePushConstants(
+	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept override;

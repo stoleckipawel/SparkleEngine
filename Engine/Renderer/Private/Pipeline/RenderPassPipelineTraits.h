@@ -37,7 +37,7 @@ template <> struct RenderPassPipelineTraits<GBufferPass>
 		        .Package = GBufferPass::DescribeGBufferShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Graphics,
 		        .AllowInputAssemblerInputLayout = true,
-		        .BindingLayoutDebugName = L"GBuffer_RootSignature",
+		        .BindingLayoutDebugName = L"GBuffer_BindingLayout",
 		        .PipelineStateDebugName = L"GBuffer_PipelineState"},
 		    storage,
 		    [](GraphicsPipelineStateDesc& pipelineDesc)
@@ -83,7 +83,7 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 		        .PackageDeclarationName = "ComputeShaderPackage",
 		        .Package = ComputeClearPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"ComputeClear_RootSignature",
+		        .BindingLayoutDebugName = L"ComputeClear_BindingLayout",
 		        .PipelineStateDebugName = L"ComputeClear_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)
@@ -117,7 +117,7 @@ template <> struct RenderPassPipelineTraits<DirectLightingPass>
 		        .PackageDeclarationName = "DirectLightingShaderPackage",
 		        .Package = DirectLightingPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"DirectLighting_RootSignature",
+		        .BindingLayoutDebugName = L"DirectLighting_BindingLayout",
 		        .PipelineStateDebugName = L"DirectLighting_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)
@@ -151,7 +151,7 @@ template <> struct RenderPassPipelineTraits<IndirectLightingPass>
 		        .PackageDeclarationName = "IndirectLightingShaderPackage",
 		        .Package = IndirectLightingPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"IndirectLighting_RootSignature",
+		        .BindingLayoutDebugName = L"IndirectLighting_BindingLayout",
 		        .PipelineStateDebugName = L"IndirectLighting_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)
@@ -185,7 +185,7 @@ template <> struct RenderPassPipelineTraits<LightingCompositePass>
 		        .PackageDeclarationName = "LightingCompositeShaderPackage",
 		        .Package = LightingCompositePass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"LightingComposite_RootSignature",
+		        .BindingLayoutDebugName = L"LightingComposite_BindingLayout",
 		        .PipelineStateDebugName = L"LightingComposite_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)
@@ -219,7 +219,7 @@ template <> struct RenderPassPipelineTraits<SkyPass>
 		        .PackageDeclarationName = "SkyShaderPackage",
 		        .Package = SkyPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"Sky_RootSignature",
+		        .BindingLayoutDebugName = L"Sky_BindingLayout",
 		        .PipelineStateDebugName = L"Sky_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)
@@ -253,7 +253,7 @@ template <> struct RenderPassPipelineTraits<VisualizeBuffersPass>
 		        .PackageDeclarationName = "VisualizeBuffersShaderPackage",
 		        .Package = VisualizeBuffersPass::DescribeShaderPackage(),
 		        .PipelineKind = RenderPassShaderPipelineKind::Compute,
-		        .BindingLayoutDebugName = L"VisualizeBuffers_RootSignature",
+		        .BindingLayoutDebugName = L"VisualizeBuffers_BindingLayout",
 		        .PipelineStateDebugName = L"VisualizeBuffers_PipelineState"},
 		    storage,
 		    [](ComputePipelineStateDesc&)

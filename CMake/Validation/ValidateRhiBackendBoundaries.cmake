@@ -115,6 +115,16 @@ if(EXISTS "${rhi_public_root}")
                 "CreateBufferShaderResourceView"
                 "CreateBufferUnorderedAccessView"
                 "CreateRayTracingAccelerationStructureShaderResourceView"
+                "RootParameterIndex"
+                "RootConstantBufferView"
+                "RootShaderResourceView"
+                "RootUnorderedAccessView"
+                "DescriptorTableShaderResourceView"
+                "DescriptorTableUnorderedAccessView"
+                "DescriptorTableSampler"
+                "InlineUniformDataAsRootConstants"
+                "SetGraphicsRootConstants"
+                "SetComputeRootConstants"
             DESCRIPTION "public RHI vocabulary must use neutral memory block, aliasing resource, and global binding state names"
         )
     endforeach()
@@ -125,6 +135,14 @@ if(EXISTS "${rhi_public_root}")
         require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "RhiResourceViewDesc" "public RHI must describe logical resource views independently of native descriptors")
         require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "RhiResourceViewHandle" "public RHI must identify views independently of D3D12 CPU/GPU descriptor handles")
         require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "AccelerationStructureShaderResource" "view model must include acceleration-structure SRV intent")
+    endif()
+
+    set(rhi_pipeline_state_path "${rhi_public_root}/Pipeline/RhiPipelineStateDesc.h")
+    read_required_file("${rhi_pipeline_state_path}" rhi_pipeline_state_text)
+    if(rhi_pipeline_state_text)
+        require_text("${rhi_pipeline_state_path}" "${rhi_pipeline_state_text}" "RhiBindingPoint" "binding layouts must expose neutral set/binding coordinates")
+        require_text("${rhi_pipeline_state_path}" "${rhi_pipeline_state_text}" "RhiBindlessBindingMetadata" "binding layouts must reserve future bindless metadata without enabling bindless behavior")
+        require_text("${rhi_pipeline_state_path}" "${rhi_pipeline_state_text}" "PushConstants" "push constants/root constants must share one public RHI description")
     endif()
 endif()
 
@@ -217,6 +235,12 @@ foreach(high_level_root IN LISTS high_level_roots)
                 "SetShaderVisibleDescriptorHeaps"
                 "SetDescriptorHeaps"
                 "NativeDescriptorHeapHandle"
+                "RootParameterIndex"
+                "SetRoot32BitConstants"
+                "BindRootShaderResourceView"
+                "BindRootUnorderedAccessView"
+                "RootConstants"
+                "RootSignature"
             DESCRIPTION "Application, Editor, GameFramework, and Renderer must use backend-neutral RHI surfaces"
         )
     endforeach()

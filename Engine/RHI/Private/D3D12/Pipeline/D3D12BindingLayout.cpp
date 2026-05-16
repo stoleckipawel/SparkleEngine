@@ -69,7 +69,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    shaderPackage,
 					    parameterDesc,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-					    CompiledBindingType::DescriptorTableShaderResourceView,
+					    CompiledBindingType::ReadOnlyResourceTable,
 					    srvRegister);
 					break;
 				case ShaderParameterSemanticKind::AccelerationStructure:
@@ -94,7 +94,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    shaderPackage,
 					    parameterDesc,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
-					    CompiledBindingType::DescriptorTableUnorderedAccessView,
+					    CompiledBindingType::ReadWriteResourceTable,
 					    uavRegister);
 					break;
 				case ShaderParameterSemanticKind::SamplerSet:
@@ -107,7 +107,7 @@ class D3D12BindingLayoutCompilerImpl final
 					    shaderPackage,
 					    parameterDesc,
 					    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,
-					    CompiledBindingType::DescriptorTableSampler,
+					    CompiledBindingType::SamplerTable,
 					    samplerRegister);
 					break;
 				case ShaderParameterSemanticKind::RenderTarget:
@@ -281,10 +281,10 @@ class D3D12BindingLayoutCompilerImpl final
 			const std::uint32_t shaderRegister = reflectedLocation.Register;
 			const std::uint32_t registerSpace = reflectedLocation.RegisterSpace;
 
-			if (desc.InlineUniformDataAsRootConstants)
+			if (desc.InlineUniformDataAsPushConstants)
 			{
 				assert((bindingRecord.ValueSizeInBytes % sizeof(std::uint32_t)) == 0);
-				const std::uint32_t rootParameterIndex = builder.AddRootConstants(
+				const std::uint32_t bindingIndex = builder.AddRootConstants(
 				    bindingRecord.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t)),
 				    shaderRegister,
 				    registerSpace,
@@ -292,23 +292,23 @@ class D3D12BindingLayoutCompilerImpl final
 				bindings.push_back(
 				    CompiledBinding{
 				        .Name = bindingNames.back().c_str(),
-				        .Type = CompiledBindingType::RootConstants,
-				        .RootParameterIndex = rootParameterIndex,
-				        .ShaderRegister = shaderRegister,
-				        .RegisterSpace = registerSpace,
-				        .DescriptorCount = bindingRecord.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t))});
+				        .Type = CompiledBindingType::PushConstants,
+				        .BindingIndex = bindingIndex,
+				        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
+				        .VisibilityMask = reflectedLocation.VisibilityMask,
+				        .PushConstantCount = bindingRecord.ValueSizeInBytes / static_cast<std::uint32_t>(sizeof(std::uint32_t))});
 				cbvRegister = std::max(cbvRegister, shaderRegister + 1u);
 				continue;
 			}
 
-			const std::uint32_t rootParameterIndex = builder.AddConstantBufferView(shaderRegister, registerSpace, visibility);
+			const std::uint32_t bindingIndex = builder.AddConstantBufferView(shaderRegister, registerSpace, visibility);
 			bindings.push_back(
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
-			        .Type = CompiledBindingType::RootConstantBufferView,
-			        .RootParameterIndex = rootParameterIndex,
-			        .ShaderRegister = shaderRegister,
-			        .RegisterSpace = registerSpace,
+			        .Type = CompiledBindingType::ConstantBuffer,
+			        .BindingIndex = bindingIndex,
+			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
+			        .VisibilityMask = reflectedLocation.VisibilityMask,
 			        .DescriptorCount = 1});
 			cbvRegister = std::max(cbvRegister, shaderRegister + 1u);
 		}
@@ -341,15 +341,15 @@ class D3D12BindingLayoutCompilerImpl final
 			bindingNames.emplace_back(bindingName);
 			const std::uint32_t shaderRegister = reflectedLocation.Register;
 			const std::uint32_t registerSpace = reflectedLocation.RegisterSpace;
-			const std::uint32_t rootParameterIndex =
+			const std::uint32_t bindingIndex =
 			    builder.AddDescriptorTable(rangeType, descriptorCount, shaderRegister, registerSpace, visibility);
 			bindings.push_back(
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = bindingType,
-			        .RootParameterIndex = rootParameterIndex,
-			        .ShaderRegister = shaderRegister,
-			        .RegisterSpace = registerSpace,
+			        .BindingIndex = bindingIndex,
+			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
+			        .VisibilityMask = reflectedLocation.VisibilityMask,
 			        .DescriptorCount = descriptorCount});
 			nextShaderRegister = std::max(nextShaderRegister, shaderRegister + descriptorCount);
 		}
@@ -379,14 +379,14 @@ class D3D12BindingLayoutCompilerImpl final
 			bindingNames.emplace_back(bindingName);
 			const std::uint32_t shaderRegister = reflectedLocation.Register;
 			const std::uint32_t registerSpace = reflectedLocation.RegisterSpace;
-			const std::uint32_t rootParameterIndex = builder.AddShaderResourceView(shaderRegister, registerSpace, visibility);
+			const std::uint32_t bindingIndex = builder.AddShaderResourceView(shaderRegister, registerSpace, visibility);
 			bindings.push_back(
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
-			        .Type = CompiledBindingType::RootShaderResourceView,
-			        .RootParameterIndex = rootParameterIndex,
-			        .ShaderRegister = shaderRegister,
-			        .RegisterSpace = registerSpace,
+			        .Type = CompiledBindingType::ReadOnlyAddress,
+			        .BindingIndex = bindingIndex,
+			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
+			        .VisibilityMask = reflectedLocation.VisibilityMask,
 			        .DescriptorCount = 1});
 			nextShaderRegister = std::max(nextShaderRegister, shaderRegister + 1u);
 		}

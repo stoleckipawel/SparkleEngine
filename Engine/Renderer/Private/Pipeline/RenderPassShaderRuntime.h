@@ -27,7 +27,7 @@ struct RenderPassShaderRuntimeDesc final
 	ShaderPackageDefinition Package;
 	RenderPassShaderPipelineKind PipelineKind = RenderPassShaderPipelineKind::Graphics;
 	bool AllowInputAssemblerInputLayout = false;
-	const wchar_t* BindingLayoutDebugName = L"RenderPass_RootSignature";
+	const wchar_t* BindingLayoutDebugName = L"RenderPass_BindingLayout";
 	const wchar_t* PipelineStateDebugName = L"RenderPass_PipelineState";
 };
 

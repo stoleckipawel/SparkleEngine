@@ -13,7 +13,7 @@ enum class PassBindingOverrideType : std::uint8_t
 	ShaderResourceView,
 	UnorderedAccessView,
 	DescriptorTable,
-	RootConstants,
+	PushConstants,
 };
 
 enum class DescriptorTableOverrideKind : std::uint8_t
@@ -43,7 +43,7 @@ class PassBindingOverrides final
 	void SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable);
 	void SetDescriptorTable(const char* name, RhiDescriptorTableHandle descriptorTable);
 	void SetDescriptorTable(const char* name, RhiDescriptorTableBinding descriptorTable);
-	void SetRootConstants(const char* name, const void* data, std::uint32_t constantCount);
+	void SetPushConstants(const char* name, const void* data, std::uint32_t constantCount);
 
 	std::span<const PassBindingOverride> GetOverrides() const noexcept { return m_overrides; }
 	const PassBindingOverride* Find(const char* name, PassBindingOverrideType type) const noexcept;

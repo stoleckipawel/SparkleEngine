@@ -38,23 +38,40 @@ enum class RhiVertexLayoutKind : std::uint8_t
 
 enum class CompiledBindingType : std::uint8_t
 {
-	RootConstantBufferView,
-	RootShaderResourceView,
-	RootUnorderedAccessView,
-	DescriptorTableShaderResourceView,
-	DescriptorTableUnorderedAccessView,
-	DescriptorTableSampler,
-	RootConstants,
+	ConstantBuffer,
+	ReadOnlyAddress,
+	ReadWriteAddress,
+	ReadOnlyResourceTable,
+	ReadWriteResourceTable,
+	SamplerTable,
+	PushConstants,
+};
+
+struct RhiBindingPoint
+{
+	// HLSL register space and SPIR-V descriptor set share Set; HLSL register and SPIR-V binding share Binding.
+	std::uint32_t Set = 0;
+	std::uint32_t Binding = 0;
+};
+
+struct RhiBindlessBindingMetadata
+{
+	// Reserved for descriptor-indexing/bindless layout compilation; bindful paths keep these fields disabled.
+	bool BindlessEligible = false;
+	bool RuntimeSizedArray = false;
+	std::uint32_t ReservedDescriptorCount = 0;
 };
 
 struct CompiledBinding
 {
 	const char* Name = nullptr;
-	CompiledBindingType Type = CompiledBindingType::DescriptorTableShaderResourceView;
-	std::uint32_t RootParameterIndex = 0;
-	std::uint32_t ShaderRegister = 0;
-	std::uint32_t RegisterSpace = 0;
+	CompiledBindingType Type = CompiledBindingType::ReadOnlyResourceTable;
+	std::uint32_t BindingIndex = 0;
+	RhiBindingPoint BindingPoint = {};
+	ShaderStageMask VisibilityMask = ShaderStageMask::None;
 	std::uint32_t DescriptorCount = 0;
+	std::uint32_t PushConstantCount = 0;
+	RhiBindlessBindingMetadata Bindless = {};
 };
 
 struct RenderBindingLayoutCompileDesc
@@ -63,7 +80,7 @@ struct RenderBindingLayoutCompileDesc
 	const LoadedShaderPackage* ShaderPackage = nullptr;
 	bool AllowInputAssemblerInputLayout = false;
 	const wchar_t* DebugName = L"RHI_BindingLayout";
-	bool InlineUniformDataAsRootConstants = false;
+	bool InlineUniformDataAsPushConstants = false;
 };
 
 class SPARKLE_RHI_API RenderBindingLayout

@@ -31,27 +31,27 @@ class SPARKLE_RENDERER_API RenderCommandContext final
 
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept;
 
-	void BindConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
-	void SetRoot32BitConstants(
-	    std::uint32_t rootParameterIndex,
+	void BindConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void SetPushConstants(
+	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
-	void BindRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
-	void BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 
-	void BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
-	void BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept;
-	void BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
-	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
-	void BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept;
-	void SetComputeRoot32BitConstants(
-	    std::uint32_t rootParameterIndex,
+	void BindDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void BindDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
+	void BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept;
+	void BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept;
+	void SetComputePushConstants(
+	    std::uint32_t bindingIndex,
 	    std::uint32_t num32BitValues,
 	    const void* data,
 	    std::uint32_t destOffsetIn32BitValues) noexcept;
-	void BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
-	void BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
+	void BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept;
 
 	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept;
 

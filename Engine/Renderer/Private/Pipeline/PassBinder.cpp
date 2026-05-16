@@ -60,12 +60,12 @@ void PassBindingOverrides::SetDescriptorTable(const char* name, RhiDescriptorTab
 	        .DescriptorTableKind = DescriptorTableOverrideKind::LogicalTable});
 }
 
-void PassBindingOverrides::SetRootConstants(const char* name, const void* data, std::uint32_t constantCount)
+void PassBindingOverrides::SetPushConstants(const char* name, const void* data, std::uint32_t constantCount)
 {
 	m_overrides.push_back(
 	    PassBindingOverride{
 	        .Name = name != nullptr ? name : "",
-	        .Type = PassBindingOverrideType::RootConstants,
+	        .Type = PassBindingOverrideType::PushConstants,
 	        .ConstantsData = data,
 	        .ConstantCount = constantCount});
 }
@@ -196,13 +196,13 @@ void PassBinder::BindCompiledBinding(
 {
 	switch (compiledBinding.Type)
 	{
-		case CompiledBindingType::RootConstantBufferView:
+		case CompiledBindingType::ConstantBuffer:
 		{
 			const PassBindingOverride* bindingOverride =
 			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::ConstantBufferView) : nullptr;
 			if (bindingOverride != nullptr)
 			{
-				BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+				BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 				return;
 			}
 
@@ -210,7 +210,7 @@ void PassBinder::BindCompiledBinding(
 			assert(parameterBinding != nullptr);
 			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
 			assert(uniformData != nullptr);
-			BindRootGpuAddress(
+			BindGpuAddress(
 			    cmd,
 			    compiledBinding,
 			    renderHardwareInterface->AllocateUniformConstantBuffer(
@@ -219,13 +219,13 @@ void PassBinder::BindCompiledBinding(
 			    isCompute);
 			return;
 		}
-		case CompiledBindingType::RootShaderResourceView:
+		case CompiledBindingType::ReadOnlyAddress:
 		{
 			const PassBindingOverride* bindingOverride =
 			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::ShaderResourceView) : nullptr;
 			if (bindingOverride != nullptr)
 			{
-				BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+				BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 				return;
 			}
 
@@ -233,19 +233,19 @@ void PassBinder::BindCompiledBinding(
 			const PassParameterAccelerationStructureBindingData* accelerationStructureData =
 			    parameterBinding->AsAccelerationStructureData();
 			assert(accelerationStructureData != nullptr);
-			BindRootGpuAddress(cmd, compiledBinding, accelerationStructureData->GpuAddress, isCompute);
+			BindGpuAddress(cmd, compiledBinding, accelerationStructureData->GpuAddress, isCompute);
 			return;
 		}
-		case CompiledBindingType::RootUnorderedAccessView:
+		case CompiledBindingType::ReadWriteAddress:
 		{
 			assert(overrides != nullptr);
 			const PassBindingOverride* bindingOverride =
 			    overrides->Find(compiledBinding.Name, PassBindingOverrideType::UnorderedAccessView);
 			assert(bindingOverride != nullptr);
-			BindRootGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
+			BindGpuAddress(cmd, compiledBinding, bindingOverride->GpuAddress, isCompute);
 			return;
 		}
-		case CompiledBindingType::DescriptorTableShaderResourceView:
+		case CompiledBindingType::ReadOnlyResourceTable:
 		{
 			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
 			{
@@ -272,7 +272,7 @@ void PassBinder::BindCompiledBinding(
 			BindDescriptorTable(cmd, compiledBinding, resources.ResolveShaderResourceView(bufferData->Handles[0]), isCompute);
 			return;
 		}
-		case CompiledBindingType::DescriptorTableUnorderedAccessView:
+		case CompiledBindingType::ReadWriteResourceTable:
 		{
 			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
 			{
@@ -299,7 +299,7 @@ void PassBinder::BindCompiledBinding(
 			BindDescriptorTable(cmd, compiledBinding, resources.ResolveUnorderedAccessView(bufferData->Handles[0]), isCompute);
 			return;
 		}
-		case CompiledBindingType::DescriptorTableSampler:
+		case CompiledBindingType::SamplerTable:
 		{
 			if (TryBindDescriptorTableOverride(cmd, compiledBinding, overrides, isCompute))
 			{
@@ -315,20 +315,20 @@ void PassBinder::BindCompiledBinding(
 			BindDescriptorTable(cmd, compiledBinding, samplerBinding, isCompute);
 			return;
 		}
-		case CompiledBindingType::RootConstants:
+		case CompiledBindingType::PushConstants:
 		{
 			const PassBindingOverride* bindingOverride =
-			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::RootConstants) : nullptr;
+			    overrides != nullptr ? overrides->Find(compiledBinding.Name, PassBindingOverrideType::PushConstants) : nullptr;
 			if (bindingOverride != nullptr)
 			{
-				BindRootConstants(cmd, compiledBinding, bindingOverride->ConstantsData, bindingOverride->ConstantCount, isCompute);
+				BindPushConstants(cmd, compiledBinding, bindingOverride->ConstantsData, bindingOverride->ConstantCount, isCompute);
 				return;
 			}
 
 			assert(parameterBinding != nullptr);
 			const PassParameterUniformBindingData* uniformData = parameterBinding->AsUniformData();
 			assert(uniformData != nullptr);
-			BindRootConstants(
+			BindPushConstants(
 			    cmd,
 			    compiledBinding,
 			    uniformData->Data,
@@ -366,7 +366,7 @@ bool PassBinder::TryBindDescriptorTableOverride(
 	return true;
 }
 
-void PassBinder::BindRootGpuAddress(
+void PassBinder::BindGpuAddress(
     RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     RhiGpuVirtualAddress gpuAddress,
@@ -376,14 +376,14 @@ void PassBinder::BindRootGpuAddress(
 	{
 		switch (compiledBinding.Type)
 		{
-			case CompiledBindingType::RootConstantBufferView:
-				cmd.BindComputeRootConstantBuffer(compiledBinding.RootParameterIndex, gpuAddress);
+			case CompiledBindingType::ConstantBuffer:
+				cmd.BindComputeConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
 				return;
-			case CompiledBindingType::RootShaderResourceView:
-				cmd.BindComputeRootShaderResourceView(compiledBinding.RootParameterIndex, gpuAddress);
+			case CompiledBindingType::ReadOnlyAddress:
+				cmd.BindComputeShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
 				return;
-			case CompiledBindingType::RootUnorderedAccessView:
-				cmd.BindComputeRootUnorderedAccessView(compiledBinding.RootParameterIndex, gpuAddress);
+			case CompiledBindingType::ReadWriteAddress:
+				cmd.BindComputeUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
 				return;
 			default:
 				assert(false);
@@ -393,14 +393,14 @@ void PassBinder::BindRootGpuAddress(
 
 	switch (compiledBinding.Type)
 	{
-		case CompiledBindingType::RootConstantBufferView:
-			cmd.BindConstantBuffer(compiledBinding.RootParameterIndex, gpuAddress);
+		case CompiledBindingType::ConstantBuffer:
+			cmd.BindConstantBuffer(compiledBinding.BindingIndex, gpuAddress);
 			return;
-		case CompiledBindingType::RootShaderResourceView:
-			cmd.BindRootShaderResourceView(compiledBinding.RootParameterIndex, gpuAddress);
+		case CompiledBindingType::ReadOnlyAddress:
+			cmd.BindShaderResourceAddress(compiledBinding.BindingIndex, gpuAddress);
 			return;
-		case CompiledBindingType::RootUnorderedAccessView:
-			cmd.BindRootUnorderedAccessView(compiledBinding.RootParameterIndex, gpuAddress);
+		case CompiledBindingType::ReadWriteAddress:
+			cmd.BindUnorderedAccessAddress(compiledBinding.BindingIndex, gpuAddress);
 			return;
 		default:
 			assert(false);
@@ -416,11 +416,11 @@ void PassBinder::BindDescriptorTable(
 {
 	if (isCompute)
 	{
-		cmd.BindComputeDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+		cmd.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
-	cmd.BindDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+	cmd.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
 void PassBinder::BindDescriptorTable(
@@ -431,14 +431,14 @@ void PassBinder::BindDescriptorTable(
 {
 	if (isCompute)
 	{
-		cmd.BindComputeDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+		cmd.BindComputeDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 		return;
 	}
 
-	cmd.BindDescriptorTable(compiledBinding.RootParameterIndex, descriptorTable);
+	cmd.BindDescriptorTable(compiledBinding.BindingIndex, descriptorTable);
 }
 
-void PassBinder::BindRootConstants(
+void PassBinder::BindPushConstants(
     RenderCommandContext& cmd,
     const CompiledBinding& compiledBinding,
     const void* data,
@@ -450,9 +450,9 @@ void PassBinder::BindRootConstants(
 
 	if (isCompute)
 	{
-		cmd.SetComputeRoot32BitConstants(compiledBinding.RootParameterIndex, constantCount, data, 0);
+		cmd.SetComputePushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
 		return;
 	}
 
-	cmd.SetRoot32BitConstants(compiledBinding.RootParameterIndex, constantCount, data, 0);
+	cmd.SetPushConstants(compiledBinding.BindingIndex, constantCount, data, 0);
 }

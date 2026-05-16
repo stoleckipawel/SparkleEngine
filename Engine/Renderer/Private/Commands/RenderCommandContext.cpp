@@ -42,72 +42,72 @@ void RenderCommandContext::BindIndexBuffer(const RhiIndexBufferView& view) noexc
 	m_commandList->BindIndexBuffer(view);
 }
 
-void RenderCommandContext::BindConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindGraphicsConstantBuffer(rootParameterIndex, gpuAddress);
+	m_commandList->BindGraphicsConstantBuffer(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::SetRoot32BitConstants(
-    std::uint32_t rootParameterIndex,
+void RenderCommandContext::SetPushConstants(
+    std::uint32_t bindingIndex,
     std::uint32_t num32BitValues,
     const void* data,
     std::uint32_t destOffsetIn32BitValues) noexcept
 {
-	m_commandList->SetGraphicsRootConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
+	m_commandList->SetGraphicsPushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
 
-void RenderCommandContext::BindRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindGraphicsShaderResource(rootParameterIndex, gpuAddress);
+	m_commandList->BindGraphicsShaderResource(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::BindRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindGraphicsUnorderedAccess(rootParameterIndex, gpuAddress);
+	m_commandList->BindGraphicsUnorderedAccess(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+void RenderCommandContext::BindDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
-	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, baseDescriptor);
+	m_commandList->BindGraphicsDescriptorTable(bindingIndex, baseDescriptor);
 }
 
-void RenderCommandContext::BindDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+void RenderCommandContext::BindDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
-	m_commandList->BindGraphicsDescriptorTable(rootParameterIndex, tableBinding);
+	m_commandList->BindGraphicsDescriptorTable(bindingIndex, tableBinding);
 }
 
-void RenderCommandContext::BindComputeRootConstantBuffer(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindComputeConstantBuffer(rootParameterIndex, gpuAddress);
+	m_commandList->BindComputeConstantBuffer(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
+void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
 {
-	m_commandList->BindComputeDescriptorTable(rootParameterIndex, baseDescriptor);
+	m_commandList->BindComputeDescriptorTable(bindingIndex, baseDescriptor);
 }
 
-void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t rootParameterIndex, RhiDescriptorTableBinding tableBinding) noexcept
+void RenderCommandContext::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiDescriptorTableBinding tableBinding) noexcept
 {
-	m_commandList->BindComputeDescriptorTable(rootParameterIndex, tableBinding);
+	m_commandList->BindComputeDescriptorTable(bindingIndex, tableBinding);
 }
 
-void RenderCommandContext::SetComputeRoot32BitConstants(
-    std::uint32_t rootParameterIndex,
+void RenderCommandContext::SetComputePushConstants(
+    std::uint32_t bindingIndex,
     std::uint32_t num32BitValues,
     const void* data,
     std::uint32_t destOffsetIn32BitValues) noexcept
 {
-	m_commandList->SetComputeRootConstants(rootParameterIndex, num32BitValues, data, destOffsetIn32BitValues);
+	m_commandList->SetComputePushConstants(bindingIndex, num32BitValues, data, destOffsetIn32BitValues);
 }
 
-void RenderCommandContext::BindComputeRootShaderResourceView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeShaderResourceAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindComputeShaderResource(rootParameterIndex, gpuAddress);
+	m_commandList->BindComputeShaderResource(bindingIndex, gpuAddress);
 }
 
-void RenderCommandContext::BindComputeRootUnorderedAccessView(std::uint32_t rootParameterIndex, RhiGpuVirtualAddress gpuAddress) noexcept
+void RenderCommandContext::BindComputeUnorderedAccessAddress(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
 {
-	m_commandList->BindComputeUnorderedAccess(rootParameterIndex, gpuAddress);
+	m_commandList->BindComputeUnorderedAccess(bindingIndex, gpuAddress);
 }
 
 void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
