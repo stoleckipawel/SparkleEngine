@@ -28,10 +28,12 @@
 
 D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
     D3D12Rhi& rhi,
+	D3D12GpuMemoryAllocator& memoryAllocator,
     D3D12DescriptorHeapManager& descriptorHeapManager,
     D3D12SwapChain& swapChain,
     D3D12ConstantBufferManager& constantBufferManager) noexcept :
-    m_rhi(&rhi), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain), m_constantBufferManager(&constantBufferManager)
+	m_rhi(&rhi), m_memoryAllocator(&memoryAllocator), m_descriptorHeapManager(&descriptorHeapManager), m_swapChain(&swapChain),
+	m_constantBufferManager(&constantBufferManager)
 {
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
 	{
@@ -62,6 +64,36 @@ std::wstring D3D12RenderHardwareInterface::CopyDebugName(std::wstring_view debug
 bool D3D12RenderHardwareInterface::ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept
 {
 	return resource != nullptr && (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::WrapOwnedResource(
+    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
+    std::wstring debugName) noexcept
+{
+	if (resource == nullptr)
+	{
+		return {};
+	}
+
+	auto record = std::make_unique<D3D12GpuAllocationRecord>();
+	record->Resource = std::move(resource);
+	record->DebugName = std::move(debugName);
+	return MakeD3D12OwnedResourceHandle(std::move(record));
+}
+
+RhiOwnedHeapHandle D3D12RenderHardwareInterface::WrapOwnedHeap(
+    Microsoft::WRL::ComPtr<ID3D12Heap>&& heap,
+    std::wstring debugName) noexcept
+{
+	if (heap == nullptr)
+	{
+		return {};
+	}
+
+	auto record = std::make_unique<D3D12GpuHeapRecord>();
+	record->NativeHeap = std::move(heap);
+	record->DebugName = std::move(debugName);
+	return MakeD3D12OwnedHeapHandle(std::move(record));
 }
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept
@@ -417,7 +449,8 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 		return false;
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"VertexBuffer").c_str());
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"VertexBuffer");
+	ownedResource->SetName(ownedDebugName.c_str());
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -432,7 +465,7 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 	    .BufferLocation = ownedResource->GetGPUVirtualAddress(),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .StrideInBytes = strideInBytes};
-	outResource = RhiOwnedResourceHandle{ownedResource.Detach()};
+	outResource = WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 	return true;
 }
 
@@ -465,7 +498,8 @@ bool D3D12RenderHardwareInterface::CreateIndexBuffer(
 		return false;
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"IndexBuffer").c_str());
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"IndexBuffer");
+	ownedResource->SetName(ownedDebugName.c_str());
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -480,7 +514,7 @@ bool D3D12RenderHardwareInterface::CreateIndexBuffer(
 	    .BufferLocation = ownedResource->GetGPUVirtualAddress(),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .Format = format};
-	outResource = RhiOwnedResourceHandle{ownedResource.Detach()};
+	outResource = WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 	return true;
 }
 
@@ -491,8 +525,11 @@ void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle r
 		return;
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	ownedResource.Attach(static_cast<ID3D12Resource*>(resource.Value));
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = TakeD3D12OwnedResourceHandle(resource);
+	if (ownedRecord == nullptr)
+	{
+		return;
+	}
 
 	std::uint64_t retireFenceValue = 0;
 	if (m_rhi != nullptr)
@@ -502,7 +539,7 @@ void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle r
 
 	DrainCompletedOwnedResourceReleases();
 	m_pendingOwnedResourceReleases.push_back(
-	    PendingOwnedResourceRelease{.Resource = std::move(ownedResource), .RetireFenceValue = retireFenceValue});
+	    PendingOwnedResourceRelease{.Record = std::move(ownedRecord), .RetireFenceValue = retireFenceValue});
 }
 
 void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcept
@@ -523,19 +560,19 @@ void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcep
 	    m_pendingOwnedResourceReleases.end(),
 	    [completedFenceValue](const PendingOwnedResourceRelease& pendingRelease)
 	    {
-		    return pendingRelease.Resource == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 }
 
 NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
 {
-	return NativeResourceHandle{resource.Value};
+	return NativeResourceHandle{GetD3D12Resource(resource)};
 }
 
 RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
 {
-	ID3D12Resource* const nativeResource = static_cast<ID3D12Resource*>(resource.Value);
+	ID3D12Resource* const nativeResource = GetD3D12Resource(resource);
 	return nativeResource != nullptr ? nativeResource->GetGPUVirtualAddress() : 0;
 }
 
@@ -623,8 +660,9 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuff
 		return {};
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingScratch").c_str());
-	return RhiOwnedResourceHandle{ownedResource.Detach()};
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingScratch");
+	ownedResource->SetName(ownedDebugName.c_str());
+	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
@@ -656,8 +694,9 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAcceleratio
 		return {};
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingAccelerationStructure").c_str());
-	return RhiOwnedResourceHandle{ownedResource.Detach()};
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingAccelerationStructure");
+	ownedResource->SetName(ownedDebugName.c_str());
+	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(
@@ -701,7 +740,8 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 		return {};
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"RayTracingInstanceBuffer").c_str());
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingInstanceBuffer");
+	ownedResource->SetName(ownedDebugName.c_str());
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -711,7 +751,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 
 	std::memcpy(mappedData, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes));
 	ownedResource->Unmap(0, nullptr);
-	return RhiOwnedResourceHandle{ownedResource.Detach()};
+	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 }
 
 RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
@@ -764,16 +804,14 @@ RhiOwnedHeapHandle D3D12RenderHardwareInterface::CreateOwnedHeap(
 		return {};
 	}
 
-	ownedHeap->SetName(CopyDebugName(debugName, L"TransientHeap").c_str());
-	return RhiOwnedHeapHandle{ownedHeap.Detach()};
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"TransientHeap");
+	ownedHeap->SetName(ownedDebugName.c_str());
+	return WrapOwnedHeap(std::move(ownedHeap), std::move(ownedDebugName));
 }
 
 void D3D12RenderHardwareInterface::ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noexcept
 {
-	if (heap.Value != nullptr)
-	{
-		static_cast<ID3D12Heap*>(heap.Value)->Release();
-	}
+	std::unique_ptr<D3D12GpuHeapRecord> ownedHeap = TakeD3D12OwnedHeapHandle(heap);
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource(
@@ -782,7 +820,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
     const RhiTransientTextureAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	ID3D12Heap* const ownedHeap = static_cast<ID3D12Heap*>(heap.Value);
+	ID3D12Heap* const ownedHeap = GetD3D12Heap(heap);
 	if (m_rhi == nullptr || ownedHeap == nullptr)
 	{
 		return {};
@@ -803,8 +841,9 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
 		return {};
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"PlacedTexture").c_str());
-	return RhiOwnedResourceHandle{ownedResource.Detach()};
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedTexture");
+	ownedResource->SetName(ownedDebugName.c_str());
+	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
@@ -813,7 +852,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
     const RhiTransientBufferAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	ID3D12Heap* const ownedHeap = static_cast<ID3D12Heap*>(heap.Value);
+	ID3D12Heap* const ownedHeap = GetD3D12Heap(heap);
 	if (m_rhi == nullptr || ownedHeap == nullptr)
 	{
 		return {};
@@ -832,8 +871,9 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
 		return {};
 	}
 
-	ownedResource->SetName(CopyDebugName(debugName, L"PlacedBuffer").c_str());
-	return RhiOwnedResourceHandle{ownedResource.Detach()};
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedBuffer");
+	ownedResource->SetName(ownedDebugName.c_str());
+	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
 }
 
 void D3D12RenderHardwareInterface::CreateRenderTargetView(

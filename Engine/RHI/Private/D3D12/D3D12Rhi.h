@@ -16,6 +16,8 @@ struct RhiDiagnosticMessage;
 class D3D12DebugLayer;
 #endif
 
+class D3D12GpuMemoryAllocator;
+
 class D3D12Rhi final
 {
   public:
@@ -70,11 +72,14 @@ class D3D12Rhi final
 	const ComPtr<ID3D12Fence1>& GetFence() const noexcept { return m_fence; }
 	HANDLE GetFenceEvent() const noexcept { return m_fenceEvent; }
 	uint64_t GetNextFenceValue() const noexcept { return m_nextFenceValue; }
+	D3D12GpuMemoryAllocator& GetMemoryAllocator() noexcept { return *m_memoryAllocator; }
+	const D3D12GpuMemoryAllocator& GetMemoryAllocator() const noexcept { return *m_memoryAllocator; }
 
   private:
 	void SelectAdapter() noexcept;
 	void CreateFactory();
 	void CreateDevice();
+	void CreateMemoryAllocator();
 	void CheckRayTracingSupport() noexcept;
 	void CreateCommandQueue();
 	void CreateCommandAllocators();
@@ -88,6 +93,7 @@ class D3D12Rhi final
 	ComPtr<IDXGIFactory7> m_dxgiFactory = nullptr;
 	ComPtr<IDXGIAdapter1> m_adapter = nullptr;
 	ComPtr<ID3D12Device10> m_device = nullptr;
+	std::unique_ptr<D3D12GpuMemoryAllocator> m_memoryAllocator;
 	ComPtr<ID3D12CommandQueue> m_cmdQueue = nullptr;
 	ComPtr<ID3D12CommandAllocator> m_cmdAllocator[RenderConfig::FramesInFlight] = {};
 	ComPtr<ID3D12GraphicsCommandList7> m_cmdList[RenderConfig::FramesInFlight] = {};

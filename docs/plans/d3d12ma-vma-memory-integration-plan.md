@@ -316,6 +316,8 @@ Phase 0 protects this target state:
 
 ### Phase 1 Prompt: D3D12MA Dependency And Allocator Service Bootstrap
 
+Status: implemented. D3D12MA is fetched privately for SparkleRHI at v3.1.0 (`0fa62ed3a0a69b73230a8ec1faa752d4061c8dc8`), and `D3D12GpuMemoryAllocator` owns allocator initialization/shutdown behind the D3D12 backend.
+
 ```text
 Implement Phase 1 of docs/plans/d3d12ma-vma-memory-integration-plan.md: add D3D12MA privately and create the backend memory service skeleton.
 
@@ -371,6 +373,8 @@ D3D12RenderHardwareInterface
 ```
 
 ### Phase 2 Prompt: Opaque Handle Records And Delayed Release Conversion
+
+Status: implemented. D3D12 owned resource and heap handles now point to private D3D12 allocation/heap records, and delayed release retires resource records after completed GPU fences.
 
 ```text
 Implement Phase 2 of docs/plans/d3d12ma-vma-memory-integration-plan.md: convert owned RHI handles from raw native pointers to backend-owned allocation records.

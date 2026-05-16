@@ -3,6 +3,7 @@
 #include "Config/RenderConfig.h"
 #include "Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
+#include "D3D12/Memory/D3D12GpuAllocation.h"
 
 #include <array>
 #include <memory>
@@ -12,6 +13,7 @@
 class D3D12DescriptorHeapManager;
 class D3D12ConstantBufferManager;
 class D3D12ImGuiBackend;
+class D3D12GpuMemoryAllocator;
 class D3D12RenderCommandList;
 class D3D12Rhi;
 class D3D12SamplerLibrary;
@@ -22,6 +24,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
   public:
 	D3D12RenderHardwareInterface(
 	    D3D12Rhi& rhi,
+	    D3D12GpuMemoryAllocator& memoryAllocator,
 	    D3D12DescriptorHeapManager& descriptorHeapManager,
 	    D3D12SwapChain& swapChain,
 	    D3D12ConstantBufferManager& constantBufferManager) noexcept;
@@ -154,7 +157,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 
 	struct PendingOwnedResourceRelease
 	{
-		Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
+		std::unique_ptr<D3D12GpuAllocationRecord> Record;
 		std::uint64_t RetireFenceValue = 0;
 	};
 
@@ -163,12 +166,17 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
+	static RhiOwnedResourceHandle WrapOwnedResource(
+	    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
+	    std::wstring debugName) noexcept;
+	static RhiOwnedHeapHandle WrapOwnedHeap(Microsoft::WRL::ComPtr<ID3D12Heap>&& heap, std::wstring debugName) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
+	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;

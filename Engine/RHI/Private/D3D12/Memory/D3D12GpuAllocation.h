@@ -1,0 +1,59 @@
+#pragma once
+
+#include "Interop/RhiNativeHandles.h"
+
+#include <d3d12.h>
+#include <wrl/client.h>
+
+#include <memory>
+#include <string>
+
+namespace D3D12MA
+{
+	class Allocation;
+	class Pool;
+}
+
+struct D3D12GpuAllocationRecord final
+{
+	Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
+	D3D12MA::Allocation* Allocation = nullptr;
+	D3D12MA::Pool* Pool = nullptr;
+	std::wstring DebugName;
+	bool IsMapped = false;
+	void* CpuMappedAddress = nullptr;
+
+	D3D12GpuAllocationRecord() noexcept = default;
+	~D3D12GpuAllocationRecord() noexcept;
+
+	D3D12GpuAllocationRecord(const D3D12GpuAllocationRecord&) = delete;
+	D3D12GpuAllocationRecord& operator=(const D3D12GpuAllocationRecord&) = delete;
+	D3D12GpuAllocationRecord(D3D12GpuAllocationRecord&&) = delete;
+	D3D12GpuAllocationRecord& operator=(D3D12GpuAllocationRecord&&) = delete;
+};
+
+struct D3D12GpuHeapRecord final
+{
+	Microsoft::WRL::ComPtr<ID3D12Heap> NativeHeap;
+	D3D12MA::Allocation* Allocation = nullptr;
+	D3D12MA::Pool* Pool = nullptr;
+	std::wstring DebugName;
+
+	D3D12GpuHeapRecord() noexcept = default;
+	~D3D12GpuHeapRecord() noexcept;
+
+	D3D12GpuHeapRecord(const D3D12GpuHeapRecord&) = delete;
+	D3D12GpuHeapRecord& operator=(const D3D12GpuHeapRecord&) = delete;
+	D3D12GpuHeapRecord(D3D12GpuHeapRecord&&) = delete;
+	D3D12GpuHeapRecord& operator=(D3D12GpuHeapRecord&&) = delete;
+};
+
+RhiOwnedResourceHandle MakeD3D12OwnedResourceHandle(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
+std::unique_ptr<D3D12GpuAllocationRecord> TakeD3D12OwnedResourceHandle(RhiOwnedResourceHandle handle) noexcept;
+D3D12GpuAllocationRecord* GetD3D12GpuAllocationRecord(RhiOwnedResourceHandle handle) noexcept;
+ID3D12Resource* GetD3D12Resource(RhiOwnedResourceHandle handle) noexcept;
+
+RhiOwnedHeapHandle MakeD3D12OwnedHeapHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
+std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedHeapHandle(RhiOwnedHeapHandle handle) noexcept;
+D3D12GpuHeapRecord* GetD3D12GpuHeapRecord(RhiOwnedHeapHandle handle) noexcept;
+ID3D12Heap* GetD3D12Heap(RhiOwnedHeapHandle handle) noexcept;

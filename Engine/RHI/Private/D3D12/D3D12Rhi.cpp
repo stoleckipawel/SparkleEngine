@@ -1,6 +1,7 @@
 ﻿#include "PCH.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12DebugLayer.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
 
@@ -40,6 +41,11 @@ D3D12Rhi::D3D12Rhi() noexcept
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer->InitializeInfoQueue(m_device.Get());
 #endif
+
+	{
+		SPARKLE_CPU_SCOPE("RHI.D3D12.CreateMemoryAllocator");
+		CreateMemoryAllocator();
+	}
 
 	{
 		SPARKLE_CPU_SCOPE("RHI.D3D12.CheckShaderModel");
@@ -150,6 +156,16 @@ void D3D12Rhi::CreateDevice()
 
 	CHECK(D3D12CreateDevice(m_adapter.Get(), m_desiredD3DFeatureLevel, IID_PPV_ARGS(m_device.ReleaseAndGetAddressOf())));
 	CheckRayTracingSupport();
+}
+
+void D3D12Rhi::CreateMemoryAllocator()
+{
+	if (!m_adapter || !m_device)
+	{
+		Diagnostics::Fail(g_d3d12RhiLogger, __FILE__, __LINE__, "CreateMemoryAllocator called before adapter and device creation");
+	}
+
+	m_memoryAllocator = std::make_unique<D3D12GpuMemoryAllocator>(m_adapter.Get(), m_device.Get());
 }
 
 void D3D12Rhi::CheckRayTracingSupport() noexcept
@@ -400,6 +416,7 @@ D3D12Rhi::~D3D12Rhi() noexcept
 
 	m_fence.Reset();
 	m_cmdQueue.Reset();
+	m_memoryAllocator.reset();
 
 #if ENGINE_GPU_VALIDATION
 	m_debugLayer.reset();

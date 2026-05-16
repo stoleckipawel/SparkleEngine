@@ -6,6 +6,7 @@
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
+#include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "Device/RenderHardwareInterface.h"
 
 #include <array>
@@ -45,12 +46,22 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 	void SetDebugName(RhiOwnedHeapHandle heap, std::wstring_view debugName) noexcept override
 	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(heap.Value), debugName);
+		D3D12GpuHeapRecord* const record = GetD3D12GpuHeapRecord(heap);
+		if (record != nullptr)
+		{
+			record->DebugName = debugName;
+		}
+		SetD3D12ObjectDebugName(record != nullptr ? record->NativeHeap.Get() : nullptr, debugName);
 	}
 
 	void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept override
 	{
-		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName);
+		D3D12GpuAllocationRecord* const record = GetD3D12GpuAllocationRecord(resource);
+		if (record != nullptr)
+		{
+			record->DebugName = debugName;
+		}
+		SetD3D12ObjectDebugName(record != nullptr ? record->Resource.Get() : nullptr, debugName);
 	}
 
   private:

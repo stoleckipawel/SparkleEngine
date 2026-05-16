@@ -91,6 +91,7 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer,
 		SPARKLE_CPU_SCOPE("RHI.CreateHardwareInterface");
 		services->m_impl->renderHardwareInterface = std::make_unique<D3D12RenderHardwareInterface>(
 		    *services->m_impl->rhi,
+		    services->m_impl->rhi->GetMemoryAllocator(),
 		    *services->m_impl->descriptorHeapManager,
 		    *services->m_impl->swapChain,
 		    *services->m_impl->constantBufferManager);
