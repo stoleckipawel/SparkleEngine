@@ -71,7 +71,7 @@ namespace
 		}
 
 		if (block.alignment != physicalPlan.alignment || block.sizeInBytes < physicalPlan.sizeInBytes ||
-		    block.heapOffset != physicalPlan.heapOffset)
+		    block.memoryBlockOffset != physicalPlan.memoryBlockOffset)
 		{
 			return false;
 		}
@@ -257,7 +257,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 			        .pool = transientPlan->physicalAllocation.pool,
 			        .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
 			        .alignment = transientPlan->physicalAllocation.alignment,
-			        .heapOffset = transientPlan->physicalAllocation.heapOffset,
+			        .memoryBlockOffset = transientPlan->physicalAllocation.memoryBlockOffset,
 			        .textureResourceDesc = transientPlan->physicalAllocation.textureResourceDesc,
 			        .bufferResourceDesc = transientPlan->physicalAllocation.bufferResourceDesc,
 			        .optimizedClearValue = transientPlan->physicalAllocation.optimizedClearValue,

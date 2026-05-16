@@ -10,6 +10,7 @@
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RenderConstantBufferData.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiResourceView.h"
 #include "../RHIAPI.h"
 #include "../Samplers/RhiSamplerDesc.h"
 
@@ -45,11 +46,10 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;
-	virtual void SetShaderVisibleDescriptorHeaps(RenderCommandList& commandList) const noexcept = 0;
-	virtual NativeDescriptorHeapHandle GetShaderResourceHeapHandle() const noexcept = 0;
-	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorHeapType heapType) = 0;
-	virtual void ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept = 0;
-	virtual RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorHeapType heapType, std::uint32_t descriptorCount) = 0;
+	virtual void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept = 0;
+	virtual RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) = 0;
+	virtual void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept = 0;
+	virtual RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) = 0;
 	virtual RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept = 0;
 	virtual void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept = 0;
@@ -96,42 +96,26 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	    std::wstring_view debugName) = 0;
 	virtual RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept = 0;
 	virtual RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept = 0;
-	virtual RhiOwnedHeapHandle CreateOwnedHeap(
+	virtual RhiOwnedMemoryBlockHandle CreateTransientMemoryBlock(
 	    RhiTransientAllocationPool pool,
 	    std::uint64_t sizeInBytes,
 	    std::uint64_t alignment,
 	    std::wstring_view debugName) = 0;
-	virtual void ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noexcept = 0;
-	virtual RhiOwnedResourceHandle CreatePlacedTextureResource(
-	    RhiOwnedHeapHandle heap,
-	    std::uint64_t heapOffset,
+	virtual void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept = 0;
+	virtual RhiOwnedResourceHandle CreateAliasingTextureResource(
+	    RhiOwnedMemoryBlockHandle memoryBlock,
+	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientTextureAllocationDesc& desc,
 	    std::wstring_view debugName) = 0;
-	virtual RhiOwnedResourceHandle CreatePlacedBufferResource(
-	    RhiOwnedHeapHandle heap,
-	    std::uint64_t heapOffset,
+	virtual RhiOwnedResourceHandle CreateAliasingBufferResource(
+	    RhiOwnedMemoryBlockHandle memoryBlock,
+	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
 	    std::wstring_view debugName) = 0;
-	virtual void CreateRenderTargetView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateDepthStencilView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateTextureShaderResourceView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateTextureUnorderedAccessView(
-	    NativeResourceHandle resource,
-	    PixelFormat format,
-	    RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateBufferShaderResourceView(
-	    NativeResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateBufferUnorderedAccessView(
-	    NativeResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    RhiCpuDescriptorHandle destination) = 0;
-	virtual void CreateRayTracingAccelerationStructureShaderResourceView(
-	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
-	    RhiCpuDescriptorHandle destination) = 0;
+	virtual RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) = 0;
+	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
+	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
+	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept = 0;
 	virtual void BeginPresentRenderPass(const float clearColor[4]) noexcept = 0;
 	virtual void BeginPresentOverlayPass() noexcept = 0;

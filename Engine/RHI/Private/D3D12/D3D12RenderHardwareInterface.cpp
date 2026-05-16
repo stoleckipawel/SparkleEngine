@@ -87,14 +87,14 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::WrapOwnedResource(
 	return MakeD3D12OwnedResourceHandle(std::move(record));
 }
 
-RhiOwnedHeapHandle D3D12RenderHardwareInterface::WrapOwnedHeap(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept
+RhiOwnedMemoryBlockHandle D3D12RenderHardwareInterface::WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept
 {
 	if (record == nullptr)
 	{
 		return {};
 	}
 
-	return MakeD3D12OwnedHeapHandle(std::move(record));
+	return MakeD3D12OwnedMemoryBlockHandle(std::move(record));
 }
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept
@@ -202,26 +202,26 @@ std::unique_ptr<RenderPipelineState> D3D12RenderHardwareInterface::CreateCompute
 	return std::make_unique<D3D12PipelineState>(*m_rhi, desc);
 }
 
-void D3D12RenderHardwareInterface::SetShaderVisibleDescriptorHeaps(RenderCommandList& commandList) const noexcept
+void D3D12RenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept
 {
-	if (m_descriptorHeapManager != nullptr)
+	if (m_descriptorHeapManager != nullptr && commandList.GetBackendApi() == ERhiBackendApi::D3D12)
 	{
-		m_descriptorHeapManager->SetShaderVisibleHeaps(commandList);
+		m_descriptorHeapManager->BindGlobalDescriptorState(static_cast<D3D12RenderCommandList&>(commandList));
 	}
 }
 
-NativeDescriptorHeapHandle D3D12RenderHardwareInterface::GetShaderResourceHeapHandle() const noexcept
+ID3D12DescriptorHeap* D3D12RenderHardwareInterface::GetD3D12ShaderResourceDescriptorHeap() const noexcept
 {
 	if (m_descriptorHeapManager == nullptr)
 	{
-		return {};
+		return nullptr;
 	}
 
 	D3D12DescriptorHeap* heap = m_descriptorHeapManager->GetHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	return NativeDescriptorHeapHandle{heap != nullptr ? heap->GetRaw() : nullptr};
+	return heap != nullptr ? heap->GetRaw() : nullptr;
 }
 
-RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDescriptorHeapType heapType)
+RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
 {
 	RhiDescriptorAllocation allocation{};
 	if (m_descriptorHeapManager == nullptr)
@@ -229,7 +229,7 @@ RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDes
 		return allocation;
 	}
 
-	const D3D12_DESCRIPTOR_HEAP_TYPE nativeType = D3D12TypeConversions::ToDescriptorHeapType(heapType);
+	const D3D12_DESCRIPTOR_HEAP_TYPE nativeType = D3D12TypeConversions::ToDescriptorHeapType(descriptorType);
 	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle{};
 	m_descriptorHeapManager->AllocateHandle(nativeType, cpuHandle, gpuHandle);
@@ -238,7 +238,7 @@ RhiDescriptorAllocation D3D12RenderHardwareInterface::AllocateDescriptor(ERhiDes
 	return allocation;
 }
 
-void D3D12RenderHardwareInterface::ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept
+void D3D12RenderHardwareInterface::ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept
 {
 	if (m_descriptorHeapManager == nullptr || !allocation.CpuHandle)
 	{
@@ -246,13 +246,13 @@ void D3D12RenderHardwareInterface::ReleaseDescriptor(ERhiDescriptorHeapType heap
 	}
 
 	m_descriptorHeapManager->FreeHandle(
-	    D3D12TypeConversions::ToDescriptorHeapType(heapType),
+	    D3D12TypeConversions::ToDescriptorHeapType(descriptorType),
 	    D3D12_CPU_DESCRIPTOR_HANDLE{allocation.CpuHandle.Value},
 	    D3D12_GPU_DESCRIPTOR_HANDLE{allocation.GpuHandle.Value});
 }
 
 RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
-    ERhiDescriptorHeapType heapType,
+    ERhiDescriptorAllocatorType descriptorType,
     std::uint32_t descriptorCount)
 {
 	if (m_descriptorHeapManager == nullptr || descriptorCount == 0)
@@ -261,14 +261,14 @@ RhiDescriptorTableHandle D3D12RenderHardwareInterface::AllocateDescriptorTable(
 	}
 
 	const D3D12DescriptorHandle nativeHandle =
-	    m_descriptorHeapManager->AllocateContiguous(D3D12TypeConversions::ToDescriptorHeapType(heapType), descriptorCount);
+	    m_descriptorHeapManager->AllocateContiguous(D3D12TypeConversions::ToDescriptorHeapType(descriptorType), descriptorCount);
 	if (!nativeHandle.IsValid())
 	{
 		return {};
 	}
 
 	DescriptorTableRecord record{};
-	record.heapType = heapType;
+	record.descriptorType = descriptorType;
 	record.descriptorCount = descriptorCount;
 	record.nativeHandle = nativeHandle;
 
@@ -300,7 +300,7 @@ void D3D12RenderHardwareInterface::ReleaseDescriptorTable(RhiDescriptorTableHand
 	}
 
 	m_descriptorHeapManager->FreeContiguous(
-	    D3D12TypeConversions::ToDescriptorHeapType(record->heapType),
+	    D3D12TypeConversions::ToDescriptorHeapType(record->descriptorType),
 	    record->nativeHandle,
 	    record->descriptorCount);
 	*record = DescriptorTableRecord{};
@@ -549,7 +549,7 @@ void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle r
 
 void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcept
 {
-	if (m_pendingOwnedResourceReleases.empty() && m_pendingOwnedHeapReleases.empty())
+	if (m_pendingOwnedResourceReleases.empty() && m_pendingOwnedMemoryBlockReleases.empty())
 	{
 		return;
 	}
@@ -570,13 +570,13 @@ void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcep
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
 
 	auto heapEraseBegin = std::remove_if(
-	    m_pendingOwnedHeapReleases.begin(),
-	    m_pendingOwnedHeapReleases.end(),
-	    [completedFenceValue](const PendingOwnedHeapRelease& pendingRelease)
+	    m_pendingOwnedMemoryBlockReleases.begin(),
+	    m_pendingOwnedMemoryBlockReleases.end(),
+	    [completedFenceValue](const PendingOwnedMemoryBlockRelease& pendingRelease)
 	    {
 		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
 	    });
-	m_pendingOwnedHeapReleases.erase(heapEraseBegin, m_pendingOwnedHeapReleases.end());
+	m_pendingOwnedMemoryBlockReleases.erase(heapEraseBegin, m_pendingOwnedMemoryBlockReleases.end());
 }
 
 NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
@@ -778,7 +778,7 @@ RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetBufferAllocationInfo(
 	return RhiResourceAllocationInfo{.SizeInBytes = allocationInfo.SizeInBytes, .Alignment = allocationInfo.Alignment};
 }
 
-RhiOwnedHeapHandle D3D12RenderHardwareInterface::CreateOwnedHeap(
+RhiOwnedMemoryBlockHandle D3D12RenderHardwareInterface::CreateTransientMemoryBlock(
     RhiTransientAllocationPool pool,
     std::uint64_t sizeInBytes,
     std::uint64_t alignment,
@@ -789,21 +789,21 @@ RhiOwnedHeapHandle D3D12RenderHardwareInterface::CreateOwnedHeap(
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"TransientHeap");
-	std::unique_ptr<D3D12GpuHeapRecord> ownedHeap =
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"TransientMemoryBlock");
+	std::unique_ptr<D3D12GpuHeapRecord> ownedMemoryBlock =
 	    m_memoryAllocator != nullptr ? m_memoryAllocator->CreateTransientHeap(pool, sizeInBytes, alignment, ownedDebugName) : nullptr;
-	if (ownedHeap == nullptr)
+	if (ownedMemoryBlock == nullptr)
 	{
 		return {};
 	}
 
-	return WrapOwnedHeap(std::move(ownedHeap));
+	return WrapOwnedMemoryBlock(std::move(ownedMemoryBlock));
 }
 
-void D3D12RenderHardwareInterface::ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noexcept
+void D3D12RenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept
 {
-	std::unique_ptr<D3D12GpuHeapRecord> ownedHeap = TakeD3D12OwnedHeapHandle(heap);
-	if (ownedHeap == nullptr)
+	std::unique_ptr<D3D12GpuHeapRecord> ownedMemoryBlock = TakeD3D12OwnedMemoryBlockHandle(memoryBlock);
+	if (ownedMemoryBlock == nullptr)
 	{
 		return;
 	}
@@ -815,17 +815,18 @@ void D3D12RenderHardwareInterface::ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noe
 	}
 
 	DrainCompletedOwnedResourceReleases();
-	m_pendingOwnedHeapReleases.push_back(PendingOwnedHeapRelease{.Record = std::move(ownedHeap), .RetireFenceValue = retireFenceValue});
+	m_pendingOwnedMemoryBlockReleases.push_back(
+	    PendingOwnedMemoryBlockRelease{.Record = std::move(ownedMemoryBlock), .RetireFenceValue = retireFenceValue});
 }
 
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource(
-    RhiOwnedHeapHandle heap,
-    std::uint64_t heapOffset,
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateAliasingTextureResource(
+    RhiOwnedMemoryBlockHandle memoryBlock,
+    std::uint64_t memoryBlockOffset,
     const RhiTransientTextureAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	D3D12GpuHeapRecord* const ownedHeap = GetD3D12GpuHeapRecord(heap);
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedHeap == nullptr)
+	D3D12GpuHeapRecord* const ownedMemoryBlock = GetD3D12GpuHeapRecord(memoryBlock);
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedMemoryBlock == nullptr)
 	{
 		return {};
 	}
@@ -833,10 +834,10 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
 	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildTextureResourceDesc(desc.ResourceDesc);
 	const D3D12_CLEAR_VALUE clearValue = D3D12TypeConversions::BuildClearValue(desc.ClearValue);
 	const D3D12_CLEAR_VALUE* clearValuePtr = desc.ClearValue.ValueType == RhiOptimizedClearValue::Type::None ? nullptr : &clearValue;
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedTexture");
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"AliasingTexture");
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedResource = m_memoryAllocator->CreateAliasingTexture(
-	    *ownedHeap,
-	    heapOffset,
+	    *ownedMemoryBlock,
+	    memoryBlockOffset,
 	    resourceDesc,
 	    D3D12TypeConversions::ToResourceStates(desc.InitialState),
 	    clearValuePtr,
@@ -849,23 +850,23 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
 	return WrapOwnedResource(std::move(ownedResource));
 }
 
-RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
-    RhiOwnedHeapHandle heap,
-    std::uint64_t heapOffset,
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateAliasingBufferResource(
+    RhiOwnedMemoryBlockHandle memoryBlock,
+    std::uint64_t memoryBlockOffset,
     const RhiTransientBufferAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	D3D12GpuHeapRecord* const ownedHeap = GetD3D12GpuHeapRecord(heap);
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedHeap == nullptr)
+	D3D12GpuHeapRecord* const ownedMemoryBlock = GetD3D12GpuHeapRecord(memoryBlock);
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedMemoryBlock == nullptr)
 	{
 		return {};
 	}
 
 	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(desc.ResourceDesc);
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedBuffer");
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"AliasingBuffer");
 	std::unique_ptr<D3D12GpuAllocationRecord> ownedResource = m_memoryAllocator->CreateAliasingBuffer(
-	    *ownedHeap,
-	    heapOffset,
+	    *ownedMemoryBlock,
+	    memoryBlockOffset,
 	    resourceDesc,
 	    D3D12TypeConversions::ToResourceStates(desc.InitialState),
 	    ownedDebugName);
@@ -877,171 +878,218 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
 	return WrapOwnedResource(std::move(ownedResource));
 }
 
-void D3D12RenderHardwareInterface::CreateRenderTargetView(
-    NativeResourceHandle resource,
-    PixelFormat format,
-    RhiCpuDescriptorHandle destination)
+RhiResourceViewHandle D3D12RenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (m_rhi == nullptr || !resource || !destination)
+	if (m_rhi == nullptr || m_descriptorHeapManager == nullptr)
 	{
-		return;
+		return {};
 	}
 
-	D3D12_RENDER_TARGET_VIEW_DESC viewDesc{};
-	viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	m_rhi->GetDevice()->CreateRenderTargetView(
-	    D3D12TypeConversions::ToResource(resource),
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
+	const ERhiDescriptorAllocatorType descriptorType = ResolveResourceViewDescriptorAllocatorType(desc.Kind);
+	RhiDescriptorAllocation allocation = AllocateDescriptor(descriptorType);
+	if (!allocation.IsValid())
+	{
+		return {};
+	}
+
+	if (!WriteD3D12ResourceViewDescriptor(desc, allocation.CpuHandle))
+	{
+		ReleaseDescriptor(descriptorType, allocation);
+		return {};
+	}
+
+	ResourceViewRecord record{};
+	record.kind = desc.Kind;
+	record.descriptorType = descriptorType;
+	record.descriptorAllocation = allocation;
+
+	if (!m_freeResourceViewIndices.empty())
+	{
+		const std::uint32_t recordIndex = m_freeResourceViewIndices.back();
+		m_freeResourceViewIndices.pop_back();
+		m_resourceViewRecords[recordIndex] = record;
+		return RhiResourceViewHandle{recordIndex + 1u};
+	}
+
+	m_resourceViewRecords.push_back(record);
+	return RhiResourceViewHandle{static_cast<std::uint32_t>(m_resourceViewRecords.size())};
 }
 
-void D3D12RenderHardwareInterface::CreateDepthStencilView(
-    NativeResourceHandle resource,
-    PixelFormat format,
-    RhiCpuDescriptorHandle destination)
+void D3D12RenderHardwareInterface::ReleaseResourceView(RhiResourceViewHandle view) noexcept
 {
-	if (m_rhi == nullptr || !resource || !destination)
+	ResourceViewRecord* const record = FindResourceViewRecord(view);
+	if (record == nullptr)
 	{
 		return;
 	}
 
-	D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc{};
-	viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	viewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	viewDesc.Flags = D3D12_DSV_FLAG_NONE;
-	m_rhi->GetDevice()->CreateDepthStencilView(
-	    D3D12TypeConversions::ToResource(resource),
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
+	ReleaseDescriptor(record->descriptorType, record->descriptorAllocation);
+	*record = ResourceViewRecord{};
+	m_freeResourceViewIndices.push_back(view.Value - 1u);
 }
 
-void D3D12RenderHardwareInterface::CreateTextureShaderResourceView(
-    NativeResourceHandle resource,
-    PixelFormat format,
-    RhiCpuDescriptorHandle destination)
+RhiCpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
 {
-	if (m_rhi == nullptr || !resource || !destination)
-	{
-		return;
-	}
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-	viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	viewDesc.Texture2D.MostDetailedMip = 0;
-	viewDesc.Texture2D.MipLevels = 1;
-	m_rhi->GetDevice()->CreateShaderResourceView(
-	    D3D12TypeConversions::ToResource(resource),
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
+	const ResourceViewRecord* const record = FindResourceViewRecord(view);
+	return record != nullptr ? record->descriptorAllocation.CpuHandle : RhiCpuDescriptorHandle{};
 }
 
-void D3D12RenderHardwareInterface::CreateTextureUnorderedAccessView(
-    NativeResourceHandle resource,
-    PixelFormat format,
-    RhiCpuDescriptorHandle destination)
+RhiGpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept
 {
-	if (m_rhi == nullptr || !resource || !destination)
-	{
-		return;
-	}
-
-	D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc{};
-	viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(format);
-	viewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-	viewDesc.Texture2D.MipSlice = 0;
-	viewDesc.Texture2D.PlaneSlice = 0;
-	m_rhi->GetDevice()->CreateUnorderedAccessView(
-	    D3D12TypeConversions::ToResource(resource),
-	    nullptr,
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
+	const ResourceViewRecord* const record = FindResourceViewRecord(view);
+	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
 }
 
-void D3D12RenderHardwareInterface::CreateBufferShaderResourceView(
-    NativeResourceHandle resource,
-    std::uint64_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    RhiCpuDescriptorHandle destination)
+bool D3D12RenderHardwareInterface::WriteD3D12ResourceViewDescriptor(
+    const RhiResourceViewDesc& desc,
+    RhiCpuDescriptorHandle destination) noexcept
 {
-	if (m_rhi == nullptr || !resource || !destination || sizeInBytes == 0)
+	if (m_rhi == nullptr || !destination)
 	{
-		return;
+		return false;
 	}
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-	viewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	if (strideInBytes > 0)
+	ID3D12Device* const device = m_rhi->GetDevice();
+	if (device == nullptr)
 	{
-		viewDesc.Format = DXGI_FORMAT_UNKNOWN;
-		viewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-		viewDesc.Buffer.StructureByteStride = strideInBytes;
-		viewDesc.Buffer.NumElements = static_cast<UINT>(sizeInBytes / strideInBytes);
-	}
-	else
-	{
-		viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		viewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
-		viewDesc.Buffer.StructureByteStride = 0;
-		viewDesc.Buffer.NumElements = static_cast<UINT>(sizeInBytes / sizeof(std::uint32_t));
-	}
-	m_rhi->GetDevice()->CreateShaderResourceView(
-	    D3D12TypeConversions::ToResource(resource),
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
-}
-
-void D3D12RenderHardwareInterface::CreateBufferUnorderedAccessView(
-    NativeResourceHandle resource,
-    std::uint64_t sizeInBytes,
-    std::uint32_t strideInBytes,
-    RhiCpuDescriptorHandle destination)
-{
-	if (m_rhi == nullptr || !resource || !destination || sizeInBytes == 0)
-	{
-		return;
+		return false;
 	}
 
-	D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc{};
-	viewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	if (strideInBytes > 0)
+	const D3D12_CPU_DESCRIPTOR_HANDLE nativeDestination = D3D12TypeConversions::ToCpuDescriptor(destination);
+	switch (desc.Kind)
 	{
-		viewDesc.Format = DXGI_FORMAT_UNKNOWN;
-		viewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-		viewDesc.Buffer.StructureByteStride = strideInBytes;
-		viewDesc.Buffer.NumElements = static_cast<UINT>(sizeInBytes / strideInBytes);
-	}
-	else
-	{
-		viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-		viewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
-		viewDesc.Buffer.StructureByteStride = 0;
-		viewDesc.Buffer.NumElements = static_cast<UINT>(sizeInBytes / sizeof(std::uint32_t));
-	}
-	m_rhi->GetDevice()->CreateUnorderedAccessView(
-	    D3D12TypeConversions::ToResource(resource),
-	    nullptr,
-	    &viewDesc,
-	    D3D12TypeConversions::ToCpuDescriptor(destination));
-}
+		case ERhiResourceViewKind::RenderTarget:
+		{
+			if (!desc.Resource)
+			{
+				return false;
+			}
 
-void D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureShaderResourceView(
-    RhiGpuVirtualAddress accelerationStructureGpuAddress,
-    RhiCpuDescriptorHandle destination)
-{
-	if (m_rhi == nullptr || accelerationStructureGpuAddress == 0 || !destination)
-	{
-		return;
-	}
+			D3D12_RENDER_TARGET_VIEW_DESC viewDesc{};
+			viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.Format);
+			viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			device->CreateRenderTargetView(D3D12TypeConversions::ToResource(desc.Resource), &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::DepthStencil:
+		{
+			if (!desc.Resource)
+			{
+				return false;
+			}
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
-	viewDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
-	viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	viewDesc.RaytracingAccelerationStructure.Location = accelerationStructureGpuAddress;
-	m_rhi->GetDevice()->CreateShaderResourceView(nullptr, &viewDesc, D3D12TypeConversions::ToCpuDescriptor(destination));
+			D3D12_DEPTH_STENCIL_VIEW_DESC viewDesc{};
+			viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.Format);
+			viewDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			viewDesc.Flags = D3D12_DSV_FLAG_NONE;
+			device->CreateDepthStencilView(D3D12TypeConversions::ToResource(desc.Resource), &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::TextureShaderResource:
+		{
+			if (!desc.Resource)
+			{
+				return false;
+			}
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.Format);
+			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			viewDesc.Texture2D.MostDetailedMip = desc.Texture.MostDetailedMip;
+			viewDesc.Texture2D.MipLevels = desc.Texture.MipCount;
+			device->CreateShaderResourceView(D3D12TypeConversions::ToResource(desc.Resource), &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::TextureUnorderedAccess:
+		{
+			if (!desc.Resource)
+			{
+				return false;
+			}
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc{};
+			viewDesc.Format = D3D12TypeConversions::ToDxgiFormat(desc.Format);
+			viewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			viewDesc.Texture2D.MipSlice = desc.Texture.MostDetailedMip;
+			viewDesc.Texture2D.PlaneSlice = 0;
+			device->CreateUnorderedAccessView(D3D12TypeConversions::ToResource(desc.Resource), nullptr, &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::BufferShaderResource:
+		{
+			if (!desc.Resource || desc.Buffer.SizeInBytes == 0)
+			{
+				return false;
+			}
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			if (desc.Buffer.StrideInBytes > 0)
+			{
+				viewDesc.Format = DXGI_FORMAT_UNKNOWN;
+				viewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+				viewDesc.Buffer.FirstElement = desc.Buffer.OffsetInBytes / desc.Buffer.StrideInBytes;
+				viewDesc.Buffer.StructureByteStride = desc.Buffer.StrideInBytes;
+				viewDesc.Buffer.NumElements = static_cast<UINT>(desc.Buffer.SizeInBytes / desc.Buffer.StrideInBytes);
+			}
+			else
+			{
+				viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+				viewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+				viewDesc.Buffer.FirstElement = desc.Buffer.OffsetInBytes / sizeof(std::uint32_t);
+				viewDesc.Buffer.StructureByteStride = 0;
+				viewDesc.Buffer.NumElements = static_cast<UINT>(desc.Buffer.SizeInBytes / sizeof(std::uint32_t));
+			}
+			device->CreateShaderResourceView(D3D12TypeConversions::ToResource(desc.Resource), &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::BufferUnorderedAccess:
+		{
+			if (!desc.Resource || desc.Buffer.SizeInBytes == 0)
+			{
+				return false;
+			}
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC viewDesc{};
+			viewDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+			if (desc.Buffer.StrideInBytes > 0)
+			{
+				viewDesc.Format = DXGI_FORMAT_UNKNOWN;
+				viewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+				viewDesc.Buffer.FirstElement = desc.Buffer.OffsetInBytes / desc.Buffer.StrideInBytes;
+				viewDesc.Buffer.StructureByteStride = desc.Buffer.StrideInBytes;
+				viewDesc.Buffer.NumElements = static_cast<UINT>(desc.Buffer.SizeInBytes / desc.Buffer.StrideInBytes);
+			}
+			else
+			{
+				viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+				viewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+				viewDesc.Buffer.FirstElement = desc.Buffer.OffsetInBytes / sizeof(std::uint32_t);
+				viewDesc.Buffer.StructureByteStride = 0;
+				viewDesc.Buffer.NumElements = static_cast<UINT>(desc.Buffer.SizeInBytes / sizeof(std::uint32_t));
+			}
+			device->CreateUnorderedAccessView(D3D12TypeConversions::ToResource(desc.Resource), nullptr, &viewDesc, nativeDestination);
+			return true;
+		}
+		case ERhiResourceViewKind::AccelerationStructureShaderResource:
+		{
+			if (desc.AccelerationStructureGpuAddress == 0)
+			{
+				return false;
+			}
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+			viewDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+			viewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			viewDesc.RaytracingAccelerationStructure.Location = desc.AccelerationStructureGpuAddress;
+			device->CreateShaderResourceView(nullptr, &viewDesc, nativeDestination);
+			return true;
+		}
+		default:
+			return false;
+	}
 }
 
 bool D3D12RenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept
@@ -1064,7 +1112,7 @@ void D3D12RenderHardwareInterface::BeginPresentRenderPass(const float clearColor
 
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	SetShaderVisibleDescriptorHeaps(commandList);
+	BindGlobalDescriptorState(commandList);
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
@@ -1088,7 +1136,7 @@ void D3D12RenderHardwareInterface::BeginPresentOverlayPass() noexcept
 
 	RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
 	commandList.TransitionResource(presentTexture, ResourceState::Present, ResourceState::RenderTarget);
-	SetShaderVisibleDescriptorHeaps(commandList);
+	BindGlobalDescriptorState(commandList);
 
 	const RhiCpuDescriptorHandle renderTargetView = GetBackBufferRenderTargetView();
 	commandList.SetRenderTarget(renderTargetView);
@@ -1119,6 +1167,25 @@ PixelFormat D3D12RenderHardwareInterface::GetPresentColorFormat() const noexcept
 void D3D12RenderHardwareInterface::SetSamplerTableHandle(RhiDescriptorTableHandle samplerTableHandle) noexcept
 {
 	m_samplerTableHandle = samplerTableHandle;
+}
+
+ERhiDescriptorAllocatorType D3D12RenderHardwareInterface::ResolveResourceViewDescriptorAllocatorType(
+    ERhiResourceViewKind kind) noexcept
+{
+	switch (kind)
+	{
+		case ERhiResourceViewKind::RenderTarget:
+			return ERhiDescriptorAllocatorType::RenderTarget;
+		case ERhiResourceViewKind::DepthStencil:
+			return ERhiDescriptorAllocatorType::DepthStencil;
+		case ERhiResourceViewKind::TextureShaderResource:
+		case ERhiResourceViewKind::TextureUnorderedAccess:
+		case ERhiResourceViewKind::BufferShaderResource:
+		case ERhiResourceViewKind::BufferUnorderedAccess:
+		case ERhiResourceViewKind::AccelerationStructureShaderResource:
+		default:
+			return ERhiDescriptorAllocatorType::ShaderResource;
+	}
 }
 
 D3D12RenderHardwareInterface::DescriptorTableRecord* D3D12RenderHardwareInterface::FindDescriptorTableRecord(
@@ -1173,4 +1240,28 @@ D3D12_GPU_DESCRIPTOR_HANDLE D3D12RenderHardwareInterface::ResolveDescriptorTable
 	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = record->nativeHandle.GetGPU();
 	gpuHandle.ptr += static_cast<UINT64>(descriptorIndex) * record->nativeHandle.GetIncrementSize();
 	return gpuHandle;
+}
+
+D3D12RenderHardwareInterface::ResourceViewRecord* D3D12RenderHardwareInterface::FindResourceViewRecord(
+    RhiResourceViewHandle view) noexcept
+{
+	if (!view || view.Value == 0 || view.Value > m_resourceViewRecords.size())
+	{
+		return nullptr;
+	}
+
+	ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
+	return record.IsAllocated() ? &record : nullptr;
+}
+
+const D3D12RenderHardwareInterface::ResourceViewRecord* D3D12RenderHardwareInterface::FindResourceViewRecord(
+    RhiResourceViewHandle view) const noexcept
+{
+	if (!view || view.Value == 0 || view.Value > m_resourceViewRecords.size())
+	{
+		return nullptr;
+	}
+
+	const ResourceViewRecord& record = m_resourceViewRecords[view.Value - 1u];
+	return record.IsAllocated() ? &record : nullptr;
 }

@@ -45,6 +45,14 @@ set(FORBIDDEN_EXECUTION_COMPILER_TOKENS
     "Renderer/Private/FrameGraph/Compiler/FrameGraphPlan.h"
 )
 
+set(FORBIDDEN_FRAMEGRAPH_DESCRIPTOR_IDENTITY_TOKENS
+    "RhiDescriptorAllocation"
+    "shaderResourceViewCpu"
+    "shaderResourceViewGpu"
+    "unorderedAccessViewCpu"
+    "unorderedAccessViewGpu"
+)
+
 set(FRAMEGRAPH_BOUNDARY_VIOLATIONS "")
 
 function(check_file_for_tokens file_path)
@@ -89,6 +97,25 @@ if(EXISTS "${FRAMEGRAPH_PRIVATE_ROOT}")
             "${private_framegraph_header}"
             TOKENS ${FORBIDDEN_PRIVATE_EXPORT_TOKENS}
             DESCRIPTION "private FrameGraph headers must not become Renderer DLL export contracts"
+        )
+
+        check_file_for_tokens(
+            "${private_framegraph_header}"
+            TOKENS ${FORBIDDEN_FRAMEGRAPH_DESCRIPTOR_IDENTITY_TOKENS}
+            DESCRIPTION "FrameGraph view identity must use logical RHI resource view handles, not D3D12-shaped descriptor allocations"
+        )
+    endforeach()
+
+    file(GLOB_RECURSE private_framegraph_sources
+        "${FRAMEGRAPH_PRIVATE_ROOT}/*.cpp"
+        "${FRAMEGRAPH_PRIVATE_ROOT}/*.cxx"
+    )
+
+    foreach(private_framegraph_source IN LISTS private_framegraph_sources)
+        check_file_for_tokens(
+            "${private_framegraph_source}"
+            TOKENS ${FORBIDDEN_FRAMEGRAPH_DESCRIPTOR_IDENTITY_TOKENS}
+            DESCRIPTION "FrameGraph view identity must use logical RHI resource view handles, not D3D12-shaped descriptor allocations"
         )
     endforeach()
 

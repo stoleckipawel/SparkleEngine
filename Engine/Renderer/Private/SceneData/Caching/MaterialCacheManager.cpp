@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
 #include "MaterialCacheManager.h"
 
@@ -75,7 +75,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceStrength), DefaultTexture::Black)};
 
 		const RhiDescriptorTableHandle tableHandle =
-		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, MaterialTextureSlots::Count);
+		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorAllocatorType::ShaderResource, MaterialTextureSlots::Count);
 		if (!tableHandle)
 		{
 			Diagnostics::Fail(

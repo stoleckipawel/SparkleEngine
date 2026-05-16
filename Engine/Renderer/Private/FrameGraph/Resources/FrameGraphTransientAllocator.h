@@ -19,13 +19,11 @@ class FrameGraphTransientAllocator final
 		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
-		std::uint64_t heapOffset = 0;
-		RhiDescriptorAllocation renderTargetView = {};
-		RhiDescriptorAllocation depthStencilView = {};
-		RhiDescriptorAllocation shaderResourceView = {};
-		RhiDescriptorAllocation unorderedAccessView = {};
-		bool hasShaderResourceView = false;
-		bool hasUnorderedAccessView = false;
+		std::uint64_t memoryBlockOffset = 0;
+		RhiResourceViewHandle renderTargetView = {};
+		RhiResourceViewHandle depthStencilView = {};
+		RhiResourceViewHandle shaderResourceView = {};
+		RhiResourceViewHandle unorderedAccessView = {};
 		RhiOwnedResourceHandle ownedDepthStencilResource = {};
 		RhiOwnedResourceHandle ownedRenderTargetResource = {};
 		RhiOwnedResourceHandle ownedBuffer = {};
@@ -40,8 +38,8 @@ class FrameGraphTransientAllocator final
 		FrameGraphTransientResourcePlan::AllocationPool pool = FrameGraphTransientResourcePlan::AllocationPool::Color;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
-		std::uint64_t heapOffset = 0;
-		RhiOwnedHeapHandle ownedHeap = {};
+		std::uint64_t memoryBlockOffset = 0;
+		RhiOwnedMemoryBlockHandle ownedMemoryBlock = {};
 	};
 
 	explicit FrameGraphTransientAllocator(RenderHardwareInterface& renderHardwareInterface) noexcept;

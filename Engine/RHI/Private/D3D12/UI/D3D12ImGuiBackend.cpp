@@ -23,7 +23,7 @@ bool D3D12ImGuiBackend::Initialize()
 	initInfo.NumFramesInFlight = static_cast<int>(RenderConfig::FramesInFlight);
 	initInfo.RTVFormat = D3D12TypeConversions::ToDxgiFormat(m_renderHardware->GetPresentColorFormat());
 	initInfo.DSVFormat = D3D12TypeConversions::ToDxgiFormat(RenderConfig::DepthStencilFormat);
-	initInfo.SrvDescriptorHeap = ToD3D12DescriptorHeap(m_renderHardware->GetShaderResourceHeapHandle());
+	initInfo.SrvDescriptorHeap = m_renderHardware->GetD3D12ShaderResourceDescriptorHeap();
 	initInfo.SrvDescriptorAllocFn = &D3D12ImGuiBackend::AllocateDescriptor;
 	initInfo.SrvDescriptorFreeFn = &D3D12ImGuiBackend::ReleaseDescriptor;
 	initInfo.UserData = m_renderHardware;
@@ -89,11 +89,6 @@ ID3D12Device* D3D12ImGuiBackend::ToD3D12Device(NativeGraphicsDeviceHandle handle
 ID3D12CommandQueue* D3D12ImGuiBackend::ToD3D12CommandQueue(NativeGraphicsQueueHandle handle) noexcept
 {
 	return static_cast<ID3D12CommandQueue*>(handle.Value);
-}
-
-ID3D12DescriptorHeap* D3D12ImGuiBackend::ToD3D12DescriptorHeap(NativeDescriptorHeapHandle handle) noexcept
-{
-	return static_cast<ID3D12DescriptorHeap*>(handle.Value);
 }
 
 ID3D12GraphicsCommandList* D3D12ImGuiBackend::ToD3D12GraphicsCommandList(NativeGraphicsCommandListHandle handle) noexcept

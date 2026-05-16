@@ -48,26 +48,15 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 		{
 			if (!access.renderTargetView)
 			{
-				access.renderTargetView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::RenderTarget).CpuHandle;
+				access.renderTargetView = m_renderHardwareInterface->CreateResourceView(
+				    RhiResourceViewDesc::RenderTarget(access.resource, metadata.textureDesc.format));
 			}
 
-			m_renderHardwareInterface->CreateRenderTargetView(
-			    access.resource,
-			    metadata.textureDesc.format,
-			    access.renderTargetView);
-
-			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
+			if (!access.shaderResourceView)
 			{
-				const RhiDescriptorAllocation allocation =
-				    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
-				access.shaderResourceViewCpu = allocation.CpuHandle;
-				access.shaderResourceViewGpu = allocation.GpuHandle;
+				access.shaderResourceView = m_renderHardwareInterface->CreateResourceView(
+				    RhiResourceViewDesc::TextureShaderResource(access.resource, metadata.textureDesc.format));
 			}
-
-			m_renderHardwareInterface->CreateTextureShaderResourceView(
-			    access.resource,
-			    metadata.textureDesc.format,
-			    access.shaderResourceViewCpu);
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
@@ -79,47 +68,30 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 					assert(false);
 				}
 
-				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
+				if (!access.unorderedAccessView)
 				{
-					const RhiDescriptorAllocation allocation =
-					    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
-					access.unorderedAccessViewCpu = allocation.CpuHandle;
-					access.unorderedAccessViewGpu = allocation.GpuHandle;
+					access.unorderedAccessView = m_renderHardwareInterface->CreateResourceView(
+					    RhiResourceViewDesc::TextureUnorderedAccess(access.resource, metadata.textureDesc.format));
 				}
-
-				m_renderHardwareInterface->CreateTextureUnorderedAccessView(
-				    access.resource,
-				    metadata.textureDesc.format,
-				    access.unorderedAccessViewCpu);
 			}
 		}
 		else if (metadata.kind == FrameGraphResourceKind::DepthStencil)
 		{
 			if (!access.depthStencilView)
 			{
-				access.depthStencilView = m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::DepthStencil).CpuHandle;
+				access.depthStencilView = m_renderHardwareInterface->CreateResourceView(
+				    RhiResourceViewDesc::DepthStencil(access.resource, metadata.textureDesc.format));
 			}
-
-			m_renderHardwareInterface->CreateDepthStencilView(
-			    access.resource,
-			    metadata.textureDesc.format,
-			    access.depthStencilView);
 		}
 		else if (metadata.kind == FrameGraphResourceKind::Buffer)
 		{
-			if (!access.shaderResourceViewCpu || !access.shaderResourceViewGpu)
+			if (!access.shaderResourceView)
 			{
-				const RhiDescriptorAllocation allocation =
-				    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
-				access.shaderResourceViewCpu = allocation.CpuHandle;
-				access.shaderResourceViewGpu = allocation.GpuHandle;
+				access.shaderResourceView = m_renderHardwareInterface->CreateResourceView(RhiResourceViewDesc::BufferShaderResource(
+				    access.resource,
+				    metadata.bufferDesc.sizeInBytes,
+				    metadata.bufferDesc.strideInBytes));
 			}
-
-			m_renderHardwareInterface->CreateBufferShaderResourceView(
-			    access.resource,
-			    metadata.bufferDesc.sizeInBytes,
-			    metadata.bufferDesc.strideInBytes,
-			    access.shaderResourceViewCpu);
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
@@ -131,25 +103,19 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 					assert(false);
 				}
 
-				if (!access.unorderedAccessViewCpu || !access.unorderedAccessViewGpu)
+				if (!access.unorderedAccessView)
 				{
-					const RhiDescriptorAllocation allocation =
-					    m_renderHardwareInterface->AllocateDescriptor(ERhiDescriptorHeapType::ShaderResource);
-					access.unorderedAccessViewCpu = allocation.CpuHandle;
-					access.unorderedAccessViewGpu = allocation.GpuHandle;
+					access.unorderedAccessView = m_renderHardwareInterface->CreateResourceView(RhiResourceViewDesc::BufferUnorderedAccess(
+					    access.resource,
+					    metadata.bufferDesc.sizeInBytes,
+					    metadata.bufferDesc.strideInBytes));
 				}
-
-				m_renderHardwareInterface->CreateBufferUnorderedAccessView(
-				    access.resource,
-				    metadata.bufferDesc.sizeInBytes,
-				    metadata.bufferDesc.strideInBytes,
-				    access.unorderedAccessViewCpu);
 			}
 		}
 	}
 }
 
-void FrameGraph::ReleaseExternalViewDescriptors() noexcept
+void FrameGraph::ReleaseExternalResourceViews() noexcept
 {
 	if (m_renderHardwareInterface == nullptr)
 	{
@@ -167,36 +133,26 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
 		if (access.renderTargetView)
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(
-			    ERhiDescriptorHeapType::RenderTarget,
-			    RhiDescriptorAllocation{.CpuHandle = access.renderTargetView});
+			m_renderHardwareInterface->ReleaseResourceView(access.renderTargetView);
 			access.renderTargetView = {};
 		}
 
 		if (access.depthStencilView)
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(
-			    ERhiDescriptorHeapType::DepthStencil,
-			    RhiDescriptorAllocation{.CpuHandle = access.depthStencilView});
+			m_renderHardwareInterface->ReleaseResourceView(access.depthStencilView);
 			access.depthStencilView = {};
 		}
 
-		if (access.shaderResourceViewCpu || access.shaderResourceViewGpu)
+		if (access.shaderResourceView)
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(
-			    ERhiDescriptorHeapType::ShaderResource,
-			    RhiDescriptorAllocation{.CpuHandle = access.shaderResourceViewCpu, .GpuHandle = access.shaderResourceViewGpu});
-			access.shaderResourceViewCpu = {};
-			access.shaderResourceViewGpu = {};
+			m_renderHardwareInterface->ReleaseResourceView(access.shaderResourceView);
+			access.shaderResourceView = {};
 		}
 
-		if (access.unorderedAccessViewCpu || access.unorderedAccessViewGpu)
+		if (access.unorderedAccessView)
 		{
-			m_renderHardwareInterface->ReleaseDescriptor(
-			    ERhiDescriptorHeapType::ShaderResource,
-			    RhiDescriptorAllocation{.CpuHandle = access.unorderedAccessViewCpu, .GpuHandle = access.unorderedAccessViewGpu});
-			access.unorderedAccessViewCpu = {};
-			access.unorderedAccessViewGpu = {};
+			m_renderHardwareInterface->ReleaseResourceView(access.unorderedAccessView);
+			access.unorderedAccessView = {};
 		}
 	}
 }

@@ -105,7 +105,7 @@ void BindComputeShaderPass(
 {
 	if (renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->SetShaderVisibleDescriptorHeaps(cmd.GetRenderCommandList());
+		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState);
@@ -132,7 +132,7 @@ void BindRasterShaderPass(
 {
 	if (renderHardwareInterface != nullptr)
 	{
-		renderHardwareInterface->SetShaderVisibleDescriptorHeaps(cmd.GetRenderCommandList());
+		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
 
 	cmd.SetPipelineState(pipelineState);

@@ -123,7 +123,7 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		            .pool = ResolveTransientAllocationPool(resourceMetadata.kind),
 		            .sizeInBytes = allocationInfo.SizeInBytes,
 		            .alignment = allocationInfo.Alignment,
-		            .heapOffset = 0,
+		            .memoryBlockOffset = 0,
 		            .textureResourceDesc = textureResourceDesc,
 		            .bufferResourceDesc = bufferResourceDesc,
 		            .optimizedClearValue = isBuffer
@@ -147,33 +147,29 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 		{
 			case FrameGraphResourceKind::DepthStencil:
 				access.resource = allocation.depthStencilResource;
-				access.depthStencilView = allocation.depthStencilView.CpuHandle;
+					access.depthStencilView = allocation.depthStencilView;
 				break;
 			case FrameGraphResourceKind::ColorRenderTarget:
 				access.resource = allocation.renderTargetResource;
-				access.renderTargetView = allocation.renderTargetView.CpuHandle;
-				if (allocation.shaderResourceView.IsValid())
+					access.renderTargetView = allocation.renderTargetView;
+					if (allocation.shaderResourceView)
 				{
-					access.shaderResourceViewCpu = allocation.shaderResourceView.CpuHandle;
-					access.shaderResourceViewGpu = allocation.shaderResourceView.GpuHandle;
+						access.shaderResourceView = allocation.shaderResourceView;
 				}
-				if (allocation.unorderedAccessView.IsValid())
+					if (allocation.unorderedAccessView)
 				{
-					access.unorderedAccessViewCpu = allocation.unorderedAccessView.CpuHandle;
-					access.unorderedAccessViewGpu = allocation.unorderedAccessView.GpuHandle;
+						access.unorderedAccessView = allocation.unorderedAccessView;
 				}
 				break;
 			case FrameGraphResourceKind::Buffer:
 				access.resource = allocation.buffer;
-				if (allocation.shaderResourceView.IsValid())
+					if (allocation.shaderResourceView)
 				{
-					access.shaderResourceViewCpu = allocation.shaderResourceView.CpuHandle;
-					access.shaderResourceViewGpu = allocation.shaderResourceView.GpuHandle;
+						access.shaderResourceView = allocation.shaderResourceView;
 				}
-				if (allocation.unorderedAccessView.IsValid())
+					if (allocation.unorderedAccessView)
 				{
-					access.unorderedAccessViewCpu = allocation.unorderedAccessView.CpuHandle;
-					access.unorderedAccessViewGpu = allocation.unorderedAccessView.GpuHandle;
+						access.unorderedAccessView = allocation.unorderedAccessView;
 				}
 				break;
 			default:

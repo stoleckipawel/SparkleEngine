@@ -75,7 +75,7 @@ class SPARKLE_RHI_API RenderObjectDiagnostics
 	virtual void SetDebugName(NativeGraphicsQueueHandle queue, std::wstring_view debugName) noexcept = 0;
 	virtual void SetDebugName(const RenderCommandList& commandList, std::wstring_view debugName) noexcept = 0;
 	virtual void SetDebugName(NativeResourceHandle resource, std::wstring_view debugName) noexcept = 0;
-	virtual void SetDebugName(RhiOwnedHeapHandle heap, std::wstring_view debugName) noexcept = 0;
+	virtual void SetDebugName(RhiOwnedMemoryBlockHandle memoryBlock, std::wstring_view debugName) noexcept = 0;
 	virtual void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept = 0;
 };
 

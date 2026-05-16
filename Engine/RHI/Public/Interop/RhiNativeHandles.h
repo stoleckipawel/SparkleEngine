@@ -21,13 +21,6 @@ struct NativeGraphicsCommandListHandle
 	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
 };
 
-struct NativeDescriptorHeapHandle
-{
-	void* Value = nullptr;
-
-	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
-};
-
 struct NativeResourceHandle
 {
 	void* Value = nullptr;
@@ -37,7 +30,7 @@ struct NativeResourceHandle
 
 using NativeTextureHandle = NativeResourceHandle;
 
-struct RhiOwnedHeapHandle
+struct RhiOwnedMemoryBlockHandle
 {
 	void* Value = nullptr;
 

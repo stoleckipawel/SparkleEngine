@@ -66,17 +66,17 @@ D3D12_GPU_DESCRIPTOR_HANDLE D3D12TypeConversions::ToGpuDescriptor(RhiGpuDescript
 	return D3D12_GPU_DESCRIPTOR_HANDLE{handle.Value};
 }
 
-D3D12_DESCRIPTOR_HEAP_TYPE D3D12TypeConversions::ToDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept
+D3D12_DESCRIPTOR_HEAP_TYPE D3D12TypeConversions::ToDescriptorHeapType(ERhiDescriptorAllocatorType descriptorType) noexcept
 {
-	switch (heapType)
+	switch (descriptorType)
 	{
-		case ERhiDescriptorHeapType::RenderTarget:
+		case ERhiDescriptorAllocatorType::RenderTarget:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		case ERhiDescriptorHeapType::DepthStencil:
+		case ERhiDescriptorAllocatorType::DepthStencil:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		case ERhiDescriptorHeapType::Sampler:
+		case ERhiDescriptorAllocatorType::Sampler:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-		case ERhiDescriptorHeapType::ShaderResource:
+		case ERhiDescriptorAllocatorType::ShaderResource:
 		default:
 			return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	}

@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -39,7 +39,7 @@ D3D12SamplerLibrary::D3D12SamplerLibrary(D3D12Rhi& rhi, RenderHardwareInterface&
 {
 	constexpr uint32_t samplerCount = static_cast<uint32_t>(Slot::Count);
 
-	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorHeapType::Sampler, samplerCount);
+	m_tableHandle = m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, samplerCount);
 	if (!m_tableHandle)
 	{
 		Diagnostics::Fail(g_samplerLibraryLogger, __FILE__, __LINE__, "Failed to allocate sampler descriptor table.");

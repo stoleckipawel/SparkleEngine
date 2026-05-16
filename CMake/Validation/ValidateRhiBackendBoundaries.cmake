@@ -83,6 +83,51 @@ function(check_file_for_backend_tokens file_path)
     endforeach()
 endfunction()
 
+set(rhi_public_root "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Public")
+if(EXISTS "${rhi_public_root}")
+    file(GLOB_RECURSE rhi_public_files
+        "${rhi_public_root}/*.h"
+        "${rhi_public_root}/*.hpp"
+    )
+
+    foreach(rhi_public_file IN LISTS rhi_public_files)
+        check_file_for_backend_tokens(
+            "${rhi_public_file}"
+            TOKENS
+                "RhiOwnedHeapHandle"
+                "CreateOwnedHeap"
+                "ReleaseOwnedHeap"
+                "CreatePlacedTextureResource"
+                "CreatePlacedBufferResource"
+                "PlacedResource"
+                "SetShaderVisibleDescriptorHeaps"
+                "SetDescriptorHeaps"
+                "GetShaderResourceHeapHandle"
+                "NativeDescriptorHeapHandle"
+                "ERhiDescriptorHeapType"
+                "DescriptorHeap"
+                "heapOffset"
+                "ownedHeap"
+                "CreateRenderTargetView"
+                "CreateDepthStencilView"
+                "CreateTextureShaderResourceView"
+                "CreateTextureUnorderedAccessView"
+                "CreateBufferShaderResourceView"
+                "CreateBufferUnorderedAccessView"
+                "CreateRayTracingAccelerationStructureShaderResourceView"
+            DESCRIPTION "public RHI vocabulary must use neutral memory block, aliasing resource, and global binding state names"
+        )
+    endforeach()
+
+    set(rhi_resource_view_path "${rhi_public_root}/Resources/RhiResourceView.h")
+    read_required_file("${rhi_resource_view_path}" rhi_resource_view_text)
+    if(rhi_resource_view_text)
+        require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "RhiResourceViewDesc" "public RHI must describe logical resource views independently of native descriptors")
+        require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "RhiResourceViewHandle" "public RHI must identify views independently of D3D12 CPU/GPU descriptor handles")
+        require_text("${rhi_resource_view_path}" "${rhi_resource_view_text}" "AccelerationStructureShaderResource" "view model must include acceleration-structure SRV intent")
+    endif()
+endif()
+
 set(rhi_cmake_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt")
 read_required_file("${rhi_cmake_path}" rhi_cmake_text)
 if(rhi_cmake_text)
@@ -169,6 +214,9 @@ foreach(high_level_root IN LISTS high_level_roots)
                 "#include <vulkan/"
                 "D3D12MemAlloc"
                 "vk_mem_alloc"
+                "SetShaderVisibleDescriptorHeaps"
+                "SetDescriptorHeaps"
+                "NativeDescriptorHeapHandle"
             DESCRIPTION "Application, Editor, GameFramework, and Renderer must use backend-neutral RHI surfaces"
         )
     endforeach()
@@ -176,8 +224,8 @@ endforeach()
 
 if(RHI_BACKEND_BOUNDARY_VIOLATIONS)
     string(PREPEND RHI_BACKEND_BOUNDARY_VIOLATIONS
-        "RHI backend boundary validation failed. Keep common RHI and Renderer backend-neutral, and keep backend API libraries on backend targets.\n")
+        "RHI backend boundary validation failed. Keep common RHI and Renderer backend-neutral, keep backend API libraries on backend targets, and keep public RHI vocabulary backend-agnostic.\n")
     message(FATAL_ERROR "${RHI_BACKEND_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "RHI backend boundary check passed for CMake target split, Renderer link hygiene, and common-source backend leakage.")
+message(STATUS "RHI backend boundary check passed for CMake target split, Renderer link hygiene, common-source backend leakage, and public RHI vocabulary.")

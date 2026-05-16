@@ -1,20 +1,18 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
-#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "RHI/Public/Interop/RhiNativeHandles.h"
+#include "RHI/Public/Resources/RhiResourceView.h"
 
 #include <vector>
 
 struct FrameGraphResourceAccess
 {
 	NativeResourceHandle resource = {};
-	RhiCpuDescriptorHandle renderTargetView = {};
-	RhiCpuDescriptorHandle depthStencilView = {};
-	RhiCpuDescriptorHandle shaderResourceViewCpu = {};
-	RhiGpuDescriptorHandle shaderResourceViewGpu = {};
-	RhiCpuDescriptorHandle unorderedAccessViewCpu = {};
-	RhiGpuDescriptorHandle unorderedAccessViewGpu = {};
+	RhiResourceViewHandle renderTargetView = {};
+	RhiResourceViewHandle depthStencilView = {};
+	RhiResourceViewHandle shaderResourceView = {};
+	RhiResourceViewHandle unorderedAccessView = {};
 
 	bool IsResolved() const noexcept { return static_cast<bool>(resource); }
 };

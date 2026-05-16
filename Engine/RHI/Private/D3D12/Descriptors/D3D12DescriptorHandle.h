@@ -25,7 +25,7 @@ class D3D12DescriptorHandle
 	bool IsValid() const noexcept { return (m_index != InvalidIndex) && (m_cpuHandle.ptr != 0); }
 	bool IsShaderVisible() const noexcept
 	{
-		return (m_heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (m_heapType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		return (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) || (m_descriptorType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	}
 
 	static constexpr UINT InvalidIndex = ~0u;
@@ -33,7 +33,7 @@ class D3D12DescriptorHandle
   private:
 	UINT m_index = InvalidIndex;
 	UINT m_incrementSize = 0;
-	D3D12_DESCRIPTOR_HEAP_TYPE m_heapType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
+	D3D12_DESCRIPTOR_HEAP_TYPE m_descriptorType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_cpuHandle = {0};
 	D3D12_GPU_DESCRIPTOR_HANDLE m_gpuHandle = {0};
 };

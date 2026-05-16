@@ -27,7 +27,7 @@ FrameGraph::~FrameGraph()
 		m_transientAllocator->Reset();
 	}
 
-	ReleaseExternalViewDescriptors();
+	ReleaseExternalResourceViews();
 	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph destroyed");
 }
 

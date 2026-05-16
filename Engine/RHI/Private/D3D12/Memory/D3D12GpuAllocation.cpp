@@ -92,22 +92,22 @@ void SetD3D12AllocationRecordDebugName(D3D12GpuAllocationRecord& record, std::ws
 	}
 }
 
-RhiOwnedHeapHandle MakeD3D12OwnedHeapHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept
+RhiOwnedMemoryBlockHandle MakeD3D12OwnedMemoryBlockHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept
 {
-	return RhiOwnedHeapHandle{record.release()};
+	return RhiOwnedMemoryBlockHandle{record.release()};
 }
 
-std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedHeapHandle(RhiOwnedHeapHandle handle) noexcept
+std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedMemoryBlockHandle(RhiOwnedMemoryBlockHandle handle) noexcept
 {
 	return std::unique_ptr<D3D12GpuHeapRecord>(static_cast<D3D12GpuHeapRecord*>(handle.Value));
 }
 
-D3D12GpuHeapRecord* GetD3D12GpuHeapRecord(RhiOwnedHeapHandle handle) noexcept
+D3D12GpuHeapRecord* GetD3D12GpuHeapRecord(RhiOwnedMemoryBlockHandle handle) noexcept
 {
 	return static_cast<D3D12GpuHeapRecord*>(handle.Value);
 }
 
-ID3D12Heap* GetD3D12Heap(RhiOwnedHeapHandle handle) noexcept
+ID3D12Heap* GetD3D12Heap(RhiOwnedMemoryBlockHandle handle) noexcept
 {
 	D3D12GpuHeapRecord* const record = GetD3D12GpuHeapRecord(handle);
 	return record != nullptr ? record->NativeHeap.Get() : nullptr;

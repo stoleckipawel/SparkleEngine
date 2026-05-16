@@ -3,6 +3,7 @@
 #include "Device/RenderHardwareInterface.h"
 
 #include <d3d12.h>
+#include <cstdint>
 
 class D3D12RenderHardwareInterface;
 
@@ -17,7 +18,7 @@ class D3D12RenderCommandList final : public RenderCommandList
 	void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
 	void EndDiagnosticScope() noexcept override;
 	void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept override;
-	void SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept override;
+	void SetShaderVisibleDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept;
 	void SetPipelineState(const RenderPipelineState& pipelineState) noexcept override;
 	void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;
 	void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept override;

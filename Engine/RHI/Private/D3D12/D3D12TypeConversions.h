@@ -16,7 +16,7 @@ class D3D12TypeConversions final
 	static ID3D12Resource* ToResource(NativeResourceHandle handle) noexcept;
 	static D3D12_CPU_DESCRIPTOR_HANDLE ToCpuDescriptor(RhiCpuDescriptorHandle handle) noexcept;
 	static D3D12_GPU_DESCRIPTOR_HANDLE ToGpuDescriptor(RhiGpuDescriptorHandle handle) noexcept;
-	static D3D12_DESCRIPTOR_HEAP_TYPE ToDescriptorHeapType(ERhiDescriptorHeapType heapType) noexcept;
+	static D3D12_DESCRIPTOR_HEAP_TYPE ToDescriptorHeapType(ERhiDescriptorAllocatorType descriptorType) noexcept;
 	static D3D12_RESOURCE_STATES ToResourceStates(ResourceState state) noexcept;
 	static D3D12_PRIMITIVE_TOPOLOGY ToPrimitiveTopology(RhiPrimitiveTopology topology) noexcept;
 	static DXGI_FORMAT ToIndexFormat(RhiIndexFormat format) noexcept;

@@ -24,7 +24,6 @@ class SPARKLE_RHI_API RenderCommandList
 	virtual void BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
 	virtual void EndDiagnosticScope() noexcept = 0;
 	virtual void InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color = {}) noexcept = 0;
-	virtual void SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept = 0;
 	virtual void SetPipelineState(const RenderPipelineState& pipelineState) noexcept = 0;
 	virtual void SetGraphicsBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;
 	virtual void SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept = 0;

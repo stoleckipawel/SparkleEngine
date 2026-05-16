@@ -51,7 +51,7 @@ namespace
 		RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 		if (!skyTextureTable)
 		{
-			skyTextureTable = renderHardwareInterface.AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, 1u);
+			skyTextureTable = renderHardwareInterface.AllocateDescriptorTable(ERhiDescriptorAllocatorType::ShaderResource, 1u);
 		}
 
 		if (!skyTextureTable)

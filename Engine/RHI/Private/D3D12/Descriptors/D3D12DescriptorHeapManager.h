@@ -5,6 +5,8 @@
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"
 
+class D3D12RenderCommandList;
+
 class D3D12DescriptorHeapManager final
 {
   public:
@@ -16,7 +18,7 @@ class D3D12DescriptorHeapManager final
 	D3D12DescriptorHeapManager(D3D12DescriptorHeapManager&&) = delete;
 	D3D12DescriptorHeapManager& operator=(D3D12DescriptorHeapManager&&) = delete;
 
-	void SetShaderVisibleHeaps(RenderCommandList& commandList) const;
+	void BindGlobalDescriptorState(D3D12RenderCommandList& commandList) const;
 
 	void AllocateHandle(D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
 	{

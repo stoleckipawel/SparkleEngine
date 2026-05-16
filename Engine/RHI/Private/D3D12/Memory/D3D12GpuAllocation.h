@@ -67,7 +67,7 @@ D3D12GpuAllocationRecord* GetD3D12GpuAllocationRecord(RhiOwnedResourceHandle han
 ID3D12Resource* GetD3D12Resource(RhiOwnedResourceHandle handle) noexcept;
 void SetD3D12AllocationRecordDebugName(D3D12GpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 
-RhiOwnedHeapHandle MakeD3D12OwnedHeapHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
-std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedHeapHandle(RhiOwnedHeapHandle handle) noexcept;
-D3D12GpuHeapRecord* GetD3D12GpuHeapRecord(RhiOwnedHeapHandle handle) noexcept;
-ID3D12Heap* GetD3D12Heap(RhiOwnedHeapHandle handle) noexcept;
+RhiOwnedMemoryBlockHandle MakeD3D12OwnedMemoryBlockHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
+std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedMemoryBlockHandle(RhiOwnedMemoryBlockHandle handle) noexcept;
+D3D12GpuHeapRecord* GetD3D12GpuHeapRecord(RhiOwnedMemoryBlockHandle handle) noexcept;
+ID3D12Heap* GetD3D12Heap(RhiOwnedMemoryBlockHandle handle) noexcept;

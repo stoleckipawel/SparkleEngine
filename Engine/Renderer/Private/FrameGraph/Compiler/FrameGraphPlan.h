@@ -137,7 +137,7 @@ struct FrameGraphTransientResourcePlan
 		AllocationPool pool = AllocationPool::Color;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
-		std::uint64_t heapOffset = 0;
+		std::uint64_t memoryBlockOffset = 0;
 		RhiTextureResourceDesc textureResourceDesc{};
 		RhiBufferResourceDesc bufferResourceDesc{};
 		RhiOptimizedClearValue optimizedClearValue{};
@@ -160,7 +160,7 @@ struct FrameGraphTransientPhysicalBlockPlan
 	FrameGraphTransientResourcePlan::AllocationPool pool = FrameGraphTransientResourcePlan::AllocationPool::Color;
 	std::uint64_t sizeInBytes = 0;
 	std::uint64_t alignment = 0;
-	std::uint64_t heapOffset = 0;
+	std::uint64_t memoryBlockOffset = 0;
 	RhiTextureResourceDesc textureResourceDesc{};
 	RhiBufferResourceDesc bufferResourceDesc{};
 	RhiOptimizedClearValue optimizedClearValue{};

@@ -16,7 +16,7 @@ struct RhiGpuDescriptorHandle
 	constexpr explicit operator bool() const noexcept { return Value != 0; }
 };
 
-enum class ERhiDescriptorHeapType : std::uint8_t
+enum class ERhiDescriptorAllocatorType : std::uint8_t
 {
 	ShaderResource = 0,
 	Sampler = 1,

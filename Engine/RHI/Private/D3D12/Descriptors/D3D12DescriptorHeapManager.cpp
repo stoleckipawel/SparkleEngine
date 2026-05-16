@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include "Device/RenderHardwareInterface.h"
+#include "D3D12/D3D12RenderCommandList.h"
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {
@@ -34,12 +34,10 @@ D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&r
 
 D3D12DescriptorHeapManager::~D3D12DescriptorHeapManager() noexcept = default;
 
-void D3D12DescriptorHeapManager::SetShaderVisibleHeaps(RenderCommandList& commandList) const
+void D3D12DescriptorHeapManager::BindGlobalDescriptorState(D3D12RenderCommandList& commandList) const
 {
-	const NativeDescriptorHeapHandle heaps[] = {
-	    NativeDescriptorHeapHandle{m_HeapSRV->GetRaw()},
-	    NativeDescriptorHeapHandle{m_HeapSampler->GetRaw()}};
-	commandList.SetDescriptorHeaps(static_cast<std::uint32_t>(_countof(heaps)), heaps);
+	ID3D12DescriptorHeap* const heaps[] = {m_HeapSRV->GetRaw(), m_HeapSampler->GetRaw()};
+	commandList.SetShaderVisibleDescriptorHeaps(static_cast<std::uint32_t>(_countof(heaps)), heaps);
 }
 
 void D3D12DescriptorHeapManager::FreeHandle(

@@ -315,7 +315,7 @@ class FrameGraph
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
-	void ReleaseExternalViewDescriptors() noexcept;
+	void ReleaseExternalResourceViews() noexcept;
 	void EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitTransientAliasingBarriers(
 	    RenderCommandContext& cmd,

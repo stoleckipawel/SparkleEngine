@@ -47,9 +47,9 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		SetD3D12ObjectDebugName(static_cast<ID3D12Object*>(resource.Value), debugName);
 	}
 
-	void SetDebugName(RhiOwnedHeapHandle heap, std::wstring_view debugName) noexcept override
+	void SetDebugName(RhiOwnedMemoryBlockHandle memoryBlock, std::wstring_view debugName) noexcept override
 	{
-		D3D12GpuHeapRecord* const record = GetD3D12GpuHeapRecord(heap);
+		D3D12GpuHeapRecord* const record = GetD3D12GpuHeapRecord(memoryBlock);
 		if (record != nullptr)
 		{
 			record->DebugName = debugName;

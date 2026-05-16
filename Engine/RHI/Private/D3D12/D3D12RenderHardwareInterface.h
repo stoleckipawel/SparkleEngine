@@ -52,11 +52,11 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;
-	void SetShaderVisibleDescriptorHeaps(RenderCommandList& commandList) const noexcept override;
-	NativeDescriptorHeapHandle GetShaderResourceHeapHandle() const noexcept override;
-	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorHeapType heapType) override;
-	void ReleaseDescriptor(ERhiDescriptorHeapType heapType, const RhiDescriptorAllocation& allocation) noexcept override;
-	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorHeapType heapType, std::uint32_t descriptorCount) override;
+	void BindGlobalDescriptorState(RenderCommandList& commandList) const noexcept override;
+	ID3D12DescriptorHeap* GetD3D12ShaderResourceDescriptorHeap() const noexcept;
+	RhiDescriptorAllocation AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType) override;
+	void ReleaseDescriptor(ERhiDescriptorAllocatorType descriptorType, const RhiDescriptorAllocation& allocation) noexcept override;
+	RhiDescriptorTableHandle AllocateDescriptorTable(ERhiDescriptorAllocatorType descriptorType, std::uint32_t descriptorCount) override;
 	RhiCpuDescriptorHandle GetDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept override;
 	void ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept override;
@@ -103,39 +103,26 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    std::wstring_view debugName) override;
 	RhiResourceAllocationInfo GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept override;
 	RhiResourceAllocationInfo GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept override;
-	RhiOwnedHeapHandle CreateOwnedHeap(
+	RhiOwnedMemoryBlockHandle CreateTransientMemoryBlock(
 	    RhiTransientAllocationPool pool,
 	    std::uint64_t sizeInBytes,
 	    std::uint64_t alignment,
 	    std::wstring_view debugName) override;
-	void ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noexcept override;
-	RhiOwnedResourceHandle CreatePlacedTextureResource(
-	    RhiOwnedHeapHandle heap,
-	    std::uint64_t heapOffset,
+	void ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept override;
+	RhiOwnedResourceHandle CreateAliasingTextureResource(
+	    RhiOwnedMemoryBlockHandle memoryBlock,
+	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientTextureAllocationDesc& desc,
 	    std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreatePlacedBufferResource(
-	    RhiOwnedHeapHandle heap,
-	    std::uint64_t heapOffset,
+	RhiOwnedResourceHandle CreateAliasingBufferResource(
+	    RhiOwnedMemoryBlockHandle memoryBlock,
+	    std::uint64_t memoryBlockOffset,
 	    const RhiTransientBufferAllocationDesc& desc,
 	    std::wstring_view debugName) override;
-	void CreateRenderTargetView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) override;
-	void CreateDepthStencilView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) override;
-	void CreateTextureShaderResourceView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) override;
-	void CreateTextureUnorderedAccessView(NativeResourceHandle resource, PixelFormat format, RhiCpuDescriptorHandle destination) override;
-	void CreateBufferShaderResourceView(
-	    NativeResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    RhiCpuDescriptorHandle destination) override;
-	void CreateBufferUnorderedAccessView(
-	    NativeResourceHandle resource,
-	    std::uint64_t sizeInBytes,
-	    std::uint32_t strideInBytes,
-	    RhiCpuDescriptorHandle destination) override;
-	void CreateRayTracingAccelerationStructureShaderResourceView(
-	    RhiGpuVirtualAddress accelerationStructureGpuAddress,
-	    RhiCpuDescriptorHandle destination) override;
+	RhiResourceViewHandle CreateResourceView(const RhiResourceViewDesc& desc) override;
+	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
+	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
+	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
 	void BeginPresentOverlayPass() noexcept override;
@@ -148,11 +135,20 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 
 	struct DescriptorTableRecord
 	{
-		ERhiDescriptorHeapType heapType = ERhiDescriptorHeapType::ShaderResource;
+		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
 		std::uint32_t descriptorCount = 0;
 		D3D12DescriptorHandle nativeHandle;
 
 		bool IsAllocated() const noexcept { return nativeHandle.IsValid(); }
+	};
+
+	struct ResourceViewRecord
+	{
+		ERhiResourceViewKind kind = ERhiResourceViewKind::TextureShaderResource;
+		ERhiDescriptorAllocatorType descriptorType = ERhiDescriptorAllocatorType::ShaderResource;
+		RhiDescriptorAllocation descriptorAllocation = {};
+
+		bool IsAllocated() const noexcept { return descriptorAllocation.IsValid(); }
 	};
 
 	struct PendingOwnedResourceRelease
@@ -161,7 +157,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 		std::uint64_t RetireFenceValue = 0;
 	};
 
-	struct PendingOwnedHeapRelease
+	struct PendingOwnedMemoryBlockRelease
 	{
 		std::unique_ptr<D3D12GpuHeapRecord> Record;
 		std::uint64_t RetireFenceValue = 0;
@@ -171,16 +167,20 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
+	static ERhiDescriptorAllocatorType ResolveResourceViewDescriptorAllocatorType(ERhiResourceViewKind kind) noexcept;
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
 	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedResourceHandle WrapOwnedResource(
 	    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
 	    std::wstring debugName) noexcept;
-	static RhiOwnedHeapHandle WrapOwnedHeap(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
+	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
+	bool WriteD3D12ResourceViewDescriptor(const RhiResourceViewDesc& desc, RhiCpuDescriptorHandle destination) noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
 	const DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) const noexcept;
+	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
+	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
 
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12GpuMemoryAllocator* m_memoryAllocator = nullptr;
@@ -193,6 +193,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;
 	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
+	std::vector<ResourceViewRecord> m_resourceViewRecords;
+	std::vector<std::uint32_t> m_freeResourceViewIndices;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
-	std::vector<PendingOwnedHeapRelease> m_pendingOwnedHeapReleases;
+	std::vector<PendingOwnedMemoryBlockRelease> m_pendingOwnedMemoryBlockReleases;
 };

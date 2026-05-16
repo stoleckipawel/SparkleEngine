@@ -17,7 +17,12 @@ RhiCpuDescriptorHandle FrameGraph::ResolveRenderTargetView(FrameGraphResourceHan
 	}
 
 	assert(access.renderTargetView);
-	return access.renderTargetView;
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->GetResourceViewCpuHandle(access.renderTargetView);
 }
 
 RhiCpuDescriptorHandle FrameGraph::ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept
@@ -27,7 +32,12 @@ RhiCpuDescriptorHandle FrameGraph::ResolveDepthStencilView(FrameGraphResourceHan
 	assert(metadata.kind == FrameGraphResourceKind::DepthStencil);
 
 	assert(access.depthStencilView);
-	return access.depthStencilView;
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->GetResourceViewCpuHandle(access.depthStencilView);
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept
@@ -37,8 +47,13 @@ RhiGpuDescriptorHandle FrameGraph::ResolveShaderResourceView(FrameGraphResourceH
 	assert(metadata.kind != FrameGraphResourceKind::BackBuffer);
 	assert(metadata.kind != FrameGraphResourceKind::DepthStencil && "Depth SRV resolution is not implemented yet.");
 
-	assert(access.shaderResourceViewGpu);
-	return access.shaderResourceViewGpu;
+	assert(access.shaderResourceView);
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->GetResourceViewGpuHandle(access.shaderResourceView);
 }
 
 RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept
@@ -48,8 +63,13 @@ RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphResource
 	assert(metadata.kind != FrameGraphResourceKind::BackBuffer);
 	assert(metadata.kind != FrameGraphResourceKind::DepthStencil);
 
-	assert(access.unorderedAccessViewGpu);
-	return access.unorderedAccessViewGpu;
+	assert(access.unorderedAccessView);
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->GetResourceViewGpuHandle(access.unorderedAccessView);
 }
 
 std::array<float, 4> FrameGraph::GetClearColor(FrameGraphResourceHandle handle) const noexcept

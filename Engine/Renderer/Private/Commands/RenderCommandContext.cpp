@@ -110,11 +110,6 @@ void RenderCommandContext::BindComputeRootUnorderedAccessView(std::uint32_t root
 	m_commandList->BindComputeUnorderedAccess(rootParameterIndex, gpuAddress);
 }
 
-void RenderCommandContext::SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept
-{
-	m_commandList->SetDescriptorHeaps(heapCount, heaps);
-}
-
 void RenderCommandContext::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv) noexcept
 {
 	m_commandList->SetRenderTarget(rtv, dsv);

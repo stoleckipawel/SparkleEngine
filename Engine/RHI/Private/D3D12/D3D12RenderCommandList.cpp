@@ -62,7 +62,7 @@ void D3D12RenderCommandList::InsertDiagnosticMarker(std::string_view label, RhiD
 	D3D12PixEvents::SetMarker(m_commandList, D3D12PixEvents::ToColor(color), ownedLabel.c_str());
 }
 
-void D3D12RenderCommandList::SetDescriptorHeaps(std::uint32_t heapCount, const NativeDescriptorHeapHandle* heaps) noexcept
+void D3D12RenderCommandList::SetShaderVisibleDescriptorHeaps(std::uint32_t heapCount, ID3D12DescriptorHeap* const* heaps) noexcept
 {
 	if (m_commandList == nullptr)
 	{
@@ -70,12 +70,13 @@ void D3D12RenderCommandList::SetDescriptorHeaps(std::uint32_t heapCount, const N
 	}
 
 	std::array<ID3D12DescriptorHeap*, 2> nativeHeaps{};
-	for (std::uint32_t index = 0; index < heapCount && index < nativeHeaps.size(); ++index)
+	const std::uint32_t clampedHeapCount = std::min<std::uint32_t>(heapCount, static_cast<std::uint32_t>(nativeHeaps.size()));
+	for (std::uint32_t index = 0; index < clampedHeapCount; ++index)
 	{
-		nativeHeaps[index] = static_cast<ID3D12DescriptorHeap*>(heaps[index].Value);
+		nativeHeaps[index] = heaps[index];
 	}
 
-	m_commandList->SetDescriptorHeaps(heapCount, nativeHeaps.data());
+	m_commandList->SetDescriptorHeaps(clampedHeapCount, nativeHeaps.data());
 }
 
 void D3D12RenderCommandList::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
