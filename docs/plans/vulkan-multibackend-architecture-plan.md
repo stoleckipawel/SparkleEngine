@@ -339,6 +339,25 @@ The migration should be done intentionally as part of Vulkan-readiness, not as a
 
 This roadmap uses phases that can be coded without running full builds after each prompt. Use source gates and focused validation while coding. Full build/runtime validation happens at milestone boundaries.
 
+The phases are intentionally numerous. This is not the shortest route to a Vulkan backend; it is the route that makes each concept visible while coding. Each phase should produce one concrete artifact that can be inspected in the repo: a boundary script, a neutral RHI type, a backend service, a Vulkan object owner, a translation table, a diagnostic snapshot, or a deleted legacy path.
+
+Use this cadence for implementation prompts:
+
+```text
+Study the current code for the narrow phase.
+Name the concept being learned.
+Make the smallest architectural change that teaches that concept.
+Add or update a source validation gate when the concept affects boundaries.
+Mark the phase coding done.
+Do not run full builds until the milestone checkpoint unless explicitly requested.
+```
+
+Each phase should answer three questions before moving on:
+
+1. What engine concept did this teach?
+2. What legacy assumption did this remove or isolate?
+3. How will D3D12 and Vulkan prove parity for this concept later?
+
 ### Phase 0: Architecture Inventory And Parity Baseline
 
 Goal: create a factual inventory of D3D12-only assumptions before moving code.
@@ -798,6 +817,829 @@ Done criteria:
 1. The final architecture is smaller than the transition architecture.
 2. Every remaining abstraction has a clear owner and reason to exist.
 3. D3D12 and Vulkan are both first-class, selectable, and documented.
+
+## Learning-Oriented Prompt Map
+
+The roadmap above is architectural. The table below is the implementation learning path. Each row is small enough to become one prompt or one short prompt series. The point is to learn Vulkan and multi-backend architecture by repeatedly touching a narrow piece of the engine, seeing how D3D12 expresses it, then designing the Vulkan peer.
+
+| Prompt | Phase | Coding slice | What you learn by doing | Artifact |
+| --- | --- | --- | --- | --- |
+| 0.1 | Inventory | Public RHI method audit | How to read an RHI as a contract, not as a set of C++ functions | Parity inventory table |
+| 0.2 | Inventory | Renderer dependency sweep | How backend leakage creeps into higher layers | Forbidden-token list |
+| 0.3 | Inventory | D3D12 vocabulary map | Which names describe engine concepts and which describe D3D12 mechanics | Rename candidate table |
+| 0.4 | Inventory | Parity status vocabulary | How professional engines track backend feature gaps | `Parity`, `TemporaryD3D12`, `UnsupportedByDesign` statuses |
+| 1.1 | Backend factory | Add backend selection config | How runtime backend selection should enter the engine | Backend selection type/config |
+| 1.2 | Backend factory | Extract D3D12 service construction | How to separate bootstrap ownership from rendering API | D3D12 service factory |
+| 1.3 | Backend factory | Preserve Renderer call sites | How a good abstraction keeps call sites stable | Renderer unchanged through refactor |
+| 1.4 | Backend factory | Unsupported backend diagnostics | How to fail clearly before Vulkan exists | Clear error path |
+| 2.1 | Build split | Identify common vs D3D12 RHI sources | How build systems enforce architecture | Source classification list |
+| 2.2 | Build split | Create common/backend target shape | How backend libraries become peers | CMake target split |
+| 2.3 | Build split | Move D3D12MA under D3D12 backend | How third-party allocator privacy is enforced | Backend-private D3D12MA link |
+| 2.4 | Build split | Add Vulkan target placeholder | How to prepare a backend without implementing it yet | Empty Vulkan backend target |
+| 3.1 | Vocabulary | Rename transient heap handle | How public names constrain future APIs | Memory block handle |
+| 3.2 | Vocabulary | Rename placed resource APIs | How aliasing/materialization differs from D3D12 placed resources | Neutral transient materialization API |
+| 3.3 | Vocabulary | Hide descriptor heap setup | Why Vulkan should not inherit D3D12 descriptor heap language | Neutral global binding setup |
+| 3.4 | Vocabulary | Update diagnostics/debug names | How tooling follows public architecture | Neutral debug-name overloads |
+| 4.1 | Resource views | Define view desc model | How RTV/SRV/UAV/DSV map to Vulkan image views and descriptors | `RhiResourceViewDesc` |
+| 4.2 | Resource views | Add logical view handle | Why a view is not always a descriptor pointer | `RhiResourceViewHandle` or documented alternative |
+| 4.3 | Resource views | Move FrameGraph to logical views | How FrameGraph stays API-agnostic | FrameGraph view requests |
+| 4.4 | Resource views | Keep D3D12 descriptor implementation private | How to keep native mechanics without leaking them | D3D12 view implementation |
+| 5.1 | Bindings | Audit reflection fields | How shader reflection becomes binding layout data | Reflection audit notes |
+| 5.2 | Bindings | Normalize layout desc | How register/space maps to descriptor set/binding | Backend-neutral binding layout |
+| 5.3 | Bindings | Preserve D3D12 root signature path | How to refactor without losing current backend behavior | D3D12 root layout compiler |
+| 5.4 | Bindings | Add bindless-ready metadata | How to prepare for descriptor indexing without building bindless now | Future bindless fields/docs |
+| 6.1 | Shaders | Audit cooked shader package use | How runtime selects API-specific binaries | Shader load path inventory |
+| 6.2 | Shaders | Enforce required binary format | Why D3D12 wants DXIL and Vulkan wants SPIR-V | Runtime format gate |
+| 6.3 | Shaders | Add missing variant diagnostics | How shader failures become actionable | Backend-specific error messages |
+| 6.4 | Shaders | Prepare SPIR-V module data path | What Vulkan pipeline creation needs from shader packages | SPIR-V-ready loader surface |
+| 7.1 | Vulkan dependency | Add Vulkan SDK discovery | How native SDK dependencies enter CMake cleanly | Vulkan CMake option/find package |
+| 7.2 | Vulkan dependency | Add VMA backend-private dependency | Why VMA should be present before resource creation | `SparkleVMA` target or equivalent |
+| 7.3 | Vulkan dependency | Create Vulkan folder skeleton | How file layout communicates backend ownership | `Engine/RHI/Private/Vulkan/**` |
+| 7.4 | Vulkan dependency | Add Vulkan boundary validation | How source gates prevent future leaks | Vulkan forbidden-token script rules |
+| 8.1 | Vulkan device | Create instance and debug utils | How Vulkan starts before a device exists | Instance owner |
+| 8.2 | Vulkan device | Enumerate physical devices | How adapters map between DXGI and Vulkan | Adapter selection code |
+| 8.3 | Vulkan device | Pick queue families | Why queues are explicit API concepts | Queue family record |
+| 8.4 | Vulkan device | Create logical device | How feature and extension chains shape Vulkan capability | Device owner |
+| 8.5 | Vulkan diagnostics | Report adapter and validation state | How diagnostics become portfolio evidence | Vulkan diagnostics provider |
+| 9.1 | Swapchain | Create Win32 surface | How Windows platform seams feed Vulkan | Surface owner |
+| 9.2 | Swapchain | Select format/present mode | How presentation differs from D3D12 DXGI | Swapchain config code |
+| 9.3 | Swapchain | Wrap images as RHI resources | How native resources enter a shared RHI | Back buffer records |
+| 9.4 | Swapchain | Implement acquire/present | Why semaphores and fences matter | Present flow hidden behind services |
+| 10.1 | Commands | Create command pools/buffers | How Vulkan command allocation differs from D3D12 allocators | Per-frame command owner |
+| 10.2 | Commands | Implement begin/end/reset | How command buffer lifecycle follows GPU completion | Command lifecycle code |
+| 10.3 | Commands | Add debug labels | How GPU tooling sees your frame | Marker implementation |
+| 10.4 | Commands | Submit with fence retirement | How delayed destruction becomes backend-neutral | Submission/fence path |
+| 11.1 | VMA memory | Create VMA allocator | How physical/logical device data feeds VMA | `VulkanGpuMemoryAllocator` |
+| 11.2 | VMA memory | Allocate buffers | How usage, memory type, and residency meet | VMA buffer allocation path |
+| 11.3 | VMA memory | Allocate images | How Vulkan image allocation differs from D3D12 resources | VMA image allocation path |
+| 11.4 | VMA memory | Track categories and names | How memory diagnostics stay backend-neutral | Live allocation records |
+| 11.5 | VMA memory | Expose budget snapshots | How VMA and D3D12MA become comparable | Shared memory snapshot output |
+| 12.1 | Resources | Implement buffer creation parity | How mesh/index/constant buffers map to Vulkan | Vulkan buffer factory |
+| 12.2 | Resources | Implement texture creation parity | How formats, usages, mips, and initial layout map | Vulkan texture factory |
+| 12.3 | Resources | Implement upload staging | Why host-visible memory is a policy, not a hack | Upload staging path |
+| 12.4 | Resources | Neutralize upload API | How D3D12 and Vulkan copies share one renderer call | Backend-neutral upload interface |
+| 13.1 | Barriers | List all Sparkle resource states | How the engine names synchronization intent | State inventory |
+| 13.2 | Barriers | Write D3D12 translation table | How current behavior is made explicit | D3D12 state map |
+| 13.3 | Barriers | Write Vulkan layout/access/stage table | How Vulkan synchronization2 thinks | Vulkan barrier map |
+| 13.4 | Barriers | Route FrameGraph barriers to Vulkan | How the FrameGraph becomes the synchronization authority | Vulkan barrier playback |
+| 14.1 | Pipelines | Create shader modules | How SPIR-V becomes executable shader state | VkShaderModule owner |
+| 14.2 | Pipelines | Translate raster/depth/blend state | How neutral PSO state maps to Vulkan structs | Graphics state translator |
+| 14.3 | Pipelines | Create graphics pipeline | How render target formats and layouts affect pipelines | Vulkan graphics PSO |
+| 14.4 | Pipelines | Create compute pipeline | How compute is simpler but still layout-bound | Vulkan compute PSO |
+| 14.5 | Pipelines | Execute first FrameGraph draw/clear | How the pieces meet in a real frame | Minimal Vulkan FrameGraph pass |
+| 15.1 | Descriptors | Create descriptor set layouts | How binding layout becomes Vulkan layout | VkDescriptorSetLayout owner |
+| 15.2 | Descriptors | Build descriptor pool/page allocator | How descriptor lifetime is managed | Vulkan descriptor allocator |
+| 15.3 | Descriptors | Write texture/buffer descriptors | How resource views become shader-visible | Descriptor write code |
+| 15.4 | Descriptors | Map material tables | How Sparkle material binding survives both APIs | Backend-neutral material table path |
+| 16.1 | Editor UI | Move ImGui backend code private | How tooling integrations stay out of Renderer | Backend-private ImGui owners |
+| 16.2 | Editor UI | Add Vulkan ImGui init/render/shutdown | How third-party UI maps to Vulkan | Vulkan ImGui backend path |
+| 16.3 | Editor UI | Keep overlay pass neutral | How present overlays avoid backend forks | Shared editor RHI calls |
+| 17.1 | Transients | Define transient memory block contract | How aliasing starts from engine intent | Neutral transient API |
+| 17.2 | Transients | Keep FrameGraph alias planning in Renderer | Why allocator libraries should not own pass lifetimes | FrameGraph plan ownership |
+| 17.3 | Transients | Implement D3D12MA transient block path | How D3D12MA backs aliasing mechanics | D3D12 transient implementation |
+| 17.4 | Transients | Implement VMA transient resource strategy | How Vulkan aliasing/resource lifetime differs | Vulkan transient implementation |
+| 17.5 | Transients | Add transient memory diagnostics parity | How to compare both backends under load | `FrameGraphTransient` stats |
+| 18.1 | Ray tracing | Inventory current DXR path | How ray tracing resources differ from raster resources | Ray tracing parity inventory |
+| 18.2 | Ray tracing | Map BLAS/TLAS API concepts | How Vulkan KHR AS maps to D3D12 AS | Cross-backend AS mapping |
+| 18.3 | Ray tracing | Decide staged support boundary | How to be honest about feature parity | Ray tracing milestone decision |
+| 18.4 | Ray tracing | Keep public API neutral | How future Vulkan RT avoids D3D12 naming | Neutral RT API cleanup |
+| 19.1 | Validation | Add backend boundary gate | How architecture becomes enforceable | `ValidateRhiBackendBoundaries.cmake` |
+| 19.2 | Validation | Add shader parity gate | How missing DXIL/SPIR-V variants are caught | Shader package parity script |
+| 19.3 | Validation | Add memory parity checks | How D3D12MA/VMA diagnostics stay comparable | Memory diagnostics gate |
+| 19.4 | Validation | Add runtime smoke command docs | How to test both backends consistently | D3D12/Vulkan smoke instructions |
+| 20.1 | Cleanup | Delete temporary migration code | How to avoid carrying scaffolding forever | Removed temporary files/wrappers |
+| 20.2 | Cleanup | Collapse low-value abstractions | How to judge whether a wrapper earns its keep | Smaller backend/RHI diff |
+| 20.3 | Cleanup | Update architecture docs | How documentation matches implemented reality | Final architecture docs |
+| 20.4 | Cleanup | Final parity review | How to present the work professionally | Parity checklist and caveats |
+
+## Phase Notebook Template
+
+For each prompt, keep a short note in the implementation commit message or phase tracker:
+
+```text
+Phase:
+Learning goal:
+Files studied:
+Files changed:
+Backend-neutral concept introduced:
+D3D12 behavior preserved:
+Vulkan behavior enabled or planned:
+Validation run:
+Open risks:
+```
+
+This keeps the work educational. It also creates interview-ready material because every phase can be explained as a deliberate architecture lesson, not just a pile of code.
+
+## Execution Prompt Contract
+
+Every implementation prompt in this plan should preserve these rules unless the user explicitly changes direction:
+
+1. Read the current repo state before editing. Do not assume previous edits still exist.
+2. Keep D3D12 and Vulkan as peer backends under one shared RHI contract.
+3. Prefer deleting or renaming D3D12-shaped public concepts over adding compatibility wrappers.
+4. Keep Vulkan, VMA, D3D12, and D3D12MA concrete types out of public RHI and Renderer surfaces except explicit opaque interop handles.
+5. Keep FrameGraph policy in Renderer: pass order, lifetimes, aliasing intent, resource states, and logical view requests.
+6. Keep backend code responsible for native translation: device creation, allocation mechanics, barriers, descriptors, command submission, and diagnostics.
+7. Use D3D12MA for D3D12 allocations and VMA for Vulkan allocations from the first real backend resource phase.
+8. Keep bindful rendering working first, but do not block descriptor indexing, bindless tables, or direct heap indexing later.
+9. Keep the current single-threaded execution path simple, but avoid global ownership that would block future per-thread command pools or descriptor pages.
+10. Do not run full solution builds after every prompt. Use source gates and focused checks during implementation; reserve full validation for milestone checkpoints.
+
+Each prompt should end with:
+
+```text
+Phase status:
+What was learned:
+Architectural result:
+Validation run:
+Deferred risks:
+```
+
+## Copy-Ready Phase Prompts
+
+These prompts are intentionally detailed. They are written so a future implementation session can start from the document, execute a bounded phase, and keep the final architecture aligned with this plan.
+
+### Phase 0 Execution Prompt
+
+```text
+Implement Phase 0: Architecture Inventory And Parity Baseline.
+
+Goal: build a factual parity inventory before code movement. Study the current RHI, Renderer, FrameGraph, shader, memory, diagnostics, and CMake structure. Do not make runtime architecture changes in this phase unless a small validation/doc helper is necessary.
+
+Learning goal: understand Sparkle's current RHI as a contract and identify which parts are engine concepts versus D3D12 assumptions.
+
+Required work:
+1. Create or expand a parity inventory section/file that lists every public RenderHardwareInterface method and its D3D12/Vulkan disposition.
+2. Sweep Renderer and RHI public/private boundaries for D3D12, DXGI, D3D12MA, Vk, Vulkan, VMA, heap, placed resource, descriptor heap, and native handle assumptions.
+3. Classify each finding as Core, BackendSpecific, TemporaryD3D12, Future, or UnsupportedByDesign.
+4. List the public names that should be neutralized before Vulkan is implemented.
+5. Propose source validation gates needed to prevent regression.
+
+Constraints:
+1. Do not run a full build.
+2. Do not refactor implementation code yet.
+3. Do not mark a feature unsupported silently. Every gap must have a reason.
+
+Deliverables:
+1. Parity inventory with feature status.
+2. Boundary risk list.
+3. Public vocabulary cleanup list.
+4. Phase notebook entry.
+
+Validation:
+1. Run text/source checks relevant to the inventory.
+2. Run trailing whitespace check on edited docs.
+```
+
+### Phase 1 Execution Prompt
+
+```text
+Implement Phase 1: Backend Selection And Device Services Factory.
+
+Goal: make D3D12 pass through an explicit backend factory so Vulkan can become a peer without changing Renderer ownership.
+
+Learning goal: separate backend bootstrap from renderer-facing RHI usage.
+
+Required work:
+1. Add or extend backend selection config using the existing ERhiBackendApi direction.
+2. Refactor RenderDeviceServices::Create so it accepts backend selection and dispatches to a backend-specific creation path.
+3. Move current D3D12 service construction into a D3D12-private factory or service builder.
+4. Preserve existing Renderer and Editor call sites as much as possible.
+5. Add a clear unsupported-backend error path for Vulkan until Phase 8 provides a real implementation.
+
+Constraints:
+1. Do not introduce a fake Vulkan renderer.
+2. Do not leak D3D12 service types into public Renderer APIs.
+3. Do not keep old direct construction beside the factory unless it is private and temporary.
+
+Deliverables:
+1. Backend-aware RenderDeviceServices creation.
+2. D3D12 backend service creation isolated behind the factory.
+3. Backend selection diagnostics.
+4. Phase notebook entry.
+
+Validation:
+1. Run source boundary checks.
+2. Run focused compile only if signatures changed broadly; otherwise defer build to milestone.
+```
+
+### Phase 2 Execution Prompt
+
+```text
+Implement Phase 2: CMake Backend Target Split.
+
+Goal: make build targets express backend ownership. SparkleRHI should no longer be a single undifferentiated target that privately means D3D12.
+
+Learning goal: use the build system to enforce architecture instead of relying on convention.
+
+Required work:
+1. Classify current RHI sources into common code and D3D12 backend code.
+2. Split CMake targets so D3D12 system libraries, ImGui DX12 backend, and D3D12MA belong to the D3D12 backend target.
+3. Add a Vulkan backend option and placeholder target structure without implementing runtime Vulkan yet.
+4. Keep Renderer linking against the shared RHI contract and selected backend composition target, not raw graphics APIs.
+5. Update validation rules to detect accidental backend library leakage.
+
+Constraints:
+1. Do not mix D3D12 and Vulkan source globs in a shared private backend bucket.
+2. Do not expose D3D12MA include directories publicly outside the D3D12 backend need.
+3. Do not require Vulkan SDK to build D3D12-only configurations.
+
+Deliverables:
+1. Common/backend CMake split.
+2. D3D12 backend target owning D3D12 dependencies.
+3. Vulkan option and placeholder target.
+4. Phase notebook entry.
+
+Validation:
+1. Run CMake/source validation scripts that do not require a full build.
+2. Defer full target builds to M1 unless the CMake graph cannot be reasoned about from source.
+```
+
+### Phase 3 Execution Prompt
+
+```text
+Implement Phase 3: Public RHI Vocabulary Cleanup.
+
+Goal: remove D3D12 heap and placed-resource vocabulary from public RHI before Vulkan has to imitate it.
+
+Learning goal: understand how public names shape backend architecture.
+
+Required work:
+1. Rename public transient heap handles and methods to neutral memory block terminology.
+2. Rename placed-resource creation methods to aliasing or transient materialization terminology.
+3. Hide descriptor heap setup behind a neutral backend/global binding setup method or keep it as a D3D12-private operation.
+4. Update FrameGraph transient allocation call sites to use neutral names.
+5. Update diagnostics debug-name APIs to match the new neutral handle vocabulary.
+
+Constraints:
+1. Prefer direct renames over compatibility shims.
+2. Keep D3D12 implementation free to use ID3D12Heap internally.
+3. Do not introduce Vulkan-specific names in public APIs.
+
+Deliverables:
+1. Neutral public transient memory API.
+2. Updated D3D12 private implementation names.
+3. Updated FrameGraph call sites.
+4. Phase notebook entry explaining removed D3D12 vocabulary.
+
+Validation:
+1. Search public RHI and Renderer for leftover public heap/placed-resource terms.
+2. Run source boundary gates and whitespace checks.
+```
+
+### Phase 4 Execution Prompt
+
+```text
+Implement Phase 4: Backend-Neutral Resource And View Model.
+
+Goal: make resource views an engine concept that can map to D3D12 descriptors or Vulkan image/buffer views and descriptor writes.
+
+Learning goal: separate resource identity, view identity, and descriptor binding.
+
+Required work:
+1. Define a neutral RHI resource view description for texture SRV/UAV/RTV/DSV, buffer SRV/UAV, and acceleration structure SRV intent.
+2. Decide whether existing descriptor handles can safely represent logical views or whether a new RhiResourceViewHandle is needed.
+3. Move FrameGraph code toward requesting logical views instead of D3D12-shaped CPU descriptor handles.
+4. Keep D3D12 descriptor allocation and descriptor handle math private to D3D12 code.
+5. Document how the same view desc will map to VkImageView, VkBufferView, and descriptor set writes later.
+
+Constraints:
+1. Do not break material binding or FrameGraph execution without documenting the transition.
+2. Do not make Vulkan emulate D3D12 descriptor pointer semantics.
+3. Avoid broad renderer rewrites outside view ownership.
+
+Deliverables:
+1. Resource view desc/handle model.
+2. D3D12 implementation of the view model.
+3. FrameGraph view ownership update.
+4. Phase notebook entry.
+
+Validation:
+1. Search for direct descriptor-handle assumptions in FrameGraph after the change.
+2. Run source gates.
+```
+
+### Phase 5 Execution Prompt
+
+```text
+Implement Phase 5: Binding Layout And Binding Set Hardening.
+
+Goal: make shader reflection and binding layouts compile to D3D12 root signatures now and Vulkan descriptor set layouts later.
+
+Learning goal: understand binding spaces, registers, descriptor sets, push constants, and root constants as one neutral contract.
+
+Required work:
+1. Audit current RenderBindingLayout and RenderBindingLayoutCompileDesc fields.
+2. Normalize binding layout data around set/space, binding/register, resource type, count, visibility, and push constant/root constant ranges.
+3. Keep the D3D12 root signature compiler as one backend implementation of the neutral layout.
+4. Add Vulkan-ready layout data needed for descriptor set layouts and pipeline layouts.
+5. Add bindless-ready metadata without enabling bindless rendering yet.
+
+Constraints:
+1. Do not force bindless into this phase.
+2. Do not let Renderer passes decide D3D12 root parameters or Vulkan descriptor sets.
+3. Keep shader reflection source of truth centralized.
+
+Deliverables:
+1. Neutral binding layout contract.
+2. D3D12 root signature path preserved.
+3. Vulkan pipeline-layout requirements documented in code/docs.
+4. Phase notebook entry.
+
+Validation:
+1. Run shader layout/source gates.
+2. Search Renderer passes for backend-specific binding decisions.
+```
+
+### Phase 6 Execution Prompt
+
+```text
+Implement Phase 6: Shader Package And Runtime Binary Selection.
+
+Goal: make DXIL and SPIR-V runtime selection explicit and validated.
+
+Learning goal: understand how one logical shader becomes backend-specific executable code.
+
+Required work:
+1. Audit cooked shader package loading and current DXIL assumptions.
+2. Ensure the runtime uses GetRequiredShaderBinaryFormat for all shader lookup and pipeline creation paths.
+3. Add diagnostics for missing backend shader variants that name shader, pass, backend, and expected format.
+4. Prepare the SPIR-V binary path needed for Vulkan shader module creation.
+5. Add or update validation that required Showcase/runtime shaders have the expected backend variants.
+
+Constraints:
+1. D3D12 must not accidentally load SPIR-V.
+2. Vulkan must not be designed to load DXIL.
+3. Do not fork shader source authoring unless the existing shader toolchain requires it and the plan records why.
+
+Deliverables:
+1. Backend-driven shader binary selection.
+2. Missing-variant diagnostics.
+3. SPIR-V-ready runtime shader data path.
+4. Phase notebook entry.
+
+Validation:
+1. Run shader package/source validation.
+2. Defer full shader rebuild unless this phase changes the cook tools directly.
+```
+
+### Phase 7 Execution Prompt
+
+```text
+Implement Phase 7: Vulkan Dependency And Loader Foundation.
+
+Goal: add Vulkan SDK and VMA dependency structure privately, without adding real rendering behavior yet.
+
+Learning goal: understand Vulkan as a backend dependency and keep native dependencies out of public engine layers.
+
+Required work:
+1. Add CMake discovery/options for Vulkan SDK on Windows.
+2. Add VMA as a backend-private dependency or target.
+3. Create the Vulkan backend folder skeleton under Engine/RHI/Private/Vulkan.
+4. Add Vulkan result helpers, object-name helper declarations, and debug utility scaffolding if useful.
+5. Add validation rules that forbid Vk and Vma types outside approved Vulkan backend paths and opaque interop boundaries.
+
+Constraints:
+1. Vulkan disabled builds must still configure.
+2. Public RHI headers must not include Vulkan or VMA headers.
+3. Do not create manual Vulkan allocations that will be replaced by VMA later.
+
+Deliverables:
+1. Vulkan/VMA build integration.
+2. Vulkan private folder skeleton.
+3. Boundary validation updates.
+4. Phase notebook entry.
+
+Validation:
+1. Run source validation and CMake configure validation if available.
+2. Do not run a full build unless CMake changes require a focused configure/build checkpoint.
+```
+
+### Phase 8 Execution Prompt
+
+```text
+Implement Phase 8: Vulkan Device, Adapter, Queue, And Diagnostics Bootstrap.
+
+Goal: create a real Vulkan backend service that initializes instance, physical device, logical device, graphics queue, and diagnostics.
+
+Learning goal: understand Vulkan's explicit device creation chain and how it differs from D3D12/DXGI bootstrap.
+
+Required work:
+1. Implement Vulkan instance creation on Windows with debug utils in development configs.
+2. Enumerate physical devices and select an adapter using clear policy.
+3. Query queue families and create a logical device with graphics queue support.
+4. Prefer Vulkan 1.3 features needed by the plan, especially synchronization2 and dynamic rendering where available.
+5. Implement Vulkan diagnostics reporting for API, adapter, driver, validation state, and enabled extensions.
+6. Wire backend factory selection so Vulkan can create services up to device initialization.
+
+Constraints:
+1. No rendering is required yet.
+2. Do not expose VkInstance, VkDevice, or VkQueue through public Renderer APIs.
+3. Keep feature enablement explicit and logged.
+
+Deliverables:
+1. Vulkan instance/device/queue owner.
+2. Vulkan diagnostics provider.
+3. Backend factory Vulkan path.
+4. Phase notebook entry.
+
+Validation:
+1. Run source boundary gates.
+2. Run a focused Vulkan backend build/startup smoke only at the M2 checkpoint or if the user asks.
+```
+
+### Phase 9 Execution Prompt
+
+```text
+Implement Phase 9: Vulkan Swapchain And Present Resource Wrapping.
+
+Goal: make Vulkan present images look like normal RHI back buffer resources.
+
+Learning goal: understand Vulkan surfaces, swapchains, image acquisition, presentation, and how native images enter a shared RHI.
+
+Required work:
+1. Create a Win32 Vulkan surface from Sparkle's window/platform seam.
+2. Select swapchain format, color space, present mode, extent, and image count.
+3. Create the swapchain and wrap swapchain images as RHI resource records.
+4. Create logical views for back buffers through the resource view model.
+5. Implement acquire and present flow with backend-private semaphores/fences.
+6. Match D3D12 viewport, scissor, format, resize, and teardown behavior.
+
+Constraints:
+1. Renderer should not know whether present is DXGI or VkSwapchainKHR.
+2. Present synchronization must stay backend-private.
+3. Do not bypass the RHI resource/view model for swapchain images.
+
+Deliverables:
+1. Vulkan swapchain owner.
+2. RHI-wrapped back buffer resources.
+3. Acquire/present lifecycle.
+4. Phase notebook entry.
+
+Validation:
+1. Run source gates.
+2. Defer runtime smoke until the M2 checkpoint unless explicitly requested.
+```
+
+### Phase 10 Execution Prompt
+
+```text
+Implement Phase 10: Vulkan Command List And Submission.
+
+Goal: implement command buffer lifecycle and submission enough to support clear/present and later FrameGraph playback.
+
+Learning goal: compare D3D12 command allocators/lists with Vulkan command pools/buffers and fence retirement.
+
+Required work:
+1. Add Vulkan command pool and command buffer owners scoped by frame and queue.
+2. Implement begin, end, reset, and submit behavior through the RenderCommandList contract.
+3. Add debug marker support using Vulkan debug utils where available.
+4. Connect submission fences to backend delayed destruction retirement.
+5. Keep the ownership model ready for future per-thread command pools.
+
+Constraints:
+1. Keep command buffer access private to Vulkan backend code.
+2. Do not add global command state that would block future multithreading.
+3. Do not duplicate FrameGraph policy in command list code.
+
+Deliverables:
+1. Vulkan command list implementation.
+2. Queue submission path.
+3. Fence retirement hook.
+4. Phase notebook entry.
+
+Validation:
+1. Run source gates.
+2. Run focused backend build at M2 checkpoint.
+```
+
+### Phase 11 Execution Prompt
+
+```text
+Implement Phase 11: Vulkan Memory With VMA.
+
+Goal: make VMA the required Vulkan allocation foundation and expose memory facts through the existing backend-neutral diagnostics model.
+
+Learning goal: understand Vulkan memory requirements, VMA allocation, residency, budget snapshots, and delayed destruction.
+
+Required work:
+1. Implement VulkanGpuMemoryAllocator as a Vulkan-private service.
+2. Create VMA allocator from instance, physical device, logical device, and Vulkan function access.
+3. Add buffer and image allocation helpers through VMA.
+4. Track allocation records with category, residency class, debug name, size, and native handles.
+5. Implement VMA budget/stat snapshots mapped to RhiMemoryUsageSnapshot.
+6. Implement delayed destruction behavior equivalent to D3D12MA path.
+
+Constraints:
+1. No normal Vulkan buffer/image creation outside the memory allocator.
+2. No Vma types in public headers or Renderer.
+3. Do not add defragmentation in this phase.
+
+Deliverables:
+1. VMA allocator service.
+2. VMA-backed buffer/image allocation records.
+3. Memory diagnostics parity path.
+4. Phase notebook entry.
+
+Validation:
+1. Add/search validation for vkCreateBuffer, vkCreateImage, vkAllocateMemory, and Vma leakage.
+2. Run source gates.
+```
+
+### Phase 12 Execution Prompt
+
+```text
+Implement Phase 12: Resource Creation And Upload Path Parity.
+
+Goal: create Vulkan buffers, textures, and uploads through the same RHI resource intent used by D3D12.
+
+Learning goal: understand how usages, formats, initial states, staging memory, and copy scheduling map between APIs.
+
+Required work:
+1. Implement Vulkan buffer creation from RhiBufferResourceDesc using VMA.
+2. Implement Vulkan texture/image creation from RhiTextureResourceDesc using VMA.
+3. Implement host-visible staging/upload allocations and copy helpers.
+4. Neutralize D3D12-shaped upload assumptions in Renderer-facing APIs.
+5. Preserve D3D12 behavior while making buffer/texture creation backend-neutral.
+
+Constraints:
+1. Renderer should not issue VkBuffer, VkImage, ID3D12Resource, or D3D12 upload-specific calls.
+2. Upload policy should be explicit and reusable by future copy queue work.
+3. Do not add bindless or ray tracing resource behavior here unless it is required for existing resource parity.
+
+Deliverables:
+1. Vulkan buffer resource factory.
+2. Vulkan texture resource factory.
+3. Backend-neutral upload/staging path.
+4. Phase notebook entry.
+
+Validation:
+1. Run allocation boundary gates.
+2. Run source checks for native resource leakage.
+```
+
+### Phase 13 Execution Prompt
+
+```text
+Implement Phase 13: Barrier And Resource State Translation.
+
+Goal: make Sparkle's resource state model translate cleanly to D3D12 states and Vulkan synchronization2 barriers.
+
+Learning goal: understand pipeline stages, access masks, image layouts, and why FrameGraph should own synchronization intent.
+
+Required work:
+1. Inventory all ResourceState values used by FrameGraph and RHI.
+2. Make the current D3D12 translation explicit and testable.
+3. Implement Vulkan translation to image layouts, access masks, and pipeline stages.
+4. Route FrameGraph barrier playback through Vulkan barrier emission.
+5. Add warnings or validation for unsupported state combinations.
+
+Constraints:
+1. Do not let individual render passes manually guess Vulkan layouts.
+2. Do not move pass ordering or lifetime policy into Vulkan backend code.
+3. Prefer synchronization2 for new Vulkan work.
+
+Deliverables:
+1. Resource state mapping tables.
+2. Vulkan barrier translator.
+3. FrameGraph Vulkan barrier playback.
+4. Phase notebook entry.
+
+Validation:
+1. Run FrameGraph boundary validation.
+2. Run source checks for direct layout/state decisions outside the translator.
+```
+
+### Phase 14 Execution Prompt
+
+```text
+Implement Phase 14: Pipeline State And Render Pass Execution.
+
+Goal: create Vulkan shader modules and graphics/compute pipelines from Sparkle's neutral pipeline descriptions, then execute a minimal FrameGraph pass.
+
+Learning goal: understand how SPIR-V, pipeline layouts, dynamic rendering, attachments, and PSO state combine in Vulkan.
+
+Required work:
+1. Implement Vulkan shader module creation from SPIR-V package data.
+2. Translate neutral raster, blend, depth/stencil, topology, viewport/scissor, format, and attachment state into Vulkan pipeline state.
+3. Create Vulkan graphics pipeline objects and cache keys.
+4. Create Vulkan compute pipeline objects.
+5. Use dynamic rendering for FrameGraph attachment execution if the selected Vulkan baseline supports it.
+6. Execute the first minimal FrameGraph clear/draw path on Vulkan.
+
+Constraints:
+1. Do not fork renderer passes by backend.
+2. Do not make shader modules or VkPipeline public objects.
+3. Keep pipeline errors detailed and tied to shader/pass/backend.
+
+Deliverables:
+1. Vulkan shader module owner.
+2. Vulkan graphics and compute PSO implementations.
+3. Minimal Vulkan FrameGraph render execution.
+4. Phase notebook entry.
+
+Validation:
+1. Run shader and FrameGraph source gates.
+2. Runtime validation waits for M4 unless explicitly requested.
+```
+
+### Phase 15 Execution Prompt
+
+```text
+Implement Phase 15: Descriptor Sets, Binding Sets, And Material Tables.
+
+Goal: make bindful material and FrameGraph resource bindings work on Vulkan without backend forks in renderer passes.
+
+Learning goal: understand how D3D12 descriptor tables and Vulkan descriptor sets can implement one binding contract.
+
+Required work:
+1. Implement Vulkan descriptor set layout creation from RenderBindingLayout.
+2. Build descriptor pool/page allocation for Vulkan binding sets.
+3. Implement descriptor writes for texture views, buffer views, samplers, UAVs, constant buffers, and future AS descriptors where needed.
+4. Map existing material descriptor table behavior onto the neutral binding model.
+5. Retain bound resources until command completion.
+6. Document bindless expansion path for descriptor indexing.
+
+Constraints:
+1. Do not add material code branches for D3D12 versus Vulkan.
+2. Do not expose VkDescriptorSet or D3D12 descriptor heap details to Renderer.
+3. Keep descriptor allocator design compatible with future per-thread pages.
+
+Deliverables:
+1. Vulkan descriptor set layout implementation.
+2. Vulkan descriptor allocator.
+3. Vulkan binding set/material table path.
+4. Phase notebook entry.
+
+Validation:
+1. Run descriptor/binding boundary checks.
+2. Search Renderer for backend-specific descriptor logic.
+```
+
+### Phase 16 Execution Prompt
+
+```text
+Implement Phase 16: ImGui And Editor Presentation.
+
+Goal: make editor UI rendering work on both backends while keeping backend-specific ImGui code private.
+
+Learning goal: understand how third-party render integrations should be isolated behind backend services.
+
+Required work:
+1. Move or keep ImGui backend implementation behind RHI backend-private hooks.
+2. Add Vulkan ImGui initialization, frame begin, draw rendering, and shutdown paths privately.
+3. Keep Editor using only neutral RHI methods for UI lifecycle.
+4. Ensure present overlay pass behavior maps to D3D12 and Vulkan.
+5. Preserve D3D12 editor behavior.
+
+Constraints:
+1. Editor and Renderer must not include D3D12 or Vulkan ImGui backend headers directly.
+2. Do not duplicate editor UI logic by backend.
+3. Do not add Vulkan UI code before command, descriptor, and pipeline prerequisites exist.
+
+Deliverables:
+1. Backend-private ImGui implementations.
+2. Neutral editor UI calls preserved.
+3. Vulkan editor presentation path.
+4. Phase notebook entry.
+
+Validation:
+1. Run public/private include boundary checks.
+2. Runtime UI validation waits for M4 unless explicitly requested.
+```
+
+### Phase 17 Execution Prompt
+
+```text
+Implement Phase 17: FrameGraph Transient Resource Parity.
+
+Goal: make transient memory and aliasing backend-neutral while D3D12MA and VMA own native allocation mechanics.
+
+Learning goal: understand the split between FrameGraph aliasing policy and allocator implementation.
+
+Required work:
+1. Define the final neutral transient memory block/materialization contract.
+2. Keep lifetime ranges, physical block planning, alias decisions, and barrier intent in Renderer/FrameGraph.
+3. Implement D3D12 transient memory through D3D12MA using the neutral contract.
+4. Implement Vulkan transient resources through VMA using the selected aliasing/materialization strategy.
+5. Add transient memory diagnostics under the shared FrameGraphTransient category for both backends.
+
+Constraints:
+1. Do not let D3D12MA or VMA decide FrameGraph alias policy.
+2. Do not expose native heap or VMA allocation objects to FrameGraph.
+3. Avoid speculative pool abstractions unless they remove real duplication.
+
+Deliverables:
+1. Neutral transient memory block API.
+2. D3D12MA transient implementation.
+3. VMA transient implementation.
+4. Shared transient diagnostics.
+5. Phase notebook entry.
+
+Validation:
+1. Run FrameGraph and memory boundary gates.
+2. Search for native allocator leakage into Renderer.
+```
+
+### Phase 18 Execution Prompt
+
+```text
+Implement Phase 18: Ray Tracing Parity Planning.
+
+Goal: decide and document how current D3D12 ray tracing support will reach Vulkan parity without contaminating public APIs with DXR vocabulary.
+
+Learning goal: understand cross-backend acceleration structure concepts and how to stage complex parity honestly.
+
+Required work:
+1. Inventory current ray tracing APIs, buffers, acceleration structure build paths, and Showcase usage.
+2. Map BLAS/TLAS, scratch buffers, instance buffers, build flags, compaction, and shader binding concepts to Vulkan KHR equivalents.
+3. Decide whether raster parity can land before ray tracing parity or whether ray tracing is required for first-class backend status.
+4. Clean public API names that are unnecessarily D3D12-shaped.
+5. Document the VMA backing strategy for Vulkan acceleration structure buffers.
+
+Constraints:
+1. Do not silently drop D3D12 ray tracing features from parity tracking.
+2. Do not implement large Vulkan ray tracing code until the staged boundary is accepted.
+3. Keep ray tracing unsupported states explicit if deferred.
+
+Deliverables:
+1. Ray tracing parity inventory.
+2. Cross-backend acceleration structure concept map.
+3. Staged implementation decision.
+4. Phase notebook entry.
+
+Validation:
+1. Run source searches for DXR/D3D12 naming in public surfaces.
+2. Update parity inventory.
+```
+
+### Phase 19 Execution Prompt
+
+```text
+Implement Phase 19: Diagnostics, Validation Layer, And Parity Gates.
+
+Goal: make multi-backend quality enforceable from source and visible at runtime.
+
+Learning goal: understand how professional rendering architecture is protected by validation, not memory.
+
+Required work:
+1. Add or update backend boundary validation scripts for public RHI, Renderer, D3D12 backend, Vulkan backend, D3D12MA, and VMA.
+2. Add shader package parity validation for required DXIL and SPIR-V variants.
+3. Add memory diagnostics parity checks for D3D12MA and VMA categories, budgets, and live allocation records.
+4. Add runtime smoke command docs for D3D12 and Vulkan backend selection.
+5. Consider a lightweight RHI validation wrapper after both backends exist.
+6. Ensure validation reports are clear enough to use in portfolio discussion.
+
+Constraints:
+1. Do not make validation require full builds unless it is a milestone command.
+2. Do not make validation backend-biased.
+3. Do not hide known unsupported features.
+
+Deliverables:
+1. Backend boundary gate.
+2. Shader parity gate.
+3. Memory diagnostics parity gate.
+4. Runtime smoke documentation.
+5. Phase notebook entry.
+
+Validation:
+1. Run all new source gates.
+2. Record any known false positives and fix them before final milestone validation.
+```
+
+### Phase 20 Execution Prompt
+
+```text
+Implement Phase 20: Legacy Deletion And Architecture Tightening.
+
+Goal: remove temporary migration code, low-value wrappers, and stale documentation so the final architecture is smaller and easier to explain.
+
+Learning goal: practice the hardest part of architecture work: deleting code that no longer earns its maintenance cost.
+
+Required work:
+1. Search for temporary compatibility shims, D3D12-only renderer paths, placeholder Vulkan bootstrap code, and wrappers that only forward without policy.
+2. Delete or collapse low-value abstractions while preserving the shared RHI contract and backend parity.
+3. Update architecture docs to describe implemented state, not future intention.
+4. Produce a final parity checklist for D3D12 and Vulkan.
+5. Record honest caveats for unsupported or deferred features.
+
+Constraints:
+1. Do not keep legacy code just because it made migration easier.
+2. Do not delete a backend-specific implementation detail that still owns real native complexity.
+3. Do not claim parity for features that are deferred.
+
+Deliverables:
+1. Removed migration leftovers.
+2. Smaller final RHI/backend shape.
+3. Updated docs.
+4. Final parity checklist.
+5. Phase notebook entry.
+
+Validation:
+1. Run all source gates.
+2. Run focused D3D12 and Vulkan builds.
+3. Run final runtime smoke for both backends when available.
+```
 
 ## Suggested Milestones
 
