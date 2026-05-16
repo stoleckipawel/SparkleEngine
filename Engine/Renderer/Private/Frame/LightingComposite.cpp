@@ -14,6 +14,7 @@ void AddLightingCompositePass(
 {
     auto& parameters = builder.AllocPassParameters<LightingCompositePass>();
     LightingCompositePass::DeclareResources(builder, sceneTargets, lighting, gbuffer, parameters);
+    
     builder.AddComputePass<LightingCompositePass>(
         LightingCompositePass::PassName,
         parameters,
