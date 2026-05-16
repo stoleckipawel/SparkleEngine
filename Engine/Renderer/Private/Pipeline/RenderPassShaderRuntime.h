@@ -2,6 +2,7 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Core/RhiBackendSelection.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
@@ -103,7 +104,7 @@ class RenderPassShaderRuntime final
 			}
 		}
 
-		LogRuntimeReady(desc);
+		LogRuntimeReady(rhi, desc);
 		outErrorMessage.clear();
 		return true;
 	}
@@ -148,7 +149,7 @@ class RenderPassShaderRuntime final
 		configurePipelineState(pipelineDesc);
 		storage.PipelineState = rhi.CreateComputePipelineState(pipelineDesc);
 
-		LogRuntimeReady(desc);
+		LogRuntimeReady(rhi, desc);
 		outErrorMessage.clear();
 		return true;
 	}
@@ -253,17 +254,21 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		outLoadedPackage = nullptr;
+		const CookedShaderBinaryFormat requiredBinaryFormat = rhi.GetRequiredShaderBinaryFormat();
 		if (!shaderPackageCache
-		         .LoadPackage(desc.Package, bindingLayout, rhi.GetRequiredShaderBinaryFormat(), outErrorMessage, outLoadedPackage))
+		         .LoadPackage(desc.Package, bindingLayout, requiredBinaryFormat, outErrorMessage, outLoadedPackage))
 		{
 			const std::string bindingLayoutLabel =
 			    desc.Package.BindingLayoutId != nullptr ? std::string(desc.Package.BindingLayoutId) : bindingLayout.GetDebugName();
 			outErrorMessage = std::format(
-			    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with bindingLayout='{}' expectedStages='{}' - "
+			    "Runtime validation rejected cooked shader package '{}' for pass '{}' ({}) with backend='{}' requiredFormat='{}' "
+			    "bindingLayout='{}' expectedStages='{}' - "
 			    "{}",
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    desc.PassName,
 			    desc.PackageDeclarationName,
+			    RhiBackendApiToString(rhi.GetBackendApi()),
+			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 			    bindingLayoutLabel,
 			    FormatShaderStageMask(desc.Package.ExpectedStages),
 			    outErrorMessage);
@@ -289,13 +294,16 @@ class RenderPassShaderRuntime final
 		return rhi.CreateBindingLayout(bindingDesc);
 	}
 
-	static void LogRuntimeReady(const RenderPassShaderRuntimeDesc& desc)
+	static void LogRuntimeReady(RenderHardwareInterface& rhi, const RenderPassShaderRuntimeDesc& desc)
 	{
 		SPDLOG_LOGGER_INFO(
 		    GetLogger(),
-		    "Cooked shader runtime ready: pass='{}' pipeline='{}' package='{}' bindingLayout='{}' expectedStages='{}'",
+		    "Cooked shader runtime ready: pass='{}' pipeline='{}' backend='{}' requiredFormat='{}' package='{}' bindingLayout='{}' "
+		    "expectedStages='{}'",
 		    desc.PassName,
 		    FormatPipelineKind(desc.PipelineKind),
+		    RhiBackendApiToString(rhi.GetBackendApi()),
+		    CookedShaderBinaryFormatToString(rhi.GetRequiredShaderBinaryFormat()),
 		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 		    desc.Package.BindingLayoutId != nullptr ? desc.Package.BindingLayoutId : "<null>",
 		    FormatShaderStageMask(desc.Package.ExpectedStages));

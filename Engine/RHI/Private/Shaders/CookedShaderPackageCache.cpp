@@ -17,18 +17,6 @@
 
 namespace
 {
-	const char* FormatCookedShaderBinaryFormat(CookedShaderBinaryFormat format) noexcept
-	{
-		switch (format)
-		{
-			case CookedShaderBinaryFormat::Dxil:
-				return "DXIL";
-			case CookedShaderBinaryFormat::SpirV:
-				return "SPIR-V";
-		}
-		return "unknown";
-	}
-
 	constexpr std::array<ShaderStage, 6> kKnownShaderStages =
 	    {ShaderStage::Vertex, ShaderStage::Pixel, ShaderStage::Geometry, ShaderStage::Hull, ShaderStage::Domain, ShaderStage::Compute};
 
@@ -265,7 +253,7 @@ namespace
 		message += std::format(
 		    " Expected runtime bindings=[{}]. Reflected {} bindings=[{}].",
 		    FormatExpectedParameterList(expectedParameters),
-		    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
+		    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 		    FormatReflectedBindingList(package, definition, requiredBinaryFormat));
 		return message;
 	}
@@ -401,7 +389,7 @@ namespace
 					        static_cast<std::uint32_t>(binaryRecord.Stage),
 					        FormatCookedShaderResourceKind(resourceBinding.Kind),
 					        resourceName,
-					        FormatCookedShaderBinaryFormat(requiredBinaryFormat)),
+							CookedShaderBinaryFormatToString(requiredBinaryFormat)),
 					    package,
 					    definition,
 					    expectedParameters,
@@ -462,7 +450,7 @@ namespace
 				        definition.PackageId,
 				        expectedParameter.Name,
 				        expectedParameter.GetShaderName(),
-				        FormatCookedShaderBinaryFormat(requiredBinaryFormat)),
+				        CookedShaderBinaryFormatToString(requiredBinaryFormat)),
 				    package,
 				    definition,
 				    expectedParameters,
@@ -865,7 +853,7 @@ bool CookedShaderPackageCache::ValidatePackage(
 				outErrorMessage = std::format(
 				    "Cooked shader package '{}' contains more than one {} binary for stage {}",
 				    definition.PackageId,
-				    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
+				    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 				    stageIndex);
 				return false;
 			}
@@ -884,10 +872,10 @@ bool CookedShaderPackageCache::ValidatePackage(
 		if (!hasRequiredBinaryForStage[static_cast<std::size_t>(stage)])
 		{
 			outErrorMessage = std::format(
-			    "Cooked shader package '{}' is missing the required {} binary for stage {}",
+			    "Cooked shader package '{}' is missing the required {} binary for shader stage '{}'",
 			    definition.PackageId,
-			    FormatCookedShaderBinaryFormat(requiredBinaryFormat),
-			    static_cast<std::uint32_t>(stage));
+			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
+			    GetShaderStagePrefix(stage));
 			return false;
 		}
 	}

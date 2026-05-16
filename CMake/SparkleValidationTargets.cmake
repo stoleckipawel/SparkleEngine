@@ -74,6 +74,22 @@ add_sparkle_validation_dependency(SparkleRenderer shader_compiler_boundary_check
 add_sparkle_validation_dependency(ShaderCompiler shader_compiler_boundary_check)
 
 add_custom_target(
+    shader_package_parity_check
+    COMMAND ${CMAKE_COMMAND}
+        -DSHADER_PACKAGE_PARITY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateShaderPackageParity.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating cooked shader package DXIL/SPIR-V runtime selection parity..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI shader_package_parity_check)
+add_sparkle_validation_dependency(SparkleApplication shader_package_parity_check)
+add_sparkle_validation_dependency(SparkleGameFramework shader_package_parity_check)
+add_sparkle_validation_dependency(SparkleRenderer shader_package_parity_check)
+add_sparkle_validation_dependency(SparkleEditor shader_package_parity_check)
+add_sparkle_validation_dependency(ShaderCompiler shader_package_parity_check)
+
+add_custom_target(
     texture_cooker_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DTEXTURE_COOKER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -150,6 +166,7 @@ add_custom_target(
         rhi_backend_boundary_check
         rhi_memory_boundary_check
         shader_compiler_boundary_check
+        shader_package_parity_check
         texture_cooker_boundary_check
         tools_architecture_boundary_check
         logging_boundary_check

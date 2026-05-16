@@ -181,7 +181,7 @@ if(CLANG_FORMAT_EXE AND SPARKLE_RUN_CLANG_FORMAT_ON_BUILD)
     # Optionally make normal targets depend on clang_format_check.
     get_property(all_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
     foreach(t ${all_targets})
-        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "sparkle_validation_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "texture_cooker_boundary_check" AND NOT t STREQUAL "tools_architecture_boundary_check" AND NOT t STREQUAL "logging_boundary_check")
+        if(NOT t STREQUAL "clang_format_check" AND NOT t STREQUAL "sparkle_validation_check" AND NOT t STREQUAL "runtime_cooked_boundary_check" AND NOT t STREQUAL "framegraph_boundary_check" AND NOT t STREQUAL "rhi_backend_boundary_check" AND NOT t STREQUAL "rhi_memory_boundary_check" AND NOT t STREQUAL "shader_compiler_boundary_check" AND NOT t STREQUAL "shader_package_parity_check" AND NOT t STREQUAL "texture_cooker_boundary_check" AND NOT t STREQUAL "tools_architecture_boundary_check" AND NOT t STREQUAL "logging_boundary_check")
             add_dependencies(${t} clang_format_check)
         endif()
     endforeach()

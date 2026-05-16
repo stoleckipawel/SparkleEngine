@@ -77,3 +77,16 @@ std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 
 	return Hash::Fnv1a64(canonicalLayout);
 }
+
+const char* CookedShaderBinaryFormatToString(CookedShaderBinaryFormat format) noexcept
+{
+	switch (format)
+	{
+		case CookedShaderBinaryFormat::Dxil:
+			return "DXIL";
+		case CookedShaderBinaryFormat::SpirV:
+			return "SPIR-V";
+	}
+
+	return "unknown";
+}

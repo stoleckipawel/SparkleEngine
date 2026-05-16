@@ -22,3 +22,4 @@ struct ShaderPackageDefinition final
 
 SPARKLE_RHI_API std::uint64_t BuildShaderPackageKey(std::string_view packageId);
 SPARKLE_RHI_API std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout);
+SPARKLE_RHI_API const char* CookedShaderBinaryFormatToString(CookedShaderBinaryFormat format) noexcept;
