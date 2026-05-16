@@ -7,10 +7,13 @@
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "Device/RenderHardwareInterface.h"
+#include "Core/Public/Environment/EnvironmentVariables.h"
 
 #include <array>
 #include <cstring>
+#include <filesystem>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -59,7 +62,8 @@ class D3D12RenderObjectDiagnostics final : public RenderObjectDiagnostics
 		D3D12GpuAllocationRecord* const record = GetD3D12GpuAllocationRecord(resource);
 		if (record != nullptr)
 		{
-			record->DebugName = debugName;
+			SetD3D12AllocationRecordDebugName(*record, debugName);
+			return;
 		}
 		SetD3D12ObjectDebugName(record != nullptr ? record->Resource.Get() : nullptr, debugName);
 	}
@@ -335,11 +339,42 @@ class D3D12RenderFailureDiagnostics final : public RenderFailureDiagnostics
 	D3D12Rhi& m_rhi;
 };
 
+class D3D12RenderMemoryDiagnostics final : public RenderMemoryDiagnostics
+{
+  public:
+	explicit D3D12RenderMemoryDiagnostics(D3D12GpuMemoryAllocator& allocator) noexcept : m_allocator(allocator)
+	{
+		std::string jsonDumpPath;
+		if (Environment::TryGetVariable("SPARKLE_RHI_MEMORY_JSON_DUMP", jsonDumpPath))
+		{
+			(void)m_allocator.WriteAllocatorJsonDump(std::filesystem::path(jsonDumpPath), true);
+		}
+	}
+
+	bool SupportsBudgetQueries() const noexcept override { return m_allocator.SupportsBudgetQueries(); }
+
+	bool SupportsJsonDump() const noexcept override { return m_allocator.SupportsJsonDump(); }
+
+	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
+
+	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept override
+	{
+		return m_allocator.WriteAllocatorJsonDump(outputPath, includeDetailedMap);
+	}
+
+  private:
+	D3D12GpuMemoryAllocator& m_allocator;
+};
+
 class D3D12RenderDiagnostics final : public RenderDiagnostics
 {
   public:
 	explicit D3D12RenderDiagnostics(D3D12Rhi& rhi) noexcept :
-	    m_objectDiagnostics(rhi), m_timingDiagnostics(rhi), m_messageDiagnostics(rhi), m_failureDiagnostics(rhi)
+	    m_objectDiagnostics(rhi),
+	    m_timingDiagnostics(rhi),
+	    m_messageDiagnostics(rhi),
+	    m_failureDiagnostics(rhi),
+	    m_memoryDiagnostics(rhi.GetMemoryAllocator())
 	{
 	}
 
@@ -351,7 +386,10 @@ class D3D12RenderDiagnostics final : public RenderDiagnostics
 		    .SupportsTimestampQueries = m_timingDiagnostics.SupportsTimestampQueries(),
 		    .SupportsDebugMessages = m_messageDiagnostics.SupportsDebugMessages(),
 		    .SupportsLiveObjectReports = m_failureDiagnostics.SupportsLiveObjectReports(),
-		    .SupportsCrashDiagnostics = m_failureDiagnostics.SupportsCrashDiagnostics()};
+		    .SupportsCrashDiagnostics = m_failureDiagnostics.SupportsCrashDiagnostics(),
+		    .SupportsMemoryDiagnostics = true,
+		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries(),
+		    .SupportsMemoryJsonDump = m_memoryDiagnostics.SupportsJsonDump()};
 	}
 
 	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }
@@ -390,11 +428,16 @@ class D3D12RenderDiagnostics final : public RenderDiagnostics
 		                                                                                                             : nullptr;
 	}
 
+	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return &m_memoryDiagnostics; }
+
+	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return &m_memoryDiagnostics; }
+
   private:
 	D3D12RenderObjectDiagnostics m_objectDiagnostics;
 	D3D12RenderTimingDiagnostics m_timingDiagnostics;
 	D3D12RenderMessageDiagnostics m_messageDiagnostics;
 	D3D12RenderFailureDiagnostics m_failureDiagnostics;
+	D3D12RenderMemoryDiagnostics m_memoryDiagnostics;
 };
 
 std::unique_ptr<RenderDiagnostics> CreateD3D12RenderDiagnostics(D3D12Rhi& rhi)

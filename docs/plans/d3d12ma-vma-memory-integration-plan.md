@@ -252,7 +252,7 @@ Use this as the removal checklist. Each row is done only when the direct D3D12 a
 
 ## Prompt-Ready Phase Plan
 
-Use these phase briefs as future coding prompts. Each phase is scoped so it can be implemented, validated, and reviewed without losing the architectural through-line.
+Use these phase briefs as future coding prompts. Each phase is scoped so it can be implemented, source-validated, marked done, and reviewed without losing the architectural through-line.
 
 Universal prompt preamble:
 
@@ -267,7 +267,12 @@ cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=. -P CMake/Validation/ValidateRhiMemoryBo
 git diff --check
 ```
 
-If new C++ files are added under `Engine/RHI`, regenerate CMake/build files before compiling because the RHI CMake source list is globbed. Do not run a full build until the phase's selected code changes are complete.
+Phase completion cadence:
+
+- Mark a phase/stage done after the selected coding changes and source-only validation are complete.
+- Do not run builds between resource families or sub-stages.
+- Run focused target builds only at explicit checkpoints, at the end of a larger selected coding batch, or when requested.
+- If new C++ files are added under `Engine/RHI`, regenerate CMake/build files before the next compile checkpoint because the RHI CMake source list is globbed.
 
 ### Phase 0 Prompt: Boundary And Validation Gate
 
@@ -302,6 +307,7 @@ Done criteria:
 - rhi_memory_boundary_check is included in sparkle_validation_check.
 - SparkleRHI and high-level engine targets depend on it when SPARKLE_BUILD_VALIDATION_ON_BUILD is enabled.
 - The script passes on the current tree while still guarding against new leakage and new raw D3D12 allocation calls.
+- The phase can be marked done after coding and source validation; target builds are checkpoint work.
 ```
 
 Phase 0 protects this target state:
@@ -350,14 +356,14 @@ Architecture constraints:
 
 Validation:
 - Run cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=. -P CMake/Validation/ValidateRhiMemoryBoundary.cmake.
-- Regenerate CMake/build files if new Engine/RHI files were added.
-- Build SparkleRHI or the smallest available RHI target after regeneration.
+- If new Engine/RHI C++ source files were added, note that CMake regeneration is needed before the next compile checkpoint.
 - Run git diff --check.
 
 Done criteria:
 - D3D12GpuMemoryAllocator owns D3D12MA initialization/shutdown privately.
 - Existing renderer/RHI behavior is unchanged.
 - Boundary validation passes.
+- The phase can be marked done after coding and source validation; no intermediate build is required unless requested.
 - The next phase can add allocation records without changing public RHI type names.
 ```
 
@@ -410,7 +416,6 @@ Architecture constraints:
 
 Validation:
 - Run rhi_memory_boundary_check directly.
-- Run focused tests/build for SparkleRHI after CMake regeneration if new files were added.
 - Run any existing source validation target that touches RHI/Renderer if practical.
 - Run git diff --check.
 
@@ -419,6 +424,7 @@ Done criteria:
 - Delayed release retires records, not raw ID3D12Resource pointers alone.
 - Renderer and FrameGraph callers do not know the handle implementation changed.
 - Boundary validation passes with no D3D12MA/VMA public leakage.
+- The phase can be marked done after coding and source validation; compile/smoke builds are checkpoint work.
 ```
 
 Phase 2 is the architectural hinge. Later phases should not migrate broad resources until this handle model is in place.
@@ -467,9 +473,8 @@ Architecture constraints:
 - Keep logs quiet by default.
 
 Validation:
-- Run rhi_memory_boundary_check after each converted family.
-- Run focused runtime/editor smoke if available after all selected conversions compile.
-- Run SparkleRHI/Renderer build only after selected code changes are complete.
+- Run rhi_memory_boundary_check after the selected coding batch is complete.
+- Run focused runtime/editor smoke only at an explicit checkpoint or when requested.
 - Run git diff --check.
 
 Done criteria:
@@ -477,6 +482,7 @@ Done criteria:
 - The validation legacy baseline is reduced for every removed direct D3D12 allocation call.
 - Resource names, GPU virtual addresses, descriptors, and delayed release still work.
 - No public D3D12MA/VMA leakage.
+- The phase can be marked done after coding and source validation; do not build between converted families.
 ```
 
 Persistent migration checklist:
@@ -492,6 +498,8 @@ Persistent migration checklist:
 | Constant/persistent upload | ConstantBuffer or Upload | HostUpload | Direct committed constant-buffer allocation where still used |
 
 ### Phase 4 Prompt: Memory Diagnostics And Portfolio Surface
+
+Status: implemented. `RenderMemoryDiagnostics` now exposes backend-neutral memory snapshots and explicit allocator JSON dump export through `RenderDiagnostics`; the D3D12 backend populates category/residency rows, allocation names, budgets, allocation counts, and block counts from D3D12MA plus Sparkle allocation records.
 
 ```text
 Implement Phase 4 of docs/plans/d3d12ma-vma-memory-integration-plan.md: add backend-neutral memory diagnostics backed by D3D12MA.
@@ -532,8 +540,7 @@ Architecture constraints:
 
 Validation:
 - Run rhi_memory_boundary_check.
-- Run a smoke path that queries memory diagnostics if available.
-- Run SparkleRHI build after selected code changes are complete.
+- Run a smoke path that queries memory diagnostics only at an explicit checkpoint or when requested.
 - Run git diff --check.
 
 Done criteria:
@@ -541,6 +548,7 @@ Done criteria:
 - D3D12MA JSON dump is available on demand through RenderMemoryDiagnostics.
 - Allocation categories and names are visible in diagnostics.
 - No diagnostics spam appears without opt-in flags.
+- The phase can be marked done after coding and source validation; target builds are separate checkpoint work.
 ```
 
 Diagnostics output contract:
@@ -586,14 +594,14 @@ Architecture constraints:
 
 Validation:
 - Run rhi_memory_boundary_check.
-- Run focused editor/runtime smoke for memory snapshot display if UI is touched.
-- Run selected target build after code changes are complete.
+- Run focused editor/runtime smoke for memory snapshot display only at an explicit checkpoint or when requested.
 - Run git diff --check.
 
 Done criteria:
 - Renderer/Editor can consume RhiMemoryUsageSnapshot through a backend-neutral path.
 - Texture streaming has a clear memory-pressure input seam even if detailed mip policy is still minimal.
 - No allocator implementation types leak outside RHI private backend code.
+- The phase can be marked done after coding and source validation; target builds are separate checkpoint work.
 ```
 
 Budget policy should follow this flow:
@@ -646,8 +654,7 @@ Architecture constraints:
 Validation:
 - Run rhi_memory_boundary_check.
 - Run existing FrameGraph boundary validation.
-- Run renderer/framegraph smoke after selected code changes are complete.
-- Run selected build target only after all Phase 6 code changes are complete.
+- Run renderer/framegraph smoke only at an explicit checkpoint or when requested.
 - Run git diff --check.
 
 Done criteria:
@@ -655,6 +662,7 @@ Done criteria:
 - FrameGraph still owns lifetime ranges, aliasing plan, physical resource intent, barriers, descriptors, and carried runtime state.
 - D3D12MA-backed transient allocations show up under RhiMemoryCategory::FrameGraphTransient.
 - Boundary validation passes and the direct allocation baseline is reduced.
+- The phase can be marked done after coding and source validation; target builds are separate checkpoint work.
 ```
 
 FrameGraph ownership must remain split like this:

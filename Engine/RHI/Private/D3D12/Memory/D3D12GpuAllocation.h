@@ -8,12 +8,15 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace D3D12MA
 {
 	class Allocation;
 	class Pool;
 }
+
+class D3D12GpuMemoryAllocator;
 
 struct D3D12GpuAllocationRecord final
 {
@@ -23,6 +26,7 @@ struct D3D12GpuAllocationRecord final
 	RhiMemoryCategory Category = RhiMemoryCategory::Other;
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
 	std::wstring DebugName;
+	D3D12GpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;
 	void* CpuMappedAddress = nullptr;
 
@@ -56,6 +60,7 @@ RhiOwnedResourceHandle MakeD3D12OwnedResourceHandle(std::unique_ptr<D3D12GpuAllo
 std::unique_ptr<D3D12GpuAllocationRecord> TakeD3D12OwnedResourceHandle(RhiOwnedResourceHandle handle) noexcept;
 D3D12GpuAllocationRecord* GetD3D12GpuAllocationRecord(RhiOwnedResourceHandle handle) noexcept;
 ID3D12Resource* GetD3D12Resource(RhiOwnedResourceHandle handle) noexcept;
+void SetD3D12AllocationRecordDebugName(D3D12GpuAllocationRecord& record, std::wstring_view debugName) noexcept;
 
 RhiOwnedHeapHandle MakeD3D12OwnedHeapHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 std::unique_ptr<D3D12GpuHeapRecord> TakeD3D12OwnedHeapHandle(RhiOwnedHeapHandle handle) noexcept;

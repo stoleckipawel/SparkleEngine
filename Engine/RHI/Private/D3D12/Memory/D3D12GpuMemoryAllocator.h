@@ -1,10 +1,12 @@
 #pragma once
 
 #include "D3D12/Memory/D3D12GpuAllocation.h"
+#include "Memory/RhiMemoryDiagnostics.h"
 #include "Memory/RhiMemoryTypes.h"
 
 #include <cstdint>
 #include <d3d12.h>
+#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -23,6 +25,10 @@ class D3D12GpuMemoryAllocator final
 	D3D12GpuMemoryAllocator& operator=(D3D12GpuMemoryAllocator&&) = delete;
 
 	bool IsInitialized() const noexcept;
+	bool SupportsBudgetQueries() const noexcept;
+	bool SupportsJsonDump() const noexcept;
+	RhiMemoryUsageSnapshot CreateMemoryUsageSnapshot() const;
+	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept;
 	std::unique_ptr<D3D12GpuAllocationRecord> CreateTexture(
 	    const D3D12_RESOURCE_DESC& resourceDesc,
 	    D3D12_RESOURCE_STATES initialState,
@@ -47,6 +53,10 @@ class D3D12GpuMemoryAllocator final
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
 	static D3D12_HEAP_TYPE ToHeapType(RhiMemoryResidencyClass residencyClass) noexcept;
+	void RegisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept;
+	void UnregisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept;
+
+	friend struct D3D12GpuAllocationRecord;
 
 	std::unique_ptr<Impl> m_impl;
 };

@@ -1,11 +1,18 @@
 #include "PCH.h"
 
 #include "D3D12/Memory/D3D12GpuAllocation.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
 #include <D3D12MemAlloc.h>
 
 D3D12GpuAllocationRecord::~D3D12GpuAllocationRecord() noexcept
 {
+	if (Owner != nullptr)
+	{
+		Owner->UnregisterAllocationRecord(*this);
+		Owner = nullptr;
+	}
+
 	if (IsMapped && Resource != nullptr)
 	{
 		Resource->Unmap(0, nullptr);
@@ -55,6 +62,19 @@ ID3D12Resource* GetD3D12Resource(RhiOwnedResourceHandle handle) noexcept
 {
 	D3D12GpuAllocationRecord* const record = GetD3D12GpuAllocationRecord(handle);
 	return record != nullptr ? record->Resource.Get() : nullptr;
+}
+
+void SetD3D12AllocationRecordDebugName(D3D12GpuAllocationRecord& record, std::wstring_view debugName) noexcept
+{
+	record.DebugName = debugName;
+	if (record.Resource != nullptr)
+	{
+		record.Resource->SetName(record.DebugName.c_str());
+	}
+	if (record.Allocation != nullptr)
+	{
+		record.Allocation->SetName(record.DebugName.c_str());
+	}
 }
 
 RhiOwnedHeapHandle MakeD3D12OwnedHeapHandle(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept

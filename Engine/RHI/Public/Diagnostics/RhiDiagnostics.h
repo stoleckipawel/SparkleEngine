@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Interop/RhiNativeHandles.h"
+#include "../Memory/RhiMemoryDiagnostics.h"
 #include "../RHIAPI.h"
 
 #include <cstdint>
@@ -59,6 +60,9 @@ struct RhiDiagnosticsCapabilities
 	bool SupportsDebugMessages = false;
 	bool SupportsLiveObjectReports = false;
 	bool SupportsCrashDiagnostics = false;
+	bool SupportsMemoryDiagnostics = false;
+	bool SupportsMemoryBudgetQueries = false;
+	bool SupportsMemoryJsonDump = false;
 };
 
 class SPARKLE_RHI_API RenderObjectDiagnostics
@@ -123,4 +127,6 @@ class SPARKLE_RHI_API RenderDiagnostics
 	virtual const RenderMessageDiagnostics* GetMessageDiagnostics() const noexcept = 0;
 	virtual RenderFailureDiagnostics* GetFailureDiagnostics() noexcept = 0;
 	virtual const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept = 0;
+	virtual RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept = 0;
+	virtual const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept = 0;
 };
