@@ -2,6 +2,7 @@
 #include "FrameGraph/FrameGraph.h"
 
 #include "Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.h"
+#include "Renderer/Private/FrameGraph/Diagnostics/FrameGraphPlanDiagnostics.h"
 #include "Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -36,6 +37,7 @@ FrameGraphPlan FrameGraph::Compile()
 	BuildTransientMaterializationPlan(m_compiledPlan);
 	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker);
 	compiler.Compile();
+	FrameGraphPlanDiagnostics::LogIfEnabled(m_compiledPlan);
 	return m_compiledPlan;
 }
 

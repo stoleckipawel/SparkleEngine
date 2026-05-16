@@ -18,6 +18,17 @@ add_sparkle_validation_dependency(SparkleGameFramework runtime_cooked_boundary_c
 add_sparkle_validation_dependency(SparkleRenderer runtime_cooked_boundary_check)
 
 add_custom_target(
+    framegraph_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DFRAMEGRAPH_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateFrameGraphBoundary.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating Renderer FrameGraph public/private and compiler/execution boundaries..."
+)
+
+add_sparkle_validation_dependency(SparkleRenderer framegraph_boundary_check)
+
+add_custom_target(
     shader_compiler_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DSHADER_COMPILER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -105,6 +116,7 @@ add_custom_target(
     sparkle_validation_check
     DEPENDS
         runtime_cooked_boundary_check
+        framegraph_boundary_check
         shader_compiler_boundary_check
         texture_cooker_boundary_check
         tools_architecture_boundary_check
