@@ -6,9 +6,12 @@
 #include <d3d12.h>
 #include <wrl/client.h>
 
+#include <memory>
+
 using Microsoft::WRL::ComPtr;
 
 class D3D12DescriptorHeapManager;
+struct D3D12GpuAllocationRecord;
 class D3D12Rhi;
 
 class D3D12Texture final : public Texture
@@ -42,6 +45,8 @@ class D3D12Texture final : public Texture
 	D3D12Rhi& m_rhi;
 	ComPtr<ID3D12Resource2> m_textureResource;
 	ComPtr<ID3D12Resource2> m_uploadResource;
+	std::unique_ptr<D3D12GpuAllocationRecord> m_textureAllocation;
+	std::unique_ptr<D3D12GpuAllocationRecord> m_uploadAllocation;
 	TextureLoadResult m_textureLoadResult;
 	D3D12DescriptorHandle m_srvHandle;
 	D3D12_RESOURCE_DESC m_texResourceDesc = {};

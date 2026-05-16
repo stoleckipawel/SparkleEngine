@@ -1,9 +1,12 @@
 #include "PCH.h"
 #include "D3D12/Resources/D3D12UploadBuffer.h"
 #include "D3D12/D3D12Rhi.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include <cstring>
 
-ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* data, size_t dataSize)
+static const auto g_d3d12UploadBufferLogger = Logging::GetOrCreateLogger("RHI.D3D12.UploadBuffer");
+
+std::unique_ptr<D3D12GpuAllocationRecord> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* data, size_t dataSize)
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -17,27 +20,30 @@ ComPtr<ID3D12Resource2> D3D12UploadBuffer::Upload(D3D12Rhi& rhi, const void* dat
 	resourceDesc.SampleDesc.Quality = 0;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-	ComPtr<ID3D12Resource2> uploadBuffer;
-	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
-	CHECK(rhi.GetDevice()->CreateCommittedResource(
-	    &heapUploadProperties,
-	    D3D12_HEAP_FLAG_NONE,
-	    &resourceDesc,
+	std::unique_ptr<D3D12GpuAllocationRecord> uploadBuffer = rhi.GetMemoryAllocator().CreateBuffer(
+	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    nullptr,
-	    IID_PPV_ARGS(uploadBuffer.ReleaseAndGetAddressOf())));
-
-	uploadBuffer->SetName(L"RHI_UploadBuffer");
+	    RhiMemoryCategory::Upload,
+	    RhiMemoryResidencyClass::HostUpload,
+	    L"RHI_UploadBuffer");
+	if (uploadBuffer == nullptr || uploadBuffer->Resource == nullptr)
+	{
+		Diagnostics::Fail(g_d3d12UploadBufferLogger, __FILE__, __LINE__, "D3D12UploadBuffer: failed to allocate upload buffer.");
+	}
 
 	void* mappedData = nullptr;
 	D3D12_RANGE readRange = {0, 0};
-	CHECK(uploadBuffer->Map(0, &readRange, &mappedData));
+	CHECK(uploadBuffer->Resource->Map(0, &readRange, &mappedData));
+	uploadBuffer->IsMapped = true;
+	uploadBuffer->CpuMappedAddress = mappedData;
 
 	if (dataSize > 0 && data != nullptr && mappedData != nullptr)
 	{
 		std::memcpy(mappedData, data, dataSize);
 	}
-	uploadBuffer->Unmap(0, nullptr);
+	uploadBuffer->Resource->Unmap(0, nullptr);
+	uploadBuffer->IsMapped = false;
+	uploadBuffer->CpuMappedAddress = nullptr;
 
 	return uploadBuffer;
 }

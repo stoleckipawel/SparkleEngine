@@ -4,9 +4,12 @@
 
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include <cstring>
 #include <d3d12.h>
 #include <wrl/client.h>
+
+#include <memory>
 
 using Microsoft::WRL::ComPtr;
 
@@ -46,11 +49,8 @@ template <typename T> class D3D12ConstantBuffer
 
 	~D3D12ConstantBuffer() noexcept
 	{
-		if (m_resource)
-		{
-			m_resource->Unmap(0, nullptr);
-			m_resource.Reset();
-		}
+		m_resource.Reset();
+		m_resourceAllocation.reset();
 		m_mappedData = nullptr;
 
 		if (m_cbvHandle.IsValid())
@@ -62,8 +62,6 @@ template <typename T> class D3D12ConstantBuffer
   private:
 	void CreateResource()
 	{
-		D3D12_HEAP_PROPERTIES heapProperties = {};
-		heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
 		D3D12_RESOURCE_DESC resourceDesc = {};
 		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		resourceDesc.Width = m_constantBufferSize;
@@ -75,21 +73,29 @@ template <typename T> class D3D12ConstantBuffer
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		CHECK(m_rhi->GetDevice()->CreateCommittedResource(
-		    &heapProperties,
-		    D3D12_HEAP_FLAG_NONE,
-		    &resourceDesc,
+		m_resourceAllocation = m_rhi->GetMemoryAllocator().CreateBuffer(
+		    resourceDesc,
 		    D3D12_RESOURCE_STATE_GENERIC_READ,
-		    nullptr,
-		    IID_PPV_ARGS(&m_resource)));
-
-		m_resource->SetName(L"RHI_ConstantBuffer");
+		    RhiMemoryCategory::ConstantBuffer,
+		    RhiMemoryResidencyClass::HostUpload,
+		    L"RHI_ConstantBuffer");
+		if (m_resourceAllocation == nullptr || m_resourceAllocation->Resource == nullptr)
+		{
+			Diagnostics::Fail(
+			    Logging::GetOrCreateLogger("RHI.D3D12.ConstantBuffer"),
+			    __FILE__,
+			    __LINE__,
+			    "D3D12ConstantBuffer: failed to allocate constant buffer.");
+		}
+		CHECK(m_resourceAllocation->Resource.As(&m_resource));
 
 		D3D12_RANGE readRange = {0, 0};
 		void* mapped = nullptr;
 
 		CHECK(m_resource->Map(0, &readRange, &mapped));
 		m_mappedData = mapped;
+		m_resourceAllocation->IsMapped = true;
+		m_resourceAllocation->CpuMappedAddress = mapped;
 	}
 
 	void CreateConstantBufferView()
@@ -103,6 +109,7 @@ template <typename T> class D3D12ConstantBuffer
 	D3D12Rhi* m_rhi = nullptr;
 	D3D12DescriptorHeapManager* m_descriptorHeapManager = nullptr;
 	ComPtr<ID3D12Resource2> m_resource = nullptr;
+	std::unique_ptr<D3D12GpuAllocationRecord> m_resourceAllocation;
 	D3D12DescriptorHandle m_cbvHandle;
 	T m_constantBufferData;
 	D3D12_CONSTANT_BUFFER_VIEW_DESC m_constantBufferViewDesc = {};

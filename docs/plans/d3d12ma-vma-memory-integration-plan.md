@@ -425,6 +425,8 @@ Phase 2 is the architectural hinge. Later phases should not migrate broad resour
 
 ### Phase 3 Prompt: Persistent Resource Migration To D3D12MA
 
+Status: implemented. Persistent texture, mesh buffer, ray tracing buffer, upload helper, constant buffer, and linear upload backing resources now route through `D3D12GpuMemoryAllocator` with backend-neutral category/residency intent; remaining direct D3D12 allocation baseline covers only deferred transient/readback paths.
+
 ```text
 Implement Phase 3 of docs/plans/d3d12ma-vma-memory-integration-plan.md: migrate persistent D3D12 resources to D3D12GpuMemoryAllocator/D3D12MA and remove duplicate raw allocation code as each path converts.
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Interop/RhiNativeHandles.h"
+#include "Memory/RhiMemoryTypes.h"
 
 #include <d3d12.h>
 #include <wrl/client.h>
@@ -19,6 +20,8 @@ struct D3D12GpuAllocationRecord final
 	Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
 	D3D12MA::Allocation* Allocation = nullptr;
 	D3D12MA::Pool* Pool = nullptr;
+	RhiMemoryCategory Category = RhiMemoryCategory::Other;
+	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
 	std::wstring DebugName;
 	bool IsMapped = false;
 	void* CpuMappedAddress = nullptr;
@@ -37,6 +40,7 @@ struct D3D12GpuHeapRecord final
 	Microsoft::WRL::ComPtr<ID3D12Heap> NativeHeap;
 	D3D12MA::Allocation* Allocation = nullptr;
 	D3D12MA::Pool* Pool = nullptr;
+	RhiMemoryCategory Category = RhiMemoryCategory::FrameGraphTransient;
 	std::wstring DebugName;
 
 	D3D12GpuHeapRecord() noexcept = default;

@@ -9,6 +9,7 @@
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
 #include "D3D12/Resources/D3D12ConstantBufferManager.h"
@@ -64,6 +65,11 @@ std::wstring D3D12RenderHardwareInterface::CopyDebugName(std::wstring_view debug
 bool D3D12RenderHardwareInterface::ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept
 {
 	return resource != nullptr && (resource->GetDesc().Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0;
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept
+{
+	return MakeD3D12OwnedResourceHandle(std::move(record));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::WrapOwnedResource(
@@ -430,27 +436,25 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 {
 	outResource = {};
 	outView = {};
-	if (m_rhi == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
 	{
 		return false;
 	}
 
 	D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
-	const D3D12_HEAP_PROPERTIES heapProperties = D3D12TypeConversions::BuildUploadHeapProperties();
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &resourceDesc,
-	        D3D12_RESOURCE_STATE_GENERIC_READ,
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"VertexBuffer");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_GENERIC_READ,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    ownedDebugName);
+	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return false;
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"VertexBuffer");
-	ownedResource->SetName(ownedDebugName.c_str());
+	ID3D12Resource* const ownedResource = ownedRecord->Resource.Get();
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -458,14 +462,18 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 		return false;
 	}
 
+	ownedRecord->IsMapped = true;
+	ownedRecord->CpuMappedAddress = mappedData;
 	std::memcpy(mappedData, data, sizeInBytes);
 	ownedResource->Unmap(0, nullptr);
+	ownedRecord->IsMapped = false;
+	ownedRecord->CpuMappedAddress = nullptr;
 
 	outView = RhiVertexBufferView{
 	    .BufferLocation = ownedResource->GetGPUVirtualAddress(),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .StrideInBytes = strideInBytes};
-	outResource = WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	outResource = WrapOwnedResource(std::move(ownedRecord));
 	return true;
 }
 
@@ -479,27 +487,25 @@ bool D3D12RenderHardwareInterface::CreateIndexBuffer(
 {
 	outResource = {};
 	outView = {};
-	if (m_rhi == nullptr || data == nullptr || sizeInBytes == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0)
 	{
 		return false;
 	}
 
 	D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
-	const D3D12_HEAP_PROPERTIES heapProperties = D3D12TypeConversions::BuildUploadHeapProperties();
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &resourceDesc,
-	        D3D12_RESOURCE_STATE_GENERIC_READ,
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"IndexBuffer");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_GENERIC_READ,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    ownedDebugName);
+	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return false;
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"IndexBuffer");
-	ownedResource->SetName(ownedDebugName.c_str());
+	ID3D12Resource* const ownedResource = ownedRecord->Resource.Get();
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -507,14 +513,18 @@ bool D3D12RenderHardwareInterface::CreateIndexBuffer(
 		return false;
 	}
 
+	ownedRecord->IsMapped = true;
+	ownedRecord->CpuMappedAddress = mappedData;
 	std::memcpy(mappedData, data, sizeInBytes);
 	ownedResource->Unmap(0, nullptr);
+	ownedRecord->IsMapped = false;
+	ownedRecord->CpuMappedAddress = nullptr;
 
 	outView = RhiIndexBufferView{
 	    .BufferLocation = ownedResource->GetGPUVirtualAddress(),
 	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
 	    .Format = format};
-	outResource = WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	outResource = WrapOwnedResource(std::move(ownedRecord));
 	return true;
 }
 
@@ -635,68 +645,52 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::Get
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || sizeInBytes == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || sizeInBytes == 0)
 	{
 		return {};
 	}
 
 	const D3D12_RESOURCE_DESC resourceDesc =
 	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
-	const D3D12_HEAP_PROPERTIES heapProperties{
-	    .Type = D3D12_HEAP_TYPE_DEFAULT,
-	    .CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-	    .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
-	    .CreationNodeMask = 1,
-	    .VisibleNodeMask = 1};
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &resourceDesc,
-	        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingScratch");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	    RhiMemoryCategory::RayTracing,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    ownedDebugName);
+	if (ownedRecord == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingScratch");
-	ownedResource->SetName(ownedDebugName.c_str());
-	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	return WrapOwnedResource(std::move(ownedRecord));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
     std::uint64_t sizeInBytes,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || sizeInBytes == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || sizeInBytes == 0)
 	{
 		return {};
 	}
 
 	const D3D12_RESOURCE_DESC resourceDesc =
 	    D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes, .AllowUnorderedAccess = true});
-	const D3D12_HEAP_PROPERTIES heapProperties{
-	    .Type = D3D12_HEAP_TYPE_DEFAULT,
-	    .CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-	    .MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN,
-	    .CreationNodeMask = 1,
-	    .VisibleNodeMask = 1};
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &resourceDesc,
-	        D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingAccelerationStructure");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+	    RhiMemoryCategory::RayTracing,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    ownedDebugName);
+	if (ownedRecord == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingAccelerationStructure");
-	ownedResource->SetName(ownedDebugName.c_str());
-	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	return WrapOwnedResource(std::move(ownedRecord));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuffer(
@@ -704,7 +698,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || instances == nullptr || instanceCount == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || instances == nullptr || instanceCount == 0)
 	{
 		return {};
 	}
@@ -727,21 +721,19 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 
 	const std::uint64_t sizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * static_cast<std::uint64_t>(nativeInstances.size());
 	D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(RhiBufferResourceDesc{.SizeInBytes = sizeInBytes});
-	const D3D12_HEAP_PROPERTIES heapProperties = D3D12TypeConversions::BuildUploadHeapProperties();
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
-	if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-	        &heapProperties,
-	        D3D12_HEAP_FLAG_NONE,
-	        &resourceDesc,
-	        D3D12_RESOURCE_STATE_GENERIC_READ,
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingInstanceBuffer");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_GENERIC_READ,
+	    RhiMemoryCategory::RayTracing,
+	    RhiMemoryResidencyClass::HostUpload,
+	    ownedDebugName);
+	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"RayTracingInstanceBuffer");
-	ownedResource->SetName(ownedDebugName.c_str());
+	ID3D12Resource* const ownedResource = ownedRecord->Resource.Get();
 	void* mappedData = nullptr;
 	const D3D12_RANGE readRange{0, 0};
 	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
@@ -749,9 +741,13 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
 		return {};
 	}
 
+	ownedRecord->IsMapped = true;
+	ownedRecord->CpuMappedAddress = mappedData;
 	std::memcpy(mappedData, nativeInstances.data(), static_cast<std::size_t>(sizeInBytes));
 	ownedResource->Unmap(0, nullptr);
-	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	ownedRecord->IsMapped = false;
+	ownedRecord->CpuMappedAddress = nullptr;
+	return WrapOwnedResource(std::move(ownedRecord));
 }
 
 RhiResourceAllocationInfo D3D12RenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept

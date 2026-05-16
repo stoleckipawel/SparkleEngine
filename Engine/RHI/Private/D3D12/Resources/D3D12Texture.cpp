@@ -2,6 +2,7 @@
 #include "D3D12/Resources/D3D12Texture.h"
 #include "D3D12/D3D12Rhi.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
 #include <vector>
 
@@ -93,28 +94,34 @@ void D3D12Texture::CreateResource()
 	m_texResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	m_texResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	CD3DX12_HEAP_PROPERTIES heapDefaultProperties(D3D12_HEAP_TYPE_DEFAULT);
-	CHECK(m_rhi.GetDevice()->CreateCommittedResource(
-	    &heapDefaultProperties,
-	    D3D12_HEAP_FLAG_NONE,
-	    &m_texResourceDesc,
+	m_textureAllocation = m_rhi.GetMemoryAllocator().CreateTexture(
+	    m_texResourceDesc,
 	    D3D12_RESOURCE_STATE_COPY_DEST,
 	    nullptr,
-	    IID_PPV_ARGS(m_textureResource.ReleaseAndGetAddressOf())));
-	m_textureResource->SetName(L"RHI_D3D12Texture");
+	    RhiMemoryCategory::Texture,
+	    RhiMemoryResidencyClass::DeviceLocal,
+	    L"RHI_D3D12Texture");
+	if (m_textureAllocation == nullptr || m_textureAllocation->Resource == nullptr)
+	{
+		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: failed to allocate default texture resource.");
+	}
+	CHECK(m_textureAllocation->Resource.As(&m_textureResource));
 
 	const UINT subresourceCount = static_cast<UINT>(m_textureLoadResult.GetSubresourceCount());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);
 
-	CD3DX12_HEAP_PROPERTIES heapUploadProperties(D3D12_HEAP_TYPE_UPLOAD);
 	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
-	CHECK(m_rhi.GetDevice()->CreateCommittedResource(
-	    &heapUploadProperties,
-	    D3D12_HEAP_FLAG_NONE,
-	    &resourceDesc,
+	m_uploadAllocation = m_rhi.GetMemoryAllocator().CreateBuffer(
+	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    nullptr,
-	    IID_PPV_ARGS(m_uploadResource.ReleaseAndGetAddressOf())));
+	    RhiMemoryCategory::Upload,
+	    RhiMemoryResidencyClass::HostUpload,
+	    L"RHI_D3D12TextureUpload");
+	if (m_uploadAllocation == nullptr || m_uploadAllocation->Resource == nullptr)
+	{
+		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: failed to allocate texture upload resource.");
+	}
+	CHECK(m_uploadAllocation->Resource.As(&m_uploadResource));
 }
 
 void D3D12Texture::UploadToGPU()
@@ -205,6 +212,8 @@ D3D12Texture::~D3D12Texture() noexcept
 {
 	m_textureResource.Reset();
 	m_uploadResource.Reset();
+	m_textureAllocation.reset();
+	m_uploadAllocation.reset();
 
 	if (m_srvHandle.IsValid())
 	{

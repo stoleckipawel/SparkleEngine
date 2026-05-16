@@ -166,6 +166,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	static std::wstring CopyDebugName(std::wstring_view debugName, std::wstring_view fallbackName);
+	static RhiOwnedResourceHandle WrapOwnedResource(std::unique_ptr<D3D12GpuAllocationRecord> record) noexcept;
 	static RhiOwnedResourceHandle WrapOwnedResource(
 	    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
 	    std::wstring debugName) noexcept;

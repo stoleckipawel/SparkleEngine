@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Core/Public/Math/MathUtils.h"
+#include "D3D12/Memory/D3D12GpuAllocation.h"
 
 #include <atomic>
 #include <cassert>
 #include <cstdint>
+#include <memory>
 #include <d3d12.h>
 #include <stdexcept>
 #include <wrl/client.h>
@@ -67,6 +69,7 @@ class D3D12LinearAllocator
   private:
 	D3D12Rhi* m_rhi = nullptr;
 	ComPtr<ID3D12Resource> m_Resource;
+	std::unique_ptr<D3D12GpuAllocationRecord> m_Allocation;
 	uint8_t* m_CpuBase = nullptr;
 	D3D12_GPU_VIRTUAL_ADDRESS m_GpuBase = 0;
 	uint64_t m_Capacity = 0;

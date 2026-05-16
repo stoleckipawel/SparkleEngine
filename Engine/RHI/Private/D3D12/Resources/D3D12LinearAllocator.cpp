@@ -2,6 +2,7 @@
 
 #include "D3D12/Resources/D3D12LinearAllocator.h"
 #include "D3D12/D3D12Rhi.h"
+#include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 
 #include <cstring>
 
@@ -12,11 +13,6 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 	m_rhi = &rhi;
 	m_Capacity = capacity;
 	m_Offset.store(0, std::memory_order_relaxed);
-
-	D3D12_HEAP_PROPERTIES heapProps = {};
-	heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -31,26 +27,28 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	HRESULT hr = m_rhi->GetDevice()->CreateCommittedResource(
-	    &heapProps,
-	    D3D12_HEAP_FLAG_NONE,
-	    &resourceDesc,
+	m_Allocation = m_rhi->GetMemoryAllocator().CreateBuffer(
+	    resourceDesc,
 	    D3D12_RESOURCE_STATE_GENERIC_READ,
-	    nullptr,
-	    IID_PPV_ARGS(&m_Resource));
-
-	if (FAILED(hr))
+	    RhiMemoryCategory::ConstantBuffer,
+	    RhiMemoryResidencyClass::HostUpload,
+	    debugName);
+	if (m_Allocation == nullptr || m_Allocation->Resource == nullptr)
 	{
 		throw std::runtime_error("D3D12LinearAllocator: Failed to create upload buffer");
 	}
-	m_Resource->SetName(debugName);
+	m_Resource = m_Allocation->Resource;
 
 	D3D12_RANGE readRange = {0, 0};
-	hr = m_Resource->Map(0, &readRange, reinterpret_cast<void**>(&m_CpuBase));
+	const HRESULT hr = m_Resource->Map(0, &readRange, reinterpret_cast<void**>(&m_CpuBase));
 	if (FAILED(hr))
 	{
+		m_Resource.Reset();
+		m_Allocation.reset();
 		throw std::runtime_error("D3D12LinearAllocator: Failed to map upload buffer");
 	}
+	m_Allocation->IsMapped = true;
+	m_Allocation->CpuMappedAddress = m_CpuBase;
 
 	m_GpuBase = m_Resource->GetGPUVirtualAddress();
 	m_bInitialized = true;
@@ -58,11 +56,8 @@ void D3D12LinearAllocator::Initialize(D3D12Rhi& rhi, uint64_t capacity, const wc
 
 void D3D12LinearAllocator::Shutdown()
 {
-	if (m_Resource)
-	{
-		m_Resource->Unmap(0, nullptr);
-		m_Resource.Reset();
-	}
+	m_Resource.Reset();
+	m_Allocation.reset();
 	m_CpuBase = nullptr;
 	m_GpuBase = 0;
 	m_Capacity = 0;

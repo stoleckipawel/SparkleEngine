@@ -1,16 +1,15 @@
 #pragma once
 
-#include <d3d12.h>
-#include <wrl/client.h>
-#include <cstddef>
-#include <type_traits>
+#include "D3D12/Memory/D3D12GpuAllocation.h"
 
-using Microsoft::WRL::ComPtr;
+#include <cstddef>
+#include <memory>
+#include <type_traits>
 
 class D3D12Rhi;
 
 class D3D12UploadBuffer
 {
   public:
-	static ComPtr<ID3D12Resource2> Upload(D3D12Rhi& rhi, const void* data, size_t dataSize);
+	static std::unique_ptr<D3D12GpuAllocationRecord> Upload(D3D12Rhi& rhi, const void* data, size_t dataSize);
 };

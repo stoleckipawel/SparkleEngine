@@ -6,6 +6,13 @@
 
 D3D12GpuAllocationRecord::~D3D12GpuAllocationRecord() noexcept
 {
+	if (IsMapped && Resource != nullptr)
+	{
+		Resource->Unmap(0, nullptr);
+		IsMapped = false;
+		CpuMappedAddress = nullptr;
+	}
+
 	Resource.Reset();
 	if (Allocation != nullptr)
 	{
