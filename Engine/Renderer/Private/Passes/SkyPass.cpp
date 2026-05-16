@@ -19,6 +19,8 @@
 
 #include <cassert>
 
+SkyPass::SkyPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+
 namespace
 {
 	const Texture* ResolveSkyTexture(const TextureManager* textureManager) noexcept
@@ -95,7 +97,7 @@ void SkyPass::DeclareResources(
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices)
+void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices) const
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
@@ -107,11 +109,10 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 	assert(valid);
 }
 
-void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
+void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.Sky.Execute");
 
-	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<SkyPass>();
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	PassBindingOverrides overrides;
 	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.RuntimeServices));
@@ -123,7 +124,7 @@ void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& paramete
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
-	    runtime,
+	    m_runtime,
 	    parameters.GetPassParameterSet(),
 	    dispatch,
 	    &overrides,

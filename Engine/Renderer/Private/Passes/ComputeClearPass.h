@@ -9,9 +9,9 @@
 #include <cstdint>
 
 class RenderCommandContext;
-class FrameGraph;
 class FrameGraphBuilder;
 class PassParameterLayout;
+struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 
 struct ComputeClearPassParameters
@@ -35,13 +35,18 @@ class ComputeClearPass final
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
+	explicit ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept;
+
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
-	static void Execute(
+	void Execute(
 	    PassExecutionContext& context,
 	    const ParameterInstance& parameters,
 	    std::uint32_t width,
-	    std::uint32_t height) noexcept;
+	    std::uint32_t height) const noexcept;
+
+  private:
+	const ComputePassPipelineRuntime& m_runtime;
 };

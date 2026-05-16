@@ -10,8 +10,8 @@
 
 #include <cstdint>
 
-class FrameGraph;
 class FrameGraphBuilder;
+struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
 struct RenderViewData;
@@ -54,6 +54,8 @@ class DirectLightingPass final
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
+	explicit DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept;
+
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(
@@ -61,9 +63,13 @@ class DirectLightingPass final
 	    const LightingTargets& lighting,
 	    const GBufferTargets& gbuffer,
 	    ParameterInstance& parameters);
-	static void SetParameters(
+	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+
+  private:
+	void SetParameters(
 	    ParameterInstance& parameters,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices);
-	static void Execute(PassExecutionContext& context, ParameterInstance& parameters);
+	    const PassRuntimeServices& passRuntimeServices) const;
+
+	const ComputePassPipelineRuntime& m_runtime;
 };

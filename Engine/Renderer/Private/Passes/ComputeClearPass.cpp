@@ -15,6 +15,8 @@
 
 #include <cassert>
 
+ComputeClearPass::ComputeClearPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+
 const ComputeClearPass::ParameterMetadata& ComputeClearPass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -44,9 +46,9 @@ void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTe
 
 void ComputeClearPass::Execute(
 	PassExecutionContext& context,
-    const ComputeClearPass::ParameterInstance& parameters,
-    std::uint32_t width,
-    std::uint32_t height) noexcept
+	const ComputeClearPass::ParameterInstance& parameters,
+	std::uint32_t width,
+	std::uint32_t height) const noexcept
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.ComputeClear.Execute");
 
@@ -54,12 +56,11 @@ void ComputeClearPass::Execute(
 	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),
 	    1};
-	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<ComputeClearPass>();
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ComputeClearPass>(
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
-	    runtime,
+	    m_runtime,
 	    parameters,
 	    dispatch,
 	    PassName);

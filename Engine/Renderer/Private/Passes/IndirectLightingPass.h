@@ -9,8 +9,8 @@
 
 #include <cstdint>
 
-class FrameGraph;
 class FrameGraphBuilder;
+struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 
 struct IndirectLightingPassParameters
@@ -37,8 +37,13 @@ class IndirectLightingPass final
 	using ParameterMetadata = ShaderParameterStructMetadata<Parameters>;
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 
+	explicit IndirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept;
+
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, const LightingTargets& lighting, ParameterInstance& parameters);
-	static void Execute(PassExecutionContext& context, ParameterInstance& parameters);
+	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
+
+  private:
+	const ComputePassPipelineRuntime& m_runtime;
 };

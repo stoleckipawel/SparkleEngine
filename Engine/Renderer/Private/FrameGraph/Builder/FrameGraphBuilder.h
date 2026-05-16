@@ -34,25 +34,11 @@ class FrameGraphBuilder final
 		m_frameGraph.AddRasterPass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
-	void AddRasterPass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
-	{
-		m_frameGraph.AddRasterPass<TPass>(name, parameters, std::forward<TExecuteArgs>(executeArgs)...);
-	}
-
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
 	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
-	void AddComputePass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
-	{
-		m_frameGraph.AddComputePass<TPass>(name, parameters, std::forward<TExecuteArgs>(executeArgs)...);
 	}
 
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()

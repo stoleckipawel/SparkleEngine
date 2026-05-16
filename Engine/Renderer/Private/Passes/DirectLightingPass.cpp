@@ -15,6 +15,8 @@
 
 #include <cassert>
 
+DirectLightingPass::DirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+
 const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -52,7 +54,7 @@ void DirectLightingPass::DeclareResources(
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices)
+	const PassRuntimeServices& passRuntimeServices) const
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
@@ -60,11 +62,10 @@ void DirectLightingPass::SetParameters(
 	assert(valid);
 }
 
-void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
+void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
 
-	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<DirectLightingPass>();
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
@@ -74,7 +75,7 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
-	    runtime,
+	    m_runtime,
 	    parameters,
 	    dispatch,
 	    PassName);

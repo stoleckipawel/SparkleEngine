@@ -12,7 +12,6 @@
 
 class RenderCommandContext;
 struct RasterPassPipelineRuntime;
-class FrameGraph;
 class FrameGraphBuilder;
 struct PassExecutionContext;
 struct RenderSceneData;
@@ -86,26 +85,28 @@ class GBufferPass final
 	using ParameterInstance = TypedPassParameterInstance<Parameters>;
 	using DrawParameterInstance = TypedPassParameterInstance<DrawParameters>;
 
+	explicit GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept;
+
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters);
-	static void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData);
-	static void Execute(PassExecutionContext& context, ParameterInstance& parameters);
+	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:
-	static void PrepareTargets(PassExecutionContext& context, const Parameters& parameters);
-	static void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData);
-	static void BindPassResources(
+	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData) const;
+	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
+	void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData) const;
+	void BindPassResources(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const ParameterInstance& parameters,
-	    const RasterPassPipelineRuntime& runtime,
-	    const PassRuntimeServices& passRuntimeServices);
-	static void DrawOpaqueMeshes(
+	    const PassRuntimeServices& passRuntimeServices) const;
+	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
-	    const RasterPassPipelineRuntime& runtime,
-	    const PassRuntimeServices& passRuntimeServices);
+	    const PassRuntimeServices& passRuntimeServices) const;
+
+	const RasterPassPipelineRuntime& m_runtime;
 };

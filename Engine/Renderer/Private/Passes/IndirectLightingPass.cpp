@@ -13,6 +13,8 @@
 
 #include <cassert>
 
+IndirectLightingPass::IndirectLightingPass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+
 const IndirectLightingPass::ParameterMetadata& IndirectLightingPass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -38,11 +40,10 @@ void IndirectLightingPass::DeclareResources(FrameGraphBuilder& builder, const Li
 	parameters->IndirectSubsurface = builder.CreateUAV(lighting.IndirectSubsurface);
 }
 
-void IndirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
+void IndirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.IndirectLighting.Execute");
 
-	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<IndirectLightingPass>();
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
@@ -51,7 +52,7 @@ void IndirectLightingPass::Execute(PassExecutionContext& context, ParameterInsta
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
-	    runtime,
+	    m_runtime,
 	    parameters,
 	    dispatch,
 	    PassName);

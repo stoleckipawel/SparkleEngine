@@ -15,6 +15,8 @@
 
 #include <cassert>
 
+LightingCompositePass::LightingCompositePass(const ComputePassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
+
 const LightingCompositePass::ParameterMetadata& LightingCompositePass::GetParameterMetadata() noexcept
 {
 	static const ParameterMetadata metadata = []
@@ -58,7 +60,7 @@ void LightingCompositePass::DeclareResources(
 void LightingCompositePass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-    const PassRuntimeServices& passRuntimeServices)
+	const PassRuntimeServices& passRuntimeServices) const
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
@@ -66,11 +68,10 @@ void LightingCompositePass::SetParameters(
 	assert(valid);
 }
 
-void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
+void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.LightingComposite.Execute");
 
-	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<LightingCompositePass>();
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
@@ -80,7 +81,7 @@ void LightingCompositePass::Execute(PassExecutionContext& context, ParameterInst
 	    context.Resources,
 	    context.Commands,
 	    context.RuntimeServices.HardwareInterface,
-	    runtime,
+	    m_runtime,
 	    parameters,
 	    dispatch,
 	    PassName);

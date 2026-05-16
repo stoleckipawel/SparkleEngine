@@ -26,7 +26,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -107,21 +106,6 @@ class FrameGraph
 		    std::forward<ExecuteFn>(executeFn));
 	}
 
-	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
-	void AddRasterPass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
-	{
-		AddTypedShaderPass(
-		    name,
-		    EFrameGraphPassFlags::Raster,
-		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    {
-			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
-		    MakeDirectPassExecuteCallback<TPass, TParameterBindings>(std::forward<TExecuteArgs>(executeArgs)...));
-	}
-
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
 	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
@@ -135,21 +119,6 @@ class FrameGraph
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
 		    std::forward<ExecuteFn>(executeFn));
-	}
-
-	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
-	void AddComputePass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
-	{
-		AddTypedShaderPass(
-		    name,
-		    EFrameGraphPassFlags::Compute,
-		    parameters,
-		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
-		    {
-			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
-		    },
-		    MakeDirectPassExecuteCallback<TPass, TParameterBindings>(std::forward<TExecuteArgs>(executeArgs)...));
 	}
 
 	void Setup(const FrameContext& frame);
@@ -282,23 +251,6 @@ class FrameGraph
   private:
 	using SetupCallback = std::function<void(PassResourceBuilder&, const FrameContext&)>;
 	using ExecuteCallback = std::function<void(PassExecutionContext&)>;
-
-	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	static auto MakeDirectPassExecuteCallback(TExecuteArgs&&... executeArgs)
-	{
-		using ExecuteArgsTuple = std::tuple<std::decay_t<TExecuteArgs>...>;
-		return [executeArgsTuple = ExecuteArgsTuple(std::forward<TExecuteArgs>(executeArgs)...)](
-		           PassExecutionContext& context,
-		           TParameterBindings& typedParameters) mutable
-		{
-			std::apply(
-			    [&](auto&... capturedExecuteArgs)
-			    {
-				    TPass::Execute(context, typedParameters, capturedExecuteArgs...);
-			    },
-			    executeArgsTuple);
-		};
-	}
 
 	template <typename TParameterBindings, typename ExecuteFn>
 	static ExecuteCallback MakeParameterizedExecuteCallback(TParameterBindings* parameters, ExecuteFn&& executeFn)
