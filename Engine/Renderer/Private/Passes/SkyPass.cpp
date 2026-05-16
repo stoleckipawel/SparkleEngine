@@ -89,8 +89,8 @@ ShaderPackageDefinition SkyPass::DescribeShaderPackage() noexcept
 
 void SkyPass::DeclareResources(
     FrameGraphBuilder& builder,
-    const SceneTargets& sceneTargets,
-    const GBufferTargets& gbuffer,
+    const SceneRenderTargets& sceneTargets,
+    const GBufferRenderTargets& gbuffer,
     ParameterInstance& parameters)
 {
 	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 
 class FrameGraphBuilder;
 
 void AddVisualizeBuffersPass(
     FrameGraphBuilder& builder,
-    const SceneTargets& sceneTargets,
-    const LightingTargets& lighting,
-    const GBufferTargets& gbuffer);
+    const SceneRenderTargets& sceneTargets,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer);

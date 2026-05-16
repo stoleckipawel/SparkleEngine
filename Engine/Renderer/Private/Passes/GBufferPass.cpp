@@ -69,7 +69,7 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame.sceneData, context.RuntimeServices);
 }
 
-void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters)
+void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters)
 {
 	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor);
 	parameters->Normal = builder.CreateRenderTarget(targets.Normal);

@@ -4,7 +4,7 @@
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
@@ -90,7 +90,7 @@ class GBufferPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
-	static void DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters);
+	static void DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
   private:

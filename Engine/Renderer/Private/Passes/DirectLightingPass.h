@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -60,8 +60,8 @@ class DirectLightingPass final
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(
 	    FrameGraphBuilder& builder,
-	    const LightingTargets& lighting,
-	    const GBufferTargets& gbuffer,
+	    const LightingRenderTargets& lighting,
+	    const GBufferRenderTargets& gbuffer,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 

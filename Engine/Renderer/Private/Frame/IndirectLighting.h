@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 
 class FrameGraphBuilder;
 
-void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingTargets& lighting);
+void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting);

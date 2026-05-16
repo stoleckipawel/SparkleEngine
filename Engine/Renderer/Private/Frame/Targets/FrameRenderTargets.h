@@ -2,14 +2,14 @@
 
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 
-struct SceneTargets
+struct SceneRenderTargets
 {
 	FrameGraphTextureHandle SceneColor;
 	FrameGraphTextureHandle BackBuffer;
 	FrameGraphTextureHandle MainDepth;
 };
 
-struct GBufferTargets
+struct GBufferRenderTargets
 {
 	FrameGraphTextureHandle BaseColor;
 	FrameGraphTextureHandle Normal;
@@ -20,7 +20,7 @@ struct GBufferTargets
 	FrameGraphTextureHandle MainDepth;
 };
 
-struct LightingTargets
+struct LightingRenderTargets
 {
 	FrameGraphTextureHandle DirectDiffuse;
 	FrameGraphTextureHandle DirectSpecular;

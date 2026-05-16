@@ -59,8 +59,8 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	const FrameBuildResult frameLoop = BuildFrame(builder, m_dependencies.sceneExtent, m_dependencies.presentSceneToBackBuffer);
 
 	FrameGraphBuildResult result{};
-	result.SceneColor = frameLoop.Targets.SceneColor;
-	result.SceneDepth = frameLoop.Targets.MainDepth;
+	result.SceneColor = frameLoop.Scene.SceneColor;
+	result.SceneDepth = frameLoop.Scene.MainDepth;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

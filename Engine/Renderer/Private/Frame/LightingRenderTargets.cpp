@@ -1,5 +1,5 @@
 #include "../PCH.h"
-#include "Frame/LightingTargets.h"
+#include "Frame/LightingRenderTargets.h"
 
 #include "Config/RenderConfig.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
@@ -14,9 +14,9 @@ namespace
 	}
 }
 
-LightingTargets CreateLightingTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent)
+LightingRenderTargets CreateLightingRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent)
 {
-	LightingTargets lighting{};
+	LightingRenderTargets lighting{};
 	lighting.DirectDiffuse = CreateLightingTexture(builder, "DirectDiffuse", sceneExtent);
 	lighting.DirectSpecular = CreateLightingTexture(builder, "DirectSpecular", sceneExtent);
 	lighting.DirectSubsurface = CreateLightingTexture(builder, "DirectSubsurface", sceneExtent);

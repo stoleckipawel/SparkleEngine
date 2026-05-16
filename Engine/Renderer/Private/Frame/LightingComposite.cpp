@@ -8,9 +8,9 @@
 
 void AddLightingCompositePass(
     FrameGraphBuilder& builder,
-    const SceneTargets& sceneTargets,
-    const LightingTargets& lighting,
-    const GBufferTargets& gbuffer)
+    const SceneRenderTargets& sceneTargets,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer)
 {
     auto& parameters = builder.AllocPassParameters<LightingCompositePass>();
     LightingCompositePass::DeclareResources(builder, sceneTargets, lighting, gbuffer, parameters);

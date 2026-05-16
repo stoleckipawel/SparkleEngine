@@ -1,14 +1,14 @@
 #pragma once
 
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
 class FrameGraphBuilder;
 
 struct FrameBuildResult
 {
-	SceneTargets Targets;
-	GBufferTargets GBuffer;
+	SceneRenderTargets Scene;
+	GBufferRenderTargets GBuffer;
 };
 
 FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer);

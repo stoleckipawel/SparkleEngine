@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FrameGraph/Features/FrameGraphProducts.h"
+#include "Frame/Targets/FrameRenderTargets.h"
 
 class FrameGraphBuilder;
 
-void AddSkyPass(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer);
+void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const GBufferRenderTargets& gbuffer);

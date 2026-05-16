@@ -37,8 +37,8 @@ ShaderPackageDefinition DirectLightingPass::DescribeShaderPackage() noexcept
 
 void DirectLightingPass::DeclareResources(
     FrameGraphBuilder& builder,
-    const LightingTargets& lighting,
-    const GBufferTargets& gbuffer,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer,
     ParameterInstance& parameters)
 {
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);

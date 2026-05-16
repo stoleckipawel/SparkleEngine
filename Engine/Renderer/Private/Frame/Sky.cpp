@@ -6,7 +6,7 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/SkyPass.h"
 
-void AddSkyPass(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer)
+void AddSkyPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const GBufferRenderTargets& gbuffer)
 {
 	auto& parameters = builder.AllocPassParameters<SkyPass>();
 	SkyPass::DeclareResources(builder, sceneTargets, gbuffer, parameters);

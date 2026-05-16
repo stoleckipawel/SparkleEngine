@@ -6,7 +6,7 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/DirectLightingPass.h"
 
-void AddDirectLightingPass(FrameGraphBuilder& builder, const LightingTargets& lighting, const GBufferTargets& gbuffer)
+void AddDirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
 {
 	auto& parameters = builder.AllocPassParameters<DirectLightingPass>();
 	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, parameters);

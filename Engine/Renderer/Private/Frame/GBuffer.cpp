@@ -8,9 +8,9 @@
 #include "Passes/GBufferPass.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 
-GBufferTargets CreateGBufferTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets)
+GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneRenderTargets& sceneTargets)
 {
-	GBufferTargets targets{};
+	GBufferRenderTargets targets{};
 	targets.BaseColor = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateColor(
 	        "GBufferBaseColor",
@@ -43,7 +43,7 @@ GBufferTargets CreateGBufferTargets(FrameGraphBuilder& builder, RenderViewportEx
 	return targets;
 }
 
-void AddGBufferPass(FrameGraphBuilder& builder, const GBufferTargets& targets)
+void AddGBufferPass(FrameGraphBuilder& builder, const GBufferRenderTargets& targets)
 {
 	auto& parameters = builder.AllocPassParameters<GBufferPass>();
 	GBufferPass::DeclareResources(builder, targets, parameters);

@@ -33,7 +33,7 @@ ShaderPackageDefinition IndirectLightingPass::DescribeShaderPackage() noexcept
 	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
-void IndirectLightingPass::DeclareResources(FrameGraphBuilder& builder, const LightingTargets& lighting, ParameterInstance& parameters)
+void IndirectLightingPass::DeclareResources(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, ParameterInstance& parameters)
 {
 	parameters->IndirectDiffuse = builder.CreateUAV(lighting.IndirectDiffuse);
 	parameters->IndirectSpecular = builder.CreateUAV(lighting.IndirectSpecular);
