@@ -6,6 +6,8 @@ This document is about D3D12MA now and Vulkan Memory Allocator later. The goal i
 
 Integrate AMD/GPUOpen D3D12 Memory Allocator, but do it as a private D3D12 backend service under SparkleRHI, not as a public Renderer concept and not as a replacement for your framegraph lifetime planning. Design the RHI seam so a future Vulkan backend can use Vulkan Memory Allocator with the same high-level Sparkle concepts.
 
+Implementation plan: [d3d12ma-vma-memory-integration-plan.md](d3d12ma-vma-memory-integration-plan.md).
+
 This is the portfolio-friendly path:
 
 - Use D3D12MA for tested heap allocation, placed resource creation, budget/statistics reporting, naming, and future defragmentation support.
@@ -60,7 +62,7 @@ quadrantChart
 | D3D12MA plus diagnostics | Integrate D3D12MA and add categories, budget UI, allocation dumps | Best near-term balance | Requires clean handle/lifetime design | Strong professional graphics-engine signal |
 | D3D12MA now, VMA-ready later | Same as above, but design backend-neutral RHI categories for Vulkan | Best long-term engine story | Needs discipline to avoid D3D12 leaking upward | Strong AMD/NVIDIA and cross-API signal |
 
-Recommended choice: D3D12MA plus diagnostics now, with the RHI shaped for VMA later.
+Recommended choice: D3D12MA plus diagnostics now, with the RHI shaped for VMA later. The selected scope is Levels 1-4, with defragmentation explicitly excluded.
 
 ## Scope Ladder
 
@@ -90,11 +92,11 @@ flowchart TD
 | 0 | Keep raw D3D12 allocation | No | You already know this is not where you want to spend portfolio energy |
 | 1 | D3D12MA for persistent textures, buffers, ray tracing buffers | Yes | Gives immediate correctness and architecture payoff |
 | 2 | Memory stats, budgets, names, JSON dump, editor panel | Yes | This is what makes the integration visible and interview-useful |
-| 3 | Streaming policy using allocator budgets | After Level 2 | Strong feature unlock, but needs content policy |
-| 4 | Framegraph transient pools through D3D12MA | Later | Sparkle already has valuable custom framegraph lifetime/aliasing logic |
-| 5 | Defragmentation and moving resources | Optional | Powerful but requires relocation scheduling and handle update policy |
+| 3 | Streaming policy using allocator budgets | Yes | Strong feature unlock; allocator reports budget pressure, Sparkle owns policy |
+| 4 | Framegraph transient pools through D3D12MA | Yes | Use D3D12MA for heap/pool mechanics while keeping Sparkle lifetime/aliasing/barrier logic |
+| 5 | Defragmentation and moving resources | No | Out of scope; requires relocation scheduling and handle update policy |
 
-The sweet spot is Level 1 + Level 2. That gives real results without turning the engine into an allocator project.
+The selected sweet spot is Level 1 through Level 4. That fully uses D3D12MA where it reduces maintained code, while avoiding defragmentation work that would turn the engine into an allocator project.
 
 ## Current Engine State
 
@@ -201,7 +203,7 @@ mindmap
 | Integration becomes too large before visible results | Medium | Medium | Medium | Stop at persistent resources plus diagnostics before touching framegraph transients |
 | You cannot explain memory fundamentals in interview | Low/Medium | High | Medium | Keep a short architecture note and demo budget/heap/aliasing concepts visually |
 | D3D12MA and future VMA abstractions diverge | Medium | Medium | Medium | Define shared Sparkle memory categories and diagnostics before Vulkan implementation |
-| Defragmentation derails scope | Low | High | Medium | Defer defrag until resource relocation policy exists |
+| Defragmentation derails scope | Low | High | Medium | Exclude defrag from this scope until resource relocation policy exists |
 | Upload path gets overcomplicated | Medium | Medium | Medium | Keep current `D3D12LinearAllocator` initially; revisit upload architecture separately |
 
 ## Decision Tree
@@ -288,7 +290,7 @@ That is a strong AMD/NVIDIA portfolio answer because those teams care about tech
 | Only add library, no migration | 1/5 | 1/5 | 1/5 | No |
 | Persistent resources only | 4/5 | 3/5 | 3/5 | Yes, first |
 | Persistent resources plus memory diagnostics | 5/5 | 5/5 | 3/5 | Yes, target scope |
-| Also replace framegraph transient heap path | 4/5 | 4/5 | 4/5 | Later |
+| Also replace framegraph transient heap path | 4/5 | 4/5 | 4/5 | Yes, after persistent resources and diagnostics |
 | Add defragmentation immediately | 3/5 | 4/5 | 5/5 | No, defer |
 | Design D3D12MA and VMA common diagnostics categories | 5/5 | 5/5 | 2/5 | Yes |
 
@@ -487,7 +489,7 @@ Recommended first targets:
 | M5: JSON export | Command writes D3D12MA memory dump | Tool/debug command | Dump opens in visualizer |
 | M6: VMA-ready abstraction | Public categories do not mention D3D12MA | RHI memory snapshot structs | Vulkan backend can mirror it later |
 
-Do not start M7, framegraph transient allocator replacement, until M1-M6 are stable and useful.
+Do not start M7, framegraph transient allocator replacement, until M1-M6 are stable and useful. Defragmentation remains outside this plan.
 
 ## Feature Impact Matrix
 
