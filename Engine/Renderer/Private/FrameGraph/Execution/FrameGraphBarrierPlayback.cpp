@@ -11,12 +11,13 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vect
 	EmitCompiledBarriers(cmd, "Unknown", barriers);
 }
 
-void FrameGraph::EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
+void FrameGraph::EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers)
+    const noexcept
 {
-	EmitCompiledAliasingBarriers(cmd, "Unknown", barriers);
+	EmitTransientAliasingBarriers(cmd, "Unknown", barriers);
 }
 
-void FrameGraph::EmitCompiledAliasingBarriers(
+void FrameGraph::EmitTransientAliasingBarriers(
     RenderCommandContext& cmd,
     std::string_view passName,
     const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
@@ -34,7 +35,7 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 			assert(false);
 			SPDLOG_LOGGER_WARN(
 			    g_frameGraphBarrierLogger,
-			    "FrameGraph::EmitCompiledAliasingBarriers: unresolved aliasing barrier resources.");
+			    "FrameGraph::EmitTransientAliasingBarriers: unresolved aliasing barrier resources.");
 			continue;
 		}
 

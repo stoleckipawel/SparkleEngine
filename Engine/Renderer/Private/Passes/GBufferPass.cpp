@@ -7,8 +7,8 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "SceneData/RenderSceneData.h"
@@ -19,7 +19,7 @@
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
-#include "Pipeline/RenderPassPipelineTraits.h"
+#include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/PassBinder.h"
 
 #include <array>
@@ -56,16 +56,16 @@ ShaderPackageDefinition GBufferPass::DescribeGBufferShaderPackage() noexcept
 	    .ExpectedStages = ShaderStageMask::Vertex | ShaderStageMask::Pixel};
 }
 
-void GBufferPass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)
+void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.GBuffer.Execute");
 
-	const GBufferPassRuntime& runtime = context.Runtime.GetPassRuntime<GBufferPass>();
+	const RasterPassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<GBufferPass>();
 	SetParameters(parameters, context.Frame.mainView);
 	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
-	BindPassResources(context.Graph, context.Commands, parameters, runtime, context.Runtime);
-	DrawOpaqueMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
+	BindPassResources(context.Resources, context.Commands, parameters, runtime, context.RuntimeServices);
+	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame.sceneData, runtime, context.RuntimeServices);
 }
 
 void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters)
@@ -87,7 +87,7 @@ void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewD
 	assert(valid);
 }
 
-void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferPass::Parameters& parameters)
+void GBufferPass::PrepareTargets(PassExecutionContext& context, const GBufferPass::Parameters& parameters)
 {
 	const std::array<FrameGraphTextureHandle, 6> renderTargets = {
 	    parameters.BaseColor[0],
@@ -96,12 +96,12 @@ void GBufferPass::PrepareTargets(RenderGraphPassContext& context, const GBufferP
 	    parameters.Emissive[0],
 	    parameters.Subsurface[0],
 	    parameters.DeviceZ[0]};
-	context.Graph.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
+	context.Resources.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
 	for (FrameGraphTextureHandle renderTarget : renderTargets)
 	{
-		context.Graph.ClearRenderTarget(context.Commands, renderTarget);
+		context.Resources.ClearRenderTarget(context.Commands, renderTarget);
 	}
-	context.Graph.ClearDepthStencil(context.Commands, parameters.MainDepth[0]);
+	context.Resources.ClearDepthStencil(context.Commands, parameters.MainDepth[0]);
 }
 
 void GBufferPass::ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData)
@@ -112,15 +112,15 @@ void GBufferPass::ConfigurePipeline(RenderCommandContext& cmd, const RenderViewD
 }
 
 void GBufferPass::BindPassResources(
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderCommandContext& cmd,
     const ParameterInstance& parameters,
-    const RasterPassRuntime& runtime,
-    const RenderPassContext& renderPassContext)
+	const RasterPassPipelineRuntime& runtime,
+    const PassRuntimeServices& passRuntimeServices)
 {
-	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
+	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 	const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
-	    frameGraph,
+	    resources,
 	    cmd,
 	    &renderHardwareInterface,
 	    runtime,
@@ -131,13 +131,13 @@ void GBufferPass::BindPassResources(
 }
 
 void GBufferPass::DrawOpaqueMeshes(
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
-    const RasterPassRuntime& runtime,
-    const RenderPassContext& renderPassContext)
+	const RasterPassPipelineRuntime& runtime,
+    const PassRuntimeServices& passRuntimeServices)
 {
-	RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
+	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 
 	for (const auto& draw : sceneData.meshDraws)
 	{
@@ -178,7 +178,7 @@ void GBufferPass::DrawOpaqueMeshes(
 		drawParameters->TextureSubsurfaceStrength =
 		    RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::SubsurfaceStrength};
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    &renderHardwareInterface,
 		    runtime,

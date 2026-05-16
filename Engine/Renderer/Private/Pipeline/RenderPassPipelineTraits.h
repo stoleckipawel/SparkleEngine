@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "FrameGraph/RenderPassRuntime.h"
+#include "Pipeline/PassPipelineRuntime.h"
 #include "Pipeline/RenderPassShaderRuntime.h"
 
 #include "Config/RenderConfig.h"
@@ -19,8 +19,8 @@ template <typename TPass> struct RenderPassPipelineTraits;
 
 template <> struct RenderPassPipelineTraits<GBufferPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<GBufferPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<GBufferPass>;
+	using RuntimeType = RasterPassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -66,8 +66,8 @@ template <> struct RenderPassPipelineTraits<GBufferPass>
 
 template <> struct RenderPassPipelineTraits<ComputeClearPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<ComputeClearPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<ComputeClearPass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -100,8 +100,8 @@ template <> struct RenderPassPipelineTraits<ComputeClearPass>
 
 template <> struct RenderPassPipelineTraits<DirectLightingPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<DirectLightingPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<DirectLightingPass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -134,8 +134,8 @@ template <> struct RenderPassPipelineTraits<DirectLightingPass>
 
 template <> struct RenderPassPipelineTraits<IndirectLightingPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<IndirectLightingPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<IndirectLightingPass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -168,8 +168,8 @@ template <> struct RenderPassPipelineTraits<IndirectLightingPass>
 
 template <> struct RenderPassPipelineTraits<LightingCompositePass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<LightingCompositePass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<LightingCompositePass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -202,8 +202,8 @@ template <> struct RenderPassPipelineTraits<LightingCompositePass>
 
 template <> struct RenderPassPipelineTraits<SkyPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<SkyPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<SkyPass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,
@@ -236,8 +236,8 @@ template <> struct RenderPassPipelineTraits<SkyPass>
 
 template <> struct RenderPassPipelineTraits<VisualizeBuffersPass>
 {
-	using RuntimeType = RenderPassRuntimeTraits<VisualizeBuffersPass>::RuntimeType;
-	using StorageType = RenderPassRuntimeStorage<VisualizeBuffersPass>;
+	using RuntimeType = ComputePassPipelineRuntime;
+	using StorageType = RenderPassShaderRuntimeStorage;
 
 	static bool CreateRuntimeStorage(
 	    RenderHardwareInterface& rhi,

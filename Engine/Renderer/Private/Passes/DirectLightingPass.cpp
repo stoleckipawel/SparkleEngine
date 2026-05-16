@@ -5,12 +5,12 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
-#include "Pipeline/RenderPassPipelineTraits.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
+#include "Pipeline/PassPipelineRuntime.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
 #include <cassert>
@@ -52,28 +52,28 @@ void DirectLightingPass::DeclareResources(
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-    const RenderPassContext& renderPassContext)
+    const PassRuntimeServices& passRuntimeServices)
 {
-	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
 
-void DirectLightingPass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)
+void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
 
-	const DirectLightingPassRuntime& runtime = context.Runtime.GetPassRuntime<DirectLightingPass>();
-	SetParameters(parameters, context.Frame.mainView, context.Runtime);
+	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<DirectLightingPass>();
+	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<DirectLightingPass>(
-	    context.Graph,
+	    context.Resources,
 	    context.Commands,
-	    context.Runtime.HardwareInterface,
+	    context.RuntimeServices.HardwareInterface,
 	    runtime,
 	    parameters,
 	    dispatch,

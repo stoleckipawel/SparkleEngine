@@ -94,7 +94,7 @@ bool ValidateShaderPassLayout(const PassParameterLayout& layout, ShaderPassKind 
 
 void BindComputeShaderPass(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
@@ -111,7 +111,7 @@ void BindComputeShaderPass(
 	cmd.SetPipelineState(pipelineState);
 	PassBinder::BindCompute(
 	    cmd,
-	    frameGraph,
+	    resources,
 	    renderHardwareInterface,
 	    bindingLayout,
 	    parameterSet,
@@ -121,7 +121,7 @@ void BindComputeShaderPass(
 
 void BindRasterShaderPass(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
@@ -138,7 +138,7 @@ void BindRasterShaderPass(
 	cmd.SetPipelineState(pipelineState);
 	PassBinder::BindGraphics(
 	    cmd,
-	    frameGraph,
+	    resources,
 	    renderHardwareInterface,
 	    bindingLayout,
 	    parameterSet,

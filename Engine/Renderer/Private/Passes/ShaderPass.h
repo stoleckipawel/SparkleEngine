@@ -8,7 +8,7 @@
 #include <utility>
 
 class RenderCommandContext;
-class FrameGraph;
+class FrameGraphResourceCommands;
 class FrameGraphBuilder;
 class PassResourceBuilder;
 class PassParameterLayout;
@@ -16,9 +16,9 @@ class PassBindingOverrides;
 class RenderHardwareInterface;
 class RenderBindingLayout;
 class RenderPipelineState;
-struct RenderGraphPassContext;
+struct PassExecutionContext;
 struct FrameContext;
-struct RenderPassContext;
+struct PassRuntimeServices;
 
 enum class ShaderPassKind : std::uint8_t
 {
@@ -41,7 +41,7 @@ SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
     const char* passName) noexcept;
 SPARKLE_RENDERER_API void BindComputeShaderPass(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
@@ -52,7 +52,7 @@ SPARKLE_RENDERER_API void BindComputeShaderPass(
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& bindingLayout,
     const RenderPipelineState& pipelineState,
@@ -258,7 +258,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 
 	template <typename TParameterBindings>
 	static bool Dispatch(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
@@ -277,7 +277,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 
 		BindComputeShaderPass(
 		    cmd,
-		    frameGraph,
+		    resources,
 		    &renderHardwareInterface,
 		    bindingLayout,
 		    pipelineState,
@@ -307,7 +307,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 
 	template <typename TParameterBindings>
 	static bool Bind(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& bindingLayout,
@@ -325,7 +325,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 
 		BindRasterShaderPass(
 		    cmd,
-		    frameGraph,
+		    resources,
 		    renderHardwareInterface,
 		    bindingLayout,
 		    pipelineState,
@@ -336,5 +336,5 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 		return true;
 	}
 
-	virtual void Draw(RenderGraphPassContext& context, const Parameters& parameters) = 0;
+	virtual void Draw(PassExecutionContext& context, const Parameters& parameters) = 0;
 };

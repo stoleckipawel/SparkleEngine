@@ -17,15 +17,19 @@ namespace
 		}
 
 		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
-		       std::find(transientPlan.requiredStates.begin(), transientPlan.requiredStates.end(), ResourceState::ShaderResource) !=
-		           transientPlan.requiredStates.end();
+		       std::find(
+		           transientPlan.lifetime.requiredStates.begin(),
+		           transientPlan.lifetime.requiredStates.end(),
+		           ResourceState::ShaderResource) != transientPlan.lifetime.requiredStates.end();
 	}
 
 	bool RequiresUnorderedAccessView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
 		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
-		       std::find(transientPlan.requiredStates.begin(), transientPlan.requiredStates.end(), ResourceState::UnorderedAccess) !=
-		           transientPlan.requiredStates.end();
+		       std::find(
+		           transientPlan.lifetime.requiredStates.begin(),
+		           transientPlan.lifetime.requiredStates.end(),
+		           ResourceState::UnorderedAccess) != transientPlan.lifetime.requiredStates.end();
 	}
 
 	std::wstring BuildWideDebugName(const std::string& name, const wchar_t* fallbackName)

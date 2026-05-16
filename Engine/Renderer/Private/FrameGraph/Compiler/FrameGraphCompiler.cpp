@@ -284,25 +284,25 @@ const FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(Frame
 FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept
 {
 	const auto it = std::find_if(
-	    m_plan.transientResources.begin(),
-	    m_plan.transientResources.end(),
+	    m_plan.transients.resources.begin(),
+	    m_plan.transients.resources.end(),
 	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
 	    {
 		    return transientPlan.handle == handle;
 	    });
 
-	return it != m_plan.transientResources.end() ? &(*it) : nullptr;
+	return it != m_plan.transients.resources.end() ? &(*it) : nullptr;
 }
 
 const FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
-	    m_plan.transientResources.begin(),
-	    m_plan.transientResources.end(),
+	    m_plan.transients.resources.begin(),
+	    m_plan.transients.resources.end(),
 	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
 	    {
 		    return transientPlan.handle == handle;
 	    });
 
-	return it != m_plan.transientResources.end() ? &(*it) : nullptr;
+	return it != m_plan.transients.resources.end() ? &(*it) : nullptr;
 }

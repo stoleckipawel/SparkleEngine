@@ -5,11 +5,12 @@
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
+#include "Pipeline/PassPipelineRuntime.h"
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 
 #include <cassert>
@@ -42,7 +43,7 @@ void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTe
 }
 
 void ComputeClearPass::Execute(
-    RenderGraphPassContext& context,
+	PassExecutionContext& context,
     const ComputeClearPass::ParameterInstance& parameters,
     std::uint32_t width,
     std::uint32_t height) noexcept
@@ -53,11 +54,11 @@ void ComputeClearPass::Execute(
 	    MathUtils::DivideRoundUp(width, ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(height, ThreadGroupSizeY),
 	    1};
-	const ComputeClearPassRuntime& runtime = context.Runtime.GetPassRuntime<ComputeClearPass>();
+	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<ComputeClearPass>();
 	const bool dispatched = PassUtilities::DispatchComputePassWithRuntime<ComputeClearPass>(
-	    context.Graph,
+	    context.Resources,
 	    context.Commands,
-	    context.Runtime.HardwareInterface,
+	    context.RuntimeServices.HardwareInterface,
 	    runtime,
 	    parameters,
 	    dispatch,

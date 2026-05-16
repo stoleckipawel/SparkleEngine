@@ -3,8 +3,8 @@
 #include "Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Commands/RenderCommandContext.h"
 #include "Pipeline/PassBindingOverrides.h"
@@ -88,10 +88,10 @@ namespace PassUtilities
 		return bindingNames;
 	}
 
-	template <typename TRasterPassRuntime>
+	template <typename TRasterPipelineRuntime>
 	const RenderPipelineState& ResolveRasterPipelineState(
 	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPassRuntime& runtime) noexcept
+	    const TRasterPipelineRuntime& runtime) noexcept
 	{
 		if constexpr (requires { runtime.WireframePipelineState; })
 		{
@@ -105,12 +105,12 @@ namespace PassUtilities
 		return runtime.PipelineState;
 	}
 
-	template <typename TRasterPassRuntime>
+	template <typename TRasterPipelineRuntime>
 	bool BindRasterPassWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPassRuntime& runtime,
+	    const TRasterPipelineRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
@@ -118,7 +118,7 @@ namespace PassUtilities
 	    const char* passName = nullptr) noexcept
 	{
 		return RasterShaderPass<PassParameterSet>::Bind(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime.BindingLayout,
@@ -130,19 +130,19 @@ namespace PassUtilities
 		    passName);
 	}
 
-	template <typename TRasterPassRuntime>
+	template <typename TRasterPipelineRuntime>
 	bool BindAvailableRasterPassWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPassRuntime& runtime,
+	    const TRasterPipelineRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
 		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
 		return BindRasterPassWithRuntime(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime,
@@ -153,18 +153,18 @@ namespace PassUtilities
 		    passName);
 	}
 
-	template <typename TRasterPassRuntime, std::size_t N>
+	template <typename TRasterPipelineRuntime, std::size_t N>
 	bool BindRasterPassOverridesWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPassRuntime& runtime,
+	    const TRasterPipelineRuntime& runtime,
 	    const std::array<const char*, N>& bindingNames,
 	    const PassBindingOverrides& overrides,
 	    const char* passName = nullptr) noexcept
 	{
 		return BindRasterPassWithRuntime(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime,
@@ -175,17 +175,17 @@ namespace PassUtilities
 		    passName);
 	}
 
-	template <typename TRasterPassRuntime>
+	template <typename TRasterPipelineRuntime>
 	bool BindRasterPassOverridesWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface* renderHardwareInterface,
-	    const TRasterPassRuntime& runtime,
+	    const TRasterPipelineRuntime& runtime,
 	    const PassBindingOverrides& overrides,
 	    const char* passName = nullptr) noexcept
 	{
 		return BindAvailableRasterPassWithRuntime(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime,
@@ -196,7 +196,7 @@ namespace PassUtilities
 
 	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
 	bool DispatchComputePassWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
@@ -207,7 +207,7 @@ namespace PassUtilities
 		using Parameters = typename TComputePass::Parameters;
 
 		return ComputeShaderPass<Parameters>::Dispatch(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime.BindingLayout,
@@ -222,7 +222,7 @@ namespace PassUtilities
 
 	template <typename TComputePass, typename TComputePassRuntime, typename TParameterBindings>
 	bool DispatchComputePassWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
@@ -236,7 +236,7 @@ namespace PassUtilities
 		using Parameters = typename TComputePass::Parameters;
 
 		return ComputeShaderPass<Parameters>::Dispatch(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime.BindingLayout,
@@ -251,7 +251,7 @@ namespace PassUtilities
 
 	template <typename TComputePass, typename TComputePassRuntime>
 	bool DispatchAvailableComputePassWithRuntime(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    RenderHardwareInterface& renderHardwareInterface,
 	    const TComputePassRuntime& runtime,
@@ -262,7 +262,7 @@ namespace PassUtilities
 	{
 		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
 		return DispatchComputePassWithRuntime<TComputePass>(
-		    frameGraph,
+		    resources,
 		    cmd,
 		    renderHardwareInterface,
 		    runtime,
@@ -288,9 +288,9 @@ namespace PassUtilities
 				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
 				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
-		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
+		    [destinationHandle, sourceHandle](PassExecutionContext& context)
 		    {
-			    context.Graph.CopyTexture(context.Commands, destinationHandle, sourceHandle);
+			    context.Resources.CopyTexture(context.Commands, destinationHandle, sourceHandle);
 		    });
 	}
 
@@ -304,9 +304,9 @@ namespace PassUtilities
 				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
 				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
-		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
+		    [destinationHandle, sourceHandle](PassExecutionContext& context)
 		    {
-			    context.Graph.CopyBuffer(context.Commands, destinationHandle, sourceHandle);
+			    context.Resources.CopyBuffer(context.Commands, destinationHandle, sourceHandle);
 		    });
 	}
 }  // namespace PassUtilities

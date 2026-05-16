@@ -12,9 +12,8 @@
 
 class FrameGraph;
 class FrameGraphBuilder;
-struct LightingCompositePassRuntime;
-struct RenderGraphPassContext;
-struct RenderPassContext;
+struct PassExecutionContext;
+struct PassRuntimeServices;
 struct RenderViewData;
 
 struct LightingCompositePassParameters
@@ -76,6 +75,6 @@ class LightingCompositePass final
 	static void SetParameters(
 	    ParameterInstance& parameters,
 	    const RenderViewData& viewData,
-	    const RenderPassContext& renderPassContext);
-	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
+	    const PassRuntimeServices& passRuntimeServices);
+	static void Execute(PassExecutionContext& context, ParameterInstance& parameters);
 };

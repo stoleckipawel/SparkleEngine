@@ -25,7 +25,7 @@ void FrameGraph::Execute(
     const FrameGraphPlan& plan,
     RenderCommandContext& cmd,
     const FrameContext& frame,
-    const RenderPassContext& renderPassContext,
+	const PassRuntimeServices& passRuntimeServices,
     FrameExecutionDiagnostics& frameDiagnostics) const
 {
 	cmd.EnableDrawDispatchDiagnostics();
@@ -38,13 +38,13 @@ void FrameGraph::Execute(
 	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
 		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
-		if (!passRecord.compiledAliasingBarriers.empty())
+		if (!passRecord.transientAliasingBarriers.empty())
 		{
 			std::string aliasBarrierMarker = passRecord.diagnosticName;
 			aliasBarrierMarker += ".AliasingBarriers";
 			frameDiagnostics.InsertGpuMarker(cmd, aliasBarrierMarker);
 		}
-		EmitCompiledAliasingBarriers(cmd, passRecord.passName, passRecord.compiledAliasingBarriers);
+		EmitTransientAliasingBarriers(cmd, passRecord.passName, passRecord.transientAliasingBarriers);
 		if (!passRecord.compiledBarriers.empty())
 		{
 			std::string barrierMarker = passRecord.diagnosticName;
@@ -61,20 +61,91 @@ void FrameGraph::Execute(
 		    passRecord.passKind);
 		auto passScope = passDiagnostics.BeginPassGpuEvent();
 		auto passTimer = passDiagnostics.BeginPassTimer();
-		RenderGraphPassContext passContext{cmd, frame, renderPassContext, passDiagnostics, *this};
+		PassExecutionContext passContext{cmd, frame, passRuntimeServices, passDiagnostics, FrameGraphResourceCommands{*this}};
 		m_passes[passIndex].executeCallback(passContext);
 	}
 
-	if (!plan.finalAliasingBarriers.empty())
+	if (!plan.finalTransientAliasingBarriers.empty())
 	{
 		frameDiagnostics.InsertGpuMarker(cmd, "Renderer.FrameGraph.FrameEnd.AliasingBarriers");
 	}
-	EmitCompiledAliasingBarriers(cmd, "FrameEnd", plan.finalAliasingBarriers);
+	EmitTransientAliasingBarriers(cmd, "FrameEnd", plan.finalTransientAliasingBarriers);
 	if (!plan.finalBarriers.empty())
 	{
 		frameDiagnostics.InsertGpuMarker(cmd, "Renderer.FrameGraph.FrameEnd.ResourceBarriers");
 	}
 	EmitCompiledBarriers(cmd, "FrameEnd", plan.finalBarriers);
+}
+
+FrameGraphResourceCommands::FrameGraphResourceCommands(const FrameGraph& frameGraph) noexcept : m_frameGraph(&frameGraph)
+{
+}
+
+void FrameGraphResourceCommands::BindRenderTarget(
+	RenderCommandContext& cmd,
+	FrameGraphTextureHandle renderTargetHandle,
+	FrameGraphTextureHandle depthStencilHandle) const noexcept
+{
+	m_frameGraph->BindRenderTarget(cmd, renderTargetHandle, depthStencilHandle);
+}
+
+void FrameGraphResourceCommands::BindRenderTargets(
+	RenderCommandContext& cmd,
+	std::span<const FrameGraphTextureHandle> renderTargetHandles,
+	FrameGraphTextureHandle depthStencilHandle) const noexcept
+{
+	m_frameGraph->BindRenderTargets(cmd, renderTargetHandles, depthStencilHandle);
+}
+
+void FrameGraphResourceCommands::CopyTexture(
+	RenderCommandContext& cmd,
+	FrameGraphTextureHandle destinationHandle,
+	FrameGraphTextureHandle sourceHandle) const noexcept
+{
+	m_frameGraph->CopyTexture(cmd, destinationHandle, sourceHandle);
+}
+
+void FrameGraphResourceCommands::CopyBuffer(
+	RenderCommandContext& cmd,
+	FrameGraphBufferHandle destinationHandle,
+	FrameGraphBufferHandle sourceHandle) const noexcept
+{
+	m_frameGraph->CopyBuffer(cmd, destinationHandle, sourceHandle);
+}
+
+void FrameGraphResourceCommands::ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+{
+	m_frameGraph->ClearRenderTarget(cmd, handle);
+}
+
+void FrameGraphResourceCommands::ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept
+{
+	m_frameGraph->ClearDepthStencil(cmd, handle);
+}
+
+NativeResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextureHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveResource(handle);
+}
+
+RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveShaderResourceView(handle);
+}
+
+RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveShaderResourceView(handle);
+}
+
+RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveUnorderedAccessView(handle);
+}
+
+RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveUnorderedAccessView(handle);
 }
 
 void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle renderTargetHandle, FrameGraphTextureHandle depthStencilHandle) const noexcept

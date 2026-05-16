@@ -11,13 +11,14 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 class RenderCommandContext;
-struct RasterPassRuntime;
+struct RasterPassPipelineRuntime;
 class FrameGraph;
 class FrameGraphBuilder;
-struct RenderGraphPassContext;
+struct PassExecutionContext;
 struct RenderSceneData;
-struct RenderPassContext;
+struct PassRuntimeServices;
 struct RenderViewData;
+class FrameGraphResourceCommands;
 
 struct GBufferPassParameters
 {
@@ -90,21 +91,21 @@ class GBufferPass final
 	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters);
 	static void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData);
-	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
+	static void Execute(PassExecutionContext& context, ParameterInstance& parameters);
 
   private:
-	static void PrepareTargets(RenderGraphPassContext& context, const Parameters& parameters);
+	static void PrepareTargets(PassExecutionContext& context, const Parameters& parameters);
 	static void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData);
 	static void BindPassResources(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const ParameterInstance& parameters,
-	    const RasterPassRuntime& runtime,
-	    const RenderPassContext& renderPassContext);
+	    const RasterPassPipelineRuntime& runtime,
+	    const PassRuntimeServices& passRuntimeServices);
 	static void DrawOpaqueMeshes(
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
 	    const RenderSceneData& sceneData,
-	    const RasterPassRuntime& runtime,
-	    const RenderPassContext& renderPassContext);
+	    const RasterPassPipelineRuntime& runtime,
+	    const PassRuntimeServices& passRuntimeServices);
 };

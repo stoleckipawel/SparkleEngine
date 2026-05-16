@@ -40,10 +40,6 @@ struct RenderPassShaderRuntimeStorage
 	const LoadedShaderPackage* ShaderPackage = nullptr;
 };
 
-template <typename TPass> struct RenderPassRuntimeStorage : RenderPassShaderRuntimeStorage
-{
-};
-
 class RenderPassShaderRuntime final
 {
   public:

@@ -88,8 +88,8 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 {
 	assert(m_renderHardwareInterface != nullptr);
 
-	plan.transientResources.clear();
-	plan.transientResources.reserve(m_virtualTransientResources.size());
+	plan.transients.resources.clear();
+	plan.transients.resources.reserve(m_virtualTransientResources.size());
 
 	for (const VirtualTransientResource& transientResource : m_virtualTransientResources)
 	{
@@ -109,8 +109,8 @@ void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const n
 		const RhiResourceAllocationInfo allocationInfo = isBuffer
 		                                                     ? m_renderHardwareInterface->GetBufferAllocationInfo(bufferResourceDesc)
 		                                                     : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
-		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
-		plan.transientResources.push_back(
+		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transients.resources.size());
+		plan.transients.resources.push_back(
 		    FrameGraphTransientResourcePlan{
 		        .handle = transientResource.handle,
 		        .resourceClass = resourceMetadata.resourceClass,
@@ -138,7 +138,7 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 {
 	assert(m_transientAllocator != nullptr);
 
-	for (const FrameGraphTransientResourcePlan& transientPlan : plan.transientResources)
+	for (const FrameGraphTransientResourcePlan& transientPlan : plan.transients.resources)
 	{
 		const FrameGraphTransientAllocator::AllocationRecord& allocation = m_transientAllocator->Materialize(transientPlan);
 		FrameGraphResourceAccess access{};

@@ -12,7 +12,7 @@ class RenderCommandContext;
 class FrameGraph;
 class FrameGraphBuilder;
 class PassParameterLayout;
-struct RenderGraphPassContext;
+struct PassExecutionContext;
 
 struct ComputeClearPassParameters
 {
@@ -40,7 +40,7 @@ class ComputeClearPass final
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
 	static void Execute(
-	    RenderGraphPassContext& context,
+	    PassExecutionContext& context,
 	    const ParameterInstance& parameters,
 	    std::uint32_t width,
 	    std::uint32_t height) noexcept;

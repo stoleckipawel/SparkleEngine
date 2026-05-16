@@ -6,13 +6,13 @@
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassBindingOverrides.h"
-#include "Pipeline/RenderPassPipelineTraits.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
+#include "Pipeline/PassPipelineRuntime.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"
@@ -36,9 +36,9 @@ namespace
 		return textureManager->GetTexture(TextureId::Checker);
 	}
 
-	RhiDescriptorTableBinding GetSkyTextureBinding(const RenderPassContext& renderPassContext) noexcept
+	RhiDescriptorTableBinding GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) noexcept
 	{
-		const Texture* skyTexture = ResolveSkyTexture(renderPassContext.Textures);
+		const Texture* skyTexture = ResolveSkyTexture(passRuntimeServices.Textures);
 		if (skyTexture == nullptr)
 		{
 			return {};
@@ -46,7 +46,7 @@ namespace
 
 		static RhiDescriptorTableHandle skyTextureTable = {};
 		static const Texture* cachedTexture = nullptr;
-		RenderHardwareInterface& renderHardwareInterface = renderPassContext.HardwareInterface;
+		RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
 		if (!skyTextureTable)
 		{
 			skyTextureTable = renderHardwareInterface.AllocateDescriptorTable(ERhiDescriptorHeapType::ShaderResource, 1u);
@@ -95,9 +95,9 @@ void SkyPass::DeclareResources(
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 }
 
-void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const RenderPassContext& renderPassContext)
+void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const PassRuntimeServices& passRuntimeServices)
 {
-	parameters->PerFrame = renderPassContext.HardwareInterface.GetPerFrameConstantData();
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	parameters->SamplerLinearClamp = RhiSamplerDesc{
 	    .MinMagFilter = RhiSamplerMinMagFilter::Linear,
@@ -107,22 +107,22 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 	assert(valid);
 }
 
-void SkyPass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)
+void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters)
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.Sky.Execute");
 
-	const SkyPassRuntime& runtime = context.Runtime.GetPassRuntime<SkyPass>();
-	SetParameters(parameters, context.Frame.mainView, context.Runtime);
+	const ComputePassPipelineRuntime& runtime = context.RuntimeServices.GetPassRuntime<SkyPass>();
+	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	PassBindingOverrides overrides;
-	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.Runtime));
+	overrides.SetDescriptorTable("SkyTexture", GetSkyTextureBinding(context.RuntimeServices));
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),
 	    1};
 	const bool dispatched = PassUtilities::DispatchAvailableComputePassWithRuntime<SkyPass>(
-	    context.Graph,
+	    context.Resources,
 	    context.Commands,
-	    context.Runtime.HardwareInterface,
+	    context.RuntimeServices.HardwareInterface,
 	    runtime,
 	    parameters.GetPassParameterSet(),
 	    dispatch,

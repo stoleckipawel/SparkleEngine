@@ -2,7 +2,7 @@
 #include "Pipeline/PassBinder.h"
 
 #include "Commands/RenderCommandContext.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Execution/FrameGraphResourceCommands.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
@@ -90,31 +90,31 @@ const PassBindingOverride* PassBindingOverrides::Find(const char* name, PassBind
 
 void PassBinder::BindGraphics(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides)
 {
-	BindImpl(cmd, frameGraph, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, false);
+	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, false);
 }
 
 void PassBinder::BindCompute(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides)
 {
-	BindImpl(cmd, frameGraph, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, true);
+	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, true);
 }
 
 void PassBinder::BindImpl(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
@@ -149,7 +149,7 @@ void PassBinder::BindImpl(
 			const CompiledBinding& compiledBinding = layout.GetBindings()[bindingIndex];
 			BindCompiledBinding(
 			    cmd,
-			    frameGraph,
+			    resources,
 			    renderHardwareInterface,
 			    compiledBinding,
 			    parameterSet.FindBinding(compiledBinding.Name),
@@ -172,7 +172,7 @@ void PassBinder::BindImpl(
 
 			BindCompiledBinding(
 			    cmd,
-			    frameGraph,
+			    resources,
 			    renderHardwareInterface,
 			    compiledBinding,
 			    parameterSet.FindBinding(bindingName),
@@ -187,7 +187,7 @@ void PassBinder::BindImpl(
 
 void PassBinder::BindCompiledBinding(
     RenderCommandContext& cmd,
-    const FrameGraph& frameGraph,
+	const FrameGraphResourceCommands& resources,
     RenderHardwareInterface* renderHardwareInterface,
     const CompiledBinding& compiledBinding,
     const PassParameterBinding* parameterBinding,
@@ -262,14 +262,14 @@ void PassBinder::BindCompiledBinding(
 			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
 			{
 				assert(textureData->Handles.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(textureData->Handles[0]), isCompute);
+				BindDescriptorTable(cmd, compiledBinding, resources.ResolveShaderResourceView(textureData->Handles[0]), isCompute);
 				return;
 			}
 
 			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
 			assert(bufferData != nullptr);
 			assert(bufferData->Handles.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveShaderResourceView(bufferData->Handles[0]), isCompute);
+			BindDescriptorTable(cmd, compiledBinding, resources.ResolveShaderResourceView(bufferData->Handles[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableUnorderedAccessView:
@@ -289,14 +289,14 @@ void PassBinder::BindCompiledBinding(
 			if (const PassParameterTextureBindingData* textureData = parameterBinding->AsTextureData())
 			{
 				assert(textureData->Handles.size() == 1);
-				BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(textureData->Handles[0]), isCompute);
+				BindDescriptorTable(cmd, compiledBinding, resources.ResolveUnorderedAccessView(textureData->Handles[0]), isCompute);
 				return;
 			}
 
 			const PassParameterBufferBindingData* bufferData = parameterBinding->AsBufferData();
 			assert(bufferData != nullptr);
 			assert(bufferData->Handles.size() == 1);
-			BindDescriptorTable(cmd, compiledBinding, frameGraph.ResolveUnorderedAccessView(bufferData->Handles[0]), isCompute);
+			BindDescriptorTable(cmd, compiledBinding, resources.ResolveUnorderedAccessView(bufferData->Handles[0]), isCompute);
 			return;
 		}
 		case CompiledBindingType::DescriptorTableSampler:

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Pipeline/RenderPassPipelineTraits.h"
-#include "FrameGraph/RenderPassRuntime.h"
 #include "Shaders/CookedShaderReloadResult.h"
 
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -27,7 +27,7 @@ class PipelineStateManager final
 	std::uint64_t GetShaderPackageGeneration() const noexcept { return m_shaderPackages.GetGeneration(); }
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 
-	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename RenderPassPipelineTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
 		RuntimeStorageHolder<TPass>& holder = GetOrCreateRuntimeStorageHolder<TPass>();
 		if (!holder.Runtime.has_value())
@@ -52,8 +52,8 @@ class PipelineStateManager final
 
 	template <typename TPass> struct RuntimeStorageHolder final : IRuntimeStorageHolder
 	{
-		RenderPassRuntimeStorage<TPass> Storage;
-		std::optional<typename RenderPassRuntimeTraits<TPass>::RuntimeType> Runtime;
+		typename RenderPassPipelineTraits<TPass>::StorageType Storage;
+		std::optional<typename RenderPassPipelineTraits<TPass>::RuntimeType> Runtime;
 	};
 
 	template <typename TPass> RuntimeStorageHolder<TPass>& GetOrCreateRuntimeStorageHolder() const noexcept

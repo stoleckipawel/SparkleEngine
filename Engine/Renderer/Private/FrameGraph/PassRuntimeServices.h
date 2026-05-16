@@ -13,14 +13,14 @@ class TextureManager;
 //
 // Keep this struct focused. New fields should only be added when they are
 // genuinely stable execute-time services shared across authored passes.
-struct RenderPassContext
+struct PassRuntimeServices
 {
 	RenderHardwareInterface& HardwareInterface;
 	RenderDiagnostics& BackendDiagnostics;
 	const PipelineStateManager& RuntimeManager;
 	const TextureManager* Textures = nullptr;
 
-	template <typename TPass> const typename RenderPassRuntimeTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
+	template <typename TPass> const typename RenderPassPipelineTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{
 		return RuntimeManager.GetPassRuntime<TPass>();
 	}

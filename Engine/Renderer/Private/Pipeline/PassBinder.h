@@ -6,7 +6,7 @@
 #include <span>
 
 class RenderCommandContext;
-class FrameGraph;
+class FrameGraphResourceCommands;
 struct PassParameterBinding;
 class PassParameterSet;
 class RenderHardwareInterface;
@@ -16,7 +16,7 @@ class PassBinder final
   public:
 	static void BindGraphics(
 	    RenderCommandContext& cmd,
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
@@ -25,7 +25,7 @@ class PassBinder final
 
 	static void BindCompute(
 	    RenderCommandContext& cmd,
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
@@ -35,7 +35,7 @@ class PassBinder final
   private:
 	static void BindImpl(
 	    RenderCommandContext& cmd,
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
@@ -44,7 +44,7 @@ class PassBinder final
 	    bool isCompute);
 	static void BindCompiledBinding(
 	    RenderCommandContext& cmd,
-	    const FrameGraph& frameGraph,
+	    const FrameGraphResourceCommands& resources,
 	    RenderHardwareInterface* renderHardwareInterface,
 	    const CompiledBinding& compiledBinding,
 	    const PassParameterBinding* parameterBinding,

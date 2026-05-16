@@ -10,7 +10,7 @@
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "FrameGraph/Execution/RenderGraphPassContext.h"
+#include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
@@ -34,7 +34,7 @@
 class RenderCommandContext;
 class FrameExecutionDiagnostics;
 class FrameGraphTransientAllocator;
-struct RenderPassContext;
+struct PassRuntimeServices;
 class Window;
 struct FrameContext;
 
@@ -65,8 +65,8 @@ class FrameGraph
 		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
 		    "FrameGraph setup lambda must accept (PassResourceBuilder&, const FrameContext&) or (PassResourceBuilder&).\n");
 		static_assert(
-		    std::is_invocable_v<ExecuteFnType&, RenderGraphPassContext&>,
-		    "FrameGraph execute lambda must accept (RenderGraphPassContext&). ");
+		    std::is_invocable_v<ExecuteFnType&, PassExecutionContext&>,
+		    "FrameGraph execute lambda must accept (PassExecutionContext&). ");
 
 		SetupFnType normalizedSetup(std::forward<SetupFn>(setupFn));
 		ExecuteFnType normalizedExecute(std::forward<ExecuteFn>(executeFn));
@@ -86,14 +86,14 @@ class FrameGraph
 				        setup(builder);
 			        }
 		        },
-		        [execute = std::move(normalizedExecute)](RenderGraphPassContext& context) mutable
+		        [execute = std::move(normalizedExecute)](PassExecutionContext& context) mutable
 		        {
 			        execute(context);
 		        }});
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -108,7 +108,7 @@ class FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
 	void AddRasterPass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
 	{
 		AddTypedShaderPass(
@@ -123,7 +123,7 @@ class FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename ExecuteFn>
-	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, RenderGraphPassContext&, TParameterBindings&>
+	    requires std::is_invocable_v<std::decay_t<ExecuteFn>&, PassExecutionContext&, TParameterBindings&>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, ExecuteFn&& executeFn)
 	{
 		AddTypedShaderPass(
@@ -138,7 +138,7 @@ class FrameGraph
 	}
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
-	    requires std::is_invocable_v<decltype(&TPass::Execute), RenderGraphPassContext&, TParameterBindings&, TExecuteArgs...>
+	    requires std::is_invocable_v<decltype(&TPass::Execute), PassExecutionContext&, TParameterBindings&, TExecuteArgs...>
 	void AddComputePass(std::string_view name, TParameterBindings& parameters, TExecuteArgs&&... executeArgs)
 	{
 		AddTypedShaderPass(
@@ -160,7 +160,7 @@ class FrameGraph
 	    const FrameGraphPlan& plan,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
-	    const RenderPassContext& renderPassContext,
+	    const PassRuntimeServices& passRuntimeServices,
 	    FrameExecutionDiagnostics& frameDiagnostics) const;
 	template <typename TParameters> TypedPassParameterInstance<TParameters>& AllocParameters()
 	{
@@ -281,14 +281,14 @@ class FrameGraph
 
   private:
 	using SetupCallback = std::function<void(PassResourceBuilder&, const FrameContext&)>;
-	using ExecuteCallback = std::function<void(RenderGraphPassContext&)>;
+	using ExecuteCallback = std::function<void(PassExecutionContext&)>;
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
 	static auto MakeDirectPassExecuteCallback(TExecuteArgs&&... executeArgs)
 	{
 		using ExecuteArgsTuple = std::tuple<std::decay_t<TExecuteArgs>...>;
 		return [executeArgsTuple = ExecuteArgsTuple(std::forward<TExecuteArgs>(executeArgs)...)](
-		           RenderGraphPassContext& context,
+		           PassExecutionContext& context,
 		           TParameterBindings& typedParameters) mutable
 		{
 			std::apply(
@@ -305,11 +305,11 @@ class FrameGraph
 	{
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 		static_assert(
-		    std::is_invocable_v<ExecuteFnType&, RenderGraphPassContext&, TParameterBindings&>,
-		    "Typed pass execute lambda must accept (RenderGraphPassContext&, Parameters&). ");
+		    std::is_invocable_v<ExecuteFnType&, PassExecutionContext&, TParameterBindings&>,
+		    "Typed pass execute lambda must accept (PassExecutionContext&, Parameters&). ");
 
 		ExecuteFnType callback(std::forward<ExecuteFn>(executeFn));
-		return [parameters, callback = std::move(callback)](RenderGraphPassContext& context) mutable
+		return [parameters, callback = std::move(callback)](PassExecutionContext& context) mutable
 		{
 			callback(context, *parameters);
 		};
@@ -340,7 +340,7 @@ class FrameGraph
 		        MakeParameterizedExecuteCallback(
 		            parameterBindings,
 		            [setupValid, executeFn = std::forward<ExecuteFn>(executeFn)](
-		                RenderGraphPassContext& context,
+		                PassExecutionContext& context,
 		                TParameterBindings& typedParameters) mutable
 		            {
 			            if (!*setupValid)
@@ -364,9 +364,11 @@ class FrameGraph
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
 	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalViewDescriptors() noexcept;
-	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
-	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphAliasingBarrier>& barriers)
-	    const noexcept;
+	void EmitTransientAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
+	void EmitTransientAliasingBarriers(
+	    RenderCommandContext& cmd,
+	    std::string_view passName,
+	    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;

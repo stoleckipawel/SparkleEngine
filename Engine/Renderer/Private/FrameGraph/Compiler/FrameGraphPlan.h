@@ -19,6 +19,14 @@ using FrameGraphResourceIndex = std::uint32_t;
 static constexpr FrameGraphPassIndex INVALID_FRAME_GRAPH_PASS_INDEX = static_cast<FrameGraphPassIndex>(-1);
 static constexpr FrameGraphResourceIndex INVALID_FRAME_GRAPH_RESOURCE_INDEX = static_cast<FrameGraphResourceIndex>(-1);
 
+#ifndef SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED
+	#define SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED 1
+#endif
+
+#ifndef SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES
+	#define SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES 0
+#endif
+
 struct FrameGraphBarrier
 {
 	enum class Type : std::uint8_t
@@ -64,7 +72,7 @@ struct FrameGraphPassNode
 	std::vector<FrameGraphPassIndex> successors;
 	std::uint32_t inDegree = 0;
 	bool alive = true;
-	std::vector<FrameGraphAliasingBarrier> compiledAliasingBarriers;
+	std::vector<FrameGraphAliasingBarrier> transientAliasingBarriers;
 	std::vector<FrameGraphBarrier> compiledBarriers;
 };
 
@@ -81,6 +89,36 @@ struct FrameGraphResourceNode
 	std::string debugName;
 	std::uint32_t currentVersion = 0;
 	std::vector<FrameGraphResourceVersion> versions;
+};
+
+struct FrameGraphTransientPlanningOptions
+{
+	bool enableAliasing = SPARKLE_FRAMEGRAPH_TRANSIENT_ALIASING_ENABLED != 0;
+	bool extendLifetimesToFrame = SPARKLE_FRAMEGRAPH_TRANSIENT_EXTEND_LIFETIMES != 0;
+
+	static constexpr FrameGraphTransientPlanningOptions Default() noexcept { return FrameGraphTransientPlanningOptions{}; }
+};
+
+struct FrameGraphTransientLifetime
+{
+	FrameGraphPassIndex firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+	FrameGraphPassIndex lastUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+	FrameGraphPassIndex firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
+	FrameGraphPassIndex lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
+	bool readUsed = false;
+	bool writeUsed = false;
+	std::vector<ResourceState> requiredStates;
+
+	void Clear() noexcept
+	{
+		firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+		lastUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+		firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
+		lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
+		readUsed = false;
+		writeUsed = false;
+		requiredStates.clear();
+	}
 };
 
 struct FrameGraphTransientResourcePlan
@@ -113,16 +151,10 @@ struct FrameGraphTransientResourcePlan
 	FrameGraphBufferDesc bufferDesc{};
 	FrameGraphResourceKind kind = FrameGraphResourceKind::ColorRenderTarget;
 	PhysicalAllocationPlan physicalAllocation{};
-	FrameGraphPassIndex firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
-	FrameGraphPassIndex lastUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
-	FrameGraphPassIndex firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
-	FrameGraphPassIndex lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
-	bool readUsed = false;
-	bool writeUsed = false;
-	std::vector<ResourceState> requiredStates;
+	FrameGraphTransientLifetime lifetime{};
 };
 
-struct FrameGraphPhysicalAllocationPlan
+struct FrameGraphTransientPhysicalBlockPlan
 {
 	std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
 	FrameGraphTransientResourcePlan::AllocationPool pool = FrameGraphTransientResourcePlan::AllocationPool::Color;
@@ -138,24 +170,36 @@ struct FrameGraphPhysicalAllocationPlan
 	std::vector<FrameGraphResourceHandle> handles;
 };
 
+struct FrameGraphTransientPlan
+{
+	FrameGraphTransientPlanningOptions options = FrameGraphTransientPlanningOptions::Default();
+	std::vector<FrameGraphTransientResourcePlan> resources;
+	std::vector<FrameGraphTransientPhysicalBlockPlan> physicalBlocks;
+
+	void Clear() noexcept
+	{
+		options = FrameGraphTransientPlanningOptions::Default();
+		resources.clear();
+		physicalBlocks.clear();
+	}
+};
+
 struct FrameGraphPlan
 {
 	std::vector<FrameGraphPassNode> passes;
 	std::vector<FrameGraphResourceNode> resources;
-	std::vector<FrameGraphTransientResourcePlan> transientResources;
-	std::vector<FrameGraphPhysicalAllocationPlan> physicalBlocks;
+	FrameGraphTransientPlan transients;
 	std::vector<FrameGraphPassIndex> executionOrder;
-	std::vector<FrameGraphAliasingBarrier> finalAliasingBarriers;
+	std::vector<FrameGraphAliasingBarrier> finalTransientAliasingBarriers;
 	std::vector<FrameGraphBarrier> finalBarriers;
 
 	void Clear() noexcept
 	{
 		passes.clear();
 		resources.clear();
-		transientResources.clear();
-		physicalBlocks.clear();
+		transients.Clear();
 		executionOrder.clear();
-		finalAliasingBarriers.clear();
+		finalTransientAliasingBarriers.clear();
 		finalBarriers.clear();
 	}
 };

@@ -18,7 +18,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/FrameContext.h"
 #include "FrameGraph/FrameGraph.h"
-#include "FrameGraph/RenderPassContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Scene/Camera/CameraComponent.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Scene/Meshes/Mesh.h"
@@ -467,7 +467,7 @@ void Renderer::RecordFrame() noexcept
 		return m_frameGraph->Compile();
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
-	const RenderPassContext renderPassContext{
+	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
@@ -483,7 +483,7 @@ void Renderer::RecordFrame() noexcept
 	auto gpuFrameTimer = frameDiagnostics.BeginTimer(cmd, "GPU Frame");
 
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute begin");
-	m_frameGraph->Execute(compiledPlan, cmd, frame, renderPassContext, frameDiagnostics);
+	m_frameGraph->Execute(compiledPlan, cmd, frame, passRuntimeServices, frameDiagnostics);
 
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph execute end");
 }
