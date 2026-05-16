@@ -125,6 +125,19 @@ if(EXISTS "${rhi_public_root}")
                 "InlineUniformDataAsRootConstants"
                 "SetGraphicsRootConstants"
                 "SetComputeRootConstants"
+                "#include <vulkan/"
+                "#include \"vulkan/"
+                "#include \"Vulkan/"
+                "vk_mem_alloc"
+                "VkInstance"
+                "VkPhysicalDevice"
+                "VkDevice"
+                "VkQueue"
+                "VkCommandBuffer"
+                "VkImage"
+                "VkBuffer"
+                "VmaAllocator"
+                "VmaAllocation"
             DESCRIPTION "public RHI vocabulary must use neutral memory block, aliasing resource, and global binding state names"
         )
     endforeach()
@@ -152,12 +165,17 @@ if(rhi_cmake_text)
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "option(SPARKLE_RHI_WITH_D3D12" "backend enablement must be explicit")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "option(SPARKLE_RHI_WITH_VULKAN" "backend enablement must be explicit")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "set(SPARKLE_RHI_DEFAULT_BACKEND" "build default backend must be explicit")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "find_package(Vulkan QUIET)" "Vulkan SDK discovery must be explicit and backend-scoped")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "add_library(SparkleRHICommon OBJECT" "common RHI implementation must be separated from backend implementation")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "add_library(SparkleRHI_D3D12 STATIC" "D3D12 backend must have its own target")
-    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "add_library(SparkleRHI_Vulkan INTERFACE" "Vulkan placeholder target must exist behind its option")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "add_library(SparkleVMA INTERFACE" "VMA must be represented as a backend-private dependency target")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "add_library(SparkleRHI_Vulkan STATIC" "Vulkan backend must have its own implementation target")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "SPARKLE_RHI_COMMON_PRIVATE_SOURCES" "common source glob must be named and separated")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "SPARKLE_RHI_D3D12_SOURCES" "D3D12 source glob must be named and separated")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "SPARKLE_RHI_VULKAN_SOURCES" "Vulkan source glob must be named and separated")
     require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX \"/Private/D3D12/\")" "D3D12 sources must be excluded from common RHI sources")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX \"/Private/Vulkan/\")" "Vulkan sources must be excluded from common RHI sources")
+    require_text("${rhi_cmake_path}" "${rhi_cmake_text}" "target_link_libraries(SparkleRHI_Vulkan" "Vulkan SDK and VMA must be linked only through the Vulkan backend target")
     forbid_text("${rhi_cmake_path}" "${rhi_cmake_text}" "SPARKLE_RHI_PRIVATE_SOURCES" "do not restore one undifferentiated private source glob")
     forbid_text("${rhi_cmake_path}" "${rhi_cmake_text}" "SPARKLE_RHI_THIRD_PARTY_SOURCES" "backend third-party sources must be named per backend")
 endif()
@@ -195,7 +213,17 @@ if(EXISTS "${common_rhi_private_root}")
                 "#include \"Vulkan/"
                 "#include <vulkan/"
                 "D3D12MemAlloc"
+                "VulkanMemoryAllocator"
                 "vk_mem_alloc"
+                "VkInstance"
+                "VkPhysicalDevice"
+                "VkDevice"
+                "VkQueue"
+                "VkCommandBuffer"
+                "VkImage"
+                "VkBuffer"
+                "VmaAllocator"
+                "VmaAllocation"
             DESCRIPTION "common RHI private code must not include backend-private native headers or allocator libraries"
         )
     endforeach()
@@ -231,7 +259,17 @@ foreach(high_level_root IN LISTS high_level_roots)
                 "#include \"Vulkan/"
                 "#include <vulkan/"
                 "D3D12MemAlloc"
+                "VulkanMemoryAllocator"
                 "vk_mem_alloc"
+                "VkInstance"
+                "VkPhysicalDevice"
+                "VkDevice"
+                "VkQueue"
+                "VkCommandBuffer"
+                "VkImage"
+                "VkBuffer"
+                "VmaAllocator"
+                "VmaAllocation"
                 "SetShaderVisibleDescriptorHeaps"
                 "SetDescriptorHeaps"
                 "NativeDescriptorHeapHandle"

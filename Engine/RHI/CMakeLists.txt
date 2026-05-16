@@ -6,7 +6,14 @@
 include(FetchContent)
 
 option(SPARKLE_RHI_WITH_D3D12 "Enable the D3D12 RHI backend" ON)
-option(SPARKLE_RHI_WITH_VULKAN "Enable the placeholder Vulkan RHI backend target" ON)
+find_package(Vulkan QUIET)
+if(Vulkan_FOUND)
+    set(SPARKLE_RHI_WITH_VULKAN_DEFAULT ON)
+else()
+    set(SPARKLE_RHI_WITH_VULKAN_DEFAULT OFF)
+endif()
+option(SPARKLE_RHI_WITH_VULKAN "Enable the Vulkan RHI backend target" ${SPARKLE_RHI_WITH_VULKAN_DEFAULT})
+option(SPARKLE_RHI_REQUIRE_VULKAN_SDK "Fail configure when the Vulkan RHI backend is enabled but the Vulkan SDK is missing" OFF)
 set(SPARKLE_RHI_DEFAULT_BACKEND "D3D12" CACHE STRING "Default RHI backend: D3D12 or Vulkan")
 set_property(CACHE SPARKLE_RHI_DEFAULT_BACKEND PROPERTY STRINGS D3D12 Vulkan)
 string(TOUPPER "${SPARKLE_RHI_DEFAULT_BACKEND}" SPARKLE_RHI_DEFAULT_BACKEND_UPPER)
@@ -21,6 +28,15 @@ endif()
 
 if(SPARKLE_RHI_DEFAULT_BACKEND_UPPER STREQUAL "VULKAN" AND NOT SPARKLE_RHI_WITH_VULKAN)
     message(FATAL_ERROR "SPARKLE_RHI_DEFAULT_BACKEND is Vulkan, but SPARKLE_RHI_WITH_VULKAN is OFF.")
+endif()
+
+if(SPARKLE_RHI_WITH_VULKAN AND NOT Vulkan_FOUND)
+    if(SPARKLE_RHI_REQUIRE_VULKAN_SDK OR SPARKLE_RHI_DEFAULT_BACKEND_UPPER STREQUAL "VULKAN")
+        message(FATAL_ERROR "SPARKLE_RHI_WITH_VULKAN is ON, but the Vulkan SDK was not found. Install the Vulkan SDK or set SPARKLE_RHI_WITH_VULKAN=OFF.")
+    endif()
+
+    message(WARNING "Vulkan SDK was not found. Disabling SparkleRHI_Vulkan for this configure. Set SPARKLE_RHI_WITH_VULKAN=OFF to silence this warning.")
+    set(SPARKLE_RHI_WITH_VULKAN OFF CACHE BOOL "Enable the Vulkan RHI backend target" FORCE)
 endif()
 
 if(NOT DEFINED SPARKLE_GIT_PROGRESS)
@@ -41,6 +57,8 @@ file(GLOB_RECURSE SPARKLE_RHI_COMMON_PRIVATE_HEADERS CONFIGURE_DEPENDS
 
 list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX "/Private/D3D12/")
 list(FILTER SPARKLE_RHI_COMMON_PRIVATE_HEADERS EXCLUDE REGEX "/Private/D3D12/")
+list(FILTER SPARKLE_RHI_COMMON_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Vulkan/")
+list(FILTER SPARKLE_RHI_COMMON_PRIVATE_HEADERS EXCLUDE REGEX "/Private/Vulkan/")
 
 add_library(SparkleRHICommon OBJECT
     ${SPARKLE_RHI_PUBLIC_HEADERS}
@@ -180,8 +198,58 @@ if(SPARKLE_RHI_WITH_D3D12)
 endif()
 
 if(SPARKLE_RHI_WITH_VULKAN)
-    add_library(SparkleRHI_Vulkan INTERFACE)
-    target_compile_features(SparkleRHI_Vulkan INTERFACE cxx_std_20)
+    FetchContent_Declare(sparkle_vma
+        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+        GIT_TAG        v3.1.0
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${SPARKLE_GIT_PROGRESS}
+    )
+
+    FetchContent_GetProperties(sparkle_vma)
+    if(NOT sparkle_vma_POPULATED)
+        FetchContent_Populate(sparkle_vma)
+    endif()
+
+    add_library(SparkleVMA INTERFACE)
+    target_include_directories(SparkleVMA
+        INTERFACE
+            ${sparkle_vma_SOURCE_DIR}/include
+    )
+    target_link_libraries(SparkleVMA
+        INTERFACE
+            Vulkan::Vulkan
+    )
+    set_target_properties(SparkleVMA PROPERTIES FOLDER "ThirdParty")
+
+    file(GLOB_RECURSE SPARKLE_RHI_VULKAN_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan/*.cpp
+    )
+
+    file(GLOB_RECURSE SPARKLE_RHI_VULKAN_HEADERS CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan/*.h
+    )
+
+    add_library(SparkleRHI_Vulkan STATIC
+        ${SPARKLE_RHI_VULKAN_SOURCES}
+        ${SPARKLE_RHI_VULKAN_HEADERS}
+    )
+
+    sparkle_configure_rhi_implementation_target(SparkleRHI_Vulkan)
+
+    target_link_libraries(SparkleRHI_Vulkan
+        PUBLIC
+            SparkleCore
+        PRIVATE
+            SparklePlatform
+            Vulkan::Vulkan
+            SparkleVMA
+    )
+
+    sparkle_target_precompile_headers(SparkleRHI_Vulkan
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan/VulkanPCH.h
+    )
+
+    list(APPEND SPARKLE_RHI_BACKEND_TARGETS SparkleRHI_Vulkan)
 endif()
 
 if(SPARKLE_BUILD_SHARED)
@@ -228,4 +296,8 @@ if(SPARKLE_RHI_WITH_D3D12)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12 PREFIX "Private\\D3D12" FILES ${SPARKLE_RHI_D3D12_SOURCES} ${SPARKLE_RHI_D3D12_HEADERS})
     source_group("ThirdParty\\ImGui\\D3D12" FILES ${SPARKLE_RHI_D3D12_THIRD_PARTY_SOURCES})
     source_group("ThirdParty\\D3D12MA" FILES ${SPARKLE_D3D12MA_SOURCES})
+endif()
+
+if(SPARKLE_RHI_WITH_VULKAN)
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan PREFIX "Private\\Vulkan" FILES ${SPARKLE_RHI_VULKAN_SOURCES} ${SPARKLE_RHI_VULKAN_HEADERS})
 endif()
