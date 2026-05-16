@@ -32,14 +32,14 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 
 	for (const FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
-		FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
-		FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
+		const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
+		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
 		if (metadata.ownership != FrameGraphResourceOwnership::Imported || metadata.kind == FrameGraphResourceKind::BackBuffer)
 		{
 			continue;
 		}
 
-		if (!access.externalResource)
+		if (!access.resource)
 		{
 			continue;
 		}
@@ -52,7 +52,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			m_renderHardwareInterface->CreateRenderTargetView(
-			    access.externalResource,
+			    access.resource,
 			    metadata.textureDesc.format,
 			    access.renderTargetView);
 
@@ -65,13 +65,13 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			m_renderHardwareInterface->CreateTextureShaderResourceView(
-			    access.externalResource,
+			    access.resource,
 			    metadata.textureDesc.format,
 			    access.shaderResourceViewCpu);
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.externalResource))
+				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
 				{
 					SPDLOG_LOGGER_WARN(
 					    g_frameGraphExternalLogger,
@@ -88,7 +88,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				}
 
 				m_renderHardwareInterface->CreateTextureUnorderedAccessView(
-				    access.externalResource,
+				    access.resource,
 				    metadata.textureDesc.format,
 				    access.unorderedAccessViewCpu);
 			}
@@ -101,7 +101,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			m_renderHardwareInterface->CreateDepthStencilView(
-			    access.externalResource,
+			    access.resource,
 			    metadata.textureDesc.format,
 			    access.depthStencilView);
 		}
@@ -116,14 +116,14 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 			}
 
 			m_renderHardwareInterface->CreateBufferShaderResourceView(
-			    access.externalResource,
+			    access.resource,
 			    metadata.bufferDesc.sizeInBytes,
 			    metadata.bufferDesc.strideInBytes,
 			    access.shaderResourceViewCpu);
 
 			if (RequiresUnorderedAccessView(m_compiledPlan, handle))
 			{
-				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.externalResource))
+				if (!m_renderHardwareInterface->SupportsUnorderedAccess(access.resource))
 				{
 					SPDLOG_LOGGER_WARN(
 					    g_frameGraphExternalLogger,
@@ -140,7 +140,7 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 				}
 
 				m_renderHardwareInterface->CreateBufferUnorderedAccessView(
-				    access.externalResource,
+				    access.resource,
 				    metadata.bufferDesc.sizeInBytes,
 				    metadata.bufferDesc.strideInBytes,
 				    access.unorderedAccessViewCpu);
@@ -158,7 +158,13 @@ void FrameGraph::ReleaseExternalViewDescriptors() noexcept
 
 	for (const FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
-		FrameGraphResourceAccess& access = m_resourceRegistry.GetResolvedAccess(handle);
+		const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
+		if (metadata.ownership != FrameGraphResourceOwnership::Imported || metadata.kind == FrameGraphResourceKind::BackBuffer)
+		{
+			continue;
+		}
+
+		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
 		if (access.renderTargetView)
 		{
 			m_renderHardwareInterface->ReleaseDescriptor(

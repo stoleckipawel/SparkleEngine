@@ -140,6 +140,47 @@ void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan
 
 	for (const FrameGraphTransientResourcePlan& transientPlan : plan.transientResources)
 	{
-		(void) m_transientAllocator->Materialize(transientPlan);
+		const FrameGraphTransientAllocator::AllocationRecord& allocation = m_transientAllocator->Materialize(transientPlan);
+		FrameGraphResourceAccess access{};
+
+		switch (transientPlan.kind)
+		{
+			case FrameGraphResourceKind::DepthStencil:
+				access.resource = allocation.depthStencilResource;
+				access.depthStencilView = allocation.depthStencilView.CpuHandle;
+				break;
+			case FrameGraphResourceKind::ColorRenderTarget:
+				access.resource = allocation.renderTargetResource;
+				access.renderTargetView = allocation.renderTargetView.CpuHandle;
+				if (allocation.shaderResourceView.IsValid())
+				{
+					access.shaderResourceViewCpu = allocation.shaderResourceView.CpuHandle;
+					access.shaderResourceViewGpu = allocation.shaderResourceView.GpuHandle;
+				}
+				if (allocation.unorderedAccessView.IsValid())
+				{
+					access.unorderedAccessViewCpu = allocation.unorderedAccessView.CpuHandle;
+					access.unorderedAccessViewGpu = allocation.unorderedAccessView.GpuHandle;
+				}
+				break;
+			case FrameGraphResourceKind::Buffer:
+				access.resource = allocation.buffer;
+				if (allocation.shaderResourceView.IsValid())
+				{
+					access.shaderResourceViewCpu = allocation.shaderResourceView.CpuHandle;
+					access.shaderResourceViewGpu = allocation.shaderResourceView.GpuHandle;
+				}
+				if (allocation.unorderedAccessView.IsValid())
+				{
+					access.unorderedAccessViewCpu = allocation.unorderedAccessView.CpuHandle;
+					access.unorderedAccessViewGpu = allocation.unorderedAccessView.GpuHandle;
+				}
+				break;
+			default:
+				assert(false);
+				break;
+		}
+
+		m_resourceResolver.SetResolvedAccess(transientPlan.handle, access);
 	}
 }

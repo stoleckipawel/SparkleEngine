@@ -34,7 +34,7 @@ FrameGraphPlan FrameGraph::Compile()
 {
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);
-	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry);
+	FrameGraphCompiler compiler(m_compiledPlan, m_resourceRegistry, m_resourceStateTracker);
 	compiler.Compile();
 	return m_compiledPlan;
 }
@@ -46,7 +46,7 @@ ResourceState FrameGraph::GetTrackedResourceState(FrameGraphResourceHandle handl
 		return ResourceState::Common;
 	}
 
-	return m_resourceRegistry.GetRuntimeState(handle).currentState;
+	return m_resourceStateTracker.GetRuntimeState(handle).currentState;
 }
 
 void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept
@@ -56,5 +56,5 @@ void FrameGraph::UpdateTrackedResourceState(FrameGraphResourceHandle handle, Res
 		return;
 	}
 
-	m_resourceRegistry.UpdateCurrentState(handle, currentState);
+	m_resourceStateTracker.UpdateCurrentState(handle, currentState);
 }

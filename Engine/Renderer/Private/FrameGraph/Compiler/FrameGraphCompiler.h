@@ -2,12 +2,16 @@
 
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
 
-class ResourceRegistry;
+class FrameGraphResourceRegistry;
+class FrameGraphResourceStateTracker;
 
 class FrameGraphCompiler final
 {
   public:
-	FrameGraphCompiler(FrameGraphPlan& plan, ResourceRegistry& resourceRegistry) noexcept;
+	FrameGraphCompiler(
+	    FrameGraphPlan& plan,
+	    FrameGraphResourceRegistry& resourceRegistry,
+	    FrameGraphResourceStateTracker& resourceStateTracker) noexcept;
 
 	void Compile() noexcept;
 
@@ -42,5 +46,6 @@ class FrameGraphCompiler final
 	const FrameGraphTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept;
 
 	FrameGraphPlan& m_plan;
-	ResourceRegistry& m_resourceRegistry;
+	FrameGraphResourceRegistry& m_resourceRegistry;
+	FrameGraphResourceStateTracker& m_resourceStateTracker;
 };

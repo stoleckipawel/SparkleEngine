@@ -1,6 +1,9 @@
 #include "PCH.h"
 #include "FrameGraphCompiler.h"
 
+#include "FrameGraph/FrameGraphResourceRegistry.h"
+#include "FrameGraph/FrameGraphResourceStateTracker.h"
+
 #include <algorithm>
 #include <cassert>
 #include <string>
@@ -51,8 +54,11 @@ namespace
 
 }  // namespace
 
-FrameGraphCompiler::FrameGraphCompiler(FrameGraphPlan& plan, ResourceRegistry& resourceRegistry) noexcept :
-    m_plan(plan), m_resourceRegistry(resourceRegistry)
+FrameGraphCompiler::FrameGraphCompiler(
+	FrameGraphPlan& plan,
+	FrameGraphResourceRegistry& resourceRegistry,
+	FrameGraphResourceStateTracker& resourceStateTracker) noexcept :
+	m_plan(plan), m_resourceRegistry(resourceRegistry), m_resourceStateTracker(resourceStateTracker)
 {
 }
 
@@ -91,7 +97,6 @@ void FrameGraphCompiler::Compile() noexcept
 			}
 
 			FrameGraphResourceNode& compiledResource = GetCompiledResourceEntry(declaration.handle);
-			FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(declaration.handle);
 			const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
 			if (compiledResource.currentState != requiredState)
 			{
@@ -102,7 +107,7 @@ void FrameGraphCompiler::Compile() noexcept
 				        .before = compiledResource.currentState,
 				        .after = requiredState});
 				compiledResource.currentState = requiredState;
-				runtimeState.currentState = requiredState;
+				m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
 			}
 			else if (
 			    requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
@@ -126,7 +131,6 @@ void FrameGraphCompiler::Compile() noexcept
 		}
 
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(compiledResource.handle);
-		FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(compiledResource.handle);
 		if (compiledResource.currentState == compiledResource.finalState)
 		{
 			continue;
@@ -139,7 +143,7 @@ void FrameGraphCompiler::Compile() noexcept
 		        .before = compiledResource.currentState,
 		        .after = compiledResource.finalState});
 		compiledResource.currentState = compiledResource.finalState;
-		runtimeState.currentState = entry.finalState;
+		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, entry.finalState);
 	}
 }
 
@@ -153,7 +157,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 	{
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
-		const FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(handle);
+		const FrameGraphResourceRuntimeState& runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
@@ -174,9 +178,8 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 {
 	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
-		compiledResource.currentState = m_resourceRegistry.GetRuntimeState(compiledResource.handle).currentState;
-		FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(compiledResource.handle);
-		runtimeState.currentState = compiledResource.currentState;
+		compiledResource.currentState = m_resourceStateTracker.GetRuntimeState(compiledResource.handle).currentState;
+		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, compiledResource.currentState);
 	}
 }
 

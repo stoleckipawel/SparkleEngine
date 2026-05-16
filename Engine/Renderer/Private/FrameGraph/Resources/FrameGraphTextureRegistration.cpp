@@ -38,6 +38,9 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(const FrameGraphTextureDesc& d
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "BackBuffer");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
 	m_resourceRegistry.RegisterBackBuffer(handle, resolvedDesc, initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
 }
 
@@ -54,7 +57,10 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(
 
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "ImportedTexture");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), resource, initialState);
+	m_resourceRegistry.RegisterImportedTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.RegisterResource(handle, resource);
 	return FrameGraphTextureHandle{handle};
 }
 
@@ -70,6 +76,10 @@ FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& d
 	    resolvedDesc,
 	    kind,
 	    kind == FrameGraphResourceKind::DepthStencil ? ResourceState::DepthRead : ResourceState::Common);
+	m_resourceStateTracker.RegisterResource(
+	    handle,
+	    kind == FrameGraphResourceKind::DepthStencil ? ResourceState::DepthRead : ResourceState::Common);
+	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
 }
 
@@ -83,7 +93,10 @@ FrameGraphBufferHandle FrameGraph::ImportBuffer(const FrameGraphBufferDesc& desc
 
 	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "ImportedBuffer");
 	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
-	m_resourceRegistry.RegisterImportedBuffer(handle, resolvedDesc, resource, initialState);
+	m_resourceRegistry.RegisterImportedBuffer(handle, resolvedDesc, initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.RegisterResource(handle, resource);
 	return FrameGraphBufferHandle{handle};
 }
 
@@ -94,6 +107,8 @@ FrameGraphBufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc
 	m_virtualTransientResources.push_back(
 	    VirtualTransientResource{.handle = handle, .resourceClass = FrameGraphResourceClass::Buffer, .bufferDesc = resolvedDesc});
 	m_resourceRegistry.RegisterTransientBuffer(handle, resolvedDesc, ResourceState::Common);
+	m_resourceStateTracker.RegisterResource(handle, ResourceState::Common);
+	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphBufferHandle{handle};
 }
 

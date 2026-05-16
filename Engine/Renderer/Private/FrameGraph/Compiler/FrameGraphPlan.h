@@ -1,8 +1,8 @@
 #pragma once
 
 #include "FrameGraph/FrameGraphPassFlags.h"
+#include "FrameGraph/FrameGraphResourceTypes.h"
 #include "FrameGraph/PassResourceDeclaration.h"
-#include "FrameGraph/ResourceRegistry.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"

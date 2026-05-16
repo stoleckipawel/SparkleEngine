@@ -5,9 +5,11 @@
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
+#include "FrameGraph/FrameGraphResourceRegistry.h"
+#include "FrameGraph/FrameGraphResourceResolver.h"
+#include "FrameGraph/FrameGraphResourceStateTracker.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "FrameGraph/ResourceRegistry.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
@@ -354,14 +356,9 @@ class FrameGraph
 	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveTransientRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
-	RhiCpuDescriptorHandle ResolveTransientDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveTransientShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
-	RhiGpuDescriptorHandle ResolveTransientUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
-	NativeResourceHandle ResolveTransientResource(FrameGraphResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
 	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
@@ -394,7 +391,9 @@ class FrameGraph
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	Window* m_window = nullptr;
 	RenderViewportExtent m_sceneExtent = {};
-	mutable ResourceRegistry m_resourceRegistry;
+	FrameGraphResourceRegistry m_resourceRegistry;
+	mutable FrameGraphResourceStateTracker m_resourceStateTracker;
+	mutable FrameGraphResourceResolver m_resourceResolver;
 	FrameGraphPlan m_compiledPlan;
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;

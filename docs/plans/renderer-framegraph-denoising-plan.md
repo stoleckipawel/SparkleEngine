@@ -1018,6 +1018,19 @@ Validation greps:
 Skip compile/build.
 ```
 
+Phase 5 findings:
+
+- Split the former fused `ResourceRegistry` into focused private owners:
+  - `FrameGraphResourceRegistry` owns graph resource metadata, descriptors, ownership, kind, debug names, boundary states, and registered handle order.
+  - `FrameGraphResourceStateTracker` owns carried `currentState` and the host-side state feedback used by `GetTrackedResourceState` and `UpdateTrackedResourceState`.
+  - `FrameGraphResourceResolver` owns resolved `NativeResourceHandle` plus `RhiCpuDescriptorHandle`/`RhiGpuDescriptorHandle` view access used during execution.
+- Moved common metadata vocabulary into `FrameGraphResourceTypes.h` so `FrameGraphPlan` can describe resources without including a state/resolver owner.
+- Imported resources now register metadata, state, and resolved opaque native access through separate owners. Metadata registration no longer writes runtime state or descriptor access as a side effect.
+- Imported resource descriptor creation remains in `FrameGraphExternalResources.cpp` behind `RenderHardwareInterface`; no D3D12/DXGI/native backend concrete types were introduced into public FrameGraph contracts.
+- Transient materialization still reads the compiled `FrameGraphPlan` and uses `FrameGraphTransientAllocator`, but materialized native resources and descriptors are now written into `FrameGraphResourceResolver` before execution resolves them.
+- Barrier planning now takes both `FrameGraphResourceRegistry&` and `FrameGraphResourceStateTracker&`, preserving carried runtime-state behavior while making state feedback ownership explicit.
+- `GetTrackedResourceState`/`UpdateTrackedResourceState` semantics are preserved for host-side render-product transitions. No transient allocator allocation behavior was intentionally changed, and no build was run for this phase per the phase workflow.
+
 ## Phase 6: Make Transient Allocation And Aliasing A Named Subsystem
 
 Goal: make Sparkle's transient resource planning easier to debug and eventually portable beyond D3D12.
