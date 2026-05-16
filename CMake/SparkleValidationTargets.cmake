@@ -29,6 +29,21 @@ add_custom_target(
 add_sparkle_validation_dependency(SparkleRenderer framegraph_boundary_check)
 
 add_custom_target(
+    rhi_backend_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DRHI_BACKEND_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateRhiBackendBoundaries.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating RHI backend target split and high-level backend-neutral boundaries..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI rhi_backend_boundary_check)
+add_sparkle_validation_dependency(SparkleApplication rhi_backend_boundary_check)
+add_sparkle_validation_dependency(SparkleGameFramework rhi_backend_boundary_check)
+add_sparkle_validation_dependency(SparkleRenderer rhi_backend_boundary_check)
+add_sparkle_validation_dependency(SparkleEditor rhi_backend_boundary_check)
+
+add_custom_target(
     rhi_memory_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -132,6 +147,7 @@ add_custom_target(
     DEPENDS
         runtime_cooked_boundary_check
         framegraph_boundary_check
+        rhi_backend_boundary_check
         rhi_memory_boundary_check
         shader_compiler_boundary_check
         texture_cooker_boundary_check

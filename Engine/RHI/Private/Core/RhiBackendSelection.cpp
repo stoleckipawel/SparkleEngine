@@ -129,9 +129,18 @@ static bool TryResolveRhiBackendFromCommandLine(ERhiBackendApi& outApi) noexcept
 	return false;
 }
 
+static ERhiBackendApi ResolveBuildDefaultRhiBackend() noexcept
+{
+#if defined(SPARKLE_RHI_DEFAULT_BACKEND_VULKAN)
+	return ERhiBackendApi::Vulkan;
+#else
+	return ERhiBackendApi::D3D12;
+#endif
+}
+
 RhiBackendSelection ResolveDefaultRhiBackendSelection() noexcept
 {
-	RhiBackendSelection selection{};
+	RhiBackendSelection selection{ResolveBuildDefaultRhiBackend()};
 	std::string configuredBackend;
 	if (Environment::TryGetVariable("SPARKLE_RHI_BACKEND", configuredBackend) && !TryParseRhiBackendApi(configuredBackend, selection.Api))
 	{

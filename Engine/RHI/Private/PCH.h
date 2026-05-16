@@ -16,19 +16,7 @@
 
 #include <Windows.h>
 #include <wrl/client.h>
+#include <DirectXMath.h>
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
-
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <DirectXMath.h>
-
-#include "D3D12/ThirdParty/D3DX12Includes.h"
-
-#ifdef ENGINE_GPU_VALIDATION
-	#include <d3d12sdklayers.h>
-	#include <dxgidebug.h>
-#endif
-
-using Microsoft::WRL::ComPtr;

@@ -1,0 +1,26 @@
+#pragma once
+
+#include <cstdint>
+
+class RenderCommandList;
+class RenderDiagnostics;
+class RenderHardwareInterface;
+
+class RenderDeviceBackendServices
+{
+  public:
+	virtual ~RenderDeviceBackendServices() noexcept = default;
+
+	virtual RenderHardwareInterface& GetRenderHardwareInterface() noexcept = 0;
+	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
+	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
+	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
+	virtual void Flush() noexcept = 0;
+	virtual void ResizeSwapChain() noexcept = 0;
+	virtual void BeginFrame() noexcept = 0;
+	virtual RenderCommandList& GetCurrentGraphicsCommandList() noexcept = 0;
+	virtual void SubmitFrame() noexcept = 0;
+	virtual void AdvanceFrameInFlight() noexcept = 0;
+	virtual void UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept = 0;
+	virtual void CloseExecuteAndFlushCurrentFrame() noexcept = 0;
+};
