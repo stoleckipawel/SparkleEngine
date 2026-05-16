@@ -1,13 +1,13 @@
 #include "../PCH.h"
 #include "Frame/DirectLighting.h"
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/DirectLightingPass.h"
 
-void AddDirectLightingPass(FrameGraph& frameGraph, const LightingTargets& lighting, const GBufferTargets& gbuffer)
+void AddDirectLightingPass(FrameGraphBuilder& builder, const LightingTargets& lighting, const GBufferTargets& gbuffer)
 {
-	auto& parameters = frameGraph.AllocPassParameters<DirectLightingPass>();
-	DirectLightingPass::DeclareResources(frameGraph, lighting, gbuffer, parameters);
+	auto& parameters = builder.AllocPassParameters<DirectLightingPass>();
+	DirectLightingPass::DeclareResources(builder, lighting, gbuffer, parameters);
 
-	frameGraph.AddComputePass<DirectLightingPass>(DirectLightingPass::PassName, parameters);
+	builder.AddComputePass<DirectLightingPass>(DirectLightingPass::PassName, parameters);
 }

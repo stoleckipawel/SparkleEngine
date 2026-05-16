@@ -8,14 +8,14 @@
 namespace
 {
 	bool HasCompiledBarrier(
-	    const FrameGraph::CompilePassRecord& passRecord,
+	    const FrameGraphPassNode& passRecord,
 	    FrameGraphResourceHandle handle,
-	    FrameGraph::CompiledBarrier::Type type) noexcept
+	    FrameGraphBarrier::Type type) noexcept
 	{
 		const auto it = std::find_if(
 		    passRecord.compiledBarriers.begin(),
 		    passRecord.compiledBarriers.end(),
-		    [handle, type](const FrameGraph::CompiledBarrier& barrier)
+		    [handle, type](const FrameGraphBarrier& barrier)
 		    {
 			    return barrier.handle == handle && barrier.type == type;
 		    });
@@ -23,9 +23,9 @@ namespace
 		return it != passRecord.compiledBarriers.end();
 	}
 
-	void ValidateResourceVersionGraph(const FrameGraph::CompiledPlan& plan) noexcept
+	void ValidateResourceVersionGraph(const FrameGraphPlan& plan) noexcept
 	{
-		for (const FrameGraph::CompileResourceEntry& resource : plan.resources)
+		for (const FrameGraphResourceNode& resource : plan.resources)
 		{
 			assert(resource.handle.IsValid());
 			assert(!resource.versions.empty());
@@ -33,15 +33,15 @@ namespace
 
 			for (std::size_t versionIndex = 0; versionIndex < resource.versions.size(); ++versionIndex)
 			{
-				const FrameGraph::ResourceVersion& version = resource.versions[versionIndex];
+				const FrameGraphResourceVersion& version = resource.versions[versionIndex];
 				assert(version.handle == resource.handle);
 				assert(version.version == versionIndex);
-				if (version.writerPass != FrameGraph::INVALID_PASS_INDEX)
+				if (version.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX)
 				{
 					assert(version.writerPass < plan.passes.size());
 				}
 
-				for (const FrameGraph::PassIndex readerPass : version.readerPasses)
+				for (const FrameGraphPassIndex readerPass : version.readerPasses)
 				{
 					assert(readerPass < plan.passes.size());
 				}
@@ -51,7 +51,7 @@ namespace
 
 }  // namespace
 
-FrameGraphCompiler::FrameGraphCompiler(FrameGraph::CompiledPlan& plan, ResourceRegistry& resourceRegistry) noexcept :
+FrameGraphCompiler::FrameGraphCompiler(FrameGraphPlan& plan, ResourceRegistry& resourceRegistry) noexcept :
     m_plan(plan), m_resourceRegistry(resourceRegistry)
 {
 }
@@ -63,7 +63,7 @@ void FrameGraphCompiler::Compile() noexcept
 	m_plan.executionOrder.reserve(m_plan.passes.size());
 	m_plan.finalBarriers.clear();
 
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		passRecord.dependsOn.clear();
 		passRecord.successors.clear();
@@ -80,9 +80,9 @@ void FrameGraphCompiler::Compile() noexcept
 	BuildTransientAliasingBarriers();
 	ResetCompiledResourceStatesForBarrierPlanning();
 
-	for (const PassIndex passIndex : m_plan.executionOrder)
+	for (const FrameGraphPassIndex passIndex : m_plan.executionOrder)
 	{
-		CompilePassRecord& passRecord = m_plan.passes[passIndex];
+		FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 		for (const PassResourceDeclaration& declaration : passRecord.declarations)
 		{
 			if (!declaration.handle.IsValid())
@@ -90,15 +90,15 @@ void FrameGraphCompiler::Compile() noexcept
 				continue;
 			}
 
-			CompileResourceEntry& compiledResource = GetCompiledResourceEntry(declaration.handle);
+			FrameGraphResourceNode& compiledResource = GetCompiledResourceEntry(declaration.handle);
 			FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(declaration.handle);
 			const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
 			if (compiledResource.currentState != requiredState)
 			{
 				passRecord.compiledBarriers.push_back(
-				    CompiledBarrier{
+				    FrameGraphBarrier{
 				        .handle = declaration.handle,
-				        .type = CompiledBarrier::Type::Transition,
+				        .type = FrameGraphBarrier::Type::Transition,
 				        .before = compiledResource.currentState,
 				        .after = requiredState});
 				compiledResource.currentState = requiredState;
@@ -106,19 +106,19 @@ void FrameGraphCompiler::Compile() noexcept
 			}
 			else if (
 			    requiredState == ResourceState::UnorderedAccess && WritesToUsage(declaration.usage) &&
-			    !HasCompiledBarrier(passRecord, declaration.handle, CompiledBarrier::Type::UnorderedAccess))
+			    !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::UnorderedAccess))
 			{
 				passRecord.compiledBarriers.push_back(
-				    CompiledBarrier{
+				    FrameGraphBarrier{
 				        .handle = declaration.handle,
-				        .type = CompiledBarrier::Type::UnorderedAccess,
+				        .type = FrameGraphBarrier::Type::UnorderedAccess,
 				        .before = requiredState,
 				        .after = requiredState});
 			}
 		}
 	}
 
-	for (CompileResourceEntry& compiledResource : m_plan.resources)
+	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
 		if (!ShouldRestoreFinalState(compiledResource))
 		{
@@ -133,9 +133,9 @@ void FrameGraphCompiler::Compile() noexcept
 		}
 
 		m_plan.finalBarriers.push_back(
-		    CompiledBarrier{
+		    FrameGraphBarrier{
 		        .handle = entry.handle,
-		        .type = CompiledBarrier::Type::Transition,
+		        .type = FrameGraphBarrier::Type::Transition,
 		        .before = compiledResource.currentState,
 		        .after = compiledResource.finalState});
 		compiledResource.currentState = compiledResource.finalState;
@@ -155,8 +155,8 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(handle);
 		m_plan.resources.push_back(
-		    CompileResourceEntry{
-		        .index = static_cast<ResourceIndex>(resourceIndex),
+		    FrameGraphResourceNode{
+		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
 		        .handle = entry.handle,
 		        .resourceClass = entry.resourceClass,
 		        .kind = entry.kind,
@@ -166,13 +166,13 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .currentState = runtimeState.currentState,
 		        .debugName = entry.debugName,
 		        .currentVersion = 0,
-		        .versions = {ResourceVersion{.handle = entry.handle, .version = 0, .writerPass = FrameGraph::INVALID_PASS_INDEX}}});
+		        .versions = {FrameGraphResourceVersion{.handle = entry.handle, .version = 0, .writerPass = INVALID_FRAME_GRAPH_PASS_INDEX}}});
 	}
 }
 
 void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcept
 {
-	for (CompileResourceEntry& compiledResource : m_plan.resources)
+	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
 		compiledResource.currentState = m_resourceRegistry.GetRuntimeState(compiledResource.handle).currentState;
 		FrameGraphResourceRuntimeState& runtimeState = m_resourceRegistry.GetRuntimeState(compiledResource.handle);
@@ -182,7 +182,7 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 
 ResourceState FrameGraphCompiler::InferRequiredResourceState(
     const PassResourceDeclaration& declaration,
-    const CompileResourceEntry& resource) const noexcept
+    const FrameGraphResourceNode& resource) const noexcept
 {
 	if (IsReadOnlyUsage(declaration.usage))
 	{
@@ -235,29 +235,29 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 	return ResourceState::Common;
 }
 
-bool FrameGraphCompiler::ShouldRestoreFinalState(const CompileResourceEntry& resource) const noexcept
+bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept
 {
 	return resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil;
 }
 
-FrameGraph::ResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(CompileResourceEntry& resource) noexcept
+FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept
 {
 	assert(resource.currentVersion < resource.versions.size());
 	return resource.versions[resource.currentVersion];
 }
 
-const FrameGraph::ResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(const CompileResourceEntry& resource) const noexcept
+const FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(const FrameGraphResourceNode& resource) const noexcept
 {
 	assert(resource.currentVersion < resource.versions.size());
 	return resource.versions[resource.currentVersion];
 }
 
-FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept
+FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.resources.begin(),
 	    m_plan.resources.end(),
-	    [handle](const CompileResourceEntry& resource)
+	    [handle](const FrameGraphResourceNode& resource)
 	    {
 		    return resource.handle == handle;
 	    });
@@ -265,12 +265,12 @@ FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(F
 	return *it;
 }
 
-const FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept
+const FrameGraphResourceNode& FrameGraphCompiler::GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.resources.begin(),
 	    m_plan.resources.end(),
-	    [handle](const CompileResourceEntry& resource)
+	    [handle](const FrameGraphResourceNode& resource)
 	    {
 		    return resource.handle == handle;
 	    });
@@ -278,12 +278,12 @@ const FrameGraph::CompileResourceEntry& FrameGraphCompiler::GetCompiledResourceE
 	return *it;
 }
 
-FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept
+FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.transientResources.begin(),
 	    m_plan.transientResources.end(),
-	    [handle](const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
 	    {
 		    return transientPlan.handle == handle;
 	    });
@@ -291,12 +291,12 @@ FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientReso
 	return it != m_plan.transientResources.end() ? &(*it) : nullptr;
 }
 
-const FrameGraph::CompiledTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept
+const FrameGraphTransientResourcePlan* FrameGraphCompiler::FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept
 {
 	const auto it = std::find_if(
 	    m_plan.transientResources.begin(),
 	    m_plan.transientResources.end(),
-	    [handle](const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	    [handle](const FrameGraphTransientResourcePlan& transientPlan)
 	    {
 		    return transientPlan.handle == handle;
 	    });

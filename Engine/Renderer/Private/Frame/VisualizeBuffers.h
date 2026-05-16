@@ -2,10 +2,10 @@
 
 #include "FrameGraph/Features/FrameGraphProducts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
 void AddVisualizeBuffersPass(
-    FrameGraph& frameGraph,
+    FrameGraphBuilder& builder,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,
     const GBufferTargets& gbuffer);

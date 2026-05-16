@@ -1,12 +1,12 @@
 #include "../PCH.h"
 #include "Frame/Sky.h"
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/SkyPass.h"
 
-void AddSkyPass(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer)
+void AddSkyPass(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer)
 {
-	auto& parameters = frameGraph.AllocPassParameters<SkyPass>();
-	SkyPass::DeclareResources(frameGraph, sceneTargets, gbuffer, parameters);
-	frameGraph.AddComputePass<SkyPass>(SkyPass::PassName, parameters);
+	auto& parameters = builder.AllocPassParameters<SkyPass>();
+	SkyPass::DeclareResources(builder, sceneTargets, gbuffer, parameters);
+	builder.AddComputePass<SkyPass>(SkyPass::PassName, parameters);
 }

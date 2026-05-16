@@ -1,33 +1,26 @@
 #pragma once
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Compiler/FrameGraphPlan.h"
 
 class ResourceRegistry;
 
 class FrameGraphCompiler final
 {
   public:
-	FrameGraphCompiler(FrameGraph::CompiledPlan& plan, ResourceRegistry& resourceRegistry) noexcept;
+	FrameGraphCompiler(FrameGraphPlan& plan, ResourceRegistry& resourceRegistry) noexcept;
 
 	void Compile() noexcept;
 
   private:
-	using PassIndex = FrameGraph::PassIndex;
-	using ResourceIndex = FrameGraph::ResourceIndex;
-	using CompiledBarrier = FrameGraph::CompiledBarrier;
-	using ResourceVersion = FrameGraph::ResourceVersion;
-	using CompilePassRecord = FrameGraph::CompilePassRecord;
-	using CompileResourceEntry = FrameGraph::CompileResourceEntry;
-
 	void BuildCompiledPlanResources() noexcept;
 	void BuildResourceVersionGraph() noexcept;
 	void FinalizePassDependencies() noexcept;
 	void DeduplicatePassDependencies() noexcept;
 	void CullDeadPasses() noexcept;
-	void MarkPassAliveRecursive(PassIndex passIndex) noexcept;
-	bool IsRootPass(const CompilePassRecord& passRecord) const noexcept;
-	const char* GetRootPassReason(const CompilePassRecord& passRecord) const noexcept;
-	bool WritesBackBuffer(const CompilePassRecord& passRecord) const noexcept;
+	void MarkPassAliveRecursive(FrameGraphPassIndex passIndex) noexcept;
+	bool IsRootPass(const FrameGraphPassNode& passRecord) const noexcept;
+	const char* GetRootPassReason(const FrameGraphPassNode& passRecord) const noexcept;
+	bool WritesBackBuffer(const FrameGraphPassNode& passRecord) const noexcept;
 	void BuildPassSuccessorsAndInDegrees() noexcept;
 	void BuildTopologicalExecutionOrder() noexcept;
 	void ValidateExecutionOrder() const noexcept;
@@ -35,19 +28,19 @@ class FrameGraphCompiler final
 	void BuildTransientPhysicalBlockAssignments() noexcept;
 	void BuildTransientAliasingBarriers() noexcept;
 	void ResetCompiledResourceStatesForBarrierPlanning() noexcept;
-	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const CompileResourceEntry& resource)
+	ResourceState InferRequiredResourceState(const PassResourceDeclaration& declaration, const FrameGraphResourceNode& resource)
 	    const noexcept;
-	bool ShouldRestoreFinalState(const CompileResourceEntry& resource) const noexcept;
-	void BuildPassResourceVersionDependencies(CompilePassRecord& passRecord) noexcept;
-	void RegisterReadDependency(CompilePassRecord& passRecord, CompileResourceEntry& resource) noexcept;
-	void RegisterWriteDependency(CompilePassRecord& passRecord, CompileResourceEntry& resource) noexcept;
-	ResourceVersion& GetCurrentResourceVersion(CompileResourceEntry& resource) noexcept;
-	const ResourceVersion& GetCurrentResourceVersion(const CompileResourceEntry& resource) const noexcept;
-	CompileResourceEntry& GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept;
-	const CompileResourceEntry& GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept;
-	FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept;
-	const FrameGraph::CompiledTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept;
+	bool ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept;
+	void BuildPassResourceVersionDependencies(FrameGraphPassNode& passRecord) noexcept;
+	void RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;
+	void RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept;
+	FrameGraphResourceVersion& GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept;
+	const FrameGraphResourceVersion& GetCurrentResourceVersion(const FrameGraphResourceNode& resource) const noexcept;
+	FrameGraphResourceNode& GetCompiledResourceEntry(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraphResourceNode& GetCompiledResourceEntry(FrameGraphResourceHandle handle) const noexcept;
+	FrameGraphTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) noexcept;
+	const FrameGraphTransientResourcePlan* FindTransientResourcePlan(FrameGraphResourceHandle handle) const noexcept;
 
-	FrameGraph::CompiledPlan& m_plan;
+	FrameGraphPlan& m_plan;
 	ResourceRegistry& m_resourceRegistry;
 };

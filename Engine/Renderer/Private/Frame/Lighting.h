@@ -2,6 +2,6 @@
 
 #include "FrameGraph/Features/FrameGraphProducts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-void AddLightingPasses(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const LightingTargets& lighting, const GBufferTargets& gbuffer);
+void AddLightingPasses(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const LightingTargets& lighting, const GBufferTargets& gbuffer);

@@ -3,7 +3,7 @@
 #include "FrameGraph/Features/FrameGraphProducts.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-GBufferTargets CreateGBufferTargets(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets);
-void AddGBufferPass(FrameGraph& frameGraph, const GBufferTargets& targets);
+GBufferTargets CreateGBufferTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, const SceneTargets& sceneTargets);
+void AddGBufferPass(FrameGraphBuilder& builder, const GBufferTargets& targets);

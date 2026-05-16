@@ -3,21 +3,38 @@
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
+#include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/ResourceUsage.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
-class FrameGraph;
+#include <string_view>
+#include <vector>
 
-class PassBuilder final
+class PassResourceDeclarationSink final
 {
   public:
-	explicit PassBuilder(FrameGraph& frameGraph) noexcept;
-	~PassBuilder() noexcept = default;
+	explicit PassResourceDeclarationSink(std::vector<PassResourceDeclaration>& declarations) noexcept;
 
-	PassBuilder(const PassBuilder&) = delete;
-	PassBuilder& operator=(const PassBuilder&) = delete;
-	PassBuilder(PassBuilder&&) = delete;
-	PassBuilder& operator=(PassBuilder&&) = delete;
+	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label = {}) noexcept;
+	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label = {}) noexcept;
+	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label = {}) noexcept;
+
+  private:
+	void Record(PassResourceDeclaration declaration) noexcept;
+
+	std::vector<PassResourceDeclaration>* m_declarations = nullptr;
+};
+
+class PassResourceBuilder final
+{
+  public:
+	explicit PassResourceBuilder(PassResourceDeclarationSink& declarations) noexcept;
+	~PassResourceBuilder() noexcept = default;
+
+	PassResourceBuilder(const PassResourceBuilder&) = delete;
+	PassResourceBuilder& operator=(const PassResourceBuilder&) = delete;
+	PassResourceBuilder(PassResourceBuilder&&) = delete;
+	PassResourceBuilder& operator=(PassResourceBuilder&&) = delete;
 
 	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
@@ -41,5 +58,5 @@ class PassBuilder final
 	    const PassParameterDesc& parameter,
 	    std::uint32_t arrayIndex) noexcept;
 
-	FrameGraph* m_frameGraph = nullptr;
+	PassResourceDeclarationSink* m_declarations = nullptr;
 };

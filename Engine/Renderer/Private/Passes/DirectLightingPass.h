@@ -11,6 +11,7 @@
 #include <cstdint>
 
 class FrameGraph;
+class FrameGraphBuilder;
 struct DirectLightingPassRuntime;
 struct RenderGraphPassContext;
 struct RenderPassContext;
@@ -57,7 +58,7 @@ class DirectLightingPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(
-	    FrameGraph& frameGraph,
+	    FrameGraphBuilder& builder,
 	    const LightingTargets& lighting,
 	    const GBufferTargets& gbuffer,
 	    ParameterInstance& parameters);

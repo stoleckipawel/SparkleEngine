@@ -4,6 +4,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/PassUtilities.h"
 #include "Passes/ShaderPass.h"
 #include "Pipeline/RenderPassPipelineTraits.h"
@@ -30,11 +31,11 @@ ShaderPackageDefinition IndirectLightingPass::DescribeShaderPackage() noexcept
 	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
-void IndirectLightingPass::DeclareResources(FrameGraph& frameGraph, const LightingTargets& lighting, ParameterInstance& parameters)
+void IndirectLightingPass::DeclareResources(FrameGraphBuilder& builder, const LightingTargets& lighting, ParameterInstance& parameters)
 {
-	parameters->IndirectDiffuse = frameGraph.CreateUAV(lighting.IndirectDiffuse);
-	parameters->IndirectSpecular = frameGraph.CreateUAV(lighting.IndirectSpecular);
-	parameters->IndirectSubsurface = frameGraph.CreateUAV(lighting.IndirectSubsurface);
+	parameters->IndirectDiffuse = builder.CreateUAV(lighting.IndirectDiffuse);
+	parameters->IndirectSpecular = builder.CreateUAV(lighting.IndirectSpecular);
+	parameters->IndirectSubsurface = builder.CreateUAV(lighting.IndirectSubsurface);
 }
 
 void IndirectLightingPass::Execute(RenderGraphPassContext& context, ParameterInstance& parameters)

@@ -2,6 +2,6 @@
 
 #include "FrameGraph/Features/FrameGraphProducts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-void AddSkyPass(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer);
+void AddSkyPass(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const GBufferTargets& gbuffer);

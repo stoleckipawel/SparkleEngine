@@ -1,16 +1,16 @@
 #include "../PCH.h"
 #include "Frame/LightingComposite.h"
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/LightingCompositePass.h"
 
 void AddLightingCompositePass(
-    FrameGraph& frameGraph,
+    FrameGraphBuilder& builder,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,
     const GBufferTargets& gbuffer)
 {
-	auto& parameters = frameGraph.AllocPassParameters<LightingCompositePass>();
-	LightingCompositePass::DeclareResources(frameGraph, sceneTargets, lighting, gbuffer, parameters);
-	frameGraph.AddComputePass<LightingCompositePass>(LightingCompositePass::PassName, parameters);
+	auto& parameters = builder.AllocPassParameters<LightingCompositePass>();
+	LightingCompositePass::DeclareResources(builder, sceneTargets, lighting, gbuffer, parameters);
+	builder.AddComputePass<LightingCompositePass>(LightingCompositePass::PassName, parameters);
 }

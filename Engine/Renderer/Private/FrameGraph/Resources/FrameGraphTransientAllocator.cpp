@@ -9,7 +9,7 @@
 
 namespace
 {
-	bool RequiresShaderResourceView(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	bool RequiresShaderResourceView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
 		if (transientPlan.kind == FrameGraphResourceKind::ColorRenderTarget)
 		{
@@ -21,7 +21,7 @@ namespace
 		           transientPlan.requiredStates.end();
 	}
 
-	bool RequiresUnorderedAccessView(const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	bool RequiresUnorderedAccessView(const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
 		return transientPlan.kind != FrameGraphResourceKind::DepthStencil &&
 		       std::find(transientPlan.requiredStates.begin(), transientPlan.requiredStates.end(), ResourceState::UnorderedAccess) !=
@@ -38,7 +38,7 @@ namespace
 		return std::wstring(name.begin(), name.end());
 	}
 
-	std::wstring BuildHeapDebugName(const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+	std::wstring BuildHeapDebugName(const FrameGraphTransientResourcePlan& transientPlan)
 	{
 		const std::string& debugName =
 		    transientPlan.resourceClass == FrameGraphResourceClass::Buffer ? transientPlan.bufferDesc.name : transientPlan.textureDesc.name;
@@ -155,7 +155,7 @@ void FrameGraphTransientAllocator::ReleaseAllocationDescriptors(AllocationList& 
 }
 
 FrameGraphTransientAllocator::AllocationRecord& FrameGraphTransientAllocator::Materialize(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraphTransientResourcePlan& transientPlan)
 {
 	AllocationList& allocations = GetAllocationList(transientPlan.physicalAllocation.pool);
 	if (AllocationRecord* existingAllocation = const_cast<AllocationRecord*>(FindAllocationInList(allocations, transientPlan.handle)))
@@ -201,13 +201,13 @@ const FrameGraphTransientAllocator::AllocationRecord* FrameGraphTransientAllocat
 }
 
 FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+    FrameGraphTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth:
+		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
 			return m_depthBlocks;
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer:
+		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
 			return m_bufferBlocks;
 		default:
 			return m_colorBlocks;
@@ -215,13 +215,13 @@ FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockL
 }
 
 const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::GetBlockList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+    FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth:
+		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
 			return m_depthBlocks;
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer:
+		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
 			return m_bufferBlocks;
 		default:
 			return m_colorBlocks;
@@ -229,13 +229,13 @@ const FrameGraphTransientAllocator::BlockList& FrameGraphTransientAllocator::Get
 }
 
 FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept
+    FrameGraphTransientResourcePlan::AllocationPool pool) noexcept
 {
 	switch (pool)
 	{
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth:
+		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
 			return m_depthAllocations;
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer:
+		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
 			return m_bufferAllocations;
 		default:
 			return m_colorAllocations;
@@ -243,13 +243,13 @@ FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetA
 }
 
 const FrameGraphTransientAllocator::AllocationList& FrameGraphTransientAllocator::GetAllocationList(
-    FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept
+    FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept
 {
 	switch (pool)
 	{
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth:
+		case FrameGraphTransientResourcePlan::AllocationPool::Depth:
 			return m_depthAllocations;
-		case FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer:
+		case FrameGraphTransientResourcePlan::AllocationPool::Buffer:
 			return m_bufferAllocations;
 		default:
 			return m_colorAllocations;
@@ -287,10 +287,10 @@ FrameGraphTransientAllocator::PhysicalBlockRecord* FrameGraphTransientAllocator:
 }
 
 FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator::GetOrCreatePhysicalBlock(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraphTransientResourcePlan& transientPlan)
 {
 	assert(m_renderHardwareInterface != nullptr);
-	assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
+	assert(transientPlan.physicalAllocation.physicalBlockIndex != INVALID_FRAME_GRAPH_RESOURCE_INDEX);
 	BlockList& blocks = GetBlockList(transientPlan.physicalAllocation.pool);
 	if (PhysicalBlockRecord* existingBlock = FindPhysicalBlock(blocks, transientPlan.physicalAllocation.physicalBlockIndex))
 	{
@@ -304,9 +304,9 @@ FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator:
 	block.alignment = transientPlan.physicalAllocation.alignment;
 	block.heapOffset = transientPlan.physicalAllocation.heapOffset;
 	block.ownedHeap = m_renderHardwareInterface->CreateOwnedHeap(
-	    block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer
+	    block.pool == FrameGraphTransientResourcePlan::AllocationPool::Buffer
 	        ? RhiTransientAllocationPool::Buffer
-	        : (block.pool == FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth ? RhiTransientAllocationPool::Depth
+	        : (block.pool == FrameGraphTransientResourcePlan::AllocationPool::Depth ? RhiTransientAllocationPool::Depth
 	                                                                                          : RhiTransientAllocationPool::Color),
 	    block.sizeInBytes,
 	    block.alignment,
@@ -318,12 +318,12 @@ FrameGraphTransientAllocator::PhysicalBlockRecord& FrameGraphTransientAllocator:
 }
 
 FrameGraphTransientAllocator::AllocationRecord FrameGraphTransientAllocator::CreateAllocationRecord(
-    const FrameGraph::CompiledTransientResourcePlan& transientPlan)
+    const FrameGraphTransientResourcePlan& transientPlan)
 {
 	assert(m_renderHardwareInterface != nullptr);
 	assert(transientPlan.handle.IsValid());
-	assert(transientPlan.physicalAllocation.allocationIndex != FrameGraph::INVALID_RESOURCE_INDEX);
-	assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
+	assert(transientPlan.physicalAllocation.allocationIndex != INVALID_FRAME_GRAPH_RESOURCE_INDEX);
+	assert(transientPlan.physicalAllocation.physicalBlockIndex != INVALID_FRAME_GRAPH_RESOURCE_INDEX);
 	assert(transientPlan.physicalAllocation.sizeInBytes > 0);
 	assert(transientPlan.physicalAllocation.alignment > 0);
 

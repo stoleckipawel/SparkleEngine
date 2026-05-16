@@ -338,8 +338,8 @@ void Renderer::InitializeFrameGraph() noexcept
 	    ResolveSceneExtent(),
 	    ShouldPresentSceneToBackBuffer()};
 
-	FrameGraphBuilder frameGraphBuilder(dependencies);
-	FrameGraphBuildResult buildResult = frameGraphBuilder.Build();
+	FrameGraphFactory frameGraphFactory(dependencies);
+	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 
 	m_viewportSceneColorHandle =
@@ -461,7 +461,7 @@ void Renderer::RecordFrame() noexcept
 	}
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph setup end");
 
-	const FrameGraph::CompiledPlan compiledPlan = [&]()
+	const FrameGraphPlan compiledPlan = [&]()
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphCompile");
 		return m_frameGraph->Compile();

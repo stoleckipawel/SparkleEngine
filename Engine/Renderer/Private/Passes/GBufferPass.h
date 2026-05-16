@@ -13,6 +13,7 @@
 class RenderCommandContext;
 struct RasterPassRuntime;
 class FrameGraph;
+class FrameGraphBuilder;
 struct RenderGraphPassContext;
 struct RenderSceneData;
 struct RenderPassContext;
@@ -87,7 +88,7 @@ class GBufferPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const DrawParameterMetadata& GetDrawParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeGBufferShaderPackage() noexcept;
-	static void DeclareResources(FrameGraph& frameGraph, const GBufferTargets& targets, ParameterInstance& parameters);
+	static void DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters);
 	static void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 

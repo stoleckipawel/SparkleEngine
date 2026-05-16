@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Compiler/FrameGraphPlan.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <memory>
 #include <vector>
@@ -14,8 +15,8 @@ class FrameGraphTransientAllocator final
 	{
 		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
 		FrameGraphResourceKind kind = FrameGraphResourceKind::ColorRenderTarget;
-		std::uint32_t allocationIndex = FrameGraph::INVALID_RESOURCE_INDEX;
-		std::uint32_t physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
+		std::uint32_t allocationIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
+		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
 		std::uint64_t heapOffset = 0;
@@ -35,8 +36,8 @@ class FrameGraphTransientAllocator final
 
 	struct PhysicalBlockRecord
 	{
-		std::uint32_t physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
-		FrameGraph::CompiledTransientResourcePlan::AllocationPool pool = FrameGraph::CompiledTransientResourcePlan::AllocationPool::Color;
+		std::uint32_t physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
+		FrameGraphTransientResourcePlan::AllocationPool pool = FrameGraphTransientResourcePlan::AllocationPool::Color;
 		std::uint64_t sizeInBytes = 0;
 		std::uint64_t alignment = 0;
 		std::uint64_t heapOffset = 0;
@@ -52,7 +53,7 @@ class FrameGraphTransientAllocator final
 	FrameGraphTransientAllocator& operator=(FrameGraphTransientAllocator&&) = delete;
 
 	void Reset() noexcept;
-	AllocationRecord& Materialize(const FrameGraph::CompiledTransientResourcePlan& transientPlan);
+	AllocationRecord& Materialize(const FrameGraphTransientResourcePlan& transientPlan);
 	const AllocationRecord* FindAllocation(FrameGraphResourceHandle handle) const noexcept;
 	const AllocationRecord* FindDepthAllocation(FrameGraphResourceHandle handle) const noexcept;
 	const AllocationRecord* FindColorAllocation(FrameGraphResourceHandle handle) const noexcept;
@@ -63,12 +64,12 @@ class FrameGraphTransientAllocator final
 	using BlockList = std::vector<PhysicalBlockRecord>;
 
 	void ReleaseAllocationDescriptors(AllocationList& allocations) noexcept;
-	AllocationRecord CreateAllocationRecord(const FrameGraph::CompiledTransientResourcePlan& transientPlan);
-	PhysicalBlockRecord& GetOrCreatePhysicalBlock(const FrameGraph::CompiledTransientResourcePlan& transientPlan);
-	AllocationList& GetAllocationList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept;
-	const AllocationList& GetAllocationList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept;
-	BlockList& GetBlockList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) noexcept;
-	const BlockList& GetBlockList(FrameGraph::CompiledTransientResourcePlan::AllocationPool pool) const noexcept;
+	AllocationRecord CreateAllocationRecord(const FrameGraphTransientResourcePlan& transientPlan);
+	PhysicalBlockRecord& GetOrCreatePhysicalBlock(const FrameGraphTransientResourcePlan& transientPlan);
+	AllocationList& GetAllocationList(FrameGraphTransientResourcePlan::AllocationPool pool) noexcept;
+	const AllocationList& GetAllocationList(FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept;
+	BlockList& GetBlockList(FrameGraphTransientResourcePlan::AllocationPool pool) noexcept;
+	const BlockList& GetBlockList(FrameGraphTransientResourcePlan::AllocationPool pool) const noexcept;
 	const AllocationRecord* FindAllocationInList(const AllocationList& allocations, FrameGraphResourceHandle handle) const noexcept;
 	PhysicalBlockRecord* FindPhysicalBlock(BlockList& blocks, std::uint32_t physicalBlockIndex) noexcept;
 

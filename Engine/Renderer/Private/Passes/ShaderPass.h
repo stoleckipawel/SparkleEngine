@@ -9,7 +9,8 @@
 
 class RenderCommandContext;
 class FrameGraph;
-class PassBuilder;
+class FrameGraphBuilder;
+class PassResourceBuilder;
 class PassParameterLayout;
 class PassBindingOverrides;
 class RenderHardwareInterface;
@@ -32,7 +33,7 @@ struct ComputeDispatchDesc
 	std::uint32_t GroupCountZ = 1;
 };
 
-SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept;
+SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet) noexcept;
 SPARKLE_RENDERER_API void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
@@ -97,7 +98,7 @@ class SPARKLE_RENDERER_API ShaderPass
 	}
 
 	template <typename TParameterBindings>
-	static bool SetupParameterUsages(PassBuilder& builder, const TParameterBindings& parameters, const char* passName) noexcept
+	static bool SetupParameterUsages(PassResourceBuilder& builder, const TParameterBindings& parameters, const char* passName) noexcept
 	{
 		const PassParameterSet& parameterSet = GetPassParameterSet(parameters);
 		if (!ValidateSetupParameterSet(parameterSet, passName))
@@ -250,7 +251,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	ShaderPassKind GetPassKind() const noexcept final { return ShaderPassKind::Compute; }
 
 	template <typename TParameterBindings>
-	static bool Setup(PassBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
+	static bool Setup(PassResourceBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
 	{
 		return SetupParameterUsages(builder, parameters, passName);
 	}
@@ -299,7 +300,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	ShaderPassKind GetPassKind() const noexcept final { return ShaderPassKind::Raster; }
 
 	template <typename TParameterBindings>
-	static bool Setup(PassBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
+	static bool Setup(PassResourceBuilder& builder, const TParameterBindings& parameters, const char* passName = nullptr) noexcept
 	{
 		return SetupParameterUsages(builder, parameters, passName);
 	}

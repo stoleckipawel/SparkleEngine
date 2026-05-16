@@ -2,6 +2,6 @@
 
 #include "FrameGraph/Features/FrameGraphProducts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-void AddPresentationPass(FrameGraph& frameGraph, const SceneTargets& sceneTargets);
+void AddPresentationPass(FrameGraphBuilder& builder, const SceneTargets& sceneTargets);

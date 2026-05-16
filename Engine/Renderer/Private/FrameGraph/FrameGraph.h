@@ -3,7 +3,8 @@
 #include "FrameGraph/FrameGraphPassFlags.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "FrameGraph/PassResourceDeclaration.h"
-#include "FrameGraph/Builder/PassBuilder.h"
+#include "FrameGraph/Builder/PassResourceBuilder.h"
+#include "FrameGraph/Compiler/FrameGraphPlan.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "FrameGraph/ResourceRegistry.h"
@@ -37,9 +38,6 @@ struct FrameContext;
 
 class FrameGraph
 {
-  public:
-	struct CompiledPlan;
-
   private:
 	struct AllocatedParameterInstanceBase
 	{
@@ -62,8 +60,8 @@ class FrameGraph
 		using ExecuteFnType = std::decay_t<ExecuteFn>;
 
 		static_assert(
-		    std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassBuilder&>,
-		    "FrameGraph setup lambda must accept (PassBuilder&, const FrameContext&) or (PassBuilder&).\n");
+		    std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&> || std::is_invocable_v<SetupFnType&, PassResourceBuilder&>,
+		    "FrameGraph setup lambda must accept (PassResourceBuilder&, const FrameContext&) or (PassResourceBuilder&).\n");
 		static_assert(
 		    std::is_invocable_v<ExecuteFnType&, RenderGraphPassContext&>,
 		    "FrameGraph execute lambda must accept (RenderGraphPassContext&). ");
@@ -75,9 +73,9 @@ class FrameGraph
 		    RegisteredPass{
 		        std::string(name),
 		        flags,
-		        [setup = std::move(normalizedSetup)](PassBuilder& builder, const FrameContext& frame) mutable
+		        [setup = std::move(normalizedSetup)](PassResourceBuilder& builder, const FrameContext& frame) mutable
 		        {
-			        if constexpr (std::is_invocable_v<SetupFnType&, PassBuilder&, const FrameContext&>)
+			        if constexpr (std::is_invocable_v<SetupFnType&, PassResourceBuilder&, const FrameContext&>)
 			        {
 				        setup(builder, frame);
 			        }
@@ -100,7 +98,7 @@ class FrameGraph
 		    name,
 		    EFrameGraphPassFlags::Raster,
 		    parameters,
-		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
 			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -115,7 +113,7 @@ class FrameGraph
 		    name,
 		    EFrameGraphPassFlags::Raster,
 		    parameters,
-		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
 			    return RasterShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -130,7 +128,7 @@ class FrameGraph
 		    name,
 		    EFrameGraphPassFlags::Compute,
 		    parameters,
-		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -145,7 +143,7 @@ class FrameGraph
 		    name,
 		    EFrameGraphPassFlags::Compute,
 		    parameters,
-		    [](PassBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
+		    [](PassResourceBuilder& builder, const TParameterBindings& typedParameters, const char* passName)
 		    {
 			    return ComputeShaderPass<typename TPass::Parameters>::Setup(builder, typedParameters, passName);
 		    },
@@ -154,10 +152,10 @@ class FrameGraph
 
 	void Setup(const FrameContext& frame);
 
-	CompiledPlan Compile();
+	FrameGraphPlan Compile();
 
 	void Execute(
-	    const CompiledPlan& plan,
+	    const FrameGraphPlan& plan,
 	    RenderCommandContext& cmd,
 	    const FrameContext& frame,
 	    const RenderPassContext& renderPassContext,
@@ -279,156 +277,8 @@ class FrameGraph
 		return field;
 	}
 
-	using PassIndex = std::uint32_t;
-	using ResourceIndex = std::uint32_t;
-	static constexpr PassIndex INVALID_PASS_INDEX = static_cast<PassIndex>(-1);
-	static constexpr ResourceIndex INVALID_RESOURCE_INDEX = static_cast<ResourceIndex>(-1);
-
-	struct CompiledBarrier
-	{
-		enum class Type : std::uint8_t
-		{
-			Transition,
-			UnorderedAccess
-		};
-
-		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
-		Type type = Type::Transition;
-		ResourceState before = ResourceState::Common;
-		ResourceState after = ResourceState::Common;
-	};
-
-	struct CompiledAliasingBarrier
-	{
-		std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
-		FrameGraphResourceHandle beforeHandle = FrameGraphResourceHandle::Invalid();
-		FrameGraphResourceHandle afterHandle = FrameGraphResourceHandle::Invalid();
-		PassIndex executeBeforePass = INVALID_PASS_INDEX;
-		PassIndex executeAfterPass = INVALID_PASS_INDEX;
-	};
-
-	struct ResourceVersion
-	{
-		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
-		std::uint32_t version = 0;
-		PassIndex writerPass = INVALID_PASS_INDEX;
-		std::vector<PassIndex> readerPasses;
-	};
-
-	struct CompilePassRecord
-	{
-		PassIndex index = INVALID_PASS_INDEX;
-		std::string passName;
-		EFrameGraphPassFlags flags = EFrameGraphPassFlags::None;
-		EFrameGraphPassFlags passKind = EFrameGraphPassFlags::None;
-		std::string diagnosticName;
-		std::string displayLabel;
-		std::string eventScopeLabel;
-		std::vector<PassResourceDeclaration> declarations;
-		std::vector<PassIndex> dependsOn;
-		std::vector<PassIndex> successors;
-		std::uint32_t inDegree = 0;
-		bool alive = true;
-		std::vector<CompiledAliasingBarrier> compiledAliasingBarriers;
-		std::vector<CompiledBarrier> compiledBarriers;
-	};
-
-	struct CompileResourceEntry
-	{
-		ResourceIndex index = INVALID_RESOURCE_INDEX;
-		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
-		FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
-		FrameGraphResourceKind kind = FrameGraphResourceKind::BackBuffer;
-		FrameGraphResourceOwnership ownership = FrameGraphResourceOwnership::Transient;
-		ResourceState initialState = ResourceState::Common;
-		ResourceState finalState = ResourceState::Common;
-		ResourceState currentState = ResourceState::Common;
-		std::string debugName;
-		std::uint32_t currentVersion = 0;
-		std::vector<ResourceVersion> versions;
-	};
-
-	struct CompiledTransientResourcePlan
-	{
-		enum class AllocationPool : std::uint8_t
-		{
-			Color,
-			Depth,
-			Buffer
-		};
-
-		struct PhysicalAllocationPlan
-		{
-			std::uint32_t allocationIndex = INVALID_RESOURCE_INDEX;
-			std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
-			AllocationPool pool = AllocationPool::Color;
-			std::uint64_t sizeInBytes = 0;
-			std::uint64_t alignment = 0;
-			std::uint64_t heapOffset = 0;
-			RhiTextureResourceDesc textureResourceDesc{};
-			RhiBufferResourceDesc bufferResourceDesc{};
-			RhiOptimizedClearValue optimizedClearValue{};
-			bool hasOptimizedClearValue = false;
-			ResourceState initialState = ResourceState::Common;
-		};
-
-		FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();
-		FrameGraphResourceClass resourceClass = FrameGraphResourceClass::Texture;
-		FrameGraphTextureDesc textureDesc{};
-		FrameGraphBufferDesc bufferDesc{};
-		FrameGraphResourceKind kind = FrameGraphResourceKind::ColorRenderTarget;
-		PhysicalAllocationPlan physicalAllocation{};
-		PassIndex firstUserPass = INVALID_PASS_INDEX;
-		PassIndex lastUserPass = INVALID_PASS_INDEX;
-		PassIndex firstExecutionIndex = INVALID_PASS_INDEX;
-		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
-		bool readUsed = false;
-		bool writeUsed = false;
-		std::vector<ResourceState> requiredStates;
-	};
-
-	struct CompiledPhysicalBlockPlan
-	{
-		std::uint32_t physicalBlockIndex = INVALID_RESOURCE_INDEX;
-		CompiledTransientResourcePlan::AllocationPool pool = CompiledTransientResourcePlan::AllocationPool::Color;
-		std::uint64_t sizeInBytes = 0;
-		std::uint64_t alignment = 0;
-		std::uint64_t heapOffset = 0;
-		RhiTextureResourceDesc textureResourceDesc{};
-		RhiBufferResourceDesc bufferResourceDesc{};
-		RhiOptimizedClearValue optimizedClearValue{};
-		bool hasOptimizedClearValue = false;
-		PassIndex firstExecutionIndex = INVALID_PASS_INDEX;
-		PassIndex lastExecutionIndex = INVALID_PASS_INDEX;
-		std::vector<FrameGraphResourceHandle> handles;
-	};
-
-	struct CompiledPlan
-	{
-		std::vector<CompilePassRecord> passes;
-		std::vector<CompileResourceEntry> resources;
-		std::vector<CompiledTransientResourcePlan> transientResources;
-		std::vector<CompiledPhysicalBlockPlan> physicalBlocks;
-		std::vector<PassIndex> executionOrder;
-		std::vector<CompiledAliasingBarrier> finalAliasingBarriers;
-		std::vector<CompiledBarrier> finalBarriers;
-
-		void Clear() noexcept
-		{
-			passes.clear();
-			resources.clear();
-			transientResources.clear();
-			physicalBlocks.clear();
-			executionOrder.clear();
-			finalAliasingBarriers.clear();
-			finalBarriers.clear();
-		}
-	};
-
   private:
-	friend class PassBuilder;
-
-	using SetupCallback = std::function<void(PassBuilder&, const FrameContext&)>;
+	using SetupCallback = std::function<void(PassResourceBuilder&, const FrameContext&)>;
 	using ExecuteCallback = std::function<void(RenderGraphPassContext&)>;
 
 	template <typename TPass, typename TParameterBindings, typename... TExecuteArgs>
@@ -480,7 +330,7 @@ class FrameGraph
 		        std::string(name),
 		        flags,
 		        [parameterBindings, passName, setupValid, setupFn = std::forward<SetupFn>(setupFn)](
-		            PassBuilder& builder,
+		            PassResourceBuilder& builder,
 		            const FrameContext&) mutable
 		        {
 			        *setupValid = setupFn(builder, *parameterBindings, passName.c_str());
@@ -500,16 +350,6 @@ class FrameGraph
 		            })});
 	}
 
-	void BeginPassSetup() noexcept;
-	void EndPassSetup() noexcept;
-	void RecordDeclaration(PassResourceDeclaration declaration) noexcept;
-	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
-	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
-	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
-	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
-
 	RhiCpuDescriptorHandle ResolveRenderTargetView(FrameGraphResourceHandle handle) const noexcept;
 	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
@@ -524,14 +364,14 @@ class FrameGraph
 	NativeResourceHandle ResolveTransientResource(FrameGraphResourceHandle handle, FrameGraphResourceKind kind) const noexcept;
 	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
-	void BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept;
-	void EnsureTransientResourcesMaterialized(const CompiledPlan& plan) const noexcept;
+	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;
+	void EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept;
 	void ReleaseExternalViewDescriptors() noexcept;
-	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept;
-	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledAliasingBarrier>& barriers)
+	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept;
+	void EmitCompiledAliasingBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphAliasingBarrier>& barriers)
 	    const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept;
-	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
+	void EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers) const noexcept;
 	FrameGraphResourceHandle AllocateDynamicResourceHandle() noexcept;
 
 	struct VirtualTransientResource
@@ -555,11 +395,9 @@ class FrameGraph
 	Window* m_window = nullptr;
 	RenderViewportExtent m_sceneExtent = {};
 	mutable ResourceRegistry m_resourceRegistry;
-	CompiledPlan m_compiledPlan;
+	FrameGraphPlan m_compiledPlan;
 	std::uint32_t m_nextDynamicResourceIndex = 0;
 	std::vector<VirtualTransientResource> m_virtualTransientResources;
 	mutable std::unique_ptr<FrameGraphTransientAllocator> m_transientAllocator;
 	std::vector<std::unique_ptr<AllocatedParameterInstanceBase>> m_allocatedParameterInstances;
-	std::vector<PassResourceDeclaration> m_activePassDeclarations;
-	bool m_isSettingUpPass = false;
 };

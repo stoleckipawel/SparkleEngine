@@ -6,7 +6,7 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Frame/RenderViewData.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Passes/PassUtilities.h"
@@ -68,15 +68,15 @@ void GBufferPass::Execute(RenderGraphPassContext& context, ParameterInstance& pa
 	DrawOpaqueMeshes(context.Graph, context.Commands, context.Frame.sceneData, runtime, context.Runtime);
 }
 
-void GBufferPass::DeclareResources(FrameGraph& frameGraph, const GBufferTargets& targets, ParameterInstance& parameters)
+void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferTargets& targets, ParameterInstance& parameters)
 {
-	parameters->BaseColor = frameGraph.CreateRenderTarget(targets.BaseColor);
-	parameters->Normal = frameGraph.CreateRenderTarget(targets.Normal);
-	parameters->Material = frameGraph.CreateRenderTarget(targets.Material);
-	parameters->Emissive = frameGraph.CreateRenderTarget(targets.Emissive);
-	parameters->Subsurface = frameGraph.CreateRenderTarget(targets.Subsurface);
-	parameters->DeviceZ = frameGraph.CreateRenderTarget(targets.DeviceZ);
-	parameters->MainDepth = frameGraph.CreateDepthTarget(targets.MainDepth);
+	parameters->BaseColor = builder.CreateRenderTarget(targets.BaseColor);
+	parameters->Normal = builder.CreateRenderTarget(targets.Normal);
+	parameters->Material = builder.CreateRenderTarget(targets.Material);
+	parameters->Emissive = builder.CreateRenderTarget(targets.Emissive);
+	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface);
+	parameters->DeviceZ = builder.CreateRenderTarget(targets.DeviceZ);
+	parameters->MainDepth = builder.CreateDepthTarget(targets.MainDepth);
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 }
 

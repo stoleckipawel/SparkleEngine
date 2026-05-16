@@ -5,7 +5,7 @@
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewData.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
@@ -86,13 +86,13 @@ ShaderPackageDefinition SkyPass::DescribeShaderPackage() noexcept
 }
 
 void SkyPass::DeclareResources(
-    FrameGraph& frameGraph,
+    FrameGraphBuilder& builder,
     const SceneTargets& sceneTargets,
     const GBufferTargets& gbuffer,
     ParameterInstance& parameters)
 {
-	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
-	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
+	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
+	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 }
 
 void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData, const RenderPassContext& renderPassContext)

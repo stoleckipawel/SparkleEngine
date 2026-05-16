@@ -10,9 +10,9 @@
 
 namespace
 {
-	bool RequiresUnorderedAccess(const FrameGraph::CompiledPlan& plan, FrameGraphResourceHandle handle) noexcept
+	bool RequiresUnorderedAccess(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
 	{
-		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
+		for (const FrameGraphPassNode& passRecord : plan.passes)
 		{
 			for (const PassResourceDeclaration& declaration : passRecord.declarations)
 			{
@@ -68,23 +68,23 @@ namespace
 		return clearValue;
 	}
 
-	FrameGraph::CompiledTransientResourcePlan::AllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind) noexcept
+	FrameGraphTransientResourcePlan::AllocationPool ResolveTransientAllocationPool(FrameGraphResourceKind kind) noexcept
 	{
 		if (kind == FrameGraphResourceKind::DepthStencil)
 		{
-			return FrameGraph::CompiledTransientResourcePlan::AllocationPool::Depth;
+			return FrameGraphTransientResourcePlan::AllocationPool::Depth;
 		}
 
 		if (kind == FrameGraphResourceKind::Buffer)
 		{
-			return FrameGraph::CompiledTransientResourcePlan::AllocationPool::Buffer;
+			return FrameGraphTransientResourcePlan::AllocationPool::Buffer;
 		}
 
-		return FrameGraph::CompiledTransientResourcePlan::AllocationPool::Color;
+		return FrameGraphTransientResourcePlan::AllocationPool::Color;
 	}
 }  // namespace
 
-void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noexcept
+void FrameGraph::BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept
 {
 	assert(m_renderHardwareInterface != nullptr);
 
@@ -111,15 +111,15 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 		                                                     : m_renderHardwareInterface->GetTextureAllocationInfo(textureResourceDesc);
 		const std::uint32_t allocationIndex = static_cast<std::uint32_t>(plan.transientResources.size());
 		plan.transientResources.push_back(
-		    CompiledTransientResourcePlan{
+		    FrameGraphTransientResourcePlan{
 		        .handle = transientResource.handle,
 		        .resourceClass = resourceMetadata.resourceClass,
 		        .textureDesc = transientResource.textureDesc,
 		        .bufferDesc = transientResource.bufferDesc,
 		        .kind = resourceMetadata.kind,
-		        .physicalAllocation = CompiledTransientResourcePlan::PhysicalAllocationPlan{
+		        .physicalAllocation = FrameGraphTransientResourcePlan::PhysicalAllocationPlan{
 		            .allocationIndex = allocationIndex,
-		            .physicalBlockIndex = INVALID_RESOURCE_INDEX,
+		            .physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX,
 		            .pool = ResolveTransientAllocationPool(resourceMetadata.kind),
 		            .sizeInBytes = allocationInfo.SizeInBytes,
 		            .alignment = allocationInfo.Alignment,
@@ -134,11 +134,11 @@ void FrameGraph::BuildTransientMaterializationPlan(CompiledPlan& plan) const noe
 	}
 }
 
-void FrameGraph::EnsureTransientResourcesMaterialized(const CompiledPlan& plan) const noexcept
+void FrameGraph::EnsureTransientResourcesMaterialized(const FrameGraphPlan& plan) const noexcept
 {
 	assert(m_transientAllocator != nullptr);
 
-	for (const CompiledTransientResourcePlan& transientPlan : plan.transientResources)
+	for (const FrameGraphTransientResourcePlan& transientPlan : plan.transientResources)
 	{
 		(void) m_transientAllocator->Materialize(transientPlan);
 	}

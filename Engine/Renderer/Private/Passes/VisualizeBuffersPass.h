@@ -11,6 +11,7 @@
 #include <cstdint>
 
 class FrameGraph;
+class FrameGraphBuilder;
 struct RenderGraphPassContext;
 struct RenderPassContext;
 struct RenderViewData;
@@ -63,7 +64,7 @@ class VisualizeBuffersPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
 	static void DeclareResources(
-	    FrameGraph& frameGraph,
+	    FrameGraphBuilder& builder,
 	    const SceneTargets& sceneTargets,
 	    const LightingTargets& lighting,
 	    const GBufferTargets& gbuffer,

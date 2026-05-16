@@ -9,9 +9,9 @@ static const auto g_frameGraphExternalLogger = Logging::GetOrCreateLogger("Rende
 
 namespace
 {
-	bool RequiresUnorderedAccessView(const FrameGraph::CompiledPlan& plan, FrameGraphResourceHandle handle) noexcept
+	bool RequiresUnorderedAccessView(const FrameGraphPlan& plan, FrameGraphResourceHandle handle) noexcept
 	{
-		for (const FrameGraph::CompilePassRecord& passRecord : plan.passes)
+		for (const FrameGraphPassNode& passRecord : plan.passes)
 		{
 			for (const PassResourceDeclaration& declaration : passRecord.declarations)
 			{

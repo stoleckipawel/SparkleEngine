@@ -10,6 +10,7 @@
 
 class RenderCommandContext;
 class FrameGraph;
+class FrameGraphBuilder;
 class PassParameterLayout;
 struct RenderGraphPassContext;
 
@@ -37,7 +38,7 @@ class ComputeClearPass final
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static const PassParameterLayout& GetParameterLayout() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
-	static void DeclareResources(FrameGraph& frameGraph, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
+	static void DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters);
 	static void Execute(
 	    RenderGraphPassContext& context,
 	    const ParameterInstance& parameters,

@@ -7,11 +7,11 @@
 #include "Frame/Sky.h"
 #include "Frame/VisualizeBuffers.h"
 
-void AddLightingPasses(FrameGraph& frameGraph, const SceneTargets& sceneTargets, const LightingTargets& lighting, const GBufferTargets& gbuffer)
+void AddLightingPasses(FrameGraphBuilder& builder, const SceneTargets& sceneTargets, const LightingTargets& lighting, const GBufferTargets& gbuffer)
 {
-	AddDirectLightingPass(frameGraph, lighting, gbuffer);
-	AddIndirectLightingPass(frameGraph, lighting);
-	AddLightingCompositePass(frameGraph, sceneTargets, lighting, gbuffer);
-	AddVisualizeBuffersPass(frameGraph, sceneTargets, lighting, gbuffer);
-	AddSkyPass(frameGraph, sceneTargets, gbuffer);
+	AddDirectLightingPass(builder, lighting, gbuffer);
+	AddIndirectLightingPass(builder, lighting);
+	AddLightingCompositePass(builder, sceneTargets, lighting, gbuffer);
+	AddVisualizeBuffersPass(builder, sceneTargets, lighting, gbuffer);
+	AddSkyPass(builder, sceneTargets, gbuffer);
 }

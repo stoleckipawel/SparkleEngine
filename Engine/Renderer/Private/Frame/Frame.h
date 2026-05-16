@@ -3,7 +3,7 @@
 #include "FrameGraph/Features/FrameGraphProducts.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
 struct FrameBuildResult
 {
@@ -11,4 +11,4 @@ struct FrameBuildResult
 	GBufferTargets GBuffer;
 };
 
-FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, bool presentToBackBuffer);
+FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer);

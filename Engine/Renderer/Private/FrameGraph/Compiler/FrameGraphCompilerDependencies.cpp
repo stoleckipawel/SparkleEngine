@@ -9,9 +9,9 @@
 
 namespace
 {
-	void AddRawDependency(std::vector<FrameGraph::PassIndex>& dependsOn, FrameGraph::PassIndex dependency) noexcept
+	void AddRawDependency(std::vector<FrameGraphPassIndex>& dependsOn, FrameGraphPassIndex dependency) noexcept
 	{
-		if (dependency == FrameGraph::INVALID_PASS_INDEX)
+		if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			return;
 		}
@@ -19,9 +19,9 @@ namespace
 		dependsOn.push_back(dependency);
 	}
 
-	void RegisterVersionReader(FrameGraph::ResourceVersion& version, FrameGraph::PassIndex readerPass) noexcept
+	void RegisterVersionReader(FrameGraphResourceVersion& version, FrameGraphPassIndex readerPass) noexcept
 	{
-		if (readerPass == FrameGraph::INVALID_PASS_INDEX)
+		if (readerPass == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			return;
 		}
@@ -36,7 +36,7 @@ namespace
 
 void FrameGraphCompiler::BuildResourceVersionGraph() noexcept
 {
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		BuildPassResourceVersionDependencies(passRecord);
 	}
@@ -53,14 +53,14 @@ void FrameGraphCompiler::FinalizePassDependencies() noexcept
 
 void FrameGraphCompiler::DeduplicatePassDependencies() noexcept
 {
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
-		std::vector<PassIndex> deduplicated;
+		std::vector<FrameGraphPassIndex> deduplicated;
 		deduplicated.reserve(passRecord.dependsOn.size());
 
-		for (const PassIndex dependency : passRecord.dependsOn)
+		for (const FrameGraphPassIndex dependency : passRecord.dependsOn)
 		{
-			if (dependency == FrameGraph::INVALID_PASS_INDEX || dependency == passRecord.index)
+			if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX || dependency == passRecord.index)
 			{
 				continue;
 			}
@@ -78,10 +78,10 @@ void FrameGraphCompiler::DeduplicatePassDependencies() noexcept
 
 void FrameGraphCompiler::CullDeadPasses() noexcept
 {
-	std::vector<PassIndex> rootPasses;
+	std::vector<FrameGraphPassIndex> rootPasses;
 	rootPasses.reserve(m_plan.passes.size());
 
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		passRecord.alive = false;
 		if (GetRootPassReason(passRecord) != nullptr)
@@ -92,32 +92,32 @@ void FrameGraphCompiler::CullDeadPasses() noexcept
 
 	if (!m_plan.passes.empty() && rootPasses.empty())
 	{
-		for (CompilePassRecord& passRecord : m_plan.passes)
+		for (FrameGraphPassNode& passRecord : m_plan.passes)
 		{
 			passRecord.alive = true;
 		}
 		return;
 	}
 
-	for (const PassIndex rootPass : rootPasses)
+	for (const FrameGraphPassIndex rootPass : rootPasses)
 	{
 		MarkPassAliveRecursive(rootPass);
 	}
 }
 
-void FrameGraphCompiler::MarkPassAliveRecursive(PassIndex passIndex) noexcept
+void FrameGraphCompiler::MarkPassAliveRecursive(FrameGraphPassIndex passIndex) noexcept
 {
 	assert(passIndex < m_plan.passes.size());
-	CompilePassRecord& passRecord = m_plan.passes[passIndex];
+	FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 	if (passRecord.alive)
 	{
 		return;
 	}
 
 	passRecord.alive = true;
-	for (const PassIndex dependency : passRecord.dependsOn)
+	for (const FrameGraphPassIndex dependency : passRecord.dependsOn)
 	{
-		if (dependency == FrameGraph::INVALID_PASS_INDEX)
+		if (dependency == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			continue;
 		}
@@ -126,12 +126,12 @@ void FrameGraphCompiler::MarkPassAliveRecursive(PassIndex passIndex) noexcept
 	}
 }
 
-bool FrameGraphCompiler::IsRootPass(const CompilePassRecord& passRecord) const noexcept
+bool FrameGraphCompiler::IsRootPass(const FrameGraphPassNode& passRecord) const noexcept
 {
 	return GetRootPassReason(passRecord) != nullptr;
 }
 
-const char* FrameGraphCompiler::GetRootPassReason(const CompilePassRecord& passRecord) const noexcept
+const char* FrameGraphCompiler::GetRootPassReason(const FrameGraphPassNode& passRecord) const noexcept
 {
 	if (WritesBackBuffer(passRecord))
 	{
@@ -142,7 +142,7 @@ const char* FrameGraphCompiler::GetRootPassReason(const CompilePassRecord& passR
 }
 
 
-bool FrameGraphCompiler::WritesBackBuffer(const CompilePassRecord& passRecord) const noexcept
+bool FrameGraphCompiler::WritesBackBuffer(const FrameGraphPassNode& passRecord) const noexcept
 {
 	for (const PassResourceDeclaration& declaration : passRecord.declarations)
 	{
@@ -151,7 +151,7 @@ bool FrameGraphCompiler::WritesBackBuffer(const CompilePassRecord& passRecord) c
 			continue;
 		}
 
-		const CompileResourceEntry& resource = GetCompiledResourceEntry(declaration.handle);
+		const FrameGraphResourceNode& resource = GetCompiledResourceEntry(declaration.handle);
 		if (resource.kind == FrameGraphResourceKind::BackBuffer)
 		{
 			return true;
@@ -163,23 +163,23 @@ bool FrameGraphCompiler::WritesBackBuffer(const CompilePassRecord& passRecord) c
 
 void FrameGraphCompiler::BuildPassSuccessorsAndInDegrees() noexcept
 {
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		passRecord.successors.clear();
 		passRecord.inDegree = 0;
 	}
 
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		if (!passRecord.alive)
 		{
 			continue;
 		}
 
-		for (const PassIndex dependency : passRecord.dependsOn)
+		for (const FrameGraphPassIndex dependency : passRecord.dependsOn)
 		{
 			assert(dependency < m_plan.passes.size());
-			CompilePassRecord& dependencyPass = m_plan.passes[dependency];
+			FrameGraphPassNode& dependencyPass = m_plan.passes[dependency];
 			assert(dependencyPass.alive);
 			dependencyPass.successors.push_back(passRecord.index);
 			++passRecord.inDegree;
@@ -194,14 +194,14 @@ void FrameGraphCompiler::BuildTopologicalExecutionOrder() noexcept
 
 	std::vector<std::uint32_t> remainingInDegree;
 	remainingInDegree.reserve(m_plan.passes.size());
-	for (const CompilePassRecord& passRecord : m_plan.passes)
+	for (const FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		remainingInDegree.push_back(passRecord.inDegree);
 	}
 
-	std::vector<PassIndex> ready;
+	std::vector<FrameGraphPassIndex> ready;
 	ready.reserve(m_plan.passes.size());
-	for (const CompilePassRecord& passRecord : m_plan.passes)
+	for (const FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		if (passRecord.alive && passRecord.inDegree == 0)
 		{
@@ -211,11 +211,11 @@ void FrameGraphCompiler::BuildTopologicalExecutionOrder() noexcept
 
 	for (std::size_t readyIndex = 0; readyIndex < ready.size(); ++readyIndex)
 	{
-		const PassIndex passIndex = ready[readyIndex];
+		const FrameGraphPassIndex passIndex = ready[readyIndex];
 		m_plan.executionOrder.push_back(passIndex);
 
-		const CompilePassRecord& passRecord = m_plan.passes[passIndex];
-		for (const PassIndex successor : passRecord.successors)
+		const FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
+		for (const FrameGraphPassIndex successor : passRecord.successors)
 		{
 			assert(successor < remainingInDegree.size());
 			assert(remainingInDegree[successor] > 0);
@@ -234,20 +234,20 @@ void FrameGraphCompiler::ValidateExecutionOrder() const noexcept
 	std::vector<bool> visited(m_plan.passes.size(), false);
 	std::vector<std::size_t> orderPosition(m_plan.passes.size(), static_cast<std::size_t>(-1));
 
-	for (const CompilePassRecord& passRecord : m_plan.passes)
+	for (const FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		if (passRecord.alive)
 		{
 			++alivePassCount;
 		}
-		for (const PassIndex successor : passRecord.successors)
+		for (const FrameGraphPassIndex successor : passRecord.successors)
 		{
 			assert(successor < m_plan.passes.size());
 		}
 	}
 
 	assert(m_plan.executionOrder.size() == alivePassCount);
-	for (const PassIndex passIndex : m_plan.executionOrder)
+	for (const FrameGraphPassIndex passIndex : m_plan.executionOrder)
 	{
 		assert(passIndex < m_plan.passes.size());
 		assert(m_plan.passes[passIndex].alive);
@@ -260,14 +260,14 @@ void FrameGraphCompiler::ValidateExecutionOrder() const noexcept
 		orderPosition[m_plan.executionOrder[orderIndex]] = orderIndex;
 	}
 
-	for (const CompilePassRecord& passRecord : m_plan.passes)
+	for (const FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		if (!passRecord.alive)
 		{
 			continue;
 		}
 
-		for (const PassIndex dependency : passRecord.dependsOn)
+		for (const FrameGraphPassIndex dependency : passRecord.dependsOn)
 		{
 			assert(dependency < orderPosition.size());
 			assert(orderPosition[dependency] != static_cast<std::size_t>(-1));
@@ -277,7 +277,7 @@ void FrameGraphCompiler::ValidateExecutionOrder() const noexcept
 	}
 }
 
-void FrameGraphCompiler::BuildPassResourceVersionDependencies(CompilePassRecord& passRecord) noexcept
+void FrameGraphCompiler::BuildPassResourceVersionDependencies(FrameGraphPassNode& passRecord) noexcept
 {
 	for (const PassResourceDeclaration& declaration : passRecord.declarations)
 	{
@@ -286,7 +286,7 @@ void FrameGraphCompiler::BuildPassResourceVersionDependencies(CompilePassRecord&
 			continue;
 		}
 
-		CompileResourceEntry& resource = GetCompiledResourceEntry(declaration.handle);
+		FrameGraphResourceNode& resource = GetCompiledResourceEntry(declaration.handle);
 		if (IsReadOnlyUsage(declaration.usage))
 		{
 			RegisterReadDependency(passRecord, resource);
@@ -307,10 +307,10 @@ void FrameGraphCompiler::BuildPassResourceVersionDependencies(CompilePassRecord&
 	}
 }
 
-void FrameGraphCompiler::RegisterReadDependency(CompilePassRecord& passRecord, CompileResourceEntry& resource) noexcept
+void FrameGraphCompiler::RegisterReadDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
 {
-	ResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
-	if (currentVersion.writerPass != FrameGraph::INVALID_PASS_INDEX && currentVersion.writerPass != passRecord.index)
+	FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
+	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
 		AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
@@ -318,15 +318,15 @@ void FrameGraphCompiler::RegisterReadDependency(CompilePassRecord& passRecord, C
 	RegisterVersionReader(currentVersion, passRecord.index);
 }
 
-void FrameGraphCompiler::RegisterWriteDependency(CompilePassRecord& passRecord, CompileResourceEntry& resource) noexcept
+void FrameGraphCompiler::RegisterWriteDependency(FrameGraphPassNode& passRecord, FrameGraphResourceNode& resource) noexcept
 {
-	const ResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
-	if (currentVersion.writerPass != FrameGraph::INVALID_PASS_INDEX && currentVersion.writerPass != passRecord.index)
+	const FrameGraphResourceVersion& currentVersion = GetCurrentResourceVersion(resource);
+	if (currentVersion.writerPass != INVALID_FRAME_GRAPH_PASS_INDEX && currentVersion.writerPass != passRecord.index)
 	{
 		AddRawDependency(passRecord.dependsOn, currentVersion.writerPass);
 	}
 
-	for (const PassIndex readerPass : currentVersion.readerPasses)
+	for (const FrameGraphPassIndex readerPass : currentVersion.readerPasses)
 	{
 		if (readerPass == passRecord.index)
 		{
@@ -338,5 +338,5 @@ void FrameGraphCompiler::RegisterWriteDependency(CompilePassRecord& passRecord, 
 
 	resource.currentVersion = static_cast<std::uint32_t>(resource.versions.size());
 	resource.versions.push_back(
-	    ResourceVersion{.handle = resource.handle, .version = resource.currentVersion, .writerPass = passRecord.index});
+	    FrameGraphResourceVersion{.handle = resource.handle, .version = resource.currentVersion, .writerPass = passRecord.index});
 }

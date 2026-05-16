@@ -6,35 +6,35 @@
 #include "Frame/Lighting.h"
 #include "Frame/LightingTargets.h"
 #include "Frame/Presentation.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
-FrameBuildResult BuildFrame(FrameGraph& frameGraph, RenderViewportExtent sceneExtent, bool presentToBackBuffer)
+FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent, bool presentToBackBuffer)
 {
 	const FrameGraphTextureDesc sceneColorDesc =
 	    FrameGraphTextureDesc::CreateColor("SceneColor", sceneExtent.Width, sceneExtent.Height, RenderConfig::SceneColorFormat);
-	const FrameGraphTextureHandle sceneColor = frameGraph.CreateTexture(sceneColorDesc);
+	const FrameGraphTextureHandle sceneColor = builder.CreateTexture(sceneColorDesc);
 
 	const FrameGraphTextureDesc backBufferDesc =
 	    FrameGraphTextureDesc::CreateColor("BackBuffer", sceneExtent.Width, sceneExtent.Height, RenderConfig::BackBufferFormat);
-	const FrameGraphTextureHandle backBuffer = frameGraph.ImportTexture(backBufferDesc, ResourceState::Present);
+	const FrameGraphTextureHandle backBuffer = builder.ImportTexture(backBufferDesc, ResourceState::Present);
 
 	const FrameGraphTextureDesc mainDepthDesc =
 	    FrameGraphTextureDesc::CreateDepthStencil("MainDepth", sceneExtent.Width, sceneExtent.Height);
-	const FrameGraphTextureHandle mainDepth = frameGraph.CreateTexture(mainDepthDesc);
+	const FrameGraphTextureHandle mainDepth = builder.CreateTexture(mainDepthDesc);
 
 	const SceneTargets sceneTargets{.SceneColor = sceneColor, .BackBuffer = backBuffer, .MainDepth = mainDepth};
 
-	const GBufferTargets gbuffer = CreateGBufferTargets(frameGraph, sceneExtent, sceneTargets);
-	AddGBufferPass(frameGraph, gbuffer);
+	const GBufferTargets gbuffer = CreateGBufferTargets(builder, sceneExtent, sceneTargets);
+	AddGBufferPass(builder, gbuffer);
 
-	const LightingTargets lighting = CreateLightingTargets(frameGraph, sceneExtent);
-	AddLightingPasses(frameGraph, sceneTargets, lighting, gbuffer);
+	const LightingTargets lighting = CreateLightingTargets(builder, sceneExtent);
+	AddLightingPasses(builder, sceneTargets, lighting, gbuffer);
 
 	if (presentToBackBuffer)
 	{
-		AddPresentationPass(frameGraph, sceneTargets);
+		AddPresentationPass(builder, sceneTargets);
 	}
 
 	return FrameBuildResult{.Targets = sceneTargets, .GBuffer = gbuffer};

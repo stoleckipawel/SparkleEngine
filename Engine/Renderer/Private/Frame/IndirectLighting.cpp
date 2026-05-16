@@ -1,12 +1,12 @@
 #include "../PCH.h"
 #include "Frame/IndirectLighting.h"
 
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "Passes/IndirectLightingPass.h"
 
-void AddIndirectLightingPass(FrameGraph& frameGraph, const LightingTargets& lighting)
+void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingTargets& lighting)
 {
-	auto& parameters = frameGraph.AllocPassParameters<IndirectLightingPass>();
-	IndirectLightingPass::DeclareResources(frameGraph, lighting, parameters);
-	frameGraph.AddComputePass<IndirectLightingPass>(IndirectLightingPass::PassName, parameters);
+	auto& parameters = builder.AllocPassParameters<IndirectLightingPass>();
+	IndirectLightingPass::DeclareResources(builder, lighting, parameters);
+	builder.AddComputePass<IndirectLightingPass>(IndirectLightingPass::PassName, parameters);
 }

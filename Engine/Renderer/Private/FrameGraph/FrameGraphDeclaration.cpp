@@ -5,12 +5,13 @@
 
 #include <cassert>
 #include <string>
+#include <utility>
 
 static const auto g_frameGraphDeclarationLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
-	std::string FormatPassDisplayLabel(FrameGraph::PassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
+	std::string FormatPassDisplayLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
 	{
 		std::string label{"["};
 		label += FrameGraphPassKindToString(flags);
@@ -21,7 +22,7 @@ namespace
 		return label;
 	}
 
-	std::string FormatPassEventScopeLabel(FrameGraph::PassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
+	std::string FormatPassEventScopeLabel(FrameGraphPassIndex passIndex, std::string_view passName, EFrameGraphPassFlags flags)
 	{
 		std::string label{"FrameGraph/"};
 		label += FrameGraphPassKindToString(flags);
@@ -69,22 +70,6 @@ namespace
 	}
 }  // namespace
 
-void FrameGraph::BeginPassSetup() noexcept
-{
-	m_isSettingUpPass = true;
-	m_activePassDeclarations.clear();
-}
-
-void FrameGraph::EndPassSetup() noexcept
-{
-	m_isSettingUpPass = false;
-}
-
-void FrameGraph::RecordDeclaration(PassResourceDeclaration declaration) noexcept
-{
-	m_activePassDeclarations.push_back(declaration);
-}
-
 void FrameGraph::Setup(const FrameContext& frame)
 {
 	ReleaseExternalViewDescriptors();
@@ -94,61 +79,20 @@ void FrameGraph::Setup(const FrameContext& frame)
 	for (std::size_t passIndex = 0; passIndex < m_passes.size(); ++passIndex)
 	{
 		auto& pass = m_passes[passIndex];
-		PassBuilder builder(*this);
-		BeginPassSetup();
+		std::vector<PassResourceDeclaration> declarations;
+		PassResourceDeclarationSink declarationSink(declarations);
+		PassResourceBuilder builder(declarationSink);
 		pass.setupCallback(builder, frame);
-		EndPassSetup();
-		ValidatePassDeclarations(pass.name, pass.flags, m_activePassDeclarations);
+		ValidatePassDeclarations(pass.name, pass.flags, declarations);
 		m_compiledPlan.passes.push_back(
-		    CompilePassRecord{
-		        .index = static_cast<PassIndex>(passIndex),
+		    FrameGraphPassNode{
+		        .index = static_cast<FrameGraphPassIndex>(passIndex),
 		        .passName = pass.name,
 		        .flags = pass.flags,
 		        .passKind = GetFrameGraphPassKind(pass.flags),
 		        .diagnosticName = FormatPassDiagnosticName(pass.name),
-		        .displayLabel = FormatPassDisplayLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
-		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<PassIndex>(passIndex), pass.name, pass.flags),
-		        .declarations = m_activePassDeclarations});
+		        .displayLabel = FormatPassDisplayLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.flags),
+		        .eventScopeLabel = FormatPassEventScopeLabel(static_cast<FrameGraphPassIndex>(passIndex), pass.name, pass.flags),
+		        .declarations = std::move(declarations)});
 	}
-
-	m_activePassDeclarations.clear();
-}
-
-FrameGraphResourceHandle FrameGraph::Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	return Read(handle, usage, {});
-}
-
-FrameGraphResourceHandle FrameGraph::Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
-{
-	assert(m_isSettingUpPass);
-	assert(IsReadOnlyUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
-}
-
-FrameGraphResourceHandle FrameGraph::Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	return Write(handle, usage, {});
-}
-
-FrameGraphResourceHandle FrameGraph::Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
-{
-	assert(m_isSettingUpPass);
-	assert(IsWriteOnlyUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
-}
-
-FrameGraphResourceHandle FrameGraph::Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept
-{
-	return Use(handle, usage, {});
-}
-
-FrameGraphResourceHandle FrameGraph::Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept
-{
-	assert(m_isSettingUpPass);
-	assert(IsReadWriteUsage(usage));
-	RecordDeclaration(PassResourceDeclaration{.handle = handle, .usage = usage, .label = std::string(label)});
-	return handle;
 }

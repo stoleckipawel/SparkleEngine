@@ -4,7 +4,7 @@
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Trace.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Core/Public/Math/MathUtils.h"
@@ -36,9 +36,9 @@ ShaderPackageDefinition ComputeClearPass::DescribeShaderPackage() noexcept
 	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
 }
 
-void ComputeClearPass::DeclareResources(FrameGraph& frameGraph, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters)
+void ComputeClearPass::DeclareResources(FrameGraphBuilder& builder, FrameGraphTextureHandle outputTexture, ParameterInstance& parameters)
 {
-	parameters->Output = frameGraph.CreateUAV(outputTexture);
+	parameters->Output = builder.CreateUAV(outputTexture);
 }
 
 void ComputeClearPass::Execute(

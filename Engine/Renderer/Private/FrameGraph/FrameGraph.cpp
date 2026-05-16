@@ -30,7 +30,7 @@ FrameGraph::~FrameGraph()
 	SPDLOG_LOGGER_INFO(g_frameGraphLogger, "FrameGraph destroyed");
 }
 
-FrameGraph::CompiledPlan FrameGraph::Compile()
+FrameGraphPlan FrameGraph::Compile()
 {
 	SyncImportedResourceAccesses();
 	BuildTransientMaterializationPlan(m_compiledPlan);

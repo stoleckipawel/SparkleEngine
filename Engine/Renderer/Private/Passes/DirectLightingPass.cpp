@@ -4,7 +4,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewData.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
@@ -34,19 +34,19 @@ ShaderPackageDefinition DirectLightingPass::DescribeShaderPackage() noexcept
 }
 
 void DirectLightingPass::DeclareResources(
-    FrameGraph& frameGraph,
+    FrameGraphBuilder& builder,
     const LightingTargets& lighting,
     const GBufferTargets& gbuffer,
     ParameterInstance& parameters)
 {
-	parameters->DirectDiffuse = frameGraph.CreateUAV(lighting.DirectDiffuse);
-	parameters->DirectSpecular = frameGraph.CreateUAV(lighting.DirectSpecular);
-	parameters->DirectSubsurface = frameGraph.CreateUAV(lighting.DirectSubsurface);
-	parameters->GBufferBaseColor = frameGraph.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
-	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
-	parameters->GBufferSubsurface = frameGraph.CreateSRV(gbuffer.Subsurface);
-	parameters->GBufferDeviceZ = frameGraph.CreateSRV(gbuffer.DeviceZ);
+	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
+	parameters->DirectSpecular = builder.CreateUAV(lighting.DirectSpecular);
+	parameters->DirectSubsurface = builder.CreateUAV(lighting.DirectSubsurface);
+	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
+	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
+	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
+	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
 }
 
 void DirectLightingPass::SetParameters(

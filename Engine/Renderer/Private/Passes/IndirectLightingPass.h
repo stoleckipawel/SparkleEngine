@@ -10,6 +10,7 @@
 #include <cstdint>
 
 class FrameGraph;
+class FrameGraphBuilder;
 struct IndirectLightingPassRuntime;
 struct RenderGraphPassContext;
 
@@ -39,6 +40,6 @@ class IndirectLightingPass final
 
 	static const ParameterMetadata& GetParameterMetadata() noexcept;
 	static ShaderPackageDefinition DescribeShaderPackage() noexcept;
-	static void DeclareResources(FrameGraph& frameGraph, const LightingTargets& lighting, ParameterInstance& parameters);
+	static void DeclareResources(FrameGraphBuilder& builder, const LightingTargets& lighting, ParameterInstance& parameters);
 	static void Execute(RenderGraphPassContext& context, ParameterInstance& parameters);
 };

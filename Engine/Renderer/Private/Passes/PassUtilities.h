@@ -2,7 +2,7 @@
 
 #include "Frame/FrameContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/RenderGraphPassContext.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
@@ -275,18 +275,18 @@ namespace PassUtilities
 	}
 
 	inline void AddCopyTexturePass(
-	    FrameGraph& frameGraph,
+	    FrameGraphBuilder& builder,
 	    std::string_view name,
 	    FrameGraphTextureHandle destinationHandle,
 	    FrameGraphTextureHandle sourceHandle)
 	{
-		frameGraph.AddPass(
+		builder.AddPass(
 		    name,
 		    EFrameGraphPassFlags::Transfer,
-		    [destinationHandle, sourceHandle](PassBuilder& builder)
+			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
-			    builder.Read(sourceHandle, ResourceUsage::CopySource);
-			    builder.Write(destinationHandle, ResourceUsage::CopyDest);
+				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
+				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
 		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
 		    {
@@ -294,15 +294,15 @@ namespace PassUtilities
 		    });
 	}
 
-	inline void AddCopyBufferPass(FrameGraph& frameGraph, std::string_view name, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
+	inline void AddCopyBufferPass(FrameGraphBuilder& builder, std::string_view name, FrameGraphBufferHandle destinationHandle, FrameGraphBufferHandle sourceHandle)
 	{
-		frameGraph.AddPass(
+		builder.AddPass(
 		    name,
 		    EFrameGraphPassFlags::Transfer,
-		    [destinationHandle, sourceHandle](PassBuilder& builder)
+			[destinationHandle, sourceHandle](PassResourceBuilder& resourceBuilder)
 		    {
-			    builder.Read(sourceHandle, ResourceUsage::CopySource);
-			    builder.Write(destinationHandle, ResourceUsage::CopyDest);
+				resourceBuilder.Read(sourceHandle, ResourceUsage::CopySource);
+				resourceBuilder.Write(destinationHandle, ResourceUsage::CopyDest);
 		    },
 		    [destinationHandle, sourceHandle](RenderGraphPassContext& context)
 		    {

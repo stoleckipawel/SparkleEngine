@@ -4,7 +4,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 #include "Core/Public/Math/MathUtils.h"
 #include "Frame/RenderViewData.h"
-#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/RenderPassContext.h"
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Passes/PassUtilities.h"
@@ -34,24 +34,24 @@ ShaderPackageDefinition VisualizeBuffersPass::DescribeShaderPackage() noexcept
 }
 
 void VisualizeBuffersPass::DeclareResources(
-    FrameGraph& frameGraph,
+    FrameGraphBuilder& builder,
     const SceneTargets& sceneTargets,
     const LightingTargets& lighting,
     const GBufferTargets& gbuffer,
     ParameterInstance& parameters)
 {
-	parameters->SceneColor = frameGraph.CreateUAV(sceneTargets.SceneColor);
-	parameters->DirectDiffuse = frameGraph.CreateSRV(lighting.DirectDiffuse);
-	parameters->DirectSpecular = frameGraph.CreateSRV(lighting.DirectSpecular);
-	parameters->DirectSubsurface = frameGraph.CreateSRV(lighting.DirectSubsurface);
-	parameters->IndirectDiffuse = frameGraph.CreateSRV(lighting.IndirectDiffuse);
-	parameters->IndirectSpecular = frameGraph.CreateSRV(lighting.IndirectSpecular);
-	parameters->IndirectSubsurface = frameGraph.CreateSRV(lighting.IndirectSubsurface);
-	parameters->GBufferBaseColor = frameGraph.CreateSRV(gbuffer.BaseColor);
-	parameters->GBufferNormal = frameGraph.CreateSRV(gbuffer.Normal);
-	parameters->GBufferMaterial = frameGraph.CreateSRV(gbuffer.Material);
-	parameters->GBufferEmissive = frameGraph.CreateSRV(gbuffer.Emissive);
-	parameters->GBufferSubsurface = frameGraph.CreateSRV(gbuffer.Subsurface);
+	parameters->SceneColor = builder.CreateUAV(sceneTargets.SceneColor);
+	parameters->DirectDiffuse = builder.CreateSRV(lighting.DirectDiffuse);
+	parameters->DirectSpecular = builder.CreateSRV(lighting.DirectSpecular);
+	parameters->DirectSubsurface = builder.CreateSRV(lighting.DirectSubsurface);
+	parameters->IndirectDiffuse = builder.CreateSRV(lighting.IndirectDiffuse);
+	parameters->IndirectSpecular = builder.CreateSRV(lighting.IndirectSpecular);
+	parameters->IndirectSubsurface = builder.CreateSRV(lighting.IndirectSubsurface);
+	parameters->GBufferBaseColor = builder.CreateSRV(gbuffer.BaseColor);
+	parameters->GBufferNormal = builder.CreateSRV(gbuffer.Normal);
+	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
+	parameters->GBufferEmissive = builder.CreateSRV(gbuffer.Emissive);
+	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 }
 
 void VisualizeBuffersPass::SetParameters(

@@ -22,7 +22,7 @@ struct FrameGraphFramebuffer final
 };
 
 void FrameGraph::Execute(
-    const CompiledPlan& plan,
+    const FrameGraphPlan& plan,
     RenderCommandContext& cmd,
     const FrameContext& frame,
     const RenderPassContext& renderPassContext,
@@ -35,9 +35,9 @@ void FrameGraph::Execute(
 
 	EnsureTransientResourcesMaterialized(plan);
 
-	for (const PassIndex passIndex : plan.executionOrder)
+	for (const FrameGraphPassIndex passIndex : plan.executionOrder)
 	{
-		const CompilePassRecord& passRecord = plan.passes[passIndex];
+		const FrameGraphPassNode& passRecord = plan.passes[passIndex];
 		if (!passRecord.compiledAliasingBarriers.empty())
 		{
 			std::string aliasBarrierMarker = passRecord.diagnosticName;

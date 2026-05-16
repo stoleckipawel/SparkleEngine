@@ -6,7 +6,7 @@
 
 namespace
 {
-	using AllocationPool = FrameGraph::CompiledTransientResourcePlan::AllocationPool;
+	using AllocationPool = FrameGraphTransientResourcePlan::AllocationPool;
 
 	bool AreTextureResourceDescsEqual(const RhiTextureResourceDesc& lhs, const RhiTextureResourceDesc& rhs) noexcept
 	{
@@ -50,8 +50,8 @@ namespace
 	}
 
 	bool CanSharePhysicalBlock(
-	    const FrameGraph::CompiledPhysicalBlockPlan& block,
-	    const FrameGraph::CompiledTransientResourcePlan& transientPlan) noexcept
+	    const FrameGraphPhysicalAllocationPlan& block,
+	    const FrameGraphTransientResourcePlan& transientPlan) noexcept
 	{
 		const auto& physicalPlan = transientPlan.physicalAllocation;
 		if (block.pool != physicalPlan.pool)
@@ -59,8 +59,8 @@ namespace
 			return false;
 		}
 
-		if (block.lastExecutionIndex == FrameGraph::INVALID_PASS_INDEX ||
-		    transientPlan.firstExecutionIndex == FrameGraph::INVALID_PASS_INDEX)
+		if (block.lastExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX ||
+		    transientPlan.firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
 		{
 			return false;
 		}
@@ -105,12 +105,12 @@ namespace
 
 void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 {
-	for (FrameGraph::CompiledTransientResourcePlan& transientPlan : m_plan.transientResources)
+	for (FrameGraphTransientResourcePlan& transientPlan : m_plan.transientResources)
 	{
-		transientPlan.firstUserPass = FrameGraph::INVALID_PASS_INDEX;
-		transientPlan.lastUserPass = FrameGraph::INVALID_PASS_INDEX;
-		transientPlan.firstExecutionIndex = FrameGraph::INVALID_PASS_INDEX;
-		transientPlan.lastExecutionIndex = FrameGraph::INVALID_PASS_INDEX;
+		transientPlan.firstUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+		transientPlan.lastUserPass = INVALID_FRAME_GRAPH_PASS_INDEX;
+		transientPlan.firstExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
+		transientPlan.lastExecutionIndex = INVALID_FRAME_GRAPH_PASS_INDEX;
 		transientPlan.readUsed = false;
 		transientPlan.writeUsed = false;
 		transientPlan.requiredStates.clear();
@@ -118,8 +118,8 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 
 	for (std::size_t executionIndex = 0; executionIndex < m_plan.executionOrder.size(); ++executionIndex)
 	{
-		const PassIndex passIndex = m_plan.executionOrder[executionIndex];
-		const CompilePassRecord& passRecord = m_plan.passes[passIndex];
+		const FrameGraphPassIndex passIndex = m_plan.executionOrder[executionIndex];
+		const FrameGraphPassNode& passRecord = m_plan.passes[passIndex];
 
 		for (const PassResourceDeclaration& declaration : passRecord.declarations)
 		{
@@ -128,17 +128,17 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 				continue;
 			}
 
-			FrameGraph::CompiledTransientResourcePlan* transientPlan = FindTransientResourcePlan(declaration.handle);
+			FrameGraphTransientResourcePlan* transientPlan = FindTransientResourcePlan(declaration.handle);
 			if (transientPlan == nullptr)
 			{
 				continue;
 			}
 
-			const CompileResourceEntry& compiledResource = GetCompiledResourceEntry(declaration.handle);
+			const FrameGraphResourceNode& compiledResource = GetCompiledResourceEntry(declaration.handle);
 			assert(compiledResource.ownership == FrameGraphResourceOwnership::Transient);
 
-			const PassIndex executionIndexValue = static_cast<PassIndex>(executionIndex);
-			if (transientPlan->firstExecutionIndex == FrameGraph::INVALID_PASS_INDEX)
+			const FrameGraphPassIndex executionIndexValue = static_cast<FrameGraphPassIndex>(executionIndex);
+			if (transientPlan->firstExecutionIndex == INVALID_FRAME_GRAPH_PASS_INDEX)
 			{
 				transientPlan->firstExecutionIndex = executionIndexValue;
 				transientPlan->firstUserPass = passIndex;
@@ -165,14 +165,14 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 		}
 	}
 
-	for (const FrameGraph::CompiledTransientResourcePlan& transientPlan : m_plan.transientResources)
+	for (const FrameGraphTransientResourcePlan& transientPlan : m_plan.transientResources)
 	{
 		assert(transientPlan.handle.IsValid());
-		assert(transientPlan.firstExecutionIndex != FrameGraph::INVALID_PASS_INDEX);
-		assert(transientPlan.lastExecutionIndex != FrameGraph::INVALID_PASS_INDEX);
+		assert(transientPlan.firstExecutionIndex != INVALID_FRAME_GRAPH_PASS_INDEX);
+		assert(transientPlan.lastExecutionIndex != INVALID_FRAME_GRAPH_PASS_INDEX);
 		assert(transientPlan.firstExecutionIndex <= transientPlan.lastExecutionIndex);
-		assert(transientPlan.firstUserPass != FrameGraph::INVALID_PASS_INDEX);
-		assert(transientPlan.lastUserPass != FrameGraph::INVALID_PASS_INDEX);
+		assert(transientPlan.firstUserPass != INVALID_FRAME_GRAPH_PASS_INDEX);
+		assert(transientPlan.lastUserPass != INVALID_FRAME_GRAPH_PASS_INDEX);
 		assert(!transientPlan.requiredStates.empty());
 	}
 }
@@ -181,18 +181,18 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 {
 	m_plan.physicalBlocks.clear();
 
-	std::vector<FrameGraph::CompiledTransientResourcePlan*> assignmentOrder;
+	std::vector<FrameGraphTransientResourcePlan*> assignmentOrder;
 	assignmentOrder.reserve(m_plan.transientResources.size());
-	for (FrameGraph::CompiledTransientResourcePlan& transientPlan : m_plan.transientResources)
+	for (FrameGraphTransientResourcePlan& transientPlan : m_plan.transientResources)
 	{
-		transientPlan.physicalAllocation.physicalBlockIndex = FrameGraph::INVALID_RESOURCE_INDEX;
+		transientPlan.physicalAllocation.physicalBlockIndex = INVALID_FRAME_GRAPH_RESOURCE_INDEX;
 		assignmentOrder.push_back(&transientPlan);
 	}
 
 	std::sort(
 	    assignmentOrder.begin(),
 	    assignmentOrder.end(),
-	    [](const FrameGraph::CompiledTransientResourcePlan* lhs, const FrameGraph::CompiledTransientResourcePlan* rhs)
+	    [](const FrameGraphTransientResourcePlan* lhs, const FrameGraphTransientResourcePlan* rhs)
 	    {
 		    if (lhs->physicalAllocation.pool != rhs->physicalAllocation.pool)
 		    {
@@ -207,12 +207,12 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		    return lhs->handle.index < rhs->handle.index;
 	    });
 
-	for (FrameGraph::CompiledTransientResourcePlan* transientPlan : assignmentOrder)
+	for (FrameGraphTransientResourcePlan* transientPlan : assignmentOrder)
 	{
 		assert(transientPlan != nullptr);
 
-		FrameGraph::CompiledPhysicalBlockPlan* selectedBlock = nullptr;
-		for (FrameGraph::CompiledPhysicalBlockPlan& block : m_plan.physicalBlocks)
+		FrameGraphPhysicalAllocationPlan* selectedBlock = nullptr;
+		for (FrameGraphPhysicalAllocationPlan& block : m_plan.physicalBlocks)
 		{
 			if (!CanSharePhysicalBlock(block, *transientPlan))
 			{
@@ -227,7 +227,7 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		{
 			const std::uint32_t blockIndex = static_cast<std::uint32_t>(m_plan.physicalBlocks.size());
 			m_plan.physicalBlocks.push_back(
-			    FrameGraph::CompiledPhysicalBlockPlan{
+			    FrameGraphPhysicalAllocationPlan{
 			        .physicalBlockIndex = blockIndex,
 			        .pool = transientPlan->physicalAllocation.pool,
 			        .sizeInBytes = transientPlan->physicalAllocation.sizeInBytes,
@@ -251,32 +251,32 @@ void FrameGraphCompiler::BuildTransientPhysicalBlockAssignments() noexcept
 		transientPlan->physicalAllocation.physicalBlockIndex = selectedBlock->physicalBlockIndex;
 	}
 
-	for (const FrameGraph::CompiledTransientResourcePlan& transientPlan : m_plan.transientResources)
+	for (const FrameGraphTransientResourcePlan& transientPlan : m_plan.transientResources)
 	{
-		assert(transientPlan.physicalAllocation.physicalBlockIndex != FrameGraph::INVALID_RESOURCE_INDEX);
+		assert(transientPlan.physicalAllocation.physicalBlockIndex != INVALID_FRAME_GRAPH_RESOURCE_INDEX);
 	}
 }
 
 void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 {
-	for (CompilePassRecord& passRecord : m_plan.passes)
+	for (FrameGraphPassNode& passRecord : m_plan.passes)
 	{
 		passRecord.compiledAliasingBarriers.clear();
 	}
 	m_plan.finalAliasingBarriers.clear();
 
-	for (const FrameGraph::CompiledPhysicalBlockPlan& block : m_plan.physicalBlocks)
+	for (const FrameGraphPhysicalAllocationPlan& block : m_plan.physicalBlocks)
 	{
 		if (block.handles.size() < 2)
 		{
 			continue;
 		}
 
-		std::vector<const FrameGraph::CompiledTransientResourcePlan*> orderedPlans;
+		std::vector<const FrameGraphTransientResourcePlan*> orderedPlans;
 		orderedPlans.reserve(block.handles.size());
 		for (const FrameGraphResourceHandle handle : block.handles)
 		{
-			const FrameGraph::CompiledTransientResourcePlan* transientPlan = FindTransientResourcePlan(handle);
+			const FrameGraphTransientResourcePlan* transientPlan = FindTransientResourcePlan(handle);
 			assert(transientPlan != nullptr);
 			orderedPlans.push_back(transientPlan);
 		}
@@ -284,7 +284,7 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 		std::sort(
 		    orderedPlans.begin(),
 		    orderedPlans.end(),
-		    [](const FrameGraph::CompiledTransientResourcePlan* lhs, const FrameGraph::CompiledTransientResourcePlan* rhs)
+		    [](const FrameGraphTransientResourcePlan* lhs, const FrameGraphTransientResourcePlan* rhs)
 		    {
 			    if (lhs->firstExecutionIndex != rhs->firstExecutionIndex)
 			    {
@@ -296,19 +296,19 @@ void FrameGraphCompiler::BuildTransientAliasingBarriers() noexcept
 
 		for (std::size_t ownerIndex = 1; ownerIndex < orderedPlans.size(); ++ownerIndex)
 		{
-			const FrameGraph::CompiledTransientResourcePlan& previousOwner = *orderedPlans[ownerIndex - 1];
-			const FrameGraph::CompiledTransientResourcePlan& nextOwner = *orderedPlans[ownerIndex];
+			const FrameGraphTransientResourcePlan& previousOwner = *orderedPlans[ownerIndex - 1];
+			const FrameGraphTransientResourcePlan& nextOwner = *orderedPlans[ownerIndex];
 
 			assert(previousOwner.lastExecutionIndex < nextOwner.firstExecutionIndex);
 
-			FrameGraph::CompiledAliasingBarrier barrier{
+			FrameGraphAliasingBarrier barrier{
 			    .physicalBlockIndex = block.physicalBlockIndex,
 			    .beforeHandle = previousOwner.handle,
 			    .afterHandle = nextOwner.handle,
 			    .executeBeforePass = previousOwner.lastUserPass,
 			    .executeAfterPass = nextOwner.firstUserPass};
 
-			assert(barrier.executeAfterPass != FrameGraph::INVALID_PASS_INDEX);
+			assert(barrier.executeAfterPass != INVALID_FRAME_GRAPH_PASS_INDEX);
 			assert(barrier.executeAfterPass < m_plan.passes.size());
 			m_plan.passes[barrier.executeAfterPass].compiledAliasingBarriers.push_back(barrier);
 		}

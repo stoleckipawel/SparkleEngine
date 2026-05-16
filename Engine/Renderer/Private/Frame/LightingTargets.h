@@ -3,6 +3,6 @@
 #include "FrameGraph/Features/FrameGraphProducts.h"
 #include "Renderer/Public/Viewport/ViewportContracts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-LightingTargets CreateLightingTargets(FrameGraph& frameGraph, RenderViewportExtent sceneExtent);
+LightingTargets CreateLightingTargets(FrameGraphBuilder& builder, RenderViewportExtent sceneExtent);

@@ -6,12 +6,12 @@
 
 static const auto g_frameGraphBarrierLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
-void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<CompiledBarrier>& barriers) const noexcept
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphBarrier>& barriers) const noexcept
 {
 	EmitCompiledBarriers(cmd, "Unknown", barriers);
 }
 
-void FrameGraph::EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
+void FrameGraph::EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
 {
 	EmitCompiledAliasingBarriers(cmd, "Unknown", barriers);
 }
@@ -19,9 +19,9 @@ void FrameGraph::EmitCompiledAliasingBarriers(RenderCommandContext& cmd, const s
 void FrameGraph::EmitCompiledAliasingBarriers(
     RenderCommandContext& cmd,
     std::string_view passName,
-    const std::vector<CompiledAliasingBarrier>& barriers) const noexcept
+    const std::vector<FrameGraphAliasingBarrier>& barriers) const noexcept
 {
-	for (const CompiledAliasingBarrier& barrier : barriers)
+	for (const FrameGraphAliasingBarrier& barrier : barriers)
 	{
 		assert(barrier.beforeHandle.IsValid());
 		assert(barrier.afterHandle.IsValid());
@@ -42,10 +42,10 @@ void FrameGraph::EmitCompiledAliasingBarriers(
 	}
 }
 
-void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<CompiledBarrier>& barriers)
+void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_view passName, const std::vector<FrameGraphBarrier>& barriers)
     const noexcept
 {
-	for (const CompiledBarrier& barrier : barriers)
+	for (const FrameGraphBarrier& barrier : barriers)
 	{
 		const NativeResourceHandle resource = ResolveResource(barrier.handle);
 		if (!resource)
@@ -57,10 +57,10 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 
 		switch (barrier.type)
 		{
-			case CompiledBarrier::Type::Transition:
+			case FrameGraphBarrier::Type::Transition:
 				cmd.TransitionResource(resource, barrier.before, barrier.after);
 				break;
-			case CompiledBarrier::Type::UnorderedAccess:
+			case FrameGraphBarrier::Type::UnorderedAccess:
 				cmd.UnorderedAccessBarrier(resource);
 				break;
 			default:

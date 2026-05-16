@@ -890,6 +890,16 @@ Preferred shape:
 Keep behavior equivalent. Do not split compiler or plan types in this phase. Validate with stale-name greps for PassBuilder if renamed, include-boundary scans for full graph includes that can be narrowed, and git diff --check. Skip compile/build.
 ```
 
+Phase 3 findings:
+
+- `FrameGraphBuilder` is now the setup-time authoring wrapper around a `FrameGraph`. Frame assembly and pass declaration code use it for `AddPass`, typed pass registration, texture/buffer creation and import, parameter allocation, and shader-parameter helper construction.
+- The old dependency-driven graph creator is now named `FrameGraphFactory`; it constructs the underlying `FrameGraph`, creates a setup builder, and calls `BuildFrame` through that setup surface.
+- `PassBuilder` was renamed to `PassResourceBuilder` to make the pass setup lambda parameter read as resource declaration work rather than pass construction.
+- `PassResourceDeclarationSink` now owns declaration recording during `FrameGraph::Setup`. `FrameGraph` no longer exposes pass-setup declaration mutation APIs, no longer grants `PassResourceBuilder` friendship, and no longer stores active setup declaration state.
+- Frame helper functions and concrete pass `DeclareResources` functions now accept `FrameGraphBuilder&`. Execution-time helpers and binding utilities still accept `const FrameGraph&` because they resolve descriptors, bind resources, clear targets, and copy graph resources during execution.
+- Behavior is intended to remain equivalent: this phase only separates setup authoring from graph storage and keeps compile plan ownership inside `FrameGraph` for Phase 4.
+- No build was run for this phase per the phase workflow; validation is source-only.
+
 ## Phase 4: Extract Compile Plan Types From The Graph Class
 
 Goal: make compilation output a first-class artifact rather than nested state inside the graph owner.
@@ -946,6 +956,16 @@ Validation greps:
 
 Skip compile/build.
 ```
+
+Phase 4 findings:
+
+- Added the private plan contract `Engine/Renderer/Private/FrameGraph/Compiler/FrameGraphPlan.h` so compiler output can be read without opening the main graph owner.
+- Moved the former nested compile records out of `FrameGraph` and renamed them to the selected FrameGraph vocabulary: `FrameGraphPlan`, `FrameGraphPassNode`, `FrameGraphResourceNode`, `FrameGraphResourceVersion`, `FrameGraphBarrier`, `FrameGraphAliasingBarrier`, `FrameGraphTransientResourcePlan`, and `FrameGraphPhysicalAllocationPlan`.
+- Moved pass/resource index aliases and invalid index constants into the plan contract as `FrameGraphPassIndex`, `FrameGraphResourceIndex`, `INVALID_FRAME_GRAPH_PASS_INDEX`, and `INVALID_FRAME_GRAPH_RESOURCE_INDEX`.
+- `FrameGraph::Compile` now returns `FrameGraphPlan`, `FrameGraph::Execute` consumes `const FrameGraphPlan&`, and the Renderer frame record path stores the compile output as `FrameGraphPlan`.
+- `FrameGraphCompiler`, barrier playback, transient materialization planning, external resource view sync, and the transient allocator now consume the extracted plan types instead of `FrameGraph::...` nested records.
+- Pass diagnostics names, display labels, and event scope labels remain stored on `FrameGraphPassNode`, preserving the Phase 3 setup-time formatting path and keeping execution from recomputing those labels.
+- No compiler behavior, dependency planning, barrier planning, transient allocation, or resource registry ownership was intentionally changed. No build was run for this phase per the phase workflow.
 
 ## Phase 5: Split Resource Metadata, State Tracking, And Resolution
 

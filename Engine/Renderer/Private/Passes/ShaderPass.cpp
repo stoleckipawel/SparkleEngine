@@ -1,7 +1,7 @@
 #include "../PCH.h"
 #include "Passes/ShaderPass.h"
 
-#include "FrameGraph/Builder/PassBuilder.h"
+#include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "Commands/RenderCommandContext.h"
 #include "Renderer/Public/ShaderParameters/PassParameterSet.h"
 
@@ -35,7 +35,7 @@ namespace
 	}
 }  // namespace
 
-void DeclareShaderPassParameterUsages(PassBuilder& builder, const PassParameterSet& parameterSet) noexcept
+void DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet) noexcept
 {
 	builder.DeclareParameterUsages(parameterSet);
 }

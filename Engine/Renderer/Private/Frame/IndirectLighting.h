@@ -2,6 +2,6 @@
 
 #include "FrameGraph/Features/FrameGraphProducts.h"
 
-class FrameGraph;
+class FrameGraphBuilder;
 
-void AddIndirectLightingPass(FrameGraph& frameGraph, const LightingTargets& lighting);
+void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingTargets& lighting);
