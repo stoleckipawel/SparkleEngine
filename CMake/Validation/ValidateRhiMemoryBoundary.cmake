@@ -65,8 +65,6 @@ set(RHI_MEMORY_BOUNDARY_VIOLATIONS "")
 # D3D12MA migration. Counts are maximums, so deleting old calls is allowed but
 # adding new calls outside the memory service fails this gate.
 set(LEGACY_DIRECT_D3D12_ALLOCATION_LIMITS
-    "Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp|CreateHeap|1"
-    "Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp|CreatePlacedResource|2"
     "Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp|CreateCommittedResource|1"
 )
 

@@ -7,6 +7,15 @@
 
 D3D12GpuAllocationRecord::~D3D12GpuAllocationRecord() noexcept
 {
+	if (ParentHeap != nullptr)
+	{
+		if (ParentHeap->AliasingResourceCount > 0)
+		{
+			--ParentHeap->AliasingResourceCount;
+		}
+		ParentHeap = nullptr;
+	}
+
 	if (Owner != nullptr)
 	{
 		Owner->UnregisterAllocationRecord(*this);
@@ -30,6 +39,12 @@ D3D12GpuAllocationRecord::~D3D12GpuAllocationRecord() noexcept
 
 D3D12GpuHeapRecord::~D3D12GpuHeapRecord() noexcept
 {
+	if (Owner != nullptr)
+	{
+		Owner->UnregisterHeapRecord(*this);
+		Owner = nullptr;
+	}
+
 	NativeHeap.Reset();
 	if (Allocation != nullptr)
 	{

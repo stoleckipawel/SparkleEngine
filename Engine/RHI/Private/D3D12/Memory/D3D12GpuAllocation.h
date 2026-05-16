@@ -17,12 +17,14 @@ namespace D3D12MA
 }
 
 class D3D12GpuMemoryAllocator;
+struct D3D12GpuHeapRecord;
 
 struct D3D12GpuAllocationRecord final
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> Resource;
 	D3D12MA::Allocation* Allocation = nullptr;
 	D3D12MA::Pool* Pool = nullptr;
+	D3D12GpuHeapRecord* ParentHeap = nullptr;
 	RhiMemoryCategory Category = RhiMemoryCategory::Other;
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
 	std::wstring DebugName;
@@ -45,7 +47,10 @@ struct D3D12GpuHeapRecord final
 	D3D12MA::Allocation* Allocation = nullptr;
 	D3D12MA::Pool* Pool = nullptr;
 	RhiMemoryCategory Category = RhiMemoryCategory::FrameGraphTransient;
+	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::Transient;
 	std::wstring DebugName;
+	D3D12GpuMemoryAllocator* Owner = nullptr;
+	std::uint32_t AliasingResourceCount = 0;
 
 	D3D12GpuHeapRecord() noexcept = default;
 	~D3D12GpuHeapRecord() noexcept;

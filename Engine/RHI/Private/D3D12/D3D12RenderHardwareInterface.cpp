@@ -87,18 +87,13 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::WrapOwnedResource(
 	return MakeD3D12OwnedResourceHandle(std::move(record));
 }
 
-RhiOwnedHeapHandle D3D12RenderHardwareInterface::WrapOwnedHeap(
-    Microsoft::WRL::ComPtr<ID3D12Heap>&& heap,
-    std::wstring debugName) noexcept
+RhiOwnedHeapHandle D3D12RenderHardwareInterface::WrapOwnedHeap(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept
 {
-	if (heap == nullptr)
+	if (record == nullptr)
 	{
 		return {};
 	}
 
-	auto record = std::make_unique<D3D12GpuHeapRecord>();
-	record->NativeHeap = std::move(heap);
-	record->DebugName = std::move(debugName);
 	return MakeD3D12OwnedHeapHandle(std::move(record));
 }
 
@@ -554,7 +549,7 @@ void D3D12RenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle r
 
 void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcept
 {
-	if (m_pendingOwnedResourceReleases.empty())
+	if (m_pendingOwnedResourceReleases.empty() && m_pendingOwnedHeapReleases.empty())
 	{
 		return;
 	}
@@ -573,6 +568,15 @@ void D3D12RenderHardwareInterface::DrainCompletedOwnedResourceReleases() noexcep
 		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
 	    });
 	m_pendingOwnedResourceReleases.erase(eraseBegin, m_pendingOwnedResourceReleases.end());
+
+	auto heapEraseBegin = std::remove_if(
+	    m_pendingOwnedHeapReleases.begin(),
+	    m_pendingOwnedHeapReleases.end(),
+	    [completedFenceValue](const PendingOwnedHeapRelease& pendingRelease)
+	    {
+		    return pendingRelease.Record == nullptr || pendingRelease.RetireFenceValue <= completedFenceValue;
+	    });
+	m_pendingOwnedHeapReleases.erase(heapEraseBegin, m_pendingOwnedHeapReleases.end());
 }
 
 NativeResourceHandle D3D12RenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
@@ -785,29 +789,33 @@ RhiOwnedHeapHandle D3D12RenderHardwareInterface::CreateOwnedHeap(
 		return {};
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Heap> ownedHeap;
-	D3D12_HEAP_DESC heapDesc{};
-	heapDesc.SizeInBytes = sizeInBytes;
-	heapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-	heapDesc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	heapDesc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	heapDesc.Properties.CreationNodeMask = 0;
-	heapDesc.Properties.VisibleNodeMask = 0;
-	heapDesc.Alignment = alignment;
-	heapDesc.Flags = D3D12TypeConversions::ToHeapFlags(pool);
-	if (FAILED(m_rhi->GetDevice()->CreateHeap(&heapDesc, IID_PPV_ARGS(ownedHeap.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"TransientHeap");
+	std::unique_ptr<D3D12GpuHeapRecord> ownedHeap =
+	    m_memoryAllocator != nullptr ? m_memoryAllocator->CreateTransientHeap(pool, sizeInBytes, alignment, ownedDebugName) : nullptr;
+	if (ownedHeap == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"TransientHeap");
-	ownedHeap->SetName(ownedDebugName.c_str());
-	return WrapOwnedHeap(std::move(ownedHeap), std::move(ownedDebugName));
+	return WrapOwnedHeap(std::move(ownedHeap));
 }
 
 void D3D12RenderHardwareInterface::ReleaseOwnedHeap(RhiOwnedHeapHandle heap) noexcept
 {
 	std::unique_ptr<D3D12GpuHeapRecord> ownedHeap = TakeD3D12OwnedHeapHandle(heap);
+	if (ownedHeap == nullptr)
+	{
+		return;
+	}
+
+	std::uint64_t retireFenceValue = 0;
+	if (m_rhi != nullptr)
+	{
+		retireFenceValue = m_rhi->GetNextFenceValue();
+	}
+
+	DrainCompletedOwnedResourceReleases();
+	m_pendingOwnedHeapReleases.push_back(PendingOwnedHeapRelease{.Record = std::move(ownedHeap), .RetireFenceValue = retireFenceValue});
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource(
@@ -816,30 +824,29 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedTextureResource
     const RhiTransientTextureAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	ID3D12Heap* const ownedHeap = GetD3D12Heap(heap);
-	if (m_rhi == nullptr || ownedHeap == nullptr)
+	D3D12GpuHeapRecord* const ownedHeap = GetD3D12GpuHeapRecord(heap);
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedHeap == nullptr)
 	{
 		return {};
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
 	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildTextureResourceDesc(desc.ResourceDesc);
 	const D3D12_CLEAR_VALUE clearValue = D3D12TypeConversions::BuildClearValue(desc.ClearValue);
 	const D3D12_CLEAR_VALUE* clearValuePtr = desc.ClearValue.ValueType == RhiOptimizedClearValue::Type::None ? nullptr : &clearValue;
-	if (FAILED(m_rhi->GetDevice()->CreatePlacedResource(
-	        ownedHeap,
-	        heapOffset,
-	        &resourceDesc,
-	        D3D12TypeConversions::ToResourceStates(desc.InitialState),
-	        clearValuePtr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedTexture");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedResource = m_memoryAllocator->CreateAliasingTexture(
+	    *ownedHeap,
+	    heapOffset,
+	    resourceDesc,
+	    D3D12TypeConversions::ToResourceStates(desc.InitialState),
+	    clearValuePtr,
+	    ownedDebugName);
+	if (ownedResource == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedTexture");
-	ownedResource->SetName(ownedDebugName.c_str());
-	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	return WrapOwnedResource(std::move(ownedResource));
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
@@ -848,28 +855,26 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreatePlacedBufferResource(
     const RhiTransientBufferAllocationDesc& desc,
     std::wstring_view debugName)
 {
-	ID3D12Heap* const ownedHeap = GetD3D12Heap(heap);
-	if (m_rhi == nullptr || ownedHeap == nullptr)
+	D3D12GpuHeapRecord* const ownedHeap = GetD3D12GpuHeapRecord(heap);
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedHeap == nullptr)
 	{
 		return {};
 	}
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> ownedResource;
 	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(desc.ResourceDesc);
-	if (FAILED(m_rhi->GetDevice()->CreatePlacedResource(
-	        ownedHeap,
-	        heapOffset,
-	        &resourceDesc,
-	        D3D12TypeConversions::ToResourceStates(desc.InitialState),
-	        nullptr,
-	        IID_PPV_ARGS(ownedResource.ReleaseAndGetAddressOf()))))
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedBuffer");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedResource = m_memoryAllocator->CreateAliasingBuffer(
+	    *ownedHeap,
+	    heapOffset,
+	    resourceDesc,
+	    D3D12TypeConversions::ToResourceStates(desc.InitialState),
+	    ownedDebugName);
+	if (ownedResource == nullptr)
 	{
 		return {};
 	}
 
-	std::wstring ownedDebugName = CopyDebugName(debugName, L"PlacedBuffer");
-	ownedResource->SetName(ownedDebugName.c_str());
-	return WrapOwnedResource(std::move(ownedResource), std::move(ownedDebugName));
+	return WrapOwnedResource(std::move(ownedResource));
 }
 
 void D3D12RenderHardwareInterface::CreateRenderTargetView(

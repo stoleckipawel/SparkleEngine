@@ -3,6 +3,7 @@
 #include "D3D12/Memory/D3D12GpuAllocation.h"
 #include "Memory/RhiMemoryDiagnostics.h"
 #include "Memory/RhiMemoryTypes.h"
+#include "Resources/RhiResourceDesc.h"
 
 #include <cstdint>
 #include <d3d12.h>
@@ -42,6 +43,24 @@ class D3D12GpuMemoryAllocator final
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<D3D12GpuHeapRecord> CreateTransientHeap(
+	    RhiTransientAllocationPool pool,
+	    std::uint64_t sizeInBytes,
+	    std::uint64_t alignment,
+	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateAliasingTexture(
+	    D3D12GpuHeapRecord& heap,
+	    std::uint64_t heapOffset,
+	    const D3D12_RESOURCE_DESC& resourceDesc,
+	    D3D12_RESOURCE_STATES initialState,
+	    const D3D12_CLEAR_VALUE* optimizedClearValue,
+	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateAliasingBuffer(
+	    D3D12GpuHeapRecord& heap,
+	    std::uint64_t heapOffset,
+	    const D3D12_RESOURCE_DESC& resourceDesc,
+	    D3D12_RESOURCE_STATES initialState,
+	    std::wstring_view debugName) noexcept;
 
   private:
 	struct Impl;
@@ -52,11 +71,22 @@ class D3D12GpuMemoryAllocator final
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<D3D12GpuAllocationRecord> CreateAliasingResource(
+	    D3D12GpuHeapRecord& heap,
+	    std::uint64_t heapOffset,
+	    const D3D12_RESOURCE_DESC& resourceDesc,
+	    D3D12_RESOURCE_STATES initialState,
+	    const D3D12_CLEAR_VALUE* optimizedClearValue,
+	    std::wstring_view debugName) noexcept;
 	static D3D12_HEAP_TYPE ToHeapType(RhiMemoryResidencyClass residencyClass) noexcept;
+	static D3D12_HEAP_FLAGS ToTransientHeapFlags(RhiTransientAllocationPool pool) noexcept;
 	void RegisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept;
 	void UnregisterAllocationRecord(D3D12GpuAllocationRecord& record) noexcept;
+	void RegisterHeapRecord(D3D12GpuHeapRecord& record) noexcept;
+	void UnregisterHeapRecord(D3D12GpuHeapRecord& record) noexcept;
 
 	friend struct D3D12GpuAllocationRecord;
+	friend struct D3D12GpuHeapRecord;
 
 	std::unique_ptr<Impl> m_impl;
 };

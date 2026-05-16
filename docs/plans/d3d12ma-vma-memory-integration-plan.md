@@ -620,6 +620,8 @@ flowchart LR
 
 ### Phase 6 Prompt: FrameGraph Transient D3D12MA Integration
 
+Status: implemented. FrameGraph transient heap blocks now route through `D3D12GpuMemoryAllocator::CreateTransientHeap`, transient resources are created with D3D12MA aliasing resources at FrameGraph-planned offsets, descriptor creation remains in `FrameGraphTransientAllocator`, heap releases are fence-delayed with owned resources, and memory snapshots report live transient blocks as `RhiMemoryCategory::FrameGraphTransient`.
+
 ```text
 Implement Phase 6 of docs/plans/d3d12ma-vma-memory-integration-plan.md: route FrameGraph transient heap/resource mechanics through D3D12GpuMemoryAllocator while preserving Sparkle framegraph policy.
 

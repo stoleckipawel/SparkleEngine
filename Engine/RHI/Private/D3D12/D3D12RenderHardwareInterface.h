@@ -161,6 +161,12 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 		std::uint64_t RetireFenceValue = 0;
 	};
 
+	struct PendingOwnedHeapRelease
+	{
+		std::unique_ptr<D3D12GpuHeapRecord> Record;
+		std::uint64_t RetireFenceValue = 0;
+	};
+
 	D3D12_CPU_DESCRIPTOR_HANDLE ResolveDescriptorTableCpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
 	    const noexcept;
 	D3D12_GPU_DESCRIPTOR_HANDLE ResolveDescriptorTableGpuHandle(RhiDescriptorTableHandle tableHandle, std::uint32_t descriptorIndex = 0)
@@ -170,7 +176,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	static RhiOwnedResourceHandle WrapOwnedResource(
 	    Microsoft::WRL::ComPtr<ID3D12Resource>&& resource,
 	    std::wstring debugName) noexcept;
-	static RhiOwnedHeapHandle WrapOwnedHeap(Microsoft::WRL::ComPtr<ID3D12Heap>&& heap, std::wstring debugName) noexcept;
+	static RhiOwnedHeapHandle WrapOwnedHeap(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
@@ -188,4 +194,5 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	std::vector<DescriptorTableRecord> m_descriptorTableRecords;
 	std::vector<std::uint32_t> m_freeDescriptorTableIndices;
 	std::vector<PendingOwnedResourceRelease> m_pendingOwnedResourceReleases;
+	std::vector<PendingOwnedHeapRelease> m_pendingOwnedHeapReleases;
 };
