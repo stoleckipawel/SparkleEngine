@@ -250,173 +250,418 @@ Use this as the removal checklist. Each row is done only when the direct D3D12 a
 | D3D12 device, queues, command allocators, fences | API object creation, not GPU resource memory | No D3D12MA replacement | Keep |
 | Swap chain back buffers | Owned by DXGI swap chain | No D3D12MA replacement | Keep |
 
-## Phase Plan
+## Prompt-Ready Phase Plan
 
-### Phase 0: Boundary And Validation First
+Use these phase briefs as future coding prompts. Each phase is scoped so it can be implemented, validated, and reviewed without losing the architectural through-line.
 
-Goal: make leakage and duplicate allocation hard to reintroduce.
-
-Add a source validation script/target before broad migration:
+Universal prompt preamble:
 
 ```text
-CMake/Validation/ValidateRhiMemoryBoundary.cmake
-rhi_memory_boundary_check
+We are integrating D3D12MA now in SparkleEngine and keeping the RHI VMA-ready for a later Vulkan backend. Allocator implementation is not the portfolio pillar; memory competence must be shown through clean architecture, diagnostics, categories, budget visibility, and removal of duplicate raw D3D12 allocation code. Keep D3D12MA/VMA backend-private, do not expose allocator types through public RHI/Renderer APIs, do not add defragmentation, and keep diagnostics quiet by default. Prefer replacing legacy paths over compatibility shims once a phase owns a path.
 ```
 
-Checks:
+Validation to run after every phase unless the phase prompt narrows it further:
 
-| Check | Rule |
+```text
+cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=. -P CMake/Validation/ValidateRhiMemoryBoundary.cmake
+git diff --check
+```
+
+If new C++ files are added under `Engine/RHI`, regenerate CMake/build files before compiling because the RHI CMake source list is globbed. Do not run a full build until the phase's selected code changes are complete.
+
+### Phase 0 Prompt: Boundary And Validation Gate
+
+Status: implemented. Use this prompt only to harden or update the gate during later phases.
+
+```text
+Implement or update Phase 0 of docs/plans/d3d12ma-vma-memory-integration-plan.md: the RHI memory boundary validation gate.
+
+Goal:
+- Make allocator leakage, duplicate raw D3D12 allocation, direct allocator JSON usage, backend-specific public memory naming, and defragmentation scope drift hard to reintroduce.
+
+Required files:
+- CMake/Validation/ValidateRhiMemoryBoundary.cmake
+- CMake/SparkleValidationTargets.cmake
+- docs/plans/d3d12ma-vma-memory-integration-plan.md if the baseline/status changes
+
+Rules:
+- Reject D3D12MA::, D3D12MemAlloc, VmaAllocator, VmaAllocation, and vk_mem_alloc in public RHI headers and high-level engine modules.
+- Reject public D3D12Memory* and VulkanMemory* type names; public memory contracts must stay backend-neutral.
+- Reject BeginDefragmentation, DefragmentationPass, and DEFRAGMENTATION in Sparkle source. Defragmentation is out of scope.
+- Reject direct allocator JSON/stat dump calls from Renderer/UI/high-level modules; JSON dump access must go through RenderMemoryDiagnostics.
+- Enforce direct D3D12 allocation through a counted legacy baseline. Existing counts may go down as migration progresses, but new CreateCommittedResource/CreateHeap/CreatePlacedResource calls outside Engine/RHI/Private/D3D12/Memory must fail.
+
+Important implementation detail:
+- Keep direct allocation baseline entries per file/token, not broad file allowlists. Deleting old calls must pass. Adding new calls must fail.
+
+Validation:
+- Run cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=. -P CMake/Validation/ValidateRhiMemoryBoundary.cmake.
+- Run git diff --check for the edited validation/doc files.
+
+Done criteria:
+- rhi_memory_boundary_check is included in sparkle_validation_check.
+- SparkleRHI and high-level engine targets depend on it when SPARKLE_BUILD_VALIDATION_ON_BUILD is enabled.
+- The script passes on the current tree while still guarding against new leakage and new raw D3D12 allocation calls.
+```
+
+Phase 0 protects this target state:
+
+| Guard | Expected outcome |
 | --- | --- |
-| Public header leak | Reject `D3D12MA::`, `D3D12MemAlloc`, `VmaAllocator`, `VmaAllocation`, `vk_mem_alloc` under `Engine/RHI/Public`, `Engine/Renderer`, `Engine/GameFramework`, `Engine/Application`, and `Engine/Editor` public headers |
-| Direct allocation bypass | Reject `CreateCommittedResource`, `CreateHeap`, and `CreatePlacedResource` outside approved D3D12 memory service files and explicit exception files |
-| Defrag scope guard | Reject `BeginDefragmentation`, `DefragmentationPass`, and `DEFRAGMENTATION` symbols in Sparkle code for this phase |
-| Backend-neutral naming | Reject public `D3D12Memory*` or `VulkanMemory*` diagnostics types |
-| JSON dump boundary | JSON dump command must go through `RenderMemoryDiagnostics`, not D3D12MA directly from UI/Renderer |
+| Allocator public leak check | D3D12MA/VMA stay backend-private |
+| Direct allocation counted baseline | Existing debt is visible and cannot grow |
+| Defrag scope guard | No defrag investigation sneaks into this pass |
+| Backend-neutral naming | Future VMA can share public memory diagnostics |
+| JSON boundary | UI/Renderer consume memory diagnostics, not allocator APIs |
 
-Approved direct-allocation exceptions should be narrow and documented. Examples: command allocators, descriptor heaps, fences, query heaps, swap chain creation, and any debug readback path that you intentionally leave outside allocator scope.
-
-### Phase 1: Allocator Service Bootstrap
-
-Goal: D3D12MA initializes once as a D3D12 backend service.
-
-Tasks:
-
-1. Add the pinned D3D12MA dependency privately to `SparkleRHI`.
-2. Add `D3D12GpuMemoryAllocator` and initialize it after `D3D12Rhi` creates device and adapter.
-3. Inject the allocator into `D3D12RenderHardwareInterface`, `TextureFactory`, `D3D12Texture`, upload helpers, and any D3D12 resource factory that creates owned resources.
-4. Add no-op/empty memory diagnostics plumbing so public API shape is present before data is rich.
-5. Keep startup logs to one info line at most, or hide behind `SPARKLE_RHI_MEMORY_DIAGNOSTICS=1`.
-
-Production pattern:
+### Phase 1 Prompt: D3D12MA Dependency And Allocator Service Bootstrap
 
 ```text
-D3D12Rhi owns native device/adapter/queue/fence.
-D3D12RenderHardwareInterface owns renderer-facing services.
-D3D12GpuMemoryAllocator is injected into resource creation paths.
-No global singleton. No renderer-level D3D12MA access.
+Implement Phase 1 of docs/plans/d3d12ma-vma-memory-integration-plan.md: add D3D12MA privately and create the backend memory service skeleton.
+
+Goal:
+- Initialize D3D12MA once as a private D3D12 backend service without migrating resource ownership yet.
+- Establish the class/folder shape that later phases will use for all D3D12 GPU memory allocation.
+- Keep the public RHI VMA-ready and free of D3D12MA symbols.
+
+Required context to inspect first:
+- Engine/RHI/CMakeLists.txt
+- Engine/RHI/Private/D3D12/D3D12Rhi.h/.cpp
+- Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.h/.cpp
+- Engine/RHI/Public/Device/RenderHardwareInterface.h
+- Engine/RHI/Public/Diagnostics/RhiDiagnostics.h
+- CMake/Validation/ValidateRhiMemoryBoundary.cmake
+
+Required implementation:
+- Add a pinned D3D12MA dependency under an RHI-private third-party folder or equivalent private FetchContent path.
+- Add Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.h/.cpp.
+- Initialize D3D12MA from the D3D12 device and adapter after D3D12Rhi has created them.
+- Inject D3D12GpuMemoryAllocator into D3D12RenderHardwareInterface without using a global singleton.
+- Add minimal methods needed for later phases, but do not migrate resource creation yet unless needed to compile the service.
+- Keep logs quiet: at most one opt-in startup line behind SPARKLE_RHI_MEMORY_DIAGNOSTICS=1.
+
+Architecture constraints:
+- No D3D12MA headers in Engine/RHI/Public, Engine/Renderer, Engine/Application, Engine/GameFramework, or Engine/Editor.
+- Do not expose D3D12MA::Allocator or D3D12MA::Allocation in public API or Renderer-facing headers.
+- Do not add VMA yet. Reserve naming and public concepts so VMA can mirror the service later.
+- Do not add defragmentation APIs or TODO-driven defrag scaffolding.
+
+Validation:
+- Run cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=. -P CMake/Validation/ValidateRhiMemoryBoundary.cmake.
+- Regenerate CMake/build files if new Engine/RHI files were added.
+- Build SparkleRHI or the smallest available RHI target after regeneration.
+- Run git diff --check.
+
+Done criteria:
+- D3D12GpuMemoryAllocator owns D3D12MA initialization/shutdown privately.
+- Existing renderer/RHI behavior is unchanged.
+- Boundary validation passes.
+- The next phase can add allocation records without changing public RHI type names.
 ```
 
-### Phase 2: Handle Model Conversion
+Phase 1 should leave the tree in this shape:
 
-Goal: make `RhiOwnedResourceHandle` and `RhiOwnedHeapHandle` point to backend records, not raw native objects.
+```text
+D3D12Rhi/device/adapter
+    -> D3D12GpuMemoryAllocator
+        -> D3D12MA::Allocator
 
-Tasks:
+D3D12RenderHardwareInterface
+    -> receives/owns/accesses D3D12GpuMemoryAllocator as a private backend service
+```
 
-1. Introduce `D3D12GpuAllocationRecord` and `D3D12GpuHeapRecord` private types.
-2. Change `GetNativeResource(RhiOwnedResourceHandle)` to unwrap `record->Resource.Get()`.
-3. Change `GetResourceGpuVirtualAddress` to unwrap the record.
-4. Change `RenderObjectDiagnostics::SetDebugName(RhiOwnedResourceHandle)` implementation to update the record resource and allocation name.
-5. Replace `PendingOwnedResourceRelease` with `PendingD3D12AllocationRelease` that retires the record after fence completion.
-6. Add debug assertions for invalid handle kind where practical.
+### Phase 2 Prompt: Opaque Handle Records And Delayed Release Conversion
 
-This is the most important architectural step. Without it, D3D12MA integration becomes a band-aid because the public handle still assumes raw D3D12 resource ownership.
+```text
+Implement Phase 2 of docs/plans/d3d12ma-vma-memory-integration-plan.md: convert owned RHI handles from raw native pointers to backend-owned allocation records.
 
-### Phase 3: Persistent Resource Migration
+Goal:
+- Make RhiOwnedResourceHandle and RhiOwnedHeapHandle remain public opaque handles while their D3D12 implementation points to private records, not raw ID3D12Resource*/ID3D12Heap*.
+- Prepare resource lifetime so D3D12MA resource+allocation objects retire together after GPU fences.
 
-Goal: all persistent resources that D3D12MA can own should go through the allocator service.
+Required context to inspect first:
+- Engine/RHI/Public/Interop/RhiNativeHandles.h
+- Engine/RHI/Public/Device/RenderHardwareInterface.h
+- Engine/RHI/Public/Diagnostics/RhiDiagnostics.h
+- Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.h/.cpp
+- Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp
+- Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.h/.cpp
+- docs/plans/d3d12ma-vma-memory-integration-plan.md sections Public RHI Shape and Private D3D12 Shape
+
+Required implementation:
+- Add private D3D12 allocation/heap record types under Engine/RHI/Private/D3D12/Memory.
+- Change D3D12 owned resource handles so Value points to D3D12GpuAllocationRecord.
+- Change D3D12 owned heap handles so Value points to D3D12GpuHeapRecord if heap records are needed before Phase 6.
+- Update GetNativeResource to unwrap record->Resource.Get().
+- Update GetResourceGpuVirtualAddress to unwrap the record.
+- Update RenderObjectDiagnostics::SetDebugName(RhiOwnedResourceHandle) and SetDebugName(RhiOwnedHeapHandle) to use private records.
+- Replace PendingOwnedResourceRelease with a pending release that owns/retires allocation records after the completed fence reaches RetireFenceValue.
+- Keep old raw resource allocation calls temporarily if needed, but wrap their outputs into the new record model so callers no longer assume raw pointers.
+
+Architecture constraints:
+- Do not change RhiOwnedResourceHandle or RhiOwnedHeapHandle public fields unless absolutely required; their Value should remain opaque.
+- Do not expose record structs outside D3D12 private implementation.
+- Do not introduce shared_ptr ownership cycles or global handle registries unless a simple owning record cannot work.
+- Do not add compatibility helpers that allow new code to bypass D3D12GpuMemoryAllocator.
+
+Validation:
+- Run rhi_memory_boundary_check directly.
+- Run focused tests/build for SparkleRHI after CMake regeneration if new files were added.
+- Run any existing source validation target that touches RHI/Renderer if practical.
+- Run git diff --check.
+
+Done criteria:
+- Native resource access still works through GetNativeResource.
+- Delayed release retires records, not raw ID3D12Resource pointers alone.
+- Renderer and FrameGraph callers do not know the handle implementation changed.
+- Boundary validation passes with no D3D12MA/VMA public leakage.
+```
+
+Phase 2 is the architectural hinge. Later phases should not migrate broad resources until this handle model is in place.
+
+### Phase 3 Prompt: Persistent Resource Migration To D3D12MA
+
+```text
+Implement Phase 3 of docs/plans/d3d12ma-vma-memory-integration-plan.md: migrate persistent D3D12 resources to D3D12GpuMemoryAllocator/D3D12MA and remove duplicate raw allocation code as each path converts.
+
+Goal:
+- Replace persistent resource CreateCommittedResource paths with allocator-backed creation.
+- Use backend-neutral memory categories and residency intent so the same public model can map to VMA later.
+- Reduce the legacy direct allocation baseline in ValidateRhiMemoryBoundary.cmake as calls are removed.
+
+Required context to inspect first:
+- Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp buffer and ray tracing methods
+- Engine/RHI/Private/D3D12/Resources/D3D12Texture.h/.cpp
+- Engine/RHI/Private/D3D12/Resources/D3D12UploadBuffer.h/.cpp
+- Engine/RHI/Private/D3D12/Resources/D3D12ConstantBuffer.h
+- Engine/RHI/Private/D3D12/Resources/D3D12LinearAllocator.h/.cpp
+- Engine/RHI/Private/D3D12/Resources/D3D12ConstantBufferManager.cpp
+- Engine/Renderer/Private/Meshes/GPUMesh.h and mesh creation call sites
+- CMake/Validation/ValidateRhiMemoryBoundary.cmake legacy direct allocation counts
 
 Migration order:
+- Runtime textures first: default texture resource and upload resource.
+- Ray tracing scratch/result/instance buffers second.
+- Mesh vertex/index buffers third. Prefer a real default-heap GPU buffer plus upload/copy path if the current upload-heap static mesh path is being touched deeply enough.
+- Standalone upload helper next.
+- Constant/persistent upload resources last. Keep the per-frame upload policy only where it is still genuinely useful.
 
-| Order | Resource family | Reason |
+Required implementation:
+- Add D3D12GpuMemoryAllocator methods for texture and buffer creation with category, residency, initial state, optimized clear value, and debug name.
+- Ensure allocation names and resource object names are set together.
+- Ensure mapped upload resources store CPU pointer state in the private record where useful.
+- Convert one resource family at a time and delete the direct CreateCommittedResource block from that family once converted.
+- Decrease the corresponding counted legacy baseline in ValidateRhiMemoryBoundary.cmake after each deleted raw call.
+
+Architecture constraints:
+- Do not leave dual paths such as maybe raw allocation, maybe D3D12MA for the same resource family.
+- Do not expose D3D12MA allocation handles through RHI or Renderer.
+- Do not change descriptor ownership; descriptors remain in the descriptor heap manager.
+- Do not add defragmentation.
+- Keep logs quiet by default.
+
+Validation:
+- Run rhi_memory_boundary_check after each converted family.
+- Run focused runtime/editor smoke if available after all selected conversions compile.
+- Run SparkleRHI/Renderer build only after selected code changes are complete.
+- Run git diff --check.
+
+Done criteria:
+- Converted persistent resource families allocate through D3D12GpuMemoryAllocator.
+- The validation legacy baseline is reduced for every removed direct D3D12 allocation call.
+- Resource names, GPU virtual addresses, descriptors, and delayed release still work.
+- No public D3D12MA/VMA leakage.
+```
+
+Persistent migration checklist:
+
+| Family | Category | Residency | Expected old code removed |
+| --- | --- | --- | --- |
+| Runtime texture resource | Texture | DeviceLocal | Texture default `CreateCommittedResource` |
+| Texture upload resource | Upload | HostUpload | Texture upload `CreateCommittedResource` |
+| Static mesh vertex/index | Mesh | DeviceLocal preferred | RHI buffer upload-heap direct allocation if replaced |
+| Ray tracing scratch/result | RayTracing | DeviceLocal | RHI RT direct allocations |
+| Ray tracing instance buffer | RayTracing or Upload | HostUpload or DeviceLocal by policy | RHI instance direct allocation |
+| Upload helper | Upload | HostUpload | `D3D12UploadBuffer` direct allocation |
+| Constant/persistent upload | ConstantBuffer or Upload | HostUpload | Direct committed constant-buffer allocation where still used |
+
+### Phase 4 Prompt: Memory Diagnostics And Portfolio Surface
+
+```text
+Implement Phase 4 of docs/plans/d3d12ma-vma-memory-integration-plan.md: add backend-neutral memory diagnostics backed by D3D12MA.
+
+Goal:
+- Show memory competence through useful diagnostics: categories, budgets, allocation counts, block counts, names, and on-demand JSON dumps.
+- Keep the public diagnostics shape VMA-ready.
+- Keep diagnostics silent/noise-free by default.
+
+Required context to inspect first:
+- Engine/RHI/Public/Diagnostics/RhiDiagnostics.h
+- Engine/RHI/Public/Device/RenderHardwareInterface.h
+- Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp
+- Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.h/.cpp
+- Existing editor diagnostics panels under Engine/Editor/Private/Panels if adding UI in this phase
+- docs/plans/d3d12ma-vma-memory-integration-plan.md Public RHI Shape and VMA-Ready Contract
+
+Required implementation:
+- Add backend-neutral public memory diagnostics types, for example RhiMemoryCategory, RhiMemoryResidencyClass, RhiMemoryCategoryStats, RhiMemoryUsageSnapshot, and RenderMemoryDiagnostics.
+- Wire RenderMemoryDiagnostics through RenderDiagnostics or another RHI-owned diagnostics surface without D3D12 naming.
+- Populate D3D12 memory snapshots from D3D12MA stats/budget APIs and Sparkle allocation records.
+- Add on-demand D3D12MA JSON dump export through RenderMemoryDiagnostics only.
+- Add allocation category names and debug names to snapshots.
+- Add optional editor/log presentation only if it can stay quiet by default.
+
+Noise policy:
+- No per-allocation logs by default.
+- No JSON dump by default.
+- No warning for normal allocation churn.
+- Use SPARKLE_RHI_MEMORY_DIAGNOSTICS=1 for summaries.
+- Use SPARKLE_RHI_MEMORY_JSON_DUMP=path for explicit dump export.
+
+Architecture constraints:
+- Public diagnostics types must not contain D3D12, D3D12MA, Vulkan, or VMA names.
+- Renderer/UI must call RenderMemoryDiagnostics, not D3D12MA.
+- Do not introduce streaming policy here beyond exposing data needed by Phase 5.
+- Do not add defragmentation diagnostics or controls.
+
+Validation:
+- Run rhi_memory_boundary_check.
+- Run a smoke path that queries memory diagnostics if available.
+- Run SparkleRHI build after selected code changes are complete.
+- Run git diff --check.
+
+Done criteria:
+- A caller can get a RhiMemoryUsageSnapshot without knowing the backend.
+- D3D12MA JSON dump is available on demand through RenderMemoryDiagnostics.
+- Allocation categories and names are visible in diagnostics.
+- No diagnostics spam appears without opt-in flags.
+```
+
+Diagnostics output contract:
+
+| Field | Meaning | Later VMA mapping |
 | --- | --- | --- |
-| 1 | Runtime textures | High memory impact and easy portfolio diagnostics |
-| 2 | Ray tracing scratch/result/instance buffers | Large allocations with obvious scene cost |
-| 3 | Mesh vertex/index buffers | Needed for real content scale; consider default-heap buffers plus upload copy |
-| 4 | Standalone upload buffers | Removes repeated upload committed-resource code |
-| 5 | Constant/persistent upload buffers | Consolidates remaining direct resource creation |
+| Category | Sparkle-owned resource class | Same enum |
+| ResidencyClass | DeviceLocal/HostUpload/HostReadback/Transient | Vulkan memory type intent |
+| UsedBytes | Bytes actively used by allocations/resources | VMA allocation stats |
+| AllocatedBytes | Heap/block bytes reserved by allocator | VMA block stats |
+| BudgetBytes | API/allocator budget if available | VMA budget extension/stats |
+| AllocationCount | Number of allocator allocations | VMA allocation count |
+| BlockCount | Number of backing blocks/heaps | VMA block count |
 
-Do not keep old helper code after each migration. The desired state is not:
-
-```text
-CreateVertexBuffer -> maybe D3D12MA, maybe raw CreateCommittedResource
-```
-
-The desired state is:
+### Phase 5 Prompt: Budget-Aware Streaming Hooks
 
 ```text
-CreateVertexBuffer -> D3D12GpuMemoryAllocator::CreateBuffer -> D3D12MA
+Implement Phase 5 of docs/plans/d3d12ma-vma-memory-integration-plan.md: consume memory diagnostics in renderer/asset policy hooks without making D3D12MA own streaming decisions.
+
+Goal:
+- Use allocator facts to inform Sparkle-owned streaming and memory pressure decisions.
+- Add the policy seam for texture/scene memory pressure while keeping actual asset choice in Renderer/Asset systems.
+
+Required context to inspect first:
+- Engine/RHI/Public memory diagnostics types from Phase 4
+- Texture manager/runtime texture diagnostics paths
+- Engine/Renderer resource ownership and scene/level load paths
+- Editor panels that could display memory snapshots
+- docs/plans/material-default-fallback-ownership or texture pipeline notes if relevant
+
+Required implementation:
+- Add a renderer-side memory snapshot consumer that polls RHI at a controlled cadence, not every allocation.
+- Add memory pressure classification per category, for example Normal, Watch, Pressure, Critical.
+- Add a texture streaming policy stub that consumes category pressure and can later choose mip promotion/demotion.
+- Add scene/model memory report hooks using allocation categories and debug names.
+- Keep policy backend-neutral so VMA can feed the same data later.
+
+Architecture constraints:
+- D3D12MA reports budget/stat facts only; it does not decide which textures, mips, meshes, or scene assets matter.
+- Do not add direct D3D12MA/VMA calls in Renderer or Editor.
+- Do not add noisy logs or per-frame large dumps.
+- Do not implement defragmentation or relocation.
+
+Validation:
+- Run rhi_memory_boundary_check.
+- Run focused editor/runtime smoke for memory snapshot display if UI is touched.
+- Run selected target build after code changes are complete.
+- Run git diff --check.
+
+Done criteria:
+- Renderer/Editor can consume RhiMemoryUsageSnapshot through a backend-neutral path.
+- Texture streaming has a clear memory-pressure input seam even if detailed mip policy is still minimal.
+- No allocator implementation types leak outside RHI private backend code.
 ```
 
-### Phase 4: Diagnostics And Portfolio Surface
-
-Goal: prove memory competence through visible, useful tooling.
-
-Deliverables:
-
-| Deliverable | Default behavior | Opt-in behavior |
-| --- | --- | --- |
-| Memory categories | Always tag allocations internally | Show by category in editor panel/log dump |
-| Budget snapshot | Cheap cached query | Detailed allocator stat walk only on demand |
-| JSON dump | No dump by default | Command/env var writes D3D12MA JSON dump |
-| Allocation names | Always set names | Names visible in PIX/DRED/live-object reports |
-| Memory warnings | Only warn when meaningful thresholds are crossed | Verbose allocation list behind diagnostics flag |
-
-Suggested environment flags:
-
-```text
-SPARKLE_RHI_MEMORY_DIAGNOSTICS=1
-SPARKLE_RHI_MEMORY_DIAGNOSTICS_FILTER=Texture|Mesh|RayTracing|FrameGraphTransient
-SPARKLE_RHI_MEMORY_JSON_DUMP=path/to/dump.json
-```
-
-Noise rules:
-
-- No per-allocation log spam by default.
-- No large JSON dump unless explicitly requested.
-- No warnings for normal allocation churn.
-- Summary logs should include budget, used bytes, allocation count, block count, and top categories only.
-
-### Phase 5: Budget-Aware Streaming Hooks
-
-Goal: wire allocator facts into engine policy without making the allocator own streaming decisions.
-
-Tasks:
-
-1. Add `RhiMemoryUsageSnapshot` polling at a controlled cadence.
-2. Expose per-category budget pressure to Renderer/Asset systems.
-3. Add a texture streaming policy stub that can react to memory pressure later.
-4. Add scene/model memory snapshots using allocation categories and debug names.
-5. Keep policy outside D3D12MA: the allocator reports pressure, Sparkle decides which mips/assets matter.
+Budget policy should follow this flow:
 
 ```mermaid
 flowchart LR
-    A[D3D12MA budget/stats] --> B[RhiMemoryUsageSnapshot]
-    B --> C[Renderer memory service]
-    C --> D[Texture streaming policy]
-    C --> E[Editor memory panel]
-    C --> F[Scene memory report]
+    A[D3D12MA stats/budget] --> B[RenderMemoryDiagnostics]
+    B --> C[RhiMemoryUsageSnapshot]
+    C --> D[Renderer memory monitor]
+    D --> E[Texture streaming policy]
+    D --> F[Scene memory report]
+    D --> G[Editor memory panel]
 ```
 
-### Phase 6: FrameGraph Transient Integration
+### Phase 6 Prompt: FrameGraph Transient D3D12MA Integration
 
-Goal: use D3D12MA for transient heap/pool mechanics while preserving Sparkle's framegraph compiler as the owner of lifetimes, aliasing, and barriers.
+```text
+Implement Phase 6 of docs/plans/d3d12ma-vma-memory-integration-plan.md: route FrameGraph transient heap/resource mechanics through D3D12GpuMemoryAllocator while preserving Sparkle framegraph policy.
 
-Current Sparkle ownership to keep:
+Goal:
+- Use D3D12MA for transient heap/pool/resource mechanics where it reduces maintained D3D12 code.
+- Keep FrameGraphCompiler as the owner of lifetimes, physical block planning, aliasing decisions, and barrier planning.
+- Remove raw CreateHeap/CreatePlacedResource from normal transient resource creation once converted.
 
-| Keep | Why |
+Required context to inspect first:
+- Engine/Renderer/Private/FrameGraph/Resources/FrameGraphTransientAllocator.h/.cpp
+- Engine/Renderer/Private/FrameGraph/Resources/FrameGraphTransientPlanning.cpp
+- Engine/Renderer/Private/FrameGraph/Compiler/FrameGraphPlan.h and resource lifetime/physical allocation structs
+- Engine/RHI/Public/Device/RenderHardwareInterface.h transient allocation APIs
+- Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp CreateOwnedHeap/CreatePlacedTextureResource/CreatePlacedBufferResource
+- Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator.h/.cpp
+- CMake/Validation/ValidateRhiMemoryBoundary.cmake legacy direct allocation counts
+
+Required implementation:
+- Add allocator service APIs for transient blocks/pools and placed/aliased transient resources.
+- Preserve RenderHardwareInterface transient API names if they remain good backend-neutral contracts; change internals, not Renderer policy.
+- Convert CreateOwnedHeap/CreatePlacedTextureResource/CreatePlacedBufferResource to call D3D12GpuMemoryAllocator.
+- Keep descriptor creation in FrameGraphTransientAllocator.
+- Keep framegraph lifetime, physical block, offset, and barrier planning in Renderer unless the selected D3D12MA API cannot honor exact planned offsets cleanly.
+- If exact planned offsets do not map cleanly, use D3D12MA virtual allocation/pool support only to replace packing mechanics while preserving Sparkle lifetime inputs and diagnostics.
+- Decrease the direct allocation baseline for CreateHeap/CreatePlacedResource when raw calls are removed.
+
+Architecture constraints:
+- Do not delete FrameGraphCompiler lifetime analysis.
+- Do not let D3D12MA decide pass ordering, barriers, descriptor lifetime, or resource usage states.
+- Do not expose D3D12MA/VMA types to Renderer or public RHI.
+- Do not add defragmentation.
+- Do not regress carried transient resource state tracking across frames.
+
+Validation:
+- Run rhi_memory_boundary_check.
+- Run existing FrameGraph boundary validation.
+- Run renderer/framegraph smoke after selected code changes are complete.
+- Run selected build target only after all Phase 6 code changes are complete.
+- Run git diff --check.
+
+Done criteria:
+- Normal transient resource creation no longer directly calls CreateHeap/CreatePlacedResource outside the D3D12 memory service.
+- FrameGraph still owns lifetime ranges, aliasing plan, physical resource intent, barriers, descriptors, and carried runtime state.
+- D3D12MA-backed transient allocations show up under RhiMemoryCategory::FrameGraphTransient.
+- Boundary validation passes and the direct allocation baseline is reduced.
+```
+
+FrameGraph ownership must remain split like this:
+
+| Concern | Owner after Phase 6 |
 | --- | --- |
-| `FrameGraphCompiler` lifetime analysis | This is engine architecture, not allocator boilerplate |
-| Physical block assignment decisions | This expresses aliasing policy |
-| Barrier plan | Allocator does not know pass/resource state transitions |
-| Descriptor creation in `FrameGraphTransientAllocator` | D3D12MA/VMA do not manage descriptors |
-
-Allocator mechanics to replace:
-
-| Replace | Target |
-| --- | --- |
-| Raw `CreateHeap` in `CreateOwnedHeap` | D3D12MA pool/allocation-backed transient block |
-| Raw `CreatePlacedResource` for transient textures/buffers | D3D12MA aliasing/placed resource creation path |
-| Manual D3D12 heap ownership in public-ish handle | Private transient heap/allocation record |
-
-Recommended pattern:
-
-1. Keep the current framegraph compile plan and physical block plan.
-2. For each physical block, ask `D3D12GpuMemoryAllocator` for a transient block/pool in category `FrameGraphTransient`.
-3. For each planned resource, ask the allocator to create an aliased/placed resource using the planned offset if supported cleanly by the selected D3D12MA version.
-4. If exact planned offsets do not map cleanly to the D3D12MA API, use D3D12MA virtual allocation/pool support to replace Sparkle's physical offset packing while preserving Sparkle lifetime inputs.
-5. Do not add defragmentation.
-
-The goal is not to delete framegraph intelligence. The goal is to delete duplicated D3D12 heap/resource mechanics.
+| Pass dependencies | FrameGraph compiler |
+| Resource lifetime ranges | FrameGraph compiler |
+| Physical block/aliasing intent | FrameGraph compiler |
+| Resource barriers and states | FrameGraph execution/plan |
+| Descriptor allocation/views | FrameGraphTransientAllocator + RHI descriptor APIs |
+| D3D12 heap/pool/resource mechanics | D3D12GpuMemoryAllocator + D3D12MA |
+| Memory diagnostics category | RHI memory diagnostics as FrameGraphTransient |
 
 ## VMA-Ready Contract
 

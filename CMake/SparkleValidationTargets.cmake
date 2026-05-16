@@ -29,6 +29,21 @@ add_custom_target(
 add_sparkle_validation_dependency(SparkleRenderer framegraph_boundary_check)
 
 add_custom_target(
+    rhi_memory_boundary_check
+    COMMAND ${CMAKE_COMMAND}
+        -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateRhiMemoryBoundary.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating RHI memory allocator boundaries and D3D12MA/VMA leakage guards..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI rhi_memory_boundary_check)
+add_sparkle_validation_dependency(SparkleApplication rhi_memory_boundary_check)
+add_sparkle_validation_dependency(SparkleGameFramework rhi_memory_boundary_check)
+add_sparkle_validation_dependency(SparkleRenderer rhi_memory_boundary_check)
+add_sparkle_validation_dependency(SparkleEditor rhi_memory_boundary_check)
+
+add_custom_target(
     shader_compiler_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DSHADER_COMPILER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -117,6 +132,7 @@ add_custom_target(
     DEPENDS
         runtime_cooked_boundary_check
         framegraph_boundary_check
+        rhi_memory_boundary_check
         shader_compiler_boundary_check
         texture_cooker_boundary_check
         tools_architecture_boundary_check

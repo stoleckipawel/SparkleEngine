@@ -10,7 +10,7 @@ Implementation plan: [d3d12ma-vma-memory-integration-plan.md](d3d12ma-vma-memory
 
 This is the portfolio-friendly path:
 
-- Use D3D12MA for tested heap allocation, placed resource creation, budget/statistics reporting, naming, and future defragmentation support.
+- Use D3D12MA for tested heap allocation, placed resource creation, budget/statistics reporting, and naming. Leave defragmentation out of this scope.
 - Plan the same shape for VMA when Vulkan arrives: backend-private allocator, backend-neutral RHI resource handles, shared memory diagnostics categories.
 - Keep Sparkle's own framegraph compiler responsible for resource lifetimes, pass order, aliasing decisions, and barrier planning.
 - Keep the small per-frame upload/constant linear allocator because it solves a different problem and is already a good explicit-API story.
@@ -466,7 +466,7 @@ flowchart TD
     D --> E[Add allocation stats and budget logging]
     E --> F[Editor GPU memory panel]
     F --> G[Optional: framegraph transient pool integration]
-    G --> H[Optional: streaming and defrag experiments]
+    G --> H[Optional: streaming experiments]
 ```
 
 Recommended first targets:
