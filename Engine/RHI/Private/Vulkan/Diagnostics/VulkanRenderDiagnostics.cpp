@@ -41,7 +41,14 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 		SetDebugName(VK_OBJECT_TYPE_UNKNOWN, reinterpret_cast<std::uint64_t>(resource.Value), debugName);
 	}
 
-	void SetDebugName(RhiOwnedMemoryBlockHandle, std::wstring_view) noexcept override {}
+	void SetDebugName(RhiOwnedMemoryBlockHandle memoryBlock, std::wstring_view debugName) noexcept override
+	{
+		VulkanGpuMemoryBlockRecord* const record = GetVulkanGpuMemoryBlockRecord(memoryBlock);
+		if (record != nullptr)
+		{
+			SetVulkanMemoryBlockRecordDebugName(*record, debugName);
+		}
+	}
 
 	void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept override
 	{

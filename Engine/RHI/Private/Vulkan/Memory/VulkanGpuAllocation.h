@@ -12,6 +12,7 @@
 struct VmaAllocation_T;
 
 class VulkanGpuMemoryAllocator;
+struct VulkanGpuMemoryBlockRecord;
 
 enum class VulkanGpuAllocationResourceKind : std::uint8_t
 {
@@ -25,6 +26,7 @@ struct VulkanGpuAllocationRecord final
 	VkBuffer Buffer = VK_NULL_HANDLE;
 	VkImage Image = VK_NULL_HANDLE;
 	VmaAllocation_T* Allocation = nullptr;
+	VulkanGpuMemoryBlockRecord* ParentMemoryBlock = nullptr;
 	VulkanGpuAllocationResourceKind ResourceKind = VulkanGpuAllocationResourceKind::Unknown;
 	RhiMemoryCategory Category = RhiMemoryCategory::Other;
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
@@ -40,6 +42,7 @@ struct VulkanGpuAllocationRecord final
 	VulkanGpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;
 	void* CpuMappedAddress = nullptr;
+	bool OwnsAllocation = true;
 
 	VulkanGpuAllocationRecord() noexcept = default;
 	~VulkanGpuAllocationRecord() noexcept;
@@ -50,8 +53,37 @@ struct VulkanGpuAllocationRecord final
 	VulkanGpuAllocationRecord& operator=(VulkanGpuAllocationRecord&&) = delete;
 };
 
+struct VulkanGpuMemoryBlockRecord final
+{
+	VmaAllocation_T* Allocation = nullptr;
+	RhiMemoryCategory Category = RhiMemoryCategory::FrameGraphTransient;
+	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::Transient;
+	std::uint64_t UsedBytes = 0;
+	std::uint64_t AllocatedBytes = 0;
+	std::uint64_t RequestedSizeInBytes = 0;
+	std::uint64_t Alignment = 0;
+	std::uint32_t MemoryTypeIndex = UINT32_MAX;
+	std::uint32_t MemoryHeapIndex = UINT32_MAX;
+	std::wstring DebugName;
+	VulkanGpuMemoryAllocator* Owner = nullptr;
+	std::uint32_t AliasingResourceCount = 0;
+
+	VulkanGpuMemoryBlockRecord() noexcept = default;
+	~VulkanGpuMemoryBlockRecord() noexcept;
+
+	VulkanGpuMemoryBlockRecord(const VulkanGpuMemoryBlockRecord&) = delete;
+	VulkanGpuMemoryBlockRecord& operator=(const VulkanGpuMemoryBlockRecord&) = delete;
+	VulkanGpuMemoryBlockRecord(VulkanGpuMemoryBlockRecord&&) = delete;
+	VulkanGpuMemoryBlockRecord& operator=(VulkanGpuMemoryBlockRecord&&) = delete;
+};
+
 RhiOwnedResourceHandle MakeVulkanOwnedResourceHandle(std::unique_ptr<VulkanGpuAllocationRecord> record) noexcept;
 std::unique_ptr<VulkanGpuAllocationRecord> TakeVulkanOwnedResourceHandle(RhiOwnedResourceHandle handle) noexcept;
 VulkanGpuAllocationRecord* GetVulkanGpuAllocationRecord(RhiOwnedResourceHandle handle) noexcept;
 NativeResourceHandle GetVulkanNativeResource(VulkanGpuAllocationRecord& record) noexcept;
 void SetVulkanAllocationRecordDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
+
+RhiOwnedMemoryBlockHandle MakeVulkanOwnedMemoryBlockHandle(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept;
+std::unique_ptr<VulkanGpuMemoryBlockRecord> TakeVulkanOwnedMemoryBlockHandle(RhiOwnedMemoryBlockHandle handle) noexcept;
+VulkanGpuMemoryBlockRecord* GetVulkanGpuMemoryBlockRecord(RhiOwnedMemoryBlockHandle handle) noexcept;
+void SetVulkanMemoryBlockRecordDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;

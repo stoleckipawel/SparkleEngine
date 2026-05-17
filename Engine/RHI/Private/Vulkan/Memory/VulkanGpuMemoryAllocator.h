@@ -2,6 +2,7 @@
 
 #include "Memory/RhiMemoryDiagnostics.h"
 #include "Memory/RhiMemoryTypes.h"
+#include "Resources/RhiResourceDesc.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 
 #include <cstddef>
@@ -41,22 +42,45 @@ class VulkanGpuMemoryAllocator final
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<VulkanGpuMemoryBlockRecord> CreateTransientMemoryBlock(
+	    RhiTransientAllocationPool pool,
+	    std::uint64_t sizeInBytes,
+	    std::uint64_t alignment,
+	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<VulkanGpuAllocationRecord> CreateAliasingImage(
+	    VulkanGpuMemoryBlockRecord& memoryBlock,
+	    std::uint64_t memoryBlockOffset,
+	    const VkImageCreateInfo& imageCreateInfo,
+	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<VulkanGpuAllocationRecord> CreateAliasingBuffer(
+	    VulkanGpuMemoryBlockRecord& memoryBlock,
+	    std::uint64_t memoryBlockOffset,
+	    const VkBufferCreateInfo& bufferCreateInfo,
+	    std::wstring_view debugName) noexcept;
 	bool WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes) noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecord(NativeResourceHandle resource) const noexcept;
 
 	void QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record, std::uint64_t retireFenceValue) noexcept;
+	void QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpuMemoryBlockRecord> record, std::uint64_t retireFenceValue) noexcept;
 	void DrainCompletedReleases(std::uint64_t completedFenceValue) noexcept;
 	void FlushPendingReleases() noexcept;
 
   private:
 	struct Impl;
 	struct PendingAllocationRelease;
+	struct PendingMemoryBlockRelease;
 
 	void DestroyAllocation(VulkanGpuAllocationRecord& record) noexcept;
+	void DestroyMemoryBlock(VulkanGpuMemoryBlockRecord& record) noexcept;
 	void UnmapAllocation(VulkanGpuAllocationRecord& record) noexcept;
 	void SetAllocationDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
+	void SetMemoryBlockDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;
 	void RegisterAllocationRecord(VulkanGpuAllocationRecord& record) noexcept;
 	void UnregisterAllocationRecord(VulkanGpuAllocationRecord& record) noexcept;
+	void RegisterMemoryBlockRecord(VulkanGpuMemoryBlockRecord& record) noexcept;
+	void UnregisterMemoryBlockRecord(VulkanGpuMemoryBlockRecord& record) noexcept;
+	bool EnsureMemoryBlockAllocationForImage(VulkanGpuMemoryBlockRecord& memoryBlock, const VkImageCreateInfo& imageCreateInfo) noexcept;
+	bool EnsureMemoryBlockAllocationForBuffer(VulkanGpuMemoryBlockRecord& memoryBlock, const VkBufferCreateInfo& bufferCreateInfo) noexcept;
 
 	std::unique_ptr<VulkanGpuAllocationRecord> CreateAllocationRecord(
 	    VulkanGpuAllocationResourceKind resourceKind,
@@ -66,10 +90,19 @@ class VulkanGpuMemoryAllocator final
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
+	std::unique_ptr<VulkanGpuAllocationRecord> CreateAliasingAllocationRecord(
+	    VulkanGpuAllocationResourceKind resourceKind,
+	    VkBuffer buffer,
+	    VkImage image,
+	    VulkanGpuMemoryBlockRecord& memoryBlock,
+	    std::wstring_view debugName) noexcept;
 	static std::uint32_t ResolveMemoryHeapIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, std::uint32_t memoryTypeIndex) noexcept;
 	static VkImageAspectFlags ResolveImageAspectMask(VkFormat format) noexcept;
 
 	friend struct VulkanGpuAllocationRecord;
+	friend struct VulkanGpuMemoryBlockRecord;
+	friend void SetVulkanAllocationRecordDebugName(VulkanGpuAllocationRecord& record, std::wstring_view debugName) noexcept;
+	friend void SetVulkanMemoryBlockRecordDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept;
 
 	VulkanRhi& m_rhi;
 	std::unique_ptr<Impl> m_impl;

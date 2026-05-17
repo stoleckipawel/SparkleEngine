@@ -6,6 +6,15 @@
 
 VulkanGpuAllocationRecord::~VulkanGpuAllocationRecord() noexcept
 {
+	if (ParentMemoryBlock != nullptr)
+	{
+		if (ParentMemoryBlock->AliasingResourceCount > 0)
+		{
+			--ParentMemoryBlock->AliasingResourceCount;
+		}
+		ParentMemoryBlock = nullptr;
+	}
+
 	if (Owner != nullptr)
 	{
 		Owner->UnregisterAllocationRecord(*this);
@@ -19,6 +28,16 @@ VulkanGpuAllocationRecord::~VulkanGpuAllocationRecord() noexcept
 	if (Owner != nullptr)
 	{
 		Owner->DestroyAllocation(*this);
+		Owner = nullptr;
+	}
+}
+
+VulkanGpuMemoryBlockRecord::~VulkanGpuMemoryBlockRecord() noexcept
+{
+	if (Owner != nullptr)
+	{
+		Owner->UnregisterMemoryBlockRecord(*this);
+		Owner->DestroyMemoryBlock(*this);
 		Owner = nullptr;
 	}
 }
@@ -58,5 +77,29 @@ void SetVulkanAllocationRecordDebugName(VulkanGpuAllocationRecord& record, std::
 	if (record.Owner != nullptr)
 	{
 		record.Owner->SetAllocationDebugName(record, debugName);
+	}
+}
+
+RhiOwnedMemoryBlockHandle MakeVulkanOwnedMemoryBlockHandle(std::unique_ptr<VulkanGpuMemoryBlockRecord> record) noexcept
+{
+	return RhiOwnedMemoryBlockHandle{record.release()};
+}
+
+std::unique_ptr<VulkanGpuMemoryBlockRecord> TakeVulkanOwnedMemoryBlockHandle(RhiOwnedMemoryBlockHandle handle) noexcept
+{
+	return std::unique_ptr<VulkanGpuMemoryBlockRecord>(static_cast<VulkanGpuMemoryBlockRecord*>(handle.Value));
+}
+
+VulkanGpuMemoryBlockRecord* GetVulkanGpuMemoryBlockRecord(RhiOwnedMemoryBlockHandle handle) noexcept
+{
+	return static_cast<VulkanGpuMemoryBlockRecord*>(handle.Value);
+}
+
+void SetVulkanMemoryBlockRecordDebugName(VulkanGpuMemoryBlockRecord& record, std::wstring_view debugName) noexcept
+{
+	record.DebugName = debugName;
+	if (record.Owner != nullptr)
+	{
+		record.Owner->SetMemoryBlockDebugName(record, debugName);
 	}
 }

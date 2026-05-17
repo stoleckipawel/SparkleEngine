@@ -528,35 +528,94 @@ RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetBufferAllocationInfo
 }
 
 RhiOwnedMemoryBlockHandle VulkanRenderHardwareInterface::CreateTransientMemoryBlock(
-    RhiTransientAllocationPool,
-    std::uint64_t,
-    std::uint64_t,
-    std::wstring_view)
+    RhiTransientAllocationPool pool,
+    std::uint64_t sizeInBytes,
+    std::uint64_t alignment,
+    std::wstring_view debugName)
 {
-	FailRenderingNotImplemented("CreateTransientMemoryBlock");
-	return {};
+	if (m_memoryAllocator == nullptr || sizeInBytes == 0)
+	{
+		return {};
+	}
+
+	std::unique_ptr<VulkanGpuMemoryBlockRecord> record =
+	    m_memoryAllocator->CreateTransientMemoryBlock(pool, sizeInBytes, alignment, debugName);
+	return record != nullptr ? MakeVulkanOwnedMemoryBlockHandle(std::move(record)) : RhiOwnedMemoryBlockHandle{};
 }
 
-void VulkanRenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle) noexcept {}
+void VulkanRenderHardwareInterface::ReleaseTransientMemoryBlock(RhiOwnedMemoryBlockHandle memoryBlock) noexcept
+{
+	if (m_memoryAllocator == nullptr)
+	{
+		return;
+	}
+
+	std::unique_ptr<VulkanGpuMemoryBlockRecord> record = TakeVulkanOwnedMemoryBlockHandle(memoryBlock);
+	if (record == nullptr)
+	{
+		return;
+	}
+
+	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
+	m_memoryAllocator->QueueDestroyMemoryBlock(std::move(record), retireFenceValue);
+	if (m_commandContext != nullptr)
+	{
+		m_memoryAllocator->DrainCompletedReleases(m_commandContext->GetCompletedRetireFenceValue());
+	}
+	else
+	{
+		m_memoryAllocator->FlushPendingReleases();
+	}
+}
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingTextureResource(
-    RhiOwnedMemoryBlockHandle,
-    std::uint64_t,
-    const RhiTransientTextureAllocationDesc&,
-    std::wstring_view)
+    RhiOwnedMemoryBlockHandle memoryBlock,
+    std::uint64_t memoryBlockOffset,
+    const RhiTransientTextureAllocationDesc& desc,
+    std::wstring_view debugName)
 {
-	FailRenderingNotImplemented("CreateAliasingTextureResource");
-	return {};
+	(void) desc.InitialState;
+	(void) desc.ClearValue;
+	if (m_memoryAllocator == nullptr || !memoryBlock || desc.ResourceDesc.Width == 0 || desc.ResourceDesc.Height == 0 ||
+	    desc.ResourceDesc.Format == PixelFormat::Unknown)
+	{
+		return {};
+	}
+
+	VulkanGpuMemoryBlockRecord* const memoryBlockRecord = GetVulkanGpuMemoryBlockRecord(memoryBlock);
+	if (memoryBlockRecord == nullptr)
+	{
+		return {};
+	}
+
+	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc.ResourceDesc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record =
+	    m_memoryAllocator->CreateAliasingImage(*memoryBlockRecord, memoryBlockOffset, imageCreateInfo, debugName);
+	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingBufferResource(
-    RhiOwnedMemoryBlockHandle,
-    std::uint64_t,
-    const RhiTransientBufferAllocationDesc&,
-    std::wstring_view)
+    RhiOwnedMemoryBlockHandle memoryBlock,
+    std::uint64_t memoryBlockOffset,
+    const RhiTransientBufferAllocationDesc& desc,
+    std::wstring_view debugName)
 {
-	FailRenderingNotImplemented("CreateAliasingBufferResource");
-	return {};
+	(void) desc.InitialState;
+	if (m_memoryAllocator == nullptr || !memoryBlock || desc.ResourceDesc.SizeInBytes == 0)
+	{
+		return {};
+	}
+
+	VulkanGpuMemoryBlockRecord* const memoryBlockRecord = GetVulkanGpuMemoryBlockRecord(memoryBlock);
+	if (memoryBlockRecord == nullptr)
+	{
+		return {};
+	}
+
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc.ResourceDesc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record =
+	    m_memoryAllocator->CreateAliasingBuffer(*memoryBlockRecord, memoryBlockOffset, bufferCreateInfo, debugName);
+	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
 }
 
 RhiResourceViewHandle VulkanRenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
@@ -917,6 +976,10 @@ void VulkanRenderHardwareInterface::ReleaseAllResourceViews() noexcept
 		if (record.OwnsImageView && record.ImageView != VK_NULL_HANDLE)
 		{
 			vkDestroyImageView(m_rhi->GetDevice(), record.ImageView, nullptr);
+		}
+		if (m_descriptorAllocator != nullptr && record.DescriptorHandle)
+		{
+			m_descriptorAllocator->ReleaseRegisteredDescriptor(record.DescriptorHandle);
 		}
 		record = {};
 	}

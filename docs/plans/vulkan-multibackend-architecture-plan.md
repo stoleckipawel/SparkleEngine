@@ -809,6 +809,20 @@ Done criteria:
 2. Backends own allocator mechanics.
 3. D3D12 and Vulkan report transient memory consistently.
 
+Phase notebook:
+
+```text
+Phase: 17 - FrameGraph Transient Resource Parity
+Learning goal: FrameGraph owns logical transient lifetime and alias selection; each backend owns how a physical memory block becomes native resources.
+Files studied: FrameGraphCompilerTransients.cpp, FrameGraphTransientPlanning.cpp, FrameGraphTransientAllocator.*, RenderHardwareInterface.h, D3D12GpuMemoryAllocator.*, VulkanGpuMemoryAllocator.*.
+Files changed: VulkanGpuAllocation.*, VulkanGpuMemoryAllocator.*, VulkanRenderHardwareInterface.cpp, VulkanRenderDiagnostics.cpp, ValidateRhiBackendBoundaries.cmake.
+Backend-neutral concept introduced: transient materialization stays on CreateTransientMemoryBlock/CreateAliasingTextureResource/CreateAliasingBufferResource without exposing D3D12MA or VMA to Renderer.
+D3D12 behavior preserved: D3D12 transient blocks continue to use D3D12MA alias-capable heap allocations and report FrameGraphTransient memory.
+Vulkan behavior enabled: VMA-backed transient memory block records, vmaCreateAliasingImage2/vmaCreateAliasingBuffer2 resource materialization, delayed block release, and FrameGraphTransient memory diagnostics.
+Validation run: source gates only per prompt policy; no full build.
+Open risks: Vulkan aliasing blocks allocate lazily from the first materialized resource because the neutral block API intentionally carries only pool/size/alignment; FrameGraph currently aliases only compatible resource descriptions within a physical block.
+```
+
 ### Phase 18: Ray Tracing Parity Planning
 
 Goal: decide how much current D3D12 ray tracing feature surface must be Vulkan-parity before calling Vulkan first-class.
