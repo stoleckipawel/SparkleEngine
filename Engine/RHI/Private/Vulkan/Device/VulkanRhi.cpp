@@ -338,6 +338,12 @@ void VulkanRhi::LoadDeviceDebugFunctions() noexcept
 
 	m_setDebugUtilsObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
 	    vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
+	m_cmdBeginDebugUtilsLabel = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
+	    vkGetDeviceProcAddr(m_device, "vkCmdBeginDebugUtilsLabelEXT"));
+	m_cmdEndDebugUtilsLabel = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
+	    vkGetDeviceProcAddr(m_device, "vkCmdEndDebugUtilsLabelEXT"));
+	m_cmdInsertDebugUtilsLabel = reinterpret_cast<PFN_vkCmdInsertDebugUtilsLabelEXT>(
+	    vkGetDeviceProcAddr(m_device, "vkCmdInsertDebugUtilsLabelEXT"));
 }
 
 void VulkanRhi::NameBootstrapObjects() noexcept

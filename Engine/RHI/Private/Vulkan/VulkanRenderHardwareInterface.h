@@ -1,16 +1,21 @@
 #pragma once
 
 #include "Device/RenderHardwareInterface.h"
+#include "Vulkan/VulkanIncludes.h"
 
+#include <cstdint>
 #include <memory>
+#include <vector>
 
+class VulkanCommandContext;
 class VulkanRenderCommandList;
 class VulkanRhi;
+class VulkanSwapChain;
 
 class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 {
   public:
-	explicit VulkanRenderHardwareInterface(VulkanRhi& rhi) noexcept;
+	VulkanRenderHardwareInterface(VulkanRhi& rhi, VulkanSwapChain& swapChain, VulkanCommandContext& commandContext) noexcept;
 	~VulkanRenderHardwareInterface() noexcept override;
 
 	VulkanRenderHardwareInterface(const VulkanRenderHardwareInterface&) = delete;
@@ -109,12 +114,42 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void BeginPresentOverlayPass() noexcept override;
 	void EndPresentRenderPass() noexcept override;
 	PixelFormat GetPresentColorFormat() const noexcept override;
+	void SetCurrentFrameIndex(std::uint32_t frameIndex) noexcept;
+	void RebuildSwapChainBackBufferViews() noexcept;
 
   private:
+	struct ResourceViewRecord final
+	{
+		ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;
+		VkImage Image = VK_NULL_HANDLE;
+		VkImageView ImageView = VK_NULL_HANDLE;
+		bool OwnsImageView = false;
+	};
+
 	static void FailRenderingNotImplemented(std::string_view operation) noexcept;
+	static RhiResourceViewHandle MakeResourceViewHandle(std::uint32_t index) noexcept;
+	static std::uintptr_t EncodeImageViewHandle(VkImageView imageView) noexcept;
+	RhiResourceViewHandle AddResourceView(ResourceViewRecord record);
+	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
+	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
+	VkImageView CreateImageView(const RhiResourceViewDesc& desc) const;
+	VkFormat ResolveViewFormat(const RhiResourceViewDesc& desc) const noexcept;
+	VkImageAspectFlags ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept;
+	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;
+	void ReleaseAllResourceViews() noexcept;
+	void BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept;
+	void EndCurrentBackBufferRendering() noexcept;
+	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, VkImageLayout newLayout) noexcept;
 
 	VulkanRhi* m_rhi = nullptr;
+	VulkanSwapChain* m_swapChain = nullptr;
+	VulkanCommandContext* m_commandContext = nullptr;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
-	std::unique_ptr<VulkanRenderCommandList> m_placeholderCommandList;
 	PerFrameConstantBufferData m_emptyPerFrameConstants = {};
+	std::uint32_t m_currentFrameIndex = 0;
+	std::vector<ResourceViewRecord> m_resourceViewRecords;
+	std::vector<std::uint32_t> m_freeResourceViewIndices;
+	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
+	std::vector<VkImageLayout> m_swapChainBackBufferLayouts;
+	bool m_isPresentRendering = false;
 };

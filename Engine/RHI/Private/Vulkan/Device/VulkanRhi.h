@@ -51,6 +51,9 @@ class VulkanRhi final
 	VkQueue GetGraphicsQueue() const noexcept { return m_graphicsQueue; }
 	std::uint32_t GetGraphicsQueueFamilyIndex() const noexcept { return m_graphicsQueueFamilyIndex; }
 	PFN_vkSetDebugUtilsObjectNameEXT GetSetDebugUtilsObjectName() const noexcept { return m_setDebugUtilsObjectName; }
+	PFN_vkCmdBeginDebugUtilsLabelEXT GetCmdBeginDebugUtilsLabel() const noexcept { return m_cmdBeginDebugUtilsLabel; }
+	PFN_vkCmdEndDebugUtilsLabelEXT GetCmdEndDebugUtilsLabel() const noexcept { return m_cmdEndDebugUtilsLabel; }
+	PFN_vkCmdInsertDebugUtilsLabelEXT GetCmdInsertDebugUtilsLabel() const noexcept { return m_cmdInsertDebugUtilsLabel; }
 	const VulkanAdapterInfo& GetAdapterInfo() const noexcept { return m_adapterInfo; }
 	const VulkanFeatureStatus& GetFeatureStatus() const noexcept { return m_featureStatus; }
 	const std::vector<std::string>& GetEnabledInstanceExtensions() const noexcept { return m_enabledInstanceExtensions; }
@@ -100,6 +103,9 @@ class VulkanRhi final
 	VkQueue m_graphicsQueue = VK_NULL_HANDLE;
 	std::uint32_t m_graphicsQueueFamilyIndex = UINT32_MAX;
 	PFN_vkSetDebugUtilsObjectNameEXT m_setDebugUtilsObjectName = nullptr;
+	PFN_vkCmdBeginDebugUtilsLabelEXT m_cmdBeginDebugUtilsLabel = nullptr;
+	PFN_vkCmdEndDebugUtilsLabelEXT m_cmdEndDebugUtilsLabel = nullptr;
+	PFN_vkCmdInsertDebugUtilsLabelEXT m_cmdInsertDebugUtilsLabel = nullptr;
 	PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugUtilsMessenger = nullptr;
 	VulkanAdapterInfo m_adapterInfo;
 	VulkanFeatureStatus m_featureStatus;

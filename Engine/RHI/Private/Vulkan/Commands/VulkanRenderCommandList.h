@@ -1,10 +1,22 @@
 #pragma once
 
 #include "Commands/RenderCommandList.h"
+#include "Vulkan/VulkanIncludes.h"
+
+#include <array>
+#include <cstdint>
+#include <string>
+#include <string_view>
 
 class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
+	void SetNativeCommandBuffer(
+	    VkCommandBuffer commandBuffer,
+	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
+	    PFN_vkCmdEndDebugUtilsLabelEXT endLabel,
+	    PFN_vkCmdInsertDebugUtilsLabelEXT insertLabel) noexcept;
+
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	NativeGraphicsCommandListHandle GetNativeHandle() const noexcept override;
 	bool SupportsDiagnosticScopes() const noexcept override;
@@ -68,4 +80,19 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept override;
 	void TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept override;
 	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept override;
+
+  private:
+	static VkImageView DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept;
+	static VkDebugUtilsLabelEXT BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept;
+
+	static constexpr std::uint32_t MaxRenderTargets = 8;
+
+	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+	PFN_vkCmdBeginDebugUtilsLabelEXT m_beginDebugUtilsLabel = nullptr;
+	PFN_vkCmdEndDebugUtilsLabelEXT m_endDebugUtilsLabel = nullptr;
+	PFN_vkCmdInsertDebugUtilsLabelEXT m_insertDebugUtilsLabel = nullptr;
+	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};
+	std::uint32_t m_renderTargetCount = 0;
+	VkRect2D m_scissorRect = {};
+	bool m_hasScissorRect = false;
 };

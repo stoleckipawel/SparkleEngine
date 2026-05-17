@@ -2,7 +2,10 @@
 
 #include "Device/RenderDeviceBackendFactory.h"
 
+#include "Config/RenderConfig.h"
+#include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 #include "Time/Timer.h"
@@ -38,7 +41,11 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	VulkanRenderDeviceServices() noexcept = default;
 
 	std::unique_ptr<VulkanRhi> m_rhi;
+	std::unique_ptr<VulkanSwapChain> m_swapChain;
+	std::unique_ptr<VulkanCommandContext> m_commandContext;
 	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
+	std::uint32_t m_currentFrameIndex = 0;
+	bool m_hasAcquiredBackBuffer = false;
 };
 
 std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Timer& timer, Window& window) noexcept
@@ -46,7 +53,7 @@ std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Ti
 	return VulkanRenderDeviceServices::Create(timer, window);
 }
 
-std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Timer&, Window&) noexcept
+std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Timer&, Window& window) noexcept
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
 	{
@@ -54,8 +61,17 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(T
 		services->m_rhi = std::make_unique<VulkanRhi>();
 	}
 	{
+		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateSwapChain");
+		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window);
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateCommandContext");
+		services->m_commandContext = std::make_unique<VulkanCommandContext>(*services->m_rhi);
+	}
+	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateHardwareInterface");
-		services->m_renderHardwareInterface = std::make_unique<VulkanRenderHardwareInterface>(*services->m_rhi);
+		services->m_renderHardwareInterface =
+		    std::make_unique<VulkanRenderHardwareInterface>(*services->m_rhi, *services->m_swapChain, *services->m_commandContext);
 	}
 	return services;
 }
@@ -68,6 +84,8 @@ VulkanRenderDeviceServices::~VulkanRenderDeviceServices() noexcept
 	}
 
 	m_renderHardwareInterface.reset();
+	m_commandContext.reset();
+	m_swapChain.reset();
 	m_rhi.reset();
 }
 
@@ -93,25 +111,64 @@ const RenderDiagnostics& VulkanRenderDeviceServices::GetDiagnostics() const noex
 
 void VulkanRenderDeviceServices::Flush() noexcept
 {
+	m_hasAcquiredBackBuffer = false;
 	m_renderHardwareInterface->WaitForIdle();
 }
 
-void VulkanRenderDeviceServices::ResizeSwapChain() noexcept {}
+void VulkanRenderDeviceServices::ResizeSwapChain() noexcept
+{
+	m_renderHardwareInterface->WaitForIdle();
+	m_swapChain->Resize();
+	m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
+}
 
-void VulkanRenderDeviceServices::BeginFrame() noexcept {}
+void VulkanRenderDeviceServices::BeginFrame() noexcept
+{
+	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
+	m_commandContext->BeginFrame(m_currentFrameIndex);
+	m_hasAcquiredBackBuffer = m_swapChain->AcquireNextImage(m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex));
+	if (!m_hasAcquiredBackBuffer)
+	{
+		m_commandContext->CancelFrame(m_currentFrameIndex);
+		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
+	}
+}
 
 RenderCommandList& VulkanRenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
 {
-	return m_renderHardwareInterface->GetGraphicsCommandList(0);
+	return m_renderHardwareInterface->GetGraphicsCommandList(m_currentFrameIndex);
 }
 
-void VulkanRenderDeviceServices::SubmitFrame() noexcept {}
+void VulkanRenderDeviceServices::SubmitFrame() noexcept
+{
+	if (!m_hasAcquiredBackBuffer)
+	{
+		return;
+	}
 
-void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept {}
+	const VkSemaphore imageAvailableSemaphore = m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex);
+	const VkSemaphore renderFinishedSemaphore = m_commandContext->GetRenderFinishedSemaphore(m_currentFrameIndex);
+	m_commandContext->SubmitFrame(m_currentFrameIndex, imageAvailableSemaphore, renderFinishedSemaphore);
+	if (m_swapChain->Present(renderFinishedSemaphore))
+	{
+		m_renderHardwareInterface->RebuildSwapChainBackBufferViews();
+	}
+	m_hasAcquiredBackBuffer = false;
+}
+
+void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
+{
+	m_currentFrameIndex = (m_currentFrameIndex + 1u) % RenderConfig::FramesInFlight;
+	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
+}
 
 void VulkanRenderDeviceServices::UpdatePerFrameConstants(std::uint32_t) noexcept {}
 
 void VulkanRenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {
+	if (m_hasAcquiredBackBuffer)
+	{
+		SubmitFrame();
+	}
 	m_renderHardwareInterface->WaitForIdle();
 }
