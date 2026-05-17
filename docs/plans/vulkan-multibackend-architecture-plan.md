@@ -681,6 +681,35 @@ Done criteria:
 2. D3D12 and Vulkan barrier translators are small, explicit, and testable.
 3. Vulkan layout transitions are not guessed at individual pass sites.
 
+Phase notebook:
+
+```text
+Phase: 13 - Barrier And Resource State Translation
+Learning goal: ResourceState is Sparkle's synchronization intent; D3D12 consumes it as resource states, Vulkan consumes it as synchronization2 stage/access/layout triples.
+Files studied: ResourceState.h, D3D12TypeConversions.cpp, VulkanTypeConversions.cpp, VulkanRenderCommandList.cpp, FrameGraphBarrierPlayback.cpp, FrameGraphCompiler.cpp.
+Files changed: VulkanTypeConversions.*, VulkanRenderCommandList.*, VulkanRenderHardwareInterface.*, D3D12RenderHardwareInterface.*, ValidateRhiBackendBoundaries.cmake.
+Backend-neutral concept introduced: centralized ResourceState translation plus buffer/image support validation.
+D3D12 behavior preserved: D3D12TypeConversions::ToResourceStates remains the explicit D3D12 mapping table.
+Vulkan behavior enabled: FrameGraph barrier playback reaches vkCmdPipelineBarrier2 through RenderCommandList::TransitionResource and UnorderedAccessBarrier.
+Validation run: FrameGraph boundary, RHI backend boundary, RHI memory boundary, ShaderCompiler boundary, shader package parity, git diff --check, Vulkan trailing-whitespace scan.
+Open risks: texture-from-path upload still needs the Phase 12 texture loader/copy scheduling follow-up; no full build was run by prompt policy.
+```
+
+ResourceState inventory:
+
+| State | FrameGraph/RHI use | Vulkan support rule |
+| --- | --- | --- |
+| `Common` | default initial/final state and fallback tracked state | buffer and image |
+| `RenderTarget` | color attachment writes | image only |
+| `DepthWrite` | depth attachment writes | image only |
+| `DepthRead` | depth read/pass sampling intent | image only |
+| `ShaderResource` | sampled/SRV read intent | buffer and image |
+| `UnorderedAccess` | UAV/storage read-write intent and UAV barriers | buffer and image |
+| `RayTracingAccelerationStructure` | acceleration structure resources | buffer only |
+| `CopySource` | copy/read transfer source | buffer and image |
+| `CopyDest` | copy/write transfer destination | buffer and image |
+| `Present` | imported back buffer initial/final state | image only |
+
 ### Phase 14: Pipeline State And Render Pass Execution
 
 Goal: create graphics/compute pipelines and execute core FrameGraph passes on Vulkan.

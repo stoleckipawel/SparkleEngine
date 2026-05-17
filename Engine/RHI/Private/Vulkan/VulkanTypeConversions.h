@@ -20,6 +20,8 @@ class VulkanTypeConversions final
 	static VkFormat ToVkFormat(PixelFormat format) noexcept;
 	static PixelFormat ToPixelFormat(VkFormat format) noexcept;
 	static VkIndexType ToVkIndexType(RhiIndexFormat format) noexcept;
+	static bool IsBufferResourceStateSupported(ResourceState state) noexcept;
+	static bool IsImageResourceStateSupported(ResourceState state) noexcept;
 	static VulkanResourceStateMapping ToResourceStateMapping(ResourceState state) noexcept;
 	static VkBufferCreateInfo BuildBufferCreateInfo(const RhiBufferResourceDesc& desc, VkBufferUsageFlags extraUsage = 0) noexcept;
 	static VkImageCreateInfo BuildTextureCreateInfo(const RhiTextureResourceDesc& desc, VkImageUsageFlags extraUsage = 0) noexcept;

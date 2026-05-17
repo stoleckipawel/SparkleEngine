@@ -319,6 +319,11 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 
 	if (record != nullptr && record->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && record->Buffer != VK_NULL_HANDLE)
 	{
+		if (!VulkanTypeConversions::IsBufferResourceStateSupported(before) || !VulkanTypeConversions::IsBufferResourceStateSupported(after))
+		{
+			return;
+		}
+
 		const VkBufferMemoryBarrier2 bufferBarrier{
 		    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
 		    .pNext = nullptr,
@@ -347,6 +352,10 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 
 	const VkImage image = record != nullptr && record->Image != VK_NULL_HANDLE ? record->Image : static_cast<VkImage>(resource.Value);
 	if (image == VK_NULL_HANDLE)
+	{
+		return;
+	}
+	if (!VulkanTypeConversions::IsImageResourceStateSupported(before) || !VulkanTypeConversions::IsImageResourceStateSupported(after))
 	{
 		return;
 	}

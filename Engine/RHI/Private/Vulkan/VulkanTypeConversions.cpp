@@ -53,6 +53,48 @@ VkIndexType VulkanTypeConversions::ToVkIndexType(RhiIndexFormat format) noexcept
 	}
 }
 
+bool VulkanTypeConversions::IsBufferResourceStateSupported(ResourceState state) noexcept
+{
+	switch (state)
+	{
+		case ResourceState::Common:
+		case ResourceState::ShaderResource:
+		case ResourceState::UnorderedAccess:
+		case ResourceState::RayTracingAccelerationStructure:
+		case ResourceState::CopySource:
+		case ResourceState::CopyDest:
+			return true;
+		case ResourceState::RenderTarget:
+		case ResourceState::DepthWrite:
+		case ResourceState::DepthRead:
+		case ResourceState::Present:
+		case ResourceState::Count:
+		default:
+			return false;
+	}
+}
+
+bool VulkanTypeConversions::IsImageResourceStateSupported(ResourceState state) noexcept
+{
+	switch (state)
+	{
+		case ResourceState::Common:
+		case ResourceState::RenderTarget:
+		case ResourceState::DepthWrite:
+		case ResourceState::DepthRead:
+		case ResourceState::ShaderResource:
+		case ResourceState::UnorderedAccess:
+		case ResourceState::CopySource:
+		case ResourceState::CopyDest:
+		case ResourceState::Present:
+			return true;
+		case ResourceState::RayTracingAccelerationStructure:
+		case ResourceState::Count:
+		default:
+			return false;
+	}
+}
+
 VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(ResourceState state) noexcept
 {
 	switch (state)
