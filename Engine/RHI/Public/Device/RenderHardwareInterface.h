@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Bindings/RenderBindingSet.h"
 #include "../Commands/RenderCommandList.h"
 #include "../Core/RhiCapabilities.h"
 #include "../Core/RhiBackendApi.h"
@@ -40,6 +41,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
+	virtual std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;

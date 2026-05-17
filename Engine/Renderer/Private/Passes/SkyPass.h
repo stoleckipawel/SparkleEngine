@@ -6,15 +6,18 @@
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
 
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 
 #include <cstdint>
+#include <memory>
 
 class FrameGraphBuilder;
 struct ComputePassPipelineRuntime;
 struct PassExecutionContext;
 struct PassRuntimeServices;
 struct RenderViewData;
+class Texture;
 
 struct SkyPassParameters
 {
@@ -60,6 +63,9 @@ class SkyPass final
 	    ParameterInstance& parameters,
 	    const RenderViewData& viewData,
 	    const PassRuntimeServices& passRuntimeServices) const;
+	RhiDescriptorTableBinding GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept;
 
 	const ComputePassPipelineRuntime& m_runtime;
+	mutable std::unique_ptr<RenderBindingSet> m_skyTextureBindingSet;
+	mutable const Texture* m_cachedSkyTexture = nullptr;
 };

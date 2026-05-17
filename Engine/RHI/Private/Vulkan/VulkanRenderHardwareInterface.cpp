@@ -191,6 +191,11 @@ RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 	return *m_imguiBackend;
 }
 
+std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
+{
+	return std::make_unique<RenderBindingSet>(*this, desc);
+}
+
 std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
 	return VulkanBindingLayoutCompiler::Compile(*m_rhi, desc);

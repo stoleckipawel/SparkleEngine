@@ -841,6 +841,36 @@ Acceptance criteria:
 - The model documents how resources remain alive while GPU work using a binding set or packet is in flight.
 - Bindless remains reserved metadata and is not required for material correctness.
 
+Phase 4 implementation notes:
+
+- `RenderBindingSet` is now a backend-neutral RHI object created by `RenderHardwareInterface`. It owns a descriptor table allocation for its lifetime and exposes descriptor-slot writes plus bindable table records without making ordinary Renderer code own raw table handles.
+- D3D12 and Vulkan both create `RenderBindingSet` through the central RHI device/factory path. The object currently realizes the bindful model through the existing descriptor table allocators, which keeps backend parity while avoiding a service-wrapper abstraction.
+- `MaterialCacheManager` now owns persistent material texture binding sets. `MaterialData` carries a stable pointer to the binding set owned by the cache, and `GBufferPass` binds material texture slots through `RenderBindingSet::GetTableBinding`.
+- `SkyPass` now owns a persistent sky texture binding set instead of a static raw descriptor table. This removes the remaining ordinary Renderer-side descriptor table allocation path.
+- The existing typed pass parameter metadata, `PassParameterSet`, `PassBinder`, and frame graph resource command path remain the transitional frame-local binding packet equivalent for pass resources. A later pass can make that packet object explicit once FrameGraph execution owns command-list packet assembly.
+- Binding set resource liveness is currently tied to existing renderer ownership: material binding sets point at textures resolved by `TextureManager`, and sky binding sets point at the cached sky/default texture. The cache/pass owner must outlive GPU work that consumes the binding set; full delayed-destruction/fence integration belongs with Phase 5 memory and upload ownership.
+- Bindless metadata remains reserved in binding layout compilation and is not used to make material correctness work.
+
+Phase 4 class disposition audit:
+
+| Class / Family | Phase 4 Disposition | Reason |
+| --- | --- | --- |
+| `RenderBindingSet` | Add real owner | Owns persistent bindful descriptor-table lifetime and exposes backend-neutral binding records. |
+| `RenderHardwareInterface` | Adjust / keep central factory | Adds `CreateBindingSet` so binding sets are device-created real objects, not caller-assembled services. |
+| `D3D12RenderHardwareInterface` / `VulkanRenderHardwareInterface` | Adjust backend parity | Both backends create the same binding object through existing descriptor table allocators. |
+| `MaterialCacheManager` | Adjust ownership | Owns material texture binding sets instead of raw descriptor table handles. |
+| `MaterialData` | Adjust payload | Carries a stable binding-set pointer for draw-time binding intent, not a descriptor table handle. |
+| `GBufferPass` / `SkyPass` | Adjust binding use | Bind through persistent binding sets instead of allocating or reconstructing raw descriptor table ownership. |
+| `PassBindingOverrides` | Shrink raw handle surface | Removed the unused raw `RhiDescriptorTableHandle` overload; overrides accept GPU descriptors or backend-neutral table bindings only. |
+
+Phase 4 source-only validation notes:
+
+- Source search should find no `RhiDescriptorTableHandle`, `AllocateDescriptorTable`, `ReleaseDescriptorTable`, or `GetDescriptorTableCpuHandle` references in ordinary Renderer code.
+- Source search should find material and sky texture bindings flowing through `RenderBindingSet`.
+- Source search should find `CreateBindingSet` implemented by both D3D12 and Vulkan backends.
+- Source search should find no `RhiServices` or legacy adapter references reintroduced.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
+
 ### Phase 5: Memory, Uploads, and Allocator Responsibility Split
 
 Idea behind the phase:

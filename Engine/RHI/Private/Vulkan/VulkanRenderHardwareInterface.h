@@ -47,6 +47,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
+	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;

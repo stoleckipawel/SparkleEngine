@@ -3,12 +3,12 @@
 #include "Core/Public/Assets/TextureGroup.h"
 #include "Renderer/Public/RendererAPI.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <DirectXMath.h>
 #include <cstdint>
 
 struct MaterialDesc;
+class RenderBindingSet;
 
 namespace MaterialTextureSlots
 {
@@ -36,7 +36,7 @@ struct SPARKLE_RENDERER_API MaterialData
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
 
-	RhiDescriptorTableHandle textureTableHandle = {};
+	const RenderBindingSet* textureBindingSet = nullptr;
 
 	static MaterialData FromDesc(const MaterialDesc& desc);
 

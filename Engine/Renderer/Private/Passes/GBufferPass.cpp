@@ -17,6 +17,7 @@
 #include "Meshes/GPUMesh.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 
+#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Pipeline/PassPipelineRuntime.h"
@@ -155,27 +156,27 @@ void GBufferPass::DrawOpaqueMeshes(
 		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
 		const PerObjectPSConstantBufferData perObjectPS = sceneData.materials[draw.materialSlot].ToPerObjectPSData();
 
-		const RhiDescriptorTableHandle materialTextureTable = sceneData.materials[draw.materialSlot].textureTableHandle;
-		if (!materialTextureTable)
+		const RenderBindingSet* materialTextureBindingSet = sceneData.materials[draw.materialSlot].textureBindingSet;
+		if (materialTextureBindingSet == nullptr || !*materialTextureBindingSet)
 		{
 			SPDLOG_LOGGER_WARN(
 			    Logging::GetOrCreateLogger("Renderer.GBufferPass"),
-			    "GBufferPass::DrawOpaqueMeshes: Material texture table is invalid; draw skipped.");
+			    "GBufferPass::DrawOpaqueMeshes: Material texture binding set is invalid; draw skipped.");
 			continue;
 		}
 
 		DrawParameterInstance drawParameters(GetDrawParameterMetadata());
 		drawParameters->PerObjectVS = perObjectVS;
 		drawParameters->PerObjectPS = perObjectPS;
-		drawParameters->TextureBaseColor = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::BaseColor};
-		drawParameters->TextureNormal = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Normal};
-		drawParameters->TextureRoughness = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Roughness};
-		drawParameters->TextureMetallic = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Metallic};
-		drawParameters->TextureOcclusion = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Occlusion};
-		drawParameters->TextureEmissive = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::Emissive};
-		drawParameters->TextureSubsurfaceColor = RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::SubsurfaceColor};
+		drawParameters->TextureBaseColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::BaseColor);
+		drawParameters->TextureNormal = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Normal);
+		drawParameters->TextureRoughness = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Roughness);
+		drawParameters->TextureMetallic = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Metallic);
+		drawParameters->TextureOcclusion = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Occlusion);
+		drawParameters->TextureEmissive = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Emissive);
+		drawParameters->TextureSubsurfaceColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceColor);
 		drawParameters->TextureSubsurfaceStrength =
-		    RhiDescriptorTableBinding{materialTextureTable, MaterialTextureSlots::SubsurfaceStrength};
+		    materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceStrength);
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,

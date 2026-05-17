@@ -1,13 +1,14 @@
 #pragma once
 
-#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "Scene/Materials/MaterialSnapshot.h"
 #include "SceneData/MaterialData.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 struct RenderSceneData;
+class RenderBindingSet;
 class RenderHardwareInterface;
 class TextureManager;
 
@@ -27,13 +28,13 @@ class MaterialCacheManager final
 	void Reset() noexcept;
 
   private:
-	void ReleaseMaterialTextureTables() noexcept;
+	void ReleaseMaterialTextureBindingSets() noexcept;
 
 	TextureManager* m_textureManager = nullptr;
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	MaterialSnapshot m_cachedMaterialSnapshot;
 	std::vector<MaterialData> m_cachedMaterialData;
-	std::vector<RhiDescriptorTableHandle> m_materialTextureTables;
+	std::vector<std::unique_ptr<RenderBindingSet>> m_materialTextureBindingSets;
 	bool m_materialCacheBuilt = false;
 	bool m_cachedFromSceneMaterials = false;
 };

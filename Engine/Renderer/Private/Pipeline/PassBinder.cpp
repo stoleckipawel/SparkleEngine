@@ -45,11 +45,6 @@ void PassBindingOverrides::SetDescriptorTable(const char* name, RhiGpuDescriptor
 	        .DescriptorTableKind = DescriptorTableOverrideKind::GpuDescriptor});
 }
 
-void PassBindingOverrides::SetDescriptorTable(const char* name, RhiDescriptorTableHandle descriptorTable)
-{
-	SetDescriptorTable(name, RhiDescriptorTableBinding{descriptorTable, 0u});
-}
-
 void PassBindingOverrides::SetDescriptorTable(const char* name, RhiDescriptorTableBinding descriptorTable)
 {
 	m_overrides.push_back(

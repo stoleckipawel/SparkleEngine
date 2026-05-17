@@ -14,6 +14,7 @@
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Resources/Texture.h"
 #include "Textures/TextureManager.h"
 
@@ -38,35 +39,6 @@ namespace
 		return textureManager->GetTexture(TextureId::Checker);
 	}
 
-	RhiDescriptorTableBinding GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) noexcept
-	{
-		const Texture* skyTexture = ResolveSkyTexture(passRuntimeServices.Textures);
-		if (skyTexture == nullptr)
-		{
-			return {};
-		}
-
-		static RhiDescriptorTableHandle skyTextureTable = {};
-		static const Texture* cachedTexture = nullptr;
-		RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
-		if (!skyTextureTable)
-		{
-			skyTextureTable = renderHardwareInterface.AllocateDescriptorTable(ERhiDescriptorAllocatorType::ShaderResource, 1u);
-		}
-
-		if (!skyTextureTable)
-		{
-			return {};
-		}
-
-		if (cachedTexture != skyTexture)
-		{
-			skyTexture->WriteShaderResourceView(renderHardwareInterface.GetDescriptorTableCpuHandle(skyTextureTable));
-			cachedTexture = skyTexture;
-		}
-
-		return RhiDescriptorTableBinding{skyTextureTable, 0u};
-	}
 }
 
 const SkyPass::ParameterMetadata& SkyPass::GetParameterMetadata() noexcept
@@ -107,6 +79,35 @@ void SkyPass::SetParameters(ParameterInstance& parameters, const RenderViewData&
 	    .Address = MakeRhiSamplerAddressModes(RhiSamplerAddressMode::Clamp)};
 	const bool valid = parameters.Sync();
 	assert(valid);
+}
+
+RhiDescriptorTableBinding SkyPass::GetSkyTextureBinding(const PassRuntimeServices& passRuntimeServices) const noexcept
+{
+	const Texture* skyTexture = ResolveSkyTexture(passRuntimeServices.Textures);
+	if (skyTexture == nullptr)
+	{
+		return {};
+	}
+
+	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
+	if (!m_skyTextureBindingSet)
+	{
+		m_skyTextureBindingSet = renderHardwareInterface.CreateBindingSet(
+		    RenderBindingSetDesc{.DescriptorType = ERhiDescriptorAllocatorType::ShaderResource, .DescriptorCount = 1u});
+	}
+
+	if (!m_skyTextureBindingSet || !*m_skyTextureBindingSet)
+	{
+		return {};
+	}
+
+	if (m_cachedSkyTexture != skyTexture)
+	{
+		skyTexture->WriteShaderResourceView(m_skyTextureBindingSet->GetCpuDescriptorHandle());
+		m_cachedSkyTexture = skyTexture;
+	}
+
+	return m_skyTextureBindingSet->GetTableBinding();
 }
 
 void SkyPass::Execute(PassExecutionContext& context, ParameterInstance& parameters) const

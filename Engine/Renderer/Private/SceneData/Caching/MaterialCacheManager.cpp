@@ -8,6 +8,7 @@
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "RHI/Public/Bindings/RenderBindingSet.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
@@ -55,7 +56,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		return;
 	}
 
-	ReleaseMaterialTextureTables();
+	ReleaseMaterialTextureBindingSets();
 	m_cachedMaterialData.clear();
 	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
@@ -75,15 +76,17 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceColor), DefaultTexture::Black),
 		    m_textureManager->ResolveTextureReferenceOrDefault(desc.FindTextureReference(TextureGroup::SubsurfaceStrength), DefaultTexture::Black)};
 
-		const RhiDescriptorTableHandle tableHandle =
-		    m_renderHardwareInterface->AllocateDescriptorTable(ERhiDescriptorAllocatorType::ShaderResource, MaterialTextureSlots::Count);
-		if (!tableHandle)
+		auto textureBindingSet = m_renderHardwareInterface->CreateBindingSet(
+		    RenderBindingSetDesc{
+		        .DescriptorType = ERhiDescriptorAllocatorType::ShaderResource,
+		        .DescriptorCount = MaterialTextureSlots::Count});
+		if (!textureBindingSet || !*textureBindingSet)
 		{
 			Diagnostics::Fail(
 			    g_materialCacheManagerLogger,
 			    __FILE__,
 			    __LINE__,
-			    "MaterialCacheManager::Rebuild: failed to allocate material descriptor table.");
+			    "MaterialCacheManager::Rebuild: failed to allocate material texture binding set.");
 			return;
 		}
 
@@ -98,11 +101,11 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 				    std::format("MaterialCacheManager::Rebuild: Material texture slot {} resolved to null.", slot));
 			}
 
-			textures[slot]->WriteShaderResourceView(m_renderHardwareInterface->GetDescriptorTableCpuHandle(tableHandle, slot));
+			textures[slot]->WriteShaderResourceView(textureBindingSet->GetCpuDescriptorHandle(slot));
 		}
 
-		material.textureTableHandle = tableHandle;
-		m_materialTextureTables.push_back(tableHandle);
+		material.textureBindingSet = textureBindingSet.get();
+		m_materialTextureBindingSets.push_back(std::move(textureBindingSet));
 		m_cachedMaterialData.push_back(material);
 	};
 
@@ -110,7 +113,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	{
 		m_cachedMaterialSnapshot = materialSnapshot;
 		m_cachedMaterialData.reserve(materialSnapshot.materialDescs.size());
-		m_materialTextureTables.reserve(materialSnapshot.materialDescs.size());
+		m_materialTextureBindingSets.reserve(materialSnapshot.materialDescs.size());
 
 		for (const auto& desc : materialSnapshot.materialDescs)
 		{
@@ -120,7 +123,7 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 	else
 	{
 		m_cachedMaterialData.reserve(1);
-		m_materialTextureTables.reserve(1);
+		m_materialTextureBindingSets.reserve(1);
 
 		MaterialDesc defaultMaterial;
 		defaultMaterial.name = "Renderer_DefaultMaterial";
@@ -132,27 +135,14 @@ void MaterialCacheManager::Rebuild(const MaterialSnapshot& materialSnapshot)
 
 void MaterialCacheManager::Reset() noexcept
 {
-	ReleaseMaterialTextureTables();
+	ReleaseMaterialTextureBindingSets();
 	m_cachedMaterialData.clear();
 	m_cachedMaterialSnapshot.Reset();
 	m_materialCacheBuilt = false;
 	m_cachedFromSceneMaterials = false;
 }
 
-void MaterialCacheManager::ReleaseMaterialTextureTables() noexcept
+void MaterialCacheManager::ReleaseMaterialTextureBindingSets() noexcept
 {
-	if (!m_renderHardwareInterface)
-	{
-		return;
-	}
-
-	for (const RhiDescriptorTableHandle tableHandle : m_materialTextureTables)
-	{
-		if (tableHandle)
-		{
-			m_renderHardwareInterface->ReleaseDescriptorTable(tableHandle);
-		}
-	}
-
-	m_materialTextureTables.clear();
+	m_materialTextureBindingSets.clear();
 }

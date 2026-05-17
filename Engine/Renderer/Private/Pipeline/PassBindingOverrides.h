@@ -41,7 +41,6 @@ class PassBindingOverrides final
 	void SetShaderResourceView(const char* name, RhiGpuVirtualAddress gpuAddress);
 	void SetUnorderedAccessView(const char* name, RhiGpuVirtualAddress gpuAddress);
 	void SetDescriptorTable(const char* name, RhiGpuDescriptorHandle descriptorTable);
-	void SetDescriptorTable(const char* name, RhiDescriptorTableHandle descriptorTable);
 	void SetDescriptorTable(const char* name, RhiDescriptorTableBinding descriptorTable);
 	void SetPushConstants(const char* name, const void* data, std::uint32_t constantCount);
 

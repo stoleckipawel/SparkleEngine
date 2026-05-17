@@ -201,6 +201,11 @@ RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
 	return *m_imguiBackend;
 }
 
+std::unique_ptr<RenderBindingSet> D3D12RenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)
+{
+	return std::make_unique<RenderBindingSet>(*this, desc);
+}
+
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
 	if (m_rhi == nullptr || desc.ParameterLayout == nullptr || desc.ShaderPackage == nullptr)
