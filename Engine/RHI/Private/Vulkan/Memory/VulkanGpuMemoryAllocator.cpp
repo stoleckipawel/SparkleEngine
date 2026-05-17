@@ -206,6 +206,7 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 
 	VmaTotalStatistics totalStats = {};
 	vmaCalculateStatistics(m_impl->Allocator, &totalStats);
+	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::VMA;
 	snapshot.TotalUsedBytes = totalStats.total.statistics.allocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.total.statistics.blockBytes;
 
@@ -233,6 +234,11 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			++aggregation.Stats.ResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
 			aggregation.Stats.AllocatedBytes += record->AllocatedBytes;
+			snapshot.CommittedUsageBytes += record->AllocatedBytes;
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			{
+				snapshot.TransientUsageBytes += record->AllocatedBytes;
+			}
 			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
 
 			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
@@ -255,6 +261,11 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			aggregation.Stats.ResourceCount += record->AliasingResourceCount;
 			aggregation.Stats.UsedBytes += record->UsedBytes;
 			aggregation.Stats.AllocatedBytes += record->AllocatedBytes;
+			snapshot.PlacedUsageBytes += record->AllocatedBytes;
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			{
+				snapshot.TransientUsageBytes += record->AllocatedBytes;
+			}
 			AddHeapReference(aggregation, record->MemoryHeapIndex, heapBudgets);
 
 			snapshot.Allocations.push_back(RhiMemoryAllocationInfo{
@@ -263,6 +274,24 @@ RhiMemoryUsageSnapshot VulkanGpuMemoryAllocator::CreateMemoryUsageSnapshot() con
 			    .UsedBytes = record->UsedBytes,
 			    .AllocatedBytes = record->AllocatedBytes,
 			    .DebugName = record->DebugName});
+		}
+
+		for (const PendingAllocationRelease& pendingRelease : m_impl->PendingReleases)
+		{
+			if (pendingRelease.Record != nullptr)
+			{
+				snapshot.DelayedDestructionBytes += pendingRelease.Record->AllocatedBytes;
+				++snapshot.DelayedDestructionAllocationCount;
+			}
+		}
+
+		for (const PendingMemoryBlockRelease& pendingRelease : m_impl->PendingMemoryBlockReleases)
+		{
+			if (pendingRelease.Record != nullptr)
+			{
+				snapshot.DelayedDestructionBytes += pendingRelease.Record->AllocatedBytes;
+				++snapshot.DelayedDestructionAllocationCount;
+			}
 		}
 	}
 

@@ -18,9 +18,9 @@ class D3D12TextureFactory final : public TextureFactory
 	{
 	}
 
-	std::unique_ptr<Texture> CreateTexture(TextureLoadResult loadResult) const override
+	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload) const override
 	{
-		return std::make_unique<D3D12Texture>(*m_rhi, std::move(loadResult), *m_descriptorHeapManager);
+		return std::make_unique<D3D12Texture>(*m_rhi, std::move(textureUpload), *m_descriptorHeapManager);
 	}
 
   private:

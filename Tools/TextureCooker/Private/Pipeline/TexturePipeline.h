@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHI/Private/D3D12/Textures/TextureLoadResult.h"
+#include "Pipeline/TextureLoadResult.h"
 #include "TextureCookRequestList.h"
 
 #include <string>

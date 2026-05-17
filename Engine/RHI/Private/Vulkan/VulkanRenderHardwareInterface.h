@@ -71,7 +71,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiRect GetBackBufferScissorRect() const noexcept override;
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
 	NativeResourceHandle GetBackBufferResource() const noexcept override;
-	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const override;
+	std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,

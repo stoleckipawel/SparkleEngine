@@ -176,6 +176,7 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 
 	D3D12MA::TotalStatistics totalStats = {};
 	m_impl->allocator->CalculateStatistics(&totalStats);
+	snapshot.AllocatorBackend = ERhiMemoryAllocatorBackend::D3D12MA;
 	snapshot.TotalUsedBytes = totalStats.Total.Stats.AllocationBytes;
 	snapshot.TotalAllocatedBytes = totalStats.Total.Stats.BlockBytes;
 	snapshot.TotalBudgetBytes = localBudget.BudgetBytes + nonLocalBudget.BudgetBytes;
@@ -195,6 +196,18 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			}
 
 			const std::uint64_t allocationBytes = record->Allocation->GetSize();
+			if (record->Allocation->GetHeap() == nullptr)
+			{
+				snapshot.CommittedUsageBytes += allocationBytes;
+			}
+			else
+			{
+				snapshot.PlacedUsageBytes += allocationBytes;
+			}
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			{
+				snapshot.TransientUsageBytes += allocationBytes;
+			}
 			CategoryAggregation& aggregation = FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,
@@ -226,6 +239,11 @@ RhiMemoryUsageSnapshot D3D12GpuMemoryAllocator::CreateMemoryUsageSnapshot() cons
 			}
 
 			const std::uint64_t allocationBytes = record->Allocation->GetSize();
+			snapshot.PlacedUsageBytes += allocationBytes;
+			if (record->ResidencyClass == RhiMemoryResidencyClass::Transient || record->Category == RhiMemoryCategory::FrameGraphTransient)
+			{
+				snapshot.TransientUsageBytes += allocationBytes;
+			}
 			CategoryAggregation& aggregation = FindOrCreateAggregation(
 			    aggregations,
 			    record->Category,

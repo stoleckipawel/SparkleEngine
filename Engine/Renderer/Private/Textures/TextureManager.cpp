@@ -7,9 +7,11 @@
 #include "Core/Public/Paths/PathUtils.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "Resources/Texture.h"
+#include "Textures/CookedTextureLoader.h"
 
 #include <algorithm>
 #include <format>
+#include <utility>
 
 static const auto g_textureManagerLogger = Logging::GetOrCreateLogger("Renderer.TextureManager");
 
@@ -25,7 +27,13 @@ std::unique_ptr<Texture> TextureManager::CreateTextureFromPath(const std::filesy
 		return nullptr;
 	}
 
-	return m_renderHardwareInterface->CreateTextureFromPath(texturePath);
+	RhiTextureUploadDesc textureUpload = CookedTextureLoader::Load(texturePath);
+	if (!textureUpload.IsValid())
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->CreateTexture(std::move(textureUpload), texturePath.filename().wstring());
 }
 
 TextureManager::TextureManager(RenderHardwareInterface& renderHardwareInterface) noexcept :

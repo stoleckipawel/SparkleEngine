@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12/Textures/TextureLoadResult.h"
+#include "Resources/RhiTextureUpload.h"
 
 #include <memory>
 
@@ -15,5 +15,5 @@ class TextureFactory
 
 	static std::unique_ptr<TextureFactory> Create(D3D12Rhi& rhi, D3D12DescriptorHeapManager& descriptorHeapManager);
 
-	virtual std::unique_ptr<Texture> CreateTexture(TextureLoadResult loadResult) const = 0;
+	virtual std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload) const = 0;
 };

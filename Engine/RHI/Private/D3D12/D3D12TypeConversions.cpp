@@ -6,16 +6,48 @@ DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 {
 	switch (format)
 	{
-		case PixelFormat::R8G8B8A8_UNorm:
-			return DXGI_FORMAT_R8G8B8A8_UNORM;
-		case PixelFormat::B8G8R8A8_UNorm:
-			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		case PixelFormat::R32G32B32A32_Float:
+			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case PixelFormat::R16G16B16A16_Float:
 			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case PixelFormat::R8G8B8A8_UNorm:
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		case PixelFormat::R8G8B8A8_UNorm_Srgb:
+			return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		case PixelFormat::B8G8R8A8_UNorm:
+			return DXGI_FORMAT_B8G8R8A8_UNORM;
+		case PixelFormat::B8G8R8A8_UNorm_Srgb:
+			return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
 		case PixelFormat::D24_UNorm_S8_UInt:
 			return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case PixelFormat::R32_Float:
 			return DXGI_FORMAT_R32_FLOAT;
+		case PixelFormat::BC1_UNorm:
+			return DXGI_FORMAT_BC1_UNORM;
+		case PixelFormat::BC1_UNorm_Srgb:
+			return DXGI_FORMAT_BC1_UNORM_SRGB;
+		case PixelFormat::BC2_UNorm:
+			return DXGI_FORMAT_BC2_UNORM;
+		case PixelFormat::BC2_UNorm_Srgb:
+			return DXGI_FORMAT_BC2_UNORM_SRGB;
+		case PixelFormat::BC3_UNorm:
+			return DXGI_FORMAT_BC3_UNORM;
+		case PixelFormat::BC3_UNorm_Srgb:
+			return DXGI_FORMAT_BC3_UNORM_SRGB;
+		case PixelFormat::BC4_UNorm:
+			return DXGI_FORMAT_BC4_UNORM;
+		case PixelFormat::BC4_SNorm:
+			return DXGI_FORMAT_BC4_SNORM;
+		case PixelFormat::BC5_UNorm:
+			return DXGI_FORMAT_BC5_UNORM;
+		case PixelFormat::BC5_SNorm:
+			return DXGI_FORMAT_BC5_SNORM;
+		case PixelFormat::BC6H_UF16:
+			return DXGI_FORMAT_BC6H_UF16;
+		case PixelFormat::BC7_UNorm:
+			return DXGI_FORMAT_BC7_UNORM;
+		case PixelFormat::BC7_UNorm_Srgb:
+			return DXGI_FORMAT_BC7_UNORM_SRGB;
 		case PixelFormat::Unknown:
 		default:
 			return DXGI_FORMAT_UNKNOWN;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Core/RhiCapabilities.h"
 #include "RhiMemoryTypes.h"
 #include "../RHIAPI.h"
 
@@ -31,10 +32,16 @@ struct RhiMemoryAllocationInfo
 
 struct RhiMemoryUsageSnapshot
 {
+	ERhiMemoryAllocatorBackend AllocatorBackend = ERhiMemoryAllocatorBackend::Unknown;
 	std::uint64_t TotalUsedBytes = 0;
 	std::uint64_t TotalAllocatedBytes = 0;
 	std::uint64_t TotalBudgetBytes = 0;
 	std::uint64_t ApiUsageBytes = 0;
+	std::uint64_t CommittedUsageBytes = 0;
+	std::uint64_t PlacedUsageBytes = 0;
+	std::uint64_t TransientUsageBytes = 0;
+	std::uint64_t DelayedDestructionBytes = 0;
+	std::uint64_t DelayedDestructionAllocationCount = 0;
 	std::vector<RhiMemoryCategoryStats> CategoryStats;
 	std::vector<RhiMemoryAllocationInfo> Allocations;
 };

@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Resources/D3D12Texture.h"
+#include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
@@ -8,60 +9,27 @@
 
 static const auto g_d3d12TextureLogger = Logging::GetOrCreateLogger("RHI.Textures");
 
-static std::uint64_t D3D12TextureCalculatePayloadBytes(const TextureLoadResult& textureLoadResult) noexcept
+static std::uint64_t D3D12TextureCalculatePayloadBytes(const RhiTextureUploadDesc& textureUpload) noexcept
 {
 	std::uint64_t byteCount = 0;
-	for (const TextureArraySliceData& arraySlice : textureLoadResult.arraySlices)
+	for (const RhiTextureArraySliceUploadData& arraySlice : textureUpload.ArraySlices)
 	{
-		for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
 		{
-			byteCount += static_cast<std::uint64_t>(mipLevel.data.size());
+			byteCount += static_cast<std::uint64_t>(mipLevel.Data.size());
 		}
 	}
 	return byteCount;
 }
 
-static const char* D3D12TextureFormatName(DXGI_FORMAT format) noexcept
+static const char* D3D12TextureFormatName(PixelFormat format) noexcept
 {
-	switch (format)
-	{
-		case DXGI_FORMAT_R8G8B8A8_UNORM:
-			return "R8G8B8A8_UNORM";
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-			return "R8G8B8A8_UNORM_SRGB";
-		case DXGI_FORMAT_B8G8R8A8_UNORM:
-			return "B8G8R8A8_UNORM";
-		case DXGI_FORMAT_BC1_UNORM:
-			return "BC1_UNORM";
-		case DXGI_FORMAT_BC1_UNORM_SRGB:
-			return "BC1_UNORM_SRGB";
-		case DXGI_FORMAT_BC2_UNORM:
-			return "BC2_UNORM";
-		case DXGI_FORMAT_BC2_UNORM_SRGB:
-			return "BC2_UNORM_SRGB";
-		case DXGI_FORMAT_BC3_UNORM:
-			return "BC3_UNORM";
-		case DXGI_FORMAT_BC3_UNORM_SRGB:
-			return "BC3_UNORM_SRGB";
-		case DXGI_FORMAT_BC4_UNORM:
-			return "BC4_UNORM";
-		case DXGI_FORMAT_BC5_UNORM:
-			return "BC5_UNORM";
-		case DXGI_FORMAT_BC6H_UF16:
-			return "BC6H_UF16";
-		case DXGI_FORMAT_BC7_UNORM:
-			return "BC7_UNORM";
-		case DXGI_FORMAT_BC7_UNORM_SRGB:
-			return "BC7_UNORM_SRGB";
-		case DXGI_FORMAT_UNKNOWN:
-		default:
-			return "Unknown";
-	}
+	return PixelFormatName(format);
 }
 
-D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D3D12DescriptorHeapManager& descriptorHeapManager) :
+D3D12Texture::D3D12Texture(D3D12Rhi& rhi, RhiTextureUploadDesc textureUpload, D3D12DescriptorHeapManager& descriptorHeapManager) :
     m_rhi(rhi),
-    m_textureLoadResult(std::move(textureLoadResult)),
+    m_textureUpload(std::move(textureUpload)),
     m_srvHandle(descriptorHeapManager.GetAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)->Allocate()),
     m_descriptorHeapManager(&descriptorHeapManager)
 {
@@ -70,9 +38,9 @@ D3D12Texture::D3D12Texture(D3D12Rhi& rhi, TextureLoadResult textureLoadResult, D
 		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: failed to allocate SRV descriptor.");
 	}
 
-	if (!m_textureLoadResult.IsValid())
+	if (!m_textureUpload.IsValid())
 	{
-		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: runtime texture load result is invalid.");
+		Diagnostics::Fail(g_d3d12TextureLogger, __FILE__, __LINE__, "D3D12Texture: runtime texture upload payload is invalid.");
 	}
 
 	CreateResource();
@@ -84,11 +52,11 @@ void D3D12Texture::CreateResource()
 {
 	m_texResourceDesc = {};
 	m_texResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	m_texResourceDesc.Width = static_cast<UINT64>(m_textureLoadResult.width);
-	m_texResourceDesc.Height = static_cast<UINT>(m_textureLoadResult.height);
-	m_texResourceDesc.DepthOrArraySize = m_textureLoadResult.GetArraySize();
-	m_texResourceDesc.MipLevels = m_textureLoadResult.GetMipCount();
-	m_texResourceDesc.Format = m_textureLoadResult.dxgiFormat;
+	m_texResourceDesc.Width = static_cast<UINT64>(m_textureUpload.Width);
+	m_texResourceDesc.Height = static_cast<UINT>(m_textureUpload.Height);
+	m_texResourceDesc.DepthOrArraySize = m_textureUpload.GetArraySize();
+	m_texResourceDesc.MipLevels = m_textureUpload.GetMipCount();
+	m_texResourceDesc.Format = D3D12TypeConversions::ToDxgiFormat(m_textureUpload.Format);
 	m_texResourceDesc.SampleDesc.Count = 1;
 	m_texResourceDesc.SampleDesc.Quality = 0;
 	m_texResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -107,7 +75,7 @@ void D3D12Texture::CreateResource()
 	}
 	CHECK(m_textureAllocation->Resource.As(&m_textureResource));
 
-	const UINT subresourceCount = static_cast<UINT>(m_textureLoadResult.GetSubresourceCount());
+	const UINT subresourceCount = static_cast<UINT>(m_textureUpload.GetSubresourceCount());
 	UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_textureResource.Get(), 0, subresourceCount);
 
 	CD3DX12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
@@ -127,16 +95,16 @@ void D3D12Texture::CreateResource()
 void D3D12Texture::UploadToGPU()
 {
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	subresources.reserve(m_textureLoadResult.GetSubresourceCount());
+	subresources.reserve(m_textureUpload.GetSubresourceCount());
 
-	for (const TextureArraySliceData& arraySlice : m_textureLoadResult.arraySlices)
+	for (const RhiTextureArraySliceUploadData& arraySlice : m_textureUpload.ArraySlices)
 	{
-		for (const TextureMipLevelData& mipLevel : arraySlice.mipLevels)
+		for (const RhiTextureMipUploadData& mipLevel : arraySlice.MipLevels)
 		{
 			D3D12_SUBRESOURCE_DATA subresource = {};
-			subresource.pData = mipLevel.data.empty() ? nullptr : mipLevel.data.data();
-			subresource.RowPitch = static_cast<LONG_PTR>(mipLevel.rowPitch);
-			subresource.SlicePitch = static_cast<LONG_PTR>(mipLevel.slicePitch);
+			subresource.pData = mipLevel.Data.empty() ? nullptr : mipLevel.Data.data();
+			subresource.RowPitch = static_cast<LONG_PTR>(mipLevel.RowPitch);
+			subresource.SlicePitch = static_cast<LONG_PTR>(mipLevel.SlicePitch);
 			subresources.push_back(subresource);
 		}
 	}
@@ -165,20 +133,20 @@ void D3D12Texture::CreateShaderResourceView()
 D3D12_SHADER_RESOURCE_VIEW_DESC D3D12Texture::BuildShaderResourceViewDesc() const noexcept
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = m_textureLoadResult.dxgiFormat;
+	srvDesc.Format = D3D12TypeConversions::ToDxgiFormat(m_textureUpload.Format);
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	if (m_textureLoadResult.IsCube())
+	if (m_textureUpload.IsCube())
 	{
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		srvDesc.TextureCube.MostDetailedMip = 0;
-		srvDesc.TextureCube.MipLevels = m_textureLoadResult.GetMipCount();
+		srvDesc.TextureCube.MipLevels = m_textureUpload.GetMipCount();
 		srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 	}
 	else
 	{
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MostDetailedMip = 0;
-		srvDesc.Texture2D.MipLevels = m_textureLoadResult.GetMipCount();
+		srvDesc.Texture2D.MipLevels = m_textureUpload.GetMipCount();
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 	}
 	return srvDesc;
@@ -195,16 +163,16 @@ void D3D12Texture::WriteShaderResourceView(RhiCpuDescriptorHandle destination) c
 TextureRuntimeInfo D3D12Texture::GetRuntimeInfo() const noexcept
 {
 	TextureRuntimeInfo info;
-	info.Width = m_textureLoadResult.width;
-	info.Height = m_textureLoadResult.height;
-	info.ArraySize = m_textureLoadResult.GetArraySize();
-	info.Dimension = m_textureLoadResult.dimension;
-	info.FormatName = D3D12TextureFormatName(m_textureLoadResult.dxgiFormat);
-	info.FormatIntent = m_textureLoadResult.formatIntent;
-	info.MipCount = m_textureLoadResult.GetMipCount();
-	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureLoadResult);
+	info.Width = m_textureUpload.Width;
+	info.Height = m_textureUpload.Height;
+	info.ArraySize = m_textureUpload.GetArraySize();
+	info.Dimension = m_textureUpload.Dimension;
+	info.FormatName = D3D12TextureFormatName(m_textureUpload.Format);
+	info.FormatIntent = m_textureUpload.FormatIntent;
+	info.MipCount = m_textureUpload.GetMipCount();
+	info.EstimatedByteSize = D3D12TextureCalculatePayloadBytes(m_textureUpload);
 	info.GpuShaderResourceViewId = m_srvHandle.IsValid() ? m_srvHandle.GetGPU().ptr : 0;
-	info.IsValid = m_textureLoadResult.IsValid() && m_textureResource != nullptr;
+	info.IsValid = m_textureUpload.IsValid() && m_textureResource != nullptr;
 	return info;
 }
 

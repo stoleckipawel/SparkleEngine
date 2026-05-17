@@ -159,7 +159,7 @@ This is the Phase 0 ledger for the current `RenderHardwareInterface` surface. It
 | Binding / descriptor realization | `BindGlobalDescriptorState`, `AllocateDescriptor`, `ReleaseDescriptor`, `AllocateDescriptorTable`, `GetDescriptorTableCpuHandle`, `ReleaseDescriptorTable`, `AllocateShaderResourceDescriptor`, `ReleaseShaderResourceDescriptor`, `GetSharedSamplerBinding` | Move raw descriptor allocation behind binding-set/binding-packet realization. Renderer should request binding intent, not descriptor mechanics. |
 | Upload / constant data | `GetPerFrameConstantData`, `GetPerFrameConstantGpuAddress`, `AllocateUniformConstantBuffer`, `AllocatePerViewConstantBuffer`, `AllocatePerObjectVertexConstants`, `AllocatePerObjectPixelConstants` | Replace renderer-facing GPU-address traffic with backend-neutral constant/upload binding records where possible. Raw GPU virtual addresses are backend capability details. |
 | Presentation | `GetBackBufferViewport`, `GetBackBufferScissorRect`, `GetBackBufferRenderTargetView`, `GetBackBufferResource`, `BeginPresentRenderPass`, `BeginPresentOverlayPass`, `EndPresentRenderPass`, `GetPresentColorFormat` | Isolate behind presentation/host integration. Materials, scene systems, asset systems, and frame graph planning should not depend on presentation APIs. |
-| Runtime asset loading boundary | `CreateTextureFromPath` | Move out of core RHI. Runtime RHI should create GPU resources from cooked/upload-ready payloads; tools/editor/source systems own source path import/loading. |
+| Runtime texture upload boundary | `CreateTexture` | Core RHI creates GPU textures from backend-neutral cooked/upload-ready payloads. Renderer/runtime asset systems own cooked asset loading; tools/editor/source systems own source path import/loading. |
 | Persistent GPU resources | `CreateTextureResource`, `CreateBufferResource`, `CreateVertexBuffer`, `CreateIndexBuffer`, `ReleaseOwnedResource` | Keep as backend-neutral resource/upload services, but align mesh/texture uploads with cooked payloads and explicit lifetime ownership. |
 | Memory / allocation planning | `GetTextureAllocationInfo`, `GetBufferAllocationInfo`, `CreateTransientMemoryBlock`, `ReleaseTransientMemoryBlock`, `CreateAliasingTextureResource`, `CreateAliasingBufferResource` | Keep backend-neutral memory intent in public RHI. D3D12MA/VMA details stay backend-private; FrameGraph owns transient lifetime/aliasing intent. |
 | Resource views | `CreateResourceView`, `ReleaseResourceView`, `GetResourceViewCpuHandle`, `GetResourceViewGpuHandle` | Treat as RHI binding/resource-view realization. Renderer should prefer resource views through binding sets/packets instead of CPU/GPU descriptor handle ownership. |
@@ -213,14 +213,14 @@ This is the Phase 1 source-inspection ledger. It records current ownership, targ
 | `D3D12SwapChain` / `VulkanSwapChain` | RHI backend-private presentation implementation | RHI presentation service -> backend-private swapchain | Render-thread-owned presentation lifecycle | Keep, isolate | Useful owner. Presentation should move out of core device/facade in Phase 3. |
 | `D3D12ImGuiBackend` / `VulkanImGuiBackend` | RHI backend-private editor adapter, target Editor/Renderer integration | Editor/presentation integration -> backend adapter | Render-thread-owned editor overlay state | Move outward / isolate | Backend-specific adapter is useful, but core RHI should not require ImGui concepts. Defer to Phase 3/7 boundary cleanup. |
 | `D3D12SamplerLibrary` / `VulkanSamplerLibrary` | RHI backend-private sampler realization | RHI binding system -> backend sampler library | Backend-owned cache | Keep backend-private | Useful focused cache if only sampler realization. Keep out of Renderer. |
-| `VulkanTextureFactory` / `VulkanTextureLoader` and D3D12 texture loading equivalents | RHI backend-private GPU texture creation, source-load path transitional | Runtime should use cooked/upload-ready payloads; source loading belongs Tools/Editor | Backend creation on render thread; source loading should leave runtime | Split / move | GPU factory is useful; source-path loading in core runtime is wrong. Defer source-load removal to Phase 5/7. |
+| `VulkanTextureFactory` and D3D12 texture factory/resource implementations | RHI backend-private GPU texture creation from upload-ready payloads | Runtime should use cooked/upload-ready payloads; source loading belongs Tools/Editor | Backend creation on render thread; source loading stays outside core RHI | Keep / shrink | GPU factory/resource creation is useful. Phase 5 removed core RHI source-path loaders; future Vulkan texture upload implementation must consume the same neutral payload contract. |
 | `VulkanCommandContext` / backend command contexts and command lists | RHI backend-private command allocation/submission | RHI command contract -> backend command context | Render-thread-owned today; future command recording contract needed | Keep, evolve | Proper backend owner. Needs explicit future per-frame/per-thread ownership in Phase 9. |
 
 ### Renderer and FrameGraph Responsibility Ledger
 
 | Class / Family | Target Module | Allowed Edges | Mutation / Thread Assumption | Disposition | Mental-Load Judgment and Phase Action |
 | --- | --- | --- | --- | --- | --- |
-| `TextureManager` | Renderer private runtime texture registry/cache | Renderer private -> RHI public resource/upload; Renderer private -> runtime cooked texture refs | Render-thread-owned cache; future explicit synchronization policy | Split | Useful for default/fallback policy and residency cache. Source path loading increases mental load and violates runtime boundary; defer move to Phase 5/7. |
+| `TextureManager` | Renderer private runtime texture registry/cache and cooked texture upload driver | Renderer private -> RHI public resource/upload; Renderer private -> runtime cooked texture refs | Render-thread-owned cache; future explicit synchronization policy | Adjust | Useful for default/fallback policy and residency cache. Phase 5 moved cooked `.stex` loading into Renderer-side texture ownership and removed source-path loading from core RHI. |
 | `MaterialCacheManager` | Renderer private material resource cache, future binding-set owner | Renderer private -> TextureManager + RHI binding/resource contracts | Render-thread-owned material cache today | Adjust | Useful material-data cache, but raw `RhiDescriptorTableHandle` ownership is wrong. Defer to Phase 4 binding-set migration. |
 | `PipelineStateManager` | Renderer private shader package + pass pipeline runtime cache | Renderer passes -> PipelineStateManager -> RHI pipeline/binding contracts | Lazy mutable cache; render-thread-owned unless synchronized later | Adjust | Useful, but dependency on full RHI and combined shader/pipeline cache can add mental load. Defer narrow-interface dependency to Phase 3; split only if reload and PSO lifetime diverge. |
 | `GPUMeshCache` / `GPUMesh` | Renderer private mesh GPU resource cache | Renderer private -> RHI resource/upload contracts; GameFramework mesh data -> Renderer extraction | Render-thread-owned cache | Keep, align | Useful owner for mesh GPU lifetime. Needs cooked/upload service alignment and future extraction boundary in Phases 5 and 9. |
@@ -900,6 +900,40 @@ Acceptance criteria:
 - Source asset import/loading is owned by tools/editor/asset systems, not core RHI.
 - Upload and readback/staging resources have explicit contracts and backend implementations.
 - FrameGraph can express transient allocation intent without knowing D3D12MA/VMA mechanics.
+
+Phase 5 implementation notes:
+
+- Added `RhiTextureUploadDesc` as the backend-neutral runtime texture upload payload. It carries dimensions, array/cube layout, `PixelFormat`, `TextureFormatIntent`, mip row/slice pitch, and byte payloads without exposing D3D12 or Vulkan native types.
+- Expanded `PixelFormat` to cover the cooked texture formats already flowing through the cooker/runtime path, including sRGB, HDR, and BC compressed formats. D3D12 and Vulkan type conversions now map those values to backend-native formats privately.
+- Replaced public RHI `CreateTextureFromPath` with `CreateTexture(RhiTextureUploadDesc, debugName)`. Runtime RHI no longer accepts a filesystem path as a texture creation request.
+- Added Renderer-private `CookedTextureLoader` and moved cooked `.stex` loading into `TextureManager`. Existing cooked files remain readable because serialized texture format values map to the new neutral `PixelFormat` contract.
+- Removed core RHI D3D12/Vulkan source/path texture loader classes. The texture cooker now owns its source/cook-side `TextureLoadResult` type instead of depending on a D3D12-private RHI header.
+- D3D12 runtime texture creation now consumes the neutral upload payload and converts `PixelFormat` to `DXGI_FORMAT` inside the backend. Vulkan exposes the same public payload entrypoint; full Vulkan runtime texture object/upload remains an implementation gap visible at the backend boundary rather than hidden behind a path-loader stub.
+- `RhiMemoryUsageSnapshot` now reports allocator backend, committed usage, placed usage, transient usage, and delayed destruction pressure fields without exposing D3D12MA/VMA objects. D3D12 and Vulkan populate allocator/usage fields from their backend-private allocators; Vulkan also reports queued delayed-destruction pressure visible to its allocator.
+
+Phase 5 class disposition audit:
+
+| Class / Family | Phase 5 Disposition | Reason |
+| --- | --- | --- |
+| `RhiTextureUploadDesc` | Add real contract | Owns backend-neutral cooked/upload-ready texture payload shape at the RHI boundary. |
+| `PixelFormat` | Expand public neutral enum | Covers runtime cooked texture formats without leaking `DXGI_FORMAT` or `VkFormat` to Renderer. |
+| `RenderHardwareInterface` | Shrink runtime asset boundary | Replaces path-based texture creation with upload-payload texture creation. |
+| `TextureManager` | Adjust ownership | Owns cooked texture loading and asks RHI only for GPU texture realization. |
+| `CookedTextureLoader` | Add Renderer-private loader | Reads runtime cooked `.stex` assets and produces neutral upload payloads outside core RHI. |
+| D3D12/Vulkan path texture loaders | Delete | They were orphaned compatibility/source-path loader surfaces after `TextureManager` took ownership. |
+| Texture cooker `TextureLoadResult` | Move to tool owner | Keeps DXGI/source/cook-side format handling in the cooker instead of RHI private D3D12 code. |
+| `D3D12Texture` / `TextureFactory` | Adjust payload | Consume `RhiTextureUploadDesc` and keep native format/resource allocation private. |
+| `RenderMemoryDiagnostics` payloads | Expand diagnostics contract | Report allocator backend and pressure categories without exposing allocator APIs. |
+
+Phase 5 source-only validation notes:
+
+- Source search should find no `CreateTextureFromPath` references in `Engine/RHI`.
+- Source search should find no RHI-private `TextureLoader`, `CookedTextureAssetLoader`, or `VulkanTextureLoader` source files.
+- Source search should find no `D3D12/Textures/TextureLoadResult.h` includes; tool-side source loading uses the texture cooker-owned payload.
+- Source search should find Renderer texture loading flowing through `CookedTextureLoader` and RHI texture creation flowing through `CreateTexture(RhiTextureUploadDesc, ...)`.
+- Source search should find D3D12/Vulkan backend-private format conversion coverage for the expanded public `PixelFormat` values.
+- Source search should find D3D12MA/VMA headers only in backend-private allocator implementations, not Renderer or FrameGraph public code.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
 
 ### Phase 6: FrameGraph Resource State and Transient Planning
 

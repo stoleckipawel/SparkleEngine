@@ -19,7 +19,6 @@
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/Textures/VulkanTextureFactory.h"
-#include "Vulkan/Textures/VulkanTextureLoader.h"
 #include "Vulkan/UI/VulkanImGuiBackend.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
@@ -324,9 +323,11 @@ NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() cons
 	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : NativeResourceHandle{};
 }
 
-std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTextureFromPath(const std::filesystem::path& texturePath) const
+std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
 {
-	return VulkanTextureLoader::Load(texturePath);
+	(void) textureUpload;
+	(void) debugName;
+	return {};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(

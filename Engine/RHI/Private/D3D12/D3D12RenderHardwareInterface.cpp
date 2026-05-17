@@ -17,7 +17,6 @@
 #include "D3D12/UI/D3D12ImGuiBackend.h"
 #include "Resources/Texture.h"
 #include "D3D12/Textures/TextureFactory.h"
-#include "D3D12/Textures/TextureLoader.h"
 #include "Shaders/CookedShaderPackage.h"
 
 #include <algorithm>
@@ -438,21 +437,21 @@ NativeResourceHandle D3D12RenderHardwareInterface::GetBackBufferResource() const
 	return NativeResourceHandle{m_swapChain != nullptr ? m_swapChain->GetCurrentResource() : nullptr};
 }
 
-std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTextureFromPath(const std::filesystem::path& texturePath) const
+std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
 {
+	(void) debugName;
 	if (m_rhi == nullptr || m_descriptorHeapManager == nullptr)
 	{
 		return {};
 	}
 
-	TextureLoadResult loadResult = TextureLoader::Load(texturePath);
-	if (!loadResult.IsValid())
+	if (!textureUpload.IsValid())
 	{
 		return {};
 	}
 
 	std::unique_ptr<TextureFactory> textureFactory = TextureFactory::Create(*m_rhi, *m_descriptorHeapManager);
-	return textureFactory != nullptr ? textureFactory->CreateTexture(std::move(loadResult)) : std::unique_ptr<Texture>{};
+	return textureFactory != nullptr ? textureFactory->CreateTexture(std::move(textureUpload)) : std::unique_ptr<Texture>{};
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateTextureResource(

@@ -13,6 +13,7 @@
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RenderConstantBufferData.h"
 #include "../Resources/RhiResourceDesc.h"
+#include "../Resources/RhiTextureUpload.h"
 #include "../Resources/RhiResourceView.h"
 #include "../RHIAPI.h"
 #include "../Samplers/RhiSamplerDesc.h"
@@ -65,7 +66,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiRect GetBackBufferScissorRect() const noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept = 0;
 	virtual NativeResourceHandle GetBackBufferResource() const noexcept = 0;
-	virtual std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const = 0;
+	virtual std::unique_ptr<Texture> CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName) = 0;
 	virtual RhiOwnedResourceHandle CreateTextureResource(
 	    const RhiTextureResourceDesc& desc,
 	    ResourceState initialState,
