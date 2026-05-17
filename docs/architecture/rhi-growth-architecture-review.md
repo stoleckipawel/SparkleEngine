@@ -167,11 +167,13 @@ Sparkle should not solve architecture hardening by adding another layer of manag
 | `RenderPassShaderRuntime` and pass pipeline traits | Shader package and pass-specific pipeline runtime | Keep, but tie to binding layout source of truth | Useful pattern. Ensure traits do not duplicate backend binding layout definitions and remain driven by cooked shader reflection + parameter metadata. |
 | `RendererMemoryMonitor` / diagnostics classes | Capture memory and timing diagnostics | Keep if read-only and owner-aware | Diagnostics should aggregate from RHI/Renderer owners without mutating ownership or depending on backend internals. |
 
-Class disposition rule: a class earns its existence when it owns one real concept: lifetime, cache identity, backend realization, compilation/planning, validation, or user-facing policy. A class should be merged or deleted when it only forwards calls, hides ownership, or exists because two modules do not have a clean dependency boundary.
+Class disposition rule: a class earns its existence when it owns one real concept: lifetime, cache identity, backend realization, compilation/planning, validation, or user-facing policy. A class should be merged or deleted when it only forwards calls, hides ownership, or exists because two modules do not have a clean dependency boundary. If the team is unsure whether an abstraction is carrying its weight and it looks like needless complexity, the default decision is to remove it, fold it into a stronger owner, or defer reintroducing it until a concrete need appears.
 
 ## Allowed Dependency Edges
 
 The architecture should be reviewed as a graph. Edges are as important as nodes: a correct class in the wrong module, or a useful service reached through the wrong dependency, still creates long-term debt.
+
+Dependency-edge discipline is a hard review gate. A change that improves one class while creating an unclear or forbidden dependency is not accepted. The new design graph is the authority, even when that requires large refactors of existing code. Existing call paths, convenience accessors, managers, and wrappers do not get to remain just because they already work; they must respect the new edges or be moved, merged, rewritten, or deleted. The goal is a clear visual and mental model: when reading any include, constructor dependency, service accessor, or ownership pointer, it should be obvious which layer is depending on which layer and why.
 
 ```mermaid
 flowchart LR
@@ -206,14 +208,22 @@ Forbidden edges:
 
 Public/private boundary rule: if a type appears in `Engine/RHI/Public`, it must be backend-neutral, reviewable by both D3D12 and Vulkan implementers, and safe for Renderer to include. If a type cannot satisfy that rule, it belongs in backend private code or an explicit interop namespace with strict usage rules.
 
+Dependency-edge review rule: every responsibility move must preserve or improve the graph. If a move requires a new edge, the implementation must name the edge, justify why the caller cannot depend on a narrower contract, and add a validation check or documented follow-up if the edge is temporary. Temporary edges must have an owner and removal phase; they are not allowed to become quiet architecture.
+
+Refactor permission rule: honoring the new dependency graph is more important than minimizing code churn. Broad refactors are acceptable when they reduce mental load, remove unclear ownership, or make module boundaries easier to inspect. The plan should avoid churn for its own sake, but it should not preserve confusing code simply to keep the diff small.
+
 ## Class Overload Reduction Rules
 
 During RHI hardening, every manager/orchestrator/wrapper should be reviewed with these questions:
 
 - What does this class own that no other class owns?
+- What mental load does this class add for someone trying to understand the render path?
+- Does the class reduce mental load enough to justify its existence?
+- Would deleting this class make ownership clearer without losing a required behavior?
 - Is it policy, planning, resource lifetime, backend realization, diagnostics, or orchestration?
 - Does it expose a smaller public contract than the object it wraps?
 - Does it reduce backend coupling or merely hide it?
+- Is this abstraction required now, or is it speculative structure for a future that has not arrived?
 - Is it safe to construct/use from future worker threads, or is it explicitly render-thread-only?
 - Can its mutable state be turned into immutable frame data, a cache with clear invalidation, or backend-private state?
 - Does it belong in RHI, Renderer, FrameGraph, Editor, Tools, or Application?
@@ -225,6 +235,10 @@ Disposition outcomes:
 - **Move:** useful behavior, wrong module. Example: source texture loading belongs outside core RHI.
 - **Merge:** two classes split one concept without reducing coupling or improving navigation.
 - **Delete:** pass-through wrapper, duplicate orchestrator, or compatibility shim that obscures the real owner.
+
+Default bias: when keep/delete is ambiguous, choose the simpler architecture. Keep an uncertain class only if it has a near-term caller, a distinct owner responsibility, a smaller API than the thing it wraps, and a measurable reduction in mental load. Otherwise delete it, merge it, or postpone it.
+
+Usefulness rule: every piece of code must prove that it helps the architecture. The question is not whether the code count is high or low; the question is whether the code lowers the cost of understanding, changing, validating, and extending the render path. More code is acceptable when it creates a clearer owner or boundary. Less code is better when an abstraction only adds another place to look.
 
 The target is not a tiny codebase. The target is a codebase where every class has a nameable job, a stable module home, and obvious connection edges.
 
@@ -313,22 +327,27 @@ Responsibilities:
 
 ## Multithreading Readiness Contract
 
-This plan should prepare Sparkle for multithreaded rendering without implementing multithreading immediately. The architecture should make the future safe by separating immutable frame data from mutable backend state.
+This plan should prepare Sparkle for multithreaded rendering without implementing multithreading immediately. The architecture should make the future safe by separating immutable frame data from mutable backend state across GameFramework, Renderer, FrameGraph, and RHI.
+
+Preparation must target the real architecture, not a workaround layer. If GameFramework currently exposes mutable scene state in a way that blocks clean renderer snapshots, fix the GameFramework-to-Renderer handoff. If Renderer reaches through global managers in a way that blocks frame-local work, fix Renderer ownership. If RHI backend state cannot support future command recording or frame submission boundaries, fix the RHI contracts. Do not add adapter hacks that merely hide the problem while preserving the wrong dependency or mutation model.
 
 Threading assumptions for now:
 
-- Renderer frame orchestration remains single-owner until a later threading phase explicitly changes it.
-- Scene snapshots, view data, lighting data, material snapshots, and frame graph declarations should be designed as immutable or frame-local data after setup.
+- GameFramework owns gameplay/world mutation and must hand Renderer stable frame inputs through explicit snapshot or extraction contracts.
+- Renderer frame orchestration remains single-owner until a later threading phase explicitly changes it, but it should consume GameFramework data through immutable/frame-local inputs rather than mutable world access.
+- Scene snapshots, view data, lighting data, material snapshots, transform data, and frame graph declarations should be designed as immutable or frame-local data after setup.
 - RHI backend objects, descriptor allocators, memory allocators, command contexts, and swapchains are render-thread-owned unless their API explicitly says otherwise.
-- Future parallelism should begin with CPU-side preparation: scene snapshot building, pass setup, shader/material lookup, frame graph compilation, and command list recording for independent passes.
+- Future parallelism should begin with CPU-side preparation: GameFramework-to-Renderer extraction, scene snapshot building, pass setup, shader/material lookup, frame graph compilation, and command list recording for independent passes.
 - Shared caches must define their synchronization strategy before they are used from worker threads: render-thread-only, externally synchronized, lock-protected, or immutable after build.
 
 Multithreading-ready shape:
 
 ```mermaid
 flowchart TD
-    GameThread[Game / Editor Thread] --> Snapshot[Immutable Scene + View Snapshots]
-    Snapshot --> SetupJobs[Future Parallel Pass Setup Jobs]
+    GameFramework[GameFramework World Mutation] --> Extract[Frame Extraction Contract]
+    EditorHost[Editor / Application Host] --> Extract
+    Extract --> Snapshot[Immutable Scene + View Snapshots]
+    Snapshot --> SetupJobs[Future Parallel Renderer Setup Jobs]
     SetupJobs --> FGCompile[FrameGraph Compile]
     FGCompile --> CommandJobs[Future Parallel Command Recording Jobs]
     CommandJobs --> Submit[Render Thread Submit]
@@ -338,6 +357,8 @@ flowchart TD
 
 Rules that should be enforced before real multithreading lands:
 
+- GameFramework-to-Renderer handoff must be explicit, snapshot-based, and owned by a named boundary; Renderer should not read mutable gameplay state during pass setup or command recording.
+- Transform, camera, lighting, material, mesh, and texture data crossing from GameFramework into Renderer must have a clear extraction/mutation phase and frame lifetime.
 - Pass setup must not mutate global renderer caches except through explicit cache APIs.
 - Render passes should receive frame-local inputs and narrow services, not reach back into `Renderer` as a service locator.
 - Binding sets that are shared across passes should be immutable after creation or versioned.
@@ -346,6 +367,7 @@ Rules that should be enforced before real multithreading lands:
 - FrameGraph compile output should be immutable once execution begins.
 - RHI resource handles should be generation-checked or otherwise validated so stale handles are caught before worker-thread use makes bugs nondeterministic.
 - Backend descriptor and memory allocators should be considered non-thread-safe until documented and validated otherwise.
+- If a threading-readiness issue crosses module boundaries, modify the owning module contract rather than adding a workaround in the caller.
 
 ## Current Architectural Risks
 
@@ -476,6 +498,15 @@ Each phase is written as a learning step first and an implementation prompt seco
 
 Validation policy: do not run builds between phases. Inside each phase, use source inspection, local diagnostics, and acceptance-criteria review only. Run the full validation block once, after Phase 10, so the work can move as one coherent architectural change set.
 
+Non-negotiable rules for every phase:
+
+- The new dependency graph is the authority. Existing structure may be refactored substantially when needed to honor the target edges.
+- Code must prove usefulness by lowering mental load, clarifying ownership, narrowing dependencies, improving validation, or making extension safer. The plan does not optimize for fewer or more lines; it optimizes for a clearer render architecture.
+- Uncertain, speculative, or pass-through abstractions default to deletion, merging, or deferral unless they own a concrete near-term responsibility.
+- Responsibility moves must update real owners and module contracts. Do not solve architecture issues with hacks, hidden mutable globals, workaround adapters, or compatibility shims that preserve the wrong dependency or mutation model.
+- Multithreading preparation spans GameFramework, Renderer, FrameGraph, and RHI. Even before worker threads exist, the architecture must define mutation phases, immutable/frame-local handoffs, cache policy, and backend ownership.
+- Public/private boundaries are part of correctness. A phase is incomplete if it leaves unclear includes, service access paths, ownership pointers, or temporary edges without an owner and removal phase.
+
 ### Phase 0: Establish the Review Contract
 
 Idea behind the phase:
@@ -494,7 +525,7 @@ Ready-to-use prompt:
 
 
 ```text
-Update Sparkle's RHI architecture documentation and validation notes so external NVIDIA/AMD-style reviewers can understand subsystem ownership, allowed dependencies, forbidden dependencies, runtime boundaries, backend parity expectations, and current class disposition. Do not change runtime behavior yet. Produce a code ownership map, capability categories for public RHI APIs, a keep/adjust/move/merge/delete classification for current RHI/Renderer managers and wrappers, and review-reject rules for backend leakage, descriptor ownership, memory allocator exposure, class overload, and frame graph barriers.
+Update Sparkle's RHI architecture documentation and validation notes so external NVIDIA/AMD-style reviewers can understand subsystem ownership, allowed dependencies, forbidden dependencies, runtime boundaries, backend parity expectations, current class disposition, and the phase-wide non-negotiable rules. Do not change runtime behavior yet. Produce a code ownership map, capability categories for public RHI APIs, a keep/adjust/move/merge/delete classification for current RHI/Renderer managers and wrappers, and review-reject rules for backend leakage, descriptor ownership, memory allocator exposure, class overload, dependency-edge violations, avoidable mental load, workaround adapters, and frame graph barriers.
 ```
 
 Acceptance criteria:
@@ -503,6 +534,7 @@ Acceptance criteria:
 - Every existing public `RenderHardwareInterface` method is assigned to a category: core device, resource, memory, upload, binding, pipeline, command, diagnostics/query, presentation, editor integration, ray tracing, or interop escape hatch.
 - Current RHI and Renderer managers/orchestrators/wrappers are classified as keep, adjust, move, merge, or delete candidates with a concrete rationale.
 - The document states which dependencies are forbidden in ordinary Renderer code: native device objects, D3D12MA/VMA types, raw descriptor allocation, backend-specific command lists, source asset import, and runtime shader compilation.
+- The document states the phase-wide rules for dependency-edge authority, usefulness by mental-load reduction, default removal of uncertain abstractions, no workaround architecture, GameFramework/Renderer/FrameGraph/RHI multithreading preparation, and final-only validation.
 - No source code behavior changes are required in this phase.
 
 ### Phase 1: Responsibility Audit and Class Disposition
@@ -517,23 +549,28 @@ The engine has accumulated managers, orchestrators, caches, and wrappers around 
 
 What this phase changes:
 
-This phase creates a responsibility ledger for existing RHI and Renderer classes. It classifies each important class as keep, adjust, move, merge, delete, or add-adjacent-owner. The outcome is allowed to modify code: move responsibilities between modules, split overloaded classes, remove legacy paths, add missing focused owners, and update call sites so the code matches the target responsibility map.
+This phase creates a responsibility ledger for existing RHI and Renderer classes. It classifies each important class as keep, adjust, move, merge, delete, or add-adjacent-owner. The outcome is allowed to modify code substantially: move responsibilities between modules, split overloaded classes, remove legacy paths, add missing focused owners, and update call sites so the code matches the target responsibility map. When the audit cannot prove an abstraction is useful or cannot prove that it reduces mental load, prefer deletion or merging over keeping optional complexity.
 
 Ready-to-use prompt:
 
 
 ```text
-Audit Sparkle's existing RHI and Renderer class responsibilities before adding new architecture. Inspect RenderHardwareInterface, RenderDeviceServices, D3D12RenderHardwareInterface, VulkanRenderHardwareInterface, backend descriptor/memory/command/swapchain services, Renderer, TextureManager, MaterialCacheManager, PipelineStateManager, SceneRenderStateCoordinator, GPUMeshCache, RenderSceneDataBuilder, PerViewDataBuilder, ViewLightingBuilder, FrameGraph classes, PassBinder, pass runtime/shader classes, and diagnostics/monitor classes. For each class, identify its current responsibility, target owner module, public/private status, mutation phase, threading assumption, and disposition: keep, adjust, move, merge, delete, or add a new focused owner. Then make the smallest code and documentation changes needed so responsibilities are placed correctly: move misplaced behavior, delete obsolete legacy wrappers, collapse pass-through orchestrators, split classes that own unrelated concepts, and introduce new classes only when they clarify ownership or remove real coupling. Do not run builds during this phase; use source inspection and acceptance criteria review only.
+Audit Sparkle's existing RHI and Renderer class responsibilities before adding new architecture. Inspect RenderHardwareInterface, RenderDeviceServices, D3D12RenderHardwareInterface, VulkanRenderHardwareInterface, backend descriptor/memory/command/swapchain services, Renderer, TextureManager, MaterialCacheManager, PipelineStateManager, SceneRenderStateCoordinator, GPUMeshCache, RenderSceneDataBuilder, PerViewDataBuilder, ViewLightingBuilder, FrameGraph classes, PassBinder, pass runtime/shader classes, and diagnostics/monitor classes. For each class, identify its current responsibility, target owner module, public/private status, allowed dependency edges, mental-load cost, mutation phase, threading assumption, and disposition: keep, adjust, move, merge, delete, or add a new focused owner. Then make the clearest code and documentation changes needed so responsibilities are placed correctly: move misplaced behavior, delete obsolete legacy wrappers, collapse pass-through orchestrators, split classes that own unrelated concepts, and introduce new classes only when they clarify ownership or remove real coupling. Prefer the refactor that best honors the new dependency graph and lowers mental load, even if it touches more files. Treat dependency-edge clarity as mandatory: no responsibility move is complete until includes, constructor dependencies, ownership pointers, and service access paths match the allowed graph or have a documented temporary exception with an owner and removal phase. Do not run builds during this phase; use source inspection and acceptance criteria review only.
 ```
 
 Acceptance criteria:
 
 - There is a responsibility ledger for all important RHI and Renderer managers, orchestrators, wrappers, caches, builders, frame graph services, backend services, and diagnostics classes touched by the audit.
 - Each audited class has a target module: RHI public, RHI backend-private, Renderer public, Renderer private, FrameGraph, Editor, Tools/Cook, Runtime asset contract, or Application host.
+- Each audited class records its allowed incoming and outgoing dependency edges, including whether those edges are public contracts, private implementation details, runtime asset contracts, or explicit interop escape hatches.
+- Each audited class records its mental-load cost and the reason it makes the system easier to understand, modify, validate, or extend.
 - Each audited class has a disposition: keep, adjust, move, merge, delete, or add-adjacent-owner, with a short reason.
 - Responsibility moves are reflected in code or explicitly deferred with a named dependency on a later phase.
+- Responsibility moves do not create new unclear edges; if a temporary edge is unavoidable, it has a named owner, reason, validation note, and removal phase.
+- Existing code structure is not preserved when it conflicts with the new dependency graph or keeps avoidable mental load in the render path.
 - Legacy paths and wrappers are deleted when the new owner fully replaces them; compatibility shims are not kept unless the phase records a short-lived migration reason.
 - New classes are added only when they own a distinct concept such as lifetime, cache identity, backend realization, planning, validation, or user-facing policy.
+- Ambiguous abstractions are removed, merged into a stronger owner, or explicitly deferred; they are not kept merely because they might become useful later.
 - Renderer no longer grows as a service locator for unrelated systems; new dependencies flow through narrow owners or frame-local data.
 - Public/private boundaries are updated when a responsibility moves, including headers, includes, and validation notes.
 
@@ -750,30 +787,33 @@ Acceptance criteria:
 
 Idea behind the phase:
 
-Sparkle should prepare for multithreaded rendering by making ownership and mutation phases explicit before any worker-thread execution is introduced.
+Sparkle should prepare for multithreaded rendering by making ownership and mutation phases explicit before any worker-thread execution is introduced. This preparation spans GameFramework, Renderer, FrameGraph, and RHI because future parallel rendering depends on clean handoff boundaries all the way from gameplay/world mutation to backend command submission.
 
 Why the previous state was wrong:
 
-Managers, caches, command contexts, descriptor allocators, and frame data can work fine on one thread while hiding assumptions that make later parallel pass setup or command recording unsafe. Adding threads before clarifying ownership would turn architectural ambiguity into nondeterministic bugs.
+Managers, caches, command contexts, descriptor allocators, gameplay/world state, renderer snapshots, and frame data can work fine on one thread while hiding assumptions that make later parallel extraction, pass setup, or command recording unsafe. Adding threads before clarifying ownership would turn architectural ambiguity into nondeterministic bugs. Adding a workaround adapter would be just as harmful if the real issue is an incorrect GameFramework, Renderer, FrameGraph, or RHI contract.
 
 What this phase changes:
 
-This phase labels render-thread-only state, defines immutable/frame-local data, documents cache synchronization policy, and shapes pass setup/command recording APIs so later multithreading has clean insertion points.
+This phase labels game-thread-owned, render-thread-owned, and backend-owned state; defines immutable/frame-local handoff data; documents cache synchronization policy; and shapes GameFramework extraction, Renderer setup, FrameGraph compile, and RHI command recording APIs so later multithreading has clean insertion points. If the target state requires changing the existing architecture, change the architecture rather than working around it.
 
 Ready-to-use prompt:
 
 
 ```text
-Audit Sparkle RHI, Renderer, and FrameGraph for multithreading readiness. Do not introduce worker-thread execution yet. Instead, define which objects are render-thread-only, which data is immutable or frame-local, which caches require synchronization or versioning, and which APIs would be safe for future parallel pass setup, frame graph compilation, and command list recording. Update class contracts and documentation so future threading work has clear ownership and synchronization boundaries.
+Audit Sparkle GameFramework, Renderer, FrameGraph, and RHI for multithreading readiness. Do not introduce worker-thread execution yet. Instead, define which objects are game-thread-owned, render-thread-owned, backend-owned, immutable, or frame-local; which caches require synchronization or versioning; and which APIs would be safe for future parallel GameFramework-to-Renderer extraction, Renderer pass setup, FrameGraph compilation, command list recording, and RHI submission. Update class contracts and documentation so future threading work has clear ownership and synchronization boundaries. If an issue exists in the owning module contract, modify that contract as much as necessary for the target state; do not add hacks, workaround adapters, hidden mutable globals, or caller-side patches that preserve the wrong architecture.
 ```
 
 Acceptance criteria:
 
-- Renderer orchestration, RHI backend services, descriptor allocators, memory allocators, swapchains, command contexts, and diagnostics state are explicitly marked render-thread-only unless documented otherwise.
-- Scene snapshots, view data, lighting data, frame graph compile output, and per-pass binding packets are documented as immutable/frame-local after setup.
+- GameFramework/world mutation, Renderer orchestration, FrameGraph planning, RHI backend services, descriptor allocators, memory allocators, swapchains, command contexts, and diagnostics state are explicitly marked game-thread-owned, render-thread-owned, backend-owned, immutable, or frame-local.
+- GameFramework-to-Renderer handoff uses explicit snapshot/extraction contracts; Renderer does not depend on mutable gameplay/world state during pass setup or command recording.
+- Scene snapshots, transform data, view data, lighting data, material data, frame graph compile output, and per-pass binding packets are documented as immutable/frame-local after setup.
 - Shared caches such as texture, material, shader package, pipeline, and mesh caches define their future synchronization policy: render-thread-only, immutable after build, lock-protected, versioned, or externally synchronized.
 - Pass setup code does not use `Renderer` as a service locator; it receives narrow services or frame-local data.
 - Command recording APIs avoid hidden global mutable current state that would block future parallel command recording.
+- RHI submission and backend allocator/descriptor services have clear ownership boundaries and do not rely on hidden caller-side synchronization assumptions.
+- Threading-readiness changes modify the real owning module when needed; no hacks, workaround adapters, hidden mutable globals, or compatibility shims remain as the accepted solution.
 - Validation or documentation identifies stale-handle/generation-check requirements before worker-thread use is allowed.
 
 ### Phase 10: Advanced Feature Readiness Gate
@@ -813,10 +853,14 @@ Final validation checklist:
 
 - Review the architecture document against the code ownership map, responsibility ledger, class disposition map, allowed dependency edges, and multithreading readiness contract.
 - Confirm audited RHI/Renderer classes have either been kept with a clear owner, adjusted into the new context, moved to the proper module, merged with a stronger owner, deleted as legacy/pass-through code, or explicitly deferred with a later-phase dependency.
+- Confirm no class or service remains only because it might be useful someday; uncertain abstractions must have been removed, merged, or backed by a concrete near-term responsibility.
+- Confirm dependency edges match the allowed graph: public-to-public includes stay intentional, private backend types do not leak upward, Renderer does not depend on backend-private code, FrameGraph depends only on backend-neutral RHI contracts, and temporary edges have an owner plus removal phase.
+- Confirm every retained abstraction proves its usefulness by reducing mental load, clarifying ownership, narrowing dependencies, improving validation, or making future extension safer.
 - Confirm the implementation did not introduce runtime dependencies on source asset import, editor-only systems, backend-private D3D12/Vulkan headers, D3D12MA/VMA public exposure, or raw descriptor ownership in Renderer passes.
 - Confirm D3D12 and Vulkan capability reports match implemented behavior and unsupported features fail with targeted diagnostics.
 - Confirm bindful material/pass binding ownership works without requiring bindless resources.
 - Confirm FrameGraph owns cross-pass transitions, transient lifetime intent, and aliasing decisions except for documented pass-local hazards.
+- Confirm GameFramework-to-Renderer extraction, Renderer setup, FrameGraph planning, and RHI submission boundaries are prepared for future multithreading without hacks or caller-side workarounds.
 
 Final validation commands:
 
@@ -850,6 +894,9 @@ The plan is complete when Sparkle has:
 
 - A navigable RHI/Renderer/FrameGraph ownership map that matches the code.
 - A responsibility ledger proving existing RHI and Renderer managers, orchestrators, wrappers, caches, builders, backend services, and diagnostics classes were inspected and either kept, adjusted, moved, merged, deleted, or intentionally expanded.
+- A simpler class surface where uncertain or speculative abstractions were removed or merged unless they own a concrete near-term responsibility.
+- A dependency graph whose edges are easy to inspect: public contracts point downward through allowed module boundaries, backend-private details stay private, temporary edges are named and owned, and forbidden edges are blocked by validation.
+- A retained code surface where each abstraction justifies its mental-load cost through clearer ownership, safer dependency edges, stronger validation, or simpler future extension.
 - A backend-neutral capability model populated by D3D12 and Vulkan.
 - A narrower RHI surface organized by capability area.
 - Bindful binding layouts and binding sets/packets derived from shader reflection and parameter metadata.
