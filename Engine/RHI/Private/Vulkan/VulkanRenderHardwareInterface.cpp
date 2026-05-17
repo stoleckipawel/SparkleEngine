@@ -46,6 +46,7 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	}
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
+	m_capabilities = BuildCapabilities();
 }
 
 VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
@@ -109,6 +110,70 @@ RenderCommandList& VulkanRenderHardwareInterface::GetGraphicsCommandList(std::ui
 RhiRayTracingCapabilities VulkanRenderHardwareInterface::GetRayTracingCapabilities() const noexcept
 {
 	return m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+}
+
+RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcept
+{
+	VkPhysicalDeviceProperties properties{};
+	if (m_rhi != nullptr && m_rhi->GetPhysicalDevice() != VK_NULL_HANDLE)
+	{
+		vkGetPhysicalDeviceProperties(m_rhi->GetPhysicalDevice(), &properties);
+	}
+
+	RhiCapabilities capabilities{};
+	capabilities.BackendApi = ERhiBackendApi::Vulkan;
+	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::SpirV;
+	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorSets;
+	capabilities.BindingLimits = RhiBindingLimits{
+	    .MaxDescriptorSets = properties.limits.maxBoundDescriptorSets,
+	    .MaxShaderResourceDescriptors = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages +
+	                                     properties.limits.maxDescriptorSetUniformBuffers + properties.limits.maxDescriptorSetStorageBuffers,
+	    .MaxSamplerDescriptors = properties.limits.maxDescriptorSetSamplers,
+	    .MaxDescriptorTableEntries = properties.limits.maxDescriptorSetSampledImages + properties.limits.maxDescriptorSetStorageImages,
+	    .MaxPushConstantBytes = properties.limits.maxPushConstantsSize};
+	capabilities.UploadReadback = RhiUploadReadbackCapabilities{
+	    .SupportsBufferUpload = true,
+	    .SupportsTextureUpload = true,
+	    .SupportsReadback = true};
+	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
+	{
+		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
+	}
+	capabilities.SupportsTimestampQueries = false;
+	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	capabilities.SupportsMeshShaders = false;
+	capabilities.SupportsTaskShaders = false;
+	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
+	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
+	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VMA;
+	return capabilities;
+}
+
+RhiFormatSupport VulkanRenderHardwareInterface::QueryFormatSupport(PixelFormat format) const noexcept
+{
+	RhiFormatSupport support{.Format = format};
+	if (m_rhi == nullptr || m_rhi->GetPhysicalDevice() == VK_NULL_HANDLE || format == PixelFormat::Unknown)
+	{
+		return support;
+	}
+
+	const VkFormat nativeFormat = VulkanTypeConversions::ToVkFormat(format);
+	if (nativeFormat == VK_FORMAT_UNDEFINED)
+	{
+		return support;
+	}
+
+	VkFormatProperties properties{};
+	vkGetPhysicalDeviceFormatProperties(m_rhi->GetPhysicalDevice(), nativeFormat, &properties);
+	const VkFormatFeatureFlags optimal = properties.optimalTilingFeatures;
+	support.SupportsTexture = (optimal & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0 ||
+	                          (optimal & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0 ||
+	                          (optimal & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+	support.SupportsShaderResource = (optimal & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
+	support.SupportsUnorderedAccess = (optimal & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
+	support.SupportsRenderTarget = (optimal & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0;
+	support.SupportsDepthStencil = (optimal & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+	return support;
 }
 
 RenderDiagnostics& VulkanRenderHardwareInterface::GetDiagnostics() noexcept

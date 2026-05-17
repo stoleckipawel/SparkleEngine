@@ -142,6 +142,29 @@ This section is the review map for maintainability and navigation. It defines th
 | Editor integration | Editor/Renderer host integration | Editor render products, UI overlay hooks, viewport contracts | Backend-specific ImGui integration behind adapter | Core RHI requiring editor-only concepts |
 | Runtime/cook boundary | Runtime asset/shader loading systems | Cooked package and cooked asset contracts | Tool-side source import/cook implementations | Runtime RHI loading source assets or compiling shaders |
 
+## Current Public RHI Method Categories
+
+This is the Phase 0 ledger for the current `RenderHardwareInterface` surface. It assigns every existing public method to a capability category so future refactors can split or facade the interface without guessing why each method exists.
+
+| Capability Category | Current Methods | Target Direction |
+| --- | --- | --- |
+| Core device / backend identity | `GetBackendApi`, `GetRequiredShaderBinaryFormat`, `GetCurrentFrameIndex`, `WaitForIdle` | Move behind a small device/capability/frame-lifecycle contract. Renderer features should use capability policy, not backend branching. |
+| Interop escape hatch | `GetDeviceHandle`, `GetGraphicsQueueHandle`, `GetNativeResource`, `GetResourceGpuVirtualAddress` | Keep available only through explicit interop/diagnostics paths. Ordinary Renderer and pass code must not branch on native handles. |
+| Command recording | `GetGraphicsCommandList` | Replace direct global command-list access with frame/pass command contexts or command allocators that can later support multiple lists and parallel recording. |
+| Diagnostics / query | `GetDiagnostics`, const `GetDiagnostics`, `SupportsUnorderedAccess` | Keep as diagnostics/capability-facing services. Feature code should query support through capability records where possible. |
+| Ray tracing | `GetRayTracingCapabilities`, `GetBottomLevelAccelerationStructurePrebuildInfo`, `GetTopLevelAccelerationStructurePrebuildInfo`, `CreateRayTracingScratchBuffer`, `CreateRayTracingAccelerationStructureBuffer`, `CreateRayTracingInstanceBuffer` | Keep behind an explicit ray tracing capability surface. Do not expand until D3D12/Vulkan capability tiers, binding impact, and lifetime rules are formalized. |
+| Editor integration | `InitializeImGuiBackend`, `BeginImGuiFrame`, `RenderImGuiDrawData`, `ShutdownImGuiBackend` | Move behind editor/presentation integration. Core runtime RHI contracts should not require editor-only UI concepts. |
+| Binding layout / pipeline | `CreateBindingLayout`, `CreateGraphicsPipelineState`, `CreateComputePipelineState` | Keep backend-neutral, driven by cooked shader reflection and typed parameter metadata. Split pipeline creation from unrelated RHI responsibilities. |
+| Binding / descriptor realization | `BindGlobalDescriptorState`, `AllocateDescriptor`, `ReleaseDescriptor`, `AllocateDescriptorTable`, `GetDescriptorTableCpuHandle`, `ReleaseDescriptorTable`, `AllocateShaderResourceDescriptor`, `ReleaseShaderResourceDescriptor`, `GetSharedSamplerBinding` | Move raw descriptor allocation behind binding-set/binding-packet realization. Renderer should request binding intent, not descriptor mechanics. |
+| Upload / constant data | `GetPerFrameConstantData`, `GetPerFrameConstantGpuAddress`, `AllocateUniformConstantBuffer`, `AllocatePerViewConstantBuffer`, `AllocatePerObjectVertexConstants`, `AllocatePerObjectPixelConstants` | Replace renderer-facing GPU-address traffic with backend-neutral constant/upload binding records where possible. Raw GPU virtual addresses are backend capability details. |
+| Presentation | `GetBackBufferViewport`, `GetBackBufferScissorRect`, `GetBackBufferRenderTargetView`, `GetBackBufferResource`, `BeginPresentRenderPass`, `BeginPresentOverlayPass`, `EndPresentRenderPass`, `GetPresentColorFormat` | Isolate behind presentation/host integration. Materials, scene systems, asset systems, and frame graph planning should not depend on presentation APIs. |
+| Runtime asset loading boundary | `CreateTextureFromPath` | Move out of core RHI. Runtime RHI should create GPU resources from cooked/upload-ready payloads; tools/editor/source systems own source path import/loading. |
+| Persistent GPU resources | `CreateTextureResource`, `CreateBufferResource`, `CreateVertexBuffer`, `CreateIndexBuffer`, `ReleaseOwnedResource` | Keep as backend-neutral resource/upload services, but align mesh/texture uploads with cooked payloads and explicit lifetime ownership. |
+| Memory / allocation planning | `GetTextureAllocationInfo`, `GetBufferAllocationInfo`, `CreateTransientMemoryBlock`, `ReleaseTransientMemoryBlock`, `CreateAliasingTextureResource`, `CreateAliasingBufferResource` | Keep backend-neutral memory intent in public RHI. D3D12MA/VMA details stay backend-private; FrameGraph owns transient lifetime/aliasing intent. |
+| Resource views | `CreateResourceView`, `ReleaseResourceView`, `GetResourceViewCpuHandle`, `GetResourceViewGpuHandle` | Treat as RHI binding/resource-view realization. Renderer should prefer resource views through binding sets/packets instead of CPU/GPU descriptor handle ownership. |
+
+Phase 0 reject rule: any new public RHI method must be assigned to one of these categories, or a new category must be added with allowed dependency edges, owner, backend-private implementation expectations, and review-reject dependencies.
+
 ## Current Class Disposition Map
 
 Sparkle should not solve architecture hardening by adding another layer of managers on top of existing managers. The hardening sessions must classify existing classes first, then choose whether each class stays, shrinks, moves, merges, or disappears.
@@ -166,6 +189,85 @@ Sparkle should not solve architecture hardening by adding another layer of manag
 | `PassBinder` / `PassBindingOverrides` / `PassParameterSet` | Renderer-side pass binding orchestration | Adjust into binding packet generation path | These are close to the desired bridge between shader parameters and RHI binding sets. Their target role should be explicit: create pass-local binding packets from frame graph resources and shader metadata, not allocate raw descriptors. |
 | `RenderPassShaderRuntime` and pass pipeline traits | Shader package and pass-specific pipeline runtime | Keep, but tie to binding layout source of truth | Useful pattern. Ensure traits do not duplicate backend binding layout definitions and remain driven by cooked shader reflection + parameter metadata. |
 | `RendererMemoryMonitor` / diagnostics classes | Capture memory and timing diagnostics | Keep if read-only and owner-aware | Diagnostics should aggregate from RHI/Renderer owners without mutating ownership or depending on backend internals. |
+
+## Phase 1 Responsibility Ledger
+
+This is the Phase 1 source-inspection ledger. It records current ownership, target module, allowed edges, mental-load judgment, mutation/thread assumption, disposition, and whether source work is immediate or deferred to a later phase. Phase 1 does not run builds; source moves that would require implementation validation are explicitly assigned to later phases.
+
+| Class / Family | Target Module | Allowed Edges | Mutation / Thread Assumption | Disposition | Mental-Load Judgment and Phase Action |
+| --- | --- | --- | --- | --- | --- |
+| `Renderer` | Renderer public host facade + Renderer private frame orchestrator | Application/Editor host -> Renderer public; Renderer private -> RHI public, FrameGraph private, runtime cooked assets | Render-thread/frame-owner today; future consumes immutable GameFramework extraction data | Adjust | High mental load because it owns many systems and exposes full RHI. Keep as top-level frame sequencer, but defer fan-out reduction and service narrowing to Phases 3, 7, and 9. |
+| `RenderDeviceServices` | RHI public backend lifecycle service | Renderer private -> RHI public; RHI public -> backend-private service implementation | Render-thread-owned backend lifecycle and frame submission | Keep, narrow | Useful owner for backend creation and frame lifecycle. Mental load rises when it exposes full RHI and command-list shortcuts; defer narrowing to Phase 3. |
+| `RenderHardwareInterface` | RHI public compatibility facade until split | Renderer/FrameGraph -> RHI public only; RHI public -> backend-private implementations | Render-thread-owned facade over backend services | Adjust / split | Highest RHI mental load. Keep temporarily as migration facade; split by capability area in Phase 3. No new responsibilities should be added without ledger category. |
+| `RenderCommandList` | RHI public command recording contract | Renderer command context / FrameGraph execution -> RHI command contract; backend implementations private | Render-thread-owned command recording today; future per-pass/per-thread command ownership | Keep, evolve | Useful core abstraction. Needs future allocation/recording ownership contract for threading; defer to Phases 3, 6, and 9. |
+| `RenderBindingLayout` / `RenderPipelineState` | RHI public binding and pipeline contracts | Renderer pipeline runtime -> RHI public; backend-private layout/PSO realizations | Mostly immutable after creation | Keep, tighten | Good mental-load reduction when driven by shader reflection. Tie harder to binding set/packet path in Phase 4. |
+| `CookedShaderPackageCache` / `LoadedShaderPackage` / shader reflection records | RHI public/runtime shader package contract | Renderer pipeline manager -> RHI public shader package; tools produce cooked packages | Cache mutation during reload; otherwise read-mostly | Keep | Strong owner for backend shader binary and reflection data. Keep public runtime contract; source/cook production remains outside runtime. |
+| `RenderDiagnostics` / `RenderMemoryDiagnostics` | RHI public diagnostics contract | Renderer diagnostics -> RHI public; backend-private diagnostics providers | Read-mostly snapshots; backend updates during frame | Keep | Useful for review and validation. Must remain aggregation/reporting, not backend leakage; Phase 8 adds stronger validation layer. |
+| `RhiDescriptor*` handle structs | RHI public transitional descriptor handles | Renderer should not own raw descriptor allocation long-term; binding realization may use them internally | Handle values; lifetime controlled by RHI/backend services | Adjust / hide | Currently useful but mentally expensive in Renderer. Defer to Phase 4 to move raw descriptor traffic behind binding sets/packets. |
+| `RhiGpuVirtualAddress` and address-based bindings | RHI public capability detail | Renderer should prefer buffer/view/binding records; address access through explicit capability paths | Backend capability value, not general ownership | Adjust | D3D12-shaped concept leaks mental load into Renderer. Defer replacement with backend-neutral binding records to Phases 3-5. |
+| `D3D12RenderHardwareInterface` / `VulkanRenderHardwareInterface` | RHI backend-private composition roots | RHI public facade -> backend-private root; backend root -> backend services | Render-thread-owned backend root | Keep temporarily, shrink | Useful during migration but too much direct accumulation. Keep as composition root, delegate more to descriptor/memory/presentation/binding services in Phases 3-5. |
+| `D3D12Rhi` / `VulkanRhi` | RHI backend-private native device owner | Backend root/services -> native API | Backend-owned, render-thread/device lifetime | Keep | Proper native-device owner. Must not leak native device ownership upward except explicit interop. |
+| `D3D12DescriptorHeapManager` / `VulkanDescriptorManager` / descriptor allocators | RHI backend-private descriptor/view realization | RHI binding/resource-view services -> backend-private descriptor services | Render-thread-owned unless later synchronized | Keep backend-private | Clear backend responsibility. Renderer raw descriptor allocation should be removed in Phase 4, not by deleting these services. |
+| `D3D12GpuMemoryAllocator` / `VulkanGpuMemoryAllocator` | RHI backend-private memory allocator | RHI memory intent -> backend allocator; D3D12MA/VMA private | Backend-owned, delayed-release state | Keep backend-private | Strong owner that reduces mental load by isolating D3D12MA/VMA. Keep and expose only backend-neutral diagnostics. |
+| `D3D12SwapChain` / `VulkanSwapChain` | RHI backend-private presentation implementation | RHI presentation service -> backend-private swapchain | Render-thread-owned presentation lifecycle | Keep, isolate | Useful owner. Presentation should move out of core device/facade in Phase 3. |
+| `D3D12ImGuiBackend` / `VulkanImGuiBackend` | RHI backend-private editor adapter, target Editor/Renderer integration | Editor/presentation integration -> backend adapter | Render-thread-owned editor overlay state | Move outward / isolate | Backend-specific adapter is useful, but core RHI should not require ImGui concepts. Defer to Phase 3/7 boundary cleanup. |
+| `D3D12SamplerLibrary` / `VulkanSamplerLibrary` | RHI backend-private sampler realization | RHI binding system -> backend sampler library | Backend-owned cache | Keep backend-private | Useful focused cache if only sampler realization. Keep out of Renderer. |
+| `VulkanTextureFactory` / `VulkanTextureLoader` and D3D12 texture loading equivalents | RHI backend-private GPU texture creation, source-load path transitional | Runtime should use cooked/upload-ready payloads; source loading belongs Tools/Editor | Backend creation on render thread; source loading should leave runtime | Split / move | GPU factory is useful; source-path loading in core runtime is wrong. Defer source-load removal to Phase 5/7. |
+| `VulkanCommandContext` / backend command contexts and command lists | RHI backend-private command allocation/submission | RHI command contract -> backend command context | Render-thread-owned today; future command recording contract needed | Keep, evolve | Proper backend owner. Needs explicit future per-frame/per-thread ownership in Phase 9. |
+
+### Renderer and FrameGraph Responsibility Ledger
+
+| Class / Family | Target Module | Allowed Edges | Mutation / Thread Assumption | Disposition | Mental-Load Judgment and Phase Action |
+| --- | --- | --- | --- | --- | --- |
+| `TextureManager` | Renderer private runtime texture registry/cache | Renderer private -> RHI public resource/upload; Renderer private -> runtime cooked texture refs | Render-thread-owned cache; future explicit synchronization policy | Split | Useful for default/fallback policy and residency cache. Source path loading increases mental load and violates runtime boundary; defer move to Phase 5/7. |
+| `MaterialCacheManager` | Renderer private material resource cache, future binding-set owner | Renderer private -> TextureManager + RHI binding/resource contracts | Render-thread-owned material cache today | Adjust | Useful material-data cache, but raw `RhiDescriptorTableHandle` ownership is wrong. Defer to Phase 4 binding-set migration. |
+| `PipelineStateManager` | Renderer private shader package + pass pipeline runtime cache | Renderer passes -> PipelineStateManager -> RHI pipeline/binding contracts | Lazy mutable cache; render-thread-owned unless synchronized later | Adjust | Useful, but dependency on full RHI and combined shader/pipeline cache can add mental load. Defer narrow-interface dependency to Phase 3; split only if reload and PSO lifetime diverge. |
+| `GPUMeshCache` / `GPUMesh` | Renderer private mesh GPU resource cache | Renderer private -> RHI resource/upload contracts; GameFramework mesh data -> Renderer extraction | Render-thread-owned cache | Keep, align | Useful owner for mesh GPU lifetime. Needs cooked/upload service alignment and future extraction boundary in Phases 5 and 9. |
+| `RendererMemoryMonitor` | Renderer private diagnostics aggregator | Renderer diagnostics -> RHI diagnostics + renderer cache snapshots | Read-only snapshot capture during frame/diagnostics | Keep | Reduces mental load if it aggregates only. Must not mutate ownership or inspect backend-private state. |
+| `SceneRenderStateCoordinator` | Renderer private level lifecycle coordinator only | Level events -> Renderer private caches/services | Event-driven render-thread/lifecycle mutation | Keep only if narrow | Useful if it remains lifecycle invalidation/refresh. If it becomes a second Renderer orchestrator, split or delete in Phase 1/7 follow-up. |
+| `RenderSceneSnapshot` | Renderer private immutable-ish scene extraction state | GameFramework/GameScene -> Renderer snapshot; Renderer setup -> frame data | Mutated during extraction/refresh; should be immutable during frame setup/record | Keep, strengthen | Important for future threading. Phase 9 must make mutation phase and GameFramework handoff explicit. |
+| `RenderSceneDataBuilder` | Renderer private scene draw-data builder | Snapshot/material/mesh caches -> frame-local scene data | Should be setup-phase only and stateless after build | Keep | Good mental-load reduction if pure builder. Keep out of GPU resource ownership. |
+| `PerViewDataBuilder` / `ViewLightingBuilder` | Renderer private frame/view data builders | Snapshot/camera/lights -> frame-local constants | Setup-phase only; frame-local output | Keep | Good threading shape if they remain pure builders. Phase 9 documents ownership/mutation phase. |
+| `RenderCamera` | Renderer private view state | GameFramework/Editor input -> Renderer view data | Main/render-thread mutation today | Keep, clarify | Useful, but future threading requires explicit extraction/update phase. Defer to Phase 9. |
+| `FrameGraph` | Renderer private frame graph owner | Renderer setup -> FrameGraph; FrameGraph -> RHI public contracts | Setup/compile/execute phases; render-thread-owned today | Keep, consolidate | Strong owner. Needs sharper split between declaration, immutable plan, and execution in Phase 6. |
+| `FrameGraphBuilder` / `FrameGraphFactory` | Renderer private graph construction API | Renderer pass setup -> FrameGraph declaration; dependencies -> RHI public/window | Setup-phase only | Keep | Good mental-load reduction for pass declaration. Ensure dependencies stay narrow; Phase 3 removes full-RHI reach where possible. |
+| `FrameGraphPlan` / compiler types | Renderer private planning output | FrameGraph compile -> execution/backend-neutral RHI plan | Immutable after compile | Keep, strengthen | Correct owner for future barriers/lifetimes. Phase 6 expands authority. |
+| `FrameGraphResourceRegistry` / `FrameGraphResourceResolver` / `FrameGraphResourceStateTracker` | Renderer private FrameGraph resource state services | FrameGraph internals -> RHI resource/view contracts | Mutated during setup/compile/execute according to phase | Keep, consolidate | Meaningful owners if responsibilities remain distinct. Merge only if one becomes pass-through during Phase 6. |
+| `FrameGraphTransientAllocator` | Renderer private transient allocation planner/executor adapter | FrameGraph plan -> RHI memory intent | Compile/execute phase; render-thread-owned today | Keep, align | Correct concept. Must express intent only and keep D3D12MA/VMA private; Phase 5/6 alignment. |
+| `FrameGraphResourceCommands` | Renderer private execution adapter | Pass execution -> FrameGraph resource resolution -> RenderCommandContext | Execute-phase only | Keep only as adapter | Useful if it translates compiled plan/resource handles. Delete or fold if it becomes an alternate planner. Re-evaluate in Phase 6. |
+| `RenderCommandContext` | Renderer private command convenience wrapper | FrameGraph/pass execution -> RHI command list | Execute-phase, render-thread-owned | Adjust / re-evaluate | Adds diagnostics convenience but exposes GPU addresses, descriptors, and native handles. Keep only until RHI command/binding split; Phase 3/4 re-evaluate. |
+| `PassBinder` / `PassBindingOverrides` | Renderer private pass binding bridge | Pass execution -> FrameGraph resources + RHI binding layout | Execute/setup binding phase | Adjust | Useful bridge but currently binds descriptors/addresses directly. Convert toward binding packet generation in Phase 4. |
+| `PassParameterSet` / shader parameter field types | Renderer public/private pass parameter data | Pass declarations -> FrameGraph/binding metadata | Frame-local or immutable after setup | Keep | Strong source of pass binding intent. Should remain metadata/intent, not descriptor ownership. |
+| `ShaderPass` / concrete pass classes | Renderer private feature passes | Pass setup -> FrameGraphBuilder; execute -> PassExecutionContext | Setup/execute phase split | Keep, constrain | Useful feature boundaries. Must not reach native/backend-private handles; Phase 6/8 validation should catch exceptions. |
+| `RenderPassShaderRuntime` / pass pipeline traits | Renderer private pass runtime cache helper | PipelineStateManager -> RHI pipeline/binding contracts + cooked shader packages | Lazy render-thread cache | Keep, tie to source of truth | Good mental-load reduction if all pass PSO/binding runtime creation flows here. Phase 4 ties binding layout to shader reflection. |
+| `FrameExecutionDiagnostics` / `PassExecutionDiagnostics` | Renderer private diagnostics | Pass/Frame execution -> RHI diagnostics | Frame-local diagnostics mutation | Keep | Useful instrumentation; must remain diagnostics-only and avoid backend-private coupling. |
+
+### Phase 1 Source Action Register
+
+Phase 1 source inspection found several responsibility moves, but most require implementation validation from later phases. No runtime behavior change is made in Phase 1. Required moves are explicitly deferred:
+
+| Required Move | Reason | Deferred Phase |
+| --- | --- | --- |
+| Split/facade `RenderHardwareInterface` by capability area | Current broad facade creates high mental load and unclear dependencies | Phase 3 |
+| Remove raw descriptor/table ownership from Renderer material and pass binding paths | Renderer should express binding intent, not descriptor mechanics | Phase 4 |
+| Move `CreateTextureFromPath` and source-path texture loading out of core RHI/runtime path | Runtime RHI should consume cooked/upload-ready payloads | Phase 5 and Phase 7 |
+| Replace general Renderer-facing GPU virtual address traffic with backend-neutral buffer/view/binding records where possible | Avoid D3D12-shaped semantics leaking into Vulkan and Renderer | Phase 3, Phase 4, Phase 5 |
+| Isolate ImGui/editor backend integration outside core RHI device contract | Editor-only concepts should not be required by runtime RHI | Phase 3 and Phase 7 |
+| Make GameFramework-to-Renderer extraction and snapshot mutation phases explicit | Future multithreading requires stable frame inputs | Phase 9 |
+| Re-evaluate `RenderCommandContext` and `FrameGraphResourceCommands` after command/binding/framegraph planning split | Keep only if they reduce mental load; merge/delete if pass-through | Phase 3, Phase 4, Phase 6 |
+
+### Phase 1 Source-Only Validation Notes
+
+Reviewers should reject Phase 1 as incomplete if any of these are true:
+
+- An audited class lacks a target module, allowed dependency edge, mutation/thread assumption, disposition, or mental-load reason.
+- A class is marked keep without naming the concrete responsibility it owns.
+- A class is marked adjust/split/move/merge/delete without either a source change or a named deferred phase in the action register.
+- A retained wrapper hides the stronger owner instead of narrowing dependencies or reducing mental load.
+- A temporary edge or compatibility path lacks an owner, reason, validation note, and removal phase.
+- A disposition keeps Renderer as a service locator or keeps raw descriptor/source asset/backend-private ownership in ordinary Renderer paths without assigning the cleanup to a later phase.
+
+Phase 1 is complete when the responsibility ledger and action register can guide later source changes without re-litigating where each audited responsibility belongs.
 
 Class disposition rule: a class earns its existence when it owns one real concept: lifetime, cache identity, backend realization, compilation/planning, validation, or user-facing policy. A class should be merged or deleted when it only forwards calls, hides ownership, or exists because two modules do not have a clean dependency boundary. If the team is unsure whether an abstraction is carrying its weight and it looks like needless complexity, the default decision is to remove it, fold it into a stronger owner, or defer reintroducing it until a concrete need appears.
 
@@ -241,6 +343,22 @@ Default bias: when keep/delete is ambiguous, choose the simpler architecture. Ke
 Usefulness rule: every piece of code must prove that it helps the architecture. The question is not whether the code count is high or low; the question is whether the code lowers the cost of understanding, changing, validating, and extending the render path. More code is acceptable when it creates a clearer owner or boundary. Less code is better when an abstraction only adds another place to look.
 
 The target is not a tiny codebase. The target is a codebase where every class has a nameable job, a stable module home, and obvious connection edges.
+
+## Phase 0 Source-Only Validation Notes
+
+Phase 0 does not change runtime behavior and does not run builds between phases. Its validation is an architecture review pass over the document and current source shape.
+
+Reviewers should reject Phase 0 as incomplete if any of these are true:
+
+- A public RHI method exists without a capability category in the current public RHI method ledger.
+- A category allows Renderer, FrameGraph, GameFramework, Editor, Tools, or Application code to reach a forbidden dependency edge.
+- A class disposition says keep but does not name the responsibility, module home, dependency edges, and mental-load reason.
+- A manager/orchestrator/wrapper is kept because it already exists rather than because it clarifies ownership or reduces mental load.
+- A temporary edge, compatibility shim, or workaround is accepted without an owner and removal phase.
+- A runtime-facing path depends on source asset import, runtime shader compilation, D3D12MA/VMA public exposure, backend-private headers, raw descriptor ownership, or editor-only UI contracts.
+- The GameFramework-to-Renderer, Renderer-to-FrameGraph, FrameGraph-to-RHI, or RHI-to-backend boundary is described in a way that blocks future threading preparation.
+
+Phase 0 is complete only when the document itself can be used as a review checklist for later source changes.
 
 ## External Pattern Alignment
 
@@ -531,10 +649,11 @@ Update Sparkle's RHI architecture documentation and validation notes so external
 Acceptance criteria:
 
 - The architecture document contains a code ownership map for RHI, Renderer, FrameGraph, shader packages, memory, binding, uploads, diagnostics, presentation, editor integration, and runtime/cook boundaries.
-- Every existing public `RenderHardwareInterface` method is assigned to a category: core device, resource, memory, upload, binding, pipeline, command, diagnostics/query, presentation, editor integration, ray tracing, or interop escape hatch.
+- Every existing public `RenderHardwareInterface` method is assigned in the current public RHI method ledger to a category: core device, resource, memory, upload, binding, pipeline, command, diagnostics/query, presentation, editor integration, ray tracing, or interop escape hatch.
 - Current RHI and Renderer managers/orchestrators/wrappers are classified as keep, adjust, move, merge, or delete candidates with a concrete rationale.
 - The document states which dependencies are forbidden in ordinary Renderer code: native device objects, D3D12MA/VMA types, raw descriptor allocation, backend-specific command lists, source asset import, and runtime shader compilation.
 - The document states the phase-wide rules for dependency-edge authority, usefulness by mental-load reduction, default removal of uncertain abstractions, no workaround architecture, GameFramework/Renderer/FrameGraph/RHI multithreading preparation, and final-only validation.
+- The document includes source-only Phase 0 validation notes that reviewers can apply before any source behavior change.
 - No source code behavior changes are required in this phase.
 
 ### Phase 1: Responsibility Audit and Class Disposition
@@ -603,6 +722,21 @@ Acceptance criteria:
 - Unsupported features fail early with targeted diagnostics instead of falling through to backend asserts or stub failures.
 - Existing D3D12 launch still works.
 - Vulkan launch either works for its declared capability set or fails with a capability diagnostic that explains the missing feature.
+
+Phase 2 implementation notes:
+
+- `RhiCapabilities` is the first-class backend-neutral capability report exposed through RHI. It records backend identity, required shader binary format, descriptor model, binding limits, upload/readback support, per-format usage support, timestamp/query support, ray tracing support, mesh/task shader support, queue support, present support, and memory allocator backend.
+- D3D12 populates the report from its current implementation state: DXIL shader packages, descriptor heap/table binding, D3D12MA allocation, graphics queue only, present support when the swapchain exposes a back buffer format, timestamp query support through the graphics queue, ray tracing capabilities from `D3D12Rhi`, and format support through `CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT)`.
+- Vulkan populates the report from its current implementation state: SPIR-V shader packages, descriptor-set binding, VMA allocation, graphics queue only, present support when the swapchain exposes a back buffer format, no timestamp query path yet, ray tracing disabled, and format support from `vkGetPhysicalDeviceFormatProperties`.
+- `RenderDeviceServices` logs the selected backend, shader binary format, descriptor model, allocator backend, major feature flags, queue support, and binding limits during backend creation.
+- Renderer shader runtime now reads backend identity and required shader format from the capability report, and rejects shader packages that require acceleration-structure bindings or inline ray query when the selected backend reports those features unsupported.
+
+Phase 2 source-only validation notes:
+
+- Reviewers should reject Phase 2 if a Renderer feature initialization path still branches on `ERhiBackendApi` instead of capability policy.
+- Reviewers should reject Phase 2 if D3D12 or Vulkan reports a feature as supported without an implemented backend path or a targeted validation diagnostic.
+- Reviewers should reject Phase 2 if startup cannot print the selected backend, shader binary format, descriptor model, allocator backend, present support, queue support, timestamp query support, and ray tracing flags from one capability report.
+- Builds and launch checks remain deferred to the final validation block unless the phase policy is explicitly changed.
 
 ### Phase 3: Narrow the RHI Surface by Capability Area
 

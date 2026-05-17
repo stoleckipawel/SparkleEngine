@@ -70,7 +70,8 @@ class RenderPassShaderRuntime final
 	{
 		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Graphics, outErrorMessage) ||
 		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
-		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage))
+		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage) ||
+		    !ValidatePackageCapabilities(rhi, desc, *storage.ShaderPackage, outErrorMessage))
 		{
 			return false;
 		}
@@ -135,7 +136,8 @@ class RenderPassShaderRuntime final
 	{
 		if (!ValidatePipelineKind(desc, RenderPassShaderPipelineKind::Compute, outErrorMessage) ||
 		    !ValidateExpectedStages(desc, outErrorMessage) || !BuildBindingLayout(desc, storage.BindingLayoutDefinition, outErrorMessage) ||
-		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage))
+		    !LoadShaderPackage(rhi, shaderPackageCache, desc, storage.BindingLayoutDefinition, storage.ShaderPackage, outErrorMessage) ||
+		    !ValidatePackageCapabilities(rhi, desc, *storage.ShaderPackage, outErrorMessage))
 		{
 			return false;
 		}
@@ -254,7 +256,8 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		outLoadedPackage = nullptr;
-		const CookedShaderBinaryFormat requiredBinaryFormat = rhi.GetRequiredShaderBinaryFormat();
+		const RhiCapabilities& capabilities = rhi.GetCapabilities();
+		const CookedShaderBinaryFormat requiredBinaryFormat = capabilities.RequiredShaderBinaryFormat;
 		if (!shaderPackageCache
 		         .LoadPackage(desc.Package, bindingLayout, requiredBinaryFormat, outErrorMessage, outLoadedPackage))
 		{
@@ -267,7 +270,7 @@ class RenderPassShaderRuntime final
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    desc.PassName,
 			    desc.PackageDeclarationName,
-			    RhiBackendApiToString(rhi.GetBackendApi()),
+			    RhiBackendApiToString(capabilities.BackendApi),
 			    CookedShaderBinaryFormatToString(requiredBinaryFormat),
 			    bindingLayoutLabel,
 			    FormatShaderStageMask(desc.Package.ExpectedStages),
@@ -276,6 +279,40 @@ class RenderPassShaderRuntime final
 		}
 
 		assert(outLoadedPackage != nullptr);
+		outErrorMessage.clear();
+		return true;
+	}
+
+	static bool ValidatePackageCapabilities(
+	    RenderHardwareInterface& rhi,
+	    const RenderPassShaderRuntimeDesc& desc,
+	    const LoadedShaderPackage& shaderPackage,
+	    std::string& outErrorMessage)
+	{
+		const RhiCapabilities& capabilities = rhi.GetCapabilities();
+		const CookedShaderPackageFeatureFlags packageFeatures = shaderPackage.GetHeader().PackageFeatures;
+		if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesAccelerationStructure) &&
+		    !capabilities.RayTracing.SupportsRayTracing)
+		{
+			outErrorMessage = std::format(
+			    "Render pass '{}' package '{}' requires acceleration-structure bindings, but backend '{}' reports ray tracing unsupported",
+			    desc.PassName,
+			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
+			    RhiBackendApiToString(capabilities.BackendApi));
+			return false;
+		}
+
+		if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
+		    !capabilities.RayTracing.SupportsInlineRayQuery)
+		{
+			outErrorMessage = std::format(
+			    "Render pass '{}' package '{}' requires inline ray query, but backend '{}' reports inline ray query unsupported",
+			    desc.PassName,
+			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
+			    RhiBackendApiToString(capabilities.BackendApi));
+			return false;
+		}
+
 		outErrorMessage.clear();
 		return true;
 	}
@@ -296,14 +333,15 @@ class RenderPassShaderRuntime final
 
 	static void LogRuntimeReady(RenderHardwareInterface& rhi, const RenderPassShaderRuntimeDesc& desc)
 	{
+		const RhiCapabilities& capabilities = rhi.GetCapabilities();
 		SPDLOG_LOGGER_INFO(
 		    GetLogger(),
 		    "Cooked shader runtime ready: pass='{}' pipeline='{}' backend='{}' requiredFormat='{}' package='{}' bindingLayout='{}' "
 		    "expectedStages='{}'",
 		    desc.PassName,
 		    FormatPipelineKind(desc.PipelineKind),
-		    RhiBackendApiToString(rhi.GetBackendApi()),
-		    CookedShaderBinaryFormatToString(rhi.GetRequiredShaderBinaryFormat()),
+		    RhiBackendApiToString(capabilities.BackendApi),
+		    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
 		    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 		    desc.Package.BindingLayoutId != nullptr ? desc.Package.BindingLayoutId : "<null>",
 		    FormatShaderStageMask(desc.Package.ExpectedStages));

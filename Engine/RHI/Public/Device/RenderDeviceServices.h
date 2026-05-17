@@ -23,6 +23,7 @@ class SPARKLE_RHI_API RenderDeviceServices final
 	RenderDeviceServices(RenderDeviceServices&&) = delete;
 	RenderDeviceServices& operator=(RenderDeviceServices&&) = delete;
 
+	const RhiCapabilities& GetCapabilities() const noexcept;
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
 	RenderDiagnostics& GetDiagnostics() noexcept;

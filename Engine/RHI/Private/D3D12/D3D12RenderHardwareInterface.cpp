@@ -41,6 +41,7 @@ D3D12RenderHardwareInterface::D3D12RenderHardwareInterface(
 		m_commandLists[frameIndex] = std::make_unique<D3D12RenderCommandList>(*this, rhi.GetCommandList(frameIndex).Get());
 	}
 
+	m_capabilities = BuildCapabilities();
 	m_diagnostics = CreateD3D12RenderDiagnostics(rhi);
 	m_imguiBackend = std::make_unique<D3D12ImGuiBackend>(*this);
 }
@@ -95,6 +96,59 @@ RhiOwnedMemoryBlockHandle D3D12RenderHardwareInterface::WrapOwnedMemoryBlock(std
 	}
 
 	return MakeD3D12OwnedMemoryBlockHandle(std::move(record));
+}
+
+RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
+{
+	RhiCapabilities capabilities{};
+	capabilities.BackendApi = ERhiBackendApi::D3D12;
+	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
+	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorHeapTables;
+	capabilities.BindingLimits = RhiBindingLimits{
+	    .MaxDescriptorSets = 1,
+	    .MaxShaderResourceDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
+	    .MaxSamplerDescriptors = D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE,
+	    .MaxDescriptorTableEntries = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
+	    .MaxPushConstantBytes = 256};
+	capabilities.UploadReadback = RhiUploadReadbackCapabilities{
+	    .SupportsBufferUpload = true,
+	    .SupportsTextureUpload = true,
+	    .SupportsReadback = true};
+	for (std::size_t index = 0; index < capabilities.FormatSupport.size(); ++index)
+	{
+		capabilities.FormatSupport[index] = QueryFormatSupport(kRhiCapabilityPixelFormats[index]);
+	}
+	capabilities.SupportsTimestampQueries = m_rhi != nullptr && m_rhi->GetCommandQueue() != nullptr;
+	capabilities.RayTracing = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities() : RhiRayTracingCapabilities{};
+	capabilities.SupportsMeshShaders = false;
+	capabilities.SupportsTaskShaders = false;
+	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
+	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
+	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12MA;
+	return capabilities;
+}
+
+RhiFormatSupport D3D12RenderHardwareInterface::QueryFormatSupport(PixelFormat format) const noexcept
+{
+	RhiFormatSupport support{.Format = format};
+	if (m_rhi == nullptr || m_rhi->GetDevice() == nullptr || format == PixelFormat::Unknown)
+	{
+		return support;
+	}
+
+	D3D12_FEATURE_DATA_FORMAT_SUPPORT data{};
+	data.Format = D3D12TypeConversions::ToDxgiFormat(format);
+	if (data.Format == DXGI_FORMAT_UNKNOWN || FAILED(m_rhi->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &data, sizeof(data))))
+	{
+		return support;
+	}
+
+	support.SupportsTexture = (data.Support1 & D3D12_FORMAT_SUPPORT1_TEXTURE2D) != 0;
+	support.SupportsShaderResource = (data.Support1 & (D3D12_FORMAT_SUPPORT1_SHADER_LOAD | D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE)) != 0;
+	support.SupportsUnorderedAccess = (data.Support2 & (D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD | D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE)) != 0;
+	support.SupportsRenderTarget = (data.Support1 & D3D12_FORMAT_SUPPORT1_RENDER_TARGET) != 0;
+	support.SupportsDepthStencil = (data.Support1 & D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL) != 0;
+	return support;
 }
 
 std::uint32_t D3D12RenderHardwareInterface::GetCurrentFrameIndex() const noexcept

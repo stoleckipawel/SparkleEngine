@@ -34,6 +34,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanRenderHardwareInterface(VulkanRenderHardwareInterface&&) = delete;
 	VulkanRenderHardwareInterface& operator=(VulkanRenderHardwareInterface&&) = delete;
 
+	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept override;
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
@@ -144,6 +145,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 
   private:
 	static void FailRenderingNotImplemented(std::string_view operation) noexcept;
+	RhiCapabilities BuildCapabilities() const noexcept;
+	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;
 	void BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept;
 	void EndCurrentBackBufferRendering() noexcept;
@@ -159,6 +162,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	std::unique_ptr<VulkanTextureFactory> m_textureFactory;
 	std::unique_ptr<VulkanImGuiBackend> m_imguiBackend;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
+	RhiCapabilities m_capabilities;
 	std::uint32_t m_currentFrameIndex = 0;
 	std::vector<VkImageLayout> m_swapChainBackBufferLayouts;
 	bool m_isPresentRendering = false;

@@ -35,6 +35,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12RenderHardwareInterface(D3D12RenderHardwareInterface&&) = delete;
 	D3D12RenderHardwareInterface& operator=(D3D12RenderHardwareInterface&&) = delete;
 
+	const RhiCapabilities& GetCapabilities() const noexcept override { return m_capabilities; }
 	ERhiBackendApi GetBackendApi() const noexcept override;
 	CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept override;
 	std::uint32_t GetCurrentFrameIndex() const noexcept override;
@@ -187,6 +188,8 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    std::wstring debugName) noexcept;
 	static RhiOwnedMemoryBlockHandle WrapOwnedMemoryBlock(std::unique_ptr<D3D12GpuHeapRecord> record) noexcept;
 	static bool ResourceSupportsUnorderedAccess(ID3D12Resource* resource) noexcept;
+	RhiCapabilities BuildCapabilities() const noexcept;
+	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	bool WriteD3D12ResourceViewDescriptor(const RhiResourceViewDesc& desc, RhiCpuDescriptorHandle destination) noexcept;
 	void DrainCompletedOwnedResourceReleases() noexcept;
 	DescriptorTableRecord* FindDescriptorTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;
@@ -200,6 +203,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	D3D12SwapChain* m_swapChain = nullptr;
 	D3D12ConstantBufferManager* m_constantBufferManager = nullptr;
 	std::unique_ptr<D3D12ImGuiBackend> m_imguiBackend;
+	RhiCapabilities m_capabilities;
 	RhiDescriptorTableHandle m_samplerTableHandle = {};
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	std::array<std::unique_ptr<RenderCommandList>, RenderConfig::FramesInFlight> m_commandLists;

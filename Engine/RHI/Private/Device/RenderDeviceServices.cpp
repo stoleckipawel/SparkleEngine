@@ -4,6 +4,8 @@
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
 
+#include "Shaders/CookedShaderPackageUtils.h"
+
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -18,6 +20,36 @@ static void FailUnsupportedRhiBackend(ERhiBackendApi api) noexcept
 {
 	const std::string message = std::string("RHI backend '") + RhiBackendApiToString(api) + "' is not implemented by RenderDeviceServices yet.";
 	Diagnostics::Fail(g_rhiServicesLogger, __FILE__, __LINE__, message);
+}
+
+static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
+{
+	SPDLOG_LOGGER_INFO(
+	    g_rhiServicesLogger,
+	    "RHI capabilities: backend={} shaderFormat={} descriptorModel={} allocator={} present={} upload(buffer={}, texture={}) readback={} "
+	    "timestampQueries={} rayTracing={} inlineRayQuery={} meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
+	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={})",
+	    RhiBackendApiToString(capabilities.BackendApi),
+	    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
+	    RhiDescriptorModelToString(capabilities.DescriptorModel),
+	    RhiMemoryAllocatorBackendToString(capabilities.MemoryAllocator),
+	    capabilities.SupportsPresent,
+	    capabilities.UploadReadback.SupportsBufferUpload,
+	    capabilities.UploadReadback.SupportsTextureUpload,
+	    capabilities.UploadReadback.SupportsReadback,
+	    capabilities.SupportsTimestampQueries,
+	    capabilities.RayTracing.SupportsRayTracing,
+	    capabilities.RayTracing.SupportsInlineRayQuery,
+	    capabilities.SupportsMeshShaders,
+	    capabilities.SupportsTaskShaders,
+	    capabilities.Queues.SupportsGraphics,
+	    capabilities.Queues.SupportsCompute,
+	    capabilities.Queues.SupportsCopy,
+	    capabilities.BindingLimits.MaxDescriptorSets,
+	    capabilities.BindingLimits.MaxShaderResourceDescriptors,
+	    capabilities.BindingLimits.MaxSamplerDescriptors,
+	    capabilities.BindingLimits.MaxDescriptorTableEntries,
+	    capabilities.BindingLimits.MaxPushConstantBytes);
 }
 
 struct RenderDeviceServices::Impl
@@ -63,7 +95,18 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer,
 		default:
 			FailUnsupportedRhiBackend(selection.Api);
 	}
+
+	if (services->m_impl->backend != nullptr)
+	{
+		LogRhiCapabilities(services->m_impl->backend->GetRenderHardwareInterface().GetCapabilities());
+	}
 	return services;
+}
+
+const RhiCapabilities& RenderDeviceServices::GetCapabilities() const noexcept
+{
+	const RenderDeviceBackendServices& backend = *m_impl->backend;
+	return backend.GetRenderHardwareInterface().GetCapabilities();
 }
 
 RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface() noexcept

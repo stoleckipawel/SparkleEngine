@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Commands/RenderCommandList.h"
+#include "../Core/RhiCapabilities.h"
 #include "../Core/RhiBackendApi.h"
 #include "../Descriptors/RhiDescriptorHandles.h"
 #include "../Diagnostics/RhiDiagnostics.h"
@@ -23,13 +24,13 @@
 
 class Texture;
 struct ImDrawData;
-enum class CookedShaderBinaryFormat : std::uint8_t;
 
 class SPARKLE_RHI_API RenderHardwareInterface
 {
   public:
 	virtual ~RenderHardwareInterface() noexcept = default;
 
+	virtual const RhiCapabilities& GetCapabilities() const noexcept = 0;
 	virtual ERhiBackendApi GetBackendApi() const noexcept = 0;
 	virtual CookedShaderBinaryFormat GetRequiredShaderBinaryFormat() const noexcept = 0;
 	virtual std::uint32_t GetCurrentFrameIndex() const noexcept = 0;
