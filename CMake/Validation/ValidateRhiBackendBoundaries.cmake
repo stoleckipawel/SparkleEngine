@@ -229,6 +229,7 @@ if(vulkan_command_context_text)
     require_text("${vulkan_command_context_path}" "${vulkan_command_context_text}" "vkQueueSubmit" "Vulkan command context must own queue submission")
     require_text("${vulkan_command_context_path}" "${vulkan_command_context_text}" "vkCreateSemaphore" "Vulkan present synchronization must stay backend-private")
     require_text("${vulkan_command_context_path}" "${vulkan_command_context_text}" "vkCreateFence" "Vulkan frame retirement must use backend-private fences")
+    require_text("${vulkan_command_context_path}" "${vulkan_command_context_text}" "RetireFenceValue" "Vulkan frame retirement must track delayed-destruction-compatible fence tickets")
 endif()
 
 set(vulkan_command_list_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp")

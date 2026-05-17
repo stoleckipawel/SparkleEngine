@@ -30,6 +30,8 @@ class VulkanCommandContext final
 	VkCommandBuffer GetCommandBuffer(std::uint32_t frameIndex) const noexcept;
 	VkSemaphore GetImageAvailableSemaphore(std::uint32_t frameIndex) const noexcept;
 	VkSemaphore GetRenderFinishedSemaphore(std::uint32_t frameIndex) const noexcept;
+	std::uint64_t GetNextRetireFenceValue() const noexcept { return m_nextRetireFenceValue; }
+	std::uint64_t GetCompletedRetireFenceValue() const noexcept { return m_completedRetireFenceValue; }
 
   private:
 	struct FrameState final
@@ -39,6 +41,7 @@ class VulkanCommandContext final
 		VkFence Fence = VK_NULL_HANDLE;
 		VkSemaphore ImageAvailableSemaphore = VK_NULL_HANDLE;
 		VkSemaphore RenderFinishedSemaphore = VK_NULL_HANDLE;
+		std::uint64_t RetireFenceValue = 0;
 		std::unique_ptr<VulkanRenderCommandList> CommandList;
 		bool IsRecording = false;
 	};
@@ -51,4 +54,6 @@ class VulkanCommandContext final
 
 	VulkanRhi& m_rhi;
 	std::array<FrameState, RenderConfig::FramesInFlight> m_frames;
+	std::uint64_t m_nextRetireFenceValue = 1;
+	std::uint64_t m_completedRetireFenceValue = 0;
 };

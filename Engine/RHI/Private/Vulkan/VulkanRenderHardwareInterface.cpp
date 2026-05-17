@@ -678,7 +678,7 @@ void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer 
 	        .levelCount = 1,
 	        .baseArrayLayer = 0,
 	        .layerCount = 1}};
-            
+
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,

@@ -7,6 +7,7 @@
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 
+#include <algorithm>
 #include <format>
 
 static const auto g_vulkanCommandContextLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Commands");
@@ -34,6 +35,7 @@ void VulkanCommandContext::BeginFrame(std::uint32_t frameIndex) noexcept
 	if (frameState.Fence != VK_NULL_HANDLE)
 	{
 		(void)vkWaitForFences(m_rhi.GetDevice(), 1, &frameState.Fence, VK_TRUE, UINT64_MAX);
+		m_completedRetireFenceValue = std::max(m_completedRetireFenceValue, frameState.RetireFenceValue);
 		(void)vkResetFences(m_rhi.GetDevice(), 1, &frameState.Fence);
 	}
 
@@ -80,6 +82,7 @@ void VulkanCommandContext::SubmitFrame(std::uint32_t frameIndex, VkSemaphore wai
 	    .signalSemaphoreCount = signalSemaphore != VK_NULL_HANDLE ? 1u : 0u,
 	    .pSignalSemaphores = signalSemaphore != VK_NULL_HANDLE ? &signalSemaphore : nullptr};
 
+	frameState.RetireFenceValue = m_nextRetireFenceValue++;
 	const VkResult submitResult = vkQueueSubmit(m_rhi.GetGraphicsQueue(), 1, &submitInfo, frameState.Fence);
 	if (!VulkanResult::Succeeded(submitResult))
 	{
@@ -108,6 +111,7 @@ void VulkanCommandContext::CancelFrame(std::uint32_t frameIndex) noexcept
 		    .signalSemaphoreCount = 0,
 		    .pSignalSemaphores = nullptr};
 		(void)vkResetFences(m_rhi.GetDevice(), 1, &frameState.Fence);
+		frameState.RetireFenceValue = m_nextRetireFenceValue++;
 		(void)vkQueueSubmit(m_rhi.GetGraphicsQueue(), 1, &submitInfo, frameState.Fence);
 	}
 }
@@ -119,6 +123,7 @@ void VulkanCommandContext::WaitForIdle() noexcept
 		if (frameState.Fence != VK_NULL_HANDLE)
 		{
 			(void)vkWaitForFences(m_rhi.GetDevice(), 1, &frameState.Fence, VK_TRUE, UINT64_MAX);
+			m_completedRetireFenceValue = std::max(m_completedRetireFenceValue, frameState.RetireFenceValue);
 		}
 	}
 }
