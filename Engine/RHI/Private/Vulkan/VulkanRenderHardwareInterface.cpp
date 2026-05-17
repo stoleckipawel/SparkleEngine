@@ -21,6 +21,7 @@
 #include "Vulkan/Textures/VulkanTextureFactory.h"
 #include "Vulkan/UI/VulkanImGuiBackend.h"
 #include "Vulkan/VulkanTypeConversions.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <format>
 
@@ -144,7 +145,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
-	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VMA;
+	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
 	return capabilities;
 }
 
@@ -338,8 +339,12 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
     std::wstring_view debugName)
 {
 	(void) initialState;
-	return m_textureFactory != nullptr ? m_textureFactory->CreateTextureResource(desc, category, residencyClass, debugName)
-	                               : RhiOwnedResourceHandle{};
+	if (m_textureFactory == nullptr || !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc, "RHI.Vulkan.CreateTextureResource"))
+	{
+		return {};
+	}
+
+	return m_textureFactory->CreateTextureResource(desc, category, residencyClass, debugName);
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
@@ -589,8 +594,8 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingTextureResou
 {
 	(void) desc.InitialState;
 	(void) desc.ClearValue;
-	if (m_memoryAllocator == nullptr || !memoryBlock || desc.ResourceDesc.Width == 0 || desc.ResourceDesc.Height == 0 ||
-	    desc.ResourceDesc.Format == PixelFormat::Unknown)
+	if (m_memoryAllocator == nullptr || !memoryBlock ||
+	    !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc.ResourceDesc, "RHI.Vulkan.CreateAliasingTextureResource"))
 	{
 		return {};
 	}

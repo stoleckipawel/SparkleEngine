@@ -3,14 +3,21 @@
 #include "RHI/Public/Bindings/RenderBindingSet.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <utility>
 
 RenderBindingSet::RenderBindingSet(RenderHardwareInterface& renderHardwareInterface, const RenderBindingSetDesc& desc) noexcept :
-	m_renderHardwareInterface(&renderHardwareInterface),
-	m_tableHandle(renderHardwareInterface.AllocateDescriptorTable(desc.DescriptorType, desc.DescriptorCount)),
-	m_descriptorCount(desc.DescriptorCount)
+	m_renderHardwareInterface(&renderHardwareInterface)
 {
+	if (!RhiValidation::ValidateBindingSetDesc(renderHardwareInterface.GetCapabilities(), desc, "RHI.RenderBindingSet"))
+	{
+		m_renderHardwareInterface = nullptr;
+		return;
+	}
+
+	m_tableHandle = renderHardwareInterface.AllocateDescriptorTable(desc.DescriptorType, desc.DescriptorCount);
+	m_descriptorCount = desc.DescriptorCount;
 }
 
 RenderBindingSet::~RenderBindingSet() noexcept
@@ -40,12 +47,22 @@ RenderBindingSet& RenderBindingSet::operator=(RenderBindingSet&& other) noexcept
 
 RhiCpuDescriptorHandle RenderBindingSet::GetCpuDescriptorHandle(std::uint32_t descriptorIndex) const noexcept
 {
+	if (!RhiValidation::ValidateBindingSetDescriptorIndex(descriptorIndex, m_descriptorCount, "RHI.RenderBindingSet"))
+	{
+		return {};
+	}
+
 	return m_renderHardwareInterface != nullptr ? m_renderHardwareInterface->GetDescriptorTableCpuHandle(m_tableHandle, descriptorIndex)
 	                                        : RhiCpuDescriptorHandle{};
 }
 
 RhiDescriptorTableBinding RenderBindingSet::GetTableBinding(std::uint32_t descriptorIndex) const noexcept
 {
+	if (!RhiValidation::ValidateBindingSetDescriptorIndex(descriptorIndex, m_descriptorCount, "RHI.RenderBindingSet"))
+	{
+		return {};
+	}
+
 	return RhiDescriptorTableBinding{.Table = m_tableHandle, .DescriptorIndex = descriptorIndex};
 }
 

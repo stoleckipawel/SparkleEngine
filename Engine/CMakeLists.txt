@@ -4,18 +4,22 @@
 # Module Dependency Hierarchy (strict layering - each layer only depends on layers below):
 #
 #   ┌─────────────────────────────────────────────────────────────┐
-#   │                 SparkleApplication.lib                      │
-#   │              (App bootstrap and main loop)                  │
+#   │              SparkleApplicationEditor.lib                   │
+#   │              (Editor host bootstrap)                        │
 #   └─────────────────────────────────────────────────────────────┘
 #                               │
 #                ┌──────────────┴──────────────┐
 #                ▼                             ▼
 #   ┌───────────────────────────┐   ┌─────────────────────────────┐
-#   │    SparkleGameFramework   │   │      SparkleEditor.dll       │
-#   │   (World, Entities, Assets)  │   │   (Editor panels and UI)    │
+#   │    SparkleApplication     │   │      SparkleEditor.dll       │
+#   │  (Runtime host bootstrap) │   │   (Editor panels and UI)    │
 #   └───────────────────────────┘   └─────────────────────────────┘
 #                │                             │
 #                └──────────────┬──────────────┘
+#                               │
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │                  SparkleGameFramework                       │
+#   └─────────────────────────────────────────────────────────────┘
 #                               │
 #   ┌─────────────────────────────────────────────────────────────┐
 #   │                   SparkleRenderer.dll                       │
@@ -50,8 +54,8 @@ add_subdirectory(Platform)       # SparklePlatform.dll - Window, Input, FileSyst
 add_subdirectory(RHI)            # SparkleRHI.dll      - D3D12/Vulkan abstraction
 add_subdirectory(Renderer)       # SparkleRenderer.dll - Rendering pipeline
 add_subdirectory(GameFramework)  # SparkleEngine.dll   - World, Entities, Components (NO rendering deps)
-add_subdirectory(Application)    # SparkleApplication  - App class (ties GameFramework + Renderer)
 add_subdirectory(Editor)         # SparkleEditor.dll   - Editor UI, panels, tools
+add_subdirectory(Application)    # SparkleApplication/SparkleApplicationEditor - Runtime and editor hosts
 
 # ============================================================================
 # MODULE LINKING GUIDE
@@ -63,13 +67,18 @@ add_subdirectory(Editor)         # SparkleEditor.dll   - Editor UI, panels, tool
 #   SparkleRHI          - D3D12/Vulkan abstraction (required for rendering)
 #   SparkleRenderer     - High-level rendering (requires RHI)
 #   SparkleGameFramework - Scene, Camera, Primitives (NO rendering deps)
-#   SparkleApplication  - App class (ties GameFramework + Renderer together)
-#   SparkleEditor       - Editor UI and tools
+#   SparkleApplication  - Runtime host class (ties GameFramework + Renderer together)
+#   SparkleEditor       - Editor UI and tools, without launch ownership
+#   SparkleApplicationEditor - Editor host launch class (ties runtime host + editor UI together)
 #
-# Example for a typical game project:
+# Example for a typical runtime project:
 #   target_link_libraries(MyGame PRIVATE
 #       SparkleApplication  # Brings in GameFramework + Renderer + all deps
-#       SparkleEditor
+#   )
+#
+# Example for an editor host:
+#   target_link_libraries(MyGameEditor PRIVATE
+#       SparkleApplicationEditor
 #   )
 #
 # Example for a headless tool (no rendering):

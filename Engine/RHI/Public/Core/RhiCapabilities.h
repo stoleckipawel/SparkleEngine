@@ -11,15 +11,15 @@
 enum class ERhiDescriptorModel : std::uint8_t
 {
 	Unknown = 0,
-	DescriptorHeapTables,
+	DescriptorTables,
 	DescriptorSets,
 };
 
 enum class ERhiMemoryAllocatorBackend : std::uint8_t
 {
 	Unknown = 0,
-	D3D12MA,
-	VMA,
+	D3D12Managed,
+	VulkanManaged,
 };
 
 struct RhiBindingLimits
@@ -97,8 +97,8 @@ constexpr const char* RhiDescriptorModelToString(ERhiDescriptorModel model) noex
 {
 	switch (model)
 	{
-		case ERhiDescriptorModel::DescriptorHeapTables:
-			return "DescriptorHeapTables";
+		case ERhiDescriptorModel::DescriptorTables:
+			return "DescriptorTables";
 		case ERhiDescriptorModel::DescriptorSets:
 			return "DescriptorSets";
 		case ERhiDescriptorModel::Unknown:
@@ -111,10 +111,10 @@ constexpr const char* RhiMemoryAllocatorBackendToString(ERhiMemoryAllocatorBacke
 {
 	switch (backend)
 	{
-		case ERhiMemoryAllocatorBackend::D3D12MA:
-			return "D3D12MA";
-		case ERhiMemoryAllocatorBackend::VMA:
-			return "VMA";
+		case ERhiMemoryAllocatorBackend::D3D12Managed:
+			return "D3D12Managed";
+		case ERhiMemoryAllocatorBackend::VulkanManaged:
+			return "VulkanManaged";
 		case ERhiMemoryAllocatorBackend::Unknown:
 		default:
 			return "Unknown";

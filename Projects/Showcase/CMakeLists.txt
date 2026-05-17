@@ -14,8 +14,7 @@ target_compile_features(ShowcaseEditor PRIVATE cxx_std_20)
 target_compile_features(ShowcaseRuntime PRIVATE cxx_std_20)
 
 target_link_libraries(ShowcaseEditor PRIVATE
-    SparkleApplication
-    SparkleEditor
+    SparkleApplicationEditor
 )
 
 target_link_libraries(ShowcaseRuntime PRIVATE

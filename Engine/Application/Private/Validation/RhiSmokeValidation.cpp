@@ -3,9 +3,6 @@
 #include "Validation/RhiSmokeValidation.h"
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
-#include "Diagnostics/ScopedLogEvent.h"
-#include "Editor/Public/UI.h"
-#include "Input/InputSystem.h"
 #include "Platform/Public/Window/Window.h"
 #include "ProjectApp.h"
 #include "Renderer.h"
@@ -32,7 +29,6 @@ class RhiSmokeValidationRunner final
   public:
 	static bool IsRequested() noexcept;
 	static int RunProject() noexcept;
-	static int RunEditor() noexcept;
 
   private:
 	static RhiSmokeValidationConfig LoadConfig() noexcept;
@@ -41,16 +37,9 @@ class RhiSmokeValidationRunner final
 	    const RhiSmokeValidationConfig& config,
 	    ProjectApp& app,
 	    RhiSmokeValidationState& state) noexcept;
-	static void LogEditorViewportEvidence(
-	    const RhiSmokeValidationConfig& config,
-	    ProjectApp& app,
-	    const ViewportRenderProducts& viewportProducts,
-	    RhiSmokeValidationState& state) noexcept;
 	static void Advance(const RhiSmokeValidationConfig& config, ProjectApp& app, RhiSmokeValidationState& state) noexcept;
 	static bool TickRuntime(ProjectApp& app, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
-	static bool TickEditor(ProjectApp& app, UI& ui, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
 	static int RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept;
-	static int RunEditorValidation(const RhiSmokeValidationConfig& config) noexcept;
 };
 
 RhiSmokeValidationConfig RhiSmokeValidationRunner::LoadConfig() noexcept
@@ -127,7 +116,8 @@ void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
 	if (!capabilities.SupportsLiveObjectReports)
 	{
 		SPDLOG_LOGGER_WARN(
-		    appLogger, "RHI smoke validation: live object reporting is unavailable; inspect the active backend diagnostics log lines for the concrete environment or runtime reason.");
+		    appLogger,
+		    "RHI smoke validation: live object reporting is unavailable; inspect the active backend diagnostics log lines for the concrete environment or runtime reason.");
 	}
 	if (!capabilities.SupportsCrashDiagnostics)
 	{
@@ -140,42 +130,10 @@ void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
 	state.DiagnosticsLogged = true;
 }
 
-void RhiSmokeValidationRunner::LogEditorViewportEvidence(
-	const RhiSmokeValidationConfig& config,
-    ProjectApp& app,
-    const ViewportRenderProducts& viewportProducts,
-	RhiSmokeValidationState& state) noexcept
-{
-	if (!config.Enabled || state.EditorViewportEvidenceLogged)
-	{
-		return;
-	}
-
-	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
-	if (appLogger == nullptr)
-	{
-		return;
-	}
-
-	Renderer& renderer = app.GetRenderer();
-	const RenderProduct& sceneColor = viewportProducts.GetSceneColor();
-	const std::uint64_t sceneColorTextureId = renderer.ResolveRenderProductTextureId(sceneColor.Handle);
-	SPDLOG_LOGGER_INFO(
-	    appLogger,
-	    "RHI editor smoke evidence: viewport sceneColorHandle={} textureId={} extent={}x{} outputsMask={}",
-	    sceneColor.Handle.Value,
-	    sceneColorTextureId,
-	    sceneColor.Extent.Width,
-	    sceneColor.Extent.Height,
-	    static_cast<std::uint32_t>(viewportProducts.GetAvailableOutputs()));
-
-	state.EditorViewportEvidenceLogged = true;
-}
-
 void RhiSmokeValidationRunner::Advance(
-	const RhiSmokeValidationConfig& config,
+    const RhiSmokeValidationConfig& config,
     ProjectApp& app,
-	RhiSmokeValidationState& state) noexcept
+    RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled)
 	{
@@ -263,58 +221,6 @@ bool RhiSmokeValidationRunner::TickRuntime(
 	return true;
 }
 
-bool RhiSmokeValidationRunner::TickEditor(
-    ProjectApp& app,
-    UI& ui,
-	const RhiSmokeValidationConfig& config,
-	RhiSmokeValidationState& state) noexcept
-{
-	switch (app.BeginFrame())
-	{
-		case ProjectAppFrameResult::Exit:
-			return false;
-		case ProjectAppFrameResult::SkipRender:
-			return true;
-		case ProjectAppFrameResult::Ready:
-		default:
-			break;
-	}
-
-	app.UpdateRuntime();
-	app.SubmitViewportRenderRequest(ui.GetViewportRenderRequest());
-
-	Renderer& renderer = app.GetRenderer();
-	renderer.PrepareHostFrame();
-	renderer.RecordHostFrame();
-
-	const ViewportRenderProducts& viewportProducts = app.GetViewportRenderProducts();
-	ui.SetViewportRenderProducts(viewportProducts);
-	ui.SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
-	LogEditorViewportEvidence(config, app, viewportProducts, state);
-	ui.Update();
-
-	RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-	renderer.TransitionRenderProduct(
-	    viewportProducts.GetSceneColor().Handle,
-	    ResourceState::RenderTarget,
-	    ResourceState::ShaderResource);
-
-	constexpr float editorClearColor[4] = {0.06f, 0.06f, 0.07f, 1.0f};
-	renderHardware.BeginPresentRenderPass(editorClearColor);
-	ui.Render();
-	renderHardware.EndPresentRenderPass();
-
-	renderer.TransitionRenderProduct(
-	    viewportProducts.GetSceneColor().Handle,
-	    ResourceState::ShaderResource,
-	    ResourceState::Common);
-
-	renderer.SubmitHostFrame();
-	app.EndFrame();
-	Advance(config, app, state);
-	return true;
-}
-
 int RhiSmokeValidationRunner::RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept
 {
 	ProjectApp app;
@@ -331,40 +237,6 @@ int RhiSmokeValidationRunner::RunProjectValidation(const RhiSmokeValidationConfi
 	return 0;
 }
 
-int RhiSmokeValidationRunner::RunEditorValidation(const RhiSmokeValidationConfig& config) noexcept
-{
-	ProjectApp app;
-	RhiSmokeValidationState state{};
-	ApplyLoggingConfig(config);
-	app.Initialize();
-	LogDiagnosticsCapabilities(config, app, state);
-	static const auto appLogger = Logging::GetOrCreateLogger("Application.SmokeValidation");
-
-	{
-		SPARKLE_LOG_SCOPE(appLogger, spdlog::level::info, "RHI editor smoke UI scope");
-		Renderer& renderer = app.GetRenderer();
-		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
-		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
-		app.GetInputSystem().BeginInputRoutingFrame(false, false);
-		UI ui(EditorHostServices{
-		    .RuntimeTimer = app.GetTimer(),
-		    .Levels = app.GetLevelManager(),
-		    .Scene = app.GetGameScene(),
-		    .RenderHardware = renderHardware,
-		    .HostWindow = app.GetWindow(),
-		    .Input = app.GetInputSystem()});
-
-		while (TickEditor(app, ui, config, state))
-		{
-		}
-		app.GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
-	}
-
-	app.Shutdown();
-	SPDLOG_LOGGER_INFO(appLogger, "RHI editor smoke: ProjectApp shutdown complete");
-	return 0;
-}
-
 bool RhiSmokeValidationRunner::IsRequested() noexcept
 {
 	return LoadConfig().Enabled;
@@ -375,11 +247,6 @@ int RhiSmokeValidationRunner::RunProject() noexcept
 	return RunProjectValidation(LoadConfig());
 }
 
-int RhiSmokeValidationRunner::RunEditor() noexcept
-{
-	return RunEditorValidation(LoadConfig());
-}
-
 bool RhiSmokeValidation::IsRequested() noexcept
 {
 	return RhiSmokeValidationRunner::IsRequested();
@@ -388,9 +255,4 @@ bool RhiSmokeValidation::IsRequested() noexcept
 int RhiSmokeValidation::RunProject() noexcept
 {
 	return RhiSmokeValidationRunner::RunProject();
-}
-
-int RhiSmokeValidation::RunEditor() noexcept
-{
-	return RhiSmokeValidationRunner::RunEditor();
 }

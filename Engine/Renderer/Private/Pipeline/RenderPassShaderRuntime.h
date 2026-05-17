@@ -7,6 +7,7 @@
 #include "RHI/Public/ShaderParameters/PassParameterLayout.h"
 #include "RHI/Public/Shaders/CookedShaderPackageCache.h"
 #include "RHI/Public/Shaders/ShaderPackageLayoutBuilder.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <cassert>
 #include <format>
@@ -275,6 +276,10 @@ class RenderPassShaderRuntime final
 			    bindingLayoutLabel,
 			    FormatShaderStageMask(desc.Package.ExpectedStages),
 			    outErrorMessage);
+			RhiValidation::ReportContractViolation(
+			    "Renderer.Pipeline",
+			    outErrorMessage,
+			    "recook the shader package, regenerate shader parameter metadata, or fix the pass package declaration so reflection and runtime layout match");
 			return false;
 		}
 
@@ -299,6 +304,10 @@ class RenderPassShaderRuntime final
 			    desc.PassName,
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    RhiBackendApiToString(capabilities.BackendApi));
+			RhiValidation::ReportContractViolation(
+			    "Renderer.Pipeline",
+			    outErrorMessage,
+			    "disable the pass, select a non-ray-tracing permutation, or implement and truthfully report backend ray tracing support");
 			return false;
 		}
 
@@ -310,6 +319,10 @@ class RenderPassShaderRuntime final
 			    desc.PassName,
 			    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>",
 			    RhiBackendApiToString(capabilities.BackendApi));
+			RhiValidation::ReportContractViolation(
+			    "Renderer.Pipeline",
+			    outErrorMessage,
+			    "disable the pass, select a non-ray-query permutation, or implement and truthfully report backend inline ray query support");
 			return false;
 		}
 

@@ -17,6 +17,7 @@
 #include "D3D12/UI/D3D12ImGuiBackend.h"
 #include "Resources/Texture.h"
 #include "D3D12/Textures/TextureFactory.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 #include "Shaders/CookedShaderPackage.h"
 
 #include <algorithm>
@@ -102,7 +103,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	RhiCapabilities capabilities{};
 	capabilities.BackendApi = ERhiBackendApi::D3D12;
 	capabilities.RequiredShaderBinaryFormat = CookedShaderBinaryFormat::Dxil;
-	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorHeapTables;
+	capabilities.DescriptorModel = ERhiDescriptorModel::DescriptorTables;
 	capabilities.BindingLimits = RhiBindingLimits{
 	    .MaxDescriptorSets = 1,
 	    .MaxShaderResourceDescriptors = D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_2,
@@ -123,7 +124,7 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.SupportsTaskShaders = false;
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
-	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12MA;
+	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
 	return capabilities;
 }
 
@@ -461,7 +462,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateTextureResource(
     RhiMemoryResidencyClass residencyClass,
     std::wstring_view debugName)
 {
-	if (m_memoryAllocator == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
+	if (m_memoryAllocator == nullptr || !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc, "RHI.D3D12.CreateTextureResource"))
 	{
 		return {};
 	}
@@ -904,7 +905,8 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateAliasingTextureResour
     std::wstring_view debugName)
 {
 	D3D12GpuHeapRecord* const ownedMemoryBlock = GetD3D12GpuHeapRecord(memoryBlock);
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedMemoryBlock == nullptr)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || ownedMemoryBlock == nullptr ||
+	    !RhiValidation::ValidateTextureResourceDesc(m_capabilities, desc.ResourceDesc, "RHI.D3D12.CreateAliasingTextureResource"))
 	{
 		return {};
 	}

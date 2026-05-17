@@ -1,8 +1,7 @@
 #include "PCH.h"
 
-#include "ApplicationLaunch.h"
+#include "ProjectApplicationLaunch.h"
 
-#include "EditorApp.h"
 #include "ProjectApp.h"
 
 #include "Validation/RhiSmokeValidation.h"
@@ -25,14 +24,7 @@ namespace
 	}
 }
 
-class ApplicationLaunch final
-{
-  public:
-	static int RunProject() noexcept;
-	static int RunEditor() noexcept;
-};
-
-int ApplicationLaunch::RunProject() noexcept
+int RunProjectApplication()
 {
 	ConfigureAutomationErrorHandling();
 
@@ -44,28 +36,4 @@ int ApplicationLaunch::RunProject() noexcept
 	ProjectApp app;
 	app.Run();
 	return 0;
-}
-
-int ApplicationLaunch::RunEditor() noexcept
-{
-	ConfigureAutomationErrorHandling();
-
-	if (RhiSmokeValidation::IsRequested())
-	{
-		return RhiSmokeValidation::RunEditor();
-	}
-
-	EditorApp app;
-	app.Run();
-	return 0;
-}
-
-int RunProjectApplication()
-{
-	return ApplicationLaunch::RunProject();
-}
-
-int RunEditorApplication()
-{
-	return ApplicationLaunch::RunEditor();
 }

@@ -49,7 +49,7 @@ set(FORBIDDEN_DIRECT_D3D12_ALLOCATION_TOKENS
 
 set(FORBIDDEN_DIRECT_VULKAN_ALLOCATION_TOKENS
     "vkCreateBuffer"
-    "vkCreateImage"
+    "vkCreateImage("
     "vkAllocateMemory"
     "vmaCreateBuffer"
     "vmaCreateImage"
@@ -70,11 +70,10 @@ set(FORBIDDEN_DIRECT_ALLOCATOR_JSON_TOKENS
 )
 
 set(RHI_MEMORY_BOUNDARY_VIOLATIONS "")
+set_property(GLOBAL PROPERTY SPARKLE_RHI_MEMORY_BOUNDARY_VIOLATIONS "")
 
 function(append_rhi_memory_violation message_text)
-    set(RHI_MEMORY_BOUNDARY_VIOLATIONS
-        "${RHI_MEMORY_BOUNDARY_VIOLATIONS}${message_text}\n"
-        PARENT_SCOPE)
+    set_property(GLOBAL APPEND PROPERTY SPARKLE_RHI_MEMORY_BOUNDARY_VIOLATIONS "${message_text}")
 endfunction()
 
 function(is_generated_or_third_party_path relative_path out_var)
@@ -252,7 +251,9 @@ if(EXISTS "${RHI_MEMORY_ENGINE_ROOT}")
     endforeach()
 endif()
 
+get_property(RHI_MEMORY_BOUNDARY_VIOLATIONS GLOBAL PROPERTY SPARKLE_RHI_MEMORY_BOUNDARY_VIOLATIONS)
 if(RHI_MEMORY_BOUNDARY_VIOLATIONS)
+    list(JOIN RHI_MEMORY_BOUNDARY_VIOLATIONS "\n" RHI_MEMORY_BOUNDARY_VIOLATIONS)
     string(PREPEND RHI_MEMORY_BOUNDARY_VIOLATIONS
         "RHI memory boundary validation failed. Keep allocator libraries backend-private, route GPU resource allocation through the D3D12 memory service, keep public memory contracts backend-neutral, and leave defragmentation out of this scope.\n")
     message(FATAL_ERROR "${RHI_MEMORY_BOUNDARY_VIOLATIONS}")

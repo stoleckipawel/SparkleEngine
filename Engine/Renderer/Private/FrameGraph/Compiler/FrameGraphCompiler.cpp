@@ -3,9 +3,11 @@
 
 #include "FrameGraph/FrameGraphResourceRegistry.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <algorithm>
 #include <cassert>
+#include <format>
 #include <string>
 
 namespace
@@ -50,6 +52,24 @@ namespace
 				}
 			}
 		}
+	}
+
+	void ValidateResourceBoundaryState(const FrameGraphResourceMetadata& metadata, const FrameGraphResourceRuntimeState& runtimeState) noexcept
+	{
+		if (metadata.ownership != FrameGraphResourceOwnership::Imported || runtimeState.currentState == metadata.initialState)
+		{
+			return;
+		}
+
+		const std::string condition = std::format(
+		    "resource '{}' declared initialState='{}' but tracked runtime state is '{}'",
+		    metadata.debugName.empty() ? "<unnamed>" : metadata.debugName,
+		    ResourceStateToString(metadata.initialState),
+		    ResourceStateToString(runtimeState.currentState));
+		RhiValidation::ReportContractViolation(
+		    "Renderer.FrameGraph",
+		    condition,
+		    "update the import/boundary state at the host handoff or transition the resource through FrameGraph before declaring pass usage");
 	}
 
 }  // namespace
@@ -161,6 +181,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
+		ValidateResourceBoundaryState(entry, runtimeState);
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),

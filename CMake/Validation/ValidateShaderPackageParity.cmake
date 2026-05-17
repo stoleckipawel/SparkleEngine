@@ -12,11 +12,10 @@ get_filename_component(
 cmake_path(NORMAL_PATH SHADER_PACKAGE_PARITY_SOURCE_DIR)
 
 set(SHADER_PACKAGE_PARITY_VIOLATIONS "")
+set_property(GLOBAL PROPERTY SPARKLE_SHADER_PACKAGE_PARITY_VIOLATIONS "")
 
 function(append_shader_package_parity_violation message_text)
-    set(SHADER_PACKAGE_PARITY_VIOLATIONS
-        "${SHADER_PACKAGE_PARITY_VIOLATIONS}${message_text}\n"
-        PARENT_SCOPE)
+    set_property(GLOBAL APPEND PROPERTY SPARKLE_SHADER_PACKAGE_PARITY_VIOLATIONS "${message_text}")
 endfunction()
 
 function(read_required_shader_package_file file_path out_text)
@@ -49,8 +48,8 @@ endfunction()
 set(render_pass_runtime_path "${SHADER_PACKAGE_PARITY_SOURCE_DIR}/Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h")
 read_required_shader_package_file("${render_pass_runtime_path}" render_pass_runtime_text)
 if(render_pass_runtime_text)
-    require_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "rhi.GetRequiredShaderBinaryFormat()" "renderer shader package loading must ask the active RHI which binary format it needs")
-    require_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "RhiBackendApiToString(rhi.GetBackendApi())" "missing shader variant diagnostics must include the active backend")
+    require_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "capabilities.RequiredShaderBinaryFormat" "renderer shader package loading must ask the active RHI capability report which binary format it needs")
+    require_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "RhiBackendApiToString(capabilities.BackendApi)" "missing shader variant diagnostics must include the active backend")
     require_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "CookedShaderBinaryFormatToString(requiredBinaryFormat)" "missing shader variant diagnostics must include the requested binary format")
     forbid_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "CookedShaderBinaryFormat::Dxil" "Renderer must not hard-code D3D12 shader binaries")
     forbid_shader_package_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "CookedShaderBinaryFormat::SpirV" "Renderer must not hard-code Vulkan shader binaries")
@@ -138,7 +137,9 @@ if(cooked_package_writer_text)
     require_shader_package_text("${cooked_package_writer_path}" "${cooked_package_writer_text}" ".Format = compiledStage.format" "cooked packages must serialize each variant's binary format")
 endif()
 
+get_property(SHADER_PACKAGE_PARITY_VIOLATIONS GLOBAL PROPERTY SPARKLE_SHADER_PACKAGE_PARITY_VIOLATIONS)
 if(SHADER_PACKAGE_PARITY_VIOLATIONS)
+    list(JOIN SHADER_PACKAGE_PARITY_VIOLATIONS "\n" SHADER_PACKAGE_PARITY_VIOLATIONS)
     string(PREPEND SHADER_PACKAGE_PARITY_VIOLATIONS
         "Shader package parity validation failed. Runtime shader selection must be backend-driven, packages must validate missing DXIL/SPIR-V variants, and the cooker must preserve multi-target variants.\n")
     message(FATAL_ERROR "${SHADER_PACKAGE_PARITY_VIOLATIONS}")

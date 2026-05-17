@@ -280,8 +280,10 @@ Dependency-edge discipline is a hard review gate. A change that improves one cla
 
 ```mermaid
 flowchart LR
-    App[Application Hosts] --> RendererPublic[Renderer Public API]
-    Editor[Editor] --> RendererPublic
+    RuntimeApp[Runtime Application Host] --> RendererPublic[Renderer Public API]
+    EditorApp[Editor Application Host] --> RuntimeApp
+    EditorApp --> Editor[Editor UI]
+    Editor[Editor UI] --> RendererPublic
     RendererPrivate[Renderer Private Systems] --> RhiPublic[RHI Public Contracts]
     RendererPrivate --> FrameGraph[FrameGraph Private Planning]
     FrameGraph --> RhiPublic
@@ -294,7 +296,9 @@ flowchart LR
 
 Allowed edges:
 
-- Application and Editor may depend on Renderer public host contracts.
+- The runtime application host may depend on Renderer public host contracts and runtime cooked asset contracts, but not editor UI or source authoring systems.
+- The editor application host may depend on the runtime application host and Editor UI; that editor-host edge must not flow back into game runtime targets.
+- Editor UI may depend on Renderer public host contracts for viewport and inspection integration.
 - Renderer private systems may depend on RHI public contracts, FrameGraph private planning types, and runtime cooked asset contracts.
 - FrameGraph may depend on RHI public resource, memory-intent, and command contract types, but not backend-private types.
 - RHI public contracts may expose backend-neutral resource, binding, command, diagnostics, memory, and interop types.
@@ -308,6 +312,7 @@ Forbidden edges:
 - Runtime RHI code to source asset importers or runtime shader compilers.
 - Render passes to native command list/device/resource types, except through explicit interop adapters.
 - Editor-only UI/inspection systems into core runtime RHI contracts.
+- Game runtime targets to editor-host launch targets, Editor UI modules, shader recook bridges, or source-import/cook tools.
 
 Public/private boundary rule: if a type appears in `Engine/RHI/Public`, it must be backend-neutral, reviewable by both D3D12 and Vulkan implementers, and safe for Renderer to include. If a type cannot satisfy that rule, it belongs in backend private code or an explicit interop namespace with strict usage rules.
 
@@ -1026,6 +1031,36 @@ Acceptance criteria:
 - Backend capability diagnostics and validation behavior are consistent across editor and runtime host modes.
 - Boundary validation catches runtime dependencies on tools/editor/source-import systems.
 
+Phase 7 implementation notes:
+
+- `SparkleApplication` is now the runtime application host target. Its source list excludes `EditorApp`, shader recook code, editor launch code, and editor smoke validation.
+- `SparkleApplicationEditor` is the editor-host companion target. It links the runtime application host plus `SparkleEditor`, owns `EditorApp`, shader recook orchestration, editor launch, and editor smoke validation.
+- The mixed `ApplicationLaunch.h` / `ApplicationLaunch.cpp` pair was removed. Runtime and editor entrypoints include `ProjectApplicationLaunch.h` and `EditorApplicationLaunch.h` respectively.
+- `ShowcaseRuntime` links only `SparkleApplication`. `ShowcaseEditor` links `SparkleApplicationEditor`, making launch intent and dependency ownership explicit at the project target level.
+- Runtime RHI smoke validation remains in the runtime host target and does not include editor UI. Editor smoke validation lives in the editor-host target and preserves the same backend diagnostics, window automation, and cooked shader reload controls used by runtime smoke validation.
+- `docs/plans/backend-runtime-smoke-tests.md` records `ShowcaseRuntime` and `ShowcaseEditor` backend smoke launch expectations, `SPARKLE_RHI_BACKEND`, `--rhi=`, `--graphics-api=`, `SPARKLE_SMOKE_VALIDATE_RHI`, and required diagnostics log evidence.
+- `ValidateRuntimeCookedBoundary.cmake` now catches runtime target links to `SparkleEditor` or `SparkleApplicationEditor`, catches project runtime targets that link editor-host/editor modules, and requires Showcase runtime/editor targets to use the correct host libraries.
+
+Phase 7 class disposition audit:
+
+| Class / Family | Phase 7 Disposition | Reason |
+| --- | --- | --- |
+| `SparkleApplication` target | Split / narrow | Runtime host target compiles only runtime app, runtime console, runtime launch, and runtime smoke validation. |
+| `SparkleApplicationEditor` target | Add explicit owner | Owns editor-host launch and integration code that previously leaked through the runtime application target. |
+| `ProjectApp` | Keep runtime host owner | Continues to own window/input/scene/renderer runtime orchestration and cooked runtime operation. |
+| `EditorApp` | Move to editor-host target | Uses `ProjectApp`, Editor UI, and shader recook; no longer becomes a required runtime app dependency. |
+| `ProjectApplicationLaunch` / `EditorApplicationLaunch` | Split launch boundary | Separate public launch entrypoints make runtime/editor host expectations visible to project entrypoints. |
+| `RhiSmokeValidation` | Split by host mode | Runtime validation stays editor-free; editor validation adds viewport/UI evidence in the editor-host target while retaining shared backend diagnostics behavior. |
+| `ShaderRecook` files | Isolate editor-host tooling | Remain out-of-process editor integration around `ShaderCompiler.exe`, not runtime RHI or renderer dependencies. |
+
+Phase 7 source-only validation notes:
+
+- `cmake -DRUNTIME_BOUNDARY_SOURCE_DIR=<repo> -P CMake/Validation/ValidateRuntimeCookedBoundary.cmake` passes and now enforces host-mode target links.
+- `cmake -DSHADER_COMPILER_BOUNDARY_SOURCE_DIR=<repo> -P CMake/Validation/ValidateShaderCompilerBoundary.cmake` passes with shader recook still isolated under the editor-host path.
+- `cmake -DRHI_BACKEND_PARITY_SOURCE_DIR=<repo> -P CMake/Validation/ValidateRhiBackendParity.cmake` passes with backend smoke launch documentation restored.
+- `git diff --check` was run for touched Phase 7 files; the only reported output was the existing CRLF warning for `CMake/SparkleValidationTargets.cmake`.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
+
 ### Phase 8: Validation Layer and Review Gates
 
 Idea behind the phase:
@@ -1055,6 +1090,35 @@ Acceptance criteria:
 - Backend parity checks identify when D3D12 and Vulkan capability declarations diverge from implementation.
 - Validation diagnostics name the owning subsystem and recommended fix path.
 
+Implementation notes:
+
+- Added the backend-neutral `RhiValidation` service in public/private RHI. Debug/development RHI targets define `ENGINE_GPU_VALIDATION`, and validation diagnostics log owner, failed condition, and recommended fix path before asserting in validation-enabled builds.
+- `RenderBindingSet` now validates descriptor count against backend-declared binding limits before descriptor-table allocation, and validates descriptor indices before handle/table lookup.
+- D3D12 and Vulkan texture creation now validate zero/unknown descriptors plus unsupported format usage against `RhiCapabilities::FormatSupport` before backend allocation or aliasing materialization.
+- `RenderPassShaderRuntime` routes cooked package/layout mismatch failures and unsupported ray tracing / inline ray query feature use through `RhiValidation::ReportContractViolation`, keeping the Renderer diagnostic actionable while still using backend capability truth.
+- `FrameGraphCompiler` validates imported resource boundary state against runtime state before compiling the resource plan and reports ownership as `Renderer.FrameGraph` when the host handoff or pass transition contract is wrong.
+- Public memory diagnostics no longer expose implementation-library names for allocator backends: `D3D12MA` / `VMA` public enum values were replaced by neutral `D3D12Managed` / `VulkanManaged` labels.
+- Repaired CMake validation accumulation in backend parity, backend boundary, RHI memory boundary, and shader package parity scripts so violations collected inside helper functions cannot silently disappear.
+- Hardened `ValidateRhiBackendParity.cmake` so the Phase 8 validation service and hooks are part of the source review gate, including binding descriptor validation, texture usage validation, FrameGraph boundary validation, and shader package feature diagnostics.
+
+Class disposition audit:
+
+- `RhiValidation`: added as a real RHI-owned validation service, not a renderer-side workaround or backend wrapper. It owns contract diagnostics shared by RHI and Renderer boundaries.
+- `RenderBindingSet`: retained as the binding-set lifetime owner and strengthened with pre-backend validation; descriptor tables remain behind the RHI abstraction.
+- `RenderPassShaderRuntime`: retained as Renderer pipeline/package validation owner and now forwards actionable contract failures into the RHI validation layer.
+- `FrameGraphCompiler`: retained as the owner of cross-pass and imported-resource boundary planning; boundary-state validation stays here because FrameGraph owns that contract.
+- D3D12MA and VMA allocator classes stay backend-private. Only neutral allocator diagnostics cross the public RHI boundary.
+- No compatibility shim or fake wrapper was added; stale source-gate expectations were corrected to match current owners instead of preserving old names.
+
+Source-only validation:
+
+- `cmake -DRHI_BACKEND_PARITY_SOURCE_DIR="$root" -P CMake/Validation/ValidateRhiBackendParity.cmake`
+- `cmake -DRHI_BACKEND_BOUNDARY_SOURCE_DIR="$root" -P CMake/Validation/ValidateRhiBackendBoundaries.cmake`
+- `cmake -DRHI_MEMORY_BOUNDARY_SOURCE_DIR="$root" -P CMake/Validation/ValidateRhiMemoryBoundary.cmake`
+- `cmake -DFRAMEGRAPH_BOUNDARY_SOURCE_DIR="$root" -P CMake/Validation/ValidateFrameGraphBoundary.cmake`
+- `cmake -DSHADER_PACKAGE_PARITY_SOURCE_DIR="$root" -P CMake/Validation/ValidateShaderPackageParity.cmake`
+- `git diff --check` was used on the touched validation/runtime slices. Builds and launches remain deferred by the phase validation policy.
+
 ### Phase 9: Multithreading Readiness Gate
 
 Idea behind the phase:
@@ -1073,7 +1137,7 @@ Ready-to-use prompt:
 
 
 ```text
-Audit Sparkle GameFramework, Renderer, FrameGraph, and RHI for multithreading readiness. Do not introduce worker-thread execution yet. Instead, define which objects are game-thread-owned, render-thread-owned, backend-owned, immutable, or frame-local; which caches require synchronization or versioning; and which APIs would be safe for future parallel GameFramework-to-Renderer extraction, Renderer pass setup, FrameGraph compilation, command list recording, and RHI submission. Update class contracts and documentation so future threading work has clear ownership and synchronization boundaries. If an issue exists in the owning module contract, modify that contract as much as necessary for the target state; do not add hacks, workaround adapters, hidden mutable globals, or caller-side patches that preserve the wrong architecture.
+Audit Sparkle GameFramework, Renderer, FrameGraph, and RHI for multithreading readiness. Do not introduce worker-thread execution yet. Instead, define which objects are game-thread-owned, render-thread-owned, backend-owned, immutable, or frame-local; which caches require synchronization or versioning; and which APIs would be safe for future parallel GameFramework-to-Renderer extraction, Renderer pass setup, FrameGraph compilation, command list recording, and RHI submission. Update class contracts and documentation so future threading work has clear ownership and synchronization boundaries. If an issue exists in the owning module contract, modify that contract as much as necessary for the target state; do not add hacks, workaround adapters, hidden mutable globals, or caller-side patches that preserve the wrong architecture. Be bold and make necesary changes so that introducing multithreading wont be pain in the ass dont just document the code but make neccesary modifications so that the structure is multihtreading ready of course respecting all the goals within this document you shall not do anything that collides with long term maintainability , i dont care about legacy code & backwards compat
 ```
 
 Acceptance criteria:

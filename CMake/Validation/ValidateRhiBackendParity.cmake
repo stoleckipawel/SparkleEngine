@@ -12,11 +12,10 @@ get_filename_component(
 cmake_path(NORMAL_PATH RHI_BACKEND_PARITY_SOURCE_DIR)
 
 set(RHI_BACKEND_PARITY_VIOLATIONS "")
+set_property(GLOBAL PROPERTY SPARKLE_RHI_BACKEND_PARITY_VIOLATIONS "")
 
 function(append_rhi_backend_parity_violation message_text)
-    set(RHI_BACKEND_PARITY_VIOLATIONS
-        "${RHI_BACKEND_PARITY_VIOLATIONS}${message_text}\n"
-        PARENT_SCOPE)
+    set_property(GLOBAL APPEND PROPERTY SPARKLE_RHI_BACKEND_PARITY_VIOLATIONS "${message_text}")
 endfunction()
 
 function(read_required_rhi_backend_parity_file file_path out_text)
@@ -100,10 +99,7 @@ set(rhi_interface_methods
     GetGraphicsCommandList
     GetRayTracingCapabilities
     GetDiagnostics
-    InitializeImGuiBackend
-    BeginImGuiFrame
-    RenderImGuiDrawData
-    ShutdownImGuiBackend
+    CreateBindingSet
     CreateBindingLayout
     CreateGraphicsPipelineState
     CreateComputePipelineState
@@ -126,7 +122,7 @@ set(rhi_interface_methods
     GetBackBufferScissorRect
     GetBackBufferRenderTargetView
     GetBackBufferResource
-    CreateTextureFromPath
+    CreateTexture
     CreateTextureResource
     CreateBufferResource
     CreateVertexBuffer
@@ -209,6 +205,18 @@ read_required_rhi_backend_parity_file("${vulkan_rhi_header_path}" vulkan_rhi_hea
 read_required_rhi_backend_parity_file("${vulkan_rhi_source_path}" vulkan_rhi_source_text)
 
 if(rhi_interface_text AND d3d12_rhi_header_text AND d3d12_rhi_source_text)
+    require_rhi_backend_parity_text(
+        "${rhi_interface_path}"
+        "${rhi_interface_text}"
+        "GetCapabilities("
+        "public interface must expose GetCapabilities for backend capability parity checks"
+    )
+    require_rhi_backend_parity_text(
+        "${d3d12_rhi_header_path}"
+        "${d3d12_rhi_header_text}"
+        "GetCapabilities("
+        "D3D12RenderHardwareInterface must expose the inline GetCapabilities override"
+    )
     require_backend_method_parity(
         "${rhi_interface_path}"
         "${rhi_interface_text}"
@@ -222,6 +230,18 @@ if(rhi_interface_text AND d3d12_rhi_header_text AND d3d12_rhi_source_text)
 endif()
 
 if(rhi_interface_text AND vulkan_rhi_header_text AND vulkan_rhi_source_text)
+    require_rhi_backend_parity_text(
+        "${rhi_interface_path}"
+        "${rhi_interface_text}"
+        "GetCapabilities("
+        "public interface must expose GetCapabilities for backend capability parity checks"
+    )
+    require_rhi_backend_parity_text(
+        "${vulkan_rhi_header_path}"
+        "${vulkan_rhi_header_text}"
+        "GetCapabilities("
+        "VulkanRenderHardwareInterface must expose the inline GetCapabilities override"
+    )
     require_backend_method_parity(
         "${rhi_interface_path}"
         "${rhi_interface_text}"
@@ -275,13 +295,13 @@ endif()
 if(d3d12_rhi_source_text)
     require_rhi_backend_parity_text("${d3d12_rhi_source_path}" "${d3d12_rhi_source_text}" "return ERhiBackendApi::D3D12" "D3D12 backend must identify itself through the neutral backend enum")
     require_rhi_backend_parity_text("${d3d12_rhi_source_path}" "${d3d12_rhi_source_text}" "return CookedShaderBinaryFormat::Dxil" "D3D12 backend must request DXIL shader variants")
-    require_rhi_backend_parity_text("${d3d12_rhi_source_path}" "${d3d12_rhi_source_text}" "CreateRenderDiagnostics" "D3D12 backend must expose RenderDiagnostics through the shared facade")
+    require_rhi_backend_parity_text("${d3d12_rhi_source_path}" "${d3d12_rhi_source_text}" "CreateD3D12RenderDiagnostics" "D3D12 backend must expose RenderDiagnostics through the shared facade")
 endif()
 
 if(vulkan_rhi_source_text)
     require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "return ERhiBackendApi::Vulkan" "Vulkan backend must identify itself through the neutral backend enum")
     require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "return CookedShaderBinaryFormat::SpirV" "Vulkan backend must request SPIR-V shader variants")
-    require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "CreateRenderDiagnostics" "Vulkan backend must expose RenderDiagnostics through the shared facade")
+    require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "CreateVulkanRenderDiagnostics" "Vulkan backend must expose RenderDiagnostics through the shared facade")
     require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "FailRenderingNotImplemented(\"CreateRayTracingScratchBuffer\")" "deferred Vulkan RT scratch support must fail explicitly")
     require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "FailRenderingNotImplemented(\"CreateRayTracingAccelerationStructureBuffer\")" "deferred Vulkan RT acceleration-structure support must fail explicitly")
     require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "FailRenderingNotImplemented(\"CreateRayTracingInstanceBuffer\")" "deferred Vulkan RT instance buffer support must fail explicitly")
@@ -423,7 +443,62 @@ if(smoke_doc_text)
     require_rhi_backend_parity_text("${smoke_doc_path}" "${smoke_doc_text}" "RHI smoke diagnostics capabilities" "smoke test docs must name diagnostics capability log evidence")
 endif()
 
+set(rhi_validation_header_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Public/Validation/RhiValidation.h")
+set(rhi_validation_source_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Validation/RhiValidation.cpp")
+set(rhi_cmake_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt")
+set(binding_set_source_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Bindings/RenderBindingSet.cpp")
+set(framegraph_compiler_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/Renderer/Private/FrameGraph/Compiler/FrameGraphCompiler.cpp")
+set(render_pass_runtime_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h")
+
+read_required_rhi_backend_parity_file("${rhi_validation_header_path}" rhi_validation_header_text)
+read_required_rhi_backend_parity_file("${rhi_validation_source_path}" rhi_validation_source_text)
+read_required_rhi_backend_parity_file("${rhi_cmake_path}" rhi_cmake_text)
+read_required_rhi_backend_parity_file("${binding_set_source_path}" binding_set_source_text)
+read_required_rhi_backend_parity_file("${framegraph_compiler_path}" framegraph_compiler_text)
+read_required_rhi_backend_parity_file("${render_pass_runtime_path}" render_pass_runtime_text)
+
+if(rhi_validation_header_text)
+    require_rhi_backend_parity_text("${rhi_validation_header_path}" "${rhi_validation_header_text}" "ReportContractViolation" "debug/editor validation must expose owner/fix-path diagnostics before backend calls fail")
+    require_rhi_backend_parity_text("${rhi_validation_header_path}" "${rhi_validation_header_text}" "ValidateBindingSetDesc" "validation must catch binding descriptor capacity mismatches before backend descriptor allocation")
+    require_rhi_backend_parity_text("${rhi_validation_header_path}" "${rhi_validation_header_text}" "ValidateBindingSetDescriptorIndex" "validation must catch descriptor index overflow before backend descriptor lookup")
+    require_rhi_backend_parity_text("${rhi_validation_header_path}" "${rhi_validation_header_text}" "ValidateTextureResourceDesc" "validation must catch unsupported format/usage requests before backend resource allocation")
+endif()
+
+if(rhi_validation_source_text)
+    require_rhi_backend_parity_text("${rhi_validation_source_path}" "${rhi_validation_source_text}" "ENGINE_GPU_VALIDATION" "validation must be compile-time enabled only for debug/editor validation configurations")
+    require_rhi_backend_parity_text("${rhi_validation_source_path}" "${rhi_validation_source_text}" "owner='{}' condition='{}' recommendedFix='{}'" "validation diagnostics must name owner, condition, and recommended fix path")
+    require_rhi_backend_parity_text("${rhi_validation_source_path}" "${rhi_validation_source_text}" "capabilities.FindFormatSupport" "texture validation must compare requests against backend-declared format capabilities")
+endif()
+
+if(rhi_cmake_text)
+    require_rhi_backend_parity_text("${rhi_cmake_path}" "${rhi_cmake_text}" "ENGINE_GPU_VALIDATION" "RHI validation must be enabled by build profile for debug/editor configurations")
+endif()
+
+if(binding_set_source_text)
+    require_rhi_backend_parity_text("${binding_set_source_path}" "${binding_set_source_text}" "RhiValidation::ValidateBindingSetDesc" "binding set creation must validate descriptor capacity before backend allocation")
+    require_rhi_backend_parity_text("${binding_set_source_path}" "${binding_set_source_text}" "RhiValidation::ValidateBindingSetDescriptorIndex" "binding set descriptor lookup must validate descriptor indices")
+endif()
+
+if(d3d12_rhi_source_text)
+    require_rhi_backend_parity_text("${d3d12_rhi_source_path}" "${d3d12_rhi_source_text}" "RhiValidation::ValidateTextureResourceDesc" "D3D12 texture creation must validate unsupported format/usage before allocation")
+endif()
+
+if(vulkan_rhi_source_text)
+    require_rhi_backend_parity_text("${vulkan_rhi_source_path}" "${vulkan_rhi_source_text}" "RhiValidation::ValidateTextureResourceDesc" "Vulkan texture creation must validate unsupported format/usage before allocation")
+endif()
+
+if(framegraph_compiler_text)
+    require_rhi_backend_parity_text("${framegraph_compiler_path}" "${framegraph_compiler_text}" "ValidateResourceBoundaryState" "FrameGraph compilation must validate imported resource boundary state mismatches")
+    require_rhi_backend_parity_text("${framegraph_compiler_path}" "${framegraph_compiler_text}" "RhiValidation::ReportContractViolation" "FrameGraph boundary validation must route actionable diagnostics through the validation layer")
+endif()
+
+if(render_pass_runtime_text)
+    require_rhi_backend_parity_text("${render_pass_runtime_path}" "${render_pass_runtime_text}" "RhiValidation::ReportContractViolation" "shader package/layout and unsupported feature failures must route actionable diagnostics through the validation layer")
+endif()
+
+get_property(RHI_BACKEND_PARITY_VIOLATIONS GLOBAL PROPERTY SPARKLE_RHI_BACKEND_PARITY_VIOLATIONS)
 if(RHI_BACKEND_PARITY_VIOLATIONS)
+    list(JOIN RHI_BACKEND_PARITY_VIOLATIONS "\n" RHI_BACKEND_PARITY_VIOLATIONS)
     string(PREPEND RHI_BACKEND_PARITY_VIOLATIONS
         "RHI backend parity validation failed. D3D12/Vulkan implementations must stay contract-complete, public and Renderer layers must stay backend-neutral, diagnostics/shader parity must be explicit, and runtime smoke evidence must be documented.\n")
     message(FATAL_ERROR "${RHI_BACKEND_PARITY_VIOLATIONS}")

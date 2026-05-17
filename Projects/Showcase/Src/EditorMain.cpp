@@ -1,4 +1,4 @@
-#include "ApplicationLaunch.h"
+#include "EditorApplicationLaunch.h"
 
 int main()
 {
