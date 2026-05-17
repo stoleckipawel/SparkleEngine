@@ -2,6 +2,7 @@
 
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
+#include "Config/RenderConfig.h"
 #include "Shaders/CookedShaderPackage.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
@@ -24,6 +25,10 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
 	m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
 {
+	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
+	{
+		commandContext.GetCommandList(frameIndex).SetMemoryAllocator(&memoryAllocator);
+	}
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
 }
@@ -224,32 +229,110 @@ std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTextureFromPath(co
 	return {};
 }
 
+RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
+    const RhiTextureResourceDesc& desc,
+    ResourceState initialState,
+    RhiMemoryCategory category,
+    RhiMemoryResidencyClass residencyClass,
+    std::wstring_view debugName)
+{
+	(void)initialState;
+	if (m_memoryAllocator == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
+	{
+		return {};
+	}
+
+	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateImage(imageCreateInfo, category, residencyClass, debugName);
+	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+}
+
+RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
+    const RhiBufferResourceDesc& desc,
+    ResourceState initialState,
+    RhiMemoryCategory category,
+    RhiMemoryResidencyClass residencyClass,
+    std::wstring_view debugName)
+{
+	(void)initialState;
+	if (m_memoryAllocator == nullptr || desc.SizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(bufferCreateInfo, category, residencyClass, debugName);
+	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+}
+
 bool VulkanRenderHardwareInterface::CreateVertexBuffer(
-	const void*,
-	std::size_t,
-	std::uint32_t,
-	std::wstring_view,
+	const void* data,
+	std::size_t sizeInBytes,
+	std::uint32_t strideInBytes,
+	std::wstring_view debugName,
 	RhiOwnedResourceHandle& outResource,
 	RhiVertexBufferView& outView)
 {
-	FailRenderingNotImplemented("CreateVertexBuffer");
 	outResource = {};
 	outView = {};
-	return false;
+	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
+	{
+		return false;
+	}
+
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
+	    bufferCreateInfo,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    debugName.empty() ? L"VertexBuffer" : debugName);
+	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
+	{
+		return false;
+	}
+
+	outView = RhiVertexBufferView{
+	    .BufferLocation = reinterpret_cast<std::uint64_t>(record->Buffer),
+	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
+	    .StrideInBytes = strideInBytes};
+	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
+	return true;
 }
 
 bool VulkanRenderHardwareInterface::CreateIndexBuffer(
-	const void*,
-	std::size_t,
-	RhiIndexFormat,
-	std::wstring_view,
+	const void* data,
+	std::size_t sizeInBytes,
+	RhiIndexFormat format,
+	std::wstring_view debugName,
 	RhiOwnedResourceHandle& outResource,
 	RhiIndexBufferView& outView)
 {
-	FailRenderingNotImplemented("CreateIndexBuffer");
 	outResource = {};
 	outView = {};
-	return false;
+	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0)
+	{
+		return false;
+	}
+
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes};
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
+	    bufferCreateInfo,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    debugName.empty() ? L"IndexBuffer" : debugName);
+	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
+	{
+		return false;
+	}
+
+	outView = RhiIndexBufferView{
+	    .BufferLocation = reinterpret_cast<std::uint64_t>(record->Buffer),
+	    .SizeInBytes = static_cast<std::uint32_t>(sizeInBytes),
+	    .Format = format};
+	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
+	return true;
 }
 
 void VulkanRenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
@@ -283,9 +366,10 @@ NativeResourceHandle VulkanRenderHardwareInterface::GetNativeResource(RhiOwnedRe
 	return record != nullptr ? GetVulkanNativeResource(*record) : NativeResourceHandle{};
 }
 
-RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle) const noexcept
+RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept
 {
-	return {};
+	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
+	return record != nullptr && record->Buffer != VK_NULL_HANDLE ? reinterpret_cast<std::uint64_t>(record->Buffer) : 0;
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo VulkanRenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
@@ -317,14 +401,43 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateRayTracingInstanceBu
 	return {};
 }
 
-RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc&) const noexcept
+RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetTextureAllocationInfo(const RhiTextureResourceDesc& desc) const noexcept
 {
-	return {};
+	if (m_rhi == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
+	{
+		return {};
+	}
+
+	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
+	const VkDeviceImageMemoryRequirements requirementsInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS,
+	    .pNext = nullptr,
+	    .pCreateInfo = &imageCreateInfo,
+	    .planeAspect = static_cast<VkImageAspectFlagBits>(0)};
+	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+	vkGetDeviceImageMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
+	return RhiResourceAllocationInfo{
+	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
+	    .Alignment = memoryRequirements.memoryRequirements.alignment};
 }
 
-RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetBufferAllocationInfo(const RhiBufferResourceDesc&) const noexcept
+RhiResourceAllocationInfo VulkanRenderHardwareInterface::GetBufferAllocationInfo(const RhiBufferResourceDesc& desc) const noexcept
 {
-	return {};
+	if (m_rhi == nullptr || desc.SizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
+	const VkDeviceBufferMemoryRequirements requirementsInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS,
+	    .pNext = nullptr,
+	    .pCreateInfo = &bufferCreateInfo};
+	VkMemoryRequirements2 memoryRequirements{.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+	vkGetDeviceBufferMemoryRequirements(m_rhi->GetDevice(), &requirementsInfo, &memoryRequirements);
+	return RhiResourceAllocationInfo{
+	    .SizeInBytes = memoryRequirements.memoryRequirements.size,
+	    .Alignment = memoryRequirements.memoryRequirements.alignment};
 }
 
 RhiOwnedMemoryBlockHandle VulkanRenderHardwareInterface::CreateTransientMemoryBlock(
@@ -617,7 +730,7 @@ void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float*
 	commandList.SetRenderTarget(GetBackBufferRenderTargetView());
 
 	VkCommandBuffer commandBuffer = m_commandContext->GetCommandBuffer(m_currentFrameIndex);
-	TransitionCurrentBackBuffer(commandBuffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	TransitionCurrentBackBuffer(commandBuffer, ResourceState::RenderTarget);
 
 	VkClearValue nativeClearValue = {};
 	if (clear && clearColor != nullptr)
@@ -670,11 +783,11 @@ void VulkanRenderHardwareInterface::EndCurrentBackBufferRendering() noexcept
 
 	VkCommandBuffer commandBuffer = m_commandContext->GetCommandBuffer(m_currentFrameIndex);
 	vkCmdEndRendering(commandBuffer);
-	TransitionCurrentBackBuffer(commandBuffer, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	TransitionCurrentBackBuffer(commandBuffer, ResourceState::Present);
 	m_isPresentRendering = false;
 }
 
-void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, VkImageLayout newLayout) noexcept
+void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept
 {
 	if (m_swapChain == nullptr || commandBuffer == VK_NULL_HANDLE)
 	{
@@ -687,21 +800,27 @@ void VulkanRenderHardwareInterface::TransitionCurrentBackBuffer(VkCommandBuffer 
 		return;
 	}
 
+	const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(newState);
+	const VkImageLayout newLayout = destinationState.ImageLayout;
 	VkImageLayout& currentLayout = m_swapChainBackBufferLayouts[backBufferIndex];
 	if (currentLayout == newLayout)
 	{
 		return;
 	}
 
-	const bool transitioningFromRenderTarget = currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	const bool transitioningToRenderTarget = newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	const ResourceState currentState = currentLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR       ? ResourceState::Present
+	                                   : currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ? ResourceState::RenderTarget
+	                                                                                              : ResourceState::Common;
+	const VulkanResourceStateMapping sourceState = currentLayout == VK_IMAGE_LAYOUT_UNDEFINED
+	    ? VulkanResourceStateMapping{}
+	    : VulkanTypeConversions::ToResourceStateMapping(currentState);
 	const VkImageMemoryBarrier2 imageBarrier{
 	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
-	    .srcStageMask = transitioningFromRenderTarget ? VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_2_NONE,
-	    .srcAccessMask = transitioningFromRenderTarget ? VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_2_NONE,
-	    .dstStageMask = transitioningToRenderTarget ? VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_2_NONE,
-	    .dstAccessMask = transitioningToRenderTarget ? VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_2_NONE,
+	    .srcStageMask = sourceState.StageMask,
+	    .srcAccessMask = sourceState.AccessMask,
+	    .dstStageMask = destinationState.StageMask,
+	    .dstAccessMask = destinationState.AccessMask,
 	    .oldLayout = currentLayout,
 	    .newLayout = newLayout,
 	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,

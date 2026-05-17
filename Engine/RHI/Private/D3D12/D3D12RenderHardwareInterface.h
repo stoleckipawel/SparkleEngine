@@ -74,6 +74,18 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
 	NativeResourceHandle GetBackBufferResource() const noexcept override;
 	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const override;
+	RhiOwnedResourceHandle CreateTextureResource(
+	    const RhiTextureResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateBufferResource(
+	    const RhiBufferResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) override;
 	bool CreateVertexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

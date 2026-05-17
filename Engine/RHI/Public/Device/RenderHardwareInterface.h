@@ -6,6 +6,7 @@
 #include "../Diagnostics/RhiDiagnostics.h"
 #include "../Formats/PixelFormat.h"
 #include "../Interop/RhiNativeHandles.h"
+#include "../Memory/RhiMemoryTypes.h"
 #include "../Pipeline/RhiPipelineStateDesc.h"
 #include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RenderConstantBufferData.h"
@@ -67,6 +68,18 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept = 0;
 	virtual NativeResourceHandle GetBackBufferResource() const noexcept = 0;
 	virtual std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const = 0;
+	virtual RhiOwnedResourceHandle CreateTextureResource(
+	    const RhiTextureResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) = 0;
+	virtual RhiOwnedResourceHandle CreateBufferResource(
+	    const RhiBufferResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) = 0;
 	virtual bool CreateVertexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

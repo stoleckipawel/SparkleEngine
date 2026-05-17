@@ -4,6 +4,7 @@
 #include "Memory/RhiMemoryTypes.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -40,6 +41,8 @@ class VulkanGpuMemoryAllocator final
 	    RhiMemoryCategory category,
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
+	bool WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes) noexcept;
+	VulkanGpuAllocationRecord* FindAllocationRecord(NativeResourceHandle resource) const noexcept;
 
 	void QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record, std::uint64_t retireFenceValue) noexcept;
 	void DrainCompletedReleases(std::uint64_t completedFenceValue) noexcept;
@@ -64,6 +67,7 @@ class VulkanGpuMemoryAllocator final
 	    RhiMemoryResidencyClass residencyClass,
 	    std::wstring_view debugName) noexcept;
 	static std::uint32_t ResolveMemoryHeapIndex(const VkPhysicalDeviceMemoryProperties& memoryProperties, std::uint32_t memoryTypeIndex) noexcept;
+	static VkImageAspectFlags ResolveImageAspectMask(VkFormat format) noexcept;
 
 	friend struct VulkanGpuAllocationRecord;
 

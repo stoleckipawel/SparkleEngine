@@ -8,9 +8,11 @@
 #include <string>
 #include <string_view>
 
+class VulkanGpuMemoryAllocator;
 class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
+	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
 	void SetNativeCommandBuffer(
 	    VkCommandBuffer commandBuffer,
 	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
@@ -87,6 +89,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
+	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_beginDebugUtilsLabel = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT m_endDebugUtilsLabel = nullptr;

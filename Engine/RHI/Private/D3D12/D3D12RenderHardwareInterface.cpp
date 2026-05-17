@@ -421,6 +421,51 @@ std::unique_ptr<Texture> D3D12RenderHardwareInterface::CreateTextureFromPath(con
 	return textureFactory != nullptr ? textureFactory->CreateTexture(std::move(loadResult)) : std::unique_ptr<Texture>{};
 }
 
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateTextureResource(
+    const RhiTextureResourceDesc& desc,
+    ResourceState initialState,
+    RhiMemoryCategory category,
+    RhiMemoryResidencyClass residencyClass,
+    std::wstring_view debugName)
+{
+	if (m_memoryAllocator == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
+	{
+		return {};
+	}
+
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildTextureResourceDesc(desc);
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateTexture(
+	    resourceDesc,
+	    D3D12TypeConversions::ToResourceStates(initialState),
+	    nullptr,
+	    category,
+	    residencyClass,
+	    CopyDebugName(debugName, L"TextureResource"));
+	return ownedRecord != nullptr ? WrapOwnedResource(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
+}
+
+RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateBufferResource(
+    const RhiBufferResourceDesc& desc,
+    ResourceState initialState,
+    RhiMemoryCategory category,
+    RhiMemoryResidencyClass residencyClass,
+    std::wstring_view debugName)
+{
+	if (m_memoryAllocator == nullptr || desc.SizeInBytes == 0)
+	{
+		return {};
+	}
+
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(desc);
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12TypeConversions::ToResourceStates(initialState),
+	    category,
+	    residencyClass,
+	    CopyDebugName(debugName, L"BufferResource"));
+	return ownedRecord != nullptr ? WrapOwnedResource(std::move(ownedRecord)) : RhiOwnedResourceHandle{};
+}
+
 bool D3D12RenderHardwareInterface::CreateVertexBuffer(
     const void* data,
     std::size_t sizeInBytes,

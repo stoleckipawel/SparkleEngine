@@ -66,6 +66,18 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiCpuDescriptorHandle GetBackBufferRenderTargetView() const noexcept override;
 	NativeResourceHandle GetBackBufferResource() const noexcept override;
 	std::unique_ptr<Texture> CreateTextureFromPath(const std::filesystem::path& texturePath) const override;
+	RhiOwnedResourceHandle CreateTextureResource(
+	    const RhiTextureResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateBufferResource(
+	    const RhiBufferResourceDesc& desc,
+	    ResourceState initialState,
+	    RhiMemoryCategory category,
+	    RhiMemoryResidencyClass residencyClass,
+	    std::wstring_view debugName) override;
 	bool CreateVertexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,
@@ -144,7 +156,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseAllResourceViews() noexcept;
 	void BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept;
 	void EndCurrentBackBufferRendering() noexcept;
-	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, VkImageLayout newLayout) noexcept;
+	void TransitionCurrentBackBuffer(VkCommandBuffer commandBuffer, ResourceState newState) noexcept;
 
 	VulkanRhi* m_rhi = nullptr;
 	VulkanSwapChain* m_swapChain = nullptr;

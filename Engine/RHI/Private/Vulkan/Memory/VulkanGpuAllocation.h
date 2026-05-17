@@ -30,8 +30,12 @@ struct VulkanGpuAllocationRecord final
 	RhiMemoryResidencyClass ResidencyClass = RhiMemoryResidencyClass::DeviceLocal;
 	std::uint64_t UsedBytes = 0;
 	std::uint64_t AllocatedBytes = 0;
+	std::uint64_t ResourceSizeInBytes = 0;
 	std::uint32_t MemoryTypeIndex = UINT32_MAX;
 	std::uint32_t MemoryHeapIndex = UINT32_MAX;
+	VkFormat Format = VK_FORMAT_UNDEFINED;
+	VkExtent3D Extent = {};
+	VkImageAspectFlags AspectMask = 0;
 	std::wstring DebugName;
 	VulkanGpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;

@@ -2,6 +2,10 @@
 
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 
+#include "Vulkan/Memory/VulkanGpuAllocation.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
+#include "Vulkan/VulkanTypeConversions.h"
+
 #include <algorithm>
 
 void VulkanRenderCommandList::SetNativeCommandBuffer(
@@ -91,9 +95,28 @@ void VulkanRenderCommandList::SetComputePushConstants(std::uint32_t, std::uint32
 
 void VulkanRenderCommandList::SetPrimitiveTopology(RhiPrimitiveTopology) noexcept {}
 
-void VulkanRenderCommandList::BindVertexBuffer(const RhiVertexBufferView&) noexcept {}
+void VulkanRenderCommandList::BindVertexBuffer(const RhiVertexBufferView& view) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || view.BufferLocation == 0)
+	{
+		return;
+	}
 
-void VulkanRenderCommandList::BindIndexBuffer(const RhiIndexBufferView&) noexcept {}
+	const VkBuffer buffer = reinterpret_cast<VkBuffer>(view.BufferLocation);
+	constexpr VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &buffer, &offset);
+}
+
+void VulkanRenderCommandList::BindIndexBuffer(const RhiIndexBufferView& view) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || view.BufferLocation == 0)
+	{
+		return;
+	}
+
+	const VkBuffer buffer = reinterpret_cast<VkBuffer>(view.BufferLocation);
+	vkCmdBindIndexBuffer(m_commandBuffer, buffer, 0, VulkanTypeConversions::ToVkIndexType(view.Format));
+}
 
 void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle*) noexcept
 {
@@ -214,13 +237,180 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
 {
 }
 
-void VulkanRenderCommandList::CopyResource(NativeResourceHandle, NativeResourceHandle) noexcept {}
+void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || m_memoryAllocator == nullptr || !destinationResource || !sourceResource)
+	{
+		return;
+	}
+
+	VulkanGpuAllocationRecord* const destinationRecord = m_memoryAllocator->FindAllocationRecord(destinationResource);
+	VulkanGpuAllocationRecord* const sourceRecord = m_memoryAllocator->FindAllocationRecord(sourceResource);
+	if (destinationRecord == nullptr || sourceRecord == nullptr || destinationRecord->ResourceKind != sourceRecord->ResourceKind)
+	{
+		return;
+	}
+
+	if (destinationRecord->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && destinationRecord->Buffer != VK_NULL_HANDLE &&
+	    sourceRecord->Buffer != VK_NULL_HANDLE)
+	{
+		const VkBufferCopy copyRegion{
+		    .srcOffset = 0,
+		    .dstOffset = 0,
+		    .size = std::min(destinationRecord->ResourceSizeInBytes, sourceRecord->ResourceSizeInBytes)};
+		if (copyRegion.size > 0)
+		{
+			vkCmdCopyBuffer(m_commandBuffer, sourceRecord->Buffer, destinationRecord->Buffer, 1, &copyRegion);
+		}
+		return;
+	}
+
+	if (destinationRecord->ResourceKind == VulkanGpuAllocationResourceKind::Image && destinationRecord->Image != VK_NULL_HANDLE &&
+	    sourceRecord->Image != VK_NULL_HANDLE)
+	{
+		const VkExtent3D copyExtent{
+		    .width = std::min(destinationRecord->Extent.width, sourceRecord->Extent.width),
+		    .height = std::min(destinationRecord->Extent.height, sourceRecord->Extent.height),
+		    .depth = std::min(destinationRecord->Extent.depth, sourceRecord->Extent.depth)};
+		if (copyExtent.width == 0 || copyExtent.height == 0 || copyExtent.depth == 0)
+		{
+			return;
+		}
+
+		const VkImageSubresourceLayers sourceLayers{
+		    .aspectMask = sourceRecord->AspectMask,
+		    .mipLevel = 0,
+		    .baseArrayLayer = 0,
+		    .layerCount = 1};
+		const VkImageSubresourceLayers destinationLayers{
+		    .aspectMask = destinationRecord->AspectMask,
+		    .mipLevel = 0,
+		    .baseArrayLayer = 0,
+		    .layerCount = 1};
+		const VkImageCopy copyRegion{
+		    .srcSubresource = sourceLayers,
+		    .srcOffset = VkOffset3D{},
+		    .dstSubresource = destinationLayers,
+		    .dstOffset = VkOffset3D{},
+		    .extent = copyExtent};
+		vkCmdCopyImage(
+		    m_commandBuffer,
+		    sourceRecord->Image,
+		    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		    destinationRecord->Image,
+		    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		    1,
+		    &copyRegion);
+	}
+}
 
 void VulkanRenderCommandList::AliasResource(NativeResourceHandle, NativeResourceHandle) noexcept {}
 
-void VulkanRenderCommandList::TransitionResource(NativeResourceHandle, ResourceState, ResourceState) noexcept {}
+void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || !resource || before == after)
+	{
+		return;
+	}
 
-void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle) noexcept {}
+	const VulkanResourceStateMapping sourceState = VulkanTypeConversions::ToResourceStateMapping(before);
+	const VulkanResourceStateMapping destinationState = VulkanTypeConversions::ToResourceStateMapping(after);
+	VulkanGpuAllocationRecord* const record = m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+
+	if (record != nullptr && record->ResourceKind == VulkanGpuAllocationResourceKind::Buffer && record->Buffer != VK_NULL_HANDLE)
+	{
+		const VkBufferMemoryBarrier2 bufferBarrier{
+		    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+		    .pNext = nullptr,
+		    .srcStageMask = sourceState.StageMask,
+		    .srcAccessMask = sourceState.AccessMask,
+		    .dstStageMask = destinationState.StageMask,
+		    .dstAccessMask = destinationState.AccessMask,
+		    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		    .buffer = record->Buffer,
+		    .offset = 0,
+		    .size = record->ResourceSizeInBytes > 0 ? record->ResourceSizeInBytes : VK_WHOLE_SIZE};
+		const VkDependencyInfo dependencyInfo{
+		    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+		    .pNext = nullptr,
+		    .dependencyFlags = 0,
+		    .memoryBarrierCount = 0,
+		    .pMemoryBarriers = nullptr,
+		    .bufferMemoryBarrierCount = 1,
+		    .pBufferMemoryBarriers = &bufferBarrier,
+		    .imageMemoryBarrierCount = 0,
+		    .pImageMemoryBarriers = nullptr};
+		vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+		return;
+	}
+
+	const VkImage image = record != nullptr && record->Image != VK_NULL_HANDLE ? record->Image : static_cast<VkImage>(resource.Value);
+	if (image == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	const VkImageAspectFlags aspectMask = record != nullptr && record->AspectMask != 0 ? record->AspectMask : VK_IMAGE_ASPECT_COLOR_BIT;
+	const VkImageMemoryBarrier2 imageBarrier{
+	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = sourceState.StageMask,
+	    .srcAccessMask = sourceState.AccessMask,
+	    .dstStageMask = destinationState.StageMask,
+	    .dstAccessMask = destinationState.AccessMask,
+	    .oldLayout = sourceState.ImageLayout,
+	    .newLayout = destinationState.ImageLayout,
+	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .image = image,
+	    .subresourceRange = VkImageSubresourceRange{
+	        .aspectMask = aspectMask,
+	        .baseMipLevel = 0,
+	        .levelCount = VK_REMAINING_MIP_LEVELS,
+	        .baseArrayLayer = 0,
+	        .layerCount = VK_REMAINING_ARRAY_LAYERS}};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 0,
+	    .pMemoryBarriers = nullptr,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 1,
+	    .pImageMemoryBarriers = &imageBarrier};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+}
+
+void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	const VkMemoryBarrier2 memoryBarrier{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+	                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+	    .srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+	                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+	    .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 1,
+	    .pMemoryBarriers = &memoryBarrier,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+}
 
 VkImageView VulkanRenderCommandList::DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept
 {
