@@ -15,6 +15,7 @@
 #include <cstring>
 #include <filesystem>
 #include <limits>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -167,7 +168,10 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 
 		FrameTimingState& frameState = m_frameStates[location.FrameIndex];
 		ID3D12GraphicsCommandList* const nativeCommandList = D3D12TypeConversions::ToGraphicsCommandList(commandList.GetNativeHandle());
-		if (nativeCommandList == nullptr || frameState.QueryHeap == nullptr || frameState.ReadbackBuffer == nullptr)
+		ID3D12Resource* const readbackBuffer = frameState.ReadbackAllocation != nullptr
+		                                           ? frameState.ReadbackAllocation->Resource.Get()
+		                                           : nullptr;
+		if (nativeCommandList == nullptr || frameState.QueryHeap == nullptr || readbackBuffer == nullptr)
 		{
 			return false;
 		}
@@ -178,7 +182,7 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		    D3D12_QUERY_TYPE_TIMESTAMP,
 		    location.QueryIndex,
 		    1,
-		    frameState.ReadbackBuffer.Get(),
+		    readbackBuffer,
 		    static_cast<UINT64>(location.QueryIndex) * sizeof(std::uint64_t));
 		return true;
 	}
@@ -222,7 +226,7 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 	struct FrameTimingState
 	{
 		Microsoft::WRL::ComPtr<ID3D12QueryHeap> QueryHeap;
-		Microsoft::WRL::ComPtr<ID3D12Resource> ReadbackBuffer;
+		std::unique_ptr<D3D12GpuAllocationRecord> ReadbackAllocation;
 		std::uint64_t* MappedReadback = nullptr;
 		std::vector<std::uint32_t> FreeQueryIndices;
 		std::uint32_t QueryCount = 0;
@@ -267,24 +271,28 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 		    .StrideInBytes = sizeof(std::uint64_t),
 		    .AllowUnorderedAccess = false};
 		const D3D12_RESOURCE_DESC nativeReadbackDesc = D3D12TypeConversions::BuildBufferResourceDesc(readbackBufferDesc);
-		const D3D12_HEAP_PROPERTIES readbackHeapProperties = D3D12TypeConversions::BuildReadbackHeapProperties();
-		if (FAILED(m_rhi->GetDevice()->CreateCommittedResource(
-		        &readbackHeapProperties,
-		        D3D12_HEAP_FLAG_NONE,
-		        &nativeReadbackDesc,
-		        D3D12_RESOURCE_STATE_COPY_DEST,
-		        nullptr,
-		        IID_PPV_ARGS(frameState.ReadbackBuffer.ReleaseAndGetAddressOf()))))
+		std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_Frame") + std::to_wstring(frameIndex);
+		auto readbackAllocation = m_rhi->GetMemoryAllocator().CreateBuffer(
+		    nativeReadbackDesc,
+		    D3D12_RESOURCE_STATE_COPY_DEST,
+		    RhiMemoryCategory::Readback,
+		    RhiMemoryResidencyClass::HostReadback,
+		    readbackName);
+		if (readbackAllocation == nullptr || readbackAllocation->Resource == nullptr)
 		{
 			return false;
 		}
 
-		if (FAILED(frameState.ReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&frameState.MappedReadback))))
+		if (FAILED(readbackAllocation->Resource->Map(0, nullptr, reinterpret_cast<void**>(&frameState.MappedReadback))))
 		{
+			frameState.MappedReadback = nullptr;
 			return false;
 		}
+		readbackAllocation->IsMapped = true;
+		readbackAllocation->CpuMappedAddress = frameState.MappedReadback;
 
 		std::memset(frameState.MappedReadback, 0, static_cast<std::size_t>(readbackBufferDesc.SizeInBytes));
+		frameState.ReadbackAllocation = std::move(readbackAllocation);
 		frameState.QueryCount = kQueriesPerFrame;
 		frameState.FreeQueryIndices.reserve(kQueriesPerFrame);
 		for (std::uint32_t queryIndex = kQueriesPerFrame; queryIndex > 0; --queryIndex)
@@ -294,8 +302,6 @@ class D3D12RenderTimingDiagnostics final : public RenderTimingDiagnostics
 
 		std::wstring queryHeapName = std::wstring(L"D3D12TimestampQueryHeap_Frame") + std::to_wstring(frameIndex);
 		frameState.QueryHeap->SetName(queryHeapName.c_str());
-		std::wstring readbackName = std::wstring(L"D3D12TimestampReadback_Frame") + std::to_wstring(frameIndex);
-		frameState.ReadbackBuffer->SetName(readbackName.c_str());
 		return true;
 	}
 

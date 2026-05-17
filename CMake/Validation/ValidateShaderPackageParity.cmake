@@ -109,6 +109,13 @@ if(d3d12_rhi_text)
     require_shader_package_text("${d3d12_rhi_path}" "${d3d12_rhi_text}" "return CookedShaderBinaryFormat::Dxil" "D3D12 must load DXIL shader binaries")
 endif()
 
+set(vulkan_rhi_path "${SHADER_PACKAGE_PARITY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp")
+read_required_shader_package_file("${vulkan_rhi_path}" vulkan_rhi_text)
+if(vulkan_rhi_text)
+    require_shader_package_text("${vulkan_rhi_path}" "${vulkan_rhi_text}" "GetRequiredShaderBinaryFormat()" "Vulkan backend must declare its required shader binary format")
+    require_shader_package_text("${vulkan_rhi_path}" "${vulkan_rhi_text}" "return CookedShaderBinaryFormat::SpirV" "Vulkan must load SPIR-V shader binaries")
+endif()
+
 set(stage_compiler_path "${SHADER_PACKAGE_PARITY_SOURCE_DIR}/Tools/ShaderCompiler/Private/Cooking/StageCompiler.cpp")
 read_required_shader_package_file("${stage_compiler_path}" stage_compiler_text)
 if(stage_compiler_text)

@@ -44,6 +44,21 @@ add_sparkle_validation_dependency(SparkleRenderer rhi_backend_boundary_check)
 add_sparkle_validation_dependency(SparkleEditor rhi_backend_boundary_check)
 
 add_custom_target(
+    rhi_backend_parity_check
+    COMMAND ${CMAKE_COMMAND}
+        -DRHI_BACKEND_PARITY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateRhiBackendParity.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating D3D12/Vulkan backend parity, diagnostics, shader variants, and smoke evidence..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI rhi_backend_parity_check)
+add_sparkle_validation_dependency(SparkleApplication rhi_backend_parity_check)
+add_sparkle_validation_dependency(SparkleGameFramework rhi_backend_parity_check)
+add_sparkle_validation_dependency(SparkleRenderer rhi_backend_parity_check)
+add_sparkle_validation_dependency(SparkleEditor rhi_backend_parity_check)
+
+add_custom_target(
     rhi_memory_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DRHI_MEMORY_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -164,6 +179,7 @@ add_custom_target(
         runtime_cooked_boundary_check
         framegraph_boundary_check
         rhi_backend_boundary_check
+        rhi_backend_parity_check
         rhi_memory_boundary_check
         shader_compiler_boundary_check
         shader_package_parity_check

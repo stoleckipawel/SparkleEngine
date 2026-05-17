@@ -210,25 +210,3 @@ D3D12_CLEAR_VALUE D3D12TypeConversions::BuildClearValue(const RhiOptimizedClearV
 	}
 	return nativeClearValue;
 }
-
-D3D12_HEAP_PROPERTIES D3D12TypeConversions::BuildUploadHeapProperties() noexcept
-{
-	D3D12_HEAP_PROPERTIES properties{};
-	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	properties.CreationNodeMask = 1;
-	properties.VisibleNodeMask = 1;
-	return properties;
-}
-
-D3D12_HEAP_PROPERTIES D3D12TypeConversions::BuildReadbackHeapProperties() noexcept
-{
-	D3D12_HEAP_PROPERTIES properties{};
-	properties.Type = D3D12_HEAP_TYPE_READBACK;
-	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	properties.CreationNodeMask = 1;
-	properties.VisibleNodeMask = 1;
-	return properties;
-}

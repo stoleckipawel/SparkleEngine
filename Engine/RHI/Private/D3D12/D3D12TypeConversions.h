@@ -24,8 +24,6 @@ class D3D12TypeConversions final
 	static D3D12_RESOURCE_DESC BuildTextureResourceDesc(const RhiTextureResourceDesc& desc) noexcept;
 	static D3D12_RESOURCE_DESC BuildBufferResourceDesc(const RhiBufferResourceDesc& desc) noexcept;
 	static D3D12_CLEAR_VALUE BuildClearValue(const RhiOptimizedClearValue& clearValue) noexcept;
-	static D3D12_HEAP_PROPERTIES BuildUploadHeapProperties() noexcept;
-	static D3D12_HEAP_PROPERTIES BuildReadbackHeapProperties() noexcept;
 
   private:
 	D3D12TypeConversions() = delete;

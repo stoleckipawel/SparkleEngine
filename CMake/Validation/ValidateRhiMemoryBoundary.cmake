@@ -47,6 +47,16 @@ set(FORBIDDEN_DIRECT_D3D12_ALLOCATION_TOKENS
     "CreatePlacedResource"
 )
 
+set(FORBIDDEN_DIRECT_VULKAN_ALLOCATION_TOKENS
+    "vkCreateBuffer"
+    "vkCreateImage"
+    "vkAllocateMemory"
+    "vmaCreateBuffer"
+    "vmaCreateImage"
+    "vmaAllocateMemoryForBuffer"
+    "vmaAllocateMemoryForImage"
+)
+
 set(FORBIDDEN_DEFRAGMENTATION_TOKENS
     "BeginDefragmentation"
     "DefragmentationPass"
@@ -60,13 +70,6 @@ set(FORBIDDEN_DIRECT_ALLOCATOR_JSON_TOKENS
 )
 
 set(RHI_MEMORY_BOUNDARY_VIOLATIONS "")
-
-# Temporary legacy baseline for direct D3D12 resource allocation before the
-# D3D12MA migration. Counts are maximums, so deleting old calls is allowed but
-# adding new calls outside the memory service fails this gate.
-set(LEGACY_DIRECT_D3D12_ALLOCATION_LIMITS
-    "Engine/RHI/Private/D3D12/Diagnostics/D3D12RenderDiagnostics.cpp|CreateCommittedResource|1"
-)
 
 function(append_rhi_memory_violation message_text)
     set(RHI_MEMORY_BOUNDARY_VIOLATIONS
@@ -90,6 +93,14 @@ function(is_d3d12_memory_service_path relative_path out_var)
     endif()
 endfunction()
 
+function(is_vulkan_memory_service_path relative_path out_var)
+    if(relative_path MATCHES "^Engine/RHI/Private/Vulkan/Memory/.*\.(h|hpp|cpp|cxx)$")
+        set(${out_var} TRUE PARENT_SCOPE)
+    else()
+        set(${out_var} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
 function(count_token_occurrences text token out_var)
     string(LENGTH "${text}" original_length)
     string(LENGTH "${token}" token_length)
@@ -99,21 +110,6 @@ function(count_token_occurrences text token out_var)
     math(EXPR token_count "${removed_length} / ${token_length}")
 
     set(${out_var} ${token_count} PARENT_SCOPE)
-endfunction()
-
-function(get_legacy_direct_allocation_limit relative_path token out_var)
-    set(limit 0)
-    foreach(limit_entry IN LISTS LEGACY_DIRECT_D3D12_ALLOCATION_LIMITS)
-        string(REPLACE "|" ";" limit_fields "${limit_entry}")
-        list(GET limit_fields 0 limit_path)
-        list(GET limit_fields 1 limit_token)
-        list(GET limit_fields 2 limit_count)
-        if(relative_path STREQUAL limit_path AND token STREQUAL limit_token)
-            set(limit ${limit_count})
-        endif()
-    endforeach()
-
-    set(${out_var} ${limit} PARENT_SCOPE)
 endfunction()
 
 function(check_file_for_tokens file_path)
@@ -156,12 +152,34 @@ function(check_file_for_direct_d3d12_allocations file_path)
             continue()
         endif()
 
-        get_legacy_direct_allocation_limit("${relative_path}" "${token}" legacy_limit)
-        if(token_count GREATER legacy_limit)
-            append_rhi_memory_violation(
-                "${relative_path}: found ${token_count} '${token}' call(s), allowed ${legacy_limit}. Route GPU resource allocation through Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator instead."
-            )
+        append_rhi_memory_violation(
+            "${relative_path}: found ${token_count} '${token}' call(s), allowed 0. Route GPU resource allocation through Engine/RHI/Private/D3D12/Memory/D3D12GpuMemoryAllocator instead."
+        )
+    endforeach()
+endfunction()
+
+function(check_file_for_direct_vulkan_allocations file_path)
+    cmake_path(RELATIVE_PATH file_path BASE_DIRECTORY "${RHI_MEMORY_BOUNDARY_SOURCE_DIR}" OUTPUT_VARIABLE relative_path)
+    is_generated_or_third_party_path("${relative_path}" should_skip)
+    if(should_skip)
+        return()
+    endif()
+
+    is_vulkan_memory_service_path("${relative_path}" is_memory_service)
+    if(is_memory_service)
+        return()
+    endif()
+
+    file(READ "${file_path}" file_text)
+    foreach(token IN LISTS FORBIDDEN_DIRECT_VULKAN_ALLOCATION_TOKENS)
+        count_token_occurrences("${file_text}" "${token}" token_count)
+        if(token_count EQUAL 0)
+            continue()
         endif()
+
+        append_rhi_memory_violation(
+            "${relative_path}: found ${token_count} '${token}' call(s), allowed 0. Route Vulkan buffer/image allocation through Engine/RHI/Private/Vulkan/Memory/VulkanGpuMemoryAllocator instead."
+        )
     endforeach()
 endfunction()
 
@@ -230,6 +248,7 @@ if(EXISTS "${RHI_MEMORY_ENGINE_ROOT}")
             DESCRIPTION "D3D12MA/VMA defragmentation is out of scope until Sparkle has a relocation policy"
         )
         check_file_for_direct_d3d12_allocations("${engine_source_file}")
+        check_file_for_direct_vulkan_allocations("${engine_source_file}")
     endforeach()
 endif()
 
@@ -239,4 +258,4 @@ if(RHI_MEMORY_BOUNDARY_VIOLATIONS)
     message(FATAL_ERROR "${RHI_MEMORY_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "RHI memory boundary check passed for allocator leakage, direct D3D12 allocation baseline, defragmentation scope, and diagnostics routing.")
+message(STATUS "RHI memory boundary check passed for allocator leakage, direct backend allocation bans, defragmentation scope, and diagnostics routing.")
