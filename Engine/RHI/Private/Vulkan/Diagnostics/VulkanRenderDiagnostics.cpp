@@ -3,10 +3,16 @@
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 
 #include "Device/RenderHardwareInterface.h"
+#include "Core/Public/Environment/EnvironmentVariables.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
+#include "Vulkan/Memory/VulkanGpuAllocation.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 
 #include "Core/Public/Strings/StringUtils.h"
+
+#include <filesystem>
+#include <string>
 
 class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 {
@@ -39,7 +45,11 @@ class VulkanRenderObjectDiagnostics final : public RenderObjectDiagnostics
 
 	void SetDebugName(RhiOwnedResourceHandle resource, std::wstring_view debugName) noexcept override
 	{
-		SetDebugName(VK_OBJECT_TYPE_UNKNOWN, reinterpret_cast<std::uint64_t>(resource.Value), debugName);
+		VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
+		if (record != nullptr)
+		{
+			SetVulkanAllocationRecordDebugName(*record, debugName);
+		}
 	}
 
   private:
@@ -89,10 +99,40 @@ class VulkanRenderFailureDiagnostics final : public RenderFailureDiagnostics
 	void CollectCrashDiagnostics() noexcept override {}
 };
 
+class VulkanRenderMemoryDiagnostics final : public RenderMemoryDiagnostics
+{
+  public:
+	explicit VulkanRenderMemoryDiagnostics(VulkanGpuMemoryAllocator& allocator) noexcept : m_allocator(allocator)
+	{
+		std::string jsonDumpPath;
+		if (Environment::TryGetVariable("SPARKLE_RHI_MEMORY_JSON_DUMP", jsonDumpPath))
+		{
+			(void)m_allocator.WriteAllocatorJsonDump(std::filesystem::path(jsonDumpPath), true);
+		}
+	}
+
+	bool SupportsBudgetQueries() const noexcept override { return m_allocator.SupportsBudgetQueries(); }
+
+	bool SupportsJsonDump() const noexcept override { return m_allocator.SupportsJsonDump(); }
+
+	RhiMemoryUsageSnapshot GetLatestMemorySnapshot() const override { return m_allocator.CreateMemoryUsageSnapshot(); }
+
+	bool WriteAllocatorJsonDump(const std::filesystem::path& outputPath, bool includeDetailedMap = true) const noexcept override
+	{
+		return m_allocator.WriteAllocatorJsonDump(outputPath, includeDetailedMap);
+	}
+
+  private:
+	VulkanGpuMemoryAllocator& m_allocator;
+};
+
 class VulkanRenderDiagnostics final : public RenderDiagnostics
 {
   public:
-	explicit VulkanRenderDiagnostics(VulkanRhi& rhi) noexcept : m_objectDiagnostics(rhi), m_messageDiagnostics(rhi) {}
+	VulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
+	    m_objectDiagnostics(rhi), m_messageDiagnostics(rhi), m_memoryDiagnostics(memoryAllocator)
+	{
+	}
 
 	RhiDiagnosticsCapabilities GetCapabilities() const noexcept override
 	{
@@ -103,9 +143,9 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 		    .SupportsDebugMessages = true,
 		    .SupportsLiveObjectReports = false,
 		    .SupportsCrashDiagnostics = false,
-		    .SupportsMemoryDiagnostics = false,
-		    .SupportsMemoryBudgetQueries = false,
-		    .SupportsMemoryJsonDump = false};
+		    .SupportsMemoryDiagnostics = true,
+		    .SupportsMemoryBudgetQueries = m_memoryDiagnostics.SupportsBudgetQueries(),
+		    .SupportsMemoryJsonDump = m_memoryDiagnostics.SupportsJsonDump()};
 	}
 
 	RenderObjectDiagnostics& GetObjectDiagnostics() noexcept override { return m_objectDiagnostics; }
@@ -124,17 +164,18 @@ class VulkanRenderDiagnostics final : public RenderDiagnostics
 
 	const RenderFailureDiagnostics* GetFailureDiagnostics() const noexcept override { return nullptr; }
 
-	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return nullptr; }
+	RenderMemoryDiagnostics* GetMemoryDiagnostics() noexcept override { return &m_memoryDiagnostics; }
 
-	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return nullptr; }
+	const RenderMemoryDiagnostics* GetMemoryDiagnostics() const noexcept override { return &m_memoryDiagnostics; }
 
   private:
 	VulkanRenderObjectDiagnostics m_objectDiagnostics;
 	VulkanRenderMessageDiagnostics m_messageDiagnostics;
 	VulkanRenderFailureDiagnostics m_failureDiagnostics;
+	VulkanRenderMemoryDiagnostics m_memoryDiagnostics;
 };
 
-std::unique_ptr<RenderDiagnostics> CreateVulkanRenderDiagnostics(VulkanRhi& rhi)
+std::unique_ptr<RenderDiagnostics> CreateVulkanRenderDiagnostics(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator)
 {
-	return std::make_unique<VulkanRenderDiagnostics>(rhi);
+	return std::make_unique<VulkanRenderDiagnostics>(rhi, memoryAllocator);
 }

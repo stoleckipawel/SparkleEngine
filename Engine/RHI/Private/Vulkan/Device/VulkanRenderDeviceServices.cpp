@@ -5,6 +5,7 @@
 #include "Config/RenderConfig.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
@@ -41,6 +42,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	VulkanRenderDeviceServices() noexcept = default;
 
 	std::unique_ptr<VulkanRhi> m_rhi;
+	std::unique_ptr<VulkanGpuMemoryAllocator> m_memoryAllocator;
 	std::unique_ptr<VulkanSwapChain> m_swapChain;
 	std::unique_ptr<VulkanCommandContext> m_commandContext;
 	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
@@ -61,6 +63,10 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(T
 		services->m_rhi = std::make_unique<VulkanRhi>();
 	}
 	{
+		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateMemoryAllocator");
+		services->m_memoryAllocator = std::make_unique<VulkanGpuMemoryAllocator>(*services->m_rhi);
+	}
+	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateSwapChain");
 		services->m_swapChain = std::make_unique<VulkanSwapChain>(*services->m_rhi, window);
 	}
@@ -70,8 +76,11 @@ std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(T
 	}
 	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateHardwareInterface");
-		services->m_renderHardwareInterface =
-		    std::make_unique<VulkanRenderHardwareInterface>(*services->m_rhi, *services->m_swapChain, *services->m_commandContext);
+		services->m_renderHardwareInterface = std::make_unique<VulkanRenderHardwareInterface>(
+		    *services->m_rhi,
+		    *services->m_swapChain,
+		    *services->m_commandContext,
+		    *services->m_memoryAllocator);
 	}
 	return services;
 }
@@ -86,6 +95,7 @@ VulkanRenderDeviceServices::~VulkanRenderDeviceServices() noexcept
 	m_renderHardwareInterface.reset();
 	m_commandContext.reset();
 	m_swapChain.reset();
+	m_memoryAllocator.reset();
 	m_rhi.reset();
 }
 

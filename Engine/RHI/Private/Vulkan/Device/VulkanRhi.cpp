@@ -288,6 +288,10 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	{
 		deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
+	if (IsDeviceExtensionAvailable(m_physicalDevice, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME))
+	{
+		deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+	}
 	for (const char* extension : deviceExtensions)
 	{
 		m_enabledDeviceExtensions.emplace_back(extension);

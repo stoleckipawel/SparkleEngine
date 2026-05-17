@@ -8,6 +8,8 @@
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
+#include "Vulkan/Memory/VulkanGpuAllocation.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
@@ -18,16 +20,21 @@ static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLo
 VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 	VulkanRhi& rhi,
 	VulkanSwapChain& swapChain,
-	VulkanCommandContext& commandContext) noexcept :
-	m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext)
+	VulkanCommandContext& commandContext,
+	VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
+	m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
 {
-	m_diagnostics = CreateVulkanRenderDiagnostics(rhi);
+	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
 }
 
 VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
 {
 	ReleaseAllResourceViews();
+	if (m_memoryAllocator != nullptr)
+	{
+		m_memoryAllocator->FlushPendingReleases();
+	}
 }
 
 ERhiBackendApi VulkanRenderHardwareInterface::GetBackendApi() const noexcept
@@ -54,6 +61,10 @@ void VulkanRenderHardwareInterface::WaitForIdle() noexcept
 	if (m_rhi != nullptr)
 	{
 		m_rhi->WaitForIdle();
+	}
+	if (m_memoryAllocator != nullptr)
+	{
+		m_memoryAllocator->FlushPendingReleases();
 	}
 }
 
@@ -241,11 +252,35 @@ bool VulkanRenderHardwareInterface::CreateIndexBuffer(
 	return false;
 }
 
-void VulkanRenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle) noexcept {}
-
-NativeResourceHandle VulkanRenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle) const noexcept
+void VulkanRenderHardwareInterface::ReleaseOwnedResource(RhiOwnedResourceHandle resource) noexcept
 {
-	return {};
+	if (m_memoryAllocator == nullptr)
+	{
+		return;
+	}
+
+	std::unique_ptr<VulkanGpuAllocationRecord> record = TakeVulkanOwnedResourceHandle(resource);
+	if (record == nullptr)
+	{
+		return;
+	}
+
+	const std::uint64_t retireFenceValue = m_commandContext != nullptr ? m_commandContext->GetNextRetireFenceValue() : 0;
+	m_memoryAllocator->QueueDestroyResource(std::move(record), retireFenceValue);
+	if (m_commandContext != nullptr)
+	{
+		m_memoryAllocator->DrainCompletedReleases(m_commandContext->GetCompletedRetireFenceValue());
+	}
+	else
+	{
+		m_memoryAllocator->FlushPendingReleases();
+	}
+}
+
+NativeResourceHandle VulkanRenderHardwareInterface::GetNativeResource(RhiOwnedResourceHandle resource) const noexcept
+{
+	VulkanGpuAllocationRecord* const record = GetVulkanGpuAllocationRecord(resource);
+	return record != nullptr ? GetVulkanNativeResource(*record) : NativeResourceHandle{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetResourceGpuVirtualAddress(RhiOwnedResourceHandle) const noexcept

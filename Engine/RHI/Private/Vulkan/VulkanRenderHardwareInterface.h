@@ -8,6 +8,7 @@
 #include <vector>
 
 class VulkanCommandContext;
+class VulkanGpuMemoryAllocator;
 class VulkanRenderCommandList;
 class VulkanRhi;
 class VulkanSwapChain;
@@ -15,7 +16,11 @@ class VulkanSwapChain;
 class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 {
   public:
-	VulkanRenderHardwareInterface(VulkanRhi& rhi, VulkanSwapChain& swapChain, VulkanCommandContext& commandContext) noexcept;
+	VulkanRenderHardwareInterface(
+	    VulkanRhi& rhi,
+	    VulkanSwapChain& swapChain,
+	    VulkanCommandContext& commandContext,
+	    VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 	~VulkanRenderHardwareInterface() noexcept override;
 
 	VulkanRenderHardwareInterface(const VulkanRenderHardwareInterface&) = delete;
@@ -144,6 +149,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanRhi* m_rhi = nullptr;
 	VulkanSwapChain* m_swapChain = nullptr;
 	VulkanCommandContext* m_commandContext = nullptr;
+	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	PerFrameConstantBufferData m_emptyPerFrameConstants = {};
 	std::uint32_t m_currentFrameIndex = 0;
