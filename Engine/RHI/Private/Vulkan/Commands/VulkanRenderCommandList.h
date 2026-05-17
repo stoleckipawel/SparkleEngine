@@ -7,12 +7,16 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 class VulkanGpuMemoryAllocator;
+class VulkanDescriptorAllocator;
+class VulkanBindingLayout;
 class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
+	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
 	void CloseOpenRendering() noexcept;
 	void SetNativeCommandBuffer(
 	    VkCommandBuffer commandBuffer,
@@ -53,7 +57,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void BindVertexBuffer(const RhiVertexBufferView& view) noexcept override;
 	void BindIndexBuffer(const RhiIndexBufferView& view) noexcept override;
 	void SetRenderTarget(RhiCpuDescriptorHandle rtv, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept override;
-	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept override;
+	void SetRenderTargets(std::uint32_t numRTVs, const RhiCpuDescriptorHandle* rtvs, const RhiCpuDescriptorHandle* dsv = nullptr) noexcept
+	    override;
 	void ClearRenderTarget(RhiCpuDescriptorHandle rtv, const float color[4]) noexcept override;
 	void ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil = 0) noexcept override;
 	void SetViewport(const RhiViewport& viewport) noexcept override;
@@ -87,13 +92,34 @@ class VulkanRenderCommandList final : public RenderCommandList
   private:
 	static VkImageView DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept;
 	static VkDebugUtilsLabelEXT BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept;
+	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
+	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;
+	VkDescriptorSet EnsureDescriptorSet(
+	    const VulkanBindingLayout* layout,
+	    std::uint32_t setIndex,
+	    std::vector<VkDescriptorSet>& descriptorSets) noexcept;
+	void BindDescriptorSet(
+	    VkPipelineBindPoint bindPoint,
+	    VkPipelineLayout pipelineLayout,
+	    std::uint32_t setIndex,
+	    VkDescriptorSet descriptorSet) noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
+	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
+	const VulkanBindingLayout* m_graphicsBindingLayout = nullptr;
+	const VulkanBindingLayout* m_computeBindingLayout = nullptr;
+	VkPipelineLayout m_graphicsPipelineLayout = VK_NULL_HANDLE;
+	VkPipelineLayout m_computePipelineLayout = VK_NULL_HANDLE;
+	std::vector<VkDescriptorSet> m_graphicsDescriptorSets;
+	std::vector<VkDescriptorSet> m_computeDescriptorSets;
+	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
+	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
+	std::vector<VkBuffer> m_retainedDescriptorBuffers;
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_beginDebugUtilsLabel = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT m_endDebugUtilsLabel = nullptr;
 	PFN_vkCmdInsertDebugUtilsLabelEXT m_insertDebugUtilsLabel = nullptr;

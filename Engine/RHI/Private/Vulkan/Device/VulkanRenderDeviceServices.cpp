@@ -136,6 +136,7 @@ void VulkanRenderDeviceServices::BeginFrame() noexcept
 {
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 	m_commandContext->BeginFrame(m_currentFrameIndex);
+	m_renderHardwareInterface->ResetTransientFrameResources();
 	m_hasAcquiredBackBuffer = m_swapChain->AcquireNextImage(m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex));
 	if (!m_hasAcquiredBackBuffer)
 	{

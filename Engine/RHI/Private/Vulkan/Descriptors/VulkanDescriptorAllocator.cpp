@@ -1,0 +1,593 @@
+#include "Vulkan/VulkanPCH.h"
+
+#include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
+
+#include "Pipeline/RhiPipelineStateDesc.h"
+#include "Vulkan/Core/VulkanResult.h"
+#include "Vulkan/Device/VulkanRhi.h"
+
+#include <algorithm>
+#include <array>
+
+static const auto g_vulkanDescriptorAllocatorLogger = Logging::GetOrCreateLogger("RHI.Vulkan.Descriptors");
+
+VulkanDescriptorAllocator::VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept : m_rhi(rhi) {}
+
+VulkanDescriptorAllocator::~VulkanDescriptorAllocator() noexcept
+{
+	for (std::vector<DescriptorPoolPage>& poolPages : m_framePoolPages)
+	{
+		for (DescriptorPoolPage& page : poolPages)
+		{
+			if (page.Pool != VK_NULL_HANDLE)
+			{
+				vkDestroyDescriptorPool(m_rhi.GetDevice(), page.Pool, nullptr);
+			}
+		}
+	}
+}
+
+RhiDescriptorAllocation VulkanDescriptorAllocator::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
+{
+	const RhiDescriptorTableHandle table = AllocateDescriptorTable(descriptorType, 1);
+	return RhiDescriptorAllocation{.CpuHandle = GetDescriptorTableCpuHandle(table), .GpuHandle = {}};
+}
+
+void VulkanDescriptorAllocator::BeginFrame(std::uint32_t frameIndex) noexcept
+{
+	std::scoped_lock lock(m_mutex);
+	m_currentFrameIndex = frameIndex;
+	if (m_framePoolPages.size() <= frameIndex)
+	{
+		m_framePoolPages.resize(static_cast<std::size_t>(frameIndex) + 1u);
+	}
+
+	for (DescriptorPoolPage& page : m_framePoolPages[frameIndex])
+	{
+		if (page.Pool == VK_NULL_HANDLE)
+		{
+			continue;
+		}
+		const VkResult result = vkResetDescriptorPool(m_rhi.GetDevice(), page.Pool, 0);
+		if (VulkanResult::Succeeded(result))
+		{
+			page.AllocatedSets = 0;
+		}
+	}
+}
+
+void VulkanDescriptorAllocator::ReleaseDescriptor(ERhiDescriptorAllocatorType, const RhiDescriptorAllocation& allocation) noexcept
+{
+	std::uint32_t tableIndex = 0;
+	std::uint32_t descriptorIndex = 0;
+	if (!DecodeCpuDescriptorHandle(allocation.CpuHandle, tableIndex, descriptorIndex) || descriptorIndex != 0)
+	{
+		return;
+	}
+	ReleaseDescriptorTable(MakeTableHandle(tableIndex));
+}
+
+RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
+    ERhiDescriptorAllocatorType descriptorType,
+    std::uint32_t descriptorCount)
+{
+	if (descriptorCount == 0)
+	{
+		return {};
+	}
+
+	std::scoped_lock lock(m_mutex);
+	DescriptorTableRecord record{};
+	record.Type = descriptorType;
+	record.Entries.assign(descriptorCount, DescriptorEntry{.Kind = ToTableEntryKind(descriptorType)});
+	record.Allocated = true;
+
+	if (!m_freeTableIndices.empty())
+	{
+		const std::uint32_t index = m_freeTableIndices.back();
+		m_freeTableIndices.pop_back();
+		m_tables[index] = std::move(record);
+		return MakeTableHandle(index);
+	}
+
+	m_tables.push_back(std::move(record));
+	return MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1));
+}
+
+RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
+    RhiDescriptorTableHandle tableHandle,
+    std::uint32_t descriptorIndex) const noexcept
+{
+	std::scoped_lock lock(m_mutex);
+	const DescriptorTableRecord* const record = FindTableRecord(tableHandle);
+	if (record == nullptr || descriptorIndex >= record->Entries.size())
+	{
+		return {};
+	}
+	return MakeCpuDescriptorHandle(tableHandle.Value - 1u, descriptorIndex);
+}
+
+void VulkanDescriptorAllocator::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
+{
+	std::scoped_lock lock(m_mutex);
+	DescriptorTableRecord* const record = FindTableRecord(tableHandle);
+	if (record == nullptr)
+	{
+		return;
+	}
+	*record = DescriptorTableRecord{};
+	m_freeTableIndices.push_back(tableHandle.Value - 1u);
+}
+
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterImageDescriptor(ERhiResourceViewKind viewKind, VkImageView imageView)
+{
+	if (imageView == VK_NULL_HANDLE)
+	{
+		return {};
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = ToImageEntryKind(viewKind);
+	entry.Image = VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE, .imageView = imageView, .imageLayout = ToImageLayout(entry.Kind)};
+
+	std::scoped_lock lock(m_mutex);
+	if (!m_freeRegisteredDescriptorIndices.empty())
+	{
+		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
+		m_freeRegisteredDescriptorIndices.pop_back();
+		m_registeredDescriptors[index] = entry;
+		return MakeGpuDescriptorHandle(index);
+	}
+
+	m_registeredDescriptors.push_back(entry);
+	return MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+}
+
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
+    ERhiResourceViewKind viewKind,
+    VkBuffer buffer,
+    std::uint64_t offsetInBytes,
+    std::uint64_t sizeInBytes)
+{
+	if (buffer == VK_NULL_HANDLE)
+	{
+		return {};
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = ToBufferEntryKind(viewKind);
+	entry.Buffer =
+	    VkDescriptorBufferInfo{.buffer = buffer, .offset = offsetInBytes, .range = sizeInBytes != 0 ? sizeInBytes : VK_WHOLE_SIZE};
+
+	std::scoped_lock lock(m_mutex);
+	if (!m_freeRegisteredDescriptorIndices.empty())
+	{
+		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
+		m_freeRegisteredDescriptorIndices.pop_back();
+		m_registeredDescriptors[index] = entry;
+		return MakeGpuDescriptorHandle(index);
+	}
+
+	m_registeredDescriptors.push_back(entry);
+	return MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+}
+
+void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept
+{
+	std::uint32_t index = 0;
+	if (!DecodeGpuDescriptorHandle(handle, index))
+	{
+		return;
+	}
+
+	std::scoped_lock lock(m_mutex);
+	if (index >= m_registeredDescriptors.size())
+	{
+		return;
+	}
+	m_registeredDescriptors[index] = DescriptorEntry{};
+	m_freeRegisteredDescriptorIndices.push_back(index);
+}
+
+void VulkanDescriptorAllocator::WriteImageDescriptor(
+    RhiCpuDescriptorHandle destination,
+    ERhiResourceViewKind viewKind,
+    VkImageView imageView) noexcept
+{
+	std::uint32_t tableIndex = 0;
+	std::uint32_t descriptorIndex = 0;
+	if (!DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || imageView == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	std::scoped_lock lock(m_mutex);
+	if (tableIndex >= m_tables.size() || descriptorIndex >= m_tables[tableIndex].Entries.size())
+	{
+		return;
+	}
+	DescriptorEntry& entry = m_tables[tableIndex].Entries[descriptorIndex];
+	entry.Kind = ToImageEntryKind(viewKind);
+	entry.Image = VkDescriptorImageInfo{.sampler = VK_NULL_HANDLE, .imageView = imageView, .imageLayout = ToImageLayout(entry.Kind)};
+}
+
+void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept
+{
+	std::uint32_t tableIndex = 0;
+	std::uint32_t descriptorIndex = 0;
+	if (!DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || sampler == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	std::scoped_lock lock(m_mutex);
+	if (tableIndex >= m_tables.size() || descriptorIndex >= m_tables[tableIndex].Entries.size())
+	{
+		return;
+	}
+	DescriptorEntry& entry = m_tables[tableIndex].Entries[descriptorIndex];
+	entry.Kind = EntryKind::Sampler;
+	entry.Image = VkDescriptorImageInfo{.sampler = sampler, .imageView = VK_NULL_HANDLE, .imageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
+}
+
+VkDescriptorSet VulkanDescriptorAllocator::AllocateTransientSet(VkDescriptorSetLayout layout)
+{
+	if (layout == VK_NULL_HANDLE)
+	{
+		return VK_NULL_HANDLE;
+	}
+
+	std::scoped_lock lock(m_mutex);
+	if (m_framePoolPages.size() <= m_currentFrameIndex)
+	{
+		m_framePoolPages.resize(static_cast<std::size_t>(m_currentFrameIndex) + 1u);
+	}
+
+	std::vector<DescriptorPoolPage>& poolPages = m_framePoolPages[m_currentFrameIndex];
+	for (DescriptorPoolPage& page : poolPages)
+	{
+		if (page.AllocatedSets >= DescriptorSetsPerPage)
+		{
+			continue;
+		}
+
+		const VkDescriptorSetAllocateInfo allocateInfo{
+		    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+		    .pNext = nullptr,
+		    .descriptorPool = page.Pool,
+		    .descriptorSetCount = 1,
+		    .pSetLayouts = &layout};
+		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+		const VkResult result = vkAllocateDescriptorSets(m_rhi.GetDevice(), &allocateInfo, &descriptorSet);
+		if (VulkanResult::Succeeded(result))
+		{
+			++page.AllocatedSets;
+			return descriptorSet;
+		}
+	}
+
+	DescriptorPoolPage page{};
+	page.Pool = CreatePoolPage();
+	if (page.Pool == VK_NULL_HANDLE)
+	{
+		return VK_NULL_HANDLE;
+	}
+
+	const VkDescriptorSetAllocateInfo allocateInfo{
+	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+	    .pNext = nullptr,
+	    .descriptorPool = page.Pool,
+	    .descriptorSetCount = 1,
+	    .pSetLayouts = &layout};
+	VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+	const VkResult result = vkAllocateDescriptorSets(m_rhi.GetDevice(), &allocateInfo, &descriptorSet);
+	if (!VulkanResult::Succeeded(result))
+	{
+		vkDestroyDescriptorPool(m_rhi.GetDevice(), page.Pool, nullptr);
+		return VK_NULL_HANDLE;
+	}
+	++page.AllocatedSets;
+	poolPages.push_back(page);
+	return descriptorSet;
+}
+
+void VulkanDescriptorAllocator::WriteDescriptorTable(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    RhiDescriptorTableBinding tableBinding) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || !tableBinding)
+	{
+		return;
+	}
+
+	std::vector<DescriptorEntry> entries;
+	{
+		std::scoped_lock lock(m_mutex);
+		const DescriptorTableRecord* const record = FindTableRecord(tableBinding.Table);
+		if (record == nullptr || tableBinding.DescriptorIndex >= record->Entries.size())
+		{
+			return;
+		}
+
+		const std::uint32_t count =
+		    std::min(binding.DescriptorCount, static_cast<std::uint32_t>(record->Entries.size() - tableBinding.DescriptorIndex));
+		entries.assign(
+		    record->Entries.begin() + tableBinding.DescriptorIndex,
+		    record->Entries.begin() + tableBinding.DescriptorIndex + count);
+	}
+	WriteEntries(descriptorSet, binding, entries);
+}
+
+void VulkanDescriptorAllocator::WriteDescriptorHandle(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    RhiGpuDescriptorHandle handle) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || !handle)
+	{
+		return;
+	}
+
+	DescriptorEntry entry{};
+	{
+		std::scoped_lock lock(m_mutex);
+		const DescriptorEntry* const registeredEntry = FindRegisteredEntry(handle);
+		if (registeredEntry == nullptr || registeredEntry->Kind == EntryKind::Empty)
+		{
+			return;
+		}
+		entry = *registeredEntry;
+	}
+	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+}
+
+void VulkanDescriptorAllocator::WriteBufferDescriptor(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    VkBuffer buffer,
+    VkDeviceSize offset,
+    VkDeviceSize range) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || buffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = binding.Type == CompiledBindingType::ConstantBuffer ? EntryKind::UniformBuffer : EntryKind::StorageBuffer;
+	entry.Buffer = VkDescriptorBufferInfo{.buffer = buffer, .offset = offset, .range = range != 0 ? range : VK_WHOLE_SIZE};
+	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+}
+
+RhiDescriptorTableHandle VulkanDescriptorAllocator::MakeTableHandle(std::uint32_t index) noexcept
+{
+	return RhiDescriptorTableHandle{index + 1u};
+}
+
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::MakeGpuDescriptorHandle(std::uint32_t index) noexcept
+{
+	return RhiGpuDescriptorHandle{GpuDescriptorMagic | static_cast<std::uint64_t>(index + 1u)};
+}
+
+RhiCpuDescriptorHandle VulkanDescriptorAllocator::MakeCpuDescriptorHandle(std::uint32_t tableIndex, std::uint32_t descriptorIndex) noexcept
+{
+	return RhiCpuDescriptorHandle{
+	    CpuDescriptorMagic | (static_cast<std::uintptr_t>(tableIndex + 1u) << 24u) | static_cast<std::uintptr_t>(descriptorIndex + 1u)};
+}
+
+bool VulkanDescriptorAllocator::DecodeGpuDescriptorHandle(RhiGpuDescriptorHandle handle, std::uint32_t& outIndex) noexcept
+{
+	if ((handle.Value & 0xFFFFFFFF00000000ull) != GpuDescriptorMagic)
+	{
+		return false;
+	}
+	const std::uint32_t encodedIndex = static_cast<std::uint32_t>(handle.Value & 0xFFFFFFFFull);
+	if (encodedIndex == 0)
+	{
+		return false;
+	}
+	outIndex = encodedIndex - 1u;
+	return true;
+}
+
+bool VulkanDescriptorAllocator::DecodeCpuDescriptorHandle(
+    RhiCpuDescriptorHandle handle,
+    std::uint32_t& outTableIndex,
+    std::uint32_t& outDescriptorIndex) noexcept
+{
+	if ((handle.Value & static_cast<std::uintptr_t>(0xFFFFFFFF00000000ull)) != CpuDescriptorMagic)
+	{
+		return false;
+	}
+	const std::uint32_t encodedTableIndex = static_cast<std::uint32_t>((handle.Value >> 24u) & 0xFFFFFFu);
+	const std::uint32_t encodedDescriptorIndex = static_cast<std::uint32_t>(handle.Value & 0xFFFFFFu);
+	if (encodedTableIndex == 0 || encodedDescriptorIndex == 0)
+	{
+		return false;
+	}
+	outTableIndex = encodedTableIndex - 1u;
+	outDescriptorIndex = encodedDescriptorIndex - 1u;
+	return true;
+}
+
+VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noexcept
+{
+	switch (kind)
+	{
+		case EntryKind::SampledImage:
+			return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		case EntryKind::StorageImage:
+			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		case EntryKind::UniformBuffer:
+			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		case EntryKind::StorageBuffer:
+			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		case EntryKind::Sampler:
+			return VK_DESCRIPTOR_TYPE_SAMPLER;
+		case EntryKind::Empty:
+		default:
+			return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+	}
+}
+
+VulkanDescriptorAllocator::EntryKind VulkanDescriptorAllocator::ToImageEntryKind(ERhiResourceViewKind viewKind) noexcept
+{
+	switch (viewKind)
+	{
+		case ERhiResourceViewKind::TextureUnorderedAccess:
+			return EntryKind::StorageImage;
+		case ERhiResourceViewKind::TextureShaderResource:
+		default:
+			return EntryKind::SampledImage;
+	}
+}
+
+VulkanDescriptorAllocator::EntryKind VulkanDescriptorAllocator::ToBufferEntryKind(ERhiResourceViewKind viewKind) noexcept
+{
+	switch (viewKind)
+	{
+		case ERhiResourceViewKind::BufferUnorderedAccess:
+			return EntryKind::StorageBuffer;
+		case ERhiResourceViewKind::BufferShaderResource:
+		default:
+			return EntryKind::StorageBuffer;
+	}
+}
+
+VulkanDescriptorAllocator::EntryKind VulkanDescriptorAllocator::ToTableEntryKind(ERhiDescriptorAllocatorType descriptorType) noexcept
+{
+	switch (descriptorType)
+	{
+		case ERhiDescriptorAllocatorType::Sampler:
+			return EntryKind::Sampler;
+		case ERhiDescriptorAllocatorType::ShaderResource:
+		default:
+			return EntryKind::SampledImage;
+	}
+}
+
+VkImageLayout VulkanDescriptorAllocator::ToImageLayout(EntryKind kind) noexcept
+{
+	return kind == EntryKind::StorageImage ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
+
+VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(RhiDescriptorTableHandle tableHandle) noexcept
+{
+	if (!tableHandle || tableHandle.Value - 1u >= m_tables.size() || !m_tables[tableHandle.Value - 1u].Allocated)
+	{
+		return nullptr;
+	}
+	return &m_tables[tableHandle.Value - 1u];
+}
+
+const VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocator::FindTableRecord(
+    RhiDescriptorTableHandle tableHandle) const noexcept
+{
+	if (!tableHandle || tableHandle.Value - 1u >= m_tables.size() || !m_tables[tableHandle.Value - 1u].Allocated)
+	{
+		return nullptr;
+	}
+	return &m_tables[tableHandle.Value - 1u];
+}
+
+VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept
+{
+	std::uint32_t index = 0;
+	if (!DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
+	{
+		return nullptr;
+	}
+	return &m_registeredDescriptors[index];
+}
+
+const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(
+    RhiGpuDescriptorHandle handle) const noexcept
+{
+	std::uint32_t index = 0;
+	if (!DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
+	{
+		return nullptr;
+	}
+	return &m_registeredDescriptors[index];
+}
+
+VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
+{
+	static constexpr std::array<VkDescriptorPoolSize, 5> poolSizes = {
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1024},
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1024},
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 1024},
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 512},
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256}};
+	const VkDescriptorPoolCreateInfo createInfo{
+	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+	    .pNext = nullptr,
+	    .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+	    .maxSets = DescriptorSetsPerPage,
+	    .poolSizeCount = static_cast<std::uint32_t>(poolSizes.size()),
+	    .pPoolSizes = poolSizes.data()};
+	VkDescriptorPool pool = VK_NULL_HANDLE;
+	const VkResult result = vkCreateDescriptorPool(m_rhi.GetDevice(), &createInfo, nullptr, &pool);
+	if (!VulkanResult::Succeeded(result))
+	{
+		Diagnostics::Fail(
+		    g_vulkanDescriptorAllocatorLogger,
+		    __FILE__,
+		    __LINE__,
+		    VulkanResult::FormatFailure("vkCreateDescriptorPool", result));
+	}
+	return pool;
+}
+
+void VulkanDescriptorAllocator::WriteEntries(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    std::span<const DescriptorEntry> entries) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || entries.empty())
+	{
+		return;
+	}
+
+	const EntryKind entryKind = entries.front().Kind;
+	const VkDescriptorType descriptorType = ToDescriptorType(entryKind);
+	if (descriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
+	{
+		return;
+	}
+
+	std::vector<VkDescriptorImageInfo> imageInfos;
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+	imageInfos.reserve(entries.size());
+	bufferInfos.reserve(entries.size());
+	for (const DescriptorEntry& entry : entries)
+	{
+		if (entry.Kind != entryKind)
+		{
+			return;
+		}
+
+		if (entryKind == EntryKind::SampledImage || entryKind == EntryKind::StorageImage || entryKind == EntryKind::Sampler)
+		{
+			imageInfos.push_back(entry.Image);
+		}
+		else
+		{
+			bufferInfos.push_back(entry.Buffer);
+		}
+	}
+
+	const VkWriteDescriptorSet write{
+	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	    .pNext = nullptr,
+	    .dstSet = descriptorSet,
+	    .dstBinding = binding.BindingPoint.Binding,
+	    .dstArrayElement = 0,
+	    .descriptorCount = static_cast<std::uint32_t>(entries.size()),
+	    .descriptorType = descriptorType,
+	    .pImageInfo = imageInfos.empty() ? nullptr : imageInfos.data(),
+	    .pBufferInfo = bufferInfos.empty() ? nullptr : bufferInfos.data(),
+	    .pTexelBufferView = nullptr};
+	vkUpdateDescriptorSets(m_rhi.GetDevice(), 1, &write, 0, nullptr);
+}

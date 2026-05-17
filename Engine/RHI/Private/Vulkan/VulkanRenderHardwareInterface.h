@@ -8,7 +8,9 @@
 #include <vector>
 
 class VulkanCommandContext;
+class VulkanDescriptorAllocator;
 class VulkanGpuMemoryAllocator;
+struct VulkanGpuAllocationRecord;
 class VulkanRenderCommandList;
 class VulkanRhi;
 class VulkanSwapChain;
@@ -97,7 +99,8 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiGpuVirtualAddress GetResourceGpuVirtualAddress(RhiOwnedResourceHandle resource) const noexcept override;
 	RhiRayTracingAccelerationStructurePrebuildInfo GetBottomLevelAccelerationStructurePrebuildInfo(
 	    const RhiRayTracingGeometryDesc& geometry) const noexcept override;
-	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(std::uint32_t instanceCount) const noexcept override;
+	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
+	    std::uint32_t instanceCount) const noexcept override;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
@@ -132,6 +135,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void EndPresentRenderPass() noexcept override;
 	PixelFormat GetPresentColorFormat() const noexcept override;
 	void SetCurrentFrameIndex(std::uint32_t frameIndex) noexcept;
+	void ResetTransientFrameResources() noexcept;
 	void RebuildSwapChainBackBufferViews() noexcept;
 
   private:
@@ -139,13 +143,27 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	{
 		ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;
 		VkImage Image = VK_NULL_HANDLE;
+		VkBuffer Buffer = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
+		RhiGpuDescriptorHandle DescriptorHandle = {};
 		bool OwnsImageView = false;
 	};
 
+	struct SamplerRecord final
+	{
+		RhiSamplerDesc Desc = {};
+		VkSampler Sampler = VK_NULL_HANDLE;
+		RhiDescriptorTableHandle Table = {};
+	};
+
 	static void FailRenderingNotImplemented(std::string_view operation) noexcept;
+	static bool SamplerDescEquals(const RhiSamplerDesc& lhs, const RhiSamplerDesc& rhs) noexcept;
+	static VkFilter ToVkFilter(RhiSamplerMinMagFilter filter) noexcept;
+	static VkSamplerMipmapMode ToVkMipmapMode(RhiSamplerMipFilter filter) noexcept;
+	static VkSamplerAddressMode ToVkAddressMode(RhiSamplerAddressMode mode) noexcept;
 	static RhiResourceViewHandle MakeResourceViewHandle(std::uint32_t index) noexcept;
 	static std::uintptr_t EncodeImageViewHandle(VkImageView imageView) noexcept;
+	VkSampler CreateSampler(const RhiSamplerDesc& desc) const;
 	RhiResourceViewHandle AddResourceView(ResourceViewRecord record);
 	ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) noexcept;
 	const ResourceViewRecord* FindResourceViewRecord(RhiResourceViewHandle view) const noexcept;
@@ -162,11 +180,14 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	VulkanSwapChain* m_swapChain = nullptr;
 	VulkanCommandContext* m_commandContext = nullptr;
 	VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
+	std::unique_ptr<VulkanDescriptorAllocator> m_descriptorAllocator;
 	std::unique_ptr<RenderDiagnostics> m_diagnostics;
 	PerFrameConstantBufferData m_emptyPerFrameConstants = {};
 	std::uint32_t m_currentFrameIndex = 0;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;
+	mutable std::vector<SamplerRecord> m_samplerRecords;
+	std::vector<std::vector<std::unique_ptr<VulkanGpuAllocationRecord>>> m_uniformUploadRecordsByFrame;
 	std::vector<RhiResourceViewHandle> m_swapChainBackBufferViews;
 	std::vector<VkImageLayout> m_swapChainBackBufferLayouts;
 	bool m_isPresentRendering = false;

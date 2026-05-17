@@ -20,6 +20,7 @@ class VulkanPipelineState final : public RenderPipelineState
 	VulkanPipelineState& operator=(VulkanPipelineState&&) = delete;
 
 	VkPipeline GetPipeline() const noexcept { return m_pipeline; }
+	VkPipelineLayout GetPipelineLayout() const noexcept { return m_pipelineLayout; }
 	VkPipelineBindPoint GetBindPoint() const noexcept { return m_bindPoint; }
 
   private:

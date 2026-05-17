@@ -739,7 +739,7 @@ Backend-neutral concept introduced: pipeline creation remains driven by RenderBi
 D3D12 behavior preserved: existing D3D12 PSO/root-signature creation remains the reference backend and public PSO factories are unchanged.
 Vulkan behavior enabled: SPIR-V shader modules, descriptor-set-layout-backed pipeline layouts, dynamic-rendering graphics pipelines, compute pipelines, pipeline binding, draw, indexed draw, dispatch, and attachment clear execution.
 Validation run: source gates only per prompt policy; no full build.
-Open risks: descriptor allocation/writes are still Phase 15, so Vulkan can create layout-compatible pipelines before it can bind material/FrameGraph descriptor sets end to end.
+Open risks: descriptor allocation/writes moved into Phase 15; texture asset loading on Vulkan remains a later resource-loader slice.
 ```
 
 ### Phase 15: Descriptor Sets, Binding Sets, And Material Tables
@@ -759,6 +759,20 @@ Done criteria:
 1. Existing material path does not fork by backend.
 2. Vulkan binding sets retain referenced resources until command completion.
 3. Descriptor allocation is thread-safe or has a documented future per-thread/page design.
+
+Phase notebook:
+
+```text
+Phase: 15 - Descriptor Sets, Binding Sets, And Material Tables
+Learning goal: Sparkle's existing bindful material table and FrameGraph binding path now maps to Vulkan descriptor sets without adding renderer-side backend branches.
+Files studied: RhiDescriptorHandles.h, RenderHardwareInterface.h, PassBinder.cpp, MaterialCacheManager.cpp, RhiResourceView.h, D3D12RenderHardwareInterface.cpp, D3D12RenderCommandList.cpp, VulkanBindingLayout.*, VulkanRenderHardwareInterface.*, VulkanRenderCommandList.*.
+Files changed: VulkanDescriptorAllocator.*, VulkanRenderHardwareInterface.*, VulkanRenderCommandList.*, VulkanRenderDeviceServices.cpp, VulkanPipelineState.h, ValidateRhiBackendBoundaries.cmake.
+Backend-neutral concept introduced: RHI descriptor tables remain logical handles; Vulkan decodes those handles into backend-private descriptor payloads and writes native descriptor sets at bind time.
+D3D12 behavior preserved: existing descriptor heap/table allocation and renderer PassBinder/material-table code remain unchanged.
+Vulkan behavior enabled: per-frame descriptor pool pages, descriptor set allocation, table/handle/buffer/sampler descriptor writes, vkCmdBindDescriptorSets, vkCmdPushConstants, resource-view descriptor handles, and shared sampler tables.
+Validation run: source gates only per prompt policy; no full build.
+Open risks: Vulkan texture-from-path loading is still deferred, so material table infrastructure exists before source texture asset import reaches backend parity.
+```
 
 ### Phase 16: ImGui And Editor Presentation
 
