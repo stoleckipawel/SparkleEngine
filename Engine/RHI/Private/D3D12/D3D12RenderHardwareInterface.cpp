@@ -994,7 +994,7 @@ bool D3D12RenderHardwareInterface::WriteD3D12ResourceViewDescriptor(
 		return false;
 	}
 
-	ID3D12Device* const device = m_rhi->GetDevice();
+	ID3D12Device* const device = m_rhi->GetDevice().Get();
 	if (device == nullptr)
 	{
 		return false;

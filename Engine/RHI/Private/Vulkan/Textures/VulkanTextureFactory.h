@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Interop/RhiNativeHandles.h"
 #include "Memory/RhiMemoryTypes.h"
 #include "Resources/RhiResourceDesc.h"
 

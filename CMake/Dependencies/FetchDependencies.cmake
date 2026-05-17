@@ -425,6 +425,8 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
 sparkle_add_dependency_subdirectory(${assimp_SOURCE_DIR} ${assimp_BINARY_DIR})
 
 if(TARGET assimp AND NOT TARGET assimp::assimp)
@@ -432,6 +434,9 @@ if(TARGET assimp AND NOT TARGET assimp::assimp)
 endif()
 
 if(TARGET assimp)
+    if(MSVC)
+        target_compile_options(assimp PRIVATE /MP1 /FS)
+    endif()
     set_target_properties(assimp PROPERTIES FOLDER "ThirdParty/Assimp")
 endif()
 

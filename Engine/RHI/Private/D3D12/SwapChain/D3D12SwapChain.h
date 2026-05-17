@@ -12,7 +12,7 @@
 #include <wrl/client.h>
 
 #include "Config/RenderConfig.h"
-#include "Descriptors/D3D12DescriptorHandle.h"
+#include "D3D12/Descriptors/D3D12DescriptorHandle.h"
 #include "Device/RenderHardwareInterface.h"
 
 using Microsoft::WRL::ComPtr;

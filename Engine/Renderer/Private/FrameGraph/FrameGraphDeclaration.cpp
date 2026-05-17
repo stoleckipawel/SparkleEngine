@@ -72,7 +72,6 @@ namespace
 
 void FrameGraph::Setup(const FrameContext& frame)
 {
-	ReleaseExternalViewDescriptors();
 	m_compiledPlan.Clear();
 	m_compiledPlan.passes.reserve(m_passes.size());
 
