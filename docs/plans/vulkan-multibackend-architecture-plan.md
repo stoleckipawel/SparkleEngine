@@ -841,6 +841,20 @@ Done criteria:
 2. Vulkan unsupported ray tracing path is explicit until implemented.
 3. Portfolio narrative explains the staged parity decision honestly.
 
+Phase notebook:
+
+```text
+Phase: 18 - Ray Tracing Parity Planning
+Learning goal: ray tracing parity has two surfaces: neutral acceleration-structure build/binding contracts that already exist, and backend-native DXR/Vulkan KHR mechanics that should not leak upward.
+Files studied: RhiRayTracingDesc.h, RenderHardwareInterface.h, RenderCommandList.h, D3D12RenderHardwareInterface.cpp, D3D12RenderCommandList.cpp, VulkanRenderHardwareInterface.cpp, VulkanRenderCommandList.cpp, GPUMesh.cpp, shader package/authoring records, Showcase project assets.
+Files changed: docs/plans/ray-tracing-parity-inventory.md, VulkanRenderCommandList.cpp, VulkanRhi.h, ValidateRhiBackendBoundaries.cmake, vulkan-multibackend-architecture-plan.md.
+Backend-neutral concept introduced: ray tracing is tracked as acceleration-structure build, AS buffer, instance buffer, AS descriptor, shader library metadata, and future ray tracing pipeline/SBT concepts instead of as DXR-specific vocabulary.
+D3D12 behavior preserved: existing DXR BLAS/TLAS prebuild/build paths and D3D12MA-backed scratch/AS/instance buffers remain backend-private.
+Vulkan behavior enabled or planned: Vulkan RT remains explicitly unsupported for now; future support will use VK_KHR_acceleration_structure/VK_KHR_ray_tracing_pipeline with VMA-backed RayTracing buffers and backend-private AS records.
+Validation run: source gates only per prompt policy; no full build.
+Open risks: current public RHI covers AS build/binding metadata but not a full neutral ray tracing pipeline or shader binding table model, so Vulkan RT implementation should start with an API design slice before backend code.
+```
+
 ### Phase 19: Diagnostics, Validation Layer, And Parity Gates
 
 Goal: make architecture quality visible and enforceable.

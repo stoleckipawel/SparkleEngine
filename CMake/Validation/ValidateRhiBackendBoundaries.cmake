@@ -136,6 +136,9 @@ if(EXISTS "${rhi_public_root}")
                 "VkCommandBuffer"
                 "VkImage"
                 "VkBuffer"
+                "VkAccelerationStructure"
+                "VK_KHR_acceleration_structure"
+                "VK_KHR_ray_tracing_pipeline"
                 "VmaAllocator"
                 "VmaAllocation"
             DESCRIPTION "public RHI vocabulary must use neutral memory block, aliasing resource, and global binding state names"
@@ -155,6 +158,9 @@ if(EXISTS "${rhi_public_root}")
     if(rhi_interface_text)
         require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateTextureResource" "public RHI must expose neutral texture resource creation from RhiTextureResourceDesc")
         require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateBufferResource" "public RHI must expose neutral buffer resource creation from RhiBufferResourceDesc")
+        require_text("${rhi_interface_path}" "${rhi_interface_text}" "RhiRayTracingCapabilities" "public RHI ray tracing support must be exposed as neutral capabilities")
+        require_text("${rhi_interface_path}" "${rhi_interface_text}" "GetBottomLevelAccelerationStructurePrebuildInfo" "public RHI must describe BLAS prebuild sizing without DXR or Vulkan KHR names")
+        require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateRayTracingAccelerationStructureBuffer" "public RHI must create acceleration-structure storage through neutral resource ownership")
         require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateTransientMemoryBlock" "public RHI must expose neutral transient memory block creation")
         require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateAliasingTextureResource" "public RHI must expose neutral transient texture aliasing")
         require_text("${rhi_interface_path}" "${rhi_interface_text}" "CreateAliasingBufferResource" "public RHI must expose neutral transient buffer aliasing")
@@ -168,6 +174,16 @@ if(EXISTS "${rhi_public_root}")
         require_text("${rhi_pipeline_state_path}" "${rhi_pipeline_state_text}" "RhiBindlessBindingMetadata" "binding layouts must reserve future bindless metadata without enabling bindless behavior")
         require_text("${rhi_pipeline_state_path}" "${rhi_pipeline_state_text}" "PushConstants" "push constants/root constants must share one public RHI description")
     endif()
+endif()
+
+set(rhi_ray_tracing_desc_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Public/RayTracing/RhiRayTracingDesc.h")
+read_required_file("${rhi_ray_tracing_desc_path}" rhi_ray_tracing_desc_text)
+if(rhi_ray_tracing_desc_text)
+    require_text("${rhi_ray_tracing_desc_path}" "${rhi_ray_tracing_desc_text}" "RhiRayTracingGeometryDesc" "public ray tracing geometry must stay backend-neutral")
+    require_text("${rhi_ray_tracing_desc_path}" "${rhi_ray_tracing_desc_text}" "RhiRayTracingInstanceDesc" "public ray tracing instances must stay backend-neutral")
+    require_text("${rhi_ray_tracing_desc_path}" "${rhi_ray_tracing_desc_text}" "RhiRayTracingAccelerationStructurePrebuildInfo" "public acceleration-structure sizing must stay backend-neutral")
+    forbid_text("${rhi_ray_tracing_desc_path}" "${rhi_ray_tracing_desc_text}" "D3D12_RAYTRACING" "public ray tracing descriptions must not expose DXR structs")
+    forbid_text("${rhi_ray_tracing_desc_path}" "${rhi_ray_tracing_desc_text}" "VkAccelerationStructure" "public ray tracing descriptions must not expose Vulkan KHR structs")
 endif()
 
 set(rhi_cmake_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt")
@@ -209,6 +225,12 @@ if(vulkan_rhi_text)
     require_text("${vulkan_rhi_path}" "${vulkan_rhi_text}" "VK_EXT_MEMORY_BUDGET_EXTENSION_NAME" "Vulkan backend should enable memory budget reporting when the adapter exposes it")
 endif()
 
+set(vulkan_rhi_header_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Device/VulkanRhi.h")
+read_required_file("${vulkan_rhi_header_path}" vulkan_rhi_header_text)
+if(vulkan_rhi_header_text)
+    require_text("${vulkan_rhi_header_path}" "${vulkan_rhi_header_text}" "SupportsRayTracing = false" "Vulkan ray tracing must remain explicitly unsupported until the Vulkan KHR ray tracing phase")
+endif()
+
 set(vulkan_interface_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/VulkanRenderHardwareInterface.cpp")
 read_required_file("${vulkan_interface_path}" vulkan_interface_text)
 if(vulkan_interface_text)
@@ -223,10 +245,34 @@ if(vulkan_interface_text)
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "CreateTransientMemoryBlock" "Vulkan transient FrameGraph blocks must route through the neutral RHI memory block API")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "CreateAliasingTextureResource" "Vulkan transient FrameGraph textures must materialize through neutral aliasing APIs")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "CreateAliasingBufferResource" "Vulkan transient FrameGraph buffers must materialize through neutral aliasing APIs")
+    require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "FailRenderingNotImplemented(\"CreateRayTracingScratchBuffer\")" "Vulkan ray tracing scratch buffers must fail explicitly until KHR acceleration structure support lands")
+    require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "FailRenderingNotImplemented(\"CreateRayTracingAccelerationStructureBuffer\")" "Vulkan acceleration-structure buffers must fail explicitly until KHR acceleration structure support lands")
+    require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "FailRenderingNotImplemented(\"CreateRayTracingInstanceBuffer\")" "Vulkan ray tracing instance buffers must fail explicitly until KHR acceleration structure support lands")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "VK_BUFFER_USAGE_VERTEX_BUFFER_BIT" "Vulkan static mesh vertex buffers must be real Vulkan vertex buffers")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "VK_BUFFER_USAGE_INDEX_BUFFER_BIT" "Vulkan static mesh index buffers must be real Vulkan index buffers")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "RhiMemoryResidencyClass::HostUpload" "Vulkan upload/staging parity must use host-visible VMA allocations without exposing Vulkan layouts to Renderer")
     require_text("${vulkan_interface_path}" "${vulkan_interface_text}" "ToResourceStateMapping" "Vulkan present transitions must route through the shared ResourceState mapping")
+endif()
+
+set(d3d12_interface_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12RenderHardwareInterface.cpp")
+read_required_file("${d3d12_interface_path}" d3d12_interface_text)
+if(d3d12_interface_text)
+    require_text("${d3d12_interface_path}" "${d3d12_interface_text}" "GetRaytracingAccelerationStructurePrebuildInfo" "D3D12 must keep DXR prebuild sizing backend-private")
+    require_text("${d3d12_interface_path}" "${d3d12_interface_text}" "RhiMemoryCategory::RayTracing" "D3D12 ray tracing buffers must report the shared RayTracing memory category")
+    require_text("${d3d12_interface_path}" "${d3d12_interface_text}" "RhiMemoryResidencyClass::DeviceLocal" "D3D12 ray tracing AS/scratch buffers must use allocator-backed device-local memory")
+endif()
+
+set(d3d12_command_list_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12RenderCommandList.cpp")
+read_required_file("${d3d12_command_list_path}" d3d12_command_list_text)
+if(d3d12_command_list_text)
+    require_text("${d3d12_command_list_path}" "${d3d12_command_list_text}" "D3D12_RAYTRACING_GEOMETRY_DESC" "D3D12 must translate neutral BLAS geometry privately")
+    require_text("${d3d12_command_list_path}" "${d3d12_command_list_text}" "BuildRaytracingAccelerationStructure" "D3D12 must own DXR AS build commands privately")
+endif()
+
+set(vulkan_command_list_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp")
+read_required_file("${vulkan_command_list_path}" vulkan_command_list_text)
+if(vulkan_command_list_text)
+    require_text("${vulkan_command_list_path}" "${vulkan_command_list_text}" "FailVulkanRayTracingCommandUnsupported" "Vulkan AS build commands must fail explicitly until KHR acceleration structure support lands")
 endif()
 
 set(vulkan_type_conversions_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/VulkanTypeConversions.cpp")
@@ -473,6 +519,9 @@ if(EXISTS "${common_rhi_private_root}")
                 "VkCommandBuffer"
                 "VkImage"
                 "VkBuffer"
+                "VkAccelerationStructure"
+                "VK_KHR_acceleration_structure"
+                "VK_KHR_ray_tracing_pipeline"
                 "VmaAllocator"
                 "VmaAllocation"
             DESCRIPTION "common RHI private code must not include backend-private native headers or allocator libraries"
@@ -519,6 +568,9 @@ foreach(high_level_root IN LISTS high_level_roots)
                 "VkCommandBuffer"
                 "VkImage"
                 "VkBuffer"
+                "VkAccelerationStructure"
+                "VK_KHR_acceleration_structure"
+                "VK_KHR_ray_tracing_pipeline"
                 "VmaAllocator"
                 "VmaAllocation"
                 "SetShaderVisibleDescriptorHeaps"

@@ -10,6 +10,22 @@
 #include "Vulkan/VulkanTypeConversions.h"
 
 #include <algorithm>
+#include <format>
+#include <string_view>
+
+static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
+
+namespace
+{
+	void FailVulkanRayTracingCommandUnsupported(std::string_view operation) noexcept
+	{
+		Diagnostics::Fail(
+		    g_vulkanRenderCommandListLogger,
+		    __FILE__,
+		    __LINE__,
+		    std::format("Vulkan ray tracing command '{}' is deferred until VK_KHR_acceleration_structure support is implemented.", operation));
+	}
+}
 
 void VulkanRenderCommandList::CloseOpenRendering() noexcept
 {
@@ -480,6 +496,7 @@ void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress,
     RhiGpuVirtualAddress) noexcept
 {
+	FailVulkanRayTracingCommandUnsupported("BuildBottomLevelAccelerationStructure");
 }
 
 void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
@@ -488,6 +505,7 @@ void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress,
     RhiGpuVirtualAddress) noexcept
 {
+	FailVulkanRayTracingCommandUnsupported("BuildTopLevelAccelerationStructure");
 }
 
 void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept

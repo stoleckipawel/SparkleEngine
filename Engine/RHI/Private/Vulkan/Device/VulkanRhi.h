@@ -59,7 +59,10 @@ class VulkanRhi final
 	const std::vector<std::string>& GetEnabledInstanceExtensions() const noexcept { return m_enabledInstanceExtensions; }
 	const std::vector<std::string>& GetEnabledDeviceExtensions() const noexcept { return m_enabledDeviceExtensions; }
 	bool IsValidationEnabled() const noexcept { return m_validationEnabled; }
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept { return {}; }
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept
+	{
+		return RhiRayTracingCapabilities{.SupportsRayTracing = false, .SupportsInlineRayQuery = false};
+	}
 
   private:
 	struct PhysicalDeviceCandidate final
