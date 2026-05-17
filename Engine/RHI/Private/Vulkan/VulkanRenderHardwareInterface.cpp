@@ -11,6 +11,8 @@
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
+#include "Vulkan/Pipeline/VulkanBindingLayout.h"
+#include "Vulkan/Pipeline/VulkanPipelineState.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
@@ -114,22 +116,19 @@ void VulkanRenderHardwareInterface::RenderImGuiDrawData(ImDrawData*) noexcept {}
 
 void VulkanRenderHardwareInterface::ShutdownImGuiBackend() noexcept {}
 
-std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc&)
+std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
-	FailRenderingNotImplemented("CreateBindingLayout");
-	return {};
+	return VulkanBindingLayoutCompiler::Compile(*m_rhi, desc);
 }
 
-std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc&)
+std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc)
 {
-	FailRenderingNotImplemented("CreateGraphicsPipelineState");
-	return {};
+	return std::make_unique<VulkanPipelineState>(*m_rhi, desc);
 }
 
-std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc&)
+std::unique_ptr<RenderPipelineState> VulkanRenderHardwareInterface::CreateComputePipelineState(const ComputePipelineStateDesc& desc)
 {
-	FailRenderingNotImplemented("CreateComputePipelineState");
-	return {};
+	return std::make_unique<VulkanPipelineState>(*m_rhi, desc);
 }
 
 void VulkanRenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList&) const noexcept {}

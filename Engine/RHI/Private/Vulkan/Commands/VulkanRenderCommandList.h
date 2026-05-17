@@ -13,6 +13,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
+	void CloseOpenRendering() noexcept;
 	void SetNativeCommandBuffer(
 	    VkCommandBuffer commandBuffer,
 	    PFN_vkCmdBeginDebugUtilsLabelEXT beginLabel,
@@ -86,6 +87,8 @@ class VulkanRenderCommandList final : public RenderCommandList
   private:
 	static VkImageView DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept;
 	static VkDebugUtilsLabelEXT BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept;
+	void BeginDynamicRenderingIfNeeded() noexcept;
+	void EndDynamicRenderingIfNeeded() noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
@@ -96,6 +99,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	PFN_vkCmdInsertDebugUtilsLabelEXT m_insertDebugUtilsLabel = nullptr;
 	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};
 	std::uint32_t m_renderTargetCount = 0;
+	VkImageView m_depthStencil = VK_NULL_HANDLE;
 	VkRect2D m_scissorRect = {};
 	bool m_hasScissorRect = false;
+	bool m_dynamicRenderingActive = false;
 };

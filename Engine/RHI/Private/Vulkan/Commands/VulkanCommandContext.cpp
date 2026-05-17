@@ -62,6 +62,10 @@ void VulkanCommandContext::SubmitFrame(std::uint32_t frameIndex, VkSemaphore wai
 	FrameState& frameState = GetFrameState(frameIndex);
 	if (frameState.IsRecording)
 	{
+		if (frameState.CommandList)
+		{
+			frameState.CommandList->CloseOpenRendering();
+		}
 		const VkResult endResult = vkEndCommandBuffer(frameState.CommandBuffer);
 		if (!VulkanResult::Succeeded(endResult))
 		{
@@ -95,6 +99,10 @@ void VulkanCommandContext::CancelFrame(std::uint32_t frameIndex) noexcept
 	FrameState& frameState = GetFrameState(frameIndex);
 	if (frameState.IsRecording)
 	{
+		if (frameState.CommandList)
+		{
+			frameState.CommandList->CloseOpenRendering();
+		}
 		(void)vkEndCommandBuffer(frameState.CommandBuffer);
 		frameState.IsRecording = false;
 	}

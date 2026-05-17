@@ -2,6 +2,7 @@
 
 #include "Formats/PixelFormat.h"
 #include "Interop/ResourceState.h"
+#include "Pipeline/RhiPipelineStateDesc.h"
 #include "Resources/RhiResourceDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
@@ -20,6 +21,10 @@ class VulkanTypeConversions final
 	static VkFormat ToVkFormat(PixelFormat format) noexcept;
 	static PixelFormat ToPixelFormat(VkFormat format) noexcept;
 	static VkIndexType ToVkIndexType(RhiIndexFormat format) noexcept;
+	static VkCompareOp ToVkCompareOp(CompareOp op) noexcept;
+	static VkStencilOp ToVkStencilOp(RhiStencilOp op) noexcept;
+	static VkCullModeFlags ToVkCullModeFlags(ERhiCullMode cullMode) noexcept;
+	static VkPrimitiveTopology ToVkPrimitiveTopology(RhiPrimitiveTopology topology) noexcept;
 	static bool IsBufferResourceStateSupported(ResourceState state) noexcept;
 	static bool IsImageResourceStateSupported(ResourceState state) noexcept;
 	static VulkanResourceStateMapping ToResourceStateMapping(ResourceState state) noexcept;

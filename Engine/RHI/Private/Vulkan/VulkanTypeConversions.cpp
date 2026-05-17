@@ -53,6 +53,78 @@ VkIndexType VulkanTypeConversions::ToVkIndexType(RhiIndexFormat format) noexcept
 	}
 }
 
+VkCompareOp VulkanTypeConversions::ToVkCompareOp(CompareOp op) noexcept
+{
+	switch (op)
+	{
+		case CompareOp::Never:
+			return VK_COMPARE_OP_NEVER;
+		case CompareOp::Less:
+			return VK_COMPARE_OP_LESS;
+		case CompareOp::Equal:
+			return VK_COMPARE_OP_EQUAL;
+		case CompareOp::LessOrEqual:
+			return VK_COMPARE_OP_LESS_OR_EQUAL;
+		case CompareOp::Greater:
+			return VK_COMPARE_OP_GREATER;
+		case CompareOp::NotEqual:
+			return VK_COMPARE_OP_NOT_EQUAL;
+		case CompareOp::GreaterOrEqual:
+			return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		case CompareOp::Always:
+		default:
+			return VK_COMPARE_OP_ALWAYS;
+	}
+}
+
+VkStencilOp VulkanTypeConversions::ToVkStencilOp(RhiStencilOp op) noexcept
+{
+	switch (op)
+	{
+		case RhiStencilOp::Keep:
+			return VK_STENCIL_OP_KEEP;
+		case RhiStencilOp::Zero:
+			return VK_STENCIL_OP_ZERO;
+		case RhiStencilOp::Replace:
+			return VK_STENCIL_OP_REPLACE;
+		case RhiStencilOp::IncrementClamp:
+			return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+		case RhiStencilOp::DecrementClamp:
+			return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+		case RhiStencilOp::Invert:
+			return VK_STENCIL_OP_INVERT;
+		case RhiStencilOp::IncrementWrap:
+			return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+		case RhiStencilOp::DecrementWrap:
+		default:
+			return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+	}
+}
+
+VkCullModeFlags VulkanTypeConversions::ToVkCullModeFlags(ERhiCullMode cullMode) noexcept
+{
+	switch (cullMode)
+	{
+		case ERhiCullMode::None:
+			return VK_CULL_MODE_NONE;
+		case ERhiCullMode::Front:
+			return VK_CULL_MODE_FRONT_BIT;
+		case ERhiCullMode::Back:
+		default:
+			return VK_CULL_MODE_BACK_BIT;
+	}
+}
+
+VkPrimitiveTopology VulkanTypeConversions::ToVkPrimitiveTopology(RhiPrimitiveTopology topology) noexcept
+{
+	switch (topology)
+	{
+		case RhiPrimitiveTopology::TriangleList:
+		default:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	}
+}
+
 bool VulkanTypeConversions::IsBufferResourceStateSupported(ResourceState state) noexcept
 {
 	switch (state)

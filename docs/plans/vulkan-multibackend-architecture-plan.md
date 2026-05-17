@@ -728,6 +728,20 @@ Done criteria:
 2. PSO cache keys include backend-relevant state without leaking backend types publicly.
 3. Pipeline errors report missing state clearly.
 
+Phase notebook:
+
+```text
+Phase: 14 - Pipeline State And Render Pass Execution
+Learning goal: Sparkle's neutral PSO descriptions now feed D3D12 bytecode and Vulkan SPIR-V/native pipeline state without widening the public RHI surface.
+Files studied: RhiPipelineStateDesc.h, CookedShaderPackageCache.h, D3D12PipelineState.*, D3D12BindingLayout.*, VulkanRenderHardwareInterface.cpp, VulkanRenderCommandList.cpp, RenderPassShaderRuntime.h, ShaderPass.cpp, GBufferPass.cpp.
+Files changed: VulkanShaderModule.*, VulkanBindingLayout.*, VulkanPipelineState.*, VulkanTypeConversions.*, VulkanRenderHardwareInterface.cpp, VulkanRenderCommandList.*, VulkanCommandContext.cpp, ValidateRhiBackendBoundaries.cmake.
+Backend-neutral concept introduced: pipeline creation remains driven by RenderBindingLayout, GraphicsPipelineStateDesc, ComputePipelineStateDesc, and cooked shader package records.
+D3D12 behavior preserved: existing D3D12 PSO/root-signature creation remains the reference backend and public PSO factories are unchanged.
+Vulkan behavior enabled: SPIR-V shader modules, descriptor-set-layout-backed pipeline layouts, dynamic-rendering graphics pipelines, compute pipelines, pipeline binding, draw, indexed draw, dispatch, and attachment clear execution.
+Validation run: source gates only per prompt policy; no full build.
+Open risks: descriptor allocation/writes are still Phase 15, so Vulkan can create layout-compatible pipelines before it can bind material/FrameGraph descriptor sets end to end.
+```
+
 ### Phase 15: Descriptor Sets, Binding Sets, And Material Tables
 
 Goal: run bindful material/FrameGraph bindings on Vulkan.
