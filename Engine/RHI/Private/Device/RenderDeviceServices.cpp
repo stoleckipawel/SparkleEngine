@@ -52,6 +52,13 @@ std::unique_ptr<RenderDeviceServices> RenderDeviceServices::Create(Timer& timer,
 			break;
 		#endif
 		case ERhiBackendApi::Vulkan:
+		#if SPARKLE_RHI_WITH_VULKAN
+			services->m_impl->backend = CreateVulkanRenderDeviceServices(timer, window);
+			break;
+		#else
+			FailUnsupportedRhiBackend(selection.Api);
+			break;
+		#endif
 		case ERhiBackendApi::Unknown:
 		default:
 			FailUnsupportedRhiBackend(selection.Api);

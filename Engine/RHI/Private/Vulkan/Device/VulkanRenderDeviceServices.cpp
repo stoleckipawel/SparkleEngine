@@ -1,0 +1,117 @@
+#include "Vulkan/VulkanPCH.h"
+
+#include "Device/RenderDeviceBackendFactory.h"
+
+#include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/VulkanRenderHardwareInterface.h"
+
+#include "Time/Timer.h"
+#include "Window/Window.h"
+
+#include "Core/Public/Diagnostics/Trace.h"
+
+class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
+{
+  public:
+	static std::unique_ptr<VulkanRenderDeviceServices> Create(Timer& timer, Window& window) noexcept;
+	~VulkanRenderDeviceServices() noexcept override;
+
+	VulkanRenderDeviceServices(const VulkanRenderDeviceServices&) = delete;
+	VulkanRenderDeviceServices& operator=(const VulkanRenderDeviceServices&) = delete;
+	VulkanRenderDeviceServices(VulkanRenderDeviceServices&&) = delete;
+	VulkanRenderDeviceServices& operator=(VulkanRenderDeviceServices&&) = delete;
+
+	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
+	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
+	RenderDiagnostics& GetDiagnostics() noexcept override;
+	const RenderDiagnostics& GetDiagnostics() const noexcept override;
+	void Flush() noexcept override;
+	void ResizeSwapChain() noexcept override;
+	void BeginFrame() noexcept override;
+	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
+	void SubmitFrame() noexcept override;
+	void AdvanceFrameInFlight() noexcept override;
+	void UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept override;
+	void CloseExecuteAndFlushCurrentFrame() noexcept override;
+
+  private:
+	VulkanRenderDeviceServices() noexcept = default;
+
+	std::unique_ptr<VulkanRhi> m_rhi;
+	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
+};
+
+std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Timer& timer, Window& window) noexcept
+{
+	return VulkanRenderDeviceServices::Create(timer, window);
+}
+
+std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Timer&, Window&) noexcept
+{
+	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
+	{
+		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateDevice");
+		services->m_rhi = std::make_unique<VulkanRhi>();
+	}
+	{
+		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateHardwareInterface");
+		services->m_renderHardwareInterface = std::make_unique<VulkanRenderHardwareInterface>(*services->m_rhi);
+	}
+	return services;
+}
+
+VulkanRenderDeviceServices::~VulkanRenderDeviceServices() noexcept
+{
+	if (m_renderHardwareInterface != nullptr)
+	{
+		m_renderHardwareInterface->WaitForIdle();
+	}
+
+	m_renderHardwareInterface.reset();
+	m_rhi.reset();
+}
+
+RenderHardwareInterface& VulkanRenderDeviceServices::GetRenderHardwareInterface() noexcept
+{
+	return *m_renderHardwareInterface;
+}
+
+const RenderHardwareInterface& VulkanRenderDeviceServices::GetRenderHardwareInterface() const noexcept
+{
+	return *m_renderHardwareInterface;
+}
+
+RenderDiagnostics& VulkanRenderDeviceServices::GetDiagnostics() noexcept
+{
+	return m_renderHardwareInterface->GetDiagnostics();
+}
+
+const RenderDiagnostics& VulkanRenderDeviceServices::GetDiagnostics() const noexcept
+{
+	return m_renderHardwareInterface->GetDiagnostics();
+}
+
+void VulkanRenderDeviceServices::Flush() noexcept
+{
+	m_renderHardwareInterface->WaitForIdle();
+}
+
+void VulkanRenderDeviceServices::ResizeSwapChain() noexcept {}
+
+void VulkanRenderDeviceServices::BeginFrame() noexcept {}
+
+RenderCommandList& VulkanRenderDeviceServices::GetCurrentGraphicsCommandList() noexcept
+{
+	return m_renderHardwareInterface->GetGraphicsCommandList(0);
+}
+
+void VulkanRenderDeviceServices::SubmitFrame() noexcept {}
+
+void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept {}
+
+void VulkanRenderDeviceServices::UpdatePerFrameConstants(std::uint32_t) noexcept {}
+
+void VulkanRenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
+{
+	m_renderHardwareInterface->WaitForIdle();
+}
