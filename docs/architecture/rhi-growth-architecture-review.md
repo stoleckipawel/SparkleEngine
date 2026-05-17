@@ -965,6 +965,38 @@ Acceptance criteria:
 - FrameGraph diagnostics can print resource lifetime and transition plans for review.
 - Transient resource planning integrates with the backend-private D3D12MA/VMA allocation path through RHI memory intent.
 
+Phase 6 implementation notes:
+
+- `FrameGraphCompiler` is the owner of cross-pass resource reasoning. It builds resource versions, pass dependencies, topological execution order, transient lifetimes, physical block assignments, transition barriers, UAV barriers, aliasing barriers, and frame-end restore barriers from pass declarations.
+- `FrameGraphPlan` now preserves each resource's `planningStartState` separately from metadata `initialState` and the compiler-mutated `currentState`. Diagnostics can therefore distinguish boundary defaults from the carried runtime state used to compile barriers.
+- Generated `FrameGraphBarrier` records carry the declaration label that caused the transition or UAV barrier. Frame-end restore barriers are labelled `FinalState`.
+- `FrameGraphExecution` plays `transientAliasingBarriers`, `compiledBarriers`, `finalTransientAliasingBarriers`, and `finalBarriers` centrally through `FrameGraphBarrierPlayback` before pass callbacks or at frame end.
+- D3D12 and Vulkan both consume the same backend-neutral `AliasResource`, `TransitionResource`, and `UnorderedAccessBarrier` command-list calls. D3D12 maps aliasing to `D3D12_RESOURCE_BARRIER_TYPE_ALIASING`; Vulkan maps aliasing to a conservative `vkCmdPipelineBarrier2` memory dependency because Vulkan has no D3D12-style alias barrier object.
+- `FrameGraphPlanDiagnostics` can print pass order, pass declarations, resource lifetime/start/final states, transient lifetime and physical blocks, transition/UAV barriers, aliasing barriers, and frame-end barriers under `SPARKLE_FRAMEGRAPH_DIAGNOSTICS` with an optional filter.
+- Transient resources flow from FrameGraph plan records into `FrameGraphTransientAllocator`, which requests backend-neutral transient memory blocks and aliasing resources through the RHI. D3D12MA/VMA remain backend-private allocator mechanics.
+- Renderer pass code does not issue cross-pass resource transitions directly. The remaining `Renderer::TransitionRenderProduct` helper is a host/render-product boundary transition used by application/editor consumers and feeds the resulting state back into `FrameGraphResourceStateTracker`.
+
+Phase 6 class disposition audit:
+
+| Class / Family | Phase 6 Disposition | Reason |
+| --- | --- | --- |
+| `FrameGraphPlan` | Strengthen real plan record | Carries execution order, resource versions, transient decisions, barriers, diagnostic labels, and planning start state. |
+| `FrameGraphCompiler` | Confirm as planning owner | Compiles dependencies, lifetimes, transitions, UAV ordering barriers, aliasing barriers, and final-state restore barriers from declarations. |
+| `FrameGraphExecution` / `FrameGraphBarrierPlayback` | Confirm as central playback owner | Emits all compiled FrameGraph barriers before passes or at frame end through backend-neutral command APIs. |
+| `FrameGraphPlanDiagnostics` | Expand review surface | Prints declarations and labelled barriers alongside pass/resource/transient plans. |
+| `FrameGraphTransientAllocator` | Confirm RHI memory-intent bridge | Materializes planned transient blocks/resources using neutral RHI allocation intent, not D3D12MA/VMA APIs. |
+| D3D12/Vulkan command lists | Adjust backend parity | Both backends realize the same neutral alias/transition/UAV command-list surface; Vulkan aliasing is no longer a no-op. |
+| Render passes | Keep declaration-only for cross-pass hazards | Passes declare usages through FrameGraph/typed parameters; cross-pass barriers are compiled by the graph. |
+
+Phase 6 source-only validation notes:
+
+- Source search should find render pass resource usage declared through FrameGraph declarations or typed pass parameters, not direct `TransitionResource`/`ResourceBarrier` calls in `Engine/Renderer/Private/Passes`.
+- Source search should find `FrameGraphExecution` playing pass and frame-end aliasing/transition barriers through `EmitTransientAliasingBarriers` and `EmitCompiledBarriers`.
+- Source search should find `FrameGraphPlanDiagnostics` logging pass declarations, resource lifetimes, labelled barriers, aliasing blocks, and frame-end barriers.
+- Source search should find Vulkan and D3D12 command-list implementations for `AliasResource`, `TransitionResource`, and `UnorderedAccessBarrier`.
+- Source search should find no D3D12MA, VMA, Vulkan, D3D12, or DXGI native allocator types in FrameGraph planning/execution files.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
+
 ### Phase 7: Runtime Boundary and Host Mode Cleanup
 
 Idea behind the phase:

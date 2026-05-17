@@ -39,6 +39,7 @@ struct FrameGraphBarrier
 	Type type = Type::Transition;
 	ResourceState before = ResourceState::Common;
 	ResourceState after = ResourceState::Common;
+	std::string label;
 };
 
 struct FrameGraphAliasingBarrier
@@ -84,6 +85,7 @@ struct FrameGraphResourceNode
 	FrameGraphResourceKind kind = FrameGraphResourceKind::BackBuffer;
 	FrameGraphResourceOwnership ownership = FrameGraphResourceOwnership::Transient;
 	ResourceState initialState = ResourceState::Common;
+	ResourceState planningStartState = ResourceState::Common;
 	ResourceState finalState = ResourceState::Common;
 	ResourceState currentState = ResourceState::Common;
 	std::string debugName;

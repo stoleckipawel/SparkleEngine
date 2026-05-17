@@ -562,7 +562,33 @@ void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResou
 	}
 }
 
-void VulkanRenderCommandList::AliasResource(NativeResourceHandle, NativeResourceHandle) noexcept {}
+void VulkanRenderCommandList::AliasResource(NativeResourceHandle beforeResource, NativeResourceHandle afterResource) noexcept
+{
+	if (m_commandBuffer == VK_NULL_HANDLE || (!beforeResource && !afterResource))
+	{
+		return;
+	}
+	EndDynamicRenderingIfNeeded();
+
+	const VkMemoryBarrier2 memoryBarrier{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+	    .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+	    .dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 1,
+	    .pMemoryBarriers = &memoryBarrier,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
+}
 
 void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, ResourceState before, ResourceState after) noexcept
 {

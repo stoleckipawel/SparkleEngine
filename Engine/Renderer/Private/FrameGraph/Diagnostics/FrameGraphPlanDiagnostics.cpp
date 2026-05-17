@@ -116,6 +116,11 @@ namespace FrameGraphPlanDiagnostics
 		}
 	}
 
+	static std::string_view BarrierLabel(const FrameGraphBarrier& barrier) noexcept
+	{
+		return barrier.label.empty() ? "<unlabeled>" : std::string_view(barrier.label);
+	}
+
 	static const char* AllocationPoolName(FrameGraphTransientResourcePlan::AllocationPool pool) noexcept
 	{
 		switch (pool)
@@ -135,6 +140,30 @@ namespace FrameGraphPlanDiagnostics
 	{
 		const FrameGraphPassNode* passRecord = FindPass(plan, passIndex);
 		return passRecord != nullptr ? std::string_view(passRecord->passName) : "<invalid>";
+	}
+
+	static void LogPassDeclarations(const FrameGraphPlan& plan, const Config& config, const std::shared_ptr<spdlog::logger>& logger) noexcept
+	{
+		for (const FrameGraphPassNode& passRecord : plan.passes)
+		{
+			for (const PassResourceDeclaration& declaration : passRecord.declarations)
+			{
+				const FrameGraphResourceNode* resourceRecord = FindResource(plan, declaration.handle);
+				if (!MatchesPassFilter(passRecord, config.Filter) &&
+				    (resourceRecord == nullptr || !MatchesResourceFilter(*resourceRecord, config.Filter)))
+				{
+					continue;
+				}
+
+				SPDLOG_LOGGER_INFO(
+				    logger,
+				    "FrameGraph declaration: pass='{}' resource='{}' label='{}' usage={}",
+				    passRecord.passName,
+				    ResourceName(resourceRecord),
+				    declaration.label.empty() ? "<unlabeled>" : declaration.label,
+				    ResourceUsageToString(declaration.usage));
+			}
+		}
 	}
 
 	static bool ShouldLogBarrier(
@@ -222,12 +251,13 @@ namespace FrameGraphPlanDiagnostics
 
 			SPDLOG_LOGGER_INFO(
 			    logger,
-			    "FrameGraph resource: index={} name='{}' kind={} ownership={} initial={} final={} versions={}",
+			    "FrameGraph resource: index={} name='{}' kind={} ownership={} initial={} planningStart={} final={} versions={}",
 			    resourceRecord.index,
 			    ResourceName(&resourceRecord),
 			    ResourceKindName(resourceRecord.kind),
 			    ResourceOwnershipName(resourceRecord.ownership),
 			    ResourceStateToString(resourceRecord.initialState),
+			    ResourceStateToString(resourceRecord.planningStartState),
 			    ResourceStateToString(resourceRecord.finalState),
 			    resourceRecord.versions.size());
 		}
@@ -269,9 +299,10 @@ namespace FrameGraphPlanDiagnostics
 				const FrameGraphResourceNode* resourceRecord = FindResource(plan, barrier.handle);
 				SPDLOG_LOGGER_INFO(
 				    logger,
-				    "FrameGraph barrier: pass='{}' resource='{}' type={} {}->{}",
+				    "FrameGraph barrier: pass='{}' resource='{}' label='{}' type={} {}->{}",
 				    passRecord.passName,
 				    ResourceName(resourceRecord),
+				    BarrierLabel(barrier),
 				    BarrierTypeName(barrier.type),
 				    ResourceStateToString(barrier.before),
 				    ResourceStateToString(barrier.after));
@@ -288,8 +319,9 @@ namespace FrameGraphPlanDiagnostics
 			const FrameGraphResourceNode* resourceRecord = FindResource(plan, barrier.handle);
 			SPDLOG_LOGGER_INFO(
 			    logger,
-			    "FrameGraph frame-end barrier: resource='{}' type={} {}->{}",
+			    "FrameGraph frame-end barrier: resource='{}' label='{}' type={} {}->{}",
 			    ResourceName(resourceRecord),
+			    BarrierLabel(barrier),
 			    BarrierTypeName(barrier.type),
 			    ResourceStateToString(barrier.before),
 			    ResourceStateToString(barrier.after));
@@ -396,6 +428,7 @@ namespace FrameGraphPlanDiagnostics
 		    config.Filter);
 
 		LogPassOrder(plan, config, logger);
+		LogPassDeclarations(plan, config, logger);
 		LogCulledPasses(plan, config, logger);
 		LogResourceLifetimes(plan, config, logger);
 		LogBarriers(plan, config, logger);

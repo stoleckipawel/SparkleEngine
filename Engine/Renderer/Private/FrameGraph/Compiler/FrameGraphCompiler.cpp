@@ -105,7 +105,8 @@ void FrameGraphCompiler::Compile() noexcept
 				        .handle = declaration.handle,
 				        .type = FrameGraphBarrier::Type::Transition,
 				        .before = compiledResource.currentState,
-				        .after = requiredState});
+				        .after = requiredState,
+				        .label = declaration.label});
 				compiledResource.currentState = requiredState;
 				m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
 			}
@@ -118,7 +119,8 @@ void FrameGraphCompiler::Compile() noexcept
 				        .handle = declaration.handle,
 				        .type = FrameGraphBarrier::Type::UnorderedAccess,
 				        .before = requiredState,
-				        .after = requiredState});
+				        .after = requiredState,
+				        .label = declaration.label});
 			}
 		}
 	}
@@ -141,7 +143,8 @@ void FrameGraphCompiler::Compile() noexcept
 		        .handle = entry.handle,
 		        .type = FrameGraphBarrier::Type::Transition,
 		        .before = compiledResource.currentState,
-		        .after = compiledResource.finalState});
+		        .after = compiledResource.finalState,
+		        .label = "FinalState"});
 		compiledResource.currentState = compiledResource.finalState;
 		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, entry.finalState);
 	}
@@ -166,6 +169,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		        .kind = entry.kind,
 		        .ownership = entry.ownership,
 		        .initialState = entry.initialState,
+		        .planningStartState = runtimeState.currentState,
 		        .finalState = entry.finalState,
 		        .currentState = runtimeState.currentState,
 		        .debugName = entry.debugName,

@@ -169,11 +169,12 @@ void FrameGraphCompiler::BuildTransientResourceLifetimes() noexcept
 			transientPlan->lifetime.lastExecutionIndex = executionIndexValue;
 			transientPlan->lifetime.lastUserPass = passIndex;
 
-			if (IsReadOnlyUsage(declaration.usage))
+			if (ReadsFromUsage(declaration.usage))
 			{
 				transientPlan->lifetime.readUsed = true;
 			}
-			else if (IsWriteOnlyUsage(declaration.usage))
+
+			if (WritesToUsage(declaration.usage))
 			{
 				transientPlan->lifetime.writeUsed = true;
 			}
