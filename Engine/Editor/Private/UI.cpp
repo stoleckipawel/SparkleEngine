@@ -19,7 +19,7 @@
 #include "Style/SparkleUiTheme.h"
 
 #include "Core/Public/Diagnostics/Trace.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"
@@ -117,7 +117,7 @@ UI::UI(EditorHostServices hostServices) :
 	m_timer(&hostServices.RuntimeTimer),
 	m_levelManager(hostServices.Levels),
 	m_gameScene(hostServices.Scene),
-	m_renderHardware(&hostServices.RenderHardware),
+	m_imguiRenderer(&hostServices.ImGuiRenderer),
 	m_window(&hostServices.HostWindow),
 	m_inputSystem(&hostServices.Input),
 	m_sceneSelection(SceneObjectSelection::None())
@@ -165,23 +165,22 @@ bool UI::InitializeWin32Backend()
 
 bool UI::InitializeGraphicsBackend()
 {
-	if (m_renderHardware == nullptr)
+	if (m_imguiRenderer == nullptr)
 	{
-		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing render hardware interface");
+		Diagnostics::Fail(g_editorLogger, __FILE__, __LINE__, "UI::InitializeGraphicsBackend: missing ImGui renderer");
 		return false;
 	}
 
-	if (m_renderHardware->GetBackendApi() == ERhiBackendApi::Unknown)
+	m_isGraphicsBackendInitialized = m_imguiRenderer->Initialize();
+	if (!m_isGraphicsBackendInitialized)
 	{
 		Diagnostics::Fail(
 		    g_editorLogger,
 		    __FILE__,
 		    __LINE__,
 		    "UI::InitializeGraphicsBackend: editor UI backend is not implemented for the active RHI backend");
-		return false;
 	}
 
-	m_isGraphicsBackendInitialized = m_renderHardware->InitializeImGuiBackend();
 	return m_isGraphicsBackendInitialized;
 }
 
@@ -356,7 +355,7 @@ void UI::NewFrame()
 	io.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
 	io.DisplaySize = ImVec2(m_window->GetWidth(), m_window->GetHeight());
 
-	m_renderHardware->BeginImGuiFrame();
+	m_imguiRenderer->BeginFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
@@ -480,12 +479,12 @@ void UI::Update()
 void UI::Render() noexcept
 {
 	SPARKLE_CPU_SCOPE("Editor.UI.Render");
-	if (!IsReady() || m_renderHardware == nullptr)
+	if (!IsReady() || m_imguiRenderer == nullptr)
 	{
 		return;
 	}
 
-	m_renderHardware->RenderImGuiDrawData(ImGui::GetDrawData());
+	m_imguiRenderer->RenderDrawData(ImGui::GetDrawData());
 }
 
 UI::~UI() noexcept
@@ -497,16 +496,11 @@ UI::~UI() noexcept
 
 	if (m_isGraphicsBackendInitialized)
 	{
-		if (m_renderHardware != nullptr)
-		{
-			m_renderHardware->WaitForIdle();
-		}
-
 		SPDLOG_LOGGER_INFO(
 		    g_editorLogger,
 		    "UI::~UI graphics backend invalidate begin (context={})",
 		    static_cast<const void*>(ImGui::GetCurrentContext()));
-		m_renderHardware->ShutdownImGuiBackend();
+		m_imguiRenderer->Shutdown();
 		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend invalidate complete");
 		m_isGraphicsBackendInitialized = false;
 		SPDLOG_LOGGER_INFO(g_editorLogger, "UI::~UI graphics backend shutdown complete");

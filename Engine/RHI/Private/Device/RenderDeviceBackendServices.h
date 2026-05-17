@@ -5,6 +5,7 @@
 class RenderCommandList;
 class RenderDiagnostics;
 class RenderHardwareInterface;
+class RhiImGuiRenderer;
 
 class RenderDeviceBackendServices
 {
@@ -13,6 +14,7 @@ class RenderDeviceBackendServices
 
 	virtual RenderHardwareInterface& GetRenderHardwareInterface() noexcept = 0;
 	virtual const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept = 0;
+	virtual RhiImGuiRenderer& GetImGuiRenderer() noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
 	virtual void Flush() noexcept = 0;

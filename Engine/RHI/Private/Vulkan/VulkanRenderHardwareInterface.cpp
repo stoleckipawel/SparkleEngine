@@ -186,33 +186,9 @@ const RenderDiagnostics& VulkanRenderHardwareInterface::GetDiagnostics() const n
 	return *m_diagnostics;
 }
 
-bool VulkanRenderHardwareInterface::InitializeImGuiBackend()
+RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 {
-	return m_imguiBackend != nullptr && m_imguiBackend->Initialize();
-}
-
-void VulkanRenderHardwareInterface::BeginImGuiFrame() noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		m_imguiBackend->BeginFrame();
-	}
-}
-
-void VulkanRenderHardwareInterface::RenderImGuiDrawData(ImDrawData* drawData) noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		m_imguiBackend->RenderDrawData(drawData);
-	}
-}
-
-void VulkanRenderHardwareInterface::ShutdownImGuiBackend() noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		m_imguiBackend->Shutdown();
-	}
+	return *m_imguiBackend;
 }
 
 std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)

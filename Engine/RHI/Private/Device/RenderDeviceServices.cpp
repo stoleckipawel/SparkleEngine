@@ -120,6 +120,11 @@ const RenderHardwareInterface& RenderDeviceServices::GetRenderHardwareInterface(
 	return backend.GetRenderHardwareInterface();
 }
 
+RhiImGuiRenderer& RenderDeviceServices::GetImGuiRenderer() noexcept
+{
+	return m_impl->backend->GetImGuiRenderer();
+}
+
 RenderDiagnostics& RenderDeviceServices::GetDiagnostics() noexcept
 {
 	return m_impl->backend->GetDiagnostics();

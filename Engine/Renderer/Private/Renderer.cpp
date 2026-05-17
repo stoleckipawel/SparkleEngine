@@ -63,6 +63,11 @@ const RenderHardwareInterface& Renderer::GetRenderHardwareInterface() const noex
 	return m_backend->GetRenderHardwareInterface();
 }
 
+RhiImGuiRenderer& Renderer::GetImGuiRenderer() noexcept
+{
+	return m_backend->GetImGuiRenderer();
+}
+
 CookedShaderReloadResult Renderer::ReloadCookedShaders() noexcept
 {
 	if (m_pipelineStateManager != nullptr)

@@ -16,7 +16,7 @@ class RenderHardwareInterface;
 class PipelineStateManager final
 {
   public:
-	explicit PipelineStateManager(RenderHardwareInterface& rhi) noexcept;
+	explicit PipelineStateManager(RenderHardwareInterface& renderHardwareInterface) noexcept;
 	~PipelineStateManager() noexcept;
 
 	PipelineStateManager(const PipelineStateManager&) = delete;
@@ -33,7 +33,7 @@ class PipelineStateManager final
 		if (!holder.Runtime.has_value())
 		{
 			std::string errorMessage;
-			if (!RenderPassPipelineTraits<TPass>::CreateRuntimeStorage(*m_rhi, m_shaderPackages, holder.Storage, errorMessage))
+			if (!RenderPassPipelineTraits<TPass>::CreateRuntimeStorage(*m_renderHardwareInterface, m_shaderPackages, holder.Storage, errorMessage))
 			{
 				HandleRuntimeCreationFailure(errorMessage);
 			}
@@ -72,7 +72,7 @@ class PipelineStateManager final
 
 	[[noreturn]] void HandleRuntimeCreationFailure(const std::string& errorMessage) const;
 
-	RenderHardwareInterface* m_rhi = nullptr;
+	RenderHardwareInterface* m_renderHardwareInterface = nullptr;
 	mutable CookedShaderPackageCache m_shaderPackages;
 	mutable std::unordered_map<std::type_index, std::unique_ptr<IRuntimeStorageHolder>> m_runtimeStorageByPass;
 };

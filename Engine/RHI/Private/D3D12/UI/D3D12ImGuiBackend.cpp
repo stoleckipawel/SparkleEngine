@@ -42,6 +42,17 @@ void D3D12ImGuiBackend::BeginFrame() noexcept
 	ImGui_ImplDX12_NewFrame();
 }
 
+void D3D12ImGuiBackend::RenderDrawData(ImDrawData* drawData) noexcept
+{
+	if (m_renderHardware == nullptr)
+	{
+		return;
+	}
+
+	RenderCommandList& commandList = m_renderHardware->GetGraphicsCommandList(m_renderHardware->GetCurrentFrameIndex());
+	Render(commandList.GetNativeHandle(), drawData);
+}
+
 void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept
 {
 	ID3D12GraphicsCommandList* nativeCommandList = ToD3D12GraphicsCommandList(commandList);
@@ -55,6 +66,11 @@ void D3D12ImGuiBackend::Render(NativeGraphicsCommandListHandle commandList, ImDr
 
 void D3D12ImGuiBackend::Shutdown() noexcept
 {
+	if (m_renderHardware != nullptr)
+	{
+		m_renderHardware->WaitForIdle();
+	}
+
 	ImGui_ImplDX12_InvalidateDeviceObjects();
 	ImGui_ImplDX12_Shutdown();
 }

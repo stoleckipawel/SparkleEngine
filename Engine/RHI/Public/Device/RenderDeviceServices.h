@@ -9,6 +9,7 @@
 
 class Timer;
 class Window;
+class RhiImGuiRenderer;
 
 class SPARKLE_RHI_API RenderDeviceServices final
 {
@@ -26,6 +27,7 @@ class SPARKLE_RHI_API RenderDeviceServices final
 	const RhiCapabilities& GetCapabilities() const noexcept;
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	RenderDiagnostics& GetDiagnostics() noexcept;
 	const RenderDiagnostics& GetDiagnostics() const noexcept;
 	void Flush() noexcept;

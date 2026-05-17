@@ -3,8 +3,12 @@
 
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Verify.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 
-PipelineStateManager::PipelineStateManager(RenderHardwareInterface& rhi) noexcept : m_rhi(&rhi) {}
+PipelineStateManager::PipelineStateManager(RenderHardwareInterface& renderHardwareInterface) noexcept :
+	m_renderHardwareInterface(&renderHardwareInterface)
+{
+}
 
 PipelineStateManager::~PipelineStateManager() noexcept = default;
 

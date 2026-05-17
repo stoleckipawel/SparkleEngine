@@ -7,7 +7,7 @@
 
 RuntimeConsoleHost::RuntimeConsoleHost(Timer& timer, Window& window, Renderer& renderer)
 {
-	m_overlay = std::make_unique<RuntimeConsoleOverlay>(timer, window, renderer.GetRenderHardwareInterface());
+	m_overlay = std::make_unique<RuntimeConsoleOverlay>(timer, window, renderer.GetImGuiRenderer());
 }
 
 RuntimeConsoleHost::~RuntimeConsoleHost() noexcept = default;

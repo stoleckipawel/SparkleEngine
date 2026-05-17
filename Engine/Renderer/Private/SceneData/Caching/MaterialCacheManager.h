@@ -1,13 +1,14 @@
 #pragma once
 
+#include "RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "Scene/Materials/MaterialSnapshot.h"
 #include "SceneData/MaterialData.h"
 
 #include <cstdint>
 #include <vector>
 
-class RenderHardwareInterface;
 struct RenderSceneData;
+class RenderHardwareInterface;
 class TextureManager;
 
 class MaterialCacheManager final

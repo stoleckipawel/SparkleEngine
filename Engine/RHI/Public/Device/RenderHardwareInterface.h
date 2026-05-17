@@ -23,7 +23,6 @@
 #include <string_view>
 
 class Texture;
-struct ImDrawData;
 
 class SPARKLE_RHI_API RenderHardwareInterface
 {
@@ -41,10 +40,6 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;
 	virtual const RenderDiagnostics& GetDiagnostics() const noexcept = 0;
-	virtual bool InitializeImGuiBackend() = 0;
-	virtual void BeginImGuiFrame() noexcept = 0;
-	virtual void RenderImGuiDrawData(ImDrawData* drawData) noexcept = 0;
-	virtual void ShutdownImGuiBackend() noexcept = 0;
 	virtual std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) = 0;
 	virtual std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) = 0;

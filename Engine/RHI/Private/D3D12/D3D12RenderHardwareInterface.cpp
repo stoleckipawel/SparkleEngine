@@ -196,34 +196,9 @@ const RenderDiagnostics& D3D12RenderHardwareInterface::GetDiagnostics() const no
 	return *m_diagnostics;
 }
 
-bool D3D12RenderHardwareInterface::InitializeImGuiBackend()
+RhiImGuiRenderer& D3D12RenderHardwareInterface::GetImGuiRenderer() noexcept
 {
-	return m_imguiBackend != nullptr && m_imguiBackend->Initialize();
-}
-
-void D3D12RenderHardwareInterface::BeginImGuiFrame() noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		m_imguiBackend->BeginFrame();
-	}
-}
-
-void D3D12RenderHardwareInterface::RenderImGuiDrawData(ImDrawData* drawData) noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		RenderCommandList& commandList = GetGraphicsCommandList(GetCurrentFrameIndex());
-		m_imguiBackend->Render(commandList.GetNativeHandle(), drawData);
-	}
-}
-
-void D3D12RenderHardwareInterface::ShutdownImGuiBackend() noexcept
-{
-	if (m_imguiBackend != nullptr)
-	{
-		m_imguiBackend->Shutdown();
-	}
+	return *m_imguiBackend;
 }
 
 std::unique_ptr<RenderBindingLayout> D3D12RenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Device/RenderHardwareInterface.h"
+#include "UI/RhiImGuiRenderer.h"
 
 #include <d3d12.h>
 
@@ -9,15 +10,16 @@ struct ImGui_ImplDX12_InitInfo;
 
 class D3D12RenderHardwareInterface;
 
-class D3D12ImGuiBackend final
+class D3D12ImGuiBackend final : public RhiImGuiRenderer
 {
   public:
 	explicit D3D12ImGuiBackend(D3D12RenderHardwareInterface& renderHardware) noexcept;
 
-	bool Initialize();
-	void BeginFrame() noexcept;
+	bool Initialize() override;
+	void BeginFrame() noexcept override;
+	void RenderDrawData(ImDrawData* drawData) noexcept override;
 	void Render(NativeGraphicsCommandListHandle commandList, ImDrawData* drawData) noexcept;
-	void Shutdown() noexcept;
+	void Shutdown() noexcept override;
 
   private:
 	static void AllocateDescriptor(

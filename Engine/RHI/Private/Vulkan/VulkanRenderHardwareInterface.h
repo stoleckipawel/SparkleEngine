@@ -18,6 +18,7 @@ class VulkanRhi;
 class VulkanSamplerLibrary;
 class VulkanTextureFactory;
 class VulkanSwapChain;
+class RhiImGuiRenderer;
 
 class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 {
@@ -45,10 +46,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
-	bool InitializeImGuiBackend() override;
-	void BeginImGuiFrame() noexcept override;
-	void RenderImGuiDrawData(ImDrawData* drawData) noexcept override;
-	void ShutdownImGuiBackend() noexcept override;
+	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateComputePipelineState(const ComputePipelineStateDesc& desc) override;

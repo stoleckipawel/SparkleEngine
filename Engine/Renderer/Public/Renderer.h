@@ -16,6 +16,7 @@
 
 class Timer;
 class RenderDeviceServices;
+class RhiImGuiRenderer;
 
 class FrameGraph;
 class GPUMeshCache;
@@ -52,6 +53,7 @@ class SPARKLE_RENDERER_API Renderer final
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept;
+	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
 	CookedShaderReloadResult ReloadCookedShaders() noexcept;
 	std::uint64_t GetShaderPackageGeneration() const noexcept;
 	MeshDiagnosticsSnapshot CaptureMeshDiagnostics() const;

@@ -40,12 +40,11 @@ void EditorApp::Initialize()
 	if (!m_ui)
 	{
 		Renderer& renderer = m_projectApp->GetRenderer();
-		RenderHardwareInterface& renderHardware = renderer.GetRenderHardwareInterface();
 		m_ui = std::make_unique<UI>(EditorHostServices{
 		    .RuntimeTimer = m_projectApp->GetTimer(),
 		    .Levels = m_projectApp->GetLevelManager(),
 		    .Scene = m_projectApp->GetGameScene(),
-		    .RenderHardware = renderHardware,
+		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
 		    .HostWindow = m_projectApp->GetWindow(),
 		    .Input = m_projectApp->GetInputSystem()});
 		m_ui->SetDiagnosticsProviders(EditorDiagnosticsProviders{

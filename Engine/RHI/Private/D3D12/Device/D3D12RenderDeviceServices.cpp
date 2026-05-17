@@ -28,6 +28,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
+	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	void Flush() noexcept override;
@@ -134,6 +135,11 @@ RenderHardwareInterface& D3D12RenderDeviceServices::GetRenderHardwareInterface()
 const RenderHardwareInterface& D3D12RenderDeviceServices::GetRenderHardwareInterface() const noexcept
 {
 	return *m_renderHardwareInterface;
+}
+
+RhiImGuiRenderer& D3D12RenderDeviceServices::GetImGuiRenderer() noexcept
+{
+	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
 RenderDiagnostics& D3D12RenderDeviceServices::GetDiagnostics() noexcept

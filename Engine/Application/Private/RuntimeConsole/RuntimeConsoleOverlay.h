@@ -2,7 +2,6 @@
 
 #include "Core/Public/Console/ConsoleCommandRegistry.h"
 #include "Core/Public/Events/ScopedEventHandle.h"
-#include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <Windows.h>
 #include <array>
@@ -11,6 +10,7 @@
 #include <vector>
 
 class ConsoleSession;
+class RhiImGuiRenderer;
 class Timer;
 class Window;
 struct ImGuiInputTextCallbackData;
@@ -20,7 +20,7 @@ struct WindowMessageEvent;
 class RuntimeConsoleOverlay final
 {
   public:
-	RuntimeConsoleOverlay(Timer& timer, Window& window, RenderHardwareInterface& renderHardware);
+	RuntimeConsoleOverlay(Timer& timer, Window& window, RhiImGuiRenderer& imguiRenderer);
 	~RuntimeConsoleOverlay() noexcept;
 
 	RuntimeConsoleOverlay(const RuntimeConsoleOverlay&) = delete;
@@ -60,7 +60,7 @@ class RuntimeConsoleOverlay final
 
 	Timer* m_timer = nullptr;
 	Window* m_window = nullptr;
-	RenderHardwareInterface* m_renderHardware = nullptr;
+	RhiImGuiRenderer* m_imguiRenderer = nullptr;
 	ScopedEventHandle m_windowMessageHandle;
 	ConsoleCommandRegistry m_commandRegistry;
 	std::unique_ptr<ConsoleSession> m_consoleSession;

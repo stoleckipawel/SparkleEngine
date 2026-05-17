@@ -75,6 +75,7 @@ The weak point is that the public RHI surface has grown as a direct list of oper
 
 NVRHI is a reusable RHI over D3D11, D3D12, and Vulkan 1.3. Its strongest architectural choices are:
 
+- `IDevice` is a coherent central device/factory/submission object. NVRHI does not split the device into many inherited public service facets; it moves behavioral weight into the objects the device creates.
 - `IDevice` owns resource, pipeline, query, binding, and command-list creation, but draw and dispatch live on `ICommandList`.
 - The application creates the native graphics device; NVRHI wraps it. This keeps platform/bootstrap concerns outside the abstraction.
 - Resource lifetime is handle-based and reference-counted. Resources can be captured by binding sets and command lists until the GPU is done.
@@ -85,7 +86,7 @@ NVRHI is a reusable RHI over D3D11, D3D12, and Vulkan 1.3. Its strongest archite
 - Validation is a wrapper device that intercepts API calls and command lists.
 - Feature areas are modeled directly: graphics, compute, meshlet, ray tracing, staging/readback, timer queries, event queries, multi-queue, volatile constant buffers, push constants, and bindless resources.
 
-The core lesson is not "copy NVRHI." The lesson is that a growth-ready RHI must encode ownership, lifetime, feature availability, and synchronization policy as first-class API concepts rather than leaving each renderer subsystem to remember backend rules.
+The core lesson is not "copy NVRHI." The lesson is that a growth-ready RHI must encode ownership, lifetime, feature availability, and synchronization policy as first-class API concepts rather than leaving each renderer subsystem to remember backend rules. Sparkle should therefore narrow the RHI by strengthening real object ownership--device, command list, resources, binding layouts/sets, pipelines, queries, presentation, and validation--not by adding pass-through service interfaces around the same broad object.
 
 ### AMD FidelityFX / Cauldron: What It Does Differently
 
@@ -172,8 +173,8 @@ Sparkle should not solve architecture hardening by adding another layer of manag
 | Current Class / Family | Current Role | Target Disposition | Rationale |
 | --- | --- | --- | --- |
 | `Renderer` | Top-level owner of backend, frame graph, scene caches, diagnostics, viewport products, and frame lifecycle | Adjust into frame orchestrator only | It should sequence frame phases and own high-level lifetime, but not become the place where every subsystem is reached directly forever. Use small services and immutable frame snapshots to reduce fan-out. |
-| `RenderDeviceServices` | Backend service owner and lifecycle facade | Keep, but narrow to backend lifecycle/frame submission service | This is a useful seam. It should expose backend lifecycle, frame begin/submit/advance, capabilities, and service accessors, not the whole low-level RHI by default. |
-| `RenderHardwareInterface` | Very broad public RHI facade | Split/facade by capability area | Current breadth hides ownership and forces backends to stub unrelated concepts. Replace with device/capability, resources, memory, uploads, binding, pipeline, command, diagnostics, presentation, editor integration, RT, and interop capability surfaces. |
+| `RenderDeviceServices` | Backend service owner and lifecycle facade | Keep, but narrow to backend lifecycle/frame submission owner | This is a useful seam. It should expose backend lifecycle, frame begin/submit/advance, capabilities, and explicit handoff points, not become the permanent low-level RHI locator. |
+| `RenderHardwareInterface` | Very broad public RHI facade | Keep temporarily as RHI device/factory facade, then shrink by moving behavior to real RHI objects | Current breadth hides ownership and forces backends to stub unrelated concepts. Do not replace it with service wrappers that only forward calls. Move command recording to command lists, binding lifetime to binding sets/packets, resource lifetime to handles/owners, presentation/editor work to host integration, and native access to explicit interop. |
 | `D3D12RenderHardwareInterface` / `VulkanRenderHardwareInterface` | Backend implementations of broad facade | Keep as backend composition roots temporarily, then shrink | They are useful aggregation points during migration, but should delegate to backend-private services and stop accumulating descriptor/resource/presentation/ImGui logic directly. |
 | `D3D12DescriptorHeapManager` / `VulkanDescriptorManager` | Backend descriptor allocation and view ownership | Keep backend-private, rename/split only if responsibilities blur | Descriptor managers are valid backend-private services. Renderer should never allocate raw descriptors directly; binding sets/packets should request descriptor realization. |
 | `D3D12GpuMemoryAllocator` / `VulkanGpuMemoryAllocator` | D3D12MA/VMA-backed allocation and memory diagnostics | Keep backend-private and central | These are proper backend services. Public RHI should expose memory intent and diagnostics, not allocator handles or D3D12MA/VMA types. |
@@ -197,8 +198,8 @@ This is the Phase 1 source-inspection ledger. It records current ownership, targ
 | Class / Family | Target Module | Allowed Edges | Mutation / Thread Assumption | Disposition | Mental-Load Judgment and Phase Action |
 | --- | --- | --- | --- | --- | --- |
 | `Renderer` | Renderer public host facade + Renderer private frame orchestrator | Application/Editor host -> Renderer public; Renderer private -> RHI public, FrameGraph private, runtime cooked assets | Render-thread/frame-owner today; future consumes immutable GameFramework extraction data | Adjust | High mental load because it owns many systems and exposes full RHI. Keep as top-level frame sequencer, but defer fan-out reduction and service narrowing to Phases 3, 7, and 9. |
-| `RenderDeviceServices` | RHI public backend lifecycle service | Renderer private -> RHI public; RHI public -> backend-private service implementation | Render-thread-owned backend lifecycle and frame submission | Keep, narrow | Useful owner for backend creation and frame lifecycle. Mental load rises when it exposes full RHI and command-list shortcuts; defer narrowing to Phase 3. |
-| `RenderHardwareInterface` | RHI public compatibility facade until split | Renderer/FrameGraph -> RHI public only; RHI public -> backend-private implementations | Render-thread-owned facade over backend services | Adjust / split | Highest RHI mental load. Keep temporarily as migration facade; split by capability area in Phase 3. No new responsibilities should be added without ledger category. |
+| `RenderDeviceServices` | RHI public backend lifecycle service | Renderer private -> RHI public; RHI public -> backend-private implementation | Render-thread-owned backend lifecycle and frame submission | Keep, narrow | Useful owner for backend creation and frame lifecycle. Mental load rises when it exposes full RHI and command-list shortcuts; defer narrowing to Phase 3. |
+| `RenderHardwareInterface` | RHI public compatibility facade until object ownership split | Renderer/FrameGraph -> RHI public only; RHI public -> backend-private implementations | Render-thread-owned device/factory facade over backend objects | Adjust / shrink | Highest RHI mental load. Keep temporarily as the Sparkle equivalent of a central device/factory root, then move work to command lists, resources, bindings, queries, presentation/editor integration, and validation. No new responsibilities should be added without ledger category. |
 | `RenderCommandList` | RHI public command recording contract | Renderer command context / FrameGraph execution -> RHI command contract; backend implementations private | Render-thread-owned command recording today; future per-pass/per-thread command ownership | Keep, evolve | Useful core abstraction. Needs future allocation/recording ownership contract for threading; defer to Phases 3, 6, and 9. |
 | `RenderBindingLayout` / `RenderPipelineState` | RHI public binding and pipeline contracts | Renderer pipeline runtime -> RHI public; backend-private layout/PSO realizations | Mostly immutable after creation | Keep, tighten | Good mental-load reduction when driven by shader reflection. Tie harder to binding set/packet path in Phase 4. |
 | `CookedShaderPackageCache` / `LoadedShaderPackage` / shader reflection records | RHI public/runtime shader package contract | Renderer pipeline manager -> RHI public shader package; tools produce cooked packages | Cache mutation during reload; otherwise read-mostly | Keep | Strong owner for backend shader binary and reflection data. Keep public runtime contract; source/cook production remains outside runtime. |
@@ -248,7 +249,7 @@ Phase 1 source inspection found several responsibility moves, but most require i
 
 | Required Move | Reason | Deferred Phase |
 | --- | --- | --- |
-| Split/facade `RenderHardwareInterface` by capability area | Current broad facade creates high mental load and unclear dependencies | Phase 3 |
+| Narrow `RenderHardwareInterface` through NVRHI-style object ownership | Current broad facade creates high mental load, but service-wrapper splits would only hide the same ownership problem | Phase 3 |
 | Remove raw descriptor/table ownership from Renderer material and pass binding paths | Renderer should express binding intent, not descriptor mechanics | Phase 4 |
 | Move `CreateTextureFromPath` and source-path texture loading out of core RHI/runtime path | Runtime RHI should consume cooked/upload-ready payloads | Phase 5 and Phase 7 |
 | Replace general Renderer-facing GPU virtual address traffic with backend-neutral buffer/view/binding records where possible | Avoid D3D12-shaped semantics leaking into Vulkan and Renderer | Phase 3, Phase 4, Phase 5 |
@@ -738,35 +739,76 @@ Phase 2 source-only validation notes:
 - Reviewers should reject Phase 2 if startup cannot print the selected backend, shader binary format, descriptor model, allocator backend, present support, queue support, timestamp query support, and ray tracing flags from one capability report.
 - Builds and launch checks remain deferred to the final validation block unless the phase policy is explicitly changed.
 
-### Phase 3: Narrow the RHI Surface by Capability Area
+### Phase 3: Narrow the RHI Surface by Real Object Ownership
 
 Idea behind the phase:
 
-The RHI should be a set of focused contracts, not one giant object every system must know about. Narrow interfaces make ownership visible and make backend implementation gaps easier to reason about.
+The RHI should have a coherent central device/factory root plus focused objects that own real GPU concepts. NVRHI's model is the useful reference here: `IDevice` creates and queries, `ICommandList` records and tracks command work, resources own lifetime, binding layouts/sets own binding liveness, and native handles are explicit escape hatches. The fix is not service proliferation; the fix is to move responsibility to the object that actually owns it.
 
 Why the previous state was wrong:
 
 `RenderHardwareInterface` currently mixes device identity, command lists, descriptors, constant buffers, textures, presentation, ImGui, resource creation, memory, resource views, ray tracing, and native interop. That forces unrelated systems to depend on the full RHI and forces backend implementations to carry unrelated responsibilities together.
 
+A tempting but wrong correction is to split the broad facade into public service interfaces that simply forward back into `RenderHardwareInterface`. That creates more names without changing ownership. It also makes callers compose the RHI from services instead of making the backend/device own real objects. Phase 3 should reject that direction.
+
 What this phase changes:
 
-This phase uses the Phase 1 responsibility ledger to split or facade the public RHI by capability area. Classes that own a real concept stay; pass-through wrappers and duplicate orchestrators are merged or removed.
+This phase uses the Phase 1 responsibility ledger to identify which responsibilities should remain on the central RHI device/factory root and which should move to existing or new real objects. Command recording belongs on `RenderCommandList` or a future command allocator/context. Binding liveness belongs in binding layouts, binding sets, or frame-local binding packets. Resource lifetime belongs in resource handles/owners and backend-private delayed release. Presentation and editor/ImGui integration belong outside the core device contract. Pass-through wrappers and duplicate orchestrators are merged or removed.
 
 Ready-to-use prompt:
 
 
 ```text
-Refactor Sparkle's public RHI surface into smaller capability-facing interfaces or services without changing renderer behavior. Split or facade the current broad RenderHardwareInterface responsibilities into device/capabilities, resources/memory, uploads, bindings, pipelines, command recording, diagnostics/queries, presentation, editor integration, ray tracing, and interop. Audit current Renderer and RHI managers before adding new classes: keep useful owners, adjust classes that belong in the new architecture, move misplaced behavior, merge duplicate orchestrators, and delete pass-through wrappers. Update Renderer subsystems to depend on the narrowest interface needed. Preserve backend-private D3D12/Vulkan implementations and avoid compatibility shims unless required for a small migration step.
+Refactor Sparkle's public RHI surface using NVRHI-style object ownership, not public service-wrapper proliferation. Keep RenderHardwareInterface temporarily as the central RHI device/factory/capability root, but stop adding unrelated responsibilities to it. Move behavior only when there is a real owning object: command recording to RenderCommandList or explicit command contexts, binding lifetime to RenderBindingLayout/RenderBindingSet or frame-local binding packets, resource lifetime to resource handles/owners, presentation to a presentation/host integration owner, editor ImGui integration to an editor integration owner, diagnostics/query validation to diagnostics/query objects, and native handles to explicit interop paths. Delete any public service or adapter that merely forwards to the broad RHI. Update touched Renderer subsystems only when their new dependency is a real owner with a smaller contract, not a renamed slice of the same facade. Preserve backend-private D3D12/Vulkan implementation boundaries and document any temporary edge with owner, reason, and removal phase.
 ```
 
 Acceptance criteria:
 
-- Material, texture, mesh, frame graph, presentation, diagnostics, and editor integration code no longer need the full RHI interface when a narrower service is enough.
+- No public RHI service interface or legacy adapter exists only to forward calls back to `RenderHardwareInterface`.
+- `RenderHardwareInterface` is documented and treated as a temporary central device/factory/capability facade, not as a forever service locator and not as a multiple-inheritance service bundle.
+- At least one responsibility is narrowed to a real owning object or deliberately deferred to the phase where that object is introduced. Examples: command recording to command-list ownership, binding work to Phase 4 binding sets/packets, upload/resource lifetime to Phase 5 upload/resource ownership, or presentation/editor work to host/editor integration.
+- Material, texture, mesh, frame graph, presentation, diagnostics, and editor integration code no longer receive a fake narrower type when the fake type does not own a real concept.
 - At least one class disposition audit is captured in the architecture log for the touched area, including why each class is kept, adjusted, moved, merged, or deleted.
-- ImGui/editor-specific hooks are no longer part of the core device contract, or are clearly isolated behind presentation/editor integration services.
+- ImGui/editor-specific hooks are no longer part of the core device contract, or are explicitly marked as a short-lived temporary edge owned by presentation/editor integration with a removal phase.
 - Native handles remain available only through explicit interop APIs.
 - Adding a new backend feature does not require stubbing unrelated presentation/editor/raytracing methods.
 - Boundary validation prevents Renderer from including backend-private D3D12/Vulkan headers.
+
+Phase 3 NVRHI relationship correction:
+
+- NVRHI keeps a central `IDevice` that creates resources, binding layouts/sets, pipelines, queries, and command lists. Sparkle should mirror that by keeping a central RHI device/factory root during migration instead of making callers assemble the device from public service facets.
+- NVRHI separates recording into `ICommandList`, where uploads, barriers, draw/dispatch, debug markers, timer queries, and state tracking live. Sparkle's command-list/context work should move in that direction before parallel command recording is attempted.
+- NVRHI models binding lifetime through binding layouts, binding sets, and descriptor tables. Sparkle's raw descriptor table use should be corrected in Phase 4 by binding objects, not by a generic descriptor service wrapper.
+- NVRHI uses explicit native-object accessors as escape hatches. Sparkle should keep native handle access named and reviewable, not expose backend branches to normal Renderer paths.
+- Validation in NVRHI wraps the device and command lists. Sparkle's future validation layer should check the object contracts above rather than validating arbitrary service calls.
+
+Phase 3 implementation notes:
+
+- The rejected service-wrapper direction was removed: no public `RhiServices` or legacy service adapter remains, and `RenderHardwareInterface` is not a multiple-inheritance service bundle.
+- `RhiImGuiRenderer` is the first real-object narrowing slice. It owns the editor/runtime ImGui GPU lifecycle: initialize, begin frame, render draw data, and shutdown.
+- `D3D12ImGuiBackend` and `VulkanImGuiBackend` implement `RhiImGuiRenderer` directly. They are backend-private realizations of the UI rendering object, not caller-side wrappers around the full RHI facade.
+- `RenderDeviceServices` and `Renderer` expose the `RhiImGuiRenderer` object through backend lifecycle ownership. Editor UI and the runtime console overlay now depend on `RhiImGuiRenderer` for ImGui work instead of the full `RenderHardwareInterface`.
+- `RenderHardwareInterface` no longer exposes `InitializeImGuiBackend`, `BeginImGuiFrame`, `RenderImGuiDrawData`, or `ShutdownImGuiBackend`. This removes editor UI lifecycle from the central device/factory facade while keeping presentation methods temporarily on the facade until a dedicated presentation owner is introduced.
+- Material, texture, mesh, pipeline, descriptor table, upload, and binding dependencies remain on `RenderHardwareInterface` for now because replacing them with fake narrow services would repeat the rejected design. Their real owner moves are deferred to Phase 4 binding sets/packets and Phase 5 resource/upload ownership.
+
+Phase 3 class disposition audit:
+
+| Class / Family | Phase 3 Disposition | Reason |
+| --- | --- | --- |
+| `RenderHardwareInterface` | Adjust / shrink | Kept as temporary central RHI device/factory/capability facade, but editor ImGui lifecycle is removed from the core contract. |
+| `RhiImGuiRenderer` | Add real owner | Owns one concrete concept: backend-neutral ImGui GPU rendering lifecycle for editor/runtime overlays. |
+| `D3D12ImGuiBackend` / `VulkanImGuiBackend` | Keep, implement real owner | Existing backend-private implementations now realize `RhiImGuiRenderer` directly instead of being hidden behind broad RHI methods. |
+| `RenderDeviceServices` | Keep, expose object handoff | Backend lifecycle owner exposes the UI renderer object without making callers compose the RHI from service facets. |
+| `UI` / `RuntimeConsoleOverlay` | Adjust dependency | They now depend on the ImGui renderer object for UI drawing, not the full RHI facade. |
+| `MaterialCacheManager`, `TextureManager`, `GPUMeshCache`, `PipelineStateManager` | Defer real narrowing | They still need binding/resource/pipeline capabilities that do not yet have real owning objects; fake service wrappers were rejected. |
+
+Phase 3 source-only validation notes:
+
+- Source search should find no calls to `InitializeImGuiBackend`, `BeginImGuiFrame`, `RenderImGuiDrawData`, or `ShutdownImGuiBackend`.
+- Source search should find no `RhiServices` or `RhiLegacyServiceAdapters` files or references.
+- `UI` and `RuntimeConsoleOverlay` should include/use `RhiImGuiRenderer` for ImGui lifecycle operations.
+- `RenderHardwareInterface` should not mention `ImDrawData`.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
 
 ### Phase 4: Binding Layouts, Binding Sets, and Runtime Binding Ownership
 

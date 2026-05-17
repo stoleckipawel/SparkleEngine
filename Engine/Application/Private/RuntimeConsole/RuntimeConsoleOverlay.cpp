@@ -4,6 +4,7 @@
 #include "Core/Public/Console/ConsoleBuiltinCommands.h"
 #include "Core/Public/Console/ConsoleSession.h"
 #include "Core/Public/Strings/StringUtils.h"
+#include "RHI/Public/UI/RhiImGuiRenderer.h"
 #include "Time/Timer.h"
 #include "Window/Window.h"
 
@@ -15,8 +16,8 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, RenderHardwareInterface& renderHardware) :
-    m_timer(&timer), m_window(&window), m_renderHardware(&renderHardware)
+RuntimeConsoleOverlay::RuntimeConsoleOverlay(Timer& timer, Window& window, RhiImGuiRenderer& imguiRenderer) :
+	m_timer(&timer), m_window(&window), m_imguiRenderer(&imguiRenderer)
 {
 	ConsoleBuiltinCommands::Register(m_commandRegistry);
 	m_consoleSession = std::make_unique<ConsoleSession>(m_commandRegistry, ConsoleCommandContext{.Scope = ConsoleCommandScope::Runtime});
@@ -53,12 +54,7 @@ RuntimeConsoleOverlay::~RuntimeConsoleOverlay() noexcept
 
 	if (m_isGraphicsBackendInitialized)
 	{
-		if (m_renderHardware != nullptr)
-		{
-			m_renderHardware->WaitForIdle();
-		}
-
-		m_renderHardware->ShutdownImGuiBackend();
+		m_imguiRenderer->Shutdown();
 		m_isGraphicsBackendInitialized = false;
 	}
 
@@ -134,17 +130,12 @@ bool RuntimeConsoleOverlay::InitializeWin32Backend()
 
 bool RuntimeConsoleOverlay::InitializeGraphicsBackend()
 {
-	if (m_renderHardware == nullptr)
+	if (m_imguiRenderer == nullptr)
 	{
 		return false;
 	}
 
-	if (m_renderHardware->GetBackendApi() == ERhiBackendApi::Unknown)
-	{
-		return false;
-	}
-
-	m_isGraphicsBackendInitialized = m_renderHardware->InitializeImGuiBackend();
+	m_isGraphicsBackendInitialized = m_imguiRenderer->Initialize();
 	return m_isGraphicsBackendInitialized;
 }
 
@@ -182,7 +173,7 @@ void RuntimeConsoleOverlay::Update()
 		io.DisplaySize = ImVec2(static_cast<float>(m_window->GetWidth()), static_cast<float>(m_window->GetHeight()));
 	}
 
-	m_renderHardware->BeginImGuiFrame();
+	m_imguiRenderer->BeginFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	if (m_isVisible)
@@ -199,7 +190,7 @@ void RuntimeConsoleOverlay::Render() noexcept
 		return;
 	}
 
-	m_renderHardware->RenderImGuiDrawData(ImGui::GetDrawData());
+	m_imguiRenderer->RenderDrawData(ImGui::GetDrawData());
 }
 
 void RuntimeConsoleOverlay::BuildUI()

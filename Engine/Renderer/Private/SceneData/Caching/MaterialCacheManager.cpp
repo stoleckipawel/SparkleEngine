@@ -8,13 +8,14 @@
 #include "SceneData/MaterialData.h"
 #include "SceneData/RenderSceneData.h"
 #include "Renderer/Public/Resources/Textures/DefaultTextures.h"
+#include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
 #include "Textures/TextureManager.h"
 
 static const auto g_materialCacheManagerLogger = Logging::GetOrCreateLogger("Renderer.MaterialCache");
 
 MaterialCacheManager::MaterialCacheManager(TextureManager& textureManager, RenderHardwareInterface& renderHardwareInterface) noexcept :
-    m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
+	m_textureManager(&textureManager), m_renderHardwareInterface(&renderHardwareInterface)
 {
 }
 

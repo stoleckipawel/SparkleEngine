@@ -27,6 +27,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 
 	RenderHardwareInterface& GetRenderHardwareInterface() noexcept override;
 	const RenderHardwareInterface& GetRenderHardwareInterface() const noexcept override;
+	RhiImGuiRenderer& GetImGuiRenderer() noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	void Flush() noexcept override;
@@ -107,6 +108,11 @@ RenderHardwareInterface& VulkanRenderDeviceServices::GetRenderHardwareInterface(
 const RenderHardwareInterface& VulkanRenderDeviceServices::GetRenderHardwareInterface() const noexcept
 {
 	return *m_renderHardwareInterface;
+}
+
+RhiImGuiRenderer& VulkanRenderDeviceServices::GetImGuiRenderer() noexcept
+{
+	return m_renderHardwareInterface->GetImGuiRenderer();
 }
 
 RenderDiagnostics& VulkanRenderDeviceServices::GetDiagnostics() noexcept
