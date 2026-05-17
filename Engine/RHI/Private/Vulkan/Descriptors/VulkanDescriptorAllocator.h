@@ -87,18 +87,8 @@ class VulkanDescriptorAllocator final
 		std::uint32_t AllocatedSets = 0;
 	};
 
-	static constexpr std::uint64_t GpuDescriptorMagic = 0x5350564B00000000ull;
-	static constexpr std::uintptr_t CpuDescriptorMagic = static_cast<std::uintptr_t>(0x4350564B00000000ull);
 	static constexpr std::uint32_t DescriptorSetsPerPage = 256;
 
-	static RhiDescriptorTableHandle MakeTableHandle(std::uint32_t index) noexcept;
-	static RhiGpuDescriptorHandle MakeGpuDescriptorHandle(std::uint32_t index) noexcept;
-	static RhiCpuDescriptorHandle MakeCpuDescriptorHandle(std::uint32_t tableIndex, std::uint32_t descriptorIndex) noexcept;
-	static bool DecodeGpuDescriptorHandle(RhiGpuDescriptorHandle handle, std::uint32_t& outIndex) noexcept;
-	static bool DecodeCpuDescriptorHandle(
-	    RhiCpuDescriptorHandle handle,
-	    std::uint32_t& outTableIndex,
-	    std::uint32_t& outDescriptorIndex) noexcept;
 	static VkDescriptorType ToDescriptorType(EntryKind kind) noexcept;
 	static EntryKind ToImageEntryKind(ERhiResourceViewKind viewKind) noexcept;
 	static EntryKind ToBufferEntryKind(ERhiResourceViewKind viewKind) noexcept;

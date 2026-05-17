@@ -4,6 +4,7 @@
 
 #include "Pipeline/RhiPipelineStateDesc.h"
 #include "Vulkan/Core/VulkanResult.h"
+#include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
 #include "Vulkan/Device/VulkanRhi.h"
 
 #include <algorithm>
@@ -60,11 +61,11 @@ void VulkanDescriptorAllocator::ReleaseDescriptor(ERhiDescriptorAllocatorType, c
 {
 	std::uint32_t tableIndex = 0;
 	std::uint32_t descriptorIndex = 0;
-	if (!DecodeCpuDescriptorHandle(allocation.CpuHandle, tableIndex, descriptorIndex) || descriptorIndex != 0)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(allocation.CpuHandle, tableIndex, descriptorIndex) || descriptorIndex != 0)
 	{
 		return;
 	}
-	ReleaseDescriptorTable(MakeTableHandle(tableIndex));
+	ReleaseDescriptorTable(VulkanDescriptorHandles::MakeTableHandle(tableIndex));
 }
 
 RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
@@ -87,11 +88,11 @@ RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
 		const std::uint32_t index = m_freeTableIndices.back();
 		m_freeTableIndices.pop_back();
 		m_tables[index] = std::move(record);
-		return MakeTableHandle(index);
+		return VulkanDescriptorHandles::MakeTableHandle(index);
 	}
 
 	m_tables.push_back(std::move(record));
-	return MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1));
+	return VulkanDescriptorHandles::MakeTableHandle(static_cast<std::uint32_t>(m_tables.size() - 1));
 }
 
 RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
@@ -104,7 +105,7 @@ RhiCpuDescriptorHandle VulkanDescriptorAllocator::GetDescriptorTableCpuHandle(
 	{
 		return {};
 	}
-	return MakeCpuDescriptorHandle(tableHandle.Value - 1u, descriptorIndex);
+	return VulkanDescriptorHandles::MakeCpuDescriptorHandle(tableHandle.Value - 1u, descriptorIndex);
 }
 
 void VulkanDescriptorAllocator::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
@@ -136,11 +137,11 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterImageDescriptor(ERhiRe
 		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
 		m_freeRegisteredDescriptorIndices.pop_back();
 		m_registeredDescriptors[index] = entry;
-		return MakeGpuDescriptorHandle(index);
+		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
 	}
 
 	m_registeredDescriptors.push_back(entry);
-	return MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
 }
 
 RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
@@ -165,17 +166,17 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
 		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
 		m_freeRegisteredDescriptorIndices.pop_back();
 		m_registeredDescriptors[index] = entry;
-		return MakeGpuDescriptorHandle(index);
+		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
 	}
 
 	m_registeredDescriptors.push_back(entry);
-	return MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
 }
 
 void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept
 {
 	std::uint32_t index = 0;
-	if (!DecodeGpuDescriptorHandle(handle, index))
+	if (!VulkanDescriptorHandles::DecodeGpuDescriptorHandle(handle, index))
 	{
 		return;
 	}
@@ -196,7 +197,7 @@ void VulkanDescriptorAllocator::WriteImageDescriptor(
 {
 	std::uint32_t tableIndex = 0;
 	std::uint32_t descriptorIndex = 0;
-	if (!DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || imageView == VK_NULL_HANDLE)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || imageView == VK_NULL_HANDLE)
 	{
 		return;
 	}
@@ -215,7 +216,7 @@ void VulkanDescriptorAllocator::WriteSamplerDescriptor(RhiCpuDescriptorHandle de
 {
 	std::uint32_t tableIndex = 0;
 	std::uint32_t descriptorIndex = 0;
-	if (!DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || sampler == VK_NULL_HANDLE)
+	if (!VulkanDescriptorHandles::DecodeCpuDescriptorHandle(destination, tableIndex, descriptorIndex) || sampler == VK_NULL_HANDLE)
 	{
 		return;
 	}
@@ -360,57 +361,6 @@ void VulkanDescriptorAllocator::WriteBufferDescriptor(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
-RhiDescriptorTableHandle VulkanDescriptorAllocator::MakeTableHandle(std::uint32_t index) noexcept
-{
-	return RhiDescriptorTableHandle{index + 1u};
-}
-
-RhiGpuDescriptorHandle VulkanDescriptorAllocator::MakeGpuDescriptorHandle(std::uint32_t index) noexcept
-{
-	return RhiGpuDescriptorHandle{GpuDescriptorMagic | static_cast<std::uint64_t>(index + 1u)};
-}
-
-RhiCpuDescriptorHandle VulkanDescriptorAllocator::MakeCpuDescriptorHandle(std::uint32_t tableIndex, std::uint32_t descriptorIndex) noexcept
-{
-	return RhiCpuDescriptorHandle{
-	    CpuDescriptorMagic | (static_cast<std::uintptr_t>(tableIndex + 1u) << 24u) | static_cast<std::uintptr_t>(descriptorIndex + 1u)};
-}
-
-bool VulkanDescriptorAllocator::DecodeGpuDescriptorHandle(RhiGpuDescriptorHandle handle, std::uint32_t& outIndex) noexcept
-{
-	if ((handle.Value & 0xFFFFFFFF00000000ull) != GpuDescriptorMagic)
-	{
-		return false;
-	}
-	const std::uint32_t encodedIndex = static_cast<std::uint32_t>(handle.Value & 0xFFFFFFFFull);
-	if (encodedIndex == 0)
-	{
-		return false;
-	}
-	outIndex = encodedIndex - 1u;
-	return true;
-}
-
-bool VulkanDescriptorAllocator::DecodeCpuDescriptorHandle(
-    RhiCpuDescriptorHandle handle,
-    std::uint32_t& outTableIndex,
-    std::uint32_t& outDescriptorIndex) noexcept
-{
-	if ((handle.Value & static_cast<std::uintptr_t>(0xFFFFFFFF00000000ull)) != CpuDescriptorMagic)
-	{
-		return false;
-	}
-	const std::uint32_t encodedTableIndex = static_cast<std::uint32_t>((handle.Value >> 24u) & 0xFFFFFFu);
-	const std::uint32_t encodedDescriptorIndex = static_cast<std::uint32_t>(handle.Value & 0xFFFFFFu);
-	if (encodedTableIndex == 0 || encodedDescriptorIndex == 0)
-	{
-		return false;
-	}
-	outTableIndex = encodedTableIndex - 1u;
-	outDescriptorIndex = encodedDescriptorIndex - 1u;
-	return true;
-}
-
 VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noexcept
 {
 	switch (kind)
@@ -494,7 +444,7 @@ const VulkanDescriptorAllocator::DescriptorTableRecord* VulkanDescriptorAllocato
 VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept
 {
 	std::uint32_t index = 0;
-	if (!DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
+	if (!VulkanDescriptorHandles::DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
 	{
 		return nullptr;
 	}
@@ -505,7 +455,7 @@ const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::Fin
     RhiGpuDescriptorHandle handle) const noexcept
 {
 	std::uint32_t index = 0;
-	if (!DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
+	if (!VulkanDescriptorHandles::DecodeGpuDescriptorHandle(handle, index) || index >= m_registeredDescriptors.size())
 	{
 		return nullptr;
 	}

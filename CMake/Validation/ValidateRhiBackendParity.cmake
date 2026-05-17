@@ -235,8 +235,8 @@ if(rhi_interface_text AND vulkan_rhi_header_text AND vulkan_rhi_source_text)
 endif()
 
 set(command_interface_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Public/Commands/RenderCommandList.h")
-set(d3d12_command_header_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12RenderCommandList.h")
-set(d3d12_command_source_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12RenderCommandList.cpp")
+set(d3d12_command_header_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/Commands/D3D12RenderCommandList.h")
+set(d3d12_command_source_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/Commands/D3D12RenderCommandList.cpp")
 set(vulkan_command_header_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.h")
 set(vulkan_command_source_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Commands/VulkanRenderCommandList.cpp")
 
@@ -376,7 +376,7 @@ set(backend_selection_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/
 set(render_device_services_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Device/RenderDeviceServices.cpp")
 set(smoke_validation_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/Application/Private/Validation/RhiSmokeValidation.cpp")
 set(vulkan_device_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/Vulkan/Device/VulkanRhi.cpp")
-set(d3d12_device_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12Rhi.cpp")
+set(d3d12_device_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/Engine/RHI/Private/D3D12/Device/D3D12Rhi.cpp")
 set(smoke_doc_path "${RHI_BACKEND_PARITY_SOURCE_DIR}/docs/plans/backend-runtime-smoke-tests.md")
 
 read_required_rhi_backend_parity_file("${backend_selection_path}" backend_selection_text)

@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Samplers/D3D12SamplerLibrary.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 
 static const auto g_samplerLibraryLogger = Logging::GetOrCreateLogger("RHI.D3D12.Samplers");

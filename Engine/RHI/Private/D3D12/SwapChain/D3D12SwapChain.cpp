@@ -1,8 +1,8 @@
 #include "PCH.h"
-#include "D3D12/D3D12SwapChain.h"
+#include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "CVars/RHICVars.h"
 #include "Window/Window.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 

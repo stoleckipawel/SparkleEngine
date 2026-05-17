@@ -3,7 +3,7 @@
 #include "D3D12/Textures/TextureFactory.h"
 
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Resources/D3D12Texture.h"
 #include "Resources/Texture.h"
 

@@ -1,6 +1,6 @@
 #include "PCH.h"
 
-#include "D3D12/D3D12RenderCommandList.h"
+#include "D3D12/Commands/D3D12RenderCommandList.h"
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 #include "D3D12/D3D12TypeConversions.h"

@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Resources/D3D12UploadBuffer.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/Memory/D3D12GpuMemoryAllocator.h"
 #include <cstring>
 

@@ -5,7 +5,7 @@
 #include <cstring>
 #include "Timer.h"
 #include "Window/Window.h"
-#include "D3D12/D3D12SwapChain.h"
+#include "D3D12/SwapChain/D3D12SwapChain.h"
 
 D3D12ConstantBufferManager::D3D12ConstantBufferManager(
     Timer& timer,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "Device/RenderHardwareInterface.h"
 #include "D3D12DescriptorHeap.h"
 #include "D3D12DescriptorAllocator.h"

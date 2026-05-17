@@ -4,6 +4,7 @@
 
 #include "Diagnostics/RhiDiagnostics.h"
 #include "RayTracing/RhiRayTracingDesc.h"
+#include "Vulkan/Diagnostics/VulkanDebugLayer.h"
 
 #include <cstdint>
 #include <mutex>
@@ -100,7 +101,7 @@ class VulkanRhi final
 	    void* userData) noexcept;
 
 	VkInstance m_instance = VK_NULL_HANDLE;
-	VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
+	VulkanDebugLayer m_debugLayer;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_device = VK_NULL_HANDLE;
 	VkQueue m_graphicsQueue = VK_NULL_HANDLE;
@@ -109,7 +110,6 @@ class VulkanRhi final
 	PFN_vkCmdBeginDebugUtilsLabelEXT m_cmdBeginDebugUtilsLabel = nullptr;
 	PFN_vkCmdEndDebugUtilsLabelEXT m_cmdEndDebugUtilsLabel = nullptr;
 	PFN_vkCmdInsertDebugUtilsLabelEXT m_cmdInsertDebugUtilsLabel = nullptr;
-	PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugUtilsMessenger = nullptr;
 	VulkanAdapterInfo m_adapterInfo;
 	VulkanFeatureStatus m_featureStatus;
 	std::vector<std::string> m_enabledInstanceExtensions;

@@ -8,13 +8,19 @@
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
+#include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
 #include "Vulkan/Pipeline/VulkanPipelineState.h"
+#include "Vulkan/Resources/VulkanConstantBufferManager.h"
+#include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
+#include "Vulkan/Textures/VulkanTextureFactory.h"
+#include "Vulkan/Textures/VulkanTextureLoader.h"
+#include "Vulkan/UI/VulkanImGuiBackend.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 #include <format>
@@ -28,12 +34,15 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
     VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
     m_rhi(&rhi), m_swapChain(&swapChain), m_commandContext(&commandContext), m_memoryAllocator(&memoryAllocator)
 {
-	m_descriptorAllocator = std::make_unique<VulkanDescriptorAllocator>(rhi);
-	m_uniformUploadRecordsByFrame.resize(RenderConfig::FramesInFlight);
+	m_descriptorManager = std::make_unique<VulkanDescriptorManager>(rhi);
+	m_constantBufferManager = std::make_unique<VulkanConstantBufferManager>(memoryAllocator);
+	m_samplerLibrary = std::make_unique<VulkanSamplerLibrary>(rhi, *m_descriptorManager);
+	m_textureFactory = std::make_unique<VulkanTextureFactory>(memoryAllocator);
+	m_imguiBackend = std::make_unique<VulkanImGuiBackend>();
 	for (std::uint32_t frameIndex = 0; frameIndex < RenderConfig::FramesInFlight; ++frameIndex)
 	{
 		commandContext.GetCommandList(frameIndex).SetMemoryAllocator(&memoryAllocator);
-		commandContext.GetCommandList(frameIndex).SetDescriptorAllocator(m_descriptorAllocator.get());
+		commandContext.GetCommandList(frameIndex).SetDescriptorAllocator(&m_descriptorManager->GetAllocator());
 	}
 	m_diagnostics = CreateVulkanRenderDiagnostics(rhi, memoryAllocator);
 	RebuildSwapChainBackBufferViews();
@@ -41,20 +50,10 @@ VulkanRenderHardwareInterface::VulkanRenderHardwareInterface(
 
 VulkanRenderHardwareInterface::~VulkanRenderHardwareInterface() noexcept
 {
-	ReleaseAllResourceViews();
-	for (SamplerRecord& samplerRecord : m_samplerRecords)
-	{
-		if (m_descriptorAllocator != nullptr && samplerRecord.Table)
-		{
-			m_descriptorAllocator->ReleaseDescriptorTable(samplerRecord.Table);
-		}
-		if (m_rhi != nullptr && samplerRecord.Sampler != VK_NULL_HANDLE)
-		{
-			vkDestroySampler(m_rhi->GetDevice(), samplerRecord.Sampler, nullptr);
-		}
-	}
-	m_samplerRecords.clear();
-	m_uniformUploadRecordsByFrame.clear();
+	m_samplerLibrary.reset();
+	m_imguiBackend.reset();
+	m_textureFactory.reset();
+	m_constantBufferManager.reset();
 	if (m_memoryAllocator != nullptr)
 	{
 		m_memoryAllocator->FlushPendingReleases();
@@ -124,14 +123,32 @@ const RenderDiagnostics& VulkanRenderHardwareInterface::GetDiagnostics() const n
 
 bool VulkanRenderHardwareInterface::InitializeImGuiBackend()
 {
-	return false;
+	return m_imguiBackend != nullptr && m_imguiBackend->Initialize();
 }
 
-void VulkanRenderHardwareInterface::BeginImGuiFrame() noexcept {}
+void VulkanRenderHardwareInterface::BeginImGuiFrame() noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->BeginFrame();
+	}
+}
 
-void VulkanRenderHardwareInterface::RenderImGuiDrawData(ImDrawData*) noexcept {}
+void VulkanRenderHardwareInterface::RenderImGuiDrawData(ImDrawData* drawData) noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->RenderDrawData(drawData);
+	}
+}
 
-void VulkanRenderHardwareInterface::ShutdownImGuiBackend() noexcept {}
+void VulkanRenderHardwareInterface::ShutdownImGuiBackend() noexcept
+{
+	if (m_imguiBackend != nullptr)
+	{
+		m_imguiBackend->Shutdown();
+	}
+}
 
 std::unique_ptr<RenderBindingLayout> VulkanRenderHardwareInterface::CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc)
 {
@@ -152,16 +169,16 @@ void VulkanRenderHardwareInterface::BindGlobalDescriptorState(RenderCommandList&
 
 RhiDescriptorAllocation VulkanRenderHardwareInterface::AllocateDescriptor(ERhiDescriptorAllocatorType descriptorType)
 {
-	return m_descriptorAllocator != nullptr ? m_descriptorAllocator->AllocateDescriptor(descriptorType) : RhiDescriptorAllocation{};
+	return m_descriptorManager != nullptr ? m_descriptorManager->AllocateDescriptor(descriptorType) : RhiDescriptorAllocation{};
 }
 
 void VulkanRenderHardwareInterface::ReleaseDescriptor(
     ERhiDescriptorAllocatorType descriptorType,
     const RhiDescriptorAllocation& allocation) noexcept
 {
-	if (m_descriptorAllocator != nullptr)
+	if (m_descriptorManager != nullptr)
 	{
-		m_descriptorAllocator->ReleaseDescriptor(descriptorType, allocation);
+		m_descriptorManager->ReleaseDescriptor(descriptorType, allocation);
 	}
 }
 
@@ -169,7 +186,7 @@ RhiDescriptorTableHandle VulkanRenderHardwareInterface::AllocateDescriptorTable(
     ERhiDescriptorAllocatorType descriptorType,
     std::uint32_t descriptorCount)
 {
-	return m_descriptorAllocator != nullptr ? m_descriptorAllocator->AllocateDescriptorTable(descriptorType, descriptorCount)
+	return m_descriptorManager != nullptr ? m_descriptorManager->AllocateDescriptorTable(descriptorType, descriptorCount)
 	                                        : RhiDescriptorTableHandle{};
 }
 
@@ -177,15 +194,15 @@ RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetDescriptorTableCpuHandl
     RhiDescriptorTableHandle tableHandle,
     std::uint32_t descriptorIndex) const noexcept
 {
-	return m_descriptorAllocator != nullptr ? m_descriptorAllocator->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex)
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetDescriptorTableCpuHandle(tableHandle, descriptorIndex)
 	                                        : RhiCpuDescriptorHandle{};
 }
 
 void VulkanRenderHardwareInterface::ReleaseDescriptorTable(RhiDescriptorTableHandle tableHandle) noexcept
 {
-	if (m_descriptorAllocator != nullptr)
+	if (m_descriptorManager != nullptr)
 	{
-		m_descriptorAllocator->ReleaseDescriptorTable(tableHandle);
+		m_descriptorManager->ReleaseDescriptorTable(tableHandle);
 	}
 }
 
@@ -207,81 +224,38 @@ void VulkanRenderHardwareInterface::ReleaseShaderResourceDescriptor(
 
 const PerFrameConstantBufferData& VulkanRenderHardwareInterface::GetPerFrameConstantData() const noexcept
 {
-	return m_emptyPerFrameConstants;
+	static const PerFrameConstantBufferData emptyPerFrameConstants = {};
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameData() : emptyPerFrameConstants;
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::GetPerFrameConstantGpuAddress() const noexcept
 {
-	return {};
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->GetPerFrameGpuAddress() : RhiGpuVirtualAddress{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocateUniformConstantBuffer(const void* data, std::uint32_t sizeInBytes)
 {
-	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0)
-	{
-		return {};
-	}
-
-	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = 0, .AllowUnorderedAccess = false};
-	const VkBufferCreateInfo createInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
-	    createInfo,
-	    RhiMemoryCategory::ConstantBuffer,
-	    RhiMemoryResidencyClass::HostUpload,
-	    L"Vulkan Uniform Upload");
-	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
-	{
-		return {};
-	}
-
-	const VkBuffer buffer = record->Buffer;
-	if (m_currentFrameIndex < m_uniformUploadRecordsByFrame.size())
-	{
-		m_uniformUploadRecordsByFrame[m_currentFrameIndex].push_back(std::move(record));
-	}
-	return reinterpret_cast<RhiGpuVirtualAddress>(buffer);
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocateUniform(data, sizeInBytes) : RhiGpuVirtualAddress{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerViewConstantBuffer(const PerViewConstantBufferData& data)
 {
-	return AllocateUniformConstantBuffer(&data, sizeof(data));
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerView(data) : RhiGpuVirtualAddress{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data)
 {
-	return AllocateUniformConstantBuffer(&data, sizeof(data));
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerObjectVertexConstants(data) : RhiGpuVirtualAddress{};
 }
 
 RhiGpuVirtualAddress VulkanRenderHardwareInterface::AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data)
 {
-	return AllocateUniformConstantBuffer(&data, sizeof(data));
+	return m_constantBufferManager != nullptr ? m_constantBufferManager->AllocatePerObjectPixelConstants(data) : RhiGpuVirtualAddress{};
 }
 
 RhiDescriptorTableBinding VulkanRenderHardwareInterface::GetSharedSamplerBinding(const RhiSamplerDesc& samplerDesc) const noexcept
 {
-	if (m_descriptorAllocator == nullptr || m_rhi == nullptr)
-	{
-		return {};
-	}
-
-	for (const SamplerRecord& samplerRecord : m_samplerRecords)
-	{
-		if (SamplerDescEquals(samplerRecord.Desc, samplerDesc))
-		{
-			return RhiDescriptorTableBinding{.Table = samplerRecord.Table, .DescriptorIndex = 0};
-		}
-	}
-
-	VulkanRenderHardwareInterface* self = const_cast<VulkanRenderHardwareInterface*>(this);
-	VkSampler sampler = self->CreateSampler(samplerDesc);
-	if (sampler == VK_NULL_HANDLE)
-	{
-		return {};
-	}
-	const RhiDescriptorTableHandle table = self->m_descriptorAllocator->AllocateDescriptorTable(ERhiDescriptorAllocatorType::Sampler, 1);
-	self->m_descriptorAllocator->WriteSamplerDescriptor(self->m_descriptorAllocator->GetDescriptorTableCpuHandle(table), sampler);
-	self->m_samplerRecords.push_back(SamplerRecord{.Desc = samplerDesc, .Sampler = sampler, .Table = table});
-	return RhiDescriptorTableBinding{.Table = table, .DescriptorIndex = 0};
+	return m_samplerLibrary != nullptr ? m_samplerLibrary->GetSharedSamplerBinding(samplerDesc) : RhiDescriptorTableBinding{};
 }
 
 RhiViewport VulkanRenderHardwareInterface::GetBackBufferViewport() const noexcept
@@ -304,10 +278,9 @@ NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() cons
 	return m_swapChain != nullptr ? m_swapChain->GetCurrentBackBufferResource() : NativeResourceHandle{};
 }
 
-std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTextureFromPath(const std::filesystem::path&) const
+std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTextureFromPath(const std::filesystem::path& texturePath) const
 {
-	FailRenderingNotImplemented("CreateTextureFromPath");
-	return {};
+	return VulkanTextureLoader::Load(texturePath);
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
@@ -318,15 +291,8 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
     std::wstring_view debugName)
 {
 	(void) initialState;
-	if (m_memoryAllocator == nullptr || desc.Width == 0 || desc.Height == 0 || desc.Format == PixelFormat::Unknown)
-	{
-		return {};
-	}
-
-	const VkImageCreateInfo imageCreateInfo = VulkanTypeConversions::BuildTextureCreateInfo(desc);
-	std::unique_ptr<VulkanGpuAllocationRecord> record =
-	    m_memoryAllocator->CreateImage(imageCreateInfo, category, residencyClass, debugName);
-	return record != nullptr ? MakeVulkanOwnedResourceHandle(std::move(record)) : RhiOwnedResourceHandle{};
+	return m_textureFactory != nullptr ? m_textureFactory->CreateTextureResource(desc, category, residencyClass, debugName)
+	                               : RhiOwnedResourceHandle{};
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateBufferResource(
@@ -620,92 +586,25 @@ RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateAliasingBufferResour
 
 RhiResourceViewHandle VulkanRenderHardwareInterface::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (!desc.Resource)
-	{
-		return {};
-	}
-
-	switch (desc.Kind)
-	{
-		case ERhiResourceViewKind::TextureShaderResource:
-		case ERhiResourceViewKind::TextureUnorderedAccess:
-		{
-			const VkImageView imageView = CreateImageView(desc);
-			RhiGpuDescriptorHandle descriptorHandle = {};
-			if (m_descriptorAllocator != nullptr && imageView != VK_NULL_HANDLE)
-			{
-				descriptorHandle = m_descriptorAllocator->RegisterImageDescriptor(desc.Kind, imageView);
-			}
-			return AddResourceView(
-			    ResourceViewRecord{
-			        .Kind = desc.Kind,
-			        .Image = static_cast<VkImage>(desc.Resource.Value),
-			        .ImageView = imageView,
-			        .DescriptorHandle = descriptorHandle,
-			        .OwnsImageView = true});
-		}
-		case ERhiResourceViewKind::RenderTarget:
-		case ERhiResourceViewKind::DepthStencil:
-			return AddResourceView(
-			    ResourceViewRecord{
-			        .Kind = desc.Kind,
-			        .Image = static_cast<VkImage>(desc.Resource.Value),
-			        .ImageView = CreateImageView(desc),
-			        .OwnsImageView = true});
-		case ERhiResourceViewKind::BufferShaderResource:
-		case ERhiResourceViewKind::BufferUnorderedAccess:
-		{
-			RhiGpuDescriptorHandle descriptorHandle = {};
-			if (m_descriptorAllocator != nullptr)
-			{
-				descriptorHandle = m_descriptorAllocator->RegisterBufferDescriptor(
-				    static_cast<VkBuffer>(desc.Resource.Value),
-				    desc.Buffer.OffsetInBytes,
-				    desc.Buffer.SizeInBytes != 0 ? desc.Buffer.SizeInBytes : VK_WHOLE_SIZE);
-			}
-			return AddResourceView(
-			    ResourceViewRecord{
-			        .Kind = desc.Kind,
-			        .Buffer = static_cast<VkBuffer>(desc.Resource.Value),
-			        .DescriptorHandle = descriptorHandle});
-		}
-		case ERhiResourceViewKind::AccelerationStructureShaderResource:
-		default:
-			FailRenderingNotImplemented("CreateResourceView for non-texture Vulkan resources");
-			return {};
-	}
+	return m_descriptorManager != nullptr ? m_descriptorManager->CreateResourceView(desc) : RhiResourceViewHandle{};
 }
 
 void VulkanRenderHardwareInterface::ReleaseResourceView(RhiResourceViewHandle view) noexcept
 {
-	ResourceViewRecord* const record = FindResourceViewRecord(view);
-	if (record == nullptr)
+	if (m_descriptorManager != nullptr)
 	{
-		return;
+		m_descriptorManager->ReleaseResourceView(view);
 	}
-
-	if (record->OwnsImageView && record->ImageView != VK_NULL_HANDLE && m_rhi != nullptr)
-	{
-		vkDestroyImageView(m_rhi->GetDevice(), record->ImageView, nullptr);
-	}
-	if (m_descriptorAllocator != nullptr && record->DescriptorHandle)
-	{
-		m_descriptorAllocator->ReleaseRegisteredDescriptor(record->DescriptorHandle);
-	}
-	*record = {};
-	m_freeResourceViewIndices.push_back(view.Value - 1u);
 }
 
 RhiCpuDescriptorHandle VulkanRenderHardwareInterface::GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept
 {
-	const ResourceViewRecord* const record = FindResourceViewRecord(view);
-	return RhiCpuDescriptorHandle{record != nullptr ? EncodeImageViewHandle(record->ImageView) : 0u};
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewCpuHandle(view) : RhiCpuDescriptorHandle{};
 }
 
 RhiGpuDescriptorHandle VulkanRenderHardwareInterface::GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept
 {
-	const ResourceViewRecord* const record = FindResourceViewRecord(view);
-	return record != nullptr ? record->DescriptorHandle : RhiGpuDescriptorHandle{};
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewGpuHandle(view) : RhiGpuDescriptorHandle{};
 }
 
 bool VulkanRenderHardwareInterface::SupportsUnorderedAccess(NativeResourceHandle) const noexcept
@@ -741,22 +640,18 @@ void VulkanRenderHardwareInterface::SetCurrentFrameIndex(std::uint32_t frameInde
 
 void VulkanRenderHardwareInterface::ResetTransientFrameResources() noexcept
 {
-	if (m_descriptorAllocator != nullptr)
+	if (m_descriptorManager != nullptr)
 	{
-		m_descriptorAllocator->BeginFrame(m_currentFrameIndex);
+		m_descriptorManager->BeginFrame(m_currentFrameIndex);
 	}
-	if (m_currentFrameIndex < m_uniformUploadRecordsByFrame.size())
+	if (m_constantBufferManager != nullptr)
 	{
-		m_uniformUploadRecordsByFrame[m_currentFrameIndex].clear();
+		m_constantBufferManager->BeginFrame(m_currentFrameIndex);
 	}
 }
 
 void VulkanRenderHardwareInterface::RebuildSwapChainBackBufferViews() noexcept
 {
-	ReleaseAllResourceViews();
-	m_resourceViewRecords.clear();
-	m_freeResourceViewIndices.clear();
-	m_swapChainBackBufferViews.clear();
 	m_swapChainBackBufferLayouts.clear();
 	m_isPresentRendering = false;
 	if (m_swapChain == nullptr)
@@ -765,16 +660,10 @@ void VulkanRenderHardwareInterface::RebuildSwapChainBackBufferViews() noexcept
 	}
 
 	const std::uint32_t backBufferCount = m_swapChain->GetBackBufferCount();
-	m_swapChainBackBufferViews.reserve(backBufferCount);
 	m_swapChainBackBufferLayouts.assign(backBufferCount, VK_IMAGE_LAYOUT_UNDEFINED);
-	for (std::uint32_t backBufferIndex = 0; backBufferIndex < backBufferCount; ++backBufferIndex)
+	if (m_descriptorManager != nullptr)
 	{
-		m_swapChainBackBufferViews.push_back(AddResourceView(
-		    ResourceViewRecord{
-		        .Kind = ERhiResourceViewKind::RenderTarget,
-		        .Image = m_swapChain->GetBackBufferImage(backBufferIndex),
-		        .ImageView = m_swapChain->GetBackBufferImageView(backBufferIndex),
-		        .OwnsImageView = false}));
+		m_descriptorManager->RebuildSwapChainBackBufferViews(*m_swapChain);
 	}
 }
 
@@ -789,170 +678,6 @@ void VulkanRenderHardwareInterface::FailRenderingNotImplemented(std::string_view
 	        operation));
 }
 
-RhiResourceViewHandle VulkanRenderHardwareInterface::MakeResourceViewHandle(std::uint32_t index) noexcept
-{
-	return RhiResourceViewHandle{index + 1u};
-}
-
-bool VulkanRenderHardwareInterface::SamplerDescEquals(const RhiSamplerDesc& lhs, const RhiSamplerDesc& rhs) noexcept
-{
-	return lhs.MinMagFilter == rhs.MinMagFilter && lhs.MipFilter == rhs.MipFilter && lhs.Address.U == rhs.Address.U &&
-	       lhs.Address.V == rhs.Address.V && lhs.Address.W == rhs.Address.W && lhs.MaxAnisotropy == rhs.MaxAnisotropy;
-}
-
-VkFilter VulkanRenderHardwareInterface::ToVkFilter(RhiSamplerMinMagFilter filter) noexcept
-{
-	return filter == RhiSamplerMinMagFilter::Point ? VK_FILTER_NEAREST : VK_FILTER_LINEAR;
-}
-
-VkSamplerMipmapMode VulkanRenderHardwareInterface::ToVkMipmapMode(RhiSamplerMipFilter filter) noexcept
-{
-	return filter == RhiSamplerMipFilter::Point ? VK_SAMPLER_MIPMAP_MODE_NEAREST : VK_SAMPLER_MIPMAP_MODE_LINEAR;
-}
-
-VkSamplerAddressMode VulkanRenderHardwareInterface::ToVkAddressMode(RhiSamplerAddressMode mode) noexcept
-{
-	switch (mode)
-	{
-		case RhiSamplerAddressMode::Clamp:
-			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		case RhiSamplerAddressMode::Mirror:
-			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-		case RhiSamplerAddressMode::Wrap:
-		default:
-			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	}
-}
-
-std::uintptr_t VulkanRenderHardwareInterface::EncodeImageViewHandle(VkImageView imageView) noexcept
-{
-	return reinterpret_cast<std::uintptr_t>(imageView);
-}
-
-VkSampler VulkanRenderHardwareInterface::CreateSampler(const RhiSamplerDesc& desc) const
-{
-	const float maxAnisotropy = static_cast<float>(desc.MaxAnisotropy);
-	const VkSamplerCreateInfo createInfo{
-	    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .magFilter = ToVkFilter(desc.MinMagFilter),
-	    .minFilter = ToVkFilter(desc.MinMagFilter),
-	    .mipmapMode = ToVkMipmapMode(desc.MipFilter),
-	    .addressModeU = ToVkAddressMode(desc.Address.U),
-	    .addressModeV = ToVkAddressMode(desc.Address.V),
-	    .addressModeW = ToVkAddressMode(desc.Address.W),
-	    .mipLodBias = 0.0f,
-	    .anisotropyEnable = desc.MaxAnisotropy != RhiSamplerAnisotropy::X1,
-	    .maxAnisotropy = maxAnisotropy,
-	    .compareEnable = VK_FALSE,
-	    .compareOp = VK_COMPARE_OP_ALWAYS,
-	    .minLod = 0.0f,
-	    .maxLod = desc.MipFilter == RhiSamplerMipFilter::None ? 0.0f : VK_LOD_CLAMP_NONE,
-	    .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
-	    .unnormalizedCoordinates = VK_FALSE};
-
-	VkSampler sampler = VK_NULL_HANDLE;
-	const VkResult result = vkCreateSampler(m_rhi->GetDevice(), &createInfo, nullptr, &sampler);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanRenderHardwareInterfaceLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateSampler", result));
-	}
-	return sampler;
-}
-
-RhiResourceViewHandle VulkanRenderHardwareInterface::AddResourceView(ResourceViewRecord record)
-{
-	if (!m_freeResourceViewIndices.empty())
-	{
-		const std::uint32_t index = m_freeResourceViewIndices.back();
-		m_freeResourceViewIndices.pop_back();
-		m_resourceViewRecords[index] = record;
-		return MakeResourceViewHandle(index);
-	}
-
-	m_resourceViewRecords.push_back(record);
-	return MakeResourceViewHandle(static_cast<std::uint32_t>(m_resourceViewRecords.size() - 1u));
-}
-
-VulkanRenderHardwareInterface::ResourceViewRecord* VulkanRenderHardwareInterface::FindResourceViewRecord(
-    RhiResourceViewHandle view) noexcept
-{
-	if (!view || view.Value - 1u >= m_resourceViewRecords.size())
-	{
-		return nullptr;
-	}
-	return &m_resourceViewRecords[view.Value - 1u];
-}
-
-const VulkanRenderHardwareInterface::ResourceViewRecord* VulkanRenderHardwareInterface::FindResourceViewRecord(
-    RhiResourceViewHandle view) const noexcept
-{
-	if (!view || view.Value - 1u >= m_resourceViewRecords.size())
-	{
-		return nullptr;
-	}
-	return &m_resourceViewRecords[view.Value - 1u];
-}
-
-VkImageView VulkanRenderHardwareInterface::CreateImageView(const RhiResourceViewDesc& desc) const
-{
-	const VkImageViewCreateInfo createInfo{
-	    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .image = static_cast<VkImage>(desc.Resource.Value),
-	    .viewType = VK_IMAGE_VIEW_TYPE_2D,
-	    .format = ResolveViewFormat(desc),
-	    .components =
-	        VkComponentMapping{
-	            .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-	            .a = VK_COMPONENT_SWIZZLE_IDENTITY},
-	    .subresourceRange = VkImageSubresourceRange{
-	        .aspectMask = ResolveViewAspectMask(desc),
-	        .baseMipLevel = desc.Texture.MostDetailedMip,
-	        .levelCount = desc.Texture.MipCount,
-	        .baseArrayLayer = desc.Texture.FirstArraySlice,
-	        .layerCount = desc.Texture.ArraySize}};
-
-	VkImageView imageView = VK_NULL_HANDLE;
-	const VkResult result = vkCreateImageView(m_rhi->GetDevice(), &createInfo, nullptr, &imageView);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanRenderHardwareInterfaceLogger,
-		    __FILE__,
-		    __LINE__,
-		    VulkanResult::FormatFailure("vkCreateImageView", result));
-	}
-	return imageView;
-}
-
-VkFormat VulkanRenderHardwareInterface::ResolveViewFormat(const RhiResourceViewDesc& desc) const noexcept
-{
-	if (desc.Format != PixelFormat::Unknown)
-	{
-		return VulkanTypeConversions::ToVkFormat(desc.Format);
-	}
-	if (m_swapChain != nullptr && desc.Resource.Value == m_swapChain->GetCurrentBackBufferResource().Value)
-	{
-		return m_swapChain->GetNativeBackBufferFormat();
-	}
-	return VK_FORMAT_UNDEFINED;
-}
-
-VkImageAspectFlags VulkanRenderHardwareInterface::ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept
-{
-	return desc.Kind == ERhiResourceViewKind::DepthStencil ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
-	                                                       : VK_IMAGE_ASPECT_COLOR_BIT;
-}
-
 RhiResourceViewHandle VulkanRenderHardwareInterface::GetCurrentBackBufferViewHandle() const noexcept
 {
 	if (m_swapChain == nullptr)
@@ -961,28 +686,7 @@ RhiResourceViewHandle VulkanRenderHardwareInterface::GetCurrentBackBufferViewHan
 	}
 
 	const std::uint32_t backBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
-	return backBufferIndex < m_swapChainBackBufferViews.size() ? m_swapChainBackBufferViews[backBufferIndex] : RhiResourceViewHandle{};
-}
-
-void VulkanRenderHardwareInterface::ReleaseAllResourceViews() noexcept
-{
-	if (m_rhi == nullptr)
-	{
-		return;
-	}
-
-	for (ResourceViewRecord& record : m_resourceViewRecords)
-	{
-		if (record.OwnsImageView && record.ImageView != VK_NULL_HANDLE)
-		{
-			vkDestroyImageView(m_rhi->GetDevice(), record.ImageView, nullptr);
-		}
-		if (m_descriptorAllocator != nullptr && record.DescriptorHandle)
-		{
-			m_descriptorAllocator->ReleaseRegisteredDescriptor(record.DescriptorHandle);
-		}
-		record = {};
-	}
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetSwapChainBackBufferView(backBufferIndex) : RhiResourceViewHandle{};
 }
 
 void VulkanRenderHardwareInterface::BeginCurrentBackBufferRendering(const float* clearColor, bool clear) noexcept

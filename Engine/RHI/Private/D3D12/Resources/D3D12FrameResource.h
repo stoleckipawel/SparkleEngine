@@ -7,7 +7,7 @@
 #include <cassert>
 #include "D3D12LinearAllocator.h"
 #include "Config/RenderConfig.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 
 struct D3D12FrameResource
 {

@@ -2,9 +2,9 @@
 
 #include "D3D12/D3D12RenderHardwareInterface.h"
 
-#include "D3D12/D3D12RenderCommandList.h"
-#include "D3D12/D3D12Rhi.h"
-#include "D3D12/D3D12SwapChain.h"
+#include "D3D12/Commands/D3D12RenderCommandList.h"
+#include "D3D12/Device/D3D12Rhi.h"
+#include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeap.h"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Commands/RenderCommandList.h"
+#include "Vulkan/Diagnostics/VulkanDebugEvents.h"
 #include "Vulkan/VulkanIncludes.h"
 
 #include <array>
@@ -90,8 +91,6 @@ class VulkanRenderCommandList final : public RenderCommandList
 	void UnorderedAccessBarrier(NativeResourceHandle resource) noexcept override;
 
   private:
-	static VkImageView DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept;
-	static VkDebugUtilsLabelEXT BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept;
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
@@ -120,9 +119,7 @@ class VulkanRenderCommandList final : public RenderCommandList
 	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;
-	PFN_vkCmdBeginDebugUtilsLabelEXT m_beginDebugUtilsLabel = nullptr;
-	PFN_vkCmdEndDebugUtilsLabelEXT m_endDebugUtilsLabel = nullptr;
-	PFN_vkCmdInsertDebugUtilsLabelEXT m_insertDebugUtilsLabel = nullptr;
+	VulkanDebugEventFunctions m_debugEvents = {};
 	std::array<VkImageView, MaxRenderTargets> m_renderTargets = {};
 	std::uint32_t m_renderTargetCount = 0;
 	VkImageView m_depthStencil = VK_NULL_HANDLE;

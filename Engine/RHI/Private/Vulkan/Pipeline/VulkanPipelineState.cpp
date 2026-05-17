@@ -7,7 +7,9 @@
 #include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Diagnostics/VulkanDebugNames.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
+#include "Vulkan/Pipeline/VulkanPipelineLayoutBuilder.h"
 #include "Vulkan/Pipeline/VulkanShaderModule.h"
+#include "Vulkan/Pipeline/VulkanVertexLayout.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 #include <array>
@@ -35,16 +37,6 @@ namespace
 	std::string ToDebugName(const wchar_t* debugName)
 	{
 		return debugName != nullptr ? Strings::ToNarrow(debugName) : std::string{"VulkanPipelineState"};
-	}
-
-	std::array<VkVertexInputAttributeDescription, 5> BuildStaticMeshAttributes() noexcept
-	{
-		return std::array<VkVertexInputAttributeDescription, 5>{
-		    VkVertexInputAttributeDescription{.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = 0},
-		    VkVertexInputAttributeDescription{.location = 1, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = 12},
-		    VkVertexInputAttributeDescription{.location = 2, .binding = 0, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .offset = 20},
-		    VkVertexInputAttributeDescription{.location = 3, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = 36},
-		    VkVertexInputAttributeDescription{.location = 4, .binding = 0, .format = VK_FORMAT_R32G32B32A32_SFLOAT, .offset = 48}};
 	}
 
 	VkStencilOpState BuildStencilFaceState(
@@ -78,7 +70,9 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)
 {
 	const std::string debugName = ToDebugName(desc.DebugName);
-	CreatePipelineLayout(rhi, desc.BindingLayout, debugName);
+	VulkanPipelineLayoutBuilder layoutBuilder;
+	layoutBuilder.SetBindingLayout(desc.BindingLayout);
+	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
 
 	VulkanShaderModule vertexShader(rhi, desc.VertexShader, debugName, true);
 	VulkanShaderModule pixelShader(rhi, desc.PixelShader, debugName, false);
@@ -90,17 +84,14 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 		shaderStages.push_back(pixelShader.BuildStageCreateInfo());
 	}
 
-	const VkVertexInputBindingDescription vertexBinding{
-	    .binding = 0,
-	    .stride = 64,
-	    .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
-	const std::array<VkVertexInputAttributeDescription, 5> vertexAttributes = BuildStaticMeshAttributes();
+	const std::span<const VkVertexInputBindingDescription> vertexBindings = VulkanVertexLayout::GetStaticMeshBindings();
+	const std::span<const VkVertexInputAttributeDescription> vertexAttributes = VulkanVertexLayout::GetStaticMeshAttributes();
 	const VkPipelineVertexInputStateCreateInfo vertexInputState{
 	    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 	    .pNext = nullptr,
 	    .flags = 0,
 	    .vertexBindingDescriptionCount = desc.VertexLayout == RhiVertexLayoutKind::StaticMesh ? 1u : 0u,
-	    .pVertexBindingDescriptions = desc.VertexLayout == RhiVertexLayoutKind::StaticMesh ? &vertexBinding : nullptr,
+	    .pVertexBindingDescriptions = desc.VertexLayout == RhiVertexLayoutKind::StaticMesh ? vertexBindings.data() : nullptr,
 	    .vertexAttributeDescriptionCount = desc.VertexLayout == RhiVertexLayoutKind::StaticMesh ? static_cast<std::uint32_t>(vertexAttributes.size()) : 0u,
 	    .pVertexAttributeDescriptions = desc.VertexLayout == RhiVertexLayoutKind::StaticMesh ? vertexAttributes.data() : nullptr};
 
@@ -217,7 +208,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
 
 	const VulkanPipelineCacheKey cacheKey{
-	    .Layout = reinterpret_cast<std::uint64_t>(m_pipelineLayout),
+	    .Layout = reinterpret_cast<std::uint64_t>(GetPipelineLayout()),
 	    .RenderTargetCount = desc.RenderTargetCount,
 	    .RenderTargetFormats = renderTargetFormats,
 	    .DepthStencilFormat = renderingCreateInfo.depthAttachmentFormat,
@@ -243,7 +234,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .pDepthStencilState = &depthStencilState,
 	    .pColorBlendState = &colorBlendState,
 	    .pDynamicState = &dynamicState,
-	    .layout = m_pipelineLayout,
+	    .layout = GetPipelineLayout(),
 	    .renderPass = VK_NULL_HANDLE,
 	    .subpass = 0,
 	    .basePipelineHandle = VK_NULL_HANDLE,
@@ -266,7 +257,9 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const ComputePipelineSt
 	m_device(rhi.GetDevice()), m_bindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
 {
 	const std::string debugName = ToDebugName(desc.DebugName);
-	CreatePipelineLayout(rhi, desc.BindingLayout, debugName);
+	VulkanPipelineLayoutBuilder layoutBuilder;
+	layoutBuilder.SetBindingLayout(desc.BindingLayout);
+	m_pipelineLayout = layoutBuilder.Build(rhi, debugName);
 
 	VulkanShaderModule computeShader(rhi, desc.ComputeShader, debugName, true);
 	const VkPipelineShaderStageCreateInfo shaderStage = computeShader.BuildStageCreateInfo();
@@ -275,7 +268,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const ComputePipelineSt
 	    .pNext = nullptr,
 	    .flags = 0,
 	    .stage = shaderStage,
-	    .layout = m_pipelineLayout,
+	    .layout = GetPipelineLayout(),
 	    .basePipelineHandle = VK_NULL_HANDLE,
 	    .basePipelineIndex = -1};
 	const VkResult result = vkCreateComputePipelines(m_device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &m_pipeline);
@@ -297,41 +290,9 @@ VulkanPipelineState::~VulkanPipelineState() noexcept
 	Reset();
 }
 
-void VulkanPipelineState::CreatePipelineLayout(VulkanRhi& rhi, const RenderBindingLayout* bindingLayout, std::string_view debugName)
+VkPipelineLayout VulkanPipelineState::GetPipelineLayout() const noexcept
 {
-	std::span<const VkDescriptorSetLayout> descriptorSetLayouts;
-	std::span<const VkPushConstantRange> pushConstantRanges;
-	if (bindingLayout != nullptr)
-	{
-		const auto& vulkanBindingLayout = static_cast<const VulkanBindingLayout&>(*bindingLayout);
-		descriptorSetLayouts = vulkanBindingLayout.GetDescriptorSetLayouts();
-		pushConstantRanges = vulkanBindingLayout.GetPushConstantRanges();
-	}
-
-	const VkPipelineLayoutCreateInfo createInfo{
-	    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .setLayoutCount = static_cast<std::uint32_t>(descriptorSetLayouts.size()),
-	    .pSetLayouts = descriptorSetLayouts.data(),
-	    .pushConstantRangeCount = static_cast<std::uint32_t>(pushConstantRanges.size()),
-	    .pPushConstantRanges = pushConstantRanges.data()};
-	const VkResult result = vkCreatePipelineLayout(m_device, &createInfo, nullptr, &m_pipelineLayout);
-	if (!VulkanResult::Succeeded(result))
-	{
-		Diagnostics::Fail(
-		    g_vulkanPipelineStateLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Failed to create Vulkan pipeline layout '{}': {}", debugName, VulkanResult::FormatFailure("vkCreatePipelineLayout", result)));
-	}
-
-	VulkanDebugNames::SetObjectName(
-	    rhi.GetSetDebugUtilsObjectName(),
-	    m_device,
-	    VK_OBJECT_TYPE_PIPELINE_LAYOUT,
-	    reinterpret_cast<std::uint64_t>(m_pipelineLayout),
-	    std::format("{} Layout", debugName));
+	return m_pipelineLayout != nullptr ? m_pipelineLayout->Get() : VK_NULL_HANDLE;
 }
 
 void VulkanPipelineState::Reset() noexcept
@@ -347,9 +308,5 @@ void VulkanPipelineState::Reset() noexcept
 		m_pipeline = VK_NULL_HANDLE;
 	}
 
-	if (m_pipelineLayout != VK_NULL_HANDLE)
-	{
-		vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
-		m_pipelineLayout = VK_NULL_HANDLE;
-	}
+	m_pipelineLayout.reset();
 }

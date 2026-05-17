@@ -1,6 +1,6 @@
 #include "PCH.h"
 #include "D3D12/Pipeline/D3D12RootSignature.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 
 D3D12RootSignature::D3D12RootSignature(D3D12Rhi& rhi, const RootSignatureDesc& desc) : m_rhi(rhi)
 {

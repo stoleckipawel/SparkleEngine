@@ -49,11 +49,7 @@ VulkanRhi::~VulkanRhi() noexcept
 		m_device = VK_NULL_HANDLE;
 	}
 
-	if (m_debugMessenger != VK_NULL_HANDLE && m_destroyDebugUtilsMessenger != nullptr)
-	{
-		m_destroyDebugUtilsMessenger(m_instance, m_debugMessenger, nullptr);
-		m_debugMessenger = VK_NULL_HANDLE;
-	}
+	m_debugLayer.Shutdown();
 
 	if (m_instance != VK_NULL_HANDLE)
 	{
@@ -172,38 +168,7 @@ void VulkanRhi::CreateInstance() noexcept
 
 void VulkanRhi::CreateDebugMessenger() noexcept
 {
-	if (m_instance == VK_NULL_HANDLE)
-	{
-		return;
-	}
-
-	auto createDebugUtilsMessenger = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-	    vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT"));
-	m_destroyDebugUtilsMessenger = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-	    vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT"));
-	if (createDebugUtilsMessenger == nullptr || m_destroyDebugUtilsMessenger == nullptr)
-	{
-		return;
-	}
-
-#if ENGINE_GPU_VALIDATION
-	const VkDebugUtilsMessengerCreateInfoEXT createInfo{
-	    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-	    .pNext = nullptr,
-	    .flags = 0,
-	    .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-	                       VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-	    .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-	                   VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-	    .pfnUserCallback = &VulkanRhi::DebugUtilsCallback,
-	    .pUserData = this};
-
-	const VkResult result = createDebugUtilsMessenger(m_instance, &createInfo, nullptr, &m_debugMessenger);
-	if (!VulkanResult::Succeeded(result))
-	{
-		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "vkCreateDebugUtilsMessengerEXT failed: {}", VulkanResult::ToString(result));
-	}
-#endif
+	m_debugLayer.Initialize(m_instance, &VulkanRhi::DebugUtilsCallback, this);
 }
 
 void VulkanRhi::SelectPhysicalDevice() noexcept

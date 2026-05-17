@@ -1,6 +1,6 @@
 ﻿#include "PCH.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12VertexLayout.h"

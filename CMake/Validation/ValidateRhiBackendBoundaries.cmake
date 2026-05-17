@@ -83,6 +83,65 @@ function(check_file_for_backend_tokens file_path)
     endforeach()
 endfunction()
 
+function(require_backend_concept_folder backend_name folder_name)
+    set(folder_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/${backend_name}/${folder_name}")
+    if(NOT EXISTS "${folder_path}")
+        append_rhi_backend_violation("Engine/RHI/Private/${backend_name}: missing ${folder_name}/ concept folder for peer backend navigation")
+    endif()
+endfunction()
+
+function(check_backend_root_files backend_name)
+    set(backend_root "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/${backend_name}")
+    if(NOT EXISTS "${backend_root}")
+        append_rhi_backend_violation("missing backend root: Engine/RHI/Private/${backend_name}")
+        return()
+    endif()
+
+    if(backend_name STREQUAL "D3D12")
+        set(allowed_root_files
+            "D3D12PCH.h"
+            "D3D12RenderHardwareInterface.cpp"
+            "D3D12RenderHardwareInterface.h"
+            "D3D12TypeConversions.cpp"
+            "D3D12TypeConversions.h"
+        )
+    elseif(backend_name STREQUAL "Vulkan")
+        set(allowed_root_files
+            "VulkanIncludes.h"
+            "VulkanPCH.h"
+            "VulkanRenderHardwareInterface.cpp"
+            "VulkanRenderHardwareInterface.h"
+            "VulkanTypeConversions.cpp"
+            "VulkanTypeConversions.h"
+        )
+    else()
+        append_rhi_backend_violation("unknown backend layout check: ${backend_name}")
+        return()
+    endif()
+
+    file(GLOB backend_root_files
+        "${backend_root}/*.h"
+        "${backend_root}/*.cpp"
+    )
+
+    foreach(backend_root_file IN LISTS backend_root_files)
+        get_filename_component(root_file_name "${backend_root_file}" NAME)
+        list(FIND allowed_root_files "${root_file_name}" allowed_index)
+        if(allowed_index EQUAL -1)
+            append_rhi_backend_violation(
+                "Engine/RHI/Private/${backend_name}/${root_file_name}: backend root should only contain PCH/includes, type conversions, and the RHI facade; move concept-owned implementation to a backend concept folder"
+            )
+        endif()
+    endforeach()
+endfunction()
+
+foreach(required_backend IN ITEMS D3D12 Vulkan)
+    check_backend_root_files("${required_backend}")
+    foreach(required_folder IN ITEMS Device Commands Descriptors Memory Pipeline Resources Samplers SwapChain Textures UI Diagnostics)
+        require_backend_concept_folder("${required_backend}" "${required_folder}")
+    endforeach()
+endforeach()
+
 set(rhi_public_root "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Public")
 if(EXISTS "${rhi_public_root}")
     file(GLOB_RECURSE rhi_public_files
@@ -262,7 +321,7 @@ if(d3d12_interface_text)
     require_text("${d3d12_interface_path}" "${d3d12_interface_text}" "RhiMemoryResidencyClass::DeviceLocal" "D3D12 ray tracing AS/scratch buffers must use allocator-backed device-local memory")
 endif()
 
-set(d3d12_command_list_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/D3D12/D3D12RenderCommandList.cpp")
+set(d3d12_command_list_path "${RHI_BACKEND_BOUNDARY_SOURCE_DIR}/Engine/RHI/Private/D3D12/Commands/D3D12RenderCommandList.cpp")
 read_required_file("${d3d12_command_list_path}" d3d12_command_list_text)
 if(d3d12_command_list_text)
     require_text("${d3d12_command_list_path}" "${d3d12_command_list_text}" "D3D12_RAYTRACING_GEOMETRY_DESC" "D3D12 must translate neutral BLAS geometry privately")
@@ -593,4 +652,4 @@ if(RHI_BACKEND_BOUNDARY_VIOLATIONS)
     message(FATAL_ERROR "${RHI_BACKEND_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "RHI backend boundary check passed for CMake target split, Renderer link hygiene, common-source backend leakage, and public RHI vocabulary.")
+message(STATUS "RHI backend boundary check passed for backend folder layout, CMake target split, Renderer link hygiene, common-source backend leakage, and public RHI vocabulary.")

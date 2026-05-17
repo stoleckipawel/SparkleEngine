@@ -1,7 +1,7 @@
 #include "PCH.h"
 #include "D3D12/Descriptors/D3D12DescriptorHeapManager.h"
 
-#include "D3D12/D3D12RenderCommandList.h"
+#include "D3D12/Commands/D3D12RenderCommandList.h"
 
 D3D12DescriptorHeapManager::D3D12DescriptorHeapManager(D3D12Rhi& rhi) : m_rhi(&rhi)
 {

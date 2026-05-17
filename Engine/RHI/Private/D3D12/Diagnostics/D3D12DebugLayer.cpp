@@ -1,5 +1,5 @@
 ﻿#include "PCH.h"
-#include "D3D12/D3D12DebugLayer.h"
+#include "D3D12/Diagnostics/D3D12DebugLayer.h"
 
 #if ENGINE_GPU_VALIDATION
 

@@ -3,7 +3,7 @@
 #include "D3D12/Diagnostics/D3D12RenderDiagnostics.h"
 
 #include "Config/RenderConfig.h"
-#include "D3D12/D3D12Rhi.h"
+#include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/D3D12TypeConversions.h"
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Memory/D3D12GpuAllocation.h"

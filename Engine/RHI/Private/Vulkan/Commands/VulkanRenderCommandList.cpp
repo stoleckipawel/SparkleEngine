@@ -3,6 +3,7 @@
 #include "Vulkan/Commands/VulkanRenderCommandList.h"
 
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
+#include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
@@ -49,9 +50,7 @@ void VulkanRenderCommandList::SetNativeCommandBuffer(
 	m_retainedDescriptorTables.clear();
 	m_retainedDescriptorHandles.clear();
 	m_retainedDescriptorBuffers.clear();
-	m_beginDebugUtilsLabel = beginLabel;
-	m_endDebugUtilsLabel = endLabel;
-	m_insertDebugUtilsLabel = insertLabel;
+	m_debugEvents = VulkanDebugEventFunctions{.BeginLabel = beginLabel, .EndLabel = endLabel, .InsertLabel = insertLabel};
 }
 
 ERhiBackendApi VulkanRenderCommandList::GetBackendApi() const noexcept
@@ -66,35 +65,22 @@ NativeGraphicsCommandListHandle VulkanRenderCommandList::GetNativeHandle() const
 
 bool VulkanRenderCommandList::SupportsDiagnosticScopes() const noexcept
 {
-	return m_commandBuffer != VK_NULL_HANDLE && m_beginDebugUtilsLabel != nullptr && m_endDebugUtilsLabel != nullptr;
+	return VulkanDebugEvents::SupportsScopes(m_commandBuffer, m_debugEvents);
 }
 
 void VulkanRenderCommandList::BeginDiagnosticScope(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
-	if (SupportsDiagnosticScopes())
-	{
-		const std::string ownedLabel(label);
-		const VkDebugUtilsLabelEXT nativeLabel = BuildLabel(ownedLabel.c_str(), color);
-		m_beginDebugUtilsLabel(m_commandBuffer, &nativeLabel);
-	}
+	VulkanDebugEvents::BeginScope(m_commandBuffer, m_debugEvents, label, color);
 }
 
 void VulkanRenderCommandList::EndDiagnosticScope() noexcept
 {
-	if (m_commandBuffer != VK_NULL_HANDLE && m_endDebugUtilsLabel != nullptr)
-	{
-		m_endDebugUtilsLabel(m_commandBuffer);
-	}
+	VulkanDebugEvents::EndScope(m_commandBuffer, m_debugEvents);
 }
 
 void VulkanRenderCommandList::InsertDiagnosticMarker(std::string_view label, RhiDiagnosticLabelColor color) noexcept
 {
-	if (m_commandBuffer != VK_NULL_HANDLE && m_insertDebugUtilsLabel != nullptr)
-	{
-		const std::string ownedLabel(label);
-		const VkDebugUtilsLabelEXT nativeLabel = BuildLabel(ownedLabel.c_str(), color);
-		m_insertDebugUtilsLabel(m_commandBuffer, &nativeLabel);
-	}
+	VulkanDebugEvents::InsertMarker(m_commandBuffer, m_debugEvents, label, color);
 }
 
 void VulkanRenderCommandList::SetPipelineState(const RenderPipelineState& pipelineState) noexcept
@@ -314,9 +300,9 @@ void VulkanRenderCommandList::SetRenderTarget(RhiCpuDescriptorHandle rtv, const 
 {
 	EndDynamicRenderingIfNeeded();
 	m_renderTargets = {};
-	m_renderTargets[0] = DecodeImageViewHandle(rtv);
+	m_renderTargets[0] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtv);
 	m_renderTargetCount = m_renderTargets[0] != VK_NULL_HANDLE ? 1u : 0u;
-	m_depthStencil = dsv != nullptr ? DecodeImageViewHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
 }
 
 void VulkanRenderCommandList::SetRenderTargets(
@@ -327,7 +313,7 @@ void VulkanRenderCommandList::SetRenderTargets(
 	EndDynamicRenderingIfNeeded();
 	m_renderTargets = {};
 	m_renderTargetCount = 0;
-	m_depthStencil = dsv != nullptr ? DecodeImageViewHandle(*dsv) : VK_NULL_HANDLE;
+	m_depthStencil = dsv != nullptr ? VulkanDescriptorHandles::DecodeImageViewCpuHandle(*dsv) : VK_NULL_HANDLE;
 	if (rtvs == nullptr)
 	{
 		return;
@@ -336,7 +322,7 @@ void VulkanRenderCommandList::SetRenderTargets(
 	const std::uint32_t count = std::min(numRTVs, MaxRenderTargets);
 	for (std::uint32_t index = 0; index < count; ++index)
 	{
-		m_renderTargets[index] = DecodeImageViewHandle(rtvs[index]);
+		m_renderTargets[index] = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtvs[index]);
 		if (m_renderTargets[index] != VK_NULL_HANDLE)
 		{
 			m_renderTargetCount = index + 1u;
@@ -351,7 +337,7 @@ void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle rtv, cons
 		return;
 	}
 
-	const VkImageView imageView = DecodeImageViewHandle(rtv);
+	const VkImageView imageView = VulkanDescriptorHandles::DecodeImageViewCpuHandle(rtv);
 	std::uint32_t colorAttachment = MaxRenderTargets;
 	for (std::uint32_t index = 0; index < m_renderTargetCount; ++index)
 	{
@@ -386,7 +372,7 @@ void VulkanRenderCommandList::ClearRenderTarget(RhiCpuDescriptorHandle rtv, cons
 
 void VulkanRenderCommandList::ClearDepthStencil(RhiCpuDescriptorHandle dsv, float depth, std::uint8_t stencil) noexcept
 {
-	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || DecodeImageViewHandle(dsv) != m_depthStencil)
+	if (m_commandBuffer == VK_NULL_HANDLE || !m_hasScissorRect || VulkanDescriptorHandles::DecodeImageViewCpuHandle(dsv) != m_depthStencil)
 	{
 		return;
 	}
@@ -693,24 +679,6 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle) noexc
 	    .imageMemoryBarrierCount = 0,
 	    .pImageMemoryBarriers = nullptr};
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
-}
-
-VkImageView VulkanRenderCommandList::DecodeImageViewHandle(RhiCpuDescriptorHandle handle) noexcept
-{
-	return reinterpret_cast<VkImageView>(handle.Value);
-}
-
-VkDebugUtilsLabelEXT VulkanRenderCommandList::BuildLabel(const char* label, RhiDiagnosticLabelColor color) noexcept
-{
-	return VkDebugUtilsLabelEXT{
-	    .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
-	    .pNext = nullptr,
-	    .pLabelName = label,
-	    .color = {
-	        static_cast<float>(color.Red) / 255.0f,
-	        static_cast<float>(color.Green) / 255.0f,
-	        static_cast<float>(color.Blue) / 255.0f,
-	        static_cast<float>(color.Alpha) / 255.0f}};
 }
 
 const CompiledBinding* VulkanRenderCommandList::FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept
