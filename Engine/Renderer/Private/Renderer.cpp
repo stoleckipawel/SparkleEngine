@@ -426,7 +426,7 @@ void Renderer::SetupFrame() noexcept
 	}
 	RefreshViewportRenderProducts();
 
-	m_sceneSnapshot->Capture(*m_gameScene);
+	m_sceneSnapshot->Capture(m_gameScene->CaptureSnapshot());
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 

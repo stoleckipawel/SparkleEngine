@@ -82,7 +82,7 @@ void SceneRenderStateCoordinator::RefreshSceneScopedRendererState() noexcept
 {
 	if (m_gameScene && m_sceneSnapshot)
 	{
-		m_sceneSnapshot->Capture(*m_gameScene);
+		m_sceneSnapshot->Capture(m_gameScene->CaptureSnapshot());
 	}
 
 	if (m_renderCamera && m_sceneSnapshot)

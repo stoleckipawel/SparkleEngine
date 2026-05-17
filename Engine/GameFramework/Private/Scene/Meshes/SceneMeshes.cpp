@@ -35,16 +35,21 @@ void SceneMeshes::Reset() noexcept
 MeshSnapshot SceneMeshes::CaptureSnapshot() const
 {
 	MeshSnapshot snapshot;
-	snapshot.meshComponents.reserve(m_meshes.size());
+	snapshot.meshInstances.reserve(m_meshes.size());
 
 	for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
 	{
-		if (!mesh || !mesh->IsVisible())
+		if (!mesh || !mesh->IsVisible() || !mesh->HasMesh())
 		{
 			continue;
 		}
 
-		snapshot.meshComponents.push_back(mesh.get());
+		MeshInstanceSnapshot meshInstance = {};
+		meshInstance.mesh = mesh->GetMesh();
+		DirectX::XMStoreFloat4x4(&meshInstance.worldMatrix, mesh->GetWorldMatrix());
+		DirectX::XMStoreFloat3x4(&meshInstance.worldInvTranspose, mesh->GetWorldInverseTransposeMatrix());
+		meshInstance.materialHandle = mesh->GetMaterialHandle();
+		snapshot.meshInstances.push_back(meshInstance);
 	}
 
 	return snapshot;

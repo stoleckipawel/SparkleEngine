@@ -67,6 +67,17 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 	return true;
 }
 
+GameSceneSnapshot GameScene::CaptureSnapshot() const
+{
+	GameSceneSnapshot snapshot;
+	snapshot.camera = m_sceneCamera.CaptureSnapshot();
+	snapshot.lighting = m_lighting.CaptureSnapshot();
+	snapshot.textures = m_textures.CaptureSnapshot();
+	snapshot.materials = m_materials.CaptureSnapshot();
+	snapshot.meshes = m_meshes.CaptureSnapshot();
+	return snapshot;
+}
+
 void GameScene::Clear()
 {
 	m_lighting.Reset();

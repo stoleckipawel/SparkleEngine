@@ -5,7 +5,6 @@
 #include "Meshes/GPUMeshCache.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "SceneData/RenderSceneData.h"
-#include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/Mesh.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
@@ -57,16 +56,11 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 	}
 
 	sceneData.meshDraws.clear();
-	sceneData.meshDraws.reserve(sceneSnapshot.meshes.meshComponents.size());
+	sceneData.meshDraws.reserve(sceneSnapshot.meshes.meshInstances.size());
 
-	for (const MeshComponent* meshComponent : sceneSnapshot.meshes.meshComponents)
+	for (const MeshInstanceSnapshot& meshInstance : sceneSnapshot.meshes.meshInstances)
 	{
-		if (meshComponent == nullptr)
-		{
-			continue;
-		}
-
-		const Mesh* mesh = meshComponent->GetMesh();
+		const Mesh* mesh = meshInstance.mesh;
 		if (mesh == nullptr)
 		{
 			continue;
@@ -79,9 +73,9 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 		}
 
 		MeshDraw draw = {};
-		DirectX::XMStoreFloat4x4(&draw.worldMatrix, meshComponent->GetWorldMatrix());
-		DirectX::XMStoreFloat3x4(&draw.worldInvTranspose, meshComponent->GetWorldInverseTransposeMatrix());
-		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshComponent->GetMaterialHandle(), sceneData.materials.size());
+		draw.worldMatrix = meshInstance.worldMatrix;
+		draw.worldInvTranspose = meshInstance.worldInvTranspose;
+		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.gpuMesh = gpuMesh;
 		sceneData.meshDraws.push_back(draw);
 	}

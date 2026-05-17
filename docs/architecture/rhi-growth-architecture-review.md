@@ -1131,7 +1131,7 @@ Managers, caches, command contexts, descriptor allocators, gameplay/world state,
 
 What this phase changes:
 
-This phase labels game-thread-owned, render-thread-owned, and backend-owned state; defines immutable/frame-local handoff data; documents cache synchronization policy; and shapes GameFramework extraction, Renderer setup, FrameGraph compile, and RHI command recording APIs so later multithreading has clean insertion points. If the target state requires changing the existing architecture, change the architecture rather than working around it.
+This phase makes game-thread-owned, render-thread-owned, and backend-owned state visible through real module boundaries and data flow; defines immutable/frame-local handoff data; documents cache synchronization policy; and shapes GameFramework extraction, Renderer setup, FrameGraph compile, and RHI command recording APIs so later multithreading has clean insertion points. If the target state requires changing the existing architecture, change the architecture rather than working around it.
 
 Ready-to-use prompt:
 
@@ -1142,7 +1142,7 @@ Audit Sparkle GameFramework, Renderer, FrameGraph, and RHI for multithreading re
 
 Acceptance criteria:
 
-- GameFramework/world mutation, Renderer orchestration, FrameGraph planning, RHI backend services, descriptor allocators, memory allocators, swapchains, command contexts, and diagnostics state are explicitly marked game-thread-owned, render-thread-owned, backend-owned, immutable, or frame-local.
+- GameFramework/world mutation, Renderer orchestration, FrameGraph planning, RHI backend services, descriptor allocators, memory allocators, swapchains, command contexts, and diagnostics state have explicit ownership boundaries in their module contracts and data flow.
 - GameFramework-to-Renderer handoff uses explicit snapshot/extraction contracts; Renderer does not depend on mutable gameplay/world state during pass setup or command recording.
 - Scene snapshots, transform data, view data, lighting data, material data, frame graph compile output, and per-pass binding packets are documented as immutable/frame-local after setup.
 - Shared caches such as texture, material, shader package, pipeline, and mesh caches define their future synchronization policy: render-thread-only, immutable after build, lock-protected, versioned, or externally synchronized.
@@ -1151,6 +1151,41 @@ Acceptance criteria:
 - RHI submission and backend allocator/descriptor services have clear ownership boundaries and do not rely on hidden caller-side synchronization assumptions.
 - Threading-readiness changes modify the real owning module when needed; no hacks, workaround adapters, hidden mutable globals, or compatibility shims remain as the accepted solution.
 - Validation or documentation identifies stale-handle/generation-check requirements before worker-thread use is allowed.
+
+Phase 9 Implementation Notes:
+
+- `GameScene` now owns the GameFramework-to-Renderer extraction contract through `GameSceneSnapshot CaptureSnapshot() const`. Renderer setup and renderer lifecycle refresh consume that extracted payload instead of asking `RenderSceneSnapshot` to traverse mutable `GameScene` subsystems.
+- `GameSceneSnapshot` is the cross-module handoff payload for camera, lighting, texture, mesh, and material data. `RenderSceneSnapshot` is a renderer-private copy of that payload, captured by move before frame setup uses it.
+- `MeshSnapshot` now carries `MeshInstanceSnapshot` records. Each record copies the world matrix, inverse-transpose matrix, and material handle out of `MeshComponent` during GameFramework extraction, so `RenderSceneDataBuilder` no longer reads live component transforms while preparing renderer frame data.
+- The remaining mesh pointer in `MeshInstanceSnapshot` is treated as renderer cache identity for the existing `GPUMeshCache` path. Before worker-thread extraction or command recording is allowed, this must be replaced or guarded by a stale-handle and generation-check policy for mesh resource lifetime.
+- `FrameContext` remains the explicit frame-local package for `RenderSceneData` and `RenderViewData`. `FrameGraphPlan` remains the explicit compile output for pass nodes, resource nodes, transient planning, execution order, aliasing barriers, and final barriers.
+- Renderer caches remain render-thread-only for this phase: `TextureManager`, `MaterialCacheManager`, `PipelineStateManager`, and `GPUMeshCache` are accessed from renderer setup/recording flow and are not advertised as worker-safe. Future worker use must add versioned immutable cache views, locks, or externally synchronized ownership per cache.
+- Pass setup continues through frame-local data, FrameGraph objects, pass parameter sets, binding overrides, and narrow services such as the GPU mesh/material/pipeline caches. The Phase 9 source gate rejects `Renderer` dependencies in pass and FrameGraph setup paths so `Renderer` cannot become a service locator.
+- Command recording remains single render-thread/backend-driven today, but `RenderCommandContext` carries an explicit `RenderCommandList` pointer rather than relying on a hidden global current command list. Future parallel command recording should introduce per-worker/per-pass command contexts, not shared global state.
+- RHI submission, backend allocator services, descriptor services, swapchains, command contexts, and diagnostics stay at the RHI/backend boundary. D3D12 and Vulkan memory/descriptor/swapchain services remain backend-private rather than caller-side synchronization adapters.
+- Phase 9 deliberately avoids static ownership marker variables. Threading readiness is validated through data-flow shape, module ownership, forbidden dependency checks, and documented synchronization policy.
+
+Phase 9 class disposition audit:
+
+| Class / Family | Phase 9 Disposition | Reason |
+| --- | --- | --- |
+| `GameSceneSnapshot` | Add real contract | Owns the explicit GameFramework extraction payload consumed by Renderer. |
+| `GameScene` | Adjust contract | Captures camera, lighting, texture, mesh, and material snapshots at the GameFramework boundary. |
+| `RenderSceneSnapshot` | Adjust dependency | Stores a renderer-local copy of `GameSceneSnapshot` instead of traversing `GameScene`. |
+| `MeshSnapshot` / `MeshInstanceSnapshot` | Adjust payload | Removes live `MeshComponent` pointers from the renderer handoff and copies transform/material data during extraction. |
+| `RenderSceneDataBuilder` | Adjust input | Builds renderer frame data from snapshot instances, not mutable GameFramework components. |
+| `FrameContext` / `FrameGraphPlan` | Keep explicit frame-local outputs | Already provide the frame-local scene/view package and compiled FrameGraph plan. |
+| `TextureManager`, `MaterialCacheManager`, `PipelineStateManager`, `GPUMeshCache` | Keep render-thread-only for now | Future worker use requires per-cache versioning, locking, immutable views, or external synchronization. |
+| `RenderCommandContext` / `RenderCommandList` | Keep explicit command context | Current recording stays single-threaded, but command-list state is explicit rather than hidden globally. |
+| D3D12/Vulkan allocators, descriptor managers, swapchains, command contexts, diagnostics | Keep backend-private | Backend services own native synchronization assumptions; Renderer must not patch around them. |
+
+Phase 9 source-only validation notes:
+
+- `cmake -DTHREADING_READINESS_SOURCE_DIR="$root" -P CMake/Validation/ValidateThreadingReadiness.cmake`
+- Source search should find no `ThreadOwnership`, `EngineThreadOwnership`, `EngineCacheSynchronization`, `kThreadOwnership`, or `kCacheSynchronization` references in `Engine/`.
+- Source search should find no `m_sceneSnapshot->Capture(*m_gameScene)` or Renderer-side subsystem snapshot traversal such as `GetMeshes().CaptureSnapshot()`.
+- Source search should find `MeshInstanceSnapshot` consumed by `RenderSceneDataBuilder` and no `MeshComponent` dependency in that builder.
+- Builds and launches remain deferred to the final validation block unless the phase policy changes.
 
 ### Phase 10: Advanced Feature Readiness Gate
 

@@ -2,15 +2,9 @@
 
 #include "RenderSceneSnapshot.h"
 
-#include "Scene/GameScene.h"
-#include "Scene/Meshes/Mesh.h"
+#include <utility>
 
-void RenderSceneSnapshot::Capture(const GameScene& gameScene)
+void RenderSceneSnapshot::Capture(GameSceneSnapshot&& gameSceneSnapshot) noexcept
 {
-	Reset();
-	camera = gameScene.GetSceneCamera().CaptureSnapshot();
-	lighting = gameScene.GetLighting().CaptureSnapshot();
-	textures = gameScene.GetTextures().CaptureSnapshot();
-	materials = gameScene.GetMaterials().CaptureSnapshot();
-	meshes = gameScene.GetMeshes().CaptureSnapshot();
+	static_cast<GameSceneSnapshot&>(*this) = std::move(gameSceneSnapshot);
 }

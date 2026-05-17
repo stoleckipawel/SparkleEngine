@@ -111,6 +111,22 @@ add_sparkle_validation_dependency(SparkleEditor shader_package_parity_check)
 add_sparkle_validation_dependency(ShaderCompiler shader_package_parity_check)
 
 add_custom_target(
+    threading_readiness_check
+    COMMAND ${CMAKE_COMMAND}
+        -DTHREADING_READINESS_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateThreadingReadiness.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating GameFramework, Renderer, FrameGraph, and RHI threading-readiness contracts..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI threading_readiness_check)
+add_sparkle_validation_dependency(SparkleApplication threading_readiness_check)
+add_sparkle_validation_dependency(SparkleApplicationEditor threading_readiness_check)
+add_sparkle_validation_dependency(SparkleGameFramework threading_readiness_check)
+add_sparkle_validation_dependency(SparkleRenderer threading_readiness_check)
+add_sparkle_validation_dependency(SparkleEditor threading_readiness_check)
+
+add_custom_target(
     texture_cooker_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DTEXTURE_COOKER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -191,6 +207,7 @@ add_custom_target(
         rhi_memory_boundary_check
         shader_compiler_boundary_check
         shader_package_parity_check
+        threading_readiness_check
         texture_cooker_boundary_check
         tools_architecture_boundary_check
         logging_boundary_check
