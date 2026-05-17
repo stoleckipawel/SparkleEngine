@@ -3,6 +3,7 @@
 #include "Vulkan/VulkanRenderHardwareInterface.h"
 
 #include "Config/RenderConfig.h"
+#include "Resources/Texture.h"
 #include "Shaders/CookedShaderPackage.h"
 #include "Vulkan/Commands/VulkanCommandContext.h"
 #include "Vulkan/Commands/VulkanRenderCommandList.h"

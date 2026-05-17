@@ -127,6 +127,22 @@ add_sparkle_validation_dependency(SparkleRenderer threading_readiness_check)
 add_sparkle_validation_dependency(SparkleEditor threading_readiness_check)
 
 add_custom_target(
+    advanced_feature_readiness_check
+    COMMAND ${CMAKE_COMMAND}
+        -DADVANCED_FEATURE_READINESS_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateAdvancedFeatureReadiness.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating advanced feature proposal gates and feature-specific blockers..."
+)
+
+add_sparkle_validation_dependency(SparkleRHI advanced_feature_readiness_check)
+add_sparkle_validation_dependency(SparkleApplication advanced_feature_readiness_check)
+add_sparkle_validation_dependency(SparkleApplicationEditor advanced_feature_readiness_check)
+add_sparkle_validation_dependency(SparkleGameFramework advanced_feature_readiness_check)
+add_sparkle_validation_dependency(SparkleRenderer advanced_feature_readiness_check)
+add_sparkle_validation_dependency(SparkleEditor advanced_feature_readiness_check)
+
+add_custom_target(
     texture_cooker_boundary_check
     COMMAND ${CMAKE_COMMAND}
         -DTEXTURE_COOKER_BOUNDARY_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -208,6 +224,7 @@ add_custom_target(
         shader_compiler_boundary_check
         shader_package_parity_check
         threading_readiness_check
+        advanced_feature_readiness_check
         texture_cooker_boundary_check
         tools_architecture_boundary_check
         logging_boundary_check

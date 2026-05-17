@@ -80,7 +80,7 @@ namespace Logging
 			return initialized;
 		}
 
-		spdlog::level::level_enum ReadConfiguredLogLevel() noexcept
+		spdlog::level::level_enum ReadConfiguredSpdlogLevel() noexcept
 		{
 			std::string configuredLevel;
 			if (!Environment::TryGetVariable("SPARKLE_LOG_LEVEL", configuredLevel))
@@ -226,7 +226,7 @@ namespace Logging
 			}
 
 			GetSharedSinks() = CreateDefaultSinks();
-			GetLevelStorage().store(static_cast<int>(ReadConfiguredLogLevel()), std::memory_order_relaxed);
+			GetLevelStorage().store(static_cast<int>(ReadConfiguredSpdlogLevel()), std::memory_order_relaxed);
 			auto coreLogger = CreateLogger(kCoreLoggerName);
 			GetNamedLoggers().emplace(std::string(kCoreLoggerName), coreLogger);
 			spdlog::set_default_logger(coreLogger);

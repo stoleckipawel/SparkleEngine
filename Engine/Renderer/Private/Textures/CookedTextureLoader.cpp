@@ -2,6 +2,7 @@
 
 #include "Textures/CookedTextureLoader.h"
 
+#include "Core/Public/Files/BinarySpanReader.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/FileSystemUtils.h"
 #include "RHI/Public/Textures/CookedTextureAsset.h"

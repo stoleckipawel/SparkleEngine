@@ -52,6 +52,7 @@ set(ALLOWED_TOOL_PUBLIC_HEADERS
     "${TOOLS_ARCHITECTURE_ROOT}/MaterialCooker/Public/MaterialCooker.h"
     "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/CookedSceneBuild.h"
     "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/SceneCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/CookCommon/Public/ToolConsole.h"
     "${TOOLS_ARCHITECTURE_ROOT}/TextureCooker/Public/TextureCookRequestList.h"
 )
 
