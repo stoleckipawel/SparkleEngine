@@ -34,5 +34,9 @@ class GltfGeometryImporter final
 	    std::string_view primitiveLabel,
 	    SourceImportResult& result);
 	static ImportedMeshGeometry ExtractMeshGeometry(const cgltf_primitive& primitive);
+	static ImportedMeshPrimitiveIndex FindImportedPrimitiveIndex(
+	    const ImportedScene& scene,
+	    std::uint32_t sourceMeshIndex,
+	    std::uint32_t sourcePrimitiveIndex) noexcept;
 	static std::string BuildPrimitiveLabel(const cgltf_node& node, std::size_t primitiveIndex);
 };

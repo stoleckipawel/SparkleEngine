@@ -37,12 +37,13 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 
 	SourceImportDiagnosticsRecorder::RecordGeometryInstancingBaseline(result, GltfGeometryInstancingDiagnostics::CaptureBaseline(scene.data));
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
-	result.ReserveMeshes(importedMeshInstanceCount);
+	result.ReserveMeshPrimitives(result.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount);
+	result.ReserveMeshInstances(importedMeshInstanceCount);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 	GltfGeometryInstancingDiagnostics::RecordImportedPlacements(result);
 	SourceImportDiagnosticsRecorder::RecordImportedScenePayload(result);
 
-	if (result.scene.meshes.empty())
+	if (result.scene.meshPrimitives.empty() || result.scene.meshInstances.empty())
 	{
 		GltfImportDiagnosticLog::ReportNoSupportedMeshPrimitives(filePath, result);
 		return result;

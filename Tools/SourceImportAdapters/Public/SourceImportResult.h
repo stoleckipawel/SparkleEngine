@@ -43,8 +43,10 @@ enum class ImportedAlphaMode : std::uint32_t
 };
 
 using ImportedMaterialIndex = std::uint32_t;
+using ImportedMeshPrimitiveIndex = std::uint32_t;
 
 constexpr ImportedMaterialIndex kInvalidImportedMaterialIndex = (std::numeric_limits<ImportedMaterialIndex>::max)();
+constexpr ImportedMeshPrimitiveIndex kInvalidImportedMeshPrimitiveIndex = (std::numeric_limits<ImportedMeshPrimitiveIndex>::max)();
 
 struct ImportedTextureSource
 {
@@ -78,10 +80,18 @@ struct ImportedMeshGeometry
 	}
 };
 
-struct ImportedMesh
+struct ImportedMeshPrimitive
 {
 	ImportedMeshGeometry geometry;
 	std::string displayName;
+	std::uint32_t sourceMeshIndex = 0;
+	std::uint32_t sourcePrimitiveIndex = 0;
+};
+
+struct ImportedMeshInstance
+{
+	ImportedMeshPrimitiveIndex primitiveIndex = kInvalidImportedMeshPrimitiveIndex;
+	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
 	DirectX::XMFLOAT4X4 worldTransform = {
 	    1.0f,
 	    0.0f,
@@ -99,8 +109,10 @@ struct ImportedMesh
 	    0.0f,
 	    0.0f,
 	    1.0f};
-	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
+	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
+	std::string sourceNodeName;
 
+	bool HasPrimitiveBinding() const noexcept { return primitiveIndex != kInvalidImportedMeshPrimitiveIndex; }
 	bool HasMaterialBinding() const noexcept { return materialIndex != kInvalidImportedMaterialIndex; }
 };
 
@@ -123,17 +135,25 @@ struct ImportedMaterial
 
 struct ImportedScene
 {
-	std::vector<ImportedMesh> meshes;
+	std::vector<ImportedMeshPrimitive> meshPrimitives;
+	std::vector<ImportedMeshInstance> meshInstances;
 	std::vector<ImportedMaterial> materials;
 	std::filesystem::path sourcePath;
 	SourceImporterType importerType = SourceImporterType::None;
 
-	std::size_t GetMeshCount() const noexcept { return meshes.size(); }
+	std::size_t GetMeshCount() const noexcept { return meshInstances.size(); }
+	std::size_t GetMeshPrimitiveCount() const noexcept { return meshPrimitives.size(); }
+	std::size_t GetMeshInstanceCount() const noexcept { return meshInstances.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
 
-	void ReserveMeshes(std::size_t meshCount)
+	void ReserveMeshPrimitives(std::size_t primitiveCount)
 	{
-		meshes.reserve(meshCount);
+		meshPrimitives.reserve(primitiveCount);
+	}
+
+	void ReserveMeshInstances(std::size_t instanceCount)
+	{
+		meshInstances.reserve(instanceCount);
 	}
 };
 
@@ -143,13 +163,20 @@ struct SourceImportResult
 	SourceImportDiagnostics diagnostics;
 	bool succeeded = false;
 
-	bool IsValid() const noexcept { return succeeded && !scene.meshes.empty(); }
+	bool IsValid() const noexcept { return succeeded && !scene.meshPrimitives.empty() && !scene.meshInstances.empty(); }
 	std::size_t GetMeshCount() const noexcept { return scene.GetMeshCount(); }
+	std::size_t GetMeshPrimitiveCount() const noexcept { return scene.GetMeshPrimitiveCount(); }
+	std::size_t GetMeshInstanceCount() const noexcept { return scene.GetMeshInstanceCount(); }
 	std::size_t GetMaterialCount() const noexcept { return scene.GetMaterialCount(); }
 
-	void ReserveMeshes(std::size_t meshCount)
+	void ReserveMeshPrimitives(std::size_t primitiveCount)
 	{
-		scene.ReserveMeshes(meshCount);
+		scene.ReserveMeshPrimitives(primitiveCount);
+	}
+
+	void ReserveMeshInstances(std::size_t instanceCount)
+	{
+		scene.ReserveMeshInstances(instanceCount);
 	}
 };
 

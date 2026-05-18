@@ -36,16 +36,16 @@ namespace
 MeshCookOutput MeshCooker::BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId)
 {
 	MeshCookOutput output;
-	output.assets.reserve(importResult.scene.meshes.size());
-	output.assetReferences.reserve(importResult.scene.meshes.size());
+	output.assets.reserve(importResult.scene.meshPrimitives.size());
+	output.assetReferences.reserve(importResult.scene.meshPrimitives.size());
 
-	for (std::size_t meshIndex = 0; meshIndex < importResult.scene.meshes.size(); ++meshIndex)
+	for (std::size_t primitiveIndex = 0; primitiveIndex < importResult.scene.meshPrimitives.size(); ++primitiveIndex)
 	{
-		const ImportedMesh& importedMesh = importResult.scene.meshes[meshIndex];
-		const ImportedMeshGeometry& meshGeometry = importedMesh.geometry;
+		const ImportedMeshPrimitive& importedPrimitive = importResult.scene.meshPrimitives[primitiveIndex];
+		const ImportedMeshGeometry& meshGeometry = importedPrimitive.geometry;
 		CookedMeshAssetBuild meshAsset;
-		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, meshIndex);
-		meshAsset.displayName = importedMesh.displayName;
+		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, primitiveIndex);
+		meshAsset.displayName = importedPrimitive.displayName;
 		meshAsset.sourcePath = importResult.scene.sourcePath;
 		meshAsset.vertices.reserve(meshGeometry.vertices.size());
 		for (const ImportedVertex& vertex : meshGeometry.vertices)

@@ -45,6 +45,8 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 		{
 			const cgltf_primitive& primitive = node.mesh->primitives[primitiveIndex];
 			const std::string primitiveLabel = BuildPrimitiveLabel(node, primitiveIndex);
+			const std::uint32_t sourceMeshIndex = static_cast<std::uint32_t>(cgltf_mesh_index(data, node.mesh));
+			const std::uint32_t sourcePrimitiveIndex = static_cast<std::uint32_t>(primitiveIndex);
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
@@ -68,21 +70,51 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				GltfImportDiagnosticLog::ReportIgnoredMaterialVariantMappings(primitiveLabel, result);
 			}
 
-			ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(primitive);
-			if (!meshGeometry.IsValid())
+			ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(result.scene, sourceMeshIndex, sourcePrimitiveIndex);
+			if (importedPrimitiveIndex == kInvalidImportedMeshPrimitiveIndex)
 			{
-				GltfImportDiagnosticLog::ReportSkippedIncompletePrimitive(primitiveLabel, result);
-				continue;
+				ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(primitive);
+				if (!meshGeometry.IsValid())
+				{
+					GltfImportDiagnosticLog::ReportSkippedIncompletePrimitive(primitiveLabel, result);
+					continue;
+				}
+
+				ImportedMeshPrimitive primitiveEntry;
+				primitiveEntry.geometry = std::move(meshGeometry);
+				primitiveEntry.displayName = primitiveLabel;
+				primitiveEntry.sourceMeshIndex = sourceMeshIndex;
+				primitiveEntry.sourcePrimitiveIndex = sourcePrimitiveIndex;
+				importedPrimitiveIndex = static_cast<ImportedMeshPrimitiveIndex>(result.scene.meshPrimitives.size());
+				result.scene.meshPrimitives.push_back(std::move(primitiveEntry));
 			}
 
-			ImportedMesh meshEntry;
-			meshEntry.geometry = std::move(meshGeometry);
-			meshEntry.displayName = primitiveLabel;
-			DirectX::XMStoreFloat4x4(&meshEntry.worldTransform, worldTransform);
-			meshEntry.materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
-			result.scene.meshes.push_back(std::move(meshEntry));
+			ImportedMeshInstance instanceEntry;
+			instanceEntry.primitiveIndex = importedPrimitiveIndex;
+			instanceEntry.materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
+			DirectX::XMStoreFloat4x4(&instanceEntry.worldTransform, worldTransform);
+			instanceEntry.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
+			instanceEntry.sourceNodeName = node.name ? node.name : std::string();
+			result.scene.meshInstances.push_back(std::move(instanceEntry));
 		}
 	}
+}
+
+ImportedMeshPrimitiveIndex GltfGeometryImporter::FindImportedPrimitiveIndex(
+	const ImportedScene& scene,
+	std::uint32_t sourceMeshIndex,
+	std::uint32_t sourcePrimitiveIndex) noexcept
+{
+	for (std::size_t primitiveIndex = 0; primitiveIndex < scene.meshPrimitives.size(); ++primitiveIndex)
+	{
+		const ImportedMeshPrimitive& primitive = scene.meshPrimitives[primitiveIndex];
+		if (primitive.sourceMeshIndex == sourceMeshIndex && primitive.sourcePrimitiveIndex == sourcePrimitiveIndex)
+		{
+			return static_cast<ImportedMeshPrimitiveIndex>(primitiveIndex);
+		}
+	}
+
+	return kInvalidImportedMeshPrimitiveIndex;
 }
 
 const cgltf_accessor* GltfGeometryImporter::FindAttribute(const cgltf_primitive& primitive, int type)

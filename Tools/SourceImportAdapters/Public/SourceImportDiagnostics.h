@@ -5,7 +5,8 @@
 struct SourceImportSummaryDiagnostics
 {
 	std::size_t sourceMeshCount = 0;
-	std::size_t importedMeshCount = 0;
+	std::size_t importedMeshPrimitiveCount = 0;
+	std::size_t importedMeshInstanceCount = 0;
 	std::size_t sourceMaterialCount = 0;
 	std::size_t importedMaterialCount = 0;
 };

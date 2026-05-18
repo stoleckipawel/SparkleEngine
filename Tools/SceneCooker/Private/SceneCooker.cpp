@@ -40,16 +40,21 @@ bool SceneCooker::BuildManifest(
     std::string& outErrorMessage)
 {
 	outBuild.manifest.instances.clear();
-	outBuild.manifest.instances.reserve(importResult.scene.meshes.size());
+	outBuild.manifest.instances.reserve(importResult.scene.meshInstances.size());
 
-	for (std::size_t meshIndex = 0; meshIndex < importResult.scene.meshes.size(); ++meshIndex)
+	for (std::size_t instanceIndex = 0; instanceIndex < importResult.scene.meshInstances.size(); ++instanceIndex)
 	{
-		const ImportedMesh& importedMesh = importResult.scene.meshes[meshIndex];
+		const ImportedMeshInstance& importedInstance = importResult.scene.meshInstances[instanceIndex];
+		if (!importedInstance.HasPrimitiveBinding() || importedInstance.primitiveIndex >= outBuild.manifest.meshAssetReferences.size())
+		{
+			outErrorMessage = "Imported mesh instance references a primitive index outside the cooked mesh asset set";
+			return false;
+		}
 
 		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
-		if (importedMesh.HasMaterialBinding())
+		if (importedInstance.HasMaterialBinding())
 		{
-			materialAssetIndex = importedMesh.materialIndex;
+			materialAssetIndex = importedInstance.materialIndex;
 			if (materialAssetIndex >= outBuild.outputs.materialAssets.size())
 			{
 				outErrorMessage = "Imported mesh instance references a material index outside the imported material set";
@@ -59,9 +64,9 @@ bool SceneCooker::BuildManifest(
 
 		outBuild.manifest.instances.push_back(
 		    Assets::CookedSceneInstanceRecord{
-		        .meshAssetIndex = static_cast<std::uint32_t>(meshIndex),
+		        .meshAssetIndex = importedInstance.primitiveIndex,
 		        .materialAssetIndex = materialAssetIndex,
-		        .worldTransform = importedMesh.worldTransform});
+		        .worldTransform = importedInstance.worldTransform});
 	}
 
 	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());

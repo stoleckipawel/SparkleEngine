@@ -40,7 +40,7 @@ void FbxGeometryImporter::ExtractNodeMeshes(
 			continue;
 		}
 
-		AppendMeshInstance(node, *scene.mMeshes[sceneMeshIndex], worldTransform, result);
+		AppendMeshInstance(node, *scene.mMeshes[sceneMeshIndex], sceneMeshIndex, worldTransform, result);
 	}
 
 	for (unsigned int childIndex = 0; childIndex < node.mNumChildren; ++childIndex)
@@ -52,21 +52,48 @@ void FbxGeometryImporter::ExtractNodeMeshes(
 void FbxGeometryImporter::AppendMeshInstance(
 	const aiNode& node,
 	const aiMesh& mesh,
+	std::uint32_t sourceMeshIndex,
 	const aiMatrix4x4& worldTransform,
 	SourceImportResult& result)
 {
-	ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(mesh, node, result);
-	if (!meshGeometry.IsValid())
+	ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(result.scene, sourceMeshIndex);
+	if (importedPrimitiveIndex == kInvalidImportedMeshPrimitiveIndex)
 	{
-		return;
+		ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(mesh, node, result);
+		if (!meshGeometry.IsValid())
+		{
+			return;
+		}
+
+		ImportedMeshPrimitive primitiveEntry;
+		primitiveEntry.geometry = std::move(meshGeometry);
+		primitiveEntry.displayName = BuildMeshDisplayName(node, mesh);
+		primitiveEntry.sourceMeshIndex = sourceMeshIndex;
+		primitiveEntry.sourcePrimitiveIndex = 0;
+		importedPrimitiveIndex = static_cast<ImportedMeshPrimitiveIndex>(result.scene.meshPrimitives.size());
+		result.scene.meshPrimitives.push_back(std::move(primitiveEntry));
 	}
 
-	ImportedMesh meshEntry;
-	meshEntry.geometry = std::move(meshGeometry);
-	meshEntry.displayName = BuildMeshDisplayName(node, mesh);
-	meshEntry.worldTransform = ConvertTransform(worldTransform);
-	meshEntry.materialIndex = ResolveMaterialIndex(mesh, result);
-	result.scene.meshes.push_back(std::move(meshEntry));
+	ImportedMeshInstance instanceEntry;
+	instanceEntry.primitiveIndex = importedPrimitiveIndex;
+	instanceEntry.worldTransform = ConvertTransform(worldTransform);
+	instanceEntry.materialIndex = ResolveMaterialIndex(mesh, result);
+	instanceEntry.sourceNodeName = GetNodeName(node);
+	result.scene.meshInstances.push_back(std::move(instanceEntry));
+}
+
+ImportedMeshPrimitiveIndex FbxGeometryImporter::FindImportedPrimitiveIndex(const ImportedScene& scene, std::uint32_t sourceMeshIndex) noexcept
+{
+	for (std::size_t primitiveIndex = 0; primitiveIndex < scene.meshPrimitives.size(); ++primitiveIndex)
+	{
+		const ImportedMeshPrimitive& primitive = scene.meshPrimitives[primitiveIndex];
+		if (primitive.sourceMeshIndex == sourceMeshIndex)
+		{
+			return static_cast<ImportedMeshPrimitiveIndex>(primitiveIndex);
+		}
+	}
+
+	return kInvalidImportedMeshPrimitiveIndex;
 }
 
 ImportedMeshGeometry FbxGeometryImporter::ExtractMeshGeometry(const aiMesh& mesh, const aiNode& node, SourceImportResult& result)

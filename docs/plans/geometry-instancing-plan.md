@@ -10,9 +10,9 @@ The primary user-facing acceptance signal is editor diagnostics that show instan
 
 ## Current State
 
-- `Tools/SourceImportAdapters/Public/SourceImportResult.h` currently models `ImportedMesh` as geometry plus world transform plus material index. This conflates mesh asset identity with a scene placement.
-- `Tools/SourceImportAdapters/Private/Gltf/GltfGeometryImporter.cpp` iterates glTF nodes and primitives, extracts geometry for each node primitive, and stores the node world transform on each imported mesh entry.
-- `Tools/SceneCooker/Private/SceneCooker.cpp` writes one `CookedSceneInstanceRecord` for each imported mesh, using the same imported mesh index as both the mesh asset reference and the instance source.
+- `Tools/SourceImportAdapters/Public/SourceImportResult.h` now separates imported mesh primitives from imported mesh instances. Geometry identity is source mesh/primitive based, while placements carry primitive index, material index, world transform, and source node identity.
+- `Tools/SourceImportAdapters/Private/Gltf/GltfGeometryImporter.cpp` now reuses one imported primitive for repeated references to the same glTF mesh primitive and emits separate imported instances for each placement.
+- `Tools/SceneCooker/Private/SceneCooker.cpp` writes one `CookedSceneInstanceRecord` for each imported mesh instance, using the imported primitive index as the cooked mesh asset reference.
 - `Engine/GameFramework/Public/Assets/SceneAssetPayload.h` loads scene payloads as a flat list of mesh instances, each carrying `MeshData` directly.
 - `Engine/GameFramework/Public/Scene/Meshes/MeshSnapshot.h` exposes a flat `meshInstances` vector to Renderer.
 - `Engine/Renderer/Public/SceneData/MeshDraw.h` and `RenderSceneDataBuilder` keep the flat model and resolve each snapshot entry into one `MeshDraw`.

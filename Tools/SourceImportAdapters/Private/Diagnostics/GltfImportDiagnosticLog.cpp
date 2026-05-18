@@ -57,9 +57,10 @@ void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& fil
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
 	    std::format(
-	        "GltfImporter: Loaded '{}' - {} meshes, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
+	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
 	        filePath.filename().string(),
-	        result.scene.meshes.size(),
+	        result.scene.meshPrimitives.size(),
+	        result.scene.meshInstances.size(),
 	        result.scene.materials.size(),
 	        result.diagnostics.textures.resolvedTextureBindingCount,
 	        result.diagnostics.issues.warningMessageCount,

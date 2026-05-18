@@ -22,8 +22,11 @@ void AssetConverterCommands::PrintCookSceneSummary(
 	          << "  mode=cook-scene\n"
 	          << "  source='" << sourceScenePath.string() << "'\n"
 	          << "  importer='" << GetSourceImporterTypeName(importResult.scene.importerType) << "'\n"
-	          << "  meshes=" << importResult.GetMeshCount() << "\n"
+	          << "  meshPrimitives=" << importResult.GetMeshPrimitiveCount() << "\n"
+	          << "  meshInstances=" << importResult.GetMeshInstanceCount() << "\n"
 	          << "  materials=" << importResult.GetMaterialCount() << "\n"
+	          << "  cookedMeshAssetRefs=" << cookedSceneBuild.manifest.meshAssetReferences.size() << "\n"
+	          << "  cookedInstances=" << cookedSceneBuild.manifest.instances.size() << "\n"
 	          << "  sceneManifest='" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 }
 
@@ -126,8 +129,9 @@ int AssetConverterCommands::RunCookScene(const std::filesystem::path& sourceScen
 		    }
 
 		    std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
-		              << GetSourceImporterTypeName(importResult.scene.importerType) << " with " << importResult.GetMeshCount()
-		              << " meshes and " << importResult.GetMaterialCount() << " materials; emitted scene asset '"
+		              << GetSourceImporterTypeName(importResult.scene.importerType) << " with " << importResult.GetMeshPrimitiveCount()
+		              << " mesh primitives, " << importResult.GetMeshInstanceCount() << " mesh instances, and "
+		              << importResult.GetMaterialCount() << " materials; emitted scene asset '"
 		              << cookedSceneBuild.identity.assetId << "' to '" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 		    PrintCookSceneSummary(sourceScenePath, importResult, cookedSceneBuild);
 
