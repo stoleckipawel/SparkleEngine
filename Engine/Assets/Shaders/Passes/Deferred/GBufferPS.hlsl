@@ -1,4 +1,5 @@
 #include "CommonPS.hlsli"
+#include "Debug/InstanceView.hlsli"
 
 struct GBufferOutput
 {
@@ -15,6 +16,7 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	PS::PrepareInput(Input);
 
 	Material::Properties MatProps = Material::Sample(Input);
+	MatProps.BaseColor = InstanceView::ApplyInstanceGroupVisualization(MatProps.BaseColor, Input.InstanceId);
 
 	const float outputAlpha = (MatProps.AlphaMode == Material::AlphaModeBlend) ? MatProps.Alpha : 1.0f;
 	Output.BaseColor = float4(MatProps.BaseColor, outputAlpha);

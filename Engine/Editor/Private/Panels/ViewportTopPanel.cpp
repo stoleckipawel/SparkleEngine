@@ -51,6 +51,8 @@ namespace
 				return UiUtil::EditorIcon::ViewDirectSpecular;
 			case RenderViewMode::IndirectSubsurface:
 				return UiUtil::EditorIcon::ViewDirectSubsurface;
+			case RenderViewMode::InstanceGroups:
+				return UiUtil::EditorIcon::ViewMode;
 			case RenderViewMode::Count:
 				break;
 		}
@@ -112,6 +114,8 @@ const char* ViewportTopPanel::GetViewModeLabel(RenderViewMode viewMode) noexcept
 			return "Indirect Specular";
 		case RenderViewMode::IndirectSubsurface:
 			return "Indirect Subsurface";
+		case RenderViewMode::InstanceGroups:
+			return "Instance Groups";
 		case RenderViewMode::Count:
 			break;
 	}
@@ -179,6 +183,7 @@ void ViewportTopPanel::BuildViewModeCombo(bool disableInteraction) noexcept
 	{
 		DrawViewModeOption(RenderViewMode::Lit, currentViewMode);
 		DrawViewModeOption(RenderViewMode::Wireframe, currentViewMode);
+		DrawViewModeOption(RenderViewMode::InstanceGroups, currentViewMode);
 
 		DrawViewModeCategory("GBuffer");
 		ImGui::Indent(8.0f);

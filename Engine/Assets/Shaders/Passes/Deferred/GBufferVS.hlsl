@@ -2,7 +2,8 @@
 
 void main(in VS::Input Input, out VS::Output Output)
 {
-	const MeshInstanceData meshInstance = MeshInstances[FirstInstance + Input.InstanceId];
+	const uint instanceId = FirstInstance + Input.InstanceId;
+	const MeshInstanceData meshInstance = MeshInstances[instanceId];
 	const float4x4 worldMatrix = meshInstance.WorldMTX;
 	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
 
@@ -21,4 +22,5 @@ void main(in VS::Input Input, out VS::Output Output)
 	Output.BitangentWorld = bitangentWorld;
 	Output.TexCoord = Input.TexCoord;
 	Output.Color = Input.Color;
+	Output.InstanceId = instanceId;
 }

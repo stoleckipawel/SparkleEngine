@@ -32,6 +32,7 @@ class GBufferPS final : public TGlobalShader<GBufferPS>
 	static constexpr std::string_view kBindingLayoutId = "GBuffer";
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+	SHADER_PARAMETER_CBUFFER_NAMED(PerFrame, PerFrameConstantBufferData, PerFrameConstantBufferData)
 	SHADER_PARAMETER_CBUFFER_NAMED(PerObjectPS, PerObjectPSConstantBufferData, PerObjectPSConstantBufferData)
 	SHADER_PARAMETER_TEXTURE(Texture2D, TextureBaseColor)
 	SHADER_PARAMETER_TEXTURE(Texture2D, TextureNormal)

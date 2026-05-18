@@ -10,11 +10,14 @@
 #include "RHI/Public/Shaders/CookedShaderPackageUtils.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
+#include <cstddef>
+
 class RenderCommandContext;
 struct RasterPassPipelineRuntime;
 class FrameGraphBuilder;
 struct PassExecutionContext;
 struct RenderSceneData;
+struct MeshInstanceBatch;
 struct PassRuntimeServices;
 struct RenderViewData;
 struct FrameContext;
@@ -29,6 +32,7 @@ struct GBufferPassParameters
 	ShaderRenderTarget Subsurface;
 	ShaderRenderTarget DeviceZ;
 	ShaderDepthTarget MainDepth;
+	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
 	ShaderSamplerSet SamplerAniso16xWrap;
 
@@ -41,6 +45,7 @@ struct GBufferPassParameters
 		builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
 		builder.DepthTarget("MainDepth", &GBufferPassParameters::MainDepth, ShaderStageVisibility::AllGraphics);
+		builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
 		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
 		builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
 	}
@@ -96,8 +101,12 @@ class GBufferPass final
 	static void DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
+
   private:
-	void SetParameters(ParameterInstance& parameters, const RenderViewData& viewData) const;
+	void SetParameters(
+	    ParameterInstance& parameters,
+	    const RenderViewData& viewData,
+	    const PassRuntimeServices& passRuntimeServices) const;
 	void PrepareTargets(PassExecutionContext& context, const Parameters& parameters) const;
 	void ConfigurePipeline(RenderCommandContext& cmd, const RenderViewData& viewData) const;
 	void BindPassResources(

@@ -11,5 +11,6 @@ namespace VS
 		float3 NormalWorld : TEXCOORD2;
 		float4 TangentWorld : TEXCOORD3;
 		float3 BitangentWorld : TEXCOORD4;
+		nointerpolation uint InstanceId : TEXCOORD5;
 	};
 }  // namespace VS

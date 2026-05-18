@@ -96,6 +96,9 @@ float3 PreviewHdr(float3 color)
 		case ViewMode::IndirectSubsurface:
 			outputColor = PreviewHdr(indirectSubsurface);
 			break;
+		case ViewMode::InstanceGroups:
+			outputColor = saturate(gBuffer.BaseColor);
+			break;
 		default:
 			return;
 	}

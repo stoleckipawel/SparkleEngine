@@ -40,7 +40,7 @@ struct MeshInstanceData
 cbuffer MeshInstanceDrawConstantBufferData
 {
 	uint FirstInstance;
-	uint3 MeshInstanceDrawPadding;
+	uint3 Padding;
 };
 
 StructuredBuffer<MeshInstanceData> MeshInstances;

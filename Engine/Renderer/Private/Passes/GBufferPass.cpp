@@ -66,7 +66,7 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.GBuffer.Execute");
 
-	SetParameters(parameters, context.Frame.mainView);
+	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
 	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	BindPassResources(context.Resources, context.Commands, parameters, context.RuntimeServices);
@@ -85,8 +85,12 @@ void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRend
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 }
 
-void GBufferPass::SetParameters(ParameterInstance& parameters, const RenderViewData& viewData) const
+void GBufferPass::SetParameters(
+    ParameterInstance& parameters,
+    const RenderViewData& viewData,
+    const PassRuntimeServices& passRuntimeServices) const
 {
+	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
 	const bool valid = parameters.Sync();
 	assert(valid);
