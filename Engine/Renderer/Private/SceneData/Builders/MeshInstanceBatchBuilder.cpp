@@ -4,6 +4,8 @@
 
 #include "Meshes/GPUMesh.h"
 
+#include <algorithm>
+
 MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
     const std::vector<MeshRenderItem>& renderItems,
     const std::vector<MeshInstanceGroupSnapshot>& instanceGroups,
@@ -19,7 +21,7 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 	validItemIndices.reserve(renderItems.size());
 	for (std::size_t itemIndex = 0; itemIndex < renderItems.size(); ++itemIndex)
 	{
-		if (IsValidCandidate(renderItems[itemIndex], options, result.diagnostics))
+		if (IsValidCandidate(renderItems[itemIndex], instanceGroups.size(), options, result.diagnostics))
 		{
 			validItemIndices.push_back(itemIndex);
 		}
@@ -139,6 +141,7 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 
 bool MeshInstanceBatchBuilder::IsValidCandidate(
     const MeshRenderItem& item,
+	std::size_t instanceGroupCount,
     const MeshInstanceBatchBuildOptions& options,
     MeshGeometryInstancingDiagnostics& diagnostics) noexcept
 {
@@ -148,6 +151,16 @@ bool MeshInstanceBatchBuilder::IsValidCandidate(
 		{
 			++diagnostics.RejectedCandidateCount;
 			++diagnostics.RejectedMissingGpuMeshCount;
+		}
+		return false;
+	}
+
+	if (item.instanceGroupIndex != kInvalidSceneMeshInstanceGroupIndex && item.instanceGroupIndex >= instanceGroupCount)
+	{
+		if (options.collectDiagnostics)
+		{
+			++diagnostics.RejectedCandidateCount;
+			++diagnostics.RejectedInvalidInstanceGroupCount;
 		}
 		return false;
 	}
@@ -215,8 +228,13 @@ void MeshInstanceBatchBuilder::AppendBatch(
 
 	if (collectDiagnostics)
 	{
+		const std::uint32_t instanceCount = static_cast<std::uint32_t>(itemIndices.size());
 		result.diagnostics.SubmittedInstanceCount += static_cast<std::uint32_t>(itemIndices.size());
 		result.diagnostics.EstimatedGBufferDrawCallsSaved += static_cast<std::uint32_t>(itemIndices.size() - 1u);
+		result.diagnostics.MinInstancesPerBatch = result.diagnostics.MinInstancesPerBatch == 0
+		                                           ? instanceCount
+		                                           : (std::min) (result.diagnostics.MinInstancesPerBatch, instanceCount);
+		result.diagnostics.MaxInstancesPerBatch = (std::max) (result.diagnostics.MaxInstancesPerBatch, instanceCount);
 		if (source == MeshInstanceBatchSource::AuthoredGroup)
 		{
 			++result.diagnostics.AuthoredBatchCount;

@@ -1,12 +1,15 @@
 #include "../PCH.h"
 #include "Frame/MeshInstanceFrameData.h"
 
+#include "Core/Public/Diagnostics/Logger.h"
 #include "SceneData/RenderSceneData.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RenderConstantBufferData.h"
 
 #include <vector>
+
+static const auto g_meshInstanceFrameDataLogger = Logging::GetOrCreateLogger("Renderer.MeshInstanceFrameData");
 
 MeshInstanceFrameData::~MeshInstanceFrameData() noexcept
 {
@@ -66,6 +69,11 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 	    view);
 	if (!created || !buffer || !view)
 	{
+		SPDLOG_LOGGER_WARN(
+		    g_meshInstanceFrameDataLogger,
+		    "MeshInstanceFrameData::Build: failed to upload {} mesh instance records ({} bytes).",
+		    instances.size(),
+		    instances.size() * sizeof(MeshInstanceData));
 		return {};
 	}
 
@@ -74,6 +82,13 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 	frameData.m_buffer = buffer;
 	frameData.m_view = view;
 	frameData.m_shaderResourceView = renderHardwareInterface.GetResourceViewGpuHandle(view);
+	if (!frameData.m_shaderResourceView)
+	{
+		SPDLOG_LOGGER_WARN(
+		    g_meshInstanceFrameDataLogger,
+		    "MeshInstanceFrameData::Build: uploaded mesh instance buffer has no shader-resource descriptor; instance batches will be skipped.");
+		return {};
+	}
 	return frameData;
 }
 

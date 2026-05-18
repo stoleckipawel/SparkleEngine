@@ -68,7 +68,7 @@ Recommended Sparkle naming and placement:
 - Scene cooker: `Tools/SceneCooker/Private/SceneCooker.cpp` maps imported primitives and instances to cooked manifest records. It should not know about `GPUMesh`, frame resources, shader parameters, or RHI command lists.
 - Runtime payload: `Engine/GameFramework/Public/Assets/SceneAssetPayload.h` separates loaded mesh assets from mesh placements. Use names such as `SceneMeshAsset`, `MeshInstance`, and `MeshInstanceGroup` rather than renderer names like draw, batch, or GPU instance.
 - Runtime snapshot: `Engine/GameFramework/Public/Scene/Meshes/MeshSnapshot.h` exposes immutable frame-local placement data. Use `MeshInstanceSnapshot` and `MeshInstanceGroupSnapshot` for renderer input. Keep material references as `MaterialHandle` and mesh references as engine mesh pointers or handles, not GPU resources.
-- Renderer scene data: `Engine/Renderer/Private/SceneData/RenderSceneData.h` owns renderer-ready CPU data. Use `MeshRenderItem` for a resolved draw candidate, `MeshInstanceBatch` for a CPU batch, and `MeshInstanceData` for shader-facing per-instance data. Keep `MeshDraw` only as the singleton fallback or migrate it to the same render-item model.
+- Renderer scene data: `Engine/Renderer/Private/SceneData/RenderSceneData.h` owns renderer-ready CPU data. Use `MeshRenderItem` for a resolved draw candidate, `MeshInstanceBatch` for a CPU batch, and `MeshInstanceData` for shader-facing per-instance data. One-object draws should flow through single-instance batches instead of a separate legacy per-object draw path.
 - Renderer batch building: add focused private helpers under `Engine/Renderer/Private/SceneData/Builders`, for example `MeshInstanceBatchBuilder.h/.cpp`, because batching is part of converting snapshots into renderer scene data. This matches the existing `RenderSceneDataBuilder` placement.
 - Renderer frame GPU data: frame-owned upload/allocation helpers belong under `Engine/Renderer/Private/Frame` or an existing renderer frame-resource owner, not in GameFramework or tools. Use names like `MeshInstanceFrameData` or `MeshInstanceBuffer` for the uploaded structured-buffer view and counts.
 - Pass execution: `Engine/Renderer/Private/Passes/GBufferPass.cpp` consumes already-built batches and already-uploaded frame instance data. It binds pass/draw parameters and issues draw calls; it should not discover source instance groups or mutate scene payloads.
@@ -119,9 +119,9 @@ Change `SceneAssetPayload` so mesh data is not embedded in every placement. A us
 
 ### Renderer Scene Data
 
-Extend `RenderSceneData` with instanced draw data while retaining single draws for fallback:
+Extend `RenderSceneData` with instanced draw data as the canonical renderer path:
 
-- `MeshDraw` remains the single-instance path.
+- `MeshDraw` remains the CPU-side per-instance record used to populate the instance buffer.
 - `MeshInstanceData` stores world matrix, inverse transpose, material slot or packed material index.
 - `MeshInstanceBatch` stores `GPUMesh*`, material slot, first instance, instance count, and batch flags.
 
@@ -293,7 +293,7 @@ Add renderer-side auto-batching for compatible flat mesh instances, independent 
 
 Extend `RenderSceneDataBuilder` to resolve snapshot instances into intermediate render items, then group compatible items into `MeshInstanceBatch` records. The batch key must include `GPUMesh*`, material slot, texture binding set identity or material data identity, raster pass/pipeline relevant state, and render layer/visibility state when available. Add explicit batch-key fields or rejection reasons only when real per-object states such as skinning, morph targets, or material variants are represented in scene/render data. Keep the first implementation conservative: do not batch skinned meshes, morph targets, material variants, or anything with unknown per-object shader state.
 
-Build batches deterministically. Preserve source-authored groups when present, then run auto-batching over remaining compatible flat instances. Keep singleton draws available as fallback. Add renderer diagnostics for candidate items, authored batches, auto batches, rejected candidates by reason, singleton draws, and estimated draw calls saved.
+Build batches deterministically. Preserve source-authored groups when present, then run auto-batching over remaining compatible flat instances. Emit single-instance batches for valid leftovers rather than using a separate legacy per-object draw path. Add renderer diagnostics for candidate items, authored batches, auto batches, rejected candidates by reason, single-instance batches, and estimated draw calls saved.
 
 After source validation, run a focused build for the touched Renderer and Editor targets unless build validation is explicitly deferred for the iteration.
 ```
@@ -309,7 +309,7 @@ Validation:
 
 - A non-extension repeated-geometry scene produces auto batches and fewer planned GBuffer draws.
 - Rejected candidates are explainable through diagnostics.
-- Disabling auto-batching returns to singleton draw behavior without changing loaded scene data.
+- Disabling auto-batching returns ungrouped leftovers to single-instance batches without changing loaded scene data.
 - Existing scenes render unchanged.
 - Run a focused Renderer/Editor build after source validation, unless build validation is explicitly deferred for the iteration.
 
@@ -326,7 +326,7 @@ Add renderer-owned frame-local instance data storage. Each `MeshInstanceData` en
 
 Extend GBuffer draw parameters and shader parameter metadata to bind a structured instance buffer plus a first-instance offset or equivalent small constant. Update the GBuffer vertex shader to read instance data using `SV_InstanceID` plus the batch offset. Keep the vertex layout unchanged. Keep per-material pixel data and texture table binding behavior unchanged for the first implementation.
 
-Update `GBufferPass::DrawOpaqueMeshes` so singleton draws still work, authored/auto batches bind the instance buffer, and batched draws submit `DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0)` or the equivalent start-instance path if the chosen shader contract uses it. Validate the shader package reflection for DXIL and SPIR-V so both D3D12 and Vulkan see the same logical binding layout.
+Update `GBufferPass::DrawOpaqueMeshes` so all valid mesh instances draw through the instance-buffer path. Authored, auto, and single-instance batches bind the instance buffer and submit `DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0)` or the equivalent start-instance path if the chosen shader contract uses it. Validate the shader package reflection for DXIL and SPIR-V so both D3D12 and Vulkan see the same logical binding layout.
 
 After source validation, run a focused build for the touched Renderer, RHI, shader tooling, and Editor targets. Then recook shaders and affected scene assets before D3D12/Vulkan smoke validation unless build or cook validation is explicitly deferred for the iteration.
 ```
@@ -344,7 +344,7 @@ Validation:
 - Recook shaders and verify the cooked shader package includes the instance-buffer binding for DXIL and SPIR-V.
 - Run a D3D12 smoke scene with authored groups and auto batches; verify the image is unchanged and diagnostics show `instanceCount > 1` batches.
 - Run the Vulkan smoke path with the same scene and confirm matching diagnostics.
-- Verify singleton draws still render when no batches are present.
+- Verify scenes without multi-instance opportunities still render through single-instance batches.
 - Run focused Renderer/RHI/Editor builds before smoke validation, then recook shaders and scene assets touched by the phase.
 
 ### Phase 6: Editor Diagnostics And Production Hardening
@@ -356,9 +356,9 @@ Implementation prompt:
 ```text
 Expose instance batching diagnostics in the editor and harden failure behavior.
 
-Add editor-facing diagnostics that show imported instance groups, runtime instance groups, renderer authored batches, renderer auto batches, singleton draws, instances per batch, rejected batch candidates by reason, and GBuffer draw calls saved. Prefer integrating with the existing mesh diagnostics surface unless a renderer stats panel already owns draw-call diagnostics more cleanly.
+Add editor-facing diagnostics that show imported/authored instance groups as preserved in runtime snapshots, runtime instance groups, renderer authored batches, renderer preserved/shared groups, renderer auto batches, single-instance batches, instances per batch, rejected batch candidates by reason, and GBuffer draw calls saved. Prefer integrating with the existing mesh diagnostics surface unless a renderer stats panel already owns draw-call diagnostics more cleanly.
 
-Add validation and defensive behavior around empty batches, invalid mesh/material indices, missing texture binding sets, missing instance buffer uploads, shader binding layout mismatches, and unsupported feature combinations. Fail closed: render singleton draws or skip only the invalid draw with a useful warning rather than corrupting batch state.
+Add validation and defensive behavior around empty batches, invalid mesh/material indices, invalid instance-group references, out-of-range instance-buffer spans, missing texture binding sets, missing instance buffer uploads, shader binding layout mismatches, and unsupported feature combinations. Fail closed: keep valid single-instance and multi-instance batches on the instanced path, and skip only the invalid batch with a useful warning rather than corrupting batch state.
 
 Add focused source-only checks or validation gates for scene manifest versioning, source import grouping, renderer batch-key construction, and shader package reflection parity. Keep checks narrow and tied to the touched modules.
 
@@ -388,7 +388,7 @@ Implementation prompt:
 ```text
 Before final build and cook validation, add an editor/runtime viewmode that visualizes geometry instances and instance groups.
 
-Integrate the viewmode with the existing renderer/editor viewmode system. The viewmode should make instance grouping visible in the viewport without changing scene data or batching behavior. Use stable, deterministic coloring so instances that belong to the same preserved/authored group share a color, auto-batched instances are distinguishable from singleton draws, and unbatched singleton draws have a neutral fallback. If authored and auto batches need separate visual treatment, prefer a small debug palette or overlay state driven by renderer diagnostics/snapshot data rather than hard-coded source importer concepts.
+Integrate the viewmode with the existing renderer/editor viewmode system. The viewmode should make instance grouping visible in the viewport without changing scene data or batching behavior. Use stable, deterministic coloring so instances that belong to the same preserved/authored group share a color, auto-batched instances are distinguishable from single-instance batches, and ungrouped single-instance batches have a neutral fallback. If authored and auto batches need separate visual treatment, prefer a small debug palette or overlay state driven by renderer diagnostics/snapshot data rather than hard-coded source importer concepts.
 
 Keep the viewmode renderer-owned. GameFramework may expose instance and group ids through snapshots, but color assignment, draw visualization, debug shader parameters, and any overlay resources belong in Renderer/Editor. Do not add import-format names, cooked manifest records, or RHI backend details to the viewmode UI.
 
@@ -398,14 +398,14 @@ After the viewmode is implemented, run focused builds for the touched Editor, Re
 Production notes:
 
 - The viewmode is a visual debugging tool, not the source of batching truth.
-- It should show enough information to answer: which instances are grouped, which are auto-batched, which are singleton fallback draws, and whether authored groups survived import/cook/runtime.
+- It should show enough information to answer: which instances are grouped, which are auto-batched, which are single-instance batches, and whether authored groups survived import/cook/runtime.
 - Keep the default lit view unchanged and make the instance viewmode opt-in.
 - Prefer deterministic colors derived from stable group/batch ids so screenshots are comparable across runs.
 
 Validation:
 
 - The instancing sample visibly shows repeated instances grouped by shared color or overlay state.
-- Authored groups, auto batches, and singleton fallback draws are distinguishable.
+- Authored groups, auto batches, and single-instance batches are distinguishable.
 - Switching viewmodes does not mutate scene data, renderer batch data, or cooked assets.
 - Final focused builds pass before final cook validation.
 - Final scene/shader recook succeeds for the validation assets.

@@ -111,6 +111,23 @@ add_sparkle_validation_dependency(SparkleEditor shader_package_parity_check)
 add_sparkle_validation_dependency(ShaderCompiler shader_package_parity_check)
 
 add_custom_target(
+    geometry_instancing_readiness_check
+    COMMAND ${CMAKE_COMMAND}
+        -DGEOMETRY_INSTANCING_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        -P ${CMAKE_SOURCE_DIR}/CMake/Validation/ValidateGeometryInstancingReadiness.cmake
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Validating geometry instancing import/cook/runtime/renderer/shader/editor readiness..."
+)
+
+add_sparkle_validation_dependency(SourceImportAdapters geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(SceneCooker geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(SparkleGameFramework geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(SparkleRenderer geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(SparkleRHI geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(SparkleEditor geometry_instancing_readiness_check)
+add_sparkle_validation_dependency(ShaderCompiler geometry_instancing_readiness_check)
+
+add_custom_target(
     threading_readiness_check
     COMMAND ${CMAKE_COMMAND}
         -DTHREADING_READINESS_SOURCE_DIR=${CMAKE_SOURCE_DIR}
@@ -223,6 +240,7 @@ add_custom_target(
         rhi_memory_boundary_check
         shader_compiler_boundary_check
         shader_package_parity_check
+        geometry_instancing_readiness_check
         threading_readiness_check
         advanced_feature_readiness_check
         texture_cooker_boundary_check

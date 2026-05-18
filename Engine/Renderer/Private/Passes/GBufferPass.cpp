@@ -27,6 +27,8 @@
 #include <array>
 #include <cassert>
 
+static const auto g_gbufferPassLogger = Logging::GetOrCreateLogger("Renderer.GBufferPass");
+
 GBufferPass::GBufferPass(const RasterPassPipelineRuntime& runtime) noexcept : m_runtime(runtime) {}
 
 const GBufferPass::ParameterMetadata& GBufferPass::GetParameterMetadata() noexcept
@@ -168,14 +170,42 @@ void GBufferPass::DrawOpaqueMeshes(
 
 	if (!frame.meshInstances.IsValid())
 	{
+		if (!sceneData.meshInstanceBatches.empty())
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferPassLogger,
+			    "GBufferPass::DrawOpaqueMeshes: {} instance batches skipped because the frame instance buffer is unavailable.",
+			    sceneData.meshInstanceBatches.size());
+		}
 		return;
 	}
 
-	for (const MeshInstanceBatch& batch : sceneData.meshInstanceBatches)
+	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
 	{
+		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];
 		const GPUMesh* gpuMesh = batch.gpuMesh;
-		if (gpuMesh == nullptr || !gpuMesh->IsValid() || batch.instanceCount == 0)
+		if (batch.instanceCount == 0)
 		{
+			SPDLOG_LOGGER_WARN(g_gbufferPassLogger, "GBufferPass::DrawOpaqueMeshes: instance batch {} is empty; skipped.", batchIndex);
+			continue;
+		}
+
+		if (batch.firstInstance >= sceneData.meshInstances.size() ||
+		    batch.instanceCount > sceneData.meshInstances.size() - batch.firstInstance)
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferPassLogger,
+			    "GBufferPass::DrawOpaqueMeshes: instance batch {} references instance range [{}..{}) outside {} uploaded instances; skipped.",
+			    batchIndex,
+			    batch.firstInstance,
+			    batch.firstInstance + batch.instanceCount,
+			    sceneData.meshInstances.size());
+			continue;
+		}
+
+		if (gpuMesh == nullptr || !gpuMesh->IsValid())
+		{
+			SPDLOG_LOGGER_WARN(g_gbufferPassLogger, "GBufferPass::DrawOpaqueMeshes: instance batch {} has no valid GPU mesh; skipped.", batchIndex);
 			continue;
 		}
 
@@ -187,8 +217,10 @@ void GBufferPass::DrawOpaqueMeshes(
 		if (!bindMaterial(drawParameters, batch.materialSlot))
 		{
 			SPDLOG_LOGGER_WARN(
-			    Logging::GetOrCreateLogger("Renderer.GBufferPass"),
-			    "GBufferPass::DrawOpaqueMeshes: Material texture binding set is invalid; instance batch skipped.");
+			    g_gbufferPassLogger,
+			    "GBufferPass::DrawOpaqueMeshes: instance batch {} material slot {} has no valid texture binding set; skipped.",
+			    batchIndex,
+			    batch.materialSlot);
 			continue;
 		}
 
@@ -202,7 +234,15 @@ void GBufferPass::DrawOpaqueMeshes(
 		    drawParameters.GetPassParameterSet(),
 		    &overrides,
 		    PassName);
-		assert(bound);
+		if (!bound)
+		{
+			SPDLOG_LOGGER_WARN(
+			    g_gbufferPassLogger,
+			    "GBufferPass::DrawOpaqueMeshes: shader binding layout rejected instance batch {}; skipped.",
+			    batchIndex);
+			assert(bound);
+			continue;
+		}
 
 		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), batch.instanceCount, 0, 0, 0);
 	}

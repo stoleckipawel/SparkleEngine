@@ -88,6 +88,19 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 	const MeshSnapshot meshSnapshot = sceneMeshes.CaptureSnapshot();
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(meshSnapshot.meshInstances.size());
+	MeshGeometryInstancingDiagnostics& instancingDiagnostics = snapshot.GeometryInstancing;
+	instancingDiagnostics.RuntimeInstanceGroupCount = static_cast<std::uint32_t>(meshSnapshot.meshInstanceGroups.size());
+	for (const MeshInstanceGroupSnapshot& group : meshSnapshot.meshInstanceGroups)
+	{
+		if (group.groupKind == SceneMeshInstanceGroupKind::AuthoredInstanceGroup)
+		{
+			++instancingDiagnostics.RuntimeAuthoredGroupCount;
+		}
+		else if (group.groupKind == SceneMeshInstanceGroupKind::SharedMeshReference)
+		{
+			++instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
+		}
+	}
 	for (const MeshInstanceSnapshot& meshInstance : meshSnapshot.meshInstances)
 	{
 		if (meshInstance.mesh == nullptr)
@@ -115,7 +128,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 	}
 
 	MeshInstanceBatchBuilder batchBuilder;
-	snapshot.GeometryInstancing = batchBuilder.Build(
+	MeshGeometryInstancingDiagnostics batchDiagnostics = batchBuilder.Build(
 	    renderItems,
 	    meshSnapshot.meshInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
@@ -123,6 +136,10 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 	        .requireMaterialBindingSet = false,
 	        .collectDiagnostics = true})
 	                                  .diagnostics;
+	batchDiagnostics.RuntimeInstanceGroupCount = instancingDiagnostics.RuntimeInstanceGroupCount;
+	batchDiagnostics.RuntimeAuthoredGroupCount = instancingDiagnostics.RuntimeAuthoredGroupCount;
+	batchDiagnostics.RuntimeSharedMeshReferenceGroupCount = instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
+	snapshot.GeometryInstancing = batchDiagnostics;
 
 	return snapshot;
 }

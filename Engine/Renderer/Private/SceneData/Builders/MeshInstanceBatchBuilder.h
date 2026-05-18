@@ -58,6 +58,7 @@ class MeshInstanceBatchBuilder final
 
 	static bool IsValidCandidate(
 	    const MeshRenderItem& item,
+	    std::size_t instanceGroupCount,
 	    const MeshInstanceBatchBuildOptions& options,
 	    MeshGeometryInstancingDiagnostics& diagnostics) noexcept;
 	static BatchKey MakeBatchKey(const MeshRenderItem& item) noexcept;

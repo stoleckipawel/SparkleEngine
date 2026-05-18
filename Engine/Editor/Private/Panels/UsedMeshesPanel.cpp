@@ -367,16 +367,28 @@ void UsedMeshesPanel::DrawToolbar()
 	ImGui::InputTextWithHint("##UsedMeshesFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled(
-	    "%zu mesh(es), %zu resident, instances %u, single-instance %u, batches %u (authored %u, auto %u), rejected %u, saved %u, GPU %s, CPU %s estimated",
+	    "%zu mesh(es), %zu resident, instances %u, groups %u (authored %u, shared %u), batches %u (authored %u, preserved %u, auto %u, single %u), saved %u",
 	    m_snapshot.Rows.size(),
 	    CountResidentMeshes(m_snapshot),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RenderableInstanceCount),
-	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.SingleInstanceBatchCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RuntimeInstanceGroupCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RuntimeAuthoredGroupCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RuntimeSharedMeshReferenceGroupCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MeshBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.AuthoredBatchCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.PreservedGroupBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.AutoBatchCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.SingleInstanceBatchCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.EstimatedGBufferDrawCallsSaved));
+	ImGui::TextDisabled(
+	    "instances/batch %u..%u, rejected %u (gpu %u, material %u, group %u, incompatible %u), GPU %s, CPU %s estimated",
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MinInstancesPerBatch),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MaxInstancesPerBatch),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RejectedCandidateCount),
-	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.EstimatedGBufferDrawCallsSaved),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RejectedMissingGpuMeshCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RejectedInvalidMaterialCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RejectedInvalidInstanceGroupCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RejectedIncompatibleGroupCount),
 	    FormatBytes(SumGpuBytes(m_snapshot)).c_str(),
 	    FormatBytes(SumCpuBytes(m_snapshot)).c_str());
 }
