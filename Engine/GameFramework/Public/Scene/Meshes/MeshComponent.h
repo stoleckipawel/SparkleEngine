@@ -1,8 +1,10 @@
 #pragma once
 
+#include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Component.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
+#include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <DirectXMath.h>
@@ -18,7 +20,10 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	MeshComponent(
 	    std::unique_ptr<Mesh>&& mesh,
 	    const Transform& transform,
-	    MaterialHandle materialHandle = MaterialHandle::Invalid()) noexcept;
+	    MaterialHandle materialHandle = MaterialHandle::Invalid(),
+	    Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId,
+	    SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex,
+	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex) noexcept;
 	~MeshComponent() override;
 
 	MeshComponent(const MeshComponent&) = delete;
@@ -36,6 +41,15 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 
 	void SetMaterialHandle(MaterialHandle materialHandle) noexcept { m_materialHandle = materialHandle; }
 	MaterialHandle GetMaterialHandle() const noexcept { return m_materialHandle; }
+	void SetMeshAssetId(Assets::CookedAssetId meshAssetId) noexcept { m_meshAssetId = meshAssetId; }
+	Assets::CookedAssetId GetMeshAssetId() const noexcept { return m_meshAssetId; }
+	void SetMeshAssetIndex(SceneMeshAssetIndex meshAssetIndex) noexcept { m_meshAssetIndex = meshAssetIndex; }
+	SceneMeshAssetIndex GetMeshAssetIndex() const noexcept { return m_meshAssetIndex; }
+	void SetMeshInstanceGroupIndex(SceneMeshInstanceGroupIndex meshInstanceGroupIndex) noexcept
+	{
+		m_meshInstanceGroupIndex = meshInstanceGroupIndex;
+	}
+	SceneMeshInstanceGroupIndex GetMeshInstanceGroupIndex() const noexcept { return m_meshInstanceGroupIndex; }
 
 	DirectX::XMMATRIX GetWorldMatrix() const noexcept;
 	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
@@ -44,4 +58,7 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	std::unique_ptr<Mesh> m_mesh;
 	Transform m_transform;
 	MaterialHandle m_materialHandle = MaterialHandle::Invalid();
+	Assets::CookedAssetId m_meshAssetId = Assets::InvalidCookedAssetId;
+	SceneMeshAssetIndex m_meshAssetIndex = kInvalidSceneMeshAssetIndex;
+	SceneMeshInstanceGroupIndex m_meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 };

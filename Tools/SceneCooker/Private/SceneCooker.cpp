@@ -14,20 +14,6 @@
 #include <limits>
 #include <optional>
 
-static Assets::CookedSceneInstanceSourceFeature ToCookedInstanceSourceFeature(ImportedInstanceSourceFeature sourceFeature) noexcept
-{
-	switch (sourceFeature)
-	{
-		case ImportedInstanceSourceFeature::SharedMeshReference:
-			return Assets::CookedSceneInstanceSourceFeature::SharedMeshReference;
-		case ImportedInstanceSourceFeature::GltfExtMeshGpuInstancing:
-			return Assets::CookedSceneInstanceSourceFeature::GltfExtMeshGpuInstancing;
-		case ImportedInstanceSourceFeature::None:
-		default:
-			return Assets::CookedSceneInstanceSourceFeature::None;
-	}
-}
-
 bool SceneCooker::ResolveSceneIdentity(
     const std::filesystem::path& sourceScenePath,
 	CookedSceneIdentity& outIdentity,
@@ -138,7 +124,7 @@ bool SceneCooker::BuildManifest(
 		        .materialAssetIndex = materialAssetIndex,
 		        .firstInstance = importedGroup.firstInstanceIndex,
 		        .instanceCount = importedGroup.instanceCount,
-		        .sourceFeature = ToCookedInstanceSourceFeature(importedGroup.sourceFeature),
+		        .groupKind = ToCookedInstanceGroupKind(importedGroup.groupKind),
 		        .flags = importedGroup.flags});
 	}
 
@@ -251,4 +237,18 @@ bool SceneCooker::UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::s
 
 	outErrorMessage.clear();
 	return true;
+}
+
+Assets::CookedSceneInstanceGroupKind SceneCooker::ToCookedInstanceGroupKind(ImportedMeshInstanceGroupKind groupKind) noexcept
+{
+	switch (groupKind)
+	{
+		case ImportedMeshInstanceGroupKind::SharedMeshReference:
+			return Assets::CookedSceneInstanceGroupKind::SharedMeshReference;
+		case ImportedMeshInstanceGroupKind::AuthoredInstanceGroup:
+			return Assets::CookedSceneInstanceGroupKind::AuthoredInstanceGroup;
+		case ImportedMeshInstanceGroupKind::None:
+		default:
+			return Assets::CookedSceneInstanceGroupKind::None;
+	}
 }

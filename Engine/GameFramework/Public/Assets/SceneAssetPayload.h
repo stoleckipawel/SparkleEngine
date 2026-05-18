@@ -5,9 +5,11 @@
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
+#include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
@@ -20,15 +22,33 @@ struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
 
 struct SPARKLE_ENGINE_API SceneAssetPayload
 {
-	struct MeshInstance
+	struct MeshAsset
 	{
 		MeshData mesh;
 		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
-		Transform transform;
-		MaterialHandle material;
 	};
 
+	struct MeshInstance
+	{
+		SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
+		Transform transform;
+		MaterialHandle material;
+		SceneMeshInstanceGroupIndex groupIndex = kInvalidSceneMeshInstanceGroupIndex;
+	};
+
+	struct MeshInstanceGroup
+	{
+		SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
+		MaterialHandle material;
+		SceneMeshInstanceIndex firstInstance = kInvalidSceneMeshInstanceIndex;
+		std::uint32_t instanceCount = 0;
+		SceneMeshInstanceGroupKind groupKind = SceneMeshInstanceGroupKind::None;
+		std::uint32_t flags = 0;
+	};
+
+	std::vector<MeshAsset> meshAssets;
 	std::vector<MeshInstance> meshInstances;
+	std::vector<MeshInstanceGroup> meshInstanceGroups;
 	std::vector<MaterialDesc> materials;
 	SceneAssetPayloadDiagnostics diagnostics;
 

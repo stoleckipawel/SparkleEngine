@@ -50,19 +50,54 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 	const MaterialHandle materialBaseHandle = sceneAssetPayload.materials.empty()
 	                                              ? MaterialHandle::Invalid()
 	                                              : m_materials.AppendMaterials(std::move(sceneAssetPayload.materials));
+	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_meshes.GetMeshCount());
+	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_meshes.GetMeshInstanceGroupCount());
 
 	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
 	meshComponents.reserve(sceneAssetPayload.meshInstances.size());
 	for (SceneAssetPayload::MeshInstance& meshInstance : sceneAssetPayload.meshInstances)
 	{
-		auto mesh = std::make_unique<CookedMesh>(std::move(meshInstance.mesh), meshInstance.assetId);
+		if (meshInstance.meshAssetIndex >= sceneAssetPayload.meshAssets.size())
+		{
+			return false;
+		}
+
+		const SceneAssetPayload::MeshAsset& meshAsset = sceneAssetPayload.meshAssets[meshInstance.meshAssetIndex];
+		MeshData meshData = meshAsset.mesh;
+		auto mesh = std::make_unique<CookedMesh>(std::move(meshData), meshAsset.assetId);
 		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()
 		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + meshInstance.material.GetIndex())
 		                                          : m_materials.GetOrCreateDefaultMaterialHandle();
-		meshComponents.push_back(std::make_unique<MeshComponent>(std::move(mesh), meshInstance.transform, materialHandle));
+		const SceneMeshInstanceGroupIndex sceneGroupIndex = meshInstance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
+		                                                    ? kInvalidSceneMeshInstanceGroupIndex
+		                                                    : sceneGroupBaseIndex + meshInstance.groupIndex;
+		meshComponents.push_back(std::make_unique<MeshComponent>(
+			    std::move(mesh), meshInstance.transform, materialHandle, meshAsset.assetId, meshInstance.meshAssetIndex, sceneGroupIndex));
 	}
 
 	m_meshes.AppendMeshComponents(std::move(meshComponents));
+
+	std::vector<MeshInstanceGroupSnapshot> meshInstanceGroups;
+	meshInstanceGroups.reserve(sceneAssetPayload.meshInstanceGroups.size());
+	for (const SceneAssetPayload::MeshInstanceGroup& payloadGroup : sceneAssetPayload.meshInstanceGroups)
+	{
+		MeshInstanceGroupSnapshot meshInstanceGroup;
+		meshInstanceGroup.meshAssetIndex = payloadGroup.meshAssetIndex;
+		meshInstanceGroup.meshAssetId = payloadGroup.meshAssetIndex < sceneAssetPayload.meshAssets.size()
+		                                ? sceneAssetPayload.meshAssets[payloadGroup.meshAssetIndex].assetId
+		                                : Assets::InvalidCookedAssetId;
+		meshInstanceGroup.materialHandle = payloadGroup.material.IsValid() && materialBaseHandle.IsValid()
+		                                       ? MaterialHandle(materialBaseHandle.GetIndex() + payloadGroup.material.GetIndex())
+		                                       : MaterialHandle::Invalid();
+		meshInstanceGroup.firstInstance = payloadGroup.firstInstance == kInvalidSceneMeshInstanceIndex
+		                                  ? kInvalidSceneMeshInstanceIndex
+		                                  : sceneMeshBaseIndex + payloadGroup.firstInstance;
+		meshInstanceGroup.instanceCount = payloadGroup.instanceCount;
+		meshInstanceGroup.groupKind = payloadGroup.groupKind;
+		meshInstanceGroup.flags = payloadGroup.flags;
+		meshInstanceGroups.push_back(meshInstanceGroup);
+	}
+	m_meshes.AppendMeshInstanceGroups(std::move(meshInstanceGroups));
 
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,

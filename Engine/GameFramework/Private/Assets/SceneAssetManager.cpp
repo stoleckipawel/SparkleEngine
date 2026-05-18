@@ -18,6 +18,20 @@ static const auto g_sceneAssetManagerLogger = Logging::GetOrCreateLogger("GameFr
 
 namespace Assets
 {
+	static SceneMeshInstanceGroupKind ToSceneMeshInstanceGroupKind(CookedSceneInstanceGroupKind groupKind) noexcept
+	{
+		switch (groupKind)
+		{
+			case CookedSceneInstanceGroupKind::SharedMeshReference:
+				return SceneMeshInstanceGroupKind::SharedMeshReference;
+			case CookedSceneInstanceGroupKind::AuthoredInstanceGroup:
+				return SceneMeshInstanceGroupKind::AuthoredInstanceGroup;
+			case CookedSceneInstanceGroupKind::None:
+			default:
+				return SceneMeshInstanceGroupKind::None;
+		}
+	}
+
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAsset(const SceneAssetId& sceneAssetId)
 	{
 		SceneAssetLoadResult result;
@@ -114,16 +128,11 @@ namespace Assets
 		}
 
 		MeshAssetLoader meshAssetLoader;
-		struct LoadedMeshAsset final
-		{
-			MeshData mesh;
-			CookedAssetId assetId = InvalidCookedAssetId;
-		};
-		std::vector<LoadedMeshAsset> loadedMeshes;
-		loadedMeshes.reserve(sceneManifest.meshAssetReferences.size());
+		const auto meshAssetBaseIndex = static_cast<SceneMeshAssetIndex>(sceneAssetPayload.meshAssets.size());
+		sceneAssetPayload.meshAssets.reserve(sceneAssetPayload.meshAssets.size() + sceneManifest.meshAssetReferences.size());
 		for (const CookedSceneMeshAssetRef& meshReference : sceneManifest.meshAssetReferences)
 		{
-			LoadedMeshAsset loadedMesh;
+			SceneAssetPayload::MeshAsset loadedMesh;
 			const std::filesystem::path meshAssetPath = Paths::CookedMeshAsset(meshReference.meshAssetId);
 			if (!meshAssetLoader.Load(meshAssetPath, loadedMesh.mesh, errorMessage))
 			{
@@ -136,7 +145,7 @@ namespace Assets
 			}
 
 			loadedMesh.assetId = meshReference.meshAssetId;
-			loadedMeshes.push_back(std::move(loadedMesh));
+			sceneAssetPayload.meshAssets.push_back(std::move(loadedMesh));
 		}
 
 		MaterialAssetLoader materialAssetLoader;
@@ -170,17 +179,20 @@ namespace Assets
 			sceneAssetPayload.materials.push_back(std::move(runtimeMaterial));
 		}
 
+		const auto instanceBaseIndex = static_cast<SceneMeshInstanceIndex>(sceneAssetPayload.meshInstances.size());
+		const auto groupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(sceneAssetPayload.meshInstanceGroups.size());
 		sceneAssetPayload.meshInstances.reserve(sceneAssetPayload.meshInstances.size() + sceneManifest.instances.size());
+		sceneAssetPayload.meshInstanceGroups.reserve(sceneAssetPayload.meshInstanceGroups.size() + sceneManifest.instanceGroups.size());
 
 		for (const CookedSceneInstanceRecord& instanceRecord : sceneManifest.instances)
 		{
-			if (instanceRecord.meshAssetIndex >= loadedMeshes.size())
+			if (instanceRecord.meshAssetIndex >= sceneManifest.meshAssetReferences.size())
 			{
 				errorMessage = std::format(
-				    "Scene manifest '{}' references mesh index {} but only {} mesh assets were loaded",
+				    "Scene manifest '{}' references mesh index {} but only {} mesh assets were declared",
 				    sceneAssetId.value,
 				    instanceRecord.meshAssetIndex,
-				    loadedMeshes.size());
+				    sceneManifest.meshAssetReferences.size());
 				return false;
 			}
 
@@ -195,15 +207,51 @@ namespace Assets
 				return false;
 			}
 
-			const LoadedMeshAsset& loadedMesh = loadedMeshes[instanceRecord.meshAssetIndex];
 			SceneAssetPayload::MeshInstance meshInstance;
-			meshInstance.mesh = loadedMesh.mesh;
-			meshInstance.assetId = loadedMesh.assetId;
+			meshInstance.meshAssetIndex = meshAssetBaseIndex + instanceRecord.meshAssetIndex;
 			meshInstance.transform = Transform(DirectX::XMLoadFloat4x4(&instanceRecord.worldTransform));
 			meshInstance.material = instanceRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
 			                            ? MaterialHandle::Invalid()
 			                            : MaterialHandle(materialBaseIndex + instanceRecord.materialAssetIndex);
+			meshInstance.groupIndex = instanceRecord.groupIndex == kInvalidCookedSceneInstanceGroupIndex
+			                              ? kInvalidSceneMeshInstanceGroupIndex
+			                              : groupBaseIndex + instanceRecord.groupIndex;
 			sceneAssetPayload.meshInstances.push_back(std::move(meshInstance));
+		}
+
+		for (const CookedSceneInstanceGroupRecord& groupRecord : sceneManifest.instanceGroups)
+		{
+			if (groupRecord.meshAssetIndex >= sceneManifest.meshAssetReferences.size())
+			{
+				errorMessage = std::format(
+				    "Scene manifest '{}' references mesh group mesh index {} but only {} mesh assets were declared",
+				    sceneAssetId.value,
+				    groupRecord.meshAssetIndex,
+				    sceneManifest.meshAssetReferences.size());
+				return false;
+			}
+
+			if (groupRecord.materialAssetIndex != kInvalidCookedMaterialAssetIndex &&
+			    groupRecord.materialAssetIndex >= sceneManifest.materialAssetReferences.size())
+			{
+				errorMessage = std::format(
+				    "Scene manifest '{}' references mesh group material index {} but only {} material assets were loaded",
+				    sceneAssetId.value,
+				    groupRecord.materialAssetIndex,
+				    sceneManifest.materialAssetReferences.size());
+				return false;
+			}
+
+			SceneAssetPayload::MeshInstanceGroup meshInstanceGroup;
+			meshInstanceGroup.meshAssetIndex = meshAssetBaseIndex + groupRecord.meshAssetIndex;
+			meshInstanceGroup.material = groupRecord.materialAssetIndex == kInvalidCookedMaterialAssetIndex
+			                                  ? MaterialHandle::Invalid()
+			                                  : MaterialHandle(materialBaseIndex + groupRecord.materialAssetIndex);
+			meshInstanceGroup.firstInstance = instanceBaseIndex + groupRecord.firstInstance;
+			meshInstanceGroup.instanceCount = groupRecord.instanceCount;
+			meshInstanceGroup.groupKind = ToSceneMeshInstanceGroupKind(groupRecord.groupKind);
+			meshInstanceGroup.flags = groupRecord.flags;
+			sceneAssetPayload.meshInstanceGroups.push_back(meshInstanceGroup);
 		}
 
 		sceneAssetPayload.diagnostics.loadedSceneAssetCount += 1u;

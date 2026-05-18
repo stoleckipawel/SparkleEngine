@@ -5,8 +5,20 @@
 
 MeshComponent::MeshComponent(std::unique_ptr<Mesh>&& mesh) noexcept : m_mesh(std::move(mesh)) {}
 
-MeshComponent::MeshComponent(std::unique_ptr<Mesh>&& mesh, const Transform& transform, MaterialHandle materialHandle) noexcept :
-    Component(), m_mesh(std::move(mesh)), m_transform(transform), m_materialHandle(materialHandle)
+MeshComponent::MeshComponent(
+	std::unique_ptr<Mesh>&& mesh,
+	const Transform& transform,
+	MaterialHandle materialHandle,
+	Assets::CookedAssetId meshAssetId,
+	SceneMeshAssetIndex meshAssetIndex,
+	SceneMeshInstanceGroupIndex meshInstanceGroupIndex) noexcept :
+	Component(),
+	m_mesh(std::move(mesh)),
+	m_transform(transform),
+	m_materialHandle(materialHandle),
+	m_meshAssetId(meshAssetId),
+	m_meshAssetIndex(meshAssetIndex),
+	m_meshInstanceGroupIndex(meshInstanceGroupIndex)
 {
 }
 

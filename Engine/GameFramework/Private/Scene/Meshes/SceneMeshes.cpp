@@ -27,15 +27,36 @@ void SceneMeshes::AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent
 	}
 }
 
+void SceneMeshes::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& meshInstanceGroups)
+{
+	if (meshInstanceGroups.empty())
+	{
+		return;
+	}
+
+	m_meshInstanceGroups.reserve(m_meshInstanceGroups.size() + meshInstanceGroups.size());
+	for (MeshInstanceGroupSnapshot& meshInstanceGroup : meshInstanceGroups)
+	{
+		m_meshInstanceGroups.push_back(meshInstanceGroup);
+	}
+}
+
 void SceneMeshes::Reset() noexcept
 {
 	m_meshes.clear();
+	m_meshInstanceGroups.clear();
 }
 
 MeshSnapshot SceneMeshes::CaptureSnapshot() const
 {
 	MeshSnapshot snapshot;
 	snapshot.meshInstances.reserve(m_meshes.size());
+	snapshot.meshInstanceGroups = m_meshInstanceGroups;
+	for (MeshInstanceGroupSnapshot& meshInstanceGroup : snapshot.meshInstanceGroups)
+	{
+		meshInstanceGroup.firstInstance = kInvalidSceneMeshInstanceIndex;
+		meshInstanceGroup.instanceCount = 0;
+	}
 
 	for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
 	{
@@ -49,6 +70,18 @@ MeshSnapshot SceneMeshes::CaptureSnapshot() const
 		DirectX::XMStoreFloat4x4(&meshInstance.worldMatrix, mesh->GetWorldMatrix());
 		DirectX::XMStoreFloat3x4(&meshInstance.worldInvTranspose, mesh->GetWorldInverseTransposeMatrix());
 		meshInstance.materialHandle = mesh->GetMaterialHandle();
+		meshInstance.meshAssetId = mesh->GetMeshAssetId();
+		meshInstance.meshAssetIndex = mesh->GetMeshAssetIndex();
+		meshInstance.instanceGroupIndex = mesh->GetMeshInstanceGroupIndex();
+		if (meshInstance.instanceGroupIndex < snapshot.meshInstanceGroups.size())
+		{
+			MeshInstanceGroupSnapshot& meshInstanceGroup = snapshot.meshInstanceGroups[meshInstance.instanceGroupIndex];
+			if (meshInstanceGroup.instanceCount == 0)
+			{
+				meshInstanceGroup.firstInstance = static_cast<SceneMeshInstanceIndex>(snapshot.meshInstances.size());
+			}
+			++meshInstanceGroup.instanceCount;
+		}
 		snapshot.meshInstances.push_back(meshInstance);
 	}
 
