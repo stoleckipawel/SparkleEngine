@@ -21,12 +21,14 @@ void AssetConverterCommands::PrintCookSceneSummary(
 	std::cout << "AssetConverter Summary:\n"
 	          << "  mode=cook-scene\n"
 	          << "  source='" << sourceScenePath.string() << "'\n"
-	          << "  importer='" << GetSourceImporterTypeName(importResult.scene.importerType) << "'\n"
+	          << "  importer='" << importResult.GetImporterName() << "'\n"
 	          << "  meshPrimitives=" << importResult.GetMeshPrimitiveCount() << "\n"
 	          << "  meshInstances=" << importResult.GetMeshInstanceCount() << "\n"
+	          << "  meshInstanceGroups=" << importResult.GetMeshInstanceGroupCount() << "\n"
 	          << "  materials=" << importResult.GetMaterialCount() << "\n"
 	          << "  cookedMeshAssetRefs=" << cookedSceneBuild.manifest.meshAssetReferences.size() << "\n"
 	          << "  cookedInstances=" << cookedSceneBuild.manifest.instances.size() << "\n"
+	          << "  cookedInstanceGroups=" << cookedSceneBuild.manifest.instanceGroups.size() << "\n"
 	          << "  sceneManifest='" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 }
 
@@ -129,8 +131,9 @@ int AssetConverterCommands::RunCookScene(const std::filesystem::path& sourceScen
 		    }
 
 		    std::cout << "AssetConverter: imported '" << sourceScenePath.string() << "' via "
-		              << GetSourceImporterTypeName(importResult.scene.importerType) << " with " << importResult.GetMeshPrimitiveCount()
-		              << " mesh primitives, " << importResult.GetMeshInstanceCount() << " mesh instances, and "
+		              << importResult.GetImporterName() << " with " << importResult.GetMeshPrimitiveCount()
+		              << " mesh primitives, " << importResult.GetMeshInstanceCount() << " mesh instances, "
+		              << importResult.GetMeshInstanceGroupCount() << " mesh instance groups, and "
 		              << importResult.GetMaterialCount() << " materials; emitted scene asset '"
 		              << cookedSceneBuild.identity.assetId << "' to '" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 		    PrintCookSceneSummary(sourceScenePath, importResult, cookedSceneBuild);

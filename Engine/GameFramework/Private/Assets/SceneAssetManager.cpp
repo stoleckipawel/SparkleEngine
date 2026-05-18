@@ -209,6 +209,7 @@ namespace Assets
 		sceneAssetPayload.diagnostics.loadedSceneAssetCount += 1u;
 		sceneAssetPayload.diagnostics.meshAssetReferenceCount += sceneManifest.meshAssetReferences.size();
 		sceneAssetPayload.diagnostics.meshInstanceCount += sceneManifest.instances.size();
+		sceneAssetPayload.diagnostics.meshInstanceGroupCount += sceneManifest.instanceGroups.size();
 
 		SPDLOG_LOGGER_INFO(
 		    g_sceneAssetManagerLogger,
@@ -216,7 +217,7 @@ namespace Assets
 		    sceneAssetId.value,
 		    sceneManifest.meshAssetReferences.size(),
 		    sceneManifest.instances.size(),
-		    0u,
+		    sceneManifest.instanceGroups.size(),
 		    sceneManifest.materialAssetReferences.size());
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());

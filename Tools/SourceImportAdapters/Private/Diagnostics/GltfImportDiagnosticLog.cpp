@@ -168,6 +168,15 @@ void GltfImportDiagnosticLog::ReportInvalidMaterialIndex(std::string_view primit
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
+void GltfImportDiagnosticLog::ReportMalformedGpuInstancing(std::string_view nodeLabel, std::string_view reason, SourceImportResult& result)
+{
+	SPDLOG_LOGGER_WARN(
+	    g_gltfImportDiagnosticLogger,
+	    "{}",
+	    std::format("GltfImporter: Node '{}' has malformed EXT_mesh_gpu_instancing data ({}) and will import as a regular mesh node", nodeLabel, reason));
+	SourceImportDiagnosticsRecorder::RecordWarning(result);
+}
+
 void GltfImportDiagnosticLog::ReportInvalidTexturePath(
     std::uint32_t materialIndex,
     std::string_view slotName,

@@ -18,7 +18,7 @@ bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.scene.importerType = SourceImporterType::Fbx;
+	result.scene.importerName = "FbxImporter";
 	result.scene.sourcePath = filePath;
 
 	Assimp::Importer importer;

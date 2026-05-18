@@ -1,5 +1,7 @@
 #include "AssetCookerDiscovery.h"
 
+#include "SourceSceneImporter.h"
+
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -26,12 +28,6 @@ static std::string AssetCookerToLower(std::string value)
 		    return static_cast<char>(std::tolower(character));
 	    });
 	return value;
-}
-
-static bool AssetCookerIsSupportedSceneExtension(const std::filesystem::path& path)
-{
-	const std::string extension = AssetCookerToLower(path.extension().string());
-	return extension == ".gltf" || extension == ".glb" || extension == ".fbx";
 }
 
 static bool AssetCookerCategoryNeedsScenes(AssetCookerCategory category)
@@ -95,7 +91,7 @@ static void AssetCookerCollectSceneEntries(
 		}
 
 		std::error_code statusError;
-		if (!iterator->is_regular_file(statusError) || !AssetCookerIsSupportedSceneExtension(iterator->path()))
+		if (!iterator->is_regular_file(statusError) || !SourceSceneImporter::SupportsSourceScenePath(iterator->path()))
 		{
 			continue;
 		}

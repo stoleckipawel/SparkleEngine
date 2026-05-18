@@ -21,6 +21,7 @@ struct CookedSceneManifestBuildData final
 	std::vector<Assets::CookedSceneMeshAssetRef> meshAssetReferences;
 	std::vector<Assets::CookedSceneMaterialAssetRef> materialAssetReferences;
 	std::vector<Assets::CookedSceneInstanceRecord> instances;
+	std::vector<Assets::CookedSceneInstanceGroupRecord> instanceGroups;
 };
 
 struct CookedSceneAssetOutputs final

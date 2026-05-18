@@ -15,6 +15,8 @@ struct cgltf_data;
 struct cgltf_node;
 struct cgltf_primitive;
 
+struct GltfMeshGpuInstancingTransforms;
+
 class GltfGeometryImporter final
 {
   public:
@@ -27,12 +29,36 @@ class GltfGeometryImporter final
 	static DirectX::XMFLOAT2 ReadFloat2(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMFLOAT3 ReadFloat3(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMFLOAT4 ReadFloat4(const cgltf_accessor* accessor, std::size_t index);
+	static DirectX::XMMATRIX ReadFloat4x4(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
+	static const cgltf_accessor* FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName);
+	static bool TryReadMeshGpuInstancingTransforms(
+	    const cgltf_node& node,
+	    std::string_view nodeLabel,
+	    SourceImportResult& result,
+	    GltfMeshGpuInstancingTransforms& outTransforms);
+	static DirectX::XMMATRIX BuildMeshGpuInstancingTransform(const GltfMeshGpuInstancingTransforms& transforms, std::size_t instanceIndex);
 	static ImportedMaterialIndex ResolveMaterialIndex(
 	    const cgltf_primitive& primitive,
 	    const cgltf_data* data,
 	    std::string_view primitiveLabel,
 	    SourceImportResult& result);
+	static void AppendMeshInstance(
+	    SourceImportResult& result,
+	    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
+	    ImportedMaterialIndex materialIndex,
+	    DirectX::FXMMATRIX worldTransform,
+	    ImportedMeshInstanceGroupIndex groupIndex,
+	    std::uint32_t sourceNodeIndex,
+	    std::string_view sourceNodeName);
+	static void AppendMeshGpuInstancingGroup(
+	    SourceImportResult& result,
+	    const GltfMeshGpuInstancingTransforms& transforms,
+	    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
+	    ImportedMaterialIndex materialIndex,
+	    DirectX::FXMMATRIX nodeWorldTransform,
+	    std::uint32_t sourceNodeIndex,
+	    std::string_view sourceNodeName);
 	static ImportedMeshGeometry ExtractMeshGeometry(const cgltf_primitive& primitive);
 	static ImportedMeshPrimitiveIndex FindImportedPrimitiveIndex(
 	    const ImportedScene& scene,

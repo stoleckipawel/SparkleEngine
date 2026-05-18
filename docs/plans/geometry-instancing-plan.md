@@ -223,9 +223,9 @@ Implementation prompt:
 ```text
 Preserve authored mesh instance groups through source import and cooked scene manifests.
 
-Add imported instance group data that references imported primitive index, material index, first instance or explicit instance range, instance count, source feature tag, and flags. Add a source feature enum with at least `None`, `SharedMeshReference`, and `GltfExtMeshGpuInstancing`. For glTF, detect `EXT_mesh_gpu_instancing` on nodes and import its TRANSLATION, ROTATION, SCALE, and MATRIX data into world transforms. Compose authored instance transforms with the node/world transform according to glTF semantics. Validate accessor counts and skip malformed groups with clear warnings instead of crashing.
+Add imported instance group data that references imported primitive index, material index, first instance or explicit instance range, instance count, generic group kind, and flags. Add an importer-neutral group-kind enum with at least `None`, `SharedMeshReference`, and `AuthoredInstanceGroup`. For glTF, detect `EXT_mesh_gpu_instancing` inside the private glTF importer and map it to the generic authored group kind while importing its TRANSLATION, ROTATION, SCALE, and MATRIX data into world transforms. Compose authored instance transforms with the node/world transform according to glTF semantics. Validate accessor counts and skip malformed groups with clear warnings instead of crashing.
 
-Bump `kCookedSceneManifestVersion`. Add fixed-size trivially copyable cooked records for instance groups. The cooked manifest should contain mesh asset references, material asset references, instance records, and instance group records in deterministic order. Instance records should reference mesh asset index, material asset index, world transform, and group index or invalid group. Instance group records should reference mesh asset index, material asset index, first instance, instance count, source feature tag, and flags.
+Bump `kCookedSceneManifestVersion`. Add fixed-size trivially copyable cooked records for instance groups. The cooked manifest should contain mesh asset references, material asset references, instance records, and instance group records in deterministic order. Instance records should reference mesh asset index, material asset index, world transform, and group index or invalid group. Instance group records should reference mesh asset index, material asset index, first instance, instance count, importer-neutral group kind, and flags.
 
 Update `SceneCooker` writer and `SceneManifestLoader` reader together. Reject old scene manifests with a clear recook-required error rather than carrying a long-term compatibility path. Scenes without authored instancing should emit zero instance groups and remain valid.
 ```
@@ -233,7 +233,7 @@ Update `SceneCooker` writer and `SceneManifestLoader` reader together. Reject ol
 Production notes:
 
 - Keep cooked records POD/trivially copyable, matching the existing cooked asset format style.
-- Keep source feature tags backend-neutral. They are diagnostics and batching hints, not RHI commands.
+- Keep group kinds importer-neutral and backend-neutral. They are diagnostics and batching hints, not source-format or RHI commands.
 - Do not make the renderer depend on cgltf or importer-specific structs.
 - Validate all record indices at load time before building runtime payloads.
 

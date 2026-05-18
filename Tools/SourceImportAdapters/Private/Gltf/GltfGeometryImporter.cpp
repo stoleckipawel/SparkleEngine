@@ -8,6 +8,17 @@
 
 #include <cstdint>
 #include <format>
+#include <limits>
+
+struct GltfMeshGpuInstancingTransforms
+{
+	const cgltf_accessor* translations = nullptr;
+	const cgltf_accessor* rotations = nullptr;
+	const cgltf_accessor* scales = nullptr;
+	const cgltf_accessor* matrices = nullptr;
+	std::size_t instanceCount = 0;
+};
+
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
@@ -16,7 +27,14 @@ std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* d
 		const cgltf_node& node = data->nodes[nodeIndex];
 		if (node.mesh)
 		{
-			totalPrimitives += node.mesh->primitives_count;
+			std::size_t meshInstanceCount = 1;
+			if (node.has_mesh_gpu_instancing && node.mesh_gpu_instancing.attributes_count > 0)
+			{
+				const cgltf_accessor* firstAccessor = node.mesh_gpu_instancing.attributes[0].data;
+				meshInstanceCount = firstAccessor != nullptr ? firstAccessor->count : 1;
+			}
+
+			totalPrimitives += node.mesh->primitives_count * meshInstanceCount;
 		}
 	}
 
@@ -40,6 +58,11 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 		}
 
 		const DirectX::XMMATRIX worldTransform = ComputeNodeWorldTransform(&node);
+		GltfMeshGpuInstancingTransforms meshGpuInstancingTransforms;
+		const std::string nodeLabel = node.name ? node.name : std::format("node {}", nodeIndex);
+		const bool hasMeshGpuInstancing = node.has_mesh_gpu_instancing && node.mesh_gpu_instancing.attributes_count > 0;
+		const bool importMeshGpuInstancing =
+		    hasMeshGpuInstancing && TryReadMeshGpuInstancingTransforms(node, nodeLabel, result, meshGpuInstancingTransforms);
 
 		for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
 		{
@@ -89,13 +112,29 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				result.scene.meshPrimitives.push_back(std::move(primitiveEntry));
 			}
 
-			ImportedMeshInstance instanceEntry;
-			instanceEntry.primitiveIndex = importedPrimitiveIndex;
-			instanceEntry.materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
-			DirectX::XMStoreFloat4x4(&instanceEntry.worldTransform, worldTransform);
-			instanceEntry.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
-			instanceEntry.sourceNodeName = node.name ? node.name : std::string();
-			result.scene.meshInstances.push_back(std::move(instanceEntry));
+			const ImportedMaterialIndex materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
+			if (importMeshGpuInstancing)
+			{
+				AppendMeshGpuInstancingGroup(
+				    result,
+				    meshGpuInstancingTransforms,
+				    importedPrimitiveIndex,
+				    materialIndex,
+				    worldTransform,
+				    static_cast<std::uint32_t>(nodeIndex),
+				    node.name ? std::string_view(node.name) : std::string_view());
+			}
+			else
+			{
+				AppendMeshInstance(
+				    result,
+				    importedPrimitiveIndex,
+				    materialIndex,
+				    worldTransform,
+				    kInvalidImportedMeshInstanceGroupIndex,
+				    static_cast<std::uint32_t>(nodeIndex),
+				    node.name ? std::string_view(node.name) : std::string_view());
+			}
 		}
 	}
 }
@@ -177,6 +216,33 @@ DirectX::XMFLOAT4 GltfGeometryImporter::ReadFloat4(const cgltf_accessor* accesso
 	return element;
 }
 
+DirectX::XMMATRIX GltfGeometryImporter::ReadFloat4x4(const cgltf_accessor* accessor, std::size_t index)
+{
+	DirectX::XMFLOAT4X4 element = {
+	    1.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    1.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    1.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    0.0f,
+	    1.0f};
+	if (accessor && index < accessor->count)
+	{
+		cgltf_accessor_read_float(accessor, index, reinterpret_cast<cgltf_float*>(&element), 16);
+	}
+
+	return DirectX::XMLoadFloat4x4(&element);
+}
+
 DirectX::XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_node* node)
 {
 	DirectX::XMMATRIX worldTransform = DirectX::XMMatrixIdentity();
@@ -197,6 +263,170 @@ DirectX::XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_no
 	}
 
 	return worldTransform;
+}
+
+const cgltf_accessor* GltfGeometryImporter::FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName)
+{
+	if (!node.has_mesh_gpu_instancing)
+	{
+		return nullptr;
+	}
+
+	for (cgltf_size attributeIndex = 0; attributeIndex < node.mesh_gpu_instancing.attributes_count; ++attributeIndex)
+	{
+		const cgltf_attribute& attribute = node.mesh_gpu_instancing.attributes[attributeIndex];
+		if (attribute.name != nullptr && attributeName == attribute.name)
+		{
+			return attribute.data;
+		}
+	}
+
+	return nullptr;
+}
+
+bool GltfGeometryImporter::TryReadMeshGpuInstancingTransforms(
+    const cgltf_node& node,
+    std::string_view nodeLabel,
+    SourceImportResult& result,
+    GltfMeshGpuInstancingTransforms& outTransforms)
+{
+	outTransforms = {};
+	outTransforms.translations = FindMeshGpuInstancingAttribute(node, "TRANSLATION");
+	outTransforms.rotations = FindMeshGpuInstancingAttribute(node, "ROTATION");
+	outTransforms.scales = FindMeshGpuInstancingAttribute(node, "SCALE");
+	outTransforms.matrices = FindMeshGpuInstancingAttribute(node, "MATRIX");
+
+	const cgltf_accessor* countSource = outTransforms.matrices;
+	countSource = countSource != nullptr ? countSource : outTransforms.translations;
+	countSource = countSource != nullptr ? countSource : outTransforms.rotations;
+	countSource = countSource != nullptr ? countSource : outTransforms.scales;
+	if (countSource == nullptr)
+	{
+		GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, "no supported transform attributes", result);
+		return false;
+	}
+
+	const auto validateAccessor = [&](const cgltf_accessor* accessor, cgltf_type expectedType, std::string_view attributeName) -> bool {
+		if (accessor == nullptr)
+		{
+			return true;
+		}
+
+		if (accessor->component_type != cgltf_component_type_r_32f || accessor->type != expectedType)
+		{
+			GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, std::format("{} accessor has unsupported component/type", attributeName), result);
+			return false;
+		}
+
+		if (accessor->count != countSource->count)
+		{
+			GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, std::format("{} accessor count does not match the group", attributeName), result);
+			return false;
+		}
+
+		return true;
+	};
+
+	if (!validateAccessor(outTransforms.translations, cgltf_type_vec3, "TRANSLATION") ||
+	    !validateAccessor(outTransforms.rotations, cgltf_type_vec4, "ROTATION") ||
+	    !validateAccessor(outTransforms.scales, cgltf_type_vec3, "SCALE") ||
+	    !validateAccessor(outTransforms.matrices, cgltf_type_mat4, "MATRIX"))
+	{
+		return false;
+	}
+
+	if (countSource->count == 0 || countSource->count > (std::numeric_limits<std::uint32_t>::max)())
+	{
+		GltfImportDiagnosticLog::ReportMalformedGpuInstancing(nodeLabel, "instance count is outside the supported range", result);
+		return false;
+	}
+
+	outTransforms.instanceCount = countSource->count;
+	return true;
+}
+
+DirectX::XMMATRIX GltfGeometryImporter::BuildMeshGpuInstancingTransform(
+    const GltfMeshGpuInstancingTransforms& transforms,
+    std::size_t instanceIndex)
+{
+	if (transforms.matrices != nullptr)
+	{
+		return ReadFloat4x4(transforms.matrices, instanceIndex);
+	}
+
+	DirectX::XMFLOAT3 translation = {0.0f, 0.0f, 0.0f};
+	DirectX::XMFLOAT4 rotation = {0.0f, 0.0f, 0.0f, 1.0f};
+	DirectX::XMFLOAT3 scale = {1.0f, 1.0f, 1.0f};
+	if (transforms.translations != nullptr)
+	{
+		translation = ReadFloat3(transforms.translations, instanceIndex);
+	}
+	if (transforms.rotations != nullptr)
+	{
+		rotation = ReadFloat4(transforms.rotations, instanceIndex);
+	}
+	if (transforms.scales != nullptr)
+	{
+		scale = ReadFloat3(transforms.scales, instanceIndex);
+	}
+
+	return DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
+	       DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
+	       DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
+}
+
+void GltfGeometryImporter::AppendMeshInstance(
+    SourceImportResult& result,
+    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
+    ImportedMaterialIndex materialIndex,
+    DirectX::FXMMATRIX worldTransform,
+    ImportedMeshInstanceGroupIndex groupIndex,
+    std::uint32_t sourceNodeIndex,
+    std::string_view sourceNodeName)
+{
+	ImportedMeshInstance instanceEntry;
+	instanceEntry.primitiveIndex = importedPrimitiveIndex;
+	instanceEntry.materialIndex = materialIndex;
+	instanceEntry.groupIndex = groupIndex;
+	DirectX::XMStoreFloat4x4(&instanceEntry.worldTransform, worldTransform);
+	instanceEntry.sourceNodeIndex = sourceNodeIndex;
+	instanceEntry.sourceNodeName = sourceNodeName;
+	result.scene.meshInstances.push_back(std::move(instanceEntry));
+}
+
+void GltfGeometryImporter::AppendMeshGpuInstancingGroup(
+    SourceImportResult& result,
+    const GltfMeshGpuInstancingTransforms& transforms,
+    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
+    ImportedMaterialIndex materialIndex,
+    DirectX::FXMMATRIX nodeWorldTransform,
+    std::uint32_t sourceNodeIndex,
+    std::string_view sourceNodeName)
+{
+	const ImportedMeshInstanceGroupIndex groupIndex = static_cast<ImportedMeshInstanceGroupIndex>(result.scene.meshInstanceGroups.size());
+	const ImportedMeshInstanceIndex firstInstanceIndex = static_cast<ImportedMeshInstanceIndex>(result.scene.meshInstances.size());
+
+	for (std::size_t instanceIndex = 0; instanceIndex < transforms.instanceCount; ++instanceIndex)
+	{
+		const DirectX::XMMATRIX authoredInstanceTransform = BuildMeshGpuInstancingTransform(transforms, instanceIndex);
+		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(nodeWorldTransform, authoredInstanceTransform);
+		AppendMeshInstance(
+		    result,
+		    importedPrimitiveIndex,
+		    materialIndex,
+		    worldTransform,
+		    groupIndex,
+		    sourceNodeIndex,
+		    sourceNodeName);
+	}
+
+	ImportedMeshInstanceGroup groupEntry;
+	groupEntry.primitiveIndex = importedPrimitiveIndex;
+	groupEntry.materialIndex = materialIndex;
+	groupEntry.firstInstanceIndex = firstInstanceIndex;
+	groupEntry.instanceCount = static_cast<std::uint32_t>(transforms.instanceCount);
+	groupEntry.groupKind = ImportedMeshInstanceGroupKind::AuthoredInstanceGroup;
+	result.scene.meshInstanceGroups.push_back(groupEntry);
 }
 
 ImportedMaterialIndex GltfGeometryImporter::ResolveMaterialIndex(

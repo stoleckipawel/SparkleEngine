@@ -116,10 +116,6 @@ void GltfSceneReader::CollectSceneWarnings(const cgltf_data* data, SourceImportR
 		GltfImportDiagnosticLog::ReportIgnoredWeightedNodes(sceneFeatures.weightedNodeCount, result);
 	}
 
-	if (sceneFeatures.meshGpuInstancingNodeCount > 0)
-	{
-		GltfImportDiagnosticLog::ReportFlattenedGpuInstancingNodes(sceneFeatures.meshGpuInstancingNodeCount, result);
-	}
 }
 
 

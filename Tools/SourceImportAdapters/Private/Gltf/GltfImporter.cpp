@@ -19,7 +19,7 @@ bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) const
 {
 	SourceImportResult result;
-	result.scene.importerType = SourceImporterType::Gltf;
+	result.scene.importerName = "GltfImporter";
 	result.scene.sourcePath = filePath;
 
 	GltfScene scene;
@@ -39,6 +39,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);
 	result.ReserveMeshPrimitives(result.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount);
 	result.ReserveMeshInstances(importedMeshInstanceCount);
+	result.ReserveMeshInstanceGroups(result.diagnostics.geometryInstancing.authoredInstanceGroupCount);
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 	GltfGeometryInstancingDiagnostics::RecordImportedPlacements(result);
 	SourceImportDiagnosticsRecorder::RecordImportedScenePayload(result);

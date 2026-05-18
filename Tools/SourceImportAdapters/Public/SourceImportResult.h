@@ -14,27 +14,6 @@
 #include <type_traits>
 #include <vector>
 
-enum class SourceImporterType : std::uint8_t
-{
-	None = 0,
-	Fbx,
-	Gltf
-};
-
-constexpr std::string_view GetSourceImporterTypeName(SourceImporterType importerType) noexcept
-{
-	switch (importerType)
-	{
-		case SourceImporterType::Fbx:
-			return "FbxImporter";
-		case SourceImporterType::Gltf:
-			return "GltfImporter";
-		case SourceImporterType::None:
-		default:
-			return "SourceSceneImporter";
-	}
-}
-
 enum class ImportedAlphaMode : std::uint32_t
 {
 	Opaque = 0,
@@ -44,9 +23,21 @@ enum class ImportedAlphaMode : std::uint32_t
 
 using ImportedMaterialIndex = std::uint32_t;
 using ImportedMeshPrimitiveIndex = std::uint32_t;
+using ImportedMeshInstanceIndex = std::uint32_t;
+using ImportedMeshInstanceGroupIndex = std::uint32_t;
 
 constexpr ImportedMaterialIndex kInvalidImportedMaterialIndex = (std::numeric_limits<ImportedMaterialIndex>::max)();
 constexpr ImportedMeshPrimitiveIndex kInvalidImportedMeshPrimitiveIndex = (std::numeric_limits<ImportedMeshPrimitiveIndex>::max)();
+constexpr ImportedMeshInstanceIndex kInvalidImportedMeshInstanceIndex = (std::numeric_limits<ImportedMeshInstanceIndex>::max)();
+constexpr ImportedMeshInstanceGroupIndex kInvalidImportedMeshInstanceGroupIndex =
+    (std::numeric_limits<ImportedMeshInstanceGroupIndex>::max)();
+
+enum class ImportedMeshInstanceGroupKind : std::uint32_t
+{
+	None = 0,
+	SharedMeshReference = 1,
+	AuthoredInstanceGroup = 2,
+};
 
 struct ImportedTextureSource
 {
@@ -92,6 +83,7 @@ struct ImportedMeshInstance
 {
 	ImportedMeshPrimitiveIndex primitiveIndex = kInvalidImportedMeshPrimitiveIndex;
 	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
+	ImportedMeshInstanceGroupIndex groupIndex = kInvalidImportedMeshInstanceGroupIndex;
 	DirectX::XMFLOAT4X4 worldTransform = {
 	    1.0f,
 	    0.0f,
@@ -116,6 +108,20 @@ struct ImportedMeshInstance
 	bool HasMaterialBinding() const noexcept { return materialIndex != kInvalidImportedMaterialIndex; }
 };
 
+struct ImportedMeshInstanceGroup
+{
+	ImportedMeshPrimitiveIndex primitiveIndex = kInvalidImportedMeshPrimitiveIndex;
+	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
+	ImportedMeshInstanceIndex firstInstanceIndex = kInvalidImportedMeshInstanceIndex;
+	std::uint32_t instanceCount = 0;
+	ImportedMeshInstanceGroupKind groupKind = ImportedMeshInstanceGroupKind::None;
+	std::uint32_t flags = 0;
+
+	bool HasPrimitiveBinding() const noexcept { return primitiveIndex != kInvalidImportedMeshPrimitiveIndex; }
+	bool HasMaterialBinding() const noexcept { return materialIndex != kInvalidImportedMaterialIndex; }
+	bool HasInstanceRange() const noexcept { return firstInstanceIndex != kInvalidImportedMeshInstanceIndex && instanceCount > 0; }
+};
+
 struct ImportedMaterial
 {
 	std::string name;
@@ -137,13 +143,15 @@ struct ImportedScene
 {
 	std::vector<ImportedMeshPrimitive> meshPrimitives;
 	std::vector<ImportedMeshInstance> meshInstances;
+	std::vector<ImportedMeshInstanceGroup> meshInstanceGroups;
 	std::vector<ImportedMaterial> materials;
 	std::filesystem::path sourcePath;
-	SourceImporterType importerType = SourceImporterType::None;
+	std::string importerName = "SourceSceneImporter";
 
 	std::size_t GetMeshCount() const noexcept { return meshInstances.size(); }
 	std::size_t GetMeshPrimitiveCount() const noexcept { return meshPrimitives.size(); }
 	std::size_t GetMeshInstanceCount() const noexcept { return meshInstances.size(); }
+	std::size_t GetMeshInstanceGroupCount() const noexcept { return meshInstanceGroups.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)
@@ -154,6 +162,11 @@ struct ImportedScene
 	void ReserveMeshInstances(std::size_t instanceCount)
 	{
 		meshInstances.reserve(instanceCount);
+	}
+
+	void ReserveMeshInstanceGroups(std::size_t instanceGroupCount)
+	{
+		meshInstanceGroups.reserve(instanceGroupCount);
 	}
 };
 
@@ -167,7 +180,9 @@ struct SourceImportResult
 	std::size_t GetMeshCount() const noexcept { return scene.GetMeshCount(); }
 	std::size_t GetMeshPrimitiveCount() const noexcept { return scene.GetMeshPrimitiveCount(); }
 	std::size_t GetMeshInstanceCount() const noexcept { return scene.GetMeshInstanceCount(); }
+	std::size_t GetMeshInstanceGroupCount() const noexcept { return scene.GetMeshInstanceGroupCount(); }
 	std::size_t GetMaterialCount() const noexcept { return scene.GetMaterialCount(); }
+	std::string_view GetImporterName() const noexcept { return scene.importerName; }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)
 	{
@@ -177,6 +192,11 @@ struct SourceImportResult
 	void ReserveMeshInstances(std::size_t instanceCount)
 	{
 		scene.ReserveMeshInstances(instanceCount);
+	}
+
+	void ReserveMeshInstanceGroups(std::size_t instanceGroupCount)
+	{
+		scene.ReserveMeshInstanceGroups(instanceGroupCount);
 	}
 };
 

@@ -11,7 +11,22 @@
 #include "Assets/SceneAssetRegistry.h"
 
 #include <fstream>
+#include <limits>
 #include <optional>
+
+static Assets::CookedSceneInstanceSourceFeature ToCookedInstanceSourceFeature(ImportedInstanceSourceFeature sourceFeature) noexcept
+{
+	switch (sourceFeature)
+	{
+		case ImportedInstanceSourceFeature::SharedMeshReference:
+			return Assets::CookedSceneInstanceSourceFeature::SharedMeshReference;
+		case ImportedInstanceSourceFeature::GltfExtMeshGpuInstancing:
+			return Assets::CookedSceneInstanceSourceFeature::GltfExtMeshGpuInstancing;
+		case ImportedInstanceSourceFeature::None:
+		default:
+			return Assets::CookedSceneInstanceSourceFeature::None;
+	}
+}
 
 bool SceneCooker::ResolveSceneIdentity(
     const std::filesystem::path& sourceScenePath,
@@ -41,6 +56,8 @@ bool SceneCooker::BuildManifest(
 {
 	outBuild.manifest.instances.clear();
 	outBuild.manifest.instances.reserve(importResult.scene.meshInstances.size());
+	outBuild.manifest.instanceGroups.clear();
+	outBuild.manifest.instanceGroups.reserve(importResult.scene.meshInstanceGroups.size());
 
 	for (std::size_t instanceIndex = 0; instanceIndex < importResult.scene.meshInstances.size(); ++instanceIndex)
 	{
@@ -62,16 +79,73 @@ bool SceneCooker::BuildManifest(
 			}
 		}
 
+		std::uint32_t groupIndex = Assets::kInvalidCookedSceneInstanceGroupIndex;
+		if (importedInstance.groupIndex != kInvalidImportedMeshInstanceGroupIndex)
+		{
+			if (importedInstance.groupIndex >= importResult.scene.meshInstanceGroups.size())
+			{
+				outErrorMessage = "Imported mesh instance references an instance group outside the imported group set";
+				return false;
+			}
+
+			groupIndex = importedInstance.groupIndex;
+		}
+
 		outBuild.manifest.instances.push_back(
 		    Assets::CookedSceneInstanceRecord{
 		        .meshAssetIndex = importedInstance.primitiveIndex,
 		        .materialAssetIndex = materialAssetIndex,
+		        .groupIndex = groupIndex,
 		        .worldTransform = importedInstance.worldTransform});
+	}
+
+	for (std::size_t groupIndex = 0; groupIndex < importResult.scene.meshInstanceGroups.size(); ++groupIndex)
+	{
+		const ImportedMeshInstanceGroup& importedGroup = importResult.scene.meshInstanceGroups[groupIndex];
+		if (!importedGroup.HasPrimitiveBinding() || importedGroup.primitiveIndex >= outBuild.manifest.meshAssetReferences.size())
+		{
+			outErrorMessage = "Imported mesh instance group references a primitive index outside the cooked mesh asset set";
+			return false;
+		}
+
+		std::uint32_t materialAssetIndex = Assets::kInvalidCookedMaterialAssetIndex;
+		if (importedGroup.HasMaterialBinding())
+		{
+			materialAssetIndex = importedGroup.materialIndex;
+			if (materialAssetIndex >= outBuild.outputs.materialAssets.size())
+			{
+				outErrorMessage = "Imported mesh instance group references a material index outside the imported material set";
+				return false;
+			}
+		}
+
+		if (!importedGroup.HasInstanceRange() || importedGroup.firstInstanceIndex >= outBuild.manifest.instances.size() ||
+		    importedGroup.instanceCount > outBuild.manifest.instances.size() - importedGroup.firstInstanceIndex)
+		{
+			outErrorMessage = "Imported mesh instance group references an instance range outside the cooked instance set";
+			return false;
+		}
+
+		if (groupIndex > (std::numeric_limits<std::uint32_t>::max)())
+		{
+			outErrorMessage = "Imported mesh instance group count exceeds the cooked scene manifest range";
+			return false;
+		}
+
+		outBuild.manifest.instanceGroups.push_back(
+		    Assets::CookedSceneInstanceGroupRecord{
+		        .meshAssetIndex = importedGroup.primitiveIndex,
+		        .materialAssetIndex = materialAssetIndex,
+		        .firstInstance = importedGroup.firstInstanceIndex,
+		        .instanceCount = importedGroup.instanceCount,
+		        .sourceFeature = ToCookedInstanceSourceFeature(importedGroup.sourceFeature),
+		        .flags = importedGroup.flags});
 	}
 
 	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());
 	outBuild.manifest.header.materialAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.materialAssetReferences.size());
 	outBuild.manifest.header.instanceCount = static_cast<std::uint32_t>(outBuild.manifest.instances.size());
+	outBuild.manifest.header.instanceGroupCount = static_cast<std::uint32_t>(outBuild.manifest.instanceGroups.size());
 	outErrorMessage.clear();
 	return true;
 }
@@ -87,7 +161,8 @@ bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, s
 	if (!Files::BinaryStreamWriter::WriteValue(manifestOutput, build.manifest.header, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, outErrorMessage))
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, outErrorMessage))
 	{
 		return false;
 	}

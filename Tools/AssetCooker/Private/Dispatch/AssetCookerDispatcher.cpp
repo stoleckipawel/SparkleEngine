@@ -475,7 +475,7 @@ static bool AssetCookerCookImportedScene(
 	    ToolConsoleSeverity::Info,
 	    "Cooked scene",
 	    {ToolConsole::QuotedField("name", sceneEntry.relativePath),
-	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.scene.importerType)),
+	     ToolConsole::Field("importer", std::string(importResult.GetImporterName())),
 	     ToolConsole::Field("meshPrimitives", std::to_string(importResult.GetMeshPrimitiveCount())),
 	     ToolConsole::Field("meshInstances", std::to_string(importResult.GetMeshInstanceCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
@@ -485,6 +485,7 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("importWarnings", std::to_string(importResult.diagnostics.issues.warningMessageCount)),
 	     ToolConsole::Field("importedMeshPrimitives", std::to_string(importResult.diagnostics.summary.importedMeshPrimitiveCount)),
 	     ToolConsole::Field("importedMeshInstances", std::to_string(importResult.diagnostics.summary.importedMeshInstanceCount)),
+	     ToolConsole::Field("importedMeshInstanceGroups", std::to_string(importResult.diagnostics.summary.importedMeshInstanceGroupCount)),
 	     ToolConsole::Field(
 	         "importUniqueMeshPrimitiveCandidates",
 	         std::to_string(importResult.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount)),
@@ -494,7 +495,7 @@ static bool AssetCookerCookImportedScene(
 	         std::to_string(importResult.diagnostics.geometryInstancing.authoredInstanceGroupCount)),
 	     ToolConsole::Field("cookedMeshAssetRefs", std::to_string(build.manifest.meshAssetReferences.size())),
 	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
-	     ToolConsole::Field("cookedInstanceGroups", "0"),
+	     ToolConsole::Field("cookedInstanceGroups", std::to_string(build.manifest.instanceGroups.size())),
 	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 	return true;
 }

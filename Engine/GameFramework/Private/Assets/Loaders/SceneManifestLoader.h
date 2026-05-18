@@ -13,6 +13,7 @@ namespace Assets
 		bool Load(const std::filesystem::path& path, LoadedSceneManifest& outManifest, std::string& outErrorMessage) const;
 
 	  private:
-		static bool HasValidHeader(const LoadedSceneManifest& manifest) noexcept;
+		static bool ValidateHeader(const LoadedSceneManifest& manifest, std::string& outErrorMessage);
+		static bool ValidateRecords(const LoadedSceneManifest& manifest, std::string& outErrorMessage);
 	};
 }

@@ -24,6 +24,7 @@ void SourceImportDiagnosticsRecorder::RecordImportedScenePayload(SourceImportRes
 {
 	result.diagnostics.summary.importedMeshPrimitiveCount = result.scene.meshPrimitives.size();
 	result.diagnostics.summary.importedMeshInstanceCount = result.scene.meshInstances.size();
+	result.diagnostics.summary.importedMeshInstanceGroupCount = result.scene.meshInstanceGroups.size();
 	result.diagnostics.summary.importedMaterialCount = result.scene.materials.size();
 
 	std::size_t resolvedTextureBindingCount = 0;
@@ -58,6 +59,7 @@ void SourceImportDiagnosticsRecorder::RecordGeometryInstancingPrimitiveCandidate
 void SourceImportDiagnosticsRecorder::RecordGeometryInstancingPlacements(SourceImportResult& result) noexcept
 {
 	result.diagnostics.geometryInstancing.meshPlacementCount = result.scene.meshInstances.size();
+	result.diagnostics.geometryInstancing.authoredInstanceGroupCount = result.scene.meshInstanceGroups.size();
 }
 
 void SourceImportDiagnosticsRecorder::RecordWarning(SourceImportResult& result) noexcept

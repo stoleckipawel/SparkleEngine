@@ -7,6 +7,7 @@ struct SourceImportSummaryDiagnostics
 	std::size_t sourceMeshCount = 0;
 	std::size_t importedMeshPrimitiveCount = 0;
 	std::size_t importedMeshInstanceCount = 0;
+	std::size_t importedMeshInstanceGroupCount = 0;
 	std::size_t sourceMaterialCount = 0;
 	std::size_t importedMaterialCount = 0;
 };
@@ -22,7 +23,7 @@ struct SourceSceneFeatureDiagnostics
 	std::size_t materialVariantCount = 0;
 	std::size_t materialVariantPrimitiveCount = 0;
 	std::size_t embeddedTextureCount = 0;
-	std::size_t meshGpuInstancingNodeCount = 0;
+	std::size_t authoredInstancingNodeCount = 0;
 };
 
 struct SourceMaterialImportDiagnostics

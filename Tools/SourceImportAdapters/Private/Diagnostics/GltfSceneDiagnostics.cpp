@@ -22,7 +22,7 @@ SourceSceneFeatureDiagnostics GltfSceneDiagnostics::CaptureFeatures(const cgltf_
 		diagnostics.lightNodeCount += node.light != nullptr ? 1u : 0u;
 		diagnostics.skinnedNodeCount += node.skin != nullptr ? 1u : 0u;
 		diagnostics.weightedNodeCount += node.weights_count > 0 ? 1u : 0u;
-		diagnostics.meshGpuInstancingNodeCount += node.has_mesh_gpu_instancing ? 1u : 0u;
+		diagnostics.authoredInstancingNodeCount += node.has_mesh_gpu_instancing ? 1u : 0u;
 	}
 
 	for (cgltf_size meshIndex = 0; meshIndex < data->meshes_count; ++meshIndex)

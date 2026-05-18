@@ -10,6 +10,24 @@
 
 #include <array>
 
+bool SourceSceneImporter::SupportsSourceScenePath(const std::filesystem::path& filePath)
+{
+	const std::wstring extension = Paths::GetLowercaseExtension(filePath);
+	static const GltfImporter gltfImporter;
+	static const FbxImporter fbxImporter;
+	const std::array<const SourceImporter*, 2> importers = {&gltfImporter, &fbxImporter};
+
+	for (const SourceImporter* importer : importers)
+	{
+		if (importer->SupportsExtension(extension))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& filePath)
 {
 	SourceImportResult result;

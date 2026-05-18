@@ -72,7 +72,14 @@ std::size_t GltfGeometryInstancingDiagnostics::CountAuthoredInstanceGroups(const
 		const cgltf_node& node = data->nodes[nodeIndex];
 		if (node.mesh && node.has_mesh_gpu_instancing && node.mesh_gpu_instancing.attributes_count > 0)
 		{
-			++authoredGroupCount;
+			for (cgltf_size primitiveIndex = 0; primitiveIndex < node.mesh->primitives_count; ++primitiveIndex)
+			{
+				const cgltf_primitive& primitive = node.mesh->primitives[primitiveIndex];
+				if (primitive.type == cgltf_primitive_type_triangles && !primitive.has_draco_mesh_compression)
+				{
+					++authoredGroupCount;
+				}
+			}
 		}
 	}
 

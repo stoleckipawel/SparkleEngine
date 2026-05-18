@@ -31,6 +31,7 @@ class GltfImportDiagnosticLog final
 	static void ReportIgnoredMaterialVariantMappings(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportSkippedIncompletePrimitive(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportInvalidMaterialIndex(std::string_view primitiveLabel, std::uint32_t materialIndex, SourceImportResult& result);
+	static void ReportMalformedGpuInstancing(std::string_view nodeLabel, std::string_view reason, SourceImportResult& result);
 
 	static void ReportInvalidTexturePath(
 	    std::uint32_t materialIndex,
