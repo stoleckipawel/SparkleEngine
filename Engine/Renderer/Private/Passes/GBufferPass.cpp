@@ -5,6 +5,7 @@
 #include "Diagnostics/PassExecutionDiagnostics.h"
 #include "Core/Public/Diagnostics/Logger.h"
 #include "Core/Public/Diagnostics/Trace.h"
+#include "Frame/FrameContext.h"
 #include "Frame/RenderViewData.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
@@ -67,7 +68,7 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
 	BindPassResources(context.Resources, context.Commands, parameters, context.RuntimeServices);
-	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame.sceneData, context.RuntimeServices);
+	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, context.RuntimeServices);
 }
 
 void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRenderTargets& targets, ParameterInstance& parameters)
@@ -134,40 +135,26 @@ void GBufferPass::BindPassResources(
 void GBufferPass::DrawOpaqueMeshes(
 	const FrameGraphResourceCommands& resources,
 	RenderCommandContext& cmd,
-	const RenderSceneData& sceneData,
+	const FrameContext& frame,
 	const PassRuntimeServices& passRuntimeServices) const
 {
 	RenderHardwareInterface& renderHardwareInterface = passRuntimeServices.HardwareInterface;
+	const RenderSceneData& sceneData = frame.sceneData;
 
-	for (const auto& draw : sceneData.meshDraws)
+	auto bindMaterial = [&sceneData](DrawParameterInstance& drawParameters, std::uint32_t materialSlot) -> bool
 	{
-		const GPUMesh* gpuMesh = draw.gpuMesh;
-
-		if (!gpuMesh || !gpuMesh->IsValid())
+		if (materialSlot >= sceneData.materials.size())
 		{
-			continue;
+			return false;
 		}
 
-		cmd.BindVertexBuffer(gpuMesh->GetVertexBufferView());
-		cmd.BindIndexBuffer(gpuMesh->GetIndexBufferView());
-
-		PerObjectVSConstantBufferData perObjectVS{};
-		perObjectVS.WorldMTX = draw.worldMatrix;
-		perObjectVS.WorldInvTransposeMTX = draw.worldInvTranspose;
-		const PerObjectPSConstantBufferData perObjectPS = sceneData.materials[draw.materialSlot].ToPerObjectPSData();
-
-		const RenderBindingSet* materialTextureBindingSet = sceneData.materials[draw.materialSlot].textureBindingSet;
+		const RenderBindingSet* materialTextureBindingSet = sceneData.materials[materialSlot].textureBindingSet;
 		if (materialTextureBindingSet == nullptr || !*materialTextureBindingSet)
 		{
-			SPDLOG_LOGGER_WARN(
-			    Logging::GetOrCreateLogger("Renderer.GBufferPass"),
-			    "GBufferPass::DrawOpaqueMeshes: Material texture binding set is invalid; draw skipped.");
-			continue;
+			return false;
 		}
 
-		DrawParameterInstance drawParameters(GetDrawParameterMetadata());
-		drawParameters->PerObjectVS = perObjectVS;
-		drawParameters->PerObjectPS = perObjectPS;
+		drawParameters->PerObjectPS = sceneData.materials[materialSlot].ToPerObjectPSData();
 		drawParameters->TextureBaseColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::BaseColor);
 		drawParameters->TextureNormal = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Normal);
 		drawParameters->TextureRoughness = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Roughness);
@@ -175,18 +162,48 @@ void GBufferPass::DrawOpaqueMeshes(
 		drawParameters->TextureOcclusion = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Occlusion);
 		drawParameters->TextureEmissive = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::Emissive);
 		drawParameters->TextureSubsurfaceColor = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceColor);
-		drawParameters->TextureSubsurfaceStrength =
-		    materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceStrength);
+		drawParameters->TextureSubsurfaceStrength = materialTextureBindingSet->GetTableBinding(MaterialTextureSlots::SubsurfaceStrength);
+		return true;
+	};
+
+	if (!frame.meshInstances.IsValid())
+	{
+		return;
+	}
+
+	for (const MeshInstanceBatch& batch : sceneData.meshInstanceBatches)
+	{
+		const GPUMesh* gpuMesh = batch.gpuMesh;
+		if (gpuMesh == nullptr || !gpuMesh->IsValid() || batch.instanceCount == 0)
+		{
+			continue;
+		}
+
+		cmd.BindVertexBuffer(gpuMesh->GetVertexBufferView());
+		cmd.BindIndexBuffer(gpuMesh->GetIndexBufferView());
+
+		DrawParameterInstance drawParameters(GetDrawParameterMetadata());
+		drawParameters->MeshInstanceDraw = MeshInstanceDrawConstantBufferData{.FirstInstance = batch.firstInstance};
+		if (!bindMaterial(drawParameters, batch.materialSlot))
+		{
+			SPDLOG_LOGGER_WARN(
+			    Logging::GetOrCreateLogger("Renderer.GBufferPass"),
+			    "GBufferPass::DrawOpaqueMeshes: Material texture binding set is invalid; instance batch skipped.");
+			continue;
+		}
+
+		PassBindingOverrides overrides;
+		overrides.SetDescriptorTable("MeshInstances", frame.meshInstances.GetShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,
 		    &renderHardwareInterface,
 		    m_runtime,
 		    drawParameters.GetPassParameterSet(),
-		    nullptr,
+		    &overrides,
 		    PassName);
 		assert(bound);
 
-		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), 1, 0, 0, 0);
+		cmd.DrawIndexedInstanced(gpuMesh->GetIndexCount(), batch.instanceCount, 0, 0, 0);
 	}
 }

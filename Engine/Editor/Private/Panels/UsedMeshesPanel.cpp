@@ -367,11 +367,11 @@ void UsedMeshesPanel::DrawToolbar()
 	ImGui::InputTextWithHint("##UsedMeshesFilter", filterHint.c_str(), m_filterBuffer.data(), m_filterBuffer.size());
 	ImGui::SameLine();
 	ImGui::TextDisabled(
-	    "%zu mesh(es), %zu resident, draws %u, singleton %u, batches %u (authored %u, auto %u), rejected %u, saved %u, GPU %s, CPU %s estimated",
+	    "%zu mesh(es), %zu resident, instances %u, single-instance %u, batches %u (authored %u, auto %u), rejected %u, saved %u, GPU %s, CPU %s estimated",
 	    m_snapshot.Rows.size(),
 	    CountResidentMeshes(m_snapshot),
-	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MeshDrawCount),
-	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.SingletonDrawCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.RenderableInstanceCount),
+	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.SingleInstanceBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.MeshBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.AuthoredBatchCount),
 	    static_cast<unsigned int>(m_snapshot.GeometryInstancing.AutoBatchCount),

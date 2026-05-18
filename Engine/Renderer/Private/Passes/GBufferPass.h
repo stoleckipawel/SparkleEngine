@@ -17,6 +17,7 @@ struct PassExecutionContext;
 struct RenderSceneData;
 struct PassRuntimeServices;
 struct RenderViewData;
+struct FrameContext;
 class FrameGraphResourceCommands;
 
 struct GBufferPassParameters
@@ -47,7 +48,8 @@ struct GBufferPassParameters
 
 struct GBufferDrawParameters
 {
-	ShaderUniform<PerObjectVSConstantBufferData> PerObjectVS;
+	ShaderUniform<MeshInstanceDrawConstantBufferData> MeshInstanceDraw;
+	ShaderBuffer<MeshInstanceData> MeshInstances;
 	ShaderUniform<PerObjectPSConstantBufferData> PerObjectPS;
 	ShaderTexture2DSRV TextureBaseColor;
 	ShaderTexture2DSRV TextureNormal;
@@ -60,7 +62,8 @@ struct GBufferDrawParameters
 
 	static void Describe(ShaderParameterStructBuilder<GBufferDrawParameters>& builder)
 	{
-		builder.Uniform("PerObjectVS", &GBufferDrawParameters::PerObjectVS, ShaderStageVisibility::Vertex);
+		builder.Uniform("MeshInstanceDraw", &GBufferDrawParameters::MeshInstanceDraw, ShaderStageVisibility::Vertex);
+		builder.ReadBuffer("MeshInstances", &GBufferDrawParameters::MeshInstances, ShaderStageVisibility::Vertex);
 		builder.Uniform("PerObjectPS", &GBufferDrawParameters::PerObjectPS, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureBaseColor", &GBufferDrawParameters::TextureBaseColor, ShaderStageVisibility::Pixel);
 		builder.ReadTexture("TextureNormal", &GBufferDrawParameters::TextureNormal, ShaderStageVisibility::Pixel);
@@ -105,7 +108,7 @@ class GBufferPass final
 	void DrawOpaqueMeshes(
 	    const FrameGraphResourceCommands& resources,
 	    RenderCommandContext& cmd,
-	    const RenderSceneData& sceneData,
+	    const FrameContext& frame,
 	    const PassRuntimeServices& passRuntimeServices) const;
 
 	const RasterPassPipelineRuntime& m_runtime;

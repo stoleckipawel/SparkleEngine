@@ -13,7 +13,6 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 	if (options.collectDiagnostics)
 	{
 		result.diagnostics.CandidateItemCount = static_cast<std::uint32_t>(renderItems.size());
-		result.diagnostics.MeshDrawCount = static_cast<std::uint32_t>(renderItems.size());
 	}
 
 	std::vector<std::size_t> validItemIndices;
@@ -24,6 +23,10 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 		{
 			validItemIndices.push_back(itemIndex);
 		}
+	}
+	if (options.collectDiagnostics)
+	{
+		result.diagnostics.RenderableInstanceCount = static_cast<std::uint32_t>(validItemIndices.size());
 	}
 
 	std::vector<bool> consumedItems(renderItems.size(), false);
@@ -118,10 +121,18 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 		}
 	}
 
+	for (const std::size_t itemIndex : validItemIndices)
+	{
+		if (!consumedItems[itemIndex])
+		{
+			AppendBatch(renderItems, std::vector<std::size_t>{itemIndex}, MeshInstanceBatchSource::SingleInstance, options.collectDiagnostics, result);
+			consumedItems[itemIndex] = true;
+		}
+	}
+
 	if (options.collectDiagnostics)
 	{
 		result.diagnostics.MeshBatchCount = static_cast<std::uint32_t>(result.batches.size());
-		result.diagnostics.SingletonDrawCount = result.diagnostics.MeshDrawCount - result.diagnostics.InstancesInBatches;
 	}
 	return result;
 }
@@ -182,7 +193,7 @@ void MeshInstanceBatchBuilder::AppendBatch(
 	bool collectDiagnostics,
     MeshInstanceBatchBuildResult& result)
 {
-	if (itemIndices.size() < 2u)
+	if (itemIndices.empty())
 	{
 		return;
 	}
@@ -204,7 +215,7 @@ void MeshInstanceBatchBuilder::AppendBatch(
 
 	if (collectDiagnostics)
 	{
-		result.diagnostics.InstancesInBatches += static_cast<std::uint32_t>(itemIndices.size());
+		result.diagnostics.SubmittedInstanceCount += static_cast<std::uint32_t>(itemIndices.size());
 		result.diagnostics.EstimatedGBufferDrawCallsSaved += static_cast<std::uint32_t>(itemIndices.size() - 1u);
 		if (source == MeshInstanceBatchSource::AuthoredGroup)
 		{
@@ -214,9 +225,13 @@ void MeshInstanceBatchBuilder::AppendBatch(
 		{
 			++result.diagnostics.PreservedGroupBatchCount;
 		}
-		else
+		else if (source == MeshInstanceBatchSource::AutoBatch)
 		{
 			++result.diagnostics.AutoBatchCount;
+		}
+		else
+		{
+			++result.diagnostics.SingleInstanceBatchCount;
 		}
 	}
 }

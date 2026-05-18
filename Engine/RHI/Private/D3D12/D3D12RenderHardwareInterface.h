@@ -93,6 +93,13 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	    std::wstring_view debugName,
 	    RhiOwnedResourceHandle& outResource,
 	    RhiVertexBufferView& outView) override;
+	bool CreateStructuredBuffer(
+	    const void* data,
+	    std::size_t sizeInBytes,
+	    std::uint32_t strideInBytes,
+	    std::wstring_view debugName,
+	    RhiOwnedResourceHandle& outResource,
+	    RhiResourceViewHandle& outView) override;
 	bool CreateIndexBuffer(
 	    const void* data,
 	    std::size_t sizeInBytes,

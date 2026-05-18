@@ -36,7 +36,7 @@ RenderSceneData RenderSceneDataBuilder::Build(const RenderSceneSnapshot& sceneSn
 	}
 
 	BuildMaterials(sceneSnapshot, sceneData);
-	BuildMeshDraws(sceneSnapshot, sceneData);
+	BuildMeshInstanceBatches(sceneSnapshot, sceneData);
 	BuildLighting(sceneSnapshot, sceneData);
 	return sceneData;
 }
@@ -51,15 +51,13 @@ void RenderSceneDataBuilder::BuildMaterials(const RenderSceneSnapshot& sceneSnap
 	m_materialCache->BuildMaterials(sceneSnapshot.materials, sceneData);
 }
 
-void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
+void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const
 {
 	if (!sceneSnapshot.meshes.HasMeshes() || m_gpuMeshCache == nullptr)
 	{
 		return;
 	}
 
-	sceneData.meshDraws.clear();
-	sceneData.meshDraws.reserve(sceneSnapshot.meshes.meshInstances.size());
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(sceneSnapshot.meshes.meshInstances.size());
 
@@ -82,7 +80,6 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 		draw.worldInvTranspose = meshInstance.worldInvTranspose;
 		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.gpuMesh = gpuMesh;
-		sceneData.meshDraws.push_back(draw);
 
 		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
 		if (meshInstance.instanceGroupIndex < sceneSnapshot.meshes.meshInstanceGroups.size())
@@ -105,7 +102,7 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 	    renderItems,
 	    sceneSnapshot.meshes.meshInstanceGroups,
 	    MeshInstanceBatchBuildOptions{.enableAutoBatching = CVarRendererMeshAutoBatching.Get(), .requireMaterialBindingSet = true});
-	sceneData.meshBatchInstances = std::move(batchBuildResult.batchInstances);
+	sceneData.meshInstances = std::move(batchBuildResult.batchInstances);
 	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
 }
 

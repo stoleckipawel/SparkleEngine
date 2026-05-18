@@ -49,6 +49,25 @@ struct alignas(256) PerObjectVSConstantBufferData
 };
 CBV_CHECK(PerObjectVSConstantBufferData);
 
+struct MeshInstanceData
+{
+	DirectX::XMFLOAT4X4 WorldMTX;
+	DirectX::XMFLOAT3X4 WorldInvTransposeMTX;
+	uint32_t MaterialSlot = 0;
+	uint32_t Flags = 0;
+	DirectX::XMUINT2 Padding = {0, 0};
+};
+static_assert(std::is_standard_layout_v<MeshInstanceData>, "MeshInstanceData must be standard-layout");
+static_assert(std::is_trivially_copyable_v<MeshInstanceData>, "MeshInstanceData must be trivially-copyable");
+static_assert(sizeof(MeshInstanceData) == 128, "MeshInstanceData must match the HLSL structured-buffer stride");
+
+struct alignas(256) MeshInstanceDrawConstantBufferData
+{
+	uint32_t FirstInstance = 0;
+	DirectX::XMUINT3 Padding = {0, 0, 0};
+};
+CBV_CHECK(MeshInstanceDrawConstantBufferData);
+
 struct alignas(256) PerObjectPSConstantBufferData
 {
 	DirectX::XMFLOAT4 BaseColor;

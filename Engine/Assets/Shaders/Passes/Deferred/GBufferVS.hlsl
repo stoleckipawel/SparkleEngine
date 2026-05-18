@@ -2,9 +2,13 @@
 
 void main(in VS::Input Input, out VS::Output Output)
 {
-	const float4 positionWorld = PositionLocalToWorld(float4(Input.Position, 1.0f));
-	const float3 normalWorld = NormalLocalToWorld(Input.Normal);
-	const float4 tangentWorld = TangentLocalToWorld(Input.Tangent);
+	const MeshInstanceData meshInstance = MeshInstances[FirstInstance + Input.InstanceId];
+	const float4x4 worldMatrix = meshInstance.WorldMTX;
+	const float3x3 worldInvTransposeMatrix = (float3x3) meshInstance.WorldInvTransposeMTX;
+
+	const float4 positionWorld = mul(float4(Input.Position, 1.0f), worldMatrix);
+	const float3 normalWorld = normalize(mul(Input.Normal, worldInvTransposeMatrix));
+	const float4 tangentWorld = float4(mul(Input.Tangent.xyz, (float3x3) worldMatrix), Input.Tangent.w);
 
 	const float3 bitangentWorld = ComputeBitangent(normalWorld, tangentWorld);
 

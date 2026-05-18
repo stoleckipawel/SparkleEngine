@@ -551,6 +551,62 @@ bool D3D12RenderHardwareInterface::CreateVertexBuffer(
 	return true;
 }
 
+bool D3D12RenderHardwareInterface::CreateStructuredBuffer(
+    const void* data,
+    std::size_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource,
+    RhiResourceViewHandle& outView)
+{
+	outResource = {};
+	outView = {};
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
+	{
+		return false;
+	}
+
+	const RhiBufferResourceDesc bufferDesc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
+	const D3D12_RESOURCE_DESC resourceDesc = D3D12TypeConversions::BuildBufferResourceDesc(bufferDesc);
+	std::wstring ownedDebugName = CopyDebugName(debugName, L"StructuredBuffer");
+	std::unique_ptr<D3D12GpuAllocationRecord> ownedRecord = m_memoryAllocator->CreateBuffer(
+	    resourceDesc,
+	    D3D12_RESOURCE_STATE_GENERIC_READ,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    ownedDebugName.empty() ? L"StructuredBuffer" : ownedDebugName);
+	if (ownedRecord == nullptr || ownedRecord->Resource == nullptr)
+	{
+		return false;
+	}
+
+	ID3D12Resource* const ownedResource = ownedRecord->Resource.Get();
+	void* mappedData = nullptr;
+	const D3D12_RANGE readRange{0, 0};
+	if (FAILED(ownedResource->Map(0, &readRange, &mappedData)))
+	{
+		return false;
+	}
+
+	ownedRecord->IsMapped = true;
+	ownedRecord->CpuMappedAddress = mappedData;
+	std::memcpy(mappedData, data, sizeInBytes);
+	ownedResource->Unmap(0, nullptr);
+	ownedRecord->IsMapped = false;
+	ownedRecord->CpuMappedAddress = nullptr;
+
+	outResource = WrapOwnedResource(std::move(ownedRecord));
+	outView = CreateResourceView(RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	if (!outView)
+	{
+		ReleaseOwnedResource(outResource);
+		outResource = {};
+		return false;
+	}
+
+	return true;
+}
+
 bool D3D12RenderHardwareInterface::CreateIndexBuffer(
     const void* data,
     std::size_t sizeInBytes,

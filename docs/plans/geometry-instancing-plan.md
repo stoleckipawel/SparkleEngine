@@ -152,7 +152,7 @@ This gives a conservative default: batch only when the renderer can prove the in
 
 ## Phased Implementation
 
-Each phase below is intended to be usable as an implementation prompt. Keep phases source-compatible within the phase when possible, but prefer clean format/version bumps over compatibility shims once a new cooked contract is chosen.
+Each phase below is intended to be usable as an implementation prompt. Keep phases source-compatible within the phase when possible, but prefer clean format/version bumps over compatibility shims once a new cooked contract is chosen. After implementing a phase, run the narrow source checks first, then run a focused build for the touched targets unless the user explicitly asks to defer builds for that step. For phases that change cooked formats, shaders, or runtime load behavior, also run the relevant cook or recook validation after the focused build.
 
 ### Phase 0: Diagnostics And Baseline
 
@@ -168,6 +168,8 @@ Inspect the source import, scene cook, GameFramework load/snapshot, Renderer sce
 Keep diagnostics module-appropriate: source import/cook diagnostics stay in tools, loaded scene diagnostics stay in GameFramework or editor-facing payload inspection, and renderer draw diagnostics stay in Renderer/editor diagnostics. Do not add backend-specific types or command-list inspection to tool or GameFramework code.
 
 Add one small repeated-geometry validation asset or identify an existing one. Prefer a glTF where multiple nodes reference the same mesh primitive. If an `EXT_mesh_gpu_instancing` sample is available, include it as a second validation asset, but do not block this phase on it.
+
+After source validation, run a focused build for the touched tool, GameFramework, Renderer, and Editor targets unless build validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -198,6 +200,8 @@ Replace the current `ImportedMesh`-as-geometry-plus-transform model with importe
 Update the glTF importer so repeated references to the same glTF mesh primitive produce one imported primitive and multiple imported instances. Preserve material binding per primitive instance. Keep existing triangle-only, Draco, morph-target, material-variant warning behavior intact. Update mesh/material cookers and converter command surfaces so they consume the new primitive/instance model instead of assuming one imported mesh equals one cooked mesh asset and one placement.
 
 Use deterministic primitive identity. A suitable initial key is source mesh index plus primitive index. Do not key by display name or floating-point transform. Preserve original ordering so existing scenes remain stable when they do not share geometry.
+
+After source validation, run a focused build for the touched source import, cooker, GameFramework, Renderer, and Editor targets unless build validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -228,6 +232,8 @@ Add imported instance group data that references imported primitive index, mater
 Bump `kCookedSceneManifestVersion`. Add fixed-size trivially copyable cooked records for instance groups. The cooked manifest should contain mesh asset references, material asset references, instance records, and instance group records in deterministic order. Instance records should reference mesh asset index, material asset index, world transform, and group index or invalid group. Instance group records should reference mesh asset index, material asset index, first instance, instance count, importer-neutral group kind, and flags.
 
 Update `SceneCooker` writer and `SceneManifestLoader` reader together. Reject old scene manifests with a clear recook-required error rather than carrying a long-term compatibility path. Scenes without authored instancing should emit zero instance groups and remain valid.
+
+After source validation, run a focused build for the touched import, cooker, GameFramework, Renderer, and Editor targets. Then recook the validation scene assets affected by the manifest version bump unless cook validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -258,6 +264,8 @@ Change `SceneAssetPayload` so it owns loaded mesh assets separately from mesh in
 Update `SceneAssetManager` to load each cooked mesh asset once, then create placement records from cooked instance records. Update `GameScene` and `SceneMeshes` so existing component behavior continues to work, while the snapshot exposes enough data for Renderer to build batches from preserved groups. Keep Renderer-facing snapshot data immutable and frame-local.
 
 Do not introduce Renderer or RHI dependencies into GameFramework. The snapshot may expose mesh pointers/handles and material handles as it does today, but GPU mesh upload, batch construction, and instance-buffer ownership remain Renderer responsibilities.
+
+After source validation, run a focused build for the touched GameFramework, Renderer, and Editor targets unless build validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -283,9 +291,11 @@ Implementation prompt:
 ```text
 Add renderer-side auto-batching for compatible flat mesh instances, independent of authored instance groups.
 
-Extend `RenderSceneDataBuilder` to resolve snapshot instances into intermediate render items, then group compatible items into `MeshInstanceBatch` records. The batch key must include `GPUMesh*`, material slot, texture binding set identity or material data identity, raster pass/pipeline relevant state, render layer/visibility flags when available, and explicit feature flags for unsupported per-object state. Keep the first implementation conservative: do not batch skinned meshes, morph targets, material variants, or anything with unknown per-object shader state.
+Extend `RenderSceneDataBuilder` to resolve snapshot instances into intermediate render items, then group compatible items into `MeshInstanceBatch` records. The batch key must include `GPUMesh*`, material slot, texture binding set identity or material data identity, raster pass/pipeline relevant state, and render layer/visibility state when available. Add explicit batch-key fields or rejection reasons only when real per-object states such as skinning, morph targets, or material variants are represented in scene/render data. Keep the first implementation conservative: do not batch skinned meshes, morph targets, material variants, or anything with unknown per-object shader state.
 
 Build batches deterministically. Preserve source-authored groups when present, then run auto-batching over remaining compatible flat instances. Keep singleton draws available as fallback. Add renderer diagnostics for candidate items, authored batches, auto batches, rejected candidates by reason, singleton draws, and estimated draw calls saved.
+
+After source validation, run a focused build for the touched Renderer and Editor targets unless build validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -301,6 +311,7 @@ Validation:
 - Rejected candidates are explainable through diagnostics.
 - Disabling auto-batching returns to singleton draw behavior without changing loaded scene data.
 - Existing scenes render unchanged.
+- Run a focused Renderer/Editor build after source validation, unless build validation is explicitly deferred for the iteration.
 
 ### Phase 5: Tier 4 Instance Buffer And GBuffer Shader Path
 
@@ -316,6 +327,8 @@ Add renderer-owned frame-local instance data storage. Each `MeshInstanceData` en
 Extend GBuffer draw parameters and shader parameter metadata to bind a structured instance buffer plus a first-instance offset or equivalent small constant. Update the GBuffer vertex shader to read instance data using `SV_InstanceID` plus the batch offset. Keep the vertex layout unchanged. Keep per-material pixel data and texture table binding behavior unchanged for the first implementation.
 
 Update `GBufferPass::DrawOpaqueMeshes` so singleton draws still work, authored/auto batches bind the instance buffer, and batched draws submit `DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0)` or the equivalent start-instance path if the chosen shader contract uses it. Validate the shader package reflection for DXIL and SPIR-V so both D3D12 and Vulkan see the same logical binding layout.
+
+After source validation, run a focused build for the touched Renderer, RHI, shader tooling, and Editor targets. Then recook shaders and affected scene assets before D3D12/Vulkan smoke validation unless build or cook validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -332,6 +345,7 @@ Validation:
 - Run a D3D12 smoke scene with authored groups and auto batches; verify the image is unchanged and diagnostics show `instanceCount > 1` batches.
 - Run the Vulkan smoke path with the same scene and confirm matching diagnostics.
 - Verify singleton draws still render when no batches are present.
+- Run focused Renderer/RHI/Editor builds before smoke validation, then recook shaders and scene assets touched by the phase.
 
 ### Phase 6: Editor Diagnostics And Production Hardening
 
@@ -347,6 +361,8 @@ Add editor-facing diagnostics that show imported instance groups, runtime instan
 Add validation and defensive behavior around empty batches, invalid mesh/material indices, missing texture binding sets, missing instance buffer uploads, shader binding layout mismatches, and unsupported feature combinations. Fail closed: render singleton draws or skip only the invalid draw with a useful warning rather than corrupting batch state.
 
 Add focused source-only checks or validation gates for scene manifest versioning, source import grouping, renderer batch-key construction, and shader package reflection parity. Keep checks narrow and tied to the touched modules.
+
+After source validation, run focused builds for the touched tools, GameFramework, Renderer, RHI, and Editor targets before smoke validation unless build validation is explicitly deferred for the iteration.
 ```
 
 Production notes:
@@ -361,12 +377,46 @@ Validation:
 - Invalid data tests or manual corrupt-manifest checks produce clear errors.
 - D3D12 and Vulkan smoke paths continue to agree on batch counts.
 - Documentation and prompts remain accurate after implementation.
+- Run focused builds for touched tools, GameFramework, Renderer, RHI, and Editor targets before final smoke validation.
+
+### Phase 7: Instance Group Viewmode And Final Build/Cook Validation
+
+Tier coverage: final visibility and validation for Tier 1-4.
+
+Implementation prompt:
+
+```text
+Before final build and cook validation, add an editor/runtime viewmode that visualizes geometry instances and instance groups.
+
+Integrate the viewmode with the existing renderer/editor viewmode system. The viewmode should make instance grouping visible in the viewport without changing scene data or batching behavior. Use stable, deterministic coloring so instances that belong to the same preserved/authored group share a color, auto-batched instances are distinguishable from singleton draws, and unbatched singleton draws have a neutral fallback. If authored and auto batches need separate visual treatment, prefer a small debug palette or overlay state driven by renderer diagnostics/snapshot data rather than hard-coded source importer concepts.
+
+Keep the viewmode renderer-owned. GameFramework may expose instance and group ids through snapshots, but color assignment, draw visualization, debug shader parameters, and any overlay resources belong in Renderer/Editor. Do not add import-format names, cooked manifest records, or RHI backend details to the viewmode UI.
+
+After the viewmode is implemented, run focused builds for the touched Editor, Renderer, RHI, GameFramework, and tool targets. Then run the final shader recook and scene recook needed for the instancing validation assets, followed by D3D12 and Vulkan smoke checks.
+```
+
+Production notes:
+
+- The viewmode is a visual debugging tool, not the source of batching truth.
+- It should show enough information to answer: which instances are grouped, which are auto-batched, which are singleton fallback draws, and whether authored groups survived import/cook/runtime.
+- Keep the default lit view unchanged and make the instance viewmode opt-in.
+- Prefer deterministic colors derived from stable group/batch ids so screenshots are comparable across runs.
+
+Validation:
+
+- The instancing sample visibly shows repeated instances grouped by shared color or overlay state.
+- Authored groups, auto batches, and singleton fallback draws are distinguishable.
+- Switching viewmodes does not mutate scene data, renderer batch data, or cooked assets.
+- Final focused builds pass before final cook validation.
+- Final scene/shader recook succeeds for the validation assets.
+- D3D12 and Vulkan smoke checks render unchanged in normal view and show matching group visualization in the instance viewmode.
 
 ## Open Questions
 
 - Should the canonical validation asset be a small custom glTF committed under project assets, or an external sample referenced by the cook scripts?
 - Should editor diagnostics live in the existing used-meshes panel, a renderer stats panel, or both?
 - Should Phase 5 use an explicit first-instance draw parameter or the RHI `startInstanceLocation` value as the primary shader offset? The structured-buffer contract should choose one and keep it consistent across D3D12/Vulkan.
+- What should the instance visualization viewmode be named in the editor UI, and should it color by authored group, renderer batch, or expose both modes?
 
 ## Recommended First Slice
 
@@ -377,5 +427,5 @@ First implementation prompt:
 ```text
 Implement Phase 0 and the minimal Phase 1 source import split for geometry instancing.
 
-Add diagnostics for imported unique mesh primitive candidates and mesh placements. Then introduce separate imported primitive and imported instance data in `SourceImportResult`, update the glTF importer to reuse one primitive for repeated source mesh/primitive references, and update the mesh cooker enough to continue emitting cooked mesh assets from unique primitives. Do not implement GPU instance buffers yet. Validate by recooking a repeated-geometry glTF and showing primitive count lower than instance count while rendering remains unchanged.
+Add diagnostics for imported unique mesh primitive candidates and mesh placements. Then introduce separate imported primitive and imported instance data in `SourceImportResult`, update the glTF importer to reuse one primitive for repeated source mesh/primitive references, and update the mesh cooker enough to continue emitting cooked mesh assets from unique primitives. Do not implement GPU instance buffers yet. Validate by recooking a repeated-geometry glTF and showing primitive count lower than instance count while rendering remains unchanged. After source validation, run focused builds for the touched tool and engine targets unless the user explicitly defers build validation for that iteration.
 ```

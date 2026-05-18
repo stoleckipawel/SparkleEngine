@@ -12,6 +12,7 @@ enum class MeshInstanceBatchSource : std::uint32_t
 	PreservedGroup = 0,
 	AuthoredGroup = 1,
 	AutoBatch = 2,
+	SingleInstance = 3,
 };
 
 struct SPARKLE_RENDERER_API MeshDraw

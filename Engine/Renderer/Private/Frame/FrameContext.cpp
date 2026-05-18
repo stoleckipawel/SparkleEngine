@@ -23,6 +23,7 @@ FrameContext BuildFrameContext(
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
+	frame.meshInstances = MeshInstanceFrameData::Build(renderHardwareInterface, frame.sceneData);
 	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
 	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, lighting, renderHardwareInterface);
 

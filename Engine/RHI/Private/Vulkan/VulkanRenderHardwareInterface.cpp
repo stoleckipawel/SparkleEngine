@@ -402,6 +402,45 @@ bool VulkanRenderHardwareInterface::CreateVertexBuffer(
 	return true;
 }
 
+bool VulkanRenderHardwareInterface::CreateStructuredBuffer(
+    const void* data,
+    std::size_t sizeInBytes,
+    std::uint32_t strideInBytes,
+    std::wstring_view debugName,
+    RhiOwnedResourceHandle& outResource,
+    RhiResourceViewHandle& outView)
+{
+	outResource = {};
+	outView = {};
+	if (m_memoryAllocator == nullptr || data == nullptr || sizeInBytes == 0 || strideInBytes == 0)
+	{
+		return false;
+	}
+
+	const RhiBufferResourceDesc desc{.SizeInBytes = sizeInBytes, .StrideInBytes = strideInBytes};
+	const VkBufferCreateInfo bufferCreateInfo = VulkanTypeConversions::BuildBufferCreateInfo(desc);
+	std::unique_ptr<VulkanGpuAllocationRecord> record = m_memoryAllocator->CreateBuffer(
+	    bufferCreateInfo,
+	    RhiMemoryCategory::Mesh,
+	    RhiMemoryResidencyClass::HostUpload,
+	    debugName.empty() ? L"StructuredBuffer" : debugName);
+	if (record == nullptr || record->Buffer == VK_NULL_HANDLE || !m_memoryAllocator->WriteAllocation(*record, data, sizeInBytes))
+	{
+		return false;
+	}
+
+	outResource = MakeVulkanOwnedResourceHandle(std::move(record));
+	outView = CreateResourceView(RhiResourceViewDesc::BufferShaderResource(GetNativeResource(outResource), sizeInBytes, strideInBytes));
+	if (!outView)
+	{
+		ReleaseOwnedResource(outResource);
+		outResource = {};
+		return false;
+	}
+
+	return true;
+}
+
 bool VulkanRenderHardwareInterface::CreateIndexBuffer(
     const void* data,
     std::size_t sizeInBytes,
