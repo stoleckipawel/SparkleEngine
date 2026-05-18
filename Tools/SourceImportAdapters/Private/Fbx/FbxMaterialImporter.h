@@ -51,7 +51,8 @@ class FbxMaterialImporter final
 	static std::optional<std::filesystem::path> NormalizeTexturePath(
 	    std::filesystem::path texturePath,
 	    ImportedMaterialIndex materialIndex,
-	    std::string_view slotName);
+	    std::string_view slotName,
+	    SourceImportResult& result);
 };
 
 

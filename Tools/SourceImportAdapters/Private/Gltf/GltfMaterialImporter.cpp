@@ -3,13 +3,11 @@
 #include "Gltf/GltfMaterialImporter.h"
 
 #include "Core/Public/Paths/PathUtils.h"
+#include "Diagnostics/GltfImportDiagnosticLog.h"
+#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
 
 #include <DirectXMath.h>
 #include <cgltf.h>
-
-#include <format>
-
-static const auto g_gltfMaterialImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Gltf");
 
 void GltfMaterialImporter::ImportMaterials(const cgltf_data* data, const std::filesystem::path& sourceDirectory, SourceImportResult& result)
 {
@@ -47,6 +45,7 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 	{
 		return std::nullopt;
 	}
+	SourceImportDiagnosticsRecorder::RecordReferencedTextureBindings(result);
 
 	const cgltf_texture& texture = *textureView.texture;
 	if (texture.image && texture.image->uri)
@@ -61,41 +60,22 @@ std::optional<std::filesystem::path> GltfMaterialImporter::ResolveTexturePath(
 		    Paths::ResolveRelativePath(sourceDirectory, std::filesystem::path(texturePathString));
 		if (!resolvedTexturePath)
 		{
-			SPDLOG_LOGGER_WARN(
-			    g_gltfMaterialImporterLogger,
-			    "{}",
-			    std::format(
-			        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-			        materialIndex,
-			        slotName,
-			        texturePathString));
+			GltfImportDiagnosticLog::ReportInvalidTexturePath(materialIndex, slotName, texturePathString, result);
 			return std::nullopt;
 		}
 
-			return NormalizeTexturePath(*resolvedTexturePath, materialIndex, slotName);
+			return NormalizeTexturePath(*resolvedTexturePath, materialIndex, slotName, result);
 	}
 
 	if (texture.image && texture.image->buffer_view)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialImporterLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} uses an embedded {} texture which is not supported yet",
-		        materialIndex,
-		        slotName));
+		GltfImportDiagnosticLog::ReportEmbeddedTexture(materialIndex, slotName, result);
 		return std::nullopt;
 	}
 
 	if (texture.has_basisu || texture.has_webp)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialImporterLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} uses {} texture sources that are not supported by the runtime importer yet",
-		        materialIndex,
-		        slotName));
+		GltfImportDiagnosticLog::ReportUnsupportedEncodedTextureSources(materialIndex, slotName, result);
 	}
 
 	return std::nullopt;
@@ -181,14 +161,7 @@ void GltfMaterialImporter::CollectMaterialWarnings(const cgltf_material& materia
 
 	if (!unsupportedFeatures.empty())
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialImporterLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} uses unsupported glTF material features [{}] and will be approximated with Sparkle PBR "
-		        "defaults",
-		        materialIndex,
-		        unsupportedFeatures));
+		GltfImportDiagnosticLog::ReportUnsupportedMaterialFeatures(materialIndex, unsupportedFeatures, result);
 	}
 }
 
@@ -353,19 +326,13 @@ void GltfMaterialImporter::SetTextureSource(
 std::optional<std::filesystem::path> GltfMaterialImporter::NormalizeTexturePath(
     std::filesystem::path texturePath,
     ImportedMaterialIndex materialIndex,
-    std::string_view slotName)
+	std::string_view slotName,
+	SourceImportResult& result)
 {
 	const std::filesystem::path normalizedTexturePath = Paths::Normalize(texturePath);
 	if (normalizedTexturePath.empty())
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfMaterialImporterLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: Material handle {} has an invalid {} texture path '{}' and it will be ignored",
-		        materialIndex,
-		        slotName,
-		        texturePath.string()));
+		GltfImportDiagnosticLog::ReportInvalidTexturePath(materialIndex, slotName, texturePath.string(), result);
 		return std::nullopt;
 	}
 

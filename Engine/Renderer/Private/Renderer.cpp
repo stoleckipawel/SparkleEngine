@@ -14,6 +14,7 @@
 #include "Config/RenderConfig.h"
 #include "Commands/RenderCommandContext.h"
 #include "Diagnostics/FrameExecutionDiagnostics.h"
+#include "Diagnostics/MeshDiagnosticsCollector.h"
 #include "Diagnostics/RendererMemoryMonitor.h"
 #include "Core/Public/Diagnostics/LiveProfiler.h"
 #include "Core/Public/Diagnostics/Trace.h"
@@ -36,10 +37,6 @@
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
-
-#include <algorithm>
-#include <limits>
-#include <unordered_map>
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -85,128 +82,12 @@ std::uint64_t Renderer::GetShaderPackageGeneration() const noexcept
 
 MeshDiagnosticsSnapshot Renderer::CaptureMeshDiagnostics() const
 {
-	MeshDiagnosticsSnapshot snapshot;
 	if (m_gameScene == nullptr)
 	{
-		return snapshot;
+		return MeshDiagnosticsSnapshot{};
 	}
 
-	const SceneMeshes& sceneMeshes = m_gameScene->GetMeshes();
-	snapshot.Rows.reserve(sceneMeshes.GetMeshCount());
-	std::unordered_map<const Mesh*, std::size_t> rowIndices;
-	rowIndices.reserve(sceneMeshes.GetMeshCount());
-
-	for (std::size_t meshIndex = 0; meshIndex < sceneMeshes.GetMeshCount(); ++meshIndex)
-	{
-		const MeshComponent* meshComponent = sceneMeshes.GetMeshComponent(meshIndex);
-		if (meshComponent == nullptr)
-		{
-			continue;
-		}
-
-		const Mesh* mesh = meshComponent->GetMesh();
-		if (mesh == nullptr)
-		{
-			continue;
-		}
-
-		MeshDiagnosticsRow* row = nullptr;
-		if (auto it = rowIndices.find(mesh); it != rowIndices.end())
-		{
-			row = &snapshot.Rows[it->second];
-		}
-		else
-		{
-			const MeshData& meshData = mesh->GetMeshData();
-			MeshDiagnosticsRow newRow;
-			if (const CookedMesh* cookedMesh = dynamic_cast<const CookedMesh*>(mesh))
-			{
-				newRow.MeshAssetId = cookedMesh->GetAssetId();
-			}
-			newRow.MeshRuntimeId = reinterpret_cast<std::uintptr_t>(mesh);
-			newRow.CpuLoaded = meshData.IsValid();
-			newRow.VertexCount = meshData.GetVertexCount();
-			newRow.IndexCount = meshData.GetIndexCount();
-			newRow.TriangleCount = newRow.IndexCount / 3u;
-			newRow.VertexStrideBytes = static_cast<std::uint32_t>(sizeof(VertexData));
-			newRow.IndexStrideBytes = static_cast<std::uint32_t>(sizeof(std::uint32_t));
-			newRow.EstimatedCpuByteSize = static_cast<std::uint64_t>(meshData.GetVertexBufferSize() + meshData.GetIndexBufferSize());
-
-			if (!meshData.vertices.empty())
-			{
-				float minX = (std::numeric_limits<float>::max)();
-				float minY = (std::numeric_limits<float>::max)();
-				float minZ = (std::numeric_limits<float>::max)();
-				float maxX = (std::numeric_limits<float>::lowest)();
-				float maxY = (std::numeric_limits<float>::lowest)();
-				float maxZ = (std::numeric_limits<float>::lowest)();
-				for (const VertexData& vertex : meshData.vertices)
-				{
-					minX = (std::min) (minX, vertex.position.x);
-					minY = (std::min) (minY, vertex.position.y);
-					minZ = (std::min) (minZ, vertex.position.z);
-					maxX = (std::max) (maxX, vertex.position.x);
-					maxY = (std::max) (maxY, vertex.position.y);
-					maxZ = (std::max) (maxZ, vertex.position.z);
-				}
-				newRow.Bounds.Min = {minX, minY, minZ};
-				newRow.Bounds.Max = {maxX, maxY, maxZ};
-				newRow.Bounds.IsValid = true;
-			}
-
-			if (m_gpuMeshCache != nullptr)
-			{
-				if (const GPUMesh* gpuMesh = m_gpuMeshCache->Find(*mesh))
-				{
-					newRow.GpuMeshRuntimeId = reinterpret_cast<std::uintptr_t>(gpuMesh);
-					newRow.GpuResident = gpuMesh->IsValid();
-					newRow.ResidencyState =
-					    newRow.GpuResident ? MeshDiagnosticsResidencyState::Resident : MeshDiagnosticsResidencyState::Unloaded;
-					newRow.EstimatedGpuByteSize = static_cast<std::uint64_t>(gpuMesh->GetVertexBufferView().SizeInBytes) +
-					                              static_cast<std::uint64_t>(gpuMesh->GetIndexBufferView().SizeInBytes);
-				}
-			}
-
-			rowIndices.emplace(mesh, snapshot.Rows.size());
-			snapshot.Rows.push_back(newRow);
-			row = &snapshot.Rows.back();
-		}
-
-		++row->InstanceCount;
-		if (meshComponent->IsVisible())
-		{
-			++row->VisibleInstanceCount;
-		}
-
-		const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
-		if (!row->HasMaterial && materialHandle.IsValid())
-		{
-			row->HasMaterial = true;
-			row->FirstMaterialSlot = materialHandle.GetIndex();
-		}
-	}
-
-	std::sort(
-	    snapshot.Rows.begin(),
-	    snapshot.Rows.end(),
-	    [](const MeshDiagnosticsRow& lhs, const MeshDiagnosticsRow& rhs) noexcept
-	    {
-		    if (lhs.EstimatedGpuByteSize != rhs.EstimatedGpuByteSize)
-		    {
-			    return lhs.EstimatedGpuByteSize > rhs.EstimatedGpuByteSize;
-		    }
-		    if (lhs.EstimatedCpuByteSize != rhs.EstimatedCpuByteSize)
-		    {
-			    return lhs.EstimatedCpuByteSize > rhs.EstimatedCpuByteSize;
-		    }
-		    if (lhs.MeshAssetId != rhs.MeshAssetId)
-		    {
-			    return lhs.MeshAssetId < rhs.MeshAssetId;
-		    }
-		    return lhs.MeshRuntimeId < rhs.MeshRuntimeId;
-	    });
-
-	return snapshot;
+	return MeshDiagnosticsCollector::Capture(m_gameScene->GetMeshes(), m_gpuMeshCache.get());
 }
 
 TextureDiagnosticsSnapshot Renderer::CaptureTextureDiagnostics() const

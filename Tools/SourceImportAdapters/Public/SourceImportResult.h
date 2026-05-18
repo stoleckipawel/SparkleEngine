@@ -2,6 +2,7 @@
 
 #include "Core/Public/Assets/TextureGroup.h"
 #include "Core/Public/Assets/TextureProperties.h"
+#include "SourceImportDiagnostics.h"
 
 #include <DirectXMath.h>
 #include <cstddef>
@@ -139,6 +140,7 @@ struct ImportedScene
 struct SourceImportResult
 {
 	ImportedScene scene;
+	SourceImportDiagnostics diagnostics;
 	bool succeeded = false;
 
 	bool IsValid() const noexcept { return succeeded && !scene.meshes.empty(); }

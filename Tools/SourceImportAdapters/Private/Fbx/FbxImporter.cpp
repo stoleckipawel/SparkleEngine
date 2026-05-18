@@ -2,15 +2,13 @@
 
 #include "Fbx/FbxImporter.h"
 
+#include "Diagnostics/FbxImportDiagnosticLog.h"
+#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
 #include "Fbx/FbxGeometryImporter.h"
 #include "Fbx/FbxMaterialImporter.h"
 #include "Fbx/FbxSceneReader.h"
 
 #include <assimp/Importer.hpp>
-
-#include <format>
-
-static const auto g_fbxImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Fbx");
 
 bool FbxImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -30,29 +28,26 @@ SourceImportResult FbxImporter::Import(const std::filesystem::path& filePath) co
 		return result;
 	}
 
+	SourceImportDiagnosticsRecorder::RecordSourceSummary(result, scene->mNumMeshes, scene->mNumMaterials);
 	result.scene.materials.reserve(scene->mNumMaterials);
-	result.ReserveMeshes(FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode));
+	const std::size_t importedMeshInstanceCount = FbxGeometryImporter::CountImportedMeshInstances(*scene->mRootNode);
+	SourceImportDiagnosticsRecorder::RecordGeometryInstancingPrimitiveCandidates(result, importedMeshInstanceCount);
+	result.ReserveMeshes(importedMeshInstanceCount);
 
 	FbxSceneReader::CollectSceneWarnings(*scene, result);
 	FbxMaterialImporter::ImportMaterials(*scene, filePath.parent_path(), result);
 	FbxGeometryImporter::ImportGeometry(*scene, result);
+	SourceImportDiagnosticsRecorder::RecordGeometryInstancingPlacements(result);
+	SourceImportDiagnosticsRecorder::RecordImportedScenePayload(result);
 
 	if (result.scene.meshes.empty())
 	{
-		SPDLOG_LOGGER_ERROR(g_fbxImporterLogger, "{}", std::format("FbxImporter: No supported static meshes found in '{}'", filePath.string()));
+		FbxImportDiagnosticLog::ReportNoSupportedStaticMeshes(filePath, result);
 		return result;
 	}
 
 	result.succeeded = true;
-
-	SPDLOG_LOGGER_INFO(
-	    g_fbxImporterLogger,
-	    "{}",
-	    std::format(
-	        "FbxImporter: Loaded '{}' - {} meshes, {} materials",
-	        filePath.filename().string(),
-	        result.scene.meshes.size(),
-	        result.scene.materials.size()));
+	FbxImportDiagnosticLog::ReportLoadedScene(filePath, result);
 
 	return result;
 }

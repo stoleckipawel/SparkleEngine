@@ -478,6 +478,20 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("importer", GetSourceImporterTypeName(importResult.scene.importerType)),
 	     ToolConsole::Field("meshes", std::to_string(importResult.GetMeshCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
+	     ToolConsole::Field("importSourceMeshes", std::to_string(importResult.diagnostics.summary.sourceMeshCount)),
+	     ToolConsole::Field("importSourceMaterials", std::to_string(importResult.diagnostics.summary.sourceMaterialCount)),
+	     ToolConsole::Field("importTextureBindings", std::to_string(importResult.diagnostics.textures.resolvedTextureBindingCount)),
+	     ToolConsole::Field("importWarnings", std::to_string(importResult.diagnostics.issues.warningMessageCount)),
+	     ToolConsole::Field(
+	         "importUniqueMeshPrimitiveCandidates",
+	         std::to_string(importResult.diagnostics.geometryInstancing.uniqueMeshPrimitiveCandidateCount)),
+	     ToolConsole::Field("importMeshPlacements", std::to_string(importResult.diagnostics.geometryInstancing.meshPlacementCount)),
+	     ToolConsole::Field(
+	         "importAuthoredInstanceGroups",
+	         std::to_string(importResult.diagnostics.geometryInstancing.authoredInstanceGroupCount)),
+	     ToolConsole::Field("cookedMeshAssetRefs", std::to_string(build.manifest.meshAssetReferences.size())),
+	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
+	     ToolConsole::Field("cookedInstanceGroups", "0"),
 	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 	return true;
 }

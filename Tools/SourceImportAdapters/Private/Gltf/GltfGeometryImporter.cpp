@@ -2,12 +2,12 @@
 
 #include "Gltf/GltfGeometryImporter.h"
 
+#include "Diagnostics/GltfImportDiagnosticLog.h"
+
 #include <cgltf.h>
 
+#include <cstdint>
 #include <format>
-
-static const auto g_gltfGeometryImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Gltf");
-
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
 	std::size_t totalPrimitives = 0;
@@ -48,39 +48,30 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 
 			if (primitive.type != cgltf_primitive_type_triangles)
 			{
-				SPDLOG_LOGGER_WARN(g_gltfGeometryImporterLogger, "{}", std::format("GltfImporter: Skipping {} because only triangle primitives are supported", primitiveLabel));
+				GltfImportDiagnosticLog::ReportSkippedNonTrianglePrimitive(primitiveLabel, result);
 				continue;
 			}
 
 			if (primitive.targets_count > 0)
 			{
-				SPDLOG_LOGGER_WARN(g_gltfGeometryImporterLogger, "{}", std::format("GltfImporter: {} contains morph targets which will be ignored", primitiveLabel));
+				GltfImportDiagnosticLog::ReportIgnoredMorphTargets(primitiveLabel, result);
 			}
 
 			if (primitive.has_draco_mesh_compression)
 			{
-				SPDLOG_LOGGER_WARN(
-				    g_gltfGeometryImporterLogger,
-				    "{}",
-				    std::format("GltfImporter: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
+				GltfImportDiagnosticLog::ReportSkippedDracoPrimitive(primitiveLabel, result);
 				continue;
 			}
 
 			if (primitive.mappings_count > 0)
 			{
-				SPDLOG_LOGGER_WARN(
-				    g_gltfGeometryImporterLogger,
-				    "{}",
-				    std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
+				GltfImportDiagnosticLog::ReportIgnoredMaterialVariantMappings(primitiveLabel, result);
 			}
 
 			ImportedMeshGeometry meshGeometry = ExtractMeshGeometry(primitive);
 			if (!meshGeometry.IsValid())
 			{
-				SPDLOG_LOGGER_WARN(
-				    g_gltfGeometryImporterLogger,
-				    "{}",
-				    std::format("GltfImporter: Skipping {} because vertex or index data is incomplete", primitiveLabel));
+				GltfImportDiagnosticLog::ReportSkippedIncompletePrimitive(primitiveLabel, result);
 				continue;
 			}
 
@@ -193,13 +184,7 @@ ImportedMaterialIndex GltfGeometryImporter::ResolveMaterialIndex(
 		return materialIndex;
 	}
 
-	SPDLOG_LOGGER_WARN(
-	    g_gltfGeometryImporterLogger,
-	    "{}",
-	    std::format(
-	        "GltfImporter: {} references invalid material index {} and will use the default material",
-	        primitiveLabel,
-	        materialIndex));
+	GltfImportDiagnosticLog::ReportInvalidMaterialIndex(primitiveLabel, materialIndex, result);
 	return kInvalidImportedMaterialIndex;
 }
 

@@ -40,6 +40,8 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 		return false;
 	}
 
+	const SceneAssetPayloadDiagnostics diagnostics = sceneAssetPayload.diagnostics;
+
 	if (!sceneAssetPayload.materials.empty())
 	{
 		m_textures.AppendMaterialTextureReferences(sceneAssetPayload.materials);
@@ -62,7 +64,15 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 
 	m_meshes.AppendMeshComponents(std::move(meshComponents));
 
-	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loaded {} meshes, {} materials", m_meshes.GetMeshCount(), m_materials.GetMaterialCount());
+	SPDLOG_LOGGER_INFO(
+	    g_gameSceneLogger,
+	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}",
+	    m_meshes.GetMeshCount(),
+	    m_materials.GetMaterialCount(),
+	    diagnostics.loadedSceneAssetCount,
+	    diagnostics.meshAssetReferenceCount,
+	    diagnostics.meshInstanceCount,
+	    diagnostics.meshInstanceGroupCount);
 
 	return true;
 }

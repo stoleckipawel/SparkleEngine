@@ -6,12 +6,9 @@
 #include "Fbx/FbxImporter.h"
 #include "Gltf/GltfImporter.h"
 #include "Core/Public/Paths/PathUtils.h"
-#include "Core/Public/Strings/StringUtils.h"
+#include "Diagnostics/SourceImportDiagnosticLog.h"
 
 #include <array>
-#include <format>
-
-static const auto g_sourceSceneImporterLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters");
 
 SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& filePath)
 {
@@ -37,13 +34,7 @@ SourceImportResult SourceSceneImporter::Import(const std::filesystem::path& file
 
 	if (!handledByImporter)
 	{
-		SPDLOG_LOGGER_ERROR(
-		    g_sourceSceneImporterLogger,
-		    "{}",
-		    std::format(
-		        "SourceSceneImporter: Unsupported asset extension '{}' for '{}'",
-		        extension.empty() ? std::string("<none>") : Strings::ToNarrow(extension),
-		        filePath.string()));
+		SourceImportDiagnosticLog::ReportUnsupportedExtension(extension, filePath, result);
 	}
 
 	return result;

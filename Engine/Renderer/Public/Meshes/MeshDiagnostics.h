@@ -41,7 +41,16 @@ struct SPARKLE_RENDERER_API MeshDiagnosticsRow final
 	bool HasMaterial = false;
 };
 
+struct SPARKLE_RENDERER_API MeshGeometryInstancingDiagnostics final
+{
+	std::uint32_t MeshDrawCount = 0;
+	std::uint32_t MeshBatchCount = 0;
+	std::uint32_t InstancesInBatches = 0;
+	std::uint32_t EstimatedGBufferDrawCallsSaved = 0;
+};
+
 struct SPARKLE_RENDERER_API MeshDiagnosticsSnapshot final
 {
 	std::vector<MeshDiagnosticsRow> Rows;
+	MeshGeometryInstancingDiagnostics GeometryInstancing;
 };

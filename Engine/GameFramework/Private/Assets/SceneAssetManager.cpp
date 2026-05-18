@@ -14,6 +14,8 @@
 
 #include <format>
 
+static const auto g_sceneAssetManagerLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssets");
+
 namespace Assets
 {
 	SceneAssetLoadResult SceneAssetManager::LoadSceneAsset(const SceneAssetId& sceneAssetId)
@@ -203,6 +205,19 @@ namespace Assets
 			                            : MaterialHandle(materialBaseIndex + instanceRecord.materialAssetIndex);
 			sceneAssetPayload.meshInstances.push_back(std::move(meshInstance));
 		}
+
+		sceneAssetPayload.diagnostics.loadedSceneAssetCount += 1u;
+		sceneAssetPayload.diagnostics.meshAssetReferenceCount += sceneManifest.meshAssetReferences.size();
+		sceneAssetPayload.diagnostics.meshInstanceCount += sceneManifest.instances.size();
+
+		SPDLOG_LOGGER_INFO(
+		    g_sceneAssetManagerLogger,
+		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}",
+		    sceneAssetId.value,
+		    sceneManifest.meshAssetReferences.size(),
+		    sceneManifest.instances.size(),
+		    0u,
+		    sceneManifest.materialAssetReferences.size());
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());
 		errorMessage.clear();

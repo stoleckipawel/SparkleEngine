@@ -3,11 +3,11 @@
 
 #include "Gltf/GltfSceneReader.h"
 
+#include "Diagnostics/GltfImportDiagnosticLog.h"
+#include "Diagnostics/GltfSceneDiagnostics.h"
+#include "Diagnostics/SourceImportDiagnosticsRecorder.h"
+
 #include <cgltf.h>
-
-#include <format>
-
-static const auto g_gltfSceneReaderLogger = Logging::GetOrCreateLogger("Tools.SourceImportAdapters.Gltf");
 
 GltfScene::~GltfScene()
 {
@@ -21,7 +21,7 @@ bool GltfSceneReader::ValidateInputPath(const std::filesystem::path& filePath, S
 		return true;
 	}
 
-	SPDLOG_LOGGER_ERROR(g_gltfSceneReaderLogger, "{}", std::format("GltfImporter: File not found: {}", filePath.string()));
+	GltfImportDiagnosticLog::ReportMissingFile(filePath, result);
 	return false;
 }
 
@@ -33,10 +33,7 @@ bool GltfSceneReader::ParseGltfFile(cgltf_options& options, const std::string& p
 		return true;
 	}
 
-	SPDLOG_LOGGER_ERROR(
-	    g_gltfSceneReaderLogger,
-	    "{}",
-	    std::format("GltfImporter: Failed to parse '{}' (cgltf error {})", pathStr, static_cast<int>(parseResult)));
+	GltfImportDiagnosticLog::ReportParseFailure(pathStr, static_cast<int>(parseResult), result);
 	return false;
 }
 
@@ -48,10 +45,7 @@ bool GltfSceneReader::LoadGltfBuffers(cgltf_options& options, cgltf_data* data, 
 		return true;
 	}
 
-	SPDLOG_LOGGER_ERROR(
-	    g_gltfSceneReaderLogger,
-	    "{}",
-	    std::format("GltfImporter: Failed to load buffers for '{}' (cgltf error {})", pathStr, static_cast<int>(bufferResult)));
+	GltfImportDiagnosticLog::ReportBufferLoadFailure(pathStr, static_cast<int>(bufferResult), result);
 	return false;
 }
 
@@ -60,10 +54,7 @@ void GltfSceneReader::ValidateGltf(cgltf_data* data, const std::string& pathStr,
 	const cgltf_result validateResult = cgltf_validate(data);
 	if (validateResult != cgltf_result_success)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfSceneReaderLogger,
-		    "{}",
-		    std::format("GltfImporter: Validation warnings for '{}' (cgltf error {})", pathStr, static_cast<int>(validateResult)));
+		GltfImportDiagnosticLog::ReportValidationWarning(pathStr, static_cast<int>(validateResult), result);
 	}
 }
 
@@ -92,69 +83,42 @@ bool GltfSceneReader::LoadScene(const std::filesystem::path& filePath, GltfScene
 
 void GltfSceneReader::CollectSceneWarnings(const cgltf_data* data, SourceImportResult& result)
 {
-	if (data->animations_count > 0)
+	const SourceSceneFeatureDiagnostics sceneFeatures = GltfSceneDiagnostics::CaptureFeatures(data);
+	SourceImportDiagnosticsRecorder::RecordSceneFeatures(result, sceneFeatures);
+
+	if (sceneFeatures.animationCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(g_gltfSceneReaderLogger, "{}", std::format("GltfImporter: {} animations are present and will be ignored", data->animations_count));
+		GltfImportDiagnosticLog::ReportIgnoredAnimations(sceneFeatures.animationCount, result);
 	}
 
-	if (data->variants_count > 0)
+	if (sceneFeatures.materialVariantCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfSceneReaderLogger,
-		    "{}",
-		    std::format("GltfImporter: {} material variants are present and will be ignored", data->variants_count));
+		GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(sceneFeatures.materialVariantCount, result);
 	}
 
-	std::size_t cameraNodeCount = 0;
-	std::size_t lightNodeCount = 0;
-	std::size_t skinnedNodeCount = 0;
-	std::size_t weightedNodeCount = 0;
-	std::size_t instancedNodeCount = 0;
-
-	for (cgltf_size nodeIndex = 0; nodeIndex < data->nodes_count; ++nodeIndex)
+	if (sceneFeatures.cameraNodeCount > 0)
 	{
-		const cgltf_node& node = data->nodes[nodeIndex];
-		cameraNodeCount += node.camera != nullptr ? 1u : 0u;
-		lightNodeCount += node.light != nullptr ? 1u : 0u;
-		skinnedNodeCount += node.skin != nullptr ? 1u : 0u;
-		weightedNodeCount += node.weights_count > 0 ? 1u : 0u;
-		instancedNodeCount += node.has_mesh_gpu_instancing ? 1u : 0u;
+		GltfImportDiagnosticLog::ReportIgnoredCameraNodes(sceneFeatures.cameraNodeCount, result);
 	}
 
-	if (cameraNodeCount > 0)
+	if (sceneFeatures.lightNodeCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(g_gltfSceneReaderLogger, "{}", std::format("GltfImporter: {} nodes contain cameras and they will be ignored", cameraNodeCount));
+		GltfImportDiagnosticLog::ReportIgnoredLightNodes(sceneFeatures.lightNodeCount, result);
 	}
 
-	if (lightNodeCount > 0)
+	if (sceneFeatures.skinnedNodeCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(g_gltfSceneReaderLogger, "{}", std::format("GltfImporter: {} nodes contain lights and they will be ignored", lightNodeCount));
+		GltfImportDiagnosticLog::ReportStaticSkinnedNodes(sceneFeatures.skinnedNodeCount, result);
 	}
 
-	if (skinnedNodeCount > 0)
+	if (sceneFeatures.weightedNodeCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfSceneReaderLogger,
-		    "{}",
-		    std::format("GltfImporter: {} skinned nodes are present and will be imported as static data only", skinnedNodeCount));
+		GltfImportDiagnosticLog::ReportIgnoredWeightedNodes(sceneFeatures.weightedNodeCount, result);
 	}
 
-	if (weightedNodeCount > 0)
+	if (sceneFeatures.meshGpuInstancingNodeCount > 0)
 	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfSceneReaderLogger,
-		    "{}",
-		    std::format("GltfImporter: {} weighted nodes are present and morph weights will be ignored", weightedNodeCount));
-	}
-
-	if (instancedNodeCount > 0)
-	{
-		SPDLOG_LOGGER_WARN(
-		    g_gltfSceneReaderLogger,
-		    "{}",
-		    std::format(
-		        "GltfImporter: {} nodes use mesh GPU instancing and will be flattened to regular mesh instances",
-		        instancedNodeCount));
+		GltfImportDiagnosticLog::ReportFlattenedGpuInstancingNodes(sceneFeatures.meshGpuInstancingNodeCount, result);
 	}
 }
 
