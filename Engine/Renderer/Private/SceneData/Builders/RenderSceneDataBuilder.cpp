@@ -3,13 +3,16 @@
 #include "RenderSceneDataBuilder.h"
 
 #include "Meshes/GPUMeshCache.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
 #include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "SceneData/RenderSceneData.h"
+#include "SceneData/Builders/MeshInstanceBatchBuilder.h"
 #include "Scene/Meshes/Mesh.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
 
 #include <cstddef>
+#include <utility>
 
 static const auto g_renderSceneDataBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData");
 
@@ -57,6 +60,8 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 
 	sceneData.meshDraws.clear();
 	sceneData.meshDraws.reserve(sceneSnapshot.meshes.meshInstances.size());
+	std::vector<MeshRenderItem> renderItems;
+	renderItems.reserve(sceneSnapshot.meshes.meshInstances.size());
 
 	for (const MeshInstanceSnapshot& meshInstance : sceneSnapshot.meshes.meshInstances)
 	{
@@ -78,7 +83,30 @@ void RenderSceneDataBuilder::BuildMeshDraws(const RenderSceneSnapshot& sceneSnap
 		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.gpuMesh = gpuMesh;
 		sceneData.meshDraws.push_back(draw);
+
+		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
+		if (meshInstance.instanceGroupIndex < sceneSnapshot.meshes.meshInstanceGroups.size())
+		{
+			instanceGroupKind = sceneSnapshot.meshes.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind;
+		}
+
+		renderItems.push_back(
+		    MeshRenderItem{
+		        .draw = draw,
+		        .materialBindingSet = draw.materialSlot < sceneData.materials.size() ? sceneData.materials[draw.materialSlot].textureBindingSet
+		                                                                           : nullptr,
+		        .instanceGroupIndex = meshInstance.instanceGroupIndex,
+		        .instanceGroupKind = instanceGroupKind,
+		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
 	}
+
+	MeshInstanceBatchBuilder batchBuilder;
+	MeshInstanceBatchBuildResult batchBuildResult = batchBuilder.Build(
+	    renderItems,
+	    sceneSnapshot.meshes.meshInstanceGroups,
+	    MeshInstanceBatchBuildOptions{.enableAutoBatching = CVarRendererMeshAutoBatching.Get(), .requireMaterialBindingSet = true});
+	sceneData.meshBatchInstances = std::move(batchBuildResult.batchInstances);
+	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
 }
 
 void RenderSceneDataBuilder::BuildLighting(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const noexcept

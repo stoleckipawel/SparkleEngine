@@ -43,6 +43,15 @@ struct SPARKLE_RENDERER_API MeshDiagnosticsRow final
 
 struct SPARKLE_RENDERER_API MeshGeometryInstancingDiagnostics final
 {
+	std::uint32_t CandidateItemCount = 0;
+	std::uint32_t AuthoredBatchCount = 0;
+	std::uint32_t PreservedGroupBatchCount = 0;
+	std::uint32_t AutoBatchCount = 0;
+	std::uint32_t RejectedCandidateCount = 0;
+	std::uint32_t RejectedMissingGpuMeshCount = 0;
+	std::uint32_t RejectedInvalidMaterialCount = 0;
+	std::uint32_t RejectedIncompatibleGroupCount = 0;
+	std::uint32_t SingletonDrawCount = 0;
 	std::uint32_t MeshDrawCount = 0;
 	std::uint32_t MeshBatchCount = 0;
 	std::uint32_t InstancesInBatches = 0;

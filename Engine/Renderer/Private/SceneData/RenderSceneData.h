@@ -11,5 +11,7 @@ struct SPARKLE_RENDERER_API RenderSceneData
 {
 	std::vector<DirectionalLight> directionalLights;
 	std::vector<MeshDraw> meshDraws;
+	std::vector<MeshDraw> meshBatchInstances;
+	std::vector<MeshInstanceBatch> meshInstanceBatches;
 	std::vector<MaterialData> materials;
 };

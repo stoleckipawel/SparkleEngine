@@ -3,11 +3,13 @@
 #include "Diagnostics/MeshDiagnosticsCollector.h"
 
 #include "Meshes/GPUMeshCache.h"
+#include "Renderer/Public/Debug/RendererCVars.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/Mesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/MeshData.h"
 #include "Scene/Meshes/SceneMeshes.h"
+#include "SceneData/Builders/MeshInstanceBatchBuilder.h"
 
 #include <algorithm>
 #include <limits>
@@ -53,7 +55,6 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		if (meshComponent->IsVisible())
 		{
 			++row->VisibleInstanceCount;
-			++snapshot.GeometryInstancing.MeshDrawCount;
 		}
 
 		const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
@@ -83,6 +84,45 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		    }
 		    return lhs.MeshRuntimeId < rhs.MeshRuntimeId;
 	    });
+
+	const MeshSnapshot meshSnapshot = sceneMeshes.CaptureSnapshot();
+	std::vector<MeshRenderItem> renderItems;
+	renderItems.reserve(meshSnapshot.meshInstances.size());
+	for (const MeshInstanceSnapshot& meshInstance : meshSnapshot.meshInstances)
+	{
+		if (meshInstance.mesh == nullptr)
+		{
+			continue;
+		}
+
+		const GPUMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*meshInstance.mesh) : nullptr;
+		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
+		if (meshInstance.instanceGroupIndex < meshSnapshot.meshInstanceGroups.size())
+		{
+			instanceGroupKind = meshSnapshot.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind;
+		}
+
+		renderItems.push_back(
+		    MeshRenderItem{
+		        .draw = MeshDraw{
+		            .worldMatrix = meshInstance.worldMatrix,
+		            .worldInvTranspose = meshInstance.worldInvTranspose,
+		            .materialSlot = meshInstance.materialHandle.IsValid() ? meshInstance.materialHandle.GetIndex() : 0u,
+		            .gpuMesh = gpuMesh},
+		        .instanceGroupIndex = meshInstance.instanceGroupIndex,
+		        .instanceGroupKind = instanceGroupKind,
+		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
+	}
+
+	MeshInstanceBatchBuilder batchBuilder;
+	snapshot.GeometryInstancing = batchBuilder.Build(
+	    renderItems,
+	    meshSnapshot.meshInstanceGroups,
+	    MeshInstanceBatchBuildOptions{
+	        .enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
+	        .requireMaterialBindingSet = false,
+	        .collectDiagnostics = true})
+	                                  .diagnostics;
 
 	return snapshot;
 }
