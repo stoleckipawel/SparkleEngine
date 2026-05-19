@@ -20,6 +20,8 @@ class SlangShaderBackend final : public IShaderBackend
 	SlangShaderBackend& operator=(SlangShaderBackend&&) = delete;
 
 	bool IsValid() const noexcept { return m_globalSession != nullptr; }
+	static ShaderBackendCapabilities GetStaticCapabilities() noexcept;
+	static std::uint64_t QueryBackendVersion();
 
 	ShaderBackendCapabilities GetCapabilities() const override;
 	std::string_view GetBackendName() const override;
@@ -36,6 +38,7 @@ class SlangShaderBackend final : public IShaderBackend
 	    std::string_view sourceText,
 	    std::string_view diagnostics,
 	    ShaderCompileResult& outCompileResult);
+	static std::uint64_t QueryBackendVersion(slang::IGlobalSession& globalSession);
 
 	Slang::ComPtr<slang::IGlobalSession> m_globalSession;
 	std::uint64_t m_backendVersion = 0;

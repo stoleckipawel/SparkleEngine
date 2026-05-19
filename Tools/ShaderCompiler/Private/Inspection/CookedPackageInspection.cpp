@@ -53,12 +53,14 @@ bool CookedPackageInspection::Inspect(
 	}
 
 	std::span<const CookedShaderBinaryRecord> binaries;
+	std::span<const CookedShaderPipelineLayoutRecord> pipelineLayouts;
 	std::span<const CookedShaderReflectionRecord> reflections;
 	std::span<const CookedShaderResourceBindingRecord> resourceBindings;
 	std::span<const CookedShaderRayTracingExportRecord> rtExports;
 	std::span<const CookedShaderRayTracingHitGroupRecord> rtHitGroups;
 	if (!reader.ReadArrayView(header.BinaryRecordCount, binaries, outErrorMessage) ||
 	    !reader.SkipArray<CookedShaderBindingRecord>(header.BindingRecordCount, outErrorMessage) ||
+	    !reader.ReadArrayView(header.PipelineLayoutRecordCount, pipelineLayouts, outErrorMessage) ||
 	    !reader.SkipArray<CookedShaderSpecializationInputRecord>(header.SpecializationInputCount, outErrorMessage) ||
 	    !reader.ReadArrayView(header.ReflectionRecordCount, reflections, outErrorMessage) ||
 	    !reader.ReadArrayView(header.ResourceBindingRecordCount, resourceBindings, outErrorMessage) ||
@@ -91,6 +93,7 @@ bool CookedPackageInspection::Inspect(
 	outPackage.rayTracingAttributeSizeInBytes = header.RayTracingAttributeSizeInBytes;
 	outPackage.rayTracingMaxRecursionDepth = header.RayTracingMaxRecursionDepth;
 	outPackage.binaryRecordCount = header.BinaryRecordCount;
+	outPackage.pipelineLayoutRecordCount = header.PipelineLayoutRecordCount;
 	outPackage.reflectionRecordCount = header.ReflectionRecordCount;
 	outPackage.rayTracingLocalParameterRecordCount = header.RayTracingLocalParameterRecordCount;
 	outPackage.binaries.reserve(binaries.size());
@@ -99,10 +102,13 @@ bool CookedPackageInspection::Inspect(
 	{
 		const CookedShaderBinaryRecord& binary = binaries[index];
 		InspectedCookedShaderBinary inspectedBinary{};
+		inspectedBinary.shaderBlobId = binary.ShaderBlobId;
 		inspectedBinary.stage = binary.Stage;
 		inspectedBinary.format = binary.Format;
 		inspectedBinary.entryPoint = std::string(ResolveString(binary.EntryPoint, stringTable));
+		inspectedBinary.exportName = std::string(ResolveString(binary.ExportName, stringTable));
 		inspectedBinary.backendName = std::string(ResolveString(binary.BackendName, stringTable));
+		inspectedBinary.codegenTarget = std::string(ResolveString(binary.CodegenTarget, stringTable));
 		inspectedBinary.bytecodeHash = binary.BytecodeHash;
 		inspectedBinary.backendVersion = binary.BackendVersion;
 		inspectedBinary.bytecodeSizeInBytes = binary.Bytecode.SizeInBytes;
@@ -116,6 +122,24 @@ bool CookedPackageInspection::Inspect(
 			inspectedBinary.specializationConstantCount = reflection.SpecializationConstantCount;
 		}
 		outPackage.binaries.push_back(std::move(inspectedBinary));
+	}
+
+	outPackage.pipelineLayouts.reserve(pipelineLayouts.size());
+	for (const CookedShaderPipelineLayoutRecord& layout : pipelineLayouts)
+	{
+		outPackage.pipelineLayouts.push_back(InspectedCookedPipelineLayout{
+		    .codegenTarget = std::string(ResolveString(layout.CodegenTarget, stringTable)),
+		    .bindingLayoutHash = layout.BindingLayoutHash,
+		    .bindingRecordCount = layout.BindingRecordCount,
+		    .descriptorBindingCount = layout.DescriptorBindingCount,
+		    .descriptorSetCount = layout.DescriptorSetCount,
+		    .pushConstantRangeCount = layout.PushConstantRangeCount,
+		    .pushConstantSizeInBytes = layout.PushConstantSizeInBytes,
+		    .constantBufferCount = layout.ConstantBufferCount,
+		    .readOnlyResourceCount = layout.ReadOnlyResourceCount,
+		    .readWriteResourceCount = layout.ReadWriteResourceCount,
+		    .samplerCount = layout.SamplerCount,
+		    .accelerationStructureCount = layout.AccelerationStructureCount});
 	}
 
 	outPackage.rayTracingExports.reserve(rtExports.size());

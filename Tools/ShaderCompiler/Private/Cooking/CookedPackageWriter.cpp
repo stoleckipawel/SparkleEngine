@@ -78,6 +78,88 @@ static bool LayoutUsesAccelerationStructure(const PassParameterLayout& layout) n
 	return false;
 }
 
+static void AddPipelineLayoutCounts(
+    const CookedShaderBindingRecord& bindingRecord,
+    CookedShaderPipelineLayoutRecord& layoutRecord) noexcept
+{
+	switch (bindingRecord.SemanticKind)
+	{
+		case ShaderParameterSemanticKind::UniformData:
+			++layoutRecord.ConstantBufferCount;
+			break;
+		case ShaderParameterSemanticKind::ReadTexture:
+		case ShaderParameterSemanticKind::ReadBuffer:
+			layoutRecord.DescriptorBindingCount += std::max(1u, bindingRecord.ArrayCount);
+			++layoutRecord.ReadOnlyResourceCount;
+			break;
+		case ShaderParameterSemanticKind::RWTexture:
+		case ShaderParameterSemanticKind::RWBuffer:
+			layoutRecord.DescriptorBindingCount += std::max(1u, bindingRecord.ArrayCount);
+			++layoutRecord.ReadWriteResourceCount;
+			break;
+		case ShaderParameterSemanticKind::SamplerSet:
+			layoutRecord.DescriptorBindingCount += std::max(1u, bindingRecord.ArrayCount);
+			++layoutRecord.SamplerCount;
+			break;
+		case ShaderParameterSemanticKind::AccelerationStructure:
+			layoutRecord.DescriptorBindingCount += std::max(1u, bindingRecord.ArrayCount);
+			++layoutRecord.AccelerationStructureCount;
+			break;
+		case ShaderParameterSemanticKind::RenderTarget:
+		case ShaderParameterSemanticKind::DepthTarget:
+		default:
+			break;
+	}
+}
+
+static std::uint32_t EstimateDescriptorSetCount(const std::vector<CookedShaderBindingRecord>& bindingRecords) noexcept
+{
+	return bindingRecords.empty() ? 0u : 1u;
+}
+
+static void BuildPipelineLayoutRecords(
+    std::span<const CookedStageBuild> compiledStages,
+    const std::vector<CookedShaderBindingRecord>& bindingRecords,
+    std::uint64_t bindingLayoutHash,
+    Strings::StringTableBuilder& stringTable,
+    std::vector<CookedShaderPipelineLayoutRecord>& outRecords)
+{
+	outRecords.clear();
+	std::vector<std::string> codegenTargets;
+	for (const CookedStageBuild& compiledStage : compiledStages)
+	{
+		if (compiledStage.codegenTarget.empty() || std::ranges::find(codegenTargets, compiledStage.codegenTarget) != codegenTargets.end())
+		{
+			continue;
+		}
+		codegenTargets.push_back(compiledStage.codegenTarget);
+	}
+	std::ranges::sort(codegenTargets);
+
+	outRecords.reserve(codegenTargets.size());
+	for (const std::string& codegenTarget : codegenTargets)
+	{
+		CookedShaderPipelineLayoutRecord layoutRecord{};
+		layoutRecord.CodegenTarget = ToCookedShaderStringRef(stringTable.Add(codegenTarget));
+		layoutRecord.BindingLayoutHash = bindingLayoutHash;
+		layoutRecord.BindingRecordOffset = 0;
+		layoutRecord.BindingRecordCount = static_cast<std::uint32_t>(bindingRecords.size());
+		layoutRecord.DescriptorSetCount = EstimateDescriptorSetCount(bindingRecords);
+
+		for (const CookedShaderBindingRecord& bindingRecord : bindingRecords)
+		{
+			if (bindingRecord.SemanticKind == ShaderParameterSemanticKind::UniformData && bindingRecord.ValueSizeInBytes > 0)
+			{
+				++layoutRecord.PushConstantRangeCount;
+				layoutRecord.PushConstantSizeInBytes += bindingRecord.ValueSizeInBytes;
+			}
+			AddPipelineLayoutCounts(bindingRecord, layoutRecord);
+		}
+
+		outRecords.push_back(layoutRecord);
+	}
+}
+
 static std::uint32_t FindBinaryRecordIndexForStage(
     const ShaderCookPackageDesc& package,
     std::span<const CookedStageBuild> compiledStages,
@@ -221,6 +303,7 @@ bool CookedPackageWriter::Write(
 	Strings::StringTableBuilder stringTable;
 	std::vector<CookedShaderBinaryRecord> binaryRecords;
 	std::vector<CookedShaderBindingRecord> bindingRecords;
+	std::vector<CookedShaderPipelineLayoutRecord> pipelineLayoutRecords;
 	std::vector<CookedShaderSpecializationInputRecord> specializationInputs;
 	std::vector<CookedShaderRayTracingExportRecord> rayTracingExportRecords;
 	std::vector<CookedShaderRayTracingHitGroupRecord> rayTracingHitGroupRecords;
@@ -243,18 +326,24 @@ bool CookedPackageWriter::Write(
 
 		binaryRecords.push_back(
 		    CookedShaderBinaryRecord{
+		        .ShaderBlobId = compiledStage.shaderBlobId,
 		        .EntryPoint = ToCookedShaderStringRef(stringTable.Add(compiledStage.entryPoint)),
+		        .ExportName = {},
 		        .DebugArtifact = ToCookedShaderStringRef(stringTable.Add(compiledStage.debugArtifact)),
 		        .Bytecode = CookedShaderBlobRef{blobOffset, static_cast<std::uint32_t>(compiledStage.bytecode.size())},
 		        .Stage = compiledStage.stage,
 		        .Format = compiledStage.format,
 		        .BytecodeHash = compiledStage.bytecodeHash,
 		        .BackendName = ToCookedShaderStringRef(stringTable.Add(compiledStage.backendName)),
+		        .CodegenTarget = ToCookedShaderStringRef(stringTable.Add(compiledStage.codegenTarget)),
 		        .BackendVersion = compiledStage.backendVersion});
 
 		declaredStages |= ToShaderStageMask(compiledStage.stage);
 		reflectionsForSerialization.push_back(compiledStage.reflection);
 	}
+
+	const std::uint64_t bindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
+	BuildPipelineLayoutRecords(compiledStages, bindingRecords, bindingLayoutHash, stringTable, pipelineLayoutRecords);
 
 	ReflectionSerializer::Output reflectionOutput;
 	ReflectionSerializer::Build(reflectionsForSerialization, stringTable, reflectionOutput);
@@ -276,6 +365,7 @@ bool CookedPackageWriter::Write(
 	header.ShaderModelMinor = static_cast<std::uint16_t>(RenderConfig::ShaderModelMinor);
 	header.BinaryRecordCount = static_cast<std::uint32_t>(binaryRecords.size());
 	header.BindingRecordCount = static_cast<std::uint32_t>(bindingRecords.size());
+	header.PipelineLayoutRecordCount = static_cast<std::uint32_t>(pipelineLayoutRecords.size());
 	header.SpecializationInputCount = static_cast<std::uint32_t>(specializationInputs.size());
 	header.StringTableSizeInBytes = stringTable.SizeInBytes();
 	header.BinaryBlobSizeInBytes = static_cast<std::uint32_t>(binaryBlob.size());
@@ -294,7 +384,7 @@ bool CookedPackageWriter::Write(
 	header.RayTracingMaxRecursionDepth = package.rayTracingMaxRecursionDepth;
 	header.ShaderPackageKey = ::BuildShaderPackageKey(package.packageId);
 	header.SourceIdentityHash = SourceIdentityHasher::Compute(package, compiledStages);
-	header.BindingLayoutHash = BuildPassParameterLayoutHash(package.bindingLayout);
+	header.BindingLayoutHash = bindingLayoutHash;
 
 	const std::filesystem::path packagePath = Paths::CookedShaderPackage(header.ShaderPackageKey);
 	const std::filesystem::path tempPackagePath = Files::BuildTemporaryPath(packagePath);
@@ -307,6 +397,7 @@ bool CookedPackageWriter::Write(
 	if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(output, binaryRecords, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(output, bindingRecords, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(output, pipelineLayoutRecords, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(output, specializationInputs, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.reflectionRecords, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(output, reflectionOutput.resourceBindings, outErrorMessage) ||

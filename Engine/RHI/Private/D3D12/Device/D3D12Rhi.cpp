@@ -183,14 +183,29 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 	{
 		m_rayTracingCapabilities.SupportsRayTracing = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_0;
 		m_rayTracingCapabilities.SupportsInlineRayQuery = options5.RaytracingTier >= D3D12_RAYTRACING_TIER_1_1;
+		if (m_rayTracingCapabilities.SupportsRayTracing)
+		{
+			m_rayTracingCapabilities.MaxTraceRecursionDepth = D3D12_RAYTRACING_MAX_DECLARABLE_TRACE_RECURSION_DEPTH;
+			m_rayTracingCapabilities.MaxRayAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
+			m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+			m_rayTracingCapabilities.ShaderTableAlignmentInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+			m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes = D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
+			m_rayTracingCapabilities.AccelerationStructureByteAlignment = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
+			m_rayTracingCapabilities.ScratchBufferByteAlignment = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT;
+			m_rayTracingCapabilities.InstanceDescSizeInBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+		}
 
 		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,
-		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}",
+		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}, maxRecursionDepth={}, "
+		    "maxAttributeBytes={}, shaderIdentifierBytes={}",
 		    static_cast<int>(options5.RaytracingTier),
 		    RaytracingTierToString(options5.RaytracingTier),
 		    m_rayTracingCapabilities.SupportsRayTracing,
-		    m_rayTracingCapabilities.SupportsInlineRayQuery);
+		    m_rayTracingCapabilities.SupportsInlineRayQuery,
+		    m_rayTracingCapabilities.MaxTraceRecursionDepth,
+		    m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
+		    m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes);
 	}
 	else
 	{

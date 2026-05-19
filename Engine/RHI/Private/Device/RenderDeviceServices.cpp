@@ -27,7 +27,9 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	SPDLOG_LOGGER_INFO(
 	    g_rhiServicesLogger,
 	    "RHI capabilities: backend={} shaderFormat={} descriptorModel={} allocator={} present={} upload(buffer={}, texture={}) readback={} "
-	    "timestampQueries={} rayTracing={} inlineRayQuery={} meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
+	    "timestampQueries={} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
+	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
+	    "meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
 	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={})",
 	    RhiBackendApiToString(capabilities.BackendApi),
 	    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
@@ -40,6 +42,15 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    capabilities.SupportsTimestampQueries,
 	    capabilities.RayTracing.SupportsRayTracing,
 	    capabilities.RayTracing.SupportsInlineRayQuery,
+	    capabilities.RayTracing.MaxTraceRecursionDepth,
+	    capabilities.RayTracing.MaxRayPayloadSizeInBytes,
+	    capabilities.RayTracing.MaxRayAttributeSizeInBytes,
+	    capabilities.RayTracing.ShaderGroupHandleSizeInBytes,
+	    capabilities.RayTracing.ShaderTableAlignmentInBytes,
+	    capabilities.RayTracing.ShaderTableRecordAlignmentInBytes,
+	    capabilities.RayTracing.AccelerationStructureByteAlignment,
+	    capabilities.RayTracing.ScratchBufferByteAlignment,
+	    capabilities.RayTracing.InstanceDescSizeInBytes,
 	    capabilities.SupportsMeshShaders,
 	    capabilities.SupportsTaskShaders,
 	    capabilities.Queues.SupportsGraphics,

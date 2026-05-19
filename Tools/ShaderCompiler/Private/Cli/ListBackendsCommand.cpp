@@ -7,26 +7,40 @@
 
 #include <iostream>
 
-static std::string BuildTargetList(const ShaderBackendCapabilities& capabilities)
+static std::string BuildStringList(std::span<const std::string_view> values)
 {
-	std::string targets;
-	if (capabilities.SupportsDxil)
+	std::string result;
+	for (const std::string_view value : values)
 	{
-		targets = "dxil";
-	}
-	if (capabilities.SupportsSpirV)
-	{
-		if (!targets.empty())
+		if (!result.empty())
 		{
-			targets += ", ";
+			result += ", ";
 		}
-		targets += "spirv";
+		result += value;
 	}
-	if (targets.empty())
+	if (result.empty())
 	{
-		targets = "none";
+		result = "none";
 	}
-	return targets;
+	return result;
+}
+
+static std::string BuildTargetList(std::span<const ShaderTarget> targets)
+{
+	std::string result;
+	for (const ShaderTarget target : targets)
+	{
+		if (!result.empty())
+		{
+			result += ", ";
+		}
+		result += GetShaderTargetName(target);
+	}
+	if (result.empty())
+	{
+		result = "none";
+	}
+	return result;
 }
 
 static std::string BuildRayTracingFeatureList(const ShaderBackendCapabilities& capabilities)
@@ -80,10 +94,36 @@ int ListBackendsCommand::Run(std::span<const std::string_view> args) const
 	for (const ShaderBackendDescriptor& backend : backends)
 	{
 		std::cout << "  name='" << backend.Name << "'"
+		          << " required=" << (backend.IsRequired ? "true" : "false")
 		          << " available=" << (backend.IsAvailable ? "true" : "false")
-		          << " targets='" << BuildTargetList(backend.Capabilities) << "'"
+		          << " sourceExtensions='" << BuildStringList(backend.SourceExtensions) << "'"
+		          << " codegenTargets='" << BuildTargetList(backend.CodegenTargets) << "'"
+		          << " binaryFormats='" << BuildStringList(backend.BinaryFormats) << "'"
+		          << " dependencies='" << BuildStringList(backend.DependencyLocations) << "'"
 		          << " rt='" << BuildRayTracingFeatureList(backend.Capabilities) << "'"
-		          << " version=" << backend.Version << "\n";
+		          << " version=" << backend.Version;
+		if (!backend.UnavailableReason.empty())
+		{
+			std::cout << " unavailableReason='" << backend.UnavailableReason << "'";
+		}
+		std::cout << "\n";
+	}
+
+	const std::span<const ShaderBinaryFormatDescriptor> binaryFormats = ListShaderBinaryFormats();
+	std::cout << "ShaderCompiler: " << binaryFormats.size() << " binary format(s) registered\n";
+	for (const ShaderBinaryFormatDescriptor& binaryFormat : binaryFormats)
+	{
+		std::cout << "  name='" << binaryFormat.Name << "'"
+		          << " available=" << (binaryFormat.IsAvailable ? "true" : "false") << "\n";
+	}
+
+	const std::span<const ShaderCodegenTargetDescriptor> codegenTargets = ListShaderCodegenTargets();
+	std::cout << "ShaderCompiler: " << codegenTargets.size() << " codegen target(s) registered\n";
+	for (const ShaderCodegenTargetDescriptor& codegenTarget : codegenTargets)
+	{
+		std::cout << "  name='" << GetShaderTargetName(codegenTarget.Target) << "'"
+		          << " binaryFormat='" << codegenTarget.BinaryFormat << "'"
+		          << " available=" << (codegenTarget.IsAvailable ? "true" : "false") << "\n";
 	}
 
 	return kExitCodeSuccess;

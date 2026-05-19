@@ -41,37 +41,64 @@ DxcShaderBackend::DxcShaderBackend()
 		return;
 	}
 
-	// Cache the DXC version as a packed (major, minor, commit) 64-bit value.
-	// It feeds cooked backend identity and the shader artifact cache key.
-	Microsoft::WRL::ComPtr<IDxcVersionInfo> versionInfo;
-	if (SUCCEEDED(m_compiler.As(&versionInfo)))
+	m_backendVersion = QueryBackendVersion(*m_compiler.Get());
+}
+
+ShaderBackendCapabilities DxcShaderBackend::GetStaticCapabilities() noexcept
+{
+	ShaderBackendCapabilities capabilities;
+	capabilities.SupportsDxil = true;
+	capabilities.SupportsSpirV = true;
+	capabilities.SupportsDxilRayTracingLibrary = true;
+	capabilities.SupportsDxilInlineRayQuery = true;
+	return capabilities;
+}
+
+std::uint64_t DxcShaderBackend::QueryBackendVersion()
+{
+	Microsoft::WRL::ComPtr<IDxcCompiler3> compiler;
+	if (FAILED(DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(compiler.ReleaseAndGetAddressOf()))) || !compiler)
 	{
-		UINT32 major = 0;
-		UINT32 minor = 0;
-		versionInfo->GetVersion(&major, &minor);
-		UINT32 commit = 0;
-		Microsoft::WRL::ComPtr<IDxcVersionInfo2> versionInfo2;
-		if (SUCCEEDED(versionInfo.As(&versionInfo2)))
-		{
-			char* commitHash = nullptr;
-			versionInfo2->GetCommitInfo(&commit, &commitHash);
-			if (commitHash != nullptr)
-			{
-				CoTaskMemFree(commitHash);
-			}
-		}
-		m_backendVersion = (static_cast<std::uint64_t>(major) << 48u) | (static_cast<std::uint64_t>(minor) << 32u) |
-		                   static_cast<std::uint64_t>(commit);
+		return 0;
 	}
+	return QueryBackendVersion(*compiler.Get());
+}
+
+std::uint64_t DxcShaderBackend::QueryBackendVersion(IDxcCompiler3& compiler)
+{
+	Microsoft::WRL::ComPtr<IDxcVersionInfo> versionInfo;
+	if (FAILED(compiler.QueryInterface(IID_PPV_ARGS(versionInfo.ReleaseAndGetAddressOf()))) || !versionInfo)
+	{
+		return 0;
+	}
+
+	UINT32 major = 0;
+	UINT32 minor = 0;
+	versionInfo->GetVersion(&major, &minor);
+	UINT32 commit = 0;
+	Microsoft::WRL::ComPtr<IDxcVersionInfo2> versionInfo2;
+	if (SUCCEEDED(versionInfo.As(&versionInfo2)))
+	{
+		char* commitHash = nullptr;
+		versionInfo2->GetCommitInfo(&commit, &commitHash);
+		if (commitHash != nullptr)
+		{
+			CoTaskMemFree(commitHash);
+		}
+	}
+	return (static_cast<std::uint64_t>(major) << 48u) | (static_cast<std::uint64_t>(minor) << 32u) |
+	       static_cast<std::uint64_t>(commit);
 }
 
 ShaderBackendCapabilities DxcShaderBackend::GetCapabilities() const
 {
-	ShaderBackendCapabilities capabilities;
-	capabilities.SupportsDxil = IsValid();
-	capabilities.SupportsSpirV = IsValid();
-	capabilities.SupportsDxilRayTracingLibrary = IsValid();
-	capabilities.SupportsDxilInlineRayQuery = IsValid();
+	ShaderBackendCapabilities capabilities = GetStaticCapabilities();
+	capabilities.SupportsDxil = capabilities.SupportsDxil && IsValid();
+	capabilities.SupportsSpirV = capabilities.SupportsSpirV && IsValid();
+	capabilities.SupportsDxilRayTracingLibrary = capabilities.SupportsDxilRayTracingLibrary && IsValid();
+	capabilities.SupportsSpirVRayTracingLibrary = capabilities.SupportsSpirVRayTracingLibrary && IsValid();
+	capabilities.SupportsDxilInlineRayQuery = capabilities.SupportsDxilInlineRayQuery && IsValid();
+	capabilities.SupportsSpirVInlineRayQuery = capabilities.SupportsSpirVInlineRayQuery && IsValid();
 	return capabilities;
 }
 

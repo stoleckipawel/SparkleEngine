@@ -15,6 +15,8 @@ struct CookedStageBuild final
 	std::string entryPoint;
 	std::string debugArtifact;
 	std::string backendName;
+	std::string codegenTarget;
+	std::uint64_t shaderBlobId = 0;
 	std::uint64_t backendVersion = 0;
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;

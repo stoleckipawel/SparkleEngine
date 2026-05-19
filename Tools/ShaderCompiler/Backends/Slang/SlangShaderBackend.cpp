@@ -18,13 +18,36 @@ SlangShaderBackend::SlangShaderBackend()
 		return;
 	}
 
-	const char* buildTag = m_globalSession->getBuildTagString();
-	m_backendVersion = Hash::Fnv1a64(std::string_view(buildTag != nullptr ? buildTag : "slang-unknown"));
+	m_backendVersion = QueryBackendVersion(*m_globalSession.get());
+}
+
+ShaderBackendCapabilities SlangShaderBackend::GetStaticCapabilities() noexcept
+{
+	return ShaderBackendCapabilities{.SupportsDxil = true, .SupportsSpirV = true};
+}
+
+std::uint64_t SlangShaderBackend::QueryBackendVersion()
+{
+	Slang::ComPtr<slang::IGlobalSession> globalSession;
+	if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef())) || !globalSession)
+	{
+		return Hash::Fnv1a64("slang-unavailable");
+	}
+	return QueryBackendVersion(*globalSession.get());
+}
+
+std::uint64_t SlangShaderBackend::QueryBackendVersion(slang::IGlobalSession& globalSession)
+{
+	const char* buildTag = globalSession.getBuildTagString();
+	return Hash::Fnv1a64(std::string_view(buildTag != nullptr ? buildTag : "slang-unknown"));
 }
 
 ShaderBackendCapabilities SlangShaderBackend::GetCapabilities() const
 {
-	return ShaderBackendCapabilities{.SupportsDxil = IsValid(), .SupportsSpirV = IsValid()};
+	ShaderBackendCapabilities capabilities = GetStaticCapabilities();
+	capabilities.SupportsDxil = capabilities.SupportsDxil && IsValid();
+	capabilities.SupportsSpirV = capabilities.SupportsSpirV && IsValid();
+	return capabilities;
 }
 
 std::string_view SlangShaderBackend::GetBackendName() const

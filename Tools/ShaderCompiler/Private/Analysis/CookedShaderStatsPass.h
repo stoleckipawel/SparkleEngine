@@ -6,20 +6,20 @@
 #include <span>
 #include <string>
 
-struct PsoStatsPassResult final
+struct CookedShaderStatsPassResult final
 {
 	std::filesystem::path outputPath;
 	std::uint32_t rowCount = 0;
 };
 
-class PsoStatsPass final
+class CookedShaderStatsPass final
 {
   public:
-	PsoStatsPass() = delete;
+	CookedShaderStatsPass() = delete;
 
 	static bool WriteCsv(
 	    std::span<const CookedShaderPackageOutput> packages,
 	    const std::filesystem::path& analysisDirectory,
-	    PsoStatsPassResult& outResult,
+	    CookedShaderStatsPassResult& outResult,
 	    std::string& outErrorMessage);
 };

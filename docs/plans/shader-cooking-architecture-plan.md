@@ -4,7 +4,7 @@ Date: 2026-05-19
 
 ## Goal
 
-Turn the current shader compiler into a deliberate shader cooking pipeline with clear authoring contracts, durable cooked outputs, stable shader bytecode identity, pipeline layout artifacts and honest PSO readiness, robust dependency discovery, parallelizable cook execution, optional backend availability, and a naming model that matches what the system actually does.
+Turn the current shader compiler into a deliberate shader cooking pipeline with clear authoring contracts, durable cooked outputs, stable shader bytecode identity, pipeline layout artifacts and honest PSO readiness, robust dependency discovery, deterministic cook execution, explicit compiler-backend and binary-format availability, and a naming model that matches what the system actually does.
 
 This plan addresses the current critique items in stages:
 
@@ -12,7 +12,7 @@ This plan addresses the current critique items in stages:
 - Ray tracing cooking metadata exists, but runtime ray tracing resources and pipelines are not complete across backends.
 - Include handling is deterministic but regex-based in two places.
 - The cook graph is still insertion-order traversal, not a dependency graph.
-- Backend resolution constructs backend objects just to inspect support, and Slang is mandatory at configure time.
+- Backend resolution constructs backend objects just to inspect support, and required compiler-backend plus binary-format availability is not represented as an explicit registry contract.
 - The single-source fallback path conflicts with the typed shader registration direction.
 - Authoring, cooked package contracts, RHI, and tool implementation are still too tightly named and placed together.
 - Names such as compiler, target, backend, format, package, stage, shader, layout name, shader name, and PSO stats are overloaded.
@@ -135,6 +135,37 @@ CLI and log output should use the same vocabulary as the files. Prefer structure
 - Prefer clean replacement over compatibility shims when a new contract is chosen.
 - Do not keep legacy command names, CLI aliases, file names, manifest names, serialized fields, validation targets, or runtime fallback paths after their replacement phase lands. Staged implementation can temporarily use current names only until the phase that replaces them.
 
+## Offline Tool And Runtime Hard Line
+
+The shader cooker and the runtime engine must have a hard responsibility split. The offline tool may depend on compiler SDKs, source files, include resolution, reflection extraction, debug artifacts, analysis reports, local caches, backend registries, codegen-target descriptors, and binary-format descriptors. Runtime engine code must consume only cooked runtime artifacts and shared neutral contracts.
+
+Shader cooker responsibilities:
+
+- Read authored shader registrations, source files, includes, compile options, and package descriptions.
+- Own DXC, Slang, SPIRV-Reflect, compiler-backend descriptors, codegen-target descriptors, and binary-format descriptors.
+- Compile source to bytecode, extract reflection, verify parameter layouts, build blob ids, write `.sparkshader` packages, write `ShaderPackageRegistry.sreg`, emit debug artifacts, emit analysis reports, and manage the local compile cache.
+- Provide tool commands such as `cook`, `inspect-package`, `list-backends`, and future explicit static export commands.
+
+Runtime engine responsibilities:
+
+- Load `ShaderPackageRegistry.sreg` and `.sparkshader` packages from cooked output only.
+- Validate package version, package key, shader blob id, codegen target, binary format, reflection records, binding metadata, pipeline layout intent, and ray tracing metadata.
+- Translate cooked records into backend-native shader modules, root signatures, descriptor set layouts, pipeline layouts, shader tables, runtime pipeline objects, and runtime caches.
+- Reject unsupported devices, missing cooked metadata, or backend/format mismatches through runtime capability diagnostics before render work begins.
+
+Forbidden runtime responsibilities:
+
+- Do not include or link DXC, Slang, SPIRV-Reflect, shader compiler backend headers, or tool-private cooking headers from runtime modules.
+- Do not parse shader source files, scan includes, run source preprocessing, invoke compiler backends, inspect debug artifact directories, read analysis reports, or use local compile caches at runtime.
+- Do not call `list-backends` or depend on offline backend registry data from runtime code. Runtime capability checks are RHI/device facts; offline backend availability is a cooker/tool fact.
+- Do not keep runtime shader source fallback paths. If cooked data is missing or incompatible, runtime must fail clearly instead of compiling.
+
+Shared contract responsibilities:
+
+- Shared code may contain neutral authoring declarations, cooked package structs, package utilities, registry records, stable enum/string conversions, and validation helpers needed by both the cooker and runtime.
+- Shared contracts must not include compiler SDK types, tool-private orchestration types, renderer-private implementation types, or backend-native graphics handles unless those handles are inside clearly backend-owned runtime code.
+- Boundary validation should enforce this split: compiler SDK tokens stay in approved tool/backend paths, tool-private cooking tokens stay out of runtime, and runtime-private renderer/RHI implementation stays out of the cooker except through shared cooked contracts.
+
 ## Clean Replacement Policy
 
 This plan does not preserve backward compatibility for the old shader cooking surface. When a phase replaces a contract, remove the old contract in the same phase instead of adding aliases or deprecation layers.
@@ -160,9 +191,10 @@ These phases are not an open-ended backlog. They are the delivery path for the g
 | Reflection, binding metadata, and pipeline layout artifacts | Phase 3 | Cooked packages expose bytecode, reflection, binding metadata, and pipeline layout intent as separate inspectable sections that D3D12 and Vulkan can translate consistently. |
 | Honest PSO readiness | Phase 3 | The plan defines the exact PSO input model and stats naming, but does not claim to cook PSOs until render pass, vertex input, raster/depth/blend state, shader blob ids, and backend compatibility policy are all available. |
 | Robust dependency discovery and cache correctness | Phase 4 | One dependency scanner owns include/dependency discovery for preprocessing, debug artifacts, cache keys, and missing/recursive include diagnostics. |
-| Real cook graph and deterministic parallel execution | Phase 5 | Cook work is represented as a validated DAG; serial and bounded parallel execution produce stable aggregate outputs. |
-| Optional backend availability and backend naming clarity | Phase 6, Phase 9 | Backend listing, auto-selection, and errors use compiler-backend terminology; Slang can be unavailable without breaking DXC-only builds. |
-| Runtime ray tracing consumption of cooked metadata | Phase 7 | Cooked ray tracing package metadata drives runtime pipeline/shader-table setup, and unsupported devices fail through capability diagnostics before render work. |
+| Real cook graph and deterministic serial execution | Phase 5 | Cook work is represented as a validated DAG; serial execution produces stable aggregate outputs. |
+| Compiler-backend and binary-format registry clarity | Phase 6, Phase 9 | Backend listing, auto-selection, configure errors, and cooked-package diagnostics use precise terminology; DXC and Slang are required compiler backends, while DXIL and SPIR-V are first-class binary formats/codegen outputs with explicit descriptor and version reporting. |
+| Hard offline-tool/runtime-engine boundary | Phase 0, Phase 3, Phase 6, Phase 8, Phase 9 | Compiler SDKs, source preprocessing, reflection extraction, debug artifacts, analysis reports, local caches, and backend registries remain offline-tool concerns; runtime consumes only cooked artifacts and shared neutral contracts. |
+| Ray tracing capability and cooked metadata readiness | Phase 7 | Cooked ray tracing package metadata is validated against RHI capability data, and unsupported devices fail through diagnostics before any acceleration-structure, shader-table, pipeline, dispatch, or render work is attempted. |
 | Clear authoring/cooked contract ownership | Phase 8 | Shader authoring declarations and cooked package structs live in a shared shader contract owner, while RHI consumes them without owning offline authoring concepts. |
 | Final naming model across code and outputs | Phase 9 | Production code, scripts, validation, docs, command help, logs, folder names, and artifact names use the final terms consistently. |
 
@@ -209,6 +241,8 @@ Start from the current ShaderCompiler target, existing CMake validation scripts,
 Add or update validation scripts so runtime sources cannot include DXC, Slang, SPIRV-Reflect, or tool-private cooking headers, and so tool code cannot reach renderer-private runtime implementation. Keep this phase documentation/validation focused; do not move production code or change runtime behavior.
 
 Add a small architecture checklist under docs or CMake validation output that names the approved final terms and output categories: cook, compiler backend, codegen target, binary format, shader blob, package, registry, reflection metadata, binding metadata, pipeline layout artifact, debug artifact bundle, analysis report, local compile cache, static export, entry, export, binding name, and reflected name. Include the canonical runtime layout and the canonical inspection/log field names from the output layout contract. Include the clean replacement rule: each later phase removes the old command/name/path in the same phase that introduces the replacement, with no permanent aliases or backward-compatibility shims.
+
+Record the hard offline-tool/runtime-engine boundary in the checklist. The shader cooker may own compiler SDKs, source processing, backend registries, caches, debug artifacts, and analysis outputs. Runtime code may only consume cooked packages, cooked registries, shared neutral contracts, and RHI/device capability data.
 ```
 
 Acceptance criteria:
@@ -219,6 +253,7 @@ Acceptance criteria:
 - Shipping runtime outputs are clearly separated from debug artifacts, analysis reports, local caches, static exports, and runtime-created native graphics objects.
 - Folder names, file names, inspection fields, and log fields follow the output layout and naming contract.
 - The checklist records that replaced shader cooking contracts are removed cleanly, not preserved through aliases or compatibility shims.
+- The checklist records that runtime modules must not include compiler SDKs, tool-private cooking headers, source dependency scanners, backend registries, debug artifact readers, analysis reports, or local compile caches.
 - No runtime behavior changes.
 
 Suggested validation:
@@ -352,25 +387,24 @@ cmake --build build --config DevelopmentEditor --target ShaderCompiler shader_co
 build\bin\DevelopmentEditor\ShaderCompiler.exe cook --debug-artifacts build\ShaderDebugArtifacts
 ```
 
-### Phase 5: Real Cook Graph And Parallel Executor
+### Phase 5: Real Cook Graph And Serial Executor
 
-Goal: Deliver a real deterministic cook DAG and a path to bounded parallel execution.
+Goal: Deliver a real deterministic cook DAG and a serial execution contract.
 
 Implementation prompt:
 
 ```text
 Implement Phase 5 of the shader cooking architecture plan: turn the shader cook graph into a real DAG.
 
-Start from `DependencyGraph`, `CookNode`, `SerialCookExecutor`, `ShaderCookGraphBuilder`, and `ShaderCookGraphExecutor`. Model nodes for dependency scan, preprocess/debug source emission, backend compile, reflection extraction, parameter verification, blob catalog write, package write, registry write, static blob export, and analysis output. Add edges that express required ordering. Implement topological sort with cycle diagnostics. Add a serial executor over the DAG first, then a bounded parallel executor for independent compile nodes.
+Start from `DependencyGraph`, `CookNode`, `SerialCookExecutor`, `ShaderCookGraphBuilder`, and `ShaderCookGraphExecutor`. Model nodes for dependency scan, preprocess/debug source emission, backend compile, reflection extraction, parameter verification, blob catalog write, package write, registry write, static blob export, and analysis output. Add edges that express required ordering. Implement topological sort with cycle diagnostics. Route execution through the serial executor so each cook step follows the validated graph order.
 
-Keep output determinism: registry order, package order, blob catalog order, diagnostics order, and analysis output should not depend on thread scheduling. Use stable sorting before writing aggregate artifacts. Finish by adding graph validation coverage for ordering and cycles before enabling parallel execution by default.
+Keep output determinism: registry order, package order, blob catalog order, diagnostics order, and analysis output should remain stable for identical inputs. Use stable sorting before writing aggregate artifacts. Finish by adding graph validation coverage for ordering and cycles.
 ```
 
 Acceptance criteria:
 
 - `DependencyGraph` stores edges and validates cycles.
 - Serial execution order comes from topological sort, not insertion order.
-- Independent entry/export compiles can execute in parallel behind an explicit setting.
 - A failed node reports the package, entry/export, compiler backend, codegen target, and binary format that failed.
 - Aggregate outputs remain byte-stable for identical inputs.
 
@@ -381,27 +415,31 @@ cmake --build build --config DevelopmentEditor --target ShaderCompiler sparkle_v
 build\bin\DevelopmentEditor\ShaderCompiler.exe cook --debug-artifacts build\ShaderDebugArtifacts
 ```
 
-### Phase 6: Backend Registry And Optional Slang
+### Phase 6: Backend And Binary Format Registry
 
-Goal: Deliver explicit compiler-backend availability and optional Slang support.
+Goal: Deliver explicit compiler-backend and binary-format availability while keeping DXC, Slang, DXIL, and SPIR-V equally visible in the shader cooker contract.
 
 Implementation prompt:
 
 ```text
-Implement Phase 6 of the shader cooking architecture plan: replace backend probing by construction with a backend registry descriptor model.
+Implement Phase 6 of the shader cooking architecture plan: replace backend probing by construction with registry descriptor models for compiler backends, codegen targets, and cooked binary formats.
 
-Start from `ShaderBackendFactory`, `BuiltinBackends`, backend CMake wiring, backend listing, backend pool creation, and `Tools/ShaderCompiler/CMakeLists.txt`. Extend backend registrations with static descriptors: name, supported source extensions, supported codegen targets, supported binary formats, ray tracing library support, inline ray query support, version probe, and availability probe. `ResolveShaderBackendName` should select from descriptors and availability probes without constructing a full backend compiler instance unless compilation is about to run.
+Start from `ShaderBackendFactory`, `BuiltinBackends`, backend CMake wiring, backend listing, backend pool creation, target parsing, format selection, and `Tools/ShaderCompiler/CMakeLists.txt`. Extend compiler backend registrations with static descriptors: name, required dependency status, supported source extensions, supported codegen targets, supported binary formats, ray tracing library support, inline ray query support, version probe, and availability probe. Add or expose format/target descriptors so DXIL and SPIR-V are reported as first-class cooked binary formats rather than incidental backend details. `ResolveShaderBackendName` should select from descriptors and availability probes without constructing a full backend compiler instance unless compilation is about to run.
 
-Make Slang optional in CMake. Add an option such as `SPARKLE_ENABLE_SLANG`. If enabled and not found, configure should fail clearly. If disabled or unavailable by default, the `slang` backend should be reported unavailable and auto-selection should reject `.slang` sources with a precise diagnostic instead of breaking the whole ShaderCooker build. Finish by making `list-backends` report availability, version, capability, and unavailable reason without constructing a compile backend.
+Keep DXC and Slang mandatory in CMake. If the DXC dependency or the Slang SDK include directory, import library, or runtime DLL is missing, configure should fail clearly with the missing path or package. The `dxc` and `slang` compiler backends must not be hidden behind enable flags, soft fallbacks, or single-backend compatibility modes. Finish by making `list-backends` report required backend status, version, capabilities, resolved runtime location, supported codegen targets, and supported binary formats without constructing a compile backend.
+
+Keep the registry tool-only. Runtime must not include the backend registry, call `list-backends`, or use offline backend availability to decide device capability. Runtime only sees cooked package fields such as `CompilerBackend`, `CodegenTarget`, and `BinaryFormat`, then maps those against RHI/device support.
 ```
 
 Acceptance criteria:
 
-- Listing backends reports available and unavailable backends with reasons.
-- Auto-selection considers source extension, target, binary format, and backend availability.
-- DXC-only builds configure and build without Slang SDK installed.
-- Slang-enabled builds still copy `slang.dll` beside the tool when available.
+- Listing backends reports required DXC and Slang compiler backends with versions, capabilities, resolved dependency locations, supported codegen targets, and supported binary formats.
+- DXIL and SPIR-V are listed or reported as first-class cooked binary formats/codegen outputs, not hidden as incidental backend implementation details.
+- Auto-selection considers source extension, codegen target, binary format, and required backend availability.
+- Configure fails clearly when the DXC dependency or the Slang SDK include directory, import library, or runtime DLL is missing.
+- Successful builds copy `slang.dll` beside the tool.
 - Backend capability checks do not construct heavyweight compiler objects during simple name resolution.
+- Backend registry descriptors remain inside the offline tool/backend layer and are not consumed by runtime engine modules.
 
 Suggested validation:
 
@@ -410,27 +448,27 @@ cmake --build build --config DevelopmentEditor --target ShaderCompiler -- /nolog
 build\bin\DevelopmentEditor\ShaderCompiler.exe list-backends
 ```
 
-### Phase 7: Ray Tracing Runtime Completion
+### Phase 7: Ray Tracing Capability And Metadata Readiness
 
-Goal: Deliver runtime consumption of cooked ray tracing metadata across supported RHI backends.
+Goal: Deliver runtime ray tracing capability reporting and cooked metadata validation without enabling real ray tracing rendering or requiring ray tracing-capable hardware.
 
 Implementation prompt:
 
 ```text
-Implement Phase 7 of the shader cooking architecture plan: complete the runtime ray tracing path that matches cooked ray tracing shader package metadata.
+Implement Phase 7 of the shader cooking architecture plan: complete the runtime ray tracing capability and metadata readiness path that matches cooked ray tracing shader package metadata, without creating production ray tracing render usage.
 
-Start from `RenderHardwareInterface`, `RhiRayTracingDesc`, D3D12 and Vulkan RHI implementations, cooked ray tracing package records, and any renderer-side ray tracing setup points. Implement RHI-neutral descriptors for BLAS/TLAS prebuild info, scratch buffers, acceleration structure buffers, instance buffers, build/update commands, ray tracing pipeline state, shader table records, and dispatch rays. Wire D3D12 and Vulkan backend support according to their native APIs and expose capability flags that accurately gate runtime feature use.
+Start from `RenderHardwareInterface`, `RhiRayTracingDesc`, D3D12 and Vulkan RHI implementations, cooked ray tracing package records, and renderer-side package validation. Implement or refine RHI-neutral descriptors for ray tracing capability reporting, BLAS/TLAS prebuild info descriptions, scratch buffer requirements, acceleration structure buffer requirements, instance buffer layout, ray tracing pipeline metadata, shader table metadata, and dispatch requirements. Keep these as capability/description contracts for now. Do not wire real render passes, scene ray tracing effects, dispatch rays, or production acceleration-structure build usage in this phase.
 
-Connect cooked ray tracing library packages to runtime pipeline creation. Use cooked export records, hit group records, local parameter records, payload size, attribute size, and max recursion depth to create pipeline and shader table data. Runtime should reject unsupported backends or missing cooked metadata with a clear diagnostic before issuing render work. Finish with a smoke validation path that exercises capability checks and creates the minimum acceleration-structure/pipeline objects without requiring a full product ray tracing renderer.
+Connect cooked ray tracing library packages to runtime validation only. Use cooked export records, hit group records, local parameter records, payload size, attribute size, max recursion depth, shader blob ids, codegen target, and binary format to validate that a future runtime pipeline could be built. Runtime should reject unsupported backends or missing cooked metadata with a clear diagnostic before any ray tracing work could be scheduled. Finish with source/build validation and non-GPU metadata/capability checks only; do not require a smoke test that builds acceleration structures, creates ray tracing pipelines, creates shader tables, dispatches rays, or uses a ray tracing-capable graphics card.
 ```
 
 Acceptance criteria:
 
-- Vulkan no longer returns empty AS prebuild info or fails `CreateRayTracingScratchBuffer`, AS buffer creation, or instance buffer creation when ray tracing is supported.
-- Unsupported Vulkan devices report capability failure without reaching unimplemented calls.
-- D3D12 and Vulkan expose equivalent RHI-level ray tracing capabilities where the hardware supports them.
-- Cooked ray tracing library metadata is consumed by runtime pipeline setup.
-- Runtime has at least one smoke validation that builds an acceleration structure and creates a ray tracing pipeline, even before full scene ray tracing is productized.
+- D3D12 and Vulkan expose equivalent RHI-level ray tracing capability fields and limits where the backend/device can report them.
+- Unsupported devices report capability failure before any acceleration-structure, shader-table, pipeline, or dispatch work is attempted.
+- Cooked ray tracing library metadata is consumed by runtime validation and diagnostics, not by a real render path yet.
+- Runtime has a non-GPU validation path that checks cooked ray tracing metadata against RHI capability data and reports missing exports, hit groups, local parameters, payload size, attribute size, recursion depth, shader blob ids, codegen target, and binary format issues.
+- No render pass, scene feature, frame graph pass, acceleration-structure build, ray tracing pipeline creation, shader table creation, or dispatch rays path is enabled by this phase.
 
 Suggested validation:
 
@@ -503,7 +541,7 @@ Do not start with the final rename. The least risky order is:
 2. Phase 2, because stable blob identity makes later package, debug, graph, and PSO work clearer.
 3. Phase 4, because dependency correctness protects cache and blob identity work.
 4. Phase 5, because a real graph is useful once blob, reflection, layout, package, registry, and analysis nodes are explicit.
-5. Phase 6, because backend availability should be stable before Slang and future backends expand.
+5. Phase 6, because required DXC/Slang backend descriptors and DXIL/SPIR-V format descriptors should be stable before future compiler backends or binary formats expand.
 6. Phase 3, because pipeline layout artifacts need the blob identity to be final.
 7. Phase 7, because runtime ray tracing should consume the cooked metadata contract after package identity is stable.
 8. Phase 8, because ownership splitting is easier when contracts are known.
@@ -516,5 +554,5 @@ Phase 0 can run before or alongside Phase 1 as validation prep.
 - Static embedded blobs can become a distraction. Keep them optional unless a bootstrap/runtime requirement appears, and never let them replace `.sparkshader` as the primary artifact.
 - Full PSO cooking may need render pass, vertex input, blend/depth/raster, and material state decisions that are outside the shader cooker alone.
 - Conditional include accuracy may depend on backend dependency output. A fallback lexer should be honest about limitations.
-- Ray tracing runtime completion crosses RHI, renderer, shader packages, frame graph scheduling, and backend capabilities. Treat it as a feature track, not a small shader cooker cleanup.
+- Full ray tracing runtime completion crosses RHI, renderer, shader packages, frame graph scheduling, and backend capabilities. Phase 7 intentionally stops at capability and metadata readiness until ray tracing hardware and a product render path are available.
 - The authoring contract split can touch many includes. Do it after package and naming contracts stop moving.

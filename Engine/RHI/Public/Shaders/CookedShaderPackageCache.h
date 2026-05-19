@@ -6,6 +6,8 @@
 #include "CookedShaderPackageUtils.h"
 #include "ShaderBytecode.h"
 
+#include "../RayTracing/RhiRayTracingDesc.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -29,6 +31,7 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 
 	const std::vector<CookedShaderBinaryRecord>& GetBinaryRecords() const noexcept { return m_binaryRecords; }
 	const std::vector<CookedShaderBindingRecord>& GetBindingRecords() const noexcept { return m_bindingRecords; }
+	const std::vector<CookedShaderPipelineLayoutRecord>& GetPipelineLayoutRecords() const noexcept { return m_pipelineLayoutRecords; }
 	const std::vector<CookedShaderSpecializationInputRecord>& GetSpecializationInputs() const noexcept { return m_specializationInputs; }
 	const std::vector<CookedShaderRayTracingExportRecord>& GetRayTracingExports() const noexcept { return m_rayTracingExports; }
 	const std::vector<CookedShaderRayTracingHitGroupRecord>& GetRayTracingHitGroups() const noexcept { return m_rayTracingHitGroups; }
@@ -55,6 +58,10 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	ShaderBytecode GetStageBytecode(ShaderStage stage, CookedShaderBinaryFormat format) const noexcept;
 	ShaderBytecode GetBytecode(const CookedShaderBinaryRecord& record) const noexcept;
 	std::string_view ResolveString(CookedShaderStringRef ref) const noexcept;
+	bool ValidateRayTracingLibraryMetadata(
+	    const RhiRayTracingCapabilities& capabilities,
+	    CookedShaderBinaryFormat requiredBinaryFormat,
+	    std::string& outErrorMessage) const;
 
   private:
 	friend class CookedShaderPackageCache;
@@ -65,6 +72,7 @@ class SPARKLE_RHI_API LoadedShaderPackage final
 	CookedShaderPackageHeader m_header = {};
 	std::vector<CookedShaderBinaryRecord> m_binaryRecords;
 	std::vector<CookedShaderBindingRecord> m_bindingRecords;
+	std::vector<CookedShaderPipelineLayoutRecord> m_pipelineLayoutRecords;
 	std::vector<CookedShaderSpecializationInputRecord> m_specializationInputs;
 	std::vector<CookedShaderRayTracingExportRecord> m_rayTracingExports;
 	std::vector<CookedShaderRayTracingHitGroupRecord> m_rayTracingHitGroups;

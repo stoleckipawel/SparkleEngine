@@ -49,6 +49,33 @@ std::uint64_t BuildShaderPackageKey(std::string_view packageId)
 	return Hash::Fnv1a64(normalizedPackageId);
 }
 
+std::uint64_t BuildShaderBlobId(
+    std::string_view packageId,
+    std::string_view entryPoint,
+    std::string_view exportName,
+    std::string_view compilerBackendName,
+    std::string_view codegenTarget,
+    CookedShaderBinaryFormat binaryFormat)
+{
+	std::string canonical;
+	canonical.reserve(192);
+	canonical += "ShaderBlobId.v1|PackageId=";
+	canonical += NormalizeShaderPackageToken(packageId);
+	canonical += "|EntryPoint=";
+	canonical += Strings::TrimAsciiWhitespace(entryPoint);
+	canonical += "|ExportName=";
+	canonical += Strings::TrimAsciiWhitespace(exportName);
+	canonical += "|CompilerBackend=";
+	canonical += NormalizeShaderPackageToken(compilerBackendName);
+	canonical += "|CodegenTarget=";
+	canonical += Strings::TrimAsciiWhitespace(codegenTarget);
+	canonical += "|BinaryFormat=";
+	canonical += CookedShaderBinaryFormatToString(binaryFormat);
+
+	const std::uint64_t hash = Hash::Fnv1a64(canonical);
+	return hash != 0 ? hash : Hash::kFnv64OffsetBasis;
+}
+
 std::uint64_t BuildPassParameterLayoutHash(const PassParameterLayout& layout)
 {
 	std::string canonicalLayout;

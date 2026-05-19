@@ -1,6 +1,6 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 
-#include "Analysis/PsoStatsPass.h"
+#include "Analysis/CookedShaderStatsPass.h"
 
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Formatting/HexFormat.h"
@@ -9,24 +9,24 @@
 
 #include <sstream>
 
-bool PsoStatsPass::WriteCsv(
+bool CookedShaderStatsPass::WriteCsv(
     std::span<const CookedShaderPackageOutput> packages,
     const std::filesystem::path& analysisDirectory,
-    PsoStatsPassResult& outResult,
+    CookedShaderStatsPassResult& outResult,
     std::string& outErrorMessage)
 {
 	outResult = {};
-	outResult.outputPath = analysisDirectory / "pso-stats.csv";
+	outResult.outputPath = analysisDirectory / "CookedShaderStats.csv";
 
 	std::ostringstream csv;
-	csv << "packageId,packageKey,stage,format,backend,entryPoint,bytecodeSize,resourceBindings,constantBuffers,inputElements,pushConstants,specializationConstants\n";
+	csv << "PackageId,ShaderPackageKey,ShaderBlobId,Stage,BinaryFormat,CompilerBackend,CodegenTarget,EntryPoint,ExportName,BytecodeBytes,ResourceBindings,ConstantBuffers,InputElements,PushConstantRanges,SpecializationConstants,PipelineLayoutRecords\n";
 
 	for (const CookedShaderPackageOutput& package : packages)
 	{
 		InspectedCookedShaderPackage inspectedPackage;
 		if (!CookedPackageInspection::Inspect(package.outputPath, inspectedPackage, outErrorMessage))
 		{
-			outErrorMessage = "Failed to inspect cooked package for pso-stats '" + package.outputPath.string() + "' - " + outErrorMessage;
+			outErrorMessage = "Failed to inspect cooked package for CookedShaderStats '" + package.outputPath.string() + "' - " + outErrorMessage;
 			return false;
 		}
 
@@ -34,16 +34,20 @@ bool PsoStatsPass::WriteCsv(
 		{
 			csv << Strings::EscapeCsvField(package.packageId) << ','
 			    << Formatting::FormatHexUInt64(package.packageKey) << ','
+			    << Formatting::FormatHexUInt64(binary.shaderBlobId) << ','
 			    << Strings::EscapeCsvField(GetShaderStagePrefix(binary.stage)) << ','
 			    << Strings::EscapeCsvField(CookedPackageInspection::GetBinaryFormatName(binary.format)) << ','
 			    << Strings::EscapeCsvField(binary.backendName) << ','
+			    << Strings::EscapeCsvField(binary.codegenTarget) << ','
 			    << Strings::EscapeCsvField(binary.entryPoint) << ','
+			    << Strings::EscapeCsvField(binary.exportName) << ','
 			    << binary.bytecodeSizeInBytes << ','
 			    << binary.resourceBindingCount << ','
 			    << binary.constantBufferCount << ','
 			    << binary.inputElementCount << ','
 			    << binary.pushConstantRangeCount << ','
-			    << binary.specializationConstantCount << '\n';
+			    << binary.specializationConstantCount << ','
+			    << inspectedPackage.pipelineLayoutRecordCount << '\n';
 			++outResult.rowCount;
 		}
 	}

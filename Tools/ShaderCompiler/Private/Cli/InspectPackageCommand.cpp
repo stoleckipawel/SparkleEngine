@@ -28,6 +28,7 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 	          << " kind=" << CookedPackageInspection::GetPackageKindName(package.packageKind)
 	          << " features='" << CookedPackageInspection::FormatPackageFeatures(package.packageFeatures) << "'"
 	          << " binaries=" << package.binaryRecordCount
+	          << " pipelineLayouts=" << package.pipelineLayoutRecordCount
 	          << " reflections=" << package.reflectionRecordCount
 	          << " rtExports=" << package.rayTracingExports.size()
 	          << " rtHitGroups=" << package.rayTracingHitGroups.size()
@@ -40,18 +41,46 @@ int InspectPackageCommand::Run(std::span<const std::string_view> args) const
 		          << " attributeBytes=" << package.rayTracingAttributeSizeInBytes
 		          << " maxRecursion=" << package.rayTracingMaxRecursionDepth << "\n";
 	}
+	std::cout << "Bytecode:\n";
 	for (const InspectedCookedShaderBinary& binary : package.binaries)
 	{
-		std::cout << "  " << GetShaderStagePrefix(binary.stage)
-		          << " format=" << CookedPackageInspection::GetBinaryFormatName(binary.format)
-		          << " entry=" << binary.entryPoint
-		          << " backend=" << binary.backendName
+		std::cout << "  ShaderBlobId=" << Formatting::FormatPrefixedHexUInt64(binary.shaderBlobId)
+		          << " Stage=" << GetShaderStagePrefix(binary.stage)
+		          << " BinaryFormat=" << CookedPackageInspection::GetBinaryFormatName(binary.format)
+		          << " EntryPoint=" << binary.entryPoint
+		          << " ExportName=" << binary.exportName
+		          << " CompilerBackend=" << binary.backendName
+		          << " CodegenTarget=" << binary.codegenTarget
 		          << " backendVersion=" << Formatting::FormatPrefixedHexUInt64(binary.backendVersion)
-		          << " bytecodeHash=" << Formatting::FormatPrefixedHexUInt64(binary.bytecodeHash)
-		          << " bytecode=" << binary.bytecodeSizeInBytes
-		          << " resources=" << binary.resourceBindingCount
-		          << " cbuffers=" << binary.constantBufferCount
-		          << " inputs=" << binary.inputElementCount << "\n";
+		          << " BytecodeHash=" << Formatting::FormatPrefixedHexUInt64(binary.bytecodeHash)
+		          << " BytecodeBytes=" << binary.bytecodeSizeInBytes << "\n";
+	}
+	std::cout << "Reflection:\n";
+	for (const InspectedCookedShaderBinary& binary : package.binaries)
+	{
+		std::cout << "  Stage=" << GetShaderStagePrefix(binary.stage)
+		          << " BinaryFormat=" << CookedPackageInspection::GetBinaryFormatName(binary.format)
+		          << " ResourceBindings=" << binary.resourceBindingCount
+		          << " ConstantBuffers=" << binary.constantBufferCount
+		          << " InputElements=" << binary.inputElementCount
+		          << " PushConstantRanges=" << binary.pushConstantRangeCount
+		          << " SpecializationConstants=" << binary.specializationConstantCount << "\n";
+	}
+	std::cout << "PipelineLayout:\n";
+	for (const InspectedCookedPipelineLayout& layout : package.pipelineLayouts)
+	{
+		std::cout << "  CodegenTarget=" << layout.codegenTarget
+		          << " BindingLayoutHash=" << Formatting::FormatPrefixedHexUInt64(layout.bindingLayoutHash)
+		          << " BindingRecords=" << layout.bindingRecordCount
+		          << " DescriptorSets=" << layout.descriptorSetCount
+		          << " DescriptorBindings=" << layout.descriptorBindingCount
+		          << " PushConstantRanges=" << layout.pushConstantRangeCount
+		          << " PushConstantBytes=" << layout.pushConstantSizeInBytes
+		          << " ConstantBuffers=" << layout.constantBufferCount
+		          << " ReadOnlyResources=" << layout.readOnlyResourceCount
+		          << " ReadWriteResources=" << layout.readWriteResourceCount
+		          << " Samplers=" << layout.samplerCount
+		          << " AccelerationStructures=" << layout.accelerationStructureCount << "\n";
 	}
 	for (const InspectedCookedRayTracingExport& rtExport : package.rayTracingExports)
 	{

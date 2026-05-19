@@ -32,6 +32,8 @@ class DxcShaderBackend final : public IShaderBackend
 	DxcShaderBackend& operator=(DxcShaderBackend&&) = delete;
 
 	bool IsValid() const noexcept { return m_compiler != nullptr && m_utils != nullptr; }
+	static ShaderBackendCapabilities GetStaticCapabilities() noexcept;
+	static std::uint64_t QueryBackendVersion();
 
 	ShaderBackendCapabilities GetCapabilities() const override;
 
@@ -74,6 +76,7 @@ class DxcShaderBackend final : public IShaderBackend
 	    std::string_view compilerOutput,
 	    ShaderCompileResult& outCompileResult);
 	static std::vector<std::string> BuildDebugArgumentStrings(const std::vector<LPCWSTR>& compileArgs);
+	static std::uint64_t QueryBackendVersion(IDxcCompiler3& compiler);
 
 	static std::filesystem::path SaveShaderSymbols(IDxcResult* result, const std::filesystem::path& sourcePath);
 

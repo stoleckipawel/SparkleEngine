@@ -16,7 +16,7 @@ constexpr std::uint32_t MakeCookedShaderPackageMagic(char a, char b, char c, cha
 }
 
 constexpr std::uint32_t kCookedShaderPackageMagic = MakeCookedShaderPackageMagic('S', 'S', 'H', 'D');
-constexpr std::uint32_t kCookedShaderPackageVersion = 1;
+constexpr std::uint32_t kCookedShaderPackageVersion = 2;
 
 enum class CookedShaderPackageKind : std::uint8_t
 {
@@ -107,6 +107,7 @@ struct CookedShaderPackageHeader
 	std::uint16_t ShaderModelMinor = 0;
 	std::uint32_t BinaryRecordCount = 0;
 	std::uint32_t BindingRecordCount = 0;
+	std::uint32_t PipelineLayoutRecordCount = 0;
 	std::uint32_t SpecializationInputCount = 0;
 	std::uint32_t StringTableSizeInBytes = 0;
 	std::uint32_t BinaryBlobSizeInBytes = 0;
@@ -140,7 +141,9 @@ struct CookedShaderPackageHeader
 
 struct CookedShaderBinaryRecord
 {
+	std::uint64_t ShaderBlobId = 0;
 	CookedShaderStringRef EntryPoint = {};
+	CookedShaderStringRef ExportName = {};
 	CookedShaderStringRef DebugArtifact = {};
 	CookedShaderBlobRef Bytecode = {};
 	ShaderStage Stage = ShaderStage::Count;
@@ -152,7 +155,26 @@ struct CookedShaderBinaryRecord
 	// ("dxc", "slang", ...). BackendVersion is the backend's reported version
 	// stamp; renderers/tools must not parse it but may display it.
 	CookedShaderStringRef BackendName = {};
+	CookedShaderStringRef CodegenTarget = {};
 	std::uint64_t BackendVersion = 0;
+};
+
+struct CookedShaderPipelineLayoutRecord
+{
+	CookedShaderStringRef CodegenTarget = {};
+	std::uint64_t BindingLayoutHash = 0;
+	std::uint32_t BindingRecordOffset = 0;
+	std::uint32_t BindingRecordCount = 0;
+	std::uint32_t DescriptorBindingCount = 0;
+	std::uint32_t DescriptorSetCount = 0;
+	std::uint32_t PushConstantRangeCount = 0;
+	std::uint32_t PushConstantSizeInBytes = 0;
+	std::uint32_t ConstantBufferCount = 0;
+	std::uint32_t ReadOnlyResourceCount = 0;
+	std::uint32_t ReadWriteResourceCount = 0;
+	std::uint32_t SamplerCount = 0;
+	std::uint32_t AccelerationStructureCount = 0;
+	std::uint32_t Reserved = 0;
 };
 
 struct CookedShaderRayTracingExportRecord
@@ -213,6 +235,9 @@ static_assert(std::is_trivially_copyable_v<CookedShaderStringRef>, "CookedShader
 static_assert(std::is_trivially_copyable_v<CookedShaderBlobRef>, "CookedShaderBlobRef must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderPackageHeader>, "CookedShaderPackageHeader must stay trivially copyable.");
 static_assert(std::is_trivially_copyable_v<CookedShaderBinaryRecord>, "CookedShaderBinaryRecord must stay trivially copyable.");
+static_assert(
+	std::is_trivially_copyable_v<CookedShaderPipelineLayoutRecord>,
+	"CookedShaderPipelineLayoutRecord must stay trivially copyable.");
 static_assert(
     std::is_trivially_copyable_v<CookedShaderRayTracingExportRecord>,
     "CookedShaderRayTracingExportRecord must stay trivially copyable.");

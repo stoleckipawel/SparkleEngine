@@ -60,6 +60,7 @@ bool StageCompiler::Compile(
 	outCompiledStage.entryPoint = stage.entryPoint;
 	outCompiledStage.debugArtifact = Paths::MakeProjectRelativeString(compileResult.GetDebugArtifactPath());
 	outCompiledStage.backendName.assign(backend.GetBackendName());
+	outCompiledStage.codegenTarget.assign(GetShaderTargetName(options.Target));
 	outCompiledStage.backendVersion = backend.GetBackendVersion();
 	outCompiledStage.bytecode.assign(bytecodeBegin, bytecodeBegin + bytecode.Size);
 	outCompiledStage.bytecodeHash = Hash::Fnv1a64(outCompiledStage.bytecode.data(), outCompiledStage.bytecode.size());

@@ -9,6 +9,15 @@ struct RhiRayTracingCapabilities
 {
 	bool SupportsRayTracing = false;
 	bool SupportsInlineRayQuery = false;
+	std::uint32_t MaxTraceRecursionDepth = 0;
+	std::uint32_t MaxRayPayloadSizeInBytes = 0;
+	std::uint32_t MaxRayAttributeSizeInBytes = 0;
+	std::uint32_t ShaderGroupHandleSizeInBytes = 0;
+	std::uint32_t ShaderTableAlignmentInBytes = 0;
+	std::uint32_t ShaderTableRecordAlignmentInBytes = 0;
+	std::uint64_t AccelerationStructureByteAlignment = 0;
+	std::uint64_t ScratchBufferByteAlignment = 0;
+	std::uint32_t InstanceDescSizeInBytes = 0;
 };
 
 struct RhiRayTracingGeometryDesc

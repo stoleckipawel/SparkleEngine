@@ -2,7 +2,7 @@
 
 #include "Cli/CookShadersCommand.h"
 
-#include "Analysis/PsoStatsPass.h"
+#include "Analysis/CookedShaderStatsPass.h"
 #include "Backend/ShaderTarget.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Cooking/ShaderPackageCooker.h"
@@ -68,7 +68,7 @@ void CookShadersCommand::PrintHelp(std::ostream& output)
 	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16.\n"
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
 	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
-	       << "  --analysis <pass[,pass]>    Run optional analysis report passes.\n";
+	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n";
 }
 
 bool CookShadersCommand::TryParseArguments(
@@ -306,11 +306,11 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 
 	for (const std::string& analysisPass : settings.analysisPasses)
 	{
-		if (analysisPass == "pso-stats")
+		if (analysisPass == "cooked-shader-stats")
 		{
-			PsoStatsPassResult analysisResult;
+			CookedShaderStatsPassResult analysisResult;
 			std::string analysisErrorMessage;
-			if (!PsoStatsPass::WriteCsv(
+			if (!CookedShaderStatsPass::WriteCsv(
 			        cookResult.packages,
 			        cookResult.cacheDirectory / "Analysis",
 			        analysisResult,
@@ -320,7 +320,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 				    std::cerr,
 				    ToolConsoleSeverity::Error,
 				    "Failed to run analysis pass",
-				    {ToolConsole::QuotedField("analysis", "pso-stats"), ToolConsole::QuotedField("reason", analysisErrorMessage)});
+				    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"), ToolConsole::QuotedField("reason", analysisErrorMessage)});
 				return kExitCodeCookFailure;
 			}
 
@@ -328,7 +328,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 			    std::cout,
 			    ToolConsoleSeverity::Info,
 			    "Analysis pass wrote output",
-			    {ToolConsole::QuotedField("analysis", "pso-stats"),
+			    {ToolConsole::QuotedField("analysis", "cooked-shader-stats"),
 			     ToolConsole::Field("rows", std::to_string(analysisResult.rowCount)),
 			     ToolConsole::PathField("output", analysisResult.outputPath)});
 			continue;
