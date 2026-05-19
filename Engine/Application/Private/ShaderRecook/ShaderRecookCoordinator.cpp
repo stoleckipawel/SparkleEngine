@@ -330,8 +330,10 @@ std::string ShaderRecookCoordinator::DescribeRequest(const ShaderRecookRequest& 
 	{
 		case ShaderRecookRequestType::Changed:
 			return "changed shader sources";
-		case ShaderRecookRequestType::ShaderPathOrId:
-			return request.Target.empty() ? "targeted shader <empty>" : "targeted shader '" + request.Target + "'";
+		case ShaderRecookRequestType::PackageId:
+			return request.Target.empty() ? "shader package <empty>" : "shader package '" + request.Target + "'";
+		case ShaderRecookRequestType::ShaderId:
+			return request.Target.empty() ? "shader id <empty>" : "shader id '" + request.Target + "'";
 		case ShaderRecookRequestType::Global:
 		default:
 			return "all global shaders";

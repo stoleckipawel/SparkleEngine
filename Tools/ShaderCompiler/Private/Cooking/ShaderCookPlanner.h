@@ -21,8 +21,15 @@ class ShaderCookPlanner final
 	    const ShaderCompileOptions& options);
 
   private:
-	static std::vector<ShaderCookPackageDesc> BuildSingleShaderPackage(const ShaderPackageCookSettings& settings);
+	enum class CookSelectionKind
+	{
+		All,
+		PackageId,
+		ShaderId,
+	};
+
 	static std::vector<ShaderCookPackageDesc> BuildTypedShaderPackages(
-	    std::string_view requestedPackageId,
+	    CookSelectionKind selectionKind,
+	    std::string_view requestedId,
 	    std::string& outErrorMessage);
 };

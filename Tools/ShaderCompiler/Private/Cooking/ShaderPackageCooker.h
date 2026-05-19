@@ -14,7 +14,8 @@ struct ShaderPackageCookSettings final
 	bool useCache = true;
 	std::vector<ShaderTarget> targets = {kDefaultShaderTarget};
 	std::string backendName = "auto";
-	std::filesystem::path singleShaderPath;
+	std::string packageId;
+	std::string shaderId;
 	std::filesystem::path cacheDirectory;
 	std::filesystem::path debugArtifactDirectory;
 	std::vector<std::string> analysisPasses;

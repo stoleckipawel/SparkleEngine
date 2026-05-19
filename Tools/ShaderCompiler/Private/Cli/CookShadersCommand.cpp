@@ -12,6 +12,7 @@
 #include "ToolConsole.h"
 
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,23 @@ namespace
 	}
 }
 
+void CookShadersCommand::PrintHelp(std::ostream& output)
+{
+	output << "Usage:\n"
+	       << "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name>] [options]\n\n"
+	       << "Cooks typed shader registrations into .sparkshader packages and ShaderPackageRegistry.sreg.\n\n"
+	       << "Selection options:\n"
+	       << "  --package <package-id>      Cook one registered shader package.\n"
+	       << "  --shader-id <shader-id>     Cook one registered shader entry by shader id.\n\n"
+	       << "Cook options:\n"
+	       << "  --no-cache                  Disable the local compile cache.\n"
+	       << "  --cache-dir <path>          Override the local compile cache directory.\n"
+	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16.\n"
+	       << "  --backend <name>            Select a compiler backend, or auto.\n"
+	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
+	       << "  --analysis <pass[,pass]>    Run optional analysis report passes.\n";
+}
+
 bool CookShadersCommand::TryParseArguments(
 	std::span<const std::string_view> args,
 	ShaderPackageCookSettings& outSettings,
@@ -80,15 +98,28 @@ bool CookShadersCommand::TryParseArguments(
 			continue;
 		}
 
-		if (args[index] == "--shader")
+		if (args[index] == "--package")
 		{
 			if (index + 1 >= args.size())
 			{
-				outErrorMessage = "Missing value after --shader";
+				outErrorMessage = "Missing value after --package";
 				return false;
 			}
 
-			outSettings.singleShaderPath = std::filesystem::path(std::string(args[index + 1]));
+			outSettings.packageId = std::string(args[index + 1]);
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--shader-id")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --shader-id";
+				return false;
+			}
+
+			outSettings.shaderId = std::string(args[index + 1]);
 			++index;
 			continue;
 		}
@@ -205,12 +236,24 @@ bool CookShadersCommand::TryParseArguments(
 		return false;
 	}
 
+	if (!outSettings.packageId.empty() && !outSettings.shaderId.empty())
+	{
+		outErrorMessage = "Use either --package or --shader-id, not both";
+		return false;
+	}
+
 	outErrorMessage.clear();
 	return true;
 }
 
 int CookShadersCommand::Run(std::span<const std::string_view> args) const
 {
+	if (args.size() == 1 && (args[0] == "--help" || args[0] == "-h"))
+	{
+		PrintHelp(std::cout);
+		return kExitCodeSuccess;
+	}
+
 	ShaderPackageCookSettings settings;
 	std::string parseErrorMessage;
 	if (!TryParseArguments(args, settings, parseErrorMessage))
@@ -237,7 +280,7 @@ int CookShadersCommand::Run(std::span<const std::string_view> args) const
 
 	ToolConsole::Summary(
 	    std::cout,
-	    "ShaderCompiler summary",
+	    "Shader cook summary",
 	    {ToolConsole::Field("packages", std::to_string(cookResult.packages.size())),
 	     ToolConsole::PathField("packageRoot", Paths::CookedShaderPackageRoot()),
 	     ToolConsole::PathField("registry", cookResult.registryPath),

@@ -147,7 +147,7 @@ try
     }
 
     Invoke-CIStep -Label 'Cooking HelloTriangle multi-format package' -Action {
-        & $ShaderCompiler cook --no-cache --backend dxc --target DxilSm66 --target SpirV16 --shader HelloTriangle
+        & $ShaderCompiler cook --no-cache --backend dxc --target DxilSm66 --target SpirV16 --package HelloTriangle
     }
 
     $registryPath = Join-Path $RepoRoot 'build\Cooked\Showcase\Shaders\ShaderPackageRegistry.sreg'

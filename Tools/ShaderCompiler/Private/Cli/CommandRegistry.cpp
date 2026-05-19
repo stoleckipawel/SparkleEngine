@@ -17,7 +17,7 @@ CommandRegistry::CommandRegistry()
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandCook},
 	    .command = std::make_shared<CookShadersCommand>(),
-	    .usageLine = "  ShaderCompiler cook [--shader <path>] [--no-cache] [--cache-dir <path>] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>]"});
+	    .usageLine = "  ShaderCompiler cook [--package <package-id> | --shader-id <registered-shader-name>] [--no-cache] [--cache-dir <path>] [--target <name>] [--backend <name>] [--debug-artifacts <dir>] [--analysis <pass>]"});
 
 	m_registrations.push_back(Registration{
 	    .verbs = {kCommandListBackends},

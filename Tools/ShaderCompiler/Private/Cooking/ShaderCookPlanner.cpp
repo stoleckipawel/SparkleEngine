@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <format>
 #include <unordered_map>
-#include <unordered_set>
 
 ShaderCompileOptions ShaderCookPlanner::BuildCompileOptions(const ShaderCookStageDesc& stage)
 {
@@ -54,22 +53,26 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildPackages(
 	const ShaderPackageCookSettings& settings,
 	std::string& outErrorMessage)
 {
-	if (!settings.singleShaderPath.empty() && settings.singleShaderPath.has_extension())
+	if (!settings.packageId.empty() && !settings.shaderId.empty())
 	{
-		std::string typedRequestError;
-		std::vector<ShaderCookPackageDesc> typedPackages = BuildTypedShaderPackages(settings.singleShaderPath.generic_string(), typedRequestError);
-		if (!typedPackages.empty())
-		{
-			outErrorMessage.clear();
-			return typedPackages;
-		}
-
-		outErrorMessage.clear();
-		return BuildSingleShaderPackage(settings);
+		outErrorMessage = "Use either package id or shader id for a shader cook request, not both.";
+		return {};
 	}
 
-	const std::string requestedPackageId = settings.singleShaderPath.empty() ? std::string{} : settings.singleShaderPath.generic_string();
-	std::vector<ShaderCookPackageDesc> packages = BuildTypedShaderPackages(requestedPackageId, outErrorMessage);
+	CookSelectionKind selectionKind = CookSelectionKind::All;
+	std::string_view requestedId;
+	if (!settings.packageId.empty())
+	{
+		selectionKind = CookSelectionKind::PackageId;
+		requestedId = settings.packageId;
+	}
+	else if (!settings.shaderId.empty())
+	{
+		selectionKind = CookSelectionKind::ShaderId;
+		requestedId = settings.shaderId;
+	}
+
+	std::vector<ShaderCookPackageDesc> packages = BuildTypedShaderPackages(selectionKind, requestedId, outErrorMessage);
 	if (!outErrorMessage.empty())
 	{
 		return {};
@@ -108,60 +111,25 @@ std::optional<ShaderParameterStructDescriptor> ShaderCookPlanner::FindParameterS
 	return std::nullopt;
 }
 
-std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildSingleShaderPackage(const ShaderPackageCookSettings& settings)
-{
-	ShaderCookPackageDesc package;
-	package.packageId = settings.singleShaderPath.stem().string();
-	package.bindingLayoutId = "Empty";
-	package.bindingLayout = PassParameterLayout("Empty");
-	package.stages.push_back(ShaderCookStageDesc{
-	    .stage = ShaderStage::Vertex,
-	    .sourcePath = settings.singleShaderPath,
-		    .entryPoint = "VSMain",
-		    .packageKind = CookedShaderPackageKind::Graphics});
-	package.stages.push_back(ShaderCookStageDesc{
-	    .stage = ShaderStage::Pixel,
-	    .sourcePath = settings.singleShaderPath,
-		    .entryPoint = "PSMain",
-		    .packageKind = CookedShaderPackageKind::Graphics});
-
-	std::vector<ShaderCookPackageDesc> packages;
-	packages.push_back(std::move(package));
-	return packages;
-}
-
 std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
-	std::string_view requestedPackageId,
+	CookSelectionKind selectionKind,
+	std::string_view requestedId,
 	std::string& outErrorMessage)
 {
 	std::vector<ShaderCookPackageDesc> packages;
 	std::unordered_map<std::string, std::size_t> packageIndices;
-	const std::string requested(requestedPackageId);
-	std::unordered_set<std::string> packageIdsSelectedBySource;
+	const std::string requested(requestedId);
 	std::vector<const ShaderRegistrationDesc*> selectedShaders;
-	if (!requested.empty())
-	{
-		for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
-		{
-			const std::string shaderName(shader.ShaderName);
-			const std::string sourcePath(shader.SourcePath);
-			const bool sourceMatches = sourcePath == requested || sourcePath.ends_with("/" + requested) || requested.ends_with("/" + sourcePath);
-			if (shaderName == requested || sourceMatches)
-			{
-				packageIdsSelectedBySource.insert(GetShaderRegistrationPackageId(shader));
-			}
-		}
-	}
 
 	for (const ShaderRegistrationDesc& shader : GlobalShaderRegistry::GetRegistrations())
 	{
 		const std::string packageId = GetShaderRegistrationPackageId(shader);
 		const std::string shaderName(shader.ShaderName);
-		const std::string sourcePath(shader.SourcePath);
-		const bool sourceMatches = !requested.empty() &&
-		    (sourcePath == requested || sourcePath.ends_with("/" + requested) || requested.ends_with("/" + sourcePath));
-		const bool packageSelectedBySource = packageIdsSelectedBySource.contains(packageId);
-		if (!requested.empty() && packageId != requested && shaderName != requested && !sourceMatches && !packageSelectedBySource)
+		const bool selected =
+		    selectionKind == CookSelectionKind::All ||
+		    (selectionKind == CookSelectionKind::PackageId && packageId == requested) ||
+		    (selectionKind == CookSelectionKind::ShaderId && shaderName == requested);
+		if (!selected)
 		{
 			continue;
 		}
@@ -246,7 +214,8 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 	for (const RayTracingHitGroupRegistrationDesc& hitGroup : GlobalShaderRegistry::GetRayTracingHitGroups())
 	{
 		const std::string packageId(hitGroup.PackageName);
-		const bool wholePackageSelected = requested.empty() || packageId == requested || packageIdsSelectedBySource.contains(packageId);
+		const bool wholePackageSelected = selectionKind == CookSelectionKind::All ||
+		    (selectionKind == CookSelectionKind::PackageId && packageId == requested);
 		if (!wholePackageSelected)
 		{
 			continue;
@@ -272,9 +241,11 @@ std::vector<ShaderCookPackageDesc> ShaderCookPlanner::BuildTypedShaderPackages(
 		}
 	}
 
-	if (!requested.empty() && packages.empty())
+	if (selectionKind != CookSelectionKind::All && packages.empty())
 	{
-		outErrorMessage = "Unknown typed shader package or shader '" + requested + "'";
+		outErrorMessage = selectionKind == CookSelectionKind::PackageId
+		    ? "Unknown typed shader package '" + requested + "'"
+		    : "Unknown registered shader id '" + requested + "'";
 		return {};
 	}
 

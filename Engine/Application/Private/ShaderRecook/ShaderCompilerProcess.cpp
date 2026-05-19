@@ -29,15 +29,15 @@ ShaderCompilerProcessResult ShaderCompilerProcess::RunCook(const ShaderRecookReq
 	}
 
 	std::string arguments = "cook";
-	if (request.Type == ShaderRecookRequestType::ShaderPathOrId)
+	if (request.Type == ShaderRecookRequestType::PackageId || request.Type == ShaderRecookRequestType::ShaderId)
 	{
 		if (request.Target.empty())
 		{
-			result.Output = "Targeted shader recook requires a shader source path, package id, or shader id.";
+			result.Output = "Targeted shader recook requires a package id or shader id.";
 			return result;
 		}
 
-		arguments += " --shader ";
+		arguments += request.Type == ShaderRecookRequestType::PackageId ? " --package " : " --shader-id ";
 		arguments += CommandLine::QuotePath(std::filesystem::path(request.Target));
 	}
 

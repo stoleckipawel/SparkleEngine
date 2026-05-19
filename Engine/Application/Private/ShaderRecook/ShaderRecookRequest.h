@@ -7,7 +7,8 @@ enum class ShaderRecookRequestType : std::uint8_t
 {
 	Global = 0,
 	Changed,
-	ShaderPathOrId,
+	PackageId,
+	ShaderId,
 };
 
 struct ShaderRecookRequest final

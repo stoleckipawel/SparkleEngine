@@ -37,8 +37,8 @@ set(SHADER_COMPILER_TOOL_CMAKE_FILES
 )
 
 # Architecture invariant: runtime modules consume validated cooked shader
-# packages only. They must not include or link tool-only compiler APIs, DXC or
-# Slang backend implementation details, ShaderCompileOptions, or
+# packages and registries only. They must not include or link tool-only compiler
+# backend APIs, DXC, Slang, SPIRV-Reflect, ShaderCompileOptions, or
 # ShaderCompileResult. The Application shader recook bridge may launch the
 # external ShaderCompiler executable, but it must not turn runtime modules into
 # shader compiler hosts.
@@ -81,6 +81,7 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "Tools/ShaderCompiler"
     "ShaderCompiler.exe"
     "SHADER_COMPILER_EXE"
+    " --shader "
     "BuiltinShaderPackageLayouts"
     "BuildPackageBindingLayout"
     "ShaderPackageLayoutCatalog"
@@ -112,6 +113,9 @@ set(FORBIDDEN_SHADER_COMPILER_SOURCE_TOKENS
     "ShaderPackages.ini"
     "inspect-manifest"
     "cook-shaders"
+    "== \"--shader\""
+    "BuildSingleShaderPackage"
+    "singleShaderPath"
     "Application/"
     "Renderer/"
     "GameFramework/"
@@ -251,8 +255,8 @@ endforeach()
 
 if(SHADER_COMPILER_BOUNDARY_VIOLATIONS)
     string(PREPEND SHADER_COMPILER_BOUNDARY_VIOLATIONS
-        "ShaderCompiler boundary validation failed. Runtime/orchestration modules must consume cooked shader packages without hosting compiler backends, and ShaderCompiler must stay free of runtime-private or high-level engine dependencies.\n")
+        "Shader cooking boundary validation failed. Runtime/orchestration modules must consume cooked shader packages and registries without hosting compiler backends, and ShaderCompiler must stay free of runtime-private or high-level engine dependencies.\n")
     message(FATAL_ERROR "${SHADER_COMPILER_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "ShaderCompiler boundary check passed for Engine/RHI, high-level engine modules, and Tools/ShaderCompiler.")
+message(STATUS "Shader cooking boundary check passed for runtime cooked-package consumption, compiler-backend containment, and Tools/ShaderCompiler ownership.")
