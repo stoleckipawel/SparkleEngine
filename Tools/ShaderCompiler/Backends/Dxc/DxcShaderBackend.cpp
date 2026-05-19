@@ -4,6 +4,8 @@
 
 #include "Backend/ShaderBackendFactory.h"
 #include "Compiler/ShaderCompileProfile.h"
+#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderSourcePreprocessor.h"
 #include "Constants/ShaderCompilerConstants.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
@@ -90,19 +92,19 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 		return ShaderCompileResult::Failure("DXC backend is not initialized");
 	}
 
-	Microsoft::WRL::ComPtr<IDxcBlobEncoding> sourceBlob;
-	HRESULT hr = m_utils->LoadFile(options.SourcePath.c_str(), nullptr, sourceBlob.ReleaseAndGetAddressOf());
-	if (FAILED(hr) || !sourceBlob)
+	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
+	ShaderSourcePreprocessResult source = ShaderSourcePreprocessor::Load(sourcePath, options);
+	if (!source.Succeeded())
 	{
-		return ShaderCompileResult::Failure("Failed to load shader source: " + options.SourcePath.string());
+		return ShaderCompileResult::Failure(std::move(source.ErrorMessage));
 	}
 
 	DxcBuffer sourceBuffer{};
-	sourceBuffer.Ptr = sourceBlob->GetBufferPointer();
-	sourceBuffer.Size = sourceBlob->GetBufferSize();
-	sourceBuffer.Encoding = DXC_CP_ACP;
+	sourceBuffer.Ptr = source.SourceText.data();
+	sourceBuffer.Size = source.SourceText.size();
+	sourceBuffer.Encoding = DXC_CP_UTF8;
 
-	std::wstring wSourcePath = Strings::ToWide(options.SourcePath);
+	std::wstring wSourcePath = ShaderCompilerPaths::MakeWidePathArgument(sourcePath);
 	std::wstring wEntryPoint = Strings::ToWide(std::string_view{options.EntryPoint});
 	std::wstring wTargetProfile = Strings::ToWide(std::string_view{ShaderCompileProfile::BuildTargetProfile(options)});
 	std::vector<std::wstring> wIncludeDirs;
@@ -115,7 +117,7 @@ ShaderCompileResult DxcShaderBackend::Compile(const ShaderCompileOptions& option
 	m_utils->CreateDefaultIncludeHandler(includeHandler.ReleaseAndGetAddressOf());
 
 	Microsoft::WRL::ComPtr<IDxcResult> result;
-	hr = m_compiler->Compile(
+	HRESULT hr = m_compiler->Compile(
 	    &sourceBuffer,
 	    args.data(),
 	    static_cast<UINT>(args.size()),
@@ -219,10 +221,10 @@ void DxcShaderBackend::BuildCompileArguments(
 	outArgs.push_back(L"2021");
 
 	wIncludeDirs.clear();
-	wIncludeDirs.push_back(Strings::ToWide(options.IncludeDir));
+	wIncludeDirs.push_back(ShaderCompilerPaths::MakeWideIncludeDirectoryArgument(options.IncludeDir));
 	for (const auto& dir : options.AdditionalIncludeDirs)
 	{
-		wIncludeDirs.push_back(Strings::ToWide(dir));
+		wIncludeDirs.push_back(ShaderCompilerPaths::MakeWideIncludeDirectoryArgument(dir));
 	}
 	for (const auto& dir : wIncludeDirs)
 	{

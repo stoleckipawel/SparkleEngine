@@ -2,6 +2,7 @@
 
 #include "Cooking/Cache/IncludeClosureHasher.h"
 
+#include "Compiler/ShaderIncludeResolver.h"
 #include "Core/Public/Files/FileUtils.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/PathUtils.h"
@@ -10,52 +11,6 @@
 #include <format>
 #include <regex>
 #include <sstream>
-
-std::optional<std::filesystem::path> IncludeClosureHasher::ResolveIncludePath(
-	const std::filesystem::path& includerPath,
-	std::string_view includePath,
-	const ShaderCompileOptions& options)
-{
-	const std::filesystem::path includeRelativePath(includePath);
-
-	std::error_code ec;
-	const std::filesystem::path localCandidate = Paths::Normalize(includerPath.parent_path() / includeRelativePath);
-	if (std::filesystem::exists(localCandidate, ec) && !ec)
-	{
-		return localCandidate;
-	}
-
-	auto checkRoot = [&](const std::filesystem::path& root) -> std::optional<std::filesystem::path>
-	{
-		if (root.empty())
-		{
-			return std::nullopt;
-		}
-
-		ec.clear();
-		const std::filesystem::path candidate = Paths::Normalize(root / includeRelativePath);
-		if (std::filesystem::exists(candidate, ec) && !ec)
-		{
-			return candidate;
-		}
-		return std::nullopt;
-	};
-
-	if (const auto fromPrimary = checkRoot(options.IncludeDir))
-	{
-		return fromPrimary;
-	}
-
-	for (const std::filesystem::path& includeRoot : options.AdditionalIncludeDirs)
-	{
-		if (const auto fromAdditional = checkRoot(includeRoot))
-		{
-			return fromAdditional;
-		}
-	}
-
-	return std::nullopt;
-}
 
 bool IncludeClosureHasher::ResolveValidationInclude(
 	const std::filesystem::path& includerPath,
@@ -68,7 +23,7 @@ bool IncludeClosureHasher::ResolveValidationInclude(
 		return true;
 	}
 
-	if (ResolveIncludePath(includerPath, includePath, options))
+	if (ShaderIncludeResolver::ResolveIncludePath(includerPath, includePath, options))
 	{
 		return true;
 	}
@@ -88,7 +43,7 @@ bool IncludeClosureHasher::VisitFile(
 	std::string& outErrorMessage)
 {
 	const std::filesystem::path normalizedPath = Paths::Normalize(filePath);
-	const std::wstring pathKey = Paths::MakePathKey(normalizedPath);
+	const std::wstring pathKey = ShaderIncludeResolver::MakeResolvedPathKey(normalizedPath);
 	if (!visitedPathKeys.insert(pathKey).second)
 	{
 		return true;
@@ -120,7 +75,7 @@ bool IncludeClosureHasher::VisitFile(
 		}
 
 		const std::string includeSpec = match[1].str();
-		const auto resolvedIncludePath = ResolveIncludePath(normalizedPath, includeSpec, options);
+		const auto resolvedIncludePath = ShaderIncludeResolver::ResolveIncludePath(normalizedPath, includeSpec, options);
 		if (!resolvedIncludePath)
 		{
 			outErrorMessage = std::format(
@@ -183,7 +138,7 @@ IncludeClosureHashResult IncludeClosureHasher::Compute(const ShaderCompileOption
 		result.includeClosureHash = Hash::kFnv64OffsetBasis;
 	}
 
-	const std::wstring sourcePathKey = Paths::MakePathKey(Paths::Normalize(options.SourcePath));
+	const std::wstring sourcePathKey = ShaderIncludeResolver::MakeResolvedPathKey(options.SourcePath);
 	for (const auto& [path, hash] : fileHashes)
 	{
 		if (path == sourcePathKey)

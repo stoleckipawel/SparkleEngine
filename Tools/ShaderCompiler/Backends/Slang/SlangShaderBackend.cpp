@@ -2,12 +2,13 @@
 
 #include "Slang/SlangShaderBackend.h"
 
-#include "Core/Public/Files/FileUtils.h"
+#include "Compiler/ShaderCompileProfile.h"
+#include "Compiler/ShaderCompilerPathUtils.h"
+#include "Compiler/ShaderSourcePreprocessor.h"
 #include "Core/Public/Hash/HashUtils.h"
 #include "Slang/SlangReflectionExtractor.h"
 
 #include <array>
-#include <cstring>
 
 SlangShaderBackend::SlangShaderBackend()
 {
@@ -43,14 +44,14 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 		return ShaderCompileResult::Failure("Slang global session is unavailable");
 	}
 
-	std::string sourceError;
-	const std::string sourceText = LoadSourceText(options.SourcePath, sourceError);
-	if (!sourceError.empty())
+	const std::filesystem::path sourcePath = ShaderCompilerPaths::CanonicalizeForCompiler(options.SourcePath);
+	ShaderSourcePreprocessResult source = ShaderSourcePreprocessor::Load(sourcePath, options);
+	if (!source.Succeeded())
 	{
-		return ShaderCompileResult::Failure(std::move(sourceError));
+		return ShaderCompileResult::Failure(std::move(source.ErrorMessage));
 	}
 
-	const std::string includeDir = options.IncludeDir.generic_string();
+	const std::string includeDir = ShaderCompilerPaths::MakeIncludeDirectoryArgument(options.IncludeDir);
 	std::vector<std::string> includeStorage;
 	includeStorage.reserve(1 + options.AdditionalIncludeDirs.size());
 	if (!includeDir.empty())
@@ -59,7 +60,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 	}
 	for (const std::filesystem::path& includePath : options.AdditionalIncludeDirs)
 	{
-		includeStorage.push_back(includePath.generic_string());
+		includeStorage.push_back(ShaderCompilerPaths::MakeIncludeDirectoryArgument(includePath));
 	}
 
 	std::vector<const char*> includePaths;
@@ -85,7 +86,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 
 	slang::TargetDesc targetDesc{};
 	targetDesc.format = MapTarget(options.Target);
-	targetDesc.profile = m_globalSession->findProfile(GetTargetProfileName(options.Target));
+	targetDesc.profile = m_globalSession->findProfile(ShaderCompileProfile::GetSlangTargetProfileName(options.Target));
 	if (targetDesc.format == SLANG_TARGET_UNKNOWN || targetDesc.profile == SLANG_PROFILE_UNKNOWN)
 	{
 		return ShaderCompileResult::Failure("Slang backend does not support requested shader target");
@@ -116,12 +117,12 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 
 	std::string diagnostics;
 	Slang::ComPtr<slang::IBlob> diagnosticBlob;
-	const std::string moduleName = options.SourcePath.stem().generic_string();
-	const std::string modulePath = options.SourcePath.generic_string();
+	const std::string moduleName = sourcePath.stem().generic_string();
+	const std::string modulePath = sourcePath.generic_string();
 	slang::IModule* module = session->loadModuleFromSourceString(
 	    moduleName.c_str(),
 	    modulePath.c_str(),
-	    sourceText.c_str(),
+	    source.SourceText.c_str(),
 	    diagnosticBlob.writeRef());
 	diagnostics += BlobToString(diagnosticBlob);
 	if (module == nullptr)
@@ -195,7 +196,7 @@ ShaderCompileResult SlangShaderBackend::Compile(const ShaderCompileOptions& opti
 
 	if (options.CaptureDebugArtifacts)
 	{
-		CaptureDebugArtifacts(options, sourceText, diagnostics, result);
+		CaptureDebugArtifacts(options, source.SourceText, diagnostics, result);
 	}
 
 	return result;
@@ -225,32 +226,12 @@ SlangCompileTarget SlangShaderBackend::MapTarget(ShaderTarget target)
 	return SLANG_TARGET_UNKNOWN;
 }
 
-const char* SlangShaderBackend::GetTargetProfileName(ShaderTarget target)
-{
-	if (IsSpirVTarget(target))
-		return "spirv_1_5";
-	return "sm_6_0";
-}
-
 std::string SlangShaderBackend::BlobToString(slang::IBlob* blob)
 {
 	if (blob == nullptr || blob->getBufferPointer() == nullptr || blob->getBufferSize() == 0)
 		return {};
 
 	return std::string(static_cast<const char*>(blob->getBufferPointer()), blob->getBufferSize());
-}
-
-std::string SlangShaderBackend::LoadSourceText(const std::filesystem::path& sourcePath, std::string& outErrorMessage)
-{
-	std::vector<std::uint8_t> bytes;
-	if (!Files::TryReadAllBytes(sourcePath, bytes, outErrorMessage))
-	{
-		outErrorMessage = "Failed to read shader source for Slang backend '" + sourcePath.generic_string() + "' - " + outErrorMessage;
-		return {};
-	}
-
-	outErrorMessage.clear();
-	return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
 std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const ShaderCompileOptions& options)
@@ -262,7 +243,7 @@ std::vector<std::string> SlangShaderBackend::BuildDebugArgumentStrings(const Sha
 	args.push_back("-target");
 	args.push_back(IsSpirVTarget(options.Target) ? "spirv" : "dxil");
 	args.push_back("-profile");
-	args.push_back(GetTargetProfileName(options.Target));
+	args.push_back(ShaderCompileProfile::GetSlangTargetProfileName(options.Target));
 	return args;
 }
 

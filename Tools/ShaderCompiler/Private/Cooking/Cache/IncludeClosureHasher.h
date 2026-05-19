@@ -32,11 +32,6 @@ class IncludeClosureHasher final
   private:
 	typedef std::pair<std::wstring, std::uint64_t> HashPair;
 
-	static std::optional<std::filesystem::path> ResolveIncludePath(
-		const std::filesystem::path& includerPath,
-		std::string_view includePath,
-		const ShaderCompileOptions& options);
-
 	static bool VisitFile(
 		const std::filesystem::path& filePath,
 		const ShaderCompileOptions& options,

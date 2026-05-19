@@ -10,9 +10,9 @@
 
 namespace
 {
-	std::uint32_t GetProfileShaderModelMinor(const ShaderCompileOptions& options) noexcept
+	std::uint32_t GetProfileShaderModelMinor(ShaderTarget target) noexcept
 	{
-		switch (options.Target)
+		switch (target)
 		{
 			case ShaderTarget::DxilSm60:
 				return 0;
@@ -36,6 +36,51 @@ namespace
 	}
 }
 
+const char* ShaderCompileProfile::GetShaderModelProfileName(ShaderTarget target)
+{
+	switch (target)
+	{
+		case ShaderTarget::DxilSm60:
+			return "sm_6_0";
+		case ShaderTarget::DxilSm61:
+			return "sm_6_1";
+		case ShaderTarget::DxilSm62:
+			return "sm_6_2";
+		case ShaderTarget::DxilSm63:
+			return "sm_6_3";
+		case ShaderTarget::DxilSm64:
+			return "sm_6_4";
+		case ShaderTarget::DxilSm65:
+			return "sm_6_5";
+		case ShaderTarget::DxilSm66:
+			return "sm_6_6";
+		case ShaderTarget::DxilSm67:
+			return "sm_6_7";
+		default:
+			return "sm_6_6";
+	}
+}
+
+const char* ShaderCompileProfile::GetSpirVProfileName(ShaderTarget target)
+{
+	switch (target)
+	{
+		case ShaderTarget::SpirV14:
+			return "spirv_1_4";
+		case ShaderTarget::SpirV15:
+			return "spirv_1_5";
+		case ShaderTarget::SpirV16:
+			return "spirv_1_6";
+		default:
+			return "unknown";
+	}
+}
+
+const char* ShaderCompileProfile::GetSlangTargetProfileName(ShaderTarget target)
+{
+	return IsSpirVTarget(target) ? GetSpirVProfileName(target) : GetShaderModelProfileName(target);
+}
+
 std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileOptions& options)
 {
 	std::string profile;
@@ -44,6 +89,6 @@ std::string ShaderCompileProfile::BuildTargetProfile(const ShaderCompileOptions&
 	profile += '_';
 	profile += std::to_string(RenderConfig::ShaderModelMajor);
 	profile += '_';
-	profile += std::to_string(GetProfileShaderModelMinor(options));
+	profile += std::to_string(GetProfileShaderModelMinor(options.Target));
 	return profile;
 }

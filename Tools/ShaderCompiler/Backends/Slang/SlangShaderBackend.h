@@ -5,7 +5,6 @@
 #include <slang-com-ptr.h>
 #include <slang.h>
 
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -30,9 +29,7 @@ class SlangShaderBackend final : public IShaderBackend
   private:
 	static SlangStage MapStage(ShaderStage stage);
 	static SlangCompileTarget MapTarget(ShaderTarget target);
-	static const char* GetTargetProfileName(ShaderTarget target);
 	static std::string BlobToString(slang::IBlob* blob);
-	static std::string LoadSourceText(const std::filesystem::path& sourcePath, std::string& outErrorMessage);
 	static std::vector<std::string> BuildDebugArgumentStrings(const ShaderCompileOptions& options);
 	static void CaptureDebugArtifacts(
 	    const ShaderCompileOptions& options,
