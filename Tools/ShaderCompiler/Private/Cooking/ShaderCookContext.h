@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Cooking/CookedStageBuild.h"
-#include "Cooking/Graph/DependencyGraph.h"
+#include "Cooking/CookNode.h"
 #include "Cooking/ShaderCookTypes.h"
 
 #include <vector>
@@ -15,5 +15,5 @@ struct ShaderCookPipelinePlan final
 {
 	std::vector<ShaderCookPackageDesc> packages;
 	std::vector<ShaderCookPackageContext> packageContexts;
-	DependencyGraph graph;
+	std::vector<CookNode> nodes;
 };

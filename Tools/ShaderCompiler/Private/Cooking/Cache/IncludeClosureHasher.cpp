@@ -110,7 +110,6 @@ IncludeClosureHashResult IncludeClosureHasher::Compute(const ShaderCompileOption
 		result.errorMessage = "Include closure hash computation produced no source inputs";
 		return result;
 	}
-	result.dependencyCount = static_cast<std::uint32_t>(fileHashes.size());
 
 	std::sort(
 		fileHashes.begin(),

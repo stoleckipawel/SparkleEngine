@@ -13,7 +13,6 @@ struct IncludeClosureHashResult final
 {
 	std::uint64_t sourceHash = 0;
 	std::uint64_t includeClosureHash = 0;
-	std::uint32_t dependencyCount = 0;
 	std::string errorMessage;
 
 	bool Succeeded() const noexcept { return errorMessage.empty(); }

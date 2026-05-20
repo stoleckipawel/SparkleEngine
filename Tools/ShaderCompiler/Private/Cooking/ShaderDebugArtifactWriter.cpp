@@ -29,7 +29,7 @@ bool ShaderDebugArtifactWriter::Write(
 		!Files::TryWriteAllText(bundleDirectory / "reflection.json", BuildReflectionJson(compiledStage.reflection), outErrorMessage) ||
 		!Files::TryWriteAllText(
 			bundleDirectory / "parameter-struct-match.json",
-			debugArtifacts.ParameterMatchReportJson.empty() ? BuildParameterMatchJson() : debugArtifacts.ParameterMatchReportJson,
+			debugArtifacts.ParameterMatchReportJson,
 			outErrorMessage) ||
 		!Files::TryWriteAllText(
 			bundleDirectory / "disassembly.txt",
@@ -197,12 +197,4 @@ std::string ShaderDebugArtifactWriter::BuildReflectionJson(const ShaderReflectio
 	stream << "  ]\n";
 	stream << "}\n";
 	return stream.str();
-}
-
-std::string ShaderDebugArtifactWriter::BuildParameterMatchJson()
-{
-	Json::ObjectWriter writer;
-	writer.WriteString("status", "not-run");
-	writer.WriteString("reason", "ShaderParameterStructVerifier lands in Phase 3");
-	return writer.Finish();
 }

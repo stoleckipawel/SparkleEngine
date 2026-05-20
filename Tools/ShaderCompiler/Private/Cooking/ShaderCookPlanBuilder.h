@@ -8,10 +8,10 @@
 class ShaderBackendPool;
 struct ShaderPackageCookSettings;
 
-class ShaderCookGraphBuilder final
+class ShaderCookPlanBuilder final
 {
   public:
-	ShaderCookGraphBuilder() = delete;
+	ShaderCookPlanBuilder() = delete;
 
 	static bool Build(
 	    const ShaderPackageCookSettings& settings,

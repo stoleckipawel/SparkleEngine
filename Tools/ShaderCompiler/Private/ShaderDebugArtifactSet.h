@@ -10,10 +10,4 @@ struct ShaderDebugArtifactSet final
 	std::string Disassembly;
 	std::string ParameterMatchReportJson;
 	std::string PreprocessedSource;
-
-	bool HasAnyContent() const noexcept
-	{
-		return !CompileArguments.empty() || !CompilerOutput.empty() || !Disassembly.empty() || !ParameterMatchReportJson.empty() ||
-		    !PreprocessedSource.empty();
-	}
 };

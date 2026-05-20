@@ -5,8 +5,8 @@
 #include "Backend/ShaderBackendPool.h"
 #include "Cooking/Cache/LocalDiskShaderArtifactStore.h"
 #include "Cooking/CookedShaderPackageEmitter.h"
-#include "Cooking/ShaderCookGraphBuilder.h"
-#include "Cooking/ShaderCookGraphExecutor.h"
+#include "Cooking/ShaderCookPlanBuilder.h"
+#include "Cooking/ShaderCookPlanExecutor.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 
 ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSettings& settings) const
@@ -16,14 +16,14 @@ ShaderPackageCookResult ShaderPackageCooker::CookAll(const ShaderPackageCookSett
 	const bool writeDebugArtifacts = !settings.debugArtifactDirectory.empty();
 	ShaderBackendPool backendPool;
 	ShaderCookPipelinePlan plan;
-	if (!ShaderCookGraphBuilder::Build(settings, writeDebugArtifacts, backendPool, plan, result.errorMessage))
+	if (!ShaderCookPlanBuilder::Build(settings, writeDebugArtifacts, backendPool, plan, result.errorMessage))
 	{
 		return result;
 	}
 
 	LocalDiskShaderArtifactStore artifactStore(result.cacheDirectory);
 	ShaderCookExecutionCounters counters;
-	if (!ShaderCookGraphExecutor::Execute(
+	if (!ShaderCookPlanExecutor::Execute(
 	        settings,
 	        writeDebugArtifacts,
 	        plan,
