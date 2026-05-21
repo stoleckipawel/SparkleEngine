@@ -27,7 +27,7 @@ set(LOGGING_BOUNDARY_CMAKE_FILES
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/Editor/CMakeLists.txt"
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/Platform/CMakeLists.txt"
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/Conversion/AssetConverter/CMakeLists.txt"
-    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/Shader/ShaderCompiler/CMakeLists.txt"
+    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/Shaders/ShaderCompiler/CMakeLists.txt"
 )
 
 set(LOGGING_BOUNDARY_FORBIDDEN_FILES

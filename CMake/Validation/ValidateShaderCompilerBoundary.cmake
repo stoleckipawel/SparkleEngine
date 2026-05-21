@@ -29,11 +29,11 @@ set(SHADER_COMPILER_RUNTIME_CMAKE_FILES
 )
 
 set(SHADER_COMPILER_TOOL_SOURCE_ROOTS
-    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Tools/Shader/ShaderCompiler"
+    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Tools/Shaders/ShaderCompiler"
 )
 
 set(SHADER_COMPILER_TOOL_CMAKE_FILES
-    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Tools/Shader/ShaderCompiler/CMakeLists.txt"
+    "${SHADER_COMPILER_BOUNDARY_SOURCE_DIR}/Tools/Shaders/ShaderCompiler/CMakeLists.txt"
 )
 
 # Architecture invariant: runtime modules consume validated cooked shader
@@ -78,7 +78,7 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
     "slang.h"
     "slang-com-ptr.h"
     "Backends/Slang/"
-    "Tools/Shader/ShaderCompiler"
+    "Tools/Shaders/ShaderCompiler"
     "ShaderCompiler.exe"
     "SHADER_COMPILER_EXE"
     " --shader "
@@ -93,7 +93,7 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS
     "ShaderCompiler"
-    "Tools/Shader/ShaderCompiler"
+    "Tools/Shaders/ShaderCompiler"
     "dxcompiler"
     "spirv_reflect"
     "slang::slang"
@@ -259,4 +259,4 @@ if(SHADER_COMPILER_BOUNDARY_VIOLATIONS)
     message(FATAL_ERROR "${SHADER_COMPILER_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "Shader cooking boundary check passed for runtime cooked-package consumption, compiler-backend containment, and Tools/Shader/ShaderCompiler ownership.")
+message(STATUS "Shader cooking boundary check passed for runtime cooked-package consumption, compiler-backend containment, and Tools/Shaders/ShaderCompiler ownership.")

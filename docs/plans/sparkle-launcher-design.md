@@ -294,8 +294,8 @@ The launcher does not depend on command files for normal operation. The producti
 Recommended first implementation stack:
 
 - Language: C++20.
-- Build: CMake target under `Tools/Workflow/SparkleLauncher`.
-- Workflow library: static library under `Tools/Workflow/SparkleLauncher` or `Tools/WorkspaceOps`.
+- Build: CMake target under `Tools/Launcher/SparkleLauncher`.
+- Workflow library: static library under `Tools/Launcher/SparkleLauncher`.
 - UI: Dear ImGui for the first production tool UI unless a native Windows UI toolkit is explicitly chosen. ImGui fits a compact project manager, keeps the implementation inside the C++ toolchain, and avoids a large Electron-style runtime.
 - Process execution: explicit process runner with stdout/stderr capture, exit code, cancellation, and log teeing.
 - Configuration storage: JSON or INI under `build/Launcher/` for local state; no generated state under source asset folders.
@@ -415,7 +415,7 @@ Goal: create the non-UI workflow layer the launcher will depend on.
 
 Deliverables:
 
-- `Tools/Workflow/SparkleLauncher` folder with a `SparkleLauncherCore` static library target.
+- `Tools/Launcher/SparkleLauncher` folder with a `SparkleLauncherCore` static library target.
 - Repository root detection.
 - Project discovery from `Projects/*/.sparkle-project`.
 - Build profile catalog for the six supported profiles.
@@ -437,7 +437,7 @@ Goal: build the launcher window and project manager experience before wiring all
 
 Deliverables:
 
-- `Tools/Workflow/SparkleLauncher` executable target.
+- `Tools/Launcher/SparkleLauncher` executable target.
 - Project tile grid with discovered projects.
 - Selected project workspace with Setup, Build, Cook, Maintenance, and Launch groups.
 - Profile/configuration selectors.
@@ -662,14 +662,14 @@ Goal: add a non-UI C++ workflow library that owns repository/project/workflow st
 
 References to inspect:
 - Tools/CMakeLists.txt
-- Tools/Cooking/Common/CMakeLists.txt
-- Tools/Shader/ShaderCompiler/CMakeLists.txt
+- Tools/Cooking/CookCommon/CMakeLists.txt
+- Tools/Shaders/ShaderCompiler/CMakeLists.txt
 - Tools/Cooking/TextureCooker/CMakeLists.txt
 - CMake/SparkleBuildProfiles.cmake
 - Projects/*/.sparkle-project markers
 
 Target shape:
-- Add Tools/Workflow/SparkleLauncher/CMakeLists.txt.
+- Add Tools/Launcher/SparkleLauncher/CMakeLists.txt.
 - Add a static library target named SparkleLauncherCore.
 - Add Public/ and Private/ folders following existing tool conventions.
 - Expose narrow public headers for repository location, project discovery, build profiles, launcher state paths, operation model, and process runner abstraction.
@@ -698,7 +698,7 @@ Negative guardrails:
 - Do not run builds.
 
 Source-only validation:
-- Read Tools/CMakeLists.txt and Tools/Workflow/SparkleLauncher/CMakeLists.txt for target wiring.
+- Read Tools/CMakeLists.txt and Tools/Launcher/SparkleLauncher/CMakeLists.txt for target wiring.
 - Search for accidental command-file, shell, or PowerShell workflow references.
 - Search for anonymous or nested namespaces and remove them.
 - Confirm public headers do not expose unnecessary implementation details.
@@ -706,7 +706,7 @@ Source-only validation:
 
 Expected result:
 
-- `Tools/Workflow/SparkleLauncher` exists.
+- `Tools/Launcher/SparkleLauncher` exists.
 - Workflow concepts are testable outside the UI.
 - No UI or script dependency owns core workflow state.
 
@@ -783,7 +783,7 @@ Expected result:
 ### Prompt 5: Create Project-Centric Launcher UI Shell
 
 ```text
-Implement Phase 2 of Sparkle Launcher. Add Tools/Workflow/SparkleLauncher as a C++ executable using the selected UI stack. Build a project-centric shell: project tile grid, selected project workspace, profile/configuration selectors, operation groups for Setup/Build/Cook/Maintenance/Launch, recent activity panel, and job output panel. Wire it to SparkleLauncherCore discovery and dry-run operations only. Do not run builds. Do not implement script wrappers. Keep UI state separate from workflow decisions. Finish with source-only validation of CMake wiring, source layout, and references.
+Implement Phase 2 of Sparkle Launcher. Add Tools/Launcher/SparkleLauncher as a C++ executable using the selected UI stack. Build a project-centric shell: project tile grid, selected project workspace, profile/configuration selectors, operation groups for Setup/Build/Cook/Maintenance/Launch, recent activity panel, and job output panel. Wire it to SparkleLauncherCore discovery and dry-run operations only. Do not run builds. Do not implement script wrappers. Keep UI state separate from workflow decisions. Finish with source-only validation of CMake wiring, source layout, and references.
 ```
 
 Expected result:
@@ -1013,7 +1013,7 @@ Possible `SparkleLauncherCore` modules:
 Implemented MVP navigation hierarchy:
 
 ```text
-Tools/Workflow/SparkleLauncher/
+Tools/Launcher/SparkleLauncher/
   Public/SparkleLauncher/        Public operation contracts and shared launcher-facing models
   Private/Core/                  Repository, project, profile, path, process, tool, and operation primitives
   Private/BuildWorkflow/         Toolchain, build freshness, CMake workflow, and build/workspace operations

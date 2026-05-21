@@ -14,6 +14,29 @@ cmake_path(NORMAL_PATH TOOLS_ARCHITECTURE_SOURCE_DIR)
 set(TOOLS_ARCHITECTURE_ROOT "${TOOLS_ARCHITECTURE_SOURCE_DIR}/Tools")
 set_property(GLOBAL PROPERTY TOOLS_ARCHITECTURE_VIOLATIONS "")
 
+set(REQUIRED_TOOL_DOMAIN_DIRECTORIES
+    "Launcher"
+    "Cooking"
+    "Import"
+    "Conversion"
+    "Shaders"
+)
+
+set(FORBIDDEN_LEGACY_TOOL_DIRECTORIES
+    "SparkleLauncher"
+    "CookCommon"
+    "AssetCooker"
+    "TextureCooker"
+    "SourceImportAdapters"
+    "MeshCooker"
+    "MaterialCooker"
+    "SceneCooker"
+    "AssetConverter"
+    "ShaderCompiler"
+    "Workflow"
+    "Shader"
+)
+
 function(append_tools_architecture_violation violation_text)
     set_property(GLOBAL APPEND PROPERTY TOOLS_ARCHITECTURE_VIOLATIONS "${violation_text}\n")
 endfunction()
@@ -40,20 +63,44 @@ function(check_tools_file_for_tokens file_path)
     endforeach()
 endfunction()
 
+foreach(required_domain IN LISTS REQUIRED_TOOL_DOMAIN_DIRECTORIES)
+    if(NOT IS_DIRECTORY "${TOOLS_ARCHITECTURE_ROOT}/${required_domain}")
+        append_tools_architecture_violation("Tools/${required_domain}: missing required tool domain directory")
+    endif()
+endforeach()
+
+foreach(forbidden_legacy_dir IN LISTS FORBIDDEN_LEGACY_TOOL_DIRECTORIES)
+    if(IS_DIRECTORY "${TOOLS_ARCHITECTURE_ROOT}/${forbidden_legacy_dir}")
+        append_tools_architecture_violation("Tools/${forbidden_legacy_dir}: legacy flat tool directory; move the tool under its owning domain")
+    endif()
+endforeach()
+
 set(ALLOWED_TOOL_PUBLIC_HEADERS
-    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookRequest.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookResult.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/AssetCooker/Public/AssetCookerTypes.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceImportResult.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/SourceImportAdapters/Public/SourceSceneImporter.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/MeshCooker/Public/CookedMeshAssetBuild.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/MeshCooker/Public/MeshCooker.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/MaterialCooker/Public/CookedMaterialAssetBuild.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/MaterialCooker/Public/MaterialCooker.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/CookedSceneBuild.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/SceneCooker/Public/SceneCooker.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/CookCommon/Public/ToolConsole.h"
-    "${TOOLS_ARCHITECTURE_ROOT}/TextureCooker/Public/TextureCookRequestList.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/BuildWorkspaceOperations.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/BuildProfileCatalog.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/CookOperations.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/LaunchOperations.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/LauncherPaths.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/MaintenanceOperations.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/OperationModel.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/ProcessRunner.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/ProjectDiscovery.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/RepositoryLocator.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Launcher/SparkleLauncher/Public/SparkleLauncher/ToolResolver.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/AssetCooker/Public/AssetCookRequest.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/AssetCooker/Public/AssetCookResult.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/AssetCooker/Public/AssetCookerTypes.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Import/SourceImportAdapters/Public/SourceImportDiagnostics.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Import/SourceImportAdapters/Public/SourceImportResult.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Import/SourceImportAdapters/Public/SourceSceneImporter.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/MeshCooker/Public/CookedMeshAssetBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/MeshCooker/Public/MeshCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/MaterialCooker/Public/CookedMaterialAssetBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/MaterialCooker/Public/MaterialCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/SceneCooker/Public/CookedSceneBuild.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/SceneCooker/Public/SceneCooker.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/CookCommon/Public/ToolConsole.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/Cooking/TextureCooker/Public/TextureCookRequestList.h"
 )
 
 foreach(allowed_header IN LISTS ALLOWED_TOOL_PUBLIC_HEADERS)
@@ -63,6 +110,10 @@ endforeach()
 file(GLOB_RECURSE tool_public_headers
     "${TOOLS_ARCHITECTURE_ROOT}/*/Public/*.h"
     "${TOOLS_ARCHITECTURE_ROOT}/*/Public/*.hpp"
+    "${TOOLS_ARCHITECTURE_ROOT}/*/*/Public/*.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/*/*/Public/*.hpp"
+    "${TOOLS_ARCHITECTURE_ROOT}/*/*/Public/*/*.h"
+    "${TOOLS_ARCHITECTURE_ROOT}/*/*/Public/*/*.hpp"
 )
 
 foreach(public_header IN LISTS tool_public_headers)
@@ -112,7 +163,7 @@ set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
     "Tools/Cooking/MaterialCooker/Private"
     "Tools/Cooking/SceneCooker/Private"
     "Tools/Cooking/TextureCooker/Private"
-    "Tools/Shader/ShaderCompiler/Private"
+    "Tools/Shaders/ShaderCompiler/Private"
     "AssetConverter/Private"
     "AssetCooker/Private"
     "SourceImportAdapters/Private"

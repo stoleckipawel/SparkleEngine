@@ -8,8 +8,8 @@
 		set_target_properties(${target_name} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_${game_config_upper} TRUE)
 	endforeach()
 endfunction()
-add_subdirectory(Workflow/SparkleLauncher)
-add_subdirectory(Cooking/Common)
+add_subdirectory(Launcher/SparkleLauncher)
+add_subdirectory(Cooking/CookCommon)
 add_subdirectory(Cooking/AssetCooker)
 add_subdirectory(Cooking/TextureCooker)
 add_subdirectory(Import/SourceImportAdapters)
@@ -17,7 +17,7 @@ add_subdirectory(Cooking/MeshCooker)
 add_subdirectory(Cooking/MaterialCooker)
 add_subdirectory(Cooking/SceneCooker)
 add_subdirectory(Conversion/AssetConverter)
-add_subdirectory(Shader/ShaderCompiler)
+add_subdirectory(Shaders/ShaderCompiler)
 
 add_custom_target(SparkleCookTools
 	DEPENDS
