@@ -1,4 +1,4 @@
-if(NOT DEFINED GEOMETRY_INSTANCING_SOURCE_DIR)
+﻿if(NOT DEFINED GEOMETRY_INSTANCING_SOURCE_DIR)
     set(GEOMETRY_INSTANCING_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -44,14 +44,14 @@ function(forbid_geometry_instancing_text file_path text token description)
     endif()
 endfunction()
 
-set(source_import_result_path "${GEOMETRY_INSTANCING_SOURCE_DIR}/Tools/SourceImportAdapters/Public/SourceImportResult.h")
+set(source_import_result_path "${GEOMETRY_INSTANCING_SOURCE_DIR}/Tools/Import/SourceImportAdapters/Public/SourceImportResult.h")
 read_required_geometry_instancing_file("${source_import_result_path}" source_import_result_text)
 if(source_import_result_text)
     require_geometry_instancing_text("${source_import_result_path}" "${source_import_result_text}" "ImportedMeshInstanceGroupKind" "source import must preserve importer-neutral instance group kinds")
     require_geometry_instancing_text("${source_import_result_path}" "${source_import_result_text}" "std::vector<ImportedMeshInstanceGroup> meshInstanceGroups" "source import must carry imported instance groups")
 endif()
 
-set(source_import_diagnostics_path "${GEOMETRY_INSTANCING_SOURCE_DIR}/Tools/SourceImportAdapters/Public/SourceImportDiagnostics.h")
+set(source_import_diagnostics_path "${GEOMETRY_INSTANCING_SOURCE_DIR}/Tools/Import/SourceImportAdapters/Public/SourceImportDiagnostics.h")
 read_required_geometry_instancing_file("${source_import_diagnostics_path}" source_import_diagnostics_text)
 if(source_import_diagnostics_text)
     require_geometry_instancing_text("${source_import_diagnostics_path}" "${source_import_diagnostics_text}" "SourceGeometryInstancingDiagnostics" "import diagnostics must expose geometry-instancing counters")

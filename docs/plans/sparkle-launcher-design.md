@@ -231,7 +231,7 @@ Avoid for Sparkle Launcher. This path was rejected and should not be reintroduce
 
 ### Backend Option B: Launcher Calls CMake And Tool Executables Directly
 
-The launcher replaces public scripts by directly invoking CMake, MSBuild, `AssetCooker`, `ShaderCompiler`, `TextureCooker`, and maintenance commands.
+The launcher replaces command-file workflow entrypoints by directly invoking CMake, MSBuild, `AssetCooker`, `ShaderCompiler`, `TextureCooker`, and maintenance commands.
 
 Pros:
 
@@ -241,7 +241,7 @@ Pros:
 
 Cons:
 
-- Some script-owned behavior must be ported first: toolchain validation, generator selection, freshness checks, clean scopes, and logging bootstrap.
+- Some command-file-owned behavior had to be ported first: toolchain validation, generator selection, freshness checks, clean scopes, and logging bootstrap.
 - Still process-oriented rather than library-oriented.
 
 This is the minimum acceptable near-term production path. It removes command-file dependency, but it should still be treated as a step toward a shared C++ workflow library.
@@ -255,7 +255,7 @@ Pros:
 - Best long-term architecture.
 - Avoids duplicating workflow logic between GUI and CLI.
 - Enables structured progress events, diagnostics, dry runs, cancellation, and tests.
-- Makes script removal realistic instead of cosmetic.
+- Makes command-file removal realistic instead of cosmetic.
 
 Cons:
 
@@ -294,8 +294,8 @@ The launcher does not depend on command files for normal operation. The producti
 Recommended first implementation stack:
 
 - Language: C++20.
-- Build: CMake target under `Tools/SparkleLauncher`.
-- Workflow library: static library under `Tools/SparkleLauncher` or `Tools/WorkspaceOps`.
+- Build: CMake target under `Tools/Workflow/SparkleLauncher`.
+- Workflow library: static library under `Tools/Workflow/SparkleLauncher` or `Tools/WorkspaceOps`.
 - UI: Dear ImGui for the first production tool UI unless a native Windows UI toolkit is explicitly chosen. ImGui fits a compact project manager, keeps the implementation inside the C++ toolchain, and avoids a large Electron-style runtime.
 - Process execution: explicit process runner with stdout/stderr capture, exit code, cancellation, and log teeing.
 - Configuration storage: JSON or INI under `build/Launcher/` for local state; no generated state under source asset folders.
@@ -415,7 +415,7 @@ Goal: create the non-UI workflow layer the launcher will depend on.
 
 Deliverables:
 
-- `Tools/SparkleLauncher` folder with a `SparkleLauncherCore` static library target.
+- `Tools/Workflow/SparkleLauncher` folder with a `SparkleLauncherCore` static library target.
 - Repository root detection.
 - Project discovery from `Projects/*/.sparkle-project`.
 - Build profile catalog for the six supported profiles.
@@ -429,7 +429,7 @@ Exit criteria:
 - A tiny test or console harness can list projects and profiles.
 - A dummy operation can run a process, capture output, and report success/failure.
 - No UI code owns workflow decisions.
-- No foundational operation shells out through public scripts.
+- No foundational operation shells out through command-file wrappers.
 
 ### Phase 2: Project-Centric UI Shell
 
@@ -437,7 +437,7 @@ Goal: build the launcher window and project manager experience before wiring all
 
 Deliverables:
 
-- `Tools/SparkleLauncher` executable target.
+- `Tools/Workflow/SparkleLauncher` executable target.
 - Project tile grid with discovered projects.
 - Selected project workspace with Setup, Build, Cook, Maintenance, and Launch groups.
 - Profile/configuration selectors.
@@ -467,7 +467,7 @@ Deliverables:
 
 Exit criteria:
 
-- A user can open the launcher, generate build files, and compile `ShowcaseEditor` without calling a public script.
+- A user can open the launcher, generate build files, and compile `ShowcaseEditor` without calling a command-file workflow.
 - Build logs are visible in the launcher and written under the existing structured log layout or a launcher-owned equivalent.
 - Setup and build launcher paths invoke native operations directly.
 
@@ -662,14 +662,14 @@ Goal: add a non-UI C++ workflow library that owns repository/project/workflow st
 
 References to inspect:
 - Tools/CMakeLists.txt
-- Tools/CookCommon/CMakeLists.txt
-- Tools/ShaderCompiler/CMakeLists.txt
-- Tools/TextureCooker/CMakeLists.txt
+- Tools/Cooking/Common/CMakeLists.txt
+- Tools/Shader/ShaderCompiler/CMakeLists.txt
+- Tools/Cooking/TextureCooker/CMakeLists.txt
 - CMake/SparkleBuildProfiles.cmake
 - Projects/*/.sparkle-project markers
 
 Target shape:
-- Add Tools/SparkleLauncher/CMakeLists.txt.
+- Add Tools/Workflow/SparkleLauncher/CMakeLists.txt.
 - Add a static library target named SparkleLauncherCore.
 - Add Public/ and Private/ folders following existing tool conventions.
 - Expose narrow public headers for repository location, project discovery, build profiles, launcher state paths, operation model, and process runner abstraction.
@@ -691,14 +691,14 @@ Positive guardrails:
 - Every public header and helper must support a current Phase 1 exit criterion or a named Prompt 2 consumer.
 
 Negative guardrails:
-- Do not call public scripts.
+- Do not call command-file wrappers.
 - Do not add backward-compatibility wrappers.
 - Do not make SparkleLauncherCore depend on SparkleLauncher.
 - Do not add anonymous namespaces, nested namespaces, placeholder interfaces, or unused extension points.
 - Do not run builds.
 
 Source-only validation:
-- Read Tools/CMakeLists.txt and Tools/SparkleLauncher/CMakeLists.txt for target wiring.
+- Read Tools/CMakeLists.txt and Tools/Workflow/SparkleLauncher/CMakeLists.txt for target wiring.
 - Search for accidental command-file, shell, or PowerShell workflow references.
 - Search for anonymous or nested namespaces and remove them.
 - Confirm public headers do not expose unnecessary implementation details.
@@ -706,7 +706,7 @@ Source-only validation:
 
 Expected result:
 
-- `Tools/SparkleLauncher` exists.
+- `Tools/Workflow/SparkleLauncher` exists.
 - Workflow concepts are testable outside the UI.
 - No UI or script dependency owns core workflow state.
 
@@ -753,7 +753,7 @@ Source-only validation:
 Expected result:
 
 - SparkleLauncherCore can execute tools directly.
-- Public scripts are not part of the execution backend.
+- Command-file wrappers are not part of the execution backend.
 - Process execution is structured enough for UI progress and logs.
 
 ### Prompt 3: Implement Native Toolchain And Build Discovery
@@ -771,7 +771,7 @@ Expected result:
 ### Prompt 4: Implement Native Build Operations
 
 ```text
-Implement native SparkleLauncherCore operations for Setup Workspace, Generate Solution, Compile Editor, Compile Runtime/Project, and Build Cook Tools. These operations should build operation graphs and process requests for CMake/MSBuild, but this phase must not execute real builds. Add dry-run output that shows exact executable, arguments, working directory, generated outputs, and log path. Integrate operation status, failure classification placeholders, and activity records. Do not call public scripts. Remove any temporary compatibility code that duplicates these operations. Finish with source-only validation of operation graph wiring and dry-run output paths.
+Implement native SparkleLauncherCore operations for Setup Workspace, Generate Solution, Compile Editor, Compile Runtime/Project, and Build Cook Tools. These operations should build operation graphs and process requests for CMake/MSBuild, but this phase must not execute real builds. Add dry-run output that shows exact executable, arguments, working directory, generated outputs, and log path. Integrate operation status, failure classification placeholders, and activity records. Do not call command-file wrappers. Remove any temporary compatibility code that duplicates these operations. Finish with source-only validation of operation graph wiring and dry-run output paths.
 ```
 
 Expected result:
@@ -783,7 +783,7 @@ Expected result:
 ### Prompt 5: Create Project-Centric Launcher UI Shell
 
 ```text
-Implement Phase 2 of Sparkle Launcher. Add Tools/SparkleLauncher as a C++ executable using the selected UI stack. Build a project-centric shell: project tile grid, selected project workspace, profile/configuration selectors, operation groups for Setup/Build/Cook/Maintenance/Launch, recent activity panel, and job output panel. Wire it to SparkleLauncherCore discovery and dry-run operations only. Do not run builds. Do not implement script wrappers. Keep UI state separate from workflow decisions. Finish with source-only validation of CMake wiring, source layout, and references.
+Implement Phase 2 of Sparkle Launcher. Add Tools/Workflow/SparkleLauncher as a C++ executable using the selected UI stack. Build a project-centric shell: project tile grid, selected project workspace, profile/configuration selectors, operation groups for Setup/Build/Cook/Maintenance/Launch, recent activity panel, and job output panel. Wire it to SparkleLauncherCore discovery and dry-run operations only. Do not run builds. Do not implement script wrappers. Keep UI state separate from workflow decisions. Finish with source-only validation of CMake wiring, source layout, and references.
 ```
 
 Expected result:
@@ -819,7 +819,7 @@ Expected result:
 ### Prompt 8: Add `Sparkle.exe` CLI For Automation
 
 ```text
-Implement a small Sparkle.exe CLI over SparkleLauncherCore for automation parity. It should expose the same operation ids used by the launcher, support dry-run, project/configuration selection, and structured exit codes. Keep it thin: all workflow logic stays in SparkleLauncherCore. Do not run builds. Do not preserve legacy command names unless they are clean operation aliases. Update docs to point automation at Sparkle.exe rather than public scripts. Finish with source-only validation of command parsing, operation dispatch, and documentation references.
+Implement a small Sparkle.exe CLI over SparkleLauncherCore for automation parity. It should expose the same operation ids used by the launcher, support dry-run, project/configuration selection, and structured exit codes. Keep it thin: all workflow logic stays in SparkleLauncherCore. Do not run builds. Do not preserve legacy command names unless they are clean operation aliases. Update docs to point automation at Sparkle.exe rather than removed command-file workflows. Finish with source-only validation of command parsing, operation dispatch, and documentation references.
 ```
 
 Expected result:
@@ -836,7 +836,7 @@ Implement the command-surface cutover cleanup. Remove command-file workflows tha
 
 Expected result:
 
-- Normal workflow docs no longer point at public scripts.
+- Normal workflow docs no longer point at command-file workflows.
 - Replaced script code is deleted, not left as parallel legacy behavior.
 - Any retained script has a clear bootstrap/handoff reason and removal condition.
 
@@ -864,7 +864,7 @@ Use this checklist at the end of Phases 0 through 9:
 - Confirm every new file, public type, helper, target, and operation has a current-phase purpose or named next-phase consumer.
 - Check generated paths remain under `build/`, `logs/`, or user-local app data.
 - Check destructive operations expose exact scope before execution.
-- Check docs do not instruct normal users to run public scripts.
+- Check docs do not instruct normal users to run command-file workflows.
 - Collect final-phase build/test commands but do not run them until Prompt 10.
 
 ## UX Details
@@ -875,6 +875,7 @@ Main actions should be grouped by intent:
 - Build: Compile Editor, Compile Project Runtime, Build Selected Targets.
 - Cook: Cook Shaders, Build Textures, Build Meshes, Cook All Assets.
 - Quality: Run Clang Format, Run Validation Gates.
+- Smoke Tests: Run Editor RHI Smoke Test, Run Runtime RHI Smoke Test.
 - Launch: Run Editor, Run Runtime.
 
 Every action button should show readiness:
@@ -942,7 +943,7 @@ These are the main alignment decisions before implementation:
 | Choice | Option 1 | Option 2 | Recommendation |
 | --- | --- | --- | --- |
 | UI stack | Native Windows UI | Dear ImGui tool UI | Dear ImGui first unless native Windows UI is explicitly chosen |
-| MVP execution | Wrap scripts temporarily | Direct CMake/tool invocation | Direct invocation; avoid script wrapping except unavoidable bootstrap/handoff |
+| MVP execution | Compatibility command files | Direct CMake/tool invocation | Direct invocation through launcher-owned operations |
 | Backend shape | Launcher-only logic | Shared `SparkleLauncherCore` library | Shared library |
 | Fresh clone story | Temporary setup script | Prebuilt launcher release | Prebuilt launcher release long term |
 | Automation | GUI only | Shared CLI plus GUI | Shared CLI plus GUI |
@@ -962,7 +963,7 @@ The first shippable MVP should cover Phases 1 through 3 plus a minimal project-c
 7. Show active job output and latest log path.
 8. Record recent activity.
 9. Provide dry-run previews for cook, clean, and format operations even if they are not executable yet.
-10. Execute setup/build operations through C++ workflow code, not public scripts.
+10. Execute setup/build operations through C++ workflow code, not command-file wrappers.
 
 The second MVP should add Phase 4 cook operations:
 
@@ -1012,7 +1013,7 @@ Possible `SparkleLauncherCore` modules:
 Implemented MVP navigation hierarchy:
 
 ```text
-Tools/SparkleLauncher/
+Tools/Workflow/SparkleLauncher/
   Public/SparkleLauncher/        Public operation contracts and shared launcher-facing models
   Private/Core/                  Repository, project, profile, path, process, tool, and operation primitives
   Private/BuildWorkflow/         Toolchain, build freshness, CMake workflow, and build/workspace operations
@@ -1044,7 +1045,7 @@ Deferred beyond the current scope:
 
 - A full Dear ImGui or native-window front end with clickable project tiles, persistent controls, rich log navigation, and polished visual states.
 - Prebuilt launcher or installer distribution for script-free fresh-clone onboarding.
-- Removal or wrapper reduction of retained public scripts after Prompt 10 executable validation and CI migration decisions.
+- Packaged launcher/bootstrap polish after final executable validation and CI migration decisions.
 - Rich failure classification, latest-log opening as a first-class UI action, workflow presets, support bundles, update/version checks, and production polish.
 
 ## Acceptance Criteria
@@ -1063,10 +1064,11 @@ The launcher is successful when a normal contributor can:
 
 The architecture is successful when:
 
-- Public scripts can be replaced by launcher/CLI operations without losing behavior.
+- Removed command-file workflows have launcher/CLI replacements without losing behavior.
 - Workflow logic is testable outside the GUI.
 - Every operation has typed inputs, explicit outputs, structured status, and logs.
 - Destructive actions are scoped and confirmable.
 - Fresh clone bootstrap has a clear answer.
 - Any remaining scripts are exceptional bootstrap/handoff utilities, not the normal engine workflow surface.
+
 

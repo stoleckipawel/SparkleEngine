@@ -484,6 +484,7 @@ namespace SparkleLauncher
 		RenderOperationGroup(state, "Build", output);
 		RenderOperationGroup(state, "Cook", output);
 		RenderOperationGroup(state, "Maintenance", output);
+		RenderOperationGroup(state, "Smoke Tests", output);
 		RenderOperationGroup(state, "Launch", output);
 
 		output << "\nRecent Activity\n";

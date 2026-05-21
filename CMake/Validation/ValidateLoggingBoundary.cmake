@@ -1,4 +1,4 @@
-if(NOT DEFINED LOGGING_BOUNDARY_SOURCE_DIR)
+﻿if(NOT DEFINED LOGGING_BOUNDARY_SOURCE_DIR)
     set(LOGGING_BOUNDARY_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -26,8 +26,8 @@ set(LOGGING_BOUNDARY_CMAKE_FILES
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/RHI/CMakeLists.txt"
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/Editor/CMakeLists.txt"
     "${LOGGING_BOUNDARY_SOURCE_DIR}/Engine/Platform/CMakeLists.txt"
-    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/AssetConverter/CMakeLists.txt"
-    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/ShaderCompiler/CMakeLists.txt"
+    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/Conversion/AssetConverter/CMakeLists.txt"
+    "${LOGGING_BOUNDARY_SOURCE_DIR}/Tools/Shader/ShaderCompiler/CMakeLists.txt"
 )
 
 set(LOGGING_BOUNDARY_FORBIDDEN_FILES

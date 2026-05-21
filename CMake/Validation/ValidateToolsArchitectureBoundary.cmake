@@ -105,14 +105,14 @@ file(GLOB_RECURSE all_tool_source_files
 )
 
 set(FORBIDDEN_CROSS_TOOL_PRIVATE_INCLUDE_TOKENS
-    "Tools/AssetConverter/Private"
-    "Tools/AssetCooker/Private"
-    "Tools/SourceImportAdapters/Private"
-    "Tools/MeshCooker/Private"
-    "Tools/MaterialCooker/Private"
-    "Tools/SceneCooker/Private"
-    "Tools/TextureCooker/Private"
-    "Tools/ShaderCompiler/Private"
+    "Tools/Conversion/AssetConverter/Private"
+    "Tools/Cooking/AssetCooker/Private"
+    "Tools/Import/SourceImportAdapters/Private"
+    "Tools/Cooking/MeshCooker/Private"
+    "Tools/Cooking/MaterialCooker/Private"
+    "Tools/Cooking/SceneCooker/Private"
+    "Tools/Cooking/TextureCooker/Private"
+    "Tools/Shader/ShaderCompiler/Private"
     "AssetConverter/Private"
     "AssetCooker/Private"
     "SourceImportAdapters/Private"

@@ -1,4 +1,4 @@
-if(NOT DEFINED RUNTIME_BOUNDARY_SOURCE_DIR)
+﻿if(NOT DEFINED RUNTIME_BOUNDARY_SOURCE_DIR)
     set(RUNTIME_BOUNDARY_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -36,7 +36,7 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS
     "SparkleAssetAuthoring"
-    "Tools/AssetConverter"
+    "Tools/Conversion/AssetConverter"
     "AssetConverter/Public"
     "AssetConverter/Private"
     "assimp"

@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # FetchDependencies.cmake - Unified Third-Party Dependency Management
 # ============================================================================
 #
@@ -644,7 +644,7 @@ sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
 # SPIRV-Reflect - SPIR-V reflection (Khronos)
 # https://github.com/KhronosGroup/SPIRV-Reflect
 #
-# Used by Tools/ShaderCompiler/Backends/Dxc to extract reflection from the
+# Used by Tools/Shader/ShaderCompiler/Backends/Dxc to extract reflection from the
 # SPIR-V blobs DXC emits in `-spirv` mode. Single .c + headers; we build it
 # as a small static library so its symbols stay out of every translation
 # unit that includes the header.

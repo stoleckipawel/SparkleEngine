@@ -1,4 +1,4 @@
-# glTF Feature Warning Roadmap
+﻿# glTF Feature Warning Roadmap
 
 This plan turns the current glTF importer warnings into staged feature work. The order is intentionally easiest to hardest: first make importer capabilities explicit, then wire features that already have engine runtime concepts, then build the animation and skinning foundation that needs new cooked formats and renderer support.
 
@@ -6,10 +6,10 @@ This plan turns the current glTF importer warnings into staged feature work. The
 
 | Warning | Current owner | Missing feature | First functional owner |
 | --- | --- | --- | --- |
-| `animations are present and will be ignored` | `Tools/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Animation clip import, cooking, runtime playback | GameFramework animation system, with Renderer consuming evaluated skinning data |
-| `nodes contain cameras and they will be ignored` | `Tools/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Camera metadata import and level camera handoff | SourceImportAdapters -> SceneCooker -> GameFramework level camera |
-| `nodes contain lights and they will be ignored` | `Tools/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | glTF light import and scene/level lighting handoff | SourceImportAdapters -> SceneCooker -> GameFramework lighting |
-| `skinned nodes are present and will be imported as static data only` | `Tools/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` and `GltfGeometryImporter.cpp` | Skeletons, joint weights, inverse bind matrices, animation pose evaluation, skinning path | SourceImportAdapters -> cooked skeleton/mesh data -> GameFramework animation -> Renderer skinning |
+| `animations are present and will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Animation clip import, cooking, runtime playback | GameFramework animation system, with Renderer consuming evaluated skinning data |
+| `nodes contain cameras and they will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Camera metadata import and level camera handoff | SourceImportAdapters -> SceneCooker -> GameFramework level camera |
+| `nodes contain lights and they will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | glTF light import and scene/level lighting handoff | SourceImportAdapters -> SceneCooker -> GameFramework lighting |
+| `skinned nodes are present and will be imported as static data only` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` and `GltfGeometryImporter.cpp` | Skeletons, joint weights, inverse bind matrices, animation pose evaluation, skinning path | SourceImportAdapters -> cooked skeleton/mesh data -> GameFramework animation -> Renderer skinning |
 
 Related warnings to keep in the same backlog, but not let block the four warnings above: material variants, morph targets, weighted nodes, and mesh GPU instancing.
 
@@ -34,7 +34,7 @@ Implementation prompt:
 ```text
 Add structured glTF feature diagnostics for cameras, lights, animations, skins, morph targets, material variants, and mesh instancing.
 
-Keep the extraction in Tools/SourceImportAdapters. Extend SourceImportResult with a compact diagnostics/capability summary that records feature counts and whether each feature is imported, partially imported, or unsupported. GltfSceneReader should populate this summary while preserving current log messages. AssetCooker and AssetConverter should print the summary after import. Do not change runtime behavior yet.
+Keep the extraction in Tools/Import/SourceImportAdapters. Extend SourceImportResult with a compact diagnostics/capability summary that records feature counts and whether each feature is imported, partially imported, or unsupported. GltfSceneReader should populate this summary while preserving current log messages. AssetCooker and AssetConverter should print the summary after import. Do not change runtime behavior yet.
 ```
 
 Acceptance criteria:
@@ -344,3 +344,4 @@ Implement Stage 0 from docs/plans/gltf-feature-warning-roadmap.md.
 
 Add structured glTF feature diagnostics to SourceImportResult and populate them from GltfSceneReader/GltfGeometryImporter. Print a concise summary from AssetCooker and AssetConverter. Preserve existing warnings. Do not change runtime behavior. Acceptance criteria are the Stage 0 checklist in the document, and validation is the DevelopmentEditor AssetCooker/AssetConverter build plus a Showcase force recook log showing the summary.
 ```
+

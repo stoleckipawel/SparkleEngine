@@ -1,4 +1,4 @@
-if(NOT DEFINED TEXTURE_COOKER_BOUNDARY_SOURCE_DIR)
+﻿if(NOT DEFINED TEXTURE_COOKER_BOUNDARY_SOURCE_DIR)
     set(TEXTURE_COOKER_BOUNDARY_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../..")
 endif()
 
@@ -26,21 +26,21 @@ set(TEXTURE_COOKER_RUNTIME_CMAKE_FILES
 )
 
 set(TEXTURE_COOKER_ASSET_CONVERTER_SOURCE_ROOTS
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/AssetConverter"
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/MaterialCooker"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Conversion/AssetConverter"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Cooking/MaterialCooker"
 )
 
 set(TEXTURE_COOKER_ASSET_CONVERTER_CMAKE_FILES
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/AssetConverter/CMakeLists.txt"
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/MaterialCooker/CMakeLists.txt"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Conversion/AssetConverter/CMakeLists.txt"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Cooking/MaterialCooker/CMakeLists.txt"
 )
 
 set(TEXTURE_COOKER_TOOL_SOURCE_ROOTS
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/TextureCooker"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Cooking/TextureCooker"
 )
 
 set(TEXTURE_COOKER_TOOL_CMAKE_FILES
-    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/TextureCooker/CMakeLists.txt"
+    "${TEXTURE_COOKER_BOUNDARY_SOURCE_DIR}/Tools/Cooking/TextureCooker/CMakeLists.txt"
 )
 
 set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
@@ -53,7 +53,7 @@ set(FORBIDDEN_RUNTIME_SOURCE_TOKENS
 )
 
 set(FORBIDDEN_RUNTIME_CMAKE_TOKENS
-    "Tools/TextureCooker"
+    "Tools/Cooking/TextureCooker"
     "TextureCookShared"
     "TextureCooker"
     "ktx"
@@ -189,4 +189,5 @@ if(TEXTURE_COOKER_BOUNDARY_VIOLATIONS)
     message(FATAL_ERROR "${TEXTURE_COOKER_BOUNDARY_VIOLATIONS}")
 endif()
 
-message(STATUS "TextureCooker boundary check passed for runtime modules, material request planning, and Tools/TextureCooker.")
+message(STATUS "TextureCooker boundary check passed for runtime modules, material request planning, and Tools/Cooking/TextureCooker.")
+
