@@ -9,6 +9,7 @@
 	endforeach()
 endfunction()
 
+add_subdirectory(SparkleLauncher)
 add_subdirectory(CookCommon)
 add_subdirectory(AssetCooker)
 add_subdirectory(TextureCooker)

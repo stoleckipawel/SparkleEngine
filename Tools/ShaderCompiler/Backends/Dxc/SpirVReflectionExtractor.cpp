@@ -7,7 +7,9 @@
 #include <vector>
 
 CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
-    SpvReflectDescriptorType type, SpvDim dim)
+	SpvReflectDescriptorType type,
+	SpvDim dim,
+	SpvReflectDecorationFlags decorationFlags)
 {
 	switch (type)
 	{
@@ -29,7 +31,9 @@ CookedShaderResourceKind SpirVReflectionExtractor::MapDescriptorType(
 			return CookedShaderResourceKind::ConstantBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
 		case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-			return CookedShaderResourceKind::RWStructuredBuffer;
+			return (decorationFlags & SPV_REFLECT_DECORATION_NON_WRITABLE) != 0u
+			           ? CookedShaderResourceKind::StructuredBuffer
+			           : CookedShaderResourceKind::RWStructuredBuffer;
 		case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
 			return CookedShaderResourceKind::AccelerationStructure;
 		default:
@@ -287,7 +291,7 @@ bool SpirVReflectionExtractor::Extract(
 		                   ? b->name
 		                   : (b->type_description && b->type_description->type_name ? b->type_description->type_name
 		                                                                            : "");
-		binding.Kind = MapDescriptorType(b->descriptor_type, b->image.dim);
+		binding.Kind = MapDescriptorType(b->descriptor_type, b->image.dim, b->decoration_flags);
 		binding.Dimension = MapImageDim(b->image.dim, b->image.arrayed, b->image.ms);
 		switch (binding.Kind)
 		{

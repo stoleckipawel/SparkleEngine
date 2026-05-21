@@ -65,7 +65,8 @@ void CookShadersCommand::PrintHelp(std::ostream& output)
 	       << "Cook options:\n"
 	       << "  --no-cache                  Disable the local compile cache.\n"
 	       << "  --cache-dir <path>          Override the local compile cache directory.\n"
-	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16.\n"
+	       << "  --target <name>             Add a codegen target such as DxilSm66 or SpirV16. "
+	          "Defaults to DxilSm66 and SpirV16.\n"
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
 	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
 	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n";

@@ -12,7 +12,7 @@
 struct ShaderPackageCookSettings final
 {
 	bool useCache = true;
-	std::vector<ShaderTarget> targets = {kDefaultShaderTarget};
+	std::vector<ShaderTarget> targets = {ShaderTarget::DxilSm66, ShaderTarget::SpirV16};
 	std::string backendName = "auto";
 	std::string packageId;
 	std::string shaderId;
