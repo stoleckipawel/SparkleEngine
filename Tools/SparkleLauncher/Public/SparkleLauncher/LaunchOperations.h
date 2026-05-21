@@ -15,7 +15,9 @@ namespace SparkleLauncher
 	enum class LaunchOperationKind
 	{
 		RunEditor,
-		RunRuntime
+		RunRuntime,
+		RunEditorSmokeTest,
+		RunRuntimeSmokeTest
 	};
 
 	struct LaunchOperationDefinition
@@ -33,6 +35,10 @@ namespace SparkleLauncher
 		std::string ProjectId = "Showcase";
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		std::string SmokeBackend;
+		std::string SmokeFrameLimit;
+		bool SmokeTrace = false;
+		bool SmokeSkipLevelSwitching = false;
 	};
 
 	struct LaunchOperationStep
@@ -53,6 +59,7 @@ namespace SparkleLauncher
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;
 		std::filesystem::path WorkingDirectory;
+		std::vector<EnvironmentOverride> Environment;
 		std::vector<LaunchOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
 		std::vector<std::string> ReadinessMessages;

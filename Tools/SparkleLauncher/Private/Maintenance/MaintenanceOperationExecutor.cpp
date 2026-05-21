@@ -128,6 +128,17 @@ namespace SparkleLauncher
 		return step.DisplayName + " failed. Log: " + step.Request.LogPath.string();
 	}
 
+	static std::string MakeCleanFailureSummary(const MaintenanceOperationProcessStep& step, const OperationRecord& operation, const std::string& errorMessage)
+	{
+		std::string summary = errorMessage.empty() ? "Clean blocked by locked files or permissions." : errorMessage;
+		summary += " Scope: " + step.DestructivePath.string();
+		if (!operation.LogPath.empty())
+		{
+			summary += " Latest log: " + operation.LogPath.string();
+		}
+		return summary;
+	}
+
 	OperationRecord RunMaintenanceOperationPlan(MaintenanceOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback)
 	{
 		OperationRecord operation = plan.Operation;
@@ -147,7 +158,7 @@ namespace SparkleLauncher
 				std::string errorMessage;
 				if (!RunCleanStep(step, errorMessage))
 				{
-					operation.FailureSummary = errorMessage;
+					operation.FailureSummary = MakeCleanFailureSummary(step, operation, errorMessage);
 					MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 					return operation;
 				}

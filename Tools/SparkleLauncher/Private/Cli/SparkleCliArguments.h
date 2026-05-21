@@ -18,7 +18,10 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::vector<std::string> SelectedTargets;
 		std::vector<std::string> ShaderPackages;
+		std::vector<std::string> ValidationGroups;
 		std::vector<std::string> ValidationTargets;
+		std::string SmokeBackend;
+		std::string SmokeFrameLimit;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
@@ -26,7 +29,10 @@ namespace SparkleLauncher
 		bool ForceConfigure = false;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;
+		bool SmokeTrace = false;
+		bool SmokeSkipLevelSwitching = false;
 		bool ListOperations = false;
+		bool ListValidationTargets = false;
 		bool ShowHelp = false;
 	};
 }

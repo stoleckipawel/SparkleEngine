@@ -1,18 +1,18 @@
-﻿# Sparkle Launcher Operation Inventory
+# Sparkle Launcher Operation Inventory
 
 ## Purpose
 
-This inventory tracks the migration contract for replacing Sparkle's public script workflow surface with native C++ operations owned by `SparkleLauncherCore`, surfaced by `SparkleLauncher`, and exposed through `Sparkle.exe` for automation.
+This inventory records the native Sparkle Launcher operation surface after the script migration. SparkleEngine now relies on `SparkleLauncherCore`, `SparkleLauncher`, and `Sparkle.exe` for setup, build, cook, format, validation, clean, launch, and smoke-test workflows.
 
-Existing scripts are behavioral references only. They are not the desired implementation backend for launcher operations.
+The old script workflow surface has been removed from the repository. Do not add compatibility wrappers or fallback command files for normal engine work.
 
-## Migration Rules
+## Native Workflow Rules
 
-- Normal setup, build, cook, format, clean, validation, and launch workflows must be native `SparkleLauncherCore` operations.
-- `SparkleLauncher` may call `SparkleLauncherCore`; it must not shell to public scripts for normal work.
-- `Sparkle.exe` may expose automation-friendly operation ids; it must remain a thin dispatcher over `SparkleLauncherCore`.
-- Public `.bat` files should be removed once native launcher and CLI parity exists.
-- Retained scripts are allowed only for unavoidable fresh-clone bootstrap, narrow OS shell handoff, or temporary wrappers over `Sparkle.exe` during cutover.
+- Normal setup, build, cook, format, clean, validation, launch, and smoke-test workflows are native `SparkleLauncherCore` operations.
+- `SparkleLauncher` may call `SparkleLauncherCore`; it must not shell to command-file wrappers for normal work.
+- `Sparkle.exe` exposes automation-friendly operation ids and remains a thin dispatcher over `SparkleLauncherCore`.
+- CI should use `Sparkle.exe`, direct CMake targets, or direct C++ tool executables.
+- Fresh-clone onboarding should use a built launcher binary, packaged launcher, or direct CMake command until a packaged launcher is available.
 
 ## Operation Id Catalog
 
@@ -27,6 +27,8 @@ Existing scripts are behavioral references only. They are not the desired implem
 | `project.build.runtime` | `SparkleLauncherCore` | Build selected project runtime target. |
 | `project.launch.editor` | `SparkleLauncherCore` | Launch selected project editor executable from the project directory. |
 | `project.launch.runtime` | `SparkleLauncherCore` | Launch selected project runtime executable from the project directory. |
+| `smoke.rhi.editor` | `SparkleLauncherCore` | Launch selected project editor with opt-in RHI smoke validation enabled. |
+| `smoke.rhi.runtime` | `SparkleLauncherCore` | Launch selected project runtime with opt-in RHI smoke validation enabled. |
 | `cook.tools.prepare` | `SparkleLauncherCore` | Ensure required cook tool executables exist for a cook operation. |
 | `cook.project` | `SparkleLauncherCore` | Full project asset cook through native tool invocation. |
 | `cook.shaders` | `SparkleLauncherCore` | Focused shader package cook. |
@@ -36,15 +38,59 @@ Existing scripts are behavioral references only. They are not the desired implem
 | `quality.validate` | `SparkleLauncherCore` | Run known CMake validation gates. |
 | `logs.open-latest` | Future launcher shell | Resolve/open latest relevant log for an operation. |
 
+## Launcher Ownership Map
+
+Shared operation files should mostly orchestrate: resolve operation ids, copy typed request data into plans, call the nearest section owner, and build common dry-run/readiness output. Section-specific details belong under the section folder that owns the behavior.
+
+| Area | Orchestration File | Detail Owners | Boundary Rule |
+| --- | --- | --- | --- |
+| Build/workspace | `Private/BuildWorkflow/BuildWorkspaceOperations.cpp` | `BuildFilesFreshness.cpp`, `BuildFreshnessSignature.cpp`, `BuildToolchainDetection.cpp`, `BuildWorkspaceProcessRequests.cpp`, `CMakeWorkflowProcessRequests.cpp` | Operation planner coordinates toolchain/build decisions; CMake request construction and freshness details stay in focused build files. |
+| Cook | `Private/Cook/CookOperations.cpp` | `CookOperationProcessRequests.cpp`, `CookOperationExecutor.cpp` | Operation planner owns cook intent; tool invocation, force-recook cleanup, and execution details stay in cook-specific files. |
+| Maintenance | `Private/Maintenance/MaintenanceOperations.cpp` | `MaintenanceOperationProcessRequests.cpp`, `MaintenanceOperationExecutor.cpp`, `Validation/ValidationGateCatalog.cpp` | Maintenance planner coordinates format/validate/clean; validator taxonomy and target grouping live in `Maintenance/Validation`. |
+| Launch | `Private/Launch/LaunchOperations.cpp` | `LaunchOperationProcessRequests.cpp`, `LaunchOperationExecutor.cpp`, `Smoke/RhiSmokeLaunchOperations.cpp` | Launch planner derives target/executable and delegates smoke-specific inputs/environment/effects to `Launch/Smoke`. |
+| CLI | `Private/Cli/SparkleCli.cpp` | `SparkleCliParser.cpp`, `SparkleCliValueOptions.cpp`, `SparkleCliDispatcher.cpp`, `SparkleCliOutput.cpp` | CLI files parse, print, and dispatch only; workflow behavior stays in `SparkleLauncherCore`. |
+| App shell | `Private/Shell/LauncherShell.cpp` | Existing operation owners above | The shell selects project/profile and shows dry-runs; section behavior stays in core operation owners. |
+
+When a new subsection grows beyond a small operation-list entry, add a folder under the nearest owner before putting detailed policy into a shared file.
+
+## Validation Gates
+
+`quality.validate` supports explicit targets and grouped target sets. With no target or group selected, it runs `sparkle_validation_check`.
+
+| Group | Targets | Recommendation |
+| --- | --- | --- |
+| `aggregate` | `sparkle_validation_check` | Keep as the default full-suite validation entrypoint. |
+| `boundaries` | `runtime_cooked_boundary_check`, `framegraph_boundary_check`, `rhi_backend_boundary_check`, `rhi_memory_boundary_check`, `shader_compiler_boundary_check`, `texture_cooker_boundary_check`, `tools_architecture_boundary_check`, `logging_boundary_check` | Keep; these protect architecture boundaries during refactors. |
+| `parity` | `rhi_backend_parity_check`, `shader_package_parity_check` | Keep; these protect D3D12/Vulkan and DXIL/SPIR-V equivalence. |
+| `readiness` | `geometry_instancing_readiness_check`, `threading_readiness_check`, `advanced_feature_readiness_check` | Keep for now; revisit after the corresponding roadmap work graduates into concrete feature tests. |
+
+## Smoke Tests
+
+Smoke tests are launch operations because they execute the built editor/runtime host. They are not CMake validation targets.
+
+| Operation | Host | Native Hook |
+| --- | --- | --- |
+| `smoke.rhi.editor` | `<Project>Editor` | Sets `SPARKLE_SMOKE_VALIDATE_RHI=1` and runs the editor profile executable. |
+| `smoke.rhi.runtime` | `<Project>Runtime` | Sets `SPARKLE_SMOKE_VALIDATE_RHI=1` and runs the runtime profile executable. |
+
+Smoke options:
+
+| Option | Meaning |
+| --- | --- |
+| `--smoke-backend <backend>` | Sets `SPARKLE_RHI_BACKEND` for the smoke host. |
+| `--smoke-frame-limit <frames>` | Sets `SPARKLE_SMOKE_FRAME_LIMIT`; default is 120 frames. |
+| `--smoke-trace` | Sets `SPARKLE_SMOKE_TRACE=1`. |
+| `--smoke-skip-level-switching` | Sets `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`. |
+
 ## `Sparkle.exe` Automation Surface
 
-`Sparkle.exe` is a thin CLI dispatcher over `SparkleLauncherCore`. It accepts the same operation ids as the launcher shell, plans the operation first, prints readiness/effects/log paths, and either exits after `--dry-run` or executes through the native process runner.
+`Sparkle.exe` accepts the same operation ids as the launcher shell, plans the operation first, prints readiness/effects/log paths, and either exits after `--dry-run` or executes through the native process runner.
 
 Common options:
 
 ```text
 Sparkle <operation-id> [--dry-run] [--root <repo-root>] [--project <project-id>]
-	[--editor-profile <profile>] [--runtime-profile <profile>]
+    [--editor-profile <profile>] [--runtime-profile <profile>]
 ```
 
 Operation-specific options:
@@ -57,81 +103,42 @@ Operation-specific options:
 | `--confirm-force-recook` | Cook operations | Confirm force recook cleanup before execution. |
 | `--shader-package <package-id>` | `cook.shaders` | Focus shader package cooking. |
 | `--format-mode check\|apply` | `quality.format` | Choose check-only or applying format mode. |
+| `--validation-group <group>` | `quality.validate` | Add a grouped validation target set. |
 | `--validation-target <target>` | `quality.validate` | Add a specific validation target. |
+| `--smoke-backend <backend>` | Smoke operations | Select RHI backend for the launched smoke host. |
+| `--smoke-frame-limit <frames>` | Smoke operations | Override the smoke host frame limit. |
+| `--smoke-trace` | Smoke operations | Enable trace logging for the smoke host. |
+| `--smoke-skip-level-switching` | Smoke operations | Disable automated level switching during the smoke run. |
 | `--clean-scope <scope>` | `workspace.clean` | Choose an explicit destructive clean scope. |
 | `--confirm-clean` | `workspace.clean` | Confirm destructive clean execution. |
 
 Exit codes are intentionally simple for automation: `0` for success or ready dry-run, `1` for parse/execution failure, and `2` for a blocked dry-run plan.
 
-## Public Script Inventory
+## Removed Legacy Surface
 
-| Current Script | Native Replacement | Phase 6 State | Behavior Ported / Remaining | Removal Condition |
-| --- | --- | --- | --- | --- |
-| `Scripts/SetupWorkspace.bat` | `workspace.setup` / `Sparkle workspace.setup` | Deprecated public workflow; may remain only as fresh-clone bootstrap until a prebuilt launcher is available. | Native toolchain detection, build-file freshness, configure/generate planning, logs, and dry-run summaries are owned by C++. Optional open-solution handoff remains outside the current operation set. | Prebuilt launcher or installer can open a repo and run setup without requiring a script. |
-| `Scripts/GenerateSolution.bat` | `workspace.generate-solution` / `Sparkle workspace.generate-solution` | Deprecated public workflow. | Native operation owns generator/toolset discovery, configure reason, CMake configure invocation, solution path, log routing, and failure summary. | Prompt 10 build validation confirms native configure/generate and docs/automation no longer reference the script as a workflow. |
-| `Scripts/BuildProject.bat` | `project.build.editor`, `project.build.runtime`, `project.launch.editor`, `project.launch.runtime` | Deprecated public workflow. | Native operations discover projects, validate profiles, derive `<Project>Editor` and `<Project>Runtime`, ensure build files, build targets, and launch executables from `Projects/<Project>`. | Prompt 10 validation confirms editor/runtime build and launch dry-runs/execution paths through launcher/CLI. |
-| `Scripts/CookAllAssets.bat` | `cook.project` / `Sparkle cook.project` | Deprecated public workflow. | Native cook operation supports selected project, default runtime profile, incremental/force mode, scoped force cleanup, cook-tool preparation, `AssetCooker cook-project`, logs, and failure summaries. | Prompt 10 validates native full project cook or accepted source-only equivalent before script removal. |
-| `Scripts/Cook/CookShaders.bat` | `cook.shaders` / `Sparkle cook.shaders` | Deprecated public workflow. | Native shader cook prepares/locates `AssetCooker` and `ShaderCompiler`, invokes shader cook directly, supports package focus, and reports logs/failures. | Prompt 10 validates native shader cook execution path. |
-| `Scripts/Cook/CookTextures.bat` | `cook.textures` / `Sparkle cook.textures` | Deprecated public workflow. | Native texture cook prepares/locates `AssetCooker` and `TextureCooker`, invokes texture cook directly, and reports logs/failures. | Prompt 10 validates native texture cook execution path. |
-| `Scripts/Cook/CookAssets.bat` | `cook.assets` / `Sparkle cook.assets` | Deprecated public workflow. | Native scene/mesh/material cook prepares required tools, invokes asset cook directly, and reports logs/failures. | Prompt 10 validates native asset cook execution path. |
-| `Scripts/RunClangFormat.bat` | `quality.format` / `Sparkle quality.format` | Deprecated public workflow. | Native format operation supports check/apply modes, source scan policy, progress, modified/error summary, and log output. | Prompt 10 validates native format check/apply behavior or accepted dry-run evidence. |
-| `Scripts/CleanWorkspace.bat` | `workspace.clean` / `Sparkle workspace.clean` | Deprecated public workflow; may remain only for exceptional launcher self-clean handoff if needed. | Native clean operation exposes explicit scopes, confirmation metadata, locked-file diagnostics, and generated artifact cleanup coverage. | Prompt 10 validates safe scopes and any retained self-clean handoff is documented as unavoidable. |
+The previous command-file workflow has been removed. Native replacements are:
 
-## Script-to-CLI Parity Table
-
-| Public Script | Sparkle Launcher Operation | `Sparkle.exe` Equivalent |
+| Intent | Native Operation | CLI Form |
 | --- | --- | --- |
-| `Scripts/SetupWorkspace.bat` | Setup Workspace | `Sparkle workspace.setup` |
-| `Scripts/GenerateSolution.bat` | Generate Solution | `Sparkle workspace.generate-solution` |
-| `Scripts/BuildProject.bat <Project> DevelopmentEditor` | Compile Editor | `Sparkle project.build.editor --project <Project> --editor-profile DevelopmentEditor` |
-| `Scripts/BuildProject.bat <Project> DevelopmentGame` | Compile Runtime | `Sparkle project.build.runtime --project <Project> --runtime-profile DevelopmentGame` |
-| `Scripts/BuildProject.bat` launch prompt | Run Editor / Run Runtime | `Sparkle project.launch.editor --project <Project>` or `Sparkle project.launch.runtime --project <Project>` |
-| `Scripts/CookAllAssets.bat <Project> DevelopmentGame` | Cook Project Assets | `Sparkle cook.project --project <Project> --runtime-profile DevelopmentGame` |
-| `Scripts/Cook/CookShaders.bat <Project> DevelopmentGame` | Cook Shaders | `Sparkle cook.shaders --project <Project> --runtime-profile DevelopmentGame` |
-| `Scripts/Cook/CookTextures.bat <Project> DevelopmentGame` | Cook Textures | `Sparkle cook.textures --project <Project> --runtime-profile DevelopmentGame` |
-| `Scripts/Cook/CookAssets.bat <Project> DevelopmentGame` | Cook Scene Assets | `Sparkle cook.assets --project <Project> --runtime-profile DevelopmentGame` |
-| `Scripts/RunClangFormat.bat` | Run Clang Format | `Sparkle quality.format --format-mode apply` |
-| `Scripts/CleanWorkspace.bat` | Clean Workspace | `Sparkle workspace.clean --clean-scope <scope> --confirm-clean` |
+| First-time setup or workspace repair | Setup Workspace | `Sparkle workspace.setup` |
+| Regenerate CMake/Visual Studio files | Generate Solution | `Sparkle workspace.generate-solution` |
+| Build a project editor | Compile Editor | `Sparkle project.build.editor --project <Project> --editor-profile DevelopmentEditor` |
+| Build a project runtime | Compile Runtime | `Sparkle project.build.runtime --project <Project> --runtime-profile DevelopmentGame` |
+| Launch a built editor | Run Editor | `Sparkle project.launch.editor --project <Project>` |
+| Launch a built runtime | Run Runtime | `Sparkle project.launch.runtime --project <Project>` |
+| Run editor RHI smoke test | Run Editor RHI Smoke Test | `Sparkle smoke.rhi.editor --project <Project>` |
+| Run runtime RHI smoke test | Run Runtime RHI Smoke Test | `Sparkle smoke.rhi.runtime --project <Project>` |
+| Cook all project assets | Cook All Assets | `Sparkle cook.project --project <Project> --runtime-profile DevelopmentGame` |
+| Cook shader packages | Cook Shaders | `Sparkle cook.shaders --project <Project> --runtime-profile DevelopmentGame` |
+| Cook texture assets | Build Textures | `Sparkle cook.textures --project <Project> --runtime-profile DevelopmentGame` |
+| Cook scene, mesh, and material assets | Build Meshes / Scene Assets | `Sparkle cook.assets --project <Project> --runtime-profile DevelopmentGame` |
+| Check or apply formatting | Run Clang Format | `Sparkle quality.format --format-mode check` |
+| Run validation gates | Run Validation Gates | `Sparkle quality.validate` |
+| Clean generated artifacts | Clean Workspace | `Sparkle workspace.clean --clean-scope selected-cooked --confirm-clean` |
 
-## Internal Script Behaviors To Port
+## Cutover Validation Notes
 
-The public scripts delegate much of their behavior to `Scripts/Internal`. These internals should be treated as source material for `SparkleLauncherCore`, not as stable dependencies.
-
-| Internal Area | Native Destination | Behavior To Port |
-| --- | --- | --- |
-| `Scripts/Internal/Core/Config.bat` | `RepositoryLocator`, `LauncherPaths`, `BuildLayout` | Root paths, build dir, binary dir, projects dir, logs dir, solution path, project name. |
-| `Scripts/Internal/Core/BootstrapLog.bat` | `LogIndex`, `OperationLog` | Operation-scoped log directories, timestamped log files, `Latest.txt` update policy, console/log tee behavior. |
-| `Scripts/Internal/Toolchain/CheckToolchain.bat` | `ToolchainValidator` | Required tools, optional tools, version checks, GitHub/dependency-cache reachability policy, actionable missing-tool diagnostics. |
-| `Scripts/Internal/Toolchain/OpenVisualStudio.bat` | `OpenSolutionOperation` or launcher shell handoff | Optional solution-opening handoff after generation/setup. This can remain a narrow OS handoff if native launch is not worth owning. |
-| `Scripts/Internal/Build/EnsureBuildFiles.bat` | `BuildFileFreshness`, `CMakeWorkflow` | Freshness gate, `SPARKLE_FORCE_CONFIGURE`, source list hash, project marker detection, toolchain/configure changes. |
-| `Scripts/Internal/Build/CMakeHelpers.bat` | `CMakeWorkflow`, `BuildWorkflow` | Configure/build command construction, CMake generator/toolset/arch, target build invocation, logging/error classification. |
-| `Scripts/Internal/Projects/ProjectDiscovery.bat` | `ProjectDiscovery`, `TargetResolver` | `.sparkle-project` discovery, project list, editor/runtime target derivation. |
-| `Scripts/Internal/Cook/CookTools.bat` | `CookToolResolver`, `CookToolBuildOperation` | Editor-profile tool mapping, required tool sets per cook kind, existing executable detection, optional forced rebuild, tool path export. |
-| `Scripts/Internal/Utilities/RemoveDirectory.ps1` | `WorkspaceCleanOperation` | Locked-tree removal fallback should become native cleanup/retry behavior or a documented unavoidable OS handoff. |
-
-## Script Retention Policy
-
-| Script Class | Retain? | Reason | Removal Condition |
-| --- | --- | --- | --- |
-| Public normal workflow scripts | Deprecated only during cutover | Launcher and `Sparkle.exe` replace them. | Native operation parity plus final validation. |
-| Temporary wrappers over `Sparkle.exe` | Short term only | Give CI/users transition time after native parity. | Docs and automation migrated to launcher/CLI operations. |
-| Fresh-clone bootstrapper | Retain if needed | Needed only if no prebuilt launcher binary is available. | Prebuilt launcher release or installer can open a repo and run setup. |
-| Narrow OS shell handoff | Retain if needed | Some operations, such as opening Visual Studio or launcher self-clean, may be simpler as shell handoff. | Native shell-execute path exists or the handoff is documented as intentionally retained. |
-| Internal build-system CMake modules/targets | Yes | These are build infrastructure, not user-facing scripts. | Not applicable unless replaced by better build-system code. |
-
-## Explicit Retained Scripts
-
-After Phase 6, normal workflow docs must point to Sparkle Launcher and `Sparkle.exe`. The only script cases allowed to remain are:
-
-| Script | Retention Reason | Removal Condition |
-| --- | --- | --- |
-| `Scripts/SetupWorkspace.bat` | Fresh clone may not yet have a built `SparkleLauncher` or `Sparkle.exe`. | A prebuilt launcher/installer exists for first-run setup. |
-| `Scripts/CleanWorkspace.bat` | Possible exceptional handoff if a running launcher cannot remove files it owns. | Native clean validation proves no self-clean handoff is needed, or the handoff is narrowed to a wrapper. |
-| Public scripts used by external CI during transition | Temporary compatibility window only, preferably as wrappers over `Sparkle.exe`. | CI has migrated to `Sparkle.exe` operation ids or direct CMake/tool commands. |
-
-## Phase 6 Validation Notes
-
-- Every current public script has a native `SparkleLauncherCore` replacement and `Sparkle.exe` operation id.
-- Normal workflows do not have a permanent `.bat` path in the target design.
-- Public scripts are deprecated for workflow use until Prompt 10 build/execution validation allows removal or wrapper reduction.
-- Retained scripts have explicit bootstrap, handoff, or CI-transition conditions.
+- The repository no longer contains command-file workflow entrypoints or internal script helper modules.
+- Launcher code does not call command-file wrappers for normal workflow execution.
+- Native generate-solution and compile-editor execution have been validated through `Sparkle.exe`.
+- Cook, format, clean, launch, and project discovery paths have native dry-run validation through `Sparkle.exe` and `SparkleLauncher`.

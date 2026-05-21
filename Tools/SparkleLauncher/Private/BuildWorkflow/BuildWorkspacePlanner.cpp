@@ -128,7 +128,7 @@ namespace SparkleLauncher
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", "Check Toolchain", "Inspect CMake, Visual Studio/MSBuild, Windows SDK, Git, and clang-format."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Compile Editor", "Build <Project>Editor for the selected editor profile."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Compile Runtime", "Build <Project>Runtime for the selected runtime profile."},
-		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build AssetCooker, TextureCooker, and ShaderCompiler."},
+		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build AssetCooker, TextureCooker, and ShaderCompiler."},
 		};
 		return definitions;
 	}

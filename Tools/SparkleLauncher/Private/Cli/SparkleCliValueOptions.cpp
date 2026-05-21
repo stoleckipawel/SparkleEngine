@@ -69,6 +69,33 @@ namespace SparkleLauncher
 			}
 			return true;
 		}
+		if (argument == "--validation-group")
+		{
+			outHandled = true;
+			if (value != nullptr)
+			{
+				outArguments.ValidationGroups.push_back(value);
+			}
+			return true;
+		}
+		if (argument == "--smoke-backend")
+		{
+			outHandled = true;
+			if (value != nullptr)
+			{
+				outArguments.SmokeBackend = value;
+			}
+			return true;
+		}
+		if (argument == "--smoke-frame-limit")
+		{
+			outHandled = true;
+			if (value != nullptr)
+			{
+				outArguments.SmokeFrameLimit = value;
+			}
+			return true;
+		}
 		return false;
 	}
 
@@ -104,7 +131,8 @@ namespace SparkleLauncher
 	bool SparkleCliParser::IsValueOption(std::string_view argument) const
 	{
 		return argument == "--root" || argument == "--project" || argument == "--editor-profile" || argument == "--runtime-profile" ||
-		       argument == "--target" || argument == "--shader-package" || argument == "--validation-target" || argument == "--format-mode" || argument == "--clean-scope";
+		       argument == "--target" || argument == "--shader-package" || argument == "--validation-target" || argument == "--validation-group" ||
+		       argument == "--smoke-backend" || argument == "--smoke-frame-limit" || argument == "--format-mode" || argument == "--clean-scope";
 	}
 
 	bool SparkleCliParser::TryParseFormatMode(std::string_view text, FormatMode& outMode) const

@@ -55,6 +55,7 @@ set(SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/Validation/ValidationGateCatalog.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS
@@ -65,10 +66,12 @@ set(SPARKLE_LAUNCHER_CORE_LAUNCH_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeLaunchOperations.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/LaunchOperationProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeLaunchOperations.h
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES

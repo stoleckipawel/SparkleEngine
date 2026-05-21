@@ -1,6 +1,7 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include "LaunchOperationProcessRequests.h"
+#include "Smoke/RhiSmokeLaunchOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/ToolResolver.h"
 
@@ -24,7 +25,7 @@ namespace SparkleLauncher
 
 	static std::string ResolveLaunchProfile(LaunchOperationKind kind, const LaunchOperationRequest& request)
 	{
-		return kind == LaunchOperationKind::RunEditor ? request.EditorProfile : request.RuntimeProfile;
+		return kind == LaunchOperationKind::RunEditor || kind == LaunchOperationKind::RunEditorSmokeTest ? request.EditorProfile : request.RuntimeProfile;
 	}
 
 	static std::optional<BuildProfile> ResolveProfileForLaunch(LaunchOperationKind kind, std::string_view profileName)
@@ -35,7 +36,7 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const BuildProfileTarget expectedTarget = kind == LaunchOperationKind::RunEditor ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
+		const BuildProfileTarget expectedTarget = kind == LaunchOperationKind::RunEditor || kind == LaunchOperationKind::RunEditorSmokeTest ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
 		return profile->Target == expectedTarget ? profile : std::nullopt;
 	}
 
@@ -65,6 +66,10 @@ namespace SparkleLauncher
 			return "RunEditor";
 		case LaunchOperationKind::RunRuntime:
 			return "RunRuntime";
+		case LaunchOperationKind::RunEditorSmokeTest:
+			return "RunEditorSmokeTest";
+		case LaunchOperationKind::RunRuntimeSmokeTest:
+			return "RunRuntimeSmokeTest";
 		}
 
 		return "Unknown";
@@ -75,6 +80,8 @@ namespace SparkleLauncher
 		static const std::vector<LaunchOperationDefinition> definitions = {
 		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Run Editor", "Run the selected project's editor executable from its project directory."},
 		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Run Runtime", "Run the selected project's runtime executable from its project directory."},
+		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Run Editor RHI Smoke Test", "Run the selected project editor with opt-in RHI smoke validation enabled."},
+		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Run Runtime RHI Smoke Test", "Run the selected project runtime with opt-in RHI smoke validation enabled."},
 		};
 		return definitions;
 	}
@@ -107,6 +114,7 @@ namespace SparkleLauncher
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
+		PopulateRhiSmokeLaunchInputs(plan);
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 
 		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Kind, plan.Profile);
@@ -119,6 +127,7 @@ namespace SparkleLauncher
 		plan.TargetName = BuildProjectTargetName(request.ProjectId, *profile);
 		plan.ExecutablePath = ResolveSparkleToolPath(request.RepositoryRoot, plan.Profile, plan.TargetName);
 		plan.WorkingDirectory = request.RepositoryRoot / "Projects" / request.ProjectId;
+		PopulateRhiSmokeLaunchEnvironment(plan);
 
 		std::error_code errorCode;
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
@@ -127,6 +136,10 @@ namespace SparkleLauncher
 		AddReadiness(plan, executableExists ? "Launch executable exists." : "Launch executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
 		AddPlannedEffect(plan, "Launch " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
+		for (const std::string& effect : GetRhiSmokeLaunchPlannedEffects(plan))
+		{
+			AddPlannedEffect(plan, effect);
+		}
 		plan.CanRun = executableExists && projectMarkerExists;
 		PopulateLaunchStep(plan);
 
@@ -136,6 +149,10 @@ namespace SparkleLauncher
 		{
 			dryRun << "\n  " << step.DisplayName << ": " << step.DisplayCommandLine;
 			dryRun << "\n    Working directory: " << plan.WorkingDirectory.string();
+			for (const EnvironmentOverride& overrideValue : plan.Environment)
+			{
+				dryRun << "\n    Env: " << overrideValue.Name << "=" << overrideValue.Value;
+			}
 			if (!step.LogPath.empty())
 			{
 				dryRun << "\n    Log: " << step.LogPath.string();

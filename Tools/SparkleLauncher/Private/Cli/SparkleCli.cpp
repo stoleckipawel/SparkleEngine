@@ -32,6 +32,12 @@ namespace SparkleLauncher
 			return 0;
 		}
 
+		if (arguments.ListValidationTargets)
+		{
+			cliOutput.PrintValidationTargetList(output);
+			return 0;
+		}
+
 		if (arguments.OperationId.empty())
 		{
 			error << "Sparkle: operation id is required.\n";
@@ -39,7 +45,7 @@ namespace SparkleLauncher
 			return 1;
 		}
 
-		const SparkleCliDispatcher dispatcher;
+		SparkleCliDispatcher dispatcher;
 		return dispatcher.Dispatch(arguments, output, error);
 	}
 }

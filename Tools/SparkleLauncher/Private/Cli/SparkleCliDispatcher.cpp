@@ -129,6 +129,7 @@ namespace SparkleLauncher
 		request.RequestedFormatMode = arguments.RequestedFormatMode;
 		request.RequestedCleanScope = arguments.RequestedCleanScope;
 		request.DestructiveActionConfirmed = arguments.CleanConfirmed;
+		request.ValidationGroups = arguments.ValidationGroups;
 		request.ValidationTargets = arguments.ValidationTargets;
 
 		MaintenanceOperationPlan plan = PlanMaintenanceOperation(arguments.OperationId, request);
@@ -151,6 +152,10 @@ namespace SparkleLauncher
 		request.ProjectId = projectId;
 		request.EditorProfile = arguments.EditorProfile;
 		request.RuntimeProfile = arguments.RuntimeProfile;
+		request.SmokeBackend = arguments.SmokeBackend;
+		request.SmokeFrameLimit = arguments.SmokeFrameLimit;
+		request.SmokeTrace = arguments.SmokeTrace;
+		request.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
 
 		LaunchOperationPlan plan = PlanLaunchOperation(arguments.OperationId, request);
 		Output.PrintPlanDetails(plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects, output);

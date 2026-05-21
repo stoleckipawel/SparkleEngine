@@ -80,9 +80,49 @@ namespace SparkleLauncher
 		return files;
 	}
 
+	static bool AddUniqueValidationTarget(std::vector<std::string>& targets, const std::string& target)
+	{
+		if (std::find(targets.begin(), targets.end(), target) != targets.end())
+		{
+			return false;
+		}
+		targets.push_back(target);
+		return true;
+	}
+
+	static const ValidationGateGroupDefinition* FindValidationGateGroup(std::string_view groupId)
+	{
+		const std::vector<ValidationGateGroupDefinition>& groups = GetValidationGateGroupDefinitions();
+		const auto found = std::find_if(groups.begin(), groups.end(), [groupId](const ValidationGateGroupDefinition& group) {
+			return group.Id == groupId;
+		});
+		return found == groups.end() ? nullptr : &(*found);
+	}
+
 	static std::vector<std::string> ResolveValidationTargets(const MaintenanceOperationRequest& request, MaintenanceOperationPlan& plan)
 	{
-		std::vector<std::string> targets = request.ValidationTargets.empty() ? std::vector<std::string>{"sparkle_validation_check"} : request.ValidationTargets;
+		std::vector<std::string> targets;
+		for (const std::string& groupId : request.ValidationGroups)
+		{
+			const ValidationGateGroupDefinition* group = FindValidationGateGroup(groupId);
+			if (group == nullptr)
+			{
+				AddReadiness(plan, "Unknown validation group: " + groupId);
+				continue;
+			}
+			for (const std::string& target : group->Targets)
+			{
+				AddUniqueValidationTarget(targets, target);
+			}
+		}
+		for (const std::string& target : request.ValidationTargets)
+		{
+			AddUniqueValidationTarget(targets, target);
+		}
+		if (targets.empty())
+		{
+			targets.push_back("sparkle_validation_check");
+		}
 		const std::vector<std::string>& knownTargets = GetKnownValidationGateTargets();
 		for (const std::string& target : targets)
 		{
@@ -268,27 +308,6 @@ namespace SparkleLauncher
 		return "unknown";
 	}
 
-	const std::vector<std::string>& GetKnownValidationGateTargets()
-	{
-		static const std::vector<std::string> targets = {
-		    "sparkle_validation_check",
-		    "runtime_cooked_boundary_check",
-		    "framegraph_boundary_check",
-		    "rhi_backend_boundary_check",
-		    "rhi_backend_parity_check",
-		    "rhi_memory_boundary_check",
-		    "shader_compiler_boundary_check",
-		    "shader_package_parity_check",
-		    "geometry_instancing_readiness_check",
-		    "threading_readiness_check",
-		    "advanced_feature_readiness_check",
-		    "texture_cooker_boundary_check",
-		    "tools_architecture_boundary_check",
-		    "logging_boundary_check",
-		};
-		return targets;
-	}
-
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
@@ -328,6 +347,10 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
 		plan.Operation.Inputs.push_back({"cleanScope", ToString(request.RequestedCleanScope)});
+		for (const std::string& groupId : request.ValidationGroups)
+		{
+			plan.Operation.Inputs.push_back({"validationGroup", groupId});
+		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
@@ -342,6 +365,7 @@ namespace SparkleLauncher
 			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
 			break;
 		case MaintenanceOperationKind::RunValidationGates:
+			plan.ValidationGroups = request.ValidationGroups;
 			plan.ValidationTargets = ResolveValidationTargets(request, plan);
 			AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 			AddReadiness(plan, plan.Freshness.Summary);
@@ -373,6 +397,14 @@ namespace SparkleLauncher
 
 		std::ostringstream dryRun;
 		dryRun << "Dry-run plan for " << definition->DisplayName << ":";
+		if (!plan.Operation.LogPath.empty())
+		{
+			dryRun << "\n  Latest log: " << plan.Operation.LogPath.string();
+		}
+		if (plan.Operation.RequiresConfirmation)
+		{
+			dryRun << "\n  Confirmation required for clean scope: " << ToString(plan.Request.RequestedCleanScope);
+		}
 		for (const MaintenanceOperationStep& step : plan.Steps)
 		{
 			dryRun << "\n  " << step.DisplayName << ": " << step.DisplayCommandLine;

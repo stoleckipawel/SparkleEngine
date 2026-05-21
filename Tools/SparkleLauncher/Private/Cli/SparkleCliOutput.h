@@ -13,6 +13,7 @@ namespace SparkleLauncher
 	public:
 		void PrintUsage(std::ostream& output) const;
 		void PrintOperationList(std::ostream& output) const;
+		void PrintValidationTargetList(std::ostream& output) const;
 		void PrintOperationRecord(const OperationRecord& operation, std::ostream& output) const;
 		void PrintPlanDetails(
 		    const OperationRecord& operation,

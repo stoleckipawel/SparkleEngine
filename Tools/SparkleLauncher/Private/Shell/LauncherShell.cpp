@@ -325,6 +325,10 @@ namespace SparkleLauncher
 		{
 			state.JobOutput.push_back("Confirmation required: " + ToString(plan.Operation.DestructiveScope));
 		}
+		for (const std::string& groupId : plan.ValidationGroups)
+		{
+			state.JobOutput.push_back("Validation group: " + groupId);
+		}
 		for (const std::string& target : plan.ValidationTargets)
 		{
 			state.JobOutput.push_back("Validation target: " + target);
@@ -418,6 +422,10 @@ namespace SparkleLauncher
 		launchRequest.ProjectId = state.SelectedProjectId;
 		launchRequest.EditorProfile = state.EditorProfile;
 		launchRequest.RuntimeProfile = state.RuntimeProfile;
+		launchRequest.SmokeBackend = arguments.SmokeBackend;
+		launchRequest.SmokeFrameLimit = arguments.SmokeFrameLimit;
+		launchRequest.SmokeTrace = arguments.SmokeTrace;
+		launchRequest.SmokeSkipLevelSwitching = arguments.SmokeSkipLevelSwitching;
 		if (FindLaunchOperationDefinition(operationId).has_value())
 		{
 			AppendLaunchPlanDryRun(state, PlanLaunchOperation(operationId, launchRequest));
@@ -428,7 +436,7 @@ namespace SparkleLauncher
 		record.DryRunText = "Dry-run only: " + operation->NextEffect;
 		state.JobOutput.push_back(record.DisplayName + " [Preview]");
 		state.JobOutput.push_back(record.DryRunText);
-		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " placeholder dry-run for " + state.SelectedProjectId});
+		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " dry-run for " + state.SelectedProjectId});
 	}
 
 	static void RenderProjectTiles(const LauncherShellState& state, std::ostream& output)
@@ -682,6 +690,40 @@ namespace SparkleLauncher
 				continue;
 			}
 
+			if (argument == "--smoke-trace")
+			{
+				outArguments.SmokeTrace = true;
+				continue;
+			}
+
+			if (argument == "--smoke-skip-level-switching")
+			{
+				outArguments.SmokeSkipLevelSwitching = true;
+				continue;
+			}
+
+			if (argument == "--smoke-backend")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --smoke-backend requires a value.\n";
+					return false;
+				}
+				outArguments.SmokeBackend = argv[++index];
+				continue;
+			}
+
+			if (argument == "--smoke-frame-limit")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --smoke-frame-limit requires a value.\n";
+					return false;
+				}
+				outArguments.SmokeFrameLimit = argv[++index];
+				continue;
+			}
+
 			error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 			return false;
 		}
@@ -692,11 +734,12 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
+		       << "  SparkleLauncher --project Showcase --smoke-backend d3d12 --dry-run smoke.rhi.runtime\n"
 		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";

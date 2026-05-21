@@ -22,11 +22,15 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string DryRunOperationId;
+		std::string SmokeBackend;
+		std::string SmokeFrameLimit;
 		CookMode RequestedCookMode = CookMode::Incremental;
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool ForceRecookConfirmed = false;
 		bool CleanConfirmed = false;
+		bool SmokeTrace = false;
+		bool SmokeSkipLevelSwitching = false;
 		bool ShowHelp = false;
 	};
 

@@ -57,6 +57,93 @@ namespace SparkleLauncher
 		return {};
 	}
 
+	static std::vector<std::string> GetToolOverrideEnvironmentNames(KnownTool tool)
+	{
+		switch (tool)
+		{
+		case KnownTool::CMake:
+			return {"SPARKLE_CMAKE_EXE"};
+		case KnownTool::MSBuild:
+			return {"SPARKLE_MSBUILD_EXE"};
+		case KnownTool::Git:
+			return {"SPARKLE_GIT_EXE"};
+		case KnownTool::ClangFormat:
+			return {"SPARKLE_CLANG_FORMAT_EXE"};
+		}
+
+		return {};
+	}
+
+	static void AddProgramFilesCandidate(std::vector<std::filesystem::path>& candidates, const char* environmentName, std::filesystem::path relativePath)
+	{
+		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
+		if (root.has_value())
+		{
+			candidates.push_back(std::filesystem::path(*root) / relativePath);
+		}
+	}
+
+	static void AddVisualStudioMSBuildCandidates(std::vector<std::filesystem::path>& candidates)
+	{
+		const std::vector<std::string> versions = {"18", "2022"};
+		const std::vector<std::string> editions = {"Community", "Professional", "Enterprise", "BuildTools"};
+		for (const std::string& version : versions)
+		{
+			for (const std::string& edition : editions)
+			{
+				AddProgramFilesCandidate(
+				    candidates,
+				    "ProgramFiles",
+				    std::filesystem::path("Microsoft Visual Studio") / version / edition / "MSBuild" / "Current" / "Bin" / "MSBuild.exe");
+			}
+		}
+	}
+
+	static std::vector<std::filesystem::path> GetKnownInstallCandidates(KnownTool tool)
+	{
+		std::vector<std::filesystem::path> candidates;
+		for (const std::string& environmentName : GetToolOverrideEnvironmentNames(tool))
+		{
+			const std::optional<std::string> overridePath = TryGetEnvironmentVariable(environmentName.c_str());
+			if (overridePath.has_value())
+			{
+				candidates.emplace_back(*overridePath);
+			}
+		}
+
+		switch (tool)
+		{
+		case KnownTool::CMake:
+			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("CMake") / "bin" / "cmake.exe");
+			break;
+		case KnownTool::MSBuild:
+			AddVisualStudioMSBuildCandidates(candidates);
+			break;
+		case KnownTool::Git:
+			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Git") / "cmd" / "git.exe");
+			break;
+		case KnownTool::ClangFormat:
+			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("LLVM") / "bin" / "clang-format.exe");
+			break;
+		}
+
+		return candidates;
+	}
+
+	static std::optional<std::filesystem::path> FindExistingExecutable(std::vector<std::filesystem::path> candidates)
+	{
+		std::error_code errorCode;
+		for (const std::filesystem::path& candidate : candidates)
+		{
+			if (std::filesystem::exists(candidate, errorCode) && std::filesystem::is_regular_file(candidate, errorCode))
+			{
+				return candidate;
+			}
+			errorCode.clear();
+		}
+		return std::nullopt;
+	}
+
 	std::string ToString(KnownTool tool)
 	{
 		switch (tool)
@@ -132,7 +219,14 @@ namespace SparkleLauncher
 			}
 		}
 
-		result.FailureReason = result.DisplayName + " executable was not found on PATH.";
+		if (const std::optional<std::filesystem::path> path = FindExistingExecutable(GetKnownInstallCandidates(tool)))
+		{
+			result.Found = true;
+			result.Path = *path;
+			return result;
+		}
+
+		result.FailureReason = result.DisplayName + " executable was not found on PATH or in known install locations.";
 		return result;
 	}
 

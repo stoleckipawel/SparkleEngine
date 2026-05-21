@@ -2,24 +2,16 @@
 
 ## Purpose
 
-Sparkle Launcher should become the normal operator-facing front door for SparkleEngine. The goal is to remove the need to remember batch scripts, environment variables, build profiles, target names, cook modes, and log locations for common engine work.
+Sparkle Launcher should become the normal operator-facing front door for SparkleEngine. The goal is to remove the need to remember command files, environment variables, build profiles, target names, cook modes, and log locations for common engine work.
 
-The launcher is not a menu over scripts. The production direction is to move workflow orchestration into typed C++ engine tooling and reserve scripts only for unavoidable bootstrap or platform handoff cases.
+The launcher is not a menu over command files. Workflow orchestration lives in typed C++ engine tooling through `SparkleLauncherCore`, `SparkleLauncher`, and `Sparkle.exe`.
 
-## Current Friction
+## Removed Friction
 
-The repository currently has a workable but script-heavy command surface:
+The repository used to carry a command-file workflow surface for setup, solution generation, project builds, asset cooking, formatting, and cleanup. That surface has been removed after native launcher parity.
 
-- `SetupWorkspace.bat` validates tools and prepares the workspace.
-- `GenerateSolution.bat` owns CMake generator/toolset selection.
-- `BuildProject.bat` builds editor/runtime targets from profile names.
-- `CookAllAssets.bat` performs full cook orchestration through `AssetCooker`.
-- `Scripts/Cook/CookShaders.bat`, `CookTextures.bat`, and `CookAssets.bat` provide focused cook entrypoints.
-- `RunClangFormat.bat` and `CleanWorkspace.bat` handle maintenance tasks.
+Sparkle Launcher turns those flows into discoverable native actions with explicit state, progress, logs, and safe defaults.
 
-The script layer hides many details, but users still need to know which script to run, what arguments mean, where logs go, when build files are stale, and which profile maps to which executable or tool target.
-
-Sparkle Launcher should turn those flows into discoverable actions with explicit state, progress, logs, and safe defaults.
 
 ## Chosen User Experience: Project-Centric Launcher
 
@@ -148,16 +140,17 @@ Optional later operations:
 
 - Run editor after successful compile.
 - Run project runtime.
-- Run validation gates.
+- Run validation gates, including grouped boundary/parity/readiness selections.
+- Run RHI smoke tests for editor or runtime hosts.
 - Inspect cooked shader package registry.
 - Open latest logs and cooked output folders.
 - Export a support bundle with logs, config, and tool versions.
 
-## Script Policy
+## Command-File Policy
 
-Sparkle Launcher should treat scripts as a migration liability, not as the implementation backend.
+Sparkle Launcher treats command-file workflow orchestration as removed legacy surface, not as an implementation backend.
 
-The Phase 0 operation inventory lives in [sparkle-launcher-operation-inventory.md](sparkle-launcher-operation-inventory.md). It maps current public scripts to native `SparkleLauncherCore` operations, identifies script-owned behavior to port, and records deletion conditions.
+The operation inventory lives in [sparkle-launcher-operation-inventory.md](sparkle-launcher-operation-inventory.md). It records the native `SparkleLauncherCore` operation surface and the `Sparkle.exe` automation contract.
 
 Native C++ ownership is required for:
 
@@ -173,20 +166,7 @@ Native C++ ownership is required for:
 - Log indexing and operation history.
 - Failure classification and recovery suggestions.
 
-Scripts are acceptable only when they satisfy one of these conditions:
-
-- They bootstrap a fresh clone before a launcher binary exists.
-- They perform a narrow OS shell integration that C++ cannot reasonably own.
-- They are temporary wrappers over `Sparkle.exe` during cutover.
-- They support external CI while CI is migrating to `Sparkle.exe` or direct CMake/tool commands.
-
-Any script that remains after launcher MVP must document:
-
-- Why C++ cannot own it yet.
-- Which launcher or `SparkleLauncherCore` operation replaces it.
-- What condition allows deletion.
-
-The target end state is that normal engine work does not require opening `Scripts/` at all.
+Do not add command-file compatibility wrappers, launcher fallbacks, or parallel workflow scripts. Fresh-clone onboarding should use a built launcher binary, packaged launcher, or direct CMake command until launcher distribution exists.
 
 ## Production Patterns To Borrow
 
@@ -231,9 +211,9 @@ Recommended synthesis for Sparkle:
 
 These options describe how launcher operations execute. They are separate from the chosen project-centric GUI direction.
 
-### Backend Option A: Thin GUI Over Existing Scripts
+### Backend Option A: Thin GUI Over Command Files
 
-The launcher invokes current `.bat` scripts and displays their output.
+The launcher invokes external command-file wrappers and displays their output.
 
 Pros:
 
@@ -247,7 +227,7 @@ Cons:
 - Keeps batch parsing, environment quirks, and hidden control flow alive.
 - Harder to provide structured progress, cancellation, and typed diagnostics.
 
-Avoid for Sparkle Launcher. This path is useful only as a short-lived diagnostic fallback if a native operation is not ready yet.
+Avoid for Sparkle Launcher. This path was rejected and should not be reintroduced.
 
 ### Backend Option B: Launcher Calls CMake And Tool Executables Directly
 
@@ -264,7 +244,7 @@ Cons:
 - Some script-owned behavior must be ported first: toolchain validation, generator selection, freshness checks, clean scopes, and logging bootstrap.
 - Still process-oriented rather than library-oriented.
 
-This is the minimum acceptable near-term production path. It removes public script dependency, but it should still be treated as a step toward a shared C++ workflow library.
+This is the minimum acceptable near-term production path. It removes command-file dependency, but it should still be treated as a step toward a shared C++ workflow library.
 
 ### Backend Option C: Shared C++ Workflow Library Plus Launcher UI
 
@@ -309,7 +289,7 @@ Build Sparkle Launcher as a project-centric desktop app over a shared workflow l
 2. `SparkleLauncher` project-centric desktop UI over that workflow layer.
 3. Optional later `Sparkle.exe` CLI surface using the same workflow layer.
 
-The launcher should not depend on batch scripts for normal operation. The preferred production path is direct operation execution through `SparkleLauncherCore`, CMake, and existing C++ tools. Any script bridge must be exceptional, temporary, and tracked as technical debt with a planned native replacement.
+The launcher does not depend on command files for normal operation. The production path is direct operation execution through `SparkleLauncherCore`, CMake, and existing C++ tools.
 
 Recommended first implementation stack:
 
@@ -324,7 +304,7 @@ Recommended first implementation stack:
 Important bootstrap note:
 
 - If the launcher is built by the build system, a fresh clone still needs a way to obtain it.
-- Production options are: ship a prebuilt launcher release artifact, provide a tiny checked-in bootstrapper, or keep a temporary setup script until the launcher can self-update/install.
+- Production options are: ship a prebuilt launcher release artifact, provide an installer, or document direct CMake bootstrap commands until the launcher can self-update/install.
 - The cleanest long-term user story is: download Sparkle Launcher, open repository, click Setup Workspace.
 
 ## Functional Model
@@ -407,16 +387,7 @@ Each node should produce:
 
 ## Implementation Roadmap
 
-Minimize scripts from the start. Replace behavior intentionally by moving orchestration into typed C++ operations and using the launcher as the primary surface once each operation reaches parity.
-
-Scripts should be allowed only for:
-
-- Fresh-clone bootstrap before a launcher binary exists.
-- OS shell handoff that C++ cannot reasonably perform by itself.
-- Temporary compatibility wrappers after the native operation already exists.
-- CI transition glue while automation moves to `Sparkle.exe` or direct CMake/tool calls.
-
-Every retained script should have an owner, a reason, and a removal condition.
+Keep workflow orchestration in typed C++ operations and use the launcher as the primary surface. Command-file wrappers and compatibility shims should not be added back after native parity.
 
 ### Phase 0: Product Contract
 
@@ -425,18 +396,18 @@ Goal: lock the project-centric UX and operation contracts before code starts.
 Deliverables:
 
 - This design document updated around the project-centric launcher path.
-- Operation inventory that maps every public script to a launcher operation.
+- Operation inventory that maps every removed command-file workflow to a launcher operation.
 - Initial UI wireframe for project tiles, selected project operations, job output, and recent activity.
 - Decision on UI toolkit: Dear ImGui or native Windows UI.
-- Decision on bootstrap story: temporary script, prebuilt launcher artifact, or checked-in bootstrapper.
-- Script retention policy listing which scripts are unavoidable, which are temporary wrappers, and which should be deleted after native parity.
+- Decision on bootstrap story: direct CMake bootstrap, prebuilt launcher artifact, or checked-in native bootstrapper.
+- Native command-surface policy stating that setup, build, cook, format, clean, validation, and launch workflows belong to Sparkle Launcher and `Sparkle.exe`.
 
 Exit criteria:
 
 - We can name the first 10 operations and their inputs.
-- We know which script-owned behaviors must be ported before script removal.
+- We know which command-file-owned behaviors must be ported before command-file removal.
 - The first implementation milestone is small enough to build without touching cook logic.
-- No first-class launcher operation is planned to permanently call a `.bat` file.
+- No first-class launcher operation calls command-file wrappers.
 
 ### Phase 1: `SparkleLauncherCore` Foundation
 
@@ -487,7 +458,7 @@ Goal: replace the most common setup/build scripts with direct launcher operation
 Deliverables:
 
 - Toolchain status detection for CMake, Visual Studio/MSBuild, Windows SDK, Git, and clang-format.
-- Native Generate Solution operation using ported generator/toolset rules from `GenerateSolution.bat`.
+- Native Generate Solution operation using launcher-owned generator/toolset rules.
 - Native build-file freshness check using the existing `build/BuildFilesFreshness.json` contract or a ported equivalent.
 - Compile Editor operation for `<Project>Editor`.
 - Compile Runtime/Project operation for `<Project>Runtime` and selected targets.
@@ -498,7 +469,7 @@ Exit criteria:
 
 - A user can open the launcher, generate build files, and compile `ShowcaseEditor` without calling a public script.
 - Build logs are visible in the launcher and written under the existing structured log layout or a launcher-owned equivalent.
-- Scripts may still exist, but setup and build launcher paths do not invoke them.
+- Setup and build launcher paths invoke native operations directly.
 
 ### Phase 4: Cook Operations
 
@@ -518,7 +489,7 @@ Exit criteria:
 - A user can cook shaders, textures, and scene assets for `Showcase` without calling cook scripts.
 - Force recook has explicit confirmation and scoped cleanup.
 - Launcher failure summaries point to the relevant latest log.
-- Cook launcher operations invoke C++ tools directly and never route through `Scripts/Cook/*.bat`.
+- Cook launcher operations invoke C++ tools directly and never route through command-file wrappers.
 
 ### Phase 5: Maintenance Operations
 
@@ -533,35 +504,46 @@ Deliverables:
 
 Exit criteria:
 
-- A user can format, validate, and clean generated outputs without touching `Scripts/`.
+- A user can format, validate, and clean generated outputs from the launcher or `Sparkle.exe`.
 - No clean action can delete broad generated state without showing its exact scope.
 
-### Phase 6: Script Parity And Cutover
+Implemented operation ids:
 
-Goal: prove the launcher can replace public scripts before deleting them.
+- `quality.format` supports check/apply modes through native `clang-format` process requests.
+- `quality.validate` runs known CMake validation targets through native CMake build requests and supports grouped boundary/parity/readiness target selection.
+- `workspace.clean` requires explicit confirmation and reports every destructive target path before deleting generated state.
+
+Validation and smoke ownership:
+
+- Validator taxonomy lives under `Private/Maintenance/Validation` so maintenance orchestration stays focused on planning and process steps.
+- RHI smoke launch details live under `Private/Launch/Smoke` so launch orchestration stays focused on executable/profile derivation.
+- `smoke.rhi.editor` and `smoke.rhi.runtime` are launch-backed app operations, not CMake validation targets.
+
+### Phase 6: Native Parity And Cutover
+
+Goal: prove the launcher can replace the old command-file workflow before deleting it.
 
 Deliverables:
 
-- Parity table for each public script and matching launcher operation.
-- Optional `Sparkle.exe` CLI over `SparkleLauncherCore` for automation and CI.
-- Public scripts either removed, reduced to thin wrappers over `Sparkle.exe`, or marked deprecated with a removal condition.
+- Native operation table for each setup, build, cook, maintenance, validation, clean, and launch workflow.
+- `Sparkle.exe` CLI over `SparkleLauncherCore` for automation and CI.
 - Documentation updated so Sparkle Launcher is the primary workflow entrypoint.
-- Explicit list of any scripts retained for unavoidable bootstrap/handoff cases.
+- Old command-file workflow files removed instead of retained as compatibility wrappers.
 
 Exit criteria:
 
-- Every public script has a launcher operation with equivalent behavior.
+- Every old workflow has a launcher operation with equivalent behavior.
 - CI and local automation have a non-GUI path if needed.
-- No docs instruct normal users to run scripts for common workflows.
-- Retained scripts are not required for launcher-driven setup, build, cook, format, clean, or launch operations.
+- No docs instruct normal users to run command-file workflows.
+- No compatibility wrappers are required for launcher-driven setup, build, cook, format, clean, validation, or launch operations.
 
-### Phase 7: Remove Public Scripts
+### Phase 7: Remove Legacy Command Surface
 
 Goal: finish the repository transition.
 
 Deliverables:
 
-- Delete or archive public workflow scripts after parity is proven.
+- Delete the old command-file workflow after parity is proven.
 - Keep CMake modules, validation targets, and internal build infrastructure that still belong to the build system.
 - Update onboarding docs, architecture docs, and troubleshooting docs.
 - Publish prebuilt launcher or bootstrap instructions.
@@ -570,7 +552,7 @@ Exit criteria:
 
 - Fresh clone workflow has a clear launcher-based path.
 - Normal users can setup, build, cook, format, clean, and launch through Sparkle Launcher.
-- Repository no longer depends on user-facing scripts for common engine operations.
+- Repository no longer depends on command-file workflows for common engine operations.
 
 ### Phase 8: Production Polish
 
@@ -597,14 +579,12 @@ Use these prompts in order to implement the launcher from start to finish. The i
 Shared implementation contract to include with every prompt:
 
 ```text
-You are implementing Sparkle Launcher as a project-centric C++ workflow tool. The target shape is SparkleLauncherCore owning workflow logic, SparkleLauncher owning UI, and optional Sparkle.exe owning CLI automation. Do not implement launcher workflows as wrappers around .bat files or public Scripts/ entrypoints. Port behavior into C++ and remove replaced legacy/backward-compatibility paths instead of adding shims.
+You are implementing Sparkle Launcher as a project-centric C++ workflow tool. The target shape is SparkleLauncherCore owning workflow logic, SparkleLauncher owning UI, and optional Sparkle.exe owning CLI automation. Do not implement launcher workflows as wrappers around command files. Port behavior into C++ and remove replaced legacy/backward-compatibility paths instead of adding shims.
 
 Do not run full builds, CMake builds, cook commands, format commands, or launch commands during this phase. Make the requested source/documentation changes, keep edits scoped, and finish with source-only validation: targeted reads, grep/search checks, CMake file consistency checks, and editor diagnostics if available. Record final build/test commands for Prompt 10 only.
 
 Use these references when relevant:
 - docs/plans/sparkle-launcher-design.md for the product contract and phase goals.
-- Scripts/README.md for current public workflow behavior that must be replaced.
-- Scripts/SetupWorkspace.bat, GenerateSolution.bat, BuildProject.bat, CookAllAssets.bat, RunClangFormat.bat, CleanWorkspace.bat, and Scripts/Cook/*.bat for behavior to port, not call.
 - Tools/CMakeLists.txt and existing tool CMakeLists files for target wiring patterns.
 - CMake/SparkleBuildProfiles.cmake for supported profiles.
 - build/BuildFilesFreshness.json contract and related freshness docs for build-file state.
@@ -622,7 +602,7 @@ Positive guardrails:
 Negative guardrails:
 - Do not add code, files, targets, interfaces, or settings that only reserve future design space.
 - Do not introduce anonymous namespaces, unnamed namespaces, or nested namespaces; use a single named namespace and justified private/static helpers instead.
-- Do not add permanent script fallbacks.
+- Do not add command-file fallbacks.
 - Do not introduce hidden compatibility shims.
 - Do not run broad validation before Prompt 10.
 - Do not write generated launcher state into Engine/Assets or Projects/*/Assets.
@@ -644,45 +624,34 @@ Goal: freeze the product and migration contract before any launcher code is writ
 
 References to inspect:
 - docs/plans/sparkle-launcher-design.md
-- Scripts/README.md
-- Scripts/SetupWorkspace.bat
-- Scripts/GenerateSolution.bat
-- Scripts/BuildProject.bat
-- Scripts/CookAllAssets.bat
-- Scripts/Cook/CookShaders.bat
-- Scripts/Cook/CookTextures.bat
-- Scripts/Cook/CookAssets.bat
-- Scripts/RunClangFormat.bat
-- Scripts/CleanWorkspace.bat
+- docs/plans/sparkle-launcher-operation-inventory.md
 
 Tasks:
 1. Update the design doc if needed so the chosen UX is the project-centric launcher surface.
-2. Create or update an operation inventory that maps each current public script to a future native SparkleLauncherCore operation.
-3. For each script, mark the future state as remove, temporary Sparkle.exe wrapper, or unavoidable bootstrap/handoff.
-4. Identify script-owned behavior that must be ported into C++ before script deletion.
-5. Capture explicit deletion conditions for legacy scripts and compatibility wrappers.
+2. Create or update an operation inventory that maps each workflow intent to a native SparkleLauncherCore operation.
+3. Identify behavior that must be owned by C++ before deleting legacy compatibility code.
+4. Capture explicit deletion conditions for legacy command-surface code.
 
 Positive guardrails:
-- Treat existing scripts as behavioral references, not implementation dependencies.
 - Make native C++ ownership the default for all normal workflows.
-- Keep bootstrap/handoff exceptions rare and justified.
+- Keep bootstrap/handoff guidance outside the repository command surface.
 
 Negative guardrails:
 - Do not implement code yet.
 - Do not run builds.
-- Do not promise permanent `.bat` support for normal workflows.
+- Do not promise permanent command-file support for normal workflows.
 
 Source-only validation:
 - Read the updated docs/inventory.
 - Search the new text for ambiguous phrases like "wrapper first" or "script backend" and clarify them.
-- Confirm every public script has a native replacement or deletion condition.
+- Confirm every workflow intent has a native replacement.
 ```
 
 Expected result:
 
 - Launcher contract is unambiguous.
-- Every public script has a planned native replacement or deletion condition.
-- No normal workflow is planned to permanently call `.bat` files.
+- Every workflow intent has a planned native replacement.
+- No normal workflow is planned to call command-file wrappers.
 
 ### Prompt 1: Create `SparkleLauncherCore` Foundation
 
@@ -730,7 +699,7 @@ Negative guardrails:
 
 Source-only validation:
 - Read Tools/CMakeLists.txt and Tools/SparkleLauncher/CMakeLists.txt for target wiring.
-- Search for accidental `Scripts/`, `.bat`, `cmd.exe /c`, or `powershell` references.
+- Search for accidental command-file, shell, or PowerShell workflow references.
 - Search for anonymous or nested namespaces and remove them.
 - Confirm public headers do not expose unnecessary implementation details.
 ```
@@ -750,7 +719,6 @@ Goal: make SparkleLauncherCore capable of invoking tools directly without batch 
 
 References to inspect:
 - Existing Windows/platform helper patterns under Engine/Platform and Engine/Core if relevant.
-- Scripts/Internal/Toolchain and Scripts/Internal/Build only as behavior references.
 - CMake/Dependencies and CMake toolchain assumptions if relevant.
 
 Target shape:
@@ -772,7 +740,7 @@ Positive guardrails:
 - Preserve stdout/stderr and exit code for failure classification.
 
 Negative guardrails:
-- Do not invoke `.bat` files to resolve tools.
+- Do not invoke command files to resolve tools.
 - Do not shell through `cmd.exe /c` or PowerShell for normal execution.
 - Do not run builds or commands for validation.
 
@@ -827,7 +795,7 @@ Expected result:
 ### Prompt 6: Implement Native Cook Operations
 
 ```text
-Implement Phase 4 cook operations in SparkleLauncherCore and connect them to SparkleLauncher dry-run/execution surfaces. Add Cook Shaders, Build Textures, Build Meshes / Scene Assets, and Cook All Assets operations. They should locate/build required tools through native build operations, then invoke ShaderCompiler, AssetCooker, TextureCooker, and related C++ tools directly. Preserve incremental and force recook modes, with explicit scoped cleanup for force recook. Do not call Scripts/Cook/*.bat or CookAllAssets.bat. Do not run cook commands yet. Remove any script compatibility routes replaced by these native operations. Finish with source-only validation of command construction, output paths, and log classification.
+Implement Phase 4 cook operations in SparkleLauncherCore and connect them to SparkleLauncher dry-run/execution surfaces. Add Cook Shaders, Build Textures, Build Meshes / Scene Assets, and Cook All Assets operations. They should locate/build required tools through native build operations, then invoke ShaderCompiler, AssetCooker, TextureCooker, and related C++ tools directly. Preserve incremental and force recook modes, with explicit scoped cleanup for force recook. Do not add command-file wrappers. Do not run cook commands yet. Remove any compatibility routes replaced by these native operations. Finish with source-only validation of command construction, output paths, and log classification.
 ```
 
 Expected result:
@@ -846,7 +814,7 @@ Expected result:
 
 - Quality, cleanup, and launch flows are native launcher operations.
 - Clean behavior is safe and inspectable.
-- No normal maintenance action requires `Scripts/`.
+- No normal maintenance action requires command-file wrappers.
 
 ### Prompt 8: Add `Sparkle.exe` CLI For Automation
 
@@ -863,7 +831,7 @@ Expected result:
 ### Prompt 9: Remove Legacy Script Surface
 
 ```text
-Implement the script cutover cleanup. Remove public workflow scripts that are fully replaced by SparkleLauncher/Sparkle.exe operations, or reduce only unavoidable bootstrap/handoff scripts to minimal documented wrappers. Delete deprecated compatibility shims, stale docs, old quick workflow instructions, and references that tell normal users to run Scripts/*.bat. Update README/docs so Sparkle Launcher and Sparkle.exe are the primary entrypoints. Keep CMake modules and validation targets that are build-system infrastructure. Do not run builds. Finish with source-only validation using targeted search for removed script names, legacy compatibility language, and stale docs.
+Implement the command-surface cutover cleanup. Remove command-file workflows that are fully replaced by SparkleLauncher/Sparkle.exe operations. Delete deprecated compatibility shims, stale docs, old quick workflow instructions, and references that tell normal users to run command-file workflows. Update README/docs so Sparkle Launcher and Sparkle.exe are the primary entrypoints. Keep CMake modules and validation targets that are build-system infrastructure. Do not run builds. Finish with source-only validation using targeted search for legacy compatibility language and stale docs.
 ```
 
 Expected result:
@@ -875,20 +843,20 @@ Expected result:
 ### Prompt 10: Final Build And Validation Pass
 
 ```text
-Run the final validation phase for Sparkle Launcher. Now builds are allowed. Configure/generate if needed, build SparkleLauncherCore, SparkleLauncher, Sparkle.exe, existing cook tools, and representative project targets. Run focused validation for project discovery, dry-run operations, native Generate Solution, Compile Editor, Cook Shaders, Build Textures, Build Meshes, Run Clang Format check/apply mode as appropriate, Clean Workspace dry-run/safe scopes, and script-removal search checks. Fix any issues in the same slice and rerun the failing validation. End with a concise report of commands run, results, remaining risks, and any retained scripts with reasons.
+Run the final validation phase for Sparkle Launcher. Now builds are allowed. Configure/generate if needed, build SparkleLauncherCore, SparkleLauncher, Sparkle.exe, existing cook tools, and representative project targets. Run focused validation for project discovery, dry-run operations, native Generate Solution, Compile Editor, Cook Shaders, Build Textures, Build Meshes, Run Clang Format check/apply mode as appropriate, Clean Workspace dry-run/safe scopes, and command-surface removal checks. Fix any issues in the same slice and rerun the failing validation. End with a concise report of commands run, results, remaining risks, and confirmation that no legacy command-file workflow remains.
 ```
 
 Expected result:
 
 - Full system builds only after all source phases are complete.
 - Launcher/CLI/native workflows are validated end to end.
-- Legacy script surface is gone or explicitly justified.
+- Legacy command-file workflow surface is gone.
 
 ## Source-Only Validation Checklist
 
 Use this checklist at the end of Phases 0 through 9:
 
-- Search for accidental calls to `Scripts/`, `.bat`, `cmd.exe /c`, or `powershell` in launcher workflow code.
+- Search for accidental command-file, shell, or PowerShell workflow calls in launcher workflow code.
 - Search for duplicated legacy/backward-compatibility paths.
 - Search for anonymous namespaces, unnamed namespaces, nested namespaces, placeholder interfaces, and unused extension points.
 - Read changed CMake files for target inclusion, include directories, and link dependencies.
@@ -1041,7 +1009,7 @@ Possible `SparkleLauncherCore` modules:
 - `LogIndex`
 - `OperationGraph`
 
-Implemented navigation hierarchy:
+Implemented MVP navigation hierarchy:
 
 ```text
 Tools/SparkleLauncher/
@@ -1057,7 +1025,27 @@ Tools/SparkleLauncher/
   Probe/                         Lightweight probe executable for source-only sanity checks
 ```
 
-Future launcher work should add files under the nearest existing owner before adding a new folder. Add a new private folder only when it represents a durable operation family or runtime boundary, such as `Cli/` for the later `Sparkle.exe` automation surface. Public headers should remain narrow and operation-oriented; implementation helpers belong in the matching private folder.
+Future launcher work should add files under the nearest existing owner before adding a new folder. Add a new private folder only when it represents a durable operation family or runtime boundary. Public headers should remain narrow and operation-oriented; implementation helpers belong in the matching private folder.
+
+## MVP Delivery Audit
+
+The current implementation delivers the scoped workflow foundation and command surfaces, not the final polished graphical launcher. This keeps the document honest about what is ready now and what remains product polish.
+
+Delivered in the current scope:
+
+- `SparkleLauncherCore` owns repository discovery, project discovery, build profile defaults, launcher state paths, operation records, process execution, tool resolution, build-file freshness, build/workspace planning and execution, cook planning and execution, maintenance planning and execution, and launch planning and execution.
+- `SparkleLauncher` provides the current project-centric console shell: discovered projects, selected-project defaults, setup/build/cook/maintenance/launch operation groups, profile selectors through command options, recent activity text, job output, and dry-run previews.
+- `Sparkle.exe` provides the automation surface over the same operation ids and dispatches through `SparkleLauncherCore`, keeping CLI parsing/output separate from workflow logic.
+- Native operation coverage exists for setup, generate solution, toolchain check, compile editor, compile runtime, build cook tools, cook shaders, build textures, build meshes / scene assets, cook all assets, clang-format check/apply, validation gates, explicit-scope clean, run editor, and run runtime.
+- Launcher workflow code does not call command-file wrappers, shells, PowerShell, or `std::system` for normal operations.
+- Legacy command-file workflow files are removed instead of retained as compatibility wrappers.
+
+Deferred beyond the current scope:
+
+- A full Dear ImGui or native-window front end with clickable project tiles, persistent controls, rich log navigation, and polished visual states.
+- Prebuilt launcher or installer distribution for script-free fresh-clone onboarding.
+- Removal or wrapper reduction of retained public scripts after Prompt 10 executable validation and CI migration decisions.
+- Rich failure classification, latest-log opening as a first-class UI action, workflow presets, support bundles, update/version checks, and production polish.
 
 ## Acceptance Criteria
 
@@ -1071,7 +1059,7 @@ The launcher is successful when a normal contributor can:
 - Run Clang Format.
 - Clean generated outputs with a clear selected scope.
 - Open the latest relevant log after any failure.
-- Never touch `Scripts/` for normal engine work.
+- Never use command-file workflows for normal engine work.
 
 The architecture is successful when:
 

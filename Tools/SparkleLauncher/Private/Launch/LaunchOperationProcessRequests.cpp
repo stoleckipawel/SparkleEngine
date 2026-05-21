@@ -17,6 +17,7 @@ namespace SparkleLauncher
 		ProcessRequest request;
 		request.ExecutablePath = plan.ExecutablePath;
 		request.WorkingDirectory = plan.WorkingDirectory;
+		request.Environment = plan.Environment;
 		request.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "Launch.txt");
 
 		LaunchOperationProcessStep step;

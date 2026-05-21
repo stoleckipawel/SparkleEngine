@@ -50,6 +50,11 @@ namespace SparkleLauncher
 			outArguments.ListOperations = true;
 			return true;
 		}
+		if (argument == "--list-validation-targets")
+		{
+			outArguments.ListValidationTargets = true;
+			return true;
+		}
 		if (argument == "--dry-run")
 		{
 			outArguments.DryRun = true;
@@ -73,6 +78,16 @@ namespace SparkleLauncher
 		if (argument == "--confirm-clean")
 		{
 			outArguments.CleanConfirmed = true;
+			return true;
+		}
+		if (argument == "--smoke-trace")
+		{
+			outArguments.SmokeTrace = true;
+			return true;
+		}
+		if (argument == "--smoke-skip-level-switching")
+		{
+			outArguments.SmokeSkipLevelSwitching = true;
 			return true;
 		}
 		return false;
