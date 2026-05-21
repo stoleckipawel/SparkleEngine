@@ -2,6 +2,8 @@
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/CookOperations.h"
+#include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/MaintenanceOperations.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProjectDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
@@ -21,7 +23,10 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string DryRunOperationId;
 		CookMode RequestedCookMode = CookMode::Incremental;
+		FormatMode RequestedFormatMode = FormatMode::Check;
+		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool ForceRecookConfirmed = false;
+		bool CleanConfirmed = false;
 		bool ShowHelp = false;
 	};
 

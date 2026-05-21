@@ -1,0 +1,67 @@
+#pragma once
+
+#include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/OperationModel.h"
+#include "SparkleLauncher/ProcessRunner.h"
+
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+namespace SparkleLauncher
+{
+	enum class LaunchOperationKind
+	{
+		RunEditor,
+		RunRuntime
+	};
+
+	struct LaunchOperationDefinition
+	{
+		LaunchOperationKind Kind = LaunchOperationKind::RunEditor;
+		std::string Id;
+		std::string Group;
+		std::string DisplayName;
+		std::string Description;
+	};
+
+	struct LaunchOperationRequest
+	{
+		std::filesystem::path RepositoryRoot;
+		std::string ProjectId = "Showcase";
+		std::string EditorProfile = "DevelopmentEditor";
+		std::string RuntimeProfile = "DevelopmentGame";
+	};
+
+	struct LaunchOperationStep
+	{
+		std::string Id;
+		std::string DisplayName;
+		std::string DisplayCommandLine;
+		std::filesystem::path LogPath;
+	};
+
+	struct LaunchOperationPlan
+	{
+		OperationRecord Operation;
+		std::filesystem::path RepositoryRoot;
+		LaunchOperationRequest Request;
+		LaunchOperationKind Kind = LaunchOperationKind::RunEditor;
+		std::string Profile;
+		std::string TargetName;
+		std::filesystem::path ExecutablePath;
+		std::filesystem::path WorkingDirectory;
+		std::vector<LaunchOperationStep> Steps;
+		std::vector<std::string> PlannedEffects;
+		std::vector<std::string> ReadinessMessages;
+		bool CanRun = false;
+	};
+
+	std::string ToString(LaunchOperationKind kind);
+	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions();
+	std::optional<LaunchOperationDefinition> FindLaunchOperationDefinition(std::string_view operationId);
+	LaunchOperationPlan PlanLaunchOperation(std::string_view operationId, const LaunchOperationRequest& request);
+	OperationRecord RunLaunchOperationPlan(LaunchOperationPlan plan, IProcessRunner& processRunner, ProcessOutputCallback outputCallback = {});
+}

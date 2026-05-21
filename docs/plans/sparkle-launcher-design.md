@@ -1041,6 +1041,24 @@ Possible `SparkleLauncherCore` modules:
 - `LogIndex`
 - `OperationGraph`
 
+Implemented navigation hierarchy:
+
+```text
+Tools/SparkleLauncher/
+  Public/SparkleLauncher/        Public operation contracts and shared launcher-facing models
+  Private/Core/                  Repository, project, profile, path, process, tool, and operation primitives
+  Private/BuildWorkflow/         Toolchain, build freshness, CMake workflow, and build/workspace operations
+  Private/Cook/                  Cook operation planning, process requests, scoped cleanup, and execution
+  Private/Maintenance/           Format, validation, explicit clean scopes, and locked-file diagnostics
+  Private/Launch/                Editor/runtime executable path derivation and launch operation execution
+  Private/Shell/                 Current project-centric console shell and argument parsing
+  Private/Cli/                   Sparkle.exe automation dispatcher over SparkleLauncherCore operations
+  Source/                        SparkleLauncher and Sparkle.exe executable entrypoints
+  Probe/                         Lightweight probe executable for source-only sanity checks
+```
+
+Future launcher work should add files under the nearest existing owner before adding a new folder. Add a new private folder only when it represents a durable operation family or runtime boundary, such as `Cli/` for the later `Sparkle.exe` automation surface. Public headers should remain narrow and operation-oriented; implementation helpers belong in the matching private folder.
+
 ## Acceptance Criteria
 
 The launcher is successful when a normal contributor can:

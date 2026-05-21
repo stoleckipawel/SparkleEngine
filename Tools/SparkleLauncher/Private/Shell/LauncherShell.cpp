@@ -57,11 +57,14 @@ namespace SparkleLauncher
 			{
 				rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
 			}
-			rows.push_back({"Maintenance", "workspace.clean", "Clean Workspace", "Needs scope", "Require an explicit generated-output scope."});
-			rows.push_back({"Maintenance", "quality.format", "Run Clang Format", "Dry-run", "Preview source formatting pass."});
-			rows.push_back({"Maintenance", "quality.validate", "Run Validation Gates", "Dry-run", "Preview CMake validation target list."});
-			rows.push_back({"Launch", "project.launch.editor", "Run Editor", "Blocked", "Compile editor target before launch."});
-			rows.push_back({"Launch", "project.launch.runtime", "Run Runtime", "Blocked", "Compile runtime target before launch."});
+			for (const MaintenanceOperationDefinition& definition : GetMaintenanceOperationDefinitions())
+			{
+				rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
+			}
+			for (const LaunchOperationDefinition& definition : GetLaunchOperationDefinitions())
+			{
+				rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
+			}
 			return rows;
 		}();
 		return operations;
@@ -193,6 +196,61 @@ namespace SparkleLauncher
 		return text;
 	}
 
+	static bool TryParseFormatMode(std::string_view text, FormatMode& outMode)
+	{
+		if (text == "check")
+		{
+			outMode = FormatMode::Check;
+			return true;
+		}
+		if (text == "apply")
+		{
+			outMode = FormatMode::Apply;
+			return true;
+		}
+		return false;
+	}
+
+	static bool TryParseCleanScope(std::string_view text, CleanScope& outScope)
+	{
+		if (text == "selected-cooked" || text == "selected-project-cooked-outputs")
+		{
+			outScope = CleanScope::SelectedProjectCookedOutputs;
+			return true;
+		}
+		if (text == "all-cooked" || text == "all-cooked-outputs")
+		{
+			outScope = CleanScope::AllCookedOutputs;
+			return true;
+		}
+		if (text == "build-tree")
+		{
+			outScope = CleanScope::BuildTree;
+			return true;
+		}
+		if (text == "shader-cache")
+		{
+			outScope = CleanScope::ShaderCache;
+			return true;
+		}
+		if (text == "deps" || text == "third-party-dependency-cache")
+		{
+			outScope = CleanScope::ThirdPartyDependencyCache;
+			return true;
+		}
+		if (text == "logs")
+		{
+			outScope = CleanScope::Logs;
+			return true;
+		}
+		if (text == "pristine" || text == "pristine-generated-workspace")
+		{
+			outScope = CleanScope::PristineGeneratedWorkspace;
+			return true;
+		}
+		return false;
+	}
+
 	static void AppendLocalActivity(LauncherShellState& state)
 	{
 		const LauncherStatePaths statePaths = GetLauncherStatePaths(state.Repository.RootPath);
@@ -255,6 +313,59 @@ namespace SparkleLauncher
 		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
 	}
 
+	static void AppendMaintenancePlanDryRun(LauncherShellState& state, const MaintenanceOperationPlan& plan)
+	{
+		state.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
+		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
+		state.JobOutput.push_back("Editor profile: " + state.EditorProfile);
+		state.JobOutput.push_back("Format mode: " + ToString(plan.Request.RequestedFormatMode));
+		state.JobOutput.push_back("Clean scope: " + ToString(plan.Request.RequestedCleanScope));
+		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
+		if (plan.Operation.RequiresConfirmation)
+		{
+			state.JobOutput.push_back("Confirmation required: " + ToString(plan.Operation.DestructiveScope));
+		}
+		for (const std::string& target : plan.ValidationTargets)
+		{
+			state.JobOutput.push_back("Validation target: " + target);
+		}
+		for (const MaintenanceCleanTarget& target : plan.CleanTargets)
+		{
+			state.JobOutput.push_back("Clean target: " + target.Path.string() + " | " + target.Detail);
+		}
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			state.JobOutput.push_back("Readiness: " + message);
+		}
+		for (const std::string& effect : plan.PlannedEffects)
+		{
+			state.JobOutput.push_back("Effect: " + effect);
+		}
+		state.JobOutput.push_back(plan.Operation.DryRunText);
+		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
+	}
+
+	static void AppendLaunchPlanDryRun(LauncherShellState& state, const LaunchOperationPlan& plan)
+	{
+		state.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
+		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
+		state.JobOutput.push_back("Profile: " + plan.Profile);
+		state.JobOutput.push_back("Target: " + plan.TargetName);
+		state.JobOutput.push_back("Executable: " + plan.ExecutablePath.string());
+		state.JobOutput.push_back("Working directory: " + plan.WorkingDirectory.string());
+		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			state.JobOutput.push_back("Readiness: " + message);
+		}
+		for (const std::string& effect : plan.PlannedEffects)
+		{
+			state.JobOutput.push_back("Effect: " + effect);
+		}
+		state.JobOutput.push_back(plan.Operation.DryRunText);
+		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
+	}
+
 	static void ApplyDryRun(LauncherShellState& state, const LauncherShellArguments& arguments)
 	{
 		const std::string operationId = arguments.DryRunOperationId.empty() ? std::string(kDefaultDryRunOperationId) : arguments.DryRunOperationId;
@@ -286,6 +397,30 @@ namespace SparkleLauncher
 		if (FindCookOperationDefinition(operationId).has_value())
 		{
 			AppendCookPlanDryRun(state, PlanCookOperation(operationId, cookRequest));
+			return;
+		}
+
+		MaintenanceOperationRequest maintenanceRequest;
+		maintenanceRequest.RepositoryRoot = state.Repository.RootPath;
+		maintenanceRequest.ProjectId = state.SelectedProjectId;
+		maintenanceRequest.EditorProfile = state.EditorProfile;
+		maintenanceRequest.RequestedFormatMode = arguments.RequestedFormatMode;
+		maintenanceRequest.RequestedCleanScope = arguments.RequestedCleanScope;
+		maintenanceRequest.DestructiveActionConfirmed = arguments.CleanConfirmed;
+		if (FindMaintenanceOperationDefinition(operationId).has_value())
+		{
+			AppendMaintenancePlanDryRun(state, PlanMaintenanceOperation(operationId, maintenanceRequest));
+			return;
+		}
+
+		LaunchOperationRequest launchRequest;
+		launchRequest.RepositoryRoot = state.Repository.RootPath;
+		launchRequest.ProjectId = state.SelectedProjectId;
+		launchRequest.EditorProfile = state.EditorProfile;
+		launchRequest.RuntimeProfile = state.RuntimeProfile;
+		if (FindLaunchOperationDefinition(operationId).has_value())
+		{
+			AppendLaunchPlanDryRun(state, PlanLaunchOperation(operationId, launchRequest));
 			return;
 		}
 
@@ -503,6 +638,50 @@ namespace SparkleLauncher
 				continue;
 			}
 
+			if (argument == "--format-mode")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --format-mode requires check or apply.\n";
+					return false;
+				}
+
+				FormatMode mode = FormatMode::Check;
+				const std::string_view modeText(argv[++index]);
+				if (!TryParseFormatMode(modeText, mode))
+				{
+					error << "SparkleLauncher: unsupported format mode '" << modeText << "'.\n";
+					return false;
+				}
+				outArguments.RequestedFormatMode = mode;
+				continue;
+			}
+
+			if (argument == "--clean-scope")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --clean-scope requires a scope.\n";
+					return false;
+				}
+
+				CleanScope scope = CleanScope::SelectedProjectCookedOutputs;
+				const std::string_view scopeText(argv[++index]);
+				if (!TryParseCleanScope(scopeText, scope))
+				{
+					error << "SparkleLauncher: unsupported clean scope '" << scopeText << "'.\n";
+					return false;
+				}
+				outArguments.RequestedCleanScope = scope;
+				continue;
+			}
+
+			if (argument == "--confirm-clean")
+			{
+				outArguments.CleanConfirmed = true;
+				continue;
+			}
+
 			error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 			return false;
 		}
@@ -513,11 +692,13 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n";
+		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n"
+		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
+		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";
 	}
 }

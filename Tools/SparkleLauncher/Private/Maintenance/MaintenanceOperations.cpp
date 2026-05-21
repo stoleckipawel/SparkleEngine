@@ -1,0 +1,395 @@
+#include "SparkleLauncher/MaintenanceOperations.h"
+
+#include "Core/Public/Strings/StringUtils.h"
+#include "MaintenanceOperationProcessRequests.h"
+#include "SparkleLauncher/LauncherPaths.h"
+
+#include <algorithm>
+#include <optional>
+#include <sstream>
+#include <system_error>
+#include <utility>
+
+namespace SparkleLauncher
+{
+	static void AddReadiness(MaintenanceOperationPlan& plan, std::string message)
+	{
+		plan.ReadinessMessages.push_back(std::move(message));
+	}
+
+	static void AddPlannedEffect(MaintenanceOperationPlan& plan, std::string message)
+	{
+		plan.PlannedEffects.push_back(std::move(message));
+	}
+
+	static void AddCleanTarget(MaintenanceOperationPlan& plan, std::string displayName, std::filesystem::path path, std::string detail)
+	{
+		MaintenanceCleanTarget target;
+		target.DisplayName = std::move(displayName);
+		target.Path = std::move(path);
+		target.Detail = std::move(detail);
+		plan.CleanTargets.push_back(std::move(target));
+	}
+
+	static bool HasFormatExtension(const std::filesystem::path& path)
+	{
+		const std::string extension = Strings::ToLowerCopy(path.extension().string());
+		return extension == ".cpp" || extension == ".h" || extension == ".hpp" || extension == ".hxx" || extension == ".hlsl" || extension == ".hlsli";
+	}
+
+	static bool IsThirdPartyPath(const std::filesystem::path& path)
+	{
+		const std::string normalized = Strings::ToLowerCopy(path.generic_string());
+		return normalized.find("/third_party/") != std::string::npos;
+	}
+
+	static void CollectFormatSourcesInDirectory(std::vector<std::filesystem::path>& files, const std::filesystem::path& directory)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(directory, errorCode))
+		{
+			return;
+		}
+
+		std::filesystem::recursive_directory_iterator iterator(
+		    directory,
+		    std::filesystem::directory_options::skip_permission_denied,
+		    errorCode);
+		const std::filesystem::recursive_directory_iterator end;
+		while (iterator != end)
+		{
+			const std::filesystem::directory_entry entry = *iterator;
+			if (entry.is_regular_file(errorCode) && HasFormatExtension(entry.path()) && !IsThirdPartyPath(entry.path()))
+			{
+				files.push_back(entry.path());
+			}
+			errorCode.clear();
+			iterator.increment(errorCode);
+			errorCode.clear();
+		}
+	}
+
+	static std::vector<std::filesystem::path> CollectFormatSourceFiles(const std::filesystem::path& repositoryRoot)
+	{
+		std::vector<std::filesystem::path> files;
+		CollectFormatSourcesInDirectory(files, repositoryRoot / "Engine");
+		CollectFormatSourcesInDirectory(files, repositoryRoot / "Projects");
+		std::sort(files.begin(), files.end(), [](const std::filesystem::path& lhs, const std::filesystem::path& rhs) {
+			return lhs.generic_string() < rhs.generic_string();
+		});
+		return files;
+	}
+
+	static std::vector<std::string> ResolveValidationTargets(const MaintenanceOperationRequest& request, MaintenanceOperationPlan& plan)
+	{
+		std::vector<std::string> targets = request.ValidationTargets.empty() ? std::vector<std::string>{"sparkle_validation_check"} : request.ValidationTargets;
+		const std::vector<std::string>& knownTargets = GetKnownValidationGateTargets();
+		for (const std::string& target : targets)
+		{
+			if (std::find(knownTargets.begin(), knownTargets.end(), target) == knownTargets.end())
+			{
+				AddReadiness(plan, "Unknown validation target: " + target);
+			}
+		}
+		return targets;
+	}
+
+	static void AddProjectGeneratedTargets(MaintenanceOperationPlan& plan, bool includeBuild, bool includeLogs, bool includeState)
+	{
+		std::error_code errorCode;
+		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
+		if (!std::filesystem::is_directory(projectsDirectory, errorCode))
+		{
+			return;
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+		{
+			if (!entry.is_directory(errorCode))
+			{
+				continue;
+			}
+
+			const std::string projectName = entry.path().filename().string();
+			if (includeBuild)
+			{
+				AddCleanTarget(plan, "Project build tree", entry.path() / "build", "Projects/" + projectName + "/build");
+			}
+			if (includeLogs)
+			{
+				AddCleanTarget(plan, "Project logs", entry.path() / "logs", "Projects/" + projectName + "/logs");
+			}
+			if (includeState)
+			{
+				AddCleanTarget(plan, "Project ImGui state", entry.path() / "imgui.ini", "Projects/" + projectName + "/imgui.ini");
+			}
+		}
+	}
+
+	static void PopulateCleanTargets(MaintenanceOperationPlan& plan)
+	{
+		switch (plan.Request.RequestedCleanScope)
+		{
+		case CleanScope::SelectedProjectCookedOutputs:
+			AddCleanTarget(plan, "Selected project cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ProjectId), "Only cooked assets for project " + plan.Request.ProjectId + ".");
+			return;
+		case CleanScope::AllCookedOutputs:
+			AddCleanTarget(plan, "All cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", "All projects under build/Cooked.");
+			return;
+		case CleanScope::BuildTree:
+			AddCleanTarget(plan, "Build tree contents", GetBuildDirectory(plan.RepositoryRoot), "Contents are removed except build/_deps.");
+			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
+			AddCleanTarget(plan, "Root generated CMake/VS files", plan.RepositoryRoot, "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
+			AddProjectGeneratedTargets(plan, true, false, false);
+			return;
+		case CleanScope::ShaderCache:
+			AddCleanTarget(plan, "Shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", "Local shader cache, recook signal, debug artifacts, and transient shader outputs.");
+			return;
+		case CleanScope::ThirdPartyDependencyCache:
+			AddCleanTarget(plan, "Third-party dependency cache", GetBuildDirectory(plan.RepositoryRoot) / "_deps", "FetchContent dependency cache; configure will re-download dependencies.");
+			return;
+		case CleanScope::Logs:
+			AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
+			AddCleanTarget(plan, "Launcher logs", GetLauncherStatePaths(plan.RepositoryRoot).LogsDirectory, "Launcher operation logs under build/Launcher/Logs.");
+			AddProjectGeneratedTargets(plan, false, true, false);
+			return;
+		case CleanScope::PristineGeneratedWorkspace:
+			AddCleanTarget(plan, "Build tree", GetBuildDirectory(plan.RepositoryRoot), "Full build tree including dependency cache, cooked outputs, binaries, and launcher state.");
+			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
+			AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
+			AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
+			AddCleanTarget(plan, "Root ImGui state", plan.RepositoryRoot / "imgui.ini", "Root imgui.ini.");
+			AddCleanTarget(plan, "Root generated CMake/VS files", plan.RepositoryRoot, "Root *.sln, *.slnx, *.vcxproj, CMakeCache.txt, cmake_install.cmake, Makefile, and CMakeFiles.");
+			AddProjectGeneratedTargets(plan, true, true, true);
+			return;
+		}
+	}
+
+	static OperationDestructiveScope ToOperationDestructiveScope(CleanScope scope)
+	{
+		switch (scope)
+		{
+		case CleanScope::SelectedProjectCookedOutputs:
+			return OperationDestructiveScope::SelectedProjectCookedOutputs;
+		case CleanScope::AllCookedOutputs:
+			return OperationDestructiveScope::AllCookedOutputs;
+		case CleanScope::BuildTree:
+			return OperationDestructiveScope::BuildTree;
+		case CleanScope::ShaderCache:
+			return OperationDestructiveScope::ShaderCache;
+		case CleanScope::ThirdPartyDependencyCache:
+			return OperationDestructiveScope::DependencyCache;
+		case CleanScope::Logs:
+			return OperationDestructiveScope::Logs;
+		case CleanScope::PristineGeneratedWorkspace:
+			return OperationDestructiveScope::PristineGeneratedWorkspace;
+		}
+
+		return OperationDestructiveScope::None;
+	}
+
+	static void PopulatePlanSteps(MaintenanceOperationPlan& plan)
+	{
+		const bool shouldExposeSteps = plan.CanRun || plan.Kind == MaintenanceOperationKind::CleanWorkspace;
+		if (!shouldExposeSteps)
+		{
+			return;
+		}
+
+		const std::vector<MaintenanceOperationProcessStep> processSteps = BuildMaintenanceProcessStepsForPlan(plan);
+		for (const MaintenanceOperationProcessStep& processStep : processSteps)
+		{
+			MaintenanceOperationStep step;
+			step.Id = processStep.Id;
+			step.DisplayName = processStep.DisplayName;
+			step.Destructive = processStep.DeletesGeneratedOutput;
+			step.DestructivePath = processStep.DestructivePath;
+			if (processStep.HasProcessRequest)
+			{
+				step.DisplayCommandLine = BuildDisplayCommandLine(processStep.Request.ExecutablePath, processStep.Request.Arguments);
+				step.LogPath = processStep.Request.LogPath;
+			}
+			else
+			{
+				step.DisplayCommandLine = "Delete " + processStep.DestructivePath.string();
+			}
+			plan.Steps.push_back(std::move(step));
+		}
+	}
+
+	std::string ToString(MaintenanceOperationKind kind)
+	{
+		switch (kind)
+		{
+		case MaintenanceOperationKind::RunClangFormat:
+			return "RunClangFormat";
+		case MaintenanceOperationKind::RunValidationGates:
+			return "RunValidationGates";
+		case MaintenanceOperationKind::CleanWorkspace:
+			return "CleanWorkspace";
+		}
+
+		return "Unknown";
+	}
+
+	std::string ToString(FormatMode mode)
+	{
+		switch (mode)
+		{
+		case FormatMode::Check:
+			return "check";
+		case FormatMode::Apply:
+			return "apply";
+		}
+
+		return "unknown";
+	}
+
+	std::string ToString(CleanScope scope)
+	{
+		switch (scope)
+		{
+		case CleanScope::SelectedProjectCookedOutputs:
+			return "selected-project-cooked-outputs";
+		case CleanScope::AllCookedOutputs:
+			return "all-cooked-outputs";
+		case CleanScope::BuildTree:
+			return "build-tree";
+		case CleanScope::ShaderCache:
+			return "shader-cache";
+		case CleanScope::ThirdPartyDependencyCache:
+			return "third-party-dependency-cache";
+		case CleanScope::Logs:
+			return "logs";
+		case CleanScope::PristineGeneratedWorkspace:
+			return "pristine-generated-workspace";
+		}
+
+		return "unknown";
+	}
+
+	const std::vector<std::string>& GetKnownValidationGateTargets()
+	{
+		static const std::vector<std::string> targets = {
+		    "sparkle_validation_check",
+		    "runtime_cooked_boundary_check",
+		    "framegraph_boundary_check",
+		    "rhi_backend_boundary_check",
+		    "rhi_backend_parity_check",
+		    "rhi_memory_boundary_check",
+		    "shader_compiler_boundary_check",
+		    "shader_package_parity_check",
+		    "geometry_instancing_readiness_check",
+		    "threading_readiness_check",
+		    "advanced_feature_readiness_check",
+		    "texture_cooker_boundary_check",
+		    "tools_architecture_boundary_check",
+		    "logging_boundary_check",
+		};
+		return targets;
+	}
+
+	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
+	{
+		static const std::vector<MaintenanceOperationDefinition> definitions = {
+		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Maintenance", "Run Clang Format", "Check or apply clang-format to engine and project source files."},
+		    {MaintenanceOperationKind::RunValidationGates, "quality.validate", "Maintenance", "Run Validation Gates", "Run known CMake validation targets."},
+		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintenance", "Clean Workspace", "Remove generated output through an explicit confirmed scope."},
+		};
+		return definitions;
+	}
+
+	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId)
+	{
+		const std::vector<MaintenanceOperationDefinition>& definitions = GetMaintenanceOperationDefinitions();
+		const auto found = std::find_if(definitions.begin(), definitions.end(), [operationId](const MaintenanceOperationDefinition& definition) {
+			return definition.Id == operationId;
+		});
+		return found == definitions.end() ? std::nullopt : std::optional<MaintenanceOperationDefinition>(*found);
+	}
+
+	MaintenanceOperationPlan PlanMaintenanceOperation(std::string_view operationId, const MaintenanceOperationRequest& request)
+	{
+		MaintenanceOperationPlan plan;
+		const std::optional<MaintenanceOperationDefinition> definition = FindMaintenanceOperationDefinition(operationId);
+		if (!definition.has_value())
+		{
+			plan.Operation = MakeOperationRecord(std::string(operationId), "Unknown maintenance operation");
+			plan.Operation.FailureSummary = "Unknown maintenance operation id.";
+			AddReadiness(plan, plan.Operation.FailureSummary);
+			return plan;
+		}
+
+		plan.Kind = definition->Kind;
+		plan.RepositoryRoot = request.RepositoryRoot;
+		plan.Request = request;
+		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
+		plan.Operation.Inputs.push_back({"project", request.ProjectId});
+		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
+		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
+		plan.Operation.Inputs.push_back({"cleanScope", ToString(request.RequestedCleanScope)});
+		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
+		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
+		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
+
+		switch (plan.Kind)
+		{
+		case MaintenanceOperationKind::RunClangFormat:
+			plan.FormatSourceFiles = CollectFormatSourceFiles(request.RepositoryRoot);
+			AddReadiness(plan, plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : "clang-format is available.");
+			AddReadiness(plan, plan.FormatSourceFiles.empty() ? "No source files were found for formatting." : "Format source files discovered: " + std::to_string(plan.FormatSourceFiles.size()));
+			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " clang-format for Engine/ and Projects/ source files.");
+			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
+			break;
+		case MaintenanceOperationKind::RunValidationGates:
+			plan.ValidationTargets = ResolveValidationTargets(request, plan);
+			AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
+			AddReadiness(plan, plan.Freshness.Summary);
+			AddPlannedEffect(plan, "Run CMake validation target(s) for profile " + request.EditorProfile + ".");
+			plan.CanRun = plan.Toolchain.RequiredToolsAvailable;
+			for (const std::string& target : plan.ValidationTargets)
+			{
+				const std::vector<std::string>& knownTargets = GetKnownValidationGateTargets();
+				if (std::find(knownTargets.begin(), knownTargets.end(), target) == knownTargets.end())
+				{
+					plan.CanRun = false;
+				}
+			}
+			break;
+		case MaintenanceOperationKind::CleanWorkspace:
+			PopulateCleanTargets(plan);
+			plan.Operation.DestructiveScope = ToOperationDestructiveScope(request.RequestedCleanScope);
+			plan.Operation.RequiresConfirmation = true;
+			AddReadiness(plan, request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation: " + ToString(request.RequestedCleanScope));
+			for (const MaintenanceCleanTarget& target : plan.CleanTargets)
+			{
+				AddPlannedEffect(plan, target.DisplayName + ": " + target.Path.string() + " (" + target.Detail + ")");
+			}
+			plan.CanRun = request.DestructiveActionConfirmed;
+			break;
+		}
+
+		PopulatePlanSteps(plan);
+
+		std::ostringstream dryRun;
+		dryRun << "Dry-run plan for " << definition->DisplayName << ":";
+		for (const MaintenanceOperationStep& step : plan.Steps)
+		{
+			dryRun << "\n  " << step.DisplayName << ": " << step.DisplayCommandLine;
+			if (!step.LogPath.empty())
+			{
+				dryRun << "\n    Log: " << step.LogPath.string();
+			}
+			if (step.Destructive)
+			{
+				dryRun << "\n    Scope: " << step.DestructivePath.string();
+			}
+		}
+		if (plan.Steps.empty())
+		{
+			dryRun << "\n  No process step available until readiness issues are resolved.";
+		}
+		plan.Operation.DryRunText = dryRun.str();
+		return plan;
+	}
+}
