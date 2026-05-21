@@ -22,6 +22,19 @@ set(REQUIRED_TOOL_DOMAIN_DIRECTORIES
     "Shaders"
 )
 
+set(REQUIRED_TOOL_DIRECTORIES
+    "Launcher/SparkleLauncher"
+    "Cooking/CookCommon"
+    "Cooking/AssetCooker"
+    "Cooking/TextureCooker"
+    "Cooking/MeshCooker"
+    "Cooking/MaterialCooker"
+    "Cooking/SceneCooker"
+    "Import/SourceImportAdapters"
+    "Conversion/AssetConverter"
+    "Shaders/ShaderCompiler"
+)
+
 set(FORBIDDEN_LEGACY_TOOL_DIRECTORIES
     "SparkleLauncher"
     "CookCommon"
@@ -35,6 +48,12 @@ set(FORBIDDEN_LEGACY_TOOL_DIRECTORIES
     "ShaderCompiler"
     "Workflow"
     "Shader"
+)
+
+set(FORBIDDEN_LEGACY_TOOL_PATHS
+    "Workflow/SparkleLauncher"
+    "Cooking/Common"
+    "Shader/ShaderCompiler"
 )
 
 function(append_tools_architecture_violation violation_text)
@@ -69,9 +88,21 @@ foreach(required_domain IN LISTS REQUIRED_TOOL_DOMAIN_DIRECTORIES)
     endif()
 endforeach()
 
+foreach(required_tool_dir IN LISTS REQUIRED_TOOL_DIRECTORIES)
+    if(NOT IS_DIRECTORY "${TOOLS_ARCHITECTURE_ROOT}/${required_tool_dir}")
+        append_tools_architecture_violation("Tools/${required_tool_dir}: missing required tool directory")
+    endif()
+endforeach()
+
 foreach(forbidden_legacy_dir IN LISTS FORBIDDEN_LEGACY_TOOL_DIRECTORIES)
     if(IS_DIRECTORY "${TOOLS_ARCHITECTURE_ROOT}/${forbidden_legacy_dir}")
         append_tools_architecture_violation("Tools/${forbidden_legacy_dir}: legacy flat tool directory; move the tool under its owning domain")
+    endif()
+endforeach()
+
+foreach(forbidden_legacy_path IN LISTS FORBIDDEN_LEGACY_TOOL_PATHS)
+    if(IS_DIRECTORY "${TOOLS_ARCHITECTURE_ROOT}/${forbidden_legacy_path}")
+        append_tools_architecture_violation("Tools/${forbidden_legacy_path}: legacy tool directory name; use the canonical domain/tool path")
     endif()
 endforeach()
 
@@ -186,8 +217,8 @@ get_property(TOOLS_ARCHITECTURE_VIOLATIONS GLOBAL PROPERTY TOOLS_ARCHITECTURE_VI
 
 if(TOOLS_ARCHITECTURE_VIOLATIONS)
     string(PREPEND TOOLS_ARCHITECTURE_VIOLATIONS
-        "Tools architecture validation failed. Tool implementation must stay private and shared seams must be narrow and explicit.\n")
+        "Tools architecture validation failed. Tool names, public seams, and implementation boundaries must stay canonical and explicit.\n")
     message(FATAL_ERROR "${TOOLS_ARCHITECTURE_VIOLATIONS}")
 endif()
 
-message(STATUS "Tools architecture boundary check passed for public tool seams and cross-tool private includes.")
+    message(STATUS "Tools architecture boundary check passed for canonical tool names, public seams, and cross-tool private includes.")

@@ -75,10 +75,12 @@ set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.cpp
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.h
 )
 
@@ -127,7 +129,7 @@ target_compile_features(SparkleLauncherCore PUBLIC cxx_std_20)
 
 target_link_libraries(SparkleLauncherCore PRIVATE SparkleCore)
 
-add_executable(SparkleLauncher
+add_executable(SparkleLauncher WIN32
     ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp
     ${SPARKLE_LAUNCHER_PRIVATE_SOURCES}
     ${SPARKLE_LAUNCHER_PRIVATE_HEADERS}
@@ -136,7 +138,8 @@ sparkle_configure_host_tool_target(SparkleLauncher)
 
 target_include_directories(SparkleLauncher
     PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell
 )
 
 target_link_libraries(SparkleLauncher
