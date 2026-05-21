@@ -1,6 +1,7 @@
 set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildWorkspaceOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildProfileCatalog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ProcessRunner.h
@@ -19,6 +20,10 @@ set(SPARKLE_LAUNCHER_CORE_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkspacePlanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkspaceProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkspaceStateFiles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CMakeWorkflowProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CookOperationExecutor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CookOperationProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CookOperations.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/LauncherPaths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/OperationModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/ProcessRunner.cpp
@@ -31,6 +36,8 @@ set(SPARKLE_LAUNCHER_CORE_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildFreshnessSignature.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkspaceProcessRequests.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkspaceStateFiles.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CMakeWorkflowProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/CookOperationProcessRequests.h
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES

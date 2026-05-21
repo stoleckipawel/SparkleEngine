@@ -1,7 +1,7 @@
 #include "BuildWorkspaceProcessRequests.h"
 
+#include "CMakeWorkflowProcessRequests.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
-#include "SparkleLauncher/LauncherPaths.h"
 
 #include <optional>
 #include <string_view>
@@ -9,40 +9,14 @@
 
 namespace SparkleLauncher
 {
-	static std::vector<std::string> GetDefaultBuildToolArguments()
-	{
-		return {"/nologo", "/v:minimal", "/m:1", "/p:UseMultiToolTask=false", "/p:TrackFileAccess=false", "/nodeReuse:false"};
-	}
-
 	static ProcessRequest MakeConfigureRequest(const BuildWorkspaceOperationPlan& plan)
 	{
-		ProcessRequest process;
-		process.ExecutablePath = plan.Toolchain.CMakePath;
-		process.WorkingDirectory = GetBuildDirectory(plan.RepositoryRoot);
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "Configure.txt");
-		process.Arguments = {"-G", plan.Toolchain.Generator, "-A", plan.Toolchain.Platform};
-		if (!plan.Toolchain.Toolset.empty())
-		{
-			process.Arguments.push_back("-T");
-			process.Arguments.push_back(plan.Toolchain.Toolset);
-		}
-		process.Arguments.push_back("-Wno-dev");
-		process.Arguments.push_back(plan.RepositoryRoot.string());
-		return process;
+		return MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt");
 	}
 
 	static ProcessRequest MakeBuildRequest(const BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
 	{
-		ProcessRequest process;
-		process.ExecutablePath = plan.Toolchain.CMakePath;
-		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "Build.txt");
-		process.Arguments = {"--build", GetBuildDirectory(plan.RepositoryRoot).string(), "--config", std::string(profileName), "--target"};
-		process.Arguments.insert(process.Arguments.end(), targets.begin(), targets.end());
-		process.Arguments.push_back("--");
-		const std::vector<std::string> buildToolArguments = GetDefaultBuildToolArguments();
-		process.Arguments.insert(process.Arguments.end(), buildToolArguments.begin(), buildToolArguments.end());
-		return process;
+		return MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, profileName, targets, "Build.txt");
 	}
 
 	static std::vector<std::string> ResolveProjectTargets(std::string_view projectId, std::string_view profileName)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProjectDiscovery.h"
 #include "SparkleLauncher/RepositoryLocator.h"
@@ -19,6 +20,8 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string DryRunOperationId;
+		CookMode RequestedCookMode = CookMode::Incremental;
+		bool ForceRecookConfirmed = false;
 		bool ShowHelp = false;
 	};
 

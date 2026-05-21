@@ -1,5 +1,6 @@
 #include "LauncherShell.h"
 
+#include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
@@ -46,23 +47,23 @@ namespace SparkleLauncher
 
 	static const std::vector<LauncherOperationRow>& GetLauncherOperationRows()
 	{
-		static const std::vector<LauncherOperationRow> operations = {
-		    {"Setup", "workspace.setup", "Setup Workspace", "Ready", "Validate toolchain and ensure build files."},
-		    {"Setup", "workspace.generate-solution", "Generate Solution", "Ready", "Refresh CMake build files."},
-		    {"Setup", "toolchain.check", "Check Toolchain", "Ready", "Inspect required local tools."},
-		    {"Build", "project.build.editor", "Compile Editor", "Ready", "Build <Project>Editor for the selected editor profile."},
-		    {"Build", "project.build.runtime", "Compile Runtime", "Ready", "Build <Project>Runtime for the selected runtime profile."},
-		    {"Build", "cook.tools.prepare", "Build Cook Tools", "Ready", "Prepare AssetCooker, TextureCooker, and ShaderCompiler."},
-		    {"Cook", "cook.project", "Cook All Assets", "Dry-run", "Preview full incremental cook for the selected project."},
-		    {"Cook", "cook.shaders", "Cook Shaders", "Dry-run", "Preview shader package cook."},
-		    {"Cook", "cook.textures", "Build Textures", "Dry-run", "Preview focused texture cook."},
-		    {"Cook", "cook.assets", "Build Meshes / Scene Assets", "Dry-run", "Preview scene, mesh, and material cook."},
-		    {"Maintenance", "workspace.clean", "Clean Workspace", "Needs scope", "Require an explicit generated-output scope."},
-		    {"Maintenance", "quality.format", "Run Clang Format", "Dry-run", "Preview source formatting pass."},
-		    {"Maintenance", "quality.validate", "Run Validation Gates", "Dry-run", "Preview CMake validation target list."},
-		    {"Launch", "project.launch.editor", "Run Editor", "Blocked", "Compile editor target before launch."},
-		    {"Launch", "project.launch.runtime", "Run Runtime", "Blocked", "Compile runtime target before launch."},
-		};
+		static const std::vector<LauncherOperationRow> operations = [] {
+			std::vector<LauncherOperationRow> rows;
+			for (const BuildWorkspaceOperationDefinition& definition : GetBuildWorkspaceOperationDefinitions())
+			{
+				rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
+			}
+			for (const CookOperationDefinition& definition : GetCookOperationDefinitions())
+			{
+				rows.push_back({definition.Group, definition.Id, definition.DisplayName, "Dry-run", definition.Description});
+			}
+			rows.push_back({"Maintenance", "workspace.clean", "Clean Workspace", "Needs scope", "Require an explicit generated-output scope."});
+			rows.push_back({"Maintenance", "quality.format", "Run Clang Format", "Dry-run", "Preview source formatting pass."});
+			rows.push_back({"Maintenance", "quality.validate", "Run Validation Gates", "Dry-run", "Preview CMake validation target list."});
+			rows.push_back({"Launch", "project.launch.editor", "Run Editor", "Blocked", "Compile editor target before launch."});
+			rows.push_back({"Launch", "project.launch.runtime", "Run Runtime", "Blocked", "Compile runtime target before launch."});
+			return rows;
+		}();
 		return operations;
 	}
 
@@ -211,9 +212,52 @@ namespace SparkleLauncher
 		    {"local", latestLogPath.has_value() ? "Latest launcher log: " + latestLogPath->string() : "No launcher logs discovered yet."});
 	}
 
-	static void ApplyDryRun(LauncherShellState& state, std::string_view requestedOperationId)
+	static void AppendBuildPlanDryRun(LauncherShellState& state, const BuildWorkspaceOperationPlan& plan)
 	{
-		const std::string operationId = requestedOperationId.empty() ? std::string(kDefaultDryRunOperationId) : std::string(requestedOperationId);
+		state.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
+		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
+		state.JobOutput.push_back("Editor profile: " + state.EditorProfile);
+		state.JobOutput.push_back("Runtime profile: " + state.RuntimeProfile);
+		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			state.JobOutput.push_back("Readiness: " + message);
+		}
+		for (const std::string& effect : plan.PlannedEffects)
+		{
+			state.JobOutput.push_back("Effect: " + effect);
+		}
+		state.JobOutput.push_back(plan.Operation.DryRunText);
+		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
+	}
+
+	static void AppendCookPlanDryRun(LauncherShellState& state, const CookOperationPlan& plan)
+	{
+		state.JobOutput.push_back(plan.Operation.DisplayName + " [" + std::string(plan.CanRun ? "Ready" : "Blocked") + "]");
+		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
+		state.JobOutput.push_back("Runtime profile: " + state.RuntimeProfile);
+		state.JobOutput.push_back("Cook mode: " + ToString(plan.Request.Mode));
+		state.JobOutput.push_back("Cooked output: " + plan.CookedOutputDirectory.string());
+		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
+		if (plan.Operation.RequiresConfirmation)
+		{
+			state.JobOutput.push_back("Confirmation required: " + ToString(plan.Operation.DestructiveScope));
+		}
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			state.JobOutput.push_back("Readiness: " + message);
+		}
+		for (const std::string& effect : plan.PlannedEffects)
+		{
+			state.JobOutput.push_back("Effect: " + effect);
+		}
+		state.JobOutput.push_back(plan.Operation.DryRunText);
+		state.Activity.push_back({GetCurrentTimeText(), plan.Operation.DisplayName + " dry-run planned for " + state.SelectedProjectId});
+	}
+
+	static void ApplyDryRun(LauncherShellState& state, const LauncherShellArguments& arguments)
+	{
+		const std::string operationId = arguments.DryRunOperationId.empty() ? std::string(kDefaultDryRunOperationId) : arguments.DryRunOperationId;
 		const LauncherOperationRow* operation = FindOperationRow(state.Operations, operationId);
 		if (operation == nullptr)
 		{
@@ -222,21 +266,34 @@ namespace SparkleLauncher
 			return;
 		}
 
-		OperationRecord record = MakeOperationRecord(operation->Id, operation->DisplayName);
-		record.Inputs.push_back({"project", state.SelectedProjectId});
-		record.Inputs.push_back({"editorProfile", state.EditorProfile});
-		record.Inputs.push_back({"runtimeProfile", state.RuntimeProfile});
-		record.DryRunText = "Dry-run only: " + operation->NextEffect;
-		MarkOperationStarted(record, GetLauncherOperationLogPath(state.Repository.RootPath, record.Id, "DryRun.txt"));
-		MarkOperationFinished(record, OperationStatus::Succeeded, 0);
+		BuildWorkspaceOperationRequest buildRequest;
+		buildRequest.RepositoryRoot = state.Repository.RootPath;
+		buildRequest.ProjectId = state.SelectedProjectId;
+		buildRequest.EditorProfile = state.EditorProfile;
+		buildRequest.RuntimeProfile = state.RuntimeProfile;
+		if (FindBuildWorkspaceOperationDefinition(operationId).has_value())
+		{
+			AppendBuildPlanDryRun(state, PlanBuildWorkspaceOperation(operationId, buildRequest));
+			return;
+		}
 
-		state.JobOutput.push_back(record.DisplayName + " [" + ToString(record.Status) + "]");
-		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
-		state.JobOutput.push_back("Editor profile: " + state.EditorProfile);
-		state.JobOutput.push_back("Runtime profile: " + state.RuntimeProfile);
-		state.JobOutput.push_back("Log path: " + record.LogPath.string());
+		CookOperationRequest cookRequest;
+		cookRequest.RepositoryRoot = state.Repository.RootPath;
+		cookRequest.ProjectId = state.SelectedProjectId;
+		cookRequest.RuntimeProfile = state.RuntimeProfile;
+		cookRequest.Mode = arguments.RequestedCookMode;
+		cookRequest.ForceRecookConfirmed = arguments.ForceRecookConfirmed;
+		if (FindCookOperationDefinition(operationId).has_value())
+		{
+			AppendCookPlanDryRun(state, PlanCookOperation(operationId, cookRequest));
+			return;
+		}
+
+		OperationRecord record = MakeOperationRecord(operation->Id, operation->DisplayName);
+		record.DryRunText = "Dry-run only: " + operation->NextEffect;
+		state.JobOutput.push_back(record.DisplayName + " [Preview]");
 		state.JobOutput.push_back(record.DryRunText);
-		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " dry-run succeeded for " + state.SelectedProjectId});
+		state.Activity.push_back({GetCurrentTimeText(), record.DisplayName + " placeholder dry-run for " + state.SelectedProjectId});
 	}
 
 	static void RenderProjectTiles(const LauncherShellState& state, std::ostream& output)
@@ -345,7 +402,7 @@ namespace SparkleLauncher
 		AppendLocalActivity(state);
 		if (!arguments.DryRunOperationId.empty())
 		{
-			ApplyDryRun(state, arguments.DryRunOperationId);
+			ApplyDryRun(state, arguments);
 		}
 
 		RenderLauncherShell(state, output);
@@ -434,6 +491,18 @@ namespace SparkleLauncher
 				continue;
 			}
 
+			if (argument == "--force-recook")
+			{
+				outArguments.RequestedCookMode = CookMode::Force;
+				continue;
+			}
+
+			if (argument == "--confirm-force-recook")
+			{
+				outArguments.ForceRecookConfirmed = true;
+				continue;
+			}
+
 			error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 			return false;
 		}
@@ -444,10 +513,11 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--force-recook] [--confirm-force-recook] [--dry-run [operation-id]]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
-		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n";
+		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
+		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n";
 	}
 }
