@@ -89,6 +89,10 @@ target_link_libraries(SparkleCore
         spdlog::spdlog_header_only
 )
 
+if(WIN32)
+    target_link_libraries(SparkleCore PRIVATE bcrypt)
+endif()
+
 target_compile_definitions(SparkleCore
     PUBLIC
     $<$<OR:$<CONFIG:DebugEditor>,$<CONFIG:DebugGame>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE>

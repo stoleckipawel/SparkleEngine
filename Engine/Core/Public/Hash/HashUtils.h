@@ -62,6 +62,7 @@ namespace Hash
 	}
 
 	bool TryFnv1a64File(const std::filesystem::path& path, uint64_t& outHash, std::string& outErrorMessage);
+	bool TrySha256Hex(std::string_view text, std::string& outHashHex, std::string& outErrorMessage);
 
 	inline constexpr uint32_t kFnv32OffsetBasis = 2166136261u;
 	inline constexpr uint32_t kFnv32Prime = 16777619u;

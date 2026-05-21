@@ -4,6 +4,17 @@
 
 #include <array>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
+
+#if defined(_WIN32)
+	#define NOMINMAX
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <Windows.h>
+	#include <bcrypt.h>
+#endif
 
 namespace Hash
 {
@@ -38,5 +49,53 @@ namespace Hash
 		outHash = FinalizeFnv1a64(hash);
 		outErrorMessage.clear();
 		return true;
+	}
+
+	bool TrySha256Hex(std::string_view text, std::string& outHashHex, std::string& outErrorMessage)
+	{
+		outHashHex.clear();
+		outErrorMessage.clear();
+
+#if defined(_WIN32)
+		BCRYPT_ALG_HANDLE algorithmHandle = nullptr;
+		if (BCryptOpenAlgorithmProvider(&algorithmHandle, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
+		{
+			outErrorMessage = "Failed to open SHA-256 provider.";
+			return false;
+		}
+
+		BCRYPT_HASH_HANDLE hashHandle = nullptr;
+		std::array<unsigned char, 32> hash = {};
+		if (BCryptCreateHash(algorithmHandle, &hashHandle, nullptr, 0, nullptr, 0, 0) != 0)
+		{
+			BCryptCloseAlgorithmProvider(algorithmHandle, 0);
+			outErrorMessage = "Failed to create SHA-256 hash.";
+			return false;
+		}
+
+		const bool hashed = BCryptHashData(hashHandle, reinterpret_cast<unsigned char*>(const_cast<char*>(text.data())), static_cast<unsigned long>(text.size()), 0) == 0 &&
+		    BCryptFinishHash(hashHandle, hash.data(), static_cast<unsigned long>(hash.size()), 0) == 0;
+		BCryptDestroyHash(hashHandle);
+		BCryptCloseAlgorithmProvider(algorithmHandle, 0);
+		if (!hashed)
+		{
+			outErrorMessage = "Failed to compute SHA-256 hash.";
+			return false;
+		}
+
+		std::ostringstream stream;
+		stream << std::hex << std::setfill('0');
+		for (const unsigned char byte : hash)
+		{
+			stream << std::setw(2) << static_cast<int>(byte);
+		}
+
+		outHashHex = stream.str();
+		return true;
+#else
+		(void)text;
+		outErrorMessage = "SHA-256 hashing is not implemented for this platform.";
+		return false;
+#endif
 	}
 }

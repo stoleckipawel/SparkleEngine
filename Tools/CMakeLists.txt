@@ -8,7 +8,6 @@
 		set_target_properties(${target_name} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_${game_config_upper} TRUE)
 	endforeach()
 endfunction()
-
 add_subdirectory(SparkleLauncher)
 add_subdirectory(CookCommon)
 add_subdirectory(AssetCooker)
