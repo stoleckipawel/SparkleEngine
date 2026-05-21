@@ -81,10 +81,18 @@ set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
 
 set(SPARKLE_CLI_PRIVATE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliDispatcher.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliOutput.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliParser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliValueOptions.cpp
 )
 
 set(SPARKLE_CLI_PRIVATE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliArguments.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCli.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliDispatcher.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliOutput.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cli/SparkleCliParser.h
 )
 
 add_library(SparkleLauncherCore STATIC

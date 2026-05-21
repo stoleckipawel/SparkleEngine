@@ -1052,7 +1052,7 @@ Tools/SparkleLauncher/
   Private/Maintenance/           Format, validation, explicit clean scopes, and locked-file diagnostics
   Private/Launch/                Editor/runtime executable path derivation and launch operation execution
   Private/Shell/                 Current project-centric console shell and argument parsing
-  Private/Cli/                   Sparkle.exe automation dispatcher over SparkleLauncherCore operations
+  Private/Cli/                   Sparkle.exe argument model, parser, output, and operation dispatcher
   Source/                        SparkleLauncher and Sparkle.exe executable entrypoints
   Probe/                         Lightweight probe executable for source-only sanity checks
 ```
