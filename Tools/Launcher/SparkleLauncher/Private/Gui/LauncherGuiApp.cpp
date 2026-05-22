@@ -440,7 +440,7 @@ namespace SparkleLauncher
 		windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
 		windowClass.lpszClassName = className;
 		RegisterClassExW(&windowClass);
-
+ 
 		HWND window = CreateWindowExW(
 		    0,
 		    className,
