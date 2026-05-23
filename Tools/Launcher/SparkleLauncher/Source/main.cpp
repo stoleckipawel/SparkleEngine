@@ -16,7 +16,7 @@
 
 	int main()
 	{
-		std::cerr << "SparkleLauncher GUI is currently implemented for Windows. Use Sparkle.exe for CLI automation.\n";
+		std::cerr << "SparkleLauncher GUI is currently implemented for Windows.\n";
 		return SparkleLauncher::RunLauncherGui();
 	}
 #endif

@@ -127,6 +127,8 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 - UI/UX documentation is complete.
 - No build or distribution performed at this stage.
 
+**Status:** Implemented source-only UI polish. See [launcher-gui-phase3-ux-review.md](launcher-gui-phase3-ux-review.md).
+
 ---
 
 ### Phase 4: Production Readiness & QA
@@ -150,6 +152,8 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 - Documentation is complete and reviewed.
 - Branding is finalized and consistent.
 - No build or legacy code removal at this stage.
+
+**Status:** Implemented source-only production readiness hardening. See [launcher-gui-phase4-production-readiness.md](launcher-gui-phase4-production-readiness.md).
 
 ---
 
@@ -175,6 +179,10 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 - All legacy console code is removed.
 - Launcher is distributed and available in the depot.
 - User feedback is collected and tracked for future improvements.
+
+**Status:** Implemented executable build, package output, and legacy console removal. See [launcher-gui-phase5-release.md](launcher-gui-phase5-release.md).
+
+**Redesign Note:** The first production layout felt too complex in practice. A simpler one-screen redesign has been drafted in [launcher-gui-simplified-redesign.md](launcher-gui-simplified-redesign.md) before changing Qt code again.
 
 ---
 
