@@ -5,10 +5,14 @@
 #include "LauncherSettings.h"
 
 #include <QtCore/Qt>
+#include <QtGui/QTextCursor>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollArea>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
@@ -54,6 +58,9 @@ namespace SparkleLauncher
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
 		connect(&m_backend, &LauncherBackend::OperationPreviewReady, this, &LauncherMainWindow::DisplayOperationPreview);
 		connect(&m_backend, &LauncherBackend::OperationPreviewFailed, this, &LauncherMainWindow::DisplayOperationPreviewError);
+		connect(&m_backend, &LauncherBackend::OperationStarted, this, &LauncherMainWindow::DisplayOperationStarted);
+		connect(&m_backend, &LauncherBackend::OperationOutputReceived, this, &LauncherMainWindow::AppendOperationOutput);
+		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
 
 		m_navigationList->setCurrentRow(0);
 		RefreshProjects();
@@ -98,21 +105,50 @@ namespace SparkleLauncher
 		QListWidgetItem* selectedItem = m_operationList == nullptr ? nullptr : m_operationList->currentItem();
 		if (selectedItem == nullptr)
 		{
-			m_operationOutput->setPlainText("Select an operation to preview the Phase 1 backend adapter boundary.");
+			m_operationOutput->setPlainText("Select an operation to preview the native launcher backend plan.");
 			return;
 		}
 
-		m_backend.RequestOperationPreview(selectedItem->data(Qt::UserRole).toString());
+		m_backend.RequestOperationPreview(BuildOperationRequest(selectedItem->data(Qt::UserRole).toString()));
 	}
 
-	void LauncherMainWindow::DisplayOperationPreview(const QString&, const QString& title, const QString& previewText)
+	void LauncherMainWindow::RunSelectedOperation()
 	{
-		m_operationOutput->setPlainText(title + "\n\n" + previewText);
+		QListWidgetItem* selectedItem = m_operationList == nullptr ? nullptr : m_operationList->currentItem();
+		if (selectedItem == nullptr)
+		{
+			m_operationOutput->setPlainText("Select an operation before running a native launcher workflow.");
+			return;
+		}
+
+		m_backend.RunOperation(BuildOperationRequest(selectedItem->data(Qt::UserRole).toString()));
+	}
+
+	void LauncherMainWindow::DisplayOperationPreview(const QString&, const QString& title, const QString& previewText, bool canRun)
+	{
+		m_operationOutput->setPlainText(title + QString(canRun ? " [Ready]" : " [Blocked]") + "\n\n" + previewText);
 	}
 
 	void LauncherMainWindow::DisplayOperationPreviewError(const QString&, const QString& message)
 	{
 		m_operationOutput->setPlainText(message);
+	}
+
+	void LauncherMainWindow::DisplayOperationStarted(const QString&, const QString& title)
+	{
+		m_operationOutput->setPlainText(title + "\n\nOperation started. Output will stream here.\n");
+	}
+
+	void LauncherMainWindow::AppendOperationOutput(const QString&, const QString& outputText)
+	{
+		m_operationOutput->moveCursor(QTextCursor::End);
+		m_operationOutput->insertPlainText(outputText);
+		m_operationOutput->moveCursor(QTextCursor::End);
+	}
+
+	void LauncherMainWindow::DisplayOperationFinished(const QString&, const QString& title, const QString& statusText, int)
+	{
+		m_operationOutput->append("\n" + title + " finished: " + statusText);
 	}
 
 	QWidget* LauncherMainWindow::CreateSidebar()
@@ -187,27 +223,42 @@ namespace SparkleLauncher
 		m_operationOutput = new QTextEdit(page);
 		m_operationOutput->setObjectName("OperationOutput");
 		m_operationOutput->setReadOnly(true);
-		m_operationOutput->setPlainText("Select an operation to preview the Phase 1 backend adapter boundary.");
+		m_operationOutput->setPlainText("Select an operation to preview the native launcher backend plan.");
 
 		operationLayout->addWidget(m_operationList, 1);
 		operationLayout->addWidget(m_operationOutput, 2);
 
 		QPushButton* previewButton = new QPushButton("Preview Operation", page);
 		connect(previewButton, &QPushButton::clicked, this, &LauncherMainWindow::PreviewSelectedOperation);
+		QPushButton* runButton = new QPushButton("Run Operation", page);
+		connect(runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
+
+		QHBoxLayout* buttonLayout = new QHBoxLayout();
+		buttonLayout->setSpacing(10);
+		buttonLayout->addWidget(previewButton);
+		buttonLayout->addWidget(runButton);
+		buttonLayout->addStretch(1);
 
 		layout->addLayout(operationLayout, 1);
-		layout->addWidget(previewButton, 0, Qt::AlignLeft);
+		layout->addLayout(buttonLayout);
 		return page;
 	}
 
 	QWidget* LauncherMainWindow::CreateSettingsPage()
 	{
 		QWidget* page = new QWidget(this);
-		QVBoxLayout* layout = new QVBoxLayout(page);
-		layout->setContentsMargins(34, 30, 34, 30);
-		layout->setSpacing(18);
+		QVBoxLayout* pageLayout = new QVBoxLayout(page);
+		pageLayout->setContentsMargins(34, 30, 34, 30);
+		pageLayout->setSpacing(18);
 
-		layout->addWidget(CreatePageTitle("Settings", "Profiles and launcher preferences stay inside the Qt shell."));
+		pageLayout->addWidget(CreatePageTitle("Settings", "Profiles and launcher preferences stay inside the Qt shell."));
+
+		QScrollArea* scrollArea = new QScrollArea(page);
+		scrollArea->setWidgetResizable(true);
+		QWidget* settingsContent = new QWidget(scrollArea);
+		QVBoxLayout* layout = new QVBoxLayout(settingsContent);
+		layout->setContentsMargins(0, 0, 12, 0);
+		layout->setSpacing(12);
 
 		QComboBox* editorProfileBox = new QComboBox(page);
 		editorProfileBox->addItems({"DebugEditor", "DevelopmentEditor", "ShippingEditor"});
@@ -223,7 +274,83 @@ namespace SparkleLauncher
 		layout->addWidget(editorProfileBox);
 		layout->addWidget(new QLabel("Runtime profile", page));
 		layout->addWidget(runtimeProfileBox);
+
+		QCheckBox* forceConfigureBox = new QCheckBox("Force configure before build operations", page);
+		connect(forceConfigureBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetForceConfigure);
+		QCheckBox* forceRecookBox = new QCheckBox("Force recook mode", page);
+		connect(forceRecookBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetForceRecook);
+		QCheckBox* confirmForceRecookBox = new QCheckBox("Confirm force recook cleanup", page);
+		connect(confirmForceRecookBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetConfirmForceRecook);
+		QCheckBox* confirmCleanBox = new QCheckBox("Confirm clean operation", page);
+		connect(confirmCleanBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetConfirmClean);
+		QCheckBox* smokeTraceBox = new QCheckBox("Enable smoke trace", page);
+		connect(smokeTraceBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetSmokeTrace);
+		QCheckBox* smokeSkipLevelSwitchingBox = new QCheckBox("Skip smoke level switching", page);
+		connect(smokeSkipLevelSwitchingBox, &QCheckBox::toggled, &m_settings, &LauncherSettings::SetSmokeSkipLevelSwitching);
+
+		QLineEdit* selectedTargetsEdit = new QLineEdit(page);
+		selectedTargetsEdit->setPlaceholderText("Optional build targets, comma separated");
+		connect(selectedTargetsEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetSelectedTargets);
+		QLineEdit* shaderPackagesEdit = new QLineEdit(page);
+		shaderPackagesEdit->setPlaceholderText("Optional shader package ids, comma separated");
+		connect(shaderPackagesEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetShaderPackages);
+		QLineEdit* validationGroupsEdit = new QLineEdit(page);
+		validationGroupsEdit->setPlaceholderText("Validation groups: aggregate, boundaries, parity, readiness");
+		connect(validationGroupsEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetValidationGroups);
+		QLineEdit* validationTargetsEdit = new QLineEdit(page);
+		validationTargetsEdit->setPlaceholderText("Validation targets, comma separated");
+		connect(validationTargetsEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetValidationTargets);
+		QLineEdit* smokeBackendEdit = new QLineEdit(page);
+		smokeBackendEdit->setPlaceholderText("Smoke backend, for example d3d12 or vulkan");
+		connect(smokeBackendEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetSmokeBackend);
+		QLineEdit* smokeFrameLimitEdit = new QLineEdit(page);
+		smokeFrameLimitEdit->setPlaceholderText("Smoke frame limit");
+		connect(smokeFrameLimitEdit, &QLineEdit::textChanged, &m_settings, &LauncherSettings::SetSmokeFrameLimit);
+
+		QComboBox* formatModeBox = new QComboBox(page);
+		formatModeBox->addItem("Check", "check");
+		formatModeBox->addItem("Apply", "apply");
+		connect(formatModeBox, &QComboBox::currentTextChanged, [formatModeBox, this]() {
+			m_settings.SetFormatMode(formatModeBox->currentData().toString());
+		});
+
+		QComboBox* cleanScopeBox = new QComboBox(page);
+		cleanScopeBox->addItem("Selected Project Cooked Outputs", "selected-cooked");
+		cleanScopeBox->addItem("All Cooked Outputs", "all-cooked");
+		cleanScopeBox->addItem("Build Tree", "build-tree");
+		cleanScopeBox->addItem("Shader Cache", "shader-cache");
+		cleanScopeBox->addItem("Third-Party Dependency Cache", "deps");
+		cleanScopeBox->addItem("Logs", "logs");
+		cleanScopeBox->addItem("Pristine Generated Workspace", "pristine");
+		connect(cleanScopeBox, &QComboBox::currentTextChanged, [cleanScopeBox, this]() {
+			m_settings.SetCleanScope(cleanScopeBox->currentData().toString());
+		});
+
+		layout->addWidget(forceConfigureBox);
+		layout->addWidget(forceRecookBox);
+		layout->addWidget(confirmForceRecookBox);
+		layout->addWidget(confirmCleanBox);
+		layout->addWidget(smokeTraceBox);
+		layout->addWidget(smokeSkipLevelSwitchingBox);
+		layout->addWidget(new QLabel("Build targets", page));
+		layout->addWidget(selectedTargetsEdit);
+		layout->addWidget(new QLabel("Shader packages", page));
+		layout->addWidget(shaderPackagesEdit);
+		layout->addWidget(new QLabel("Validation groups", page));
+		layout->addWidget(validationGroupsEdit);
+		layout->addWidget(new QLabel("Validation targets", page));
+		layout->addWidget(validationTargetsEdit);
+		layout->addWidget(new QLabel("Smoke backend", page));
+		layout->addWidget(smokeBackendEdit);
+		layout->addWidget(new QLabel("Smoke frame limit", page));
+		layout->addWidget(smokeFrameLimitEdit);
+		layout->addWidget(new QLabel("Format mode", page));
+		layout->addWidget(formatModeBox);
+		layout->addWidget(new QLabel("Clean scope", page));
+		layout->addWidget(cleanScopeBox);
 		layout->addStretch(1);
+		scrollArea->setWidget(settingsContent);
+		pageLayout->addWidget(scrollArea, 1);
 		return page;
 	}
 
@@ -251,6 +378,31 @@ namespace SparkleLauncher
 		label->setObjectName("PageTitle");
 		label->setTextFormat(Qt::RichText);
 		return label;
+	}
+
+	LauncherOperationRequest LauncherMainWindow::BuildOperationRequest(const QString& operationId) const
+	{
+		LauncherOperationRequest request;
+		request.RepositoryRoot = m_repositoryRoot;
+		request.OperationId = operationId;
+		request.ProjectId = m_projectModel.SelectedProjectId();
+		request.EditorProfile = m_settings.EditorProfile();
+		request.RuntimeProfile = m_settings.RuntimeProfile();
+		request.SelectedTargets = m_settings.SelectedTargets();
+		request.ShaderPackages = m_settings.ShaderPackages();
+		request.ValidationGroups = m_settings.ValidationGroups();
+		request.ValidationTargets = m_settings.ValidationTargets();
+		request.SmokeBackend = m_settings.SmokeBackend();
+		request.SmokeFrameLimit = m_settings.SmokeFrameLimit();
+		request.FormatMode = m_settings.FormatMode();
+		request.CleanScope = m_settings.CleanScope();
+		request.ForceConfigure = m_settings.ForceConfigure();
+		request.ForceRecook = m_settings.ForceRecook();
+		request.ConfirmForceRecook = m_settings.ConfirmForceRecook();
+		request.ConfirmClean = m_settings.ConfirmClean();
+		request.SmokeTrace = m_settings.SmokeTrace();
+		request.SmokeSkipLevelSwitching = m_settings.SmokeSkipLevelSwitching();
+		return request;
 	}
 
 	void LauncherMainWindow::PopulateProjects()

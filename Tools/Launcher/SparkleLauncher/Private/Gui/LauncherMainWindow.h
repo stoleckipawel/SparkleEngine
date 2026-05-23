@@ -11,6 +11,7 @@
 namespace SparkleLauncher
 {
 	class LauncherBackend;
+	struct LauncherOperationRequest;
 	class LauncherProjectModel;
 	class LauncherSettings;
 
@@ -33,8 +34,12 @@ namespace SparkleLauncher
 		void RefreshProjects();
 		void SelectProjectFromList();
 		void PreviewSelectedOperation();
-		void DisplayOperationPreview(const QString& operationId, const QString& title, const QString& previewText);
+		void RunSelectedOperation();
+		void DisplayOperationPreview(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void DisplayOperationPreviewError(const QString& operationId, const QString& message);
+		void DisplayOperationStarted(const QString& operationId, const QString& title);
+		void AppendOperationOutput(const QString& operationId, const QString& outputText);
+		void DisplayOperationFinished(const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
 		QWidget* CreateSidebar();
@@ -43,6 +48,7 @@ namespace SparkleLauncher
 		QWidget* CreateSettingsPage();
 		QWidget* CreateAboutPage();
 		QLabel* CreatePageTitle(const QString& title, const QString& subtitle) const;
+		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		void PopulateProjects();
 		void PopulateOperations();
 		void ApplyVisualStyle();

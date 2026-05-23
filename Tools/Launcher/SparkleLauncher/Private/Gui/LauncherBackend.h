@@ -1,8 +1,14 @@
 #pragma once
 
+#include "SparkleLauncher/ProcessRunner.h"
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVector>
+
+#include <filesystem>
+#include <functional>
+#include <memory>
 
 namespace SparkleLauncher
 {
@@ -23,26 +29,56 @@ namespace SparkleLauncher
 		LauncherOperationCategory Category = LauncherOperationCategory::Workspace;
 	};
 
+	struct LauncherOperationRequest
+	{
+		std::filesystem::path RepositoryRoot;
+		QString OperationId;
+		QString ProjectId;
+		QString EditorProfile;
+		QString RuntimeProfile;
+		QString SelectedTargets;
+		QString ShaderPackages;
+		QString ValidationGroups;
+		QString ValidationTargets;
+		QString SmokeBackend;
+		QString SmokeFrameLimit;
+		QString FormatMode = "check";
+		QString CleanScope = "selected-cooked";
+		bool ForceConfigure = false;
+		bool ForceRecook = false;
+		bool ConfirmForceRecook = false;
+		bool ConfirmClean = false;
+		bool SmokeTrace = false;
+		bool SmokeSkipLevelSwitching = false;
+	};
+
 	class LauncherBackend final : public QObject
 	{
 		Q_OBJECT
 
 	public:
+		using ProcessRunnerFactory = std::function<std::unique_ptr<IProcessRunner>()>;
+
 		explicit LauncherBackend(QObject* parent = nullptr);
+		LauncherBackend(ProcessRunnerFactory processRunnerFactory, QObject* parent = nullptr);
 
 		const QVector<LauncherOperationDescriptor>& Operations() const;
 
-	public slots:
-		void RequestOperationPreview(const QString& operationId);
+		void RequestOperationPreview(const LauncherOperationRequest& request);
+		void RunOperation(LauncherOperationRequest request);
 
 	signals:
-		void OperationPreviewReady(const QString& operationId, const QString& title, const QString& previewText);
+		void OperationPreviewReady(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
+		void OperationStarted(const QString& operationId, const QString& title);
+		void OperationOutputReceived(const QString& operationId, const QString& outputText);
+		void OperationFinished(const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
 		void PopulateOperationCatalog();
 		const LauncherOperationDescriptor* FindOperation(const QString& operationId) const;
 
 		QVector<LauncherOperationDescriptor> m_operations;
+		ProcessRunnerFactory m_processRunnerFactory;
 	};
 }

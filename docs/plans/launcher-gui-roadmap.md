@@ -100,6 +100,8 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 - Feature inventory is checked off and reviewed.
 - No build or distribution performed at this stage.
 
+**Status:** Implemented source-only backend integration. See [launcher-gui-phase2-feature-map.md](launcher-gui-phase2-feature-map.md).
+
 ---
 
 ### Phase 3: UI/UX Polish & Design Consistency

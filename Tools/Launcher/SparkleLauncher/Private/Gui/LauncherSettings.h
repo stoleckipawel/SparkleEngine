@@ -14,10 +14,38 @@ namespace SparkleLauncher
 
 		const QString& EditorProfile() const;
 		const QString& RuntimeProfile() const;
+		const QString& SelectedTargets() const;
+		const QString& ShaderPackages() const;
+		const QString& ValidationGroups() const;
+		const QString& ValidationTargets() const;
+		const QString& SmokeBackend() const;
+		const QString& SmokeFrameLimit() const;
+		const QString& FormatMode() const;
+		const QString& CleanScope() const;
+		bool ForceConfigure() const;
+		bool ForceRecook() const;
+		bool ConfirmForceRecook() const;
+		bool ConfirmClean() const;
+		bool SmokeTrace() const;
+		bool SmokeSkipLevelSwitching() const;
 
 	public slots:
 		void SetEditorProfile(const QString& profileName);
 		void SetRuntimeProfile(const QString& profileName);
+		void SetSelectedTargets(const QString& targets);
+		void SetShaderPackages(const QString& packages);
+		void SetValidationGroups(const QString& groups);
+		void SetValidationTargets(const QString& targets);
+		void SetSmokeBackend(const QString& backend);
+		void SetSmokeFrameLimit(const QString& frameLimit);
+		void SetFormatMode(const QString& mode);
+		void SetCleanScope(const QString& scope);
+		void SetForceConfigure(bool enabled);
+		void SetForceRecook(bool enabled);
+		void SetConfirmForceRecook(bool enabled);
+		void SetConfirmClean(bool enabled);
+		void SetSmokeTrace(bool enabled);
+		void SetSmokeSkipLevelSwitching(bool enabled);
 
 	signals:
 		void SettingsChanged();
@@ -25,5 +53,19 @@ namespace SparkleLauncher
 	private:
 		QString m_editorProfile = "DevelopmentEditor";
 		QString m_runtimeProfile = "DevelopmentGame";
+		QString m_selectedTargets;
+		QString m_shaderPackages;
+		QString m_validationGroups;
+		QString m_validationTargets;
+		QString m_smokeBackend;
+		QString m_smokeFrameLimit;
+		QString m_formatMode = "check";
+		QString m_cleanScope = "selected-cooked";
+		bool m_forceConfigure = false;
+		bool m_forceRecook = false;
+		bool m_confirmForceRecook = false;
+		bool m_confirmClean = false;
+		bool m_smokeTrace = false;
+		bool m_smokeSkipLevelSwitching = false;
 	};
 }
