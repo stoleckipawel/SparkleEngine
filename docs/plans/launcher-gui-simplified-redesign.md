@@ -216,11 +216,12 @@ Advanced is a right-side drawer, not a full page. It is closed by default.
 ## Ultra-Simple Revision
 Follow-up user review found the workflow-card surface still too busy. The launcher now favors the old batch-file mental model:
 
-- The default screen is a small set of direct actions: Generate Solution, Build Editor, Cook Project, Launch Editor, and Validate.
-- Secondary operations remain available from a compact More selector instead of being shown as radio-button groups.
-- Preview is renamed to Details and moved out of the primary path.
-- Profile and rare operation flags live in a hidden Options drawer.
-- The bottom panel is status/output only, with no duplicate run controls.
+- The default screen is a small set of direct processes: Generate Solution, Build Editor, Cook Project, Launch Editor, and Validate.
+- Selecting a process does not run it. The user reviews process-specific options first, then clicks Run.
+- Secondary operations remain available from a compact Other selector instead of being shown as radio-button groups.
+- Profile and rare operation flags are placed with the process that uses them instead of in a detached drawer.
+- The bottom panel shows process activity, a completion progress bar, and output for the selected run.
+- Multiple processes can be started while earlier runs are still active; each run has its own activity entry and output buffer.
 
 ## Acceptance Criteria For Redesign Implementation
 - No primary page navigation is required for normal use.

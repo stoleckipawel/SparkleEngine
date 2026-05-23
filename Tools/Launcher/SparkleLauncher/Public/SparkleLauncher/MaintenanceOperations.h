@@ -15,7 +15,6 @@ namespace SparkleLauncher
 	enum class MaintenanceOperationKind
 	{
 		RunClangFormat,
-		RunValidationGates,
 		CleanWorkspace
 	};
 
@@ -52,23 +51,6 @@ namespace SparkleLauncher
 		std::string Detail;
 	};
 
-	struct ValidationGateDefinition
-	{
-		std::string Target;
-		std::string GroupId;
-		std::string DisplayName;
-		std::string Description;
-		std::string Recommendation;
-	};
-
-	struct ValidationGateGroupDefinition
-	{
-		std::string Id;
-		std::string DisplayName;
-		std::string Description;
-		std::vector<std::string> Targets;
-	};
-
 	struct MaintenanceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
@@ -77,8 +59,6 @@ namespace SparkleLauncher
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		bool DestructiveActionConfirmed = false;
-		std::vector<std::string> ValidationGroups;
-		std::vector<std::string> ValidationTargets;
 	};
 
 	struct MaintenanceOperationStep
@@ -100,8 +80,6 @@ namespace SparkleLauncher
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
 		std::vector<std::filesystem::path> FormatSourceFiles;
-		std::vector<std::string> ValidationGroups;
-		std::vector<std::string> ValidationTargets;
 		std::vector<MaintenanceCleanTarget> CleanTargets;
 		std::vector<MaintenanceOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;
@@ -112,9 +90,6 @@ namespace SparkleLauncher
 	std::string ToString(MaintenanceOperationKind kind);
 	std::string ToString(FormatMode mode);
 	std::string ToString(CleanScope scope);
-	const std::vector<ValidationGateDefinition>& GetValidationGateDefinitions();
-	const std::vector<ValidationGateGroupDefinition>& GetValidationGateGroupDefinitions();
-	const std::vector<std::string>& GetKnownValidationGateTargets();
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions();
 	std::optional<MaintenanceOperationDefinition> FindMaintenanceOperationDefinition(std::string_view operationId);
 	MaintenanceOperationPlan PlanMaintenanceOperation(std::string_view operationId, const MaintenanceOperationRequest& request);

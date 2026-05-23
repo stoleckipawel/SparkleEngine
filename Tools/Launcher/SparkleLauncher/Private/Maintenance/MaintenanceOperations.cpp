@@ -80,60 +80,6 @@ namespace SparkleLauncher
 		return files;
 	}
 
-	static bool AddUniqueValidationTarget(std::vector<std::string>& targets, const std::string& target)
-	{
-		if (std::find(targets.begin(), targets.end(), target) != targets.end())
-		{
-			return false;
-		}
-		targets.push_back(target);
-		return true;
-	}
-
-	static const ValidationGateGroupDefinition* FindValidationGateGroup(std::string_view groupId)
-	{
-		const std::vector<ValidationGateGroupDefinition>& groups = GetValidationGateGroupDefinitions();
-		const auto found = std::find_if(groups.begin(), groups.end(), [groupId](const ValidationGateGroupDefinition& group) {
-			return group.Id == groupId;
-		});
-		return found == groups.end() ? nullptr : &(*found);
-	}
-
-	static std::vector<std::string> ResolveValidationTargets(const MaintenanceOperationRequest& request, MaintenanceOperationPlan& plan)
-	{
-		std::vector<std::string> targets;
-		for (const std::string& groupId : request.ValidationGroups)
-		{
-			const ValidationGateGroupDefinition* group = FindValidationGateGroup(groupId);
-			if (group == nullptr)
-			{
-				AddReadiness(plan, "Unknown validation group: " + groupId);
-				continue;
-			}
-			for (const std::string& target : group->Targets)
-			{
-				AddUniqueValidationTarget(targets, target);
-			}
-		}
-		for (const std::string& target : request.ValidationTargets)
-		{
-			AddUniqueValidationTarget(targets, target);
-		}
-		if (targets.empty())
-		{
-			targets.push_back("sparkle_validation_check");
-		}
-		const std::vector<std::string>& knownTargets = GetKnownValidationGateTargets();
-		for (const std::string& target : targets)
-		{
-			if (std::find(knownTargets.begin(), knownTargets.end(), target) == knownTargets.end())
-			{
-				AddReadiness(plan, "Unknown validation target: " + target);
-			}
-		}
-		return targets;
-	}
-
 	static void AddProjectGeneratedTargets(MaintenanceOperationPlan& plan, bool includeBuild, bool includeLogs, bool includeState)
 	{
 		std::error_code errorCode;
@@ -263,8 +209,6 @@ namespace SparkleLauncher
 		{
 		case MaintenanceOperationKind::RunClangFormat:
 			return "RunClangFormat";
-		case MaintenanceOperationKind::RunValidationGates:
-			return "RunValidationGates";
 		case MaintenanceOperationKind::CleanWorkspace:
 			return "CleanWorkspace";
 		}
@@ -312,7 +256,6 @@ namespace SparkleLauncher
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
 		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Maintenance", "Run Clang Format", "Check or apply clang-format to engine and project source files."},
-		    {MaintenanceOperationKind::RunValidationGates, "quality.validate", "Maintenance", "Run Validation Gates", "Run known CMake validation targets."},
 		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintenance", "Clean Workspace", "Remove generated output through an explicit confirmed scope."},
 		};
 		return definitions;
@@ -347,10 +290,6 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
 		plan.Operation.Inputs.push_back({"cleanScope", ToString(request.RequestedCleanScope)});
-		for (const std::string& groupId : request.ValidationGroups)
-		{
-			plan.Operation.Inputs.push_back({"validationGroup", groupId});
-		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
@@ -363,22 +302,6 @@ namespace SparkleLauncher
 			AddReadiness(plan, plan.FormatSourceFiles.empty() ? "No source files were found for formatting." : "Format source files discovered: " + std::to_string(plan.FormatSourceFiles.size()));
 			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " clang-format for Engine/ and Projects/ source files.");
 			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
-			break;
-		case MaintenanceOperationKind::RunValidationGates:
-			plan.ValidationGroups = request.ValidationGroups;
-			plan.ValidationTargets = ResolveValidationTargets(request, plan);
-			AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
-			AddReadiness(plan, plan.Freshness.Summary);
-			AddPlannedEffect(plan, "Run CMake validation target(s) for profile " + request.EditorProfile + ".");
-			plan.CanRun = plan.Toolchain.RequiredToolsAvailable;
-			for (const std::string& target : plan.ValidationTargets)
-			{
-				const std::vector<std::string>& knownTargets = GetKnownValidationGateTargets();
-				if (std::find(knownTargets.begin(), knownTargets.end(), target) == knownTargets.end())
-				{
-					plan.CanRun = false;
-				}
-			}
 			break;
 		case MaintenanceOperationKind::CleanWorkspace:
 			PopulateCleanTargets(plan);

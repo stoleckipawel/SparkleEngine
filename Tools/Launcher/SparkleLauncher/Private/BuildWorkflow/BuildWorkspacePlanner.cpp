@@ -124,7 +124,7 @@ namespace SparkleLauncher
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
 		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", "Setup Workspace", "Validate tools and refresh build files when needed."},
-		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Generate Solution", "Run native CMake configure with selected generator/toolset."},
+		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Generate Solution", "Run native CMake configure for the repository and all discovered projects."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", "Check Toolchain", "Inspect CMake, Visual Studio/MSBuild, Windows SDK, Git, and clang-format."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Compile Editor", "Build <Project>Editor for the selected editor profile."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Compile Runtime", "Build <Project>Runtime for the selected runtime profile."},

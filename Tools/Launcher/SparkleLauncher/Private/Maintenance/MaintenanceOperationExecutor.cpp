@@ -121,10 +121,6 @@ namespace SparkleLauncher
 		{
 			return "clang-format reported formatting differences or failed. Log: " + step.Request.LogPath.string();
 		}
-		if (step.Id == "validation-gates")
-		{
-			return "Validation gates failed. Log: " + step.Request.LogPath.string();
-		}
 		return step.DisplayName + " failed. Log: " + step.Request.LogPath.string();
 	}
 

@@ -102,11 +102,6 @@ namespace SparkleLauncher
 		return process;
 	}
 
-	static std::vector<std::string> ResolveValidationTargets(const MaintenanceOperationPlan& plan)
-	{
-		return plan.ValidationTargets.empty() ? std::vector<std::string>{"sparkle_validation_check"} : plan.ValidationTargets;
-	}
-
 	static void AddFormatSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
 	{
 		std::size_t batchIndex = 0;
@@ -121,24 +116,6 @@ namespace SparkleLauncher
 			    MakeClangFormatRequest(plan, batch, batchIndex));
 			++batchIndex;
 		}
-	}
-
-	static void AddValidationSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
-	{
-		if (!plan.Freshness.Current)
-		{
-			AddProcessStep(
-			    steps,
-			    "configure",
-			    "Generate build files",
-			    MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt"));
-		}
-
-		AddProcessStep(
-		    steps,
-		    "validation-gates",
-		    "Run validation gates",
-		    MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, plan.Request.EditorProfile, ResolveValidationTargets(plan), "ValidationGates.txt"));
 	}
 
 	static void AddCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
@@ -192,13 +169,6 @@ namespace SparkleLauncher
 		{
 		case MaintenanceOperationKind::RunClangFormat:
 			AddFormatSteps(steps, plan);
-			return steps;
-		case MaintenanceOperationKind::RunValidationGates:
-			if (!plan.Toolchain.RequiredToolsAvailable)
-			{
-				return steps;
-			}
-			AddValidationSteps(steps, plan);
 			return steps;
 		case MaintenanceOperationKind::CleanWorkspace:
 			AddCleanSteps(steps, plan);

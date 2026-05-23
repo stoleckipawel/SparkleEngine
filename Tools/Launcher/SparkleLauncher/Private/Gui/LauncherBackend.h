@@ -32,14 +32,13 @@ namespace SparkleLauncher
 	struct LauncherOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
+		QString RunId;
 		QString OperationId;
 		QString ProjectId;
 		QString EditorProfile;
 		QString RuntimeProfile;
 		QString SelectedTargets;
 		QString ShaderPackages;
-		QString ValidationGroups;
-		QString ValidationTargets;
 		QString SmokeBackend;
 		QString SmokeFrameLimit;
 		QString FormatMode = "check";
@@ -70,9 +69,9 @@ namespace SparkleLauncher
 	signals:
 		void OperationPreviewReady(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void OperationPreviewFailed(const QString& operationId, const QString& message);
-		void OperationStarted(const QString& operationId, const QString& title);
-		void OperationOutputReceived(const QString& operationId, const QString& outputText);
-		void OperationFinished(const QString& operationId, const QString& title, const QString& statusText, int exitCode);
+		void OperationStarted(const QString& runId, const QString& operationId, const QString& title);
+		void OperationOutputReceived(const QString& runId, const QString& operationId, const QString& outputText);
+		void OperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
 		void PopulateOperationCatalog();

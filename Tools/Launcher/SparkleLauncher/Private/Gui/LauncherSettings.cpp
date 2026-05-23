@@ -27,16 +27,6 @@ namespace SparkleLauncher
 		return m_shaderPackages;
 	}
 
-	const QString& LauncherSettings::ValidationGroups() const
-	{
-		return m_validationGroups;
-	}
-
-	const QString& LauncherSettings::ValidationTargets() const
-	{
-		return m_validationTargets;
-	}
-
 	const QString& LauncherSettings::SmokeBackend() const
 	{
 		return m_smokeBackend;
@@ -118,18 +108,6 @@ namespace SparkleLauncher
 	void LauncherSettings::SetShaderPackages(const QString& packages)
 	{
 		m_shaderPackages = packages;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetValidationGroups(const QString& groups)
-	{
-		m_validationGroups = groups;
-		emit SettingsChanged();
-	}
-
-	void LauncherSettings::SetValidationTargets(const QString& targets)
-	{
-		m_validationTargets = targets;
 		emit SettingsChanged();
 	}
 

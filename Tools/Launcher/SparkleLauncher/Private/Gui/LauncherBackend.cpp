@@ -134,8 +134,6 @@ namespace SparkleLauncher
 		maintenanceRequest.RequestedFormatMode = ToFormatMode(request.FormatMode);
 		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
 		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
-		maintenanceRequest.ValidationGroups = SplitOptionList(request.ValidationGroups);
-		maintenanceRequest.ValidationTargets = SplitOptionList(request.ValidationTargets);
 		return maintenanceRequest;
 	}
 
@@ -249,13 +247,14 @@ namespace SparkleLauncher
 			return;
 		}
 
-		emit OperationStarted(operation->Id, operation->DisplayName);
+		const QString runId = request.RunId.isEmpty() ? operation->Id : request.RunId;
+		emit OperationStarted(runId, operation->Id, operation->DisplayName);
 		const LauncherOperationCategory category = operation->Category;
 		const QString title = operation->DisplayName;
 		const QString operationIdText = operation->Id;
 		ProcessRunnerFactory processRunnerFactory = m_processRunnerFactory;
 
-		QThread* workerThread = QThread::create([this, category, title, operationIdText, processRunnerFactory, request = std::move(request)]() {
+		QThread* workerThread = QThread::create([this, category, title, runId, operationIdText, processRunnerFactory, request = std::move(request)]() {
 			const std::string operationId = request.OperationId.toStdString();
 			std::unique_ptr<IProcessRunner> processRunner = processRunnerFactory();
 			if (processRunner == nullptr)
@@ -263,11 +262,11 @@ namespace SparkleLauncher
 				OperationRecord failedRecord = MakeOperationRecord(operationId, title.toStdString());
 				failedRecord.Status = OperationStatus::Failed;
 				failedRecord.FailureSummary = "No process runner is available for this launcher operation.";
-				emit OperationFinished(operationIdText, title, FormatOperationCompletion(failedRecord), -1);
+				emit OperationFinished(runId, operationIdText, title, FormatOperationCompletion(failedRecord), -1);
 				return;
 			}
-			const ProcessOutputCallback outputCallback = [this, operationIdText](std::string_view output) {
-				emit OperationOutputReceived(operationIdText, QString::fromStdString(std::string(output)));
+			const ProcessOutputCallback outputCallback = [this, runId, operationIdText](std::string_view output) {
+				emit OperationOutputReceived(runId, operationIdText, QString::fromStdString(std::string(output)));
 			};
 
 			OperationRecord record = MakeOperationRecord(operationId, title.toStdString());
@@ -327,7 +326,7 @@ namespace SparkleLauncher
 			}
 			}
 
-			emit OperationFinished(operationIdText, title, FormatOperationCompletion(record), record.ExitCode.value_or(-1));
+			emit OperationFinished(runId, operationIdText, title, FormatOperationCompletion(record), record.ExitCode.value_or(-1));
 		});
 		connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
 		workerThread->start();

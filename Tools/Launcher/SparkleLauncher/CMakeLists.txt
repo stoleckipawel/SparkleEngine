@@ -55,7 +55,6 @@ set(SPARKLE_LAUNCHER_CORE_MAINTENANCE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperationExecutor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperationProcessRequests.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/MaintenanceOperations.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance/Validation/ValidationGateCatalog.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_MAINTENANCE_HEADERS

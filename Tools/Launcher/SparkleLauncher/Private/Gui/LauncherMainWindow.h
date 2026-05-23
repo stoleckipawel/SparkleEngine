@@ -2,6 +2,7 @@
 
 #include <QtCore/QString>
 #include <QtCore/QVector>
+#include <QtCore/QHash>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
@@ -11,6 +12,7 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QTextEdit>
@@ -42,17 +44,15 @@ namespace SparkleLauncher
 
 	private slots:
 		void RefreshProjects();
-		void SelectProjectFromList();
-		void SelectWorkflow(int index);
-		void SelectOperationButton(QAbstractButton* button);
-		void ToggleAdvancedDrawer();
+		void SelectProcessButton(QAbstractButton* button);
+		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
 		void PreviewSelectedOperation();
 		void RunSelectedOperation();
 		void DisplayOperationPreview(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
 		void DisplayOperationPreviewError(const QString& operationId, const QString& message);
-		void DisplayOperationStarted(const QString& operationId, const QString& title);
-		void AppendOperationOutput(const QString& operationId, const QString& outputText);
-		void DisplayOperationFinished(const QString& operationId, const QString& title, const QString& statusText, int exitCode);
+		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
+		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
+		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
 		struct WorkflowDefinition
@@ -62,26 +62,32 @@ namespace SparkleLauncher
 			QVector<QString> OperationIds;
 		};
 
-		QWidget* CreateHeader();
-		QWidget* CreateProjectRail();
 		QWidget* CreateWorkflowSurface();
-		QPushButton* CreateWorkflowButton(const WorkflowDefinition& workflow, int index);
-		QWidget* CreateWorkflowDetailPage(const WorkflowDefinition& workflow);
-		QWidget* CreateAdvancedDrawer();
+		QWidget* CreateProcessPicker(QWidget* parent);
+		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
+		QWidget* CreateOptionsPanel(QWidget* parent);
+		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
 		QLabel* CreatePageTitle(const QString& title, const QString& subtitle, QWidget* parent = nullptr) const;
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLineEdit* CreateBoundLineEdit(const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, void (LauncherSettings::*setter)(bool));
-		void AddOperationChoice(QVBoxLayout& layout, const QString& operationId, bool checked);
+		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
+		QComboBox* CreateProjectCombo();
+		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
+		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
 		void SetStatusMessage(const QString& message);
-		void SetOperationControlsEnabled(bool enabled);
 		void SetSelectedOperation(const QString& operationId);
-		void PopulateProjects();
+		void RegisterRun(const QString& runId, const QString& title);
+		void AppendRunOutput(const QString& runId, const QString& text);
+		void ShowRunOutput(const QString& runId);
+		void UpdateProgress();
+		void PopulateProjectSelectors();
+		void PopulateProjectCombo(QComboBox& combo) const;
 		QVector<WorkflowDefinition> CreateWorkflowDefinitions() const;
 		void ApplyVisualStyle();
 
@@ -89,18 +95,23 @@ namespace SparkleLauncher
 		LauncherProjectModel& m_projectModel;
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
-		QButtonGroup* m_workflowButtonGroup = nullptr;
-		QButtonGroup* m_operationButtonGroup = nullptr;
-		QStackedWidget* m_workflowStack = nullptr;
-		QListWidget* m_projectList = nullptr;
-		QFrame* m_advancedDrawer = nullptr;
-		QPushButton* m_advancedButton = nullptr;
+		QButtonGroup* m_processButtonGroup = nullptr;
+		QStackedWidget* m_optionsStack = nullptr;
+		QHash<QString, int> m_optionsPageByOperation;
+		QVector<QComboBox*> m_projectSelectors;
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_previewButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
-		QLabel* m_statusLabel = nullptr;
+		QProgressBar* m_progressBar = nullptr;
+		QLabel* m_progressLabel = nullptr;
+		QListWidget* m_activityList = nullptr;
+		QHash<QString, QListWidgetItem*> m_runItems;
+		QHash<QString, QString> m_runOutputs;
+		QString m_activeRunId;
 		QString m_selectedOperationId;
-		bool m_operationInProgress = false;
+		int m_nextRunIndex = 0;
+		int m_startedRunCount = 0;
+		int m_finishedRunCount = 0;
 	};
 }

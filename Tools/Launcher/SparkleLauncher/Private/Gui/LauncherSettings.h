@@ -16,8 +16,6 @@ namespace SparkleLauncher
 		const QString& RuntimeProfile() const;
 		const QString& SelectedTargets() const;
 		const QString& ShaderPackages() const;
-		const QString& ValidationGroups() const;
-		const QString& ValidationTargets() const;
 		const QString& SmokeBackend() const;
 		const QString& SmokeFrameLimit() const;
 		const QString& FormatMode() const;
@@ -34,8 +32,6 @@ namespace SparkleLauncher
 		void SetRuntimeProfile(const QString& profileName);
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderPackages(const QString& packages);
-		void SetValidationGroups(const QString& groups);
-		void SetValidationTargets(const QString& targets);
 		void SetSmokeBackend(const QString& backend);
 		void SetSmokeFrameLimit(const QString& frameLimit);
 		void SetFormatMode(const QString& mode);
@@ -55,8 +51,6 @@ namespace SparkleLauncher
 		QString m_runtimeProfile = "DevelopmentGame";
 		QString m_selectedTargets;
 		QString m_shaderPackages;
-		QString m_validationGroups;
-		QString m_validationTargets;
 		QString m_smokeBackend;
 		QString m_smokeFrameLimit;
 		QString m_formatMode = "check";

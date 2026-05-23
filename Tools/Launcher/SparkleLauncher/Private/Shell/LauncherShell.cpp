@@ -325,14 +325,6 @@ namespace SparkleLauncher
 		{
 			state.JobOutput.push_back("Confirmation required: " + ToString(plan.Operation.DestructiveScope));
 		}
-		for (const std::string& groupId : plan.ValidationGroups)
-		{
-			state.JobOutput.push_back("Validation group: " + groupId);
-		}
-		for (const std::string& target : plan.ValidationTargets)
-		{
-			state.JobOutput.push_back("Validation target: " + target);
-		}
 		for (const MaintenanceCleanTarget& target : plan.CleanTargets)
 		{
 			state.JobOutput.push_back("Clean target: " + target.Path.string() + " | " + target.Detail);
