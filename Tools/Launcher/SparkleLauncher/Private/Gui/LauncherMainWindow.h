@@ -62,6 +62,7 @@ namespace SparkleLauncher
 			QVector<QString> OperationIds;
 		};
 
+		QWidget* CreateAppHeader();
 		QWidget* CreateWorkflowSurface();
 		QWidget* CreateProcessPicker(QWidget* parent);
 		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
@@ -77,6 +78,7 @@ namespace SparkleLauncher
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
+		void SetControlsEnabled(bool enabled);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		QString DescriptionForOperation(const QString& operationId) const;

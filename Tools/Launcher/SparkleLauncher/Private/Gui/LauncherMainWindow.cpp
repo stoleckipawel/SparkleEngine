@@ -8,7 +8,6 @@
 #include <QtCore/Qt>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
-#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
@@ -43,6 +42,7 @@ namespace SparkleLauncher
 		QVBoxLayout* rootLayout = new QVBoxLayout(centralWidget);
 		rootLayout->setContentsMargins(0, 0, 0, 0);
 		rootLayout->setSpacing(0);
+		rootLayout->addWidget(CreateAppHeader());
 
 		QHBoxLayout* bodyLayout = new QHBoxLayout();
 		bodyLayout->setContentsMargins(0, 0, 0, 0);
@@ -63,7 +63,6 @@ namespace SparkleLauncher
 		connect(&m_backend, &LauncherBackend::OperationOutputReceived, this, &LauncherMainWindow::AppendOperationOutput);
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
 
-		SetSelectedOperation("workspace.generate-solution");
 		UpdateProgress();
 		RefreshProjects();
 	}
@@ -188,15 +187,39 @@ namespace SparkleLauncher
 		UpdateProgress();
 	}
 
+	QWidget* LauncherMainWindow::CreateAppHeader()
+	{
+		QFrame* header = new QFrame(this);
+		header->setObjectName("AppHeader");
+		QHBoxLayout* layout = new QHBoxLayout(header);
+		layout->setContentsMargins(18, 10, 18, 10);
+		layout->setSpacing(24);
+
+		QLabel* repositoryLabel = new QLabel("Current repository\n<b>" + QString::fromStdString(m_repositoryRoot.filename().string()) + "</b>", header);
+		repositoryLabel->setObjectName("HeaderContextLabel");
+		repositoryLabel->setTextFormat(Qt::RichText);
+		layout->addWidget(repositoryLabel);
+
+		QLabel* modeLabel = new QLabel("Launcher mode\n<b>Local workflows</b>", header);
+		modeLabel->setObjectName("HeaderContextLabel");
+		modeLabel->setTextFormat(Qt::RichText);
+		layout->addWidget(modeLabel);
+
+		layout->addStretch(1);
+		QLabel* hintLabel = new QLabel("Select a workflow to configure and run", header);
+		hintLabel->setObjectName("HeaderHintLabel");
+		layout->addWidget(hintLabel);
+		return header;
+	}
+
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
 	{
 		QFrame* surface = new QFrame(this);
 		surface->setObjectName("WorkflowSurface");
-		QVBoxLayout* layout = new QVBoxLayout(surface);
-		layout->setContentsMargins(32, 30, 32, 24);
-		layout->setSpacing(22);
-		layout->addWidget(CreatePageTitle("Workflows", "Pick a workflow, configure its parameters, then run and monitor it below.", surface));
-		layout->addWidget(CreateProcessPicker(surface));
+		QHBoxLayout* layout = new QHBoxLayout(surface);
+		layout->setContentsMargins(18, 18, 18, 18);
+		layout->setSpacing(18);
+		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
 		return surface;
 	}
@@ -205,10 +228,11 @@ namespace SparkleLauncher
 	{
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("ProcessPanel");
+		panel->setFixedWidth(356);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
 		layout->setContentsMargins(0, 0, 0, 0);
-		layout->setSpacing(12);
-		layout->addWidget(CreateSectionLabel("1  Choose workflow"));
+		layout->setSpacing(10);
+		layout->addWidget(CreatePageTitle("Workflows", "Choose one action to configure.", panel));
 
 		m_processButtonGroup = new QButtonGroup(this);
 		m_processButtonGroup->setExclusive(true);
@@ -220,19 +244,17 @@ namespace SparkleLauncher
 		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
 		{
 			QWidget* tabPage = new QWidget(m_categoryTabs);
-			QGridLayout* actionLayout = new QGridLayout();
-			actionLayout->setContentsMargins(0, 14, 0, 0);
-			actionLayout->setHorizontalSpacing(12);
-			actionLayout->setVerticalSpacing(10);
+			QVBoxLayout* actionLayout = new QVBoxLayout();
+			actionLayout->setContentsMargins(0, 8, 0, 0);
+			actionLayout->setSpacing(2);
 			for (int index = 0; index < workflow.OperationIds.size(); ++index)
 			{
 				const QString& operationId = workflow.OperationIds[index];
 				QPushButton* button = CreateProcessButton(DisplayNameForOperation(operationId), operationId, tabPage);
 				m_processButtonGroup->addButton(button);
-				actionLayout->addWidget(button, index / 2, index % 2);
+				actionLayout->addWidget(button);
 			}
-			actionLayout->setColumnStretch(0, 1);
-			actionLayout->setColumnStretch(1, 1);
+			actionLayout->addStretch(1);
 			tabPage->setLayout(actionLayout);
 			m_categoryTabs->addTab(tabPage, workflow.Title);
 		}
@@ -244,11 +266,11 @@ namespace SparkleLauncher
 	QPushButton* LauncherMainWindow::CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent)
 	{
 		QPushButton* button = new QPushButton(label, parent);
-		button->setObjectName(operationId == "workspace.generate-solution" ? "PrimaryWorkflowButton" : "WorkflowButton");
+		button->setObjectName("WorkflowButton");
 		button->setCheckable(true);
-		button->setMinimumHeight(46);
+		button->setMinimumHeight(32);
 		button->setProperty("OperationId", operationId);
-		button->setToolTip(DisplayNameForOperation(operationId));
+		button->setToolTip(DescriptionForOperation(operationId));
 		return button;
 	}
 
@@ -260,14 +282,14 @@ namespace SparkleLauncher
 		layout->setContentsMargins(22, 20, 22, 18);
 		layout->setSpacing(14);
 
-		QLabel* stepLabel = CreateSectionLabel("2  Configure and run");
+		QLabel* stepLabel = CreateSectionLabel("Configure");
 		layout->addWidget(stepLabel);
 
-		m_activeOperationLabel = new QLabel("Selected: Generate Solution", panel);
+		m_activeOperationLabel = new QLabel("No workflow selected", panel);
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
 		layout->addWidget(m_activeOperationLabel);
 
-		m_activeOperationDescription = new QLabel(DescriptionForOperation("workspace.generate-solution"), panel);
+		m_activeOperationDescription = new QLabel("Choose a workflow from the left. Its parameters and run controls will appear here.", panel);
 		m_activeOperationDescription->setObjectName("OperationDescription");
 		m_activeOperationDescription->setWordWrap(true);
 		layout->addWidget(m_activeOperationDescription);
@@ -288,6 +310,7 @@ namespace SparkleLauncher
 			}
 		}
 		layout->addWidget(m_optionsStack, 1);
+		m_optionsStack->setVisible(false);
 
 		QHBoxLayout* actionLayout = new QHBoxLayout();
 		actionLayout->setSpacing(10);
@@ -295,11 +318,13 @@ namespace SparkleLauncher
 		m_previewButton = new QPushButton("Preview", panel);
 		m_previewButton->setObjectName("SecondaryButton");
 		m_previewButton->setToolTip("Preview readiness and planned work without running.");
+		m_previewButton->setEnabled(false);
 		connect(m_previewButton, &QPushButton::clicked, this, &LauncherMainWindow::PreviewSelectedOperation);
 		actionLayout->addWidget(m_previewButton);
 		m_runButton = new QPushButton(style()->standardIcon(QStyle::SP_MediaPlay), "Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
 		m_runButton->setToolTip("Start this process. Other running processes keep running.");
+		m_runButton->setEnabled(false);
 		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
 		actionLayout->addWidget(m_runButton);
 		layout->addLayout(actionLayout);
@@ -331,7 +356,7 @@ namespace SparkleLauncher
 		layout->setContentsMargins(22, 14, 22, 16);
 		layout->setSpacing(10);
 
-		QLabel* monitorLabel = CreateSectionLabel("3  Monitor progress");
+		QLabel* monitorLabel = CreateSectionLabel("Activity");
 		layout->addWidget(monitorLabel);
 
 		QHBoxLayout* progressLayout = new QHBoxLayout();
@@ -597,6 +622,22 @@ namespace SparkleLauncher
 		layout.addWidget(label);
 	}
 
+	void LauncherMainWindow::SetControlsEnabled(bool enabled)
+	{
+		if (m_previewButton != nullptr)
+		{
+			m_previewButton->setEnabled(enabled);
+		}
+		if (m_runButton != nullptr)
+		{
+			m_runButton->setEnabled(enabled);
+		}
+		if (m_optionsStack != nullptr)
+		{
+			m_optionsStack->setVisible(enabled);
+		}
+	}
+
 	const LauncherOperationDescriptor* LauncherMainWindow::FindOperationDescriptor(const QString& operationId) const
 	{
 		for (const LauncherOperationDescriptor& operation : m_backend.Operations())
@@ -669,6 +710,7 @@ namespace SparkleLauncher
 	{
 		m_selectedOperationId = operationId;
 		const QString title = DisplayNameForOperation(operationId);
+		SetControlsEnabled(true);
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
@@ -812,49 +854,50 @@ namespace SparkleLauncher
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
 		setStyleSheet(
-		    "QMainWindow, QWidget { background: #11151a; color: #e8edf2; font-family: 'Segoe UI'; font-size: 10pt; }"
-		    "QLabel { color: #c7d0de; background: transparent; }"
-		    "#WorkflowSurface { background: #11151a; }"
-		    "#OutputPanel { background: #0f1217; border-top: 1px solid #252c36; }"
-		    "#ActiveOperationLabel { color: #ffffff; font-size: 14pt; font-weight: 700; }"
-		    "#OperationDescription { color: #98a6b7; line-height: 130%; }"
+		    "QMainWindow, QWidget { background: #1f242b; color: #dce3ec; font-family: 'Segoe UI'; font-size: 10pt; }"
+		    "QLabel { color: #c9d1d9; background: transparent; }"
+		    "#AppHeader { background: #1b2027; border-bottom: 1px solid #0f1318; }"
+		    "#HeaderContextLabel { color: #8b949e; font-size: 9pt; }"
+		    "#HeaderContextLabel b { color: #f0f3f6; font-weight: 700; }"
+		    "#HeaderHintLabel { color: #8b949e; }"
+		    "#WorkflowSurface { background: #1f242b; }"
+		    "#OutputPanel { background: #1b2027; border-top: 1px solid #11161c; }"
+		    "#ActiveOperationLabel { color: #f0f3f6; font-size: 13pt; font-weight: 700; }"
+		    "#OperationDescription { color: #8b949e; line-height: 130%; }"
 		    "#ProgressLabel { color: #ffffff; font-size: 10.5pt; font-weight: 700; }"
-		    "#ProcessPanel { background: transparent; border: none; }"
-		    "#OptionsPanel { background: #151a21; border-top: 1px solid #2a3340; }"
+		    "#ProcessPanel { background: #1b2027; border-right: 1px solid #11161c; padding: 0; }"
+		    "#OptionsPanel { background: #242a32; border: 1px solid #343b45; border-radius: 6px; }"
 		    "#OptionsScrollArea, #OptionsStack { background: transparent; }"
-		    "QStatusBar { background: #0f1217; color: #8f9bae; border-top: 1px solid #252c36; }"
+		    "QStatusBar { background: #1b2027; color: #8b949e; border-top: 1px solid #11161c; }"
 		    "QListWidget { background: transparent; border: none; border-radius: 0; padding: 0; outline: 0; }"
-		    "QListWidget::item { padding: 10px 12px; border-radius: 4px; color: #bac6d6; }"
-		    "QListWidget::item:selected { background: #2f6fed; color: #ffffff; }"
+		    "QListWidget::item { padding: 10px 12px; border-radius: 4px; color: #c9d1d9; }"
+		    "QListWidget::item:selected { background: #0969da; color: #ffffff; }"
 		    "QTabWidget#ProcessTabs::pane { border: none; background: transparent; margin-top: 8px; }"
 		    "QTabWidget#ProcessTabs QWidget { background: transparent; }"
-		    "QTabBar::tab { background: transparent; color: #9aa8ba; border: none; border-bottom: 2px solid transparent; padding: 8px 15px 10px 15px; font-weight: 650; }"
-		    "QTabBar::tab:selected { color: #ffffff; border-bottom: 2px solid #2fc49a; }"
-		    "QTabBar::tab:hover { color: #dce5f2; }"
-		    "#WorkflowButton, #PrimaryWorkflowButton { color: #dce5f2; border: 1px solid #2a3441; border-radius: 4px; padding: 10px 13px; text-align: left; font-size: 10pt; font-weight: 650; }"
-		    "#WorkflowButton { background: #171c23; }"
-		    "#WorkflowButton:hover { background: #1d2530; border: 1px solid #445367; }"
-		    "#WorkflowButton:checked { background: #1d2c3f; border: 1px solid #6b96ff; color: #ffffff; }"
-		    "#PrimaryWorkflowButton { background: #1b6b56; border: 1px solid #2aa883; color: #ffffff; }"
-		    "#PrimaryWorkflowButton:hover { background: #217c64; }"
-		    "#PrimaryWorkflowButton:checked { background: #249576; border: 1px solid #7ae1c4; }"
-		    "#PageTitle h1 { color: #ffffff; font-size: 18pt; margin: 0; }"
-		    "#PageTitle p { color: #98a6b7; margin-top: 5px; }"
-		    "#SectionLabel { color: #f4f7fb; font-size: 10.5pt; font-weight: 700; padding-top: 2px; }"
+		    "QTabBar::tab { background: transparent; color: #8b949e; border: none; border-bottom: 2px solid transparent; padding: 8px 12px 9px 12px; font-weight: 650; }"
+		    "QTabBar::tab:selected { color: #f0f3f6; border-bottom: 2px solid #0969da; }"
+		    "QTabBar::tab:hover { color: #dce3ec; }"
+		    "#WorkflowButton { color: #dce3ec; border: 1px solid transparent; border-radius: 4px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600; background: transparent; }"
+		    "#WorkflowButton:hover { background: #252b33; border: 1px solid #343b45; }"
+		    "#WorkflowButton:checked { background: #0d419d; border: 1px solid #0969da; color: #ffffff; }"
+		    "#PageTitle h1 { color: #f0f3f6; font-size: 13pt; margin: 0; }"
+		    "#PageTitle p { color: #8b949e; margin-top: 4px; }"
+		    "#SectionLabel { color: #f0f3f6; font-size: 10.5pt; font-weight: 700; padding-top: 2px; }"
 		    "#FieldLabel { color: #8d9bad; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding-top: 4px; }"
-		    "#MutedLabel { color: #98a6b7; padding: 8px 0; }"
-		    "QPushButton { background: #2f6fed; color: #ffffff; border: none; border-radius: 4px; padding: 9px 15px; font-weight: 650; }"
-		    "QPushButton:hover { background: #3d7bff; }"
-		    "#SecondaryButton { background: #222a35; color: #d8e0ea; }"
-		    "#SecondaryButton:hover { background: #2c3542; }"
-		    "#PrimaryActionButton { background: #21a67f; min-width: 96px; }"
-		    "#PrimaryActionButton:hover { background: #28bb91; }"
-		    "QProgressBar { background: #1a2029; border: none; border-radius: 3px; color: #d8e0ea; text-align: center; min-height: 14px; }"
-		    "QProgressBar::chunk { background: #2fc49a; border-radius: 3px; }"
-		    "QComboBox, QTextEdit { background: #171d25; border: 1px solid #2c3542; border-radius: 4px; padding: 8px; color: #e8edf2; selection-background-color: #2f6fed; }"
-		    "QComboBox:focus, QTextEdit:focus { border: 1px solid #5f8cff; }"
-		    "#ActivityList { background: transparent; border: none; border-right: 1px solid #252c36; border-radius: 0; padding: 0 12px 0 0; }"
+		    "#MutedLabel { color: #8b949e; padding: 8px 0; }"
+		    "QPushButton { background: #0969da; color: #ffffff; border: none; border-radius: 4px; padding: 8px 14px; font-weight: 650; }"
+		    "QPushButton:hover { background: #1f7eed; }"
+		    "QPushButton:disabled { background: #343b45; color: #8b949e; }"
+		    "#SecondaryButton { background: #30363d; color: #dce3ec; border: 1px solid #454c56; }"
+		    "#SecondaryButton:hover { background: #373e47; }"
+		    "#PrimaryActionButton { background: #0969da; min-width: 96px; }"
+		    "#PrimaryActionButton:hover { background: #1f7eed; }"
+		    "QProgressBar { background: #30363d; border: none; border-radius: 3px; color: #dce3ec; text-align: center; min-height: 14px; }"
+		    "QProgressBar::chunk { background: #0969da; border-radius: 3px; }"
+		    "QComboBox, QTextEdit { background: #1b2027; border: 1px solid #454c56; border-radius: 4px; padding: 8px; color: #dce3ec; selection-background-color: #0969da; }"
+		    "QComboBox:focus, QTextEdit:focus { border: 1px solid #0969da; }"
+		    "#ActivityList { background: transparent; border: none; border-right: 1px solid #30363d; border-radius: 0; padding: 0 12px 0 0; }"
 		    "#OperationOutput { background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt; }"
-		    "QCheckBox { spacing: 8px; padding: 4px 0; color: #d2dbe8; }");
+		    "QCheckBox { spacing: 8px; padding: 4px 0; color: #dce3ec; }");
 	}
 }
