@@ -9,12 +9,12 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStackedWidget>
+#include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 
@@ -70,14 +70,16 @@ namespace SparkleLauncher
 		QWidget* CreateOutputPanel();
 		QLabel* CreatePageTitle(const QString& title, const QString& subtitle, QWidget* parent = nullptr) const;
 		QLabel* CreateSectionLabel(const QString& title) const;
-		QLineEdit* CreateBoundLineEdit(const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
+		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, void (LauncherSettings::*setter)(bool));
 		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateProjectCombo();
+		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
+		QString DescriptionForOperation(const QString& operationId) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
 		void SetStatusMessage(const QString& message);
@@ -96,6 +98,7 @@ namespace SparkleLauncher
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
 		QButtonGroup* m_processButtonGroup = nullptr;
+		QTabWidget* m_categoryTabs = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;
@@ -103,6 +106,7 @@ namespace SparkleLauncher
 		QPushButton* m_previewButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
+		QLabel* m_activeOperationDescription = nullptr;
 		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QListWidget* m_activityList = nullptr;

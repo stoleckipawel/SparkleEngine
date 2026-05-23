@@ -36,7 +36,7 @@ namespace SparkleLauncher
 	{
 		setWindowTitle("Sparkle Launcher");
 		setMinimumSize(980, 620);
-		resize(1220, 760);
+		resize(1240, 800);
 		statusBar()->showMessage("Ready");
 
 		QWidget* centralWidget = new QWidget(this);
@@ -193,15 +193,11 @@ namespace SparkleLauncher
 		QFrame* surface = new QFrame(this);
 		surface->setObjectName("WorkflowSurface");
 		QVBoxLayout* layout = new QVBoxLayout(surface);
-		layout->setContentsMargins(24, 24, 24, 18);
-		layout->setSpacing(14);
-		layout->addWidget(CreatePageTitle("Process", "Choose a category, review its options, then run it.", surface));
-
-		QHBoxLayout* contentLayout = new QHBoxLayout();
-		contentLayout->setSpacing(16);
-		contentLayout->addWidget(CreateProcessPicker(surface), 5);
-		contentLayout->addWidget(CreateOptionsPanel(surface), 4);
-		layout->addLayout(contentLayout, 1);
+		layout->setContentsMargins(32, 30, 32, 24);
+		layout->setSpacing(22);
+		layout->addWidget(CreatePageTitle("Workflows", "Pick a workflow, configure its parameters, then run and monitor it below.", surface));
+		layout->addWidget(CreateProcessPicker(surface));
+		layout->addWidget(CreateOptionsPanel(surface), 1);
 		return surface;
 	}
 
@@ -210,41 +206,38 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("ProcessPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(16, 16, 16, 16);
+		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(12);
-		layout->addWidget(CreateSectionLabel("Pick a process"));
+		layout->addWidget(CreateSectionLabel("1  Choose workflow"));
 
 		m_processButtonGroup = new QButtonGroup(this);
 		m_processButtonGroup->setExclusive(true);
 
-		QScrollArea* scrollArea = new QScrollArea(panel);
-		scrollArea->setWidgetResizable(true);
-		scrollArea->setFrameShape(QFrame::NoFrame);
-		scrollArea->setObjectName("ProcessScrollArea");
-		QWidget* content = new QWidget(scrollArea);
-		QVBoxLayout* processLayout = new QVBoxLayout(content);
-		processLayout->setContentsMargins(0, 0, 8, 0);
-		processLayout->setSpacing(14);
+		m_categoryTabs = new QTabWidget(panel);
+		m_categoryTabs->setObjectName("ProcessTabs");
+		m_categoryTabs->setDocumentMode(true);
 
 		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
 		{
-			processLayout->addWidget(CreateSectionLabel(workflow.Title));
+			QWidget* tabPage = new QWidget(m_categoryTabs);
 			QGridLayout* actionLayout = new QGridLayout();
-			actionLayout->setHorizontalSpacing(10);
-			actionLayout->setVerticalSpacing(8);
+			actionLayout->setContentsMargins(0, 14, 0, 0);
+			actionLayout->setHorizontalSpacing(12);
+			actionLayout->setVerticalSpacing(10);
 			for (int index = 0; index < workflow.OperationIds.size(); ++index)
 			{
 				const QString& operationId = workflow.OperationIds[index];
-				QPushButton* button = CreateProcessButton(DisplayNameForOperation(operationId), operationId, content);
+				QPushButton* button = CreateProcessButton(DisplayNameForOperation(operationId), operationId, tabPage);
 				m_processButtonGroup->addButton(button);
 				actionLayout->addWidget(button, index / 2, index % 2);
 			}
-			processLayout->addLayout(actionLayout);
+			actionLayout->setColumnStretch(0, 1);
+			actionLayout->setColumnStretch(1, 1);
+			tabPage->setLayout(actionLayout);
+			m_categoryTabs->addTab(tabPage, workflow.Title);
 		}
-		processLayout->addStretch(1);
-		scrollArea->setWidget(content);
 		connect(m_processButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectProcessButton);
-		layout->addWidget(scrollArea, 1);
+		layout->addWidget(m_categoryTabs);
 		return panel;
 	}
 
@@ -253,7 +246,7 @@ namespace SparkleLauncher
 		QPushButton* button = new QPushButton(label, parent);
 		button->setObjectName(operationId == "workspace.generate-solution" ? "PrimaryWorkflowButton" : "WorkflowButton");
 		button->setCheckable(true);
-		button->setMinimumHeight(48);
+		button->setMinimumHeight(46);
 		button->setProperty("OperationId", operationId);
 		button->setToolTip(DisplayNameForOperation(operationId));
 		return button;
@@ -264,14 +257,23 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("OptionsPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(16, 16, 16, 16);
-		layout->setSpacing(12);
+		layout->setContentsMargins(22, 20, 22, 18);
+		layout->setSpacing(14);
+
+		QLabel* stepLabel = CreateSectionLabel("2  Configure and run");
+		layout->addWidget(stepLabel);
 
 		m_activeOperationLabel = new QLabel("Selected: Generate Solution", panel);
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
 		layout->addWidget(m_activeOperationLabel);
 
+		m_activeOperationDescription = new QLabel(DescriptionForOperation("workspace.generate-solution"), panel);
+		m_activeOperationDescription->setObjectName("OperationDescription");
+		m_activeOperationDescription->setWordWrap(true);
+		layout->addWidget(m_activeOperationDescription);
+
 		m_optionsStack = new QStackedWidget(panel);
+		m_optionsStack->setObjectName("OptionsStack");
 		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
 		{
 			for (const QString& operationId : workflow.OperationIds)
@@ -290,7 +292,7 @@ namespace SparkleLauncher
 		QHBoxLayout* actionLayout = new QHBoxLayout();
 		actionLayout->setSpacing(10);
 		actionLayout->addStretch(1);
-		m_previewButton = new QPushButton("Details", panel);
+		m_previewButton = new QPushButton("Preview", panel);
 		m_previewButton->setObjectName("SecondaryButton");
 		m_previewButton->setToolTip("Preview readiness and planned work without running.");
 		connect(m_previewButton, &QPushButton::clicked, this, &LauncherMainWindow::PreviewSelectedOperation);
@@ -313,8 +315,8 @@ namespace SparkleLauncher
 
 		QWidget* content = new QWidget(scrollArea);
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(0, 0, 8, 0);
-		layout->setSpacing(10);
+		layout->setContentsMargins(0, 4, 8, 0);
+		layout->setSpacing(12);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -326,11 +328,14 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(this);
 		panel->setObjectName("OutputPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(18, 12, 18, 14);
-		layout->setSpacing(8);
+		layout->setContentsMargins(22, 14, 22, 16);
+		layout->setSpacing(10);
+
+		QLabel* monitorLabel = CreateSectionLabel("3  Monitor progress");
+		layout->addWidget(monitorLabel);
 
 		QHBoxLayout* progressLayout = new QHBoxLayout();
-		progressLayout->setSpacing(10);
+		progressLayout->setSpacing(14);
 		m_progressLabel = new QLabel("No processes running", panel);
 		m_progressLabel->setObjectName("ProgressLabel");
 		progressLayout->addWidget(m_progressLabel);
@@ -340,22 +345,30 @@ namespace SparkleLauncher
 		progressLayout->addWidget(m_progressBar, 1);
 		layout->addLayout(progressLayout);
 
+		QHBoxLayout* activityHeaderLayout = new QHBoxLayout();
+		activityHeaderLayout->setSpacing(14);
+		QLabel* activityHeader = CreateFieldLabel("Activity");
+		activityHeader->setMinimumWidth(280);
+		activityHeaderLayout->addWidget(activityHeader, 1);
+		activityHeaderLayout->addWidget(CreateFieldLabel("Output"), 3);
+		layout->addLayout(activityHeaderLayout);
+
 		QHBoxLayout* activityLayout = new QHBoxLayout();
-		activityLayout->setSpacing(10);
+		activityLayout->setSpacing(14);
 		m_activityList = new QListWidget(panel);
 		m_activityList->setObjectName("ActivityList");
-		m_activityList->setMinimumWidth(260);
-		m_activityList->setMaximumHeight(132);
+		m_activityList->setMinimumWidth(280);
+		m_activityList->setMaximumHeight(146);
 		connect(m_activityList, &QListWidget::currentItemChanged, this, &LauncherMainWindow::DisplaySelectedRunOutput);
 		activityLayout->addWidget(m_activityList, 1);
 
 		m_operationOutput = new QTextEdit(panel);
 		m_operationOutput->setObjectName("OperationOutput");
 		m_operationOutput->setReadOnly(true);
-		m_operationOutput->setMinimumHeight(108);
-		m_operationOutput->setMaximumHeight(154);
+		m_operationOutput->setMinimumHeight(120);
+		m_operationOutput->setMaximumHeight(168);
 		m_operationOutput->setToolTip("Select an activity to view its output.");
-		m_operationOutput->setPlainText("Select a process, adjust its options, then click Run.");
+		m_operationOutput->setPlainText("Preview a workflow to inspect planned work, or run it to stream output here.");
 		activityLayout->addWidget(m_operationOutput, 3);
 		layout->addLayout(activityLayout);
 		return panel;
@@ -377,13 +390,11 @@ namespace SparkleLauncher
 		return label;
 	}
 
-	QLineEdit* LauncherMainWindow::CreateBoundLineEdit(const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	QLabel* LauncherMainWindow::CreateFieldLabel(const QString& title) const
 	{
-		QLineEdit* edit = new QLineEdit(this);
-		edit->setPlaceholderText(placeholder);
-		edit->setToolTip(tooltip);
-		connect(edit, &QLineEdit::textChanged, &m_settings, setter);
-		return edit;
+		QLabel* label = new QLabel(title);
+		label->setObjectName("FieldLabel");
+		return label;
 	}
 
 	QCheckBox* LauncherMainWindow::CreateBoundCheckBox(const QString& label, const QString& tooltip, void (LauncherSettings::*setter)(bool))
@@ -421,20 +432,36 @@ namespace SparkleLauncher
 		return combo;
 	}
 
+	QComboBox* LauncherMainWindow::CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&))
+	{
+		QComboBox* combo = new QComboBox(this);
+		for (const QPair<QString, QString>& option : options)
+		{
+			combo->addItem(option.first, option.second);
+		}
+		const int currentIndex = combo->findData(currentValue);
+		combo->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
+		connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [combo, setter, this]() {
+			(m_settings.*setter)(combo->currentData().toString());
+		});
+		return combo;
+	}
+
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
-			AddNoOptionsMessage(layout, "Workspace process. Applies to the repository and all discovered projects.");
+			AddNoOptionsMessage(layout, "No parameters. This workflow uses the repository and all discovered projects.");
 			return;
 		}
 
 		if (operationId == "project.build.editor")
 		{
 			layout.addWidget(CreateSectionLabel("Editor build"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
 			layout.addWidget(CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			layout.addWidget(CreateBoundLineEdit("Optional build targets", "Comma-separated target filter.", &LauncherSettings::SetSelectedTargets));
 			layout.addWidget(CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
 			return;
 		}
@@ -442,19 +469,48 @@ namespace SparkleLauncher
 		if (operationId == "project.build.runtime")
 		{
 			layout.addWidget(CreateSectionLabel("Runtime build"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
 			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			layout.addWidget(CreateBoundLineEdit("Optional build targets", "Comma-separated target filter.", &LauncherSettings::SetSelectedTargets));
 			layout.addWidget(CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
+			return;
+		}
+
+		if (operationId == "cook.shaders")
+		{
+			layout.addWidget(CreateSectionLabel("Cook shaders"));
+			layout.addWidget(CreateFieldLabel("Project"));
+			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
+			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			layout.addWidget(CreateFieldLabel("Shader package"));
+			layout.addWidget(CreateValueCombo(
+			    {{"All shader packages", ""},
+			     {"ComputeClear", "ComputeClear"},
+			     {"DirectLighting", "DirectLighting"},
+			     {"GBuffer", "GBuffer"},
+			     {"HelloInlineRayQuery", "HelloInlineRayQuery"},
+			     {"HelloRayTracingLibrary", "HelloRayTracingLibrary"},
+			     {"HelloTriangle", "HelloTriangle"},
+			     {"IndirectLighting", "IndirectLighting"},
+			     {"LightingComposite", "LightingComposite"},
+			     {"Sky", "Sky"},
+			     {"VisualizeBuffers", "VisualizeBuffers"}},
+			    m_settings.ShaderPackages(),
+			    &LauncherSettings::SetShaderPackages));
+			layout.addWidget(CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
+			layout.addWidget(CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
 			return;
 		}
 
 		if (operationId.startsWith("cook."))
 		{
 			layout.addWidget(CreateSectionLabel("Cook"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
 			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			layout.addWidget(CreateBoundLineEdit("Shader packages", "Optional shader package ids.", &LauncherSettings::SetShaderPackages));
 			layout.addWidget(CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
 			layout.addWidget(CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
 			return;
@@ -463,7 +519,9 @@ namespace SparkleLauncher
 		if (operationId == "project.launch.editor")
 		{
 			layout.addWidget(CreateSectionLabel("Launch editor"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
 			layout.addWidget(CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
 			return;
 		}
@@ -471,7 +529,9 @@ namespace SparkleLauncher
 		if (operationId == "project.launch.runtime")
 		{
 			layout.addWidget(CreateSectionLabel("Launch runtime"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Profile"));
 			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			return;
 		}
@@ -479,6 +539,7 @@ namespace SparkleLauncher
 		if (operationId == "quality.format")
 		{
 			layout.addWidget(CreateSectionLabel("Format"));
+			layout.addWidget(CreateFieldLabel("Mode"));
 			QComboBox* formatModeBox = new QComboBox(this);
 			formatModeBox->addItem("Check formatting", "check");
 			formatModeBox->addItem("Apply formatting", "apply");
@@ -492,9 +553,12 @@ namespace SparkleLauncher
 		if (operationId.startsWith("smoke."))
 		{
 			layout.addWidget(CreateSectionLabel("Smoke test"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateBoundLineEdit("Backend", "Optional smoke backend.", &LauncherSettings::SetSmokeBackend));
-			layout.addWidget(CreateBoundLineEdit("Frame limit", "Optional smoke frame limit.", &LauncherSettings::SetSmokeFrameLimit));
+			layout.addWidget(CreateFieldLabel("Backend"));
+			layout.addWidget(CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
+			layout.addWidget(CreateFieldLabel("Frame limit"));
+			layout.addWidget(CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
 			layout.addWidget(CreateBoundCheckBox("Enable trace", "Capture smoke trace output.", &LauncherSettings::SetSmokeTrace));
 			layout.addWidget(CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
@@ -503,7 +567,9 @@ namespace SparkleLauncher
 		if (operationId == "workspace.clean")
 		{
 			layout.addWidget(CreateSectionLabel("Clean"));
+			layout.addWidget(CreateFieldLabel("Project"));
 			layout.addWidget(CreateProjectCombo());
+			layout.addWidget(CreateFieldLabel("Scope"));
 			QComboBox* cleanScopeBox = new QComboBox(this);
 			cleanScopeBox->addItem("Selected Project Cooked Outputs", "selected-cooked");
 			cleanScopeBox->addItem("All Cooked Outputs", "all-cooked");
@@ -547,6 +613,12 @@ namespace SparkleLauncher
 	{
 		const LauncherOperationDescriptor* operation = FindOperationDescriptor(operationId);
 		return operation == nullptr ? operationId : operation->DisplayName;
+	}
+
+	QString LauncherMainWindow::DescriptionForOperation(const QString& operationId) const
+	{
+		const LauncherOperationDescriptor* operation = FindOperationDescriptor(operationId);
+		return operation == nullptr ? QString() : operation->Description;
 	}
 
 	LauncherOperationRequest LauncherMainWindow::BuildOperationRequest(const QString& operationId) const
@@ -599,11 +671,16 @@ namespace SparkleLauncher
 		const QString title = DisplayNameForOperation(operationId);
 		if (m_activeOperationLabel != nullptr)
 		{
-			m_activeOperationLabel->setText("Selected: " + title);
+			m_activeOperationLabel->setText(title);
+		}
+		if (m_activeOperationDescription != nullptr)
+		{
+			m_activeOperationDescription->setText(DescriptionForOperation(operationId));
 		}
 		if (m_runButton != nullptr)
 		{
-			m_runButton->setText("Run " + title);
+			m_runButton->setText("Run");
+			m_runButton->setToolTip("Start " + title + ". Other running processes keep running.");
 		}
 		if (m_optionsStack != nullptr && m_optionsPageByOperation.contains(operationId))
 		{
@@ -615,6 +692,19 @@ namespace SparkleLauncher
 			for (QAbstractButton* button : m_processButtonGroup->buttons())
 			{
 				button->setChecked(button->property("OperationId").toString() == operationId);
+			}
+		}
+
+		if (m_categoryTabs != nullptr)
+		{
+			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+			for (int index = 0; index < workflows.size(); ++index)
+			{
+				if (workflows[index].OperationIds.contains(operationId))
+				{
+					m_categoryTabs->setCurrentIndex(index);
+					break;
+				}
 			}
 		}
 
@@ -722,38 +812,49 @@ namespace SparkleLauncher
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
 		setStyleSheet(
-		    "QMainWindow, QWidget { background: #15171c; color: #e8edf2; font-family: 'Segoe UI'; font-size: 10pt; }"
-		    "#WorkflowSurface { background: #15171c; }"
-		    "#OutputPanel { background: #101217; border-top: 1px solid #2b3038; }"
-		    "#ActiveOperationLabel, #ProgressLabel { color: #ffffff; font-size: 11pt; font-weight: 700; }"
-		    "#ProcessPanel, #OptionsPanel { background: transparent; border: none; }"
-		    "#OptionsScrollArea, #ProcessScrollArea { background: transparent; }"
-		    "QStatusBar { background: #101217; color: #8f9bae; border-top: 1px solid #2b3038; }"
-		    "QListWidget { background: #1d222b; border: 1px solid #303743; border-radius: 6px; padding: 6px; outline: 0; }"
-		    "QListWidget::item { padding: 9px; border-radius: 4px; }"
+		    "QMainWindow, QWidget { background: #11151a; color: #e8edf2; font-family: 'Segoe UI'; font-size: 10pt; }"
+		    "QLabel { color: #c7d0de; background: transparent; }"
+		    "#WorkflowSurface { background: #11151a; }"
+		    "#OutputPanel { background: #0f1217; border-top: 1px solid #252c36; }"
+		    "#ActiveOperationLabel { color: #ffffff; font-size: 14pt; font-weight: 700; }"
+		    "#OperationDescription { color: #98a6b7; line-height: 130%; }"
+		    "#ProgressLabel { color: #ffffff; font-size: 10.5pt; font-weight: 700; }"
+		    "#ProcessPanel { background: transparent; border: none; }"
+		    "#OptionsPanel { background: #151a21; border-top: 1px solid #2a3340; }"
+		    "#OptionsScrollArea, #OptionsStack { background: transparent; }"
+		    "QStatusBar { background: #0f1217; color: #8f9bae; border-top: 1px solid #252c36; }"
+		    "QListWidget { background: transparent; border: none; border-radius: 0; padding: 0; outline: 0; }"
+		    "QListWidget::item { padding: 10px 12px; border-radius: 4px; color: #bac6d6; }"
 		    "QListWidget::item:selected { background: #2f6fed; color: #ffffff; }"
-		    "#WorkflowButton, #PrimaryWorkflowButton { color: #dce5f2; border: 1px solid #2f3744; border-radius: 4px; padding: 10px 12px; text-align: left; font-size: 10.5pt; font-weight: 650; }"
-		    "#WorkflowButton { background: #1a1f28; }"
-		    "#WorkflowButton:hover { background: #222936; border: 1px solid #566277; }"
-		    "#WorkflowButton:checked { background: #24324a; border: 1px solid #5f8cff; color: #ffffff; }"
-		    "#PrimaryWorkflowButton { background: #1d6f5c; border: 1px solid #27876f; color: #ffffff; }"
-		    "#PrimaryWorkflowButton:hover { background: #238369; }"
-		    "#PrimaryWorkflowButton:checked { background: #249576; border: 1px solid #6bd4b8; }"
+		    "QTabWidget#ProcessTabs::pane { border: none; background: transparent; margin-top: 8px; }"
+		    "QTabWidget#ProcessTabs QWidget { background: transparent; }"
+		    "QTabBar::tab { background: transparent; color: #9aa8ba; border: none; border-bottom: 2px solid transparent; padding: 8px 15px 10px 15px; font-weight: 650; }"
+		    "QTabBar::tab:selected { color: #ffffff; border-bottom: 2px solid #2fc49a; }"
+		    "QTabBar::tab:hover { color: #dce5f2; }"
+		    "#WorkflowButton, #PrimaryWorkflowButton { color: #dce5f2; border: 1px solid #2a3441; border-radius: 4px; padding: 10px 13px; text-align: left; font-size: 10pt; font-weight: 650; }"
+		    "#WorkflowButton { background: #171c23; }"
+		    "#WorkflowButton:hover { background: #1d2530; border: 1px solid #445367; }"
+		    "#WorkflowButton:checked { background: #1d2c3f; border: 1px solid #6b96ff; color: #ffffff; }"
+		    "#PrimaryWorkflowButton { background: #1b6b56; border: 1px solid #2aa883; color: #ffffff; }"
+		    "#PrimaryWorkflowButton:hover { background: #217c64; }"
+		    "#PrimaryWorkflowButton:checked { background: #249576; border: 1px solid #7ae1c4; }"
 		    "#PageTitle h1 { color: #ffffff; font-size: 18pt; margin: 0; }"
-		    "#PageTitle p { color: #9da9bb; margin-top: 4px; }"
-		    "#SectionLabel { color: #ffffff; font-size: 11pt; font-weight: 700; padding-top: 4px; }"
-		    "#MutedLabel { color: #9da9bb; }"
-		    "QPushButton { background: #2f6fed; color: #ffffff; border: none; border-radius: 5px; padding: 9px 14px; font-weight: 600; }"
+		    "#PageTitle p { color: #98a6b7; margin-top: 5px; }"
+		    "#SectionLabel { color: #f4f7fb; font-size: 10.5pt; font-weight: 700; padding-top: 2px; }"
+		    "#FieldLabel { color: #8d9bad; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding-top: 4px; }"
+		    "#MutedLabel { color: #98a6b7; padding: 8px 0; }"
+		    "QPushButton { background: #2f6fed; color: #ffffff; border: none; border-radius: 4px; padding: 9px 15px; font-weight: 650; }"
 		    "QPushButton:hover { background: #3d7bff; }"
-		    "#SecondaryButton { background: #262d38; color: #d8e0ea; }"
-		    "#SecondaryButton:hover { background: #303846; }"
-		    "#PrimaryActionButton { background: #1f9d78; }"
-		    "#PrimaryActionButton:hover { background: #26b98e; }"
-		    "QProgressBar { background: #1d222b; border: 1px solid #303743; border-radius: 6px; color: #d8e0ea; text-align: center; min-height: 18px; }"
-		    "QProgressBar::chunk { background: #1f9d78; border-radius: 5px; }"
-		    "QComboBox, QLineEdit, QTextEdit { background: #1d222b; border: 1px solid #303743; border-radius: 6px; padding: 8px; color: #e8edf2; }"
-		    "QComboBox:focus, QLineEdit:focus, QTextEdit:focus { border: 1px solid #5f8cff; }"
-		    "QCheckBox { spacing: 8px; padding: 4px; }"
-		    "QLabel { color: #c7d0de; }");
+		    "#SecondaryButton { background: #222a35; color: #d8e0ea; }"
+		    "#SecondaryButton:hover { background: #2c3542; }"
+		    "#PrimaryActionButton { background: #21a67f; min-width: 96px; }"
+		    "#PrimaryActionButton:hover { background: #28bb91; }"
+		    "QProgressBar { background: #1a2029; border: none; border-radius: 3px; color: #d8e0ea; text-align: center; min-height: 14px; }"
+		    "QProgressBar::chunk { background: #2fc49a; border-radius: 3px; }"
+		    "QComboBox, QTextEdit { background: #171d25; border: 1px solid #2c3542; border-radius: 4px; padding: 8px; color: #e8edf2; selection-background-color: #2f6fed; }"
+		    "QComboBox:focus, QTextEdit:focus { border: 1px solid #5f8cff; }"
+		    "#ActivityList { background: transparent; border: none; border-right: 1px solid #252c36; border-radius: 0; padding: 0 12px 0 0; }"
+		    "#OperationOutput { background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt; }"
+		    "QCheckBox { spacing: 8px; padding: 4px 0; color: #d2dbe8; }");
 	}
 }
