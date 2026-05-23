@@ -7,7 +7,7 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 
 ## 1. Platform & Technology
 - **Target OS:** Windows only
-- **GUI Framework:** (To be decided; recommend modern Windows-native or cross-platform tech with good Windows support, e.g., WPF, WinUI 3, Qt, or Electron)
+- **GUI Framework:** Qt 6.8 LTS or newer, using Qt Widgets
 - **Distribution:** Ship as a ready-to-use .exe within the same depot as the engine
 
 ## 2. Features & Parity
@@ -72,6 +72,8 @@ Design and implement a modern Windows-only GUI frontend for the Sparkle Launcher
 - Placeholder UI launches and navigates between main sections.
 - All architectural decisions are reviewed and documented.
 - No build or integration with legacy code at this stage.
+
+**Status:** Implemented source-only scaffold. See [launcher-gui-phase1-architecture.md](launcher-gui-phase1-architecture.md).
 
 ---
 

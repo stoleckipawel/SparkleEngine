@@ -74,13 +74,31 @@ set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch/Smoke/RhiSmokeLaunchOperations.h
 )
 
-set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
+find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets)
+
+set(SPARKLE_LAUNCHER_GUI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.cpp
+)
+
+set(SPARKLE_LAUNCHER_GUI_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.h
+)
+
+set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
+    ${SPARKLE_LAUNCHER_GUI_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.cpp
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.h
+    ${SPARKLE_LAUNCHER_GUI_HEADERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.h
 )
 
@@ -145,11 +163,13 @@ target_include_directories(SparkleLauncher
 target_link_libraries(SparkleLauncher
     PRIVATE
         SparkleLauncherCore
+        Qt6::Widgets
 )
 
 target_compile_features(SparkleLauncher PRIVATE cxx_std_20)
 
 set_target_properties(SparkleLauncher PROPERTIES
+    AUTOMOC ON
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
