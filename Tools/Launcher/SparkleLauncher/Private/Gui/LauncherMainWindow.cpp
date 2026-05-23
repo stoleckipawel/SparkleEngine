@@ -521,8 +521,8 @@ namespace SparkleLauncher
 		if (operationId.startsWith("smoke."))
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
 			AddOptionField(layout, "Frame limit", CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
+			AddOptionField(layout, "Backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Enable trace", "Capture smoke trace output.", &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
@@ -541,8 +541,8 @@ namespace SparkleLauncher
 			connect(cleanScopeBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [cleanScopeBox, this]() {
 				m_settings.SetCleanScope(cleanScopeBox->currentData().toString());
 			});
-			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Scope", cleanScopeBox);
+			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Confirm clean", "Required before destructive clean scopes run.", &LauncherSettings::SetConfirmClean));
 			return;
 		}
@@ -803,11 +803,11 @@ namespace SparkleLauncher
 	QVector<LauncherMainWindow::WorkflowDefinition> LauncherMainWindow::CreateWorkflowDefinitions() const
 	{
 		return {
-		    {"Workspace", "Setup / Clean", {"workspace.generate-solution", "workspace.setup", "toolchain.check", "workspace.clean"}},
-		    {"Build", "Editor / Runtime", {"project.build.editor", "project.build.runtime"}},
-		    {"Cook", "Assets / Shaders", {"cook.tools.prepare", "cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
-		    {"Launch", "Editor / Runtime", {"project.launch.editor", "project.launch.runtime"}},
-		    {"Utilities", "Format / Smoke", {"quality.format", "smoke.rhi.editor", "smoke.rhi.runtime"}},
+		    {"Setup", "Fresh sync", {"workspace.setup", "toolchain.check", "workspace.generate-solution"}},
+		    {"Build", "Compile targets", {"project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
+		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
+		    {"Run", "Launch and verify", {"project.launch.editor", "project.launch.runtime", "smoke.rhi.editor", "smoke.rhi.runtime"}},
+		    {"Maintain", "Routine cleanup", {"quality.format", "workspace.clean"}},
 		};
 	}
 
