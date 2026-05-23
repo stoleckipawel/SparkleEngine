@@ -57,8 +57,6 @@ namespace SparkleLauncher
 		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
 		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
-		connect(&m_backend, &LauncherBackend::OperationPreviewReady, this, &LauncherMainWindow::DisplayOperationPreview);
-		connect(&m_backend, &LauncherBackend::OperationPreviewFailed, this, &LauncherMainWindow::DisplayOperationPreviewError);
 		connect(&m_backend, &LauncherBackend::OperationStarted, this, &LauncherMainWindow::DisplayOperationStarted);
 		connect(&m_backend, &LauncherBackend::OperationOutputReceived, this, &LauncherMainWindow::AppendOperationOutput);
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
@@ -100,20 +98,6 @@ namespace SparkleLauncher
 		ShowRunOutput(currentItem->data(Qt::UserRole).toString());
 	}
 
-	void LauncherMainWindow::PreviewSelectedOperation()
-	{
-		if (m_selectedOperationId.isEmpty())
-		{
-			m_operationOutput->setPlainText("Select a process before opening details.");
-			SetStatusMessage("No process selected");
-			return;
-		}
-
-		m_activeRunId.clear();
-		SetStatusMessage("Loading details for " + DisplayNameForOperation(m_selectedOperationId));
-		m_backend.RequestOperationPreview(BuildOperationRequest(m_selectedOperationId));
-	}
-
 	void LauncherMainWindow::RunSelectedOperation()
 	{
 		if (m_selectedOperationId.isEmpty())
@@ -135,18 +119,6 @@ namespace SparkleLauncher
 		RegisterRun(request.RunId, title);
 		SetStatusMessage("Starting " + title);
 		m_backend.RunOperation(std::move(request));
-	}
-
-	void LauncherMainWindow::DisplayOperationPreview(const QString&, const QString& title, const QString& previewText, bool canRun)
-	{
-		m_operationOutput->setPlainText(title + QString(canRun ? " is ready.\n\n" : " is blocked.\n\n") + previewText);
-		SetStatusMessage(title + QString(canRun ? " ready" : " blocked"));
-	}
-
-	void LauncherMainWindow::DisplayOperationPreviewError(const QString&, const QString& message)
-	{
-		m_operationOutput->setPlainText(message);
-		SetStatusMessage(message);
 	}
 
 	void LauncherMainWindow::DisplayOperationStarted(const QString& runId, const QString&, const QString& title)
@@ -279,11 +251,8 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("OptionsPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(22, 20, 22, 18);
-		layout->setSpacing(14);
-
-		QLabel* stepLabel = CreateSectionLabel("Configure");
-		layout->addWidget(stepLabel);
+		layout->setContentsMargins(22, 18, 22, 18);
+		layout->setSpacing(10);
 
 		m_activeOperationLabel = new QLabel("No workflow selected", panel);
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
@@ -315,12 +284,6 @@ namespace SparkleLauncher
 		QHBoxLayout* actionLayout = new QHBoxLayout();
 		actionLayout->setSpacing(10);
 		actionLayout->addStretch(1);
-		m_previewButton = new QPushButton("Preview", panel);
-		m_previewButton->setObjectName("SecondaryButton");
-		m_previewButton->setToolTip("Preview readiness and planned work without running.");
-		m_previewButton->setEnabled(false);
-		connect(m_previewButton, &QPushButton::clicked, this, &LauncherMainWindow::PreviewSelectedOperation);
-		actionLayout->addWidget(m_previewButton);
 		m_runButton = new QPushButton(style()->standardIcon(QStyle::SP_MediaPlay), "Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
 		m_runButton->setToolTip("Start this process. Other running processes keep running.");
@@ -339,9 +302,10 @@ namespace SparkleLauncher
 		scrollArea->setFrameShape(QFrame::NoFrame);
 
 		QWidget* content = new QWidget(scrollArea);
+		content->setObjectName("OptionsContent");
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(0, 4, 8, 0);
-		layout->setSpacing(12);
+		layout->setContentsMargins(0, 8, 8, 0);
+		layout->setSpacing(8);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -393,7 +357,7 @@ namespace SparkleLauncher
 		m_operationOutput->setMinimumHeight(120);
 		m_operationOutput->setMaximumHeight(168);
 		m_operationOutput->setToolTip("Select an activity to view its output.");
-		m_operationOutput->setPlainText("Preview a workflow to inspect planned work, or run it to stream output here.");
+		m_operationOutput->setPlainText("Run a workflow to stream output here.");
 		activityLayout->addWidget(m_operationOutput, 3);
 		layout->addLayout(activityLayout);
 		return panel;
@@ -476,41 +440,31 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
-			AddNoOptionsMessage(layout, "No parameters. This workflow uses the repository and all discovered projects.");
+			AddNoOptionsMessage(layout, "No parameters");
 			return;
 		}
 
 		if (operationId == "project.build.editor")
 		{
-			layout.addWidget(CreateSectionLabel("Editor build"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			layout.addWidget(CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
 		if (operationId == "project.build.runtime")
 		{
-			layout.addWidget(CreateSectionLabel("Runtime build"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			layout.addWidget(CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Force configure", "Regenerate before building.", &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
 		if (operationId == "cook.shaders")
 		{
-			layout.addWidget(CreateSectionLabel("Cook shaders"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			layout.addWidget(CreateFieldLabel("Shader package"));
-			layout.addWidget(CreateValueCombo(
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			AddOptionField(layout, "Shader package", CreateValueCombo(
 			    {{"All shader packages", ""},
 			     {"ComputeClear", "ComputeClear"},
 			     {"DirectLighting", "DirectLighting"},
@@ -524,77 +478,58 @@ namespace SparkleLauncher
 			     {"VisualizeBuffers", "VisualizeBuffers"}},
 			    m_settings.ShaderPackages(),
 			    &LauncherSettings::SetShaderPackages));
-			layout.addWidget(CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
-			layout.addWidget(CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
 			return;
 		}
 
 		if (operationId.startsWith("cook."))
 		{
-			layout.addWidget(CreateSectionLabel("Cook"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			layout.addWidget(CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
-			layout.addWidget(CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", &LauncherSettings::SetForceRecook));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", &LauncherSettings::SetConfirmForceRecook));
 			return;
 		}
 
 		if (operationId == "project.launch.editor")
 		{
-			layout.addWidget(CreateSectionLabel("Launch editor"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
 			return;
 		}
 
 		if (operationId == "project.launch.runtime")
 		{
-			layout.addWidget(CreateSectionLabel("Launch runtime"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Profile"));
-			layout.addWidget(CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			return;
 		}
 
 		if (operationId == "quality.format")
 		{
-			layout.addWidget(CreateSectionLabel("Format"));
-			layout.addWidget(CreateFieldLabel("Mode"));
 			QComboBox* formatModeBox = new QComboBox(this);
 			formatModeBox->addItem("Check formatting", "check");
 			formatModeBox->addItem("Apply formatting", "apply");
 			connect(formatModeBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [formatModeBox, this]() {
 				m_settings.SetFormatMode(formatModeBox->currentData().toString());
 			});
-			layout.addWidget(formatModeBox);
+			AddOptionField(layout, "Mode", formatModeBox);
 			return;
 		}
 
 		if (operationId.startsWith("smoke."))
 		{
-			layout.addWidget(CreateSectionLabel("Smoke test"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Backend"));
-			layout.addWidget(CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
-			layout.addWidget(CreateFieldLabel("Frame limit"));
-			layout.addWidget(CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			layout.addWidget(CreateBoundCheckBox("Enable trace", "Capture smoke trace output.", &LauncherSettings::SetSmokeTrace));
-			layout.addWidget(CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", &LauncherSettings::SetSmokeSkipLevelSwitching));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
+			AddOptionField(layout, "Frame limit", CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Enable trace", "Capture smoke trace output.", &LauncherSettings::SetSmokeTrace));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
 		}
 
 		if (operationId == "workspace.clean")
 		{
-			layout.addWidget(CreateSectionLabel("Clean"));
-			layout.addWidget(CreateFieldLabel("Project"));
-			layout.addWidget(CreateProjectCombo());
-			layout.addWidget(CreateFieldLabel("Scope"));
 			QComboBox* cleanScopeBox = new QComboBox(this);
 			cleanScopeBox->addItem("Selected Project Cooked Outputs", "selected-cooked");
 			cleanScopeBox->addItem("All Cooked Outputs", "all-cooked");
@@ -606,12 +541,41 @@ namespace SparkleLauncher
 			connect(cleanScopeBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [cleanScopeBox, this]() {
 				m_settings.SetCleanScope(cleanScopeBox->currentData().toString());
 			});
-			layout.addWidget(cleanScopeBox);
-			layout.addWidget(CreateBoundCheckBox("Confirm clean", "Required before destructive clean scopes run.", &LauncherSettings::SetConfirmClean));
+			AddOptionField(layout, "Project", CreateProjectCombo());
+			AddOptionField(layout, "Scope", cleanScopeBox);
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Confirm clean", "Required before destructive clean scopes run.", &LauncherSettings::SetConfirmClean));
 			return;
 		}
 
-		AddNoOptionsMessage(layout, "No options needed for this process.");
+		AddNoOptionsMessage(layout, "No parameters");
+	}
+
+	void LauncherMainWindow::AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control)
+	{
+		QFrame* row = new QFrame(this);
+		row->setObjectName("OptionRow");
+		QHBoxLayout* rowLayout = new QHBoxLayout(row);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(14);
+
+		QLabel* fieldLabel = CreateFieldLabel(label);
+		fieldLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+		fieldLabel->setFixedWidth(116);
+		rowLayout->addWidget(fieldLabel);
+		rowLayout->addWidget(control, 1);
+		layout.addWidget(row);
+	}
+
+	void LauncherMainWindow::AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox)
+	{
+		QFrame* row = new QFrame(this);
+		row->setObjectName("OptionRow");
+		QHBoxLayout* rowLayout = new QHBoxLayout(row);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(14);
+		rowLayout->addSpacing(130);
+		rowLayout->addWidget(checkBox, 1);
+		layout.addWidget(row);
 	}
 
 	void LauncherMainWindow::AddNoOptionsMessage(QVBoxLayout& layout, const QString& text)
@@ -624,10 +588,6 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::SetControlsEnabled(bool enabled)
 	{
-		if (m_previewButton != nullptr)
-		{
-			m_previewButton->setEnabled(enabled);
-		}
 		if (m_runButton != nullptr)
 		{
 			m_runButton->setEnabled(enabled);
@@ -867,7 +827,9 @@ namespace SparkleLauncher
 		    "#ProgressLabel { color: #ffffff; font-size: 10.5pt; font-weight: 700; }"
 		    "#ProcessPanel { background: #1b2027; border-right: 1px solid #11161c; padding: 0; }"
 		    "#OptionsPanel { background: #242a32; border: 1px solid #343b45; border-radius: 6px; }"
-		    "#OptionsScrollArea, #OptionsStack { background: transparent; }"
+		    "#OptionsScrollArea, #OptionsStack, #OptionsContent { background: transparent; border: none; }"
+		    "#OptionsScrollArea QWidget { background: transparent; }"
+		    "#OptionRow { background: transparent; min-height: 36px; }"
 		    "QStatusBar { background: #1b2027; color: #8b949e; border-top: 1px solid #11161c; }"
 		    "QListWidget { background: transparent; border: none; border-radius: 0; padding: 0; outline: 0; }"
 		    "QListWidget::item { padding: 10px 12px; border-radius: 4px; color: #c9d1d9; }"
@@ -883,8 +845,8 @@ namespace SparkleLauncher
 		    "#PageTitle h1 { color: #f0f3f6; font-size: 13pt; margin: 0; }"
 		    "#PageTitle p { color: #8b949e; margin-top: 4px; }"
 		    "#SectionLabel { color: #f0f3f6; font-size: 10.5pt; font-weight: 700; padding-top: 2px; }"
-		    "#FieldLabel { color: #8d9bad; font-size: 8.5pt; font-weight: 700; text-transform: uppercase; padding-top: 4px; }"
-		    "#MutedLabel { color: #8b949e; padding: 8px 0; }"
+		    "#FieldLabel { color: #9aa4af; font-size: 9pt; font-weight: 600; padding-top: 0; }"
+		    "#MutedLabel { color: #8b949e; padding: 6px 0; }"
 		    "QPushButton { background: #0969da; color: #ffffff; border: none; border-radius: 4px; padding: 8px 14px; font-weight: 650; }"
 		    "QPushButton:hover { background: #1f7eed; }"
 		    "QPushButton:disabled { background: #343b45; color: #8b949e; }"
@@ -894,10 +856,10 @@ namespace SparkleLauncher
 		    "#PrimaryActionButton:hover { background: #1f7eed; }"
 		    "QProgressBar { background: #30363d; border: none; border-radius: 3px; color: #dce3ec; text-align: center; min-height: 14px; }"
 		    "QProgressBar::chunk { background: #0969da; border-radius: 3px; }"
-		    "QComboBox, QTextEdit { background: #1b2027; border: 1px solid #454c56; border-radius: 4px; padding: 8px; color: #dce3ec; selection-background-color: #0969da; }"
+		    "QComboBox, QTextEdit { background: #1b2027; border: 1px solid #454c56; border-radius: 4px; padding: 7px 9px; color: #dce3ec; selection-background-color: #0969da; }"
 		    "QComboBox:focus, QTextEdit:focus { border: 1px solid #0969da; }"
 		    "#ActivityList { background: transparent; border: none; border-right: 1px solid #30363d; border-radius: 0; padding: 0 12px 0 0; }"
 		    "#OperationOutput { background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt; }"
-		    "QCheckBox { spacing: 8px; padding: 4px 0; color: #dce3ec; }");
+		    "QCheckBox { spacing: 8px; padding: 3px 0; color: #dce3ec; }");
 	}
 }

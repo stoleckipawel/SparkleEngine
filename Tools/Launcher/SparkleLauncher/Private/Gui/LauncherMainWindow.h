@@ -46,10 +46,7 @@ namespace SparkleLauncher
 		void RefreshProjects();
 		void SelectProcessButton(QAbstractButton* button);
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
-		void PreviewSelectedOperation();
 		void RunSelectedOperation();
-		void DisplayOperationPreview(const QString& operationId, const QString& title, const QString& previewText, bool canRun);
-		void DisplayOperationPreviewError(const QString& operationId, const QString& message);
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
 		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
@@ -77,6 +74,8 @@ namespace SparkleLauncher
 		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
+		void AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
+		void AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
@@ -105,7 +104,6 @@ namespace SparkleLauncher
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;
 		QTextEdit* m_operationOutput = nullptr;
-		QPushButton* m_previewButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
 		QLabel* m_activeOperationDescription = nullptr;
