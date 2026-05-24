@@ -90,6 +90,7 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
+		QLabel* CreateStatusChip(const QString& text, const QString& objectName, QWidget* parent) const;
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
@@ -103,6 +104,7 @@ namespace SparkleLauncher
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
 		void LoadLauncherIconFont();
+		QIcon CreateApplicationIcon() const;
 		QString IconGlyph(LauncherIcon icon) const;
 		QIcon CreateLauncherIcon(LauncherIcon icon, const QColor& color) const;
 		QIcon WorkflowIconForIndex(int workflowIndex) const;
@@ -110,10 +112,13 @@ namespace SparkleLauncher
 		void RegisterFocusable(QWidget* widget);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
+		void UpdateReadinessChips();
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		QString DescriptionForOperation(const QString& operationId) const;
 		bool OperationNeedsProject(const QString& operationId) const;
+		bool OperationNeedsConfirmation(const QString& operationId) const;
+		bool OperationHasActiveRun(const QString& operationId) const;
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
@@ -146,6 +151,11 @@ namespace SparkleLauncher
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
+		QLabel* m_readyChip = nullptr;
+		QLabel* m_requiresProjectChip = nullptr;
+		QLabel* m_runningChip = nullptr;
+		QLabel* m_lastFailedChip = nullptr;
+		QLabel* m_confirmationRequiredChip = nullptr;
 		QLabel* m_activeOperationDescription = nullptr;
 		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
@@ -156,6 +166,8 @@ namespace SparkleLauncher
 		QHash<QString, QListWidgetItem*> m_runItems;
 		QHash<QString, RunState> m_runStates;
 		QHash<QString, QString> m_runTitles;
+		QHash<QString, QString> m_runOperationIds;
+		QHash<QString, RunState> m_lastRunStateByOperation;
 		QHash<QString, QString> m_runOutputs;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
