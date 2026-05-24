@@ -6,6 +6,8 @@ This document critiques the current Sparkle Launcher GUI from a top-tier product
 
 The launcher should help a developer who just synced the repository understand what to do next, run workflows without using a console, and monitor long-running work without feeling buried in terminal noise.
 
+Related deeper critique: `docs/plans/launcher-gui-top-tier-product-hardening.md`.
+
 ## Product Thesis
 
 Sparkle Launcher is a local workflow control surface for engine development. It is not a marketing launcher, not an editor UI, and not a console wrapper. Its job is to turn complex build, cook, launch, and maintenance operations into a small set of trustworthy actions.

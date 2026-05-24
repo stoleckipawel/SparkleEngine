@@ -9,14 +9,17 @@
 #include <QtGui/QBrush>
 #include <QtGui/QClipboard>
 #include <QtGui/QColor>
+#include <QtGui/QFont>
+#include <QtGui/QFontDatabase>
 #include <QtGui/QGuiApplication>
+#include <QtGui/QPainter>
+#include <QtGui/QPixmap>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QStatusBar>
-#include <QtWidgets/QStyle>
 #include <QtWidgets/QWidget>
 
 #include <utility>
@@ -36,8 +39,11 @@ namespace SparkleLauncher
 	static constexpr int kFieldLabelWidth = 116;
 	static constexpr int kActivityListWidth = 280;
 	static constexpr int kActivityListMaxHeight = 146;
-	static constexpr int kOperationOutputMinHeight = 120;
+	static constexpr int kOperationOutputMinHeight = 96;
+	static constexpr int kOperationOutputCompactMaxHeight = 128;
+	static constexpr int kOperationOutputProminentMinHeight = 136;
 	static constexpr int kOperationOutputMaxHeight = 220;
+	static constexpr int kLauncherIconSize = 14;
 	static constexpr const char* kColorStateQueued = "#8b949e";
 	static constexpr const char* kColorStateRunning = "#58a6ff";
 	static constexpr const char* kColorStateSuccess = "#7ee787";
@@ -60,6 +66,7 @@ namespace SparkleLauncher
 		setMinimumSize(980, 620);
 		resize(1240, 800);
 		statusBar()->showMessage("Ready");
+		LoadLauncherIconFont();
 
 		QWidget* centralWidget = new QWidget(this);
 		QVBoxLayout* rootLayout = new QVBoxLayout(centralWidget);
@@ -73,6 +80,11 @@ namespace SparkleLauncher
 		rootLayout->addLayout(bodyLayout, 1);
 		rootLayout->addWidget(CreateOutputPanel());
 		setCentralWidget(centralWidget);
+		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+		if (!workflows.empty() && !workflows.front().OperationIds.empty())
+		{
+			SetSelectedOperation(workflows.front().OperationIds.front());
+		}
 
 		ConfigureTabOrder();
 		ApplyVisualStyle();
@@ -117,7 +129,8 @@ namespace SparkleLauncher
 			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
 			if (workflowIndex < workflows.size() && !workflows[workflowIndex].OperationIds.empty())
 			{
-				SetSelectedOperation(workflows[workflowIndex].OperationIds.front());
+				const QString lastOperationId = m_lastOperationByWorkflowIndex.value(workflowIndex);
+				SetSelectedOperation(workflows[workflowIndex].OperationIds.contains(lastOperationId) ? lastOperationId : workflows[workflowIndex].OperationIds.front());
 			}
 		}
 	}
@@ -162,6 +175,17 @@ namespace SparkleLauncher
 				m_operationOutput->setPlainText("Choose a workflow before running.");
 			}
 			SetStatusMessage("No process selected");
+			return;
+		}
+
+		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
+		{
+			const QString message = "No project discovered. Run Setup Workspace or Check Toolchain, then retry.";
+			if (m_operationOutput != nullptr)
+			{
+				m_operationOutput->setPlainText(message);
+			}
+			SetStatusMessage(message);
 			return;
 		}
 
@@ -275,6 +299,8 @@ namespace SparkleLauncher
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
 			groupButton->setToolTip(workflow.Subtitle);
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
+			groupButton->setIcon(WorkflowIconForIndex(workflowIndex));
+			groupButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
 			groupLayout->addWidget(groupButton);
@@ -362,8 +388,10 @@ namespace SparkleLauncher
 		QHBoxLayout* actionLayout = new QHBoxLayout();
 		actionLayout->setSpacing(kSpaceSmall + kSpaceTiny);
 		actionLayout->addStretch(1);
-		m_runButton = new QPushButton(style()->standardIcon(QStyle::SP_MediaPlay), "Run", panel);
+		m_runButton = new QPushButton("Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
+		m_runButton->setIcon(CreateLauncherIcon(LauncherIcon::Run, QColor("#ffffff")));
+		m_runButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 		m_runButton->setToolTip("Start this process. Other running processes keep running.");
 		m_runButton->setEnabled(false);
 		m_runButton->setAccessibleName("Run selected workflow");
@@ -410,7 +438,7 @@ namespace SparkleLauncher
 		progressLayout->addWidget(m_progressLabel);
 		m_progressBar = new QProgressBar(panel);
 		m_progressBar->setObjectName("ProgressBar");
-		m_progressBar->setTextVisible(true);
+		m_progressBar->setTextVisible(false);
 		progressLayout->addWidget(m_progressBar, 1);
 		layout->addLayout(progressLayout);
 
@@ -422,6 +450,8 @@ namespace SparkleLauncher
 		activityHeaderLayout->addWidget(CreateFieldLabel("Output"), 3);
 		m_copyOutputButton = new QPushButton("Copy output", panel);
 		m_copyOutputButton->setObjectName("SecondaryButton");
+		m_copyOutputButton->setIcon(CreateLauncherIcon(LauncherIcon::Copy, QColor(kColorStateQueued)));
+		m_copyOutputButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 		m_copyOutputButton->setEnabled(false);
 		m_copyOutputButton->setAccessibleName("Copy selected activity output");
 		RegisterFocusable(m_copyOutputButton);
@@ -439,6 +469,14 @@ namespace SparkleLauncher
 		connect(m_activityList, &QListWidget::currentItemChanged, this, &LauncherMainWindow::DisplaySelectedRunOutput);
 		activityLayout->addWidget(m_activityList, 1);
 
+		QVBoxLayout* outputLayout = new QVBoxLayout();
+		outputLayout->setContentsMargins(0, 0, 0, 0);
+		outputLayout->setSpacing(kSpaceSmall);
+		m_selectedRunSummary = new QLabel("Select an activity to view output.", panel);
+		m_selectedRunSummary->setObjectName("ActivitySummary");
+		m_selectedRunSummary->setWordWrap(true);
+		outputLayout->addWidget(m_selectedRunSummary);
+
 		m_operationOutput = new QTextEdit(panel);
 		m_operationOutput->setObjectName("OperationOutput");
 		m_operationOutput->setReadOnly(true);
@@ -447,7 +485,8 @@ namespace SparkleLauncher
 		m_operationOutput->setToolTip("Select an activity to view its output.");
 		m_operationOutput->setAccessibleName("Selected activity output");
 		RegisterFocusable(m_operationOutput);
-		activityLayout->addWidget(m_operationOutput, 3);
+		outputLayout->addWidget(m_operationOutput);
+		activityLayout->addLayout(outputLayout, 3);
 
 		m_activityDetailsPanel = new QFrame(panel);
 		m_activityDetailsPanel->setObjectName("ActivityDetailsPanel");
@@ -633,6 +672,8 @@ namespace SparkleLauncher
 			RegisterFocusable(formatModeBox);
 			formatModeBox->addItem("Check formatting", "check");
 			formatModeBox->addItem("Apply formatting", "apply");
+			const int formatModeIndex = formatModeBox->findData(m_settings.FormatMode());
+			formatModeBox->setCurrentIndex(formatModeIndex >= 0 ? formatModeIndex : 0);
 			connect(formatModeBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [formatModeBox, this]() {
 				m_settings.SetFormatMode(formatModeBox->currentData().toString());
 			});
@@ -662,6 +703,8 @@ namespace SparkleLauncher
 			cleanScopeBox->addItem("Third-Party Dependency Cache", "deps");
 			cleanScopeBox->addItem("Logs", "logs");
 			cleanScopeBox->addItem("Pristine Generated Workspace", "pristine");
+			const int cleanScopeIndex = cleanScopeBox->findData(m_settings.CleanScope());
+			cleanScopeBox->setCurrentIndex(cleanScopeIndex >= 0 ? cleanScopeIndex : 0);
 			AddOptionField(layout, "Scope", cleanScopeBox);
 			QWidget* projectRow = AddOptionField(layout, "Project", CreateProjectCombo());
 			const auto updateProjectVisibility = [cleanScopeBox, projectRow]() {
@@ -761,6 +804,116 @@ namespace SparkleLauncher
 		}
 	}
 
+	void LauncherMainWindow::LoadLauncherIconFont()
+	{
+#ifdef SPARKLE_FONT_AWESOME_SOLID_TTF
+		const char* fontPath = SPARKLE_FONT_AWESOME_SOLID_TTF;
+		std::error_code errorCode;
+		if (!std::filesystem::exists(fontPath, errorCode) || errorCode)
+		{
+			return;
+		}
+
+		const int fontId = QFontDatabase::addApplicationFont(QString::fromUtf8(fontPath));
+		if (fontId < 0)
+		{
+			return;
+		}
+
+		const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+		if (!families.empty())
+		{
+			m_iconFontFamily = families.front();
+		}
+#endif
+	}
+
+	QString LauncherMainWindow::IconGlyph(LauncherIcon icon) const
+	{
+		switch (icon)
+		{
+		case LauncherIcon::Setup:
+			return QChar(0xf0ad);
+		case LauncherIcon::Build:
+			return QChar(0xf6e3);
+		case LauncherIcon::Cook:
+			return QChar(0xf466);
+		case LauncherIcon::Run:
+			return QChar(0xf04b);
+		case LauncherIcon::Maintain:
+			return QChar(0xf1de);
+		case LauncherIcon::Queued:
+			return QChar(0xf017);
+		case LauncherIcon::Running:
+			return QChar(0xf04b);
+		case LauncherIcon::Done:
+			return QChar(0xf00c);
+		case LauncherIcon::Failed:
+			return QChar(0xf071);
+		case LauncherIcon::Copy:
+			return QChar(0xf0c5);
+		}
+
+		return QString();
+	}
+
+	QIcon LauncherMainWindow::CreateLauncherIcon(LauncherIcon icon, const QColor& color) const
+	{
+		if (m_iconFontFamily.isEmpty())
+		{
+			return {};
+		}
+
+		QPixmap pixmap(kLauncherIconSize, kLauncherIconSize);
+		pixmap.fill(Qt::transparent);
+
+		QPainter painter(&pixmap);
+		painter.setRenderHint(QPainter::Antialiasing, true);
+		painter.setRenderHint(QPainter::TextAntialiasing, true);
+		QFont iconFont(m_iconFontFamily);
+		iconFont.setPixelSize(kLauncherIconSize - 1);
+		painter.setFont(iconFont);
+		painter.setPen(color);
+		painter.drawText(pixmap.rect(), Qt::AlignCenter, IconGlyph(icon));
+		return QIcon(pixmap);
+	}
+
+	QIcon LauncherMainWindow::WorkflowIconForIndex(int workflowIndex) const
+	{
+		switch (workflowIndex)
+		{
+		case 0:
+			return CreateLauncherIcon(LauncherIcon::Setup, QColor(kColorStateQueued));
+		case 1:
+			return CreateLauncherIcon(LauncherIcon::Build, QColor(kColorStateQueued));
+		case 2:
+			return CreateLauncherIcon(LauncherIcon::Cook, QColor(kColorStateQueued));
+		case 3:
+			return CreateLauncherIcon(LauncherIcon::Run, QColor(kColorStateQueued));
+		case 4:
+			return CreateLauncherIcon(LauncherIcon::Maintain, QColor(kColorStateQueued));
+		default:
+			return {};
+		}
+	}
+
+	QIcon LauncherMainWindow::ActivityIconForState(RunState state) const
+	{
+		switch (state)
+		{
+		case RunState::Queued:
+			return CreateLauncherIcon(LauncherIcon::Queued, QColor(kColorStateQueued));
+		case RunState::Running:
+			return CreateLauncherIcon(LauncherIcon::Running, QColor(kColorStateRunning));
+		case RunState::Done:
+			return CreateLauncherIcon(LauncherIcon::Done, QColor(kColorStateSuccess));
+		case RunState::Failed:
+			return CreateLauncherIcon(LauncherIcon::Failed, QColor(kColorStateDestructive));
+		}
+
+		return {};
+	}
+
 	void LauncherMainWindow::RegisterFocusable(QWidget* widget)
 	{
 		if (widget == nullptr)
@@ -856,6 +1009,14 @@ namespace SparkleLauncher
 		{
 			return "No project is selected. Run Setup Workspace, then retry this workflow.";
 		}
+		if (operationId.startsWith("cook.") && m_settings.ForceRecook() && !m_settings.ConfirmForceRecook())
+		{
+			return "Open More options, enable Confirm recook cleanup, then retry.";
+		}
+		if (operationId == "workspace.clean" && !m_settings.ConfirmClean())
+		{
+			return "Open More options, enable Confirm clean, then retry.";
+		}
 
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
@@ -900,9 +1061,27 @@ namespace SparkleLauncher
 
 	bool LauncherMainWindow::ConfirmRunRequest(const LauncherOperationRequest& request) const
 	{
-		if (!request.ForceRecook && !request.ConfirmClean)
+		const bool cleanRequested = request.OperationId == "workspace.clean";
+		const bool destructiveRequested = request.ForceRecook || cleanRequested;
+		if (!destructiveRequested)
 		{
 			return true;
+		}
+		if (request.ForceRecook && !request.ConfirmForceRecook)
+		{
+			QMessageBox::warning(
+			    const_cast<LauncherMainWindow*>(this),
+			    "Confirmation Required",
+			    "Open More options and enable Confirm recook cleanup before running a force recook.");
+			return false;
+		}
+		if (cleanRequested && !request.ConfirmClean)
+		{
+			QMessageBox::warning(
+			    const_cast<LauncherMainWindow*>(this),
+			    "Confirmation Required",
+			    "Open More options and enable Confirm clean before running this clean workflow.");
+			return false;
 		}
 
 		const QMessageBox::StandardButton result = QMessageBox::question(
@@ -952,6 +1131,7 @@ namespace SparkleLauncher
 		if (m_operationStack != nullptr && m_workflowPageByOperation.contains(operationId))
 		{
 			const int workflowIndex = m_workflowPageByOperation.value(operationId);
+			m_lastOperationByWorkflowIndex.insert(workflowIndex, operationId);
 			m_operationStack->setCurrentIndex(workflowIndex);
 			if (m_workflowGroupButtonGroup != nullptr)
 			{
@@ -972,6 +1152,7 @@ namespace SparkleLauncher
 		QListWidgetItem* item = new QListWidgetItem(m_activityList);
 		item->setData(Qt::UserRole, runId);
 		m_runItems.insert(runId, item);
+		m_runTitles.insert(runId, title);
 		SetRunState(runId, RunState::Queued, title);
 		m_runOutputs.insert(runId, title + " queued.\n");
 		m_activityList->setCurrentItem(item);
@@ -986,6 +1167,9 @@ namespace SparkleLauncher
 		{
 			return;
 		}
+
+		m_runStates.insert(runId, state);
+		m_runTitles.insert(runId, title);
 
 		QString stateText;
 		QColor stateColor;
@@ -1010,6 +1194,7 @@ namespace SparkleLauncher
 		}
 
 		item->setText(stateText + ": " + title);
+		item->setIcon(ActivityIconForState(state));
 		item->setData(Qt::UserRole + 1, stateText);
 		item->setForeground(QBrush(stateColor));
 		item->setToolTip(stateText + ": " + title);
@@ -1030,6 +1215,32 @@ namespace SparkleLauncher
 	void LauncherMainWindow::ShowRunOutput(const QString& runId)
 	{
 		m_activeRunId = runId;
+		const RunState state = m_runStates.value(runId, RunState::Queued);
+		const QString title = m_runTitles.value(runId, "Selected process");
+		if (m_selectedRunSummary != nullptr)
+		{
+			switch (state)
+			{
+			case RunState::Queued:
+				m_selectedRunSummary->setText("Queued: " + title + ". Waiting to start.");
+				break;
+			case RunState::Running:
+				m_selectedRunSummary->setText("Running: " + title + ". Output is updating below.");
+				break;
+			case RunState::Done:
+				m_selectedRunSummary->setText("Done: " + title + ". Output is available below.");
+				break;
+			case RunState::Failed:
+				m_selectedRunSummary->setText("Failed: " + title + ". Review the summary and raw output below.");
+				break;
+			}
+		}
+		if (m_operationOutput != nullptr)
+		{
+			const bool compactOutput = state == RunState::Done;
+			m_operationOutput->setMinimumHeight(compactOutput ? kOperationOutputMinHeight : kOperationOutputProminentMinHeight);
+			m_operationOutput->setMaximumHeight(compactOutput ? kOperationOutputCompactMaxHeight : kOperationOutputMaxHeight);
+		}
 		m_operationOutput->setPlainText(m_runOutputs.value(runId));
 		m_operationOutput->moveCursor(QTextCursor::End);
 		if (m_copyOutputButton != nullptr)
@@ -1045,8 +1256,29 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const int runningCount = m_startedRunCount - m_finishedRunCount;
-		const int succeededCount = m_finishedRunCount - m_failedRunCount;
+		int queuedCount = 0;
+		int runningCount = 0;
+		int succeededCount = 0;
+		int failedCount = 0;
+		for (const RunState state : m_runStates)
+		{
+			switch (state)
+			{
+			case RunState::Queued:
+				++queuedCount;
+				break;
+			case RunState::Running:
+				++runningCount;
+				break;
+			case RunState::Done:
+				++succeededCount;
+				break;
+			case RunState::Failed:
+				++failedCount;
+				break;
+			}
+		}
+
 		const bool hasRuns = m_startedRunCount > 0;
 		if (m_activityDetailsPanel != nullptr)
 		{
@@ -1064,21 +1296,39 @@ namespace SparkleLauncher
 		{
 			m_progressBar->setRange(0, 1);
 			m_progressBar->setValue(0);
-			m_progressBar->setFormat("0/0 complete");
+			m_progressBar->setFormat(QString());
 			m_progressLabel->setText("No runs yet");
 			return;
 		}
 
 		m_progressBar->setRange(0, m_startedRunCount);
-		m_progressBar->setValue(m_finishedRunCount);
-		m_progressBar->setFormat("%v/%m complete");
-		if (m_failedRunCount > 0)
+		m_progressBar->setValue(succeededCount + failedCount);
+		m_progressBar->setFormat(QString());
+
+		QStringList activityParts;
+		if (queuedCount > 0)
 		{
-			m_progressLabel->setText(QStringLiteral("%1 running, %2 failed, %3 done").arg(runningCount).arg(m_failedRunCount).arg(succeededCount));
+			activityParts.push_back(QStringLiteral("%1 queued").arg(queuedCount));
+		}
+		if (runningCount > 0)
+		{
+			activityParts.push_back(QStringLiteral("%1 running").arg(runningCount));
+		}
+		if (failedCount > 0)
+		{
+			activityParts.push_back(QStringLiteral("%1 failed").arg(failedCount));
+		}
+		if (succeededCount > 0)
+		{
+			activityParts.push_back(QStringLiteral("%1 done").arg(succeededCount));
+		}
+		if (activityParts.empty())
+		{
+			m_progressLabel->setText("No active runs");
 		}
 		else
 		{
-			m_progressLabel->setText(QStringLiteral("%1 running, %2 complete").arg(runningCount).arg(m_finishedRunCount));
+			m_progressLabel->setText(activityParts.join(", "));
 		}
 	}
 
@@ -1172,6 +1422,7 @@ namespace SparkleLauncher
 		addRule("#FieldLabel", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600; padding-top: 0;");
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 6px 0;");
 		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700;");
+		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 9pt; font-weight: 600; padding: 0 0 2px 4px;");
 
 		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; border-radius: 4px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
 		addRule("#WorkflowGroupButton:hover", "background: " + panel + "; color: " + textBody + ";");
@@ -1190,9 +1441,11 @@ namespace SparkleLauncher
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
 		addRule("#SecondaryButton", "background: " + border + "; color: " + textBody + "; border: 1px solid " + borderStrong + ";");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
+		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 		addRule("#MoreOptionsToggle", "background: transparent; color: " + textSecondary + "; border: 1px solid " + border + "; border-radius: 4px; padding: 5px 10px; font-size: 9pt; font-weight: 650;");
 		addRule("#MoreOptionsToggle:hover", "background: " + panelHover + "; color: " + textBody + "; border: 1px solid " + borderStrong + ";");
 		addRule("#MoreOptionsToggle:checked", "background: " + border + "; color: " + textPrimary + "; border: 1px solid " + borderStrong + ";");
+		addRule("#MoreOptionsToggle:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 
 		addRule("QComboBox, QTextEdit", "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 4px; padding: 7px 9px; color: " + textBody + "; selection-background-color: " + selection + ";");
 		addRule("QComboBox:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
@@ -1207,7 +1460,7 @@ namespace SparkleLauncher
 		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
 		addRule("#ActivityList", "background: transparent; border: none; border-right: 1px solid " + border + "; border-radius: 0; padding: 0 12px 0 0;");
 		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt;");
-		addRule("QProgressBar", "background: " + border + "; border: none; border-radius: 3px; color: " + textBody + "; text-align: center; min-height: 14px;");
+		addRule("QProgressBar", "background: " + border + "; border: none; border-radius: 3px; color: " + textBody + "; text-align: center; min-height: 6px; max-height: 6px;");
 		addRule("QProgressBar::chunk", "background: " + borderStrong + "; border-radius: 3px;");
 		addRule("QStatusBar", "background: " + shell + "; color: " + textMuted + "; border-top: 1px solid " + divider + ";");
 

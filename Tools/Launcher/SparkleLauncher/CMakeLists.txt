@@ -151,6 +151,13 @@ target_link_libraries(SparkleLauncher
 
 target_compile_features(SparkleLauncher PRIVATE cxx_std_20)
 
+if(DEFINED SPARKLE_FONT_AWESOME_SOLID_TTF AND EXISTS "${SPARKLE_FONT_AWESOME_SOLID_TTF}")
+    file(TO_CMAKE_PATH "${SPARKLE_FONT_AWESOME_SOLID_TTF}" SPARKLE_LAUNCHER_FONT_AWESOME_SOLID_TTF_NORMALIZED)
+    target_compile_definitions(SparkleLauncher PRIVATE
+        SPARKLE_FONT_AWESOME_SOLID_TTF="${SPARKLE_LAUNCHER_FONT_AWESOME_SOLID_TTF_NORMALIZED}"
+    )
+endif()
+
 set_target_properties(SparkleLauncher PROPERTIES
     AUTOMOC ON
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin

@@ -3,6 +3,8 @@
 #include <QtCore/QString>
 #include <QtCore/QVector>
 #include <QtCore/QHash>
+#include <QtGui/QColor>
+#include <QtGui/QIcon>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
@@ -68,6 +70,20 @@ namespace SparkleLauncher
 			Failed,
 		};
 
+		enum class LauncherIcon
+		{
+			Setup,
+			Build,
+			Cook,
+			Run,
+			Maintain,
+			Queued,
+			Running,
+			Done,
+			Failed,
+			Copy,
+		};
+
 		QWidget* CreateWorkflowSurface();
 		QWidget* CreateProcessPicker(QWidget* parent);
 		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
@@ -86,6 +102,11 @@ namespace SparkleLauncher
 		QVBoxLayout* AddMoreOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
+		void LoadLauncherIconFont();
+		QString IconGlyph(LauncherIcon icon) const;
+		QIcon CreateLauncherIcon(LauncherIcon icon, const QColor& color) const;
+		QIcon WorkflowIconForIndex(int workflowIndex) const;
+		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
@@ -112,10 +133,12 @@ namespace SparkleLauncher
 		LauncherProjectModel& m_projectModel;
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
+		QString m_iconFontFamily;
 		QButtonGroup* m_workflowGroupButtonGroup = nullptr;
 		QButtonGroup* m_processButtonGroup = nullptr;
 		QStackedWidget* m_operationStack = nullptr;
 		QHash<QString, int> m_workflowPageByOperation;
+		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
@@ -128,8 +151,11 @@ namespace SparkleLauncher
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
 		QListWidget* m_activityList = nullptr;
+		QLabel* m_selectedRunSummary = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;
 		QHash<QString, QListWidgetItem*> m_runItems;
+		QHash<QString, RunState> m_runStates;
+		QHash<QString, QString> m_runTitles;
 		QHash<QString, QString> m_runOutputs;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
