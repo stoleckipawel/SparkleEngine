@@ -168,7 +168,7 @@ namespace SparkleLauncher
 		}
 
 		QGuiApplication::clipboard()->setText(m_operationOutput->toPlainText());
-		SetStatusMessage("Copied activity output");
+		SetStatusMessage("Copied selected run output");
 	}
 
 	void LauncherMainWindow::RunSelectedOperation()
@@ -179,7 +179,7 @@ namespace SparkleLauncher
 			{
 				m_operationOutput->setPlainText("Choose a workflow before running.");
 			}
-			SetStatusMessage("No process selected");
+			SetStatusMessage("No workflow selected");
 			return;
 		}
 
@@ -197,7 +197,7 @@ namespace SparkleLauncher
 		LauncherOperationRequest request = BuildOperationRequest(m_selectedOperationId);
 		if (!ConfirmRunRequest(request))
 		{
-			SetStatusMessage("Process canceled");
+			SetStatusMessage("Run canceled");
 			return;
 		}
 
@@ -399,7 +399,7 @@ namespace SparkleLauncher
 		m_runButton->setObjectName("PrimaryActionButton");
 		m_runButton->setIcon(CreateLauncherIcon(LauncherIcon::Run, QColor("#ffffff")));
 		m_runButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
-		m_runButton->setToolTip("Start this process. Other running processes keep running.");
+		m_runButton->setToolTip("Run the selected workflow. Existing runs keep going.");
 		m_runButton->setEnabled(false);
 		m_runButton->setAccessibleName("Run selected workflow");
 		RegisterFocusable(m_runButton);
@@ -440,7 +440,7 @@ namespace SparkleLauncher
 
 		QHBoxLayout* progressLayout = new QHBoxLayout();
 		progressLayout->setSpacing(kSpaceMedium + kSpaceTiny);
-		m_progressLabel = new QLabel("No processes running", panel);
+		m_progressLabel = new QLabel("No runs yet", panel);
 		m_progressLabel->setObjectName("ProgressLabel");
 		progressLayout->addWidget(m_progressLabel);
 		m_progressBar = new QProgressBar(panel);
@@ -461,9 +461,9 @@ namespace SparkleLauncher
 		m_copyOutputButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
 		m_copyOutputButton->setEnabled(false);
 		m_copyOutputButton->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
-		m_copyOutputButton->setToolTip("Select an activity to copy its output. Shortcut: Ctrl+Shift+C.");
-		m_copyOutputButton->setAccessibleName("Copy selected activity output");
-		m_copyOutputButton->setAccessibleDescription("Copies the output for the selected activity run.");
+		m_copyOutputButton->setToolTip("Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
+		m_copyOutputButton->setAccessibleName("Copy selected run output");
+		m_copyOutputButton->setAccessibleDescription("Copies output for the selected run.");
 		RegisterFocusable(m_copyOutputButton);
 		connect(m_copyOutputButton, &QPushButton::clicked, this, &LauncherMainWindow::CopySelectedRunOutput);
 		activityHeaderLayout->addWidget(m_copyOutputButton, 0);
@@ -475,7 +475,7 @@ namespace SparkleLauncher
 		m_activityList->setMinimumWidth(kActivityListWidth);
 		m_activityList->setMaximumHeight(kActivityListMaxHeight);
 		m_activityList->setAccessibleName("Activity runs");
-		m_activityList->setAccessibleDescription("Recent launcher runs. Select a run to review its summary and output.");
+		m_activityList->setAccessibleDescription("Recent runs. Select one to review its summary and output.");
 		RegisterFocusable(m_activityList);
 		connect(m_activityList, &QListWidget::currentItemChanged, this, &LauncherMainWindow::DisplaySelectedRunOutput);
 		activityLayout->addWidget(m_activityList, 1);
@@ -483,7 +483,7 @@ namespace SparkleLauncher
 		QVBoxLayout* outputLayout = new QVBoxLayout();
 		outputLayout->setContentsMargins(0, 0, 0, 0);
 		outputLayout->setSpacing(kSpaceSmall);
-		m_selectedRunSummary = new QLabel("Select an activity to view output.", panel);
+		m_selectedRunSummary = new QLabel("Select a run to view output.", panel);
 		m_selectedRunSummary->setObjectName("ActivitySummary");
 		m_selectedRunSummary->setAccessibleName("Selected activity summary");
 		m_selectedRunSummary->setWordWrap(true);
@@ -494,9 +494,9 @@ namespace SparkleLauncher
 		m_operationOutput->setReadOnly(true);
 		m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);
 		m_operationOutput->setMaximumHeight(kOperationOutputMaxHeight);
-		m_operationOutput->setToolTip("Select an activity to view its output.");
-		m_operationOutput->setAccessibleName("Selected activity output");
-		m_operationOutput->setAccessibleDescription("Read-only raw output for the selected activity run.");
+		m_operationOutput->setToolTip("Select a run to view its output.");
+		m_operationOutput->setAccessibleName("Selected run output");
+		m_operationOutput->setAccessibleDescription("Read-only output for the selected run.");
 		RegisterFocusable(m_operationOutput);
 		outputLayout->addWidget(m_operationOutput);
 		activityLayout->addLayout(outputLayout, 3);
@@ -556,7 +556,7 @@ namespace SparkleLauncher
 	{
 		QComboBox* combo = new QComboBox(this);
 		combo->setObjectName("ProjectCombo");
-		combo->setToolTip("Project used by this process.");
+		combo->setToolTip("Project used by this workflow.");
 		combo->setAccessibleName("Project");
 		combo->setAccessibleDescription("Project used by this workflow.");
 		RegisterFocusable(combo);
@@ -566,7 +566,7 @@ namespace SparkleLauncher
 			if (!projectId.isEmpty())
 			{
 				m_projectModel.SelectProject(projectId);
-				SetStatusMessage("Project parameter: " + combo->currentText());
+				SetStatusMessage("Selected project: " + combo->currentText());
 			}
 		});
 		PopulateProjectCombo(*combo);
@@ -594,7 +594,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
-			AddNoOptionsMessage(layout, "No parameters");
+			AddNoOptionsMessage(layout, "No settings");
 			return;
 		}
 
@@ -602,7 +602,7 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Force configure", "Regenerate before building.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate build files", "Run configure before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
@@ -610,7 +610,7 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Force configure", "Regenerate before building.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate build files", "Run configure before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
@@ -632,10 +632,10 @@ namespace SparkleLauncher
 			     {"VisualizeBuffers", "VisualizeBuffers"}},
 			    m_settings.ShaderPackages(),
 			    &LauncherSettings::SetShaderPackages));
-			QCheckBox* forceRecookBox = CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
+			QCheckBox* forceRecookBox = CreateBoundCheckBox("Clean before cooking", "Remove cooked outputs before this cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
 			forceRecookBox->setObjectName("WarningCheckBox");
 			AddOptionCheckBox(layout, forceRecookBox);
-			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
+			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm clean cook", "Required before removing cooked outputs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
 			confirmRecookBox->setObjectName("DestructiveCheckBox");
 			QWidget* confirmRecookRow = AddOptionCheckBox(layout, confirmRecookBox);
 			confirmRecookRow->setVisible(forceRecookBox->isChecked());
@@ -653,10 +653,10 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			QCheckBox* forceRecookBox = CreateBoundCheckBox("Force recook", "Clean and recook instead of incremental cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
+			QCheckBox* forceRecookBox = CreateBoundCheckBox("Clean before cooking", "Remove cooked outputs before this cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
 			forceRecookBox->setObjectName("WarningCheckBox");
 			AddOptionCheckBox(layout, forceRecookBox);
-			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm recook cleanup", "Required before destructive force recook runs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
+			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm clean cook", "Required before removing cooked outputs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
 			confirmRecookBox->setObjectName("DestructiveCheckBox");
 			QWidget* confirmRecookRow = AddOptionCheckBox(layout, confirmRecookBox);
 			confirmRecookRow->setVisible(forceRecookBox->isChecked());
@@ -704,8 +704,8 @@ namespace SparkleLauncher
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Frame limit", CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
 			QVBoxLayout* smokeOptionsLayout = AddInlineOptionsSection(layout);
-			AddOptionField(*smokeOptionsLayout, "Backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
-			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Enable trace", "Capture smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
+			AddOptionField(*smokeOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
+			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
 		}
@@ -714,13 +714,13 @@ namespace SparkleLauncher
 		{
 			QComboBox* cleanScopeBox = new QComboBox(this);
 			RegisterFocusable(cleanScopeBox);
-			cleanScopeBox->addItem("Selected Project Cooked Outputs", "selected-cooked");
-			cleanScopeBox->addItem("All Cooked Outputs", "all-cooked");
-			cleanScopeBox->addItem("Build Tree", "build-tree");
-			cleanScopeBox->addItem("Shader Cache", "shader-cache");
-			cleanScopeBox->addItem("Third-Party Dependency Cache", "deps");
+			cleanScopeBox->addItem("Selected project cooked outputs", "selected-cooked");
+			cleanScopeBox->addItem("All cooked outputs", "all-cooked");
+			cleanScopeBox->addItem("Build tree", "build-tree");
+			cleanScopeBox->addItem("Shader cache", "shader-cache");
+			cleanScopeBox->addItem("Third-party dependency cache", "deps");
 			cleanScopeBox->addItem("Logs", "logs");
-			cleanScopeBox->addItem("Pristine Generated Workspace", "pristine");
+			cleanScopeBox->addItem("Generated workspace", "pristine");
 			const int cleanScopeIndex = cleanScopeBox->findData(m_settings.CleanScope());
 			cleanScopeBox->setCurrentIndex(cleanScopeIndex >= 0 ? cleanScopeIndex : 0);
 			AddOptionField(layout, "Scope", cleanScopeBox);
@@ -737,7 +737,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		AddNoOptionsMessage(layout, "No parameters");
+		AddNoOptionsMessage(layout, "No settings");
 	}
 
 	QWidget* LauncherMainWindow::AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control)
@@ -1010,7 +1010,7 @@ namespace SparkleLauncher
 		}
 
 		const QString title = DisplayNameForOperation(m_selectedOperationId);
-		const QString actionDescription = "Start " + title + ". Other running processes keep running.";
+		const QString actionDescription = "Run " + title + ". Existing runs keep going.";
 		m_runButton->setEnabled(true);
 		m_runButton->setToolTip(actionDescription);
 		m_runButton->setAccessibleDescription(actionDescription);
@@ -1072,7 +1072,7 @@ namespace SparkleLauncher
 		}
 		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
 		{
-			return "Enable Confirm recook cleanup, then retry.";
+			return "Enable Confirm clean cook, then retry.";
 		}
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
@@ -1143,7 +1143,7 @@ namespace SparkleLauncher
 			QMessageBox::warning(
 			    const_cast<LauncherMainWindow*>(this),
 			    "Confirmation Required",
-			    "Enable Confirm recook cleanup before running a force recook.");
+			    "Enable Confirm clean cook before removing cooked outputs.");
 			return false;
 		}
 		if (cleanRequested && !request.ConfirmClean)
@@ -1195,8 +1195,8 @@ namespace SparkleLauncher
 
 		const QMessageBox::StandardButton result = QMessageBox::question(
 		    const_cast<LauncherMainWindow*>(this),
-		    "Confirm Launcher Process",
-		    "This process has a confirmed destructive option enabled. Continue?",
+		    "Confirm Clean Cook",
+		    "This workflow will remove cooked outputs before cooking. Continue?",
 		    QMessageBox::Yes | QMessageBox::No,
 		    QMessageBox::No);
 		return result == QMessageBox::Yes;
@@ -1327,7 +1327,7 @@ namespace SparkleLauncher
 	{
 		m_activeRunId = runId;
 		const RunState state = m_runStates.value(runId, RunState::Queued);
-		const QString title = m_runTitles.value(runId, "Selected process");
+		const QString title = m_runTitles.value(runId, "Selected run");
 		if (m_selectedRunSummary != nullptr)
 		{
 			switch (state)
@@ -1358,7 +1358,7 @@ namespace SparkleLauncher
 		{
 			const bool canCopyOutput = !m_operationOutput->toPlainText().isEmpty();
 			m_copyOutputButton->setEnabled(canCopyOutput);
-			m_copyOutputButton->setToolTip(canCopyOutput ? "Copy output for the selected activity. Shortcut: Ctrl+Shift+C." : "Select an activity to copy its output. Shortcut: Ctrl+Shift+C.");
+			m_copyOutputButton->setToolTip(canCopyOutput ? "Copy output for the selected run. Shortcut: Ctrl+Shift+C." : "Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
 		}
 	}
 

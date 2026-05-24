@@ -63,6 +63,6 @@ namespace SparkleLauncher
 			return {};
 		}
 
-		return {"Enable RHI smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
+		return {"Enable graphics smoke validation for " + GetRhiSmokeFrameLimitText(plan.Request) + " frames."};
 	}
 }

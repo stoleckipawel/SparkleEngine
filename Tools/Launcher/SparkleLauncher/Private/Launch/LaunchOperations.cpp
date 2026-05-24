@@ -78,10 +78,10 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Run Editor", "Run the selected project's editor executable from its project directory."},
-		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Run Runtime", "Run the selected project's runtime executable from its project directory."},
-		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Editor Smoke Test", "Run the selected project editor with RHI smoke validation enabled."},
-		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Runtime Smoke Test", "Run the selected project runtime with RHI smoke validation enabled."},
+		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Run Editor", "Start the selected project's editor executable."},
+		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Run Runtime", "Start the selected project's runtime executable."},
+		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Editor Smoke Test", "Run the selected project editor with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Runtime Smoke Test", "Run the selected project runtime with graphics smoke validation enabled."},
 		};
 		return definitions;
 	}
@@ -133,7 +133,7 @@ namespace SparkleLauncher
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
 		errorCode.clear();
 		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
-		AddReadiness(plan, executableExists ? "Launch executable exists." : "Launch executable is missing; compile the target first: " + plan.TargetName);
+		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
 		AddPlannedEffect(plan, "Launch " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
 		for (const std::string& effect : GetRhiSmokeLaunchPlannedEffects(plan))
@@ -160,7 +160,7 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun << "\n  No process step available until readiness issues are resolved.";
+			dryRun << "\n  No command step available until readiness issues are resolved.";
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;

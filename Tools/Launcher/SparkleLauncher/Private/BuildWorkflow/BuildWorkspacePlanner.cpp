@@ -69,7 +69,7 @@ namespace SparkleLauncher
 			}
 			else
 			{
-				AddPlannedEffect(plan, "Build files are already current; setup has no process step.");
+				AddPlannedEffect(plan, "Build files are already current; setup has no command step.");
 			}
 			plan.CanRun = true;
 			return;
@@ -123,12 +123,12 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", "Setup Workspace", "Validate tools and refresh build files when needed."},
-		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Generate Solution", "Run native CMake configure for the repository and all discovered projects."},
+		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", "Setup Workspace", "Validate required tools and refresh build files."},
+		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Generate Solution", "Generate Visual Studio and CMake project files."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", "Check Toolchain", "Inspect CMake, Visual Studio/MSBuild, Windows SDK, Git, and clang-format."},
-		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Compile Editor", "Build <Project>Editor for the selected editor profile."},
-		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Compile Runtime", "Build <Project>Runtime for the selected runtime profile."},
-		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build AssetCooker, TextureCooker, and ShaderCompiler."},
+		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Compile Editor", "Build the selected project's editor target."},
+		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Compile Runtime", "Build the selected project's runtime target."},
+		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build the tools required by cooking workflows."},
 		};
 		return definitions;
 	}
@@ -191,7 +191,7 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun << "\n  No process step required.";
+			dryRun << "\n  No command step required.";
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;

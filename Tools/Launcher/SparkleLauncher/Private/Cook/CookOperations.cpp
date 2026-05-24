@@ -45,16 +45,16 @@ namespace SparkleLauncher
 	{
 		if (plan.Request.Mode == CookMode::Force)
 		{
-			AddPlannedEffect(plan, "Clean cooked output scope before cooking: " + plan.CookedOutputDirectory.string());
+			AddPlannedEffect(plan, "Remove cooked outputs before cooking: " + plan.CookedOutputDirectory.string());
 		}
 
 		switch (plan.Kind)
 		{
 		case CookOperationKind::CookShaders:
-			AddPlannedEffect(plan, "Validate shader registrations with ShaderCompiler.");
+			AddPlannedEffect(plan, "Validate shader package registrations.");
 			if (plan.Request.ShaderPackages.empty())
 			{
-				AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ProjectId + " through AssetCooker.");
+				AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ProjectId + ".");
 			}
 			else
 			{
@@ -63,17 +63,17 @@ namespace SparkleLauncher
 				{
 					packages.push_back(packageId);
 				}
-				AddPlannedEffect(plan, "Cook selected shader package(s): " + Strings::Join(packages, ", ") + ".");
+				AddPlannedEffect(plan, "Cook selected shader packages: " + Strings::Join(packages, ", ") + ".");
 			}
 			return;
 		case CookOperationKind::BuildTextures:
-			AddPlannedEffect(plan, "Cook texture assets for " + plan.Request.ProjectId + " through AssetCooker and TextureCooker.");
+			AddPlannedEffect(plan, "Cook texture assets for " + plan.Request.ProjectId + ".");
 			return;
 		case CookOperationKind::BuildSceneAssets:
-			AddPlannedEffect(plan, "Cook scene, mesh, and material assets for " + plan.Request.ProjectId + " through AssetCooker.");
+			AddPlannedEffect(plan, "Cook scene, mesh, and material assets for " + plan.Request.ProjectId + ".");
 			return;
 		case CookOperationKind::CookAllAssets:
-			AddPlannedEffect(plan, "Run full project cook for " + plan.Request.ProjectId + " through AssetCooker.");
+			AddPlannedEffect(plan, "Cook all project assets for " + plan.Request.ProjectId + ".");
 			return;
 		}
 	}
@@ -134,10 +134,10 @@ namespace SparkleLauncher
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions()
 	{
 		static const std::vector<CookOperationDefinition> definitions = {
-		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All Assets", "Run full incremental or confirmed force cook for the selected project."},
-		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate registrations and cook shader packages."},
-		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Cook texture assets through AssetCooker and TextureCooker."},
-		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scene Assets", "Cook scene, mesh, and material assets through AssetCooker."},
+		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All Assets", "Prepare all assets for the selected project."},
+		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare shader packages."},
+		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
+		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scene Assets", "Prepare scene, mesh, and material assets for runtime use."},
 		};
 		return definitions;
 	}
@@ -190,7 +190,7 @@ namespace SparkleLauncher
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{
-			AddReadiness(plan, "Force recook requires confirmation for scope: " + plan.CookedOutputDirectory.string());
+			AddReadiness(plan, "Clean before cooking requires confirmation for: " + plan.CookedOutputDirectory.string());
 		}
 
 		PopulateCookEffects(plan);
@@ -214,7 +214,7 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun << "\n  No process step available until readiness issues are resolved.";
+			dryRun << "\n  No command step available until readiness issues are resolved.";
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;

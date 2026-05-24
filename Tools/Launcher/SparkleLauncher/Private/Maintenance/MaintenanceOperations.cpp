@@ -255,8 +255,8 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
-		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Maintenance", "Format Code", "Check or apply clang-format to engine and project source files."},
-		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintenance", "Clean Workspace", "Remove generated output through an explicit confirmed scope."},
+		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Maintenance", "Format Code", "Check or apply code formatting for engine and project source files."},
+		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintenance", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
 		return definitions;
 	}
@@ -300,7 +300,7 @@ namespace SparkleLauncher
 			plan.FormatSourceFiles = CollectFormatSourceFiles(request.RepositoryRoot);
 			AddReadiness(plan, plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : "clang-format is available.");
 			AddReadiness(plan, plan.FormatSourceFiles.empty() ? "No source files were found for formatting." : "Format source files discovered: " + std::to_string(plan.FormatSourceFiles.size()));
-			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " clang-format for Engine/ and Projects/ source files.");
+			AddPlannedEffect(plan, std::string(request.RequestedFormatMode == FormatMode::Check ? "Check" : "Apply") + " code formatting for Engine/ and Projects/ source files.");
 			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
 			break;
 		case MaintenanceOperationKind::CleanWorkspace:
@@ -342,7 +342,7 @@ namespace SparkleLauncher
 		}
 		if (plan.Steps.empty())
 		{
-			dryRun << "\n  No process step available until readiness issues are resolved.";
+			dryRun << "\n  No command step available until readiness issues are resolved.";
 		}
 		plan.Operation.DryRunText = dryRun.str();
 		return plan;
