@@ -1,11 +1,11 @@
 # SparkleApplication Module
-# Runtime/editor host layer built around ProjectApp and EditorApp.
+# Runtime/editor host layer built around RuntimeApplication and EditorApplication.
 # Dependencies: SparkleCore, SparklePlatform, SparkleGameFramework, SparkleRenderer
 # Runtime host code must stay cooked-only. Source import, conversion, and authoring
 # workflows belong to tool-side modules and validation should fail if they leak here.
 #
 # This module owns host orchestration above the runtime world and renderer while
-# keeping editor policy isolated to EditorApp.
+# keeping editor policy isolated to EditorApplication.
 
 file(GLOB_RECURSE SPARKLE_APPLICATION_PUBLIC_HEADERS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
@@ -20,7 +20,7 @@ file(GLOB_RECURSE SPARKLE_APPLICATION_PRIVATE_HEADERS CONFIGURE_DEPENDS
 )
 
 set(SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES ${SPARKLE_APPLICATION_PRIVATE_SOURCES})
-list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApp\\.cpp$")
+list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApplication\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/EditorApplicationLaunch\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/Validation/RhiSmokeEditorValidation\\.cpp$")
 list(FILTER SPARKLE_APPLICATION_RUNTIME_PRIVATE_SOURCES EXCLUDE REGEX "/Private/ShaderRecook/")
@@ -29,7 +29,7 @@ file(GLOB_RECURSE SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/ShaderRecook/*.cpp
 )
 list(APPEND SPARKLE_APPLICATION_EDITOR_PRIVATE_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplication.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/EditorApplicationLaunch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Validation/RhiSmokeEditorValidation.cpp
 )

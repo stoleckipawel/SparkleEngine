@@ -1,6 +1,6 @@
-#include "ProjectApplicationLaunch.h"
+#include "RuntimeApplicationLaunch.h"
 
 int main()
 {
-	return RunProjectApplication();
+	return RunRuntimeApplication();
 }

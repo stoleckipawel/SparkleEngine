@@ -64,6 +64,24 @@ namespace SparkleLauncher
 		return CleanScope::SelectedProjectCookedOutputs;
 	}
 
+	static std::vector<CleanScope> SplitCleanScopes(const QString& text)
+	{
+		std::vector<CleanScope> scopes;
+		for (const QString& part : text.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+		{
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
+			{
+				scopes.push_back(ToCleanScope(trimmed));
+			}
+		}
+		if (scopes.empty())
+		{
+			scopes.push_back(CleanScope::SelectedProjectCookedOutputs);
+		}
+		return scopes;
+	}
+
 	static void AppendLine(std::ostringstream& output, std::string_view text)
 	{
 		output << text << '\n';
@@ -84,7 +102,14 @@ namespace SparkleLauncher
 		}
 		if (operation.RequiresConfirmation)
 		{
-			AppendLine(output, "Confirmation required: " + ToString(operation.DestructiveScope));
+			if (operation.DestructiveScope == OperationDestructiveScope::None)
+			{
+				AppendLine(output, "Confirmation required: selected clean scopes");
+			}
+			else
+			{
+				AppendLine(output, "Confirmation required: " + ToString(operation.DestructiveScope));
+			}
 		}
 		for (const std::string& message : readinessMessages)
 		{
@@ -133,6 +158,7 @@ namespace SparkleLauncher
 		maintenanceRequest.EditorProfile = request.EditorProfile.toStdString();
 		maintenanceRequest.RequestedFormatMode = ToFormatMode(request.FormatMode);
 		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
+		maintenanceRequest.RequestedCleanScopes = SplitCleanScopes(request.CleanScope);
 		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
 		return maintenanceRequest;
 	}
@@ -144,6 +170,10 @@ namespace SparkleLauncher
 		launchRequest.ProjectId = request.ProjectId.toStdString();
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
+		launchRequest.VSync = request.LaunchVSync.toStdString();
+		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
+		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
 		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
 		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
 		launchRequest.SmokeTrace = request.SmokeTrace;

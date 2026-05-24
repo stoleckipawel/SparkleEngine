@@ -98,7 +98,7 @@ void ViewportPanel::BuildEmptyState() noexcept
 {
 	ImGui::TextDisabled("Viewport output unavailable");
 	ImGui::Spacing();
-	ImGui::TextWrapped("EditorApp is requesting runtime scene output, but no scene color surface is available for presentation yet.");
+	ImGui::TextWrapped("EditorApplication is requesting runtime scene output, but no scene color surface is available for presentation yet.");
 }
 
 void ViewportPanel::BuildUI(bool disableInteraction)

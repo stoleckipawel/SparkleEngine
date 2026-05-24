@@ -1,9 +1,9 @@
 ﻿#include "PCH.h"
-#include "EditorApp.h"
+#include "EditorApplication.h"
 
 #include "Editor/Public/UI.h"
 
-#include "ProjectApp.h"
+#include "RuntimeApplication.h"
 #include "Renderer.h"
 #include "Input/InputSystem.h"
 #include "ShaderRecook/ShaderConsoleCommands.h"
@@ -11,11 +11,11 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
-EditorApp::EditorApp() = default;
+EditorApplication::EditorApplication() = default;
 
-EditorApp::~EditorApp() = default;
+EditorApplication::~EditorApplication() = default;
 
-void EditorApp::Initialize()
+void EditorApplication::Initialize()
 {
 	SPARKLE_CPU_SCOPE("Application.EditorInitialize");
 	if (m_isEditorSessionActive)
@@ -23,9 +23,9 @@ void EditorApp::Initialize()
 		return;
 	}
 
-	if (!m_projectApp)
+	if (!m_runtimeApplication)
 	{
-		m_projectApp = std::make_unique<ProjectApp>(ProjectAppOptions{.EnableRuntimeConsole = false});
+		m_runtimeApplication = std::make_unique<RuntimeApplication>(RuntimeApplicationOptions{.EnableRuntimeConsole = false});
 	}
 
 	if (!m_shaderRecookCoordinator)
@@ -33,20 +33,20 @@ void EditorApp::Initialize()
 		m_shaderRecookCoordinator = std::make_unique<ShaderRecookCoordinator>();
 	}
 
-	m_projectApp->Initialize();
-	m_projectApp->GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
-	m_projectApp->GetInputSystem().BeginInputRoutingFrame(false, false);
+	m_runtimeApplication->Initialize();
+	m_runtimeApplication->GetInputSystem().SetAutomaticImGuiCaptureEnabled(false);
+	m_runtimeApplication->GetInputSystem().BeginInputRoutingFrame(false, false);
 
 	if (!m_ui)
 	{
-		Renderer& renderer = m_projectApp->GetRenderer();
+		Renderer& renderer = m_runtimeApplication->GetRenderer();
 		m_ui = std::make_unique<UI>(EditorHostServices{
-		    .RuntimeTimer = m_projectApp->GetTimer(),
-		    .Levels = m_projectApp->GetLevelManager(),
-		    .Scene = m_projectApp->GetGameScene(),
+		    .RuntimeTimer = m_runtimeApplication->GetTimer(),
+		    .Levels = m_runtimeApplication->GetLevelManager(),
+		    .Scene = m_runtimeApplication->GetGameScene(),
 		    .ImGuiRenderer = renderer.GetImGuiRenderer(),
-		    .HostWindow = m_projectApp->GetWindow(),
-		    .Input = m_projectApp->GetInputSystem()});
+		    .HostWindow = m_runtimeApplication->GetWindow(),
+		    .Input = m_runtimeApplication->GetInputSystem()});
 		m_ui->SetDiagnosticsProviders(EditorDiagnosticsProviders{
 		    .ShaderPackageGeneration = [&renderer]() noexcept
 		    {
@@ -70,26 +70,26 @@ void EditorApp::Initialize()
 	m_isEditorSessionActive = true;
 }
 
-bool EditorApp::Tick()
+bool EditorApplication::Tick()
 {
 	SPARKLE_CPU_SCOPE("Application.CpuFrame");
-	if (!m_isEditorSessionActive || !m_projectApp || !m_ui)
+	if (!m_isEditorSessionActive || !m_runtimeApplication || !m_ui)
 	{
 		return false;
 	}
 
-	switch (m_projectApp->BeginFrame())
+	switch (m_runtimeApplication->BeginFrame())
 	{
-		case ProjectAppFrameResult::Exit:
+		case RuntimeApplicationFrameResult::Exit:
 			return false;
-		case ProjectAppFrameResult::SkipRender:
+		case RuntimeApplicationFrameResult::SkipRender:
 			return true;
-		case ProjectAppFrameResult::Ready:
+		case RuntimeApplicationFrameResult::Ready:
 		default:
 			break;
 	}
 
-	Renderer& renderer = m_projectApp->GetRenderer();
+	Renderer& renderer = m_runtimeApplication->GetRenderer();
 	if (m_shaderRecookCoordinator)
 	{
 		if (m_ui->ConsumeShaderRecookRequest())
@@ -100,13 +100,13 @@ bool EditorApp::Tick()
 		m_shaderRecookCoordinator->Update(renderer, m_ui->ConsumeShaderReloadRequest());
 	}
 
-	m_projectApp->UpdateRuntime();
-	m_projectApp->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
+	m_runtimeApplication->UpdateRuntime();
+	m_runtimeApplication->SubmitViewportRenderRequest(m_ui->GetViewportRenderRequest());
 
 	renderer.PrepareHostFrame();
 	renderer.RecordHostFrame();
 
-	const ViewportRenderProducts& viewportProducts = m_projectApp->GetViewportRenderProducts();
+	const ViewportRenderProducts& viewportProducts = m_runtimeApplication->GetViewportRenderProducts();
 	m_ui->SetViewportRenderProducts(viewportProducts);
 	m_ui->SetViewportSceneColorTextureId(renderer.ResolveRenderProductTextureId(viewportProducts.GetSceneColor().Handle));
 	m_ui->Update();
@@ -130,11 +130,11 @@ bool EditorApp::Tick()
 	    ResourceState::Common);
 
 	renderer.SubmitHostFrame();
-	m_projectApp->EndFrame();
+	m_runtimeApplication->EndFrame();
 	return true;
 }
 
-void EditorApp::Shutdown()
+void EditorApplication::Shutdown()
 {
 	SPARKLE_CPU_SCOPE("Application.EditorShutdown");
 	if (!m_isEditorSessionActive)
@@ -143,8 +143,8 @@ void EditorApp::Shutdown()
 	}
 
 	m_ui.reset();
-	m_projectApp->GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
-	m_projectApp->Shutdown();
+	m_runtimeApplication->GetInputSystem().SetAutomaticImGuiCaptureEnabled(true);
+	m_runtimeApplication->Shutdown();
 	m_isEditorSessionActive = false;
 }
 

@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <cstdint>
 #include <vector>
 
 namespace SparkleLauncher
@@ -49,6 +50,10 @@ namespace SparkleLauncher
 		std::string DisplayName;
 		std::filesystem::path Path;
 		std::string Detail;
+		std::uintmax_t FileCount = 0;
+		std::uintmax_t DirectoryCount = 0;
+		std::uintmax_t ByteCount = 0;
+		bool Exists = false;
 	};
 
 	struct MaintenanceOperationRequest
@@ -58,6 +63,7 @@ namespace SparkleLauncher
 		std::string EditorProfile = "DevelopmentEditor";
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
+		std::vector<CleanScope> RequestedCleanScopes;
 		bool DestructiveActionConfirmed = false;
 	};
 

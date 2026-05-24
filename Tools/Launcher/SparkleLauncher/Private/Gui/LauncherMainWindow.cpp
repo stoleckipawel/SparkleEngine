@@ -4,7 +4,12 @@
 #include "LauncherProjectModel.h"
 #include "LauncherSettings.h"
 
+#include "SparkleLauncher/LauncherPaths.h"
+#include "SparkleLauncher/LaunchOperations.h"
+
 #include <QtCore/QSignalBlocker>
+#include <QtCore/QRegularExpression>
+#include <QtCore/QStringList>
 #include <QtCore/Qt>
 #include <QtGui/QBrush>
 #include <QtGui/QClipboard>
@@ -23,6 +28,9 @@
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QWidget>
 
+#include <array>
+#include <cstdint>
+#include <system_error>
 #include <utility>
 
 namespace SparkleLauncher
@@ -50,6 +58,91 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateSuccess = "#7ee787";
 	static constexpr const char* kColorStateDestructive = "#ff7b72";
 	static constexpr const char* kColorStateWarning = "#ffb454";
+
+	struct CleanScopeUiOption
+	{
+		QString Label;
+		QString Value;
+		QString Detail;
+	};
+
+	static QString ToDisplayPath(const std::filesystem::path& repositoryRoot, const std::filesystem::path& path)
+	{
+		std::error_code errorCode;
+		const std::filesystem::path relative = std::filesystem::relative(path, repositoryRoot, errorCode);
+		return QString::fromStdString((!errorCode && !relative.empty()) ? relative.generic_string() : path.generic_string());
+	}
+
+	static QString FormatDirectoryInventory(const std::filesystem::path& path)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::exists(path, errorCode) || errorCode)
+		{
+			return "not present";
+		}
+
+		if (std::filesystem::is_regular_file(path, errorCode))
+		{
+			return "1 file";
+		}
+
+		std::uintmax_t fileCount = 0;
+		std::uintmax_t directoryCount = 0;
+		if (std::filesystem::is_directory(path, errorCode))
+		{
+			std::filesystem::recursive_directory_iterator iterator(
+			    path,
+			    std::filesystem::directory_options::skip_permission_denied,
+			    errorCode);
+			const std::filesystem::recursive_directory_iterator end;
+			while (iterator != end)
+			{
+				const std::filesystem::directory_entry entry = *iterator;
+				if (entry.is_directory(errorCode))
+				{
+					++directoryCount;
+				}
+				else if (entry.is_regular_file(errorCode))
+				{
+					++fileCount;
+				}
+				errorCode.clear();
+				iterator.increment(errorCode);
+				errorCode.clear();
+			}
+		}
+
+		return QStringLiteral("%1 files, %2 folders").arg(fileCount).arg(directoryCount);
+	}
+
+	static std::filesystem::path ResolveCleanScopePreviewPath(const std::filesystem::path& repositoryRoot, const QString& projectId, const QString& scope)
+	{
+		if (scope == "selected-cooked")
+		{
+			return GetCookedProjectDirectory(repositoryRoot, projectId.toStdString());
+		}
+		if (scope == "all-cooked")
+		{
+			return GetBuildDirectory(repositoryRoot) / "Cooked";
+		}
+		if (scope == "build-tree")
+		{
+			return GetBuildDirectory(repositoryRoot);
+		}
+		if (scope == "shader-cache")
+		{
+			return GetBuildDirectory(repositoryRoot) / "Cache" / "Shaders";
+		}
+		if (scope == "deps")
+		{
+			return GetBuildDirectory(repositoryRoot) / "_deps";
+		}
+		if (scope == "logs")
+		{
+			return repositoryRoot / "logs";
+		}
+		return repositoryRoot;
+	}
 
 	LauncherMainWindow::LauncherMainWindow(
 	    std::filesystem::path repositoryRoot,
@@ -194,6 +287,11 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if ((m_selectedOperationId.startsWith("project.launch") || m_selectedOperationId.startsWith("smoke.")) && !OfferLaunchPrerequisiteOperation(m_selectedOperationId))
+		{
+			return;
+		}
+
 		LauncherOperationRequest request = BuildOperationRequest(m_selectedOperationId);
 		if (!ConfirmRunRequest(request))
 		{
@@ -202,10 +300,7 @@ namespace SparkleLauncher
 		}
 
 		const QString title = DisplayNameForOperation(m_selectedOperationId);
-		request.RunId = QStringLiteral("run-%1").arg(++m_nextRunIndex, 4, 10, QChar('0'));
-		RegisterRun(request.RunId, title);
-		SetStatusMessage("Starting " + title);
-		m_backend.RunOperation(std::move(request));
+		StartOperation(std::move(request), title);
 	}
 
 	void LauncherMainWindow::DisplayOperationStarted(const QString& runId, const QString&, const QString& title)
@@ -681,6 +776,11 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
+			QVBoxLayout* appOptionsLayout = AddInlineOptionsSection(layout);
+			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
+			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
+			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"Default", ""}, {"High performance", "true"}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
+			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
 			return;
 		}
 
@@ -688,6 +788,11 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			QVBoxLayout* appOptionsLayout = AddInlineOptionsSection(layout);
+			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
+			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
+			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"Default", ""}, {"High performance", "true"}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
+			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
 			return;
 		}
 
@@ -719,28 +824,66 @@ namespace SparkleLauncher
 
 		if (operationId == "workspace.clean")
 		{
-			QComboBox* cleanScopeBox = new QComboBox(this);
-			RegisterFocusable(cleanScopeBox);
-			cleanScopeBox->addItem("Selected project cooked outputs", "selected-cooked");
-			cleanScopeBox->addItem("All cooked outputs", "all-cooked");
-			cleanScopeBox->addItem("Build tree", "build-tree");
-			cleanScopeBox->addItem("Shader cache", "shader-cache");
-			cleanScopeBox->addItem("Third-party dependency cache", "deps");
-			cleanScopeBox->addItem("Logs", "logs");
-			cleanScopeBox->addItem("Generated workspace", "pristine");
-			const int cleanScopeIndex = cleanScopeBox->findData(m_settings.CleanScope());
-			cleanScopeBox->setCurrentIndex(cleanScopeIndex >= 0 ? cleanScopeIndex : 0);
-			AddOptionField(layout, "Scope", cleanScopeBox);
+			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
+			    {"Selected project cooked outputs", "selected-cooked", "Cooked assets for the selected project."},
+			    {"All cooked outputs", "all-cooked", "Cooked assets for every project."},
+			    {"Build tree", "build-tree", "Generated CMake, binaries, intermediates, and project build folders."},
+			    {"Shader cache", "shader-cache", "Transient shader cache and debug shader outputs."},
+			    {"Third-party dependency cache", "deps", "Downloaded dependency cache under build/_deps."},
+			    {"Logs", "logs", "Repository, launcher, and project logs."},
+			    {"Generated workspace", "pristine", "Build tree, editor state, logs, generated project files, and workspace state."},
+			}};
+
+			QVBoxLayout* cleanScopeLayout = AddInlineOptionsSection(layout);
+			QVector<QCheckBox*> scopeBoxes;
+			const QString selectedProjectId = m_projectModel.SelectedProjectId();
+			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
+			for (const CleanScopeUiOption& scope : cleanScopes)
+			{
+				QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
+				scopeBox->setToolTip(scope.Detail);
+				scopeBox->setProperty("CleanScope", scope.Value);
+				scopeBox->setChecked(selectedScopes.contains(scope.Value) || (selectedScopes.empty() && scope.Value == "selected-cooked"));
+				RegisterFocusable(scopeBox);
+
+				QFrame* scopeRow = new QFrame(this);
+				scopeRow->setObjectName("OptionCheckRow");
+				QVBoxLayout* scopeRowLayout = new QVBoxLayout(scopeRow);
+				scopeRowLayout->setContentsMargins(0, 0, 0, 0);
+				scopeRowLayout->setSpacing(kSpaceTiny);
+				scopeRowLayout->addWidget(scopeBox);
+				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, selectedProjectId, scope.Value);
+				QLabel* scopeDetail = new QLabel(ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath), scopeRow);
+				scopeDetail->setObjectName("OptionHelpText");
+				scopeDetail->setWordWrap(true);
+				scopeRowLayout->addWidget(scopeDetail);
+				cleanScopeLayout->addWidget(scopeRow);
+				scopeBoxes.push_back(scopeBox);
+			}
+
 			QWidget* projectRow = AddOptionField(layout, "Project", CreateProjectCombo());
-			const auto updateProjectVisibility = [cleanScopeBox, projectRow]() {
-				projectRow->setVisible(cleanScopeBox->currentData().toString() == "selected-cooked");
-			};
-			connect(cleanScopeBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [cleanScopeBox, updateProjectVisibility, this]() {
-				m_settings.SetCleanScope(cleanScopeBox->currentData().toString());
-				updateProjectVisibility();
+			const auto updateCleanScopeSetting = [scopeBoxes, projectRow, this]() {
+				QStringList selectedValues;
+				for (QCheckBox* scopeBox : scopeBoxes)
+				{
+					if (scopeBox != nullptr && scopeBox->isChecked())
+					{
+						selectedValues.push_back(scopeBox->property("CleanScope").toString());
+					}
+				}
+				if (selectedValues.empty())
+				{
+					selectedValues.push_back("selected-cooked");
+				}
+				m_settings.SetCleanScope(selectedValues.join(';'));
+				projectRow->setVisible(selectedValues.contains("selected-cooked"));
 				UpdateRunAvailability();
-			});
-			updateProjectVisibility();
+			};
+			for (QCheckBox* scopeBox : scopeBoxes)
+			{
+				connect(scopeBox, &QCheckBox::toggled, this, updateCleanScopeSetting);
+			}
+			updateCleanScopeSetting();
 			return;
 		}
 
@@ -1051,7 +1194,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.clean")
 		{
-			return m_settings.CleanScope() == "selected-cooked";
+			return m_settings.CleanScope().contains("selected-cooked");
 		}
 
 		return operationId.startsWith("project.") || operationId.startsWith("cook.") || operationId.startsWith("smoke.");
@@ -1124,6 +1267,10 @@ namespace SparkleLauncher
 		request.RuntimeProfile = m_settings.RuntimeProfile();
 		request.SelectedTargets = m_settings.SelectedTargets();
 		request.ShaderPackages = m_settings.ShaderPackages();
+		request.LaunchBackend = m_settings.LaunchBackend();
+		request.LaunchVSync = m_settings.LaunchVSync();
+		request.LaunchHighPerformanceAdapter = m_settings.LaunchHighPerformanceAdapter();
+		request.LaunchMeshAutoBatching = m_settings.LaunchMeshAutoBatching();
 		request.SmokeBackend = m_settings.SmokeBackend();
 		request.SmokeFrameLimit = m_settings.SmokeFrameLimit();
 		request.FormatMode = m_settings.FormatMode();
@@ -1155,37 +1302,40 @@ namespace SparkleLauncher
 		}
 		if (cleanRequested && !request.ConfirmClean)
 		{
-			QString scopeText = request.CleanScope;
-			if (scopeText == "selected-cooked")
+			QStringList scopeNames;
+			for (const QString& scopeValue : request.CleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
 			{
-				scopeText = "Selected project cooked outputs";
-			}
-			else if (scopeText == "all-cooked")
-			{
-				scopeText = "All cooked outputs";
-			}
-			else if (scopeText == "build-tree")
-			{
-				scopeText = "Build tree";
-			}
-			else if (scopeText == "shader-cache")
-			{
-				scopeText = "Shader cache";
-			}
-			else if (scopeText == "deps")
-			{
-				scopeText = "Third-party dependency cache";
-			}
-			else if (scopeText == "logs")
-			{
-				scopeText = "Logs";
-			}
-			else if (scopeText == "pristine")
-			{
-				scopeText = "Pristine generated workspace";
+				if (scopeValue == "selected-cooked")
+				{
+					scopeNames.push_back("Selected project cooked outputs");
+				}
+				else if (scopeValue == "all-cooked")
+				{
+					scopeNames.push_back("All cooked outputs");
+				}
+				else if (scopeValue == "build-tree")
+				{
+					scopeNames.push_back("Build tree");
+				}
+				else if (scopeValue == "shader-cache")
+				{
+					scopeNames.push_back("Shader cache");
+				}
+				else if (scopeValue == "deps")
+				{
+					scopeNames.push_back("Third-party dependency cache");
+				}
+				else if (scopeValue == "logs")
+				{
+					scopeNames.push_back("Logs");
+				}
+				else if (scopeValue == "pristine")
+				{
+					scopeNames.push_back("Generated workspace");
+				}
 			}
 
-			QString message = "Clean scope: " + scopeText;
+			QString message = "Clean scopes:\n" + scopeNames.join('\n');
 			if (!request.ProjectId.isEmpty())
 			{
 				message += "\nProject: " + request.ProjectId;
@@ -1207,6 +1357,94 @@ namespace SparkleLauncher
 		    QMessageBox::Yes | QMessageBox::No,
 		    QMessageBox::No);
 		return result == QMessageBox::Yes;
+	}
+
+	bool LauncherMainWindow::OfferLaunchPrerequisiteOperation(const QString& operationId)
+	{
+		LauncherOperationRequest request = BuildOperationRequest(operationId);
+		LaunchOperationRequest launchRequest;
+		launchRequest.RepositoryRoot = request.RepositoryRoot;
+		launchRequest.ProjectId = request.ProjectId.toStdString();
+		launchRequest.EditorProfile = request.EditorProfile.toStdString();
+		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
+		launchRequest.VSync = request.LaunchVSync.toStdString();
+		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
+		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
+		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
+		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
+		launchRequest.SmokeTrace = request.SmokeTrace;
+		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
+
+		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
+		if (plan.CanRun)
+		{
+			return true;
+		}
+
+		bool executableMissing = false;
+		bool cookedAssetsMissing = false;
+		QStringList readiness;
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			const QString readinessMessage = QString::fromStdString(message);
+			readiness.push_back(readinessMessage);
+			executableMissing = executableMissing || readinessMessage.contains("Executable is missing", Qt::CaseInsensitive);
+			cookedAssetsMissing = cookedAssetsMissing || readinessMessage.contains("Cooked meshes are missing", Qt::CaseInsensitive) ||
+			    readinessMessage.contains("Cooked textures are missing", Qt::CaseInsensitive) ||
+			    readinessMessage.contains("Cooked shaders are missing", Qt::CaseInsensitive);
+		}
+
+		QString prerequisiteOperationId;
+		QString promptTitle;
+		QString promptAction;
+		if (executableMissing)
+		{
+			const bool runtimeTarget = operationId.endsWith("runtime");
+			prerequisiteOperationId = runtimeTarget ? "project.build.runtime" : "project.build.editor";
+			promptTitle = runtimeTarget ? "Build Runtime" : "Build Editor";
+			promptAction = "The executable is missing. Start " + promptTitle + " now?";
+		}
+		else if (cookedAssetsMissing)
+		{
+			prerequisiteOperationId = "cook.project";
+			promptTitle = "Cook All Assets";
+			promptAction = "Cooked meshes, textures, or shaders are missing. Start Cook All Assets now?";
+		}
+		else
+		{
+			return true;
+		}
+
+		const QMessageBox::StandardButton result = QMessageBox::question(
+		    this,
+		    "Launch Prerequisite Missing",
+		    promptAction + "\n\n" + readiness.join('\n'),
+		    QMessageBox::Ok | QMessageBox::Cancel,
+		    QMessageBox::Ok);
+		if (result != QMessageBox::Ok)
+		{
+			SetStatusMessage("Launch canceled");
+			return false;
+		}
+
+		LauncherOperationRequest prerequisiteRequest = BuildOperationRequest(prerequisiteOperationId);
+		if (!ConfirmRunRequest(prerequisiteRequest))
+		{
+			SetStatusMessage("Prerequisite run canceled");
+			return false;
+		}
+
+		StartOperation(std::move(prerequisiteRequest), DisplayNameForOperation(prerequisiteOperationId));
+		return false;
+	}
+
+	void LauncherMainWindow::StartOperation(LauncherOperationRequest request, const QString& title)
+	{
+		request.RunId = QStringLiteral("run-%1").arg(++m_nextRunIndex, 4, 10, QChar('0'));
+		RegisterRun(request.RunId, title);
+		SetStatusMessage("Starting " + title);
+		m_backend.RunOperation(std::move(request));
 	}
 
 	void LauncherMainWindow::SetStatusMessage(const QString& message)

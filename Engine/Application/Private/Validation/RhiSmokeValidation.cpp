@@ -6,8 +6,8 @@
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
 #include "Platform/Public/Window/Window.h"
-#include "ProjectApp.h"
 #include "Renderer.h"
+#include "RuntimeApplication.h"
 
 #include <algorithm>
 #include <string>
@@ -48,15 +48,15 @@ class RhiSmokeValidationRunner final
   private:
 	static RhiSmokeValidationConfig LoadConfig() noexcept;
 	static void ApplyLoggingConfig(const RhiSmokeValidationConfig& config) noexcept;
-	static std::string GetActiveLevelName(const ProjectApp& app);
+	static std::string GetActiveLevelName(const RuntimeApplication& app);
 	static void LogDiagnosticsCapabilities(
 	    const RhiSmokeValidationConfig& config,
-	    ProjectApp& app,
+	    RuntimeApplication& app,
 	    RhiSmokeValidationState& state) noexcept;
-	static void InitializeLevelSwitching(const RhiSmokeValidationConfig& config, ProjectApp& app, RhiSmokeValidationState& state) noexcept;
-	static void AdvanceLevelSwitching(const RhiSmokeValidationConfig& config, ProjectApp& app, RhiSmokeValidationState& state) noexcept;
-	static void Advance(const RhiSmokeValidationConfig& config, ProjectApp& app, RhiSmokeValidationState& state) noexcept;
-	static bool TickRuntime(ProjectApp& app, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
+	static void InitializeLevelSwitching(const RhiSmokeValidationConfig& config, RuntimeApplication& app, RhiSmokeValidationState& state) noexcept;
+	static void AdvanceLevelSwitching(const RhiSmokeValidationConfig& config, RuntimeApplication& app, RhiSmokeValidationState& state) noexcept;
+	static void Advance(const RhiSmokeValidationConfig& config, RuntimeApplication& app, RhiSmokeValidationState& state) noexcept;
+	static bool TickRuntime(RuntimeApplication& app, const RhiSmokeValidationConfig& config, RhiSmokeValidationState& state) noexcept;
 	static int RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept;
 };
 
@@ -89,7 +89,7 @@ void RhiSmokeValidationRunner::ApplyLoggingConfig(const RhiSmokeValidationConfig
 	}
 }
 
-std::string RhiSmokeValidationRunner::GetActiveLevelName(const ProjectApp& app)
+std::string RhiSmokeValidationRunner::GetActiveLevelName(const RuntimeApplication& app)
 {
 	const LevelManager* levelManager = app.GetLevelManager();
 	if (levelManager == nullptr)
@@ -103,7 +103,7 @@ std::string RhiSmokeValidationRunner::GetActiveLevelName(const ProjectApp& app)
 
 void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
     const RhiSmokeValidationConfig& config,
-    ProjectApp& app,
+	RuntimeApplication& app,
     RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || state.DiagnosticsLogged)
@@ -165,8 +165,8 @@ void RhiSmokeValidationRunner::LogDiagnosticsCapabilities(
 }
 
 void RhiSmokeValidationRunner::InitializeLevelSwitching(
-    const RhiSmokeValidationConfig& config,
-    ProjectApp& app,
+	const RhiSmokeValidationConfig& config,
+	RuntimeApplication& app,
     RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || !config.LevelSwitching || state.LevelSwitchingInitialized)
@@ -203,8 +203,8 @@ void RhiSmokeValidationRunner::InitializeLevelSwitching(
 }
 
 void RhiSmokeValidationRunner::AdvanceLevelSwitching(
-    const RhiSmokeValidationConfig& config,
-    ProjectApp& app,
+	const RhiSmokeValidationConfig& config,
+	RuntimeApplication& app,
     RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled || !config.LevelSwitching || state.LevelSwitchingFinished)
@@ -262,8 +262,8 @@ void RhiSmokeValidationRunner::AdvanceLevelSwitching(
 }
 
 void RhiSmokeValidationRunner::Advance(
-    const RhiSmokeValidationConfig& config,
-    ProjectApp& app,
+	const RhiSmokeValidationConfig& config,
+	RuntimeApplication& app,
     RhiSmokeValidationState& state) noexcept
 {
 	if (!config.Enabled)
@@ -342,17 +342,17 @@ void RhiSmokeValidationRunner::Advance(
 }
 
 bool RhiSmokeValidationRunner::TickRuntime(
-    ProjectApp& app,
+	RuntimeApplication& app,
 	const RhiSmokeValidationConfig& config,
 	RhiSmokeValidationState& state) noexcept
 {
 	switch (app.BeginFrame())
 	{
-		case ProjectAppFrameResult::Exit:
+		case RuntimeApplicationFrameResult::Exit:
 			return false;
-		case ProjectAppFrameResult::SkipRender:
+		case RuntimeApplicationFrameResult::SkipRender:
 			return true;
-		case ProjectAppFrameResult::Ready:
+		case RuntimeApplicationFrameResult::Ready:
 		default:
 			break;
 	}
@@ -366,7 +366,7 @@ bool RhiSmokeValidationRunner::TickRuntime(
 
 int RhiSmokeValidationRunner::RunProjectValidation(const RhiSmokeValidationConfig& config) noexcept
 {
-	ProjectApp app;
+	RuntimeApplication app;
 	RhiSmokeValidationState state{};
 	ApplyLoggingConfig(config);
 	app.Initialize();

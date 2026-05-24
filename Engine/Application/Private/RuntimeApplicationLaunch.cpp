@@ -1,21 +1,22 @@
 #include "PCH.h"
 
-#include "EditorApplicationLaunch.h"
+#include "RuntimeApplicationLaunch.h"
 
 #include "Application.h"
-#include "EditorApplication.h"
+#include "RuntimeApplication.h"
+
 #include "Validation/RhiSmokeValidation.h"
 
-int RunEditorApplication()
+int RunRuntimeApplication()
 {
 	Application::ConfigureProcessFromCommandLine();
 
 	if (RhiSmokeValidation::IsRequested())
 	{
-		return RhiSmokeValidation::RunEditor();
+		return RhiSmokeValidation::RunProject();
 	}
 
-	EditorApplication app;
+	RuntimeApplication app;
 	app.Run();
 	return 0;
 }

@@ -9,8 +9,8 @@
 #include "Level/Level.h"
 #include "Level/LevelManager.h"
 #include "Platform/Public/Window/Window.h"
-#include "ProjectApp.h"
 #include "Renderer.h"
+#include "RuntimeApplication.h"
 
 #include <algorithm>
 #include <string>
@@ -73,7 +73,7 @@ namespace
 		}
 	}
 
-	std::string GetActiveLevelName(const ProjectApp& app)
+	std::string GetActiveLevelName(const RuntimeApplication& app)
 	{
 		const LevelManager* levelManager = app.GetLevelManager();
 		if (levelManager == nullptr)
@@ -85,7 +85,7 @@ namespace
 		return activeLevel != nullptr ? std::string(activeLevel->GetName()) : std::string();
 	}
 
-	void LogDiagnosticsCapabilities(const EditorSmokeConfig& config, ProjectApp& app, EditorSmokeState& state) noexcept
+	void LogDiagnosticsCapabilities(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled || state.DiagnosticsLogged)
 		{
@@ -113,7 +113,7 @@ namespace
 		state.DiagnosticsLogged = true;
 	}
 
-	void InitializeLevelSwitching(const EditorSmokeConfig& config, ProjectApp& app, EditorSmokeState& state) noexcept
+	void InitializeLevelSwitching(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled || !config.LevelSwitching || state.LevelSwitchingInitialized)
 		{
@@ -148,7 +148,7 @@ namespace
 		}
 	}
 
-	void AdvanceLevelSwitching(const EditorSmokeConfig& config, ProjectApp& app, EditorSmokeState& state) noexcept
+	void AdvanceLevelSwitching(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled || !config.LevelSwitching || state.LevelSwitchingFinished)
 		{
@@ -206,7 +206,7 @@ namespace
 
 	void LogEditorViewportEvidence(
 	    const EditorSmokeConfig& config,
-	    ProjectApp& app,
+	    RuntimeApplication& app,
 	    const ViewportRenderProducts& viewportProducts,
 	    EditorSmokeState& state) noexcept
 	{
@@ -236,7 +236,7 @@ namespace
 		state.EditorViewportEvidenceLogged = true;
 	}
 
-	void Advance(const EditorSmokeConfig& config, ProjectApp& app, EditorSmokeState& state) noexcept
+	void Advance(const EditorSmokeConfig& config, RuntimeApplication& app, EditorSmokeState& state) noexcept
 	{
 		if (!config.Enabled)
 		{
@@ -313,15 +313,15 @@ namespace
 		}
 	}
 
-	bool TickEditor(ProjectApp& app, UI& ui, const EditorSmokeConfig& config, EditorSmokeState& state) noexcept
+	bool TickEditor(RuntimeApplication& app, UI& ui, const EditorSmokeConfig& config, EditorSmokeState& state) noexcept
 	{
 		switch (app.BeginFrame())
 		{
-			case ProjectAppFrameResult::Exit:
+			case RuntimeApplicationFrameResult::Exit:
 				return false;
-			case ProjectAppFrameResult::SkipRender:
+			case RuntimeApplicationFrameResult::SkipRender:
 				return true;
-			case ProjectAppFrameResult::Ready:
+			case RuntimeApplicationFrameResult::Ready:
 			default:
 				break;
 		}
@@ -365,7 +365,7 @@ namespace
 int RhiSmokeValidation::RunEditor() noexcept
 {
 	const EditorSmokeConfig config = LoadConfig();
-	ProjectApp app;
+	RuntimeApplication app;
 	EditorSmokeState state{};
 	ApplyLoggingConfig(config);
 	app.Initialize();
@@ -393,6 +393,6 @@ int RhiSmokeValidation::RunEditor() noexcept
 	}
 
 	app.Shutdown();
-	SPDLOG_LOGGER_INFO(appLogger, "RHI editor smoke: ProjectApp shutdown complete");
+	SPDLOG_LOGGER_INFO(appLogger, "RHI editor smoke: RuntimeApplication shutdown complete");
 	return state.Failed ? 1 : 0;
 }

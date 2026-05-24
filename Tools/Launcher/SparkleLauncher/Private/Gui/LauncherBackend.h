@@ -39,6 +39,10 @@ namespace SparkleLauncher
 		QString RuntimeProfile;
 		QString SelectedTargets;
 		QString ShaderPackages;
+		QString LaunchBackend;
+		QString LaunchVSync;
+		QString LaunchHighPerformanceAdapter;
+		QString LaunchMeshAutoBatching;
 		QString SmokeBackend;
 		QString SmokeFrameLimit;
 		QString FormatMode = "check";

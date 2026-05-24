@@ -58,6 +58,34 @@ namespace SparkleLauncher
 		}
 	}
 
+	static bool DirectoryHasRegularFiles(const std::filesystem::path& directory)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(directory, errorCode))
+		{
+			return false;
+		}
+
+		std::filesystem::recursive_directory_iterator iterator(
+		    directory,
+		    std::filesystem::directory_options::skip_permission_denied,
+		    errorCode);
+		const std::filesystem::recursive_directory_iterator end;
+		while (iterator != end)
+		{
+			const std::filesystem::directory_entry entry = *iterator;
+			if (entry.is_regular_file(errorCode))
+			{
+				return true;
+			}
+			errorCode.clear();
+			iterator.increment(errorCode);
+			errorCode.clear();
+		}
+
+		return false;
+	}
+
 	std::string ToString(LaunchOperationKind kind)
 	{
 		switch (kind)
@@ -114,6 +142,22 @@ namespace SparkleLauncher
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
+		if (!request.GraphicsBackend.empty())
+		{
+			plan.Operation.Inputs.push_back({"graphicsBackend", request.GraphicsBackend});
+		}
+		if (!request.VSync.empty())
+		{
+			plan.Operation.Inputs.push_back({"r.VSync", request.VSync});
+		}
+		if (!request.PreferHighPerformanceAdapter.empty())
+		{
+			plan.Operation.Inputs.push_back({"r.PreferHighPerformanceAdapter", request.PreferHighPerformanceAdapter});
+		}
+		if (!request.MeshAutoBatching.empty())
+		{
+			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", request.MeshAutoBatching});
+		}
 		PopulateRhiSmokeLaunchInputs(plan);
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 
@@ -133,14 +177,38 @@ namespace SparkleLauncher
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
 		errorCode.clear();
 		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
+		errorCode.clear();
+		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ProjectId);
+		const bool cookedMeshesReady = DirectoryHasRegularFiles(cookedProjectDirectory / "Meshes");
+		const bool cookedTexturesReady = DirectoryHasRegularFiles(cookedProjectDirectory / "Textures");
+		const bool cookedShadersReady = DirectoryHasRegularFiles(cookedProjectDirectory / "Shaders");
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
+		AddReadiness(plan, cookedMeshesReady ? "Cooked meshes are ready." : "Cooked meshes are missing; cook scene assets before launching.");
+		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; cook textures before launching.");
+		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; cook shaders before launching.");
 		AddPlannedEffect(plan, "Launch " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
+		if (!request.GraphicsBackend.empty())
+		{
+			AddPlannedEffect(plan, "Use graphics backend: " + request.GraphicsBackend + ".");
+		}
+		if (!request.VSync.empty())
+		{
+			AddPlannedEffect(plan, "Set r.VSync=" + request.VSync + ".");
+		}
+		if (!request.PreferHighPerformanceAdapter.empty())
+		{
+			AddPlannedEffect(plan, "Set r.PreferHighPerformanceAdapter=" + request.PreferHighPerformanceAdapter + ".");
+		}
+		if (!request.MeshAutoBatching.empty())
+		{
+			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + request.MeshAutoBatching + ".");
+		}
 		for (const std::string& effect : GetRhiSmokeLaunchPlannedEffects(plan))
 		{
 			AddPlannedEffect(plan, effect);
 		}
-		plan.CanRun = executableExists && projectMarkerExists;
+		plan.CanRun = executableExists && projectMarkerExists && cookedMeshesReady && cookedTexturesReady && cookedShadersReady;
 		PopulateLaunchStep(plan);
 
 		std::ostringstream dryRun;

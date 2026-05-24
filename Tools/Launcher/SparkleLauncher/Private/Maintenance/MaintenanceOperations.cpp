@@ -5,6 +5,7 @@
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <sstream>
 #include <system_error>
@@ -22,12 +23,61 @@ namespace SparkleLauncher
 		plan.PlannedEffects.push_back(std::move(message));
 	}
 
+	static void CountCleanTarget(MaintenanceCleanTarget& target)
+	{
+		std::error_code errorCode;
+		target.Exists = std::filesystem::exists(target.Path, errorCode);
+		if (!target.Exists || errorCode)
+		{
+			return;
+		}
+
+		if (std::filesystem::is_regular_file(target.Path, errorCode))
+		{
+			target.FileCount = 1;
+			target.ByteCount = std::filesystem::file_size(target.Path, errorCode);
+			if (errorCode)
+			{
+				target.ByteCount = 0;
+			}
+			return;
+		}
+
+		if (!std::filesystem::is_directory(target.Path, errorCode))
+		{
+			return;
+		}
+
+		std::filesystem::recursive_directory_iterator iterator(
+		    target.Path,
+		    std::filesystem::directory_options::skip_permission_denied,
+		    errorCode);
+		const std::filesystem::recursive_directory_iterator end;
+		while (iterator != end)
+		{
+			const std::filesystem::directory_entry entry = *iterator;
+			if (entry.is_directory(errorCode))
+			{
+				++target.DirectoryCount;
+			}
+			else if (entry.is_regular_file(errorCode))
+			{
+				++target.FileCount;
+				target.ByteCount += entry.file_size(errorCode);
+			}
+			errorCode.clear();
+			iterator.increment(errorCode);
+			errorCode.clear();
+		}
+	}
+
 	static void AddCleanTarget(MaintenanceOperationPlan& plan, std::string displayName, std::filesystem::path path, std::string detail)
 	{
 		MaintenanceCleanTarget target;
 		target.DisplayName = std::move(displayName);
 		target.Path = std::move(path);
 		target.Detail = std::move(detail);
+		CountCleanTarget(target);
 		plan.CleanTargets.push_back(std::move(target));
 	}
 
@@ -112,9 +162,9 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void PopulateCleanTargets(MaintenanceOperationPlan& plan)
+	static void PopulateCleanTargetsForScope(MaintenanceOperationPlan& plan, CleanScope scope)
 	{
-		switch (plan.Request.RequestedCleanScope)
+		switch (scope)
 		{
 		case CleanScope::SelectedProjectCookedOutputs:
 			AddCleanTarget(plan, "Selected project cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ProjectId), "Only cooked assets for project " + plan.Request.ProjectId + ".");
@@ -149,6 +199,43 @@ namespace SparkleLauncher
 			AddProjectGeneratedTargets(plan, true, true, true);
 			return;
 		}
+	}
+
+	static std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request)
+	{
+		std::vector<CleanScope> scopes = request.RequestedCleanScopes;
+		if (scopes.empty())
+		{
+			scopes.push_back(request.RequestedCleanScope);
+		}
+
+		std::vector<CleanScope> uniqueScopes;
+		for (const CleanScope scope : scopes)
+		{
+			if (std::find(uniqueScopes.begin(), uniqueScopes.end(), scope) == uniqueScopes.end())
+			{
+				uniqueScopes.push_back(scope);
+			}
+		}
+		return uniqueScopes;
+	}
+
+	static void PopulateCleanTargets(MaintenanceOperationPlan& plan)
+	{
+		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
+		{
+			PopulateCleanTargetsForScope(plan, scope);
+		}
+	}
+
+	static std::string FormatCleanTargetStats(const MaintenanceCleanTarget& target)
+	{
+		if (!target.Exists)
+		{
+			return "not present";
+		}
+
+		return std::to_string(target.FileCount) + " files, " + std::to_string(target.DirectoryCount) + " directories, " + std::to_string(target.ByteCount) + " bytes";
 	}
 
 	static OperationDestructiveScope ToOperationDestructiveScope(CleanScope scope)
@@ -289,7 +376,10 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
-		plan.Operation.Inputs.push_back({"cleanScope", ToString(request.RequestedCleanScope)});
+		for (const CleanScope scope : ResolveRequestedCleanScopes(request))
+		{
+			plan.Operation.Inputs.push_back({"cleanScope", ToString(scope)});
+		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
@@ -304,16 +394,19 @@ namespace SparkleLauncher
 			plan.CanRun = !plan.Toolchain.ClangFormatPath.empty() && !plan.FormatSourceFiles.empty();
 			break;
 		case MaintenanceOperationKind::CleanWorkspace:
+		{
+			const std::vector<CleanScope> requestedCleanScopes = ResolveRequestedCleanScopes(request);
 			PopulateCleanTargets(plan);
-			plan.Operation.DestructiveScope = ToOperationDestructiveScope(request.RequestedCleanScope);
+			plan.Operation.DestructiveScope = requestedCleanScopes.size() == 1 ? ToOperationDestructiveScope(requestedCleanScopes.front()) : OperationDestructiveScope::None;
 			plan.Operation.RequiresConfirmation = true;
-			AddReadiness(plan, request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation: " + ToString(request.RequestedCleanScope));
+			AddReadiness(plan, request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation.");
 			for (const MaintenanceCleanTarget& target : plan.CleanTargets)
 			{
-				AddPlannedEffect(plan, target.DisplayName + ": " + target.Path.string() + " (" + target.Detail + ")");
+				AddPlannedEffect(plan, target.DisplayName + ": " + target.Path.string() + " (" + target.Detail + "; " + FormatCleanTargetStats(target) + ")");
 			}
 			plan.CanRun = request.DestructiveActionConfirmed;
 			break;
+		}
 		}
 
 		PopulatePlanSteps(plan);

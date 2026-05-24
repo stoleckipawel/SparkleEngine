@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ApplicationAPI.h"
+#include "ApplicationBase.h"
 
 #include <memory>
 
@@ -8,7 +8,7 @@ class ProjectApp;
 class ShaderRecookCoordinator;
 class UI;
 
-class SPARKLE_APPLICATION_API EditorApp
+class SPARKLE_APPLICATION_API EditorApp final : public ApplicationBase
 {
   public:
 	EditorApp();
@@ -19,10 +19,9 @@ class SPARKLE_APPLICATION_API EditorApp
 	EditorApp(EditorApp&&) = delete;
 	EditorApp& operator=(EditorApp&&) = delete;
 
-	void Initialize();
-	bool Tick();
-	void Shutdown();
-	void Run();
+	void Initialize() override;
+	bool Tick() override;
+	void Shutdown() override;
 
   private:
 	std::unique_ptr<ProjectApp> m_projectApp;

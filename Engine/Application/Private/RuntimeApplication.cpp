@@ -1,5 +1,5 @@
 ﻿#include "PCH.h"
-#include "ProjectApp.h"
+#include "RuntimeApplication.h"
 
 #include "Window/Window.h"
 #include "Renderer.h"
@@ -13,64 +13,64 @@
 
 #include "Core/Public/Diagnostics/Trace.h"
 
-ProjectApp::ProjectApp() = default;
+RuntimeApplication::RuntimeApplication() = default;
 
-ProjectApp::ProjectApp(ProjectAppOptions options) noexcept : m_options(options) {}
+RuntimeApplication::RuntimeApplication(RuntimeApplicationOptions options) noexcept : m_options(options) {}
 
-ProjectApp::~ProjectApp() = default;
+RuntimeApplication::~RuntimeApplication() = default;
 
-Timer& ProjectApp::GetTimer() noexcept
+Timer& RuntimeApplication::GetTimer() noexcept
 {
 	return *m_timer;
 }
 
-Window& ProjectApp::GetWindow() noexcept
+Window& RuntimeApplication::GetWindow() noexcept
 {
 	return *m_window;
 }
 
-InputSystem& ProjectApp::GetInputSystem() noexcept
+InputSystem& RuntimeApplication::GetInputSystem() noexcept
 {
 	return *m_inputSystem;
 }
 
-GameScene* ProjectApp::GetGameScene() const noexcept
+GameScene* RuntimeApplication::GetGameScene() const noexcept
 {
 	return m_gameScene.get();
 }
 
-LevelManager* ProjectApp::GetLevelManager() const noexcept
+LevelManager* RuntimeApplication::GetLevelManager() const noexcept
 {
 	return m_levelManager.get();
 }
 
-Renderer& ProjectApp::GetRenderer() noexcept
+Renderer& RuntimeApplication::GetRenderer() noexcept
 {
 	return *m_renderer;
 }
 
-void ProjectApp::Initialize()
+void RuntimeApplication::Initialize()
 {
-	SPARKLE_CPU_SCOPE("Application.ProjectInitialize");
+	SPARKLE_CPU_SCOPE("Application.RuntimeInitialize");
 	if (m_isInitialized)
 	{
 		return;
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.ProjectCreateWindow");
+		SPARKLE_CPU_SCOPE("Application.RuntimeCreateWindow");
 		m_timer = std::make_unique<Timer>();
 		m_window = std::make_unique<Window>("Sparkle Engine");
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.ProjectCreateInput");
+		SPARKLE_CPU_SCOPE("Application.RuntimeCreateInput");
 		m_inputSystem = InputSystem::Create();
 		m_inputSystem->SubscribeToWindow(*m_window);
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.ProjectCreateScene");
+		SPARKLE_CPU_SCOPE("Application.RuntimeCreateScene");
 		m_gameScene = std::make_unique<GameScene>();
 		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
 		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
@@ -78,24 +78,24 @@ void ProjectApp::Initialize()
 	}
 
 	{
-		SPARKLE_CPU_SCOPE("Application.ProjectCreateRenderer");
+		SPARKLE_CPU_SCOPE("Application.RuntimeCreateRenderer");
 		m_renderer = std::make_unique<Renderer>(*m_timer, *m_gameScene, *m_window, *m_levelManager);
 	}
 
 	if (m_options.EnableRuntimeConsole)
 	{
-		SPARKLE_CPU_SCOPE("Application.ProjectCreateRuntimeConsole");
+		SPARKLE_CPU_SCOPE("Application.RuntimeCreateConsole");
 		m_runtimeConsoleHost = std::make_unique<RuntimeConsoleHost>(*m_timer, *m_window, *m_renderer);
 	}
 	m_isInitialized = true;
 }
 
-ProjectAppFrameResult ProjectApp::BeginFrame()
+RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 {
-	SPARKLE_CPU_SCOPE("Application.ProjectBeginFrame");
+	SPARKLE_CPU_SCOPE("Application.RuntimeBeginFrame");
 	if (!m_isInitialized)
 	{
-		return ProjectAppFrameResult::Exit;
+		return RuntimeApplicationFrameResult::Exit;
 	}
 
 	m_inputSystem->BeginFrame();
@@ -105,14 +105,14 @@ ProjectAppFrameResult ProjectApp::BeginFrame()
 	if (m_window->ShouldClose())
 	{
 		m_inputSystem->EndFrame();
-		return ProjectAppFrameResult::Exit;
+		return RuntimeApplicationFrameResult::Exit;
 	}
 
 	if (m_window->IsMinimized())
 	{
 		m_inputSystem->EndFrame();
 		m_window->WaitForEvent();
-		return ProjectAppFrameResult::SkipRender;
+		return RuntimeApplicationFrameResult::SkipRender;
 	}
 
 	if (m_levelManager)
@@ -120,19 +120,19 @@ ProjectAppFrameResult ProjectApp::BeginFrame()
 		m_levelManager->ProcessPendingLevelChange();
 	}
 
-	return ProjectAppFrameResult::Ready;
+	return RuntimeApplicationFrameResult::Ready;
 }
 
-void ProjectApp::UpdateRuntime() noexcept
+void RuntimeApplication::UpdateRuntime() noexcept
 {
-	SPARKLE_CPU_SCOPE("Application.ProjectUpdateRuntime");
+	SPARKLE_CPU_SCOPE("Application.RuntimeUpdate");
 	if (m_gameCameraController)
 	{
 		m_gameCameraController->Update();
 	}
 }
 
-void ProjectApp::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
+void RuntimeApplication::SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept
 {
 	if (m_renderer)
 	{
@@ -140,7 +140,7 @@ void ProjectApp::SubmitViewportRenderRequest(const ViewportRenderRequest& reques
 	}
 }
 
-const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noexcept
+const ViewportRenderProducts& RuntimeApplication::GetViewportRenderProducts() const noexcept
 {
 	static const ViewportRenderProducts emptyProducts{};
 	if (!m_renderer)
@@ -151,24 +151,24 @@ const ViewportRenderProducts& ProjectApp::GetViewportRenderProducts() const noex
 	return m_renderer->GetViewportRenderProducts();
 }
 
-void ProjectApp::EndFrame() noexcept
+void RuntimeApplication::EndFrame() noexcept
 {
-	SPARKLE_CPU_SCOPE("Application.ProjectEndFrame");
+	SPARKLE_CPU_SCOPE("Application.RuntimeEndFrame");
 	if (m_inputSystem)
 	{
 		m_inputSystem->EndFrame();
 	}
 }
 
-bool ProjectApp::Tick()
+bool RuntimeApplication::Tick()
 {
 	switch (BeginFrame())
 	{
-		case ProjectAppFrameResult::Exit:
+		case RuntimeApplicationFrameResult::Exit:
 			return false;
-		case ProjectAppFrameResult::SkipRender:
+		case RuntimeApplicationFrameResult::SkipRender:
 			return true;
-		case ProjectAppFrameResult::Ready:
+		case RuntimeApplicationFrameResult::Ready:
 		default:
 			break;
 	}
@@ -191,9 +191,9 @@ bool ProjectApp::Tick()
 	return true;
 }
 
-void ProjectApp::Shutdown()
+void RuntimeApplication::Shutdown()
 {
-	SPARKLE_CPU_SCOPE("Application.ProjectShutdown");
+	SPARKLE_CPU_SCOPE("Application.RuntimeShutdown");
 	if (!m_isInitialized)
 	{
 		return;

@@ -19,6 +19,26 @@ namespace SparkleLauncher
 		request.WorkingDirectory = plan.WorkingDirectory;
 		request.Environment = plan.Environment;
 		request.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "Launch.txt");
+		if (!plan.Request.GraphicsBackend.empty())
+		{
+			request.Arguments.push_back("--graphics-api");
+			request.Arguments.push_back(plan.Request.GraphicsBackend);
+		}
+		if (!plan.Request.VSync.empty())
+		{
+			request.Arguments.push_back("--cvar");
+			request.Arguments.push_back("r.VSync=" + plan.Request.VSync);
+		}
+		if (!plan.Request.PreferHighPerformanceAdapter.empty())
+		{
+			request.Arguments.push_back("--cvar");
+			request.Arguments.push_back("r.PreferHighPerformanceAdapter=" + plan.Request.PreferHighPerformanceAdapter);
+		}
+		if (!plan.Request.MeshAutoBatching.empty())
+		{
+			request.Arguments.push_back("--cvar");
+			request.Arguments.push_back("r.MeshAutoBatching=" + plan.Request.MeshAutoBatching);
+		}
 
 		LaunchOperationProcessStep step;
 		step.Id = "launch";

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "ApplicationBase.h"
+#include "Application.h"
 #include "../../Renderer/Public/Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -19,32 +19,32 @@ namespace Assets
 	class SceneAssetManager;
 }
 
-enum class ProjectAppFrameResult : std::uint8_t
+enum class RuntimeApplicationFrameResult : std::uint8_t
 {
 	Exit = 0,
 	SkipRender = 1,
 	Ready = 2,
 };
 
-struct ProjectAppOptions final
+struct RuntimeApplicationOptions final
 {
 	bool EnableRuntimeConsole = true;
 };
 
-class SPARKLE_APPLICATION_API ProjectApp final : public ApplicationBase
+class SPARKLE_APPLICATION_API RuntimeApplication final : public Application
 {
   public:
-	ProjectApp();
-	explicit ProjectApp(ProjectAppOptions options) noexcept;
-	~ProjectApp();
+	RuntimeApplication();
+	explicit RuntimeApplication(RuntimeApplicationOptions options) noexcept;
+	~RuntimeApplication();
 
-	ProjectApp(const ProjectApp&) = delete;
-	ProjectApp& operator=(const ProjectApp&) = delete;
-	ProjectApp(ProjectApp&&) = delete;
-	ProjectApp& operator=(ProjectApp&&) = delete;
+	RuntimeApplication(const RuntimeApplication&) = delete;
+	RuntimeApplication& operator=(const RuntimeApplication&) = delete;
+	RuntimeApplication(RuntimeApplication&&) = delete;
+	RuntimeApplication& operator=(RuntimeApplication&&) = delete;
 
 	void Initialize() override;
-	ProjectAppFrameResult BeginFrame();
+	RuntimeApplicationFrameResult BeginFrame();
 	void UpdateRuntime() noexcept;
 	void SubmitViewportRenderRequest(const ViewportRenderRequest& request) noexcept;
 	const ViewportRenderProducts& GetViewportRenderProducts() const noexcept;
@@ -68,6 +68,6 @@ class SPARKLE_APPLICATION_API ProjectApp final : public ApplicationBase
 	std::unique_ptr<GameCameraController> m_gameCameraController;
 	std::unique_ptr<Renderer> m_renderer;
 	std::unique_ptr<RuntimeConsoleHost> m_runtimeConsoleHost;
-	ProjectAppOptions m_options;
+	RuntimeApplicationOptions m_options;
 	bool m_isInitialized = false;
 };

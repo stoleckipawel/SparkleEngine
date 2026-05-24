@@ -35,6 +35,10 @@ namespace SparkleLauncher
 		std::string ProjectId = "Showcase";
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		std::string GraphicsBackend;
+		std::string VSync;
+		std::string PreferHighPerformanceAdapter;
+		std::string MeshAutoBatching;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;
 		bool SmokeTrace = false;

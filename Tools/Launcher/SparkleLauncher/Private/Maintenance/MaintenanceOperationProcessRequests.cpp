@@ -118,9 +118,28 @@ namespace SparkleLauncher
 		}
 	}
 
-	static void AddCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
+	static std::vector<CleanScope> ResolveRequestedCleanScopes(const MaintenanceOperationRequest& request)
 	{
-		switch (plan.Request.RequestedCleanScope)
+		std::vector<CleanScope> scopes = request.RequestedCleanScopes;
+		if (scopes.empty())
+		{
+			scopes.push_back(request.RequestedCleanScope);
+		}
+
+		std::vector<CleanScope> uniqueScopes;
+		for (const CleanScope scope : scopes)
+		{
+			if (std::find(uniqueScopes.begin(), uniqueScopes.end(), scope) == uniqueScopes.end())
+			{
+				uniqueScopes.push_back(scope);
+			}
+		}
+		return uniqueScopes;
+	}
+
+	static void AddCleanStepsForScope(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan, CleanScope scope)
+	{
+		switch (scope)
 		{
 		case CleanScope::SelectedProjectCookedOutputs:
 			AddCleanStep(steps, "clean-selected-project-cooked", "Clean selected project cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ProjectId), MaintenanceCleanBehavior::RemovePath);
@@ -154,6 +173,14 @@ namespace SparkleLauncher
 			AddCleanStep(steps, "clean-root-generated", "Clean root CMake and Visual Studio generated files", plan.RepositoryRoot, MaintenanceCleanBehavior::RemoveRootGeneratedFiles);
 			AddProjectGeneratedCleanSteps(steps, plan, true, true, true);
 			return;
+		}
+	}
+
+	static void AddCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
+	{
+		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
+		{
+			AddCleanStepsForScope(steps, plan, scope);
 		}
 	}
 

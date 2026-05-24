@@ -27,6 +27,26 @@ namespace SparkleLauncher
 		return m_shaderPackages;
 	}
 
+	const QString& LauncherSettings::LaunchBackend() const
+	{
+		return m_launchBackend;
+	}
+
+	const QString& LauncherSettings::LaunchVSync() const
+	{
+		return m_launchVSync;
+	}
+
+	const QString& LauncherSettings::LaunchHighPerformanceAdapter() const
+	{
+		return m_launchHighPerformanceAdapter;
+	}
+
+	const QString& LauncherSettings::LaunchMeshAutoBatching() const
+	{
+		return m_launchMeshAutoBatching;
+	}
+
 	const QString& LauncherSettings::SmokeBackend() const
 	{
 		return m_smokeBackend;
@@ -108,6 +128,30 @@ namespace SparkleLauncher
 	void LauncherSettings::SetShaderPackages(const QString& packages)
 	{
 		m_shaderPackages = packages;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchBackend(const QString& backend)
+	{
+		m_launchBackend = backend;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchVSync(const QString& value)
+	{
+		m_launchVSync = value;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchHighPerformanceAdapter(const QString& value)
+	{
+		m_launchHighPerformanceAdapter = value;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchMeshAutoBatching(const QString& value)
+	{
+		m_launchMeshAutoBatching = value;
 		emit SettingsChanged();
 	}
 
