@@ -27,6 +27,7 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QStatusBar>
+#include <QtWidgets/QStyle>
 #include <QtWidgets/QWidget>
 
 #include <array>
@@ -337,6 +338,7 @@ namespace SparkleLauncher
 		if (workflowIndex >= 0 && workflowIndex < m_operationStack->count())
 		{
 			m_operationStack->setCurrentIndex(workflowIndex);
+			SetActiveWorkflowGroup(workflowIndex);
 
 			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
 			if (workflowIndex < workflows.size() && !workflows[workflowIndex].OperationIds.empty())
@@ -392,7 +394,7 @@ namespace SparkleLauncher
 
 		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			const QString message = "No project discovered. Run Setup Workspace or Check Toolchain, then retry.";
+			const QString message = "No project discovered. Run Configure Workspace or Check Toolchain, then retry.";
 			if (m_operationOutput != nullptr)
 			{
 				m_operationOutput->setPlainText(message);
@@ -508,9 +510,9 @@ namespace SparkleLauncher
 			const WorkflowDefinition& workflow = workflows[workflowIndex];
 			QPushButton* groupButton = new QPushButton(workflow.Title, panel);
 			groupButton->setObjectName("WorkflowGroupButton");
-			groupButton->setCheckable(true);
 			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
+			groupButton->setProperty("ActiveState", "false");
 			groupButton->setToolTip(workflow.Subtitle);
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
 			groupButton->setIcon(WorkflowIconForIndex(workflowIndex));
@@ -518,10 +520,6 @@ namespace SparkleLauncher
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
 			groupLayout->addWidget(groupButton);
-			if (workflowIndex == 0)
-			{
-				groupButton->setChecked(true);
-			}
 
 			QWidget* tabPage = new QWidget(m_operationStack);
 			QVBoxLayout* actionLayout = new QVBoxLayout();
@@ -1232,7 +1230,7 @@ namespace SparkleLauncher
 			}
 			if (!dependencyCacheReady)
 			{
-				AddActionRow(*actionLayout, "Populate dependency cache", "Run setup so CMake can configure dependencies under build/_deps.", "Run Setup", "workspace.setup");
+				AddActionRow(*actionLayout, "Populate dependency cache", "Run CMake configure so dependencies can populate under build/_deps.", "Configure Workspace", "workspace.setup");
 			}
 			if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && dependencyCacheReady)
 			{
@@ -1243,36 +1241,28 @@ namespace SparkleLauncher
 
 		if (isSetupWorkflow)
 		{
-			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Generated Workspace", "State directly affected by this setup workflow.");
+			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Workspace Files", "Generated files and cache state used by setup workflows.");
 			AddStatusRow(*workspaceLayout, "Build files", plan.Freshness.Current ? "Current" : "Needs refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
-			AddStatusRow(*workspaceLayout, "Dependency cache", dependencyCacheReady ? "Present" : "May update during setup", QString::fromStdString(dependencyCachePath.string()), dependencyCacheReady ? "ok" : "warning");
+			AddStatusRow(*workspaceLayout, "Dependency cache", dependencyCacheReady ? "Present" : "May update during configure", QString::fromStdString(dependencyCachePath.string()), dependencyCacheReady ? "ok" : "warning");
 
-			QVBoxLayout* prerequisiteLayout = AddOptionGroup(layout, "Prerequisites", "Items that should be satisfied before this workflow can complete cleanly.");
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
+				QVBoxLayout* prerequisiteLayout = AddOptionGroup(layout, "Prerequisites", "Items blocking this workflow before it starts.");
 				AddActionRow(*prerequisiteLayout, "Required tools need attention", RequiredToolProblemSummary(plan.Toolchain), "Check Toolchain", "toolchain.check");
 			}
-			else if (operationId == "workspace.open-solution" && !plan.Freshness.Current)
-			{
-				AddActionRow(*prerequisiteLayout, "Build files must be refreshed first", QString::fromStdString(plan.Freshness.Summary), "Regenerate Solution", "workspace.generate-solution");
-			}
-			else
-			{
-				AddActionRow(*prerequisiteLayout, "Ready for selected setup workflow", "Required tools are available for this action.", QString(), QString());
-			}
 
-			QVBoxLayout* actionLayout = AddOptionGroup(layout, "This Action", "What the selected workflow will do when you press Run.");
+			QVBoxLayout* actionLayout = AddOptionGroup(layout, "This Action", "Selected workflow behavior.");
 			if (operationId == "workspace.setup")
 			{
-				AddStatusRow(*actionLayout, "Setup Workspace", plan.Freshness.Current ? "No configure needed" : "Will configure", plan.Freshness.Current ? "Build files are already current; setup will validate the workspace state." : QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
+				AddStatusRow(*actionLayout, "Configure Workspace", plan.Freshness.Current ? "Current" : "Will run", plan.Freshness.Current ? "Generated files are already current." : "Run CMake configure to update generated files and dependency cache.", plan.Freshness.Current ? "ok" : "warning");
 			}
 			else if (operationId == "workspace.generate-solution")
 			{
-				AddStatusRow(*actionLayout, "Regenerate Solution", "Will run", "Refresh the Visual Studio solution and CMake project files.", "neutral");
+				AddStatusRow(*actionLayout, "Regenerate Solution", "Will run", "Force CMake configure and rewrite Visual Studio/CMake generated files.", "neutral");
 			}
 			else if (operationId == "workspace.open-solution")
 			{
-				AddStatusRow(*actionLayout, "Open Solution", plan.Freshness.Current ? "Ready" : "Blocked by stale files", QString::fromStdString(plan.Freshness.SolutionPath.string()), plan.Freshness.Current ? "ok" : "warning");
+				AddStatusRow(*actionLayout, "Open Solution", plan.Freshness.Current ? "Ready" : "Refresh then open", QString::fromStdString(plan.Freshness.SolutionPath.string()), plan.Freshness.Current ? "ok" : "warning");
 			}
 			return;
 		}
@@ -1486,6 +1476,23 @@ namespace SparkleLauncher
 		m_tabOrderWidgets.push_back(widget);
 	}
 
+	void LauncherMainWindow::SetActiveWorkflowGroup(int workflowIndex)
+	{
+		if (m_workflowGroupButtonGroup == nullptr)
+		{
+			return;
+		}
+
+		for (QAbstractButton* button : m_workflowGroupButtonGroup->buttons())
+		{
+			const bool active = button != nullptr && button->property("WorkflowIndex").toInt() == workflowIndex;
+			button->setProperty("ActiveState", active ? "true" : "false");
+			button->style()->unpolish(button);
+			button->style()->polish(button);
+			button->update();
+		}
+	}
+
 	void LauncherMainWindow::ConfigureTabOrder()
 	{
 		QWidget* previousWidget = nullptr;
@@ -1522,7 +1529,7 @@ namespace SparkleLauncher
 
 		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			const QString reason = "No project discovered. Run Setup Workspace or Check Toolchain, then retry.";
+			const QString reason = "No project discovered. Run Configure Workspace or Check Toolchain, then retry.";
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
@@ -1588,7 +1595,7 @@ namespace SparkleLauncher
 	{
 		if (OperationNeedsProject(operationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			return "No project is selected. Run Setup Workspace, then retry this workflow.";
+			return "No project is selected. Run Configure Workspace, then retry this workflow.";
 		}
 		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
 		{
@@ -1596,7 +1603,7 @@ namespace SparkleLauncher
 		}
 		if (operationId.startsWith("project.build") || statusText.contains("cmake", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("tool", Qt::CaseInsensitive))
 		{
-			return "Run Setup > Check Toolchain, then retry this workflow.";
+			return "Run Check Toolchain, then retry this workflow.";
 		}
 		if (statusText.contains("shader package", Qt::CaseInsensitive) || statusText.contains("shader", Qt::CaseInsensitive))
 		{
@@ -1789,7 +1796,7 @@ namespace SparkleLauncher
 		SetSelectedOperation(operationId);
 		if (OperationNeedsProject(operationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			const QString message = "No project discovered. Run Setup Workspace or Check Toolchain, then retry.";
+			const QString message = "No project discovered. Run Configure Workspace or Check Toolchain, then retry.";
 			if (m_operationOutput != nullptr)
 			{
 				m_operationOutput->setPlainText(message);
@@ -1856,13 +1863,7 @@ namespace SparkleLauncher
 			const int workflowIndex = m_workflowPageByOperation.value(operationId);
 			m_lastOperationByWorkflowIndex.insert(workflowIndex, operationId);
 			m_operationStack->setCurrentIndex(workflowIndex);
-			if (m_workflowGroupButtonGroup != nullptr)
-			{
-				for (QAbstractButton* button : m_workflowGroupButtonGroup->buttons())
-				{
-					button->setChecked(button->property("WorkflowIndex").toInt() == workflowIndex);
-				}
-			}
+			SetActiveWorkflowGroup(workflowIndex);
 		}
 
 		UpdateRunAvailability();
@@ -2078,7 +2079,7 @@ namespace SparkleLauncher
 		if (m_projectModel.Projects().empty())
 		{
 			combo.addItem("No projects found", "");
-			combo.setToolTip("No projects were discovered in the repository. Run Setup Workspace or inspect project discovery output.");
+			combo.setToolTip("No projects were discovered in the repository. Run Configure Workspace or inspect project discovery output.");
 			combo.setEnabled(false);
 			return;
 		}
@@ -2098,7 +2099,7 @@ namespace SparkleLauncher
 	QVector<LauncherMainWindow::WorkflowDefinition> LauncherMainWindow::CreateWorkflowDefinitions() const
 	{
 		return {
-		    {"Setup", "Fresh sync", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.clean"}},
+		    {"Setup", "Inspect and configure", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.clean"}},
 		    {"Build", "Compile targets", {"project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
 		    {"Run", "Open targets", {"project.launch.editor", "workspace.open-solution", "project.launch.runtime", "smoke.rhi.editor", "smoke.rhi.runtime"}},
@@ -2169,8 +2170,9 @@ namespace SparkleLauncher
 		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 9pt; font-weight: 600; padding: 0 0 2px 4px;");
 
 		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; border-radius: 2px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
-		addRule("#WorkflowGroupButton:hover", "background: " + panel + "; color: " + textBody + ";");
-		addRule("#WorkflowGroupButton:checked", "background: #303030; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
+		addRule("#WorkflowGroupButton:hover", "background: " + panel + "; color: " + textBody + "; border: 1px solid " + borderSoft + ";");
+		addRule("#WorkflowGroupButton:pressed", "background: #3f3f3f; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
+		addRule("#WorkflowGroupButton[ActiveState=\"true\"]", "background: #3a3a3a; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
 		addRule("#WorkflowGroupButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; border-radius: 2px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600;");
 		addRule("#WorkflowButton:hover", "background: " + panelHover + "; border: 1px solid " + border + ";");

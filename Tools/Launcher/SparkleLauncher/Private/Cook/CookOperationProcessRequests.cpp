@@ -124,7 +124,7 @@ namespace SparkleLauncher
 			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
 			return steps;
 		case CookOperationKind::BuildSceneAssets:
-			AddStep(steps, "cook-scene-assets", "Cook scene assets", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
+			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
 			return steps;
 		case CookOperationKind::CookAllAssets:
 			AddStep(steps, "cook-all-assets", "Cook all assets", MakeAssetCookerRequest(plan, "cook-project", "CookAllAssets.txt"));

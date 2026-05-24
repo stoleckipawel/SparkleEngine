@@ -108,8 +108,8 @@ namespace SparkleLauncher
 		static const std::vector<LaunchOperationDefinition> definitions = {
 		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Open Editor", "Open the selected project's editor executable."},
 		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Open Runtime", "Open the selected project's runtime executable."},
-		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Open Editor Smoke Test", "Open the selected project editor with graphics smoke validation enabled."},
-		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Open Runtime Smoke Test", "Open the selected project runtime with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Run Editor Smoke Test", "Run the selected project editor with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Run Runtime Smoke Test", "Run the selected project runtime with graphics smoke validation enabled."},
 		};
 		return definitions;
 	}
@@ -192,7 +192,7 @@ namespace SparkleLauncher
 		const bool cookedShadersReady = DirectoryHasRegularFiles(cookedProjectDirectory / "Shaders");
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
-		AddReadiness(plan, cookedMeshesReady ? "Cooked meshes are ready." : "Cooked meshes are missing; cook scene assets before launching.");
+		AddReadiness(plan, cookedMeshesReady ? "Cooked meshes are ready." : "Cooked meshes are missing; run Cook Meshes before launching.");
 		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; cook textures before launching.");
 		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; cook shaders before launching.");
 		AddPlannedEffect(plan, "Launch " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");

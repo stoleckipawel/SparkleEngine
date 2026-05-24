@@ -116,6 +116,7 @@ namespace SparkleLauncher
 		QIcon WorkflowIconForIndex(int workflowIndex) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
+		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
