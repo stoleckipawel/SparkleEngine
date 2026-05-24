@@ -122,7 +122,7 @@ Improvement:
 
 ### 3. Workflow Labels Are Technically Accurate But Not Always User-Centered
 
-Labels such as `Build Meshes / Scene Assets` and `Run Editor RHI Smoke Test` are precise, but they read like backend operation names. Some are long enough to make the UI feel heavier.
+Labels such as `Run Editor RHI Smoke Test` are precise, but they read like backend operation names. Some are long enough to make the UI feel heavier. Avoid slash-combined labels such as `Build Meshes / Scene Assets`; the button should say `Build Meshes` and let the description carry secondary detail.
 
 Design risk:
 
@@ -133,7 +133,7 @@ Improvement:
 - Use short primary labels and move specificity into secondary metadata only when needed.
 - Examples:
   - `Run Editor Smoke` instead of `Run Editor RHI Smoke Test`.
-  - `Build Scene Assets` instead of `Build Meshes / Scene Assets`.
+  - `Build Meshes` instead of `Build Meshes / Scene Assets`.
   - `Cook Project` instead of `Cook All Assets` if the backend operation is project-scoped.
 
 ### 4. The Selected Workflow Area Has Weak State Modeling
@@ -161,14 +161,14 @@ The parameter panel now uses compact rows, but it still visually resembles a set
 Design risk:
 
 - A reviewer may ask what is essential versus optional.
-- The user may not know which controls are safe defaults and which are advanced/risky.
+- The user may not know which controls are safe defaults and which are secondary/risky.
 
 Improvement:
 
-- Divide parameters into two groups when needed:
+- Divide parameters by user importance when needed:
   - Primary: Project, Profile, Scope, Frame limit.
-  - Advanced: Force configure, Force recook, trace, skip level switching.
-- Hide advanced checkboxes behind an `Advanced` disclosure within the selected workflow.
+  - Secondary/risky: Force configure, Force recook, trace, skip level switching.
+- Avoid visible `Advanced` section language. If uncommon options need hiding, use a quiet `More options` disclosure or reveal controls only when a selected scope makes them relevant.
 - Show destructive confirmations only after a destructive option is enabled or selected.
 
 ### 6. Activity and Output Compete With Configuration
@@ -290,7 +290,7 @@ Operations:
 Design notes:
 
 - Project and profile are primary parameters.
-- Force configure is advanced.
+- Force configure is secondary and should be tucked into a quiet `More options` reveal.
 - Build Cook Tools belongs here because it prepares later cook operations.
 
 ### Cook
@@ -302,13 +302,13 @@ Operations:
 - Cook Project
 - Cook Shaders
 - Build Textures
-- Build Scene Assets
+- Build Meshes
 
 Design notes:
 
 - Project and profile are primary.
 - Shader package is primary only for Cook Shaders.
-- Force recook and confirmation are advanced and potentially risky.
+- Force recook and confirmation are secondary/risky and should not read as a generic settings section.
 
 ### Run
 
@@ -325,7 +325,7 @@ Design notes:
 
 - Smoke tests are verification workflows, so placing them after launch is logical.
 - Frame limit is primary for smoke tests.
-- Backend override and tracing are advanced.
+- Backend override and tracing are secondary diagnostic controls.
 
 ### Maintain
 
@@ -351,7 +351,7 @@ Design notes:
 |                    | Title / status                            |
 | Setup              | Description                               |
 | Build              | Parameters                                |
-| Cook               | Advanced disclosure                       |
+| Cook               | More options only when needed             |
 | Run                |                              [Run]        |
 | Maintain           |                                           |
 +---------------------------------------------------------------+
@@ -372,7 +372,7 @@ Design notes:
 - Title should be the strongest text.
 - Description should be one line when possible.
 - Parameters should be compact and aligned.
-- Advanced options should be hidden unless needed.
+- Secondary/risky options should be quiet and hidden unless needed.
 - Run action should be anchored and visually connected to the selected workflow.
 
 ### Activity Drawer
@@ -462,9 +462,9 @@ Avoid adding icons only to make the UI look busy.
 - Concurrent runs are allowed, so the activity list must make parallel jobs obvious.
 - If cancellation is not implemented, do not show Stop.
 
-### Advanced Options
+### Secondary And Risky Options
 
-- Advanced options should be contextual, not global.
+- Secondary options should be contextual, not global.
 - Potentially destructive options should reveal confirmation requirements.
 - Defaults should be obvious without long explanatory copy.
 
@@ -610,15 +610,15 @@ States:
 Responsibilities:
 
 - Renders operation-specific controls.
-- Separates primary and advanced controls.
+- Separates primary controls from secondary or risky controls without advertising a generic `Advanced` mode.
 - Avoids global settings clutter.
 
 States:
 
 - Empty
 - Primary only
-- Primary plus advanced collapsed
-- Primary plus advanced expanded
+- Primary plus more options collapsed
+- Primary plus more options expanded
 
 ### ActivityMonitor
 
@@ -639,6 +639,18 @@ States:
 ## Improvement Roadmap
 
 The stages below are written so each can be copied directly into an implementation prompt. Each stage should be completed as a focused UI pass. Keep backend behavior unchanged unless the stage explicitly calls out a backend-supported state or action.
+
+## Current Implementation Check
+
+The current built launcher is moving in the right direction: the workflow rail, selected workflow panel, contextual parameters, and activity drawer now read as one focused desktop tool rather than a console wrapper. Setup, Build, Cook, Run, and Maintain are visible in the expected order, and the visual system is compact enough for daily use.
+
+The remaining corrections are product-language and polish issues, not architecture reversals:
+
+- Operation labels should be short and product-facing. Avoid slash-combined button text; `Build Meshes` is enough.
+- The parameter area should not expose an `Advanced` section as a visible concept. Use `More options`, contextual reveal, or direct inline controls depending on the risk and frequency of the option.
+- Blue should stay mostly reserved for the selected operation and primary `Run` action. Progress and completed states should stay neutral or state-colored.
+- The activity drawer is useful, but screenshots should keep checking that it does not visually overpower configuration after a completed run.
+- Remaining stages should focus on robustness, focus states, minimum-size behavior, and failure/no-project recovery rather than adding new features.
 
 ### Stage 1: Workflow Structure and Hierarchy
 
@@ -699,7 +711,7 @@ Acceptance criteria:
 Implementation prompt:
 
 ```text
-Redesign the selected workflow parameter area so settings feel contextual, elegant, and low-noise. Keep all existing operation options reachable, but separate primary controls from advanced or risky controls. Do not introduce free-form text fields for bounded options.
+Redesign the selected workflow parameter area so settings feel contextual, elegant, and low-noise. Keep all existing operation options reachable, but separate primary controls from secondary or risky controls without presenting a generic Advanced section. Do not introduce free-form text fields for bounded options.
 ```
 
 Goal:
@@ -717,14 +729,14 @@ Likely files:
 
 Implementation tasks:
 
-- Split operation parameters into primary and advanced groups.
+- Split operation parameters into primary, secondary, and risky controls.
 - Keep primary controls visible:
   - Project
   - Profile
   - Scope
   - Shader package
   - Frame limit
-- Move advanced or riskier controls behind a contextual `Advanced` disclosure:
+- Move secondary or riskier controls behind a quiet `More options` disclosure, or reveal them only when the selected scope makes them relevant:
   - Force configure
   - Force recook
   - Confirm recook cleanup
@@ -739,14 +751,14 @@ Implementation tasks:
 Positive guardrails:
 
 - Use explicit dropdowns and checkboxes for bounded choices.
-- Keep common workflows runnable without opening advanced controls.
+- Keep common workflows runnable without opening secondary controls.
 - Prefer local helper methods in `LauncherMainWindow` over new tiny classes unless repeated logic becomes hard to maintain.
 
 Negative guardrails:
 
 - Do not remove any existing backend-supported option.
 - Do not use long helper copy beside every control.
-- Do not make advanced options global if they only affect one operation family.
+- Do not make secondary options global if they only affect one operation family.
 
 Validation:
 
@@ -759,7 +771,7 @@ Acceptance criteria:
 
 - Build, Cook, Run, and Maintain parameter pages feel like variations of one component.
 - Common paths show only primary controls by default.
-- Advanced/risky controls are still reachable and understandable.
+- Secondary/risky controls are still reachable and understandable.
 - No parameter page contains redundant section titles or unnecessary explanatory text.
 
 ### Stage 3: Activity and Output Experience
@@ -859,6 +871,8 @@ Implementation tasks:
 - Reduce single-blue dominance by reserving filled blue for active selection and primary action.
 - Add status colors only where state needs them.
 - Add icons only where they clarify workflow group or run status.
+- Verify operation labels are short and product-facing; avoid slash-combined button labels.
+- Avoid visible `Advanced` language in the parameter area; uncommon options should feel like secondary workflow options, not a settings form.
 - Ensure text hierarchy stays restrained and readable at the minimum window size.
 
 Positive guardrails:
@@ -872,6 +886,7 @@ Negative guardrails:
 - Do not introduce decorative gradients, hero sections, or marketing visuals.
 - Do not add icons inconsistently.
 - Do not make every selected or focused element bright blue.
+- Do not reintroduce `Build Meshes / Scene Assets` or similar backend-combined labels.
 
 Validation:
 
@@ -892,7 +907,7 @@ Acceptance criteria:
 Implementation prompt:
 
 ```text
-Audit and improve Sparkle Launcher accessibility, edge cases, and production UX states. Focus on keyboard usability, focus visibility, minimum window behavior, empty states, and failure states. Keep feature scope limited to UX robustness.
+Audit and improve Sparkle Launcher accessibility, edge cases, and production UX states from the current built UI. Focus on keyboard usability, focus visibility, minimum window behavior, empty states, failure states, and screenshot-based implementation checks. Keep feature scope limited to UX robustness.
 ```
 
 Goal:
@@ -920,6 +935,7 @@ Implementation tasks:
 - Improve missing-toolchain path by directing the user toward Setup or Check Toolchain.
 - Improve multiple concurrent failure presentation.
 - Ensure selected state is not communicated by color alone.
+- Re-check all workflow screenshots after fixes so labels, parameter controls, activity output, and visual hierarchy still feel like one product.
 
 Positive guardrails:
 
@@ -952,13 +968,13 @@ Acceptance criteria:
 
 ## Near-Term Design Direction
 
-The next implementation pass should focus on structure before visual decoration:
+The next implementation pass should treat the current structure as directionally correct and focus on product polish plus robustness:
 
-1. Convert the left workflow chooser into a stronger workflow sequence.
-2. Reduce title/instruction noise in the left rail.
-3. Add contextual Advanced sections inside parameter pages.
-4. Compact the activity area when idle.
-5. Add clearer job status states.
+1. Keep operation labels short and user-facing.
+2. Replace `Advanced` framing with quiet `More options` or contextual reveals.
+3. Keep blue reserved for active selection and the primary `Run` action.
+4. Continue screenshot inspection across Setup, Build, Cook, Run, Maintain, and active output states.
+5. Use the final stage for keyboard, focus, minimum-size, empty-state, and failure-state hardening.
 
 This preserves the current Qt architecture and backend integration while moving the product toward a more mature, interview-defensible design.
 
@@ -968,7 +984,7 @@ The launcher is stronger when:
 
 - A fresh-sync user can infer the correct operation order without reading documentation.
 - The screen has one obvious primary focus at any time.
-- Common workflows require no advanced controls.
+- Common workflows require no secondary controls.
 - Risky options are visible only when they matter.
 - Activity output helps users recover, not just observe text.
 - The UI feels intentionally designed rather than assembled from Qt widgets.

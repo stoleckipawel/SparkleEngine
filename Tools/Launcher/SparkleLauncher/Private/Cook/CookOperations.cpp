@@ -137,7 +137,7 @@ namespace SparkleLauncher
 		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All Assets", "Run full incremental or confirmed force cook for the selected project."},
 		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate registrations and cook shader packages."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Build Textures", "Cook texture assets through AssetCooker and TextureCooker."},
-		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Build Meshes / Scene Assets", "Cook scene, mesh, and material assets through AssetCooker."},
+		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Build Meshes", "Cook scene, mesh, and material assets through AssetCooker."},
 		};
 		return definitions;
 	}

@@ -83,12 +83,17 @@ namespace SparkleLauncher
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
-		QVBoxLayout* AddAdvancedSection(QVBoxLayout& layout);
+		QVBoxLayout* AddMoreOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
+		void RegisterFocusable(QWidget* widget);
+		void ConfigureTabOrder();
+		void UpdateRunAvailability();
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		QString DescriptionForOperation(const QString& operationId) const;
+		bool OperationNeedsProject(const QString& operationId) const;
+		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
 		void SetStatusMessage(const QString& message);
@@ -111,6 +116,7 @@ namespace SparkleLauncher
 		QButtonGroup* m_processButtonGroup = nullptr;
 		QStackedWidget* m_operationStack = nullptr;
 		QHash<QString, int> m_workflowPageByOperation;
+		QVector<QWidget*> m_tabOrderWidgets;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;
@@ -130,5 +136,6 @@ namespace SparkleLauncher
 		int m_nextRunIndex = 0;
 		int m_startedRunCount = 0;
 		int m_finishedRunCount = 0;
+		int m_failedRunCount = 0;
 	};
 }
