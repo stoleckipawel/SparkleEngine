@@ -14,7 +14,6 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStackedWidget>
-#include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QVBoxLayout>
 
@@ -44,6 +43,7 @@ namespace SparkleLauncher
 
 	private slots:
 		void RefreshProjects();
+		void SelectWorkflowGroupButton(QAbstractButton* button);
 		void SelectProcessButton(QAbstractButton* button);
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
 		void RunSelectedOperation();
@@ -65,7 +65,6 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
-		QLabel* CreatePageTitle(const QString& title, const QString& subtitle, QWidget* parent = nullptr) const;
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, void (LauncherSettings::*setter)(bool));
@@ -97,8 +96,10 @@ namespace SparkleLauncher
 		LauncherProjectModel& m_projectModel;
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
+		QButtonGroup* m_workflowGroupButtonGroup = nullptr;
 		QButtonGroup* m_processButtonGroup = nullptr;
-		QTabWidget* m_categoryTabs = nullptr;
+		QStackedWidget* m_operationStack = nullptr;
+		QHash<QString, int> m_workflowPageByOperation;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;

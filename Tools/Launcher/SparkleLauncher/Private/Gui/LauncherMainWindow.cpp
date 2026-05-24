@@ -77,6 +77,20 @@ namespace SparkleLauncher
 		m_projectModel.Refresh(m_repositoryRoot);
 	}
 
+	void LauncherMainWindow::SelectWorkflowGroupButton(QAbstractButton* button)
+	{
+		if (button == nullptr || m_operationStack == nullptr)
+		{
+			return;
+		}
+
+		const int workflowIndex = button->property("WorkflowIndex").toInt();
+		if (workflowIndex >= 0 && workflowIndex < m_operationStack->count())
+		{
+			m_operationStack->setCurrentIndex(workflowIndex);
+		}
+	}
+
 	void LauncherMainWindow::SelectProcessButton(QAbstractButton* button)
 	{
 		if (button == nullptr)
@@ -163,8 +177,8 @@ namespace SparkleLauncher
 		QFrame* surface = new QFrame(this);
 		surface->setObjectName("WorkflowSurface");
 		QHBoxLayout* layout = new QHBoxLayout(surface);
-		layout->setContentsMargins(18, 18, 18, 18);
-		layout->setSpacing(18);
+		layout->setContentsMargins(16, 16, 16, 16);
+		layout->setSpacing(16);
 		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
 		return surface;
@@ -174,24 +188,51 @@ namespace SparkleLauncher
 	{
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("ProcessPanel");
-		panel->setFixedWidth(356);
+		panel->setFixedWidth(346);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
 		layout->setContentsMargins(0, 0, 0, 0);
-		layout->setSpacing(10);
-		layout->addWidget(CreatePageTitle("Workflows", "Choose one action to configure.", panel));
+		layout->setSpacing(12);
 
+		QLabel* railTitle = new QLabel("Workflows", panel);
+		railTitle->setObjectName("WorkflowRailTitle");
+		layout->addWidget(railTitle);
+
+		QHBoxLayout* workflowLayout = new QHBoxLayout();
+		workflowLayout->setContentsMargins(0, 0, 0, 0);
+		workflowLayout->setSpacing(12);
+
+		QVBoxLayout* groupLayout = new QVBoxLayout();
+		groupLayout->setContentsMargins(0, 0, 0, 0);
+		groupLayout->setSpacing(2);
+
+		m_workflowGroupButtonGroup = new QButtonGroup(this);
+		m_workflowGroupButtonGroup->setExclusive(true);
 		m_processButtonGroup = new QButtonGroup(this);
 		m_processButtonGroup->setExclusive(true);
 
-		m_categoryTabs = new QTabWidget(panel);
-		m_categoryTabs->setObjectName("ProcessTabs");
-		m_categoryTabs->setDocumentMode(true);
+		m_operationStack = new QStackedWidget(panel);
+		m_operationStack->setObjectName("OperationStack");
 
-		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
+		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
 		{
-			QWidget* tabPage = new QWidget(m_categoryTabs);
+			const WorkflowDefinition& workflow = workflows[workflowIndex];
+			QPushButton* groupButton = new QPushButton(workflow.Title, panel);
+			groupButton->setObjectName("WorkflowGroupButton");
+			groupButton->setCheckable(true);
+			groupButton->setMinimumHeight(30);
+			groupButton->setProperty("WorkflowIndex", workflowIndex);
+			groupButton->setToolTip(workflow.Subtitle);
+			m_workflowGroupButtonGroup->addButton(groupButton);
+			groupLayout->addWidget(groupButton);
+			if (workflowIndex == 0)
+			{
+				groupButton->setChecked(true);
+			}
+
+			QWidget* tabPage = new QWidget(m_operationStack);
 			QVBoxLayout* actionLayout = new QVBoxLayout();
-			actionLayout->setContentsMargins(0, 8, 0, 0);
+			actionLayout->setContentsMargins(0, 0, 0, 0);
 			actionLayout->setSpacing(2);
 			for (int index = 0; index < workflow.OperationIds.size(); ++index)
 			{
@@ -202,10 +243,18 @@ namespace SparkleLauncher
 			}
 			actionLayout->addStretch(1);
 			tabPage->setLayout(actionLayout);
-			m_categoryTabs->addTab(tabPage, workflow.Title);
+			const int pageIndex = m_operationStack->addWidget(tabPage);
+			for (const QString& operationId : workflow.OperationIds)
+			{
+				m_workflowPageByOperation.insert(operationId, pageIndex);
+			}
 		}
+		groupLayout->addStretch(1);
+		workflowLayout->addLayout(groupLayout, 0);
+		workflowLayout->addWidget(m_operationStack, 1);
+		connect(m_workflowGroupButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectWorkflowGroupButton);
 		connect(m_processButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectProcessButton);
-		layout->addWidget(m_categoryTabs);
+		layout->addLayout(workflowLayout, 1);
 		return panel;
 	}
 
@@ -232,7 +281,7 @@ namespace SparkleLauncher
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
 		layout->addWidget(m_activeOperationLabel);
 
-		m_activeOperationDescription = new QLabel("Choose a workflow from the left. Its parameters and run controls will appear here.", panel);
+		m_activeOperationDescription = new QLabel("Choose a workflow from the left.", panel);
 		m_activeOperationDescription->setObjectName("OperationDescription");
 		m_activeOperationDescription->setWordWrap(true);
 		layout->addWidget(m_activeOperationDescription);
@@ -335,15 +384,6 @@ namespace SparkleLauncher
 		activityLayout->addWidget(m_operationOutput, 3);
 		layout->addLayout(activityLayout);
 		return panel;
-	}
-
-	QLabel* LauncherMainWindow::CreatePageTitle(const QString& title, const QString& subtitle, QWidget* parent) const
-	{
-		const QString subtitleMarkup = subtitle.isEmpty() ? QString() : "<p>" + subtitle + "</p>";
-		QLabel* label = new QLabel("<h1>" + title + "</h1>" + subtitleMarkup, parent);
-		label->setObjectName("PageTitle");
-		label->setTextFormat(Qt::RichText);
-		return label;
 	}
 
 	QLabel* LauncherMainWindow::CreateSectionLabel(const QString& title) const
@@ -671,15 +711,15 @@ namespace SparkleLauncher
 			}
 		}
 
-		if (m_categoryTabs != nullptr)
+		if (m_operationStack != nullptr && m_workflowPageByOperation.contains(operationId))
 		{
-			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
-			for (int index = 0; index < workflows.size(); ++index)
+			const int workflowIndex = m_workflowPageByOperation.value(operationId);
+			m_operationStack->setCurrentIndex(workflowIndex);
+			if (m_workflowGroupButtonGroup != nullptr)
 			{
-				if (workflows[index].OperationIds.contains(operationId))
+				for (QAbstractButton* button : m_workflowGroupButtonGroup->buttons())
 				{
-					m_categoryTabs->setCurrentIndex(index);
-					break;
+					button->setChecked(button->property("WorkflowIndex").toInt() == workflowIndex);
 				}
 			}
 		}
@@ -792,7 +832,7 @@ namespace SparkleLauncher
 		    "QLabel { color: #c9d1d9; background: transparent; }"
 		    "#WorkflowSurface { background: #1f242b; }"
 		    "#OutputPanel { background: #1b2027; border-top: 1px solid #11161c; }"
-		    "#ActiveOperationLabel { color: #f0f3f6; font-size: 13pt; font-weight: 700; }"
+		    "#ActiveOperationLabel { color: #f0f3f6; font-size: 15pt; font-weight: 700; }"
 		    "#OperationDescription { color: #8b949e; line-height: 130%; }"
 		    "#ProgressLabel { color: #ffffff; font-size: 10.5pt; font-weight: 700; }"
 		    "#ProcessPanel { background: #1b2027; border-right: 1px solid #11161c; padding: 0; }"
@@ -804,16 +844,14 @@ namespace SparkleLauncher
 		    "QListWidget { background: transparent; border: none; border-radius: 0; padding: 0; outline: 0; }"
 		    "QListWidget::item { padding: 10px 12px; border-radius: 4px; color: #c9d1d9; }"
 		    "QListWidget::item:selected { background: #0969da; color: #ffffff; }"
-		    "QTabWidget#ProcessTabs::pane { border: none; background: transparent; margin-top: 8px; }"
-		    "QTabWidget#ProcessTabs QWidget { background: transparent; }"
-		    "QTabBar::tab { background: transparent; color: #8b949e; border: none; border-bottom: 2px solid transparent; padding: 8px 12px 9px 12px; font-weight: 650; }"
-		    "QTabBar::tab:selected { color: #f0f3f6; border-bottom: 2px solid #0969da; }"
-		    "QTabBar::tab:hover { color: #dce3ec; }"
+		    "#OperationStack { background: transparent; border: none; }"
+		    "#WorkflowRailTitle { color: #f0f3f6; font-size: 11pt; font-weight: 700; padding: 0 0 2px 0; }"
+		    "#WorkflowGroupButton { color: #8b949e; border: 1px solid transparent; border-radius: 4px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; background: transparent; min-width: 78px; }"
+		    "#WorkflowGroupButton:hover { background: #252b33; color: #dce3ec; }"
+		    "#WorkflowGroupButton:checked { background: #30363d; border: 1px solid #454c56; color: #f0f3f6; }"
 		    "#WorkflowButton { color: #dce3ec; border: 1px solid transparent; border-radius: 4px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600; background: transparent; }"
 		    "#WorkflowButton:hover { background: #252b33; border: 1px solid #343b45; }"
 		    "#WorkflowButton:checked { background: #0d419d; border: 1px solid #0969da; color: #ffffff; }"
-		    "#PageTitle h1 { color: #f0f3f6; font-size: 13pt; margin: 0; }"
-		    "#PageTitle p { color: #8b949e; margin-top: 4px; }"
 		    "#SectionLabel { color: #f0f3f6; font-size: 10.5pt; font-weight: 700; padding-top: 2px; }"
 		    "#FieldLabel { color: #9aa4af; font-size: 9pt; font-weight: 600; padding-top: 0; }"
 		    "#MutedLabel { color: #8b949e; padding: 6px 0; }"

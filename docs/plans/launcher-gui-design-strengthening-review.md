@@ -638,88 +638,317 @@ States:
 
 ## Improvement Roadmap
 
-### Stage 1: Structure and Hierarchy
+The stages below are written so each can be copied directly into an implementation prompt. Each stage should be completed as a focused UI pass. Keep backend behavior unchanged unless the stage explicitly calls out a backend-supported state or action.
 
-Goal: make the existing layout feel intentional without adding backend work.
+### Stage 1: Workflow Structure and Hierarchy
 
-Tasks:
+Implementation prompt:
 
-- Reduce `Workflows` title weight and remove redundant instruction text.
-- Evaluate replacing category tabs with vertical grouped navigation.
-- Make selected workflow title the primary text on screen.
-- Align left rail, detail panel, and activity panel to the same margin grid.
-- Keep no-selection and no-parameter states minimal.
+```text
+Refine the Sparkle Launcher main window hierarchy so the app reads as a workflow-first desktop tool. Keep the existing Qt Widgets architecture and backend operations. Focus on the left workflow chooser, selected workflow detail area, and overall visual hierarchy. Do not add new launcher workflows or backend features.
+```
 
-Validation:
+Goal:
 
-- Fresh launch screenshot feels calm without requiring explanation.
-- A new user can identify the first expected action in under 10 seconds.
+- Make the existing layout feel intentionally composed instead of assembled from independent panels.
+- Make the selected workflow the primary focus of the screen.
+- Preserve the fresh-sync order: Setup, Build, Cook, Run, Maintain.
 
-### Stage 2: Parameter Design
+Likely files:
 
-Goal: make operation settings feel contextual and professional.
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
 
-Tasks:
+Implementation tasks:
 
-- Split primary settings from advanced settings.
-- Hide force/trace/destructive checkboxes behind contextual Advanced disclosure.
-- Show destructive confirmations only when relevant.
-- Standardize parameter row widths and control heights.
+- Reduce the visual weight of the `Workflows` heading and remove redundant instruction copy if the layout already communicates selection.
+- Evaluate replacing the horizontal category tabs with a vertical grouped workflow rail. If keeping tabs, reduce their visual competition with the operation list.
+- Make the selected operation title the strongest text on the screen.
+- Align the workflow rail, detail panel, and activity panel to a shared spacing grid.
+- Keep the no-selection state minimal: one short instruction, no large explanatory block.
+- Keep the no-parameter state minimal: `No parameters`.
 
-Validation:
+Positive guardrails:
 
-- Build, Cook, Run, and Maintain panels all look like variations of one component.
-- No operation shows unnecessary text.
+- Prefer fewer nested panels and stronger alignment over new decoration.
+- Preserve compact GitHub Desktop-style restraint.
+- Keep selection separate from execution; selecting a workflow must not run it.
 
-### Stage 3: Activity and Output
+Negative guardrails:
 
-Goal: make long-running work feel inspectable instead of noisy.
-
-Tasks:
-
-- Compact activity area when no run exists.
-- Add run status styling for queued, running, done, and failed.
-- Add failure summary above output when a run fails.
-- Consider `Copy output` and `Open log` actions if backend paths are available.
+- Do not add landing-page, hero, or marketing-style UI.
+- Do not add global project rails or free-form parameter inputs.
+- Do not make maintenance actions prominent in the first-run path.
 
 Validation:
 
+- Build `SparkleLauncher` at the end of the stage.
+- Refresh and launch the packaged executable.
+- Run `git diff --check`.
+- Capture or inspect screenshots for Setup, Build, Cook, Run, and Maintain selections.
+
+Acceptance criteria:
+
+- A fresh launch feels calm without needing explanation.
+- A new user can infer the expected workflow order within 10 seconds.
+- The selected workflow title is visually stronger than left navigation labels.
+- The UI still exposes every existing operation.
+
+### Stage 2: Contextual Parameter Design
+
+Implementation prompt:
+
+```text
+Redesign the selected workflow parameter area so settings feel contextual, elegant, and low-noise. Keep all existing operation options reachable, but separate primary controls from advanced or risky controls. Do not introduce free-form text fields for bounded options.
+```
+
+Goal:
+
+- Make operation settings feel like scoped workflow decisions, not a raw settings form.
+- Reduce visible controls for common paths.
+- Make risky options obvious only when relevant.
+
+Likely files:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherSettings.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherSettings.cpp`
+
+Implementation tasks:
+
+- Split operation parameters into primary and advanced groups.
+- Keep primary controls visible:
+  - Project
+  - Profile
+  - Scope
+  - Shader package
+  - Frame limit
+- Move advanced or riskier controls behind a contextual `Advanced` disclosure:
+  - Force configure
+  - Force recook
+  - Confirm recook cleanup
+  - Backend override
+  - Enable trace
+  - Skip level switching
+  - Confirm clean
+- Reveal destructive confirmation controls only when the destructive option or scope makes them relevant.
+- Standardize parameter row widths, control heights, row gaps, and label alignment.
+- Keep no-parameter workflows visually calm and short.
+
+Positive guardrails:
+
+- Use explicit dropdowns and checkboxes for bounded choices.
+- Keep common workflows runnable without opening advanced controls.
+- Prefer local helper methods in `LauncherMainWindow` over new tiny classes unless repeated logic becomes hard to maintain.
+
+Negative guardrails:
+
+- Do not remove any existing backend-supported option.
+- Do not use long helper copy beside every control.
+- Do not make advanced options global if they only affect one operation family.
+
+Validation:
+
+- Build `SparkleLauncher` at the end of the stage.
+- Refresh and launch the packaged executable.
+- Run `git diff --check`.
+- Inspect Build, Cook Shaders, Smoke Test, Clean Workspace, and no-parameter workflows.
+
+Acceptance criteria:
+
+- Build, Cook, Run, and Maintain parameter pages feel like variations of one component.
+- Common paths show only primary controls by default.
+- Advanced/risky controls are still reachable and understandable.
+- No parameter page contains redundant section titles or unnecessary explanatory text.
+
+### Stage 3: Activity and Output Experience
+
+Implementation prompt:
+
+```text
+Redesign the activity and output area so long-running workflows are easy to monitor and failures are easier to recover from. Preserve concurrent run support and existing backend signals. Do not fake progress that the backend does not provide.
+```
+
+Goal:
+
+- Make running, completed, and failed work inspectable at a glance.
+- Reduce idle-state visual weight.
+- Keep raw output available without making it the only source of meaning.
+
+Likely files:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherBackend.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherBackend.cpp`
+
+Implementation tasks:
+
+- Compact the activity panel when no run has started.
+- Expand or visually emphasize the activity panel when one or more jobs are running.
+- Add clear per-run states in the activity list:
+  - Queued
+  - Running
+  - Done
+  - Failed
+- Keep global progress honest as job count progress, not step progress.
+- Show a concise failure summary before raw output when a run fails.
+- If backend log paths are already available, consider `Open log`; otherwise defer it.
+- Consider `Copy output` as a UI-only action because `QTextEdit` already holds the output text.
+
+Positive guardrails:
+
+- Preserve the ability to inspect output from older runs.
+- Make concurrent runs visually distinct.
+- Keep raw output selectable and readable.
+
+Negative guardrails:
+
+- Do not add Stop or Cancel unless backend cancellation exists.
+- Do not simulate progress percentages.
+- Do not hide raw output after failures.
+
+Validation:
+
+- Build `SparkleLauncher` at the end of the stage.
+- Refresh and launch the packaged executable.
+- Run `git diff --check`.
+- Start two concurrent workflows and verify the activity list remains understandable.
+- Inspect idle, running, completed, and failed or failure-like states where available.
+
+Acceptance criteria:
+
+- Idle activity state is compact and not visually dominant.
 - Two concurrent runs are understandable at a glance.
-- Failed run recovery is obvious without reading the entire log.
+- A failed run can be identified without reading the entire log.
+- Output remains available for every tracked run.
 
 ### Stage 4: Visual System Hardening
 
-Goal: make the launcher feel like a production design system.
+Implementation prompt:
 
-Tasks:
+```text
+Harden the Sparkle Launcher visual system so the UI feels consistent, modern, and intentionally designed. Keep the current dark desktop-tool direction, but consolidate color, spacing, typography, and state styling into a coherent local design system.
+```
 
-- Define color tokens in one local style section.
-- Define spacing constants for margins, rows, gaps, and panels.
-- Define typography roles and apply them consistently.
-- Add iconography only where it clarifies workflow or status.
+Goal:
+
+- Make Setup, Build, Cook, Run, and Maintain screens look like one product.
+- Reduce reliance on incidental Qt default spacing and styling.
+- Keep the visual language modest and elegant.
+
+Likely files:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
+- Optional only if structure demands it: `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+
+Implementation tasks:
+
+- Define local style roles in the stylesheet for:
+  - Background
+  - Panel
+  - Border
+  - Primary action
+  - Selection
+  - Success
+  - Warning/destructive
+  - Primary text
+  - Secondary text
+- Standardize margins, row heights, panel gaps, control heights, and border radii.
+- Reduce single-blue dominance by reserving filled blue for active selection and primary action.
+- Add status colors only where state needs them.
+- Add icons only where they clarify workflow group or run status.
+- Ensure text hierarchy stays restrained and readable at the minimum window size.
+
+Positive guardrails:
+
+- Prefer a small number of reusable object names and style rules.
+- Keep the design close to a native desktop productivity app.
+- Use spacing and typography before adding new containers.
+
+Negative guardrails:
+
+- Do not introduce decorative gradients, hero sections, or marketing visuals.
+- Do not add icons inconsistently.
+- Do not make every selected or focused element bright blue.
 
 Validation:
 
-- Screenshots of Setup, Build, Cook, Run, and Maintain look like one product.
-- No section relies on accidental Qt default spacing.
+- Build `SparkleLauncher` at the end of the stage.
+- Refresh and launch the packaged executable.
+- Run `git diff --check`.
+- Inspect screenshots of all workflow groups and at least one running state.
 
-### Stage 5: Accessibility and Edge Cases
+Acceptance criteria:
 
-Goal: make the launcher robust under real desktop usage.
+- Screenshots of each workflow group clearly belong to the same design system.
+- Visual hierarchy is consistent across selected operations.
+- No section appears as an accidental nested Qt default widget.
+- The app remains compact and calm.
 
-Tasks:
+### Stage 5: Accessibility, Edge Cases, and Production UX
 
-- Verify keyboard tab order.
-- Verify focus rings and contrast.
-- Test minimum window size.
-- Test no projects discovered.
-- Test failed toolchain discovery.
-- Test multiple concurrent failures.
+Implementation prompt:
+
+```text
+Audit and improve Sparkle Launcher accessibility, edge cases, and production UX states. Focus on keyboard usability, focus visibility, minimum window behavior, empty states, and failure states. Keep feature scope limited to UX robustness.
+```
+
+Goal:
+
+- Make the launcher robust under real desktop usage.
+- Ensure empty and failed states feel designed.
+- Make the UI easier to defend in a professional product review.
+
+Likely files:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherProjectModel.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherProjectModel.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherBackend.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherBackend.cpp`
+
+Implementation tasks:
+
+- Verify and adjust keyboard tab order through workflow groups, operation rows, parameters, Run, activity list, and output.
+- Ensure focus states are visible and distinct from hover and selected states.
+- Test the minimum window size and fix overlapping or clipped text.
+- Improve no-projects-discovered state.
+- Improve project discovery failure messaging.
+- Improve missing-toolchain path by directing the user toward Setup or Check Toolchain.
+- Improve multiple concurrent failure presentation.
+- Ensure selected state is not communicated by color alone.
+
+Positive guardrails:
+
+- Prefer clear state and recovery over more explanatory copy.
+- Keep raw technical detail available after concise failure summary.
+- Preserve existing backend operation parity.
+
+Negative guardrails:
+
+- Do not add a tutorial system.
+- Do not add nonfunctional buttons.
+- Do not hide failures behind generic messages.
 
 Validation:
 
-- The app remains usable without mouse-only assumptions.
-- Empty and failed states are designed, not incidental.
+- Build `SparkleLauncher` at the end of the stage.
+- Refresh and launch the packaged executable.
+- Run `git diff --check`.
+- Manually test keyboard navigation.
+- Manually test minimum window size.
+- Test or simulate no-project and failed-run states where practical.
+
+Acceptance criteria:
+
+- The app can be navigated without mouse-only assumptions.
+- Focus is visible and predictable.
+- Empty states are short and useful.
+- Failure states communicate what happened and preserve raw output.
+- The launcher feels robust enough for daily engine workflow use.
 
 ## Near-Term Design Direction
 
