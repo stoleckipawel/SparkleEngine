@@ -42,7 +42,6 @@ namespace SparkleLauncher
 		QVBoxLayout* rootLayout = new QVBoxLayout(centralWidget);
 		rootLayout->setContentsMargins(0, 0, 0, 0);
 		rootLayout->setSpacing(0);
-		rootLayout->addWidget(CreateAppHeader());
 
 		QHBoxLayout* bodyLayout = new QHBoxLayout();
 		bodyLayout->setContentsMargins(0, 0, 0, 0);
@@ -157,31 +156,6 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		SetStatusMessage(title + " finished: " + statusText);
 		UpdateProgress();
-	}
-
-	QWidget* LauncherMainWindow::CreateAppHeader()
-	{
-		QFrame* header = new QFrame(this);
-		header->setObjectName("AppHeader");
-		QHBoxLayout* layout = new QHBoxLayout(header);
-		layout->setContentsMargins(18, 10, 18, 10);
-		layout->setSpacing(24);
-
-		QLabel* repositoryLabel = new QLabel("Current repository\n<b>" + QString::fromStdString(m_repositoryRoot.filename().string()) + "</b>", header);
-		repositoryLabel->setObjectName("HeaderContextLabel");
-		repositoryLabel->setTextFormat(Qt::RichText);
-		layout->addWidget(repositoryLabel);
-
-		QLabel* modeLabel = new QLabel("Launcher mode\n<b>Local workflows</b>", header);
-		modeLabel->setObjectName("HeaderContextLabel");
-		modeLabel->setTextFormat(Qt::RichText);
-		layout->addWidget(modeLabel);
-
-		layout->addStretch(1);
-		QLabel* hintLabel = new QLabel("Select a workflow to configure and run", header);
-		hintLabel->setObjectName("HeaderHintLabel");
-		layout->addWidget(hintLabel);
-		return header;
 	}
 
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
@@ -816,10 +790,6 @@ namespace SparkleLauncher
 		setStyleSheet(
 		    "QMainWindow, QWidget { background: #1f242b; color: #dce3ec; font-family: 'Segoe UI'; font-size: 10pt; }"
 		    "QLabel { color: #c9d1d9; background: transparent; }"
-		    "#AppHeader { background: #1b2027; border-bottom: 1px solid #0f1318; }"
-		    "#HeaderContextLabel { color: #8b949e; font-size: 9pt; }"
-		    "#HeaderContextLabel b { color: #f0f3f6; font-weight: 700; }"
-		    "#HeaderHintLabel { color: #8b949e; }"
 		    "#WorkflowSurface { background: #1f242b; }"
 		    "#OutputPanel { background: #1b2027; border-top: 1px solid #11161c; }"
 		    "#ActiveOperationLabel { color: #f0f3f6; font-size: 13pt; font-weight: 700; }"

@@ -59,7 +59,6 @@ namespace SparkleLauncher
 			QVector<QString> OperationIds;
 		};
 
-		QWidget* CreateAppHeader();
 		QWidget* CreateWorkflowSurface();
 		QWidget* CreateProcessPicker(QWidget* parent);
 		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
