@@ -46,6 +46,7 @@ namespace SparkleLauncher
 		void SelectWorkflowGroupButton(QAbstractButton* button);
 		void SelectProcessButton(QAbstractButton* button);
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
+		void CopySelectedRunOutput();
 		void RunSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
@@ -59,6 +60,14 @@ namespace SparkleLauncher
 			QVector<QString> OperationIds;
 		};
 
+		enum class RunState
+		{
+			Queued,
+			Running,
+			Done,
+			Failed,
+		};
+
 		QWidget* CreateWorkflowSurface();
 		QWidget* CreateProcessPicker(QWidget* parent);
 		QPushButton* CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent);
@@ -67,13 +76,14 @@ namespace SparkleLauncher
 		QWidget* CreateOutputPanel();
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
-		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, void (LauncherSettings::*setter)(bool));
+		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
 		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
-		void AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
-		void AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
+		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
+		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
+		QVBoxLayout* AddAdvancedSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
@@ -84,6 +94,7 @@ namespace SparkleLauncher
 		void SetStatusMessage(const QString& message);
 		void SetSelectedOperation(const QString& operationId);
 		void RegisterRun(const QString& runId, const QString& title);
+		void SetRunState(const QString& runId, RunState state, const QString& title);
 		void AppendRunOutput(const QString& runId, const QString& text);
 		void ShowRunOutput(const QString& runId);
 		void UpdateProgress();
@@ -109,7 +120,9 @@ namespace SparkleLauncher
 		QLabel* m_activeOperationDescription = nullptr;
 		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
+		QWidget* m_activityDetailsPanel = nullptr;
 		QListWidget* m_activityList = nullptr;
+		QPushButton* m_copyOutputButton = nullptr;
 		QHash<QString, QListWidgetItem*> m_runItems;
 		QHash<QString, QString> m_runOutputs;
 		QString m_activeRunId;
