@@ -23,22 +23,22 @@ set(SPARKLE_LAUNCHER_CORE_FOUNDATION_SOURCES
 )
 
 set(SPARKLE_LAUNCHER_CORE_BUILD_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildFilesFreshness.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildFreshnessSignature.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildToolchainDetection.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceExecutor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceOperations.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspacePlanner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceProcessRequests.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceStateFiles.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/CMakeWorkflowProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFilesFreshness.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFreshnessSignature.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildToolchainDetection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceExecutor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspacePlanner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceProcessRequests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.cpp
 )
 
 set(SPARKLE_LAUNCHER_CORE_BUILD_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildFreshnessSignature.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceProcessRequests.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/BuildWorkspaceStateFiles.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow/CMakeWorkflowProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildFreshnessSignature.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceProcessRequests.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/BuildWorkspaceStateFiles.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build/CMakeWorkflowProcessRequests.h
 )
 
 set(SPARKLE_LAUNCHER_CORE_COOK_SOURCES
@@ -120,7 +120,7 @@ target_include_directories(SparkleLauncherCore
         ${CMAKE_CURRENT_SOURCE_DIR}/Public
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Core
-        ${CMAKE_CURRENT_SOURCE_DIR}/Private/BuildWorkflow
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Build
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Cook
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Maintenance
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Launch
