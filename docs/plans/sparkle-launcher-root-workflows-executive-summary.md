@@ -151,13 +151,13 @@ For first release, do not build an in-app self-update or self-rebuild feature. A
 
 Setup:
 - User outcome: repository is configured and ready for coding.
-- Code owner: `Private/BuildWorkflow`.
+- Code owner: `Private/Build`.
 - Entry workflows: `Setup Workspace`, `Generate Solution`, `Check Toolchain`.
 - Release expectation: a fresh user can reach a generated solution without knowing CMake command lines.
 
 Build:
 - User outcome: selected project editor/runtime targets compile.
-- Code owner: `Private/BuildWorkflow` plus CMake target definitions.
+- Code owner: `Private/Build` plus CMake target definitions.
 - Entry workflows: `Compile Editor`, `Compile Runtime`, `Build Cook Tools`.
 - Release expectation: common target/profile choices are visible and understandable.
 

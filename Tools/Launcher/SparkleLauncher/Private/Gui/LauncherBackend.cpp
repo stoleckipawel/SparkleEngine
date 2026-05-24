@@ -4,6 +4,7 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
 #include "SparkleLauncher/MaintenanceOperations.h"
+#include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QThread>
 
@@ -25,6 +26,19 @@ namespace SparkleLauncher
 			if (!trimmed.isEmpty())
 			{
 				values.push_back(trimmed.toStdString());
+			}
+		}
+		return values;
+	}
+
+	static std::vector<std::string> SplitCommandLineArguments(const QString& text)
+	{
+		std::vector<std::string> values;
+		for (const QString& part : QProcess::splitCommand(text))
+		{
+			if (!part.isEmpty())
+			{
+				values.push_back(part.toStdString());
 			}
 		}
 		return values;
@@ -174,6 +188,8 @@ namespace SparkleLauncher
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
 		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
+		launchRequest.CustomArguments = SplitCommandLineArguments(request.LaunchCommandLineArguments);
+		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
 		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
 		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
 		launchRequest.SmokeTrace = request.SmokeTrace;

@@ -158,6 +158,14 @@ namespace SparkleLauncher
 		{
 			plan.Operation.Inputs.push_back({"r.MeshAutoBatching", request.MeshAutoBatching});
 		}
+		if (!request.CustomArguments.empty())
+		{
+			plan.Operation.Inputs.push_back({"customArguments", std::to_string(request.CustomArguments.size())});
+		}
+		if (!request.CustomCVars.empty())
+		{
+			plan.Operation.Inputs.push_back({"customCVars", std::to_string(request.CustomCVars.size())});
+		}
 		PopulateRhiSmokeLaunchInputs(plan);
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 
@@ -203,6 +211,14 @@ namespace SparkleLauncher
 		if (!request.MeshAutoBatching.empty())
 		{
 			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + request.MeshAutoBatching + ".");
+		}
+		if (!request.CustomArguments.empty())
+		{
+			AddPlannedEffect(plan, "Append " + std::to_string(request.CustomArguments.size()) + " custom command-line argument(s).");
+		}
+		for (const std::string& customCVar : request.CustomCVars)
+		{
+			AddPlannedEffect(plan, "Set " + customCVar + ".");
 		}
 		for (const std::string& effect : GetRhiSmokeLaunchPlannedEffects(plan))
 		{

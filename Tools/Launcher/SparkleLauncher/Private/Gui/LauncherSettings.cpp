@@ -47,6 +47,16 @@ namespace SparkleLauncher
 		return m_launchMeshAutoBatching;
 	}
 
+	const QString& LauncherSettings::LaunchCommandLineArguments() const
+	{
+		return m_launchCommandLineArguments;
+	}
+
+	const QString& LauncherSettings::LaunchCVars() const
+	{
+		return m_launchCVars;
+	}
+
 	const QString& LauncherSettings::SmokeBackend() const
 	{
 		return m_smokeBackend;
@@ -152,6 +162,18 @@ namespace SparkleLauncher
 	void LauncherSettings::SetLaunchMeshAutoBatching(const QString& value)
 	{
 		m_launchMeshAutoBatching = value;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchCommandLineArguments(const QString& arguments)
+	{
+		m_launchCommandLineArguments = arguments;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchCVars(const QString& cvars)
+	{
+		m_launchCVars = cvars;
 		emit SettingsChanged();
 	}
 

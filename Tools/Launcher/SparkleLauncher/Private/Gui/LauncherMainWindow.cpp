@@ -4,6 +4,7 @@
 #include "LauncherProjectModel.h"
 #include "LauncherSettings.h"
 
+#include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/LaunchOperations.h"
 
@@ -40,13 +41,13 @@ namespace SparkleLauncher
 	static constexpr int kSpaceSmall = 8;
 	static constexpr int kSpaceMedium = 12;
 	static constexpr int kSpaceLarge = 16;
-	static constexpr int kPanelHorizontalMargin = 22;
-	static constexpr int kPanelVerticalMargin = 18;
-	static constexpr int kWorkflowRailWidth = 346;
+	static constexpr int kPanelHorizontalMargin = 18;
+	static constexpr int kPanelVerticalMargin = 14;
+	static constexpr int kWorkflowRailWidth = 332;
 	static constexpr int kWorkflowGroupMinHeight = 30;
 	static constexpr int kWorkflowButtonMinHeight = 32;
 	static constexpr int kFieldLabelWidth = 116;
-	static constexpr int kActivityListWidth = 280;
+	static constexpr int kActivityListWidth = 260;
 	static constexpr int kActivityListMaxHeight = 146;
 	static constexpr int kOperationOutputMinHeight = 96;
 	static constexpr int kOperationOutputCompactMaxHeight = 128;
@@ -142,6 +143,85 @@ namespace SparkleLauncher
 			return repositoryRoot / "logs";
 		}
 		return repositoryRoot;
+	}
+
+	static QString FormatStatusPath(const std::filesystem::path& path)
+	{
+		return path.empty() ? QString() : QString::fromStdString(path.string());
+	}
+
+	static bool DirectoryHasEntries(const std::filesystem::path& path)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(path, errorCode))
+		{
+			return false;
+		}
+		return std::filesystem::directory_iterator(path, errorCode) != std::filesystem::directory_iterator();
+	}
+
+	static QString ToolchainStatusState(ToolchainItemState state, bool required)
+	{
+		switch (state)
+		{
+		case ToolchainItemState::Found:
+			return "ok";
+		case ToolchainItemState::Warning:
+			return required ? "warning" : "neutral";
+		case ToolchainItemState::Missing:
+			return required ? "bad" : "neutral";
+		}
+		return "neutral";
+	}
+
+	static QString ToolchainStatusText(ToolchainItemState state, bool required)
+	{
+		switch (state)
+		{
+		case ToolchainItemState::Found:
+			return "Ready";
+		case ToolchainItemState::Warning:
+			return required ? "Warning" : "Optional";
+		case ToolchainItemState::Missing:
+			return required ? "Missing" : "Optional";
+		}
+		return "Unknown";
+	}
+
+	static QString BuildGeneratorSummary(const BuildToolchainStatus& toolchain)
+	{
+		return QStringLiteral("Generator: %1 | Platform: %2%3")
+		    .arg(QString::fromStdString(toolchain.Generator))
+		    .arg(QString::fromStdString(toolchain.Platform))
+		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" | Toolset: %1").arg(QString::fromStdString(toolchain.Toolset)));
+	}
+
+	static QString RequiredToolProblemSummary(const BuildToolchainStatus& toolchain)
+	{
+		QStringList problems;
+		for (const ToolchainItemStatus& item : toolchain.Items)
+		{
+			if (!item.Required || item.State == ToolchainItemState::Found)
+			{
+				continue;
+			}
+			problems.push_back(QString::fromStdString(item.DisplayName));
+		}
+
+		return problems.isEmpty() ? QString() : "Missing or blocked: " + problems.join(", ");
+	}
+
+	static QString CombineStatusDetail(const QString& first, const QString& second)
+	{
+		if (first.isEmpty())
+		{
+			return second;
+		}
+		if (second.isEmpty())
+		{
+			return first;
+		}
+		return first + " | " + second;
 	}
 
 	LauncherMainWindow::LauncherMainWindow(
@@ -352,8 +432,8 @@ namespace SparkleLauncher
 		QFrame* surface = new QFrame(this);
 		surface->setObjectName("WorkflowSurface");
 		QHBoxLayout* layout = new QHBoxLayout(surface);
-		layout->setContentsMargins(kSpaceLarge, kSpaceLarge, kSpaceLarge, kSpaceLarge);
-		layout->setSpacing(kSpaceLarge);
+		layout->setContentsMargins(kSpaceMedium, kSpaceMedium, kSpaceMedium, kSpaceMedium);
+		layout->setSpacing(kSpaceMedium);
 		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
 		return surface;
@@ -635,6 +715,34 @@ namespace SparkleLauncher
 		return box;
 	}
 
+	QLineEdit* LauncherMainWindow::CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	{
+		QLineEdit* edit = new QLineEdit(this);
+		edit->setText(text);
+		edit->setPlaceholderText(placeholder);
+		edit->setToolTip(tooltip);
+		edit->setAccessibleDescription(tooltip);
+		RegisterFocusable(edit);
+		connect(edit, &QLineEdit::textChanged, &m_settings, setter);
+		return edit;
+	}
+
+	QTextEdit* LauncherMainWindow::CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	{
+		QTextEdit* edit = new QTextEdit(this);
+		edit->setPlainText(text);
+		edit->setPlaceholderText(placeholder);
+		edit->setToolTip(tooltip);
+		edit->setAccessibleDescription(tooltip);
+		edit->setMinimumHeight(78);
+		edit->setMaximumHeight(118);
+		RegisterFocusable(edit);
+		connect(edit, &QTextEdit::textChanged, this, [edit, setter, this]() {
+			(m_settings.*setter)(edit->toPlainText());
+		});
+		return edit;
+	}
+
 	QComboBox* LauncherMainWindow::CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&))
 	{
 		QComboBox* combo = new QComboBox(this);
@@ -689,7 +797,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
-			AddNoOptionsMessage(layout, "No settings");
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -698,6 +806,7 @@ namespace SparkleLauncher
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -706,6 +815,7 @@ namespace SparkleLauncher
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -713,6 +823,7 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
 			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -776,11 +887,13 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			QVBoxLayout* appOptionsLayout = AddInlineOptionsSection(layout);
+			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and runtime CVars passed to the editor process.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"Default", ""}, {"High performance", "true"}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
 			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
+			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
+			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
 			return;
 		}
 
@@ -788,11 +901,13 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			QVBoxLayout* appOptionsLayout = AddInlineOptionsSection(layout);
+			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and runtime CVars passed to the runtime process.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"Default", ""}, {"High performance", "true"}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
 			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"Default", ""}, {"On", "true"}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
+			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
+			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
 			return;
 		}
 
@@ -814,9 +929,15 @@ namespace SparkleLauncher
 		if (operationId.startsWith("smoke."))
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Frame limit", CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			QVBoxLayout* smokeOptionsLayout = AddInlineOptionsSection(layout);
-			AddOptionField(*smokeOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
+			const bool editorSmoke = operationId.endsWith("editor");
+			AddOptionField(layout, "Profile", editorSmoke ? CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile) : CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
+			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and CVars passed before smoke validation starts.");
+			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"Default backend", ""}, {"D3D12", "d3d12"}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
+			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
+			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
+
+			QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
+			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"Default frame limit (120)", ""}, {"60 frames", "60"}, {"120 frames", "120"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
@@ -899,7 +1020,7 @@ namespace SparkleLauncher
 		rowLayout->setSpacing(kSpaceMedium + kSpaceTiny);
 
 		QLabel* fieldLabel = CreateFieldLabel(label);
-		fieldLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+		fieldLabel->setAlignment(Qt::AlignLeft | (qobject_cast<QTextEdit*>(control) != nullptr ? Qt::AlignTop : Qt::AlignVCenter));
 		fieldLabel->setFixedWidth(kFieldLabelWidth);
 		fieldLabel->setBuddy(control);
 		if (control->accessibleName().isEmpty() || control->accessibleName() == "Option value")
@@ -927,6 +1048,132 @@ namespace SparkleLauncher
 		rowLayout->addWidget(checkBox, 1);
 		layout.addWidget(row);
 		return row;
+	}
+
+	QVBoxLayout* LauncherMainWindow::AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail)
+	{
+		QFrame* group = new QFrame(this);
+		group->setObjectName("OptionGroup");
+		QVBoxLayout* groupLayout = new QVBoxLayout(group);
+		groupLayout->setContentsMargins(kSpaceMedium, kSpaceSmall + kSpaceTiny, kSpaceMedium, kSpaceMedium);
+		groupLayout->setSpacing(kSpaceSmall);
+
+		QLabel* titleLabel = new QLabel(title, group);
+		titleLabel->setObjectName("OptionGroupTitle");
+		groupLayout->addWidget(titleLabel);
+
+		if (!detail.isEmpty())
+		{
+			QLabel* detailLabel = new QLabel(detail, group);
+			detailLabel->setObjectName("OptionHelpText");
+			detailLabel->setWordWrap(true);
+			groupLayout->addWidget(detailLabel);
+		}
+
+		layout.addWidget(group);
+		return groupLayout;
+	}
+
+	void LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state)
+	{
+		QFrame* row = new QFrame(this);
+		row->setObjectName("StatusRow");
+		QVBoxLayout* rowLayout = new QVBoxLayout(row);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(kSpaceTiny);
+
+		QHBoxLayout* summaryLayout = new QHBoxLayout();
+		summaryLayout->setContentsMargins(0, 0, 0, 0);
+		summaryLayout->setSpacing(kSpaceSmall);
+
+		QLabel* nameLabel = new QLabel(label, row);
+		nameLabel->setObjectName("StatusLabel");
+		summaryLayout->addWidget(nameLabel, 1);
+
+		QLabel* statusLabel = new QLabel(status, row);
+		statusLabel->setObjectName("StatusValue");
+		statusLabel->setProperty("State", state);
+		summaryLayout->addWidget(statusLabel, 0, Qt::AlignRight);
+		rowLayout->addLayout(summaryLayout);
+
+		if (!detail.isEmpty())
+		{
+			QLabel* detailLabel = new QLabel(detail, row);
+			detailLabel->setObjectName("StatusDetail");
+			detailLabel->setWordWrap(true);
+			rowLayout->addWidget(detailLabel);
+		}
+
+		layout.addWidget(row);
+	}
+
+	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
+	{
+		BuildWorkspaceOperationRequest request;
+		request.RepositoryRoot = m_repositoryRoot;
+		request.ProjectId = m_projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : m_projectModel.SelectedProjectId().toStdString();
+		request.EditorProfile = m_settings.EditorProfile().toStdString();
+		request.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
+		request.ForceConfigure = m_settings.ForceConfigure();
+
+		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
+		QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Environment Status", "Current host tools used by build, cook, and solution workflows.");
+		AddStatusRow(
+		    *toolchainLayout,
+		    "Required tools",
+		    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Incomplete",
+		    QStringLiteral("Generator: %1 | Platform: %2%3")
+		        .arg(QString::fromStdString(plan.Toolchain.Generator))
+		        .arg(QString::fromStdString(plan.Toolchain.Platform))
+		        .arg(plan.Toolchain.Toolset.empty() ? QString() : QStringLiteral(" | Toolset: %1").arg(QString::fromStdString(plan.Toolchain.Toolset))),
+		    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
+
+		for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+		{
+			QString detail = QString::fromStdString(item.Detail);
+			const QString path = FormatStatusPath(item.Path);
+			if (!path.isEmpty())
+			{
+				detail += detail.isEmpty() ? path : " | " + path;
+			}
+			AddStatusRow(
+			    *toolchainLayout,
+			    QString::fromStdString(item.DisplayName) + (item.Required ? "" : " (optional)"),
+			    ToolchainStatusText(item.State, item.Required),
+			    detail,
+			    ToolchainStatusState(item.State, item.Required));
+		}
+
+		QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Workspace State", "Generated files and dependency cache state that affect whether commands can run immediately.");
+		AddStatusRow(
+		    *workspaceLayout,
+		    "Build files",
+		    plan.Freshness.Current ? "Current" : "Needs refresh",
+		    QString::fromStdString(plan.Freshness.Summary) + " | " + QString::fromStdString(plan.Freshness.SolutionPath.string()),
+		    plan.Freshness.Current ? "ok" : "warning");
+
+		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		const bool dependencyCacheReady = DirectoryHasEntries(dependencyCachePath);
+		AddStatusRow(
+		    *workspaceLayout,
+		    "Dependency cache",
+		    dependencyCacheReady ? "Present" : "Not populated",
+		    QString::fromStdString(dependencyCachePath.string()),
+		    dependencyCacheReady ? "ok" : "warning");
+
+		if (!plan.ReadinessMessages.empty())
+		{
+			QVBoxLayout* actionLayout = AddOptionGroup(layout, "Suggested Action", "What the selected workflow will do from this state.");
+			for (const std::string& message : plan.ReadinessMessages)
+			{
+				const QString text = QString::fromStdString(message);
+				AddStatusRow(*actionLayout, "Readiness", text.contains("missing", Qt::CaseInsensitive) || text.contains("incomplete", Qt::CaseInsensitive) ? "Attention" : "Info", text, text.contains("missing", Qt::CaseInsensitive) || text.contains("incomplete", Qt::CaseInsensitive) ? "warning" : "neutral");
+			}
+			for (const std::string& effect : plan.PlannedEffects)
+			{
+				AddStatusRow(*actionLayout, "Effect", "Planned", QString::fromStdString(effect), "neutral");
+			}
+		}
 	}
 
 	QVBoxLayout* LauncherMainWindow::AddInlineOptionsSection(QVBoxLayout& layout)
@@ -1271,6 +1518,8 @@ namespace SparkleLauncher
 		request.LaunchVSync = m_settings.LaunchVSync();
 		request.LaunchHighPerformanceAdapter = m_settings.LaunchHighPerformanceAdapter();
 		request.LaunchMeshAutoBatching = m_settings.LaunchMeshAutoBatching();
+		request.LaunchCommandLineArguments = m_settings.LaunchCommandLineArguments();
+		request.LaunchCVars = m_settings.LaunchCVars();
 		request.SmokeBackend = m_settings.SmokeBackend();
 		request.SmokeFrameLimit = m_settings.SmokeFrameLimit();
 		request.FormatMode = m_settings.FormatMode();
@@ -1739,24 +1988,27 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
-		const QString background = "#1f242b";
-		const QString shell = "#1b2027";
-		const QString panel = "#242a32";
-		const QString panelHover = "#2b323b";
-		const QString field = "#1f252d";
-		const QString border = "#343b45";
-		const QString borderStrong = "#454c56";
-		const QString divider = "#11161c";
-		const QString focus = "#c9d1d9";
-		const QString primary = "#0969da";
-		const QString primaryHover = "#1f7eed";
-		const QString selection = "#0d419d";
+		const QString background = "#2b2b2b";
+		const QString shell = "#242424";
+		const QString panel = "#343434";
+		const QString panelRaised = "#3a3a3a";
+		const QString panelHover = "#3f3f3f";
+		const QString field = "#262626";
+		const QString border = "#1b1b1b";
+		const QString borderSoft = "#454545";
+		const QString borderStrong = "#5b5b5b";
+		const QString divider = "#191919";
+		const QString focus = "#d0d7de";
+		const QString primary = "#1479c9";
+		const QString primaryHover = "#2388da";
+		const QString selection = "#0f6fb9";
+		const QString accent = "#76b900";
 		const QString warning = QString::fromLatin1(kColorStateWarning);
 		const QString destructive = QString::fromLatin1(kColorStateDestructive);
-		const QString textPrimary = "#f0f3f6";
-		const QString textBody = "#dce3ec";
-		const QString textSecondary = "#9aa4af";
-		const QString textMuted = "#8b949e";
+		const QString textPrimary = "#f4f4f4";
+		const QString textBody = "#dddddd";
+		const QString textSecondary = "#c1c1c1";
+		const QString textMuted = "#9a9a9a";
 
 		QString style;
 		const auto addRule = [&style](const QString& selector, const QString& body) {
@@ -1766,57 +2018,68 @@ namespace SparkleLauncher
 		addRule("QMainWindow, QWidget", "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 10pt;");
 		addRule("QLabel", "color: " + textBody + "; background: transparent;");
 		addRule("#WorkflowSurface", "background: " + background + ";");
-		addRule("#ProcessPanel", "background: " + shell + "; border-right: 1px solid " + divider + "; padding: 0;");
-		addRule("#OptionsPanel", "background: " + panel + "; border: 1px solid " + border + "; border-radius: 6px;");
-		addRule("#OutputPanel", "background: " + shell + "; border-top: 1px solid " + divider + ";");
+		addRule("#ProcessPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + shell + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; padding: 0;");
+		addRule("#OptionsPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + panel + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 2px;");
+		addRule("#OutputPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + ";");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; min-height: 36px;");
+		addRule("#OptionGroup", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #303030, stop:1 #292929); border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; margin-top: 8px;");
 
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15pt; font-weight: 700;");
 		addRule("#OperationDescription", "color: " + textMuted + "; line-height: 130%;");
 		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 11pt; font-weight: 700; padding: 0 0 2px 0;");
 		addRule("#SectionLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700; padding-top: 2px;");
+		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 700; padding: 0 0 0 6px; border-left: 3px solid " + accent + ";");
 		addRule("#FieldLabel", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600; padding-top: 0;");
+		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8.5pt; line-height: 125%;");
+		addRule("#StatusRow", "background: #262626; border: 1px solid #1f1f1f; border-top-color: #3b3b3b; padding: 7px 9px;");
+		addRule("#StatusLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 650;");
+		addRule("#StatusValue", "color: " + textMuted + "; font-size: 8.5pt; font-weight: 700; padding: 2px 7px; border: 1px solid #3d3d3d; background: #303030;");
+		addRule("#StatusValue[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
+		addRule("#StatusValue[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addRule("#StatusValue[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
+		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.5pt;");
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 6px 0;");
 		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700;");
 		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 9pt; font-weight: 600; padding: 0 0 2px 4px;");
 
-		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; border-radius: 4px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
+		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; border-radius: 2px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
 		addRule("#WorkflowGroupButton:hover", "background: " + panel + "; color: " + textBody + ";");
-		addRule("#WorkflowGroupButton:checked", "background: " + field + "; color: " + textPrimary + "; border: 1px solid " + borderStrong + ";");
+		addRule("#WorkflowGroupButton:checked", "background: #303030; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
 		addRule("#WorkflowGroupButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; border-radius: 4px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600;");
+		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; border-radius: 2px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600;");
 		addRule("#WorkflowButton:hover", "background: " + panelHover + "; border: 1px solid " + border + ";");
-		addRule("#WorkflowButton:checked", "background: " + selection + "; border: 1px solid " + primary + "; color: #ffffff;");
+		addRule("#WorkflowButton:checked", "background: " + selection + "; border: 1px solid #48a2df; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 
-		addRule("QPushButton", "background: " + primary + "; color: #ffffff; border: none; border-radius: 4px; padding: 8px 14px; font-weight: 650;");
+		addRule("QPushButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + primaryHover + ", stop:1 " + primary + "); color: #ffffff; border: 1px solid #0c4f86; border-top-color: #5aaae4; border-radius: 2px; padding: 8px 14px; font-weight: 650;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
-		addRule("QPushButton:disabled", "background: " + border + "; color: " + textMuted + ";");
+		addRule("QPushButton:disabled", "background: #3a3a3a; border: 1px solid " + border + "; color: " + textMuted + ";");
 		addRule("#PrimaryActionButton", "background: " + primary + "; min-width: 96px;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
-		addRule("#SecondaryButton", "background: " + border + "; color: " + textBody + "; border: 1px solid " + borderStrong + ";");
+		addRule("#SecondaryButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #4b4b4b, stop:1 #3b3b3b); color: " + textBody + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + ";");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
 		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("QComboBox, QTextEdit", "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 4px; padding: 7px 9px; color: " + textBody + "; selection-background-color: " + selection + ";");
-		addRule("QComboBox:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
+		addRule("QComboBox, QLineEdit, QTextEdit", "background: " + field + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; padding: 7px 9px; color: " + textBody + "; selection-background-color: " + selection + ";");
+		addRule("QComboBox:focus, QLineEdit:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
 		addRule("QComboBox:disabled", "background: " + shell + "; border: 1px solid " + border + "; color: " + textMuted + ";");
 		addRule("QCheckBox", "spacing: 8px; padding: 3px 0; color: " + textBody + ";");
-		addRule("QCheckBox:focus", "border: 1px solid " + focus + "; border-radius: 4px; color: " + textPrimary + ";");
+		addRule("QCheckBox:focus", "border: 1px solid " + focus + "; border-radius: 2px; color: " + textPrimary + ";");
 		addRule("QCheckBox:disabled", "color: " + textMuted + ";");
 		addRule("#WarningCheckBox", "color: " + warning + ";");
 		addRule("#DestructiveCheckBox", "color: " + destructive + ";");
 
 		addRule("QListWidget", "background: transparent; border: none; border-radius: 0; padding: 0; outline: 0;");
 		addRule("QListWidget:focus", "border: 1px solid " + focus + ";");
-		addRule("QListWidget::item", "padding: 9px 11px; border-radius: 4px; color: " + textBody + ";");
+		addRule("QListWidget::item", "padding: 8px 10px; border-radius: 2px; color: " + textBody + ";");
 		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
-		addRule("#ActivityList", "background: transparent; border: none; border-right: 1px solid " + border + "; border-radius: 0; padding: 0 12px 0 0;");
+		addRule("#ActivityDetailsPanel", "background: #303030; border: 1px solid " + border + "; border-top-color: " + borderSoft + ";");
+		addRule("#ActivityList", "background: #282828; border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 0; padding: 0;");
 		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt;");
-		addRule("QProgressBar", "background: " + border + "; border: none; border-radius: 3px; color: " + textBody + "; text-align: center; min-height: 6px; max-height: 6px;");
-		addRule("QProgressBar::chunk", "background: " + borderStrong + "; border-radius: 3px;");
+		addRule("QProgressBar", "background: #202020; border: 1px solid " + border + "; border-radius: 0; color: " + textBody + "; text-align: center; min-height: 6px; max-height: 6px;");
+		addRule("QProgressBar::chunk", "background: " + accent + "; border-radius: 0;");
 		addRule("QStatusBar", "background: " + shell + "; color: " + textMuted + "; border-top: 1px solid " + divider + ";");
 
 		setStyleSheet(style);

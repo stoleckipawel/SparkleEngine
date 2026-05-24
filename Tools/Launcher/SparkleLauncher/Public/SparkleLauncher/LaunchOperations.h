@@ -39,6 +39,8 @@ namespace SparkleLauncher
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;
 		std::string MeshAutoBatching;
+		std::vector<std::string> CustomArguments;
+		std::vector<std::string> CustomCVars;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;
 		bool SmokeTrace = false;

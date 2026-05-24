@@ -12,6 +12,7 @@
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QListWidget>
+#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
@@ -93,12 +94,18 @@ namespace SparkleLauncher
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
+		QLineEdit* CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
+		QTextEdit* CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&));
 		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
+		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
+		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state);
+		void AddActionRow(QVBoxLayout& layout, const QString& title, const QString& detail, const QString& buttonText, const QString& operationId);
+		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
@@ -120,6 +127,7 @@ namespace SparkleLauncher
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
+		void RunInlineActionOperation(const QString& operationId);
 		void StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetStatusMessage(const QString& message);
 		void SetSelectedOperation(const QString& operationId);

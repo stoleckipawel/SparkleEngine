@@ -20,6 +20,8 @@ namespace SparkleLauncher
 		const QString& LaunchVSync() const;
 		const QString& LaunchHighPerformanceAdapter() const;
 		const QString& LaunchMeshAutoBatching() const;
+		const QString& LaunchCommandLineArguments() const;
+		const QString& LaunchCVars() const;
 		const QString& SmokeBackend() const;
 		const QString& SmokeFrameLimit() const;
 		const QString& FormatMode() const;
@@ -40,6 +42,8 @@ namespace SparkleLauncher
 		void SetLaunchVSync(const QString& value);
 		void SetLaunchHighPerformanceAdapter(const QString& value);
 		void SetLaunchMeshAutoBatching(const QString& value);
+		void SetLaunchCommandLineArguments(const QString& arguments);
+		void SetLaunchCVars(const QString& cvars);
 		void SetSmokeBackend(const QString& backend);
 		void SetSmokeFrameLimit(const QString& frameLimit);
 		void SetFormatMode(const QString& mode);
@@ -63,6 +67,8 @@ namespace SparkleLauncher
 		QString m_launchVSync;
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchMeshAutoBatching;
+		QString m_launchCommandLineArguments;
+		QString m_launchCVars;
 		QString m_smokeBackend;
 		QString m_smokeFrameLimit;
 		QString m_formatMode = "check";

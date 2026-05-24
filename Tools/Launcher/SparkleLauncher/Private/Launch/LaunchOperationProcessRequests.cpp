@@ -39,6 +39,21 @@ namespace SparkleLauncher
 			request.Arguments.push_back("--cvar");
 			request.Arguments.push_back("r.MeshAutoBatching=" + plan.Request.MeshAutoBatching);
 		}
+		for (const std::string& customArgument : plan.Request.CustomArguments)
+		{
+			if (!customArgument.empty())
+			{
+				request.Arguments.push_back(customArgument);
+			}
+		}
+		for (const std::string& customCVar : plan.Request.CustomCVars)
+		{
+			if (!customCVar.empty())
+			{
+				request.Arguments.push_back("--cvar");
+				request.Arguments.push_back(customCVar);
+			}
+		}
 
 		LaunchOperationProcessStep step;
 		step.Id = "launch";
