@@ -592,7 +592,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
 	{
-		if (operationId == "workspace.generate-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
+		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
 			AddNoOptionsMessage(layout, "No settings");
 			return;
@@ -602,7 +602,7 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate build files", "Run configure before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
@@ -610,7 +610,14 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate build files", "Run configure before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			return;
+		}
+
+		if (operationId == "cook.tools.prepare")
+		{
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			return;
 		}
 
@@ -1086,11 +1093,11 @@ namespace SparkleLauncher
 		{
 			if (operationId.endsWith("runtime"))
 			{
-				return "Run Build > Compile Runtime, then retry this workflow.";
+				return "Run Build > Build Runtime, then retry this workflow.";
 			}
 			if (operationId.endsWith("editor"))
 			{
-				return "Run Build > Compile Editor, then retry this workflow.";
+				return "Run Build > Build Editor, then retry this workflow.";
 			}
 		}
 
@@ -1487,7 +1494,7 @@ namespace SparkleLauncher
 		    {"Setup", "Fresh sync", {"workspace.setup", "toolchain.check", "workspace.generate-solution"}},
 		    {"Build", "Compile targets", {"project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
-		    {"Run", "Launch and verify", {"project.launch.editor", "project.launch.runtime", "smoke.rhi.editor", "smoke.rhi.runtime"}},
+		    {"Run", "Open targets", {"project.launch.editor", "workspace.open-solution", "project.launch.runtime", "smoke.rhi.editor", "smoke.rhi.runtime"}},
 		    {"Maintain", "Routine cleanup", {"quality.format", "workspace.clean"}},
 		};
 	}

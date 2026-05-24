@@ -56,6 +56,8 @@ namespace SparkleLauncher
 			return "SetupWorkspace";
 		case BuildWorkspaceOperationKind::GenerateSolution:
 			return "GenerateSolution";
+		case BuildWorkspaceOperationKind::OpenSolution:
+			return "OpenSolution";
 		case BuildWorkspaceOperationKind::CompileEditor:
 			return "CompileEditor";
 		case BuildWorkspaceOperationKind::CompileRuntime:

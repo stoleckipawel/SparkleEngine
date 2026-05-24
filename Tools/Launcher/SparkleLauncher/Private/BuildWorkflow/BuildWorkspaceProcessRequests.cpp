@@ -2,7 +2,9 @@
 
 #include "CMakeWorkflowProcessRequests.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/LauncherPaths.h"
 
+#include <cstdlib>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -17,6 +19,37 @@ namespace SparkleLauncher
 	static ProcessRequest MakeBuildRequest(const BuildWorkspaceOperationPlan& plan, std::string_view profileName, const std::vector<std::string>& targets)
 	{
 		return MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, profileName, targets, "Build.txt");
+	}
+
+	static std::filesystem::path GetCommandProcessorPath()
+	{
+#if defined(_WIN32)
+		if (const char* commandProcessor = std::getenv("ComSpec"); commandProcessor != nullptr && commandProcessor[0] != '\0')
+		{
+			return std::filesystem::path(commandProcessor);
+		}
+		if (const char* systemRoot = std::getenv("SystemRoot"); systemRoot != nullptr && systemRoot[0] != '\0')
+		{
+			return std::filesystem::path(systemRoot) / "System32" / "cmd.exe";
+		}
+		return "cmd.exe";
+#else
+		return "xdg-open";
+#endif
+	}
+
+	static ProcessRequest MakeOpenSolutionRequest(const BuildWorkspaceOperationPlan& plan)
+	{
+		ProcessRequest process;
+		process.ExecutablePath = GetCommandProcessorPath();
+		process.WorkingDirectory = plan.RepositoryRoot;
+		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "OpenSolution.txt");
+#if defined(_WIN32)
+		process.Arguments = {"/C", "start", "", plan.Freshness.SolutionPath.string()};
+#else
+		process.Arguments = {plan.Freshness.SolutionPath.string()};
+#endif
+		return process;
 	}
 
 	static std::vector<std::string> ResolveProjectTargets(std::string_view projectId, std::string_view profileName)
@@ -57,6 +90,15 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
+	static void AddOpenSolutionStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
+	{
+		BuildWorkspaceProcessStep step;
+		step.Id = "open-solution";
+		step.DisplayName = "Open solution";
+		step.Request = MakeOpenSolutionRequest(plan);
+		steps.push_back(std::move(step));
+	}
+
 	std::vector<BuildWorkspaceProcessStep> BuildProcessStepsForPlan(const BuildWorkspaceOperationPlan& plan)
 	{
 		std::vector<BuildWorkspaceProcessStep> steps;
@@ -78,6 +120,13 @@ namespace SparkleLauncher
 			return steps;
 		case BuildWorkspaceOperationKind::GenerateSolution:
 			AddConfigureStep(steps, plan);
+			return steps;
+		case BuildWorkspaceOperationKind::OpenSolution:
+			if (needsConfigure)
+			{
+				AddConfigureStep(steps, plan);
+			}
+			AddOpenSolutionStep(steps, plan);
 			return steps;
 		case BuildWorkspaceOperationKind::CompileEditor:
 			if (needsConfigure)

@@ -77,6 +77,14 @@ namespace SparkleLauncher
 			AddConfigureStep(plan);
 			plan.CanRun = true;
 			return;
+		case BuildWorkspaceOperationKind::OpenSolution:
+			if (needsConfigure)
+			{
+				AddConfigureStep(plan);
+			}
+			AddPlannedEffect(plan, "Open solution: " + plan.Freshness.SolutionPath.string());
+			plan.CanRun = true;
+			return;
 		case BuildWorkspaceOperationKind::CompileEditor:
 		{
 			if (needsConfigure)
@@ -123,11 +131,12 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", "Setup Workspace", "Validate required tools and refresh build files."},
-		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Generate Solution", "Generate Visual Studio and CMake project files."},
+		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", "Setup Workspace", "Validate required tools and refresh the Visual Studio solution."},
+		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Regenerate Solution", "Refresh the Visual Studio solution and project files."},
+		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Run", "Open Solution", "Open the generated Visual Studio solution."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", "Check Toolchain", "Inspect CMake, Visual Studio/MSBuild, Windows SDK, Git, and clang-format."},
-		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Compile Editor", "Build the selected project's editor target."},
-		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Compile Runtime", "Build the selected project's runtime target."},
+		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Build the selected project's editor target."},
+		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Build the selected project's runtime target."},
 		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build the tools required by cooking workflows."},
 		};
 		return definitions;

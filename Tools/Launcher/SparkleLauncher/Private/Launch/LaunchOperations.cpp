@@ -78,10 +78,10 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Run Editor", "Start the selected project's editor executable."},
-		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Run Runtime", "Start the selected project's runtime executable."},
-		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Editor Smoke Test", "Run the selected project editor with graphics smoke validation enabled."},
-		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Runtime Smoke Test", "Run the selected project runtime with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Open Editor", "Open the selected project's editor executable."},
+		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Open Runtime", "Open the selected project's runtime executable."},
+		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Open Editor Smoke Test", "Open the selected project editor with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Open Runtime Smoke Test", "Open the selected project runtime with graphics smoke validation enabled."},
 		};
 		return definitions;
 	}
