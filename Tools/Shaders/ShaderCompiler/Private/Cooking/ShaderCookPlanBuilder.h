@@ -28,4 +28,12 @@ class ShaderCookPlanBuilder final
 	    ShaderBackendPool& backendPool,
 	    ShaderCookPipelinePlan& plan,
 	    std::string& outErrorMessage);
+
+	static bool ShouldCookPackageTarget(
+	    const ShaderPackageCookSettings& settings,
+	    const ShaderCookPackageDesc& package,
+	    ShaderTarget target,
+	    ShaderBackendPool& backendPool,
+	    bool& outShouldCook,
+	    std::string& outErrorMessage);
 };
