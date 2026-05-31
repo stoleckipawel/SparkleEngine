@@ -178,6 +178,15 @@ namespace SparkleLauncher
 
 	static void AddCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
 	{
+		if (!plan.Request.RequestedCleanTargets.empty())
+		{
+			for (const MaintenanceCleanPathSpec& target : plan.Request.RequestedCleanTargets)
+			{
+				AddCleanStep(steps, "clean-explicit-target", "Clean " + target.DisplayName, target.Path, MaintenanceCleanBehavior::RemovePath);
+			}
+			return;
+		}
+
 		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
 		{
 			AddCleanStepsForScope(steps, plan, scope);

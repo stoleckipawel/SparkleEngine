@@ -29,6 +29,13 @@ namespace SparkleLauncher
 		LauncherOperationCategory Category = LauncherOperationCategory::Workspace;
 	};
 
+	struct LauncherCleanTarget
+	{
+		QString DisplayName;
+		QString Path;
+		QString Detail;
+	};
+
 	struct LauncherOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
@@ -51,6 +58,7 @@ namespace SparkleLauncher
 		QString SmokeFrameLimit;
 		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
+		QVector<LauncherCleanTarget> CleanTargets;
 		bool LaunchSmokeTest = false;
 		bool ForceConfigure = false;
 		bool ForceRecook = false;

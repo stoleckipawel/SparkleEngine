@@ -56,6 +56,13 @@ namespace SparkleLauncher
 		bool Exists = false;
 	};
 
+	struct MaintenanceCleanPathSpec
+	{
+		std::string DisplayName;
+		std::filesystem::path Path;
+		std::string Detail;
+	};
+
 	struct MaintenanceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
@@ -64,6 +71,7 @@ namespace SparkleLauncher
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;
 		std::vector<CleanScope> RequestedCleanScopes;
+		std::vector<MaintenanceCleanPathSpec> RequestedCleanTargets;
 		bool DestructiveActionConfirmed = false;
 	};
 

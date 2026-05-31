@@ -222,6 +222,15 @@ namespace SparkleLauncher
 
 	static void PopulateCleanTargets(MaintenanceOperationPlan& plan)
 	{
+		if (!plan.Request.RequestedCleanTargets.empty())
+		{
+			for (const MaintenanceCleanPathSpec& target : plan.Request.RequestedCleanTargets)
+			{
+				AddCleanTarget(plan, target.DisplayName, target.Path, target.Detail);
+			}
+			return;
+		}
+
 		for (const CleanScope scope : ResolveRequestedCleanScopes(plan.Request))
 		{
 			PopulateCleanTargetsForScope(plan, scope);
@@ -376,6 +385,10 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"editorProfile", request.EditorProfile});
 		plan.Operation.Inputs.push_back({"formatMode", ToString(request.RequestedFormatMode)});
+		for (const MaintenanceCleanPathSpec& target : request.RequestedCleanTargets)
+		{
+			plan.Operation.Inputs.push_back({"cleanTarget", target.Path.string()});
+		}
 		for (const CleanScope scope : ResolveRequestedCleanScopes(request))
 		{
 			plan.Operation.Inputs.push_back({"cleanScope", ToString(scope)});
@@ -397,7 +410,7 @@ namespace SparkleLauncher
 		{
 			const std::vector<CleanScope> requestedCleanScopes = ResolveRequestedCleanScopes(request);
 			PopulateCleanTargets(plan);
-			plan.Operation.DestructiveScope = requestedCleanScopes.size() == 1 ? ToOperationDestructiveScope(requestedCleanScopes.front()) : OperationDestructiveScope::None;
+			plan.Operation.DestructiveScope = request.RequestedCleanTargets.empty() && requestedCleanScopes.size() == 1 ? ToOperationDestructiveScope(requestedCleanScopes.front()) : OperationDestructiveScope::None;
 			plan.Operation.RequiresConfirmation = true;
 			AddReadiness(plan, request.DestructiveActionConfirmed ? "Clean scope was confirmed." : "Clean scope requires explicit confirmation.");
 			for (const MaintenanceCleanTarget& target : plan.CleanTargets)

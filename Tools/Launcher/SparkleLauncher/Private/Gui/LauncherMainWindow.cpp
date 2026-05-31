@@ -4,6 +4,7 @@
 #include "LauncherProjectModel.h"
 #include "LauncherSettings.h"
 
+#include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
@@ -354,6 +355,34 @@ namespace SparkleLauncher
 		}
 
 		return "This workflow is currently blocked.";
+	}
+
+	static void AddExplicitCleanTarget(
+	    QVector<LauncherCleanTarget>& targets,
+	    const QString& displayName,
+	    const std::filesystem::path& path,
+	    const QString& detail)
+	{
+		LauncherCleanTarget target;
+		target.DisplayName = displayName;
+		target.Path = QString::fromStdString(path.string());
+		target.Detail = detail;
+		targets.push_back(std::move(target));
+	}
+
+	static void AddTargetArtifactOutputs(
+	    QVector<LauncherCleanTarget>& targets,
+	    const std::filesystem::path& repositoryRoot,
+	    const QString& profileName,
+	    const QString& targetName,
+	    const QString& detail)
+	{
+		const std::filesystem::path binaryDirectory = GetBuildBinaryDirectory(repositoryRoot, profileName.toStdString());
+		const std::filesystem::path libraryDirectory = GetBuildDirectory(repositoryRoot) / "lib" / profileName.toStdString();
+		AddExplicitCleanTarget(targets, targetName + " executable", binaryDirectory / (targetName.toStdString() + ".exe"), detail);
+		AddExplicitCleanTarget(targets, targetName + " program database", binaryDirectory / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
+		AddExplicitCleanTarget(targets, targetName + " import database", libraryDirectory / (targetName.toStdString() + ".pdb"), detail);
 	}
 
 	LauncherMainWindow::LauncherMainWindow(
@@ -712,8 +741,12 @@ namespace SparkleLauncher
 
 		QFrame* actionMetaPanel = new QFrame(panel);
 		actionMetaPanel->setObjectName("ActionMetaPanel");
-		QVBoxLayout* actionMetaLayout = new QVBoxLayout(actionMetaPanel);
-		actionMetaLayout->setContentsMargins(kSpaceMedium, kSpaceSmall, kSpaceMedium, kSpaceSmall);
+		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(actionMetaPanel);
+		actionMetaRowLayout->setContentsMargins(kSpaceMedium, kSpaceSmall, kSpaceMedium, kSpaceSmall);
+		actionMetaRowLayout->setSpacing(kSpaceMedium);
+
+		QVBoxLayout* actionMetaLayout = new QVBoxLayout();
+		actionMetaLayout->setContentsMargins(0, 0, 0, 0);
 		actionMetaLayout->setSpacing(kSpaceTiny);
 		QLabel* actionMetaTitle = new QLabel("Last completed run", actionMetaPanel);
 		actionMetaTitle->setObjectName("ActionMetaTitle");
@@ -726,11 +759,17 @@ namespace SparkleLauncher
 		m_lastRunResultLabel->setObjectName("ActionMetaDetail");
 		m_lastRunResultLabel->setWordWrap(true);
 		actionMetaLayout->addWidget(m_lastRunResultLabel);
-		layout->addWidget(actionMetaPanel);
+		actionMetaRowLayout->addLayout(actionMetaLayout, 1);
 
-		QHBoxLayout* actionLayout = new QHBoxLayout();
-		actionLayout->setSpacing(kSpaceSmall + kSpaceTiny);
-		actionLayout->addStretch(1);
+		m_cleanButton = new QPushButton("Clean", panel);
+		m_cleanButton->setObjectName("SecondaryButton");
+		m_cleanButton->setToolTip("Clean only the generated outputs tied to this action.");
+		m_cleanButton->setEnabled(false);
+		m_cleanButton->setAccessibleName("Clean selected workflow outputs");
+		RegisterFocusable(m_cleanButton);
+		connect(m_cleanButton, &QPushButton::clicked, this, &LauncherMainWindow::CleanSelectedOperation);
+		actionMetaRowLayout->addWidget(m_cleanButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+
 		m_runButton = new QPushButton("Run", panel);
 		m_runButton->setObjectName("PrimaryActionButton");
 		m_runButton->setIcon(CreateLauncherIcon(LauncherIcon::Run, QColor("#ffffff")));
@@ -740,8 +779,8 @@ namespace SparkleLauncher
 		m_runButton->setAccessibleName("Run selected workflow");
 		RegisterFocusable(m_runButton);
 		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
-		actionLayout->addWidget(m_runButton);
-		layout->addLayout(actionLayout);
+		actionMetaRowLayout->addWidget(m_runButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+		layout->addWidget(actionMetaPanel);
 		UpdateActionHistoryDisplay();
 		return panel;
 	}

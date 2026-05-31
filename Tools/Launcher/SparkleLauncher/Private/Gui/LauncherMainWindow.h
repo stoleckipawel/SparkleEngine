@@ -53,6 +53,7 @@ namespace SparkleLauncher
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
 		void CopySelectedRunOutput();
 		void RunSelectedOperation();
+		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
 		void AppendOperationOutput(const QString& runId, const QString& operationId, const QString& outputText);
 		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
@@ -133,6 +134,9 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
+		bool SupportsActionSpecificClean(const QString& operationId) const;
+		QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const QString& operationId) const;
+		LauncherOperationRequest BuildCleanOperationRequest(const QString& operationId) const;
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		bool OperationNeedsProject(const QString& operationId) const;
@@ -173,6 +177,7 @@ namespace SparkleLauncher
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;
 		QTextEdit* m_operationOutput = nullptr;
+		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
 		QLabel* m_lastRunSummaryLabel = nullptr;

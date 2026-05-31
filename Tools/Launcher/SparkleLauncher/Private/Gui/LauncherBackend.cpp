@@ -171,6 +171,14 @@ namespace SparkleLauncher
 		maintenanceRequest.RequestedFormatMode = FormatMode::Apply;
 		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
 		maintenanceRequest.RequestedCleanScopes = SplitCleanScopes(request.CleanScope);
+		for (const LauncherCleanTarget& target : request.CleanTargets)
+		{
+			MaintenanceCleanPathSpec cleanTarget;
+			cleanTarget.DisplayName = target.DisplayName.toStdString();
+			cleanTarget.Path = target.Path.toStdString();
+			cleanTarget.Detail = target.Detail.toStdString();
+			maintenanceRequest.RequestedCleanTargets.push_back(std::move(cleanTarget));
+		}
 		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
 		return maintenanceRequest;
 	}
