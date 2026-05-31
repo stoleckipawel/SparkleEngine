@@ -156,7 +156,7 @@ namespace SparkleLauncher
 	const std::vector<CookOperationDefinition>& GetCookOperationDefinitions()
 	{
 		static const std::vector<CookOperationDefinition> definitions = {
-		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All Assets", "Prepare all assets for the selected project."},
+		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All", "Prepare all assets for the selected project."},
 		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare shader packages."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
 		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Meshes", "Prepare scene mesh and material assets for runtime use."},

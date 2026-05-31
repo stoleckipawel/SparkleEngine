@@ -81,6 +81,7 @@ namespace SparkleLauncher
 		SetupWorkspace,
 		GenerateSolution,
 		OpenSolution,
+		BuildAll,
 		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,

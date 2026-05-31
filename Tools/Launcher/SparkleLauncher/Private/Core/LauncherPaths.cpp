@@ -8,6 +8,7 @@ namespace SparkleLauncher
 		paths.RootDirectory = GetLauncherStateDirectory(repositoryRoot);
 		paths.LogsDirectory = paths.RootDirectory / "Logs";
 		paths.ActivityPath = paths.RootDirectory / "Activity.json";
+		paths.ActionHistoryPath = paths.RootDirectory / "ActionHistory.tsv";
 		paths.SettingsPath = paths.RootDirectory / "Settings.json";
 		return paths;
 	}

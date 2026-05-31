@@ -16,6 +16,7 @@
 #include <QtCore/QStringList>
 #include <QtCore/QTimer>
 #include <QtCore/Qt>
+#include <QtCore/QDateTime>
 #include <QtGui/QBrush>
 #include <QtGui/QClipboard>
 #include <QtGui/QColor>
@@ -35,6 +36,7 @@
 
 #include <array>
 #include <cstdint>
+#include <fstream>
 #include <system_error>
 #include <utility>
 
@@ -306,6 +308,14 @@ namespace SparkleLauncher
 		return first + " | " + second;
 	}
 
+	static QString SanitizeActionHistoryField(QString value)
+	{
+		value.replace('\t', ' ');
+		value.replace('\r', ' ');
+		value.replace('\n', ' ');
+		return value.trimmed();
+	}
+
 	static WorkspaceIde SelectedWorkspaceIde(const LauncherSettings& settings)
 	{
 		WorkspaceIde ide = WorkspaceIde::VisualStudio;
@@ -358,6 +368,7 @@ namespace SparkleLauncher
 	    , m_settings(settings)
 	    , m_backend(backend)
 	{
+		LoadActionHistory();
 		setWindowTitle("Sparkle Launcher");
 		setMinimumSize(980, 620);
 		resize(1240, 800);
@@ -389,7 +400,10 @@ namespace SparkleLauncher
 		ApplyVisualStyle();
 
 		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
-		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
+		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, [this](const QString&) {
+			PopulateProjectSelectors();
+			UpdateRunAvailability();
+		});
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
 		connect(&m_settings, &LauncherSettings::SettingsChanged, this, [this]() {
 			RebuildOptionsPages();
@@ -494,7 +508,7 @@ namespace SparkleLauncher
 		}
 
 		if ((m_selectedOperationId == "workspace.setup" || m_selectedOperationId == "workspace.generate-solution" || m_selectedOperationId == "workspace.open-solution" ||
-		     m_selectedOperationId == "launcher.build.self" || m_selectedOperationId.startsWith("project.build") || m_selectedOperationId == "cook.tools.prepare") &&
+		     m_selectedOperationId == "workspace.build-all" || m_selectedOperationId == "launcher.build.self" || m_selectedOperationId.startsWith("project.build") || m_selectedOperationId == "cook.tools.prepare") &&
 		    !OfferWorkspacePrerequisiteOperation(m_selectedOperationId))
 		{
 			return;
@@ -560,6 +574,13 @@ namespace SparkleLauncher
 		}
 
 		++m_finishedRunCount;
+		ActionHistoryRecord historyRecord;
+		historyRecord.CompletedAtUtc = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+		historyRecord.ResultText = statusText;
+		historyRecord.ExitCode = exitCode;
+		m_actionHistory.insert(operationId, historyRecord);
+		SaveActionHistory();
+		UpdateActionHistoryDisplay();
 		ShowRunOutput(runId);
 		SetStatusMessage(title + " finished: " + statusText);
 		UpdateProgress();
@@ -689,6 +710,24 @@ namespace SparkleLauncher
 		layout->addWidget(m_optionsStack, 1);
 		m_optionsStack->setVisible(false);
 
+		QFrame* actionMetaPanel = new QFrame(panel);
+		actionMetaPanel->setObjectName("ActionMetaPanel");
+		QVBoxLayout* actionMetaLayout = new QVBoxLayout(actionMetaPanel);
+		actionMetaLayout->setContentsMargins(kSpaceMedium, kSpaceSmall, kSpaceMedium, kSpaceSmall);
+		actionMetaLayout->setSpacing(kSpaceTiny);
+		QLabel* actionMetaTitle = new QLabel("Last completed run", actionMetaPanel);
+		actionMetaTitle->setObjectName("ActionMetaTitle");
+		actionMetaLayout->addWidget(actionMetaTitle);
+		m_lastRunSummaryLabel = new QLabel("No recorded run for this workflow yet.", actionMetaPanel);
+		m_lastRunSummaryLabel->setObjectName("ActionMetaText");
+		m_lastRunSummaryLabel->setWordWrap(true);
+		actionMetaLayout->addWidget(m_lastRunSummaryLabel);
+		m_lastRunResultLabel = new QLabel("Result data will persist between launcher sessions.", actionMetaPanel);
+		m_lastRunResultLabel->setObjectName("ActionMetaDetail");
+		m_lastRunResultLabel->setWordWrap(true);
+		actionMetaLayout->addWidget(m_lastRunResultLabel);
+		layout->addWidget(actionMetaPanel);
+
 		QHBoxLayout* actionLayout = new QHBoxLayout();
 		actionLayout->setSpacing(kSpaceSmall + kSpaceTiny);
 		actionLayout->addStretch(1);
@@ -703,6 +742,7 @@ namespace SparkleLauncher
 		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
 		actionLayout->addWidget(m_runButton);
 		layout->addLayout(actionLayout);
+		UpdateActionHistoryDisplay();
 		return panel;
 	}
 
@@ -977,6 +1017,12 @@ namespace SparkleLauncher
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
+		{
+			AddBuildEnvironmentStatus(layout, operationId);
+			return;
+		}
+
+		if (operationId == "workspace.build-all")
 		{
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
@@ -1316,7 +1362,7 @@ namespace SparkleLauncher
 		const QString workspaceIdeName = SelectedWorkspaceIdeName(m_settings);
 		const bool isToolchainCheck = operationId == "toolchain.check";
 		const bool isSetupWorkflow = operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution";
-		const bool isBuildWorkflow = operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const bool dependencyCacheReady = DirectoryHasEntries(dependencyCachePath);
 
@@ -1456,24 +1502,7 @@ namespace SparkleLauncher
 		}
 		m_optionsPageByOperation.clear();
 
-		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
-		{
-			for (const QString& operationId : workflow.OperationIds)
-			{
-				if (m_optionsPageByOperation.contains(operationId))
-				{
-					continue;
-				}
-
-				const int pageIndex = m_optionsStack->addWidget(CreateOptionsPage(operationId, m_optionsStack));
-				m_optionsPageByOperation.insert(operationId, pageIndex);
-			}
-		}
-
-		if (!m_selectedOperationId.isEmpty() && m_optionsPageByOperation.contains(m_selectedOperationId))
-		{
-			m_optionsStack->setCurrentIndex(m_optionsPageByOperation.value(m_selectedOperationId));
-		}
+		EnsureOptionsPage(m_selectedOperationId);
 
 		m_projectSelectors.clear();
 		for (QComboBox* combo : findChildren<QComboBox*>())
@@ -1485,6 +1514,93 @@ namespace SparkleLauncher
 		}
 
 		m_isRebuildingOptions = false;
+	}
+
+	void LauncherMainWindow::EnsureOptionsPage(const QString& operationId)
+	{
+		if (m_optionsStack == nullptr || operationId.isEmpty() || m_optionsPageByOperation.contains(operationId))
+		{
+			return;
+		}
+
+		const int pageIndex = m_optionsStack->addWidget(CreateOptionsPage(operationId, m_optionsStack));
+		m_optionsPageByOperation.insert(operationId, pageIndex);
+		m_optionsStack->setCurrentIndex(pageIndex);
+	}
+
+	void LauncherMainWindow::LoadActionHistory()
+	{
+		m_actionHistory.clear();
+
+		const std::filesystem::path historyPath = GetLauncherStatePaths(m_repositoryRoot).ActionHistoryPath;
+		std::ifstream stream(historyPath);
+		if (!stream.is_open())
+		{
+			return;
+		}
+
+		std::string line;
+		while (std::getline(stream, line))
+		{
+			const QStringList fields = QString::fromStdString(line).split('\t');
+			if (fields.size() < 4)
+			{
+				continue;
+			}
+
+			ActionHistoryRecord record;
+			record.CompletedAtUtc = fields[1].trimmed();
+			record.ResultText = fields[2].trimmed();
+			bool exitCodeOk = false;
+			record.ExitCode = fields[3].trimmed().toInt(&exitCodeOk);
+			if (!exitCodeOk)
+			{
+				record.ExitCode = -1;
+			}
+			m_actionHistory.insert(fields[0].trimmed(), record);
+		}
+	}
+
+	void LauncherMainWindow::SaveActionHistory() const
+	{
+		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
+		std::error_code errorCode;
+		std::filesystem::create_directories(statePaths.RootDirectory, errorCode);
+
+		std::ofstream stream(statePaths.ActionHistoryPath, std::ios::out | std::ios::trunc);
+		if (!stream.is_open())
+		{
+			return;
+		}
+
+		for (auto it = m_actionHistory.constBegin(); it != m_actionHistory.constEnd(); ++it)
+		{
+			stream << SanitizeActionHistoryField(it.key()).toStdString() << '\t'
+			       << SanitizeActionHistoryField(it.value().CompletedAtUtc).toStdString() << '\t'
+			       << SanitizeActionHistoryField(it.value().ResultText).toStdString() << '\t'
+			       << it.value().ExitCode << '\n';
+		}
+	}
+
+	void LauncherMainWindow::UpdateActionHistoryDisplay()
+	{
+		if (m_lastRunSummaryLabel == nullptr || m_lastRunResultLabel == nullptr)
+		{
+			return;
+		}
+
+		const auto found = m_actionHistory.constFind(m_selectedOperationId);
+		if (found == m_actionHistory.constEnd())
+		{
+			m_lastRunSummaryLabel->setText("No recorded run for this workflow yet.");
+			m_lastRunResultLabel->setText("Result data will persist between launcher sessions.");
+			return;
+		}
+
+		const QDateTime completedAt = QDateTime::fromString(found->CompletedAtUtc, Qt::ISODate);
+		const QString completedAtText = completedAt.isValid() ? completedAt.toLocalTime().toString("MMMM d, yyyy HH:mm") : found->CompletedAtUtc;
+		m_lastRunSummaryLabel->setText(QStringLiteral("Last completed on %1").arg(completedAtText));
+		m_lastRunResultLabel->setText(QStringLiteral("Result: %1 | Exit code: %2").arg(found->ResultText).arg(found->ExitCode));
 	}
 
 	void LauncherMainWindow::LoadLauncherIconFont()
@@ -1957,7 +2073,7 @@ namespace SparkleLauncher
 			promptTitle = "Check Dependencies";
 			promptAction = "Required dependencies are missing. Run Check Dependencies now?";
 		}
-		else if ((operationId == "workspace.open-solution" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare") && !plan.Freshness.Current)
+		else if ((operationId == "workspace.open-solution" || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare") && !plan.Freshness.Current)
 		{
 			prerequisiteOperationId = "workspace.generate-solution";
 			promptTitle = "Regenerate Solution";
@@ -2068,8 +2184,8 @@ namespace SparkleLauncher
 		else if (cookedAssetsMissing)
 		{
 			prerequisiteOperationId = "cook.project";
-			promptTitle = "Cook All Assets";
-			promptAction = "Cooked meshes, textures, or shaders are missing. Start Cook All Assets now?";
+			promptTitle = "Cook All";
+			promptAction = "Cooked meshes, textures, or shaders are missing. Start Cook All now?";
 		}
 		else
 		{
@@ -2193,6 +2309,7 @@ namespace SparkleLauncher
 		m_selectedOperationId = operationId;
 		const QString title = DisplayNameForOperation(operationId);
 		SetControlsEnabled(true);
+		UpdateActionHistoryDisplay();
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
@@ -2201,9 +2318,13 @@ namespace SparkleLauncher
 		{
 			m_runButton->setText("Run");
 		}
-		if (m_optionsStack != nullptr && m_optionsPageByOperation.contains(operationId))
+		if (m_optionsStack != nullptr)
 		{
-			m_optionsStack->setCurrentIndex(m_optionsPageByOperation.value(operationId));
+			EnsureOptionsPage(operationId);
+			if (m_optionsPageByOperation.contains(operationId))
+			{
+				m_optionsStack->setCurrentIndex(m_optionsPageByOperation.value(operationId));
+			}
 		}
 
 		if (m_processButtonGroup != nullptr)
@@ -2424,8 +2545,6 @@ namespace SparkleLauncher
 				PopulateProjectCombo(*combo);
 			}
 		}
-		RebuildOptionsPages();
-		UpdateRunAvailability();
 	}
 
 	void LauncherMainWindow::PopulateProjectCombo(QComboBox& combo) const
@@ -2456,7 +2575,7 @@ namespace SparkleLauncher
 	{
 		return {
 		    {"Setup", "Inspect and configure", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.clean"}},
-		    {"Build", "Compile targets", {"launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
+		    {"Build", "Compile targets", {"workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
 		    {"Run", "Open targets", {"workspace.open-solution", "project.open.editor", "project.open.runtime", "project.run.smoke", "quality.format"}},
 		};
@@ -2512,6 +2631,10 @@ namespace SparkleLauncher
 		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 700; padding: 0 0 0 6px; border-left: 3px solid " + accent + ";");
 		addRule("#FieldLabel", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600; padding-top: 0;");
 		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8.5pt; line-height: 125%;");
+		addRule("#ActionMetaPanel", "background: #2a2a2a; border: 1px solid " + border + "; border-top-color: " + borderSoft + ";");
+		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700;");
+		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 8.5pt;");
+		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 8pt;");
 		addRule("#StatusRow", "background: #262626; border: 1px solid #1f1f1f; border-top-color: #3b3b3b; padding: 7px 9px;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 650;");
 		addRule("#StatusValue", "color: " + textMuted + "; font-size: 8.5pt; font-weight: 700; padding: 2px 7px; border: 1px solid #3d3d3d; background: #303030;");

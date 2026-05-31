@@ -4,6 +4,24 @@
 
 namespace SparkleLauncher
 {
+	static bool ProjectsMatch(const QVector<LauncherProjectSummary>& left, const QVector<LauncherProjectSummary>& right)
+	{
+		if (left.size() != right.size())
+		{
+			return false;
+		}
+
+		for (int index = 0; index < left.size(); ++index)
+		{
+			if (left[index].Id != right[index].Id || left[index].DisplayName != right[index].DisplayName || left[index].RootPath != right[index].RootPath)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	LauncherProjectModel::LauncherProjectModel(QObject* parent)
 	    : QObject(parent)
 	{
@@ -24,17 +42,38 @@ namespace SparkleLauncher
 		std::string errorMessage;
 		const std::vector<SparkleProject> discoveredProjects = DiscoverProjects(repositoryRoot, errorMessage);
 
-		m_projects.clear();
+		QVector<LauncherProjectSummary> refreshedProjects;
 		for (const SparkleProject& project : discoveredProjects)
 		{
-			m_projects.push_back({QString::fromStdString(project.Id), QString::fromStdString(project.DisplayName), project.RootPath});
+			refreshedProjects.push_back({QString::fromStdString(project.Id), QString::fromStdString(project.DisplayName), project.RootPath});
 		}
 
 		const QString previousSelection = m_selectedProjectId;
-		m_selectedProjectId = ChooseInitialProjectId(m_projects);
+		QString nextSelection = previousSelection;
+		bool selectionStillExists = false;
+		for (const LauncherProjectSummary& project : refreshedProjects)
+		{
+			if (project.Id == previousSelection)
+			{
+				selectionStillExists = true;
+				break;
+			}
+		}
+		if (!selectionStillExists)
+		{
+			nextSelection = ChooseInitialProjectId(refreshedProjects);
+		}
 
-		emit ProjectsChanged();
-		if (m_selectedProjectId != previousSelection)
+		const bool projectsChanged = !ProjectsMatch(m_projects, refreshedProjects);
+		const bool selectionChanged = m_selectedProjectId != nextSelection;
+		m_projects = std::move(refreshedProjects);
+		m_selectedProjectId = nextSelection;
+
+		if (projectsChanged)
+		{
+			emit ProjectsChanged();
+		}
+		if (selectionChanged)
 		{
 			emit SelectionChanged(m_selectedProjectId);
 		}

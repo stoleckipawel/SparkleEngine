@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtCore/QString>
+#include <QtCore/QDateTime>
 #include <QtCore/QVector>
 #include <QtCore/QHash>
 #include <QtGui/QColor>
@@ -64,6 +65,13 @@ namespace SparkleLauncher
 			QVector<QString> OperationIds;
 		};
 
+		struct ActionHistoryRecord
+		{
+			QString CompletedAtUtc;
+			QString ResultText;
+			int ExitCode = 0;
+		};
+
 		enum class RunState
 		{
 			Queued,
@@ -110,7 +118,11 @@ namespace SparkleLauncher
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
+		void EnsureOptionsPage(const QString& operationId);
 		void RebuildOptionsPages();
+		void LoadActionHistory();
+		void SaveActionHistory() const;
+		void UpdateActionHistoryDisplay();
 		void LoadLauncherIconFont();
 		QIcon CreateApplicationIcon() const;
 		QString IconGlyph(LauncherIcon icon) const;
@@ -163,6 +175,8 @@ namespace SparkleLauncher
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
+		QLabel* m_lastRunSummaryLabel = nullptr;
+		QLabel* m_lastRunResultLabel = nullptr;
 		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
@@ -173,6 +187,7 @@ namespace SparkleLauncher
 		QHash<QString, RunState> m_runStates;
 		QHash<QString, QString> m_runTitles;
 		QHash<QString, QString> m_runOutputs;
+		QHash<QString, ActionHistoryRecord> m_actionHistory;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;

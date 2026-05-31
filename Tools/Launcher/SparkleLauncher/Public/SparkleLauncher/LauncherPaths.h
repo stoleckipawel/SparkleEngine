@@ -10,6 +10,7 @@ namespace SparkleLauncher
 		std::filesystem::path RootDirectory;
 		std::filesystem::path LogsDirectory;
 		std::filesystem::path ActivityPath;
+		std::filesystem::path ActionHistoryPath;
 		std::filesystem::path SettingsPath;
 	};
 
