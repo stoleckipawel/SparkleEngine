@@ -381,7 +381,7 @@ namespace SparkleLauncher
 			plan.Operation.Inputs.push_back({"cleanScope", ToString(scope)});
 		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
-		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
+		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, WorkspaceIde::VisualStudio);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
 
 		switch (plan.Kind)

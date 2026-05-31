@@ -35,12 +35,19 @@ namespace SparkleLauncher
 		std::string Toolset;
 		std::filesystem::path CMakePath;
 		std::filesystem::path MSBuildPath;
+		std::filesystem::path RiderPath;
 		std::filesystem::path GitPath;
 		std::filesystem::path ClangFormatPath;
 		std::filesystem::path VswherePath;
 		std::string WindowsSdkVersion;
 		std::vector<ToolchainItemStatus> Items;
 		bool RequiredToolsAvailable = false;
+	};
+
+	enum class WorkspaceIde
+	{
+		VisualStudio,
+		Rider
 	};
 
 	enum class BuildFilesFreshnessState
@@ -94,6 +101,7 @@ namespace SparkleLauncher
 		std::string ProjectId = "Showcase";
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;
 		std::vector<std::string> SelectedTargets;
 		bool ForceConfigure = false;
 	};
@@ -124,9 +132,13 @@ namespace SparkleLauncher
 	std::string ToString(ToolchainItemState state);
 	std::string ToString(BuildFilesFreshnessState state);
 	std::string ToString(BuildWorkspaceOperationKind kind);
+	std::string ToString(WorkspaceIde ide);
+	std::string DisplayName(WorkspaceIde ide);
+	std::string WorkspaceIdeCommandLineValue(WorkspaceIde ide);
+	bool TryParseWorkspaceIde(std::string_view text, WorkspaceIde& outIde);
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions();
 	std::optional<BuildWorkspaceOperationDefinition> FindBuildWorkspaceOperationDefinition(std::string_view operationId);
-	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot);
+	BuildToolchainStatus DetectBuildToolchain(const std::filesystem::path& repositoryRoot, WorkspaceIde preferredIde);
 	BuildFilesFreshnessStatus CheckBuildFilesFreshness(
 	    const std::filesystem::path& repositoryRoot,
 	    const BuildToolchainStatus& toolchain);

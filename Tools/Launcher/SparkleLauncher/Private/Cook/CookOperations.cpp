@@ -180,7 +180,7 @@ namespace SparkleLauncher
 			plan.Operation.RequiresConfirmation = true;
 		}
 
-		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot);
+		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, WorkspaceIde::VisualStudio);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
 		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);

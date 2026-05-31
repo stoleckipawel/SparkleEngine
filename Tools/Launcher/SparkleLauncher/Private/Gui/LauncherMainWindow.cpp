@@ -259,6 +259,18 @@ namespace SparkleLauncher
 		return first + " | " + second;
 	}
 
+	static WorkspaceIde SelectedWorkspaceIde(const LauncherSettings& settings)
+	{
+		WorkspaceIde ide = WorkspaceIde::VisualStudio;
+		TryParseWorkspaceIde(settings.WorkspaceIde().toStdString(), ide);
+		return ide;
+	}
+
+	static QString SelectedWorkspaceIdeName(const LauncherSettings& settings)
+	{
+		return QString::fromStdString(DisplayName(SelectedWorkspaceIde(settings)));
+	}
+
 	LauncherMainWindow::LauncherMainWindow(
 	    std::filesystem::path repositoryRoot,
 	    LauncherProjectModel& projectModel,
@@ -829,6 +841,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
+			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -837,7 +850,8 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -846,7 +860,8 @@ namespace SparkleLauncher
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -854,7 +869,8 @@ namespace SparkleLauncher
 		if (operationId == "cook.tools.prepare")
 		{
 			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Regenerate solution", "Refresh the Visual Studio solution before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
@@ -1186,9 +1202,11 @@ namespace SparkleLauncher
 		request.ProjectId = m_projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : m_projectModel.SelectedProjectId().toStdString();
 		request.EditorProfile = m_settings.EditorProfile().toStdString();
 		request.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
+		request.PreferredIde = SelectedWorkspaceIde(m_settings);
 		request.ForceConfigure = m_settings.ForceConfigure();
 
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
+		const QString workspaceIdeName = SelectedWorkspaceIdeName(m_settings);
 		const bool isToolchainCheck = operationId == "toolchain.check";
 		const bool isSetupWorkflow = operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution";
 		const bool isBuildWorkflow = operationId.startsWith("project.build") || operationId == "cook.tools.prepare";
@@ -1197,7 +1215,7 @@ namespace SparkleLauncher
 
 		if (isToolchainCheck)
 		{
-			QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Required Tools", "Dependencies this machine must provide before build, cook, and solution workflows can run.");
+			QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Required Tools", "Dependencies this machine must provide before build, cook, and IDE workflows can run.");
 			AddStatusRow(*toolchainLayout, "Toolchain", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 			{
@@ -1214,6 +1232,13 @@ namespace SparkleLauncher
 				    detail,
 				    ToolchainStatusState(item.State, item.Required));
 			}
+			AddStatusRow(
+			    *toolchainLayout,
+			    "Selected IDE",
+			    workspaceIdeName,
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
+			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
 
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Generated Workspace", "Only the generated files and cache state that Check Toolchain can confirm.");
 			AddStatusRow(*workspaceLayout, "Build files", plan.Freshness.Current ? "Current" : "Needs refresh", CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), QString::fromStdString(plan.Freshness.SolutionPath.string())), plan.Freshness.Current ? "ok" : "warning");
@@ -1226,7 +1251,7 @@ namespace SparkleLauncher
 			}
 			if (!plan.Freshness.Current)
 			{
-				AddActionRow(*actionLayout, "Regenerate build files", QString::fromStdString(plan.Freshness.Summary), "Regenerate Solution", "workspace.generate-solution");
+				AddActionRow(*actionLayout, "Refresh build files", QString::fromStdString(plan.Freshness.Summary), "Refresh IDE Workspace", "workspace.generate-solution");
 			}
 			if (!dependencyCacheReady)
 			{
@@ -1242,8 +1267,14 @@ namespace SparkleLauncher
 		if (isSetupWorkflow)
 		{
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Workspace Files", "Generated files and cache state used by setup workflows.");
-			AddStatusRow(*workspaceLayout, "Build files", plan.Freshness.Current ? "Current" : "Needs refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
+			AddStatusRow(*workspaceLayout, "Build files", plan.Freshness.Current ? "Current" : "Needs refresh", CombineStatusDetail(QString::fromStdString(plan.Freshness.Summary), QString::fromStdString(plan.Freshness.SolutionPath.string())), plan.Freshness.Current ? "ok" : "warning");
 			AddStatusRow(*workspaceLayout, "Dependency cache", dependencyCacheReady ? "Present" : "May update during configure", QString::fromStdString(dependencyCachePath.string()), dependencyCacheReady ? "ok" : "warning");
+			AddStatusRow(
+			    *workspaceLayout,
+			    "IDE target",
+			    workspaceIdeName,
+			    request.PreferredIde == WorkspaceIde::Rider ? QString::fromStdString(m_repositoryRoot.string()) : QString::fromStdString(plan.Freshness.SolutionPath.string()),
+			    "neutral");
 
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
@@ -1258,11 +1289,11 @@ namespace SparkleLauncher
 			}
 			else if (operationId == "workspace.generate-solution")
 			{
-				AddStatusRow(*actionLayout, "Regenerate Solution", "Will run", "Force CMake configure and rewrite Visual Studio/CMake generated files.", "neutral");
+				AddStatusRow(*actionLayout, "Refresh IDE Workspace", "Will run", "Force CMake configure and rewrite generated workspace files for " + workspaceIdeName + ".", "neutral");
 			}
 			else if (operationId == "workspace.open-solution")
 			{
-				AddStatusRow(*actionLayout, "Open Solution", plan.Freshness.Current ? "Ready" : "Refresh then open", QString::fromStdString(plan.Freshness.SolutionPath.string()), plan.Freshness.Current ? "ok" : "warning");
+				AddStatusRow(*actionLayout, "Open IDE", plan.CanRun ? (plan.Freshness.Current ? "Ready" : "Refresh then open") : "Action needed", request.PreferredIde == WorkspaceIde::Rider ? QString::fromStdString(m_repositoryRoot.string()) : QString::fromStdString(plan.Freshness.SolutionPath.string()), plan.CanRun ? (plan.Freshness.Current ? "ok" : "warning") : "bad");
 			}
 			return;
 		}
@@ -1605,6 +1636,10 @@ namespace SparkleLauncher
 		{
 			return "Run Check Toolchain, then retry this workflow.";
 		}
+		if (statusText.contains("Rider", Qt::CaseInsensitive))
+		{
+			return "Install Rider or switch the IDE selector back to Visual Studio, then retry.";
+		}
 		if (statusText.contains("shader package", Qt::CaseInsensitive) || statusText.contains("shader", Qt::CaseInsensitive))
 		{
 			return "Run Cook > Cook Shaders, then retry this workflow.";
@@ -1642,6 +1677,7 @@ namespace SparkleLauncher
 		request.ProjectId = m_projectModel.SelectedProjectId();
 		request.EditorProfile = m_settings.EditorProfile();
 		request.RuntimeProfile = m_settings.RuntimeProfile();
+		request.WorkspaceIde = m_settings.WorkspaceIde();
 		request.SelectedTargets = m_settings.SelectedTargets();
 		request.ShaderPackages = m_settings.ShaderPackages();
 		request.LaunchBackend = m_settings.LaunchBackend();

@@ -17,6 +17,11 @@ namespace SparkleLauncher
 		return m_runtimeProfile;
 	}
 
+	const QString& LauncherSettings::WorkspaceIde() const
+	{
+		return m_workspaceIde;
+	}
+
 	const QString& LauncherSettings::SelectedTargets() const
 	{
 		return m_selectedTargets;
@@ -126,6 +131,17 @@ namespace SparkleLauncher
 		}
 
 		m_runtimeProfile = profileName;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetWorkspaceIde(const QString& ide)
+	{
+		if (m_workspaceIde == ide)
+		{
+			return;
+		}
+
+		m_workspaceIde = ide;
 		emit SettingsChanged();
 	}
 

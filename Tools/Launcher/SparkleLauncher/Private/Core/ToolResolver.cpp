@@ -48,6 +48,8 @@ namespace SparkleLauncher
 			return {"cmake.exe", "cmake"};
 		case KnownTool::MSBuild:
 			return {"MSBuild.exe", "msbuild.exe", "MSBuild"};
+		case KnownTool::Rider:
+			return {"rider64.exe", "rider.exe", "rider.bat", "rider"};
 		case KnownTool::Git:
 			return {"git.exe", "git"};
 		case KnownTool::ClangFormat:
@@ -65,6 +67,8 @@ namespace SparkleLauncher
 			return {"SPARKLE_CMAKE_EXE"};
 		case KnownTool::MSBuild:
 			return {"SPARKLE_MSBUILD_EXE"};
+		case KnownTool::Rider:
+			return {"SPARKLE_RIDER_EXE"};
 		case KnownTool::Git:
 			return {"SPARKLE_GIT_EXE"};
 		case KnownTool::ClangFormat:
@@ -77,6 +81,15 @@ namespace SparkleLauncher
 	static void AddProgramFilesCandidate(std::vector<std::filesystem::path>& candidates, const char* environmentName, std::filesystem::path relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
+		if (root.has_value())
+		{
+			candidates.push_back(std::filesystem::path(*root) / relativePath);
+		}
+	}
+
+	static void AddLocalAppDataCandidate(std::vector<std::filesystem::path>& candidates, std::filesystem::path relativePath)
+	{
+		const std::optional<std::string> root = TryGetEnvironmentVariable("LocalAppData");
 		if (root.has_value())
 		{
 			candidates.push_back(std::filesystem::path(*root) / relativePath);
@@ -99,6 +112,15 @@ namespace SparkleLauncher
 		}
 	}
 
+	static void AddJetBrainsRiderCandidates(std::vector<std::filesystem::path>& candidates)
+	{
+		AddLocalAppDataCandidate(candidates, std::filesystem::path("Programs") / "Rider" / "bin" / "rider64.exe");
+		AddLocalAppDataCandidate(candidates, std::filesystem::path("JetBrains") / "Toolbox" / "scripts" / "rider.cmd");
+		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider 2026.1" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider 2025.3" / "bin" / "rider64.exe");
+	}
+
 	static std::vector<std::filesystem::path> GetKnownInstallCandidates(KnownTool tool)
 	{
 		std::vector<std::filesystem::path> candidates;
@@ -118,6 +140,9 @@ namespace SparkleLauncher
 			break;
 		case KnownTool::MSBuild:
 			AddVisualStudioMSBuildCandidates(candidates);
+			break;
+		case KnownTool::Rider:
+			AddJetBrainsRiderCandidates(candidates);
 			break;
 		case KnownTool::Git:
 			AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("Git") / "cmd" / "git.exe");
@@ -152,6 +177,8 @@ namespace SparkleLauncher
 			return "CMake";
 		case KnownTool::MSBuild:
 			return "MSBuild";
+		case KnownTool::Rider:
+			return "Rider";
 		case KnownTool::Git:
 			return "Git";
 		case KnownTool::ClangFormat:

@@ -14,6 +14,7 @@ namespace SparkleLauncher
 
 		const QString& EditorProfile() const;
 		const QString& RuntimeProfile() const;
+		const QString& WorkspaceIde() const;
 		const QString& SelectedTargets() const;
 		const QString& ShaderPackages() const;
 		const QString& LaunchBackend() const;
@@ -36,6 +37,7 @@ namespace SparkleLauncher
 	public slots:
 		void SetEditorProfile(const QString& profileName);
 		void SetRuntimeProfile(const QString& profileName);
+		void SetWorkspaceIde(const QString& ide);
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderPackages(const QString& packages);
 		void SetLaunchBackend(const QString& backend);
@@ -61,6 +63,7 @@ namespace SparkleLauncher
 	private:
 		QString m_editorProfile = "DevelopmentEditor";
 		QString m_runtimeProfile = "DevelopmentGame";
+		QString m_workspaceIde = "visual-studio";
 		QString m_selectedTargets;
 		QString m_shaderPackages;
 		QString m_launchBackend;

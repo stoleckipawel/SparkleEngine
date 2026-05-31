@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SparkleLauncher/BuildWorkspaceOperations.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LaunchOperations.h"
@@ -21,6 +22,7 @@ namespace SparkleLauncher
 		std::string SelectedProject;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
 		std::string DryRunOperationId;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;

@@ -37,6 +37,7 @@ namespace SparkleLauncher
 		QString ProjectId;
 		QString EditorProfile;
 		QString RuntimeProfile;
+		QString WorkspaceIde;
 		QString SelectedTargets;
 		QString ShaderPackages;
 		QString LaunchBackend;

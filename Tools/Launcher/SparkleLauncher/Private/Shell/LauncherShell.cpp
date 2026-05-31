@@ -38,6 +38,7 @@ namespace SparkleLauncher
 		std::string SelectedProjectId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
 		std::vector<LauncherOperationRow> Operations;
 		std::vector<LauncherActivityEntry> Activity;
 		std::vector<std::string> JobOutput;
@@ -276,6 +277,7 @@ namespace SparkleLauncher
 		state.JobOutput.push_back("Project: " + state.SelectedProjectId);
 		state.JobOutput.push_back("Editor profile: " + state.EditorProfile);
 		state.JobOutput.push_back("Runtime profile: " + state.RuntimeProfile);
+		state.JobOutput.push_back("Workspace IDE: " + DisplayName(state.WorkspaceIdePreference));
 		state.JobOutput.push_back("Latest log: " + plan.Operation.LogPath.string());
 		for (const std::string& message : plan.ReadinessMessages)
 		{
@@ -378,6 +380,7 @@ namespace SparkleLauncher
 		buildRequest.ProjectId = state.SelectedProjectId;
 		buildRequest.EditorProfile = state.EditorProfile;
 		buildRequest.RuntimeProfile = state.RuntimeProfile;
+		buildRequest.PreferredIde = state.WorkspaceIdePreference;
 		if (FindBuildWorkspaceOperationDefinition(operationId).has_value())
 		{
 			AppendBuildPlanDryRun(state, PlanBuildWorkspaceOperation(operationId, buildRequest));
@@ -470,7 +473,8 @@ namespace SparkleLauncher
 		output << "\nSelected project: " << (state.SelectedProjectId.empty() ? "<none>" : state.SelectedProjectId) << '\n';
 		output << "Profile selectors\n";
 		output << "  Editor: " << state.EditorProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Editor) << '\n';
-		output << "  Runtime/Cook: " << state.RuntimeProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Game) << "\n\n";
+		output << "  Runtime/Cook: " << state.RuntimeProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Game) << '\n';
+		output << "  Workspace IDE: " << DisplayName(state.WorkspaceIdePreference) << " | options: Visual Studio, Rider\n\n";
 
 		RenderOperationGroup(state, "Setup", output);
 		RenderOperationGroup(state, "Build", output);
@@ -534,6 +538,7 @@ namespace SparkleLauncher
 		state.SelectedProjectId = ChooseSelectedProjectId(state.Projects, arguments.SelectedProject);
 		state.EditorProfile = arguments.EditorProfile;
 		state.RuntimeProfile = arguments.RuntimeProfile;
+		state.WorkspaceIdePreference = arguments.WorkspaceIdePreference;
 		state.Operations = GetLauncherOperationRows();
 		AppendLocalActivity(state);
 		if (!arguments.DryRunOperationId.empty())
@@ -624,6 +629,25 @@ namespace SparkleLauncher
 				{
 					outArguments.DryRunOperationId = std::string(kDefaultDryRunOperationId);
 				}
+				continue;
+			}
+
+			if (argument == "--ide")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --ide requires visual-studio or rider.\n";
+					return false;
+				}
+
+				WorkspaceIde ide = WorkspaceIde::VisualStudio;
+				const std::string_view ideText(argv[++index]);
+				if (!TryParseWorkspaceIde(ideText, ide))
+				{
+					error << "SparkleLauncher: unsupported IDE '" << ideText << "'.\n";
+					return false;
+				}
+				outArguments.WorkspaceIdePreference = ide;
 				continue;
 			}
 
@@ -727,7 +751,7 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"

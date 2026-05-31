@@ -143,10 +143,13 @@ namespace SparkleLauncher
 	static BuildWorkspaceOperationRequest MakeBuildRequest(const LauncherOperationRequest& request)
 	{
 		BuildWorkspaceOperationRequest buildRequest;
+		WorkspaceIde workspaceIde = WorkspaceIde::VisualStudio;
+		TryParseWorkspaceIde(request.WorkspaceIde.toStdString(), workspaceIde);
 		buildRequest.RepositoryRoot = request.RepositoryRoot;
 		buildRequest.ProjectId = request.ProjectId.toStdString();
 		buildRequest.EditorProfile = request.EditorProfile.toStdString();
 		buildRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		buildRequest.PreferredIde = workspaceIde;
 		buildRequest.SelectedTargets = SplitOptionList(request.SelectedTargets);
 		buildRequest.ForceConfigure = request.ForceConfigure;
 		return buildRequest;
