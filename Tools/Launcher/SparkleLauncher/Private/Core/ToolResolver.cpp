@@ -2,6 +2,8 @@
 
 #include "SparkleLauncher/LauncherPaths.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <optional>
 #include <sstream>
@@ -87,12 +89,113 @@ namespace SparkleLauncher
 		}
 	}
 
+	static void AddProgramFilesDirectoryMatches(
+	    std::vector<std::filesystem::path>& candidates,
+	    const char* environmentName,
+	    std::string_view directoryPrefix,
+	    std::filesystem::path relativeExecutablePath)
+	{
+		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
+		if (!root.has_value())
+		{
+			return;
+		}
+
+		const std::filesystem::path parentDirectory = std::filesystem::path(*root) / "JetBrains";
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(parentDirectory, errorCode))
+		{
+			return;
+		}
+
+		for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(parentDirectory, errorCode))
+		{
+			if (errorCode)
+			{
+				errorCode.clear();
+				continue;
+			}
+
+			if (!entry.is_directory(errorCode))
+			{
+				errorCode.clear();
+				continue;
+			}
+
+			const std::string directoryName = entry.path().filename().string();
+			if (directoryName.rfind(std::string(directoryPrefix), 0) == 0)
+			{
+				candidates.push_back(entry.path() / relativeExecutablePath);
+			}
+			errorCode.clear();
+		}
+	}
+
 	static void AddLocalAppDataCandidate(std::vector<std::filesystem::path>& candidates, std::filesystem::path relativePath)
 	{
 		const std::optional<std::string> root = TryGetEnvironmentVariable("LocalAppData");
 		if (root.has_value())
 		{
 			candidates.push_back(std::filesystem::path(*root) / relativePath);
+		}
+	}
+
+	static void AddEnvironmentRootIfPresent(std::vector<std::filesystem::path>& roots, const char* environmentName, std::filesystem::path relativePath = {})
+	{
+		const std::optional<std::string> root = TryGetEnvironmentVariable(environmentName);
+		if (root.has_value())
+		{
+			roots.push_back(std::filesystem::path(*root) / relativePath);
+		}
+	}
+
+	static bool PathFilenameEquals(const std::filesystem::path& path, std::string_view filename)
+	{
+		std::string pathFilename = path.filename().string();
+		std::string expected(filename);
+		std::transform(pathFilename.begin(), pathFilename.end(), pathFilename.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		std::transform(expected.begin(), expected.end(), expected.begin(), [](unsigned char value) { return static_cast<char>(std::tolower(value)); });
+		return pathFilename == expected;
+	}
+
+	static void AddRecursiveExecutableMatches(
+	    std::vector<std::filesystem::path>& candidates,
+	    const std::filesystem::path& root,
+	    std::string_view filename,
+	    int maxDepth)
+	{
+		std::error_code errorCode;
+		if (!std::filesystem::is_directory(root, errorCode))
+		{
+			return;
+		}
+
+		std::filesystem::recursive_directory_iterator iterator(
+		    root,
+		    std::filesystem::directory_options::skip_permission_denied,
+		    errorCode);
+		const std::filesystem::recursive_directory_iterator end;
+		while (iterator != end)
+		{
+			if (errorCode)
+			{
+				errorCode.clear();
+				iterator.increment(errorCode);
+				continue;
+			}
+
+			if (iterator.depth() > maxDepth)
+			{
+				iterator.disable_recursion_pending();
+			}
+
+			const std::filesystem::directory_entry entry = *iterator;
+			if (entry.is_regular_file(errorCode) && PathFilenameEquals(entry.path(), filename))
+			{
+				candidates.push_back(entry.path());
+			}
+			errorCode.clear();
+			iterator.increment(errorCode);
 		}
 	}
 
@@ -117,8 +220,23 @@ namespace SparkleLauncher
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("Programs") / "Rider" / "bin" / "rider64.exe");
 		AddLocalAppDataCandidate(candidates, std::filesystem::path("JetBrains") / "Toolbox" / "scripts" / "rider.cmd");
 		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
-		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider 2026.1" / "bin" / "rider64.exe");
-		AddProgramFilesCandidate(candidates, "ProgramFiles", std::filesystem::path("JetBrains") / "JetBrains Rider 2025.3" / "bin" / "rider64.exe");
+		AddProgramFilesCandidate(candidates, "ProgramFiles(x86)", std::filesystem::path("JetBrains") / "JetBrains Rider" / "bin" / "rider64.exe");
+		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
+		AddProgramFilesDirectoryMatches(candidates, "ProgramFiles(x86)", "JetBrains Rider", std::filesystem::path("bin") / "rider64.exe");
+
+		std::vector<std::filesystem::path> searchRoots;
+		AddEnvironmentRootIfPresent(searchRoots, "ProgramFiles", std::filesystem::path("JetBrains"));
+		AddEnvironmentRootIfPresent(searchRoots, "ProgramFiles(x86)", std::filesystem::path("JetBrains"));
+		AddEnvironmentRootIfPresent(searchRoots, "LocalAppData", std::filesystem::path("Programs"));
+		AddEnvironmentRootIfPresent(searchRoots, "LocalAppData", std::filesystem::path("JetBrains"));
+		AddEnvironmentRootIfPresent(searchRoots, "LocalAppData", std::filesystem::path("JetBrains") / "Toolbox");
+
+		for (const std::filesystem::path& root : searchRoots)
+		{
+			AddRecursiveExecutableMatches(candidates, root, "rider64.exe", 4);
+			AddRecursiveExecutableMatches(candidates, root, "rider.exe", 4);
+			AddRecursiveExecutableMatches(candidates, root, "rider.cmd", 5);
+		}
 	}
 
 	static std::vector<std::filesystem::path> GetKnownInstallCandidates(KnownTool tool)
