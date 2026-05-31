@@ -73,6 +73,32 @@ namespace SparkleLauncher
 		QString Group;
 	};
 
+	struct ThirdPartyDependencyUiEntry
+	{
+		QString Label;
+		QString Version;
+		QString Purpose;
+		QString CacheDirectoryName;
+	};
+
+	static const std::array<ThirdPartyDependencyUiEntry, 11>& GetTrackedThirdPartyDependencies()
+	{
+		static const std::array<ThirdPartyDependencyUiEntry, 11> dependencies = {{
+		    {"Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src"},
+		    {"cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src"},
+		    {"stb", "master", "Header-only image loading and mip resize helpers.", "stb-src"},
+		    {"tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src"},
+		    {"spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src"},
+		    {"zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src"},
+		    {"Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src"},
+		    {"Compressonator", "master (sparse)", "AMD BC1-BC7 texture block compression support.", "compressonator-src"},
+		    {"KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src"},
+		    {"SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src"},
+		    {"Font Awesome Free Solid", "v6.7.1", "Launcher/editor icon font asset and license.", "editor-icons"},
+		}};
+		return dependencies;
+	}
+
 	static QString ToDisplayPath(const std::filesystem::path& repositoryRoot, const std::filesystem::path& path)
 	{
 		std::error_code errorCode;
@@ -199,6 +225,23 @@ namespace SparkleLauncher
 		return std::filesystem::directory_iterator(path, errorCode) != std::filesystem::directory_iterator();
 	}
 
+	static QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath)
+	{
+		int readyCount = 0;
+		for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
+		{
+			if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
+			{
+				++readyCount;
+			}
+		}
+
+		return QStringLiteral("%1 of %2 tracked dependencies are already cached under %3.")
+		    .arg(readyCount)
+		    .arg(GetTrackedThirdPartyDependencies().size())
+		    .arg(QString::fromStdString(dependencyCachePath.string()));
+	}
+
 	static QString ToolchainStatusState(ToolchainItemState state, bool required)
 	{
 		switch (state)
@@ -273,6 +316,34 @@ namespace SparkleLauncher
 	static QString SelectedWorkspaceIdeName(const LauncherSettings& settings)
 	{
 		return QString::fromStdString(DisplayName(SelectedWorkspaceIde(settings)));
+	}
+
+	static BuildWorkspaceOperationRequest MakeWorkspacePlanRequest(
+	    const std::filesystem::path& repositoryRoot,
+	    const LauncherProjectModel& projectModel,
+	    const LauncherSettings& settings)
+	{
+		BuildWorkspaceOperationRequest request;
+		request.RepositoryRoot = repositoryRoot;
+		request.ProjectId = projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : projectModel.SelectedProjectId().toStdString();
+		request.EditorProfile = settings.EditorProfile().toStdString();
+		request.RuntimeProfile = settings.RuntimeProfile().toStdString();
+		request.PreferredIde = SelectedWorkspaceIde(settings);
+		request.ForceConfigure = settings.ForceConfigure();
+		return request;
+	}
+
+	static QString FirstBlockingReadinessMessage(const BuildWorkspaceOperationPlan& plan)
+	{
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			if (!message.empty())
+			{
+				return QString::fromStdString(message);
+			}
+		}
+
+		return "This workflow is currently blocked.";
 	}
 
 	LauncherMainWindow::LauncherMainWindow(
@@ -1294,16 +1365,32 @@ namespace SparkleLauncher
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Action Dependencies", "State this setup workflow depends on before it can do useful work.");
 			AddStatusRow(*workspaceLayout, buildFilesLabel, plan.Freshness.Current ? "Ready" : "Needs refresh", buildFilesDetail, plan.Freshness.Current ? "ok" : "warning");
 			AddStatusRow(*workspaceLayout, "Third-Party Cache", cacheStatus, cacheDetail, dependencyCacheReady ? "ok" : "warning");
-			AddStatusRow(
-			    *workspaceLayout,
-			    "IDE output target",
-			    workspaceIdeName,
-			    request.PreferredIde == WorkspaceIde::Rider ? "Rider opens the repository root." : QString("Visual Studio opens %1.").arg(QString::fromStdString(plan.Freshness.SolutionPath.string())),
-			    "neutral");
-
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
 				AddStatusRow(*workspaceLayout, "Required tools", "Blocked", RequiredToolProblemSummary(plan.Toolchain), "bad");
+			}
+
+			if (operationId == "workspace.setup")
+			{
+				QVBoxLayout* dependenciesLayout = AddOptionGroup(
+				    layout,
+				    "Tracked Third-Party Dependencies",
+				    "Sync Third Parties populates these repositories and assets into the local dependency cache.");
+				AddNoOptionsMessage(*dependenciesLayout, FormatTrackedDependencySummary(dependencyCachePath));
+				for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
+				{
+					const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
+					const bool dependencyReady = DirectoryHasEntries(dependencyPath);
+					const QString detail = QStringLiteral("%1 Cache: %2")
+					                           .arg(dependency.Purpose)
+					                           .arg(QString::fromStdString(dependencyPath.string()));
+					AddStatusRow(
+					    *dependenciesLayout,
+					    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
+					    dependencyReady ? "Cached" : "Pending",
+					    detail,
+					    dependencyReady ? "ok" : "warning");
+				}
 			}
 			return;
 		}
@@ -1354,10 +1441,12 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::RebuildOptionsPages()
 	{
-		if (m_optionsStack == nullptr)
+		if (m_optionsStack == nullptr || m_isRebuildingOptions)
 		{
 			return;
 		}
+
+		m_isRebuildingOptions = true;
 
 		while (m_optionsStack->count() > 0)
 		{
@@ -1394,6 +1483,8 @@ namespace SparkleLauncher
 				m_projectSelectors.push_back(combo);
 			}
 		}
+
+		m_isRebuildingOptions = false;
 	}
 
 	void LauncherMainWindow::LoadLauncherIconFont()
@@ -1606,6 +1697,17 @@ namespace SparkleLauncher
 		{
 			const QString reason = "No project discovered. Run Sync Third Parties or Check Dependencies, then retry.";
 			m_runButton->setEnabled(false);
+			m_runButton->setToolTip(reason);
+			m_runButton->setAccessibleDescription(reason);
+			return;
+		}
+
+		if (FindBuildWorkspaceOperationDefinition(m_selectedOperationId.toStdString()).has_value())
+		{
+			const BuildWorkspaceOperationRequest request = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
+			const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(m_selectedOperationId.toStdString(), request);
+			const QString reason = plan.CanRun ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going." : FirstBlockingReadinessMessage(plan);
+			m_runButton->setEnabled(plan.CanRun);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
 			return;
@@ -1839,14 +1941,7 @@ namespace SparkleLauncher
 
 	bool LauncherMainWindow::OfferWorkspacePrerequisiteOperation(const QString& operationId)
 	{
-		BuildWorkspaceOperationRequest request;
-		request.RepositoryRoot = m_repositoryRoot;
-		request.ProjectId = m_projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : m_projectModel.SelectedProjectId().toStdString();
-		request.EditorProfile = m_settings.EditorProfile().toStdString();
-		request.RuntimeProfile = m_settings.RuntimeProfile().toStdString();
-		request.PreferredIde = SelectedWorkspaceIde(m_settings);
-		request.ForceConfigure = m_settings.ForceConfigure();
-
+		BuildWorkspaceOperationRequest request = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
 		if (plan.CanRun)
 		{
@@ -1867,6 +1962,12 @@ namespace SparkleLauncher
 			prerequisiteOperationId = "workspace.generate-solution";
 			promptTitle = "Regenerate Solution";
 			promptAction = "Solution/workspace files are not current. Run Regenerate Solution now?";
+		}
+		else if (operationId == "workspace.open-solution")
+		{
+			prerequisiteOperationId = "toolchain.check";
+			promptTitle = "Check Dependencies";
+			promptAction = QString("%1 is not currently available. Run Check Dependencies now?").arg(SelectedWorkspaceIdeName(m_settings));
 		}
 		else
 		{

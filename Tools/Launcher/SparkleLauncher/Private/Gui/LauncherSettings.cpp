@@ -198,120 +198,200 @@ namespace SparkleLauncher
 
 	void LauncherSettings::SetSelectedTargets(const QString& targets)
 	{
+		if (m_selectedTargets == targets)
+		{
+			return;
+		}
 		m_selectedTargets = targets;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetShaderPackages(const QString& packages)
 	{
+		if (m_shaderPackages == packages)
+		{
+			return;
+		}
 		m_shaderPackages = packages;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchBackend(const QString& backend)
 	{
+		if (m_launchBackend == backend)
+		{
+			return;
+		}
 		m_launchBackend = backend;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchTarget(const QString& target)
 	{
+		if (m_launchTarget == target)
+		{
+			return;
+		}
 		m_launchTarget = target;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchVSync(const QString& value)
 	{
+		if (m_launchVSync == value)
+		{
+			return;
+		}
 		m_launchVSync = value;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchHighPerformanceAdapter(const QString& value)
 	{
+		if (m_launchHighPerformanceAdapter == value)
+		{
+			return;
+		}
 		m_launchHighPerformanceAdapter = value;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchMeshAutoBatching(const QString& value)
 	{
+		if (m_launchMeshAutoBatching == value)
+		{
+			return;
+		}
 		m_launchMeshAutoBatching = value;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchCommandLineArguments(const QString& arguments)
 	{
+		if (m_launchCommandLineArguments == arguments)
+		{
+			return;
+		}
 		m_launchCommandLineArguments = arguments;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchCVars(const QString& cvars)
 	{
+		if (m_launchCVars == cvars)
+		{
+			return;
+		}
 		m_launchCVars = cvars;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetSmokeBackend(const QString& backend)
 	{
+		if (m_smokeBackend == backend)
+		{
+			return;
+		}
 		m_smokeBackend = backend;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetSmokeFrameLimit(const QString& frameLimit)
 	{
+		if (m_smokeFrameLimit == frameLimit)
+		{
+			return;
+		}
 		m_smokeFrameLimit = frameLimit;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetFormatMode(const QString& mode)
 	{
+		if (m_formatMode == mode)
+		{
+			return;
+		}
 		m_formatMode = mode;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetCleanScope(const QString& scope)
 	{
+		if (m_cleanScope == scope)
+		{
+			return;
+		}
 		m_cleanScope = scope;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetLaunchSmokeTest(bool enabled)
 	{
+		if (m_launchSmokeTest == enabled)
+		{
+			return;
+		}
 		m_launchSmokeTest = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetForceConfigure(bool enabled)
 	{
+		if (m_forceConfigure == enabled)
+		{
+			return;
+		}
 		m_forceConfigure = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetForceRecook(bool enabled)
 	{
+		if (m_forceRecook == enabled)
+		{
+			return;
+		}
 		m_forceRecook = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetConfirmForceRecook(bool enabled)
 	{
+		if (m_confirmForceRecook == enabled)
+		{
+			return;
+		}
 		m_confirmForceRecook = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetConfirmClean(bool enabled)
 	{
+		if (m_confirmClean == enabled)
+		{
+			return;
+		}
 		m_confirmClean = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetSmokeTrace(bool enabled)
 	{
+		if (m_smokeTrace == enabled)
+		{
+			return;
+		}
 		m_smokeTrace = enabled;
 		emit SettingsChanged();
 	}
 
 	void LauncherSettings::SetSmokeSkipLevelSwitching(bool enabled)
 	{
+		if (m_smokeSkipLevelSwitching == enabled)
+		{
+			return;
+		}
 		m_smokeSkipLevelSwitching = enabled;
 		emit SettingsChanged();
 	}

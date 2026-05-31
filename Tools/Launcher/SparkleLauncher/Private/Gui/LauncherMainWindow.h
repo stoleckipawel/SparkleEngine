@@ -175,6 +175,7 @@ namespace SparkleLauncher
 		QHash<QString, QString> m_runOutputs;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
+		bool m_isRebuildingOptions = false;
 		int m_nextRunIndex = 0;
 		int m_startedRunCount = 0;
 		int m_finishedRunCount = 0;
