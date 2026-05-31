@@ -163,6 +163,25 @@ set_target_properties(SparkleLauncher PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+if(WIN32)
+    get_target_property(SPARKLE_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(SPARKLE_QT_BIN_DIR "${SPARKLE_QMAKE_EXECUTABLE}" DIRECTORY)
+
+    find_program(SPARKLE_WINDEPLOYQT_EXECUTABLE
+        NAMES windeployqt windeployqt6
+        HINTS "${SPARKLE_QT_BIN_DIR}"
+        REQUIRED
+    )
+
+    add_custom_command(TARGET SparkleLauncher POST_BUILD
+        COMMAND "${SPARKLE_WINDEPLOYQT_EXECUTABLE}"
+            --verbose 0
+            --dir "$<TARGET_FILE_DIR:SparkleLauncher>"
+            "$<TARGET_FILE:SparkleLauncher>"
+        COMMENT "Deploying Qt runtime for SparkleLauncher"
+    )
+endif()
+
 add_executable(SparkleLauncherProbe
     ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp
 )
