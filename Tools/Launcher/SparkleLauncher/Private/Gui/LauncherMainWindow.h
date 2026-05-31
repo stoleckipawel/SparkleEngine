@@ -126,9 +126,10 @@ namespace SparkleLauncher
 		bool OperationNeedsConfirmation(const QString& operationId) const;
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
-		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
+		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
 		bool OfferWorkspacePrerequisiteOperation(const QString& operationId);
+		bool OfferCookPrerequisiteOperation(const QString& operationId);
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
 		void StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetStatusMessage(const QString& message);

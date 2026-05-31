@@ -78,26 +78,10 @@ namespace SparkleLauncher
 	std::vector<CookOperationProcessStep> BuildCookProcessStepsForPlan(const CookOperationPlan& plan)
 	{
 		std::vector<CookOperationProcessStep> steps;
-		if (!plan.Toolchain.RequiredToolsAvailable)
+		if (!plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current)
 		{
 			return steps;
 		}
-
-		const bool needsConfigure = !plan.Freshness.Current;
-		if (needsConfigure)
-		{
-			AddStep(
-			    steps,
-			    "configure",
-			    "Generate build files",
-			    MakeCMakeConfigureRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, "Configure.txt"));
-		}
-
-		AddStep(
-		    steps,
-		    "build-cook-tools",
-		    "Build required cook tools",
-		    MakeCMakeBuildRequest(plan.RepositoryRoot, plan.Toolchain, plan.Operation.Id, plan.ToolProfile, GetCookToolTargets(plan.Kind), "BuildCookTools.txt"));
 
 		if (plan.Request.Mode == CookMode::Force)
 		{

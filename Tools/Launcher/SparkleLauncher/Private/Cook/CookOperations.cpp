@@ -4,6 +4,7 @@
 #include "Core/Public/Strings/StringUtils.h"
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/LauncherPaths.h"
+#include "SparkleLauncher/ToolResolver.h"
 
 #include <algorithm>
 #include <optional>
@@ -39,6 +40,27 @@ namespace SparkleLauncher
 		}
 
 		return "DevelopmentEditor";
+	}
+
+	static std::vector<std::string> GetRequiredCookToolNames(const CookOperationPlan& plan)
+	{
+		switch (plan.Kind)
+		{
+		case CookOperationKind::CookShaders:
+			if (plan.Request.ShaderPackages.empty())
+			{
+				return {"AssetCooker", "ShaderCompiler"};
+			}
+			return {"ShaderCompiler"};
+		case CookOperationKind::BuildTextures:
+			return {"TextureCooker"};
+		case CookOperationKind::BuildSceneAssets:
+			return {"AssetCooker"};
+		case CookOperationKind::CookAllAssets:
+			return {"AssetCooker", "TextureCooker", "ShaderCompiler"};
+		}
+
+		return {};
 	}
 
 	static void PopulateCookEffects(CookOperationPlan& plan)
@@ -182,11 +204,27 @@ namespace SparkleLauncher
 
 		plan.Toolchain = DetectBuildToolchain(request.RepositoryRoot, WorkspaceIde::VisualStudio);
 		plan.Freshness = CheckBuildFilesFreshness(request.RepositoryRoot, plan.Toolchain);
+		for (const std::string& toolName : GetRequiredCookToolNames(plan))
+		{
+			plan.RequiredToolPaths.push_back(ResolveSparkleToolPath(request.RepositoryRoot, plan.ToolProfile, toolName));
+		}
 		AddReadiness(plan, plan.Toolchain.RequiredToolsAvailable ? "Required toolchain is available." : "Required toolchain is incomplete.");
 		AddReadiness(plan, plan.Freshness.Summary);
 		if (request.ProjectId.empty())
 		{
 			AddReadiness(plan, "A project must be selected before cooking.");
+		}
+		if (!plan.Freshness.Current)
+		{
+			AddReadiness(plan, "Solution/workspace files are not current. Run Regenerate Solution first.");
+		}
+		bool requiredCookToolsAvailable = true;
+		for (const std::filesystem::path& toolPath : plan.RequiredToolPaths)
+		{
+			std::error_code errorCode;
+			const bool toolExists = std::filesystem::exists(toolPath, errorCode);
+			requiredCookToolsAvailable = requiredCookToolsAvailable && toolExists && !errorCode;
+			AddReadiness(plan, toolExists && !errorCode ? ("Cook tool is ready: " + toolPath.string()) : ("Cook tool is missing; run Build Cook Tools first: " + toolPath.string()));
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{
@@ -194,12 +232,12 @@ namespace SparkleLauncher
 		}
 
 		PopulateCookEffects(plan);
-		if (plan.Toolchain.RequiredToolsAvailable)
+		if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable)
 		{
 			PopulateCookSteps(plan);
 		}
 
-		plan.CanRun = plan.Toolchain.RequiredToolsAvailable && !request.ProjectId.empty() &&
+		plan.CanRun = plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable && !request.ProjectId.empty() &&
 		    (request.Mode != CookMode::Force || request.ForceRecookConfirmed);
 
 		std::ostringstream dryRun;

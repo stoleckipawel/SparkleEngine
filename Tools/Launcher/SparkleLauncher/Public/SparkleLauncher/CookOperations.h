@@ -64,6 +64,7 @@ namespace SparkleLauncher
 		BuildToolchainStatus Toolchain;
 		BuildFilesFreshnessStatus Freshness;
 		std::string ToolProfile;
+		std::vector<std::filesystem::path> RequiredToolPaths;
 		std::filesystem::path CookedOutputDirectory;
 		std::vector<CookOperationStep> Steps;
 		std::vector<std::string> PlannedEffects;

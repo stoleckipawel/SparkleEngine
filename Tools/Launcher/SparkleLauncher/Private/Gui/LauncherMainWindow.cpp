@@ -5,6 +5,7 @@
 #include "LauncherSettings.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
+#include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/LaunchOperations.h"
 
@@ -68,6 +69,7 @@ namespace SparkleLauncher
 		QString Value;
 		QString Detail;
 		QString Preview;
+		QString Group;
 	};
 
 	static QString ToDisplayPath(const std::filesystem::path& repositoryRoot, const std::filesystem::path& path)
@@ -168,7 +170,7 @@ namespace SparkleLauncher
 		}
 		if (scopeValue == "deps")
 		{
-			return "Dependency Cache";
+			return "Third-Party Cache";
 		}
 		if (scopeValue == "logs")
 		{
@@ -419,6 +421,11 @@ namespace SparkleLauncher
 		if ((m_selectedOperationId == "workspace.setup" || m_selectedOperationId == "workspace.generate-solution" || m_selectedOperationId == "workspace.open-solution" ||
 		     m_selectedOperationId == "launcher.build.self" || m_selectedOperationId.startsWith("project.build") || m_selectedOperationId == "cook.tools.prepare") &&
 		    !OfferWorkspacePrerequisiteOperation(m_selectedOperationId))
+		{
+			return;
+		}
+
+		if (m_selectedOperationId.startsWith("cook.") && m_selectedOperationId != "cook.tools.prepare" && !OfferCookPrerequisiteOperation(m_selectedOperationId))
 		{
 			return;
 		}
@@ -1051,21 +1058,27 @@ namespace SparkleLauncher
 		if (operationId == "workspace.clean")
 		{
 			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
-			    {"Project Cooked Data", "selected-cooked", "Cooked asset outputs for the selected project.", QString()},
-			    {"All Cooked Data", "all-cooked", "Cooked asset outputs for every project.", QString()},
-			    {"Build Artifacts", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps dependency cache.", "build contents except build/_deps, .vs, root generated project files, project generated files"},
-			    {"Shader Cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString()},
-			    {"Dependency Cache", "deps", "Downloaded third-party dependency cache. Configure will re-download dependencies.", QString()},
-			    {"Log Files", "logs", "Repository, launcher, and project logs.", "logs, build/Launcher/Logs, Projects/*/logs"},
-			    {"Generated Workspace", "pristine", "All generated workspace state, including dependency cache, cooked data, IDE state, logs, and generated project files.", "build, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files"},
+			    {"Project Cooked Data", "selected-cooked", "Cooked asset outputs for the selected project.", QString(), "Cooked Outputs"},
+			    {"All Cooked Data", "all-cooked", "Cooked asset outputs for every project.", QString(), "Cooked Outputs"},
+			    {"Build Artifacts", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the third-party cache.", "build contents except build/_deps, .vs, root generated project files, project generated files", "Build and Generated State"},
+			    {"Shader Cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
+			    {"Third-Party Cache", "deps", "Downloaded third-party dependency cache. Configure will re-download dependencies.", QString(), "Caches"},
+			    {"Log Files", "logs", "Repository, launcher, and project logs.", "logs, build/Launcher/Logs, Projects/*/logs", "Logs"},
+			    {"Generated Workspace", "pristine", "All generated workspace state, including the third-party cache, cooked data, IDE state, logs, and generated project files.", "build, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset Everything"},
 			}};
 
-			QVBoxLayout* cleanScopeLayout = AddInlineOptionsSection(layout);
 			QVector<QCheckBox*> scopeBoxes;
 			const QString selectedProjectId = m_projectModel.SelectedProjectId();
 			const QStringList selectedScopes = m_settings.CleanScope().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts);
-			for (const CleanScopeUiOption& scope : cleanScopes)
-			{
+			const std::array<QPair<QString, QString>, 5> cleanGroups = {{
+			    {"Cooked Outputs", "Remove cooked assets for one project or every project."},
+			    {"Build and Generated State", "Remove generated build products and local IDE workspace state."},
+			    {"Caches", "Remove caches that will be recreated by later workflows."},
+			    {"Logs", "Remove repository, launcher, and project logs."},
+			    {"Reset Everything", "Clear nearly all generated workspace state in one pass."},
+			}};
+
+			const auto addCleanScopeRow = [this, &scopeBoxes, &selectedProjectId, &selectedScopes, &layout](QVBoxLayout& groupLayout, const CleanScopeUiOption& scope) {
 				QCheckBox* scopeBox = new QCheckBox(scope.Label, this);
 				scopeBox->setToolTip(scope.Detail);
 				scopeBox->setProperty("CleanScope", scope.Value);
@@ -1084,8 +1097,20 @@ namespace SparkleLauncher
 				scopeDetail->setObjectName("OptionHelpText");
 				scopeDetail->setWordWrap(true);
 				scopeRowLayout->addWidget(scopeDetail);
-				cleanScopeLayout->addWidget(scopeRow);
+				groupLayout.addWidget(scopeRow);
 				scopeBoxes.push_back(scopeBox);
+			};
+
+			for (const QPair<QString, QString>& cleanGroup : cleanGroups)
+			{
+				QVBoxLayout* cleanGroupLayout = AddOptionGroup(layout, cleanGroup.first, cleanGroup.second);
+				for (const CleanScopeUiOption& scope : cleanScopes)
+				{
+					if (scope.Group == cleanGroup.first)
+					{
+						addCleanScopeRow(*cleanGroupLayout, scope);
+					}
+				}
 			}
 
 			const auto updateCleanScopeSetting = [scopeBoxes, this]() {
@@ -1269,11 +1294,11 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider ? QString::fromStdString(m_repositoryRoot.string()) : QString::fromStdString(plan.Freshness.SolutionPath.string()));
 			const QString cacheStatus = dependencyCacheReady ? "Ready" : "Will be created";
 			const QString cacheDetail = dependencyCacheReady ?
-			                               QString("Dependency cache available at %1.").arg(QString::fromStdString(dependencyCachePath.string())) :
-			                               QString("Dependency cache will be populated under %1 when Sync Third Parties runs.").arg(QString::fromStdString(dependencyCachePath.string()));
+			                               QString("Third-party cache available at %1.").arg(QString::fromStdString(dependencyCachePath.string())) :
+			                               QString("Third-party cache will be populated under %1 when Sync Third Parties runs.").arg(QString::fromStdString(dependencyCachePath.string()));
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Action Dependencies", "State this setup workflow depends on before it can do useful work.");
 			AddStatusRow(*workspaceLayout, buildFilesLabel, plan.Freshness.Current ? "Ready" : "Needs refresh", buildFilesDetail, plan.Freshness.Current ? "ok" : "warning");
-			AddStatusRow(*workspaceLayout, "Dependency cache", cacheStatus, cacheDetail, dependencyCacheReady ? "ok" : "warning");
+			AddStatusRow(*workspaceLayout, "Third-Party Cache", cacheStatus, cacheDetail, dependencyCacheReady ? "ok" : "warning");
 			AddStatusRow(
 			    *workspaceLayout,
 			    "IDE output target",
@@ -1690,7 +1715,7 @@ namespace SparkleLauncher
 		return request;
 	}
 
-	bool LauncherMainWindow::ConfirmRunRequest(const LauncherOperationRequest& request) const
+	bool LauncherMainWindow::ConfirmRunRequest(LauncherOperationRequest& request) const
 	{
 		const bool cleanRequested = request.OperationId == "workspace.clean";
 		const bool destructiveRequested = request.ForceRecook || cleanRequested;
@@ -1726,7 +1751,13 @@ namespace SparkleLauncher
 			    message,
 			    QMessageBox::Ok | QMessageBox::Cancel,
 			    QMessageBox::Cancel);
-			return result == QMessageBox::Ok;
+			if (result != QMessageBox::Ok)
+			{
+				return false;
+			}
+
+			request.ConfirmClean = true;
+			return true;
 		}
 
 		const QMessageBox::StandardButton result = QMessageBox::question(
@@ -1921,6 +1952,82 @@ namespace SparkleLauncher
 		if (!ConfirmRunRequest(prerequisiteRequest))
 		{
 			SetStatusMessage("Prerequisite run canceled");
+			return false;
+		}
+
+		StartOperation(std::move(prerequisiteRequest), DisplayNameForOperation(prerequisiteOperationId));
+		return false;
+	}
+
+	bool LauncherMainWindow::OfferCookPrerequisiteOperation(const QString& operationId)
+	{
+		LauncherOperationRequest request = BuildOperationRequest(operationId);
+		CookOperationRequest cookRequest;
+		cookRequest.RepositoryRoot = request.RepositoryRoot;
+		cookRequest.ProjectId = request.ProjectId.toStdString();
+		cookRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		cookRequest.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
+		cookRequest.ForceRecookConfirmed = request.ConfirmForceRecook;
+		for (const QString& part : request.ShaderPackages.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+		{
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
+			{
+				cookRequest.ShaderPackages.push_back(trimmed.toStdString());
+			}
+		}
+
+		const CookOperationPlan plan = PlanCookOperation(operationId.toStdString(), cookRequest);
+		if (plan.CanRun)
+		{
+			return true;
+		}
+
+		bool workspaceMissing = false;
+		bool cookToolsMissing = false;
+		QStringList readiness;
+		for (const std::string& message : plan.ReadinessMessages)
+		{
+			const QString readinessMessage = QString::fromStdString(message);
+			readiness.push_back(readinessMessage);
+			workspaceMissing = workspaceMissing || readinessMessage.contains("Run Regenerate Solution first", Qt::CaseInsensitive);
+			cookToolsMissing = cookToolsMissing || readinessMessage.contains("run Build Cook Tools first", Qt::CaseInsensitive);
+		}
+
+		QString prerequisiteOperationId;
+		QString promptTitle;
+		QString promptAction;
+		if (workspaceMissing)
+		{
+			prerequisiteOperationId = "workspace.generate-solution";
+			promptTitle = "Regenerate Solution";
+			promptAction = "Solution/workspace files are not current. Run Regenerate Solution now?";
+		}
+		else if (cookToolsMissing)
+		{
+			prerequisiteOperationId = "cook.tools.prepare";
+			promptTitle = "Build Cook Tools";
+			promptAction = "Required cook tools are missing. Run Build Cook Tools now?";
+		}
+		else
+		{
+			return true;
+		}
+
+		const QMessageBox::StandardButton result = QMessageBox::question(
+		    this,
+		    "Cook Prerequisite Missing",
+		    promptAction + "\n\n" + readiness.join('\n'),
+		    QMessageBox::Ok | QMessageBox::Cancel,
+		    QMessageBox::Ok);
+		if (result != QMessageBox::Ok)
+		{
+			return false;
+		}
+
+		LauncherOperationRequest prerequisiteRequest = BuildOperationRequest(prerequisiteOperationId);
+		if (!ConfirmRunRequest(prerequisiteRequest))
+		{
 			return false;
 		}
 
