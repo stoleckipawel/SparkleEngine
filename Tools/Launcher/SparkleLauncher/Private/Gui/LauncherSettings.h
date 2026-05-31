@@ -12,6 +12,7 @@ namespace SparkleLauncher
 	public:
 		explicit LauncherSettings(QObject* parent = nullptr);
 
+		const QString& BuildConfiguration() const;
 		const QString& EditorProfile() const;
 		const QString& RuntimeProfile() const;
 		const QString& WorkspaceIde() const;
@@ -35,6 +36,7 @@ namespace SparkleLauncher
 		bool SmokeSkipLevelSwitching() const;
 
 	public slots:
+		void SetBuildConfiguration(const QString& configuration);
 		void SetEditorProfile(const QString& profileName);
 		void SetRuntimeProfile(const QString& profileName);
 		void SetWorkspaceIde(const QString& ide);
@@ -61,8 +63,7 @@ namespace SparkleLauncher
 		void SettingsChanged();
 
 	private:
-		QString m_editorProfile = "DevelopmentEditor";
-		QString m_runtimeProfile = "DevelopmentGame";
+		QString m_buildConfiguration = "development";
 		QString m_workspaceIde = "visual-studio";
 		QString m_selectedTargets;
 		QString m_shaderPackages;

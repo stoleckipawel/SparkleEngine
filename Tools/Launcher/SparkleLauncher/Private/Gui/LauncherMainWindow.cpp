@@ -28,7 +28,6 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
-#include <QtWidgets/QStatusBar>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QWidget>
 
@@ -288,7 +287,6 @@ namespace SparkleLauncher
 		setWindowTitle("Sparkle Launcher");
 		setMinimumSize(980, 620);
 		resize(1240, 800);
-		statusBar()->showMessage("Ready");
 		LoadLauncherIconFont();
 		const QIcon applicationIcon = CreateApplicationIcon();
 		QGuiApplication::setWindowIcon(applicationIcon);
@@ -305,6 +303,7 @@ namespace SparkleLauncher
 		bodyLayout->addWidget(CreateWorkflowSurface(), 1);
 		rootLayout->addLayout(bodyLayout, 1);
 		rootLayout->addWidget(CreateOutputPanel());
+		rootLayout->addWidget(CreateFooterContextPanel(centralWidget));
 		setCentralWidget(centralWidget);
 		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
@@ -601,6 +600,8 @@ namespace SparkleLauncher
 		m_activeOperationDescription->setWordWrap(true);
 		layout->addWidget(m_activeOperationDescription);
 
+		CreateSharedOptionsPanel(*layout, panel);
+
 		m_optionsStack = new QStackedWidget(panel);
 		m_optionsStack->setObjectName("OptionsStack");
 		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
@@ -633,6 +634,62 @@ namespace SparkleLauncher
 		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
 		actionLayout->addWidget(m_runButton);
 		layout->addLayout(actionLayout);
+		return panel;
+	}
+
+	void LauncherMainWindow::CreateSharedOptionsPanel(QVBoxLayout& layout, QWidget* parent)
+	{
+		QFrame* group = new QFrame(parent);
+		group->setObjectName("OptionGroup");
+		QVBoxLayout* groupLayout = new QVBoxLayout(group);
+		groupLayout->setContentsMargins(kSpaceMedium, kSpaceSmall + kSpaceTiny, kSpaceMedium, kSpaceMedium);
+		groupLayout->setSpacing(kSpaceSmall);
+
+		QLabel* titleLabel = new QLabel("Options", group);
+		titleLabel->setObjectName("OptionGroupTitle");
+		groupLayout->addWidget(titleLabel);
+
+		QLabel* detailLabel = new QLabel("Shared context for the selected workflow.", group);
+		detailLabel->setObjectName("OptionHelpText");
+		detailLabel->setWordWrap(true);
+		groupLayout->addWidget(detailLabel);
+
+		m_sharedProjectRow = AddOptionField(*groupLayout, "Project", CreateProjectCombo());
+		m_sharedForceConfigureRow = AddOptionCheckBox(*groupLayout, CreateBoundCheckBox("Refresh workspace first", "Refresh the generated workspace before running this workflow.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+
+		m_sharedOptionsPanel = group;
+		layout.addWidget(group);
+		group->setVisible(false);
+	}
+
+	QWidget* LauncherMainWindow::CreateFooterContextPanel(QWidget* parent)
+	{
+		QFrame* panel = new QFrame(parent);
+		panel->setObjectName("FooterContextPanel");
+		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(kSpaceMedium);
+
+		QLabel* configurationLabel = CreateFieldLabel("Build Configuration");
+		rowLayout->addWidget(configurationLabel, 0);
+		QComboBox* configurationCombo = CreateValueCombo(
+		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
+		    m_settings.BuildConfiguration(),
+		    &LauncherSettings::SetBuildConfiguration);
+		configurationCombo->setAccessibleName("Build Configuration");
+		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
+		configurationLabel->setBuddy(configurationCombo);
+		rowLayout->addWidget(configurationCombo, 1);
+
+		QLabel* ideLabel = CreateFieldLabel("IDE");
+		rowLayout->addWidget(ideLabel, 0);
+		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
+		ideCombo->setAccessibleName("IDE");
+		ideCombo->setToolTip("Global IDE choice for workspace generation and opening.");
+		ideLabel->setBuddy(ideCombo);
+		rowLayout->addWidget(ideCombo, 1);
+
+		m_footerContextPanel = panel;
 		return panel;
 	}
 
@@ -849,53 +906,36 @@ namespace SparkleLauncher
 	{
 		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check" || operationId == "workspace.setup")
 		{
-			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "project.build.editor")
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "launcher.build.self")
 		{
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before rebuilding the launcher.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "project.build.runtime")
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
-			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "cook.tools.prepare")
 		{
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
-			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
-			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before compiling.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
 			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "cook.shaders")
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			AddOptionField(layout, "Shader package", CreateValueCombo(
 			    {{"All shader packages", ""},
 			     {"ComputeClear", "ComputeClear"},
@@ -929,8 +969,6 @@ namespace SparkleLauncher
 
 		if (operationId.startsWith("cook."))
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			QCheckBox* forceRecookBox = CreateBoundCheckBox("Clean before cooking", "Remove cooked outputs before this cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
 			forceRecookBox->setObjectName("WarningCheckBox");
 			AddOptionCheckBox(layout, forceRecookBox);
@@ -950,8 +988,6 @@ namespace SparkleLauncher
 
 		if (operationId == "project.launch.editor")
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
 			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and runtime CVars passed to the editor process.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
@@ -964,8 +1000,6 @@ namespace SparkleLauncher
 
 		if (operationId == "project.launch.runtime")
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and runtime CVars passed to the runtime process.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
@@ -993,9 +1027,6 @@ namespace SparkleLauncher
 
 		if (operationId.startsWith("smoke."))
 		{
-			AddOptionField(layout, "Project", CreateProjectCombo());
-			const bool editorSmoke = operationId.endsWith("editor");
-			AddOptionField(layout, "Profile", editorSmoke ? CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile) : CreateProfileCombo({"DebugGame", "DevelopmentGame", "ShippingGame"}, m_settings.RuntimeProfile(), &LauncherSettings::SetRuntimeProfile));
 			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Application Options", "Arguments and CVars passed before smoke validation starts.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
@@ -1048,8 +1079,7 @@ namespace SparkleLauncher
 				scopeBoxes.push_back(scopeBox);
 			}
 
-			QWidget* projectRow = AddOptionField(layout, "Project", CreateProjectCombo());
-			const auto updateCleanScopeSetting = [scopeBoxes, projectRow, this]() {
+			const auto updateCleanScopeSetting = [scopeBoxes, this]() {
 				QStringList selectedValues;
 				for (QCheckBox* scopeBox : scopeBoxes)
 				{
@@ -1063,7 +1093,7 @@ namespace SparkleLauncher
 					selectedValues.push_back("selected-cooked");
 				}
 				m_settings.SetCleanScope(selectedValues.join(';'));
-				projectRow->setVisible(selectedValues.contains("selected-cooked"));
+				UpdateSharedOptionsVisibility();
 				UpdateRunAvailability();
 			};
 			for (QCheckBox* scopeBox : scopeBoxes)
@@ -1321,7 +1351,7 @@ namespace SparkleLauncher
 			AddStatusRow(*buildLayout, "Required tools", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			AddStatusRow(*buildLayout, "Build files", plan.Freshness.Current ? "Current" : "Will refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
 			const QString targetDetail =
-			    operationId == "launcher.build.self" ? QString("SparkleLauncher for ") + m_settings.EditorProfile() :
+			    operationId == "launcher.build.self" ? QString("SparkleLauncher for ") + m_settings.BuildConfiguration() :
 			                                           (plan.PlannedEffects.empty() ? QString("No target resolved for the selected project/profile.") : QString::fromStdString(plan.PlannedEffects.back()));
 			AddStatusRow(*buildLayout, "Target", plan.CanRun ? "Resolved" : "Blocked", targetDetail, plan.CanRun ? "ok" : "warning");
 
@@ -1910,7 +1940,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::SetStatusMessage(const QString& message)
 	{
-		statusBar()->showMessage(message);
+		Q_UNUSED(message);
 	}
 
 	void LauncherMainWindow::SetSelectedOperation(const QString& operationId)
@@ -1951,8 +1981,8 @@ namespace SparkleLauncher
 			SetActiveWorkflowGroup(workflowIndex);
 		}
 
+		UpdateSharedOptionsVisibility();
 		UpdateRunAvailability();
-		SetStatusMessage("Selected " + title);
 	}
 
 	void LauncherMainWindow::RegisterRun(const QString& runId, const QString& title)
@@ -2154,6 +2184,7 @@ namespace SparkleLauncher
 				PopulateProjectCombo(*combo);
 			}
 		}
+		UpdateSharedOptionsVisibility();
 		UpdateRunAvailability();
 	}
 
@@ -2192,6 +2223,44 @@ namespace SparkleLauncher
 		};
 	}
 
+	bool LauncherMainWindow::OperationUsesProjectOption(const QString& operationId) const
+	{
+		if (operationId == "workspace.clean")
+		{
+			return m_settings.CleanScope().contains("selected-cooked");
+		}
+
+		return operationId.startsWith("project.") || operationId.startsWith("cook.") || operationId.startsWith("smoke.");
+	}
+
+	bool LauncherMainWindow::OperationUsesForceConfigureOption(const QString& operationId) const
+	{
+		return operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" ||
+		       operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare";
+	}
+
+	void LauncherMainWindow::UpdateSharedOptionsVisibility()
+	{
+		const QString operationId = m_selectedOperationId;
+		const bool hasSelection = !operationId.isEmpty();
+		const bool showProject = hasSelection && OperationUsesProjectOption(operationId);
+		const bool showForceConfigure = hasSelection && OperationUsesForceConfigureOption(operationId);
+		const bool anyVisible = showProject || showForceConfigure;
+
+		if (m_sharedProjectRow != nullptr)
+		{
+			m_sharedProjectRow->setVisible(showProject);
+		}
+		if (m_sharedForceConfigureRow != nullptr)
+		{
+			m_sharedForceConfigureRow->setVisible(showForceConfigure);
+		}
+		if (m_sharedOptionsPanel != nullptr)
+		{
+			m_sharedOptionsPanel->setVisible(anyVisible);
+		}
+	}
+
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
 		const QString background = "#2b2b2b";
@@ -2227,6 +2296,7 @@ namespace SparkleLauncher
 		addRule("#ProcessPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + shell + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; padding: 0;");
 		addRule("#OptionsPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + panel + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 2px;");
 		addRule("#OutputPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + ";");
+		addRule("#FooterContextPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + "; padding: 10px 18px 12px 18px;");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; min-height: 36px;");
@@ -2291,8 +2361,6 @@ namespace SparkleLauncher
 		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt;");
 		addRule("QProgressBar", "background: #202020; border: 1px solid " + border + "; border-radius: 0; color: " + textBody + "; text-align: center; min-height: 6px; max-height: 6px;");
 		addRule("QProgressBar::chunk", "background: " + accent + "; border-radius: 0;");
-		addRule("QStatusBar", "background: " + shell + "; color: " + textMuted + "; border-top: 1px solid " + divider + ";");
-
 		setStyleSheet(style);
 	}
 }

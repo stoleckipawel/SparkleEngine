@@ -2,19 +2,60 @@
 
 namespace SparkleLauncher
 {
+	static QString NormalizeBuildConfiguration(const QString& configuration)
+	{
+		const QString lowered = configuration.trimmed().toLower();
+		if (lowered == "debug" || lowered.startsWith("debug"))
+		{
+			return "debug";
+		}
+		if (lowered == "shipping" || lowered.startsWith("shipping"))
+		{
+			return "shipping";
+		}
+		return "development";
+	}
+
 	LauncherSettings::LauncherSettings(QObject* parent)
 	    : QObject(parent)
 	{
 	}
 
+	const QString& LauncherSettings::BuildConfiguration() const
+	{
+		return m_buildConfiguration;
+	}
+
 	const QString& LauncherSettings::EditorProfile() const
 	{
-		return m_editorProfile;
+		static QString debugProfile = "DebugEditor";
+		static QString developmentProfile = "DevelopmentEditor";
+		static QString shippingProfile = "ShippingEditor";
+		if (m_buildConfiguration == "debug")
+		{
+			return debugProfile;
+		}
+		if (m_buildConfiguration == "shipping")
+		{
+			return shippingProfile;
+		}
+		return developmentProfile;
 	}
 
 	const QString& LauncherSettings::RuntimeProfile() const
 	{
-		return m_runtimeProfile;
+		static QString debugProfile = "DebugGame";
+		static QString developmentProfile = "DevelopmentGame";
+		static QString shippingProfile = "ShippingGame";
+		if (m_buildConfiguration == "debug")
+		{
+			return debugProfile;
+		}
+		if (m_buildConfiguration == "shipping")
+		{
+			return shippingProfile;
+		}
+		return developmentProfile;
 	}
 
 	const QString& LauncherSettings::WorkspaceIde() const
@@ -112,26 +153,26 @@ namespace SparkleLauncher
 		return m_smokeSkipLevelSwitching;
 	}
 
-	void LauncherSettings::SetEditorProfile(const QString& profileName)
+	void LauncherSettings::SetBuildConfiguration(const QString& configuration)
 	{
-		if (m_editorProfile == profileName)
+		const QString normalized = NormalizeBuildConfiguration(configuration);
+		if (m_buildConfiguration == normalized)
 		{
 			return;
 		}
 
-		m_editorProfile = profileName;
+		m_buildConfiguration = normalized;
 		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetEditorProfile(const QString& profileName)
+	{
+		SetBuildConfiguration(profileName);
 	}
 
 	void LauncherSettings::SetRuntimeProfile(const QString& profileName)
 	{
-		if (m_runtimeProfile == profileName)
-		{
-			return;
-		}
-
-		m_runtimeProfile = profileName;
-		emit SettingsChanged();
+		SetBuildConfiguration(profileName);
 	}
 
 	void LauncherSettings::SetWorkspaceIde(const QString& ide)
