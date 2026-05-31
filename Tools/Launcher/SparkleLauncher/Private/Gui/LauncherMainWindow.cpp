@@ -539,7 +539,6 @@ namespace SparkleLauncher
 			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
 			groupButton->setProperty("ActiveState", "false");
-			groupButton->setToolTip(workflow.Subtitle);
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
 			groupButton->setIcon(WorkflowIconForIndex(workflowIndex));
 			groupButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
@@ -582,7 +581,6 @@ namespace SparkleLauncher
 		button->setCheckable(true);
 		button->setMinimumHeight(kWorkflowButtonMinHeight);
 		button->setProperty("OperationId", operationId);
-		button->setToolTip(DescriptionForOperation(operationId));
 		button->setAccessibleName(label + " workflow");
 		RegisterFocusable(button);
 		return button;
@@ -600,12 +598,6 @@ namespace SparkleLauncher
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
 		m_activeOperationLabel->setAccessibleName("Selected workflow");
 		layout->addWidget(m_activeOperationLabel);
-
-		m_activeOperationDescription = new QLabel("Choose a workflow from the left.", panel);
-		m_activeOperationDescription->setObjectName("OperationDescription");
-		m_activeOperationDescription->setAccessibleName("Selected workflow description");
-		m_activeOperationDescription->setWordWrap(true);
-		layout->addWidget(m_activeOperationDescription);
 
 		m_optionsStack = new QStackedWidget(panel);
 		m_optionsStack->setObjectName("OptionsStack");
@@ -1580,12 +1572,6 @@ namespace SparkleLauncher
 		return operation == nullptr ? operationId : operation->DisplayName;
 	}
 
-	QString LauncherMainWindow::DescriptionForOperation(const QString& operationId) const
-	{
-		const LauncherOperationDescriptor* operation = FindOperationDescriptor(operationId);
-		return operation == nullptr ? QString() : operation->Description;
-	}
-
 	bool LauncherMainWindow::OperationNeedsProject(const QString& operationId) const
 	{
 		if (operationId == "workspace.clean")
@@ -1964,10 +1950,6 @@ namespace SparkleLauncher
 		{
 			m_activeOperationLabel->setText(title);
 		}
-		if (m_activeOperationDescription != nullptr)
-		{
-			m_activeOperationDescription->setText(DescriptionForOperation(operationId));
-		}
 		if (m_runButton != nullptr)
 		{
 			m_runButton->setText("Run");
@@ -2277,7 +2259,6 @@ namespace SparkleLauncher
 		addRule("#OptionGroup", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #303030, stop:1 #292929); border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; margin-top: 8px;");
 
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15pt; font-weight: 700;");
-		addRule("#OperationDescription", "color: " + textMuted + "; line-height: 130%;");
 		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 11pt; font-weight: 700; padding: 0 0 2px 0;");
 		addRule("#SectionLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700; padding-top: 2px;");
 		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 700; padding: 0 0 0 6px; border-left: 3px solid " + accent + ";");

@@ -122,7 +122,6 @@ namespace SparkleLauncher
 		void UpdateRunAvailability();
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
-		QString DescriptionForOperation(const QString& operationId) const;
 		bool OperationNeedsProject(const QString& operationId) const;
 		bool OperationNeedsConfirmation(const QString& operationId) const;
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
@@ -162,7 +161,6 @@ namespace SparkleLauncher
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
-		QLabel* m_activeOperationDescription = nullptr;
 		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
