@@ -668,26 +668,39 @@ namespace SparkleLauncher
 		panel->setObjectName("FooterContextPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(kSpaceMedium);
+		rowLayout->setSpacing(kSpaceSmall);
+		rowLayout->addStretch(1);
 
 		QLabel* configurationLabel = CreateFieldLabel("Build Configuration");
+		configurationLabel->setObjectName("FooterFieldLabel");
 		rowLayout->addWidget(configurationLabel, 0);
 		QComboBox* configurationCombo = CreateValueCombo(
 		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
 		    m_settings.BuildConfiguration(),
 		    &LauncherSettings::SetBuildConfiguration);
+		configurationCombo->setObjectName("FooterContextCombo");
 		configurationCombo->setAccessibleName("Build Configuration");
 		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
+		configurationCombo->setMinimumWidth(180);
+		configurationCombo->setMaximumWidth(220);
+		configurationCombo->setMinimumHeight(28);
+		configurationCombo->setMaximumHeight(28);
 		configurationLabel->setBuddy(configurationCombo);
-		rowLayout->addWidget(configurationCombo, 1);
+		rowLayout->addWidget(configurationCombo, 0);
 
 		QLabel* ideLabel = CreateFieldLabel("IDE");
+		ideLabel->setObjectName("FooterFieldLabel");
 		rowLayout->addWidget(ideLabel, 0);
 		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
+		ideCombo->setObjectName("FooterContextCombo");
 		ideCombo->setAccessibleName("IDE");
 		ideCombo->setToolTip("Global IDE choice for workspace generation and opening.");
+		ideCombo->setMinimumWidth(150);
+		ideCombo->setMaximumWidth(190);
+		ideCombo->setMinimumHeight(28);
+		ideCombo->setMaximumHeight(28);
 		ideLabel->setBuddy(ideCombo);
-		rowLayout->addWidget(ideCombo, 1);
+		rowLayout->addWidget(ideCombo, 0);
 
 		m_footerContextPanel = panel;
 		return panel;
@@ -2296,7 +2309,10 @@ namespace SparkleLauncher
 		addRule("#ProcessPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + shell + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; padding: 0;");
 		addRule("#OptionsPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + panel + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 2px;");
 		addRule("#OutputPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + ";");
-		addRule("#FooterContextPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + "; padding: 10px 18px 12px 18px;");
+		addRule("#FooterContextPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + "; padding: 6px 14px 8px 14px;");
+		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8.5pt; font-weight: 600;");
+		addRule("#FooterContextCombo", "background: " + field + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; padding: 3px 8px; color: " + textBody + "; min-height: 24px; max-height: 28px; font-size: 8.5pt;");
+		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; min-height: 36px;");
