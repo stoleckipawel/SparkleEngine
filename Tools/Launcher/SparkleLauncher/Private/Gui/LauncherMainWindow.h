@@ -5,6 +5,7 @@
 #include <QtCore/QHash>
 #include <QtGui/QColor>
 #include <QtGui/QIcon>
+#include <QtCore/QStringList>
 #include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QButtonGroup>
 #include <QtWidgets/QCheckBox>
@@ -127,6 +128,7 @@ namespace SparkleLauncher
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
+		void PromptForLauncherRestart();
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
 		void RunInlineActionOperation(const QString& operationId);
 		void StartOperation(LauncherOperationRequest request, const QString& title);
@@ -176,5 +178,6 @@ namespace SparkleLauncher
 		int m_startedRunCount = 0;
 		int m_finishedRunCount = 0;
 		int m_failedRunCount = 0;
+		QStringList m_pendingRestartRunIds;
 	};
 }

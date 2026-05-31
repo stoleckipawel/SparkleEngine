@@ -81,6 +81,7 @@ namespace SparkleLauncher
 		SetupWorkspace,
 		GenerateSolution,
 		OpenSolution,
+		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,
 		BuildCookTools

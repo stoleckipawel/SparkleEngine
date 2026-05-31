@@ -9,6 +9,8 @@
 #include "SparkleLauncher/LaunchOperations.h"
 
 #include <QtCore/QSignalBlocker>
+#include <QtCore/QCoreApplication>
+#include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringList>
 #include <QtCore/Qt>
@@ -473,6 +475,12 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		SetStatusMessage(title + " finished: " + statusText);
 		UpdateProgress();
+
+		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
+		{
+			m_pendingRestartRunIds.push_back(runId);
+			PromptForLauncherRestart();
+		}
 	}
 
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
@@ -856,6 +864,15 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (operationId == "launcher.build.self")
+		{
+			AddOptionField(layout, "Profile", CreateProfileCombo({"DebugEditor", "DevelopmentEditor", "ShippingEditor"}, m_settings.EditorProfile(), &LauncherSettings::SetEditorProfile));
+			AddOptionField(layout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
+			AddOptionCheckBox(layout, CreateBoundCheckBox("Refresh workspace", "Refresh the generated workspace before rebuilding the launcher.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+			AddBuildEnvironmentStatus(layout, operationId);
+			return;
+		}
+
 		if (operationId == "project.build.runtime")
 		{
 			AddOptionField(layout, "Project", CreateProjectCombo());
@@ -1209,7 +1226,7 @@ namespace SparkleLauncher
 		const QString workspaceIdeName = SelectedWorkspaceIdeName(m_settings);
 		const bool isToolchainCheck = operationId == "toolchain.check";
 		const bool isSetupWorkflow = operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution";
-		const bool isBuildWorkflow = operationId.startsWith("project.build") || operationId == "cook.tools.prepare";
+		const bool isBuildWorkflow = operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const bool dependencyCacheReady = DirectoryHasEntries(dependencyCachePath);
 
@@ -1303,7 +1320,10 @@ namespace SparkleLauncher
 			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Build Readiness", "Only the workspace state needed before this compile workflow starts.");
 			AddStatusRow(*buildLayout, "Required tools", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			AddStatusRow(*buildLayout, "Build files", plan.Freshness.Current ? "Current" : "Will refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
-			AddStatusRow(*buildLayout, "Target", plan.CanRun ? "Resolved" : "Blocked", plan.PlannedEffects.empty() ? QString("No target resolved for the selected project/profile.") : QString::fromStdString(plan.PlannedEffects.back()), plan.CanRun ? "ok" : "warning");
+			const QString targetDetail =
+			    operationId == "launcher.build.self" ? QString("SparkleLauncher for ") + m_settings.EditorProfile() :
+			                                           (plan.PlannedEffects.empty() ? QString("No target resolved for the selected project/profile.") : QString::fromStdString(plan.PlannedEffects.back()));
+			AddStatusRow(*buildLayout, "Target", plan.CanRun ? "Resolved" : "Blocked", targetDetail, plan.CanRun ? "ok" : "warning");
 
 			if (!plan.Toolchain.RequiredToolsAvailable || !plan.CanRun)
 			{
@@ -1747,6 +1767,35 @@ namespace SparkleLauncher
 		return result == QMessageBox::Yes;
 	}
 
+	void LauncherMainWindow::PromptForLauncherRestart()
+	{
+		const QMessageBox::StandardButton result = QMessageBox::question(
+		    this,
+		    "Launcher Rebuilt",
+		    "Sparkle Launcher was rebuilt successfully. Restart now to run the new binary?",
+		    QMessageBox::Yes | QMessageBox::No,
+		    QMessageBox::Yes);
+		if (result != QMessageBox::Yes)
+		{
+			SetStatusMessage("Launcher rebuilt. Restart it when you're ready.");
+			return;
+		}
+
+		const QString executablePath = QCoreApplication::applicationFilePath();
+		const bool started = QProcess::startDetached(executablePath, {});
+		if (!started)
+		{
+			QMessageBox::warning(
+			    this,
+			    "Restart Failed",
+			    "The rebuilt launcher is ready, but the restart command could not be started.");
+			SetStatusMessage("Launcher rebuilt, but automatic restart failed.");
+			return;
+		}
+
+		QCoreApplication::quit();
+	}
+
 	bool LauncherMainWindow::OfferLaunchPrerequisiteOperation(const QString& operationId)
 	{
 		LauncherOperationRequest request = BuildOperationRequest(operationId);
@@ -2136,7 +2185,7 @@ namespace SparkleLauncher
 	{
 		return {
 		    {"Setup", "Inspect and configure", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.clean"}},
-		    {"Build", "Compile targets", {"project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
+		    {"Build", "Compile targets", {"launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
 		    {"Run", "Open targets", {"project.launch.editor", "workspace.open-solution", "project.launch.runtime", "smoke.rhi.editor", "smoke.rhi.runtime"}},
 		    {"Maintain", "Routine cleanup", {"quality.format"}},
