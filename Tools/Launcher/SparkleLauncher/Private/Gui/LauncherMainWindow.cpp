@@ -14,6 +14,7 @@
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringList>
+#include <QtCore/QTimer>
 #include <QtCore/Qt>
 #include <QtGui/QBrush>
 #include <QtGui/QClipboard>
@@ -319,13 +320,16 @@ namespace SparkleLauncher
 		connect(&m_projectModel, &LauncherProjectModel::ProjectsChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
 		connect(&m_projectModel, &LauncherProjectModel::SelectionChanged, this, &LauncherMainWindow::PopulateProjectSelectors);
 		connect(&m_projectModel, &LauncherProjectModel::ProjectDiscoveryFailed, this, &LauncherMainWindow::SetStartupNotice);
-		connect(&m_settings, &LauncherSettings::SettingsChanged, this, &LauncherMainWindow::UpdateRunAvailability);
+		connect(&m_settings, &LauncherSettings::SettingsChanged, this, [this]() {
+			RebuildOptionsPages();
+			UpdateRunAvailability();
+		});
 		connect(&m_backend, &LauncherBackend::OperationStarted, this, &LauncherMainWindow::DisplayOperationStarted);
 		connect(&m_backend, &LauncherBackend::OperationOutputReceived, this, &LauncherMainWindow::AppendOperationOutput);
 		connect(&m_backend, &LauncherBackend::OperationFinished, this, &LauncherMainWindow::DisplayOperationFinished);
 
 		UpdateProgress();
-		RefreshProjects();
+		QTimer::singleShot(0, this, &LauncherMainWindow::RefreshProjects);
 	}
 
 	void LauncherMainWindow::SetStartupNotice(const QString& message)
@@ -488,6 +492,8 @@ namespace SparkleLauncher
 		ShowRunOutput(runId);
 		SetStatusMessage(title + " finished: " + statusText);
 		UpdateProgress();
+		RefreshProjects();
+		RebuildOptionsPages();
 
 		if (succeeded && operationId == "launcher.build.self" && !m_pendingRestartRunIds.contains(runId))
 		{
@@ -608,19 +614,7 @@ namespace SparkleLauncher
 
 		m_optionsStack = new QStackedWidget(panel);
 		m_optionsStack->setObjectName("OptionsStack");
-		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
-		{
-			for (const QString& operationId : workflow.OperationIds)
-			{
-				if (m_optionsPageByOperation.contains(operationId))
-				{
-					continue;
-				}
-
-				const int pageIndex = m_optionsStack->addWidget(CreateOptionsPage(operationId, panel));
-				m_optionsPageByOperation.insert(operationId, pageIndex);
-			}
-		}
+		RebuildOptionsPages();
 		layout->addWidget(m_optionsStack, 1);
 		m_optionsStack->setVisible(false);
 
@@ -874,6 +868,7 @@ namespace SparkleLauncher
 	{
 		QComboBox* combo = new QComboBox(this);
 		combo->setObjectName("ProjectCombo");
+		combo->setProperty("ProjectSelector", true);
 		combo->setToolTip("Project used by this workflow.");
 		combo->setAccessibleName("Project");
 		combo->setAccessibleDescription("Project used by this workflow.");
@@ -1354,6 +1349,50 @@ namespace SparkleLauncher
 		if (m_optionsStack != nullptr)
 		{
 			m_optionsStack->setVisible(enabled);
+		}
+	}
+
+	void LauncherMainWindow::RebuildOptionsPages()
+	{
+		if (m_optionsStack == nullptr)
+		{
+			return;
+		}
+
+		while (m_optionsStack->count() > 0)
+		{
+			QWidget* page = m_optionsStack->widget(0);
+			m_optionsStack->removeWidget(page);
+			page->deleteLater();
+		}
+		m_optionsPageByOperation.clear();
+
+		for (const WorkflowDefinition& workflow : CreateWorkflowDefinitions())
+		{
+			for (const QString& operationId : workflow.OperationIds)
+			{
+				if (m_optionsPageByOperation.contains(operationId))
+				{
+					continue;
+				}
+
+				const int pageIndex = m_optionsStack->addWidget(CreateOptionsPage(operationId, m_optionsStack));
+				m_optionsPageByOperation.insert(operationId, pageIndex);
+			}
+		}
+
+		if (!m_selectedOperationId.isEmpty() && m_optionsPageByOperation.contains(m_selectedOperationId))
+		{
+			m_optionsStack->setCurrentIndex(m_optionsPageByOperation.value(m_selectedOperationId));
+		}
+
+		m_projectSelectors.clear();
+		for (QComboBox* combo : findChildren<QComboBox*>())
+		{
+			if (combo != nullptr && combo->property("ProjectSelector").toBool())
+			{
+				m_projectSelectors.push_back(combo);
+			}
 		}
 	}
 
@@ -2284,6 +2323,7 @@ namespace SparkleLauncher
 				PopulateProjectCombo(*combo);
 			}
 		}
+		RebuildOptionsPages();
 		UpdateRunAvailability();
 	}
 

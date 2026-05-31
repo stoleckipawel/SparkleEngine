@@ -2,5 +2,5 @@
 
 namespace SparkleLauncher
 {
-	int RunLauncherGui();
+	int RunLauncherGui(int argc, char** argv);
 }

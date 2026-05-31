@@ -110,6 +110,7 @@ namespace SparkleLauncher
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
+		void RebuildOptionsPages();
 		void LoadLauncherIconFont();
 		QIcon CreateApplicationIcon() const;
 		QString IconGlyph(LauncherIcon icon) const;
