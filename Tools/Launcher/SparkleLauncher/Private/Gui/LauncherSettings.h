@@ -19,6 +19,7 @@ namespace SparkleLauncher
 		const QString& SelectedTargets() const;
 		const QString& ShaderPackages() const;
 		const QString& LaunchBackend() const;
+		const QString& LaunchTarget() const;
 		const QString& LaunchVSync() const;
 		const QString& LaunchHighPerformanceAdapter() const;
 		const QString& LaunchMeshAutoBatching() const;
@@ -28,6 +29,7 @@ namespace SparkleLauncher
 		const QString& SmokeFrameLimit() const;
 		const QString& FormatMode() const;
 		const QString& CleanScope() const;
+		bool LaunchSmokeTest() const;
 		bool ForceConfigure() const;
 		bool ForceRecook() const;
 		bool ConfirmForceRecook() const;
@@ -43,6 +45,7 @@ namespace SparkleLauncher
 		void SetSelectedTargets(const QString& targets);
 		void SetShaderPackages(const QString& packages);
 		void SetLaunchBackend(const QString& backend);
+		void SetLaunchTarget(const QString& target);
 		void SetLaunchVSync(const QString& value);
 		void SetLaunchHighPerformanceAdapter(const QString& value);
 		void SetLaunchMeshAutoBatching(const QString& value);
@@ -52,6 +55,7 @@ namespace SparkleLauncher
 		void SetSmokeFrameLimit(const QString& frameLimit);
 		void SetFormatMode(const QString& mode);
 		void SetCleanScope(const QString& scope);
+		void SetLaunchSmokeTest(bool enabled);
 		void SetForceConfigure(bool enabled);
 		void SetForceRecook(bool enabled);
 		void SetConfirmForceRecook(bool enabled);
@@ -68,6 +72,7 @@ namespace SparkleLauncher
 		QString m_selectedTargets;
 		QString m_shaderPackages;
 		QString m_launchBackend;
+		QString m_launchTarget = "editor";
 		QString m_launchVSync;
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchMeshAutoBatching;
@@ -77,6 +82,7 @@ namespace SparkleLauncher
 		QString m_smokeFrameLimit;
 		QString m_formatMode = "check";
 		QString m_cleanScope = "selected-cooked";
+		bool m_launchSmokeTest = false;
 		bool m_forceConfigure = false;
 		bool m_forceRecook = false;
 		bool m_confirmForceRecook = false;

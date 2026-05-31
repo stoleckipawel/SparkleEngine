@@ -41,6 +41,7 @@ namespace SparkleLauncher
 		QString SelectedTargets;
 		QString ShaderPackages;
 		QString LaunchBackend;
+		QString LaunchTarget;
 		QString LaunchVSync;
 		QString LaunchHighPerformanceAdapter;
 		QString LaunchMeshAutoBatching;
@@ -50,6 +51,7 @@ namespace SparkleLauncher
 		QString SmokeFrameLimit;
 		QString FormatMode = "check";
 		QString CleanScope = "selected-cooked";
+		bool LaunchSmokeTest = false;
 		bool ForceConfigure = false;
 		bool ForceRecook = false;
 		bool ConfirmForceRecook = false;

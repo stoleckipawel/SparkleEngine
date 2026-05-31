@@ -6,7 +6,7 @@ namespace SparkleLauncher
 {
 	bool IsRhiSmokeLaunchOperation(LaunchOperationKind kind)
 	{
-		return kind == LaunchOperationKind::RunEditorSmokeTest || kind == LaunchOperationKind::RunRuntimeSmokeTest;
+		return kind == LaunchOperationKind::RunProject;
 	}
 
 	std::string GetRhiSmokeFrameLimitText(const LaunchOperationRequest& request)
@@ -17,6 +17,10 @@ namespace SparkleLauncher
 	void PopulateRhiSmokeLaunchInputs(LaunchOperationPlan& plan)
 	{
 		if (!IsRhiSmokeLaunchOperation(plan.Kind))
+		{
+			return;
+		}
+		if (!plan.Request.EnableSmokeTest)
 		{
 			return;
 		}
@@ -36,6 +40,10 @@ namespace SparkleLauncher
 	void PopulateRhiSmokeLaunchEnvironment(LaunchOperationPlan& plan)
 	{
 		if (!IsRhiSmokeLaunchOperation(plan.Kind))
+		{
+			return;
+		}
+		if (!plan.Request.EnableSmokeTest)
 		{
 			return;
 		}
@@ -59,6 +67,10 @@ namespace SparkleLauncher
 	std::vector<std::string> GetRhiSmokeLaunchPlannedEffects(const LaunchOperationPlan& plan)
 	{
 		if (!IsRhiSmokeLaunchOperation(plan.Kind))
+		{
+			return {};
+		}
+		if (!plan.Request.EnableSmokeTest)
 		{
 			return {};
 		}

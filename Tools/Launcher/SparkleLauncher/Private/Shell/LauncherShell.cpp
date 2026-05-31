@@ -417,6 +417,8 @@ namespace SparkleLauncher
 		launchRequest.ProjectId = state.SelectedProjectId;
 		launchRequest.EditorProfile = state.EditorProfile;
 		launchRequest.RuntimeProfile = state.RuntimeProfile;
+		launchRequest.Target = arguments.LaunchTarget;
+		launchRequest.EnableSmokeTest = arguments.EnableSmokeTest;
 		launchRequest.SmokeBackend = arguments.SmokeBackend;
 		launchRequest.SmokeFrameLimit = arguments.SmokeFrameLimit;
 		launchRequest.SmokeTrace = arguments.SmokeTrace;
@@ -480,7 +482,6 @@ namespace SparkleLauncher
 		RenderOperationGroup(state, "Build", output);
 		RenderOperationGroup(state, "Cook", output);
 		RenderOperationGroup(state, "Maintenance", output);
-		RenderOperationGroup(state, "Smoke Tests", output);
 		RenderOperationGroup(state, "Launch", output);
 
 		output << "\nRecent Activity\n";
@@ -741,6 +742,29 @@ namespace SparkleLauncher
 				continue;
 			}
 
+			if (argument == "--launch-target")
+			{
+				if (index + 1 >= argc)
+				{
+					error << "SparkleLauncher: --launch-target requires a value.\n";
+					return false;
+				}
+				const std::string target = argv[++index];
+				if (target != "editor" && target != "runtime")
+				{
+					error << "SparkleLauncher: --launch-target must be editor or runtime.\n";
+					return false;
+				}
+				outArguments.LaunchTarget = target;
+				continue;
+			}
+
+			if (argument == "--smoke-test")
+			{
+				outArguments.EnableSmokeTest = true;
+				continue;
+			}
+
 			error << "SparkleLauncher: unexpected argument '" << argument << "'.\n";
 			return false;
 		}
@@ -751,12 +775,12 @@ namespace SparkleLauncher
 	void LauncherShell::PrintUsage(std::ostream& output) const
 	{
 		output << "Usage:\n"
-		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
+		       << "  SparkleLauncher [--root <repo-root>] [--project <project-id>] [--editor-profile <profile>] [--runtime-profile <profile>] [--ide <visual-studio|rider>] [--launch-target <editor|runtime>] [--smoke-test] [--format-mode check|apply] [--clean-scope <scope>] [--confirm-clean] [--force-recook] [--confirm-force-recook] [--smoke-backend <backend>] [--smoke-frame-limit <frames>] [--smoke-trace] [--smoke-skip-level-switching] [--dry-run [operation-id]]\n"
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
 		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --project Showcase --smoke-backend d3d12 --dry-run smoke.rhi.runtime\n"
+		       << "  SparkleLauncher --project Showcase --launch-target runtime --smoke-test --smoke-backend d3d12 --dry-run project.run\n"
 		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";

@@ -44,11 +44,6 @@ namespace SparkleLauncher
 		return values;
 	}
 
-	static FormatMode ToFormatMode(const QString& text)
-	{
-		return text == "apply" ? FormatMode::Apply : FormatMode::Check;
-	}
-
 	static CleanScope ToCleanScope(const QString& text)
 	{
 		if (text == "all-cooked")
@@ -173,7 +168,7 @@ namespace SparkleLauncher
 		maintenanceRequest.RepositoryRoot = request.RepositoryRoot;
 		maintenanceRequest.ProjectId = request.ProjectId.toStdString();
 		maintenanceRequest.EditorProfile = request.EditorProfile.toStdString();
-		maintenanceRequest.RequestedFormatMode = ToFormatMode(request.FormatMode);
+		maintenanceRequest.RequestedFormatMode = FormatMode::Apply;
 		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
 		maintenanceRequest.RequestedCleanScopes = SplitCleanScopes(request.CleanScope);
 		maintenanceRequest.DestructiveActionConfirmed = request.ConfirmClean;
@@ -184,9 +179,11 @@ namespace SparkleLauncher
 	{
 		LaunchOperationRequest launchRequest;
 		launchRequest.RepositoryRoot = request.RepositoryRoot;
+		launchRequest.OperationId = request.OperationId.toStdString();
 		launchRequest.ProjectId = request.ProjectId.toStdString();
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		launchRequest.Target = request.LaunchTarget.toStdString();
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
@@ -195,6 +192,7 @@ namespace SparkleLauncher
 		launchRequest.CustomCVars = SplitOptionList(request.LaunchCVars);
 		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
 		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
+		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 		launchRequest.SmokeTrace = request.SmokeTrace;
 		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
 		return launchRequest;
@@ -277,7 +275,7 @@ namespace SparkleLauncher
 		}
 		case LauncherOperationCategory::Launch:
 		{
-			const LaunchOperationPlan plan = PlanLaunchOperation(operationId, MakeLaunchRequest(request));
+			const LaunchOperationPlan plan = PlanLaunchOperation(request.OperationId.toStdString(), MakeLaunchRequest(request));
 			AppendPlanDetails(output, plan.Operation, plan.CanRun, plan.ReadinessMessages, plan.PlannedEffects);
 			canRun = plan.CanRun;
 			break;
@@ -362,7 +360,7 @@ namespace SparkleLauncher
 			}
 			case LauncherOperationCategory::Launch:
 			{
-				LaunchOperationPlan plan = PlanLaunchOperation(operationId, MakeLaunchRequest(request));
+				LaunchOperationPlan plan = PlanLaunchOperation(request.OperationId.toStdString(), MakeLaunchRequest(request));
 				if (!plan.CanRun)
 				{
 					record = plan.Operation;

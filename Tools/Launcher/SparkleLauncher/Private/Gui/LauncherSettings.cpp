@@ -78,6 +78,11 @@ namespace SparkleLauncher
 		return m_launchBackend;
 	}
 
+	const QString& LauncherSettings::LaunchTarget() const
+	{
+		return m_launchTarget;
+	}
+
 	const QString& LauncherSettings::LaunchVSync() const
 	{
 		return m_launchVSync;
@@ -121,6 +126,11 @@ namespace SparkleLauncher
 	const QString& LauncherSettings::CleanScope() const
 	{
 		return m_cleanScope;
+	}
+
+	bool LauncherSettings::LaunchSmokeTest() const
+	{
+		return m_launchSmokeTest;
 	}
 
 	bool LauncherSettings::ForceConfigure() const
@@ -204,6 +214,12 @@ namespace SparkleLauncher
 		emit SettingsChanged();
 	}
 
+	void LauncherSettings::SetLaunchTarget(const QString& target)
+	{
+		m_launchTarget = target;
+		emit SettingsChanged();
+	}
+
 	void LauncherSettings::SetLaunchVSync(const QString& value)
 	{
 		m_launchVSync = value;
@@ -255,6 +271,12 @@ namespace SparkleLauncher
 	void LauncherSettings::SetCleanScope(const QString& scope)
 	{
 		m_cleanScope = scope;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchSmokeTest(bool enabled)
+	{
+		m_launchSmokeTest = enabled;
 		emit SettingsChanged();
 	}
 

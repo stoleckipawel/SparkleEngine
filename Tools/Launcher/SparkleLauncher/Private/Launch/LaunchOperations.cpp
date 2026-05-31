@@ -23,12 +23,17 @@ namespace SparkleLauncher
 		plan.PlannedEffects.push_back(std::move(message));
 	}
 
-	static std::string ResolveLaunchProfile(LaunchOperationKind kind, const LaunchOperationRequest& request)
+	static bool IsRuntimeLaunchTarget(const LaunchOperationRequest& request)
 	{
-		return kind == LaunchOperationKind::RunEditor || kind == LaunchOperationKind::RunEditorSmokeTest ? request.EditorProfile : request.RuntimeProfile;
+		return request.Target == "runtime";
 	}
 
-	static std::optional<BuildProfile> ResolveProfileForLaunch(LaunchOperationKind kind, std::string_view profileName)
+	static std::string ResolveLaunchProfile(LaunchOperationKind, const LaunchOperationRequest& request)
+	{
+		return IsRuntimeLaunchTarget(request) ? request.RuntimeProfile : request.EditorProfile;
+	}
+
+	static std::optional<BuildProfile> ResolveProfileForLaunch(const LaunchOperationRequest& request, std::string_view profileName)
 	{
 		const std::optional<BuildProfile> profile = FindBuildProfile(profileName);
 		if (!profile.has_value())
@@ -36,7 +41,7 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const BuildProfileTarget expectedTarget = kind == LaunchOperationKind::RunEditor || kind == LaunchOperationKind::RunEditorSmokeTest ? BuildProfileTarget::Editor : BuildProfileTarget::Game;
+		const BuildProfileTarget expectedTarget = IsRuntimeLaunchTarget(request) ? BuildProfileTarget::Game : BuildProfileTarget::Editor;
 		return profile->Target == expectedTarget ? profile : std::nullopt;
 	}
 
@@ -90,14 +95,8 @@ namespace SparkleLauncher
 	{
 		switch (kind)
 		{
-		case LaunchOperationKind::RunEditor:
-			return "RunEditor";
-		case LaunchOperationKind::RunRuntime:
-			return "RunRuntime";
-		case LaunchOperationKind::RunEditorSmokeTest:
-			return "RunEditorSmokeTest";
-		case LaunchOperationKind::RunRuntimeSmokeTest:
-			return "RunRuntimeSmokeTest";
+		case LaunchOperationKind::RunProject:
+			return "RunProject";
 		}
 
 		return "Unknown";
@@ -106,10 +105,10 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunEditor, "project.launch.editor", "Launch", "Open Editor", "Open the selected project's editor executable."},
-		    {LaunchOperationKind::RunRuntime, "project.launch.runtime", "Launch", "Open Runtime", "Open the selected project's runtime executable."},
-		    {LaunchOperationKind::RunEditorSmokeTest, "smoke.rhi.editor", "Smoke Tests", "Run Editor Smoke Test", "Run the selected project editor with graphics smoke validation enabled."},
-		    {LaunchOperationKind::RunRuntimeSmokeTest, "smoke.rhi.runtime", "Smoke Tests", "Run Runtime Smoke Test", "Run the selected project runtime with graphics smoke validation enabled."},
+		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Open the selected project in editor mode."},
+		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Open the selected project in runtime mode."},
+		    {LaunchOperationKind::RunProject, "project.run.smoke", "Launch", "Run Smoke Tests", "Run the selected project with smoke validation enabled."},
+		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Run Project", "Run the selected project in editor or runtime mode, optionally with smoke validation."},
 		};
 		return definitions;
 	}
@@ -141,7 +140,12 @@ namespace SparkleLauncher
 		plan.Profile = ResolveLaunchProfile(plan.Kind, request);
 		plan.Operation = MakeOperationRecord(definition->Id, definition->DisplayName);
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
+		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(request) ? "runtime" : "editor"});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
+		if (request.EnableSmokeTest)
+		{
+			plan.Operation.Inputs.push_back({"smokeTest", "enabled"});
+		}
 		if (!request.GraphicsBackend.empty())
 		{
 			plan.Operation.Inputs.push_back({"graphicsBackend", request.GraphicsBackend});
@@ -169,7 +173,7 @@ namespace SparkleLauncher
 		PopulateRhiSmokeLaunchInputs(plan);
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 
-		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(plan.Kind, plan.Profile);
+		const std::optional<BuildProfile> profile = ResolveProfileForLaunch(request, plan.Profile);
 		if (!profile.has_value())
 		{
 			AddReadiness(plan, "Launch profile does not match the requested launch target: " + plan.Profile);
@@ -195,7 +199,7 @@ namespace SparkleLauncher
 		AddReadiness(plan, cookedMeshesReady ? "Cooked meshes are ready." : "Cooked meshes are missing; run Cook Meshes before launching.");
 		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; cook textures before launching.");
 		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; cook shaders before launching.");
-		AddPlannedEffect(plan, "Launch " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
+		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
 		if (!request.GraphicsBackend.empty())
 		{
 			AddPlannedEffect(plan, "Use graphics backend: " + request.GraphicsBackend + ".");

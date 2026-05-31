@@ -14,15 +14,12 @@ namespace SparkleLauncher
 {
 	enum class LaunchOperationKind
 	{
-		RunEditor,
-		RunRuntime,
-		RunEditorSmokeTest,
-		RunRuntimeSmokeTest
+		RunProject
 	};
 
 	struct LaunchOperationDefinition
 	{
-		LaunchOperationKind Kind = LaunchOperationKind::RunEditor;
+		LaunchOperationKind Kind = LaunchOperationKind::RunProject;
 		std::string Id;
 		std::string Group;
 		std::string DisplayName;
@@ -32,9 +29,12 @@ namespace SparkleLauncher
 	struct LaunchOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
+		std::string OperationId = "project.run";
 		std::string ProjectId = "Showcase";
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
+		std::string Target = "editor";
+		bool EnableSmokeTest = false;
 		std::string GraphicsBackend;
 		std::string VSync;
 		std::string PreferHighPerformanceAdapter;
@@ -60,7 +60,7 @@ namespace SparkleLauncher
 		OperationRecord Operation;
 		std::filesystem::path RepositoryRoot;
 		LaunchOperationRequest Request;
-		LaunchOperationKind Kind = LaunchOperationKind::RunEditor;
+		LaunchOperationKind Kind = LaunchOperationKind::RunProject;
 		std::string Profile;
 		std::string TargetName;
 		std::filesystem::path ExecutablePath;

@@ -92,7 +92,6 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
-		void CreateSharedOptionsPanel(QVBoxLayout& layout, QWidget* parent);
 		QWidget* CreateFooterContextPanel(QWidget* parent);
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
@@ -107,7 +106,6 @@ namespace SparkleLauncher
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state);
-		void AddActionRow(QVBoxLayout& layout, const QString& title, const QString& detail, const QString& buttonText, const QString& operationId);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
@@ -131,8 +129,8 @@ namespace SparkleLauncher
 		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(const LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
+		bool OfferWorkspacePrerequisiteOperation(const QString& operationId);
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
-		void RunInlineActionOperation(const QString& operationId);
 		void StartOperation(LauncherOperationRequest request, const QString& title);
 		void SetStatusMessage(const QString& message);
 		void SetSelectedOperation(const QString& operationId);
@@ -144,9 +142,6 @@ namespace SparkleLauncher
 		void PopulateProjectSelectors();
 		void PopulateProjectCombo(QComboBox& combo) const;
 		QVector<WorkflowDefinition> CreateWorkflowDefinitions() const;
-		bool OperationUsesProjectOption(const QString& operationId) const;
-		bool OperationUsesForceConfigureOption(const QString& operationId) const;
-		void UpdateSharedOptionsVisibility();
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
@@ -160,9 +155,6 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
-		QWidget* m_sharedOptionsPanel = nullptr;
-		QWidget* m_sharedProjectRow = nullptr;
-		QWidget* m_sharedForceConfigureRow = nullptr;
 		QWidget* m_footerContextPanel = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;

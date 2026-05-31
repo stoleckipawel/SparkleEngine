@@ -24,6 +24,8 @@ namespace SparkleLauncher
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
 		std::string DryRunOperationId;
+		std::string LaunchTarget = "editor";
+		bool EnableSmokeTest = false;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;
 		CookMode RequestedCookMode = CookMode::Incremental;
