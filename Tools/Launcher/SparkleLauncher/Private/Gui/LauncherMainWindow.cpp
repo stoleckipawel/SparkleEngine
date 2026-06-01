@@ -3194,10 +3194,10 @@ namespace SparkleLauncher
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
 		addRule("#StatusRow", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2d3136, stop:1 #282c31); border: 1px solid #343940; border-top-color: #434952; padding: 7px 9px 7px 9px; margin-top: 2px;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.5pt; font-weight: 650;");
-		addRule("#StatusValue", "color: " + textMuted + "; font-size: 7.75pt; font-weight: 700; padding: 2px 8px; border: 1px solid #4a4f56; background: #2a2d31; min-width: 52px;");
-		addRule("#StatusValue[State=\"ok\"]", "color: #b8d7a4; border-color: #4a4f56; background: #2a2d31;");
-		addRule("#StatusValue[State=\"warning\"]", "color: #d8c089; border-color: #4a4f56; background: #2a2d31;");
-		addRule("#StatusValue[State=\"bad\"]", "color: #d8a49d; border-color: #4a4f56; background: #2a2d31;");
+		addRule("#StatusValue", "color: " + textMuted + "; font-size: 7.75pt; font-weight: 700; padding: 2px 8px; border: 1px solid #46503a; background: #26301f; min-width: 52px;");
+		addRule("#StatusValue[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
+		addRule("#StatusValue[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addRule("#StatusValue[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 7.75pt;");
 		addRule("#ActionRow", "background: transparent; border: none; padding: 4px 0;");
 		addRule("#ActionTitle", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 700;");
