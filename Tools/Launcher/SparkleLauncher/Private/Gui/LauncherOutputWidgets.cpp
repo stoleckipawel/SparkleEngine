@@ -36,8 +36,8 @@ namespace SparkleLauncher
 		activityRail->setObjectName("ActivityRail");
 		activityRail->setMinimumWidth(kActivityListWidth);
 		QVBoxLayout* activityRailLayout = new QVBoxLayout(activityRail);
-		activityRailLayout->setContentsMargins(6, 6, 6, 6);
-		activityRailLayout->setSpacing(4);
+		activityRailLayout->setContentsMargins(4, 4, 4, 4);
+		activityRailLayout->setSpacing(3);
 
 		QLabel* activityHeader = new QLabel("Runs", activityRail);
 		activityHeader->setObjectName("OutputPaneLabel");
@@ -57,8 +57,8 @@ namespace SparkleLauncher
 		QFrame* outputPane = new QFrame(panel);
 		outputPane->setObjectName("OutputPane");
 		QVBoxLayout* outputLayout = new QVBoxLayout(outputPane);
-		outputLayout->setContentsMargins(8, 6, 8, 6);
-		outputLayout->setSpacing(4);
+		outputLayout->setContentsMargins(6, 4, 6, 6);
+		outputLayout->setSpacing(3);
 
 		QHBoxLayout* outputHeaderLayout = new QHBoxLayout();
 		outputHeaderLayout->setContentsMargins(0, 0, 0, 0);
