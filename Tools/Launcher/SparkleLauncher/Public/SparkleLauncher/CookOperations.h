@@ -43,6 +43,17 @@ namespace SparkleLauncher
 		CookMode Mode = CookMode::Incremental;
 		bool ForceRecookConfirmed = false;
 		std::vector<std::string> ShaderPackages;
+		std::vector<std::string> ShaderTargets;
+		std::string ShaderBackend = "auto";
+		std::filesystem::path ShaderCacheDirectory;
+		std::filesystem::path ShaderDebugArtifactDirectory;
+		bool ShaderUseCache = true;
+		bool ShaderEnableDebugInfo = false;
+		bool ShaderEnableOptimizations = true;
+		bool ShaderWarningsAsErrors = true;
+		bool ShaderStripReflection = true;
+		bool ShaderStripDebugInfo = true;
+		bool WriteCookedShaderStats = false;
 	};
 
 	struct CookOperationStep

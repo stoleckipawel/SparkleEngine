@@ -47,6 +47,10 @@ namespace SparkleLauncher
 		QString WorkspaceIde;
 		QString SelectedTargets;
 		QString ShaderPackages;
+		QString ShaderTargets;
+		QString ShaderBackend;
+		QString ShaderCacheDirectory;
+		QString ShaderDebugArtifactDirectory;
 		QString LaunchBackend;
 		QString LaunchTarget;
 		QString LaunchVSync;
@@ -60,6 +64,14 @@ namespace SparkleLauncher
 		QString CleanScope = "selected-cooked";
 		QVector<LauncherCleanTarget> CleanTargets;
 		bool LaunchSmokeTest = false;
+		bool ShaderUseCache = true;
+		bool ShaderEnableDebugInfo = false;
+		bool ShaderEnableOptimizations = true;
+		bool ShaderWarningsAsErrors = true;
+		bool ShaderStripReflection = true;
+		bool ShaderStripDebugInfo = true;
+		bool ShaderWriteDebugArtifacts = false;
+		bool ShaderWriteCookedShaderStats = false;
 		bool ForceConfigure = false;
 		bool ForceRecook = false;
 		bool ConfirmForceRecook = false;

@@ -28,6 +28,11 @@ bool ShaderCookNodeBuilder::BuildAndAdd(
 	ShaderCompileOptions compileOptions = ShaderCookPlanner::BuildCompileOptions(stage);
 	compileOptions.Target = target;
 	compileOptions.CaptureDebugArtifacts = writeDebugArtifacts;
+	compileOptions.EnableDebugInfo = settings.enableDebugInfo;
+	compileOptions.EnableOptimizations = settings.enableOptimizations;
+	compileOptions.TreatWarningsAsErrors = settings.treatWarningsAsErrors;
+	compileOptions.StripReflection = settings.stripReflection;
+	compileOptions.StripDebugInfo = settings.stripDebugInfo;
 
 	if (settings.forceMissingIncludeForValidation && packageIndex == 0 && stageIndex == 0 && targetIndex == 0)
 	{

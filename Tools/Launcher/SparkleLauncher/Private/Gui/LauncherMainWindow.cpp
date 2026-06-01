@@ -1,7 +1,9 @@
 #include "LauncherMainWindow.h"
 
+#include "LauncherActionWidgets.h"
 #include "LauncherBackend.h"
 #include "LauncherProjectModel.h"
+#include "LauncherOutputWidgets.h"
 #include "LauncherSettings.h"
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
@@ -32,7 +34,9 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QStyle>
+#include <QtWidgets/QToolButton>
 #include <QtWidgets/QWidget>
 
 #include <array>
@@ -54,8 +58,6 @@ namespace SparkleLauncher
 	static constexpr int kWorkflowGroupMinHeight = 30;
 	static constexpr int kWorkflowButtonMinHeight = 32;
 	static constexpr int kFieldLabelWidth = 116;
-	static constexpr int kActivityListWidth = 260;
-	static constexpr int kActivityListMaxHeight = 146;
 	static constexpr int kOperationOutputMinHeight = 96;
 	static constexpr int kOperationOutputCompactMaxHeight = 128;
 	static constexpr int kOperationOutputProminentMinHeight = 136;
@@ -329,6 +331,43 @@ namespace SparkleLauncher
 		return QString::fromStdString(DisplayName(SelectedWorkspaceIde(settings)));
 	}
 
+	static QString ResolveShaderTargetSelection(const LauncherSettings& settings)
+	{
+		const QString preset = settings.ShaderTargetPreset();
+		if (preset == "d3d12")
+		{
+			return "DxilSm66";
+		}
+		if (preset == "vulkan")
+		{
+			return "SpirV16";
+		}
+		if (preset == "dxil-all")
+		{
+			return "DxilSm60, DxilSm61, DxilSm62, DxilSm63, DxilSm64, DxilSm65, DxilSm66, DxilSm67";
+		}
+		if (preset == "spirv-all")
+		{
+			return "SpirV14, SpirV15, SpirV16";
+		}
+		if (preset == "custom")
+		{
+			return settings.ShaderCustomTargets();
+		}
+		return "DxilSm66, SpirV16";
+	}
+
+	static QString ResolvedShaderDebugArtifactDirectory(const std::filesystem::path& repositoryRoot, const LauncherProjectModel& projectModel, const LauncherSettings& settings)
+	{
+		if (!settings.ShaderDebugArtifactDirectory().trimmed().isEmpty())
+		{
+			return settings.ShaderDebugArtifactDirectory().trimmed();
+		}
+
+		const QString projectId = projectModel.SelectedProjectId().isEmpty() ? "Workspace" : projectModel.SelectedProjectId();
+		return QString::fromStdString((GetBuildDirectory(repositoryRoot) / "ShaderDebugArtifacts" / projectId.toStdString()).string());
+	}
+
 	static BuildWorkspaceOperationRequest MakeWorkspacePlanRequest(
 	    const std::filesystem::path& repositoryRoot,
 	    const LauncherProjectModel& projectModel,
@@ -375,11 +414,16 @@ namespace SparkleLauncher
 	    const std::filesystem::path& repositoryRoot,
 	    const QString& profileName,
 	    const QString& targetName,
-	    const QString& detail)
+	    const QString& detail,
+	    const std::filesystem::path& preservedPath = {})
 	{
 		const std::filesystem::path binaryDirectory = GetBuildBinaryDirectory(repositoryRoot, profileName.toStdString());
 		const std::filesystem::path libraryDirectory = GetBuildDirectory(repositoryRoot) / "lib" / profileName.toStdString();
-		AddExplicitCleanTarget(targets, targetName + " executable", binaryDirectory / (targetName.toStdString() + ".exe"), detail);
+		const std::filesystem::path executablePath = binaryDirectory / (targetName.toStdString() + ".exe");
+		if (preservedPath.empty() || executablePath != preservedPath)
+		{
+			AddExplicitCleanTarget(targets, targetName + " executable", executablePath, detail);
+		}
 		AddExplicitCleanTarget(targets, targetName + " program database", binaryDirectory / (targetName.toStdString() + ".pdb"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import database", libraryDirectory / (targetName.toStdString() + ".pdb"), detail);
@@ -564,12 +608,50 @@ namespace SparkleLauncher
 		StartOperation(std::move(request), title);
 	}
 
+	void LauncherMainWindow::CleanSelectedOperation()
+	{
+		if (m_selectedOperationId.isEmpty())
+		{
+			SetStatusMessage("No workflow selected");
+			return;
+		}
+
+		if (!SupportsActionSpecificClean(m_selectedOperationId))
+		{
+			SetStatusMessage("Clean is not available for this workflow");
+			return;
+		}
+
+		LauncherOperationRequest request = BuildCleanOperationRequest(m_selectedOperationId);
+		if (request.CleanTargets.isEmpty())
+		{
+			const QString message = OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty() ?
+			                            "Select a project before cleaning this workflow's generated outputs." :
+			                            "No generated outputs were resolved for this workflow.";
+			if (m_operationOutput != nullptr)
+			{
+				m_operationOutput->setPlainText(message);
+			}
+			SetStatusMessage(message);
+			return;
+		}
+
+		if (!ConfirmRunRequest(request))
+		{
+			SetStatusMessage("Clean canceled");
+			return;
+		}
+
+		StartOperation(std::move(request), "Clean " + DisplayNameForOperation(m_selectedOperationId));
+	}
+
 	void LauncherMainWindow::DisplayOperationStarted(const QString& runId, const QString&, const QString& title)
 	{
-		SetRunState(runId, RunState::Running, title);
-		AppendRunOutput(runId, title + " started.\n");
+		const QString effectiveTitle = m_runTitles.value(runId, title);
+		SetRunState(runId, RunState::Running, effectiveTitle);
+		AppendRunOutput(runId, effectiveTitle + " started.\n");
 		ShowRunOutput(runId);
-		SetStatusMessage(title + " running");
+		SetStatusMessage(effectiveTitle + " running");
 		UpdateProgress();
 	}
 
@@ -585,11 +667,12 @@ namespace SparkleLauncher
 	void LauncherMainWindow::DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode)
 	{
 		const bool succeeded = exitCode == 0;
-		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, title);
+		const QString effectiveTitle = m_runTitles.value(runId, title);
+		SetRunState(runId, succeeded ? RunState::Done : RunState::Failed, effectiveTitle);
 
 		if (succeeded)
 		{
-			AppendRunOutput(runId, "\n" + title + " finished: " + statusText + "\n");
+			AppendRunOutput(runId, "\n" + effectiveTitle + " finished: " + statusText + "\n");
 		}
 		else
 		{
@@ -598,7 +681,7 @@ namespace SparkleLauncher
 			const QString recoveryText = recoveryHint.isEmpty() ? QString() : QStringLiteral("Recovery: %1\n\n").arg(recoveryHint);
 			m_runOutputs.insert(
 			    runId,
-			    QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput + "\n" + title + " finished: " + statusText + "\n");
+			    QStringLiteral("Failed: %1 (exit code %2)\n").arg(statusText).arg(exitCode) + recoveryText + "\n" + existingOutput + "\n" + effectiveTitle + " finished: " + statusText + "\n");
 			++m_failedRunCount;
 		}
 
@@ -611,7 +694,7 @@ namespace SparkleLauncher
 		SaveActionHistory();
 		UpdateActionHistoryDisplay();
 		ShowRunOutput(runId);
-		SetStatusMessage(title + " finished: " + statusText);
+		SetStatusMessage(effectiveTitle + " finished: " + statusText);
 		UpdateProgress();
 		RefreshProjects();
 		RebuildOptionsPages();
@@ -621,6 +704,19 @@ namespace SparkleLauncher
 			m_pendingRestartRunIds.push_back(runId);
 			PromptForLauncherRestart();
 		}
+
+		if (m_pendingFollowUpOperations.contains(runId))
+		{
+			const PendingFollowUpOperation followUp = m_pendingFollowUpOperations.take(runId);
+			if (succeeded)
+			{
+				StartOperation(followUp.Request, followUp.Title);
+			}
+			else
+			{
+				SetStatusMessage(followUp.Title + " canceled because the prerequisite clean failed.");
+			}
+		}
 	}
 
 	QWidget* LauncherMainWindow::CreateWorkflowSurface()
@@ -628,8 +724,8 @@ namespace SparkleLauncher
 		QFrame* surface = new QFrame(this);
 		surface->setObjectName("WorkflowSurface");
 		QHBoxLayout* layout = new QHBoxLayout(surface);
-		layout->setContentsMargins(kSpaceMedium, kSpaceMedium, kSpaceMedium, kSpaceMedium);
-		layout->setSpacing(kSpaceMedium);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
 		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
 		return surface;
@@ -641,8 +737,8 @@ namespace SparkleLauncher
 		panel->setObjectName("ProcessPanel");
 		panel->setFixedWidth(kWorkflowRailWidth);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(0, 0, 0, 0);
-		layout->setSpacing(kSpaceMedium);
+		layout->setContentsMargins(kSpaceSmall, kSpaceSmall, kSpaceSmall, kSpaceSmall);
+		layout->setSpacing(kSpaceSmall);
 
 		QLabel* railTitle = new QLabel("Workflows", panel);
 		railTitle->setObjectName("WorkflowRailTitle");
@@ -650,7 +746,7 @@ namespace SparkleLauncher
 
 		QHBoxLayout* workflowLayout = new QHBoxLayout();
 		workflowLayout->setContentsMargins(0, 0, 0, 0);
-		workflowLayout->setSpacing(kSpaceMedium);
+		workflowLayout->setSpacing(kSpaceSmall);
 
 		QVBoxLayout* groupLayout = new QVBoxLayout();
 		groupLayout->setContentsMargins(0, 0, 0, 0);
@@ -725,8 +821,8 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("OptionsPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(kPanelHorizontalMargin, kPanelVerticalMargin, kPanelHorizontalMargin, kPanelVerticalMargin);
-		layout->setSpacing(kSpaceSmall + kSpaceTiny);
+		layout->setContentsMargins(16, 14, 16, 12);
+		layout->setSpacing(kSpaceSmall);
 
 		m_activeOperationLabel = new QLabel("No workflow selected", panel);
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
@@ -742,8 +838,8 @@ namespace SparkleLauncher
 		QFrame* actionMetaPanel = new QFrame(panel);
 		actionMetaPanel->setObjectName("ActionMetaPanel");
 		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(actionMetaPanel);
-		actionMetaRowLayout->setContentsMargins(kSpaceMedium, kSpaceSmall, kSpaceMedium, kSpaceSmall);
-		actionMetaRowLayout->setSpacing(kSpaceMedium);
+		actionMetaRowLayout->setContentsMargins(0, kSpaceSmall, 0, 0);
+		actionMetaRowLayout->setSpacing(kSpaceSmall);
 
 		QVBoxLayout* actionMetaLayout = new QVBoxLayout();
 		actionMetaLayout->setContentsMargins(0, 0, 0, 0);
@@ -791,7 +887,7 @@ namespace SparkleLauncher
 		panel->setObjectName("FooterContextPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(kSpaceSmall);
+		rowLayout->setSpacing(6);
 		rowLayout->addStretch(1);
 
 		QLabel* projectLabel = CreateFieldLabel("Project");
@@ -853,8 +949,8 @@ namespace SparkleLauncher
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(0, kSpaceSmall, kSpaceSmall, 0);
-		layout->setSpacing(kSpaceSmall);
+		layout->setContentsMargins(0, 4, 0, 0);
+		layout->setSpacing(6);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -863,87 +959,26 @@ namespace SparkleLauncher
 
 	QWidget* LauncherMainWindow::CreateOutputPanel()
 	{
-		QFrame* panel = new QFrame(this);
-		panel->setObjectName("OutputPanel");
-		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(kPanelHorizontalMargin, kSpaceMedium + kSpaceTiny, kPanelHorizontalMargin, kSpaceLarge);
-		layout->setSpacing(kSpaceSmall + kSpaceTiny);
+		const LauncherOutputPanelWidgets widgets = CreateLauncherOutputPanel(
+		    this,
+		    CreateLauncherIcon(LauncherIcon::Copy, QColor(kColorStateQueued)),
+		    QSize(kLauncherIconSize, kLauncherIconSize),
+		    [this](QWidget* widget) { RegisterFocusable(widget); },
+		    [this]() { CopySelectedRunOutput(); },
+		    [this](QListWidgetItem* current, QListWidgetItem* previous) { DisplaySelectedRunOutput(current, previous); });
 
-		QLabel* monitorLabel = CreateSectionLabel("Activity");
-		layout->addWidget(monitorLabel);
-
-		QHBoxLayout* progressLayout = new QHBoxLayout();
-		progressLayout->setSpacing(kSpaceMedium + kSpaceTiny);
-		m_progressLabel = new QLabel("No runs yet", panel);
-		m_progressLabel->setObjectName("ProgressLabel");
-		progressLayout->addWidget(m_progressLabel);
-		m_progressBar = new QProgressBar(panel);
-		m_progressBar->setObjectName("ProgressBar");
-		m_progressBar->setTextVisible(false);
-		progressLayout->addWidget(m_progressBar, 1);
-		layout->addLayout(progressLayout);
-
-		QHBoxLayout* activityHeaderLayout = new QHBoxLayout();
-		activityHeaderLayout->setSpacing(kSpaceMedium + kSpaceTiny);
-		QLabel* activityHeader = CreateFieldLabel("Activity");
-		activityHeader->setMinimumWidth(kActivityListWidth);
-		activityHeaderLayout->addWidget(activityHeader, 1);
-		activityHeaderLayout->addWidget(CreateFieldLabel("Output"), 3);
-		m_copyOutputButton = new QPushButton("Copy output", panel);
-		m_copyOutputButton->setObjectName("SecondaryButton");
-		m_copyOutputButton->setIcon(CreateLauncherIcon(LauncherIcon::Copy, QColor(kColorStateQueued)));
-		m_copyOutputButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
-		m_copyOutputButton->setEnabled(false);
-		m_copyOutputButton->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
-		m_copyOutputButton->setToolTip("Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
-		m_copyOutputButton->setAccessibleName("Copy selected run output");
-		m_copyOutputButton->setAccessibleDescription("Copies output for the selected run.");
-		RegisterFocusable(m_copyOutputButton);
-		connect(m_copyOutputButton, &QPushButton::clicked, this, &LauncherMainWindow::CopySelectedRunOutput);
-		activityHeaderLayout->addWidget(m_copyOutputButton, 0);
-
-		QHBoxLayout* activityLayout = new QHBoxLayout();
-		activityLayout->setSpacing(kSpaceMedium + kSpaceTiny);
-		m_activityList = new QListWidget(panel);
-		m_activityList->setObjectName("ActivityList");
-		m_activityList->setMinimumWidth(kActivityListWidth);
-		m_activityList->setMaximumHeight(kActivityListMaxHeight);
-		m_activityList->setAccessibleName("Activity runs");
-		m_activityList->setAccessibleDescription("Recent runs. Select one to review its summary and output.");
-		RegisterFocusable(m_activityList);
-		connect(m_activityList, &QListWidget::currentItemChanged, this, &LauncherMainWindow::DisplaySelectedRunOutput);
-		activityLayout->addWidget(m_activityList, 1);
-
-		QVBoxLayout* outputLayout = new QVBoxLayout();
-		outputLayout->setContentsMargins(0, 0, 0, 0);
-		outputLayout->setSpacing(kSpaceSmall);
-		m_selectedRunSummary = new QLabel("Select a run to view output.", panel);
-		m_selectedRunSummary->setObjectName("ActivitySummary");
-		m_selectedRunSummary->setAccessibleName("Selected activity summary");
-		m_selectedRunSummary->setWordWrap(true);
-		outputLayout->addWidget(m_selectedRunSummary);
-
-		m_operationOutput = new QTextEdit(panel);
-		m_operationOutput->setObjectName("OperationOutput");
-		m_operationOutput->setReadOnly(true);
-		m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);
-		m_operationOutput->setMaximumHeight(kOperationOutputMaxHeight);
-		m_operationOutput->setToolTip("Select a run to view its output.");
-		m_operationOutput->setAccessibleName("Selected run output");
-		m_operationOutput->setAccessibleDescription("Read-only output for the selected run.");
-		RegisterFocusable(m_operationOutput);
-		outputLayout->addWidget(m_operationOutput);
-		activityLayout->addLayout(outputLayout, 3);
-
-		m_activityDetailsPanel = new QFrame(panel);
-		m_activityDetailsPanel->setObjectName("ActivityDetailsPanel");
-		QVBoxLayout* activityDetailsLayout = new QVBoxLayout(m_activityDetailsPanel);
-		activityDetailsLayout->setContentsMargins(0, 0, 0, 0);
-		activityDetailsLayout->setSpacing(kSpaceSmall);
-		activityDetailsLayout->addLayout(activityHeaderLayout);
-		activityDetailsLayout->addLayout(activityLayout);
-		layout->addWidget(m_activityDetailsPanel);
-		return panel;
+		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
+		m_activityList = widgets.ActivityList;
+		m_selectedRunSummary = widgets.SelectedRunSummary;
+		m_operationOutput = widgets.OperationOutput;
+		m_copyOutputButton = widgets.CopyOutputButton;
+		m_progressLabel = widgets.ProgressLabel;
+		if (m_operationOutput != nullptr)
+		{
+			m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);
+			m_operationOutput->setMaximumHeight(kOperationOutputMaxHeight);
+		}
+		return widgets.Root;
 	}
 
 	QLabel* LauncherMainWindow::CreateSectionLabel(const QString& title) const
@@ -1093,7 +1128,9 @@ namespace SparkleLauncher
 
 		if (operationId == "cook.shaders")
 		{
-			AddOptionField(layout, "Shader package", CreateValueCombo(
+			QVBoxLayout* selectionLayout = AddInlineOptionsSection(layout);
+			selectionLayout->addWidget(CreateSectionLabel("Selection"));
+			AddOptionField(*selectionLayout, "Shader package", CreateValueCombo(
 			    {{"All shader packages", ""},
 			     {"ComputeClear", "ComputeClear"},
 			     {"DirectLighting", "DirectLighting"},
@@ -1107,39 +1144,111 @@ namespace SparkleLauncher
 			     {"VisualizeBuffers", "VisualizeBuffers"}},
 			    m_settings.ShaderPackages(),
 			    &LauncherSettings::SetShaderPackages));
-			QCheckBox* forceRecookBox = CreateBoundCheckBox("Clean before cooking", "Remove cooked outputs before this cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
-			forceRecookBox->setObjectName("WarningCheckBox");
-			AddOptionCheckBox(layout, forceRecookBox);
-			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm clean cook", "Required before removing cooked outputs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
-			confirmRecookBox->setObjectName("DestructiveCheckBox");
-			QWidget* confirmRecookRow = AddOptionCheckBox(layout, confirmRecookBox);
-			confirmRecookRow->setVisible(forceRecookBox->isChecked());
-			connect(forceRecookBox, &QCheckBox::toggled, confirmRecookRow, [confirmRecookRow, confirmRecookBox](bool enabled) {
-				confirmRecookRow->setVisible(enabled);
-				if (!enabled)
-				{
-					confirmRecookBox->setChecked(false);
-				}
+			AddOptionField(*selectionLayout, "Compiler backend", CreateValueCombo(
+			    {{"Auto select", "auto"}, {"DXC", "dxc"}, {"Slang", "slang"}},
+			    m_settings.ShaderBackend(),
+			    &LauncherSettings::SetShaderBackend));
+			QComboBox* targetPresetCombo = CreateValueCombo(
+			    {{"Default runtime set (DxilSm66 + SpirV16)", "default"},
+			     {"DirectX 12 only (DxilSm66)", "d3d12"},
+			     {"Vulkan only (SpirV16)", "vulkan"},
+			     {"DXIL compatibility sweep (Sm60-Sm67)", "dxil-all"},
+			     {"SPIR-V compatibility sweep (1.4-1.6)", "spirv-all"},
+			     {"Custom target list", "custom"}},
+			    m_settings.ShaderTargetPreset(),
+			    &LauncherSettings::SetShaderTargetPreset);
+			AddOptionField(*selectionLayout, "Binary targets", targetPresetCombo);
+			QWidget* customTargetsRow = AddOptionField(
+			    *selectionLayout,
+			    "Custom targets",
+			    CreateBoundLineEdit(
+			        m_settings.ShaderCustomTargets(),
+			        "DxilSm66, SpirV16",
+			        "Comma-separated ShaderCompiler target names such as DxilSm66 or SpirV16.",
+			        &LauncherSettings::SetShaderCustomTargets));
+			customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
+			connect(targetPresetCombo, &QComboBox::currentTextChanged, customTargetsRow, [this, customTargetsRow](const QString&) {
+				customTargetsRow->setVisible(m_settings.ShaderTargetPreset() == "custom");
 			});
+
+			QVBoxLayout* cacheLayout = AddInlineOptionsSection(layout);
+			cacheLayout->addWidget(CreateSectionLabel("Cache And Outputs"));
+			AddOptionCheckBox(*cacheLayout, CreateBoundCheckBox("Use shader cache", "Reuse cached shader compile artifacts when possible.", m_settings.ShaderUseCache(), &LauncherSettings::SetShaderUseCache));
+			AddOptionField(
+			    *cacheLayout,
+			    "Cache directory",
+			    CreateBoundLineEdit(
+			        m_settings.ShaderCacheDirectory(),
+			        "Use ShaderCompiler default cache location",
+			        "Optional override for ShaderCompiler --cache-dir.",
+			        &LauncherSettings::SetShaderCacheDirectory));
+			QCheckBox* debugArtifactsBox = CreateBoundCheckBox(
+			    "Write debug artifact bundles",
+			    "Emit compiler-side debug bundles and intermediate artifacts for inspection.",
+			    m_settings.ShaderWriteDebugArtifacts(),
+			    &LauncherSettings::SetShaderWriteDebugArtifacts);
+			debugArtifactsBox->setObjectName("WarningCheckBox");
+			AddOptionCheckBox(*cacheLayout, debugArtifactsBox);
+			QWidget* debugArtifactsRow = AddOptionField(
+			    *cacheLayout,
+			    "Debug output directory",
+			    CreateBoundLineEdit(
+			        m_settings.ShaderDebugArtifactDirectory(),
+			        ResolvedShaderDebugArtifactDirectory(m_repositoryRoot, m_projectModel, m_settings),
+			        "Optional override for ShaderCompiler --debug-artifacts. When empty, the launcher uses a build-local default directory.",
+			        &LauncherSettings::SetShaderDebugArtifactDirectory));
+			debugArtifactsRow->setVisible(m_settings.ShaderWriteDebugArtifacts());
+			connect(debugArtifactsBox, &QCheckBox::toggled, debugArtifactsRow, &QWidget::setVisible);
+
+			QVBoxLayout* diagnosticsLayout = AddInlineOptionsSection(layout);
+			diagnosticsLayout->addWidget(CreateSectionLabel("Diagnostics"));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Enable debug info and symbols",
+			        "Request backend debug information and symbol emission where the selected backend supports it.",
+			        m_settings.ShaderEnableDebugInfo(),
+			        &LauncherSettings::SetShaderEnableDebugInfo));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Enable compiler optimizations",
+			        "Compile shaders with backend optimizations enabled. Disable when debugging compiler output or reproducing optimization-sensitive issues.",
+			        m_settings.ShaderEnableOptimizations(),
+			        &LauncherSettings::SetShaderEnableOptimizations));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Treat warnings as errors",
+			        "Fail the shader cook when the backend emits warnings.",
+			        m_settings.ShaderWarningsAsErrors(),
+			        &LauncherSettings::SetShaderWarningsAsErrors));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Strip reflection from runtime binaries",
+			        "Request reflection stripping for final runtime shader binaries where the active backend supports it.",
+			        m_settings.ShaderStripReflection(),
+			        &LauncherSettings::SetShaderStripReflection));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Strip embedded debug info from runtime binaries",
+			        "Request embedded debug info stripping for final runtime shader binaries where the active backend supports it.",
+			        m_settings.ShaderStripDebugInfo(),
+			        &LauncherSettings::SetShaderStripDebugInfo));
+			AddOptionCheckBox(
+			    *diagnosticsLayout,
+			    CreateBoundCheckBox(
+			        "Write cooked shader stats CSV",
+			        "Run the cooked-shader-stats analysis pass after the shader cook and write CSV output into the shader cache analysis folder.",
+			        m_settings.ShaderWriteCookedShaderStats(),
+			        &LauncherSettings::SetShaderWriteCookedShaderStats));
 			return;
 		}
 
 		if (operationId.startsWith("cook."))
 		{
-			QCheckBox* forceRecookBox = CreateBoundCheckBox("Clean before cooking", "Remove cooked outputs before this cook.", m_settings.ForceRecook(), &LauncherSettings::SetForceRecook);
-			forceRecookBox->setObjectName("WarningCheckBox");
-			AddOptionCheckBox(layout, forceRecookBox);
-			QCheckBox* confirmRecookBox = CreateBoundCheckBox("Confirm clean cook", "Required before removing cooked outputs.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook);
-			confirmRecookBox->setObjectName("DestructiveCheckBox");
-			QWidget* confirmRecookRow = AddOptionCheckBox(layout, confirmRecookBox);
-			confirmRecookRow->setVisible(forceRecookBox->isChecked());
-			connect(forceRecookBox, &QCheckBox::toggled, confirmRecookRow, [confirmRecookRow, confirmRecookBox](bool enabled) {
-				confirmRecookRow->setVisible(enabled);
-				if (!enabled)
-				{
-					confirmRecookBox->setChecked(false);
-				}
-			});
 			return;
 		}
 
@@ -1149,7 +1258,6 @@ namespace SparkleLauncher
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
 			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
 			return;
@@ -1164,12 +1272,10 @@ namespace SparkleLauncher
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
 			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
 			QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
 			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			AddOptionField(*smokeOptionsLayout, "Smoke backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
 			return;
@@ -1186,13 +1292,11 @@ namespace SparkleLauncher
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
 			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Mesh batching", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchMeshAutoBatching(), &LauncherSettings::SetLaunchMeshAutoBatching));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
 			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
 			QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
 			QWidget* smokeOptionsPanel = smokeOptionsLayout->parentWidget();
 			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			AddOptionField(*smokeOptionsLayout, "Smoke backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.SmokeBackend(), &LauncherSettings::SetSmokeBackend));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
 			smokeOptionsPanel->setVisible(m_settings.LaunchSmokeTest());
@@ -1297,12 +1401,25 @@ namespace SparkleLauncher
 		row->setObjectName("OptionRow");
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(kSpaceMedium + kSpaceTiny);
+		rowLayout->setSpacing(0);
 
-		QLabel* fieldLabel = CreateFieldLabel(label);
+		QFrame* labelCell = new QFrame(row);
+		labelCell->setObjectName("OptionLabelCell");
+		QHBoxLayout* labelLayout = new QHBoxLayout(labelCell);
+		labelLayout->setContentsMargins(10, 0, 10, 0);
+		labelLayout->setSpacing(0);
+
+		QLabel* fieldLabel = CreateFieldLabel(labelCell ? label : label);
 		fieldLabel->setAlignment(Qt::AlignLeft | (qobject_cast<QTextEdit*>(control) != nullptr ? Qt::AlignTop : Qt::AlignVCenter));
-		fieldLabel->setFixedWidth(kFieldLabelWidth);
 		fieldLabel->setBuddy(control);
+		labelLayout->addWidget(fieldLabel);
+		labelCell->setFixedWidth(kFieldLabelWidth + 16);
+
+		QFrame* valueCell = new QFrame(row);
+		valueCell->setObjectName("OptionValueCell");
+		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
+		valueLayout->setContentsMargins(0, 0, 0, 0);
+		valueLayout->setSpacing(0);
 		if (control->accessibleName().isEmpty() || control->accessibleName() == "Option value")
 		{
 			control->setAccessibleName(label);
@@ -1311,8 +1428,9 @@ namespace SparkleLauncher
 		{
 			control->setToolTip("Choose " + label.toLower() + " for this workflow.");
 		}
-		rowLayout->addWidget(fieldLabel);
-		rowLayout->addWidget(control, 1);
+		valueLayout->addWidget(control, 1);
+		rowLayout->addWidget(labelCell, 0);
+		rowLayout->addWidget(valueCell, 1);
 		layout.addWidget(row);
 		return row;
 	}
@@ -1323,9 +1441,21 @@ namespace SparkleLauncher
 		row->setObjectName("OptionRow");
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(kSpaceMedium + kSpaceTiny);
-		rowLayout->addSpacing(kFieldLabelWidth + kSpaceMedium + kSpaceTiny);
-		rowLayout->addWidget(checkBox, 1);
+		rowLayout->setSpacing(0);
+
+		QFrame* labelCell = new QFrame(row);
+		labelCell->setObjectName("OptionLabelCell");
+		labelCell->setFixedWidth(kFieldLabelWidth + 16);
+
+		QFrame* valueCell = new QFrame(row);
+		valueCell->setObjectName("OptionValueCell");
+		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
+		valueLayout->setContentsMargins(10, 0, 0, 0);
+		valueLayout->setSpacing(0);
+		valueLayout->addWidget(checkBox, 1);
+
+		rowLayout->addWidget(labelCell, 0);
+		rowLayout->addWidget(valueCell, 1);
 		layout.addWidget(row);
 		return row;
 	}
@@ -1335,8 +1465,8 @@ namespace SparkleLauncher
 		QFrame* group = new QFrame(this);
 		group->setObjectName("OptionGroup");
 		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(kSpaceMedium, kSpaceSmall + kSpaceTiny, kSpaceMedium, kSpaceMedium);
-		groupLayout->setSpacing(kSpaceSmall);
+		groupLayout->setContentsMargins(0, 8, 0, 8);
+		groupLayout->setSpacing(4);
 
 		QLabel* titleLabel = new QLabel(title, group);
 		titleLabel->setObjectName("OptionGroupTitle");
@@ -1354,35 +1484,47 @@ namespace SparkleLauncher
 		return groupLayout;
 	}
 
-	void LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state)
+	void LauncherMainWindow::AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory)
 	{
 		QFrame* row = new QFrame(this);
 		row->setObjectName("StatusRow");
-		QVBoxLayout* rowLayout = new QVBoxLayout(row);
+		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(kSpaceTiny);
+		rowLayout->setSpacing(kSpaceMedium);
 
-		QHBoxLayout* summaryLayout = new QHBoxLayout();
-		summaryLayout->setContentsMargins(0, 0, 0, 0);
-		summaryLayout->setSpacing(kSpaceSmall);
+		QVBoxLayout* textLayout = new QVBoxLayout();
+		textLayout->setContentsMargins(0, 0, 0, 0);
+		textLayout->setSpacing(3);
 
 		QLabel* nameLabel = new QLabel(label, row);
 		nameLabel->setObjectName("StatusLabel");
-		summaryLayout->addWidget(nameLabel, 1);
-
-		QLabel* statusLabel = new QLabel(status, row);
-		statusLabel->setObjectName("StatusValue");
-		statusLabel->setProperty("State", state);
-		summaryLayout->addWidget(statusLabel, 0, Qt::AlignRight);
-		rowLayout->addLayout(summaryLayout);
+		textLayout->addWidget(nameLabel);
 
 		if (!detail.isEmpty())
 		{
 			QLabel* detailLabel = new QLabel(detail, row);
 			detailLabel->setObjectName("StatusDetail");
 			detailLabel->setWordWrap(true);
-			rowLayout->addWidget(detailLabel);
+			textLayout->addWidget(detailLabel);
 		}
+
+		rowLayout->addLayout(textLayout, 1);
+
+		QHBoxLayout* accessoryLayout = new QHBoxLayout();
+		accessoryLayout->setContentsMargins(0, 0, 0, 0);
+		accessoryLayout->setSpacing(6);
+		accessoryLayout->setAlignment(Qt::AlignRight | Qt::AlignTop);
+
+		QLabel* statusLabel = new QLabel(status, row);
+		statusLabel->setObjectName("StatusValue");
+		statusLabel->setProperty("State", state);
+		accessoryLayout->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
+		if (accessory != nullptr)
+		{
+			accessory->setParent(row);
+			accessoryLayout->addWidget(accessory, 0, Qt::AlignRight | Qt::AlignTop);
+		}
+		rowLayout->addLayout(accessoryLayout, 0);
 
 		layout.addWidget(row);
 	}
@@ -1448,11 +1590,29 @@ namespace SparkleLauncher
 			                               QString("Third-party cache available at %1.").arg(QString::fromStdString(dependencyCachePath.string())) :
 			                               QString("Third-party cache will be populated under %1 when Sync Third Parties runs.").arg(QString::fromStdString(dependencyCachePath.string()));
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Action Dependencies", "State this setup workflow depends on before it can do useful work.");
-			AddStatusRow(*workspaceLayout, buildFilesLabel, plan.Freshness.Current ? "Ready" : "Needs refresh", buildFilesDetail, plan.Freshness.Current ? "ok" : "warning");
-			AddStatusRow(*workspaceLayout, "Third-Party Cache", cacheStatus, cacheDetail, dependencyCacheReady ? "ok" : "warning");
+			AddStatusRow(
+			    *workspaceLayout,
+			    buildFilesLabel,
+			    plan.Freshness.Current ? "Ready" : "Needs refresh",
+			    buildFilesDetail,
+			    plan.Freshness.Current ? "ok" : "warning",
+			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
+			AddStatusRow(
+			    *workspaceLayout,
+			    "Third-Party Cache",
+			    cacheStatus,
+			    cacheDetail,
+			    dependencyCacheReady ? "ok" : "warning",
+			    CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache"));
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
-				AddStatusRow(*workspaceLayout, "Required tools", "Blocked", RequiredToolProblemSummary(plan.Toolchain), "bad");
+				AddStatusRow(
+				    *workspaceLayout,
+				    "Required tools",
+				    "Blocked",
+				    RequiredToolProblemSummary(plan.Toolchain),
+				    "bad",
+				    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
 			}
 
 			if (operationId == "workspace.setup")
@@ -1461,7 +1621,6 @@ namespace SparkleLauncher
 				    layout,
 				    "Tracked Third-Party Dependencies",
 				    "Sync Third Parties populates these repositories and assets into the local dependency cache.");
-				AddNoOptionsMessage(*dependenciesLayout, FormatTrackedDependencySummary(dependencyCachePath));
 				for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
 				{
 					const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
@@ -1474,7 +1633,8 @@ namespace SparkleLauncher
 					    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
 					    dependencyReady ? "Cached" : "Pending",
 					    detail,
-					    dependencyReady ? "ok" : "warning");
+					    dependencyReady ? "ok" : "warning",
+					    CreateTrackedDependencyActions(dependency));
 				}
 			}
 			return;
@@ -1483,12 +1643,20 @@ namespace SparkleLauncher
 		if (isBuildWorkflow)
 		{
 			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Action Dependencies", "State this build workflow depends on before it can do useful work.");
-			AddStatusRow(*buildLayout, "Required tools", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked", plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
-			AddStatusRow(*buildLayout, "Build files", plan.Freshness.Current ? "Ready" : "Needs refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning");
-			const QString targetDetail =
-			    operationId == "launcher.build.self" ? QString("SparkleLauncher for ") + m_settings.BuildConfiguration() :
-			                                           (plan.PlannedEffects.empty() ? QString("No target resolved for the selected project/profile.") : QString::fromStdString(plan.PlannedEffects.back()));
-			AddStatusRow(*buildLayout, "Target", plan.CanRun ? "Resolved" : "Blocked", targetDetail, plan.CanRun ? "ok" : "warning");
+			AddStatusRow(
+			    *buildLayout,
+			    "Required tools",
+			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
+			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
+			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
+			    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
+			AddStatusRow(
+			    *buildLayout,
+			    "Build files",
+			    plan.Freshness.Current ? "Ready" : "Needs refresh",
+			    QString::fromStdString(plan.Freshness.Summary),
+			    plan.Freshness.Current ? "ok" : "warning",
+			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
 		}
 	}
 
@@ -1498,7 +1666,7 @@ namespace SparkleLauncher
 		section->setObjectName("InlineOptionsSection");
 		QVBoxLayout* sectionLayout = new QVBoxLayout(section);
 		sectionLayout->setContentsMargins(0, 0, 0, 0);
-		sectionLayout->setSpacing(kSpaceSmall);
+		sectionLayout->setSpacing(4);
 		layout.addWidget(section);
 		return sectionLayout;
 	}
@@ -1514,6 +1682,10 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::SetControlsEnabled(bool enabled)
 	{
+		if (m_cleanButton != nullptr)
+		{
+			m_cleanButton->setEnabled(enabled);
+		}
 		if (m_runButton != nullptr)
 		{
 			m_runButton->setEnabled(enabled);
@@ -1524,11 +1696,313 @@ namespace SparkleLauncher
 		}
 	}
 
+	bool LauncherMainWindow::ShouldShowActionSpecificCleanButton(const QString& operationId) const
+	{
+		return SupportsActionSpecificClean(operationId);
+	}
+
+	bool LauncherMainWindow::SupportsActionSpecificClean(const QString& operationId) const
+	{
+		return operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") ||
+		    operationId == "cook.tools.prepare" || operationId == "cook.project" || operationId == "cook.shaders" || operationId == "cook.textures" ||
+		    operationId == "cook.assets";
+	}
+
+	QVector<LauncherCleanTarget> LauncherMainWindow::BuildActionSpecificCleanTargets(const QString& operationId) const
+	{
+		QVector<LauncherCleanTarget> targets;
+		const QString projectId = m_projectModel.SelectedProjectId();
+		if ((operationId.startsWith("project.build") || operationId.startsWith("cook.")) && projectId.isEmpty())
+		{
+			return targets;
+		}
+
+		const QString editorProfile = m_settings.EditorProfile();
+		const QString runtimeProfile = m_settings.RuntimeProfile();
+		const auto addNamedTargets = [this, &targets](const QString& profileName, const QStringList& targetNames, const QString& detail) {
+			for (const QString& targetName : targetNames)
+			{
+				if (!targetName.isEmpty())
+				{
+					AddTargetArtifactOutputs(targets, m_repositoryRoot, profileName, targetName, detail);
+				}
+			}
+		};
+		const auto addProjectArtifacts = [this, &addNamedTargets](const QString& profileName, const QString& projectName, const QString& detail) {
+			const std::optional<BuildProfile> profile = FindBuildProfile(profileName.toStdString());
+			if (!profile.has_value())
+			{
+				return;
+			}
+			addNamedTargets(profileName, {QString::fromStdString(BuildProjectTargetName(projectName.toStdString(), *profile))}, detail);
+		};
+
+		if (operationId == "launcher.build.self" || operationId == "workspace.build-all")
+		{
+			const std::filesystem::path runningLauncherPath = std::filesystem::path(QCoreApplication::applicationFilePath().toStdString());
+			AddTargetArtifactOutputs(
+			    targets,
+			    m_repositoryRoot,
+			    editorProfile,
+			    "SparkleLauncher",
+			    "Launcher direct build outputs. The currently running launcher executable is preserved until restart.",
+			    runningLauncherPath);
+			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "SparkleLauncherProbe", "Launcher probe binary and matching direct build outputs.");
+			AddExplicitCleanTarget(
+			    targets,
+			    "SparkleLauncherCore library",
+			    GetBuildDirectory(m_repositoryRoot) / "lib" / editorProfile.toStdString() / "SparkleLauncherCore.lib",
+			    "Launcher support library built for the selected editor profile.");
+			AddExplicitCleanTarget(
+			    targets,
+			    "SparkleLauncherCore program database",
+			    GetBuildDirectory(m_repositoryRoot) / "lib" / editorProfile.toStdString() / "SparkleLauncherCore.pdb",
+			    "Launcher support library debug symbols built for the selected editor profile.");
+		}
+
+		if (operationId == "project.build.editor" || operationId == "workspace.build-all")
+		{
+			if (operationId == "project.build.editor" && !m_settings.SelectedTargets().trimmed().isEmpty())
+			{
+				addNamedTargets(editorProfile, m_settings.SelectedTargets().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts), "Selected editor build target outputs.");
+			}
+			else
+			{
+				addProjectArtifacts(editorProfile, projectId, "Selected project editor target outputs.");
+			}
+		}
+
+		if (operationId == "project.build.runtime" || operationId == "workspace.build-all")
+		{
+			if (operationId == "project.build.runtime" && !m_settings.SelectedTargets().trimmed().isEmpty())
+			{
+				addNamedTargets(runtimeProfile, m_settings.SelectedTargets().split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts), "Selected runtime build target outputs.");
+			}
+			else
+			{
+				addProjectArtifacts(runtimeProfile, projectId, "Selected project runtime target outputs.");
+			}
+		}
+
+		if (operationId == "cook.tools.prepare" || operationId == "workspace.build-all")
+		{
+			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "AssetCooker", "AssetCooker executable outputs.");
+			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "TextureCooker", "TextureCooker executable outputs.");
+			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "ShaderCompiler", "ShaderCompiler executable outputs.");
+		}
+
+		if (operationId == "cook.project")
+		{
+			AddExplicitCleanTarget(
+			    targets,
+			    "Cooked project content",
+			    GetCookedProjectDirectory(m_repositoryRoot, projectId.toStdString()),
+			    "All cooked content for the selected project.");
+			AddExplicitCleanTarget(
+			    targets,
+			    "Shader cache",
+			    GetBuildDirectory(m_repositoryRoot) / "Cache" / "Shaders",
+			    "Shared local shader cache refreshed by cook operations.");
+		}
+		else if (operationId == "cook.shaders")
+		{
+			AddExplicitCleanTarget(
+			    targets,
+			    "Shader cache",
+			    GetBuildDirectory(m_repositoryRoot) / "Cache" / "Shaders",
+			    "Shared local shader cache refreshed by shader cooking.");
+		}
+		else if (operationId == "cook.textures" || operationId == "cook.assets")
+		{
+			AddExplicitCleanTarget(
+			    targets,
+			    "Cooked project content",
+			    GetCookedProjectDirectory(m_repositoryRoot, projectId.toStdString()),
+			    operationId == "cook.textures" ? "Selected project cooked texture outputs." : "Selected project cooked mesh and material outputs.");
+		}
+
+		return targets;
+	}
+
+	LauncherOperationRequest LauncherMainWindow::BuildCleanOperationRequest(const QString& operationId) const
+	{
+		LauncherOperationRequest request = BuildOperationRequest("workspace.clean");
+		request.CleanTargets = BuildActionSpecificCleanTargets(operationId);
+		request.ConfirmClean = false;
+		return request;
+	}
+
+	LauncherOperationRequest LauncherMainWindow::BuildScopedCleanRequest(const QString& cleanScope) const
+	{
+		LauncherOperationRequest request = BuildOperationRequest("workspace.clean");
+		request.CleanScope = cleanScope;
+		request.CleanTargets.clear();
+		request.ConfirmClean = false;
+		return request;
+	}
+
+	LauncherOperationRequest LauncherMainWindow::BuildDependencyCleanRequest(const ThirdPartyDependencyUiEntry& dependency) const
+	{
+		LauncherOperationRequest request = BuildOperationRequest("workspace.clean");
+		LauncherCleanTarget target;
+		target.DisplayName = dependency.Label + " dependency cache";
+		target.Path = QString::fromStdString((GetBuildDirectory(m_repositoryRoot) / "_deps" / dependency.CacheDirectoryName.toStdString()).string());
+		target.Detail = "Local cache folder for " + dependency.Label + " " + dependency.Version + ".";
+		request.CleanTargets.clear();
+		request.CleanTargets.push_back(target);
+		request.ConfirmClean = false;
+		return request;
+	}
+
+	LauncherOperationRequest LauncherMainWindow::BuildDependencyRegenerateRequest() const
+	{
+		LauncherOperationRequest request = BuildOperationRequest("workspace.setup");
+		request.ForceConfigure = true;
+		return request;
+	}
+
+	QWidget* LauncherMainWindow::CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency)
+	{
+		QToolButton* button = CreateLauncherOverflowActionButton(
+		    this,
+		    dependency.Label + " actions",
+		    "Dependency actions",
+		    {
+		        LauncherActionMenuEntry{
+		            "Regenerate",
+		            [this, dependency]() { TriggerDependencyRegenerate(dependency); }},
+		        LauncherActionMenuEntry{
+		            "Clean",
+		            [this, dependency]() { TriggerDependencyClean(dependency); }},
+		    });
+		RegisterFocusable(button);
+		return button;
+	}
+
+	QWidget* LauncherMainWindow::CreateActionDependencyActions(
+	    const QString& actionId,
+	    const QString& actionTitle,
+	    const QString& cleanScope,
+	    const QString& cleanTitle,
+	    bool navigateInsteadOfRun)
+	{
+		QVector<LauncherActionMenuEntry> entries;
+		entries.push_back(LauncherActionMenuEntry{
+		    "Regenerate",
+		    [this, actionId, actionTitle, navigateInsteadOfRun]() {
+			    TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun);
+		    }});
+		if (!cleanScope.isEmpty())
+		{
+			entries.push_back(LauncherActionMenuEntry{
+			    "Clean",
+			    [this, cleanScope, cleanTitle]() {
+				    TriggerActionDependencyClean(cleanScope, cleanTitle);
+			    }});
+		}
+		QToolButton* button = CreateLauncherOverflowActionButton(
+		    this,
+		    actionTitle + " actions",
+		    "Dependency actions",
+		    entries);
+		RegisterFocusable(button);
+		return button;
+	}
+
+	void LauncherMainWindow::TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle)
+	{
+		LauncherOperationRequest request = BuildScopedCleanRequest(cleanScope);
+		if (!ConfirmRunRequest(request))
+		{
+			SetStatusMessage("Clean canceled");
+			return;
+		}
+
+		StartOperation(std::move(request), cleanTitle);
+	}
+
+	void LauncherMainWindow::TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun)
+	{
+		if (navigateInsteadOfRun)
+		{
+			SetSelectedOperation(actionId);
+			SetStatusMessage("Selected " + actionTitle + ". Configure parameters if needed, then run.");
+			return;
+		}
+
+		LauncherOperationRequest request = BuildOperationRequest(actionId);
+		if (!ConfirmRunRequest(request))
+		{
+			SetStatusMessage("Regenerate canceled");
+			return;
+		}
+
+		StartOperation(std::move(request), actionTitle);
+	}
+
+	void LauncherMainWindow::TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency)
+	{
+		LauncherOperationRequest request = BuildDependencyCleanRequest(dependency);
+		if (!ConfirmRunRequest(request))
+		{
+			SetStatusMessage("Clean canceled");
+			return;
+		}
+
+		StartOperation(std::move(request), "Clean " + dependency.Label);
+	}
+
+	void LauncherMainWindow::TriggerDependencyRegenerate(const ThirdPartyDependencyUiEntry& dependency)
+	{
+		const QMessageBox::StandardButton regenerateResult = QMessageBox::question(
+		    this,
+		    "Regenerate Dependency",
+		    QStringLiteral("This will remove the cached %1 dependency and then rerun Sync Third Parties. Continue?").arg(dependency.Label),
+		    QMessageBox::Ok | QMessageBox::Cancel,
+		    QMessageBox::Ok);
+		if (regenerateResult != QMessageBox::Ok)
+		{
+			SetStatusMessage("Regenerate canceled");
+			return;
+		}
+
+		LauncherOperationRequest cleanRequest = BuildDependencyCleanRequest(dependency);
+		if (!ConfirmRunRequest(cleanRequest))
+		{
+			SetStatusMessage("Regenerate canceled");
+			return;
+		}
+
+		LauncherOperationRequest setupRequest = BuildDependencyRegenerateRequest();
+		const QString title = "Regenerate " + dependency.Label;
+		const QString cleanTitle = "Prepare " + title;
+		const QString runId = QStringLiteral("run-%1").arg(m_nextRunIndex + 1, 4, 10, QChar('0'));
+		PendingFollowUpOperation followUp;
+		followUp.Request = std::move(setupRequest);
+		followUp.Title = title;
+		m_pendingFollowUpOperations.insert(runId, std::move(followUp));
+		StartOperation(std::move(cleanRequest), cleanTitle);
+	}
+
 	void LauncherMainWindow::RebuildOptionsPages()
 	{
 		if (m_optionsStack == nullptr || m_isRebuildingOptions)
 		{
 			return;
+		}
+
+		int preservedVerticalScroll = 0;
+		int preservedHorizontalScroll = 0;
+		if (QScrollArea* currentScrollArea = qobject_cast<QScrollArea*>(m_optionsStack->currentWidget()))
+		{
+			if (QScrollBar* verticalScrollBar = currentScrollArea->verticalScrollBar())
+			{
+				preservedVerticalScroll = verticalScrollBar->value();
+			}
+			if (QScrollBar* horizontalScrollBar = currentScrollArea->horizontalScrollBar())
+			{
+				preservedHorizontalScroll = horizontalScrollBar->value();
+			}
 		}
 
 		m_isRebuildingOptions = true;
@@ -1542,6 +2016,21 @@ namespace SparkleLauncher
 		m_optionsPageByOperation.clear();
 
 		EnsureOptionsPage(m_selectedOperationId);
+		if (m_optionsPageByOperation.contains(m_selectedOperationId))
+		{
+			m_optionsStack->setCurrentIndex(m_optionsPageByOperation.value(m_selectedOperationId));
+			if (QScrollArea* rebuiltScrollArea = qobject_cast<QScrollArea*>(m_optionsStack->currentWidget()))
+			{
+				if (QScrollBar* verticalScrollBar = rebuiltScrollArea->verticalScrollBar())
+				{
+					verticalScrollBar->setValue(preservedVerticalScroll);
+				}
+				if (QScrollBar* horizontalScrollBar = rebuiltScrollArea->horizontalScrollBar())
+				{
+					horizontalScrollBar->setValue(preservedHorizontalScroll);
+				}
+			}
+		}
 
 		m_projectSelectors.clear();
 		for (QComboBox* combo : findChildren<QComboBox*>())
@@ -1724,6 +2213,8 @@ namespace SparkleLauncher
 			return QChar(0xf071);
 		case LauncherIcon::Copy:
 			return QChar(0xf0c5);
+		case LauncherIcon::Overflow:
+			return QChar(0xf142);
 		}
 
 		return QString();
@@ -1834,7 +2325,7 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::UpdateRunAvailability()
 	{
-		if (m_runButton == nullptr)
+		if (m_runButton == nullptr || m_cleanButton == nullptr)
 		{
 			return;
 		}
@@ -1845,6 +2336,9 @@ namespace SparkleLauncher
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
+			m_cleanButton->setEnabled(false);
+			m_cleanButton->setToolTip("Select a workflow before cleaning generated outputs.");
+			m_cleanButton->setAccessibleDescription("Select a workflow before cleaning generated outputs.");
 			return;
 		}
 
@@ -1854,8 +2348,19 @@ namespace SparkleLauncher
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
+			m_cleanButton->setEnabled(false);
+			m_cleanButton->setToolTip("No project discovered for this clean action.");
+			m_cleanButton->setAccessibleDescription("No project discovered for this clean action.");
 			return;
 		}
+
+		m_cleanButton->setVisible(ShouldShowActionSpecificCleanButton(m_selectedOperationId));
+
+		const QVector<LauncherCleanTarget> cleanTargets = SupportsActionSpecificClean(m_selectedOperationId) ? BuildActionSpecificCleanTargets(m_selectedOperationId) : QVector<LauncherCleanTarget>();
+		const bool canClean = !cleanTargets.isEmpty();
+		m_cleanButton->setEnabled(canClean);
+		m_cleanButton->setToolTip(canClean ? "Clean only the generated outputs tied to " + DisplayNameForOperation(m_selectedOperationId) + "." : "Clean is not available for this workflow.");
+		m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
 
 		if (FindBuildWorkspaceOperationDefinition(m_selectedOperationId.toStdString()).has_value())
 		{
@@ -1976,6 +2481,20 @@ namespace SparkleLauncher
 		request.WorkspaceIde = m_settings.WorkspaceIde();
 		request.SelectedTargets = m_settings.SelectedTargets();
 		request.ShaderPackages = m_settings.ShaderPackages();
+		request.ShaderTargets = ResolveShaderTargetSelection(m_settings);
+		request.ShaderBackend = m_settings.ShaderBackend();
+		request.ShaderCacheDirectory = m_settings.ShaderCacheDirectory();
+		request.ShaderUseCache = m_settings.ShaderUseCache();
+		request.ShaderEnableDebugInfo = m_settings.ShaderEnableDebugInfo();
+		request.ShaderEnableOptimizations = m_settings.ShaderEnableOptimizations();
+		request.ShaderWarningsAsErrors = m_settings.ShaderWarningsAsErrors();
+		request.ShaderStripReflection = m_settings.ShaderStripReflection();
+		request.ShaderStripDebugInfo = m_settings.ShaderStripDebugInfo();
+		request.ShaderWriteDebugArtifacts = m_settings.ShaderWriteDebugArtifacts();
+		request.ShaderWriteCookedShaderStats = m_settings.ShaderWriteCookedShaderStats();
+		request.ShaderDebugArtifactDirectory = m_settings.ShaderWriteDebugArtifacts() ?
+		                                          ResolvedShaderDebugArtifactDirectory(m_repositoryRoot, m_projectModel, m_settings) :
+		                                          QString();
 		request.LaunchBackend = m_settings.LaunchBackend();
 		request.LaunchTarget = m_settings.LaunchTarget();
 		request.LaunchVSync = m_settings.LaunchVSync();
@@ -2014,6 +2533,7 @@ namespace SparkleLauncher
 	bool LauncherMainWindow::ConfirmRunRequest(LauncherOperationRequest& request) const
 	{
 		const bool cleanRequested = request.OperationId == "workspace.clean";
+		const bool customCleanRequested = cleanRequested && !request.CleanTargets.isEmpty();
 		const bool destructiveRequested = request.ForceRecook || cleanRequested;
 		if (!destructiveRequested)
 		{
@@ -2030,20 +2550,31 @@ namespace SparkleLauncher
 		if (cleanRequested && !request.ConfirmClean)
 		{
 			QStringList scopeNames;
-			for (const QString& scopeValue : request.CleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+			if (customCleanRequested)
 			{
-				scopeNames.push_back(CleanScopeDisplayName(scopeValue));
+				for (const LauncherCleanTarget& target : request.CleanTargets)
+				{
+					scopeNames.push_back(target.DisplayName + "\n" + target.Path);
+				}
+			}
+			else
+			{
+				for (const QString& scopeValue : request.CleanScope.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+				{
+					scopeNames.push_back(CleanScopeDisplayName(scopeValue));
+				}
 			}
 
-			QString message = "Clean scopes:\n" + scopeNames.join('\n');
+			QString message = customCleanRequested ? "Generated outputs to clean:\n\n" + scopeNames.join("\n\n") : "Clean scopes:\n" + scopeNames.join('\n');
 			if (!request.ProjectId.isEmpty())
 			{
 				message += "\nProject: " + request.ProjectId;
 			}
-			message += "\n\nThis removes generated files for the selected scope. Continue?";
+			message += customCleanRequested ? "\n\nThis removes only the generated outputs mapped to the selected action. Continue?" :
+			                                 "\n\nThis removes generated files for the selected scope. Continue?";
 			const QMessageBox::StandardButton result = QMessageBox::question(
 			    const_cast<LauncherMainWindow*>(this),
-			    "Confirm Clean Workspace",
+			    customCleanRequested ? "Confirm Action Clean" : "Confirm Clean Workspace",
 			    message,
 			    QMessageBox::Ok | QMessageBox::Cancel,
 			    QMessageBox::Cancel);
@@ -2079,7 +2610,10 @@ namespace SparkleLauncher
 			return;
 		}
 
-		const QString executablePath = QCoreApplication::applicationFilePath();
+		const std::filesystem::path relaunchedExecutablePath =
+		    GetBuildBinaryDirectory(m_repositoryRoot, m_settings.EditorProfile().toStdString()) /
+		    std::filesystem::path(QCoreApplication::applicationFilePath().toStdString()).filename();
+		const QString executablePath = QString::fromStdString(relaunchedExecutablePath.string());
 		const bool started = QProcess::startDetached(executablePath, {});
 		if (!started)
 		{
@@ -2355,7 +2889,7 @@ namespace SparkleLauncher
 		}
 		if (m_runButton != nullptr)
 		{
-			m_runButton->setText("Run");
+			m_runButton->setText(PrimaryActionLabelForOperationId(operationId));
 		}
 		if (m_optionsStack != nullptr)
 		{
@@ -2390,7 +2924,12 @@ namespace SparkleLauncher
 		++m_startedRunCount;
 		QListWidgetItem* item = new QListWidgetItem(m_activityList);
 		item->setData(Qt::UserRole, runId);
+		item->setSizeHint(QSize(0, 34));
+		item->setText(QString());
+		const LauncherActivityRowWidgets rowWidgets = CreateLauncherActivityRow(m_activityList, title);
+		m_activityList->setItemWidget(item, rowWidgets.Root);
 		m_runItems.insert(runId, item);
+		m_runItemWidgets.insert(runId, {rowWidgets.Root, rowWidgets.Indicator, rowWidgets.TitleLabel, rowWidgets.StateLabel});
 		m_runTitles.insert(runId, title);
 		SetRunState(runId, RunState::Queued, title);
 		m_runOutputs.insert(runId, title + " queued.\n");
@@ -2432,13 +2971,35 @@ namespace SparkleLauncher
 			break;
 		}
 
-		item->setText(stateText + ": " + title);
+		item->setText(QString());
 		item->setIcon(ActivityIconForState(state));
 		item->setData(Qt::UserRole + 1, stateText);
 		item->setData(Qt::AccessibleTextRole, stateText + ": " + title);
 		item->setData(Qt::AccessibleDescriptionRole, "Launcher activity run " + stateText.toLower());
-		item->setForeground(QBrush(stateColor));
 		item->setToolTip(stateText + ": " + title);
+
+		const ActivityRunWidgets widgets = m_runItemWidgets.value(runId);
+		if (widgets.Root != nullptr)
+		{
+			widgets.Root->setProperty("RunState", stateText.toLower());
+			if (widgets.Indicator != nullptr)
+			{
+				widgets.Indicator->setProperty("RunState", stateText.toLower());
+				widgets.Indicator->style()->unpolish(widgets.Indicator);
+				widgets.Indicator->style()->polish(widgets.Indicator);
+			}
+			if (widgets.TitleLabel != nullptr)
+			{
+				widgets.TitleLabel->setText(title);
+			}
+			if (widgets.StateLabel != nullptr)
+			{
+				widgets.StateLabel->setText(stateText);
+			}
+			widgets.Root->style()->unpolish(widgets.Root);
+			widgets.Root->style()->polish(widgets.Root);
+		}
+		UpdateActivityRunSelectionVisuals();
 	}
 
 	void LauncherMainWindow::AppendRunOutput(const QString& runId, const QString& text)
@@ -2456,6 +3017,7 @@ namespace SparkleLauncher
 	void LauncherMainWindow::ShowRunOutput(const QString& runId)
 	{
 		m_activeRunId = runId;
+		UpdateActivityRunSelectionVisuals();
 		const RunState state = m_runStates.value(runId, RunState::Queued);
 		const QString title = m_runTitles.value(runId, "Selected run");
 		if (m_selectedRunSummary != nullptr)
@@ -2492,34 +3054,25 @@ namespace SparkleLauncher
 		}
 	}
 
+	void LauncherMainWindow::UpdateActivityRunSelectionVisuals()
+	{
+		for (auto it = m_runItemWidgets.begin(); it != m_runItemWidgets.end(); ++it)
+		{
+			const bool isSelected = it.key() == m_activeRunId;
+			if (it.value().Root != nullptr)
+			{
+				it.value().Root->setProperty("Selected", isSelected);
+				it.value().Root->style()->unpolish(it.value().Root);
+				it.value().Root->style()->polish(it.value().Root);
+			}
+		}
+	}
+
 	void LauncherMainWindow::UpdateProgress()
 	{
-		if (m_progressBar == nullptr || m_progressLabel == nullptr)
+		if (m_activityDetailsPanel == nullptr)
 		{
 			return;
-		}
-
-		int queuedCount = 0;
-		int runningCount = 0;
-		int succeededCount = 0;
-		int failedCount = 0;
-		for (const RunState state : m_runStates)
-		{
-			switch (state)
-			{
-			case RunState::Queued:
-				++queuedCount;
-				break;
-			case RunState::Running:
-				++runningCount;
-				break;
-			case RunState::Done:
-				++succeededCount;
-				break;
-			case RunState::Failed:
-				++failedCount;
-				break;
-			}
 		}
 
 		const bool hasRuns = m_startedRunCount > 0;
@@ -2527,51 +3080,9 @@ namespace SparkleLauncher
 		{
 			m_activityDetailsPanel->setVisible(hasRuns);
 		}
-		if (m_progressBar != nullptr)
-		{
-			m_progressBar->setVisible(hasRuns);
-		}
 		if (m_copyOutputButton != nullptr && !hasRuns)
 		{
 			m_copyOutputButton->setEnabled(false);
-		}
-		if (m_startedRunCount == 0)
-		{
-			m_progressBar->setRange(0, 1);
-			m_progressBar->setValue(0);
-			m_progressBar->setFormat(QString());
-			m_progressLabel->setText("No runs yet");
-			return;
-		}
-
-		m_progressBar->setRange(0, m_startedRunCount);
-		m_progressBar->setValue(succeededCount + failedCount);
-		m_progressBar->setFormat(QString());
-
-		QStringList activityParts;
-		if (queuedCount > 0)
-		{
-			activityParts.push_back(QStringLiteral("%1 queued").arg(queuedCount));
-		}
-		if (runningCount > 0)
-		{
-			activityParts.push_back(QStringLiteral("%1 running").arg(runningCount));
-		}
-		if (failedCount > 0)
-		{
-			activityParts.push_back(QStringLiteral("%1 failed").arg(failedCount));
-		}
-		if (succeededCount > 0)
-		{
-			activityParts.push_back(QStringLiteral("%1 done").arg(succeededCount));
-		}
-		if (activityParts.empty())
-		{
-			m_progressLabel->setText("No active runs");
-		}
-		else
-		{
-			m_progressLabel->setText(activityParts.join(", "));
 		}
 	}
 
@@ -2622,16 +3133,16 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
-		const QString background = "#2b2b2b";
-		const QString shell = "#242424";
-		const QString panel = "#343434";
-		const QString panelRaised = "#3a3a3a";
-		const QString panelHover = "#3f3f3f";
-		const QString field = "#262626";
-		const QString border = "#1b1b1b";
-		const QString borderSoft = "#454545";
-		const QString borderStrong = "#5b5b5b";
-		const QString divider = "#191919";
+		const QString background = "#26292d";
+		const QString shell = "#1f2124";
+		const QString panel = "#2b2f34";
+		const QString panelRaised = "#30343a";
+		const QString panelHover = "#373c42";
+		const QString field = "#1d2024";
+		const QString border = "#16181b";
+		const QString borderSoft = "#35393f";
+		const QString borderStrong = "#4a4f56";
+		const QString divider = "#131518";
 		const QString focus = "#d0d7de";
 		const QString primary = "#1479c9";
 		const QString primaryHover = "#2388da";
@@ -2652,66 +3163,80 @@ namespace SparkleLauncher
 		addRule("QMainWindow, QWidget", "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 10pt;");
 		addRule("QLabel", "color: " + textBody + "; background: transparent;");
 		addRule("#WorkflowSurface", "background: " + background + ";");
-		addRule("#ProcessPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + shell + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; padding: 0;");
-		addRule("#OptionsPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + panelRaised + ", stop:1 " + panel + "); border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 2px;");
-		addRule("#OutputPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + ";");
-		addRule("#FooterContextPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f2f2f, stop:1 " + shell + "); border-top: 1px solid " + border + "; padding: 6px 14px 8px 14px;");
+		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid " + border + "; padding: 0;");
+		addRule("#OptionsPanel", "background: " + panel + "; border: none;");
+		addRule("#OutputPanel", "background: #1d1f22; border-top: 1px solid " + border + ";");
+		addRule("#OutputPaneLabel", "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.2px;");
+		addRule("#ActivityRail", "background: #1f2124; border: none; border-right: 1px solid " + border + ";");
+		addRule("#OutputPane", "background: #1b1d20; border: none;");
+		addRule("#FooterContextPanel", "background: " + shell + "; border-top: 1px solid " + border + "; padding: 5px 12px 6px 12px;");
 		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8.5pt; font-weight: 600;");
-		addRule("#FooterContextCombo", "background: " + field + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; padding: 3px 8px; color: " + textBody + "; min-height: 24px; max-height: 28px; font-size: 8.5pt;");
+		addRule("#FooterContextCombo", "background: " + field + "; border: 1px solid " + border + "; border-radius: 0; padding: 2px 8px; color: " + textBody + "; min-height: 24px; max-height: 28px; font-size: 8.5pt;");
 		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
-		addRule("#OptionRow", "background: transparent; min-height: 36px;");
-		addRule("#OptionGroup", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #303030, stop:1 #292929); border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; margin-top: 8px;");
+		addRule("#OptionRow", "background: transparent; min-height: 28px;");
+		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 10px;");
+		addRule("#OptionLabelCell", "background: #262a2f; border-right: 1px solid " + border + ";");
+		addRule("#OptionValueCell", "background: #202429;");
 
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15pt; font-weight: 700;");
-		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 11pt; font-weight: 700; padding: 0 0 2px 0;");
-		addRule("#SectionLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700; padding-top: 2px;");
-		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 10pt; font-weight: 700; padding: 0 0 0 6px; border-left: 3px solid " + accent + ";");
-		addRule("#FieldLabel", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600; padding-top: 0;");
-		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8.5pt; line-height: 125%;");
-		addRule("#ActionMetaPanel", "background: #2a2a2a; border: 1px solid " + border + "; border-top-color: " + borderSoft + ";");
+		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700; padding: 0 0 2px 0;");
+		addRule("#SectionLabel", "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700; padding: 6px 0 2px 0;");
+		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 9pt; font-weight: 700; padding: 0 0 3px 0;");
+		addRule("#FieldLabel", "color: #c8ccd1; font-size: 8.5pt; font-weight: 600; padding-top: 0;");
+		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 8pt; line-height: 125%; padding: 0 0 4px 0;");
+		addRule("#ActionMetaPanel", "background: transparent; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 8.5pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 8.5pt;");
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 8pt;");
-		addRule("#StatusRow", "background: #262626; border: 1px solid #1f1f1f; border-top-color: #3b3b3b; padding: 7px 9px;");
+		addRule("#StatusRow", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2b3035, stop:1 #282d32); border: 1px solid #30353b; border-top-color: #3a4047; padding: 8px 10px 8px 10px;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 9pt; font-weight: 650;");
-		addRule("#StatusValue", "color: " + textMuted + "; font-size: 8.5pt; font-weight: 700; padding: 2px 7px; border: 1px solid #3d3d3d; background: #303030;");
+		addRule("#StatusValue", "color: " + textMuted + "; font-size: 8.25pt; font-weight: 700; padding: 2px 8px; border: 1px solid #46503a; background: #26301f; min-width: 52px;");
 		addRule("#StatusValue[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 		addRule("#StatusValue[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
 		addRule("#StatusValue[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
-		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.5pt;");
-		addRule("#ActionRow", "background: #262626; border: 1px solid #1f1f1f; border-top-color: #3b3b3b; padding: 8px 9px;");
+		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8.25pt;");
+		addRule("#ActionRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + "; padding: 6px 0;");
 		addRule("#ActionTitle", "color: " + textPrimary + "; font-size: 9pt; font-weight: 700;");
-		addRule("#InlineActionButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #4b4b4b, stop:1 #3b3b3b); color: " + textBody + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + "; padding: 6px 10px; min-width: 120px;");
+		addRule("#InlineActionButton", "background: #2e3237; color: " + textBody + "; border: 1px solid " + borderSoft + "; padding: 5px 10px; min-width: 120px;");
 		addRule("#InlineActionButton:hover", "background: " + panelHover + ";");
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 6px 0;");
 		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 700;");
-		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 9pt; font-weight: 600; padding: 0 0 2px 4px;");
+		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 8.5pt; font-weight: 600; padding: 0 0 2px 0;");
 
-		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; border-radius: 2px; padding: 7px 9px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
-		addRule("#WorkflowGroupButton:hover", "background: " + panel + "; color: " + textBody + "; border: 1px solid " + borderSoft + ";");
-		addRule("#WorkflowGroupButton:pressed", "background: #3f3f3f; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
-		addRule("#WorkflowGroupButton[ActiveState=\"true\"]", "background: #3a3a3a; color: " + textPrimary + "; border: 1px solid " + borderStrong + "; border-left: 3px solid " + accent + "; padding-left: 7px;");
+		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: none; border-left: 2px solid transparent; padding: 7px 8px 7px 10px; text-align: left; font-size: 9pt; font-weight: 650; min-width: 78px;");
+		addRule("#WorkflowGroupButton:hover", "background: #2a2e33; color: " + textBody + ";");
+		addRule("#WorkflowGroupButton:pressed", "background: #30353b; color: " + textPrimary + "; border-left: 2px solid " + accent + ";");
+		addRule("#WorkflowGroupButton[ActiveState=\"true\"]", "background: #2e3338; color: " + textPrimary + "; border-left: 2px solid " + accent + ";");
 		addRule("#WorkflowGroupButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; border-radius: 2px; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600;");
-		addRule("#WorkflowButton:hover", "background: " + panelHover + "; border: 1px solid " + border + ";");
-		addRule("#WorkflowButton:checked", "background: " + selection + "; border: 1px solid #48a2df; color: #ffffff;");
+		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: none; padding: 8px 10px; text-align: left; font-size: 10pt; font-weight: 600;");
+		addRule("#WorkflowButton:hover", "background: #30353b;");
+		addRule("#WorkflowButton:checked", "background: " + selection + "; border: none; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 
-		addRule("QPushButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + primaryHover + ", stop:1 " + primary + "); color: #ffffff; border: 1px solid #0c4f86; border-top-color: #5aaae4; border-radius: 2px; padding: 8px 14px; font-weight: 650;");
+		addRule("QPushButton", "background: " + primary + "; color: #ffffff; border: 1px solid #0c4f86; border-radius: 0; padding: 7px 14px; font-weight: 650;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
-		addRule("QPushButton:disabled", "background: #3a3a3a; border: 1px solid " + border + "; color: " + textMuted + ";");
+		addRule("QPushButton:disabled", "background: #31353a; border: 1px solid " + border + "; color: " + textMuted + ";");
 		addRule("#PrimaryActionButton", "background: " + primary + "; min-width: 96px;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
-		addRule("#SecondaryButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #4b4b4b, stop:1 #3b3b3b); color: " + textBody + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + ";");
+		addRule("#SecondaryButton", "background: #2d3136; color: " + textBody + "; border: 1px solid " + borderSoft + ";");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
 		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("QComboBox, QLineEdit, QTextEdit", "background: " + field + "; border: 1px solid " + border + "; border-top-color: " + borderStrong + "; border-radius: 2px; padding: 7px 9px; color: " + textBody + "; selection-background-color: " + selection + ";");
+		addRule("#DependencyActionButton", "background: transparent; color: " + textMuted + "; border: none; padding: 0; min-width: 16px; max-width: 16px; min-height: 16px; max-height: 16px;");
+		addRule("#DependencyActionButton:hover", "background: #34393f; color: " + textPrimary + "; border-radius: 2px;");
+		addRule("#DependencyActionButton:pressed", "background: #3a4047; color: " + textPrimary + "; border-radius: 2px;");
+		addRule("#DependencyActionButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + "; border-radius: 2px;");
+		addRule("#DependencyActionButton::menu-indicator", "image: none; width: 0px;");
+		addRule("#OverflowMenu", "background: #25292d; color: " + textBody + "; border: 1px solid " + borderStrong + "; padding: 1px 0;");
+		addRule("#OverflowMenu::item", "background: transparent; padding: 3px 10px 3px 8px; color: " + textBody + "; font-size: 8pt;");
+		addRule("#OverflowMenu::item:selected", "background: " + selection + "; color: #ffffff;");
+		addRule("#OverflowMenu::separator", "height: 1px; background: " + borderSoft + "; margin: 2px 6px;");
+		addRule("QComboBox, QLineEdit, QTextEdit", "background: #202429; border: 1px solid " + border + "; border-left: none; border-radius: 0; padding: 5px 8px; color: " + textBody + "; selection-background-color: " + selection + ";");
 		addRule("QComboBox:focus, QLineEdit:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
 		addRule("QComboBox:disabled", "background: " + shell + "; border: 1px solid " + border + "; color: " + textMuted + ";");
-		addRule("QCheckBox", "spacing: 8px; padding: 3px 0; color: " + textBody + ";");
+		addRule("QCheckBox", "spacing: 8px; padding: 0; color: " + textBody + ";");
 		addRule("QCheckBox:focus", "border: 1px solid " + focus + "; border-radius: 2px; color: " + textPrimary + ";");
 		addRule("QCheckBox:disabled", "color: " + textMuted + ";");
 		addRule("#WarningCheckBox", "color: " + warning + ";");
@@ -2719,13 +3244,22 @@ namespace SparkleLauncher
 
 		addRule("QListWidget", "background: transparent; border: none; border-radius: 0; padding: 0; outline: 0;");
 		addRule("QListWidget:focus", "border: 1px solid " + focus + ";");
-		addRule("QListWidget::item", "padding: 8px 10px; border-radius: 2px; color: " + textBody + ";");
+		addRule("QListWidget::item", "padding: 4px 6px; border-radius: 0; color: " + textBody + ";");
 		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
-		addRule("#ActivityDetailsPanel", "background: #303030; border: 1px solid " + border + "; border-top-color: " + borderSoft + ";");
-		addRule("#ActivityList", "background: #282828; border: 1px solid " + border + "; border-top-color: " + borderSoft + "; border-radius: 0; padding: 0;");
-		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 4px 0 0 4px; font-family: 'Cascadia Mono'; font-size: 9pt;");
-		addRule("QProgressBar", "background: #202020; border: 1px solid " + border + "; border-radius: 0; color: " + textBody + "; text-align: center; min-height: 6px; max-height: 6px;");
-		addRule("QProgressBar::chunk", "background: " + accent + "; border-radius: 0;");
+		addRule("#ActivityDetailsPanel", "background: transparent; border: none;");
+		addRule("#ActivityList", "background: transparent; border: none; border-radius: 0; padding: 0;");
+		addRule("#ActivityRunRow", "background: transparent; border: none; padding: 1px 0;");
+		addRule("#ActivityRunRow[Selected=\"true\"]", "background: #204e77; border-radius: 0;");
+		addRule("#ActivityRunIndicator", "background: " + QString::fromLatin1(kColorStateQueued) + "; border-radius: 1px;");
+		addRule("#ActivityRunIndicator[RunState=\"queued\"]", "background: " + QString::fromLatin1(kColorStateQueued) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + QString::fromLatin1(kColorStateRunning) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"done\"]", "background: " + QString::fromLatin1(kColorStateSuccess) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"failed\"]", "background: " + QString::fromLatin1(kColorStateDestructive) + ";");
+		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8.5pt; font-weight: 650; padding: 0; margin: 0;");
+		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7.5pt; font-weight: 700; padding: 0; margin: 0;");
+		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunTitle", "color: #ffffff;");
+		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunState", "color: #d7e7f7;");
+		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 2px 0 0 0; font-family: 'Cascadia Mono'; font-size: 8.75pt;");
 		setStyleSheet(style);
 	}
 }

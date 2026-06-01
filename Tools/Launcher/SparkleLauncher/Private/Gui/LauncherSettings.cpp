@@ -73,6 +73,31 @@ namespace SparkleLauncher
 		return m_shaderPackages;
 	}
 
+	const QString& LauncherSettings::ShaderBackend() const
+	{
+		return m_shaderBackend;
+	}
+
+	const QString& LauncherSettings::ShaderTargetPreset() const
+	{
+		return m_shaderTargetPreset;
+	}
+
+	const QString& LauncherSettings::ShaderCustomTargets() const
+	{
+		return m_shaderCustomTargets;
+	}
+
+	const QString& LauncherSettings::ShaderCacheDirectory() const
+	{
+		return m_shaderCacheDirectory;
+	}
+
+	const QString& LauncherSettings::ShaderDebugArtifactDirectory() const
+	{
+		return m_shaderDebugArtifactDirectory;
+	}
+
 	const QString& LauncherSettings::LaunchBackend() const
 	{
 		return m_launchBackend;
@@ -131,6 +156,46 @@ namespace SparkleLauncher
 	bool LauncherSettings::LaunchSmokeTest() const
 	{
 		return m_launchSmokeTest;
+	}
+
+	bool LauncherSettings::ShaderUseCache() const
+	{
+		return m_shaderUseCache;
+	}
+
+	bool LauncherSettings::ShaderEnableDebugInfo() const
+	{
+		return m_shaderEnableDebugInfo;
+	}
+
+	bool LauncherSettings::ShaderEnableOptimizations() const
+	{
+		return m_shaderEnableOptimizations;
+	}
+
+	bool LauncherSettings::ShaderWarningsAsErrors() const
+	{
+		return m_shaderWarningsAsErrors;
+	}
+
+	bool LauncherSettings::ShaderStripReflection() const
+	{
+		return m_shaderStripReflection;
+	}
+
+	bool LauncherSettings::ShaderStripDebugInfo() const
+	{
+		return m_shaderStripDebugInfo;
+	}
+
+	bool LauncherSettings::ShaderWriteDebugArtifacts() const
+	{
+		return m_shaderWriteDebugArtifacts;
+	}
+
+	bool LauncherSettings::ShaderWriteCookedShaderStats() const
+	{
+		return m_shaderWriteCookedShaderStats;
 	}
 
 	bool LauncherSettings::ForceConfigure() const
@@ -213,6 +278,56 @@ namespace SparkleLauncher
 			return;
 		}
 		m_shaderPackages = packages;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderBackend(const QString& backend)
+	{
+		if (m_shaderBackend == backend)
+		{
+			return;
+		}
+		m_shaderBackend = backend;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderTargetPreset(const QString& preset)
+	{
+		if (m_shaderTargetPreset == preset)
+		{
+			return;
+		}
+		m_shaderTargetPreset = preset;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderCustomTargets(const QString& targets)
+	{
+		if (m_shaderCustomTargets == targets)
+		{
+			return;
+		}
+		m_shaderCustomTargets = targets;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderCacheDirectory(const QString& path)
+	{
+		if (m_shaderCacheDirectory == path)
+		{
+			return;
+		}
+		m_shaderCacheDirectory = path;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderDebugArtifactDirectory(const QString& path)
+	{
+		if (m_shaderDebugArtifactDirectory == path)
+		{
+			return;
+		}
+		m_shaderDebugArtifactDirectory = path;
 		emit SettingsChanged();
 	}
 
@@ -333,6 +448,86 @@ namespace SparkleLauncher
 			return;
 		}
 		m_launchSmokeTest = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderUseCache(bool enabled)
+	{
+		if (m_shaderUseCache == enabled)
+		{
+			return;
+		}
+		m_shaderUseCache = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderEnableDebugInfo(bool enabled)
+	{
+		if (m_shaderEnableDebugInfo == enabled)
+		{
+			return;
+		}
+		m_shaderEnableDebugInfo = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderEnableOptimizations(bool enabled)
+	{
+		if (m_shaderEnableOptimizations == enabled)
+		{
+			return;
+		}
+		m_shaderEnableOptimizations = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderWarningsAsErrors(bool enabled)
+	{
+		if (m_shaderWarningsAsErrors == enabled)
+		{
+			return;
+		}
+		m_shaderWarningsAsErrors = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderStripReflection(bool enabled)
+	{
+		if (m_shaderStripReflection == enabled)
+		{
+			return;
+		}
+		m_shaderStripReflection = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderStripDebugInfo(bool enabled)
+	{
+		if (m_shaderStripDebugInfo == enabled)
+		{
+			return;
+		}
+		m_shaderStripDebugInfo = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderWriteDebugArtifacts(bool enabled)
+	{
+		if (m_shaderWriteDebugArtifacts == enabled)
+		{
+			return;
+		}
+		m_shaderWriteDebugArtifacts = enabled;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetShaderWriteCookedShaderStats(bool enabled)
+	{
+		if (m_shaderWriteCookedShaderStats == enabled)
+		{
+			return;
+		}
+		m_shaderWriteCookedShaderStats = enabled;
 		emit SettingsChanged();
 	}
 

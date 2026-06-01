@@ -4,11 +4,14 @@
 #include "LauncherMainWindow.h"
 #include "LauncherProjectModel.h"
 #include "LauncherSettings.h"
+#include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/RepositoryLocator.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QObject>
+#include <QtCore/QProcess>
+#include <QtCore/QThread>
 #include <QtCore/QTimer>
 #include <QtGui/QWindow>
 #include <QtWidgets/QApplication>
@@ -71,6 +74,88 @@ namespace SparkleLauncher
 		return std::nullopt;
 	}
 
+	static bool AreEquivalentPaths(const std::filesystem::path& left, const std::filesystem::path& right)
+	{
+		std::error_code errorCode;
+		if (std::filesystem::equivalent(left, right, errorCode))
+		{
+			return true;
+		}
+
+		errorCode.clear();
+		const std::filesystem::path normalizedLeft = std::filesystem::weakly_canonical(left, errorCode);
+		if (errorCode)
+		{
+			return false;
+		}
+
+		errorCode.clear();
+		const std::filesystem::path normalizedRight = std::filesystem::weakly_canonical(right, errorCode);
+		if (errorCode)
+		{
+			return false;
+		}
+
+		return normalizedLeft == normalizedRight;
+	}
+
+	static bool TryStartShadowLauncher(const std::filesystem::path& repositoryRoot, QString& outError)
+	{
+		const std::filesystem::path currentDirectory = std::filesystem::path(QCoreApplication::applicationDirPath().toStdString());
+		const std::filesystem::path shadowDirectory = GetLauncherStateDirectory(repositoryRoot) / "Live";
+		if (AreEquivalentPaths(currentDirectory, shadowDirectory))
+		{
+			return false;
+		}
+
+		const std::filesystem::path currentExecutable = std::filesystem::path(QCoreApplication::applicationFilePath().toStdString());
+		const std::filesystem::path shadowExecutable = shadowDirectory / currentExecutable.filename();
+
+		std::error_code errorCode;
+		for (int attempt = 0; attempt < 15; ++attempt)
+		{
+			errorCode.clear();
+			std::filesystem::remove_all(shadowDirectory, errorCode);
+			errorCode.clear();
+			std::filesystem::create_directories(shadowDirectory, errorCode);
+			if (!errorCode)
+			{
+				errorCode.clear();
+				std::filesystem::copy(
+				    currentDirectory,
+				    shadowDirectory,
+				    std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
+				    errorCode);
+				if (!errorCode)
+				{
+					break;
+				}
+			}
+
+			if (attempt == 14)
+			{
+				outError = QStringLiteral("Launcher shadow copy failed: %1").arg(QString::fromStdString(errorCode.message()));
+				return false;
+			}
+
+			QThread::msleep(150);
+		}
+
+		QStringList arguments = QCoreApplication::arguments();
+		if (!arguments.isEmpty())
+		{
+			arguments.removeFirst();
+		}
+
+		if (!QProcess::startDetached(QString::fromStdString(shadowExecutable.string()), arguments))
+		{
+			outError = QStringLiteral("Launcher shadow restart failed: %1").arg(QString::fromStdString(shadowExecutable.string()));
+			return false;
+		}
+
+		return true;
+	}
+
 	int RunLauncherGui(int argc, char** argv)
 	{
 		QApplication application(argc, argv);
@@ -87,6 +172,16 @@ namespace SparkleLauncher
 			std::error_code errorCode;
 			std::filesystem::current_path(repositoryRoot, errorCode);
 			QDir::setCurrent(QString::fromStdString(repositoryRoot.string()));
+
+			QString shadowError;
+			if (TryStartShadowLauncher(repositoryRoot, shadowError))
+			{
+				return 0;
+			}
+			if (!shadowError.isEmpty())
+			{
+				startupNotice = shadowError;
+			}
 		}
 		else
 		{

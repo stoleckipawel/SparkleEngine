@@ -47,10 +47,6 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 		case CookOperationKind::CookShaders:
-			if (plan.Request.ShaderPackages.empty())
-			{
-				return {"AssetCooker", "ShaderCompiler"};
-			}
 			return {"ShaderCompiler"};
 		case CookOperationKind::BuildTextures:
 			return {"TextureCooker"};
@@ -74,6 +70,34 @@ namespace SparkleLauncher
 		{
 		case CookOperationKind::CookShaders:
 			AddPlannedEffect(plan, "Validate shader package registrations.");
+			AddPlannedEffect(plan, "Shader backend: " + plan.Request.ShaderBackend + ".");
+			if (!plan.Request.ShaderTargets.empty())
+			{
+				std::vector<std::string_view> shaderTargets;
+				for (const std::string& target : plan.Request.ShaderTargets)
+				{
+					shaderTargets.push_back(target);
+				}
+				AddPlannedEffect(plan, "Shader targets: " + Strings::Join(shaderTargets, ", ") + ".");
+			}
+			AddPlannedEffect(plan, std::string("Shader cache: ") + (plan.Request.ShaderUseCache ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Shader debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Shader optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Warnings as errors: ") + (plan.Request.ShaderWarningsAsErrors ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Strip reflection: ") + (plan.Request.ShaderStripReflection ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Strip debug info: ") + (plan.Request.ShaderStripDebugInfo ? "enabled." : "disabled."));
+			if (!plan.Request.ShaderCacheDirectory.empty())
+			{
+				AddPlannedEffect(plan, "Override shader cache directory: " + plan.Request.ShaderCacheDirectory.string() + ".");
+			}
+			if (!plan.Request.ShaderDebugArtifactDirectory.empty())
+			{
+				AddPlannedEffect(plan, "Write shader debug artifacts to " + plan.Request.ShaderDebugArtifactDirectory.string() + ".");
+			}
+			if (plan.Request.WriteCookedShaderStats)
+			{
+				AddPlannedEffect(plan, "Write cooked shader stats analysis output.");
+			}
 			if (plan.Request.ShaderPackages.empty())
 			{
 				AddPlannedEffect(plan, "Cook shader packages for " + plan.Request.ProjectId + ".");
@@ -95,6 +119,18 @@ namespace SparkleLauncher
 			AddPlannedEffect(plan, "Cook scene, mesh, and material assets for " + plan.Request.ProjectId + ".");
 			return;
 		case CookOperationKind::CookAllAssets:
+			AddPlannedEffect(plan, "Shader phase backend: " + plan.Request.ShaderBackend + ".");
+			if (!plan.Request.ShaderTargets.empty())
+			{
+				std::vector<std::string_view> shaderTargets;
+				for (const std::string& target : plan.Request.ShaderTargets)
+				{
+					shaderTargets.push_back(target);
+				}
+				AddPlannedEffect(plan, "Shader phase targets: " + Strings::Join(shaderTargets, ", ") + ".");
+			}
+			AddPlannedEffect(plan, std::string("Shader phase debug info: ") + (plan.Request.ShaderEnableDebugInfo ? "enabled." : "disabled."));
+			AddPlannedEffect(plan, std::string("Shader phase optimizations: ") + (plan.Request.ShaderEnableOptimizations ? "enabled." : "disabled."));
 			AddPlannedEffect(plan, "Cook all project assets for " + plan.Request.ProjectId + ".");
 			return;
 		}
@@ -195,6 +231,16 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"runtimeProfile", request.RuntimeProfile});
 		plan.Operation.Inputs.push_back({"cookMode", ToString(request.Mode)});
 		plan.Operation.Inputs.push_back({"toolProfile", plan.ToolProfile});
+		plan.Operation.Inputs.push_back({"shaderBackend", request.ShaderBackend});
+		if (!request.ShaderTargets.empty())
+		{
+			std::vector<std::string_view> shaderTargets;
+			for (const std::string& target : request.ShaderTargets)
+			{
+				shaderTargets.push_back(target);
+			}
+			plan.Operation.Inputs.push_back({"shaderTargets", Strings::Join(shaderTargets, ", ")});
+		}
 		plan.Operation.LogPath = GetLauncherOperationLogPath(request.RepositoryRoot, definition->Id, "Latest.txt");
 		if (request.Mode == CookMode::Force)
 		{

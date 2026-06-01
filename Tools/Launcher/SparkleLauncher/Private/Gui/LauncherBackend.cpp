@@ -159,6 +159,20 @@ namespace SparkleLauncher
 		cookRequest.Mode = request.ForceRecook ? CookMode::Force : CookMode::Incremental;
 		cookRequest.ForceRecookConfirmed = request.ConfirmForceRecook;
 		cookRequest.ShaderPackages = SplitOptionList(request.ShaderPackages);
+		cookRequest.ShaderTargets = SplitOptionList(request.ShaderTargets);
+		cookRequest.ShaderBackend = request.ShaderBackend.toStdString();
+		cookRequest.ShaderCacheDirectory = request.ShaderCacheDirectory.toStdString();
+		cookRequest.ShaderUseCache = request.ShaderUseCache;
+		cookRequest.ShaderEnableDebugInfo = request.ShaderEnableDebugInfo;
+		cookRequest.ShaderEnableOptimizations = request.ShaderEnableOptimizations;
+		cookRequest.ShaderWarningsAsErrors = request.ShaderWarningsAsErrors;
+		cookRequest.ShaderStripReflection = request.ShaderStripReflection;
+		cookRequest.ShaderStripDebugInfo = request.ShaderStripDebugInfo;
+		cookRequest.WriteCookedShaderStats = request.ShaderWriteCookedShaderStats;
+		if (request.ShaderWriteDebugArtifacts)
+		{
+			cookRequest.ShaderDebugArtifactDirectory = request.ShaderDebugArtifactDirectory.toStdString();
+		}
 		return cookRequest;
 	}
 

@@ -19,6 +19,11 @@ struct ShaderPackageCookSettings final
 	std::filesystem::path cacheDirectory;
 	std::filesystem::path debugArtifactDirectory;
 	std::vector<std::string> analysisPasses;
+	bool enableDebugInfo = false;
+	bool enableOptimizations = true;
+	bool treatWarningsAsErrors = true;
+	bool stripReflection = true;
+	bool stripDebugInfo = true;
 	bool forceParameterStructMismatchForValidation = false;
 	bool forceMissingIncludeForValidation = false;
 };

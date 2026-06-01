@@ -8,6 +8,53 @@
 
 namespace SparkleLauncher
 {
+	static void AppendCommonShaderCompilerArguments(const CookOperationPlan& plan, std::vector<std::string>& arguments)
+	{
+		if (!plan.Request.ShaderUseCache)
+		{
+			arguments.push_back("--no-cache");
+		}
+		if (!plan.Request.ShaderCacheDirectory.empty())
+		{
+			arguments.push_back("--cache-dir");
+			arguments.push_back(plan.Request.ShaderCacheDirectory.string());
+		}
+		for (const std::string& target : plan.Request.ShaderTargets)
+		{
+			arguments.push_back("--target");
+			arguments.push_back(target);
+		}
+		if (!plan.Request.ShaderBackend.empty())
+		{
+			arguments.push_back("--backend");
+			arguments.push_back(plan.Request.ShaderBackend);
+		}
+		if (plan.Request.ShaderEnableDebugInfo)
+		{
+			arguments.push_back("--debug-info");
+		}
+		if (!plan.Request.ShaderEnableOptimizations)
+		{
+			arguments.push_back("--disable-optimizations");
+		}
+		arguments.push_back("--warnings-as-errors");
+		arguments.push_back(plan.Request.ShaderWarningsAsErrors ? "on" : "off");
+		arguments.push_back("--strip-reflection");
+		arguments.push_back(plan.Request.ShaderStripReflection ? "on" : "off");
+		arguments.push_back("--strip-debug");
+		arguments.push_back(plan.Request.ShaderStripDebugInfo ? "on" : "off");
+		if (!plan.Request.ShaderDebugArtifactDirectory.empty())
+		{
+			arguments.push_back("--debug-artifacts");
+			arguments.push_back(plan.Request.ShaderDebugArtifactDirectory.string());
+		}
+		if (plan.Request.WriteCookedShaderStats)
+		{
+			arguments.push_back("--analysis");
+			arguments.push_back("cooked-shader-stats");
+		}
+	}
+
 	static std::vector<std::string> GetCookToolTargets(CookOperationKind kind)
 	{
 		switch (kind)
@@ -45,6 +92,17 @@ namespace SparkleLauncher
 		return process;
 	}
 
+	static ProcessRequest MakeShaderCompilerCookAllRequest(const CookOperationPlan& plan)
+	{
+		ProcessRequest process;
+		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
+		process.WorkingDirectory = plan.RepositoryRoot;
+		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "CookShaders.txt");
+		process.Arguments = {"cook"};
+		AppendCommonShaderCompilerArguments(plan, process.Arguments);
+		return process;
+	}
+
 	static ProcessRequest MakeShaderCompilerCookRequest(const CookOperationPlan& plan, std::string_view packageId)
 	{
 		ProcessRequest process;
@@ -52,6 +110,7 @@ namespace SparkleLauncher
 		process.WorkingDirectory = plan.RepositoryRoot;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, std::string("ShaderPackage-") + std::string(packageId) + ".txt");
 		process.Arguments = {"cook", "--package", std::string(packageId)};
+		AppendCommonShaderCompilerArguments(plan, process.Arguments);
 		return process;
 	}
 
@@ -94,7 +153,7 @@ namespace SparkleLauncher
 			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
 			if (plan.Request.ShaderPackages.empty())
 			{
-				AddStep(steps, "cook-shaders", "Cook shader packages", MakeAssetCookerRequest(plan, "cook-shaders", "CookShaders.txt"));
+				AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
 			}
 			else
 			{
@@ -111,7 +170,10 @@ namespace SparkleLauncher
 			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
 			return steps;
 		case CookOperationKind::CookAllAssets:
-			AddStep(steps, "cook-all-assets", "Cook all assets", MakeAssetCookerRequest(plan, "cook-project", "CookAllAssets.txt"));
+			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
+			AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
+			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
+			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
 			return steps;
 		}
 

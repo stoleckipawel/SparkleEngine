@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LauncherBackend.h"
+
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
 #include <QtCore/QVector>
@@ -16,7 +18,6 @@
 #include <QtWidgets/QListWidget>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QStackedWidget>
 #include <QtWidgets/QTextEdit>
@@ -26,11 +27,10 @@
 
 namespace SparkleLauncher
 {
-	class LauncherBackend;
 	struct LauncherOperationDescriptor;
-	struct LauncherOperationRequest;
 	class LauncherProjectModel;
 	class LauncherSettings;
+	struct ThirdPartyDependencyUiEntry;
 
 	class LauncherMainWindow final : public QMainWindow
 	{
@@ -73,6 +73,20 @@ namespace SparkleLauncher
 			int ExitCode = 0;
 		};
 
+		struct PendingFollowUpOperation
+		{
+			LauncherOperationRequest Request;
+			QString Title;
+		};
+
+		struct ActivityRunWidgets
+		{
+			QWidget* Root = nullptr;
+			QFrame* Indicator = nullptr;
+			QLabel* TitleLabel = nullptr;
+			QLabel* StateLabel = nullptr;
+		};
+
 		enum class RunState
 		{
 			Queued,
@@ -93,6 +107,7 @@ namespace SparkleLauncher
 			Done,
 			Failed,
 			Copy,
+			Overflow,
 		};
 
 		QWidget* CreateWorkflowSurface();
@@ -114,7 +129,7 @@ namespace SparkleLauncher
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
-		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state);
+		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
@@ -134,9 +149,24 @@ namespace SparkleLauncher
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
+		bool ShouldShowActionSpecificCleanButton(const QString& operationId) const;
 		bool SupportsActionSpecificClean(const QString& operationId) const;
 		QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const QString& operationId) const;
 		LauncherOperationRequest BuildCleanOperationRequest(const QString& operationId) const;
+		LauncherOperationRequest BuildScopedCleanRequest(const QString& cleanScope) const;
+		LauncherOperationRequest BuildDependencyCleanRequest(const ThirdPartyDependencyUiEntry& dependency) const;
+		LauncherOperationRequest BuildDependencyRegenerateRequest() const;
+		QWidget* CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency);
+		QWidget* CreateActionDependencyActions(
+		    const QString& actionId,
+		    const QString& actionTitle,
+		    const QString& cleanScope = QString(),
+		    const QString& cleanTitle = QString(),
+		    bool navigateInsteadOfRun = false);
+		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
+		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
+		void TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency);
+		void TriggerDependencyRegenerate(const ThirdPartyDependencyUiEntry& dependency);
 		const LauncherOperationDescriptor* FindOperationDescriptor(const QString& operationId) const;
 		QString DisplayNameForOperation(const QString& operationId) const;
 		bool OperationNeedsProject(const QString& operationId) const;
@@ -155,6 +185,7 @@ namespace SparkleLauncher
 		void SetRunState(const QString& runId, RunState state, const QString& title);
 		void AppendRunOutput(const QString& runId, const QString& text);
 		void ShowRunOutput(const QString& runId);
+		void UpdateActivityRunSelectionVisuals();
 		void UpdateProgress();
 		void PopulateProjectSelectors();
 		void PopulateProjectCombo(QComboBox& combo) const;
@@ -182,17 +213,18 @@ namespace SparkleLauncher
 		QLabel* m_activeOperationLabel = nullptr;
 		QLabel* m_lastRunSummaryLabel = nullptr;
 		QLabel* m_lastRunResultLabel = nullptr;
-		QProgressBar* m_progressBar = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
 		QListWidget* m_activityList = nullptr;
 		QLabel* m_selectedRunSummary = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;
 		QHash<QString, QListWidgetItem*> m_runItems;
+		QHash<QString, ActivityRunWidgets> m_runItemWidgets;
 		QHash<QString, RunState> m_runStates;
 		QHash<QString, QString> m_runTitles;
 		QHash<QString, QString> m_runOutputs;
 		QHash<QString, ActionHistoryRecord> m_actionHistory;
+		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;

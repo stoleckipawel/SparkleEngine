@@ -69,7 +69,12 @@ void CookShadersCommand::PrintHelp(std::ostream& output)
 	          "Defaults to DxilSm66 and SpirV16.\n"
 	       << "  --backend <name>            Select a compiler backend, or auto.\n"
 	       << "  --debug-artifacts <dir>     Write debug artifact bundles outside runtime packages.\n"
-	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n";
+	       << "  --analysis <pass[,pass]>    Run optional analysis report passes such as cooked-shader-stats.\n"
+	       << "  --debug-info                Request backend debug information and symbol emission where supported.\n"
+	       << "  --disable-optimizations     Build shaders without backend optimization passes.\n"
+	       << "  --warnings-as-errors <on|off>  Treat shader warnings as hard errors. Defaults to on.\n"
+	       << "  --strip-reflection <on|off> Strip reflection data from final runtime binaries when supported.\n"
+	       << "  --strip-debug <on|off>      Strip embedded debug info from final runtime binaries when supported.\n";
 }
 
 bool CookShadersCommand::TryParseArguments(
@@ -203,6 +208,93 @@ bool CookShadersCommand::TryParseArguments(
 			}
 
 			AppendAnalysisPasses(args[index + 1], outSettings.analysisPasses);
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--debug-info")
+		{
+			outSettings.enableDebugInfo = true;
+			continue;
+		}
+
+		if (args[index] == "--disable-optimizations")
+		{
+			outSettings.enableOptimizations = false;
+			continue;
+		}
+
+		if (args[index] == "--warnings-as-errors")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --warnings-as-errors";
+				return false;
+			}
+			const std::string_view value = args[index + 1];
+			if (value == "on" || value == "true")
+			{
+				outSettings.treatWarningsAsErrors = true;
+			}
+			else if (value == "off" || value == "false")
+			{
+				outSettings.treatWarningsAsErrors = false;
+			}
+			else
+			{
+				outErrorMessage = "Expected on|off after --warnings-as-errors";
+				return false;
+			}
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--strip-reflection")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --strip-reflection";
+				return false;
+			}
+			const std::string_view value = args[index + 1];
+			if (value == "on" || value == "true")
+			{
+				outSettings.stripReflection = true;
+			}
+			else if (value == "off" || value == "false")
+			{
+				outSettings.stripReflection = false;
+			}
+			else
+			{
+				outErrorMessage = "Expected on|off after --strip-reflection";
+				return false;
+			}
+			++index;
+			continue;
+		}
+
+		if (args[index] == "--strip-debug")
+		{
+			if (index + 1 >= args.size())
+			{
+				outErrorMessage = "Missing value after --strip-debug";
+				return false;
+			}
+			const std::string_view value = args[index + 1];
+			if (value == "on" || value == "true")
+			{
+				outSettings.stripDebugInfo = true;
+			}
+			else if (value == "off" || value == "false")
+			{
+				outSettings.stripDebugInfo = false;
+			}
+			else
+			{
+				outErrorMessage = "Expected on|off after --strip-debug";
+				return false;
+			}
 			++index;
 			continue;
 		}
