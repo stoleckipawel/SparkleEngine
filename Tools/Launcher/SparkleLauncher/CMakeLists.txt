@@ -132,6 +132,13 @@ target_include_directories(SparkleLauncherCore
 
 target_compile_features(SparkleLauncherCore PUBLIC cxx_std_20)
 
+target_compile_definitions(SparkleLauncherCore
+    PUBLIC
+        SPARKLE_ENABLE_CONTENT_PIPELINE=$<BOOL:${SPARKLE_ENABLE_CONTENT_PIPELINE}>
+        SPARKLE_ENABLE_SHADER_COMPILER=$<BOOL:${SPARKLE_ENABLE_SHADER_COMPILER}>
+        SPARKLE_ENABLE_KTX_SUPPORT=$<BOOL:${SPARKLE_ENABLE_KTX_SUPPORT}>
+)
+
 target_link_libraries(SparkleLauncherCore PRIVATE SparkleCore)
 
 add_executable(SparkleLauncher WIN32

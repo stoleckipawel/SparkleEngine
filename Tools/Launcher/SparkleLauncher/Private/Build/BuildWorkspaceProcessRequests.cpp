@@ -79,6 +79,19 @@ namespace SparkleLauncher
 		return ResolveProjectTargets(plan.Request.ProjectId, profileName);
 	}
 
+	static std::vector<std::string> GetEnabledCookToolTargets()
+	{
+		std::vector<std::string> targets;
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		targets.push_back("AssetCooker");
+		targets.push_back("TextureCooker");
+#endif
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		targets.push_back("ShaderCompiler");
+#endif
+		return targets;
+	}
+
 	static void AddConfigureStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
 	{
 		BuildWorkspaceProcessStep step;
@@ -136,7 +149,13 @@ namespace SparkleLauncher
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.EditorProfile));
 			AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveProjectTargets(plan.Request.ProjectId, plan.Request.RuntimeProfile));
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"AssetCooker", "TextureCooker", "ShaderCompiler"});
+			{
+				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+				if (!cookToolTargets.empty())
+				{
+					AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
+				}
+			}
 			return steps;
 		case BuildWorkspaceOperationKind::CompileLauncher:
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});
@@ -148,8 +167,14 @@ namespace SparkleLauncher
 			AddBuildStep(steps, plan, plan.Request.RuntimeProfile, ResolveBuildTargets(plan, plan.Request.RuntimeProfile));
 			return steps;
 		case BuildWorkspaceOperationKind::BuildCookTools:
-			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"AssetCooker", "TextureCooker", "ShaderCompiler"});
+		{
+			const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+			if (!cookToolTargets.empty())
+			{
+				AddBuildStep(steps, plan, plan.Request.EditorProfile, cookToolTargets);
+			}
 			return steps;
+		}
 		}
 
 		return steps;

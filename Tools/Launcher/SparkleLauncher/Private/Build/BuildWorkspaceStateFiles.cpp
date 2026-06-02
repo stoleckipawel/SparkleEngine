@@ -21,13 +21,17 @@ namespace SparkleLauncher
 			return std::nullopt;
 		}
 
-		const std::string prefix = std::string(key) + ":INTERNAL=";
+		const std::string prefix = std::string(key) + ":";
 		std::string line;
 		while (std::getline(stream, line))
 		{
 			if (line.rfind(prefix, 0) == 0)
 			{
-				return line.substr(prefix.size());
+				const std::size_t separator = line.find('=', prefix.size());
+				if (separator != std::string::npos)
+				{
+					return line.substr(separator + 1);
+				}
 			}
 		}
 

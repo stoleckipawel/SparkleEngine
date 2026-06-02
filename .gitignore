@@ -7,6 +7,7 @@
 # as `Tools/Launcher/SparkleLauncher/Private/Build`.
 /Build/
 /build/
+/build-*/
 /bin/
 /obj/
 /bld/

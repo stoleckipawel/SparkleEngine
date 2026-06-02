@@ -39,6 +39,7 @@
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QWidget>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <fstream>
@@ -86,21 +87,103 @@ namespace SparkleLauncher
 		QString CacheDirectoryName;
 	};
 
-	static const std::array<ThirdPartyDependencyUiEntry, 11>& GetTrackedThirdPartyDependencies()
+	struct DependencyGroupUiEntry
 	{
-		static const std::array<ThirdPartyDependencyUiEntry, 11> dependencies = {{
-		    {"Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src"},
-		    {"cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src"},
-		    {"stb", "master", "Header-only image loading and mip resize helpers.", "stb-src"},
-		    {"tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src"},
-		    {"spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src"},
-		    {"zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src"},
-		    {"Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src"},
-		    {"Compressonator", "master (sparse)", "AMD BC1-BC7 texture block compression support.", "compressonator-src"},
-		    {"KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src"},
-		    {"SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src"},
-		    {"Font Awesome Free Solid", "v6.7.1", "Launcher/editor icon font asset and license.", "editor-icons"},
-		}};
+		QString Id;
+		QString Label;
+		QString Summary;
+		QString UnlockSummary;
+		QString ConfigureOption;
+		bool Required = false;
+		bool Enabled = false;
+		std::vector<ThirdPartyDependencyUiEntry> Dependencies;
+	};
+
+	static const std::vector<DependencyGroupUiEntry>& GetDependencyGroups()
+	{
+		static const std::vector<DependencyGroupUiEntry> groups = [] {
+			std::vector<DependencyGroupUiEntry> entries;
+			entries.push_back({
+			    "core-workspace",
+			    "Core Workspace",
+			    "Baseline shared dependencies used by the launcher, engine, and project builds.",
+			    "Unlocks Sync Third Parties, Build Launcher, Build Editor, Build Runtime, and Build All.",
+			    QString(),
+			    true,
+			    true,
+			    {
+			        {"Dear ImGui", "v1.92.5", "Immediate-mode UI core and Win32 platform backend.", "imgui-src"},
+			        {"spdlog", "v1.14.1", "Repo-wide logging backend.", "spdlog-src"},
+			        {"Font Awesome Free Solid", "v6.7.1", "Launcher/editor icon font asset and license.", "editor-icons"},
+			    }});
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+			const bool contentPipelineEnabled = true;
+#else
+			const bool contentPipelineEnabled = false;
+#endif
+			entries.push_back({
+			    "content-pipeline",
+			    "Content Pipeline",
+			    "Optional source import, mesh cook, and texture cook dependencies.",
+			    "Unlocks Build Cook Tools, Cook Textures, Cook Meshes, and the content phase of Cook All.",
+			    "SPARKLE_ENABLE_CONTENT_PIPELINE",
+			    false,
+			    contentPipelineEnabled,
+			    {
+			        {"cgltf", "v1.15", "Single-header glTF 2.0 parser for source scene imports.", "cgltf-src"},
+			        {"stb", "master", "Header-only image loading and mip resize helpers.", "stb-src"},
+			        {"tinyexr", "v1.0.7", "Header-only OpenEXR image loading support.", "tinyexr-src"},
+			        {"zlib", "v1.3.1", "Compression backend used by Assimp.", "zlib-src"},
+			        {"Assimp", "v5.4.3", "FBX and DCC scene import support.", "assimp-src"},
+			        {"Compressonator", "master (sparse)", "AMD BC1-BC7 texture block compression support.", "compressonator-src"},
+			    }});
+#if SPARKLE_ENABLE_KTX_SUPPORT
+			const bool ktxSupportEnabled = true;
+#else
+			const bool ktxSupportEnabled = false;
+#endif
+			entries.push_back({
+			    "ktx-support",
+			    "KTX Support",
+			    "Optional KTX2 container support layered on top of the texture pipeline.",
+			    "Extends texture workflows when the repo is configured for KTX support.",
+			    "SPARKLE_ENABLE_KTX_SUPPORT",
+			    false,
+			    ktxSupportEnabled,
+			    {
+			        {"KTX-Software", "v4.3.2", "KTX2 texture container read/write support.", "ktx-src"},
+			    }});
+#if SPARKLE_ENABLE_SHADER_COMPILER
+			const bool shaderCompilerEnabled = true;
+#else
+			const bool shaderCompilerEnabled = false;
+#endif
+			entries.push_back({
+			    "shader-compiler",
+			    "Shader Compiler",
+			    "Optional offline shader compiler dependencies.",
+			    "Unlocks Build Cook Tools, Cook Shaders, and the shader phase of Cook All.",
+			    "SPARKLE_ENABLE_SHADER_COMPILER",
+			    false,
+			    shaderCompilerEnabled,
+			    {
+			        {"SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src"},
+			    }});
+			return entries;
+		}();
+		return groups;
+	}
+
+	static const std::vector<ThirdPartyDependencyUiEntry>& GetTrackedThirdPartyDependencies()
+	{
+		static const std::vector<ThirdPartyDependencyUiEntry> dependencies = [] {
+			std::vector<ThirdPartyDependencyUiEntry> entries;
+			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+			{
+				entries.insert(entries.end(), group.Dependencies.begin(), group.Dependencies.end());
+			}
+			return entries;
+		}();
 		return dependencies;
 	}
 
@@ -233,18 +316,123 @@ namespace SparkleLauncher
 	static QString FormatTrackedDependencySummary(const std::filesystem::path& dependencyCachePath)
 	{
 		int readyCount = 0;
-		for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
+		int trackedCount = 0;
+		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+		{
+			if (!group.Enabled)
+			{
+				continue;
+			}
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				++trackedCount;
+				if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
+				{
+					++readyCount;
+				}
+			}
+		}
+
+		return QStringLiteral("%1 of %2 enabled tracked dependencies are already cached under %3.")
+		    .arg(readyCount)
+		    .arg(trackedCount)
+		    .arg(QString::fromStdString(dependencyCachePath.string()));
+	}
+
+	static int CountReadyDependencies(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
+	{
+		int readyCount = 0;
+		for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
 		{
 			if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
 			{
 				++readyCount;
 			}
 		}
+		return readyCount;
+	}
 
-		return QStringLiteral("%1 of %2 tracked dependencies are already cached under %3.")
-		    .arg(readyCount)
-		    .arg(GetTrackedThirdPartyDependencies().size())
-		    .arg(QString::fromStdString(dependencyCachePath.string()));
+	static QString DependencyGroupStatusText(const DependencyGroupUiEntry& group, int readyCount)
+	{
+		if (!group.Enabled)
+		{
+			return "Disabled";
+		}
+		if (readyCount == static_cast<int>(group.Dependencies.size()))
+		{
+			return group.Required ? "Ready" : "Cached";
+		}
+		if (readyCount > 0)
+		{
+			return "Partial";
+		}
+		return group.Required ? "Pending sync" : "Available";
+	}
+
+	static QString DependencyGroupStatusState(const DependencyGroupUiEntry& group, int readyCount)
+	{
+		if (!group.Enabled)
+		{
+			return "neutral";
+		}
+		if (readyCount == static_cast<int>(group.Dependencies.size()))
+		{
+			return "ok";
+		}
+		return "warning";
+	}
+
+	static QString FormatDependencyGroupDetail(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath, int readyCount)
+	{
+		QString detail = group.Summary + " " + group.UnlockSummary;
+		if (!group.Enabled)
+		{
+			return detail + QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+		}
+		return detail + QStringLiteral(" %1 of %2 tracked dependencies are cached under %3.")
+		                    .arg(readyCount)
+		                    .arg(group.Dependencies.size())
+		                    .arg(QString::fromStdString(dependencyCachePath.string()));
+	}
+
+	static QString FormatDependencyEntryDetail(const DependencyGroupUiEntry& group, const ThirdPartyDependencyUiEntry& dependency, const std::filesystem::path& dependencyPath)
+	{
+		QString detail = QStringLiteral("%1 Cache: %2")
+		                     .arg(dependency.Purpose)
+		                     .arg(QString::fromStdString(dependencyPath.string()));
+		if (!group.Enabled)
+		{
+			detail += QStringLiteral(" Disabled by %1=OFF in this workspace configuration.").arg(group.ConfigureOption);
+		}
+		return detail;
+	}
+
+	static bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group)
+	{
+		if (operationId == "toolchain.check" || operationId == "workspace.setup")
+		{
+			return true;
+		}
+		if (group.Id == "core-workspace")
+		{
+			return operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "workspace.build-all" ||
+			    operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId.startsWith("cook.");
+		}
+		if (group.Id == "content-pipeline")
+		{
+			return operationId == "workspace.build-all" || operationId == "cook.tools.prepare" || operationId == "cook.textures" ||
+			    operationId == "cook.assets" || operationId == "cook.project";
+		}
+		if (group.Id == "shader-compiler")
+		{
+			return operationId == "workspace.build-all" || operationId == "cook.tools.prepare" || operationId == "cook.shaders" ||
+			    operationId == "cook.project";
+		}
+		if (group.Id == "ktx-support")
+		{
+			return operationId == "toolchain.check" || operationId == "workspace.setup";
+		}
+		return false;
 	}
 
 	static QString ToolchainStatusState(ToolchainItemState state, bool required)
@@ -277,10 +465,11 @@ namespace SparkleLauncher
 
 	static QString BuildGeneratorSummary(const BuildToolchainStatus& toolchain)
 	{
-		return QStringLiteral("Generator: %1 | Platform: %2%3")
+		return QStringLiteral("Generator: %1 | Platform: %2%3%4")
 		    .arg(QString::fromStdString(toolchain.Generator))
 		    .arg(QString::fromStdString(toolchain.Platform))
-		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" | Toolset: %1").arg(QString::fromStdString(toolchain.Toolset)));
+		    .arg(toolchain.Toolset.empty() ? QString() : QStringLiteral(" | Toolset: %1").arg(QString::fromStdString(toolchain.Toolset)))
+		    .arg(toolchain.QtRootPath.empty() ? QString() : QStringLiteral(" | Qt: %1").arg(QString::fromStdString(toolchain.QtRootPath.string())));
 	}
 
 	static QString RequiredToolProblemSummary(const BuildToolchainStatus& toolchain)
@@ -927,7 +1116,7 @@ namespace SparkleLauncher
 		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
 		ideCombo->setObjectName("FooterContextCombo");
 		ideCombo->setAccessibleName("IDE");
-		ideCombo->setToolTip("Global IDE choice for workspace generation and opening.");
+		ideCombo->setToolTip("Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
 		ideCombo->setMinimumWidth(150);
 		ideCombo->setMaximumWidth(190);
 		ideCombo->setMinimumHeight(28);
@@ -1244,11 +1433,13 @@ namespace SparkleLauncher
 			        "Run the cooked-shader-stats analysis pass after the shader cook and write CSV output into the shader cache analysis folder.",
 			        m_settings.ShaderWriteCookedShaderStats(),
 			        &LauncherSettings::SetShaderWriteCookedShaderStats));
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId.startsWith("cook."))
 		{
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -1539,13 +1730,34 @@ namespace SparkleLauncher
 		request.PreferredIde = SelectedWorkspaceIde(m_settings);
 		request.ForceConfigure = m_settings.ForceConfigure();
 
-		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(operationId.toStdString(), request);
+		const QString workspacePlanOperationId =
+		    operationId.startsWith("cook.") && operationId != "cook.tools.prepare" ? "cook.tools.prepare" : operationId;
+		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation(workspacePlanOperationId.toStdString(), request);
 		const QString workspaceIdeName = SelectedWorkspaceIdeName(m_settings);
 		const bool isToolchainCheck = operationId == "toolchain.check";
 		const bool isSetupWorkflow = operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution";
 		const bool isBuildWorkflow = operationId == "workspace.build-all" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare" || operationId == "launcher.build.self";
+		const bool isCookWorkflow = operationId.startsWith("cook.") && operationId != "cook.tools.prepare";
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const bool dependencyCacheReady = DirectoryHasEntries(dependencyCachePath);
+		const auto addRelevantDependencyGroups = [this, &dependencyCachePath, &operationId](QVBoxLayout& targetLayout) {
+			for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+			{
+				if (!OperationUsesDependencyGroup(operationId, group))
+				{
+					continue;
+				}
+
+				const int readyCount = CountReadyDependencies(group, dependencyCachePath);
+				AddStatusRow(
+				    targetLayout,
+				    group.Label,
+				    DependencyGroupStatusText(group, readyCount),
+				    FormatDependencyGroupDetail(group, dependencyCachePath, readyCount),
+				    DependencyGroupStatusState(group, readyCount),
+				    group.Enabled ? CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache") : nullptr);
+			}
+		};
 
 		if (isToolchainCheck)
 		{
@@ -1573,6 +1785,8 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
 			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
+			QVBoxLayout* groupsLayout = AddOptionGroup(layout, "Workspace Dependency Groups", "The repo now exposes capability groups. Sync only the groups this workspace enables; each enabled group unlocks more workflows.");
+			addRelevantDependencyGroups(*groupsLayout);
 
 			return;
 		}
@@ -1601,7 +1815,7 @@ namespace SparkleLauncher
 			    *workspaceLayout,
 			    "Third-Party Cache",
 			    cacheStatus,
-			    cacheDetail,
+			    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
 			    dependencyCacheReady ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache"));
 			if (!plan.Toolchain.RequiredToolsAvailable)
@@ -1617,24 +1831,30 @@ namespace SparkleLauncher
 
 			if (operationId == "workspace.setup")
 			{
-				QVBoxLayout* dependenciesLayout = AddOptionGroup(
+				QVBoxLayout* groupsLayout = AddOptionGroup(
 				    layout,
-				    "Tracked Third-Party Dependencies",
-				    "Sync Third Parties populates these repositories and assets into the local dependency cache.");
-				for (const ThirdPartyDependencyUiEntry& dependency : GetTrackedThirdPartyDependencies())
+				    "Dependency Groups",
+				    "Each group maps the local dependency cache to concrete launcher capabilities. Users do not need to sync every group up front.");
+				addRelevantDependencyGroups(*groupsLayout);
+
+				for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 				{
-					const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
-					const bool dependencyReady = DirectoryHasEntries(dependencyPath);
-					const QString detail = QStringLiteral("%1 Cache: %2")
-					                           .arg(dependency.Purpose)
-					                           .arg(QString::fromStdString(dependencyPath.string()));
-					AddStatusRow(
-					    *dependenciesLayout,
-					    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
-					    dependencyReady ? "Cached" : "Pending",
-					    detail,
-					    dependencyReady ? "ok" : "warning",
-					    CreateTrackedDependencyActions(dependency));
+					QVBoxLayout* dependenciesLayout = AddOptionGroup(
+					    layout,
+					    group.Label + " Dependencies",
+					    group.Enabled ? group.UnlockSummary : FormatDependencyGroupDetail(group, dependencyCachePath, 0));
+					for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+					{
+						const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
+						const bool dependencyReady = DirectoryHasEntries(dependencyPath);
+						AddStatusRow(
+						    *dependenciesLayout,
+						    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
+						    !group.Enabled ? "Disabled" : dependencyReady ? "Cached" : "Pending sync",
+						    FormatDependencyEntryDetail(group, dependency, dependencyPath),
+						    !group.Enabled ? "neutral" : dependencyReady ? "ok" : "warning",
+						    group.Enabled ? CreateTrackedDependencyActions(dependency) : nullptr);
+					}
 				}
 			}
 			return;
@@ -1657,6 +1877,28 @@ namespace SparkleLauncher
 			    QString::fromStdString(plan.Freshness.Summary),
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
+			addRelevantDependencyGroups(*buildLayout);
+			return;
+		}
+
+		if (isCookWorkflow)
+		{
+			QVBoxLayout* cookLayout = AddOptionGroup(layout, "Action Dependencies", "State this cook workflow depends on before it can do useful work.");
+			AddStatusRow(
+			    *cookLayout,
+			    "Required tools",
+			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Blocked",
+			    plan.Toolchain.RequiredToolsAvailable ? BuildGeneratorSummary(plan.Toolchain) : RequiredToolProblemSummary(plan.Toolchain),
+			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
+			    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
+			AddStatusRow(
+			    *cookLayout,
+			    "Build files",
+			    plan.Freshness.Current ? "Ready" : "Needs refresh",
+			    QString::fromStdString(plan.Freshness.Summary),
+			    plan.Freshness.Current ? "ok" : "warning",
+			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
+			addRelevantDependencyGroups(*cookLayout);
 		}
 	}
 
@@ -1786,9 +2028,13 @@ namespace SparkleLauncher
 
 		if (operationId == "cook.tools.prepare" || operationId == "workspace.build-all")
 		{
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "AssetCooker", "AssetCooker executable outputs.");
 			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "TextureCooker", "TextureCooker executable outputs.");
+#endif
+#if SPARKLE_ENABLE_SHADER_COMPILER
 			AddTargetArtifactOutputs(targets, m_repositoryRoot, editorProfile, "ShaderCompiler", "ShaderCompiler executable outputs.");
+#endif
 		}
 
 		if (operationId == "cook.project")
@@ -1888,7 +2134,7 @@ namespace SparkleLauncher
 	{
 		QVector<LauncherActionMenuEntry> entries;
 		entries.push_back(LauncherActionMenuEntry{
-		    "Regenerate",
+		    actionTitle,
 		    [this, actionId, actionTitle, navigateInsteadOfRun]() {
 			    TriggerActionDependencyRegenerate(actionId, actionTitle, navigateInsteadOfRun);
 		    }});
@@ -2440,6 +2686,11 @@ namespace SparkleLauncher
 		{
 			return "Install Rider or switch the IDE selector back to Visual Studio, then retry.";
 		}
+		if (statusText.contains("disabled in this workspace configuration", Qt::CaseInsensitive) ||
+		    statusText.contains("No cook tool groups are enabled", Qt::CaseInsensitive))
+		{
+			return "This workflow is disabled by the current dependency-group configuration. Reconfigure the workspace with the matching group enabled, then sync and build again.";
+		}
 		if (statusText.contains("shader package", Qt::CaseInsensitive) || statusText.contains("shader", Qt::CaseInsensitive))
 		{
 			return "Run Cook > Cook Shaders, then retry this workflow.";
@@ -2656,7 +2907,7 @@ namespace SparkleLauncher
 		{
 			prerequisiteOperationId = "toolchain.check";
 			promptTitle = "Check Dependencies";
-			promptAction = QString("%1 is not currently available. Run Check Dependencies now?").arg(SelectedWorkspaceIdeName(m_settings));
+			promptAction = QString("%1 is not currently available. Run Check Dependencies now and verify the Visual Studio, Qt, and optional ClangCL toolchain?").arg(SelectedWorkspaceIdeName(m_settings));
 		}
 		else
 		{
@@ -2814,6 +3065,7 @@ namespace SparkleLauncher
 
 		bool workspaceMissing = false;
 		bool cookToolsMissing = false;
+		bool dependencyGroupDisabled = false;
 		QStringList readiness;
 		for (const std::string& message : plan.ReadinessMessages)
 		{
@@ -2821,6 +3073,17 @@ namespace SparkleLauncher
 			readiness.push_back(readinessMessage);
 			workspaceMissing = workspaceMissing || readinessMessage.contains("Run Regenerate Solution first", Qt::CaseInsensitive);
 			cookToolsMissing = cookToolsMissing || readinessMessage.contains("run Build Cook Tools first", Qt::CaseInsensitive);
+			dependencyGroupDisabled = dependencyGroupDisabled || readinessMessage.contains("disabled in this workspace configuration", Qt::CaseInsensitive) ||
+			    readinessMessage.contains("No cook tool groups are enabled", Qt::CaseInsensitive);
+		}
+
+		if (dependencyGroupDisabled)
+		{
+			QMessageBox::information(
+			    this,
+			    "Cook Workflow Disabled",
+			    "This cook workflow is disabled by the current workspace dependency-group configuration.\n\n" + readiness.join('\n'));
+			return false;
 		}
 
 		QString prerequisiteOperationId;

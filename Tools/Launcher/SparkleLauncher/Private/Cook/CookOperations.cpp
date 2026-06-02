@@ -47,13 +47,35 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 		case CookOperationKind::CookShaders:
+#if SPARKLE_ENABLE_SHADER_COMPILER
 			return {"ShaderCompiler"};
+#else
+			return {};
+#endif
 		case CookOperationKind::BuildTextures:
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			return {"TextureCooker"};
+#else
+			return {};
+#endif
 		case CookOperationKind::BuildSceneAssets:
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			return {"AssetCooker"};
+#else
+			return {};
+#endif
 		case CookOperationKind::CookAllAssets:
-			return {"AssetCooker", "TextureCooker", "ShaderCompiler"};
+		{
+			std::vector<std::string> tools;
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+			tools.push_back("AssetCooker");
+			tools.push_back("TextureCooker");
+#endif
+#if SPARKLE_ENABLE_SHADER_COMPILER
+			tools.push_back("ShaderCompiler");
+#endif
+			return tools;
+		}
 		}
 
 		return {};
@@ -263,6 +285,25 @@ namespace SparkleLauncher
 		if (!plan.Freshness.Current)
 		{
 			AddReadiness(plan, "Solution/workspace files are not current. Run Regenerate Solution first.");
+		}
+		switch (plan.Kind)
+		{
+		case CookOperationKind::CookShaders:
+#if !SPARKLE_ENABLE_SHADER_COMPILER
+			AddReadiness(plan, "ShaderCompiler is disabled in this workspace configuration.");
+#endif
+			break;
+		case CookOperationKind::BuildTextures:
+		case CookOperationKind::BuildSceneAssets:
+#if !SPARKLE_ENABLE_CONTENT_PIPELINE
+			AddReadiness(plan, "Content pipeline tools are disabled in this workspace configuration.");
+#endif
+			break;
+		case CookOperationKind::CookAllAssets:
+#if !SPARKLE_ENABLE_CONTENT_PIPELINE && !SPARKLE_ENABLE_SHADER_COMPILER
+			AddReadiness(plan, "No cook tool groups are enabled in this workspace configuration.");
+#endif
+			break;
 		}
 		bool requiredCookToolsAvailable = true;
 		for (const std::filesystem::path& toolPath : plan.RequiredToolPaths)

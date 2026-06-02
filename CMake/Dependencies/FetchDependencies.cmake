@@ -9,17 +9,24 @@
 # versions for reproducible builds.
 #
 # Managed dependencies:
+#   Always-on:
 #   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI core + Win32 platform backend
+#   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
+#   - Font Awesome Free Solid (v6.7.1) - Editor/launcher icon font asset only
+#
+#   Optional content pipeline (SPARKLE_ENABLE_CONTENT_PIPELINE):
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
 #   - stb            (master)   - stb_image + stb_image_resize2 (header-only)
 #   - tinyexr        (v1.0.7)   - OpenEXR image loader (header-only)
-#   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
 #   - zlib           (v1.3.1)   - Compression backend for Assimp
 #   - Assimp         (v5.4.3)   - FBX and general 3D asset import
 #   - Compressonator (master)   - AMD BC1-BC7 block compression (CMP_Core only)
-#   - KTX-Software   (v4.3.2)  - KTX2 texture container read/write
+#
+#   Optional KTX support (SPARKLE_ENABLE_KTX_SUPPORT):
+#   - KTX-Software   (v4.3.2)   - KTX2 texture container read/write
+#
+#   Optional shader pipeline (SPARKLE_ENABLE_SHADER_COMPILER):
 #   - SPIRV-Reflect  (vulkan-sdk-1.3.290.0) - SPIR-V reflection (offline tool only)
-#   - Font Awesome Free Solid (v6.7.1) - Editor icon font asset only
 #
 # ============================================================================
 
@@ -230,86 +237,90 @@ endif()
 set_target_properties(imgui PROPERTIES FOLDER "ThirdParty")
 sparkle_log_dependency_ready("imgui" "${imgui_SOURCE_DIR}" "~7 MB")
 
-# ============================================================================
-# cgltf - Single-header glTF 2.0 parser
-# https://github.com/jkuhlmann/cgltf
-#
-# Header-only library. Define CGLTF_IMPLEMENTATION in exactly one .cpp file
-# before including cgltf.h to generate the implementation.
-#
-# Target:  cgltf (INTERFACE)
-# Usage:   target_link_libraries(YourTarget PRIVATE cgltf)
-# ============================================================================
-FetchContent_Declare(cgltf
-    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
-    GIT_TAG        v1.15
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   ${_sparkle_git_progress}
-)
-sparkle_log_dependency_step(2 11 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
-FetchContent_Populate(cgltf)
+if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+    # ============================================================================
+    # cgltf - Single-header glTF 2.0 parser
+    # https://github.com/jkuhlmann/cgltf
+    #
+    # Header-only library. Define CGLTF_IMPLEMENTATION in exactly one .cpp file
+    # before including cgltf.h to generate the implementation.
+    #
+    # Target:  cgltf (INTERFACE)
+    # Usage:   target_link_libraries(YourTarget PRIVATE cgltf)
+    # ============================================================================
+    FetchContent_Declare(cgltf
+        GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
+        GIT_TAG        v1.15
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(2 11 "cgltf" "v1.15" "~1 MB" "Single-header glTF 2.0 parser for source scene imports" "https://github.com/jkuhlmann/cgltf.git")
+    FetchContent_Populate(cgltf)
 
-add_library(cgltf INTERFACE)
-target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
+    add_library(cgltf INTERFACE)
+    target_include_directories(cgltf INTERFACE ${cgltf_SOURCE_DIR})
 
-# Silence MSVC CRT deprecation warnings in cgltf implementation code.
-if(MSVC)
-    target_compile_definitions(cgltf INTERFACE _CRT_SECURE_NO_WARNINGS)
-    target_compile_options(cgltf INTERFACE /wd4996)
+    # Silence MSVC CRT deprecation warnings in cgltf implementation code.
+    if(MSVC)
+        target_compile_definitions(cgltf INTERFACE _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(cgltf INTERFACE /wd4996)
+    endif()
+
+    sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
 endif()
 
-sparkle_log_dependency_ready("cgltf" "${cgltf_SOURCE_DIR}" "~1 MB")
+if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+    # ============================================================================
+    # stb - Header-only image loading and resizing
+    # https://github.com/nothings/stb
+    #
+    # Provides: stb_image.h (image loading), stb_image_resize2.h (mip generation)
+    #
+    # Target:  stb (INTERFACE)
+    # Usage:   target_link_libraries(YourTarget PRIVATE stb)
+    #          #define STB_IMAGE_IMPLEMENTATION  (in exactly one .cpp)
+    # ============================================================================
+    FetchContent_Declare(stb
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_TAG        master
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(3 11 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
+    FetchContent_Populate(stb)
 
-# ============================================================================
-# stb - Header-only image loading and resizing
-# https://github.com/nothings/stb
-#
-# Provides: stb_image.h (image loading), stb_image_resize2.h (mip generation)
-#
-# Target:  stb (INTERFACE)
-# Usage:   target_link_libraries(YourTarget PRIVATE stb)
-#          #define STB_IMAGE_IMPLEMENTATION  (in exactly one .cpp)
-# ============================================================================
-FetchContent_Declare(stb
-    GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG        master
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   ${_sparkle_git_progress}
-)
-sparkle_log_dependency_step(3 11 "stb" "master" "~5 MB" "Header-only image loading and mip resize helpers" "https://github.com/nothings/stb.git")
-FetchContent_Populate(stb)
+    add_library(stb INTERFACE)
+    target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
+    sparkle_log_dependency_ready("stb" "${stb_SOURCE_DIR}" "~5 MB")
 
-sparkle_log_dependency_ready("stb" "${stb_SOURCE_DIR}" "~5 MB")
+    # ============================================================================
+    # tinyexr - Header-only OpenEXR image loader
+    # https://github.com/syoyo/tinyexr
+    #
+    # Target:  tinyexr (INTERFACE)
+    # Usage:   target_link_libraries(YourTarget PRIVATE tinyexr)
+    #          #define TINYEXR_IMPLEMENTATION (in exactly one .cpp)
+    # ============================================================================
+    FetchContent_Declare(tinyexr
+        GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
+        GIT_TAG        v1.0.7
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(4 11 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
+    FetchContent_Populate(tinyexr)
 
-# ============================================================================
-# tinyexr - Header-only OpenEXR image loader
-# https://github.com/syoyo/tinyexr
-#
-# Target:  tinyexr (INTERFACE)
-# Usage:   target_link_libraries(YourTarget PRIVATE tinyexr)
-#          #define TINYEXR_IMPLEMENTATION (in exactly one .cpp)
-# ============================================================================
-FetchContent_Declare(tinyexr
-    GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
-    GIT_TAG        v1.0.7
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   ${_sparkle_git_progress}
-)
-sparkle_log_dependency_step(4 11 "tinyexr" "v1.0.7" "~1 MB" "Header-only OpenEXR image loading support" "https://github.com/syoyo/tinyexr.git")
-FetchContent_Populate(tinyexr)
+    add_library(tinyexr INTERFACE)
+    target_include_directories(tinyexr INTERFACE
+        ${tinyexr_SOURCE_DIR}
+        ${tinyexr_SOURCE_DIR}/deps
+        ${tinyexr_SOURCE_DIR}/deps/miniz
+        ${tinyexr_SOURCE_DIR}/miniz
+    )
 
-add_library(tinyexr INTERFACE)
-target_include_directories(tinyexr INTERFACE
-    ${tinyexr_SOURCE_DIR}
-    ${tinyexr_SOURCE_DIR}/deps
-    ${tinyexr_SOURCE_DIR}/deps/miniz
-    ${tinyexr_SOURCE_DIR}/miniz
-)
-
-sparkle_log_dependency_ready("tinyexr" "${tinyexr_SOURCE_DIR}" "~1 MB")
+    sparkle_log_dependency_ready("tinyexr" "${tinyexr_SOURCE_DIR}" "~1 MB")
+endif()
 
 # ============================================================================
 # spdlog - Repo-owned logging backend
@@ -358,109 +369,112 @@ endif()
 
 sparkle_log_dependency_ready("spdlog" "${spdlog_SOURCE_DIR}" "~3 MB")
 
-# ============================================================================
-# zlib - Compression backend for Assimp
-# https://github.com/madler/zlib
-#
-# Assimp's bundled zlib is 1.2.13 and still uses K&R-style function
-# definitions that clang-cl warns about as non-prototype definitions.
-# Keep zlib as an explicit pinned dependency so Assimp links the modernized
-# 1.3.1 source instead of building its bundled copy.
-#
-# Target:  zlibstatic
-# Usage:   target_link_libraries(YourTarget PRIVATE zlibstatic)
-# ============================================================================
-FetchContent_Declare(zlib
-    GIT_REPOSITORY https://github.com/madler/zlib.git
-    GIT_TAG        v1.3.1
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   ${_sparkle_git_progress}
-)
-sparkle_log_dependency_step(6 11 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
-FetchContent_Populate(zlib)
+if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+    # ============================================================================
+    # zlib - Compression backend for Assimp
+    # https://github.com/madler/zlib
+    #
+    # Assimp's bundled zlib is 1.2.13 and still uses K&R-style function
+    # definitions that clang-cl warns about as non-prototype definitions.
+    # Keep zlib as an explicit pinned dependency so Assimp links the modernized
+    # 1.3.1 source instead of building its bundled copy.
+    #
+    # Target:  zlibstatic
+    # Usage:   target_link_libraries(YourTarget PRIVATE zlibstatic)
+    # ============================================================================
+    FetchContent_Declare(zlib
+        GIT_REPOSITORY https://github.com/madler/zlib.git
+        GIT_TAG        v1.3.1
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(6 11 "zlib" "v1.3.1" "~1 MB" "Compression backend used by Assimp" "https://github.com/madler/zlib.git")
+    FetchContent_Populate(zlib)
 
-set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-sparkle_add_dependency_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    sparkle_add_dependency_subdirectory(${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
 
-if(TARGET zlibstatic AND NOT TARGET ZLIB::ZLIB)
-    add_library(ZLIB::ZLIB ALIAS zlibstatic)
-endif()
-
-if(TARGET zlib)
-    set_target_properties(zlib PROPERTIES FOLDER "ThirdParty/zlib")
-endif()
-
-if(TARGET zlibstatic)
-    set_target_properties(zlibstatic PROPERTIES FOLDER "ThirdParty/zlib")
-endif()
-
-set(ZLIB_FOUND TRUE)
-set(ZLIB_LIBRARIES zlibstatic)
-set(ZLIB_INCLUDE_DIR ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
-set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
-
-sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
-
-# ============================================================================
-# Assimp - Open Asset Import Library
-# https://github.com/assimp/assimp
-#
-# Provides FBX and other DCC format import through the GameFramework scene
-# import path. This remains a private dependency of GameFramework.
-#
-# Target:  assimp::assimp
-# Usage:   target_link_libraries(YourTarget PRIVATE assimp::assimp)
-# ============================================================================
-FetchContent_Declare(assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG        v5.4.3
-    GIT_SHALLOW    TRUE
-    GIT_PROGRESS   ${_sparkle_git_progress}
-)
-sparkle_log_dependency_step(7 11 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
-FetchContent_Populate(assimp)
-
-set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
-set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
-sparkle_add_dependency_subdirectory(${assimp_SOURCE_DIR} ${assimp_BINARY_DIR})
-
-if(TARGET assimp AND NOT TARGET assimp::assimp)
-    add_library(assimp::assimp ALIAS assimp)
-endif()
-
-if(TARGET assimp)
-    if(MSVC)
-        target_compile_options(assimp PRIVATE /MP1 /FS)
+    if(TARGET zlibstatic AND NOT TARGET ZLIB::ZLIB)
+        add_library(ZLIB::ZLIB ALIAS zlibstatic)
     endif()
-    set_target_properties(assimp PROPERTIES FOLDER "ThirdParty/Assimp")
+
+    if(TARGET zlib)
+        set_target_properties(zlib PROPERTIES FOLDER "ThirdParty/zlib")
+    endif()
+
+    if(TARGET zlibstatic)
+        set_target_properties(zlibstatic PROPERTIES FOLDER "ThirdParty/zlib")
+    endif()
+
+    set(ZLIB_FOUND TRUE)
+    set(ZLIB_LIBRARIES zlibstatic)
+    set(ZLIB_INCLUDE_DIR ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+    set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR})
+
+    sparkle_log_dependency_ready("zlib" "${zlib_SOURCE_DIR}" "~1 MB")
+
+    # ============================================================================
+    # Assimp - Open Asset Import Library
+    # https://github.com/assimp/assimp
+    #
+    # Provides FBX and other DCC format import through the GameFramework scene
+    # import path. This remains a private dependency of GameFramework.
+    #
+    # Target:  assimp::assimp
+    # Usage:   target_link_libraries(YourTarget PRIVATE assimp::assimp)
+    # ============================================================================
+    FetchContent_Declare(assimp
+        GIT_REPOSITORY https://github.com/assimp/assimp.git
+        GIT_TAG        v5.4.3
+        GIT_SHALLOW    TRUE
+        GIT_PROGRESS   ${_sparkle_git_progress}
+    )
+    sparkle_log_dependency_step(7 11 "Assimp" "v5.4.3" "~15 MB" "FBX and DCC scene import support" "https://github.com/assimp/assimp.git")
+    FetchContent_Populate(assimp)
+
+    set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
+    sparkle_add_dependency_subdirectory(${assimp_SOURCE_DIR} ${assimp_BINARY_DIR})
+
+    if(TARGET assimp AND NOT TARGET assimp::assimp)
+        add_library(assimp::assimp ALIAS assimp)
+    endif()
+
+    if(TARGET assimp)
+        if(MSVC)
+            target_compile_options(assimp PRIVATE /MP1 /FS)
+        endif()
+        set_target_properties(assimp PROPERTIES FOLDER "ThirdParty/Assimp")
+    endif()
+
+    sparkle_log_dependency_ready("assimp" "${assimp_SOURCE_DIR}" "~15 MB")
 endif()
 
-sparkle_log_dependency_ready("assimp" "${assimp_SOURCE_DIR}" "~15 MB")
-
-# ============================================================================
-# AMD Compressonator - BC1-BC7 texture block compression
-# https://github.com/GPUOpen-Tools/compressonator
-#
-# We build ONLY CMP_Core - the self-contained block compression library.
-# The full Compressonator project pollutes global CMake state with
-# add_compile_options(), global output dirs, etc. so we avoid their
-# top-level CMakeLists.txt and build CMP_Core from source ourselves.
-#
-# SPARSE CHECKOUT: The full repo is ~450 MB. We only need cmp_core/ and
-# applications/_libs/cmp_math/ (~5 MB). Using git's partial clone +
-# sparse checkout downloads only the trees and the blobs we need.
-#
-# Target:  CMP_Core (STATIC)
-# Usage:   target_link_libraries(YourTarget PRIVATE CMP_Core)
-#          #include "cmp_core.h"
-# API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
-# ============================================================================
-sparkle_log_dependency_step(8 11 "Compressonator" "master (sparse)" "~5 MB" "AMD BC1-BC7 texture block compression; sparse checkout of cmp_core only" "https://github.com/GPUOpen-Tools/compressonator.git")
+if(SPARKLE_ENABLE_CONTENT_PIPELINE)
+    # ============================================================================
+    # AMD Compressonator - BC1-BC7 texture block compression
+    # https://github.com/GPUOpen-Tools/compressonator
+    #
+    # We build ONLY CMP_Core - the self-contained block compression library.
+    # The full Compressonator project pollutes global CMake state with
+    # add_compile_options(), global output dirs, etc. so we avoid their
+    # top-level CMakeLists.txt and build CMP_Core from source ourselves.
+    #
+    # SPARSE CHECKOUT: The full repo is ~450 MB. We only need cmp_core/ and
+    # applications/_libs/cmp_math/ (~5 MB). Using git's partial clone +
+    # sparse checkout downloads only the trees and the blobs we need.
+    #
+    # Target:  CMP_Core (STATIC)
+    # Usage:   target_link_libraries(YourTarget PRIVATE CMP_Core)
+    #          #include "cmp_core.h"
+    # API:     CompressBlockBC7(), DecompressBlockBC7(), etc.
+    # ============================================================================
+    sparkle_log_dependency_step(8 11 "Compressonator" "master (sparse)" "~5 MB" "AMD BC1-BC7 texture block compression; sparse checkout of cmp_core only" "https://github.com/GPUOpen-Tools/compressonator.git")
 
 set(_comp_src "${FETCHCONTENT_BASE_DIR}/compressonator-src")
 
@@ -587,21 +601,23 @@ set_target_properties(CMP_Core CMP_Core_SSE CMP_Core_AVX CMP_Core_AVX512
     PROPERTIES FOLDER "ThirdParty/Compressonator"
 )
 
-sparkle_log_dependency_ready("Compressonator" "${compressonator_SOURCE_DIR}/cmp_core" "~5 MB, sparse")
+    sparkle_log_dependency_ready("Compressonator" "${compressonator_SOURCE_DIR}/cmp_core" "~5 MB, sparse")
+endif()
 
-# ============================================================================
-# KTX-Software - KTX2 texture container read/write
-# https://github.com/KhronosGroup/KTX-Software
-#
-# v4.3.2 builds the ktx target from its root CMakeLists.txt. We disable
-# tests, tools, docs, and JNI/Python bindings to keep the build minimal.
-# We also skip the CTS git submodule (tests/cts) to avoid an extra clone.
-#
-# Target:  ktx (STATIC)
-# Usage:   target_link_libraries(YourTarget PRIVATE ktx)
-#          #include <ktx.h>
-# ============================================================================
-FetchContent_Declare(ktx
+if(SPARKLE_ENABLE_KTX_SUPPORT)
+    # ============================================================================
+    # KTX-Software - KTX2 texture container read/write
+    # https://github.com/KhronosGroup/KTX-Software
+    #
+    # v4.3.2 builds the ktx target from its root CMakeLists.txt. We disable
+    # tests, tools, docs, and JNI/Python bindings to keep the build minimal.
+    # We also skip the CTS git submodule (tests/cts) to avoid an extra clone.
+    #
+    # Target:  ktx (STATIC)
+    # Usage:   target_link_libraries(YourTarget PRIVATE ktx)
+    #          #include <ktx.h>
+    # ============================================================================
+    FetchContent_Declare(ktx
     GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
     GIT_TAG        v4.3.2
     GIT_SHALLOW    TRUE
@@ -638,22 +654,24 @@ if(TARGET ktx_read)
     set_target_properties(ktx_read PROPERTIES FOLDER "ThirdParty/KTX")
 endif()
 
-sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
+    sparkle_log_dependency_ready("KTX-Software" "${ktx_SOURCE_DIR}" "~46 MB")
+endif()
 
-# ============================================================================
-# SPIRV-Reflect - SPIR-V reflection (Khronos)
-# https://github.com/KhronosGroup/SPIRV-Reflect
-#
-# Used by Tools/Shaders/ShaderCompiler/Backends/Dxc to extract reflection from the
-# SPIR-V blobs DXC emits in `-spirv` mode. Single .c + headers; we build it
-# as a small static library so its symbols stay out of every translation
-# unit that includes the header.
-#
-# Target:  spirv_reflect (STATIC)
-# Usage:   target_link_libraries(YourTarget PRIVATE spirv_reflect)
-#          #include <spirv_reflect.h>
-# ============================================================================
-FetchContent_Declare(spirv_reflect
+if(SPARKLE_ENABLE_SHADER_COMPILER)
+    # ============================================================================
+    # SPIRV-Reflect - SPIR-V reflection (Khronos)
+    # https://github.com/KhronosGroup/SPIRV-Reflect
+    #
+    # Used by Tools/Shaders/ShaderCompiler/Backends/Dxc to extract reflection from the
+    # SPIR-V blobs DXC emits in `-spirv` mode. Single .c + headers; we build it
+    # as a small static library so its symbols stay out of every translation
+    # unit that includes the header.
+    #
+    # Target:  spirv_reflect (STATIC)
+    # Usage:   target_link_libraries(YourTarget PRIVATE spirv_reflect)
+    #          #include <spirv_reflect.h>
+    # ============================================================================
+    FetchContent_Declare(spirv_reflect
     GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Reflect.git
     GIT_TAG        vulkan-sdk-1.3.290.0
     GIT_SHALLOW    TRUE
@@ -676,8 +694,9 @@ if(MSVC)
     target_compile_options(spirv_reflect PRIVATE /W0)
 endif()
 
-set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty")
-sparkle_log_dependency_ready("SPIRV-Reflect" "${spirv_reflect_SOURCE_DIR}" "~2 MB")
+    set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty")
+    sparkle_log_dependency_ready("SPIRV-Reflect" "${spirv_reflect_SOURCE_DIR}" "~2 MB")
+endif()
 
 # ============================================================================
 # Font Awesome Free Solid - Editor icon font asset only

@@ -39,6 +39,8 @@ namespace SparkleLauncher
 		std::filesystem::path GitPath;
 		std::filesystem::path ClangFormatPath;
 		std::filesystem::path VswherePath;
+		std::filesystem::path QtRootPath;
+		std::filesystem::path QtQmakePath;
 		std::string WindowsSdkVersion;
 		std::vector<ToolchainItemStatus> Items;
 		bool RequiredToolsAvailable = false;

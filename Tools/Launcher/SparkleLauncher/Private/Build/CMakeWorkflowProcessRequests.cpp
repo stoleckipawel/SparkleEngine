@@ -25,6 +25,10 @@ namespace SparkleLauncher
 			process.Arguments.push_back("-T");
 			process.Arguments.push_back(toolchain.Toolset);
 		}
+		if (!toolchain.QtRootPath.empty())
+		{
+			process.Arguments.push_back("-DCMAKE_PREFIX_PATH=" + toolchain.QtRootPath.generic_string());
+		}
 		process.Arguments.push_back("-Wno-dev");
 		process.Arguments.push_back(repositoryRoot.string());
 		return process;

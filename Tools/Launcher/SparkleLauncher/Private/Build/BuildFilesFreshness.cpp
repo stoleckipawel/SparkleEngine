@@ -54,10 +54,12 @@ namespace SparkleLauncher
 		const std::string cacheGenerator = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR").value_or(std::string());
 		const std::string cachePlatform = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR_PLATFORM").value_or(std::string());
 		const std::string cacheToolset = ReadCMakeCacheValue(status.CachePath, "CMAKE_GENERATOR_TOOLSET").value_or(std::string());
-		if (cacheGenerator != toolchain.Generator || cachePlatform != toolchain.Platform || cacheToolset != toolchain.Toolset)
+		const std::string cacheQtPrefixPath = ReadCMakeCacheValue(status.CachePath, "CMAKE_PREFIX_PATH").value_or(std::string());
+		const std::string selectedQtPrefixPath = toolchain.QtRootPath.generic_string();
+		if (cacheGenerator != toolchain.Generator || cachePlatform != toolchain.Platform || cacheToolset != toolchain.Toolset || cacheQtPrefixPath != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::GeneratorMismatch;
-			status.Summary = "CMake cache generator/platform/toolset differs from selected launcher toolchain.";
+			status.Summary = "CMake cache generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
 			return status;
 		}
 
@@ -70,10 +72,11 @@ namespace SparkleLauncher
 
 		if (ReadBuildFilesFreshnessStampValue(status.StampPath, "generator").value_or(std::string()) != toolchain.Generator ||
 		    ReadBuildFilesFreshnessStampValue(status.StampPath, "platform").value_or(std::string()) != toolchain.Platform ||
-		    ReadBuildFilesFreshnessStampValue(status.StampPath, "toolset").value_or(std::string()) != toolchain.Toolset)
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "toolset").value_or(std::string()) != toolchain.Toolset ||
+		    ReadBuildFilesFreshnessStampValue(status.StampPath, "qtRoot").value_or(std::string()) != selectedQtPrefixPath)
 		{
 			status.State = BuildFilesFreshnessState::FreshnessStampMismatch;
-			status.Summary = "Freshness stamp generator/platform/toolset differs from selected launcher toolchain.";
+			status.Summary = "Freshness stamp generator/platform/toolset/Qt prefix differs from selected launcher toolchain.";
 			return status;
 		}
 
@@ -141,6 +144,7 @@ namespace SparkleLauncher
 		       << "    \"generator\": \"" << Strings::EscapeJsonString(toolchain.Generator) << "\",\n"
 		       << "    \"platform\": \"" << Strings::EscapeJsonString(toolchain.Platform) << "\",\n"
 		       << "    \"toolset\": \"" << Strings::EscapeJsonString(toolchain.Toolset) << "\",\n"
+		       << "    \"qtRoot\": \"" << Strings::EscapeJsonString(toolchain.QtRootPath.generic_string()) << "\",\n"
 		       << "    \"sourceListHash\": \"" << *sourceListHash << "\",\n"
 		       << "    \"updatedUtc\": \"" << BuildUtcTimestamp() << "\"\n"
 		       << "}\n";

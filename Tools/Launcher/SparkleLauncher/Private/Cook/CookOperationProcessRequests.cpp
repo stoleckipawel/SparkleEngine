@@ -55,23 +55,6 @@ namespace SparkleLauncher
 		}
 	}
 
-	static std::vector<std::string> GetCookToolTargets(CookOperationKind kind)
-	{
-		switch (kind)
-		{
-		case CookOperationKind::CookShaders:
-			return {"AssetCooker", "ShaderCompiler"};
-		case CookOperationKind::BuildTextures:
-			return {"AssetCooker", "TextureCooker"};
-		case CookOperationKind::BuildSceneAssets:
-			return {"AssetCooker"};
-		case CookOperationKind::CookAllAssets:
-			return {"AssetCooker", "TextureCooker", "ShaderCompiler"};
-		}
-
-		return {};
-	}
-
 	static ProcessRequest MakeAssetCookerRequest(const CookOperationPlan& plan, std::string_view command, std::string_view logFileName)
 	{
 		ProcessRequest process;
@@ -150,6 +133,7 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 		case CookOperationKind::CookShaders:
+#if SPARKLE_ENABLE_SHADER_COMPILER
 			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
 			if (plan.Request.ShaderPackages.empty())
 			{
@@ -162,18 +146,27 @@ namespace SparkleLauncher
 					AddStep(steps, "cook-shader-package", "Cook shader package " + packageId, MakeShaderCompilerCookRequest(plan, packageId));
 				}
 			}
+#endif
 			return steps;
 		case CookOperationKind::BuildTextures:
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
+#endif
 			return steps;
 		case CookOperationKind::BuildSceneAssets:
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
+#endif
 			return steps;
 		case CookOperationKind::CookAllAssets:
+#if SPARKLE_ENABLE_SHADER_COMPILER
 			AddStep(steps, "validate-shader-registrations", "Validate shader registrations", MakeShaderValidationRequest(plan));
 			AddStep(steps, "cook-shaders", "Cook shader packages", MakeShaderCompilerCookAllRequest(plan));
+#endif
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
 			AddStep(steps, "cook-textures", "Cook textures", MakeAssetCookerRequest(plan, "cook-textures", "CookTextures.txt"));
 			AddStep(steps, "cook-scene-assets", "Cook meshes", MakeAssetCookerRequest(plan, "cook-assets", "CookSceneAssets.txt"));
+#endif
 			return steps;
 		}
 

@@ -56,6 +56,19 @@ namespace SparkleLauncher
 		return {BuildProjectTargetName(projectId, *profile)};
 	}
 
+	static std::vector<std::string> GetEnabledCookToolTargets()
+	{
+		std::vector<std::string> targets;
+#if SPARKLE_ENABLE_CONTENT_PIPELINE
+		targets.push_back("AssetCooker");
+		targets.push_back("TextureCooker");
+#endif
+#if SPARKLE_ENABLE_SHADER_COMPILER
+		targets.push_back("ShaderCompiler");
+#endif
+		return targets;
+	}
+
 	static void AddConfigureStep(BuildWorkspaceOperationPlan& plan)
 	{
 		AddPlannedEffect(plan, "Run CMake configure with generator '" + plan.Toolchain.Generator + "' for " + DisplayName(plan.Request.PreferredIde) + ".");
@@ -75,7 +88,7 @@ namespace SparkleLauncher
 	{
 		if (!plan.Toolchain.RequiredToolsAvailable)
 		{
-			AddReadiness(plan, "Required build tools are missing.");
+			AddReadiness(plan, "Required Visual Studio Windows build tools are missing or unsupported. ClangCL remains supported when selected as the CMake toolset.");
 			return;
 		}
 
@@ -83,7 +96,7 @@ namespace SparkleLauncher
 		switch (plan.Kind)
 		{
 		case BuildWorkspaceOperationKind::CheckToolchain:
-			AddPlannedEffect(plan, "Report required host dependencies for CMake, " + DisplayName(plan.Request.PreferredIde) + ", build tools, Windows SDK, Git, and formatting support.");
+			AddPlannedEffect(plan, "Report required host dependencies for the supported Windows workflow: Visual Studio, an MSVC-compatible Qt 6 kit, CMake, Windows SDK, Git, and optional ClangCL or IDE integrations.");
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::SetupWorkspace:
@@ -145,8 +158,18 @@ namespace SparkleLauncher
 				}
 				AddBuildStep(plan, request.RuntimeProfile, runtimeTargets);
 			}
-			AddBuildStep(plan, request.EditorProfile, {"AssetCooker", "TextureCooker", "ShaderCompiler"});
-			AddPlannedEffect(plan, "Build launcher, selected project editor/runtime, and cook tools in one pass.");
+			{
+				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+				if (!cookToolTargets.empty())
+				{
+					AddBuildStep(plan, request.EditorProfile, cookToolTargets);
+					AddPlannedEffect(plan, "Build launcher, selected project editor/runtime, and enabled cook tools in one pass.");
+				}
+				else
+				{
+					AddPlannedEffect(plan, "Build launcher plus selected project editor/runtime targets. Optional cook tools are disabled in this workspace.");
+				}
+			}
 			plan.CanRun = true;
 			return;
 		case BuildWorkspaceOperationKind::CompileLauncher:
@@ -195,7 +218,15 @@ namespace SparkleLauncher
 			{
 				return;
 			}
-			AddBuildStep(plan, request.EditorProfile, {"AssetCooker", "TextureCooker", "ShaderCompiler"});
+			{
+				const std::vector<std::string> cookToolTargets = GetEnabledCookToolTargets();
+				if (cookToolTargets.empty())
+				{
+					AddReadiness(plan, "No optional cook-tool targets are enabled in this workspace configuration.");
+					return;
+				}
+				AddBuildStep(plan, request.EditorProfile, cookToolTargets);
+			}
 			plan.CanRun = true;
 			return;
 		}
@@ -208,11 +239,11 @@ namespace SparkleLauncher
 		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", "Regenerate Solution", "Force-refresh generated solution and workspace files for the selected IDE."},
 		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Run", "Open IDE", "Open the selected IDE for this workspace."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", "Check Dependencies", "Inspect required host dependencies without changing workspace files."},
-		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Build launcher, project editor/runtime targets, and required cook tools."},
+		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Build launcher, project editor/runtime targets, and any enabled optional cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Build the SparkleLauncher target so the launcher can restart into the new binary."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Build the selected project's editor target."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Build the selected project's runtime target."},
-		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build the tools required by cooking workflows."},
+		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Build the enabled optional tools required by cooking workflows."},
 		};
 		return definitions;
 	}

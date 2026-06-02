@@ -80,6 +80,13 @@ option(SPARKLE_BUILD_VALIDATION_ON_BUILD "Run Sparkle validation targets as depe
 option(SPARKLE_RUN_CLANG_FORMAT_ON_BUILD "Run clang-format checks as dependencies of normal builds" OFF)
 
 # ---------------------------
+# Optional dependency groups
+# ---------------------------
+option(SPARKLE_ENABLE_CONTENT_PIPELINE "Build source import, conversion, and asset/texture cooking tools" ON)
+option(SPARKLE_ENABLE_SHADER_COMPILER "Build offline shader compiler tooling" ON)
+option(SPARKLE_ENABLE_KTX_SUPPORT "Fetch and build KTX tooling support for the content pipeline" OFF)
+
+# ---------------------------
 # Output directories
 # ---------------------------
 # For multi-config generators (Visual Studio), set per-configuration output dirs.
