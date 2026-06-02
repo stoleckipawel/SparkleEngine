@@ -1,17 +1,19 @@
 ########################################################
 # Visual Studio, CMake, and Editor Intermediate Files   #
 ########################################################
-# Build folders
-**/Build/
-/Build
-/build
-/bin
-/obj
-bld/
-bin/
-obj/
-!Scripts/Internal/Build/
-!Scripts/Internal/Build/**
+# Generated build roots used by this repository.
+# Keep these rules path-based and intentional. Do not ignore folders by generic
+# names everywhere, because this repository contains real source directories such
+# as `Tools/Launcher/SparkleLauncher/Private/Build`.
+/Build/
+/build/
+/bin/
+/obj/
+/bld/
+
+# Project-local generated outputs.
+Projects/**/build/
+Projects/**/logs/
 
 # Build results accidentally emitted at the repository root.
 # Nested source folders named Debug/Release are real code and must remain visible.
@@ -93,9 +95,7 @@ Makefile
 # Generated logs and measurement captures stay out of commits.
 # If a performance investigation needs to be preserved, move the artifact to a
 # deliberate docs/attachment location instead of committing it from logs/.
-logs/.*
-logs/*
-logs/Scripts/.*
-logs/Scripts/*
-Projects/**/build/
-Projects/**/logs/
+/logs/.*
+/logs/*
+/logs/Scripts/.*
+/logs/Scripts/*
