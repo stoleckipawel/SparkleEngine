@@ -11,6 +11,7 @@
 #include "SparkleLauncher/CookOperations.h"
 #include "SparkleLauncher/LauncherPaths.h"
 #include "SparkleLauncher/LaunchOperations.h"
+#include "SparkleLauncher/MaintenanceOperations.h"
 
 #include <QtCore/QSignalBlocker>
 #include <QtCore/QCoreApplication>
@@ -575,6 +576,19 @@ namespace SparkleLauncher
 	static QString FirstBlockingReadinessMessage(const BuildWorkspaceOperationPlan& plan)
 	{
 		for (const std::string& message : plan.ReadinessMessages)
+		{
+			if (!message.empty())
+			{
+				return QString::fromStdString(message);
+			}
+		}
+
+		return "This workflow is currently blocked.";
+	}
+
+	static QString FirstBlockingReadinessMessage(const std::vector<std::string>& readinessMessages)
+	{
+		for (const std::string& message : readinessMessages)
 		{
 			if (!message.empty())
 			{
@@ -1451,6 +1465,7 @@ namespace SparkleLauncher
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
 			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -1469,6 +1484,7 @@ namespace SparkleLauncher
 			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -1492,12 +1508,13 @@ namespace SparkleLauncher
 			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
 			smokeOptionsPanel->setVisible(m_settings.LaunchSmokeTest());
 			connect(smokeTestBox, &QCheckBox::toggled, smokeOptionsPanel, &QWidget::setVisible);
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "quality.format")
 		{
-			AddNoOptionsMessage(layout, "Runs clang-format on engine and project source files.");
+			AddMaintenanceEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -1580,6 +1597,7 @@ namespace SparkleLauncher
 				connect(scopeBox, &QCheckBox::toggled, this, updateCleanScopeSetting);
 			}
 			updateCleanScopeSetting();
+			AddMaintenanceEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -1758,10 +1776,44 @@ namespace SparkleLauncher
 				    group.Enabled ? CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache") : nullptr);
 			}
 		};
-
+		const auto addHostDependencyStatus = [this, &plan, &request, &workspaceIdeName](QVBoxLayout& targetLayout, const QString& detailText) {
+			QVBoxLayout* hostLayout = AddOptionGroup(
+			    targetLayout,
+			    "Host Rebuild Dependencies",
+			    detailText);
+			AddStatusRow(
+			    *hostLayout,
+			    "Dependency set",
+			    plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed",
+			    BuildGeneratorSummary(plan.Toolchain),
+			    plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad",
+			    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
+			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
+			{
+				QString detail = QString::fromStdString(item.Detail);
+				const QString path = FormatStatusPath(item.Path);
+				if (!path.isEmpty())
+				{
+					detail = CombineStatusDetail(detail, path);
+				}
+				AddStatusRow(
+				    *hostLayout,
+				    QString::fromStdString(item.DisplayName) + (item.Required ? "" : " (optional)"),
+				    ToolchainStatusText(item.State, item.Required),
+				    detail,
+				    ToolchainStatusState(item.State, item.Required));
+			}
+			AddStatusRow(
+			    *hostLayout,
+			    "Selected IDE",
+			    workspaceIdeName,
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
+			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
+		};
 		if (isToolchainCheck)
 		{
-			QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Required Dependencies", "Only the machine dependencies needed before build, cook, and IDE workflows can run.");
+			QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Host Build Dependencies", "Authoritative machine audit for local rebuilds, workspace generation, cook tooling, and IDE integration.");
 			AddStatusRow(*toolchainLayout, "Dependency set", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
 			for (const ToolchainItemStatus& item : plan.Toolchain.Items)
 			{
@@ -1785,7 +1837,7 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
 			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
-			QVBoxLayout* groupsLayout = AddOptionGroup(layout, "Workspace Dependency Groups", "The repo now exposes capability groups. Sync only the groups this workspace enables; each enabled group unlocks more workflows.");
+			QVBoxLayout* groupsLayout = AddOptionGroup(layout, "Enabled Workspace Dependency Groups", "Workspace capability groups controlled by repo configuration. These determine what Sync Third Parties may populate and which workflows are available.");
 			addRelevantDependencyGroups(*groupsLayout);
 
 			return;
@@ -1796,6 +1848,11 @@ namespace SparkleLauncher
 			const QString buildFilesLabel = operationId == "workspace.generate-solution" ? "Generated solution files" :
 			                               operationId == "workspace.open-solution" ? "IDE workspace files" :
 			                                                                        "Configured workspace files";
+			const bool isGenerateSolutionWorkflow = operationId == "workspace.generate-solution";
+			const QString setupGroupTitle = isGenerateSolutionWorkflow ? "Workspace Outputs" : "Sync Prerequisites";
+			const QString setupGroupDetail = isGenerateSolutionWorkflow ?
+			                                     "This workflow refreshes generated solution and workspace files to match the selected generator, platform, toolset, and Qt kit." :
+			                                     "Local state this sync workflow manages before workspace generation and optional content tooling can proceed.";
 			const QString buildFilesDetail = CombineStatusDetail(
 			    QString::fromStdString(plan.Freshness.Summary),
 			    request.PreferredIde == WorkspaceIde::Rider ? QString::fromStdString(m_repositoryRoot.string()) : QString::fromStdString(plan.Freshness.SolutionPath.string()));
@@ -1803,21 +1860,24 @@ namespace SparkleLauncher
 			const QString cacheDetail = dependencyCacheReady ?
 			                               QString("Third-party cache available at %1.").arg(QString::fromStdString(dependencyCachePath.string())) :
 			                               QString("Third-party cache will be populated under %1 when Sync Third Parties runs.").arg(QString::fromStdString(dependencyCachePath.string()));
-			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, "Action Dependencies", "State this setup workflow depends on before it can do useful work.");
+			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, setupGroupTitle, setupGroupDetail);
 			AddStatusRow(
 			    *workspaceLayout,
 			    buildFilesLabel,
-			    plan.Freshness.Current ? "Ready" : "Needs refresh",
+			    isGenerateSolutionWorkflow ? (plan.Freshness.Current ? "Current" : "Will be refreshed") :
+			                                (plan.Freshness.Current ? "Ready" : "Needs refresh"),
 			    buildFilesDetail,
 			    plan.Freshness.Current ? "ok" : "warning",
-			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
+			    isGenerateSolutionWorkflow ? nullptr :
+			                                 CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
 			AddStatusRow(
 			    *workspaceLayout,
-			    "Third-Party Cache",
+			    "Local dependency cache",
 			    cacheStatus,
 			    CombineStatusDetail(cacheDetail, FormatTrackedDependencySummary(dependencyCachePath)),
 			    dependencyCacheReady ? "ok" : "warning",
-			    CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache"));
+			    isGenerateSolutionWorkflow ? nullptr :
+			                                 CreateActionDependencyActions("workspace.setup", "Sync Third Parties", "deps", "Clean Third-Party Cache"));
 			if (!plan.Toolchain.RequiredToolsAvailable)
 			{
 				AddStatusRow(
@@ -1828,20 +1888,19 @@ namespace SparkleLauncher
 				    "bad",
 				    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
 			}
-
 			if (operationId == "workspace.setup")
 			{
 				QVBoxLayout* groupsLayout = AddOptionGroup(
 				    layout,
-				    "Dependency Groups",
-				    "Each group maps the local dependency cache to concrete launcher capabilities. Users do not need to sync every group up front.");
+				    "Syncable Dependency Groups",
+				    "Each enabled group maps the local dependency cache to concrete launcher capabilities. Users do not need to sync every group up front.");
 				addRelevantDependencyGroups(*groupsLayout);
 
 				for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 				{
 					QVBoxLayout* dependenciesLayout = AddOptionGroup(
 					    layout,
-					    group.Label + " Dependencies",
+					    group.Label + " Sync Contents",
 					    group.Enabled ? group.UnlockSummary : FormatDependencyGroupDetail(group, dependencyCachePath, 0));
 					for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
 					{
@@ -1862,7 +1921,7 @@ namespace SparkleLauncher
 
 		if (isBuildWorkflow)
 		{
-			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Action Dependencies", "State this build workflow depends on before it can do useful work.");
+			QVBoxLayout* buildLayout = AddOptionGroup(layout, "Build Prerequisites", "Requirements this build workflow depends on before a local rebuild can run successfully.");
 			AddStatusRow(
 			    *buildLayout,
 			    "Required tools",
@@ -1878,12 +1937,17 @@ namespace SparkleLauncher
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
 			addRelevantDependencyGroups(*buildLayout);
+			addHostDependencyStatus(
+			    layout,
+			    operationId == "launcher.build.self" ?
+			        "Even if this launcher came from a ready-to-run package, rebuilding it locally still requires Visual Studio/MSVC, a Qt 6 MSVC kit, CMake, Git, and the Windows SDK." :
+			        "Prebuilt package binaries do not remove the local host dependencies needed to rebuild this workspace.");
 			return;
 		}
 
 		if (isCookWorkflow)
 		{
-			QVBoxLayout* cookLayout = AddOptionGroup(layout, "Action Dependencies", "State this cook workflow depends on before it can do useful work.");
+			QVBoxLayout* cookLayout = AddOptionGroup(layout, "Cook Prerequisites", "Requirements this cook workflow depends on before local recook operations can run successfully.");
 			AddStatusRow(
 			    *cookLayout,
 			    "Required tools",
@@ -1899,6 +1963,142 @@ namespace SparkleLauncher
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-solution", "Regenerate Solution", "build-tree", "Clean Build Files"));
 			addRelevantDependencyGroups(*cookLayout);
+			addHostDependencyStatus(
+			    layout,
+			    "Cook workflows may ship ready-to-use outputs, but rebuilding or recooking them locally still requires the same host build dependencies and any enabled optional dependency groups.");
+		}
+	}
+
+	void LauncherMainWindow::AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
+	{
+		LauncherOperationRequest request = BuildOperationRequest(operationId);
+		LaunchOperationRequest launchRequest;
+		launchRequest.RepositoryRoot = request.RepositoryRoot;
+		launchRequest.OperationId = operationId.toStdString();
+		launchRequest.ProjectId = request.ProjectId.toStdString();
+		launchRequest.EditorProfile = request.EditorProfile.toStdString();
+		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
+		launchRequest.Target = request.LaunchTarget.toStdString();
+		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
+		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
+		launchRequest.VSync = request.LaunchVSync.toStdString();
+		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();
+		launchRequest.MeshAutoBatching = request.LaunchMeshAutoBatching.toStdString();
+		for (const QString& argument : QProcess::splitCommand(request.LaunchCommandLineArguments))
+		{
+			if (!argument.isEmpty())
+			{
+				launchRequest.CustomArguments.push_back(argument.toStdString());
+			}
+		}
+		for (const QString& part : request.LaunchCVars.split(QRegularExpression("[,;\\n]"), Qt::SkipEmptyParts))
+		{
+			const QString trimmed = part.trimmed();
+			if (!trimmed.isEmpty())
+			{
+				launchRequest.CustomCVars.push_back(trimmed.toStdString());
+			}
+		}
+		launchRequest.SmokeBackend = request.SmokeBackend.toStdString();
+		launchRequest.SmokeFrameLimit = request.SmokeFrameLimit.toStdString();
+		launchRequest.SmokeTrace = request.SmokeTrace;
+		launchRequest.SmokeSkipLevelSwitching = request.SmokeSkipLevelSwitching;
+
+		const LaunchOperationPlan plan = PlanLaunchOperation(operationId.toStdString(), launchRequest);
+		const bool runtimeTarget = launchRequest.Target == "runtime";
+		const auto findReadiness = [&plan](const QString& prefix) {
+			for (const std::string& message : plan.ReadinessMessages)
+			{
+				const QString text = QString::fromStdString(message);
+				if (text.startsWith(prefix, Qt::CaseInsensitive))
+				{
+					return text;
+				}
+			}
+			return QString();
+		};
+
+		const QString executableDetail = findReadiness("Executable ");
+		const QString projectDetail = findReadiness("Project working directory ");
+		const QString cookedMeshesDetail = findReadiness("Cooked meshes ");
+		const QString cookedTexturesDetail = findReadiness("Cooked textures ");
+		const QString cookedShadersDetail = findReadiness("Cooked shaders ");
+
+		QVBoxLayout* launchLayout = AddOptionGroup(layout, "Launch Prerequisites", "Launch actions depend on a built target, a valid Sparkle project directory, and cooked runtime content.");
+		AddStatusRow(
+		    *launchLayout,
+		    runtimeTarget ? "Runtime executable" : "Editor executable",
+		    executableDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    executableDetail,
+		    executableDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok",
+		    CreateActionDependencyActions(runtimeTarget ? "project.build.runtime" : "project.build.editor", runtimeTarget ? "Build Runtime" : "Build Editor"));
+		AddStatusRow(
+		    *launchLayout,
+		    "Project directory",
+		    projectDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    projectDetail,
+		    projectDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok");
+		AddStatusRow(
+		    *launchLayout,
+		    "Cooked meshes",
+		    cookedMeshesDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    cookedMeshesDetail,
+		    cookedMeshesDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok",
+		    CreateActionDependencyActions("cook.assets", "Cook Meshes"));
+		AddStatusRow(
+		    *launchLayout,
+		    "Cooked textures",
+		    cookedTexturesDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    cookedTexturesDetail,
+		    cookedTexturesDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok",
+		    CreateActionDependencyActions("cook.textures", "Cook Textures"));
+		AddStatusRow(
+		    *launchLayout,
+		    "Cooked shaders",
+		    cookedShadersDetail.contains("missing", Qt::CaseInsensitive) ? "Missing" : "Ready",
+		    cookedShadersDetail,
+		    cookedShadersDetail.contains("missing", Qt::CaseInsensitive) ? "warning" : "ok",
+		    CreateActionDependencyActions("cook.shaders", "Cook Shaders"));
+	}
+
+	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
+	{
+		MaintenanceOperationRequest request;
+		request.RepositoryRoot = m_repositoryRoot;
+		request.ProjectId = m_projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : m_projectModel.SelectedProjectId().toStdString();
+		request.EditorProfile = m_settings.EditorProfile().toStdString();
+		request.RequestedFormatMode = m_settings.FormatMode() == "check" ? FormatMode::Check : FormatMode::Apply;
+		request.DestructiveActionConfirmed = m_settings.ConfirmClean();
+
+		if (operationId == "quality.format")
+		{
+			const MaintenanceOperationPlan plan = PlanMaintenanceOperation(operationId.toStdString(), request);
+			QVBoxLayout* maintenanceLayout = AddOptionGroup(layout, "Maintenance Prerequisites", "Formatting depends on clang-format being installed and source files being discoverable in Engine/ and Projects/.");
+			AddStatusRow(
+			    *maintenanceLayout,
+			    "clang-format",
+			    plan.Toolchain.ClangFormatPath.empty() ? "Missing" : "Ready",
+			    plan.Toolchain.ClangFormatPath.empty() ? "clang-format was not found." : QString::fromStdString(plan.Toolchain.ClangFormatPath.string()),
+			    plan.Toolchain.ClangFormatPath.empty() ? "warning" : "ok",
+			    CreateActionDependencyActions("toolchain.check", "Check Dependencies"));
+			AddStatusRow(
+			    *maintenanceLayout,
+			    "Source files",
+			    plan.FormatSourceFiles.empty() ? "None found" : "Ready",
+			    QString("Discovered %1 source files eligible for formatting.").arg(plan.FormatSourceFiles.size()),
+			    plan.FormatSourceFiles.empty() ? "warning" : "ok");
+			return;
+		}
+
+		if (operationId == "workspace.clean")
+		{
+			QVBoxLayout* maintenanceLayout = AddOptionGroup(layout, "Maintenance Context", "Cleaning generated outputs does not require the build toolchain, but destructive scopes still require explicit confirmation.");
+			AddStatusRow(
+			    *maintenanceLayout,
+			    "Confirmation",
+			    m_settings.ConfirmClean() ? "Enabled" : "Required on run",
+			    m_settings.ConfirmClean() ? "Clean confirmation is enabled in settings." : "The launcher will ask for confirmation before destructive clean actions run.",
+			    m_settings.ConfirmClean() ? "ok" : "warning");
 		}
 	}
 
@@ -2619,6 +2819,21 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (m_selectedOperationId == "quality.format")
+		{
+			MaintenanceOperationRequest request;
+			request.RepositoryRoot = m_repositoryRoot;
+			request.ProjectId = m_projectModel.SelectedProjectId().isEmpty() ? std::string("Showcase") : m_projectModel.SelectedProjectId().toStdString();
+			request.EditorProfile = m_settings.EditorProfile().toStdString();
+			request.RequestedFormatMode = m_settings.FormatMode() == "check" ? FormatMode::Check : FormatMode::Apply;
+			const MaintenanceOperationPlan plan = PlanMaintenanceOperation(m_selectedOperationId.toStdString(), request);
+			const QString reason = plan.CanRun ? "Run " + DisplayNameForOperation(m_selectedOperationId) + ". Existing runs keep going." : FirstBlockingReadinessMessage(plan.ReadinessMessages);
+			m_runButton->setEnabled(plan.CanRun);
+			m_runButton->setToolTip(reason);
+			m_runButton->setAccessibleDescription(reason);
+			return;
+		}
+
 		const QString title = DisplayNameForOperation(m_selectedOperationId);
 		const QString actionDescription = "Run " + title + ". Existing runs keep going.";
 		m_runButton->setEnabled(true);
@@ -2983,16 +3198,18 @@ namespace SparkleLauncher
 		}
 
 		bool executableMissing = false;
-		bool cookedAssetsMissing = false;
+		bool cookedMeshesMissing = false;
+		bool cookedTexturesMissing = false;
+		bool cookedShadersMissing = false;
 		QStringList readiness;
 		for (const std::string& message : plan.ReadinessMessages)
 		{
 			const QString readinessMessage = QString::fromStdString(message);
 			readiness.push_back(readinessMessage);
 			executableMissing = executableMissing || readinessMessage.contains("Executable is missing", Qt::CaseInsensitive);
-			cookedAssetsMissing = cookedAssetsMissing || readinessMessage.contains("Cooked meshes are missing", Qt::CaseInsensitive) ||
-			    readinessMessage.contains("Cooked textures are missing", Qt::CaseInsensitive) ||
-			    readinessMessage.contains("Cooked shaders are missing", Qt::CaseInsensitive);
+			cookedMeshesMissing = cookedMeshesMissing || readinessMessage.contains("Cooked meshes are missing", Qt::CaseInsensitive);
+			cookedTexturesMissing = cookedTexturesMissing || readinessMessage.contains("Cooked textures are missing", Qt::CaseInsensitive);
+			cookedShadersMissing = cookedShadersMissing || readinessMessage.contains("Cooked shaders are missing", Qt::CaseInsensitive);
 		}
 
 		QString prerequisiteOperationId;
@@ -3005,11 +3222,36 @@ namespace SparkleLauncher
 			promptTitle = runtimeTarget ? "Build Runtime" : "Build Editor";
 			promptAction = "The executable is missing. Start " + promptTitle + " now?";
 		}
-		else if (cookedAssetsMissing)
+		else if (cookedMeshesMissing || cookedTexturesMissing || cookedShadersMissing)
 		{
-			prerequisiteOperationId = "cook.project";
-			promptTitle = "Cook All";
-			promptAction = "Cooked meshes, textures, or shaders are missing. Start Cook All now?";
+			const int missingCount = static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
+			if (missingCount == 1)
+			{
+				if (cookedMeshesMissing)
+				{
+					prerequisiteOperationId = "cook.assets";
+					promptTitle = "Cook Meshes";
+					promptAction = "Cooked meshes are missing. Start Cook Meshes now?";
+				}
+				else if (cookedTexturesMissing)
+				{
+					prerequisiteOperationId = "cook.textures";
+					promptTitle = "Cook Textures";
+					promptAction = "Cooked textures are missing. Start Cook Textures now?";
+				}
+				else
+				{
+					prerequisiteOperationId = "cook.shaders";
+					promptTitle = "Cook Shaders";
+					promptAction = "Cooked shaders are missing. Start Cook Shaders now?";
+				}
+			}
+			else
+			{
+				prerequisiteOperationId = "cook.project";
+				promptTitle = "Cook All";
+				promptAction = "Multiple cooked asset sets are missing. Start Cook All now?";
+			}
 		}
 		else
 		{
@@ -3387,10 +3629,11 @@ namespace SparkleLauncher
 	QVector<LauncherMainWindow::WorkflowDefinition> LauncherMainWindow::CreateWorkflowDefinitions() const
 	{
 		return {
-		    {"Setup", "Inspect and configure", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.clean"}},
+		    {"Setup", "Inspect and configure", {"toolchain.check", "workspace.setup", "workspace.generate-solution"}},
 		    {"Build", "Compile targets", {"workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Prepare content", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
-		    {"Run", "Open targets", {"workspace.open-solution", "project.open.editor", "project.open.runtime", "project.run.smoke", "quality.format"}},
+		    {"Run", "Open targets", {"workspace.open-solution", "project.open.editor", "project.open.runtime", "project.run.smoke", "project.run"}},
+		    {"Maintain", "Clean and format", {"workspace.clean", "quality.format"}},
 		};
 	}
 

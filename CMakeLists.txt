@@ -47,6 +47,10 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(MSVC)
+    add_compile_options(/Zc:__cplusplus)
+endif()
+
 function(sparkle_target_precompile_headers target_name)
     target_precompile_headers(${target_name} PRIVATE ${ARGN})
 

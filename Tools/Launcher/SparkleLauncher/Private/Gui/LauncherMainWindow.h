@@ -131,6 +131,8 @@ namespace SparkleLauncher
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
+		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
+		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		QVBoxLayout* AddInlineOptionsSection(QVBoxLayout& layout);
 		void AddNoOptionsMessage(QVBoxLayout& layout, const QString& text);
 		void SetControlsEnabled(bool enabled);
