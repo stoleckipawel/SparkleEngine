@@ -68,7 +68,7 @@ namespace
 
 	std::optional<std::filesystem::path> FindLatestTextureCookSummary()
 	{
-		const std::filesystem::path summaryRoot = Paths::WorkspaceRoot() / "build" / "Cook" / "Summaries";
+		const std::filesystem::path summaryRoot = Paths::WorkspaceRoot() / "artifacts" / "diagnostics" / "cook" / "Summaries";
 		std::error_code errorCode;
 		if (!std::filesystem::exists(summaryRoot, errorCode) || errorCode)
 		{

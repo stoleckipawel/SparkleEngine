@@ -319,7 +319,7 @@ namespace SparkleLauncher
 		}
 
 		PopulateCookEffects(plan);
-		if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable)
+		if (plan.Toolchain.RequiredToolsAvailable && plan.Freshness.Current && requiredCookToolsAvailable && !request.ProjectId.empty())
 		{
 			PopulateCookSteps(plan);
 		}

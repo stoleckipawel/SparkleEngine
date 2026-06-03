@@ -207,6 +207,12 @@ static std::filesystem::path AssetCookerResolveToolPath(
     std::string_view executableName)
 {
 	const std::string fileName = std::string(executableName) + ".exe";
+	const std::filesystem::path artifactPath =
+	    plan.repositoryRoot / "artifacts" / "dev" / "tools" / std::string(executableName) / plan.toolConfiguration / fileName;
+	if (AssetCookerFileExists(artifactPath))
+	{
+		return artifactPath;
+	}
 	return plan.repositoryRoot / "build" / "bin" / plan.toolConfiguration / fileName;
 }
 
@@ -228,7 +234,7 @@ static std::filesystem::path AssetCookerMakeTempPath(
     std::string_view extension)
 {
 	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-	return plan.repositoryRoot / "build" / "Cook" / "Temp" /
+	return plan.repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Temp" /
 	       (std::string(stem) + "-" + plan.projectName + "-" + std::to_string(timestamp) + std::string(extension));
 }
 

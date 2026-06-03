@@ -245,7 +245,7 @@ namespace SparkleLauncher
 		}
 		if (scope == "all-cooked")
 		{
-			return GetBuildDirectory(repositoryRoot) / "Cooked";
+			return GetCookedProjectsArtifactDirectory(repositoryRoot);
 		}
 		if (scope == "build-tree")
 		{
@@ -1658,8 +1658,8 @@ namespace SparkleLauncher
 		if (operationId == "workspace.clean")
 		{
 			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
-			    {"Project Cooked Outputs", "selected-cooked", "Cooked asset outputs for the selected project.", QString(), "Cooked Outputs"},
-			    {"All Cooked Outputs", "all-cooked", "Cooked asset outputs for every project.", QString(), "Cooked Outputs"},
+			    {"Project Cooked Outputs", "selected-cooked", "Cooked asset outputs for the selected project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked Outputs"},
+			    {"All Cooked Outputs", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked plus legacy build/Cooked", "Cooked Outputs"},
 			    {"Build Outputs", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the source dependency cache.", "build contents except build/_deps, .vs, root generated project files, project generated files", "Build and Generated State"},
 			    {"Shader Cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
 			    {"Source Dependency Cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},

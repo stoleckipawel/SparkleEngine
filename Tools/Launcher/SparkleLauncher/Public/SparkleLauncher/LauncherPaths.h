@@ -35,7 +35,9 @@ namespace SparkleLauncher
 	    std::string_view projectName,
 	    std::string_view productRole,
 	    std::string_view profileName);
+	std::filesystem::path GetCookedProjectsArtifactDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetDiagnosticsDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetSymbolDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetCookedProjectDirectory(const std::filesystem::path& repositoryRoot, std::string_view projectName);
+	std::filesystem::path GetSharedCookedProjectDirectory(const std::filesystem::path& repositoryRoot);
 }

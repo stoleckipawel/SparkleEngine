@@ -75,6 +75,33 @@ namespace SparkleLauncher
 		}
 	}
 
+	static void AddAllCookedCleanSteps(std::vector<MaintenanceOperationProcessStep>& steps, const MaintenanceOperationPlan& plan)
+	{
+		AddCleanStep(steps, "clean-shared-cooked", "Clean shared cooked outputs", GetSharedCookedProjectDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemovePath);
+
+		std::error_code errorCode;
+		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
+		if (std::filesystem::is_directory(projectsDirectory, errorCode))
+		{
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+			{
+				if (!entry.is_directory(errorCode))
+				{
+					continue;
+				}
+
+				const std::string projectName = entry.path().filename().string();
+				if (projectName == "TemplateProject")
+				{
+					continue;
+				}
+				AddCleanStep(steps, "clean-project-cooked", "Clean cooked outputs " + projectName, GetCookedProjectDirectory(plan.RepositoryRoot, projectName), MaintenanceCleanBehavior::RemovePath);
+			}
+		}
+
+		AddCleanStep(steps, "clean-legacy-cooked", "Clean legacy cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", MaintenanceCleanBehavior::RemovePath);
+	}
+
 	static ProcessRequest MakeClangFormatRequest(
 	    const MaintenanceOperationPlan& plan,
 	    std::span<const std::filesystem::path> files,
@@ -145,7 +172,7 @@ namespace SparkleLauncher
 			AddCleanStep(steps, "clean-selected-project-cooked", "Clean selected project cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ProjectId), MaintenanceCleanBehavior::RemovePath);
 			return;
 		case CleanScope::AllCookedOutputs:
-			AddCleanStep(steps, "clean-all-cooked", "Clean all cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", MaintenanceCleanBehavior::RemovePath);
+			AddAllCookedCleanSteps(steps, plan);
 			return;
 		case CleanScope::BuildTree:
 			AddCleanStep(steps, "clean-build-tree", "Clean build tree except dependency cache", GetBuildDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemoveBuildDirectoryContentsPreservingDependencies);

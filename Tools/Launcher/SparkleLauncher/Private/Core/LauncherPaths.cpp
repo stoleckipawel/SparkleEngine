@@ -118,6 +118,11 @@ namespace SparkleLauncher
 		return GetProjectArtifactDirectory(repositoryRoot, projectName) / std::string(productRole) / std::string(profileName);
 	}
 
+	std::filesystem::path GetCookedProjectsArtifactDirectory(const std::filesystem::path& repositoryRoot)
+	{
+		return GetDeveloperArtifactDirectory(repositoryRoot) / "projects";
+	}
+
 	std::filesystem::path GetDiagnosticsDirectory(const std::filesystem::path& repositoryRoot)
 	{
 		return GetArtifactDirectory(repositoryRoot) / "diagnostics";
@@ -130,6 +135,11 @@ namespace SparkleLauncher
 
 	std::filesystem::path GetCookedProjectDirectory(const std::filesystem::path& repositoryRoot, std::string_view projectName)
 	{
-		return GetBuildDirectory(repositoryRoot) / "Cooked" / std::string(projectName);
+		return GetProjectArtifactDirectory(repositoryRoot, projectName) / "cooked";
+	}
+
+	std::filesystem::path GetSharedCookedProjectDirectory(const std::filesystem::path& repositoryRoot)
+	{
+		return GetCookedProjectDirectory(repositoryRoot, "Shared");
 	}
 }

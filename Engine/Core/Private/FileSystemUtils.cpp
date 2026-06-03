@@ -137,7 +137,7 @@ namespace
 		const std::filesystem::path cookedProjectName =
 		    !state.projectPath.empty() ? state.projectPath.filename() : std::filesystem::path("Shared");
 
-		state.cookedAssetRootPath = Paths::Normalize(state.buildOutputRootPath / "Cooked" / cookedProjectName);
+		state.cookedAssetRootPath = Paths::Normalize(state.workspacePath / "artifacts" / "dev" / "projects" / cookedProjectName / "cooked");
 		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
 		state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
 		state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");

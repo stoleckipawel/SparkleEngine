@@ -225,11 +225,11 @@ bool AssetCookerDiscovery::BuildProjectCookPlan(
 	outPlan.toolConfiguration = AssetCookerResolveToolConfiguration(configuration);
 	outPlan.repositoryRoot = repositoryRoot;
 	outPlan.projectRoot = repositoryRoot / "Projects" / outPlan.projectName;
-	outPlan.cookedRoot = repositoryRoot / "build" / "Cooked" / outPlan.projectName;
-	outPlan.planPath = repositoryRoot / "build" / "Cook" / "Plans" / (outPlan.projectName + ".assetcookplan.txt");
-	outPlan.summaryPath = repositoryRoot / "build" / "Cook" / "Summaries" /
+	outPlan.cookedRoot = repositoryRoot / "artifacts" / "dev" / "projects" / outPlan.projectName / "cooked";
+	outPlan.planPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Plans" / (outPlan.projectName + ".assetcookplan.txt");
+	outPlan.summaryPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Summaries" /
 	                      (outPlan.projectName + "-" + outPlan.configuration + "-assetcook-summary.json");
-	outPlan.textureSummaryPath = repositoryRoot / "build" / "Cook" / "Summaries" /
+	outPlan.textureSummaryPath = repositoryRoot / "artifacts" / "diagnostics" / "cook" / "Summaries" /
 	                             (outPlan.projectName + "-" + outPlan.configuration + "-texturecook-summary.json");
 	AssetCookerAddPlanSteps(category, outPlan.steps);
 

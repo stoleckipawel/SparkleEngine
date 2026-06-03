@@ -162,6 +162,33 @@ namespace SparkleLauncher
 		}
 	}
 
+	static void AddAllCookedOutputTargets(MaintenanceOperationPlan& plan)
+	{
+		AddCleanTarget(plan, "Shared cooked outputs", GetSharedCookedProjectDirectory(plan.RepositoryRoot), "Shared cooked domain under artifacts/dev/projects/Shared/cooked.");
+
+		std::error_code errorCode;
+		const std::filesystem::path projectsDirectory = plan.RepositoryRoot / "Projects";
+		if (std::filesystem::is_directory(projectsDirectory, errorCode))
+		{
+			for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(projectsDirectory, errorCode))
+			{
+				if (!entry.is_directory(errorCode))
+				{
+					continue;
+				}
+
+				const std::string projectName = entry.path().filename().string();
+				if (projectName == "TemplateProject")
+				{
+					continue;
+				}
+				AddCleanTarget(plan, projectName + " cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, projectName), "Project cooked domain under artifacts/dev/projects/" + projectName + "/cooked.");
+			}
+		}
+
+		AddCleanTarget(plan, "Legacy cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", "Migration fallback for existing build/Cooked outputs.");
+	}
+
 	static void PopulateCleanTargetsForScope(MaintenanceOperationPlan& plan, CleanScope scope)
 	{
 		switch (scope)
@@ -170,7 +197,7 @@ namespace SparkleLauncher
 			AddCleanTarget(plan, "Selected project cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, plan.Request.ProjectId), "Only cooked assets for project " + plan.Request.ProjectId + ".");
 			return;
 		case CleanScope::AllCookedOutputs:
-			AddCleanTarget(plan, "All cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", "All projects under build/Cooked.");
+			AddAllCookedOutputTargets(plan);
 			return;
 		case CleanScope::BuildTree:
 			AddCleanTarget(plan, "Build tree contents", GetBuildDirectory(plan.RepositoryRoot), "Contents are removed except build/_deps.");

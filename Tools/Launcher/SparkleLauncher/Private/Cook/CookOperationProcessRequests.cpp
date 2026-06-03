@@ -69,7 +69,7 @@ namespace SparkleLauncher
 	{
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot;
+		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "ShaderRegistrationValidation.txt");
 		process.Arguments = {"list-shaders", "--validate"};
 		return process;
@@ -79,7 +79,7 @@ namespace SparkleLauncher
 	{
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot;
+		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "CookShaders.txt");
 		process.Arguments = {"cook"};
 		AppendCommonShaderCompilerArguments(plan, process.Arguments);
@@ -90,7 +90,7 @@ namespace SparkleLauncher
 	{
 		ProcessRequest process;
 		process.ExecutablePath = ResolveSparkleToolPath(plan.RepositoryRoot, plan.ToolProfile, "ShaderCompiler");
-		process.WorkingDirectory = plan.RepositoryRoot;
+		process.WorkingDirectory = plan.RepositoryRoot / "Projects" / plan.Request.ProjectId;
 		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, std::string("ShaderPackage-") + std::string(packageId) + ".txt");
 		process.Arguments = {"cook", "--package", std::string(packageId)};
 		AppendCommonShaderCompilerArguments(plan, process.Arguments);

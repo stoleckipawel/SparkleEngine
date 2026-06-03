@@ -92,16 +92,25 @@ namespace SparkleLauncher
 	}
 
 	static bool CookedAssetScopeHasFiles(
-	    const std::filesystem::path& cookedProjectDirectory,
+	    const std::filesystem::path& repositoryRoot,
+	    std::string_view projectId,
 	    std::string_view relativeDirectory)
 	{
-		if (DirectoryHasRegularFiles(cookedProjectDirectory / std::string(relativeDirectory)))
+		const std::string relativeScope(relativeDirectory);
+		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(repositoryRoot, projectId);
+		if (DirectoryHasRegularFiles(cookedProjectDirectory / relativeScope))
 		{
 			return true;
 		}
 
-		const std::filesystem::path cookedSharedDirectory = cookedProjectDirectory.parent_path() / "Shared";
-		return DirectoryHasRegularFiles(cookedSharedDirectory / std::string(relativeDirectory));
+		if (DirectoryHasRegularFiles(GetSharedCookedProjectDirectory(repositoryRoot) / relativeScope))
+		{
+			return true;
+		}
+
+		const std::filesystem::path legacyCookedRoot = GetBuildDirectory(repositoryRoot) / "Cooked";
+		return DirectoryHasRegularFiles(legacyCookedRoot / std::string(projectId) / relativeScope) ||
+		    DirectoryHasRegularFiles(legacyCookedRoot / "Shared" / relativeScope);
 	}
 
 	static std::filesystem::path FirstExistingOrPreferred(const std::vector<std::filesystem::path>& candidates)
@@ -237,14 +246,14 @@ namespace SparkleLauncher
 		const bool projectMarkerExists = std::filesystem::exists(plan.WorkingDirectory / ".sparkle-project", errorCode);
 		errorCode.clear();
 		const std::filesystem::path cookedProjectDirectory = GetCookedProjectDirectory(request.RepositoryRoot, request.ProjectId);
-		const bool cookedMeshesReady = CookedAssetScopeHasFiles(cookedProjectDirectory, "Meshes");
-		const bool cookedTexturesReady = CookedAssetScopeHasFiles(cookedProjectDirectory, "Textures");
-		const bool cookedShadersReady = CookedAssetScopeHasFiles(cookedProjectDirectory, "Shaders");
+		const bool cookedMeshesReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Meshes");
+		const bool cookedTexturesReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Textures");
+		const bool cookedShadersReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Shaders");
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
 		AddReadiness(plan, cookedMeshesReady ? "Cooked scene assets are ready." : "Cooked scene assets are missing; run Cook Scene Assets before launching.");
-		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; cook textures before launching.");
-		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; cook shaders before launching.");
+		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; run Cook Textures before launching.");
+		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
 		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");
 		if (!request.GraphicsBackend.empty())
 		{
