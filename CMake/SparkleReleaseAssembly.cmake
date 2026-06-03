@@ -122,12 +122,114 @@ function(sparkle_write_file_manifest root_dir manifest_path checksums_path packa
     sparkle_append_line("${manifest_path}" "}")
 endfunction()
 
+function(sparkle_capture_git_value output_variable)
+    set(multi_value_args COMMAND_ARGS)
+    cmake_parse_arguments(SPARKLE_GIT "" "" "${multi_value_args}" ${ARGN})
+
+    set(captured_value "unavailable")
+    if(DEFINED GIT_EXECUTABLE AND NOT "${GIT_EXECUTABLE}" STREQUAL "" AND EXISTS "${GIT_EXECUTABLE}")
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" ${SPARKLE_GIT_COMMAND_ARGS}
+            WORKING_DIRECTORY "${SPARKLE_REPOSITORY_ROOT}"
+            OUTPUT_VARIABLE git_output
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE git_result)
+        if(git_result EQUAL 0 AND NOT "${git_output}" STREQUAL "")
+            set(captured_value "${git_output}")
+        endif()
+    endif()
+
+    set(${output_variable} "${captured_value}" PARENT_SCOPE)
+endfunction()
+
+function(sparkle_capture_release_metadata)
+    if(NOT DEFINED GIT_EXECUTABLE OR "${GIT_EXECUTABLE}" STREQUAL "" OR NOT EXISTS "${GIT_EXECUTABLE}")
+        if(DEFINED SPARKLE_GIT_EXE AND NOT "${SPARKLE_GIT_EXE}" STREQUAL "" AND EXISTS "${SPARKLE_GIT_EXE}")
+            set(GIT_EXECUTABLE "${SPARKLE_GIT_EXE}")
+        else()
+            find_program(GIT_EXECUTABLE
+                NAMES git git.exe
+                PATHS
+                    "C:/Program Files/Git/cmd"
+                    "C:/Program Files/Git/bin"
+                    "C:/Program Files (x86)/Git/cmd"
+                    "C:/Program Files (x86)/Git/bin")
+        endif()
+    endif()
+
+    sparkle_capture_git_value(SPARKLE_RELEASE_COMMIT COMMAND_ARGS rev-parse HEAD)
+    sparkle_capture_git_value(SPARKLE_RELEASE_BRANCH COMMAND_ARGS rev-parse --abbrev-ref HEAD)
+
+    set(SPARKLE_RELEASE_DIRTY "unknown")
+    if(DEFINED GIT_EXECUTABLE AND NOT "${GIT_EXECUTABLE}" STREQUAL "" AND EXISTS "${GIT_EXECUTABLE}")
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" status --porcelain
+            WORKING_DIRECTORY "${SPARKLE_REPOSITORY_ROOT}"
+            OUTPUT_VARIABLE git_status_output
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE git_status_result)
+        if(git_status_result EQUAL 0)
+            if("${git_status_output}" STREQUAL "")
+                set(SPARKLE_RELEASE_DIRTY "false")
+            else()
+                set(SPARKLE_RELEASE_DIRTY "true")
+            endif()
+        endif()
+    endif()
+
+    if(DEFINED SPARKLE_RELEASE_CXX_COMPILER_ID AND NOT "${SPARKLE_RELEASE_CXX_COMPILER_ID}" STREQUAL "")
+        set(SPARKLE_RELEASE_TOOLCHAIN "${SPARKLE_RELEASE_CXX_COMPILER_ID} ${SPARKLE_RELEASE_CXX_COMPILER_VERSION}")
+    elseif(DEFINED CMAKE_CXX_COMPILER_ID AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "")
+        set(SPARKLE_RELEASE_TOOLCHAIN "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+    else()
+        set(SPARKLE_RELEASE_TOOLCHAIN "unavailable")
+    endif()
+
+    set(SPARKLE_RELEASE_GENERATOR "${SPARKLE_RELEASE_CMAKE_GENERATOR}")
+    set(SPARKLE_RELEASE_PLATFORM "${SPARKLE_RELEASE_CMAKE_GENERATOR_PLATFORM}")
+    set(SPARKLE_RELEASE_TOOLSET "${SPARKLE_RELEASE_CMAKE_GENERATOR_TOOLSET}")
+    if("${SPARKLE_RELEASE_GENERATOR}" STREQUAL "")
+        set(SPARKLE_RELEASE_GENERATOR "${CMAKE_GENERATOR}")
+    endif()
+    if("${SPARKLE_RELEASE_PLATFORM}" STREQUAL "")
+        set(SPARKLE_RELEASE_PLATFORM "${CMAKE_GENERATOR_PLATFORM}")
+    endif()
+    if("${SPARKLE_RELEASE_TOOLSET}" STREQUAL "")
+        set(SPARKLE_RELEASE_TOOLSET "${CMAKE_GENERATOR_TOOLSET}")
+    endif()
+
+    set(SPARKLE_RELEASE_QT_KIT "unavailable")
+    if(DEFINED SPARKLE_RELEASE_QT_KIT_HINT AND NOT "${SPARKLE_RELEASE_QT_KIT_HINT}" STREQUAL "")
+        list(GET SPARKLE_RELEASE_QT_KIT_HINT 0 SPARKLE_RELEASE_QT_KIT)
+    elseif(DEFINED Qt6_DIR AND NOT "${Qt6_DIR}" STREQUAL "")
+        get_filename_component(SPARKLE_RELEASE_QT_KIT "${Qt6_DIR}/../.." ABSOLUTE)
+        cmake_path(NORMAL_PATH SPARKLE_RELEASE_QT_KIT OUTPUT_VARIABLE SPARKLE_RELEASE_QT_KIT)
+    elseif(DEFINED SPARKLE_QT_ROOT AND NOT "${SPARKLE_QT_ROOT}" STREQUAL "")
+        set(SPARKLE_RELEASE_QT_KIT "${SPARKLE_QT_ROOT}")
+    endif()
+
+    foreach(metadata_name
+        SPARKLE_RELEASE_COMMIT
+        SPARKLE_RELEASE_BRANCH
+        SPARKLE_RELEASE_DIRTY
+        SPARKLE_RELEASE_TOOLCHAIN
+        SPARKLE_RELEASE_GENERATOR
+        SPARKLE_RELEASE_PLATFORM
+        SPARKLE_RELEASE_TOOLSET
+        SPARKLE_RELEASE_QT_KIT)
+        set(${metadata_name} "${${metadata_name}}" PARENT_SCOPE)
+    endforeach()
+endfunction()
+
 sparkle_require_variable(SPARKLE_REPOSITORY_ROOT)
 sparkle_require_variable(SPARKLE_ARTIFACT_ROOT)
 sparkle_require_variable(SPARKLE_DIST_ROOT)
 sparkle_require_variable(SPARKLE_PACKAGE_VERSION)
 sparkle_require_variable(SPARKLE_RELEASE_CHANNEL)
 sparkle_require_variable(SPARKLE_PACKAGE_PLATFORM)
+sparkle_capture_release_metadata()
 
 if(SPARKLE_BUILD_CONFIG STREQUAL "\${CONFIGURATION}" OR SPARKLE_BUILD_CONFIG STREQUAL "")
     set(SPARKLE_BUILD_CONFIG "DevelopmentEditor")
@@ -246,10 +348,24 @@ sparkle_append_line("${SPARKLE_RELEASE_MANIFEST}" "}")
 
 set(SPARKLE_BUILD_MANIFEST "${SPARKLE_RUNTIME_PACKAGE_ROOT}/manifests/sparkle-build-manifest.json")
 file(WRITE "${SPARKLE_BUILD_MANIFEST}" "{\n")
-sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"configuration\": \"${SPARKLE_BUILD_CONFIG}\",")
-sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"toolchain\": \"recorded-by-phase6-validation\",")
-sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"qtKit\": \"recorded-by-phase6-validation\",")
-sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"commit\": \"recorded-by-phase6-validation\",")
+sparkle_json_escape("${SPARKLE_BUILD_CONFIG}" SPARKLE_BUILD_CONFIG_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_TOOLCHAIN}" SPARKLE_RELEASE_TOOLCHAIN_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_GENERATOR}" SPARKLE_RELEASE_GENERATOR_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_PLATFORM}" SPARKLE_RELEASE_PLATFORM_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_TOOLSET}" SPARKLE_RELEASE_TOOLSET_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_QT_KIT}" SPARKLE_RELEASE_QT_KIT_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_COMMIT}" SPARKLE_RELEASE_COMMIT_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_BRANCH}" SPARKLE_RELEASE_BRANCH_JSON)
+sparkle_json_escape("${SPARKLE_RELEASE_DIRTY}" SPARKLE_RELEASE_DIRTY_JSON)
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"configuration\": \"${SPARKLE_BUILD_CONFIG_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"toolchain\": \"${SPARKLE_RELEASE_TOOLCHAIN_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"generator\": \"${SPARKLE_RELEASE_GENERATOR_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"generatorPlatform\": \"${SPARKLE_RELEASE_PLATFORM_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"generatorToolset\": \"${SPARKLE_RELEASE_TOOLSET_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"qtKit\": \"${SPARKLE_RELEASE_QT_KIT_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"commit\": \"${SPARKLE_RELEASE_COMMIT_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"branch\": \"${SPARKLE_RELEASE_BRANCH_JSON}\",")
+sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"dirty\": \"${SPARKLE_RELEASE_DIRTY_JSON}\",")
 sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "  \"finalValidation\": false")
 sparkle_append_line("${SPARKLE_BUILD_MANIFEST}" "}")
 
@@ -283,7 +399,7 @@ sparkle_append_line("${SPARKLE_PACKAGE_MANIFEST}" "    \"internalPrivate\": \"Ex
 sparkle_append_line("${SPARKLE_PACKAGE_MANIFEST}" "  }")
 sparkle_append_line("${SPARKLE_PACKAGE_MANIFEST}" "}")
 
-file(WRITE "${SPARKLE_RUNTIME_PACKAGE_ROOT}/RELEASE_NOTES.md" "# Sparkle ${SPARKLE_PACKAGE_VERSION}\n\nStatus: assembled for review only. Final validation and publishing are Phase 6 responsibilities.\n\n## Highlights\n\n- TODO\n\n## Known Issues\n\n- TODO\n\n## Regeneration\n\n- Launcher: Build > Build Launcher\n- Showcase editor/runtime: Build > Build Editor / Build Runtime\n- Cooked assets: Cook > Cook All\n")
+file(WRITE "${SPARKLE_RUNTIME_PACKAGE_ROOT}/RELEASE_NOTES.md" "# Sparkle ${SPARKLE_PACKAGE_VERSION}\n\nStatus: assembled for review only. Final validation and publishing are Phase 6 responsibilities.\n\n## Highlights\n\n- Package-root launcher contract: `SparkleLauncher.exe` is staged at the runtime package root.\n- Runtime package layout separates apps, cooked assets, manifests, licenses, and redistributable support files.\n- Bundled runtime components are described by manifests so rebuild and recook workflows stay optional for first-run exploration.\n\n## Known Issues\n\n- This package is not publish-ready until the Phase 6 validation checklist passes on the release machine.\n- Missing bundled components are recorded in `manifests/sparkle-bundled-runtime-components.json` rather than silently substituted from local build output.\n\n## Regeneration\n\n- Launcher: Build > Build Launcher\n- Showcase editor/runtime: Build > Build Editor / Build Runtime\n- Cooked assets: Cook > Cook All\n")
 
 if(EXISTS "${SPARKLE_ARTIFACT_ROOT}/symbols")
     file(COPY "${SPARKLE_ARTIFACT_ROOT}/symbols/" DESTINATION "${SPARKLE_SYMBOLS_PACKAGE_ROOT}/Symbols")

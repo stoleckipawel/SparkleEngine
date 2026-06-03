@@ -4,8 +4,8 @@ project(Sparkle LANGUAGES C CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleBuildProfiles.cmake)
-include(${CMAKE_SOURCE_DIR}/CMake/SparkleArtifactContract.cmake)
 include(${CMAKE_SOURCE_DIR}/CMake/SparkleQtDiscovery.cmake)
+include(${CMAKE_SOURCE_DIR}/CMake/SparkleArtifactContract.cmake)
 
 # ---------------------------
 # Optional: sanitizer support
