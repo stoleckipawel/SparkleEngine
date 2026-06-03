@@ -29,6 +29,11 @@ namespace SparkleLauncher
 		{
 			process.Arguments.push_back("-DCMAKE_PREFIX_PATH=" + toolchain.QtRootPath.generic_string());
 		}
+		if (!toolchain.GitPath.empty())
+		{
+			process.Arguments.push_back("-DGIT_EXECUTABLE=" + toolchain.GitPath.generic_string());
+			process.Arguments.push_back("-DSPARKLE_GIT_EXE=" + toolchain.GitPath.generic_string());
+		}
 		process.Arguments.push_back("-Wno-dev");
 		process.Arguments.push_back(repositoryRoot.string());
 		return process;

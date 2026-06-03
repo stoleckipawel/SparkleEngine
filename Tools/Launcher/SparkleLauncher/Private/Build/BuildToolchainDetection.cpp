@@ -73,7 +73,7 @@ namespace SparkleLauncher
 	static bool PathLooksLikeQtMsvcKitRoot(const std::filesystem::path& path)
 	{
 		const std::string directoryName = ToLower(path.filename().string());
-		return directoryName.find("msvc") != std::string::npos && directoryName.find("64") != std::string::npos;
+		return directoryName.find("msvc") != std::string::npos && directoryName.find("64") != std::string::npos && directoryName.find("arm64") == std::string::npos;
 	}
 
 	static bool PathLooksLikeQtMingwKitRoot(const std::filesystem::path& path)
@@ -317,7 +317,9 @@ namespace SparkleLauncher
 		if (programFiles.has_value())
 		{
 			std::error_code errorCode;
-			if (std::filesystem::exists(*programFiles / "Microsoft Visual Studio" / "2026", errorCode))
+			const std::filesystem::path visualStudioRoot = *programFiles / "Microsoft Visual Studio";
+			if (std::filesystem::exists(visualStudioRoot / "18", errorCode) ||
+			    std::filesystem::exists(visualStudioRoot / "2026", errorCode))
 			{
 				return "Visual Studio 18 2026";
 			}

@@ -106,9 +106,9 @@ namespace SparkleLauncher
 			std::vector<DependencyGroupUiEntry> entries;
 			entries.push_back({
 			    "core-workspace",
-			    "Core Workspace",
+			    "Core Workspace Source Tier",
 			    "Baseline shared dependencies used by the launcher, engine, and project builds.",
-			    "Unlocks Sync Source Dependencies, Build Launcher, Build Editor, Build Runtime, and Build All.",
+			    "Required source tier for local rebuilds. Runtime packages can still launch bundled components without rebuilding this tier.",
 			    QString(),
 			    true,
 			    true,
@@ -124,7 +124,7 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "content-pipeline",
-			    "Content Pipeline",
+			    "Content Pipeline Source Tier",
 			    "Optional source import, mesh cook, and texture cook dependencies.",
 			    "Unlocks Build Cook Tools, Cook Textures, Cook Scene Assets, and the content phase of Cook All.",
 			    "SPARKLE_ENABLE_CONTENT_PIPELINE",
@@ -145,7 +145,7 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "ktx-support",
-			    "KTX Support",
+			    "KTX Container Source Tier",
 			    "Optional KTX2 container support layered on top of the texture pipeline.",
 			    "Extends texture workflows when the repo is configured for KTX support.",
 			    "SPARKLE_ENABLE_KTX_SUPPORT",
@@ -161,7 +161,7 @@ namespace SparkleLauncher
 #endif
 			entries.push_back({
 			    "shader-compiler",
-			    "Shader Compiler",
+			    "Shader Compiler Source Tier",
 			    "Optional offline shader compiler dependencies.",
 			    "Unlocks Build Cook Tools, Cook Shaders, and the shader phase of Cook All.",
 			    "SPARKLE_ENABLE_SHADER_COMPILER",
@@ -876,7 +876,7 @@ namespace SparkleLauncher
 
 		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			const QString message = "No project discovered. Run Sync Source Dependencies or Verify Host Environment, then retry.";
+			const QString message = "No project discovered. Confirm this is a Sparkle repository or package root with Projects/<Project> markers.";
 			if (m_operationOutput != nullptr)
 			{
 				m_operationOutput->setPlainText(message);
@@ -1985,8 +1985,8 @@ namespace SparkleLauncher
 			    request.PreferredIde == WorkspaceIde::Rider ? QString::fromStdString(m_repositoryRoot.string()) : QString::fromStdString(plan.Freshness.SolutionPath.string()));
 			const QString cacheStatus = dependencyCacheReady ? "Ready" : "Will be created";
 			const QString cacheDetail = dependencyCacheReady ?
-			                               QString("Source dependency cache available at %1.").arg(QString::fromStdString(dependencyCachePath.string())) :
-			                               QString("Source dependency cache will be populated under %1 when Sync Source Dependencies runs.").arg(QString::fromStdString(dependencyCachePath.string()));
+			                               QString("Source dependency cache available at %1.").arg(ToDisplayPath(m_repositoryRoot, dependencyCachePath)) :
+			                               QString("Source dependency cache will be populated under %1 when Sync Source Dependencies runs.").arg(ToDisplayPath(m_repositoryRoot, dependencyCachePath));
 			QVBoxLayout* workspaceLayout = AddOptionGroup(layout, setupGroupTitle, setupGroupDetail);
 			AddStatusRow(
 			    *workspaceLayout,
@@ -2941,7 +2941,7 @@ namespace SparkleLauncher
 
 		if (OperationNeedsProject(m_selectedOperationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			const QString reason = "No project discovered. Run Sync Source Dependencies or Verify Host Environment, then retry.";
+			const QString reason = "No project discovered. Confirm this is a Sparkle repository or package root with Projects/<Project> markers, then run Generate Project Files if rebuilding from source.";
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);
@@ -3040,7 +3040,7 @@ namespace SparkleLauncher
 	{
 		if (OperationNeedsProject(operationId) && m_projectModel.SelectedProjectId().isEmpty())
 		{
-			return "No project is selected. Run Sync Source Dependencies, then retry this workflow.";
+			return "No project is selected. Confirm the repository/package root contains Projects/<Project> markers, then regenerate project files if rebuilding from source.";
 		}
 		if (operationId.startsWith("cook.") && OperationNeedsConfirmation(operationId))
 		{
@@ -3083,7 +3083,7 @@ namespace SparkleLauncher
 
 		if (FindLaunchOperationDefinition(operationId.toStdString()).has_value())
 		{
-			return "Review the output below. If binaries are missing, build the matching target before retrying.";
+			return "Review the output below. If package binaries are missing, use a complete runtime package; if source artifacts are missing, build the matching target before retrying.";
 		}
 
 		return "Review the output below, adjust the selected options, then retry.";
@@ -3762,7 +3762,7 @@ namespace SparkleLauncher
 		if (m_projectModel.Projects().empty())
 		{
 			combo.addItem("No projects found", "");
-			combo.setToolTip("No projects were discovered in the repository. Run Sync Source Dependencies or inspect project discovery output.");
+			combo.setToolTip("No projects were discovered. Confirm the selected root contains Projects/<Project> markers or inspect project discovery output.");
 			combo.setEnabled(false);
 			return;
 		}
