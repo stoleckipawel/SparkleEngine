@@ -2,9 +2,6 @@
 
 #include "Core/Public/Environment/EnvironmentVariables.h"
 
-#include <array>
-#include <system_error>
-
 namespace SparkleLauncher
 {
 	static std::filesystem::path ResolveConfiguredBuildDirectory(const std::filesystem::path& repositoryRoot)
@@ -17,34 +14,7 @@ namespace SparkleLauncher
 			return candidate.is_absolute() ? candidate : (repositoryRoot / candidate);
 		}
 
-		const std::array<std::string_view, 4> preferredBuildDirectories = {
-		    "build-ninja-msvc-qt",
-		    "build",
-		    "build-ninja-msvc",
-		    "build-msvc",
-		};
-
-		std::error_code errorCode;
-		for (const std::string_view directoryName : preferredBuildDirectories)
-		{
-			const std::filesystem::path candidate = repositoryRoot / std::string(directoryName);
-			if (!std::filesystem::is_directory(candidate, errorCode))
-			{
-				errorCode.clear();
-				continue;
-			}
-
-			if (std::filesystem::exists(candidate / "CMakeCache.txt", errorCode) ||
-			    std::filesystem::exists(candidate / "Launcher" / "Settings.json", errorCode) ||
-			    std::filesystem::exists(candidate / "bin" / "SparkleLauncher.exe", errorCode))
-			{
-				return candidate;
-			}
-
-			errorCode.clear();
-		}
-
-		return repositoryRoot / "build";
+		return repositoryRoot / "build" / "windows-msvc-x64-dev";
 	}
 
 	LauncherStatePaths GetLauncherStatePaths(const std::filesystem::path& repositoryRoot)
@@ -60,7 +30,7 @@ namespace SparkleLauncher
 
 	std::filesystem::path GetLauncherStateDirectory(const std::filesystem::path& repositoryRoot)
 	{
-		return GetBuildDirectory(repositoryRoot) / "Launcher";
+		return GetDeveloperArtifactDirectory(repositoryRoot) / "launcher-state";
 	}
 
 	std::filesystem::path GetLauncherOperationLogPath(
@@ -76,11 +46,6 @@ namespace SparkleLauncher
 		return ResolveConfiguredBuildDirectory(repositoryRoot);
 	}
 
-	std::filesystem::path GetBuildBinaryDirectory(const std::filesystem::path& repositoryRoot, std::string_view profileName)
-	{
-		return GetBuildDirectory(repositoryRoot) / "bin" / std::string(profileName);
-	}
-
 	std::filesystem::path GetArtifactDirectory(const std::filesystem::path& repositoryRoot)
 	{
 		return repositoryRoot / "artifacts";
@@ -89,6 +54,11 @@ namespace SparkleLauncher
 	std::filesystem::path GetDeveloperArtifactDirectory(const std::filesystem::path& repositoryRoot)
 	{
 		return GetArtifactDirectory(repositoryRoot) / "dev";
+	}
+
+	std::filesystem::path GetDeveloperLibraryDirectory(const std::filesystem::path& repositoryRoot, std::string_view owner, std::string_view profileName)
+	{
+		return GetDeveloperArtifactDirectory(repositoryRoot) / "libraries" / std::string(owner) / std::string(profileName);
 	}
 
 	std::filesystem::path GetLauncherArtifactDirectory(const std::filesystem::path& repositoryRoot, std::string_view profileName)

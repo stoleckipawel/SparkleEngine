@@ -191,6 +191,8 @@ namespace SparkleLauncher
 			return;
 		case CleanScope::PristineGeneratedWorkspace:
 			AddCleanStep(steps, "clean-build", "Clean build tree", GetBuildDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-artifacts", "Clean development artifacts", GetArtifactDirectory(plan.RepositoryRoot), MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-dist", "Clean package outputs", plan.RepositoryRoot / "dist", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-dot-vs", "Clean Visual Studio workspace state", plan.RepositoryRoot / ".vs", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-dot-vscode", "Clean VS Code workspace state", plan.RepositoryRoot / ".vscode", MaintenanceCleanBehavior::RemovePath);
 			AddCleanStep(steps, "clean-logs", "Clean repository logs", plan.RepositoryRoot / "logs", MaintenanceCleanBehavior::RemovePath);

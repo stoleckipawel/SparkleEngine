@@ -211,11 +211,13 @@ namespace SparkleLauncher
 			return;
 		case CleanScope::Logs:
 			AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");
-			AddCleanTarget(plan, "Launcher logs", GetLauncherStatePaths(plan.RepositoryRoot).LogsDirectory, "Launcher operation logs under build/Launcher/Logs.");
+			AddCleanTarget(plan, "Launcher logs", GetLauncherStatePaths(plan.RepositoryRoot).LogsDirectory, "Launcher operation logs under artifacts/dev/launcher-state/Logs.");
 			AddProjectGeneratedTargets(plan, false, true, false);
 			return;
 		case CleanScope::PristineGeneratedWorkspace:
-			AddCleanTarget(plan, "Build tree", GetBuildDirectory(plan.RepositoryRoot), "Full build tree including dependency cache, cooked outputs, binaries, and launcher state.");
+			AddCleanTarget(plan, "Build tree", GetBuildDirectory(plan.RepositoryRoot), "Full build tree including dependency cache and private build-system outputs.");
+			AddCleanTarget(plan, "Development artifacts", GetArtifactDirectory(plan.RepositoryRoot), "Generated runnable artifacts, launcher state, diagnostics, libraries, symbols, and cooked outputs. Close the launcher for absolute pristine cleanup.");
+			AddCleanTarget(plan, "Package outputs", plan.RepositoryRoot / "dist", "Assembled package layouts and release archives.");
 			AddCleanTarget(plan, "Visual Studio workspace state", plan.RepositoryRoot / ".vs", ".vs directory.");
 			AddCleanTarget(plan, "VS Code workspace state", plan.RepositoryRoot / ".vscode", ".vscode directory.");
 			AddCleanTarget(plan, "Repository logs", plan.RepositoryRoot / "logs", "Root structured logs.");

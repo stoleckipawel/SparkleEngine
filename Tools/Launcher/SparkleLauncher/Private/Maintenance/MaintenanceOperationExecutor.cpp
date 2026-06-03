@@ -7,6 +7,27 @@
 
 namespace SparkleLauncher
 {
+	static std::filesystem::path MakePlatformDeletePath(const std::filesystem::path& path)
+	{
+#if defined(_WIN32)
+		std::error_code errorCode;
+		const std::filesystem::path absolutePath = std::filesystem::absolute(path, errorCode);
+		const std::filesystem::path candidate = errorCode ? path : absolutePath;
+		const std::wstring nativePath = candidate.native();
+		if (nativePath.rfind(LR"(\\?\)", 0) == 0)
+		{
+			return candidate;
+		}
+		if (nativePath.rfind(LR"(\\)", 0) == 0)
+		{
+			return std::filesystem::path(std::wstring(LR"(\\?\UNC\)") + nativePath.substr(2));
+		}
+		return std::filesystem::path(std::wstring(LR"(\\?\)") + nativePath);
+#else
+		return path;
+#endif
+	}
+
 	static bool RemovePath(const std::filesystem::path& path, std::string& outErrorMessage)
 	{
 		std::error_code errorCode;
@@ -27,8 +48,23 @@ namespace SparkleLauncher
 
 		if (errorCode || std::filesystem::exists(path, errorCode))
 		{
-			outErrorMessage = "Clean blocked by locked files or permissions: " + path.string();
-			return false;
+			errorCode.clear();
+			const std::filesystem::path deletePath = MakePlatformDeletePath(path);
+			if (std::filesystem::is_directory(deletePath, errorCode))
+			{
+				std::filesystem::remove_all(deletePath, errorCode);
+			}
+			else if (!errorCode)
+			{
+				std::filesystem::remove(deletePath, errorCode);
+			}
+
+			std::error_code existsError;
+			if (errorCode || std::filesystem::exists(path, existsError))
+			{
+				outErrorMessage = "Clean blocked by locked files, long paths, or permissions: " + path.string();
+				return false;
+			}
 		}
 
 		outErrorMessage.clear();

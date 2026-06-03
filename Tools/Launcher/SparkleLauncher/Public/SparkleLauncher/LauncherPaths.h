@@ -21,9 +21,9 @@ namespace SparkleLauncher
 	    std::string_view operationId,
 	    std::string_view logFileName);
 	std::filesystem::path GetBuildDirectory(const std::filesystem::path& repositoryRoot);
-	std::filesystem::path GetBuildBinaryDirectory(const std::filesystem::path& repositoryRoot, std::string_view profileName);
 	std::filesystem::path GetArtifactDirectory(const std::filesystem::path& repositoryRoot);
 	std::filesystem::path GetDeveloperArtifactDirectory(const std::filesystem::path& repositoryRoot);
+	std::filesystem::path GetDeveloperLibraryDirectory(const std::filesystem::path& repositoryRoot, std::string_view owner, std::string_view profileName);
 	std::filesystem::path GetLauncherArtifactDirectory(const std::filesystem::path& repositoryRoot, std::string_view profileName);
 	std::filesystem::path GetDevelopmentToolArtifactDirectory(
 	    const std::filesystem::path& repositoryRoot,

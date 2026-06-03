@@ -690,26 +690,29 @@ namespace SparkleLauncher
 	    const QString& detail,
 	    const std::filesystem::path& preservedPath = {})
 	{
-		std::filesystem::path binaryDirectory = GetBuildBinaryDirectory(repositoryRoot, profileName.toStdString());
-		std::filesystem::path libraryDirectory = GetBuildDirectory(repositoryRoot) / "lib" / profileName.toStdString();
+		std::filesystem::path binaryDirectory = GetDeveloperArtifactDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
+		std::filesystem::path libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "runtime-support/" + targetName.toStdString(), profileName.toStdString());
+		std::filesystem::path symbolDirectory = GetSymbolDirectory(repositoryRoot) / "runtime-support" / targetName.toStdString() / profileName.toStdString();
 		if (targetName == "SparkleLauncher" || targetName == "SparkleLauncherProbe")
 		{
 			binaryDirectory = GetLauncherArtifactDirectory(repositoryRoot, profileName.toStdString());
-			libraryDirectory = GetSymbolDirectory(repositoryRoot) / "launcher" / profileName.toStdString() / "lib";
+			libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "launcher", profileName.toStdString());
+			symbolDirectory = GetSymbolDirectory(repositoryRoot) / "launcher" / profileName.toStdString();
 		}
 		else if (targetName == "AssetCooker" || targetName == "TextureCooker" || targetName == "ShaderCompiler" || targetName == "AssetConverter")
 		{
 			binaryDirectory = GetDevelopmentToolArtifactDirectory(repositoryRoot, targetName.toStdString(), profileName.toStdString());
-			libraryDirectory = GetSymbolDirectory(repositoryRoot) / "tools" / targetName.toStdString() / profileName.toStdString() / "lib";
+			libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "tools/" + targetName.toStdString(), profileName.toStdString());
+			symbolDirectory = GetSymbolDirectory(repositoryRoot) / "tools" / targetName.toStdString() / profileName.toStdString();
 		}
 		const std::filesystem::path executablePath = binaryDirectory / (targetName.toStdString() + ".exe");
 		if (preservedPath.empty() || executablePath != preservedPath)
 		{
 			AddExplicitCleanTarget(targets, targetName + " executable", executablePath, detail);
 		}
-		AddExplicitCleanTarget(targets, targetName + " program database", binaryDirectory / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(targets, targetName + " program database", symbolDirectory / (targetName.toStdString() + ".pdb"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
-		AddExplicitCleanTarget(targets, targetName + " import database", libraryDirectory / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(targets, targetName + " compile database", symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"), detail);
 	}
 
 	static void AddProjectTargetArtifactOutputs(
@@ -722,12 +725,13 @@ namespace SparkleLauncher
 	    const QString& detail)
 	{
 		const std::filesystem::path binaryDirectory = GetProjectTargetArtifactDirectory(repositoryRoot, projectName.toStdString(), productRole.toStdString(), profileName.toStdString());
-		const std::filesystem::path libraryDirectory = GetSymbolDirectory(repositoryRoot) / "projects" / projectName.toStdString() / productRole.toStdString() / profileName.toStdString() / "lib";
+		const std::filesystem::path libraryDirectory = GetDeveloperLibraryDirectory(repositoryRoot, "projects/" + projectName.toStdString() + "/" + productRole.toStdString(), profileName.toStdString());
+		const std::filesystem::path symbolDirectory = GetSymbolDirectory(repositoryRoot) / "projects" / projectName.toStdString() / productRole.toStdString() / profileName.toStdString();
 		const std::filesystem::path executablePath = binaryDirectory / (targetName.toStdString() + ".exe");
 		AddExplicitCleanTarget(targets, targetName + " executable", executablePath, detail);
-		AddExplicitCleanTarget(targets, targetName + " program database", binaryDirectory / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(targets, targetName + " program database", symbolDirectory / (targetName.toStdString() + ".pdb"), detail);
 		AddExplicitCleanTarget(targets, targetName + " import library", libraryDirectory / (targetName.toStdString() + ".lib"), detail);
-		AddExplicitCleanTarget(targets, targetName + " import database", libraryDirectory / (targetName.toStdString() + ".pdb"), detail);
+		AddExplicitCleanTarget(targets, targetName + " compile database", symbolDirectory / "obj" / (targetName.toStdString() + ".pdb"), detail);
 	}
 
 	LauncherMainWindow::LauncherMainWindow(
@@ -1652,8 +1656,8 @@ namespace SparkleLauncher
 			    {"Build Outputs", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the source dependency cache.", "build contents except build/_deps, .vs, root generated project files, project generated files", "Build and Generated State"},
 			    {"Shader Cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
 			    {"Source Dependency Cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
-			    {"Log Files", "logs", "Repository, launcher, and project logs.", "logs, build/Launcher/Logs, Projects/*/logs", "Logs"},
-			    {"Generated Workspace", "pristine", "All generated workspace state, including the third-party cache, cooked data, IDE state, logs, and generated project files.", "build, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset Everything"},
+			    {"Log Files", "logs", "Repository, launcher, and project logs.", "logs, artifacts/dev/launcher-state/Logs, Projects/*/logs", "Logs"},
+			    {"Generated Workspace", "pristine", "All generated workspace state, including build trees, artifacts, packages, dependency cache, cooked data, IDE state, logs, and generated project files. Close the launcher for absolute pristine cleanup of its live artifact copy.", "build, artifacts, dist, .vs, .vscode, logs, imgui.ini, root generated project files, project generated files", "Reset Everything"},
 			}};
 
 			QVector<QCheckBox*> scopeBoxes;
