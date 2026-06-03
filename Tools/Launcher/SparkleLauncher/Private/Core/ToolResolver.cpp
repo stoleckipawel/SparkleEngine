@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <optional>
 #include <sstream>
+#include <system_error>
 
 namespace SparkleLauncher
 {
@@ -287,6 +288,25 @@ namespace SparkleLauncher
 		return std::nullopt;
 	}
 
+	static std::filesystem::path FirstExistingOrPreferred(const std::vector<std::filesystem::path>& candidates)
+	{
+		std::error_code errorCode;
+		for (const std::filesystem::path& candidate : candidates)
+		{
+			if (std::filesystem::exists(candidate, errorCode) && std::filesystem::is_regular_file(candidate, errorCode))
+			{
+				return candidate;
+			}
+			errorCode.clear();
+		}
+		return candidates.empty() ? std::filesystem::path() : candidates.front();
+	}
+
+	static bool IsKnownDevelopmentTool(std::string_view executableName)
+	{
+		return executableName == "AssetCooker" || executableName == "TextureCooker" || executableName == "ShaderCompiler" || executableName == "AssetConverter";
+	}
+
 	std::string ToString(KnownTool tool)
 	{
 		switch (tool)
@@ -387,6 +407,21 @@ namespace SparkleLauncher
 			fileName += ".exe";
 		}
 #endif
-		return GetBuildBinaryDirectory(repositoryRoot, profileName) / fileName;
+		const std::filesystem::path legacyPath = GetBuildBinaryDirectory(repositoryRoot, profileName) / fileName;
+		if (executableName == "SparkleLauncher" || executableName == "SparkleLauncherProbe")
+		{
+			return FirstExistingOrPreferred({
+			    GetLauncherArtifactDirectory(repositoryRoot, profileName) / fileName,
+			    legacyPath,
+			});
+		}
+		if (IsKnownDevelopmentTool(executableName))
+		{
+			return FirstExistingOrPreferred({
+			    GetDevelopmentToolArtifactDirectory(repositoryRoot, executableName, profileName) / fileName,
+			    legacyPath,
+			});
+		}
+		return legacyPath;
 	}
 }

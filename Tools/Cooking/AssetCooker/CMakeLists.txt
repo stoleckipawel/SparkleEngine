@@ -70,6 +70,7 @@ add_executable(AssetCooker
     ${ASSET_COOKER_CLI_HEADERS}
 )
 sparkle_configure_host_tool_target(AssetCooker)
+sparkle_configure_development_tool_artifacts(AssetCooker)
 
 target_include_directories(AssetCooker
     PRIVATE
@@ -85,9 +86,7 @@ target_link_libraries(AssetCooker
         AssetCookerCore
         ${ASSET_COOKER_COOKING_LINK_LIBRARIES}
 )
-set_target_properties(AssetCooker PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+sparkle_declare_runtime_dll_owner(AssetCooker SparkleCore SparkleGameFramework SparkleRHI)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${ASSET_COOKER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${ASSET_COOKER_CORE_SOURCES} ${ASSET_COOKER_CORE_HEADERS} ${ASSET_COOKER_CLI_HEADERS})

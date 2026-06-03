@@ -21,6 +21,29 @@ target_link_libraries(ShowcaseRuntime PRIVATE
     SparkleApplication
 )
 
+sparkle_configure_project_artifacts(ShowcaseEditor Showcase editor)
+sparkle_configure_project_artifacts(ShowcaseRuntime Showcase runtime)
+sparkle_declare_runtime_dll_owner(
+    ShowcaseEditor
+    SparkleApplicationEditor
+    SparkleApplication
+    SparkleEditor
+    SparkleRenderer
+    SparkleRHI
+    SparkleGameFramework
+    SparklePlatform
+    SparkleCore
+)
+sparkle_declare_runtime_dll_owner(
+    ShowcaseRuntime
+    SparkleApplication
+    SparkleRenderer
+    SparkleRHI
+    SparkleGameFramework
+    SparklePlatform
+    SparkleCore
+)
+
 if(MSVC)
     set_target_properties(ShowcaseEditor PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

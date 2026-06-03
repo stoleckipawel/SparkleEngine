@@ -79,9 +79,8 @@ add_custom_command(TARGET ShaderCompiler POST_BUILD
         "$<TARGET_FILE_DIR:ShaderCompiler>/slang.dll"
 )
 
-set_target_properties(ShaderCompiler PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+sparkle_configure_development_tool_artifacts(ShaderCompiler)
+sparkle_declare_runtime_dll_owner(ShaderCompiler SparkleCore)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "" FILES ${SHADER_COMPILER_PRIVATE_SOURCES} ${SHADER_COMPILER_PRIVATE_HEADERS})

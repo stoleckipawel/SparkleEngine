@@ -96,7 +96,7 @@ namespace SparkleLauncher
 	{
 		BuildWorkspaceProcessStep step;
 		step.Id = "configure";
-		step.DisplayName = "Generate build files";
+		step.DisplayName = "Generate project files";
 		step.Request = MakeConfigureRequest(plan);
 		step.UpdatesBuildFilesFreshness = true;
 		steps.push_back(std::move(step));

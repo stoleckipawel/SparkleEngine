@@ -157,7 +157,7 @@ namespace SparkleLauncher
 			AddCleanStep(steps, "clean-shader-cache", "Clean shader cache", GetBuildDirectory(plan.RepositoryRoot) / "Cache" / "Shaders", MaintenanceCleanBehavior::RemovePath);
 			return;
 		case CleanScope::ThirdPartyDependencyCache:
-			AddCleanStep(steps, "clean-dependency-cache", "Clean third-party dependency cache", GetBuildDirectory(plan.RepositoryRoot) / "_deps", MaintenanceCleanBehavior::RemovePath);
+			AddCleanStep(steps, "clean-dependency-cache", "Clean source dependency cache", GetBuildDirectory(plan.RepositoryRoot) / "_deps", MaintenanceCleanBehavior::RemovePath);
 			return;
 		case CleanScope::Logs:
 			AddCleanStep(steps, "clean-root-logs", "Clean repository logs", plan.RepositoryRoot / "logs", MaintenanceCleanBehavior::RemovePath);

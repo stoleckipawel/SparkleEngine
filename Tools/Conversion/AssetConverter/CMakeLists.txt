@@ -12,6 +12,7 @@ add_executable(AssetConverter
     ${ASSET_CONVERTER_PRIVATE_HEADERS}
 )
 sparkle_configure_host_tool_target(AssetConverter)
+sparkle_configure_development_tool_artifacts(AssetConverter)
 
 # AssetConverter remains a direct debug command surface. Source import and
 # cooked output category work are owned by the focused tool modules it links.
@@ -40,9 +41,7 @@ target_link_libraries(AssetConverter
         SparkleGameFramework
 )
 
-set_target_properties(AssetConverter PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+sparkle_declare_runtime_dll_owner(AssetConverter SparkleCore SparkleGameFramework)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source PREFIX "Source" FILES ${CMAKE_CURRENT_SOURCE_DIR}/Source/main.cpp)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${ASSET_CONVERTER_PRIVATE_SOURCES} ${ASSET_CONVERTER_PRIVATE_HEADERS})

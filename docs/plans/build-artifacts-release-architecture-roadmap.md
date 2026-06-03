@@ -1085,7 +1085,7 @@ Goal:
 - make launcher actions explain what users actually need
 - separate machine-installed prerequisites from syncable dependency groups
 - make optional dependency groups visible as capability unlocks instead of mandatory setup
-
+`
 Deliverables:
 
 - workflow-first launcher grouping: Start, Setup, Build, Cook, Run, Package, and Maintenance

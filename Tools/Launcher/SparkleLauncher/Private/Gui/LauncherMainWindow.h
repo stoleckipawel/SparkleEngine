@@ -97,10 +97,12 @@ namespace SparkleLauncher
 
 		enum class LauncherIcon
 		{
+			Start,
 			Setup,
 			Build,
 			Cook,
 			Run,
+			Package,
 			Maintain,
 			Queued,
 			Running,

@@ -12,6 +12,10 @@
 /obj/
 /bld/
 
+# Generated artifact and package roots introduced by the release architecture.
+/artifacts/
+/dist/
+
 # Project-local generated outputs.
 Projects/**/build/
 Projects/**/logs/

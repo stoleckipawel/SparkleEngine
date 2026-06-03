@@ -1,5 +1,6 @@
 set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildWorkspaceOperations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/ArtifactNaming.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildProfileCatalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LaunchOperations.h
@@ -118,6 +119,7 @@ add_library(SparkleLauncherCore STATIC
     ${SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS}
 )
 sparkle_configure_host_tool_target(SparkleLauncherCore)
+sparkle_configure_launcher_artifacts(SparkleLauncherCore)
 
 target_include_directories(SparkleLauncherCore
     PUBLIC
@@ -171,8 +173,9 @@ endif()
 
 set_target_properties(SparkleLauncher PROPERTIES
     AUTOMOC ON
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+sparkle_configure_launcher_artifacts(SparkleLauncher)
+sparkle_declare_runtime_dll_owner(SparkleLauncher SparkleCore)
 
 if(WIN32)
     get_target_property(SPARKLE_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
@@ -189,7 +192,7 @@ if(WIN32)
             --verbose 0
             --dir "$<TARGET_FILE_DIR:SparkleLauncher>"
             "$<TARGET_FILE:SparkleLauncher>"
-        COMMENT "Deploying Qt runtime for SparkleLauncher"
+        COMMENT "Deploying Qt runtime for SparkleLauncher artifact"
     )
 endif()
 
@@ -197,6 +200,7 @@ add_executable(SparkleLauncherProbe
     ${CMAKE_CURRENT_SOURCE_DIR}/Probe/SparkleLauncherProbe.cpp
 )
 sparkle_configure_host_tool_target(SparkleLauncherProbe)
+sparkle_configure_launcher_artifacts(SparkleLauncherProbe)
 
 target_link_libraries(SparkleLauncherProbe
     PRIVATE

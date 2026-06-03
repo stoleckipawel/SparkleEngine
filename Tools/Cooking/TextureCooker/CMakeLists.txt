@@ -95,6 +95,7 @@ add_executable(TextureCooker
     ${TEXTURE_COOKER_PRIVATE_HEADERS}
 )
 sparkle_configure_host_tool_target(TextureCooker)
+sparkle_configure_development_tool_artifacts(TextureCooker)
 
 # TextureCooker owns source-texture loading plus cooked texture-asset emission.
 # Keep the source-decode and serialization implementation private to this
@@ -126,9 +127,7 @@ target_link_libraries(TextureCooker
         tinyexr
 )
 
-set_target_properties(TextureCooker PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+sparkle_declare_runtime_dll_owner(TextureCooker SparkleCore SparkleRHI)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${TEXTURE_COOK_SHARED_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${TEXTURE_COOK_SHARED_PRIVATE_SOURCES} ${TEXTURE_COOKER_PRIVATE_SOURCES} ${TEXTURE_COOKER_PRIVATE_HEADERS})

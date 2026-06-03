@@ -217,7 +217,7 @@ namespace SparkleLauncher
 		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All", "Prepare all assets for the selected project."},
 		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare shader packages."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
-		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Meshes", "Prepare scene mesh and material assets for runtime use."},
+		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scene Assets", "Prepare scene, mesh, and material assets for runtime use."},
 		};
 		return definitions;
 	}
@@ -284,7 +284,7 @@ namespace SparkleLauncher
 		}
 		if (!plan.Freshness.Current)
 		{
-			AddReadiness(plan, "Solution/workspace files are not current. Run Regenerate Solution first.");
+			AddReadiness(plan, "Generated project files are not current. Run Generate Project Files first.");
 		}
 		switch (plan.Kind)
 		{

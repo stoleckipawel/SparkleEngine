@@ -81,7 +81,11 @@ namespace SparkleLauncher
 		}
 		if (operationId == "workspace.generate-solution")
 		{
-			return "Regenerate";
+			return "Generate";
+		}
+		if (operationId == "package.release")
+		{
+			return "Planned";
 		}
 		if (operationId == "workspace.clean")
 		{
@@ -99,7 +103,7 @@ namespace SparkleLauncher
 		{
 			return "Build";
 		}
-		if (operationId.startsWith("project.run") || operationId.startsWith("workspace.run"))
+		if (operationId.startsWith("project.run") || operationId.startsWith("workspace.run") || operationId.startsWith("project.open"))
 		{
 			return "Run";
 		}

@@ -38,7 +38,7 @@ if(POLICY CMP0169)
     cmake_policy(SET CMP0169 OLD)
 endif()
 
-option(SPARKLE_VERBOSE_DEPENDENCIES "Show detailed third-party dependency configure output" OFF)
+option(SPARKLE_VERBOSE_DEPENDENCIES "Show detailed source dependency configure output" OFF)
 if(SPARKLE_VERBOSE_DEPENDENCIES)
     set(FETCHCONTENT_QUIET OFF)
 else()
