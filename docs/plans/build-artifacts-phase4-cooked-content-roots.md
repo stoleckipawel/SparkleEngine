@@ -16,7 +16,6 @@ Implemented Cooked Roots:
 | --- | --- |
 | Project cooked content | `artifacts/dev/projects/<Project>/cooked/` |
 | Shared cooked content | `artifacts/dev/projects/Shared/cooked/` |
-| Legacy migration fallback | `build/Cooked/<Project>/` and `build/Cooked/Shared/` |
 
 Cooked Content Layout:
 
@@ -33,9 +32,9 @@ Implemented Changes:
 - Tool-side `AssetCooker` plans now write cooked content to `artifacts/dev/projects/<Project>/cooked`.
 - Cook plan, summary, and temporary request diagnostics now write under `artifacts/diagnostics/cook`.
 - Launcher `GetCookedProjectDirectory` now returns the project artifact cooked root.
-- Launcher launch readiness checks project cooked content, shared cooked content, and legacy `build/Cooked` fallback roots.
+- Launcher launch readiness checks project cooked content and shared cooked content under artifact/package cooked roots only.
 - Direct `Cook Shaders` launcher workflows run from the selected project root so ShaderCompiler uses the same project-owned cooked root.
-- AssetCooker nested tool resolution now prefers `artifacts/dev/tools/<Tool>/<Config>` with legacy `build/bin/<Config>` fallback.
+- AssetCooker nested tool resolution uses `artifacts/dev/tools/<Tool>/<Config>` as the source-of-truth tool location.
 - Missing launch readiness now points to exact cook actions: `Cook Scene Assets`, `Cook Textures`, or `Cook Shaders`.
 - Clean scopes remove project/shared cooked roots without deleting editor/runtime artifact folders or source dependency caches.
 

@@ -75,11 +75,7 @@ target_link_libraries(SparkleEditor
         imgui
 )
 
-set_target_properties(SparkleEditor PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
+sparkle_configure_runtime_support_artifacts(SparkleEditor)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_EDITOR_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_EDITOR_PRIVATE_SOURCES} ${SPARKLE_EDITOR_PRIVATE_HEADERS})

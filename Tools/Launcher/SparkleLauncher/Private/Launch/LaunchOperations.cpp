@@ -108,9 +108,7 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		const std::filesystem::path legacyCookedRoot = GetBuildDirectory(repositoryRoot) / "Cooked";
-		return DirectoryHasRegularFiles(legacyCookedRoot / std::string(projectId) / relativeScope) ||
-		    DirectoryHasRegularFiles(legacyCookedRoot / "Shared" / relativeScope);
+		return false;
 	}
 
 	static std::filesystem::path FirstExistingOrPreferred(const std::vector<std::filesystem::path>& candidates)

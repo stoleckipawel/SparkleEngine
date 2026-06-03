@@ -100,12 +100,7 @@ target_compile_definitions(SparkleCore
     $<$<OR:$<CONFIG:ShippingEditor>,$<CONFIG:ShippingGame>>:SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_WARN>
 )
 
-# Set output directories
-set_target_properties(SparkleCore PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
+sparkle_configure_runtime_support_artifacts(SparkleCore)
 
 # IDE organization
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_CORE_PUBLIC_HEADERS})

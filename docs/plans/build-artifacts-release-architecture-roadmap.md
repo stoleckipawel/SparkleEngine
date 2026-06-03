@@ -313,7 +313,7 @@ build/windows-clangcl-x64-dev/
 build/windows-clangcl-x64-full/
 ```
 
-Temporary compatibility names may remain:
+Historical migration names that are no longer final architecture:
 
 ```text
 build/
@@ -328,6 +328,7 @@ Rules:
 - the launcher should detect stale generator/platform cache mismatch and offer a clean-regenerate recovery
 - users should be able to choose MSVC-first while still preserving clang-cl support
 - build directory selection should be explicit through launcher settings, environment variables, or CMake presets
+- final launcher discovery must not silently fall back to ambiguous legacy build output folders
 
 ## Product Artifact Model
 
@@ -1140,7 +1141,7 @@ Deliverables:
 - project editor/runtime roots under `artifacts/dev/projects/<Project>/...`
 - diagnostics root under `artifacts/diagnostics`
 - symbol root under `artifacts/symbols`
-- compatibility lookup for old output locations only where needed during migration
+- no compatibility lookup for old output locations in the final strict architecture
 - declared owner/consumer relationships for product runtime DLLs and support files
 - no primary developer workflow depends on ambiguous top-level `bin`-style browsing
 
@@ -1162,7 +1163,7 @@ Completion criteria:
 Prepared prompt:
 
 ```text
-Please perform Phase 3 of docs/plans/build-artifacts-release-architecture-roadmap.md using the Phase 1 path contract and Phase 2 launcher readiness model as input. Move developer runnable outputs to product-aware artifact roots: launcher, development tools, project editor/runtime, diagnostics, and symbols. Declare owner/consumer relationships for runtime DLLs and support files so products copy dependencies intentionally, not by accidental shared-bin scanning. Update launcher discovery and previews to prefer artifact roots while preserving reasonable compatibility lookup during migration. Do not assemble `dist/` packages. Confirm final build/package validation was not run.
+Please perform Phase 3 of docs/plans/build-artifacts-release-architecture-roadmap.md using the Phase 1 path contract and Phase 2 launcher readiness model as input. Move developer runnable outputs to product-aware artifact roots: launcher, development tools, project editor/runtime, diagnostics, and symbols. Declare owner/consumer relationships for runtime DLLs and support files so products copy dependencies intentionally, not by accidental shared-bin scanning. Update launcher discovery and previews to use artifact roots as the source-of-truth output locations. Do not assemble `dist/` packages. Confirm final build/package validation was not run.
 ```
 
 ### Phase 4: Cooked Content And Asset Capability Roots

@@ -1,7 +1,7 @@
 # Sparkle artifact and package naming contract.
 #
-# Phase 1 introduces shared names only. These variables intentionally do not
-# move build outputs yet; later phases can route targets through these roots.
+# Generated build trees are private CMake/MSBuild state. Runnable development
+# products live under artifacts/, and assembled packages live under dist/.
 
 set(SPARKLE_REPOSITORY_ROOT "${CMAKE_SOURCE_DIR}" CACHE PATH "Sparkle source repository root.")
 set(SPARKLE_BUILD_ROOT "${CMAKE_BINARY_DIR}" CACHE PATH "Active generated CMake build tree root.")
@@ -11,6 +11,8 @@ set(SPARKLE_DEV_ARTIFACT_ROOT "${SPARKLE_ARTIFACT_ROOT}/dev" CACHE PATH "Product
 set(SPARKLE_DEV_LAUNCHER_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/launcher" CACHE PATH "Sparkle Launcher development artifact root.")
 set(SPARKLE_DEV_TOOLS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/tools" CACHE PATH "Development tool artifact root.")
 set(SPARKLE_DEV_PROJECTS_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/projects" CACHE PATH "Project editor/runtime artifact root.")
+set(SPARKLE_DEV_RUNTIME_SUPPORT_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/runtime-support" CACHE PATH "Internal runtime support library artifact root.")
+set(SPARKLE_DEV_LIBRARY_ROOT "${SPARKLE_DEV_ARTIFACT_ROOT}/libraries" CACHE PATH "Development import/static library artifact root.")
 set(SPARKLE_DIAGNOSTICS_ROOT "${SPARKLE_ARTIFACT_ROOT}/diagnostics" CACHE PATH "Generated diagnostics artifact root.")
 set(SPARKLE_SYMBOL_ROOT "${SPARKLE_ARTIFACT_ROOT}/symbols" CACHE PATH "Generated symbol artifact root.")
 
@@ -54,10 +56,32 @@ function(sparkle_set_product_artifact_directories target_name runtime_root symbo
     set_target_properties(${target_name} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${runtime_root}/$<CONFIG>"
         LIBRARY_OUTPUT_DIRECTORY "${runtime_root}/$<CONFIG>"
-        ARCHIVE_OUTPUT_DIRECTORY "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/$<CONFIG>/lib"
+        ARCHIVE_OUTPUT_DIRECTORY "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/$<CONFIG>"
         PDB_OUTPUT_DIRECTORY "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/$<CONFIG>"
         COMPILE_PDB_OUTPUT_DIRECTORY "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/$<CONFIG>/obj"
     )
+
+    foreach(config_type IN LISTS CMAKE_CONFIGURATION_TYPES)
+        string(TOUPPER "${config_type}" config_upper)
+        set_target_properties(${target_name} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${config_type}"
+            LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${config_type}"
+            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/${config_type}"
+            PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${config_type}"
+            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${config_type}/obj"
+        )
+    endforeach()
+
+    if(NOT CMAKE_CONFIGURATION_TYPES AND CMAKE_BUILD_TYPE)
+        string(TOUPPER "${CMAKE_BUILD_TYPE}" config_upper)
+        set_target_properties(${target_name} PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${CMAKE_BUILD_TYPE}"
+            LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${runtime_root}/${CMAKE_BUILD_TYPE}"
+            ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_DEV_LIBRARY_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
+            PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}"
+            COMPILE_PDB_OUTPUT_DIRECTORY_${config_upper} "${SPARKLE_SYMBOL_ROOT}/${symbol_owner}/${CMAKE_BUILD_TYPE}/obj"
+        )
+    endif()
 endfunction()
 
 function(sparkle_configure_launcher_artifacts target_name)
@@ -70,6 +94,10 @@ endfunction()
 
 function(sparkle_configure_project_artifacts target_name project_name product_role)
     sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_PROJECTS_ROOT}/${project_name}/${product_role}" "projects/${project_name}/${product_role}")
+endfunction()
+
+function(sparkle_configure_runtime_support_artifacts target_name)
+    sparkle_set_product_artifact_directories(${target_name} "${SPARKLE_DEV_RUNTIME_SUPPORT_ROOT}/${target_name}" "runtime-support/${target_name}")
 endfunction()
 
 function(sparkle_declare_runtime_dll_owner product_target)

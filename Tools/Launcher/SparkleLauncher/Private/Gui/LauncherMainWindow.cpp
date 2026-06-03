@@ -558,7 +558,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "package.release")
 		{
-			return "Package outputs: review-only release assembly consumes artifacts and writes dist/releases/<version>; final validation remains Phase 6.";
+			return "Package outputs: assembles reviewable runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.";
 		}
 		if (operationId == "workspace.clean")
 		{
@@ -867,17 +867,6 @@ namespace SparkleLauncher
 				m_operationOutput->setPlainText("Choose a workflow before running.");
 			}
 			SetStatusMessage("No workflow selected");
-			return;
-		}
-
-		if (m_selectedOperationId == "package.release")
-		{
-			const QString message = "Package assembly is available as the review-only CMake target sparkle_release_assembly. The launcher button stays disabled until Phase 6 validation wires safe one-click packaging.";
-			if (m_operationOutput != nullptr)
-			{
-				m_operationOutput->setPlainText(message);
-			}
-			SetStatusMessage(message);
 			return;
 		}
 
@@ -1424,8 +1413,8 @@ namespace SparkleLauncher
 			AddStatusRow(
 			    *packageLayout,
 			    "Validation",
-			    "Deferred",
-			    "The package layout is inspectable now, but publish readiness and one-click launcher packaging are intentionally deferred until Phase 6.",
+			    "Separate sign-off",
+			    "This workflow assembles dist/ packages. Publish readiness still requires the final validation checklist and release report.",
 			    "neutral");
 			return;
 		}
@@ -1659,7 +1648,7 @@ namespace SparkleLauncher
 		{
 			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
 			    {"Project Cooked Outputs", "selected-cooked", "Cooked asset outputs for the selected project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked Outputs"},
-			    {"All Cooked Outputs", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked plus legacy build/Cooked", "Cooked Outputs"},
+			    {"All Cooked Outputs", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked", "Cooked Outputs"},
 			    {"Build Outputs", "build-tree", "Build outputs, intermediates, generated CMake/Visual Studio files, and local IDE state. Keeps the source dependency cache.", "build contents except build/_deps, .vs, root generated project files, project generated files", "Build and Generated State"},
 			    {"Shader Cache", "shader-cache", "Transient shader cache, recook signal, debug artifacts, and shader outputs.", QString(), "Caches"},
 			    {"Source Dependency Cache", "deps", "Downloaded source dependency cache. Configure will re-download source dependency groups.", QString(), "Caches"},
@@ -2162,8 +2151,8 @@ namespace SparkleLauncher
 		AddStatusRow(
 		    *launchLayout,
 		    "Bundled runtime component",
-		    "Package pending",
-		    "No bundled editor/runtime package root is wired in this phase. Local build outputs remain the active fallback until package assembly is implemented.",
+		    "Supported",
+		    "Package-root launches use bundled editor/runtime components and cooked assets from dist/; source checkouts use product artifacts under artifacts/dev.",
 		    "neutral");
 		AddStatusRow(
 		    *launchLayout,
@@ -2310,7 +2299,7 @@ namespace SparkleLauncher
 				}
 			}
 		};
-		const auto addProjectArtifacts = [this, &addNamedTargets](const QString& profileName, const QString& projectName, const QString& detail) {
+		const auto addProjectArtifacts = [this, &addNamedTargets, &targets](const QString& profileName, const QString& projectName, const QString& detail) {
 			const std::optional<BuildProfile> profile = FindBuildProfile(profileName.toStdString());
 			if (!profile.has_value())
 			{
@@ -2941,17 +2930,6 @@ namespace SparkleLauncher
 			m_cleanButton->setEnabled(false);
 			m_cleanButton->setToolTip("Select a workflow before cleaning generated outputs.");
 			m_cleanButton->setAccessibleDescription("Select a workflow before cleaning generated outputs.");
-			return;
-		}
-
-		if (m_selectedOperationId == "package.release")
-		{
-			const QString reason = "Use the CMake target sparkle_release_assembly for review-only package layout. The launcher action stays disabled until Phase 6 validation.";
-			m_runButton->setEnabled(false);
-			m_runButton->setToolTip(reason);
-			m_runButton->setAccessibleDescription(reason);
-			m_cleanButton->setEnabled(false);
-			m_cleanButton->setVisible(false);
 			return;
 		}
 

@@ -185,8 +185,6 @@ namespace SparkleLauncher
 				AddCleanTarget(plan, projectName + " cooked outputs", GetCookedProjectDirectory(plan.RepositoryRoot, projectName), "Project cooked domain under artifacts/dev/projects/" + projectName + "/cooked.");
 			}
 		}
-
-		AddCleanTarget(plan, "Legacy cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", "Migration fallback for existing build/Cooked outputs.");
 	}
 
 	static void PopulateCleanTargetsForScope(MaintenanceOperationPlan& plan, CleanScope scope)

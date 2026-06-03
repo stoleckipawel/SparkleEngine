@@ -98,8 +98,6 @@ namespace SparkleLauncher
 				AddCleanStep(steps, "clean-project-cooked", "Clean cooked outputs " + projectName, GetCookedProjectDirectory(plan.RepositoryRoot, projectName), MaintenanceCleanBehavior::RemovePath);
 			}
 		}
-
-		AddCleanStep(steps, "clean-legacy-cooked", "Clean legacy cooked outputs", GetBuildDirectory(plan.RepositoryRoot) / "Cooked", MaintenanceCleanBehavior::RemovePath);
 	}
 
 	static ProcessRequest MakeClangFormatRequest(

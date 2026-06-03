@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cwctype>
 #include <filesystem>
 #include <optional>
@@ -25,6 +26,100 @@ namespace
 	std::string GetExecutableStem()
 	{
 		return Strings::ToLowerCopy(Filesystem::GetExecutablePath().stem().string());
+	}
+
+	std::string InferProjectNameFromExecutableStem(std::string executableStem)
+	{
+		if (executableStem.size() > std::string_view("editor").size() && executableStem.ends_with("editor"))
+		{
+			executableStem.resize(executableStem.size() - std::string_view("editor").size());
+		}
+		else if (executableStem.size() > std::string_view("runtime").size() && executableStem.ends_with("runtime"))
+		{
+			executableStem.resize(executableStem.size() - std::string_view("runtime").size());
+		}
+
+		if (executableStem.empty())
+		{
+			return {};
+		}
+
+		executableStem.front() = static_cast<char>(std::toupper(static_cast<unsigned char>(executableStem.front())));
+		return executableStem;
+	}
+
+	std::optional<std::filesystem::path> DiscoverPackageRoot()
+	{
+		std::error_code ec;
+		auto currentDir = std::filesystem::weakly_canonical(Filesystem::GetExecutableDirectory(), ec);
+		if (ec)
+		{
+			currentDir = Filesystem::GetExecutableDirectory();
+		}
+
+		for (uint32_t depth = 0; depth < 8 && !currentDir.empty(); ++depth)
+		{
+			const bool hasLauncher = std::filesystem::exists(currentDir / "SparkleLauncher.exe", ec);
+			ec.clear();
+			const bool hasPackageManifest = std::filesystem::exists(currentDir / "manifests" / "sparkle-package-manifest.json", ec);
+			ec.clear();
+			const bool hasProjects = std::filesystem::exists(currentDir / "Projects", ec);
+			ec.clear();
+			if (hasLauncher && hasPackageManifest && hasProjects)
+			{
+				return Paths::Normalize(currentDir);
+			}
+
+			const auto parentDir = currentDir.parent_path();
+			if (parentDir == currentDir)
+			{
+				break;
+			}
+			currentDir = parentDir;
+		}
+
+		return std::nullopt;
+	}
+
+	std::optional<std::filesystem::path> DiscoverPackageProjectRoot(const std::filesystem::path& packageRoot)
+	{
+		if (packageRoot.empty())
+		{
+			return std::nullopt;
+		}
+
+		const std::filesystem::path projectsRoot = packageRoot / "Projects";
+		std::error_code ec;
+		if (!std::filesystem::exists(projectsRoot, ec) || ec)
+		{
+			return std::nullopt;
+		}
+
+		const std::string projectName = InferProjectNameFromExecutableStem(GetExecutableStem());
+		if (!projectName.empty())
+		{
+			const std::filesystem::path inferredProjectRoot = projectsRoot / projectName;
+			if (std::filesystem::exists(inferredProjectRoot / "Cooked", ec) && !ec)
+			{
+				return Paths::Normalize(inferredProjectRoot);
+			}
+			ec.clear();
+		}
+
+		for (const auto& entry : std::filesystem::directory_iterator(projectsRoot, ec))
+		{
+			if (ec)
+			{
+				break;
+			}
+			if (entry.is_directory(ec) && !ec && std::filesystem::exists(entry.path() / "Cooked", ec) && !ec)
+			{
+				return Paths::Normalize(entry.path());
+			}
+			ec.clear();
+		}
+
+		return std::nullopt;
 	}
 
 	std::optional<std::filesystem::path> DiscoverWorkspaceProjectRoot()
@@ -101,6 +196,7 @@ namespace
 		std::filesystem::path engineAssetsPath;
 		std::filesystem::path workingDirectory;
 		std::filesystem::path executableDirectory;
+		bool packageRuntimeRoot = false;
 		std::array<std::filesystem::path, kAssetTypeCount> projectTypedPaths{};
 		std::array<std::filesystem::path, kAssetTypeCount> engineTypedPaths{};
 		std::filesystem::path shaderSymbolsOutputPath;
@@ -137,7 +233,9 @@ namespace
 		const std::filesystem::path cookedProjectName =
 		    !state.projectPath.empty() ? state.projectPath.filename() : std::filesystem::path("Shared");
 
-		state.cookedAssetRootPath = Paths::Normalize(state.workspacePath / "artifacts" / "dev" / "projects" / cookedProjectName / "cooked");
+		state.cookedAssetRootPath = state.packageRuntimeRoot ?
+		                                Paths::Normalize(state.workspacePath / "Projects" / cookedProjectName / "Cooked") :
+		                                Paths::Normalize(state.workspacePath / "artifacts" / "dev" / "projects" / cookedProjectName / "cooked");
 		state.cookedShaderRootPath = Paths::Normalize(state.cookedAssetRootPath / "Shaders");
 		state.cookedShaderPackageRootPath = Paths::Normalize(state.cookedShaderRootPath / "Packages");
 		state.cookedShaderRegistryPath = Paths::Normalize(state.cookedShaderRootPath / "ShaderPackageRegistry.sreg");
@@ -226,8 +324,8 @@ namespace
 		logPath("Cooked Asset Root", state.cookedAssetRootPath, true);
 		logPath("Cooked Shader Root", state.cookedShaderRootPath, true);
 		logPath("Shader Cache Root", state.shaderCacheRootPath, true);
-		logPath("Engine", state.enginePath, true);
-		logPath("Engine Assets", state.engineAssetsPath, true);
+		logPath("Engine", state.enginePath, !state.packageRuntimeRoot);
+		logPath("Engine Assets", state.engineAssetsPath, !state.packageRuntimeRoot);
 		logPath("Project", state.projectPath, false);
 		logPath("Project Assets", state.projectAssetsPath, false);
 		logPath("Shader Symbols Output", state.shaderSymbolsOutputPath, false);
@@ -270,15 +368,27 @@ namespace
 		state.workingDirectory = std::filesystem::current_path();
 		state.executableDirectory = Filesystem::GetExecutableDirectory();
 
-		state.workspacePath = Filesystem::ResolveWorkspaceRootPath();
+		const std::optional<std::filesystem::path> packageRoot = DiscoverPackageRoot();
+		state.packageRuntimeRoot = packageRoot.has_value();
+		state.workspacePath = state.packageRuntimeRoot ? Paths::Normalize(*packageRoot) : Filesystem::ResolveWorkspaceRootPath();
 
-		if (auto engineRoot = Filesystem::DiscoverEngineRoot())
+		if (!state.packageRuntimeRoot)
 		{
-			state.enginePath = *engineRoot;
-			state.engineAssetsPath = state.enginePath / "Assets";
+			if (auto engineRoot = Filesystem::DiscoverEngineRoot())
+			{
+				state.enginePath = *engineRoot;
+				state.engineAssetsPath = state.enginePath / "Assets";
+			}
 		}
 
-		if (auto projectRoot = Filesystem::DiscoverProjectRoot())
+		if (state.packageRuntimeRoot)
+		{
+			if (auto projectRoot = DiscoverPackageProjectRoot(state.workspacePath))
+			{
+				state.projectPath = *projectRoot;
+			}
+		}
+		else if (auto projectRoot = Filesystem::DiscoverProjectRoot())
 		{
 			state.projectPath = *projectRoot;
 			state.projectAssetsPath = state.projectPath / "Assets";
@@ -289,8 +399,8 @@ namespace
 		state.enginePath = Paths::Normalize(state.enginePath);
 		state.engineAssetsPath = Paths::Normalize(state.engineAssetsPath);
 
-		state.buildOutputRootPath = Filesystem::ResolveBuildOutputRootPath();
-		state.logsRootPath = Filesystem::ResolveLogsRootPath();
+		state.buildOutputRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "build") : Filesystem::ResolveBuildOutputRootPath();
+		state.logsRootPath = state.packageRuntimeRoot ? Paths::Normalize(state.workspacePath / "logs") : Filesystem::ResolveLogsRootPath();
 		state.shaderCacheRootPath = Paths::Normalize(state.buildOutputRootPath / "Cache" / "Shaders");
 		state.shaderDebugArtifactRootPath = Paths::Normalize(state.shaderCacheRootPath / "Debug");
 		state.shaderRecookSignalPath = Filesystem::BuildShaderRecookSignalPath(state.shaderCacheRootPath);

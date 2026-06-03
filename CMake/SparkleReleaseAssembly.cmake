@@ -311,4 +311,4 @@ endif()
 
 message(STATUS "Sparkle runtime package assembled for review: ${SPARKLE_RUNTIME_PACKAGE_ROOT}")
 message(STATUS "Sparkle symbols package assembled separately: ${SPARKLE_SYMBOLS_PACKAGE_ROOT}")
-message(STATUS "Final build/package validation was not run by Phase 5 assembly.")
+message(STATUS "Release assembly completed. Run the final validation checklist before publishing.")

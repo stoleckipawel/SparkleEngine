@@ -5,7 +5,7 @@ Date: 2026-06-03
 Scope:
 
 - move daily runnable developer outputs to product-aware artifact roots
-- keep direct CMake/MSBuild compatibility paths available during migration
+- route launcher-visible runnable products through product-aware artifact roots
 - do not assemble `dist/` packages
 - do not move cooked content
 - do not run final build/package validation
@@ -36,21 +36,21 @@ Implemented CMake Contract:
 Implemented Launcher Contract:
 
 - Added launcher path helpers for artifact roots, diagnostics, symbols, launcher artifacts, development tool artifacts, and project target artifacts.
-- Cook tool resolution now prefers `artifacts/dev/tools/<Tool>/<Config>/` and falls back to legacy `build/bin/<Config>/`.
-- Launch executable resolution now prefers `artifacts/dev/projects/<Project>/<editor|runtime>/<Config>/` and falls back to legacy build output lookup.
+- Cook tool resolution uses `artifacts/dev/tools/<Tool>/<Config>/` as the source-of-truth tool location.
+- Launch executable resolution uses `artifacts/dev/projects/<Project>/<editor|runtime>/<Config>/` as the source-of-truth executable location.
 - Launcher self-restart now targets `artifacts/dev/launcher/<Config>/`.
 - Clean previews now point at product-aware artifact and symbol roots.
 - Shader debug artifact defaults now use `artifacts/diagnostics/ShaderDebugArtifacts/<Project>/`.
 
-Compatibility Notes:
+Strict Final-State Notes:
 
-- Engine module targets still keep their existing `build/bin` and `build/lib` output rules as direct build-system escape hatches in this phase.
+- Engine module targets are private build products unless a product explicitly owns and stages their runtime files.
 - Product executables no longer depend on browsing those generic folders: shared runtime DLLs are copied to product artifact folders through declared owner/consumer relationships.
-- Cooked content remains under the existing build cooked root until a later phase explicitly migrates cooked output policy.
+- Cooked content is owned by project/shared artifact cooked roots after Phase 4.
 
 Validation:
 
 - Read-only searches confirmed launcher/tool/project product executable artifact helpers are wired.
-- Remaining explicit `build/bin` output rules are engine module compatibility rules.
+- No launcher workflow depends on a generic `build/bin` executable lookup.
 - Final build validation was not run.
 - Final package validation was not run.

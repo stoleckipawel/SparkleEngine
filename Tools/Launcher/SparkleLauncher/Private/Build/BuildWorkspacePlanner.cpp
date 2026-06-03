@@ -230,6 +230,15 @@ namespace SparkleLauncher
 			}
 			plan.CanRun = true;
 			return;
+		case BuildWorkspaceOperationKind::AssembleRelease:
+			if (!RequireCurrentWorkspace(plan))
+			{
+				return;
+			}
+			AddPlannedEffect(plan, "Assemble reviewable runtime and symbols packages from artifacts into dist/releases/<version>.");
+			AddPlannedEffect(plan, "Keep final package validation separate from assembly; this action does not publish.");
+			plan.CanRun = true;
+			return;
 		}
 	}
 
@@ -245,6 +254,7 @@ namespace SparkleLauncher
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Optional local rebuild of the selected project's runtime target."},
 		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Optional local build of tools required by recook workflows."},
+		    {BuildWorkspaceOperationKind::AssembleRelease, "package.release", "Package", "Assemble Release Package", "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without publishing."},
 		};
 		return definitions;
 	}

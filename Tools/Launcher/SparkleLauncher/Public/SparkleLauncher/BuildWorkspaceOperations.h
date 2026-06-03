@@ -87,7 +87,8 @@ namespace SparkleLauncher
 		CompileLauncher,
 		CompileEditor,
 		CompileRuntime,
-		BuildCookTools
+		BuildCookTools,
+		AssembleRelease
 	};
 
 	struct BuildWorkspaceOperationDefinition

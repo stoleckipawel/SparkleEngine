@@ -175,6 +175,9 @@ namespace SparkleLauncher
 			}
 			return steps;
 		}
+		case BuildWorkspaceOperationKind::AssembleRelease:
+			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"sparkle_release_assembly"});
+			return steps;
 		}
 
 		return steps;

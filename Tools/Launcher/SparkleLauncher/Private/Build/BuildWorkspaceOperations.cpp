@@ -68,6 +68,8 @@ namespace SparkleLauncher
 			return "CompileRuntime";
 		case BuildWorkspaceOperationKind::BuildCookTools:
 			return "BuildCookTools";
+		case BuildWorkspaceOperationKind::AssembleRelease:
+			return "AssembleRelease";
 		}
 
 		return "Unknown";
