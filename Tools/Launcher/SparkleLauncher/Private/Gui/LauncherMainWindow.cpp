@@ -558,7 +558,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "package.release")
 		{
-			return "Package outputs: planned release assembly lane; no package is produced in this phase.";
+			return "Package outputs: review-only release assembly consumes artifacts and writes dist/releases/<version>; final validation remains Phase 6.";
 		}
 		if (operationId == "workspace.clean")
 		{
@@ -872,7 +872,7 @@ namespace SparkleLauncher
 
 		if (m_selectedOperationId == "package.release")
 		{
-			const QString message = "Package assembly is planned for a later release-architecture phase and was not run.";
+			const QString message = "Package assembly is available as the review-only CMake target sparkle_release_assembly. The launcher button stays disabled until Phase 6 validation wires safe one-click packaging.";
 			if (m_operationOutput != nullptr)
 			{
 				m_operationOutput->setPlainText(message);
@@ -1414,18 +1414,18 @@ namespace SparkleLauncher
 			QVBoxLayout* packageLayout = AddOptionGroup(
 			    layout,
 			    "Package Assembly",
-			    "Phase 2 keeps packaging visible as a product workflow without inventing a premature package command.");
+			    "Phase 5 adds a review-only package assembly target while keeping final validation separate.");
 			AddStatusRow(
 			    *packageLayout,
 			    "Release package",
-			    "Not wired yet",
-			    "Future phases will assemble ready-to-use launcher, editor/runtime, cooked content, symbols, manifests, and redistributables under the dist root.",
-			    "warning");
+			    "Review target",
+			    "Build the sparkle_release_assembly CMake target to assemble launcher, editor/runtime, cooked content, manifests, checksums, notes, licenses, and a separate symbols archive under dist/releases/<version>.",
+			    "neutral");
 			AddStatusRow(
 			    *packageLayout,
-			    "Daily workflow",
-			    "Use Start",
-			    "A synced repository can still launch or rebuild local outputs. Package validation is intentionally deferred until the final validation phase.",
+			    "Validation",
+			    "Deferred",
+			    "The package layout is inspectable now, but publish readiness and one-click launcher packaging are intentionally deferred until Phase 6.",
 			    "neutral");
 			return;
 		}
@@ -2946,7 +2946,7 @@ namespace SparkleLauncher
 
 		if (m_selectedOperationId == "package.release")
 		{
-			const QString reason = "Package assembly is planned for a later phase. Use Start, Build, Cook, or Maintenance workflows for current actions.";
+			const QString reason = "Use the CMake target sparkle_release_assembly for review-only package layout. The launcher action stays disabled until Phase 6 validation.";
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
 			m_runButton->setAccessibleDescription(reason);

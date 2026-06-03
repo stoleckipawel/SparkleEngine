@@ -94,5 +94,21 @@ function(sparkle_declare_runtime_dll_owner product_target)
     endforeach()
 endfunction()
 
+if(NOT TARGET sparkle_release_assembly)
+    add_custom_target(sparkle_release_assembly
+        COMMAND ${CMAKE_COMMAND}
+            "-DSPARKLE_REPOSITORY_ROOT=${SPARKLE_REPOSITORY_ROOT}"
+            "-DSPARKLE_ARTIFACT_ROOT=${SPARKLE_ARTIFACT_ROOT}"
+            "-DSPARKLE_DIST_ROOT=${SPARKLE_DIST_ROOT}"
+            "-DSPARKLE_PACKAGE_VERSION=${SPARKLE_PACKAGE_VERSION}"
+            "-DSPARKLE_RELEASE_CHANNEL=${SPARKLE_RELEASE_CHANNEL}"
+            "-DSPARKLE_PACKAGE_PLATFORM=${SPARKLE_PACKAGE_PLATFORM}"
+            "-DSPARKLE_BUILD_CONFIG=$<CONFIG>"
+            -P "${CMAKE_SOURCE_DIR}/CMake/SparkleReleaseAssembly.cmake"
+        COMMENT "Assembling Sparkle release layout for review"
+        VERBATIM
+    )
+endif()
+
 message(STATUS "Sparkle roots: build=${SPARKLE_BUILD_ROOT}; artifacts=${SPARKLE_ARTIFACT_ROOT}; dev=${SPARKLE_DEV_ARTIFACT_ROOT}; dist=${SPARKLE_DIST_ROOT}")
 message(STATUS "Sparkle package identity: version=${SPARKLE_PACKAGE_VERSION}; channel=${SPARKLE_RELEASE_CHANNEL}; platform=${SPARKLE_PACKAGE_PLATFORM}")
