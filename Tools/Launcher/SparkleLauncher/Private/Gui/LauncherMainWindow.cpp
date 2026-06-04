@@ -315,7 +315,7 @@ namespace SparkleLauncher
 			QPainter painter(this);
 			painter.setRenderHint(QPainter::Antialiasing, true);
 			painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-			painter.fillRect(rect(), kHeroBackground);
+			painter.fillRect(rect(), kPageBackground);
 
 			if (m_source.isNull() || width() <= 0 || height() <= 0)
 			{
@@ -349,15 +349,16 @@ namespace SparkleLauncher
 			imageRightBlend.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 132));
 			heroPainter.fillRect(designRect, imageRightBlend);
 
-			QLinearGradient topLevelFade(0, 0, 0, kDesignHeight);
-			topLevelFade.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
-			topLevelFade.setColorAt(0.50, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
-			topLevelFade.setColorAt(0.78, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 102));
-			topLevelFade.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 255));
-			heroPainter.fillRect(heroLayer.rect(), topLevelFade);
-
 			heroPainter.setPen(QPen(QColor(118, 185, 0, 210), 2));
 			heroPainter.drawLine(kCopyDividerX, 0, kCopyDividerX, kDesignHeight - 1);
+
+			QLinearGradient topLevelFade(0, 0, 0, kDesignHeight);
+			topLevelFade.setColorAt(0.00, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 0));
+			topLevelFade.setColorAt(0.50, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 0));
+			topLevelFade.setColorAt(0.70, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 50));
+			topLevelFade.setColorAt(0.86, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 172));
+			topLevelFade.setColorAt(1.00, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 255));
+			heroPainter.fillRect(heroLayer.rect(), topLevelFade);
 
 			painter.drawImage(HeroSceneRect(), heroLayer);
 		}
@@ -449,6 +450,7 @@ namespace SparkleLauncher
 		static constexpr int kCopyBottom = 44;
 		static constexpr int kCopyWidth = 430;
 		static const inline QColor kHeroBackground = QColor(3, 4, 4);
+		static const inline QColor kPageBackground = QColor(17, 19, 18);
 
 		QPixmap m_source;
 		QWidget* m_copyPane = nullptr;
