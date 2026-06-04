@@ -42,6 +42,7 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QScrollBar>
+#include <QtWidgets/QStackedLayout>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QWidget>
@@ -146,28 +147,30 @@ namespace SparkleLauncher
 		painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
 
 		QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-		leftFade.setColorAt(0.0, QColor(4, 6, 5, heroTreatment ? 238 : 210));
-		leftFade.setColorAt(heroTreatment ? 0.38 : 0.28, QColor(4, 6, 5, heroTreatment ? 190 : 128));
-		leftFade.setColorAt(0.72, QColor(4, 6, 5, softTreatment ? 96 : 42));
-		leftFade.setColorAt(1.0, QColor(4, 6, 5, 18));
+		leftFade.setColorAt(0.0, QColor(3, 4, 4, heroTreatment ? 255 : 210));
+		leftFade.setColorAt(heroTreatment ? 0.30 : 0.28, QColor(3, 4, 4, heroTreatment ? 252 : 128));
+		leftFade.setColorAt(heroTreatment ? 0.48 : 0.72, QColor(3, 4, 4, heroTreatment ? 205 : (softTreatment ? 96 : 42)));
+		leftFade.setColorAt(heroTreatment ? 0.66 : 0.82, QColor(3, 4, 4, heroTreatment ? 72 : 18));
+		leftFade.setColorAt(heroTreatment ? 0.82 : 1.0, QColor(3, 4, 4, heroTreatment ? 8 : 18));
+		leftFade.setColorAt(1.0, QColor(3, 4, 4, heroTreatment ? 0 : 18));
 		painter.fillRect(result.rect(), leftFade);
 
 		QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-		bottomFade.setColorAt(0.0, QColor(4, 6, 5, softTreatment ? 32 : 8));
-		bottomFade.setColorAt(0.58, QColor(4, 6, 5, 12));
-		bottomFade.setColorAt(1.0, QColor(4, 6, 5, heroTreatment ? 210 : 170));
+		bottomFade.setColorAt(0.0, QColor(3, 4, 4, heroTreatment ? 0 : (softTreatment ? 32 : 8)));
+		bottomFade.setColorAt(0.58, QColor(3, 4, 4, heroTreatment ? 6 : 12));
+		bottomFade.setColorAt(1.0, QColor(3, 4, 4, heroTreatment ? 92 : 170));
 		painter.fillRect(result.rect(), bottomFade);
 
 		QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-		limeSweep.setColorAt(0.0, QColor(118, 185, 0, heroTreatment ? 18 : 10));
-		limeSweep.setColorAt(0.48, QColor(118, 185, 0, heroTreatment ? 36 : 22));
+		limeSweep.setColorAt(0.0, QColor(118, 185, 0, heroTreatment ? 0 : 10));
+		limeSweep.setColorAt(0.48, QColor(118, 185, 0, heroTreatment ? 10 : 22));
 		limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
 		painter.fillRect(result.rect(), limeSweep);
 
 		if (heroTreatment)
 		{
-			painter.setPen(QPen(QColor(118, 185, 0, 165), 2));
-			const int accentX = std::clamp(targetSize.width() / 3, 140, targetSize.width() - 48);
+			painter.setPen(QPen(QColor(118, 185, 0, 175), 2));
+			const int accentX = std::clamp(static_cast<int>(targetSize.width() * 0.36), 280, targetSize.width() - 48);
 			painter.drawLine(accentX, 0, accentX, targetSize.height());
 		}
 
@@ -2508,28 +2511,34 @@ namespace SparkleLauncher
 		QFrame* card = new QFrame(this);
 		card->setObjectName("CommandHeroCard");
 		card->setProperty("State", state);
-		card->setMinimumHeight(220);
-		QHBoxLayout* shellLayout = new QHBoxLayout(card);
+		card->setMinimumHeight(292);
+		QStackedLayout* shellLayout = new QStackedLayout(card);
 		shellLayout->setContentsMargins(0, 0, 0, 0);
 		shellLayout->setSpacing(0);
+		shellLayout->setStackingMode(QStackedLayout::StackAll);
 
-		QWidget* copyPane = new QWidget(card);
+		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, 292)))
+		{
+			artwork->setParent(card);
+			shellLayout->addWidget(artwork);
+		}
+
+		QWidget* overlay = new QWidget(card);
+		overlay->setObjectName("CommandHeroOverlay");
+		QHBoxLayout* overlayLayout = new QHBoxLayout(overlay);
+		overlayLayout->setContentsMargins(0, 0, 0, 0);
+		overlayLayout->setSpacing(0);
+
+		QWidget* copyPane = new QWidget(overlay);
 		copyPane->setObjectName("CommandHeroCopyPane");
+		copyPane->setMaximumWidth(430);
 		QVBoxLayout* layout = new QVBoxLayout(copyPane);
-		layout->setContentsMargins(22, 18, 22, 18);
-		layout->setSpacing(12);
+		layout->setContentsMargins(36, 46, 34, 34);
+		layout->setSpacing(18);
 
-		QHBoxLayout* titleRow = new QHBoxLayout();
-		titleRow->setContentsMargins(0, 0, 0, 0);
-		titleRow->setSpacing(kSpaceMedium);
 		QLabel* title = new QLabel(status, card);
 		title->setObjectName("CommandHeroTitle");
-		titleRow->addWidget(title, 1);
-		QLabel* chip = new QLabel(state == "ok" ? "Ready" : (state == "warning" ? "Needs action" : "Quick Start"), card);
-		chip->setObjectName("CommandHeroChip");
-		chip->setProperty("State", state);
-		titleRow->addWidget(chip, 0, Qt::AlignRight | Qt::AlignTop);
-		layout->addLayout(titleRow);
+		layout->addWidget(title);
 
 		QLabel* body = new QLabel(detail, card);
 		body->setObjectName("CommandHeroText");
@@ -2551,36 +2560,13 @@ namespace SparkleLauncher
 		}
 		actionRow->addStretch(1);
 		layout->addLayout(actionRow);
+		layout->addStretch(1);
 
-		shellLayout->addWidget(copyPane, 1);
-
-		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(520, 220)))
-		{
-			QFrame* artworkPane = new QFrame(card);
-			artworkPane->setObjectName("CommandHeroArtworkPane");
-			QVBoxLayout* artworkLayout = new QVBoxLayout(artworkPane);
-			artworkLayout->setContentsMargins(0, 0, 0, 10);
-			artworkLayout->setSpacing(0);
-			artwork->setParent(artworkPane);
-			artworkLayout->addWidget(artwork, 1);
-
-			QHBoxLayout* carouselLayout = new QHBoxLayout();
-			carouselLayout->setContentsMargins(0, 0, 0, 0);
-			carouselLayout->setSpacing(8);
-			carouselLayout->addStretch(1);
-			for (int index = 0; index < 5; ++index)
-			{
-				QFrame* dot = new QFrame(artworkPane);
-				dot->setObjectName("CommandCarouselDot");
-				dot->setProperty("Active", index == 0);
-				dot->setFixedSize(index == 0 ? QSize(34, 5) : QSize(28, 5));
-				carouselLayout->addWidget(dot);
-			}
-			carouselLayout->addStretch(1);
-			artworkLayout->addLayout(carouselLayout);
-
-			shellLayout->addWidget(artworkPane, 2);
-		}
+		overlayLayout->addWidget(copyPane, 0);
+		overlayLayout->addStretch(1);
+		shellLayout->addWidget(overlay);
+		shellLayout->setCurrentWidget(overlay);
+		overlay->raise();
 		return card;
 	}
 
@@ -2759,25 +2745,6 @@ namespace SparkleLauncher
 			section->setAccessibleName(title);
 			layout.addWidget(section);
 		};
-
-		QFrame* identity = new QFrame(this);
-		identity->setObjectName("CommandIdentityBar");
-		QHBoxLayout* identityLayout = new QHBoxLayout(identity);
-		identityLayout->setContentsMargins(0, 0, 0, 0);
-		identityLayout->setSpacing(kSpaceMedium);
-		QVBoxLayout* titleLayout = new QVBoxLayout();
-		titleLayout->setContentsMargins(0, 0, 0, 0);
-		titleLayout->setSpacing(2);
-		QLabel* productTitle = new QLabel("Sparkle Engine", identity);
-		productTitle->setObjectName("CommandProductTitle");
-		titleLayout->addWidget(productTitle);
-		const QString selectedProjectName = m_projectModel.SelectedProjectId();
-		const QString quickStartSubtitle = selectedProjectName.isEmpty() ? QString("Quick start for the selected project") : QStringLiteral("Quick start for the %1 project").arg(selectedProjectName);
-		QLabel* productSubtitle = new QLabel(quickStartSubtitle, identity);
-		productSubtitle->setObjectName("CommandProductSubtitle");
-		titleLayout->addWidget(productSubtitle);
-		identityLayout->addLayout(titleLayout, 1);
-		layout.addWidget(identity);
 
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
 		const QString heroTitle = "Explore Project";
