@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Pipeline/PassBindingOverrides.h"
 #include "RendererAPI.h"
 #include "ShaderParameters/PassParameterSet.h"
 
@@ -12,7 +13,6 @@ class FrameGraphResourceCommands;
 class FrameGraphBuilder;
 class PassResourceBuilder;
 class PassParameterLayout;
-class PassBindingOverrides;
 class RenderHardwareInterface;
 class RenderBindingLayout;
 class RenderPipelineState;
@@ -115,9 +115,10 @@ class SPARKLE_RENDERER_API ShaderPass
 	    const TParameterBindings& parameters,
 	    const char* passName,
 	    const char* const* bindingNames = nullptr,
-	    std::uint32_t bindingNameCount = 0) noexcept
+	    std::uint32_t bindingNameCount = 0,
+	    const PassBindingOverrides* overrides = nullptr) noexcept
 	{
-		return ValidateParameterSet(GetPassParameterSet(parameters), passName, bindingNames, bindingNameCount);
+		return ValidateParameterSet(GetPassParameterSet(parameters), passName, bindingNames, bindingNameCount, overrides);
 	}
 
 	static bool ValidateSetupParameterSet(const PassParameterSet& parameterSet, const char* passName) noexcept
@@ -158,7 +159,8 @@ class SPARKLE_RENDERER_API ShaderPass
 	    const PassParameterSet& parameterSet,
 	    const char* passName,
 	    const char* const* bindingNames = nullptr,
-	    std::uint32_t bindingNameCount = 0) noexcept
+	    std::uint32_t bindingNameCount = 0,
+	    const PassBindingOverrides* overrides = nullptr) noexcept
 	{
 		if (!parameterSet.HasLayout())
 		{
@@ -171,7 +173,7 @@ class SPARKLE_RENDERER_API ShaderPass
 			for (std::uint32_t index = 0; index < bindingNameCount; ++index)
 			{
 				const PassParameterBinding* binding = parameterSet.FindBinding(bindingNames[index]);
-				if (binding != nullptr && !binding->IsBound())
+				if (binding != nullptr && !binding->IsBound() && !HasBindingOverride(overrides, bindingNames[index]))
 				{
 					ReportInvalidShaderPassParameterSet(passName, parameterSet);
 					return false;
@@ -188,6 +190,24 @@ class SPARKLE_RENDERER_API ShaderPass
 		}
 
 		return true;
+	}
+
+	static bool HasBindingOverride(const PassBindingOverrides* overrides, const char* bindingName) noexcept
+	{
+		if (overrides == nullptr || bindingName == nullptr)
+		{
+			return false;
+		}
+
+		for (const PassBindingOverride& bindingOverride : overrides->GetOverrides())
+		{
+			if (bindingOverride.Name == bindingName)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	static bool IsFrameGraphParameter(const PassParameterDesc& parameter) noexcept
@@ -270,7 +290,7 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
-		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount))
+		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount, overrides))
 		{
 			return false;
 		}
@@ -318,7 +338,7 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	    const PassBindingOverrides* overrides = nullptr,
 	    const char* passName = nullptr) noexcept
 	{
-		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount))
+		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount, overrides))
 		{
 			return false;
 		}

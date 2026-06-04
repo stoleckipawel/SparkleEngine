@@ -39,6 +39,7 @@ struct RenderPassShaderRuntimeStorage
 	std::unique_ptr<RenderBindingLayout> BindingLayout;
 	std::unique_ptr<RenderPipelineState> PipelineState;
 	std::unique_ptr<RenderPipelineState> WireframePipelineState;
+	std::unique_ptr<RenderPipelineState> TwoSidedPipelineState;
 	const LoadedShaderPackage* ShaderPackage = nullptr;
 };
 
@@ -90,8 +91,21 @@ class RenderPassShaderRuntime final
 		configurePipelineState(pipelineDesc);
 		storage.PipelineState = rhi.CreateGraphicsPipelineState(pipelineDesc);
 		storage.WireframePipelineState.reset();
+		storage.TwoSidedPipelineState.reset();
 		if (desc.AllowInputAssemblerInputLayout && !pipelineDesc.RenderWireframe)
 		{
+			GraphicsPipelineStateDesc twoSidedPipelineDesc = pipelineDesc;
+			twoSidedPipelineDesc.CullMode = ERhiCullMode::None;
+			storage.TwoSidedPipelineState = rhi.CreateGraphicsPipelineState(twoSidedPipelineDesc);
+			if (!storage.TwoSidedPipelineState)
+			{
+				outErrorMessage = std::format(
+				    "Render pass '{}' failed to create its two-sided graphics pipeline state for package '{}'",
+				    desc.PassName,
+				    desc.Package.PackageId != nullptr ? desc.Package.PackageId : "<null>");
+				return false;
+			}
+
 			GraphicsPipelineStateDesc wireframePipelineDesc = pipelineDesc;
 			wireframePipelineDesc.RenderWireframe = true;
 			wireframePipelineDesc.CullMode = ERhiCullMode::None;

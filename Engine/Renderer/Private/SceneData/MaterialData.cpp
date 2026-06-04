@@ -14,6 +14,7 @@ MaterialData MaterialData::FromDesc(const MaterialDesc& desc)
 	mat.emissiveColor = desc.emissiveColor;
 	mat.alphaMode = static_cast<std::uint32_t>(desc.alphaMode);
 	mat.alphaCutoff = desc.alphaCutoff;
+	mat.doubleSided = desc.doubleSided;
 
 	auto setTextureFlag = [&mat, &desc](TextureGroup textureGroup)
 	{

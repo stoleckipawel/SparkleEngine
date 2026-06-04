@@ -22,6 +22,7 @@ namespace Assets
 		outMaterialDesc.emissiveColor = materialAsset.header.emissiveColor;
 		outMaterialDesc.alphaMode = TranslateAlphaMode(materialAsset.header.alphaMode);
 		outMaterialDesc.alphaCutoff = materialAsset.header.alphaCutoff;
+		outMaterialDesc.doubleSided = materialAsset.header.doubleSided != 0;
 		outMaterialDesc.textureReferences.clear();
 		outMaterialDesc.textureReferences.reserve(materialAsset.textureReferences.size());
 

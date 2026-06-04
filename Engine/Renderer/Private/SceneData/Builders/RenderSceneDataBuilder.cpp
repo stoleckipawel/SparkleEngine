@@ -101,9 +101,41 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	MeshInstanceBatchBuildResult batchBuildResult = batchBuilder.Build(
 	    renderItems,
 	    sceneSnapshot.meshes.meshInstanceGroups,
-	    MeshInstanceBatchBuildOptions{.enableAutoBatching = CVarRendererMeshAutoBatching.Get(), .requireMaterialBindingSet = true});
+	    MeshInstanceBatchBuildOptions{
+	        .enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
+	        .requireMaterialBindingSet = true,
+	        .collectDiagnostics = true});
 	sceneData.meshInstances = std::move(batchBuildResult.batchInstances);
 	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
+
+	static bool loggedFirstMeshBatchSummary = false;
+	static bool loggedMissingMeshBatchWarning = false;
+	if (!loggedFirstMeshBatchSummary && !sceneData.meshInstances.empty())
+	{
+		loggedFirstMeshBatchSummary = true;
+		SPDLOG_LOGGER_INFO(
+		    g_renderSceneDataBuilderLogger,
+		    "RenderSceneDataBuilder: prepared {} renderable mesh instances in {} batches from {} scene mesh instances (rejected={}, missingGpuMesh={}, invalidMaterial={}).",
+		    sceneData.meshInstances.size(),
+		    sceneData.meshInstanceBatches.size(),
+		    sceneSnapshot.meshes.meshInstances.size(),
+		    batchBuildResult.diagnostics.RejectedCandidateCount,
+		    batchBuildResult.diagnostics.RejectedMissingGpuMeshCount,
+		    batchBuildResult.diagnostics.RejectedInvalidMaterialCount);
+	}
+	else if (!loggedMissingMeshBatchWarning && !sceneSnapshot.meshes.meshInstances.empty() && sceneData.meshInstanceBatches.empty())
+	{
+		loggedMissingMeshBatchWarning = true;
+		SPDLOG_LOGGER_WARN(
+		    g_renderSceneDataBuilderLogger,
+		    "RenderSceneDataBuilder: scene has {} mesh instances but produced no render batches (candidates={}, rejected={}, missingGpuMesh={}, invalidGroup={}, invalidMaterial={}).",
+		    sceneSnapshot.meshes.meshInstances.size(),
+		    batchBuildResult.diagnostics.CandidateItemCount,
+		    batchBuildResult.diagnostics.RejectedCandidateCount,
+		    batchBuildResult.diagnostics.RejectedMissingGpuMeshCount,
+		    batchBuildResult.diagnostics.RejectedInvalidInstanceGroupCount,
+		    batchBuildResult.diagnostics.RejectedInvalidMaterialCount);
+	}
 }
 
 void RenderSceneDataBuilder::BuildLighting(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const noexcept

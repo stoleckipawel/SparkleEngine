@@ -19,6 +19,12 @@ enum class ERhiCullMode : std::uint8_t
 	Back = 2,
 };
 
+enum class ERhiFrontFaceWinding : std::uint8_t
+{
+	Clockwise = 0,
+	CounterClockwise = 1,
+};
+
 enum class RhiStencilOp : std::uint8_t
 {
 	Keep = 0,
@@ -133,6 +139,7 @@ struct GraphicsPipelineStateDesc
 	RhiShaderStageDesc PixelShader = {};
 	bool RenderWireframe = false;
 	ERhiCullMode CullMode = ERhiCullMode::Back;
+	ERhiFrontFaceWinding FrontFaceWinding = ERhiFrontFaceWinding::CounterClockwise;
 	RhiDepthTestDesc DepthTest = {};
 	RhiStencilTestDesc StencilTest = {};
 	std::array<PixelFormat, 8> RenderTargetFormats = {};

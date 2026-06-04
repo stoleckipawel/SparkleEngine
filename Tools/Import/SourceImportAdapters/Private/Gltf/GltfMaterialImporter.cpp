@@ -169,6 +169,7 @@ void GltfMaterialImporter::ApplyMaterialProperties(const cgltf_material& materia
 {
 	importedMaterial.emissiveColor = DirectX::XMFLOAT3(material.emissive_factor[0], material.emissive_factor[1], material.emissive_factor[2]);
 	importedMaterial.alphaCutoff = material.alpha_cutoff;
+	importedMaterial.doubleSided = material.double_sided;
 
 	switch (material.alpha_mode)
 	{

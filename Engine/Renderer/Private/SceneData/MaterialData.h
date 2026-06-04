@@ -35,6 +35,7 @@ struct SPARKLE_RENDERER_API MaterialData
 	std::uint32_t alphaMode = 0;
 	float alphaCutoff = 0.5f;
 	std::uint32_t textureFlags = 0;
+	bool doubleSided = false;
 
 	const RenderBindingSet* textureBindingSet = nullptr;
 

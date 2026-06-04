@@ -34,6 +34,11 @@ namespace
 		}
 	}
 
+	BOOL ToD3D12FrontCounterClockwise(ERhiFrontFaceWinding winding) noexcept
+	{
+		return winding == ERhiFrontFaceWinding::CounterClockwise ? TRUE : FALSE;
+	}
+
 	D3D12_STENCIL_OP ToD3D12StencilOp(RhiStencilOp op) noexcept
 	{
 		switch (op)
@@ -179,14 +184,15 @@ namespace
 void D3D12PipelineState::SetRasterizerState(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
     bool bRenderWireframe,
-    ERhiCullMode cullMode) noexcept
+    ERhiCullMode cullMode,
+    ERhiFrontFaceWinding frontFaceWinding) noexcept
 {
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	auto& rs = psoDesc.RasterizerState;
 	rs = {};
 	rs.FillMode = bRenderWireframe ? D3D12_FILL_MODE_WIREFRAME : D3D12_FILL_MODE_SOLID;
 	rs.CullMode = ToD3D12CullMode(cullMode);
-	rs.FrontCounterClockwise = FALSE;
+	rs.FrontCounterClockwise = ToD3D12FrontCounterClockwise(frontFaceWinding);
 	rs.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 	rs.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
 	rs.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
@@ -260,7 +266,7 @@ void D3D12PipelineState::Create(const GraphicsPipelineStateDesc& desc)
 	psoDesc.VS = vertexShader.Bytecode;
 	psoDesc.PS = pixelShader.Bytecode;
 
-	SetRasterizerState(psoDesc, desc.RenderWireframe, desc.CullMode);
+	SetRasterizerState(psoDesc, desc.RenderWireframe, desc.CullMode, desc.FrontFaceWinding);
 
 	SetStreamOutput(psoDesc);
 

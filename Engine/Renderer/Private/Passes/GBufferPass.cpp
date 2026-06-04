@@ -184,6 +184,17 @@ void GBufferPass::DrawOpaqueMeshes(
 		return;
 	}
 
+	static bool loggedFirstDrawSummary = false;
+	if (!loggedFirstDrawSummary && !sceneData.meshInstanceBatches.empty())
+	{
+		loggedFirstDrawSummary = true;
+		SPDLOG_LOGGER_INFO(
+		    g_gbufferPassLogger,
+		    "GBufferPass::DrawOpaqueMeshes: submitting {} mesh instances across {} batches.",
+		    sceneData.meshInstances.size(),
+		    sceneData.meshInstanceBatches.size());
+	}
+
 	for (std::size_t batchIndex = 0; batchIndex < sceneData.meshInstanceBatches.size(); ++batchIndex)
 	{
 		const MeshInstanceBatch& batch = sceneData.meshInstanceBatches[batchIndex];
@@ -228,13 +239,22 @@ void GBufferPass::DrawOpaqueMeshes(
 			continue;
 		}
 
+		const bool useTwoSidedPipeline =
+		    batch.materialSlot < sceneData.materials.size() && sceneData.materials[batch.materialSlot].doubleSided &&
+		    m_runtime.TwoSidedPipelineState != nullptr;
+		RasterPassPipelineRuntime batchRuntime{
+		    m_runtime.BindingLayout,
+		    useTwoSidedPipeline ? *m_runtime.TwoSidedPipelineState : m_runtime.PipelineState,
+		    m_runtime.WireframePipelineState,
+		    m_runtime.TwoSidedPipelineState};
+
 		PassBindingOverrides overrides;
 		overrides.SetDescriptorTable("MeshInstances", frame.meshInstances.GetShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,
 		    &renderHardwareInterface,
-		    m_runtime,
+		    batchRuntime,
 		    drawParameters.GetPassParameterSet(),
 		    &overrides,
 		    PassName);

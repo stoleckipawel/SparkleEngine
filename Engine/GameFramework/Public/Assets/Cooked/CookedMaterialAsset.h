@@ -18,7 +18,7 @@ namespace Assets
 	};
 
 	inline constexpr std::uint32_t kCookedMaterialAssetMagic = MakeCookedAssetMagic('S', 'M', 'A', 'T');
-	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 2;
+	inline constexpr std::uint32_t kCookedMaterialAssetVersion = 3;
 
 	struct SPARKLE_ENGINE_API CookedMaterialAssetHeader
 	{
@@ -35,6 +35,7 @@ namespace Assets
 		float subsurfaceStrength = 0.0f;
 		float alphaCutoff = 0.5f;
 		DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
+		std::uint32_t doubleSided = 0;
 	};
 }
 

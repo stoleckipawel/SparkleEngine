@@ -29,6 +29,7 @@ namespace
 		VkFormat DepthStencilFormat = VK_FORMAT_UNDEFINED;
 		VkPrimitiveTopology PrimitiveTopology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		VkCullModeFlags CullMode = VK_CULL_MODE_BACK_BIT;
+		VkFrontFace FrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		VkCompareOp DepthCompareOp = VK_COMPARE_OP_LESS;
 		bool DepthEnable = false;
 		bool RenderWireframe = false;
@@ -63,6 +64,11 @@ namespace
 		    __FILE__,
 		    __LINE__,
 		    std::format("Failed to create Vulkan pipeline '{}': {}", debugName, VulkanResult::FormatFailure(functionName, result)));
+	}
+
+	VkFrontFace ToVkFrontFace(ERhiFrontFaceWinding winding) noexcept
+	{
+		return winding == ERhiFrontFaceWinding::Clockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	}
 }
 
@@ -119,7 +125,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .rasterizerDiscardEnable = VK_FALSE,
 	    .polygonMode = desc.RenderWireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL,
 	    .cullMode = VulkanTypeConversions::ToVkCullModeFlags(desc.CullMode),
-	    .frontFace = VK_FRONT_FACE_CLOCKWISE,
+	    .frontFace = ToVkFrontFace(desc.FrontFaceWinding),
 	    .depthBiasEnable = VK_FALSE,
 	    .depthBiasConstantFactor = 0.0f,
 	    .depthBiasClamp = 0.0f,
@@ -214,6 +220,7 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .DepthStencilFormat = renderingCreateInfo.depthAttachmentFormat,
 	    .PrimitiveTopology = inputAssemblyState.topology,
 	    .CullMode = rasterizationState.cullMode,
+	    .FrontFace = rasterizationState.frontFace,
 	    .DepthCompareOp = depthStencilState.depthCompareOp,
 	    .DepthEnable = depthStencilState.depthTestEnable == VK_TRUE,
 	    .RenderWireframe = desc.RenderWireframe};

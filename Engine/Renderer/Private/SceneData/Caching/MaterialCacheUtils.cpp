@@ -30,7 +30,7 @@ namespace MaterialCacheUtils
 		       left.subsurfaceColor.y == right.subsurfaceColor.y && left.subsurfaceColor.z == right.subsurfaceColor.z &&
 		       left.subsurfaceStrength == right.subsurfaceStrength && left.emissiveColor.x == right.emissiveColor.x &&
 		       left.emissiveColor.y == right.emissiveColor.y && left.emissiveColor.z == right.emissiveColor.z &&
-		       left.alphaMode == right.alphaMode && left.alphaCutoff == right.alphaCutoff &&
+		       left.alphaMode == right.alphaMode && left.alphaCutoff == right.alphaCutoff && left.doubleSided == right.doubleSided &&
 		       TextureReferenceEquals(left, right, TextureGroup::Diffuse) &&
 		       TextureReferenceEquals(left, right, TextureGroup::NormalMap) &&
 		       TextureReferenceEquals(left, right, TextureGroup::Roughness) &&

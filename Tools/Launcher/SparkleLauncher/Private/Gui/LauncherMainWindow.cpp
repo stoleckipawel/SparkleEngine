@@ -2612,7 +2612,7 @@ namespace SparkleLauncher
 		QLabel* productTitle = new QLabel("Sparkle Engine", identity);
 		productTitle->setObjectName("CommandProductTitle");
 		titleLayout->addWidget(productTitle);
-		QLabel* productSubtitle = new QLabel("Showcase project command center", identity);
+		QLabel* productSubtitle = new QLabel("Quick start for the Showcase project", identity);
 		productSubtitle->setObjectName("CommandProductSubtitle");
 		titleLayout->addWidget(productSubtitle);
 		identityLayout->addLayout(titleLayout, 1);
@@ -2635,41 +2635,57 @@ namespace SparkleLauncher
 		    secondaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(secondaryAction.OperationId, secondaryAction.Label, false),
 		    "showcase-hero.png"));
 
-		addHomeSection("Library");
 		QGridLayout* libraryGrid = new QGridLayout();
 		libraryGrid->setContentsMargins(0, 0, 0, 4);
 		libraryGrid->setHorizontalSpacing(16);
 		libraryGrid->setVerticalSpacing(16);
+		int libraryColumn = 0;
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
 		    QStringLiteral("Launch the Showcase editor from %1.").arg(launchProvenance) :
 		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
-		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Showcase Editor",
-		                           editorStatus,
-		                           editorDetail,
-		                           editorPlan.CanRun ? "ok" : "warning",
-		                           CreateCommandActionButton(editorPlan.CanRun ? "project.open.editor" : "project.build.editor", editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
-		                           "library",
-		                           "showcase-editor.png"),
-		    0,
-		    0);
+		const QString editorCardOperationId = editorPlan.CanRun ? "project.open.editor" : "project.build.editor";
+		if (primaryAction.OperationId != editorCardOperationId)
+		{
+			libraryGrid->addWidget(CreateHomeCapabilityCard(
+			                           "Showcase Editor",
+			                           editorStatus,
+			                           editorDetail,
+			                           editorPlan.CanRun ? "ok" : "warning",
+			                           CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
+			                           "library",
+			                           "showcase-editor.png"),
+			    0,
+			    libraryColumn++);
+		}
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
 		    QStringLiteral("Run the Showcase runtime from %1.").arg(launchProvenance) :
 		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
-		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Showcase Runtime",
-		                           runtimeStatus,
-		                           runtimeDetail,
-		                           runtimePlan.CanRun ? "ok" : "warning",
-		                           CreateCommandActionButton(runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime", runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
-		                           "library",
-		                           "showcase-runtime.png"),
-		    0,
-		    1);
-		layout.addLayout(libraryGrid);
+		const QString runtimeCardOperationId = runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime";
+		if (primaryAction.OperationId != runtimeCardOperationId)
+		{
+			libraryGrid->addWidget(CreateHomeCapabilityCard(
+			                           "Showcase Runtime",
+			                           runtimeStatus,
+			                           runtimeDetail,
+			                           runtimePlan.CanRun ? "ok" : "warning",
+			                           CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
+			                           "library",
+			                           "showcase-runtime.png"),
+			    0,
+			    libraryColumn++);
+		}
+		if (libraryColumn > 0)
+		{
+			addHomeSection("Other launch paths");
+			layout.addLayout(libraryGrid);
+		}
+		else
+		{
+			delete libraryGrid;
+		}
 
 		addHomeSection("Discover");
 		QGridLayout* discoverGrid = new QGridLayout();

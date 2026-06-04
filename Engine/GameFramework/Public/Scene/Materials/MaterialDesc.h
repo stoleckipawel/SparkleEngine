@@ -28,6 +28,7 @@ struct SPARKLE_ENGINE_API MaterialDesc
 	DirectX::XMFLOAT3 emissiveColor = {0.0f, 0.0f, 0.0f};
 	AlphaMode alphaMode = AlphaMode::Opaque;
 	float alphaCutoff = 0.5f;
+	bool doubleSided = false;
 
 	std::vector<Assets::CookedTextureReference> textureReferences;
 
