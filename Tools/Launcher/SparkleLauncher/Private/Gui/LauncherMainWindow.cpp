@@ -5082,8 +5082,10 @@ namespace SparkleLauncher
 		addRule("#CommandCardChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
 		addRule("#CommandPrimaryButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
 		addRule("#CommandPrimaryButton:hover", "background: " + primaryHover + ";");
+		addRule("#CommandPrimaryButton:disabled", "background: #20251d; color: #9da794; border: 1px solid #3a4730;");
 		addRule("#CommandSecondaryButton", "background: #2b2f2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #42493f; border-radius: 3px; padding: 6px 13px; font-weight: 750; min-width: 112px;");
 		addRule("#CommandSecondaryButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
+		addRule("#CommandSecondaryButton:disabled", "background: #20231f; color: #818a7d; border: 1px solid #343a32;");
 		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 9.5pt; font-weight: 700; padding: 0 0 3px 0;");
 		addRule("#SectionLabel", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 800; padding: 6px 0 1px 0; letter-spacing: 0.35px;");
 		addRule("#OptionGroupTitle", "color: " + textPrimary + "; font-size: 8.75pt; font-weight: 800; padding: 0 0 3px 0;");
@@ -5144,8 +5146,15 @@ namespace SparkleLauncher
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
 		addRule("QPushButton:disabled", "background: #2d312d; border: 1px solid " + border + "; border-top-color: #41483e; color: " + textMuted + ";");
+		addRule("QPushButton#CommandPrimaryButton", "background-color: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
+		addRule("QPushButton#CommandPrimaryButton:hover", "background-color: " + primaryHover + ";");
+		addRule("QPushButton#CommandPrimaryButton:disabled", "background-color: #20251d; color: #b5c0ad; border: 1px solid #3a4730;");
+		addRule("QPushButton#CommandSecondaryButton", "background-color: #2b2f2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #42493f; border-radius: 3px; padding: 6px 13px; font-weight: 750; min-width: 112px;");
+		addRule("QPushButton#CommandSecondaryButton:hover", "background-color: " + panelHover + "; color: " + textPrimary + ";");
+		addRule("QPushButton#CommandSecondaryButton:disabled", "background-color: #20231f; color: #818a7d; border: 1px solid #343a32;");
 		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; min-width: 112px; padding-left: 18px; padding-right: 18px; font-weight: 900;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
+		addRule("#PrimaryActionButton:disabled", "background: #20251d; color: #9da794; border: 1px solid #3a4730;");
 		addRule("#SecondaryButton", "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
 		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");

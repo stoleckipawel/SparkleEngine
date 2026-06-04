@@ -1595,6 +1595,76 @@ Negative guardrails: do not claim visual acceptance from build success alone; do
 Validation: build, launch, capture screenshots, and report pass/fail for every NVIDIA-inspired, Visual Studio Installer-inspired, and Rider-inspired acceptance criterion.
 ```
 
+Phase 3 final visual validation result - 2026-06-04:
+
+Validation environment:
+
+- Repository root: `C:/Users/stole/Documents/GitHub/SparkleEngine`
+- Build tree: `build/ux-validation-msvc`
+- Launcher artifact: `artifacts/dev/launcher/DevelopmentEditor/SparkleLauncher.exe`
+- Runtime launcher process: `artifacts/dev/launcher-state/Live/SparkleLauncher.exe`
+- Qt kit: `C:/Qt/6.11.1/msvc2022_64`
+- Generator: `Visual Studio 18 2026`
+- Platform: `x64`
+- Build configuration: `DevelopmentEditor`
+
+Commands run:
+
+```powershell
+cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
+artifacts\dev\launcher\DevelopmentEditor\SparkleLauncher.exe
+```
+
+Build and launch result:
+
+- PASS: `SparkleLauncher` rebuilt successfully into `artifacts/dev/launcher/DevelopmentEditor`.
+- PASS: launcher started successfully from the live-copy process under `artifacts/dev/launcher-state/Live`.
+- WARNING: Qt deployment still reports `VCINSTALLDIR is not set` when launched from this shell. The warning did not block build, Qt deployment, or launcher startup.
+
+Implementation fixes made during this phase:
+
+- Replaced the remaining old blue app-mark color with the lime/charcoal visual token family.
+- Tightened rail sizing so the full workflow set fits more comfortably at normal window height.
+- Flattened option/status rows into thin-divider product rows instead of heavy table cells.
+- Replaced blue-tinted neutral chips, secondary buttons, menus, and inline actions with charcoal/neutral surfaces.
+- Added dark scrollbar styling so long System/Settings pages no longer fall back to platform-default scrollbars.
+- Added explicit command-button styling so Home hero and tile CTAs remain readable in enabled and disabled states.
+
+Screenshot evidence:
+
+- `artifacts/diagnostics/launcher-visual-phase3/home-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/launch-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/prepare-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/package-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/system-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/settings-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/home-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/launch-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/prepare-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/package-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/system-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/settings-wide.png`
+
+Visual acceptance checklist:
+
+- PASS: NVIDIA-inspired shell structure is present: narrow icon rail, lime active indicator, title/header band, top utilities, tab rows, and no persistent bottom terminal.
+- PASS: Home follows the product launcher model: identity, one hero, Library product tiles, Discover/evidence tiles, and bounded content width.
+- PASS: Lime is used consistently for active navigation, selected tabs, ready/positive accents, and primary CTAs.
+- PASS: Old blue selected/primary states were removed from launcher shell styling.
+- PASS: Wide desktop layout keeps content bounded instead of stretching rows across the entire window.
+- PASS: Visual Studio Installer-inspired complexity appears where it belongs: source tier workload cards, package selection details, workflow impact summaries, and consequential assembly/clean-style contexts.
+- PASS: Rider-inspired expert surfaces are represented in Settings/System through compact rows, search/breadcrumb structure, aligned controls, muted help text, and quiet diagnostics/log access.
+- PASS: Raw logs, commands, paths, and full inventories stay secondary; they do not dominate Home or default workflow pages.
+- PASS: Stale or missing source outputs are visible without making the app feel like a raw CMake dashboard.
+- PASS: Final screenshots were regenerated after the rejected prototype screenshots and contaminated capture set; rejected screenshots are not reused as acceptance evidence.
+
+Remaining visual risks / follow-up:
+
+- PARTIAL: Workflow tabs are visually present but currently act mostly as section orientation rather than full tabbed navigation. If the next pass needs deeper NVIDIA App behavior, tabs should switch visible sub-sections instead of only indicating page structure.
+- PARTIAL: Activity/logs are no longer persistent bottom chrome, but the drawer/tool-window behavior should be stress-tested during active failures and long-running builds.
+- PARTIAL: Package-root first-run visuals still need validation from a real assembled runtime package with bundled editor/runtime/cooked assets.
+- FOLLOW-UP: The top header has enough controls for daily production, but future growth should consider a compact Settings/Context drawer so Project/Config/IDE never becomes crowded on smaller windows.
+
 ## Archived Prototype Implementation
 
 The earlier implemented Phase 0-5 prototype, handoff notes, build/launch validation, screenshot list, and visual rejection history were moved to:
