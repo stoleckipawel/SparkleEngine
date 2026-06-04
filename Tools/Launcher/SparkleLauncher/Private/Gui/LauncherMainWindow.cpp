@@ -1875,46 +1875,24 @@ namespace SparkleLauncher
 		if (operationId == "project.open.editor" || operationId == "project.open.runtime")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
-			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
-			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
-			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
-			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
+			AddLaunchApplicationOptions(layout);
 			return;
 		}
 
 		if (operationId == "project.run.smoke")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			QVBoxLayout* modeLayout = AddOptionGroup(layout, "Smoke Target", "Choose which project executable should run with smoke validation.");
-			AddOptionField(*modeLayout, "Target", CreateValueCombo({{"Editor", "editor"}, {"Runtime", "runtime"}}, m_settings.LaunchTarget(), &LauncherSettings::SetLaunchTarget));
-
-			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
-			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
-			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
-			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
-			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
-			QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
-			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
-			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
+			AddLaunchTargetOptions(layout, "Smoke Target", "Choose which project executable should run with smoke validation.");
+			AddLaunchApplicationOptions(layout);
+			AddSmokeValidationOptions(layout);
 			return;
 		}
 
 		if (operationId == "project.run")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			QVBoxLayout* modeLayout = AddOptionGroup(layout, "Launch Target", "Choose whether this launch starts the editor or runtime.");
-			AddOptionField(*modeLayout, "Target", CreateValueCombo({{"Editor", "editor"}, {"Runtime", "runtime"}}, m_settings.LaunchTarget(), &LauncherSettings::SetLaunchTarget));
-
-			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
-			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
-			AddOptionField(*appOptionsLayout, "VSync", CreateValueCombo({{"On", ""}, {"Off", "false"}}, m_settings.LaunchVSync(), &LauncherSettings::SetLaunchVSync));
-			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
-			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
-			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
+			AddLaunchTargetOptions(layout, "Launch Target", "Choose whether this launch starts the editor or runtime.");
+			AddLaunchApplicationOptions(layout);
 			return;
 		}
 
@@ -2215,13 +2193,73 @@ namespace SparkleLauncher
 		layout.addWidget(row);
 	}
 
-	QFrame* LauncherMainWindow::CreateHomeHeroCard(const QString& status, const QString& detail, const QString& state, QWidget* primaryAction, QWidget* secondaryAction)
+	std::filesystem::path LauncherMainWindow::FindLauncherVisualAsset(const QString& fileName) const
+	{
+		if (fileName.isEmpty())
+		{
+			return {};
+		}
+
+		const std::string assetName = fileName.toStdString();
+		const std::array<std::filesystem::path, 4> candidates = {
+		    m_repositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Assets" / "Visuals" / assetName,
+		    GetArtifactDirectory(m_repositoryRoot) / "dev" / "launcher" / "Visuals" / assetName,
+		    GetArtifactDirectory(m_repositoryRoot) / "diagnostics" / "launcher-visual-assets" / assetName,
+		    GetArtifactDirectory(m_repositoryRoot) / "diagnostics" / "launcher-visual-assets" / (std::filesystem::path(assetName).stem().string() + ".png")};
+		for (const std::filesystem::path& candidate : candidates)
+		{
+			std::error_code errorCode;
+			if (std::filesystem::is_regular_file(candidate, errorCode) && !errorCode)
+			{
+				return candidate;
+			}
+		}
+
+		return {};
+	}
+
+	QLabel* LauncherMainWindow::CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize)
+	{
+		const std::filesystem::path artworkPath = FindLauncherVisualAsset(fileName);
+		if (artworkPath.empty())
+		{
+			return nullptr;
+		}
+
+		QPixmap pixmap(QString::fromStdString(artworkPath.string()));
+		if (pixmap.isNull())
+		{
+			return nullptr;
+		}
+
+		QLabel* artwork = new QLabel(this);
+		artwork->setObjectName(objectName);
+		artwork->setPixmap(pixmap);
+		artwork->setScaledContents(true);
+		artwork->setMinimumSize(minimumSize);
+		artwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
+		return artwork;
+	}
+
+	QFrame* LauncherMainWindow::CreateHomeHeroCard(
+	    const QString& status,
+	    const QString& detail,
+	    const QString& state,
+	    QWidget* primaryAction,
+	    QWidget* secondaryAction,
+	    const QString& artworkFileName)
 	{
 		QFrame* card = new QFrame(this);
 		card->setObjectName("CommandHeroCard");
 		card->setProperty("State", state);
-		card->setMinimumHeight(126);
-		QVBoxLayout* layout = new QVBoxLayout(card);
+		card->setMinimumHeight(220);
+		QHBoxLayout* shellLayout = new QHBoxLayout(card);
+		shellLayout->setContentsMargins(0, 0, 0, 0);
+		shellLayout->setSpacing(0);
+
+		QWidget* copyPane = new QWidget(card);
+		copyPane->setObjectName("CommandHeroCopyPane");
+		QVBoxLayout* layout = new QVBoxLayout(copyPane);
 		layout->setContentsMargins(22, 18, 22, 18);
 		layout->setSpacing(12);
 
@@ -2257,19 +2295,41 @@ namespace SparkleLauncher
 		}
 		actionRow->addStretch(1);
 		layout->addLayout(actionRow);
+
+		shellLayout->addWidget(copyPane, 1);
+
+		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(420, 220)))
+		{
+			artwork->setParent(card);
+			shellLayout->addWidget(artwork, 2);
+		}
 		return card;
 	}
 
-	QFrame* LauncherMainWindow::CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action, const QString& tileRole)
+	QFrame* LauncherMainWindow::CreateHomeCapabilityCard(
+	    const QString& title,
+	    const QString& status,
+	    const QString& detail,
+	    const QString& state,
+	    QWidget* action,
+	    const QString& tileRole,
+	    const QString& artworkFileName)
 	{
 		QFrame* card = new QFrame(this);
 		card->setObjectName("CommandCapabilityCard");
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
-		card->setMinimumHeight(tileRole == "library" ? 178 : 148);
+		const bool hasArtwork = !FindLauncherVisualAsset(artworkFileName).empty();
+		card->setMinimumHeight(tileRole == "library" ? (hasArtwork ? 232 : 178) : (hasArtwork ? 190 : 148));
 		QVBoxLayout* layout = new QVBoxLayout(card);
-		layout->setContentsMargins(tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14, tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
+		layout->setContentsMargins(tileRole == "library" ? 18 : 16, hasArtwork ? 12 : (tileRole == "library" ? 16 : 14), tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
 		layout->setSpacing(tileRole == "library" ? 12 : 10);
+
+		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(260, tileRole == "library" ? 112 : 86)))
+		{
+			artwork->setParent(card);
+			layout->addWidget(artwork);
+		}
 
 		QHBoxLayout* titleRow = new QHBoxLayout();
 		titleRow->setContentsMargins(0, 0, 0, 0);
@@ -2424,7 +2484,7 @@ namespace SparkleLauncher
 		HomeNextAction secondaryAction = {"project.run.smoke", "Run Smoke Test", "Validate the selected editor or runtime once launch outputs are ready.", true};
 		if (!workspacePlan.Freshness.Current && primaryAction.OperationId != "workspace.generate-solution")
 		{
-			secondaryAction = {"workspace.generate-solution", "Generate Workspace Files", "Refresh CMake and IDE files before local development work.", true};
+			secondaryAction = {"workspace.generate-solution", "Prepare Workspace", "Refresh CMake and IDE files before local development work.", true};
 		}
 		else if (missingCookDomains > 0 && !primaryAction.OperationId.startsWith("cook."))
 		{
@@ -2516,7 +2576,8 @@ namespace SparkleLauncher
 		    heroDetail,
 		    heroState,
 		    primaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(primaryAction.OperationId, primaryAction.Label, true, !primaryAction.NavigateOnly),
-		    secondaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(secondaryAction.OperationId, secondaryAction.Label, false)));
+		    secondaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(secondaryAction.OperationId, secondaryAction.Label, false),
+		    "showcase-hero.png"));
 
 		addHomeSection("Library");
 		QGridLayout* libraryGrid = new QGridLayout();
@@ -2534,7 +2595,8 @@ namespace SparkleLauncher
 		                           editorDetail,
 		                           editorPlan.CanRun ? "ok" : "warning",
 		                           CreateCommandActionButton(editorPlan.CanRun ? "project.open.editor" : "project.build.editor", editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
-		                           "library"),
+		                           "library",
+		                           "showcase-editor.png"),
 		    0,
 		    0);
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
@@ -2547,7 +2609,8 @@ namespace SparkleLauncher
 		                           runtimeDetail,
 		                           runtimePlan.CanRun ? "ok" : "warning",
 		                           CreateCommandActionButton(runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime", runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
-		                           "library"),
+		                           "library",
+		                           "showcase-runtime.png"),
 		    0,
 		    1);
 		layout.addLayout(libraryGrid);
@@ -2564,7 +2627,8 @@ namespace SparkleLauncher
 		                            architectureDoc ? "Available" : "Pending",
 		                            "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
 		                            architectureDoc ? "ok" : "warning",
-		                            architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr),
+		                            architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr,
+		                            "sparkle-architecture.png"),
 		    0,
 		    0);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
@@ -2573,7 +2637,8 @@ namespace SparkleLauncher
 		                            readyDependencyCount == enabledDependencyCount ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
 		                                                                          "Sync source tiers only when you need the extra local build or cook capability.",
 		                            dependencyDoc ? "ok" : "warning",
-		                            dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false)),
+		                            dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false),
+		                            "sparkle-source-tiers.png"),
 		    0,
 		    1);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
@@ -2582,7 +2647,8 @@ namespace SparkleLauncher
 		                            validationReport ? "Open the latest final validation report." :
 		                                               "Run smoke tests or open Activity when you want runtime confidence.",
 		                            validationReport || storedFailureCount == 0 ? "ok" : "warning",
-		                            validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false)),
+		                            validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false),
+		                            "sparkle-validation.png"),
 		    0,
 		    2);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
@@ -2590,7 +2656,8 @@ namespace SparkleLauncher
 		                            packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
 		                            packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
 		                            packagePresent || packagePlan.CanRun ? "ok" : "warning",
-		                            packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false)),
+		                            packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false),
+		                            "sparkle-package.png"),
 		    1,
 		    0);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
@@ -2598,7 +2665,8 @@ namespace SparkleLauncher
 		                            missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
 		                            missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
 		                            missingCookDomains == 0 ? "ok" : "warning",
-		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? "Cook All" : "Cook Missing", false)),
+		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? "Cook All" : "Cook Missing", false),
+		                            "showcase-content.png"),
 		    1,
 		    1);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
@@ -2606,7 +2674,8 @@ namespace SparkleLauncher
 		                            uxDoc ? "Available" : "Pending",
 		                            "Open UX notes or continue into Prepare, Build, Cook, Validate, Package, and System workflows from the rail.",
 		                            uxDoc ? "ok" : "warning",
-		                            uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr),
+		                            uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
+		                            "sparkle-tools.png"),
 		    1,
 		    2);
 		layout.addLayout(discoverGrid);
@@ -3012,6 +3081,86 @@ namespace SparkleLauncher
 		    CreateActionDependencyActions("cook.shaders", "Cook Shaders"));
 	}
 
+	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail)
+	{
+		QVBoxLayout* targetLayout = AddOptionGroup(layout, title, detail);
+		AddOptionField(
+		    *targetLayout,
+		    "Target",
+		    CreateValueCombo(
+		        {{"Editor", "editor"}, {"Runtime", "runtime"}},
+		        m_settings.LaunchTarget(),
+		        &LauncherSettings::SetLaunchTarget));
+	}
+
+	void LauncherMainWindow::AddLaunchApplicationOptions(QVBoxLayout& layout)
+	{
+		QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
+		AddOptionField(
+		    *appOptionsLayout,
+		    "Graphics backend",
+		    CreateValueCombo(
+		        {{"D3D12", ""}, {"Vulkan", "vulkan"}},
+		        m_settings.LaunchBackend(),
+		        &LauncherSettings::SetLaunchBackend));
+		AddOptionField(
+		    *appOptionsLayout,
+		    "VSync",
+		    CreateValueCombo(
+		        {{"On", ""}, {"Off", "false"}},
+		        m_settings.LaunchVSync(),
+		        &LauncherSettings::SetLaunchVSync));
+		AddOptionField(
+		    *appOptionsLayout,
+		    "GPU preference",
+		    CreateValueCombo(
+		        {{"High performance", ""}, {"System default", "false"}},
+		        m_settings.LaunchHighPerformanceAdapter(),
+		        &LauncherSettings::SetLaunchHighPerformanceAdapter));
+		AddOptionField(
+		    *appOptionsLayout,
+		    "Arguments",
+		    CreateBoundLineEdit(
+		        m_settings.LaunchCommandLineArguments(),
+		        "--flag value \"quoted value\"",
+		        "Extra command-line arguments appended after launcher-managed options.",
+		        &LauncherSettings::SetLaunchCommandLineArguments));
+		AddOptionField(
+		    *appOptionsLayout,
+		    "CVars",
+		    CreateBoundTextEdit(
+		        m_settings.LaunchCVars(),
+		        "r.SomeCVar=1\nr.OtherCVar=false",
+		        "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.",
+		        &LauncherSettings::SetLaunchCVars));
+	}
+
+	void LauncherMainWindow::AddSmokeValidationOptions(QVBoxLayout& layout)
+	{
+		QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
+		AddOptionField(
+		    *smokeOptionsLayout,
+		    "Frame limit",
+		    CreateValueCombo(
+		        {{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}},
+		        m_settings.SmokeFrameLimit(),
+		        &LauncherSettings::SetSmokeFrameLimit));
+		AddOptionCheckBox(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Capture trace",
+		        "Write smoke trace output.",
+		        m_settings.SmokeTrace(),
+		        &LauncherSettings::SetSmokeTrace));
+		AddOptionCheckBox(
+		    *smokeOptionsLayout,
+		    CreateBoundCheckBox(
+		        "Skip level switching",
+		        "Do not switch levels during smoke.",
+		        m_settings.SmokeSkipLevelSwitching(),
+		        &LauncherSettings::SetSmokeSkipLevelSwitching));
+	}
+
 	void LauncherMainWindow::AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
 	{
 		MaintenanceOperationRequest request;
@@ -3403,47 +3552,6 @@ namespace SparkleLauncher
 
 		QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(path.string())));
 		SetStatusMessage("Opened evidence target.");
-	}
-
-	void LauncherMainWindow::CopyDiagnosticsSummary()
-	{
-		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
-		const bool packageRoot = PathExists(m_repositoryRoot / "SparkleLauncher.exe") && DirectoryHasEntries(m_repositoryRoot / "manifests");
-		const bool sourceRoot = PathExists(m_repositoryRoot / "CMakeLists.txt");
-		const QString rootMode = packageRoot ? "Package root" : (sourceRoot ? "Source checkout" : "Workspace root");
-		const QString selectedProject = m_projectModel.SelectedProjectId().isEmpty() ? "none" : m_projectModel.SelectedProjectId();
-		const QString selectedWorkflow = m_selectedOperationId.isEmpty() ? "none" : DisplayNameForOperation(m_selectedOperationId) + " (" + m_selectedOperationId + ")";
-
-		QStringList lines;
-		lines << "Sparkle Launcher diagnostics";
-		lines << "Root mode: " + rootMode;
-		lines << "Root: " + QString::fromStdString(m_repositoryRoot.string());
-		lines << "Project: " + selectedProject;
-		lines << "Build configuration: " + m_settings.BuildConfiguration();
-		lines << "IDE: " + SelectedWorkspaceIdeName(m_settings);
-		lines << "Editor profile: " + m_settings.EditorProfile();
-		lines << "Runtime profile: " + m_settings.RuntimeProfile();
-		lines << "Selected workflow: " + selectedWorkflow;
-		lines << "Artifacts root: " + QString::fromStdString(GetArtifactDirectory(m_repositoryRoot).string());
-		lines << "Developer artifacts root: " + QString::fromStdString(GetDeveloperArtifactDirectory(m_repositoryRoot).string());
-		lines << "Packages root: " + QString::fromStdString((m_repositoryRoot / "dist").string());
-		lines << "Launcher logs root: " + QString::fromStdString(statePaths.LogsDirectory.string());
-		lines << "Build tree: " + QString::fromStdString(GetBuildDirectory(m_repositoryRoot).string());
-		if (!m_activeRunId.isEmpty())
-		{
-			const RunState activeRunState = m_runStates.value(m_activeRunId, RunState::Queued);
-			const QString activeRunStateLabel =
-			    activeRunState == RunState::Queued ? "Queued" :
-			    activeRunState == RunState::Running ? "Running" :
-			    activeRunState == RunState::Done ? "Done" :
-			                                       "Failed";
-			lines << "Active run: " + m_runTitles.value(m_activeRunId, m_activeRunId);
-			lines << "Active run state: " + activeRunStateLabel;
-		}
-		lines << "Session failed runs: " + QString::number(m_failedRunCount);
-
-		QGuiApplication::clipboard()->setText(lines.join('\n'));
-		SetStatusMessage("Copied launcher diagnostics summary.");
 	}
 
 	void LauncherMainWindow::TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle)

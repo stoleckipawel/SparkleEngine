@@ -1464,9 +1464,9 @@ Phase 1 implementation handoff:
 
 Goal:
 
-- make Prepare, Launch, Build, Cook, Validate, Package, System, and Settings follow the NVIDIA App page rhythm
+- make Prepare, Launch, Build, Cook, Validate, Package, System, and Maintain follow the NVIDIA App page rhythm
 - use Visual Studio Installer-style selection details and commit bars where workflows become component-heavy or consequential
-- use Rider-style compact expert surfaces for Settings, Activity, logs, diagnostics, action menus, and advanced workflow details
+- use Rider-style compact expert surfaces for System details, Activity, logs, diagnostics, action menus, and advanced workflow details
 
 Work:
 
@@ -1474,25 +1474,25 @@ Work:
 - convert technical inventories into section rows with thin dividers
 - reserve cards for stat tiles, product tiles, package highlights, and evidence tiles
 - create a `System` page for host tools, toolchain, source tiers, artifacts, and diagnostics
-- create or strengthen a `Settings` page for launcher defaults, IDE/toolchain/Qt kit, logs/privacy, and about info
+- keep launcher defaults, IDE/toolchain/Qt kit context, logs/privacy, and about info in header utilities or System/details surfaces instead of a duplicate Settings workflow
 - model source tiers as workload/capability cards with selected-state accents, optional checkboxes, and "what this unlocks" copy
 - add selection detail or workflow impact summaries for Sync Source Tiers, Build, Cook, Package, and Clean workflows
 - move individual dependency/package-file lists into searchable detail tabs
 - move path/location decisions into `Locations` tabs or details surfaces
-- add settings search/category/breadcrumb structure where settings become dense
+- add search/category/breadcrumb structure where System/details surfaces become dense
 - make Activity/logs behave like a contextual tool window or drawer, not permanent page chrome
 - use compact `More` menus for secondary expert actions on cards, rows, dependency tiers, packages, and activity runs
 
 Positive guardrails:
 
 - use NVIDIA App-style title band and tab underline
-- settings and system pages should be calm text/row surfaces, not dashboards
+- system and advanced/detail surfaces should be calm text/row surfaces, not dashboards
 - use toggles/dropdowns/action links aligned to the right where appropriate
 - preserve command previews and details in advanced tabs or drawers
 - use Visual Studio Installer-style details for selected components, included/optional items, output roots, and final action consequences
 - keep simple workflows simple; only introduce installer-style complexity where the user is selecting tiers, components, package contents, clean scopes, or output locations
 - use Rider-style density only in intentional expert surfaces, never as the default first-contact Home
-- keep settings, logs, and diagnostics fast for daily production users
+- keep System details, logs, and diagnostics fast for daily production users
 
 Negative guardrails:
 
@@ -1514,7 +1514,7 @@ Validation:
 - raw logs, command lines, and full inventories are secondary
 - source tiers look like capability/workload cards, not dependency logs
 - consequential workflows show a clear impact/selection summary before the primary action
-- Settings has search/category/breadcrumb structure when dense
+- System/details surfaces have search/category/breadcrumb structure when dense
 - Activity/logs are contextual and collapsible
 - expert `More` menus are compact and predictable
 - no build, launch, or package validation was run
@@ -1522,9 +1522,9 @@ Validation:
 Prompt:
 
 ```text
-Please perform Visual Redesign Phase 2 from docs/plans/launcher-principal-ux-concept.md. Convert workflow pages to NVIDIA App-inspired title bands, tabs, section rows, stat cards only where appropriate, and advanced/details surfaces. Add or strengthen System and Settings pages for host/toolchain/artifact/dependency/diagnostic state and launcher defaults. Use Visual Studio Installer as a secondary reference for source tier/workload cards, individual dependency search/detail tabs, selection details, locations tabs, and commit bars for consequential workflows. Use Rider as a tertiary reference for compact expert surfaces: settings search/category/breadcrumbs, contextual Activity/log tool windows, diagnostics, and predictable compact More menus.
+Please perform Visual Redesign Phase 2 from docs/plans/launcher-principal-ux-concept.md. Convert workflow pages to NVIDIA App-inspired title bands, tabs, section rows, stat cards only where appropriate, and advanced/details surfaces. Strengthen the System page for host/toolchain/artifact/dependency/diagnostic state and keep launcher defaults in header utilities or System/details surfaces rather than a duplicate Settings workflow. Use Visual Studio Installer as a secondary reference for source tier/workload cards, individual dependency search/detail tabs, selection details, locations tabs, and commit bars for consequential workflows. Use Rider as a tertiary reference for compact expert surfaces: System search/category/breadcrumbs, contextual Activity/log tool windows, diagnostics, and predictable compact More menus.
 
-Positive guardrails: use NVIDIA App for visual shell and page rhythm; use Visual Studio Installer for complexity management inside Prepare, Package, Build, Cook, and Clean; use Rider for Settings, Activity, logs, diagnostics, and expert menus; use rows/dividers for settings and inventories; keep expert controls in Advanced/Details; preserve workflow behavior.
+Positive guardrails: use NVIDIA App for visual shell and page rhythm; use Visual Studio Installer for complexity management inside Prepare, Package, Build, Cook, and Clean; use Rider for System details, Activity, logs, diagnostics, and expert menus; use rows/dividers for settings-like state and inventories; keep expert controls in Advanced/Details; preserve workflow behavior.
 
 Negative guardrails: do not use cards for every row; do not show full inventories by default; do not keep secondary vertical operation menus when tabs fit better; do not use Visual Studio Installer colors; do not make Sparkle look like a full IDE; do not let Rider-style tool windows become Home clutter; do not add commit bars to simple launch/evidence actions; do not build or launch in this phase.
 
@@ -1557,7 +1557,7 @@ Work:
 - apply the visual token contract: near-black background, charcoal surfaces, lime accent, muted text, thin dividers
 - replace old blue selected/primary states
 - tune icon size, rail width, title spacing, tabs, card radii, row heights, dropdowns, toggles, and buttons
-- tune expert surfaces against Rider clarity: settings tree/search/breadcrumbs, compact rows, contextual tool windows, readable logs, and predictable More menus
+- tune expert surfaces against Rider clarity: System detail search/breadcrumbs, compact rows, contextual tool windows, readable logs, and predictable More menus
 - validate wide and normal window sizes against the NVIDIA-inspired acceptance criteria
 - update screenshots and final report honestly
 
@@ -1566,7 +1566,7 @@ Positive guardrails:
 - polish should strengthen clarity, not add novelty
 - the final app should look restrained and operational
 - dense expert areas should feel Rider-clear: compact, aligned, searchable, and controllable
-- screenshots must include Home, Launch, Prepare, Package, System, and Settings
+- screenshots must include Home, Launch, Prepare, Package, System, and Maintain
 - final report must distinguish functional pass from visual acceptance
 
 Negative guardrails:
@@ -1587,7 +1587,7 @@ Validation:
 Prompt:
 
 ```text
-Please perform Visual Redesign Phase 3 from docs/plans/launcher-principal-ux-concept.md after the shell/Home/page redesign phases are complete. Apply final NVIDIA App-inspired polish, replace old blue primary/selected states, tune Rider-inspired expert surfaces, validate Home/Launch/Prepare/Package/System/Settings visually at 1280x760 and wide desktop sizes, build and launch once, capture screenshots, and produce a pass/fail visual acceptance report.
+Please perform Visual Redesign Phase 3 from docs/plans/launcher-principal-ux-concept.md after the shell/Home/page redesign phases are complete. Apply final NVIDIA App-inspired polish, replace old blue primary/selected states, tune Rider-inspired expert surfaces, validate Home/Launch/Prepare/Package/System/Maintain visually at 1280x760 and wide desktop sizes, build and launch once, capture screenshots, and produce a pass/fail visual acceptance report.
 
 Positive guardrails: prioritize restraint, clarity, lime accent consistency, bounded content width, Rider-clear expert density, and honest acceptance reporting.
 
@@ -1628,7 +1628,7 @@ Implementation fixes made during this phase:
 - Tightened rail sizing so the full workflow set fits more comfortably at normal window height.
 - Flattened option/status rows into thin-divider product rows instead of heavy table cells.
 - Replaced blue-tinted neutral chips, secondary buttons, menus, and inline actions with charcoal/neutral surfaces.
-- Added dark scrollbar styling so long System/Settings pages no longer fall back to platform-default scrollbars.
+- Added dark scrollbar styling so long System/detail pages no longer fall back to platform-default scrollbars.
 - Added explicit command-button styling so Home hero and tile CTAs remain readable in enabled and disabled states.
 
 Screenshot evidence:
@@ -1638,13 +1638,13 @@ Screenshot evidence:
 - `artifacts/diagnostics/launcher-visual-phase3/prepare-1280x760.png`
 - `artifacts/diagnostics/launcher-visual-phase3/package-1280x760.png`
 - `artifacts/diagnostics/launcher-visual-phase3/system-1280x760.png`
-- `artifacts/diagnostics/launcher-visual-phase3/settings-1280x760.png`
+- `artifacts/diagnostics/launcher-visual-phase3/maintain-1280x760.png`
 - `artifacts/diagnostics/launcher-visual-phase3/home-wide.png`
 - `artifacts/diagnostics/launcher-visual-phase3/launch-wide.png`
 - `artifacts/diagnostics/launcher-visual-phase3/prepare-wide.png`
 - `artifacts/diagnostics/launcher-visual-phase3/package-wide.png`
 - `artifacts/diagnostics/launcher-visual-phase3/system-wide.png`
-- `artifacts/diagnostics/launcher-visual-phase3/settings-wide.png`
+- `artifacts/diagnostics/launcher-visual-phase3/maintain-wide.png`
 
 Visual acceptance checklist:
 
@@ -1654,7 +1654,7 @@ Visual acceptance checklist:
 - PASS: Old blue selected/primary states were removed from launcher shell styling.
 - PASS: Wide desktop layout keeps content bounded instead of stretching rows across the entire window.
 - PASS: Visual Studio Installer-inspired complexity appears where it belongs: source tier workload cards, package selection details, workflow impact summaries, and consequential assembly/clean-style contexts.
-- PASS: Rider-inspired expert surfaces are represented in Settings/System through compact rows, search/breadcrumb structure, aligned controls, muted help text, and quiet diagnostics/log access.
+- PASS: Rider-inspired expert surfaces are represented in System/detail surfaces through compact rows, search/breadcrumb structure, aligned controls, muted help text, and quiet diagnostics/log access.
 - PASS: Raw logs, commands, paths, and full inventories stay secondary; they do not dominate Home or default workflow pages.
 - PASS: Stale or missing source outputs are visible without making the app feel like a raw CMake dashboard.
 - PASS: Final screenshots were regenerated after the rejected prototype screenshots and contaminated capture set; rejected screenshots are not reused as acceptance evidence.
