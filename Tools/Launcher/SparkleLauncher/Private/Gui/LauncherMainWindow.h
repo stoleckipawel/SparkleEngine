@@ -168,6 +168,7 @@ namespace SparkleLauncher
 		LauncherOperationRequest BuildDependencyCleanRequest(const ThirdPartyDependencyUiEntry& dependency) const;
 		LauncherOperationRequest BuildDependencyRegenerateRequest() const;
 		QWidget* CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency);
+		QWidget* CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group);
 		QWidget* CreateActionDependencyActions(
 		    const QString& actionId,
 		    const QString& actionTitle,
@@ -177,7 +178,6 @@ namespace SparkleLauncher
 		QWidget* CreateFolderShortcutActions();
 		void OpenLocalPath(const std::filesystem::path& path);
 		void CopyDiagnosticsSummary();
-		void UpdateRootModeIndicator();
 		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		void TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency);
@@ -226,8 +226,6 @@ namespace SparkleLauncher
 		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
 		QPushButton* m_toggleOutputButton = nullptr;
-		QLabel* m_rootModeLabel = nullptr;
-		QPushButton* m_copyDiagnosticsButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
 		QFrame* m_actionMetaPanel = nullptr;
 		QLabel* m_lastRunSummaryLabel = nullptr;

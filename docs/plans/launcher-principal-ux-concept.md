@@ -1676,6 +1676,40 @@ That archive is historical context only. The current target direction is the NVI
 
 Do not use the archived prototype screenshots as acceptance evidence for the next redesign pass.
 
+## Launcher Architecture Refactor Handoff
+
+Refactor result - 2026-06-04:
+
+- `LauncherMainWindow` should orchestrate the Qt shell, selection state, page composition, activity, and command dispatch.
+- `LauncherWorkflowCatalog` owns the visible workflow taxonomy: Home, Launch, Prepare, Build, Cook, Validate, Package, System, and Maintain; display-name overrides; workflow verbs; and workflow impact copy.
+- `LauncherVisualStyle` owns the NVIDIA-inspired visual token contract and QSS assembly so visual polish does not live inside operation orchestration.
+- Backend operation definitions and planners remain in Build, Launch, Cook, Maintenance, and Core modules; the GUI may present workflows differently, but execution behavior stays backend-owned.
+- Product shortcuts such as Home's Open Editor/Open Runtime tiles may remain direct actions, but the primary Launch page is `Launch Project` with an editor/runtime target selector.
+- Header controls own global context such as project, config, IDE, folders, and Activity. Diagnostics belong in System/detail surfaces or copied from explicit diagnostic workflows, not as a permanent header button.
+- Clickable controls must either navigate, mutate settings, open a real file/folder/menu, show Activity/diagnostics, or run a real operation. Static section orientation should remain text, not button-shaped tabs.
+
+## Launcher Deduplication And Interaction Cleanup Handoff
+
+Deduplication result - 2026-06-04:
+
+- Removed the repeated `Workflow Guide` block from primary workflow pages. Only current-workflow recovery appears, and only when that workflow has a failed run.
+- Renamed readiness sections to `Action Dependencies`, made them collapsed by default when healthy, and included the overall state in the section title.
+- Reworked status rows so every row reserves a fixed state-chip column and a fixed contextual-action column; action menus no longer push state chips out of alignment.
+- Removed the permanent source/package mode badge and the standalone Diagnostics header button. Project, config, IDE, Folders, and Activity are the remaining header controls.
+- Kept source/package provenance in Home/System content where it supports understanding, not as duplicated global chrome.
+- Added source-tier actions for disabled tiers: copy the exact CMake enable option, open the source-tier guide, or jump to the reconfigure workflow.
+- Clarified per-dependency actions as `Refresh this cache` and `Clean this cache`; refresh cleans the selected dependency cache first, then runs the existing source-tier sync workflow to refill enabled tier content.
+- Applied native Windows dark-caption styling so the system title bar follows the launcher theme without replacing standard window behavior.
+
+Validation evidence:
+
+- Build passed: `cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel`
+- Launched artifact: `artifacts/dev/launcher/DevelopmentEditor/SparkleLauncher.exe`
+- UI automation invoked safe navigation and utility controls: Home, Launch, Prepare, Build, Cook, Validate, Package, System, Maintain, Folders, Activity, and context combo checks.
+- Screenshots:
+- `artifacts/diagnostics/launcher-dedup-pass/dedup-pass-home-final.png`
+- `artifacts/diagnostics/launcher-dedup-pass/dedup-pass-system-final.png`
+
 ## Acceptance Criteria
 
 - A first-time user or external evaluator can understand the project identity, package/source mode, and launch status within 30 seconds.

@@ -84,6 +84,8 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherOutputWidgets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherVisualStyle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherWorkflowCatalog.cpp
 )
 
 set(SPARKLE_LAUNCHER_GUI_HEADERS
@@ -93,6 +95,8 @@ set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherOutputWidgets.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherVisualStyle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherWorkflowCatalog.h
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
