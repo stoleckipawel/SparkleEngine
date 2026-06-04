@@ -193,7 +193,6 @@ namespace SparkleLauncher
 		    const QString& cleanScope = QString(),
 		    const QString& cleanTitle = QString(),
 		    bool navigateInsteadOfRun = false);
-		QWidget* CreateFolderShortcutActions();
 		void OpenLocalPath(const std::filesystem::path& path);
 		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
@@ -249,7 +248,9 @@ namespace SparkleLauncher
 		QLabel* m_lastRunResultLabel = nullptr;
 		QPushButton* m_dismissHistoryButton = nullptr;
 		QLabel* m_progressLabel = nullptr;
+		QWidget* m_activityPanel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
+		QLabel* m_activityHeaderSummary = nullptr;
 		QListWidget* m_activityList = nullptr;
 		QLabel* m_selectedRunSummary = nullptr;
 		QPushButton* m_copyOutputButton = nullptr;

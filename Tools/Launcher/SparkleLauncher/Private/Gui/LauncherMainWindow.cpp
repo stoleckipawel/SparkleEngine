@@ -76,6 +76,8 @@ namespace SparkleLauncher
 	static constexpr int kOperationOutputCompactMaxHeight = 128;
 	static constexpr int kOperationOutputProminentMinHeight = 136;
 	static constexpr int kOperationOutputMaxHeight = 220;
+	static constexpr int kActivityPanelCollapsedHeight = 36;
+	static constexpr int kActivityPanelExpandedHeight = 260;
 	static constexpr int kLauncherIconSize = 14;
 	static constexpr int kStatusChipColumnWidth = 118;
 	static constexpr int kStatusActionColumnWidth = 28;
@@ -844,11 +846,8 @@ namespace SparkleLauncher
 		rootLayout->setContentsMargins(0, 0, 0, 0);
 		rootLayout->setSpacing(0);
 
-		QHBoxLayout* bodyLayout = new QHBoxLayout();
-		bodyLayout->setContentsMargins(0, 0, 0, 0);
-		bodyLayout->setSpacing(0);
-		bodyLayout->addWidget(CreateWorkflowSurface(), 1);
-		rootLayout->addLayout(bodyLayout, 1);
+		rootLayout->addWidget(CreateWorkflowSurface(), 1);
+		rootLayout->addWidget(CreateOutputPanel(), 0);
 		setCentralWidget(centralWidget);
 		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
@@ -1137,7 +1136,6 @@ namespace SparkleLauncher
 		layout->setSpacing(0);
 		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
-		layout->addWidget(CreateOutputPanel(), 0);
 		return surface;
 	}
 
@@ -1374,25 +1372,6 @@ namespace SparkleLauncher
 		ideLabel->setBuddy(ideCombo);
 		rowLayout->addWidget(ideCombo, 0);
 
-		rowLayout->addSpacing(6);
-
-		QWidget* folderShortcuts = CreateFolderShortcutActions();
-		if (folderShortcuts != nullptr)
-		{
-			folderShortcuts->setParent(panel);
-			rowLayout->addWidget(folderShortcuts, 0, Qt::AlignLeft | Qt::AlignVCenter);
-		}
-
-		QPushButton* activityButton = new QPushButton("Activity", panel);
-		activityButton->setObjectName("HeaderUtilityButton");
-		activityButton->setToolTip("Open recent run activity and raw logs.");
-		activityButton->setAccessibleName("Open activity drawer");
-		activityButton->setMinimumHeight(28);
-		activityButton->setMaximumHeight(30);
-		RegisterFocusable(activityButton);
-		connect(activityButton, &QPushButton::clicked, this, &LauncherMainWindow::ToggleActivityLogPanel);
-		rowLayout->addWidget(activityButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
-
 		m_headerContextPanel = panel;
 		return panel;
 	}
@@ -1430,11 +1409,13 @@ namespace SparkleLauncher
 
 		if (widgets.Root != nullptr)
 		{
-			widgets.Root->setObjectName("ActivityDrawer");
-			widgets.Root->setMinimumWidth(360);
-			widgets.Root->setMaximumWidth(460);
+			widgets.Root->setObjectName("ActivityBottomPanel");
+			widgets.Root->setMinimumHeight(kActivityPanelCollapsedHeight);
+			widgets.Root->setMaximumHeight(kActivityPanelCollapsedHeight);
 		}
+		m_activityPanel = widgets.Root;
 		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
+		m_activityHeaderSummary = widgets.ActivityHeaderSummary;
 		m_activityList = widgets.ActivityList;
 		m_selectedRunSummary = widgets.SelectedRunSummary;
 		m_operationOutput = widgets.OperationOutput;
@@ -3584,44 +3565,6 @@ namespace SparkleLauncher
 		return button;
 	}
 
-	QWidget* LauncherMainWindow::CreateFolderShortcutActions()
-	{
-		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
-		const QVector<LauncherActionMenuEntry> entries = {
-		    LauncherActionMenuEntry{
-		        "Open artifacts",
-		        [this]() {
-			        OpenLocalPath(GetArtifactDirectory(m_repositoryRoot));
-		        }},
-		    LauncherActionMenuEntry{
-		        "Open packages",
-		        [this]() {
-			        OpenLocalPath(m_repositoryRoot / "dist");
-		        }},
-		    LauncherActionMenuEntry{
-		        "Open launcher logs",
-		        [this, statePaths]() {
-			        OpenLocalPath(statePaths.LogsDirectory);
-		        }},
-		};
-
-		QToolButton* button = CreateLauncherOverflowActionButton(
-		    this,
-		    "Declared workspace folder shortcuts",
-		    "Open folders",
-		    entries);
-		button->setObjectName("HeaderUtilityButton");
-		button->setText("Folders");
-		button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-		button->setAutoRaise(false);
-		button->setToolTip("Open declared generated roots: artifacts, dist, and launcher logs.");
-		button->setAccessibleDescription(button->toolTip());
-		button->setMinimumSize(82, 24);
-		button->setMaximumSize(96, 26);
-		RegisterFocusable(button);
-		return button;
-	}
-
 	void LauncherMainWindow::OpenLocalPath(const std::filesystem::path& path)
 	{
 		if (!PathExists(path) && !DirectoryHasEntries(path))
@@ -4954,6 +4897,11 @@ namespace SparkleLauncher
 	void LauncherMainWindow::SetActivityLogExpanded(bool expanded)
 	{
 		m_activityLogExpanded = expanded;
+		if (m_activityPanel != nullptr)
+		{
+			m_activityPanel->setMinimumHeight(expanded ? kActivityPanelExpandedHeight : kActivityPanelCollapsedHeight);
+			m_activityPanel->setMaximumHeight(expanded ? kActivityPanelExpandedHeight : kActivityPanelCollapsedHeight);
+		}
 		if (m_activityDetailsPanel != nullptr)
 		{
 			m_activityDetailsPanel->setVisible(expanded);
@@ -4964,9 +4912,16 @@ namespace SparkleLauncher
 		}
 		if (m_toggleOutputButton != nullptr)
 		{
-			m_toggleOutputButton->setText(expanded ? "Hide raw log" : "Show raw log");
-			m_toggleOutputButton->setToolTip(expanded ? "Hide raw process output for the selected run." : "Show raw process output for the selected run.");
+			m_toggleOutputButton->setText(expanded ? "Minimize" : "Show Activity");
+			m_toggleOutputButton->setToolTip(expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
 			m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
+		}
+		if (m_activityHeaderSummary != nullptr)
+		{
+			const QString runText = m_startedRunCount == 1 ? QStringLiteral("1 run") : QStringLiteral("%1 runs").arg(m_startedRunCount);
+			m_activityHeaderSummary->setText(m_startedRunCount > 0 ?
+			                                     QStringLiteral("%1, %2 failed. Logs stay available.").arg(runText).arg(m_failedRunCount) :
+			                                     QStringLiteral("Collapsed by default. Opens automatically for active runs and failures."));
 		}
 		if (m_copyOutputButton != nullptr)
 		{
@@ -5000,6 +4955,13 @@ namespace SparkleLauncher
 		if (m_activityDetailsPanel != nullptr)
 		{
 			m_activityDetailsPanel->setVisible(hasRuns && m_activityLogExpanded);
+		}
+		if (m_activityHeaderSummary != nullptr)
+		{
+			const QString runText = m_startedRunCount == 1 ? QStringLiteral("1 run") : QStringLiteral("%1 runs").arg(m_startedRunCount);
+			m_activityHeaderSummary->setText(hasRuns ?
+			                                     QStringLiteral("%1, %2 failed. Logs stay available.").arg(runText).arg(m_failedRunCount) :
+			                                     QStringLiteral("Collapsed by default. Opens automatically for active runs and failures."));
 		}
 		if (m_copyOutputButton != nullptr && !hasRuns)
 		{

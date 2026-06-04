@@ -27,6 +27,7 @@ namespace SparkleLauncher
 	{
 		QWidget* Root = nullptr;
 		QWidget* ActivityDetailsPanel = nullptr;
+		QLabel* ActivityHeaderSummary = nullptr;
 		QListWidget* ActivityList = nullptr;
 		QLabel* SelectedRunSummary = nullptr;
 		QTextEdit* OperationOutput = nullptr;

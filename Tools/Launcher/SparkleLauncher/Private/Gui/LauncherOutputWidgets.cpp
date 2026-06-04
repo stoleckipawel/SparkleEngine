@@ -29,11 +29,40 @@ namespace SparkleLauncher
 		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(0);
 
-		QHBoxLayout* activityLayout = new QHBoxLayout();
+		QFrame* header = new QFrame(panel);
+		header->setObjectName("ActivityHeader");
+		QHBoxLayout* headerLayout = new QHBoxLayout(header);
+		headerLayout->setContentsMargins(10, 5, 10, 5);
+		headerLayout->setSpacing(8);
+
+		QLabel* activityTitle = new QLabel("Activity", header);
+		activityTitle->setObjectName("OutputPaneLabel");
+		headerLayout->addWidget(activityTitle, 0);
+
+		QLabel* activityHeaderSummary = new QLabel("Collapsed by default. Opens automatically for active runs and failures.", header);
+		activityHeaderSummary->setObjectName("ActivitySummary");
+		activityHeaderSummary->setWordWrap(false);
+		headerLayout->addWidget(activityHeaderSummary, 1);
+
+		QPushButton* toggleOutputButton = new QPushButton("Show Activity", header);
+		toggleOutputButton->setObjectName("SecondaryButton");
+		toggleOutputButton->setToolTip("Show or minimize recent runs and raw process output.");
+		toggleOutputButton->setAccessibleName("Toggle Activity panel");
+		toggleOutputButton->setAccessibleDescription("Shows or minimizes recent runs and raw process output.");
+		registerFocusable(toggleOutputButton);
+		QObject::connect(toggleOutputButton, &QPushButton::clicked, panel, [onToggleOutput]() {
+			onToggleOutput();
+		});
+		headerLayout->addWidget(toggleOutputButton, 0);
+		layout->addWidget(header, 0);
+
+		QFrame* detailsPanel = new QFrame(panel);
+		detailsPanel->setObjectName("ActivityDetailsPanel");
+		QHBoxLayout* activityLayout = new QHBoxLayout(detailsPanel);
 		activityLayout->setContentsMargins(0, 0, 0, 0);
 		activityLayout->setSpacing(0);
 
-		QFrame* activityRail = new QFrame(panel);
+		QFrame* activityRail = new QFrame(detailsPanel);
 		activityRail->setObjectName("ActivityRail");
 		activityRail->setMinimumWidth(kActivityListWidth);
 		QVBoxLayout* activityRailLayout = new QVBoxLayout(activityRail);
@@ -44,7 +73,7 @@ namespace SparkleLauncher
 		activityHeader->setObjectName("OutputPaneLabel");
 		activityRailLayout->addWidget(activityHeader, 0);
 
-		QListWidget* activityList = new QListWidget(panel);
+		QListWidget* activityList = new QListWidget(activityRail);
 		activityList->setObjectName("ActivityList");
 		activityList->setAccessibleName("Activity runs");
 		activityList->setAccessibleDescription("Recent runs. Select one to review its summary and output.");
@@ -55,7 +84,7 @@ namespace SparkleLauncher
 		activityRailLayout->addWidget(activityList, 1);
 		activityLayout->addWidget(activityRail, 0);
 
-		QFrame* outputPane = new QFrame(panel);
+		QFrame* outputPane = new QFrame(detailsPanel);
 		outputPane->setObjectName("OutputPane");
 		QVBoxLayout* outputLayout = new QVBoxLayout(outputPane);
 		outputLayout->setContentsMargins(6, 4, 6, 6);
@@ -68,17 +97,6 @@ namespace SparkleLauncher
 		outputHeader->setObjectName("OutputPaneLabel");
 		outputHeaderLayout->addWidget(outputHeader, 0);
 		outputHeaderLayout->addStretch(1);
-
-		QPushButton* toggleOutputButton = new QPushButton("Show raw log", panel);
-		toggleOutputButton->setObjectName("SecondaryButton");
-		toggleOutputButton->setToolTip("Show or hide raw process output for the selected run.");
-		toggleOutputButton->setAccessibleName("Toggle raw log");
-		toggleOutputButton->setAccessibleDescription("Shows or hides raw process output for the selected run.");
-		registerFocusable(toggleOutputButton);
-		QObject::connect(toggleOutputButton, &QPushButton::clicked, panel, [onToggleOutput]() {
-			onToggleOutput();
-		});
-		outputHeaderLayout->addWidget(toggleOutputButton, 0);
 
 		QPushButton* copyOutputButton = new QPushButton("Copy output", panel);
 		copyOutputButton->setObjectName("SecondaryButton");
@@ -112,10 +130,11 @@ namespace SparkleLauncher
 		outputLayout->addWidget(operationOutput);
 		activityLayout->addWidget(outputPane, 1);
 
-		layout->addLayout(activityLayout, 1);
+		layout->addWidget(detailsPanel, 1);
 
 		widgets.Root = panel;
-		widgets.ActivityDetailsPanel = panel;
+		widgets.ActivityDetailsPanel = detailsPanel;
+		widgets.ActivityHeaderSummary = activityHeaderSummary;
 		widgets.ActivityList = activityList;
 		widgets.SelectedRunSummary = selectedRunSummary;
 		widgets.OperationOutput = operationOutput;
