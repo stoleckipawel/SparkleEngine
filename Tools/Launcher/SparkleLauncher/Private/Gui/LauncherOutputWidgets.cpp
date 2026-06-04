@@ -39,13 +39,11 @@ namespace SparkleLauncher
 		activityTitle->setObjectName("OutputPaneLabel");
 		headerLayout->addWidget(activityTitle, 0);
 
-		QLabel* activityHeaderSummary = new QLabel("Collapsed by default. Opens automatically for active runs and failures.", header);
-		activityHeaderSummary->setObjectName("ActivitySummary");
-		activityHeaderSummary->setWordWrap(false);
-		headerLayout->addWidget(activityHeaderSummary, 1);
+		headerLayout->addStretch(1);
 
-		QPushButton* toggleOutputButton = new QPushButton("Show Activity", header);
-		toggleOutputButton->setObjectName("SecondaryButton");
+		QPushButton* toggleOutputButton = new QPushButton(QStringLiteral("□"), header);
+		toggleOutputButton->setObjectName("ActivityToggleButton");
+		toggleOutputButton->setFixedSize(28, 24);
 		toggleOutputButton->setToolTip("Show or minimize recent runs and raw process output.");
 		toggleOutputButton->setAccessibleName("Toggle Activity panel");
 		toggleOutputButton->setAccessibleDescription("Shows or minimizes recent runs and raw process output.");
@@ -134,7 +132,6 @@ namespace SparkleLauncher
 
 		widgets.Root = panel;
 		widgets.ActivityDetailsPanel = detailsPanel;
-		widgets.ActivityHeaderSummary = activityHeaderSummary;
 		widgets.ActivityList = activityList;
 		widgets.SelectedRunSummary = selectedRunSummary;
 		widgets.OperationOutput = operationOutput;

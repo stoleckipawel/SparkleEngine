@@ -99,7 +99,6 @@ namespace SparkleLauncher
 			Cook,
 			Run,
 			Package,
-			System,
 			Maintain,
 			Queued,
 			Running,
@@ -152,7 +151,6 @@ namespace SparkleLauncher
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeQuickStart(QVBoxLayout& layout);
-		void AddSystemOverviewPage(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail);

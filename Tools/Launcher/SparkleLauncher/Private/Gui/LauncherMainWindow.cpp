@@ -69,7 +69,7 @@ namespace SparkleLauncher
 	static constexpr int kPanelHorizontalMargin = 18;
 	static constexpr int kPanelVerticalMargin = 14;
 	static constexpr int kWorkflowRailWidth = 80;
-	static constexpr int kWorkflowGroupMinHeight = 54;
+	static constexpr int kWorkflowGroupMinHeight = 58;
 	static constexpr int kWorkflowButtonMinHeight = 32;
 	static constexpr int kFieldLabelWidth = 116;
 	static constexpr int kOperationOutputMinHeight = 96;
@@ -1145,7 +1145,7 @@ namespace SparkleLauncher
 		panel->setObjectName("ProcessPanel");
 		panel->setFixedWidth(kWorkflowRailWidth);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(0, 10, 0, 10);
+		layout->setContentsMargins(0, 0, 0, 10);
 		layout->setSpacing(4);
 
 		QVBoxLayout* groupLayout = new QVBoxLayout();
@@ -1649,12 +1649,6 @@ namespace SparkleLauncher
 		if (operationId == LauncherHomeOperationId())
 		{
 			AddHomeQuickStart(layout);
-			return;
-		}
-
-		if (operationId == LauncherSystemOperationId())
-		{
-			AddSystemOverviewPage(layout);
 			return;
 		}
 
@@ -2306,7 +2300,7 @@ namespace SparkleLauncher
 		QLabel* title = new QLabel(status, card);
 		title->setObjectName("CommandHeroTitle");
 		titleRow->addWidget(title, 1);
-		QLabel* chip = new QLabel(state == "ok" ? "Ready" : (state == "warning" ? "Needs action" : "Source mode"), card);
+		QLabel* chip = new QLabel(state == "ok" ? "Ready" : (state == "warning" ? "Needs action" : "Quick Start"), card);
 		chip->setObjectName("CommandHeroChip");
 		chip->setProperty("State", state);
 		titleRow->addWidget(chip, 0, Qt::AlignRight | Qt::AlignTop);
@@ -2357,12 +2351,12 @@ namespace SparkleLauncher
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
 		const bool hasArtwork = !FindLauncherVisualAsset(artworkFileName).empty();
-		card->setMinimumHeight(tileRole == "library" ? (hasArtwork ? 232 : 178) : (hasArtwork ? 190 : 148));
+		card->setMinimumHeight(tileRole == "library" ? (hasArtwork ? 300 : 178) : (hasArtwork ? 190 : 148));
 		QVBoxLayout* layout = new QVBoxLayout(card);
 		layout->setContentsMargins(tileRole == "library" ? 18 : 16, hasArtwork ? 12 : (tileRole == "library" ? 16 : 14), tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
 		layout->setSpacing(tileRole == "library" ? 12 : 10);
 
-		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(260, tileRole == "library" ? 112 : 86)))
+		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, tileRole == "library" ? 164 : 86)))
 		{
 			artwork->setParent(card);
 			layout->addWidget(artwork);
@@ -2414,7 +2408,6 @@ namespace SparkleLauncher
 	void LauncherMainWindow::AddHomeQuickStart(QVBoxLayout& layout)
 	{
 		const BuildWorkspaceOperationRequest workspaceRequest = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
-		const BuildWorkspaceOperationPlan workspacePlan = PlanBuildWorkspaceOperation("workspace.generate-solution", workspaceRequest);
 		const BuildWorkspaceOperationPlan packagePlan = PlanBuildWorkspaceOperation("package.release", workspaceRequest);
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		const std::filesystem::path releaseRoot = m_repositoryRoot / "dist" / "releases";
@@ -2468,69 +2461,6 @@ namespace SparkleLauncher
 		const bool cookedShadersMissing = ReadinessContains(editorPlan.ReadinessMessages, "Cooked shaders are missing") ||
 		    ReadinessContains(runtimePlan.ReadinessMessages, "Cooked shaders are missing");
 		const int missingCookDomains = static_cast<int>(cookedMeshesMissing) + static_cast<int>(cookedTexturesMissing) + static_cast<int>(cookedShadersMissing);
-		HomeNextAction primaryAction;
-		if (m_projectModel.SelectedProjectId().isEmpty())
-		{
-			primaryAction = {"", "Check Project Root", "No project marker is selected. Confirm this root contains Projects/<Project> markers before launching, building, cooking, or validating a project.", true};
-		}
-		else if (editorPlan.CanRun)
-		{
-			primaryAction = {"project.open.editor", "Open Editor", "The selected project editor is ready. Launch first; rebuilds and recooks remain optional refresh paths.", false};
-		}
-		else if (runtimePlan.CanRun)
-		{
-			primaryAction = {"project.open.runtime", "Open Runtime", "The selected project runtime is ready. Launch first; rebuilds and recooks remain optional refresh paths.", false};
-		}
-		else if (!workspacePlan.Toolchain.RequiredToolsAvailable)
-		{
-			primaryAction = {"toolchain.check", "Verify Host Environment", "Installed host tools are blocking source rebuild, cook, or package workflows.", true};
-		}
-		else if (!workspacePlan.Freshness.Current)
-		{
-			primaryAction = {"workspace.generate-solution", "Generate Build Files", "Generated CMake and IDE files are stale for the selected toolchain.", true};
-		}
-		else if (editorExecutableMissing)
-		{
-			primaryAction = {"project.build.editor", "Build Editor", "The selected project editor executable is missing from local artifacts.", true};
-		}
-		else if (runtimeExecutableMissing)
-		{
-			primaryAction = {"project.build.runtime", "Build Runtime", "The selected project runtime executable is missing from local artifacts.", true};
-		}
-		else if (missingCookDomains > 1)
-		{
-			primaryAction = {"cook.project", "Cook Missing Content", "Multiple cooked content domains are missing; run the project cook from the Cook workflow.", true};
-		}
-		else if (cookedMeshesMissing)
-		{
-			primaryAction = {"cook.assets", "Cook Scenes And Meshes", "Scene and mesh cooked outputs are missing for the selected project.", true};
-		}
-		else if (cookedTexturesMissing)
-		{
-			primaryAction = {"cook.textures", "Cook Textures", "Cooked texture outputs are missing for the selected project.", true};
-		}
-		else if (cookedShadersMissing)
-		{
-			primaryAction = {"cook.shaders", "Cook Shaders", "Cooked shader outputs are missing for the selected project.", true};
-		}
-		else
-		{
-			primaryAction = {"workspace.setup", "Sync Source Tiers", "Source tiers can unlock more build and cook capability without changing installed host tools.", true};
-		}
-
-		HomeNextAction secondaryAction = {"project.run.smoke", "Run Smoke Test", "Test the selected editor or runtime once launch outputs are ready.", true};
-		if (!workspacePlan.Freshness.Current && primaryAction.OperationId != "workspace.generate-solution")
-		{
-			secondaryAction = {"workspace.generate-solution", "Generate Build Files", "Refresh CMake and IDE files before local development work.", true};
-		}
-		else if (missingCookDomains > 0 && !primaryAction.OperationId.startsWith("cook."))
-		{
-			secondaryAction = {"cook.project", "Cook Missing Content", "Refresh generated project content when launching from source artifacts.", true};
-		}
-		else if (!packagePlan.CanRun)
-		{
-			secondaryAction = {"package.release", "Inspect Package Assembly", FirstBlockingReadinessMessage(packagePlan), true};
-		}
 
 		int enabledDependencyCount = 0;
 		int readyDependencyCount = 0;
@@ -2599,21 +2529,15 @@ namespace SparkleLauncher
 		identityLayout->addLayout(titleLayout, 1);
 		layout.addWidget(identity);
 
-		const bool launchReady = editorPlan.CanRun || runtimePlan.CanRun;
-		const QString heroState = launchReady ? "ok" : "warning";
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
-		const QString heroTitle = launchReady ? (editorPlan.CanRun ? "Open Showcase Editor" : "Open Showcase Runtime") :
-		                          (!workspacePlan.Freshness.Current && !editorExecutableMissing && !runtimeExecutableMissing ? "Generate Build Files" :
-		                                                                                                         primaryAction.Label);
-		const QString heroDetail = launchReady ?
-		    QStringLiteral("Launch from %1. Rebuild and recook remain optional refresh paths.").arg(launchProvenance) :
-		    primaryAction.Detail;
+		const QString heroTitle = "Explore Showcase";
+		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products launch from %1 when available; rebuild and recook remain optional refresh paths.").arg(launchProvenance);
 		layout.addWidget(CreateHomeHeroCard(
 		    heroTitle,
 		    heroDetail,
-		    heroState,
-		    primaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(primaryAction.OperationId, primaryAction.Label, true, !primaryAction.NavigateOnly),
-		    secondaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(secondaryAction.OperationId, secondaryAction.Label, false),
+		    "neutral",
+		    nullptr,
+		    nullptr,
 		    "showcase-hero.png"));
 
 		QGridLayout* libraryGrid = new QGridLayout();
@@ -2627,40 +2551,34 @@ namespace SparkleLauncher
 		    QStringLiteral("Launch the Showcase editor from %1.").arg(launchProvenance) :
 		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
 		const QString editorCardOperationId = editorPlan.CanRun ? "project.open.editor" : "project.build.editor";
-		if (primaryAction.OperationId != editorCardOperationId)
-		{
-			libraryGrid->addWidget(CreateHomeCapabilityCard(
-			                           "Showcase Editor",
-			                           editorStatus,
-			                           editorDetail,
-			                           editorPlan.CanRun ? "ok" : "warning",
-			                           CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
-			                           "library",
-			                           "showcase-editor.png"),
-			    0,
-			    libraryColumn++);
-		}
+		libraryGrid->addWidget(CreateHomeCapabilityCard(
+		                           "Showcase Editor",
+		                           editorStatus,
+		                           editorDetail,
+		                           editorPlan.CanRun ? "ok" : "warning",
+		                           CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
+		                           "library",
+		                           "showcase-editor.png"),
+		    0,
+		    libraryColumn++);
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
 		    QStringLiteral("Run the Showcase runtime from %1.").arg(launchProvenance) :
 		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
 		const QString runtimeCardOperationId = runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime";
-		if (primaryAction.OperationId != runtimeCardOperationId)
-		{
-			libraryGrid->addWidget(CreateHomeCapabilityCard(
-			                           "Showcase Runtime",
-			                           runtimeStatus,
-			                           runtimeDetail,
-			                           runtimePlan.CanRun ? "ok" : "warning",
-			                           CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
-			                           "library",
-			                           "showcase-runtime.png"),
-			    0,
-			    libraryColumn++);
-		}
+		libraryGrid->addWidget(CreateHomeCapabilityCard(
+		                           "Showcase Runtime",
+		                           runtimeStatus,
+		                           runtimeDetail,
+		                           runtimePlan.CanRun ? "ok" : "warning",
+		                           CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
+		                           "library",
+		                           "showcase-runtime.png"),
+		    0,
+		    libraryColumn++);
 		if (libraryColumn > 0)
 		{
-			addHomeSection("Other launch paths");
+			addHomeSection("Products");
 			layout.addLayout(libraryGrid);
 		}
 		else
@@ -2718,60 +2636,20 @@ namespace SparkleLauncher
 		                            missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
 		                            missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
 		                            missingCookDomains == 0 ? "ok" : "warning",
-		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? "Cook All" : "Cook Missing", false),
+		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? QStringLiteral("Cook All") : QStringLiteral("Cook Missing"), false),
 		                            "showcase-content.png"),
 		    1,
 		    1);
 		discoverGrid->addWidget(CreateHomeCapabilityCard(
 		                            "Tools",
 		                            uxDoc ? "Available" : "Pending",
-		                            "Open UX notes or continue into Sync, Build, Cook, Test, Package, and System workflows from the rail.",
+		                            "Open UX notes or continue into Sync, Build, Cook, Test, Package, and Maintain workflows from the rail.",
 		                            uxDoc ? "ok" : "warning",
 		                            uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
 		                            "sparkle-tools.png"),
 		    1,
 		    2);
 		layout.addLayout(discoverGrid);
-	}
-
-	void LauncherMainWindow::AddSystemOverviewPage(QVBoxLayout& layout)
-	{
-		BuildWorkspaceOperationRequest request = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
-		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation("workspace.generate-solution", request);
-		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
-		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
-		int enabledDependencyCount = 0;
-		int readyDependencyCount = 0;
-		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-		{
-			if (!group.Enabled)
-			{
-				continue;
-			}
-			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
-			{
-				++enabledDependencyCount;
-				if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
-				{
-					++readyDependencyCount;
-				}
-			}
-		}
-
-		QVBoxLayout* statsLayout = AddOptionGroup(layout, "Statistics", "Current workspace and machine state, kept compact for daily production checks.");
-		AddStatusRow(*statsLayout, "Project", m_projectModel.SelectedProjectId().isEmpty() ? "Not selected" : m_projectModel.SelectedProjectId(), "Selected project used by launch, build, cook, and test workflows.", m_projectModel.SelectedProjectId().isEmpty() ? "warning" : "ok");
-		AddStatusRow(*statsLayout, "Root mode", PathExists(m_repositoryRoot / "SparkleLauncher.exe") ? "Package" : "Source checkout", "Package mode uses bundled components first; source checkout uses local artifacts and generated workspace state.", "neutral");
-		AddStatusRow(*statsLayout, "Toolchain", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad", CreateActionDependencyActions("toolchain.check", "Verify Host Environment", QString(), QString(), true));
-		AddStatusRow(*statsLayout, "Build files", plan.Freshness.Current ? "Current" : "Needs refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning", CreateActionDependencyActions("workspace.generate-solution", "Generate Build Files", "build-tree", "Clean Build Files", true));
-		AddStatusRow(*statsLayout, "Source tiers", QStringLiteral("%1 / %2 cached").arg(readyDependencyCount).arg(enabledDependencyCount), "Enabled source tiers unlock optional local build and cook capabilities.", readyDependencyCount == enabledDependencyCount ? "ok" : "warning", CreateActionDependencyActions("workspace.setup", "Sync Source Tiers", "deps", "Clean Source Dependency Cache", true));
-
-		QVBoxLayout* artifactLayout = AddDetailsGroup(layout, "Locations", "Declared workspace roots. Paths are intentionally kept in System rather than Home.", false);
-		AddStatusRow(*artifactLayout, "Build root", "Generated", ToDisplayPath(m_repositoryRoot, GetBuildDirectory(m_repositoryRoot)), "neutral");
-		AddStatusRow(*artifactLayout, "Artifacts root", "Generated", ToDisplayPath(m_repositoryRoot, GetArtifactDirectory(m_repositoryRoot)), "neutral");
-		AddStatusRow(*artifactLayout, "Dist root", "Package output", ToDisplayPath(m_repositoryRoot, m_repositoryRoot / "dist"), "neutral");
-		AddStatusRow(*artifactLayout, "Launcher logs", "Available", ToDisplayPath(m_repositoryRoot, statePaths.LogsDirectory), "neutral");
-
-		AddSourceTierCards(layout, "Source Tiers", "Capability workload cards. Sync only the tiers needed for the local work you intend to do.", false);
 	}
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
@@ -3909,8 +3787,6 @@ namespace SparkleLauncher
 			return QChar(0xf04b);
 		case LauncherIcon::Package:
 			return QChar(0xf466);
-		case LauncherIcon::System:
-			return QChar(0xf108);
 		case LauncherIcon::Maintain:
 			return QChar(0xf1de);
 		case LauncherIcon::Queued:
@@ -3980,10 +3856,6 @@ namespace SparkleLauncher
 		if (iconKey == "package")
 		{
 			return CreateLauncherIcon(LauncherIcon::Package, QColor(kColorStateQueued));
-		}
-		if (iconKey == "system")
-		{
-			return CreateLauncherIcon(LauncherIcon::System, QColor(kColorStateQueued));
 		}
 		if (iconKey == "maintain")
 		{
@@ -4081,20 +3953,6 @@ namespace SparkleLauncher
 			m_cleanButton->setEnabled(false);
 			m_cleanButton->setToolTip("Home summarizes readiness and does not own generated outputs.");
 			m_cleanButton->setAccessibleDescription(m_cleanButton->toolTip());
-			m_runButton->setVisible(false);
-			m_runButton->setEnabled(false);
-			m_runButton->setToolTip(reason);
-			m_runButton->setAccessibleDescription(reason);
-			return;
-		}
-
-		if (m_selectedOperationId == LauncherSystemOperationId())
-		{
-			const QString reason = "This page is for inspection. Use workflow pages for executable actions.";
-			m_cleanButton->setVisible(false);
-			m_cleanButton->setEnabled(false);
-			m_cleanButton->setToolTip(reason);
-			m_cleanButton->setAccessibleDescription(reason);
 			m_runButton->setVisible(false);
 			m_runButton->setEnabled(false);
 			m_runButton->setToolTip(reason);
@@ -4712,7 +4570,7 @@ namespace SparkleLauncher
 		const QString title = DisplayNameForOperation(operationId);
 		SetControlsEnabled(true);
 		UpdateActionHistoryDisplay();
-		const bool isStaticPage = operationId == LauncherHomeOperationId() || operationId == LauncherSystemOperationId();
+		const bool isStaticPage = operationId == LauncherHomeOperationId();
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
@@ -4912,16 +4770,9 @@ namespace SparkleLauncher
 		}
 		if (m_toggleOutputButton != nullptr)
 		{
-			m_toggleOutputButton->setText(expanded ? "Minimize" : "Show Activity");
+			m_toggleOutputButton->setText(expanded ? QStringLiteral("−") : QStringLiteral("□"));
 			m_toggleOutputButton->setToolTip(expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
 			m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
-		}
-		if (m_activityHeaderSummary != nullptr)
-		{
-			const QString runText = m_startedRunCount == 1 ? QStringLiteral("1 run") : QStringLiteral("%1 runs").arg(m_startedRunCount);
-			m_activityHeaderSummary->setText(m_startedRunCount > 0 ?
-			                                     QStringLiteral("%1, %2 failed. Logs stay available.").arg(runText).arg(m_failedRunCount) :
-			                                     QStringLiteral("Collapsed by default. Opens automatically for active runs and failures."));
 		}
 		if (m_copyOutputButton != nullptr)
 		{
@@ -4955,13 +4806,6 @@ namespace SparkleLauncher
 		if (m_activityDetailsPanel != nullptr)
 		{
 			m_activityDetailsPanel->setVisible(hasRuns && m_activityLogExpanded);
-		}
-		if (m_activityHeaderSummary != nullptr)
-		{
-			const QString runText = m_startedRunCount == 1 ? QStringLiteral("1 run") : QStringLiteral("%1 runs").arg(m_startedRunCount);
-			m_activityHeaderSummary->setText(hasRuns ?
-			                                     QStringLiteral("%1, %2 failed. Logs stay available.").arg(runText).arg(m_failedRunCount) :
-			                                     QStringLiteral("Collapsed by default. Opens automatically for active runs and failures."));
 		}
 		if (m_copyOutputButton != nullptr && !hasRuns)
 		{

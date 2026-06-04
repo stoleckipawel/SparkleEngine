@@ -58,6 +58,9 @@ namespace SparkleLauncher
 		addRule("#ActivityBottomPanel", "background: #181a19; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#OutputPanel", "background: #181a19; border: none;");
 		addRule("#ActivityHeader", "background: #181a19; border: none;");
+		addRule("#ActivityToggleButton", "background: transparent; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-radius: 2px; padding: 0; font-size: 10pt; font-weight: 900; min-width: 28px; max-width: 28px; min-height: 24px; max-height: 24px;");
+		addRule("#ActivityToggleButton:hover", "background: " + panelHover + "; color: " + textPrimary + "; border-color: " + borderStrong + ";");
+		addRule("#ActivityToggleButton:focus", "border: 1px solid " + focus + ";");
 		addRule("#OutputPaneLabel", "color: " + textSecondary + "; font-size: 8pt; font-weight: 700; letter-spacing: 0.2px;");
 		addRule("#ActivityRail", "background: #23262a; border: none; border-top: 1px solid " + divider + "; border-right: 1px solid " + border + ";");
 		addRule("#OutputPane", "background: #202327; border: none; border-top: 1px solid " + divider + ";");

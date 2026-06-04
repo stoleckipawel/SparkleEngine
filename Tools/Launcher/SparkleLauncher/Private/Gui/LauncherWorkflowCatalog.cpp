@@ -7,11 +7,6 @@ namespace SparkleLauncher
 		return "home.quick-start";
 	}
 
-	QString LauncherSystemOperationId()
-	{
-		return "system.overview";
-	}
-
 	QVector<LauncherWorkflowDefinition> CreateLauncherWorkflowCatalog()
 	{
 		return {
@@ -22,7 +17,6 @@ namespace SparkleLauncher
 		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}, "cook"},
 		    {"Test", "Quality gates", {"project.run.smoke", "quality.format"}, "test"},
 		    {"Package", "Release assembly", {"package.release"}, "package"},
-		    {"System", "Workspace and machine state", {LauncherSystemOperationId()}, "system"},
 		    {"Maintain", "Clean generated state", {"workspace.clean"}, "maintain"},
 		};
 	}
@@ -32,10 +26,6 @@ namespace SparkleLauncher
 		if (operationId == LauncherHomeOperationId())
 		{
 			return "Quick Start";
-		}
-		if (operationId == LauncherSystemOperationId())
-		{
-			return "System";
 		}
 		if (operationId == "workspace.open-solution")
 		{
