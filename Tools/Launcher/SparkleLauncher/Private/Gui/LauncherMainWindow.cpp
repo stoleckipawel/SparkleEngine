@@ -45,7 +45,6 @@
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QSizePolicy>
-#include <QtWidgets/QStackedLayout>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QWidget>
@@ -53,6 +52,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <system_error>
@@ -258,6 +258,182 @@ namespace SparkleLauncher
 		QPixmap m_source;
 		bool m_heroTreatment = false;
 		bool m_softTreatment = false;
+	};
+
+	class HomeHeroCardWidget final : public QFrame
+	{
+	public:
+		explicit HomeHeroCardWidget(QPixmap source, QWidget* parent = nullptr)
+		    : QFrame(parent)
+		    , m_source(std::move(source))
+		{
+			setAttribute(Qt::WA_StyledBackground, false);
+			setAttribute(Qt::WA_OpaquePaintEvent, false);
+			setMinimumHeight(kMinimumHeight);
+			setMaximumHeight(kMaximumHeight);
+			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+			policy.setHeightForWidth(true);
+			setSizePolicy(policy);
+		}
+
+		void SetCopyPane(QWidget* copyPane)
+		{
+			m_copyPane = copyPane;
+			if (m_copyPane != nullptr)
+			{
+				m_copyPane->setParent(this);
+				m_copyPane->setMaximumWidth(QWIDGETSIZE_MAX);
+				m_copyPane->show();
+				LayoutCopyPane();
+			}
+		}
+
+		bool hasHeightForWidth() const override
+		{
+			return true;
+		}
+
+		int heightForWidth(int width) const override
+		{
+			const int proportionalHeight = static_cast<int>(std::round(static_cast<double>(width) * kDesignHeight / kDesignWidth));
+			return std::clamp(proportionalHeight, kMinimumHeight, kMaximumHeight);
+		}
+
+		QSize sizeHint() const override
+		{
+			return QSize(kDesignWidth, kDesignHeight);
+		}
+
+		QSize minimumSizeHint() const override
+		{
+			return QSize(720, kMinimumHeight);
+		}
+
+	protected:
+		void paintEvent(QPaintEvent*) override
+		{
+			QPainter painter(this);
+			painter.setRenderHint(QPainter::Antialiasing, true);
+			painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+			painter.fillRect(rect(), kHeroBackground);
+
+			if (m_source.isNull() || width() <= 0 || height() <= 0)
+			{
+				return;
+			}
+
+			QImage heroLayer(QSize(kDesignWidth, kDesignHeight), QImage::Format_ARGB32_Premultiplied);
+			heroLayer.fill(kHeroBackground);
+			QPainter heroPainter(&heroLayer);
+			heroPainter.setRenderHint(QPainter::Antialiasing, true);
+			heroPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+			const QRect designRect(0, 0, kDesignWidth, kDesignHeight);
+			const QPixmap scaled = m_source.scaled(designRect.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+			const QRect cropRect(
+			    std::max(0, (scaled.width() - designRect.width()) / 2),
+			    std::max(0, (scaled.height() - designRect.height()) / 2),
+			    designRect.width(),
+			    designRect.height());
+
+			heroPainter.drawPixmap(designRect.topLeft(), scaled, cropRect);
+
+			QLinearGradient copyReadability(0, 0, kCopyDividerX, 0);
+			copyReadability.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 72));
+			copyReadability.setColorAt(0.74, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 34));
+			copyReadability.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
+			heroPainter.fillRect(QRect(0, 0, kCopyDividerX, kDesignHeight), copyReadability);
+
+			QLinearGradient imageRightBlend(kDesignWidth - 300, 0, kDesignWidth, 0);
+			imageRightBlend.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
+			imageRightBlend.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 132));
+			heroPainter.fillRect(designRect, imageRightBlend);
+
+			QLinearGradient topLevelFade(0, 0, 0, kDesignHeight);
+			topLevelFade.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
+			topLevelFade.setColorAt(0.50, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
+			topLevelFade.setColorAt(0.78, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 102));
+			topLevelFade.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 255));
+			heroPainter.fillRect(heroLayer.rect(), topLevelFade);
+
+			heroPainter.setPen(QPen(QColor(118, 185, 0, 210), 2));
+			heroPainter.drawLine(kCopyDividerX, 0, kCopyDividerX, kDesignHeight - 1);
+
+			painter.drawImage(HeroSceneRect(), heroLayer);
+		}
+
+		void resizeEvent(QResizeEvent* event) override
+		{
+			QFrame::resizeEvent(event);
+			LayoutCopyPane();
+		}
+
+	private:
+		void LayoutCopyPane()
+		{
+			if (m_copyPane == nullptr || width() <= 0 || height() <= 0)
+			{
+				return;
+			}
+
+			const double scale = std::clamp(
+			    HeroSceneScale(),
+			    0.74,
+			    1.12);
+			const QRectF sceneRect = HeroSceneRect();
+			const int left = static_cast<int>(std::round(sceneRect.left() + kCopyLeft * scale));
+			const int top = static_cast<int>(std::round(sceneRect.top() + kCopyTop * scale));
+			const int bottom = static_cast<int>(std::round(kCopyBottom * scale));
+			const int desiredPaneWidth = static_cast<int>(std::round(kCopyWidth * scale));
+			const int maximumPaneWidth = std::max(300, static_cast<int>(std::round((kCopyDividerX - kCopyLeft - 54) * scale)));
+			const int paneWidth = std::clamp(desiredPaneWidth, 300, std::min(460, maximumPaneWidth));
+			const int paneHeight = std::max(140, static_cast<int>(std::round(sceneRect.height())) - static_cast<int>(std::round(kCopyTop * scale)) - bottom);
+
+			if (QLayout* copyLayout = m_copyPane->layout())
+			{
+				copyLayout->setContentsMargins(0, 0, 0, 0);
+				copyLayout->setSpacing(std::max(10, static_cast<int>(std::round(18 * scale))));
+			}
+			m_copyPane->setGeometry(left, top, paneWidth, paneHeight);
+		}
+
+		QRectF HeroSceneRect() const
+		{
+			if (width() <= 0 || height() <= 0)
+			{
+				return QRectF();
+			}
+
+			const double scale = HeroSceneScale();
+			const QSizeF sceneSize(kDesignWidth * scale, kDesignHeight * scale);
+			const QPointF sceneTopLeft(
+			    (static_cast<double>(width()) - sceneSize.width()) * 0.5,
+			    (static_cast<double>(height()) - sceneSize.height()) * 0.5);
+			return QRectF(sceneTopLeft, sceneSize);
+		}
+
+		double HeroSceneScale() const
+		{
+			if (width() <= 0 || height() <= 0)
+			{
+				return 1.0;
+			}
+			return std::min(static_cast<double>(width()) / kDesignWidth, static_cast<double>(height()) / kDesignHeight);
+		}
+
+		static constexpr int kDesignWidth = 1560;
+		static constexpr int kDesignHeight = 360;
+		static constexpr int kCopyDividerX = 624;
+		static constexpr int kMinimumHeight = 260;
+		static constexpr int kMaximumHeight = 420;
+		static constexpr int kCopyLeft = 48;
+		static constexpr int kCopyTop = 58;
+		static constexpr int kCopyBottom = 44;
+		static constexpr int kCopyWidth = 430;
+		static const inline QColor kHeroBackground = QColor(3, 4, 4);
+
+		QPixmap m_source;
+		QWidget* m_copyPane = nullptr;
 	};
 
 	class ResponsiveCardGridWidget final : public QWidget
@@ -2786,35 +2962,21 @@ namespace SparkleLauncher
 	    QWidget* secondaryAction,
 	    const QString& artworkFileName)
 	{
-		QFrame* card = new QFrame(this);
-		card->setObjectName("CommandHeroCard");
-		card->setProperty("State", state);
-		constexpr int kHomeHeroHeight = 372;
-		card->setMinimumHeight(kHomeHeroHeight);
-		card->setMaximumHeight(kHomeHeroHeight);
-		card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-		QStackedLayout* shellLayout = new QStackedLayout(card);
-		shellLayout->setContentsMargins(0, 0, 0, 0);
-		shellLayout->setSpacing(0);
-		shellLayout->setStackingMode(QStackedLayout::StackAll);
-
-		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, kHomeHeroHeight)))
+		QPixmap heroPixmap;
+		const std::filesystem::path artworkPath = FindLauncherVisualAsset(artworkFileName);
+		if (!artworkPath.empty())
 		{
-			artwork->setParent(card);
-			shellLayout->addWidget(artwork);
+			heroPixmap.load(QString::fromStdString(artworkPath.string()));
 		}
 
-		QWidget* overlay = new QWidget(card);
-		overlay->setObjectName("CommandHeroOverlay");
-		QHBoxLayout* overlayLayout = new QHBoxLayout(overlay);
-		overlayLayout->setContentsMargins(0, 0, 0, 0);
-		overlayLayout->setSpacing(0);
+		HomeHeroCardWidget* card = new HomeHeroCardWidget(heroPixmap, this);
+		card->setObjectName("CommandHeroCard");
+		card->setProperty("State", state);
 
-		QWidget* copyPane = new QWidget(overlay);
+		QWidget* copyPane = new QWidget(card);
 		copyPane->setObjectName("CommandHeroCopyPane");
-		copyPane->setMaximumWidth(460);
 		QVBoxLayout* layout = new QVBoxLayout(copyPane);
-		layout->setContentsMargins(42, 58, 40, 46);
+		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(18);
 
 		QLabel* title = new QLabel(status, card);
@@ -2831,23 +2993,19 @@ namespace SparkleLauncher
 		actionRow->setSpacing(kSpaceSmall);
 		if (primaryAction != nullptr)
 		{
-			primaryAction->setParent(card);
+			primaryAction->setParent(copyPane);
 			actionRow->addWidget(primaryAction, 0, Qt::AlignLeft);
 		}
 		if (secondaryAction != nullptr)
 		{
-			secondaryAction->setParent(card);
+			secondaryAction->setParent(copyPane);
 			actionRow->addWidget(secondaryAction, 0, Qt::AlignLeft);
 		}
 		actionRow->addStretch(1);
 		layout->addLayout(actionRow);
 		layout->addStretch(1);
 
-		overlayLayout->addWidget(copyPane, 0);
-		overlayLayout->addStretch(1);
-		shellLayout->addWidget(overlay);
-		shellLayout->setCurrentWidget(overlay);
-		overlay->raise();
+		card->SetCopyPane(copyPane);
 		return card;
 	}
 
