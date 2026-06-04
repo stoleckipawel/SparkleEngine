@@ -270,7 +270,7 @@ namespace SparkleLauncher
 			setAttribute(Qt::WA_StyledBackground, false);
 			setAttribute(Qt::WA_OpaquePaintEvent, false);
 			setMinimumHeight(kMinimumHeight);
-			setMaximumHeight(kMaximumHeight);
+			setMaximumHeight(QWIDGETSIZE_MAX);
 			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 			policy.setHeightForWidth(true);
 			setSizePolicy(policy);
@@ -296,7 +296,7 @@ namespace SparkleLauncher
 		int heightForWidth(int width) const override
 		{
 			const int proportionalHeight = static_cast<int>(std::round(static_cast<double>(width) * kDesignHeight / kDesignWidth));
-			return std::clamp(proportionalHeight, kMinimumHeight, kMaximumHeight);
+			return std::max(proportionalHeight, kMinimumHeight);
 		}
 
 		QSize sizeHint() const override
@@ -365,10 +365,29 @@ namespace SparkleLauncher
 		void resizeEvent(QResizeEvent* event) override
 		{
 			QFrame::resizeEvent(event);
+			SyncProportionalHeight();
 			LayoutCopyPane();
 		}
 
 	private:
+		void SyncProportionalHeight()
+		{
+			if (width() <= 0)
+			{
+				return;
+			}
+
+			const int desiredHeight = heightForWidth(width());
+			if (minimumHeight() == desiredHeight && maximumHeight() == desiredHeight)
+			{
+				return;
+			}
+
+			setMinimumHeight(desiredHeight);
+			setMaximumHeight(desiredHeight);
+			updateGeometry();
+		}
+
 		void LayoutCopyPane()
 		{
 			if (m_copyPane == nullptr || width() <= 0 || height() <= 0)
@@ -407,7 +426,7 @@ namespace SparkleLauncher
 			const double scale = HeroSceneScale();
 			const QSizeF sceneSize(kDesignWidth * scale, kDesignHeight * scale);
 			const QPointF sceneTopLeft(
-			    (static_cast<double>(width()) - sceneSize.width()) * 0.5,
+			    0.0,
 			    (static_cast<double>(height()) - sceneSize.height()) * 0.5);
 			return QRectF(sceneTopLeft, sceneSize);
 		}
@@ -425,7 +444,6 @@ namespace SparkleLauncher
 		static constexpr int kDesignHeight = 360;
 		static constexpr int kCopyDividerX = 624;
 		static constexpr int kMinimumHeight = 260;
-		static constexpr int kMaximumHeight = 420;
 		static constexpr int kCopyLeft = 48;
 		static constexpr int kCopyTop = 58;
 		static constexpr int kCopyBottom = 44;
