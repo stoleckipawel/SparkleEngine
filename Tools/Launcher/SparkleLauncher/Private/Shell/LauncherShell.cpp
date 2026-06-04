@@ -479,10 +479,10 @@ namespace SparkleLauncher
 		output << "  Workspace IDE: " << DisplayName(state.WorkspaceIdePreference) << " | options: Visual Studio, Rider\n\n";
 
 		RenderOperationGroup(state, "Launch", output);
-		RenderOperationGroup(state, "Prepare", output);
+		RenderOperationGroup(state, "Sync", output);
 		RenderOperationGroup(state, "Build", output);
 		RenderOperationGroup(state, "Cook", output);
-		RenderOperationGroup(state, "Validate", output);
+		RenderOperationGroup(state, "Test", output);
 		RenderOperationGroup(state, "Package", output);
 		RenderOperationGroup(state, "Maintain", output);
 

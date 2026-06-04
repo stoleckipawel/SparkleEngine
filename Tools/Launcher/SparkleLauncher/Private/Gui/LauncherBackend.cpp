@@ -182,7 +182,7 @@ namespace SparkleLauncher
 		maintenanceRequest.RepositoryRoot = request.RepositoryRoot;
 		maintenanceRequest.ProjectId = request.ProjectId.toStdString();
 		maintenanceRequest.EditorProfile = request.EditorProfile.toStdString();
-		maintenanceRequest.RequestedFormatMode = FormatMode::Apply;
+		maintenanceRequest.RequestedFormatMode = request.FormatMode == "apply" ? FormatMode::Apply : FormatMode::Check;
 		maintenanceRequest.RequestedCleanScope = ToCleanScope(request.CleanScope);
 		maintenanceRequest.RequestedCleanScopes = SplitCleanScopes(request.CleanScope);
 		for (const LauncherCleanTarget& target : request.CleanTargets)

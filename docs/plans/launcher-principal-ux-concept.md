@@ -6,7 +6,7 @@ Status: concept and product-direction document. Do not implement until the desig
 
 ## Product Intent
 
-Sparkle Launcher should feel like an engine command center, not a CMake front-end. Its first job is to help any first-time user launch something meaningful quickly. Its second job is to help that same user grow naturally into deeper production workflows: prepare, build, cook, validate, package, diagnose, and maintain. Its third job is to keep advanced rebuild, recook, package, diagnostic, and maintenance workflows available without letting them dominate the first impression.
+Sparkle Launcher should feel like a focused engine launcher, not a CMake front-end. Its first job is to help any first-time user launch something meaningful quickly. Its second job is to help that same user grow naturally into deeper production workflows: sync, build, cook, test, package, diagnose, and maintain. Its third job is to keep advanced rebuild, recook, package, diagnostic, and maintenance workflows available without letting them dominate the first impression.
 
 The launcher should answer these questions in order:
 
@@ -19,7 +19,7 @@ The launcher should answer these questions in order:
 The first screen must serve two usage depths without splitting the product in two:
 
 1. A first-contact path for someone who needs immediate proof that the package runs and that the engineering underneath is serious.
-2. A production path for someone who needs reliable access to prepare, build, cook, validate, package, and maintain workflows.
+2. A production path for someone who needs reliable access to sync, build, cook, test, package, and maintain workflows.
 
 The solution is not a separate "reviewer mode" or "demo mode" that hides the real system. The solution is a real Quick Start home surface that uses the same readiness model as production workflows, but presents it in first-contact order: launch first, evidence second, rebuild/recook third.
 
@@ -55,7 +55,7 @@ Primary UX problems:
 - Stable mental model: actions should be grouped by user intent, not implementation category.
 - Signal over inventory: show "ready, blocked, stale, optional, disabled" at summary level first; details are expandable.
 - Old failures should not poison unrelated pages. A stale failed maintenance run belongs in Activity, not as global emotional noise.
-- Labels should speak user outcomes: Open, Prepare, Build, Cook, Validate, Package, Clean.
+- Labels should speak user outcomes: Open, Sync, Build, Cook, Test, Package, Clean.
 - Product and source states must be distinct: "Ready from package" is not the same as "Ready from local build."
 - Progressive depth: first-contact and daily production use the same data and workflows; the default screen simply prioritizes quick launch and engineering evidence before operational inventory.
 - No artificial roles: the app should not expose `Reviewer Mode`, `Developer Mode`, or portfolio-specific copy. It should feel like a real launcher that happens to be easy to evaluate quickly.
@@ -106,7 +106,7 @@ Time-boxed journey:
 | 0 to 30 seconds | Understand project identity and launch status | Show title, mode, selected project, strongest available CTA, and any launch blocker in one sentence |
 | 2 minutes | Run editor or runtime, or know the exact blocker | Prefer packaged components; if blocked, show the smallest repair action |
 | 5 minutes | Inspect engineering depth | Provide one-click evidence links for architecture, renderer/backend notes, dependency tiers, manifests, validation report, and source layout |
-| 15 minutes | Evaluate rebuild discipline | Guide to Prepare Source Workspace, Build Missing, Cook Missing, and package manifests without forcing full dependency sync |
+| 15 minutes | Evaluate rebuild discipline | Guide to Sync Source Tiers, Generate Build Files, Build Missing, Cook Missing, and package manifests without forcing full dependency sync |
 
 Quick-start screen:
 
@@ -120,7 +120,7 @@ Open the Showcase editor or runtime now. Rebuild and recook are optional.
 [Open Showcase Editor] [Open Runtime]
 
 If you have more time
-[View Architecture] [View Package Manifest] [Prepare Source Workspace]
+[View Architecture] [View Package Manifest] [Sync Source Tiers]
 
 Engineering snapshot
 Renderer: D3D12 + Vulkan | Project: Showcase | Build: Development | Package: source checkout
@@ -165,7 +165,7 @@ Goal:
 
 Ideal path:
 
-1. Launcher opens on Command Center.
+1. Launcher opens on Quick Start.
 2. Hero card says `Showcase ready from package` or `Showcase needs 2 generated outputs`.
 3. Primary CTA is `Open Editor` or `Open Runtime`.
 4. If blocked, CTA becomes `Build Missing Runtime` or `Cook Missing Assets`, not a generic setup instruction.
@@ -183,9 +183,9 @@ Goal:
 
 Ideal path:
 
-1. Command Center says `Source workspace needs refresh`.
-2. Recommended action is `Prepare Source Workspace`.
-3. Prepare screen shows a compact sequence: Host Tools, Source Tiers, Project Files.
+1. Quick Start says `Source workspace needs refresh`.
+2. Recommended action is `Generate Build Files` or `Sync Source Tiers`, depending on the smallest real blocker.
+3. Sync and Build screens show a compact sequence: Host Tools, Source Tiers, Build Files.
 4. Developer fixes the first blocker only.
 5. Build/Run become available.
 
@@ -237,33 +237,33 @@ Proposed groups:
 
 - Home / Quick Start
 - Launch
-- Prepare
+- Sync
 - Build
 - Cook
-- Validate
+- Test
 - Package
 - Maintain
 
 Rationale:
 
-- `Home / Quick Start` becomes the command center and first-run funnel.
+- `Home / Quick Start` becomes the launch-first first-run funnel.
 - `Launch` replaces `Start`; "Start" is too generic and visually weak for the most important first-contact path.
-- `Prepare` replaces `Setup`; "Prepare" implies outcome and readiness, while "Setup" sounds like installation chores.
-- `Validate` replaces `Run` for smoke tests and diagnostic launch. Normal running belongs under Launch.
+- `Sync` replaces `Prepare`; the actual user job is to synchronize source tiers, optional prebuilt/cooked packs, and workspace state, not perform a vague setup ritual.
+- `Test` replaces `Validate`; it naturally contains smoke tests, formatting checks, static analysis, coverage, and sanitizer-oriented quality gates as those capabilities become real workflows.
 - `Maintain` is shorter and less bureaucratic than Maintenance.
 
 Proposed primary navigation:
 
 | Group | Primary User Question | Actions |
 | --- | --- | --- |
-| Home / Quick Start | What should I do next? | Command Center, Run Showcase, View Evidence |
+| Home / Quick Start | What should I do next? | Quick Start, Run Showcase, View Evidence |
 | Launch | What can I open now? | Launch Project, Open IDE |
-| Prepare | What does this machine/workspace need? | Prepare Source Workspace, Verify Host Tools, Sync Source Tiers, Generate Workspace Files |
+| Sync | What capabilities or packs should I bring into this workspace? | Verify Host Tools, Sync Source Tiers, Sync Prebuilt Components, Sync Cooked Content |
 | Build | What do I want to rebuild locally? | Build Missing, Build Editor, Build Runtime, Build Launcher, Build Cooking Tools, Build All |
 | Cook | What generated content do I need? | Cook Missing, Cook All, Cook Shaders, Cook Textures, Cook Scenes And Meshes |
-| Validate | How do I test or diagnose? | Run Smoke Test |
+| Test | How do I verify quality? | Run Smoke Test, Format Check, future Unit/Integration/Coverage/Sanitizer/Static Analysis workflows |
 | Package | How do I assemble a release package? | Assemble Release Package, Open Dist Folder |
-| Maintain | What generated state should I clean? | Clean Generated Files, Format Code |
+| Maintain | What generated state should I clean? | Clean Workspace |
 
 ## Proposed Screen Model
 
@@ -278,7 +278,7 @@ Every workflow screen should use the same hierarchy:
 
 This reverses the current hierarchy. Today, details come first and the user has to synthesize the action.
 
-## Command Center Concept
+## Quick Start Concept
 
 Purpose:
 
@@ -307,7 +307,7 @@ Sparkle Engine Showcase                                      [System] [Activity]
 +---------------+ +---------------+ +---------------+ +---------------+
 
 Next best action
-1. Generate Workspace Files
+1. Generate Build Files
    CMake cache differs from selected generator/platform/toolset/Qt kit.
    [Generate]
 
@@ -315,7 +315,7 @@ Engineering evidence
 [Architecture] [Dependency Tiers] [Manifests] [Latest Validation]
 
 Recent activity
-Clean Generated Files failed because launcher artifacts were locked.
+Clean Workspace failed because launcher artifacts were locked.
 [Resolve] [Dismiss] [View log]
 ```
 
@@ -333,7 +333,7 @@ Launch first. Rebuild and recook are optional unless you want to inspect the sou
 
 +-------------------------+ +-------------------------+ +----------------------+
 | Review engineering      | | Continue as developer   | | Current evidence     |
-| Architecture            | | Prepare Source Workspace| | Manifest: available  |
+| Architecture            | | Sync Source Tiers       | | Manifest: available  |
 | Dependency tiers        | | Build Missing           | | Validation: latest   |
 | Validation report       | | Cook Missing            | | Source: detected     |
 +-------------------------+ +-------------------------+ +----------------------+
@@ -363,19 +363,19 @@ Recommended renames:
 | Current | Proposed | Reason |
 | --- | --- | --- |
 | Start | Launch | clearer primary outcome |
-| Setup | Prepare | less installer-like, more workflow-oriented |
+| Setup | Sync | clearer: the page synchronizes source tiers, future prebuilt packs, cooked content packs, and workspace state |
 | Sync Source Dependencies | Sync Source Tiers | matches capability-tier language |
-| Generate Project Files | Generate Workspace Files | covers CMake/IDE state more clearly |
+| Generate Project Files | Generate Build Files | covers CMake/IDE state without implying a vague workspace ritual |
 | Open Workspace | Open IDE | direct user language |
 | Launch Editor / Launch Runtime | Launch Project target selector | avoids duplicated pages with identical options |
 | Build All | Build Missing or Build All | `Build All` should not be default if only one target is missing |
 | Build Cook Tools | Build Cooking Tools | more natural noun phrase |
 | Cook Scene Assets | Cook Scenes And Meshes | clearer domain |
-| Run | Validate | separates normal launch from tests |
+| Run | Test | separates normal launch from quality checks |
 | Run Project | Launch Project | configurable editor/runtime launch belongs under Launch |
 | Package Release | Assemble Release Package | avoids claiming publish-ready publication |
 | Maintenance | Maintain | shorter and active |
-| Clean Workspace | Clean Generated Files | emphasizes safety |
+| Clean Workspace | Clean Workspace | keeps the action broad while the page explains exact clean scopes |
 
 Names to avoid:
 
@@ -890,7 +890,7 @@ Use the commit bar for:
 - Build Editor / Build Runtime / Build Missing / Build All
 - Cook Missing / Cook Shaders / Cook Textures / Cook Scenes And Meshes
 - Assemble Release Package
-- Clean Generated Files
+- Clean Workspace
 - Sync Source Tiers
 
 Do not use the commit bar for:
@@ -1281,7 +1281,7 @@ Required capabilities:
 | Project readiness model | Home and Launch pages need precise `ready`, `missing`, `stale`, and `disabled` states | launcher backend readiness evaluators |
 | Exact next-action mapping | Missing runtime, stale project files, or missing cooked assets must point to one real action | workflow metadata and dependency graph |
 | Engineering evidence index | First-time users need one-click access to architecture, manifests, validation, and source layout | docs manifest, package manifest, launcher evidence model |
-| Dependency capability tiers | Setup must show capability unlocks without duplicating host prerequisites | shared dependency tier definitions |
+| Dependency capability tiers | Sync must show capability unlocks without duplicating host prerequisites | shared dependency tier definitions |
 | Build Missing workflow | UI needs a minimal rebuild path instead of pushing `Build All` | target ownership metadata, selected project targets |
 | Cook Missing workflow | UI needs asset-domain recovery instead of generic cooking | cooked domain readiness, cook target mapping |
 | Activity relevance and dismissal | Old unrelated failures must not dominate every page | scoped run history, dismissed-run state, current workflow matching |
@@ -1299,14 +1299,14 @@ UX blocking rule:
 
 ## Potential Missing Product Features
 
-- Command Center landing screen.
+- Quick Start landing screen.
 - Quick Start as the default Home state for first launch and package-root usage.
 - Time-boxed first-contact path: launch in 2 minutes, evidence in 5 minutes, rebuild path in 15 minutes.
 - Engineering evidence links from Home: architecture, manifests, validation, dependency tiers, source map.
 - Dismissible activity failures.
 - `Build Missing` action that builds only missing editor/runtime/tool outputs.
 - `Cook Missing` action that cooks only missing asset domains.
-- `Prepare Source Workspace` guided sequence.
+- `Sync Source Tiers` and `Generate Build Files` guided sequence.
 - Package/root mode indicator: `Package Mode` vs `Source Checkout Mode`.
 - Source/package artifact provenance: `Ready from package` vs `Ready from local build`.
 - Compact capability matrix for Source Tiers.

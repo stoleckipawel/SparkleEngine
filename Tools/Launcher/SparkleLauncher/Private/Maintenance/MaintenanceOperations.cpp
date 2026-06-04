@@ -378,8 +378,8 @@ namespace SparkleLauncher
 	const std::vector<MaintenanceOperationDefinition>& GetMaintenanceOperationDefinitions()
 	{
 		static const std::vector<MaintenanceOperationDefinition> definitions = {
-		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Maintain", "Format Code", "Check or apply code formatting for engine and project source files."},
-		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintain", "Clean Generated Files", "Remove generated files for the selected confirmed scope."},
+		    {MaintenanceOperationKind::RunClangFormat, "quality.format", "Test", "Format Check", "Check or apply code formatting for engine and project source files."},
+		    {MaintenanceOperationKind::CleanWorkspace, "workspace.clean", "Maintain", "Clean Workspace", "Remove generated files for the selected confirmed scope."},
 		};
 		return definitions;
 	}

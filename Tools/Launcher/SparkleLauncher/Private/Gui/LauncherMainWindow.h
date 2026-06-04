@@ -151,7 +151,7 @@ namespace SparkleLauncher
 		    const QString& artworkFileName = QString());
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
-		void AddHomeCommandCenter(QVBoxLayout& layout);
+		void AddHomeQuickStart(QVBoxLayout& layout);
 		void AddSystemOverviewPage(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);

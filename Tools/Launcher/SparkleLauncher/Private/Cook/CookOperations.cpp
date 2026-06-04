@@ -284,7 +284,7 @@ namespace SparkleLauncher
 		}
 		if (!plan.Freshness.Current)
 		{
-			AddReadiness(plan, "Generated workspace files are not current. Run Generate Workspace Files first.");
+			AddReadiness(plan, "Generated build files are not current. Run Generate Build Files first.");
 		}
 		switch (plan.Kind)
 		{

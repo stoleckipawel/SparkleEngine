@@ -93,7 +93,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "quality.format")
 		{
-			return "Format";
+			return "Run";
 		}
 		if (operationId.startsWith("cook."))
 		{

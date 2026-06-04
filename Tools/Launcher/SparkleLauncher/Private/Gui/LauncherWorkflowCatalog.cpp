@@ -15,15 +15,15 @@ namespace SparkleLauncher
 	QVector<LauncherWorkflowDefinition> CreateLauncherWorkflowCatalog()
 	{
 		return {
-		    {"Home", "First-contact command center", {LauncherHomeOperationId()}, "home"},
+		    {"Quick Start", "Launch first", {LauncherHomeOperationId()}, "home"},
 		    {"Launch", "Open what is ready", {"project.run", "workspace.open-solution"}, "launch"},
-		    {"Prepare", "Make source work ready", {"toolchain.check", "workspace.setup", "workspace.generate-solution"}, "prepare"},
-		    {"Build", "Optional local rebuilds", {"workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}, "build"},
+		    {"Sync", "Bring capabilities local", {"toolchain.check", "workspace.setup"}, "sync"},
+		    {"Build", "Optional local rebuilds", {"workspace.generate-solution", "workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}, "build"},
 		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}, "cook"},
-		    {"Validate", "Test runtime confidence", {"project.run.smoke"}, "validate"},
+		    {"Test", "Quality gates", {"project.run.smoke", "quality.format"}, "test"},
 		    {"Package", "Release assembly", {"package.release"}, "package"},
 		    {"System", "Workspace and machine state", {LauncherSystemOperationId()}, "system"},
-		    {"Maintain", "Clean and format", {"workspace.clean", "quality.format"}, "maintain"},
+		    {"Maintain", "Clean generated state", {"workspace.clean"}, "maintain"},
 		};
 	}
 
@@ -31,7 +31,7 @@ namespace SparkleLauncher
 	{
 		if (operationId == LauncherHomeOperationId())
 		{
-			return "Command Center";
+			return "Quick Start";
 		}
 		if (operationId == LauncherSystemOperationId())
 		{
@@ -44,6 +44,14 @@ namespace SparkleLauncher
 		if (operationId == "project.run")
 		{
 			return "Launch Project";
+		}
+		if (operationId == "workspace.generate-solution")
+		{
+			return "Generate Build Files";
+		}
+		if (operationId == "quality.format")
+		{
+			return "Format Check";
 		}
 		if (operationId == "package.release")
 		{
@@ -64,7 +72,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "workspace.generate-solution")
 		{
-			return "Workspace files: refreshes generated CMake and IDE state without building products.";
+			return "Build files: refreshes generated CMake and IDE build-system state without building products.";
 		}
 		if (operationId == "workspace.open-solution")
 		{
@@ -88,7 +96,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "project.run.smoke")
 		{
-			return "Validate workflow: runs the selected target with smoke validation enabled.";
+			return "Test workflow: runs the selected target with smoke validation enabled.";
 		}
 		if (operationId == "package.release")
 		{
@@ -100,7 +108,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "quality.format")
 		{
-			return "Maintain: formats or checks source files; it does not build, cook, or sync dependencies.";
+			return "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.";
 		}
 		return {};
 	}
@@ -129,7 +137,7 @@ namespace SparkleLauncher
 		}
 		if (operationId.startsWith("project.run."))
 		{
-			return "Validate";
+			return "Test";
 		}
 		if (operationId.startsWith("project.build") || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
 		{

@@ -108,6 +108,9 @@ namespace SparkleLauncher
 		addRule("#DetailsPanel", "background: transparent; border: none;");
 		addRule("#FieldLabel", "color: #c9ced4; font-size: 8pt; font-weight: 600; padding-top: 0;");
 		addRule("#OptionHelpText", "color: " + textMuted + "; font-size: 7.5pt; line-height: 120%; padding: 0 0 3px 0;");
+		addRule("#CleanPlanText", "color: " + textSecondary + "; background: #1d201d; border-top: 1px solid " + divider + "; padding: 8px 10px; font-size: 8pt;");
+		addRule("#CleanScopeCard", "background: #1d201d; border: 1px solid " + divider + "; border-left: 3px solid #4a515a; border-radius: 3px;");
+		addRule("#CleanScopeCard:hover", "background: #222621; border-left-color: " + accent + ";");
 		addRule("#ActionMetaPanel", "background: transparent; border: none; border-top: 1px solid " + divider + ";");
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 7.75pt;");
