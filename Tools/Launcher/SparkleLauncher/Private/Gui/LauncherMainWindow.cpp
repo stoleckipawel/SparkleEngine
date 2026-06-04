@@ -36,6 +36,7 @@
 #include <QtGui/QPainter>
 #include <QtGui/QPen>
 #include <QtGui/QPixmap>
+#include <QtGui/QResizeEvent>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
 #include <QtWidgets/QHBoxLayout>
@@ -43,6 +44,7 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QScrollArea>
 #include <QtWidgets/QScrollBar>
+#include <QtWidgets/QSizePolicy>
 #include <QtWidgets/QStackedLayout>
 #include <QtWidgets/QStyle>
 #include <QtWidgets/QToolButton>
@@ -83,6 +85,10 @@ namespace SparkleLauncher
 	static constexpr int kActivityPanelCollapsedHeight = 36;
 	static constexpr int kActivityPanelExpandedHeight = 260;
 	static constexpr int kLauncherIconSize = 14;
+	static constexpr int kLauncherMinimumWidth = 1280;
+	static constexpr int kLauncherMinimumHeight = 720;
+	static constexpr int kLauncherInitialWidth = 1480;
+	static constexpr int kLauncherInitialHeight = 860;
 	static constexpr int kStatusChipColumnWidth = 118;
 	static constexpr int kStatusActionColumnWidth = 28;
 	static constexpr const char* kColorStateQueued = "#8b949e";
@@ -252,6 +258,94 @@ namespace SparkleLauncher
 		QPixmap m_source;
 		bool m_heroTreatment = false;
 		bool m_softTreatment = false;
+	};
+
+	class ResponsiveCardGridWidget final : public QWidget
+	{
+	public:
+		ResponsiveCardGridWidget(int minimumCardWidth, int maximumColumns, int horizontalSpacing, int verticalSpacing, QWidget* parent = nullptr)
+		    : QWidget(parent)
+		    , m_minimumCardWidth(std::max(1, minimumCardWidth))
+		    , m_maximumColumns(std::max(1, maximumColumns))
+		{
+			setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+			m_layout = new QGridLayout(this);
+			m_layout->setContentsMargins(0, 0, 0, 0);
+			m_layout->setHorizontalSpacing(horizontalSpacing);
+			m_layout->setVerticalSpacing(verticalSpacing);
+		}
+
+		void AddCard(QWidget* card)
+		{
+			if (card == nullptr)
+			{
+				return;
+			}
+
+			card->setParent(this);
+			card->setSizePolicy(QSizePolicy::Expanding, card->sizePolicy().verticalPolicy());
+			m_cards.push_back(card);
+			Reflow();
+		}
+
+		int CardCount() const
+		{
+			return static_cast<int>(m_cards.size());
+		}
+
+	protected:
+		void resizeEvent(QResizeEvent* event) override
+		{
+			QWidget::resizeEvent(event);
+			Reflow();
+		}
+
+	private:
+		int DesiredColumnCount() const
+		{
+			const int spacing = std::max(0, m_layout->horizontalSpacing());
+			const int availableWidth = std::max(1, contentsRect().width());
+			const int columnsByWidth = std::max(1, (availableWidth + spacing) / (m_minimumCardWidth + spacing));
+			return std::clamp(columnsByWidth, 1, std::min(m_maximumColumns, std::max(1, static_cast<int>(m_cards.size()))));
+		}
+
+		void Reflow()
+		{
+			if (m_cards.empty())
+			{
+				return;
+			}
+
+			const int columns = DesiredColumnCount();
+			if (columns == m_currentColumns && m_layout->count() == static_cast<int>(m_cards.size()))
+			{
+				return;
+			}
+
+			while (QLayoutItem* item = m_layout->takeAt(0))
+			{
+				delete item;
+			}
+
+			for (int column = 0; column < std::max(m_currentColumns, columns); ++column)
+			{
+				m_layout->setColumnStretch(column, column < columns ? 1 : 0);
+			}
+
+			for (int index = 0; index < static_cast<int>(m_cards.size()); ++index)
+			{
+				m_layout->addWidget(m_cards[index], index / columns, index % columns);
+			}
+
+			m_currentColumns = columns;
+			updateGeometry();
+		}
+
+		QGridLayout* m_layout = nullptr;
+		QVector<QWidget*> m_cards;
+		int m_minimumCardWidth = 320;
+		int m_maximumColumns = 3;
+		int m_currentColumns = 0;
 	};
 
 	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool softTreatment)
@@ -1136,8 +1230,8 @@ namespace SparkleLauncher
 	{
 		LoadActionHistory();
 		setWindowTitle("Sparkle Launcher");
-		setMinimumSize(980, 620);
-		resize(1240, 800);
+		setMinimumSize(kLauncherMinimumWidth, kLauncherMinimumHeight);
+		resize(kLauncherInitialWidth, kLauncherInitialHeight);
 		LoadLauncherIconFont();
 		const QIcon applicationIcon = CreateApplicationIcon();
 		QGuiApplication::setWindowIcon(applicationIcon);
@@ -1684,14 +1778,20 @@ namespace SparkleLauncher
 		scrollArea->setObjectName("OptionsScrollArea");
 		scrollArea->setWidgetResizable(true);
 		scrollArea->setFrameShape(QFrame::NoFrame);
-		scrollArea->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+		scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
-		content->setMaximumWidth(1340);
+		const bool isQuickStart = operationId == LauncherHomeOperationId();
+		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
+		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+		if (!isQuickStart)
+		{
+			content->setMaximumWidth(1340);
+		}
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(28, 22, 28, 32);
-		layout->setSpacing(10);
+		layout->setContentsMargins(isQuickStart ? QMargins(0, 0, 0, 32) : QMargins(28, 22, 28, 32));
+		layout->setSpacing(isQuickStart ? 0 : 10);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -1902,17 +2002,12 @@ namespace SparkleLauncher
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		QVBoxLayout* tiersLayout = AddOptionGroup(layout, title, detail);
-		QGridLayout* tierGrid = new QGridLayout();
-		tierGrid->setContentsMargins(0, 4, 0, 0);
-		tierGrid->setHorizontalSpacing(12);
-		tierGrid->setVerticalSpacing(12);
-		int index = 0;
+		ResponsiveCardGridWidget* tierGrid = new ResponsiveCardGridWidget(320, 4, 12, 12, this);
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 		{
-			tierGrid->addWidget(CreateSourceTierCard(group, dependencyCachePath), index / 2, index % 2);
-			++index;
+			tierGrid->AddCard(CreateSourceTierCard(group, dependencyCachePath));
 		}
-		tiersLayout->addLayout(tierGrid);
+		tiersLayout->addWidget(tierGrid);
 
 		if (!includeDependencyDetails)
 		{
@@ -2575,7 +2670,8 @@ namespace SparkleLauncher
 		{
 			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, this);
 			heroArtwork->setObjectName(objectName);
-			heroArtwork->setMinimumSize(minimumSize);
+			heroArtwork->setMinimumHeight(minimumSize.height());
+			heroArtwork->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 			heroArtwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
 			return heroArtwork;
 		}
@@ -2641,13 +2737,16 @@ namespace SparkleLauncher
 		QFrame* card = new QFrame(this);
 		card->setObjectName("CommandHeroCard");
 		card->setProperty("State", state);
-		card->setMinimumHeight(292);
+		constexpr int kHomeHeroHeight = 372;
+		card->setMinimumHeight(kHomeHeroHeight);
+		card->setMaximumHeight(kHomeHeroHeight);
+		card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 		QStackedLayout* shellLayout = new QStackedLayout(card);
 		shellLayout->setContentsMargins(0, 0, 0, 0);
 		shellLayout->setSpacing(0);
 		shellLayout->setStackingMode(QStackedLayout::StackAll);
 
-		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, 292)))
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, kHomeHeroHeight)))
 		{
 			artwork->setParent(card);
 			shellLayout->addWidget(artwork);
@@ -2661,9 +2760,9 @@ namespace SparkleLauncher
 
 		QWidget* copyPane = new QWidget(overlay);
 		copyPane->setObjectName("CommandHeroCopyPane");
-		copyPane->setMaximumWidth(430);
+		copyPane->setMaximumWidth(460);
 		QVBoxLayout* layout = new QVBoxLayout(copyPane);
-		layout->setContentsMargins(36, 46, 34, 34);
+		layout->setContentsMargins(42, 58, 40, 46);
 		layout->setSpacing(18);
 
 		QLabel* title = new QLabel(status, card);
@@ -2869,11 +2968,18 @@ namespace SparkleLauncher
 			});
 			return button;
 		};
-		const auto addHomeSection = [&layout](const QString& title) {
+		QWidget* quickStartBody = new QWidget(this);
+		quickStartBody->setObjectName("QuickStartBody");
+		quickStartBody->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+		QVBoxLayout* bodyLayout = new QVBoxLayout(quickStartBody);
+		bodyLayout->setContentsMargins(28, 24, 28, 0);
+		bodyLayout->setSpacing(10);
+
+		const auto addHomeSection = [bodyLayout](const QString& title) {
 			QLabel* section = new QLabel(title);
 			section->setObjectName("CommandSectionTitle");
 			section->setAccessibleName(title);
-			layout.addWidget(section);
+			bodyLayout->addWidget(section);
 		};
 
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
@@ -2888,46 +2994,38 @@ namespace SparkleLauncher
 		    nullptr,
 		    "showcase-hero.png"));
 
-		QGridLayout* libraryGrid = new QGridLayout();
-		libraryGrid->setContentsMargins(0, 0, 0, 4);
-		libraryGrid->setHorizontalSpacing(16);
-		libraryGrid->setVerticalSpacing(16);
-		int libraryColumn = 0;
+		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(420, 2, 16, 16, quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
 		    QStringLiteral("Launch the selected project editor from %1.").arg(launchProvenance) :
 		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
 		const QString editorCardOperationId = editorPlan.CanRun ? "project.open.editor" : "project.build.editor";
-		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Editor",
-		                           editorStatus,
-		                           editorDetail,
-		                           editorPlan.CanRun ? "ok" : "warning",
-		                           CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
-		                           "library",
-		                           "showcase-editor.png"),
-		    0,
-		    libraryColumn++);
+		libraryGrid->AddCard(CreateHomeCapabilityCard(
+		    "Editor",
+		    editorStatus,
+		    editorDetail,
+		    editorPlan.CanRun ? "ok" : "warning",
+		    CreateCommandActionButton(editorCardOperationId, editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
+		    "library",
+		    "showcase-editor.png"));
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
 		    QStringLiteral("Run the selected project runtime from %1.").arg(launchProvenance) :
 		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
 		const QString runtimeCardOperationId = runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime";
-		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Runtime",
-		                           runtimeStatus,
-		                           runtimeDetail,
-		                           runtimePlan.CanRun ? "ok" : "warning",
-		                           CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
-		                           "library",
-		                           "showcase-runtime.png"),
-		    0,
-		    libraryColumn++);
-		if (libraryColumn > 0)
+		libraryGrid->AddCard(CreateHomeCapabilityCard(
+		    "Runtime",
+		    runtimeStatus,
+		    runtimeDetail,
+		    runtimePlan.CanRun ? "ok" : "warning",
+		    CreateCommandActionButton(runtimeCardOperationId, runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
+		    "library",
+		    "showcase-runtime.png"));
+		if (libraryGrid->CardCount() > 0)
 		{
 			addHomeSection("Products");
-			layout.addLayout(libraryGrid);
+			bodyLayout->addWidget(libraryGrid);
 		}
 		else
 		{
@@ -2935,69 +3033,55 @@ namespace SparkleLauncher
 		}
 
 		addHomeSection("Discover");
-		QGridLayout* discoverGrid = new QGridLayout();
-		discoverGrid->setContentsMargins(0, 0, 0, 0);
-		discoverGrid->setHorizontalSpacing(16);
-		discoverGrid->setVerticalSpacing(16);
+		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(300, 5, 16, 16, quickStartBody);
 
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Architecture",
-		                            architectureDoc ? "Available" : "Pending",
-		                            "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
-		                            architectureDoc ? "ok" : "warning",
-		                            architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr,
-		                            "sparkle-architecture.png"),
-		    0,
-		    0);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Dependency Tiers",
-		                            dependencyDoc ? "Available" : "Pending",
-		                            readyDependencyCount == enabledDependencyCount ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
-		                                                                          "Sync source tiers only when you need the extra local build or cook capability.",
-		                            dependencyDoc ? "ok" : "warning",
-		                            dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false),
-		                            "sparkle-source-tiers.png"),
-		    0,
-		    1);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Validation",
-		                            validationReport ? "Available" : (storedFailureCount == 0 ? "No active issue" : "Review activity"),
-		                            validationReport ? "Open the latest final validation report." :
-		                                               "Run smoke tests or open Activity when you want runtime confidence.",
-		                            validationReport || storedFailureCount == 0 ? "ok" : "warning",
-		                            validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false),
-		                            "sparkle-validation.png"),
-		    0,
-		    2);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Package",
-		                            packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
-		                            packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
-		                            packagePresent || packagePlan.CanRun ? "ok" : "warning",
-		                            packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false),
-		                            "sparkle-package.png"),
-		    1,
-		    0);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Content",
-		                            missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
-		                            missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
-		                            missingCookDomains == 0 ? "ok" : "warning",
-		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? QStringLiteral("Cook All") : QStringLiteral("Cook Missing"), false),
-		                            "showcase-content.png"),
-		    1,
-		    1);
-		discoverGrid->addWidget(CreateHomeCapabilityCard(
-		                            "Tools",
-		                            uxDoc ? "Available" : "Pending",
-		                            "Open UX notes or continue into Sync, Build, Cook, Test, Package, and Maintain workflows from the rail.",
-		                            uxDoc ? "ok" : "warning",
-		                            uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
-		                            "sparkle-tools.png"),
-		    1,
-		    2);
-		layout.addLayout(discoverGrid);
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Architecture",
+		    architectureDoc ? "Available" : "Pending",
+		    "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
+		    architectureDoc ? "ok" : "warning",
+		    architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr,
+		    "sparkle-architecture.png"));
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Dependency Tiers",
+		    dependencyDoc ? "Available" : "Pending",
+		    readyDependencyCount == enabledDependencyCount ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
+		                                                  "Sync source tiers only when you need the extra local build or cook capability.",
+		    dependencyDoc ? "ok" : "warning",
+		    dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false),
+		    "sparkle-source-tiers.png"));
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Validation",
+		    validationReport ? "Available" : (storedFailureCount == 0 ? "No active issue" : "Review activity"),
+		    validationReport ? "Open the latest final validation report." :
+		                       "Run smoke tests or open Activity when you want runtime confidence.",
+		    validationReport || storedFailureCount == 0 ? "ok" : "warning",
+		    validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false),
+		    "sparkle-validation.png"));
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Package",
+		    packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
+		    packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
+		    packagePresent || packagePlan.CanRun ? "ok" : "warning",
+		    packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false),
+		    "sparkle-package.png"));
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Content",
+		    missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
+		    missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
+		    missingCookDomains == 0 ? "ok" : "warning",
+		    CreateCommandActionButton("cook.project", missingCookDomains == 0 ? QStringLiteral("Cook All") : QStringLiteral("Cook Missing"), false),
+		    "showcase-content.png"));
+		discoverGrid->AddCard(CreateHomeCapabilityCard(
+		    "Tools",
+		    uxDoc ? "Available" : "Pending",
+		    "Open UX notes or continue into Sync, Build, Cook, Test, Package, and Maintain workflows from the rail.",
+		    uxDoc ? "ok" : "warning",
+		    uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
+		    "sparkle-tools.png"));
+		bodyLayout->addWidget(discoverGrid);
+		layout.addWidget(quickStartBody);
 	}
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
