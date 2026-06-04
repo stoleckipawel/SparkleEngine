@@ -158,10 +158,10 @@ namespace SparkleLauncher
 	const std::vector<LaunchOperationDefinition>& GetLaunchOperationDefinitions()
 	{
 		static const std::vector<LaunchOperationDefinition> definitions = {
-		    {LaunchOperationKind::RunProject, "project.open.editor", "Start", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
-		    {LaunchOperationKind::RunProject, "project.open.runtime", "Start", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
-		    {LaunchOperationKind::RunProject, "project.run.smoke", "Run", "Run Smoke Tests", "Run the selected project with smoke validation enabled."},
-		    {LaunchOperationKind::RunProject, "project.run", "Run", "Run Project", "Run the selected project in editor or runtime mode, optionally with smoke validation."},
+		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
+		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
+		    {LaunchOperationKind::RunProject, "project.run.smoke", "Validate", "Run Smoke Test", "Run the selected project with smoke validation enabled."},
+		    {LaunchOperationKind::RunProject, "project.run", "Validate", "Run Custom", "Run the selected project in editor or runtime mode, optionally with smoke validation."},
 		};
 		return definitions;
 	}
@@ -249,7 +249,7 @@ namespace SparkleLauncher
 		const bool cookedShadersReady = CookedAssetScopeHasFiles(request.RepositoryRoot, request.ProjectId, "Shaders");
 		AddReadiness(plan, executableExists ? "Executable is ready." : "Executable is missing; compile the target first: " + plan.TargetName);
 		AddReadiness(plan, projectMarkerExists ? "Project working directory is valid." : "Project working directory is missing or is not a Sparkle project: " + plan.WorkingDirectory.string());
-		AddReadiness(plan, cookedMeshesReady ? "Cooked scene assets are ready." : "Cooked scene assets are missing; run Cook Scene Assets before launching.");
+		AddReadiness(plan, cookedMeshesReady ? "Cooked scenes and meshes are ready." : "Cooked scenes and meshes are missing; run Cook Scenes And Meshes before launching.");
 		AddReadiness(plan, cookedTexturesReady ? "Cooked textures are ready." : "Cooked textures are missing; run Cook Textures before launching.");
 		AddReadiness(plan, cookedShadersReady ? "Cooked shaders are ready." : "Cooked shaders are missing; run Cook Shaders before launching.");
 		AddPlannedEffect(plan, std::string("Launch ") + (IsRuntimeLaunchTarget(request) ? "runtime" : "editor") + " executable " + plan.ExecutablePath.string() + " with working directory " + plan.WorkingDirectory.string() + ".");

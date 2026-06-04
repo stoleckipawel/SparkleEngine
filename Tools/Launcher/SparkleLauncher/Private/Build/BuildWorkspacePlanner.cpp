@@ -30,7 +30,7 @@ namespace SparkleLauncher
 			return true;
 		}
 
-		AddReadiness(plan, "Generated project files are not current. Run Generate Project Files first.");
+		AddReadiness(plan, "Generated workspace files are not current. Run Generate Workspace Files first.");
 		return false;
 	}
 
@@ -245,16 +245,16 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Setup", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source dependency groups and configure workspace state without installing host tools."},
-		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Setup", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Setup", std::string(ArtifactNaming::kActionOpenWorkspace), "Open the selected IDE after generated workspace files are current."},
-		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Setup", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without syncing source dependencies or changing workspace files."},
+		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Prepare", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source tiers and configure workspace state without installing host tools."},
+		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Prepare", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE workspace files for the selected generator, platform, toolset, and Qt kit."},
+		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Prepare", std::string(ArtifactNaming::kActionOpenWorkspace), "Open the selected IDE after generated workspace files are current."},
+		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Prepare", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without syncing source tiers or changing workspace files."},
 		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Optional local rebuild of launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},
 		    {BuildWorkspaceOperationKind::CompileEditor, "project.build.editor", "Build", "Build Editor", "Optional local rebuild of the selected project's editor target."},
 		    {BuildWorkspaceOperationKind::CompileRuntime, "project.build.runtime", "Build", "Build Runtime", "Optional local rebuild of the selected project's runtime target."},
-		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cook Tools", "Optional local build of tools required by recook workflows."},
-		    {BuildWorkspaceOperationKind::AssembleRelease, "package.release", "Package", "Assemble Release Package", "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without publishing."},
+		    {BuildWorkspaceOperationKind::BuildCookTools, "cook.tools.prepare", "Build", "Build Cooking Tools", "Optional local build of tools required by recook workflows."},
+		    {BuildWorkspaceOperationKind::AssembleRelease, "package.release", "Package", "Assemble Review Package", "Assemble reviewable runtime and symbols package layouts from product artifacts into dist/releases/<version> without publishing."},
 		};
 		return definitions;
 	}

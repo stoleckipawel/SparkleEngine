@@ -17,6 +17,7 @@ namespace SparkleLauncher
 	    const QIcon& copyIcon,
 	    const QSize& copyIconSize,
 	    std::function<void(QWidget*)> registerFocusable,
+	    std::function<void()> onToggleOutput,
 	    std::function<void()> onCopyOutput,
 	    std::function<void(QListWidgetItem*, QListWidgetItem*)> onCurrentRunChanged)
 	{
@@ -68,6 +69,17 @@ namespace SparkleLauncher
 		outputHeaderLayout->addWidget(outputHeader, 0);
 		outputHeaderLayout->addStretch(1);
 
+		QPushButton* toggleOutputButton = new QPushButton("Show raw log", panel);
+		toggleOutputButton->setObjectName("SecondaryButton");
+		toggleOutputButton->setToolTip("Show or hide raw process output for the selected run.");
+		toggleOutputButton->setAccessibleName("Toggle raw log");
+		toggleOutputButton->setAccessibleDescription("Shows or hides raw process output for the selected run.");
+		registerFocusable(toggleOutputButton);
+		QObject::connect(toggleOutputButton, &QPushButton::clicked, panel, [onToggleOutput]() {
+			onToggleOutput();
+		});
+		outputHeaderLayout->addWidget(toggleOutputButton, 0);
+
 		QPushButton* copyOutputButton = new QPushButton("Copy output", panel);
 		copyOutputButton->setObjectName("SecondaryButton");
 		copyOutputButton->setIcon(copyIcon);
@@ -107,6 +119,7 @@ namespace SparkleLauncher
 		widgets.ActivityList = activityList;
 		widgets.SelectedRunSummary = selectedRunSummary;
 		widgets.OperationOutput = operationOutput;
+		widgets.ToggleOutputButton = toggleOutputButton;
 		widgets.CopyOutputButton = copyOutputButton;
 		return widgets;
 	}

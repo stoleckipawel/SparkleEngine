@@ -478,11 +478,13 @@ namespace SparkleLauncher
 		output << "  Runtime/Cook: " << state.RuntimeProfile << " | options: " << BuildProfileOptionText(BuildProfileTarget::Game) << '\n';
 		output << "  Workspace IDE: " << DisplayName(state.WorkspaceIdePreference) << " | options: Visual Studio, Rider\n\n";
 
-		RenderOperationGroup(state, "Setup", output);
+		RenderOperationGroup(state, "Launch", output);
+		RenderOperationGroup(state, "Prepare", output);
 		RenderOperationGroup(state, "Build", output);
 		RenderOperationGroup(state, "Cook", output);
-		RenderOperationGroup(state, "Maintenance", output);
-		RenderOperationGroup(state, "Launch", output);
+		RenderOperationGroup(state, "Validate", output);
+		RenderOperationGroup(state, "Package", output);
+		RenderOperationGroup(state, "Maintain", output);
 
 		output << "\nRecent Activity\n";
 		for (const LauncherActivityEntry& entry : state.Activity)

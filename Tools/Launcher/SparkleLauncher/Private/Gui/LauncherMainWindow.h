@@ -52,6 +52,7 @@ namespace SparkleLauncher
 		void SelectProcessButton(QAbstractButton* button);
 		void DisplaySelectedRunOutput(QListWidgetItem* currentItem, QListWidgetItem* previousItem);
 		void CopySelectedRunOutput();
+		void ToggleActivityLogPanel();
 		void RunSelectedOperation();
 		void CleanSelectedOperation();
 		void DisplayOperationStarted(const QString& runId, const QString& operationId, const QString& title);
@@ -131,7 +132,13 @@ namespace SparkleLauncher
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
+		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
+		QFrame* CreateHomeHeroCard(const QString& status, const QString& detail, const QString& state, QWidget* primaryAction, QWidget* secondaryAction = nullptr);
+		QFrame* CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action = nullptr);
+		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
+		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
+		void AddHomeCommandCenter(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
@@ -143,6 +150,7 @@ namespace SparkleLauncher
 		void LoadActionHistory();
 		void SaveActionHistory() const;
 		void UpdateActionHistoryDisplay();
+		void DismissSelectedActionHistory();
 		void LoadLauncherIconFont();
 		QIcon CreateApplicationIcon() const;
 		QString IconGlyph(LauncherIcon icon) const;
@@ -167,6 +175,11 @@ namespace SparkleLauncher
 		    const QString& cleanScope = QString(),
 		    const QString& cleanTitle = QString(),
 		    bool navigateInsteadOfRun = false);
+		QWidget* CreateHomeEvidenceActions();
+		QWidget* CreateFolderShortcutActions();
+		void OpenLocalPath(const std::filesystem::path& path);
+		void CopyDiagnosticsSummary();
+		void UpdateRootModeIndicator();
 		void TriggerActionDependencyClean(const QString& cleanScope, const QString& cleanTitle);
 		void TriggerActionDependencyRegenerate(const QString& actionId, const QString& actionTitle, bool navigateInsteadOfRun);
 		void TriggerDependencyClean(const ThirdPartyDependencyUiEntry& dependency);
@@ -189,6 +202,7 @@ namespace SparkleLauncher
 		void SetRunState(const QString& runId, RunState state, const QString& title);
 		void AppendRunOutput(const QString& runId, const QString& text);
 		void ShowRunOutput(const QString& runId);
+		void SetActivityLogExpanded(bool expanded);
 		void UpdateActivityRunSelectionVisuals();
 		void UpdateProgress();
 		void PopulateProjectSelectors();
@@ -214,9 +228,14 @@ namespace SparkleLauncher
 		QTextEdit* m_operationOutput = nullptr;
 		QPushButton* m_cleanButton = nullptr;
 		QPushButton* m_runButton = nullptr;
+		QPushButton* m_toggleOutputButton = nullptr;
+		QLabel* m_rootModeLabel = nullptr;
+		QPushButton* m_copyDiagnosticsButton = nullptr;
 		QLabel* m_activeOperationLabel = nullptr;
+		QFrame* m_actionMetaPanel = nullptr;
 		QLabel* m_lastRunSummaryLabel = nullptr;
 		QLabel* m_lastRunResultLabel = nullptr;
+		QPushButton* m_dismissHistoryButton = nullptr;
 		QLabel* m_progressLabel = nullptr;
 		QWidget* m_activityDetailsPanel = nullptr;
 		QListWidget* m_activityList = nullptr;
@@ -232,6 +251,7 @@ namespace SparkleLauncher
 		QString m_activeRunId;
 		QString m_selectedOperationId;
 		bool m_isRebuildingOptions = false;
+		bool m_activityLogExpanded = false;
 		int m_nextRunIndex = 0;
 		int m_startedRunCount = 0;
 		int m_finishedRunCount = 0;

@@ -30,6 +30,7 @@ namespace SparkleLauncher
 		QListWidget* ActivityList = nullptr;
 		QLabel* SelectedRunSummary = nullptr;
 		QTextEdit* OperationOutput = nullptr;
+		QPushButton* ToggleOutputButton = nullptr;
 		QPushButton* CopyOutputButton = nullptr;
 		QLabel* ProgressLabel = nullptr;
 	};
@@ -39,6 +40,7 @@ namespace SparkleLauncher
 	    const QIcon& copyIcon,
 	    const QSize& copyIconSize,
 	    std::function<void(QWidget*)> registerFocusable,
+	    std::function<void()> onToggleOutput,
 	    std::function<void()> onCopyOutput,
 	    std::function<void(QListWidgetItem*, QListWidgetItem*)> onCurrentRunChanged);
 

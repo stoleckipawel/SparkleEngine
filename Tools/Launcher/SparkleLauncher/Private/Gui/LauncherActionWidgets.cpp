@@ -85,7 +85,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "package.release")
 		{
-			return "Planned";
+			return "Assemble";
 		}
 		if (operationId == "workspace.clean")
 		{

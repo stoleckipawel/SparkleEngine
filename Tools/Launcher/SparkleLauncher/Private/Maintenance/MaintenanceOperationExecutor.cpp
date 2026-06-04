@@ -178,7 +178,7 @@ namespace SparkleLauncher
 
 		if (!plan.CanRun)
 		{
-			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Maintenance operation is not ready to run." : plan.ReadinessMessages.front();
+			operation.FailureSummary = plan.ReadinessMessages.empty() ? "Maintain operation is not ready to run." : plan.ReadinessMessages.front();
 			MarkOperationFinished(operation, OperationStatus::Failed, std::nullopt);
 			return operation;
 		}

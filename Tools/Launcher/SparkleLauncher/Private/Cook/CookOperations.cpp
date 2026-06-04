@@ -217,7 +217,7 @@ namespace SparkleLauncher
 		    {CookOperationKind::CookAllAssets, "cook.project", "Cook", "Cook All", "Prepare all assets for the selected project."},
 		    {CookOperationKind::CookShaders, "cook.shaders", "Cook", "Cook Shaders", "Validate and prepare shader packages."},
 		    {CookOperationKind::BuildTextures, "cook.textures", "Cook", "Cook Textures", "Prepare texture assets for runtime use."},
-		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scene Assets", "Prepare scene, mesh, and material assets for runtime use."},
+		    {CookOperationKind::BuildSceneAssets, "cook.assets", "Cook", "Cook Scenes And Meshes", "Prepare scene, mesh, and material assets for runtime use."},
 		};
 		return definitions;
 	}
@@ -284,7 +284,7 @@ namespace SparkleLauncher
 		}
 		if (!plan.Freshness.Current)
 		{
-			AddReadiness(plan, "Generated project files are not current. Run Generate Project Files first.");
+			AddReadiness(plan, "Generated workspace files are not current. Run Generate Workspace Files first.");
 		}
 		switch (plan.Kind)
 		{
@@ -311,7 +311,7 @@ namespace SparkleLauncher
 			std::error_code errorCode;
 			const bool toolExists = std::filesystem::exists(toolPath, errorCode);
 			requiredCookToolsAvailable = requiredCookToolsAvailable && toolExists && !errorCode;
-			AddReadiness(plan, toolExists && !errorCode ? ("Cook tool is ready: " + toolPath.string()) : ("Cook tool is missing; run Build Cook Tools first: " + toolPath.string()));
+			AddReadiness(plan, toolExists && !errorCode ? ("Cook tool is ready: " + toolPath.string()) : ("Cook tool is missing; run Build Cooking Tools first: " + toolPath.string()));
 		}
 		if (request.Mode == CookMode::Force && !request.ForceRecookConfirmed)
 		{

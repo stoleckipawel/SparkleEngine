@@ -258,12 +258,12 @@ Proposed primary navigation:
 | --- | --- | --- |
 | Home / Quick Start | What should I do next? | Command Center, Run Showcase, View Evidence |
 | Launch | What can I open now? | Open Editor, Open Runtime |
-| Prepare | What does this machine/workspace need? | Prepare Source Workspace, Verify Host Tools, Sync Source Tiers, Generate Project Files, Open IDE |
-| Build | What do I want to rebuild locally? | Build Missing, Build Editor, Build Runtime, Build Launcher, Build Cook Tools, Build All |
-| Cook | What generated content do I need? | Cook Missing, Cook All, Cook Shaders, Cook Textures, Cook Scene Assets |
+| Prepare | What does this machine/workspace need? | Prepare Source Workspace, Verify Host Tools, Sync Source Tiers, Generate Workspace Files, Open IDE |
+| Build | What do I want to rebuild locally? | Build Missing, Build Editor, Build Runtime, Build Launcher, Build Cooking Tools, Build All |
+| Cook | What generated content do I need? | Cook Missing, Cook All, Cook Shaders, Cook Textures, Cook Scenes And Meshes |
 | Validate | How do I test or diagnose? | Run Smoke Test, Run Custom |
 | Package | How do I assemble a review package? | Assemble Review Package, Open Dist Folder |
-| Maintain | What generated state should I clean? | Clean Workspace, Format Code |
+| Maintain | What generated state should I clean? | Clean Generated Files, Format Code |
 
 ## Proposed Screen Model
 
@@ -309,7 +309,7 @@ Sparkle Engine Showcase
 +---------------+ +---------------+ +---------------+ +---------------+
 
 Next best action
-1. Generate Project Files
+1. Generate Workspace Files
    CMake cache differs from selected generator/platform/toolset/Qt kit.
    [Generate]
 
@@ -317,7 +317,7 @@ Engineering evidence
 [Architecture] [Dependency Tiers] [Manifests] [Latest Validation]
 
 Recent activity
-Clean Workspace failed because launcher artifacts were locked.
+Clean Generated Files failed because launcher artifacts were locked.
 [Resolve] [Dismiss] [View log]
 ```
 
@@ -512,7 +512,7 @@ Rebuild the Showcase editor locally. This replaces package/editor artifacts only
 
 Recommended next action
 Generated project files are stale.
-[Generate Project Files]    Secondary: Clean Build Files
+[Generate Workspace Files]    Secondary: Clean Build Files
 
 Readiness
 OK Host tools ready
@@ -590,7 +590,7 @@ Make this checkout ready for local rebuilds.
 3. Project files                   Needs refresh
 4. IDE workspace                   Available after generation
 
-[Generate Project Files]
+[Generate Workspace Files]
 
 Advanced actions
 [Verify Host Tools] [Sync Source Tiers] [Open IDE]
@@ -609,7 +609,7 @@ Prepare generated runtime content for Showcase.
 Asset domains
 * Shaders       Missing   [Cook Shaders]       Uses Shader Compiler Source Tier
 * Textures      Missing   [Cook Textures]      Uses Content Pipeline Source Tier
-* Scene Assets  Missing   [Cook Scene Assets]  Uses Content Pipeline Source Tier
+* Scenes/Meshes  Missing  [Cook Scenes And Meshes]  Uses Content Pipeline Source Tier
 
 Primary action
 [Cook Missing]   Secondary: Cook All
@@ -633,7 +633,7 @@ Maintenance should feel safe. The current Clean Workspace page shows many checkb
 Proposed:
 
 ```text
-Clean Workspace                                           Safe scopes selected
+Clean Generated Files                                    Safe scopes selected
 Remove generated files. Source files and installed tools are never deleted.
 
 Recommended clean
@@ -915,6 +915,17 @@ Negative guardrails: do not remove expert workflows; do not duplicate host prere
 Validation: inspect user-facing strings for naming consistency; grep for legacy primary labels; confirm labels match Direction A's command-center tone rather than wizard or raw-console tone; confirm operation commands and workflow behavior were not intentionally changed; confirm no build, launch, or package validation was run.
 ```
 
+Phase 1 validation result:
+
+- Workflow groups now use Direction A naming in launcher UI and shell grouping: Launch, Prepare, Build, Cook, Validate, Package, Maintain.
+- Primary action labels now use outcome names: Sync Source Tiers, Generate Workspace Files, Open IDE, Build Cooking Tools, Cook Scenes And Meshes, Assemble Review Package, Clean Generated Files.
+- Operation IDs, planner kinds, process requests, command construction, and workflow behavior were intentionally left unchanged.
+- Ready host tool inventory is demoted on build/cook pages; full installed-tool detail remains available through Verify Host Environment.
+- Source dependency/cache rows no longer expose machine-specific absolute cache paths in primary details.
+- Stored per-workflow run summaries can be dismissed from the main workflow attention area while preserving logs/history files.
+- Phase-number language was removed from primary launcher package copy.
+- Final build, launch, package, and visual validation were not run in this phase.
+
 ### Phase 2: Command Center
 
 Goal:
@@ -964,6 +975,20 @@ Negative guardrails: do not turn Home into a raw prerequisite dashboard; do not 
 Validation: inspect the Home data model and verify each displayed status has a real source; confirm primary CTA rules cover package-ready, source-ready, missing-runtime, missing-cooked-content, and stale-workspace cases; confirm Home contains Direction A's hero plus compact cards and no raw target/output matrix by default; confirm stale unrelated failures are Activity insights only; confirm no build, launch, or package validation was run.
 ```
 
+Phase 2 implementation handoff:
+
+- Added `Home > Command Center` as the default first workflow surface.
+- Home uses existing workspace, package, launch, dependency, and action-history planning data rather than a separate synthetic status model.
+- The hero shows workspace/package mode, selected project state, one next best action, and one secondary path.
+- The default card set now covers Launch, Source, Content, Package, Evidence, and Activity.
+- Launch cards use editor/runtime launch plans and only offer direct launch actions when those plans are ready.
+- Missing local executable, stale workspace, missing cooked content, and blocked package states route users to the existing Build, Prepare, Cook, or Package workflow pages instead of bypassing safety checks.
+- Evidence actions open concrete docs or release folders when present; missing evidence remains explicit.
+- Stored failed workflow history appears as a compact Activity insight instead of dominating first contact.
+- Home is UI-only: the bottom Run/Clean controls are disabled for the Command Center, and existing workflow pages remain intact.
+- Launcher source was checked for role-specific reviewer/developer/portfolio app copy; none was added.
+- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
+
 ### Phase 3: Workflow Page Redesign
 
 Goal:
@@ -1011,6 +1036,18 @@ Negative guardrails: do not delete diagnostics or command visibility; do not bur
 
 Validation: inspect each redesigned page for exactly one dominant recommended action; confirm raw paths, command lines, dependency rows, and logs are secondary; confirm all major workflow pages use the same Direction A section model; confirm no build, launch, or package validation was run.
 ```
+
+Phase 3 implementation handoff:
+
+- Added a shared `Workflow Guide` section to non-Home workflow pages so each page starts with the recommended action and scoped impact before options or diagnostics.
+- Standardized primary readiness sections under `Readiness Summary` across Prepare, Build, Cook, Launch, Validate, Package, and Maintain workflows.
+- Added a reusable collapsed details drawer for secondary diagnostics and inventories.
+- Moved full host tool inventories, raw tool paths, source tier contents, and dependency-entry rows into details surfaces.
+- Collapsed shader cache/debug/compiler diagnostics under `Advanced Shader Options` while keeping common shader target choices visible.
+- Reordered Launch and Validate pages so readiness appears before launch/runtime options.
+- Reordered Maintain cleanup so confirmation/readiness appears before destructive scope choices.
+- Existing operation IDs, backend requests, run behavior, settings, clean scopes, and advanced controls were preserved.
+- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
 
 ### Phase 4: Activity And Recovery Model
 
@@ -1061,6 +1098,18 @@ Negative guardrails: do not delete logs when dismissing UI failures; do not show
 
 Validation: inspect workflow-to-run matching; confirm dismissal affects UI attention but not log storage; confirm current failures show recovery cards and raw log access; confirm Home Activity follows Direction A's compact card pattern; confirm no build, launch, or package validation was run.
 ```
+
+Phase 4 implementation handoff:
+
+- Added a raw-log toggle to the Activity/output panel so logs are collapsed by default but preserved.
+- Raw logs now auto-expand when an operation starts and when the selected/current run is running or failed.
+- Successful or unrelated old runs remain compact in Activity unless the user explicitly opens raw output.
+- Added scoped current-workflow recovery rows to workflow pages when that exact workflow has a failed stored result.
+- Recovery rows map to real follow-up workflows such as Verify Host Environment, Generate Workspace Files, Build Editor/Runtime, Build Cooking Tools, or the relevant Cook action.
+- Updated per-workflow run history copy so failed results show recovery guidance while successful history stays calm.
+- Dismiss removes stored UI attention for the selected workflow and refreshes the page; raw run logs remain available.
+- Home Activity remains a compact summary card and does not become a permanent terminal panel.
+- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
 
 ### Phase 5: Product Polish
 
@@ -1113,6 +1162,24 @@ Negative guardrails: do not introduce visual novelty that reduces clarity; do no
 Validation: inspect style/layout changes against the accepted hierarchy; confirm status chips use consistent labels and severity; confirm diagnostics/folder shortcuts point to declared roots only; confirm the final static layout matches Direction A with selected Direction B/C support patterns only; prepare the final validation checklist; confirm no build, launch, or package validation was run.
 ```
 
+Phase 5 implementation handoff:
+
+- Added an always-visible root-mode chip in the launcher footer so package roots, source checkouts, and fallback workspace roots are identifiable without adding role-specific UI.
+- Added grounded footer shortcuts for declared generated roots: `artifacts/`, `dist/`, and `artifacts/dev/launcher-state/Logs`.
+- Added a copyable diagnostics summary that records root mode, root path, selected project, build configuration, IDE, profiles, selected workflow, artifact roots, package root, log root, build tree, and active run state when present.
+- Refined visual hierarchy around Direction A: stronger page titles, calmer secondary actions, clearer primary CTA weight, consistent neutral/ready/warning/error status chip styling, and restrained footer utility styling.
+- Preserved the accepted workflow model and existing operations; Phase 5 did not add new workflow behavior just because helper functions existed.
+- Static validation scope remains UI/code inspection only; final build, launch, package, and visual validation were not run in this phase.
+
+Prepared final validation scenarios:
+
+- Desktop command-center pass: open at a wide desktop size, verify Home first, then inspect Launch, Prepare, Build, Cook, Validate, Package, and Maintain for one dominant recommended action and compact readiness.
+- Smaller-window pass: inspect the same pages at a constrained window size and verify footer context, root-mode chip, CTAs, Activity, and Details remain reachable without crowding primary content.
+- Package-root pass: from a packaged root, verify the mode chip says `Package Root`, Home prefers launch-first bundled components, and diagnostics/folder shortcuts point to package/artifact/log roots.
+- Source-checkout pass: from a source root, verify the mode chip says `Source Checkout`, rebuild/recook/sync paths are optional production extensions, and package outputs remain clearly distinct from local artifacts.
+- Activity pass: verify old unrelated failures are compact Activity insights, current-workflow failures show recovery actions, and raw logs remain behind `Show raw log`.
+- Diagnostics pass: use `Copy diagnostics`, paste the summary, and confirm every listed path is a declared root from the artifact/package contract rather than a hard-coded machine-specific assumption.
+
 ### Final UX Validation Pass: Build, Launch, And Review
 
 Goal:
@@ -1162,6 +1229,90 @@ Negative guardrails: do not run before Phases 0-5 are complete; do not skip bloc
 
 Validation: produce a final pass/fail report for every acceptance criterion and list remaining fixes.
 ```
+
+Final UX validation result - 2026-06-04:
+
+Visual acceptance correction:
+
+- The first validation pass proved the launcher built and opened, but the captured Home layout still looked like the legacy workflow/audit shell with new copy. That visual result was rejected because it did not match Direction A closely enough.
+- Home was corrected into an actual Command Center surface: the redundant operation-title chrome is hidden, the legacy Home run/footer strip is removed, and Home now owns a hero plus Launch, Prepare, Content, Package, Evidence, and Activity cards.
+- Evidence is now a visible card-level action instead of a tiny overflow-only affordance.
+- Corrected screenshot evidence:
+  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-corrected.png`
+  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-polished.png`
+  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-final-1280.png`
+- This correction supersedes the earlier Home visual acceptance claim. Package-root first-run validation is still conditional until a real packaged runtime fixture exists.
+
+Validation environment:
+
+- Repository root: `C:/Users/stole/Documents/GitHub/SparkleEngine`
+- Build tree: `build/ux-validation-msvc`
+- Launcher artifact: `artifacts/dev/launcher/DevelopmentEditor/SparkleLauncher.exe`
+- Runtime launcher process: `artifacts/dev/launcher-state/Live/SparkleLauncher.exe`
+- Qt kit: `C:/Qt/6.11.1/msvc2022_64`
+- Generator: `Visual Studio 18 2026`
+- Platform: `x64`
+- CMake: `4.3.3`
+- Git: `2.54.0.windows.1`
+- MSVC compiler: `19.51.36246.0`
+- Windows SDK: `10.0.26100.0`
+- Optional source tiers for this launcher validation: content pipeline `OFF`, shader compiler `OFF`, KTX `OFF`
+
+Commands run:
+
+```powershell
+cmake -S . -B build\ux-validation-msvc -G "Visual Studio 18 2026" -A x64 -DSPARKLE_ENABLE_CONTENT_PIPELINE=OFF -DSPARKLE_ENABLE_SHADER_COMPILER=OFF -DSPARKLE_ENABLE_KTX_SUPPORT=OFF -DSPARKLE_QT_ROOT="C:/Qt/6.11.1/msvc2022_64"
+cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
+artifacts\dev\launcher\DevelopmentEditor\SparkleLauncher.exe
+```
+
+Build and launch results:
+
+- Configure passed from a clean validation tree.
+- The attempted generic `Development|x64` build failed because Sparkle's actual CMake configurations are profile names such as `DevelopmentEditor` and `DevelopmentGame`; validation continued with the correct `DevelopmentEditor` profile.
+- `SparkleLauncher` built successfully into `artifacts/dev/launcher/DevelopmentEditor`.
+- Qt runtime deployment completed into the launcher artifact folder.
+- `windeployqt` emitted `VCINSTALLDIR is not set`, but did not block artifact deployment or launcher startup.
+- Launcher startup passed; the executable starts the live-copy instance under `artifacts/dev/launcher-state/Live`.
+- Screenshots captured into `artifacts/diagnostics/launcher-ux-validation/`.
+
+Implementation fixes made during validation:
+
+- Rebuilt Home after project selection/discovery changes so the Command Center no longer shows `Project: Missing` while the footer selects `Showcase`.
+- Changed Launch/Validate workflow guide copy from unconditional launch/run verbs to `Readiness first` so missing executable or cooked content blockers are not contradicted by the top recommendation.
+- Changed the package primary CTA from stale `Planned` copy to `Assemble`.
+- Compacted footer utility labels and control widths so the 980x620 smaller-window pass no longer overlaps Project, Config, and IDE context controls.
+- Removed an MSVC `C4804` bool-comparison warning in dismissed history handling.
+
+Screenshot evidence:
+
+- `artifacts/diagnostics/launcher-ux-validation/accepted-home-wide.png`
+- `artifacts/diagnostics/launcher-ux-validation/accepted-package-wide.png`
+- `artifacts/diagnostics/launcher-ux-validation/accepted-home-small-final.png`
+- Supporting workflow captures: `final-launch-wide.png`, `final-prepare-wide.png`, `final-build-wide.png`, `final-cook-wide.png`, `final-validate-wide.png`, `final-maintain-wide.png`
+
+Acceptance checklist:
+
+- PASS: A first-time user can understand project identity, source/package mode, launch status, and next action from Home within 30 seconds in the source-checkout state.
+- CONDITIONAL: A first-time user can launch packaged editor/runtime within 2 minutes only when a runtime package with bundled components exists. This source-checkout validation did not include a package-root runtime fixture, so package-root launch-first must be revalidated after package assembly.
+- PASS: Concrete engineering evidence is reachable from Home through evidence actions when files/folders exist, and footer diagnostics/folder utilities are one click away.
+- PASS: Optional source rebuild/cook/sync paths are visible as production extensions rather than first-contact blockers.
+- PASS: Launcher source contains no role-specific `Reviewer Mode`, `Developer Mode`, portfolio, or interview UI copy.
+- PASS: Primary workflow pages now use a shared guide/readiness/options/details hierarchy with one dominant recommendation area.
+- PASS: Ready workflows keep full prerequisite inventories in details or scoped readiness sections instead of raw audit tables.
+- PASS: Missing launch/content/build states point to specific missing executable, stale workspace, texture, shader, or cook/build actions instead of a generic dependency checklist.
+- PASS: Old unrelated failures are compact Activity/history information; raw logs stay behind the Activity log toggle.
+- PASS: Source dependencies are described as source tiers and capability unlocks.
+- PASS: Package artifacts and local source artifacts are distinguished through source/package mode, package copy, artifact roots, and `dist/releases/<version>` language.
+- PASS: Advanced controls remain available but are not the first attention field.
+- PASS: The implemented launcher reads as a command-center engine tool rather than a raw CMake dashboard.
+- PASS: Direction A is the primary architecture: Home Command Center, compact cards/status rows, workflow pages, details, Activity, and footer utilities.
+
+Remaining risks / follow-up:
+
+- Package-root first-run behavior needs a real assembled runtime package fixture with bundled editor/runtime/cooked assets before the conditional launch-first acceptance criterion can be fully closed.
+- `windeployqt` warns that `VCINSTALLDIR` is not set when launched from this shell. The build remains usable, but final release validation should run from a Visual Studio developer environment or set the expected deployment environment variables.
+- The footer `Build Configuration` selector intentionally shows simplified state names (`Development`, `Debug`, `Shipping`) while CMake uses full profile configurations (`DevelopmentEditor`, `DevelopmentGame`, etc.); this is acceptable UX, but final developer docs should call out the mapping.
 
 ## Acceptance Criteria
 
@@ -1373,7 +1524,7 @@ Next action: Generate Workspace Files
 [Run] [Details] [Copy Diagnostics]
 
 Recent runs
-Clean Workspace failed: launcher artifacts are locked. [Resolve] [Dismiss]
+Clean Generated Files failed: launcher artifacts are locked. [Resolve] [Dismiss]
 ```
 
 Build:
