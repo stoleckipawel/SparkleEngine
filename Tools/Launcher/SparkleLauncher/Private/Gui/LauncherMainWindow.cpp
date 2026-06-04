@@ -30,6 +30,7 @@
 #include <QtGui/QFont>
 #include <QtGui/QFontDatabase>
 #include <QtGui/QGuiApplication>
+#include <QtGui/QImage>
 #include <QtGui/QKeySequence>
 #include <QtGui/QLinearGradient>
 #include <QtGui/QPainter>
@@ -126,7 +127,134 @@ namespace SparkleLauncher
 		bool NavigateOnly = false;
 	};
 
-	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool heroTreatment, bool softTreatment)
+	class FadingArtworkWidget final : public QWidget
+	{
+	public:
+		FadingArtworkWidget(QPixmap source, bool heroTreatment, bool softTreatment, QWidget* parent = nullptr)
+		    : QWidget(parent)
+		    , m_source(std::move(source))
+		    , m_heroTreatment(heroTreatment)
+		    , m_softTreatment(softTreatment)
+		{
+			setAttribute(Qt::WA_StyledBackground, true);
+			setAttribute(Qt::WA_OpaquePaintEvent, false);
+		}
+
+	protected:
+		void paintEvent(QPaintEvent*) override
+		{
+			const QSize targetSize = size();
+			if (m_source.isNull() || targetSize.isEmpty())
+			{
+				return;
+			}
+
+			const QPixmap scaled = m_source.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+			const QRect cropRect(
+			    std::max(0, (scaled.width() - targetSize.width()) / 2),
+			    std::max(0, (scaled.height() - targetSize.height()) / 2),
+			    targetSize.width(),
+			    targetSize.height());
+
+			QPainter painter(this);
+			painter.setRenderHint(QPainter::Antialiasing, true);
+			painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+			if (m_heroTreatment)
+			{
+				QImage heroLayer(targetSize, QImage::Format_ARGB32_Premultiplied);
+				heroLayer.fill(Qt::transparent);
+				QPainter heroPainter(&heroLayer);
+				heroPainter.setRenderHint(QPainter::Antialiasing, true);
+				heroPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+				heroPainter.fillRect(heroLayer.rect(), QColor(3, 4, 4));
+
+				QImage imageLayer(targetSize, QImage::Format_ARGB32_Premultiplied);
+				imageLayer.fill(Qt::transparent);
+				{
+					QPainter imagePainter(&imageLayer);
+					imagePainter.setRenderHint(QPainter::Antialiasing, true);
+					imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+					imagePainter.drawPixmap(QPoint(0, 0), scaled, cropRect);
+
+					QImage alphaMask(targetSize, QImage::Format_ARGB32_Premultiplied);
+					alphaMask.fill(Qt::transparent);
+					QPainter maskPainter(&alphaMask);
+					QLinearGradient alphaGradient(0, 0, targetSize.width(), 0);
+					alphaGradient.setColorAt(0.00, QColor(255, 255, 255, 0));
+					alphaGradient.setColorAt(0.16, QColor(255, 255, 255, 8));
+					alphaGradient.setColorAt(0.30, QColor(255, 255, 255, 28));
+					alphaGradient.setColorAt(0.44, QColor(255, 255, 255, 72));
+					alphaGradient.setColorAt(0.58, QColor(255, 255, 255, 138));
+					alphaGradient.setColorAt(0.72, QColor(255, 255, 255, 218));
+					alphaGradient.setColorAt(0.88, QColor(255, 255, 255, 252));
+					alphaGradient.setColorAt(1.00, QColor(255, 255, 255, 255));
+					maskPainter.fillRect(alphaMask.rect(), alphaGradient);
+
+					imagePainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+					imagePainter.drawImage(0, 0, alphaMask);
+				}
+
+				heroPainter.drawImage(0, 0, imageLayer);
+
+				QLinearGradient bottomGradient(0, 0, 0, targetSize.height());
+				bottomGradient.setColorAt(0.00, QColor(3, 4, 4, 0));
+				bottomGradient.setColorAt(0.68, QColor(3, 4, 4, 0));
+				bottomGradient.setColorAt(1.00, QColor(3, 4, 4, 48));
+				heroPainter.fillRect(heroLayer.rect(), bottomGradient);
+
+				heroPainter.setPen(QPen(QColor(118, 185, 0, 180), 2));
+				const int accentX = std::clamp(static_cast<int>(targetSize.width() * 0.36), 280, targetSize.width() - 48);
+				heroPainter.drawLine(accentX, 0, accentX, targetSize.height());
+
+				QImage sectionMask(targetSize, QImage::Format_ARGB32_Premultiplied);
+				sectionMask.fill(Qt::transparent);
+				QPainter sectionMaskPainter(&sectionMask);
+				QLinearGradient sectionFade(0, 0, 0, targetSize.height());
+				sectionFade.setColorAt(0.00, QColor(255, 255, 255, 255));
+				sectionFade.setColorAt(0.66, QColor(255, 255, 255, 255));
+				sectionFade.setColorAt(0.84, QColor(255, 255, 255, 205));
+				sectionFade.setColorAt(0.94, QColor(255, 255, 255, 88));
+				sectionFade.setColorAt(1.00, QColor(255, 255, 255, 0));
+				sectionMaskPainter.fillRect(sectionMask.rect(), sectionFade);
+
+				heroPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+				heroPainter.drawImage(0, 0, sectionMask);
+
+				painter.drawImage(0, 0, heroLayer);
+				return;
+			}
+
+			painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
+
+			QLinearGradient leftFade(0, 0, targetSize.width(), 0);
+			leftFade.setColorAt(0.0, QColor(3, 4, 4, 210));
+			leftFade.setColorAt(0.28, QColor(3, 4, 4, 128));
+			leftFade.setColorAt(0.72, QColor(3, 4, 4, m_softTreatment ? 96 : 42));
+			leftFade.setColorAt(0.82, QColor(3, 4, 4, 18));
+			leftFade.setColorAt(1.0, QColor(3, 4, 4, 18));
+			painter.fillRect(rect(), leftFade);
+
+			QLinearGradient bottomFade(0, 0, 0, targetSize.height());
+			bottomFade.setColorAt(0.0, QColor(3, 4, 4, m_softTreatment ? 32 : 8));
+			bottomFade.setColorAt(0.58, QColor(3, 4, 4, 12));
+			bottomFade.setColorAt(1.0, QColor(3, 4, 4, 170));
+			painter.fillRect(rect(), bottomFade);
+
+			QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
+			limeSweep.setColorAt(0.0, QColor(118, 185, 0, 10));
+			limeSweep.setColorAt(0.48, QColor(118, 185, 0, 22));
+			limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
+			painter.fillRect(rect(), limeSweep);
+		}
+
+	private:
+		QPixmap m_source;
+		bool m_heroTreatment = false;
+		bool m_softTreatment = false;
+	};
+
+	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool softTreatment)
 	{
 		if (source.isNull() || targetSize.isEmpty())
 		{
@@ -144,35 +272,28 @@ namespace SparkleLauncher
 
 		QPainter painter(&result);
 		painter.setRenderHint(QPainter::Antialiasing, true);
+
 		painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
 
 		QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-		leftFade.setColorAt(0.0, QColor(3, 4, 4, heroTreatment ? 255 : 210));
-		leftFade.setColorAt(heroTreatment ? 0.30 : 0.28, QColor(3, 4, 4, heroTreatment ? 252 : 128));
-		leftFade.setColorAt(heroTreatment ? 0.48 : 0.72, QColor(3, 4, 4, heroTreatment ? 205 : (softTreatment ? 96 : 42)));
-		leftFade.setColorAt(heroTreatment ? 0.66 : 0.82, QColor(3, 4, 4, heroTreatment ? 72 : 18));
-		leftFade.setColorAt(heroTreatment ? 0.82 : 1.0, QColor(3, 4, 4, heroTreatment ? 8 : 18));
-		leftFade.setColorAt(1.0, QColor(3, 4, 4, heroTreatment ? 0 : 18));
+		leftFade.setColorAt(0.0, QColor(3, 4, 4, 210));
+		leftFade.setColorAt(0.28, QColor(3, 4, 4, 128));
+		leftFade.setColorAt(0.72, QColor(3, 4, 4, softTreatment ? 96 : 42));
+		leftFade.setColorAt(0.82, QColor(3, 4, 4, 18));
+		leftFade.setColorAt(1.0, QColor(3, 4, 4, 18));
 		painter.fillRect(result.rect(), leftFade);
 
 		QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-		bottomFade.setColorAt(0.0, QColor(3, 4, 4, heroTreatment ? 0 : (softTreatment ? 32 : 8)));
-		bottomFade.setColorAt(0.58, QColor(3, 4, 4, heroTreatment ? 6 : 12));
-		bottomFade.setColorAt(1.0, QColor(3, 4, 4, heroTreatment ? 92 : 170));
+		bottomFade.setColorAt(0.0, QColor(3, 4, 4, softTreatment ? 32 : 8));
+		bottomFade.setColorAt(0.58, QColor(3, 4, 4, 12));
+		bottomFade.setColorAt(1.0, QColor(3, 4, 4, 170));
 		painter.fillRect(result.rect(), bottomFade);
 
 		QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-		limeSweep.setColorAt(0.0, QColor(118, 185, 0, heroTreatment ? 0 : 10));
-		limeSweep.setColorAt(0.48, QColor(118, 185, 0, heroTreatment ? 10 : 22));
+		limeSweep.setColorAt(0.0, QColor(118, 185, 0, 10));
+		limeSweep.setColorAt(0.48, QColor(118, 185, 0, 22));
 		limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
 		painter.fillRect(result.rect(), limeSweep);
-
-		if (heroTreatment)
-		{
-			painter.setPen(QPen(QColor(118, 185, 0, 175), 2));
-			const int accentX = std::clamp(static_cast<int>(targetSize.width() * 0.36), 280, targetSize.width() - 48);
-			painter.drawLine(accentX, 0, accentX, targetSize.height());
-		}
 
 		return result;
 	}
@@ -2431,7 +2552,7 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	QLabel* LauncherMainWindow::CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize)
+	QWidget* LauncherMainWindow::CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize)
 	{
 		const std::filesystem::path artworkPath = FindLauncherVisualAsset(fileName);
 		if (artworkPath.empty())
@@ -2450,7 +2571,16 @@ namespace SparkleLauncher
 		const bool heroTreatment = objectName == "CommandHeroArtwork";
 		const bool softTreatment = objectName == "WorkflowVisualArtwork" || objectName == "CommandCardArtwork";
 		const QSize artworkSize = minimumSize.isEmpty() ? QSize(360, 180) : minimumSize;
-		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, heroTreatment, softTreatment));
+		if (heroTreatment)
+		{
+			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, this);
+			heroArtwork->setObjectName(objectName);
+			heroArtwork->setMinimumSize(minimumSize);
+			heroArtwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
+			return heroArtwork;
+		}
+
+		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, softTreatment));
 		artwork->setScaledContents(true);
 		artwork->setMinimumSize(minimumSize);
 		artwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
@@ -2465,7 +2595,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", QSize(360, 118));
+		QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", QSize(360, 118));
 		if (artwork == nullptr)
 		{
 			return;
@@ -2517,7 +2647,7 @@ namespace SparkleLauncher
 		shellLayout->setSpacing(0);
 		shellLayout->setStackingMode(QStackedLayout::StackAll);
 
-		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, 292)))
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(1180, 292)))
 		{
 			artwork->setParent(card);
 			shellLayout->addWidget(artwork);
@@ -2589,7 +2719,7 @@ namespace SparkleLauncher
 		layout->setContentsMargins(tileRole == "library" ? 18 : 16, hasArtwork ? 12 : (tileRole == "library" ? 16 : 14), tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
 		layout->setSpacing(tileRole == "library" ? 12 : 10);
 
-		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, tileRole == "library" ? 164 : 86)))
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, tileRole == "library" ? 164 : 86)))
 		{
 			artwork->setParent(card);
 			layout->addWidget(artwork);

@@ -77,8 +77,8 @@ namespace SparkleLauncher
 		addRule("#OptionLabelCell", "background: transparent; border: none;");
 		addRule("#OptionValueCell", "background: transparent; border: none;");
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15.5pt; font-weight: 850; letter-spacing: -0.18px;");
-		addRule("#CommandHeroCard", "background: #030404; border: none; border-radius: 2px;");
-		addRule("#CommandHeroCard[State=\"warning\"]", "background: #080706; border: none;");
+		addRule("#CommandHeroCard", "background: transparent; border: none; border-radius: 0;");
+		addRule("#CommandHeroCard[State=\"warning\"]", "background: transparent; border: none;");
 		addRule("#CommandHeroOverlay", "background: transparent; border: none;");
 		addRule("#CommandHeroCopyPane", "background: transparent; border: none;");
 		addRule("#CommandHeroArtwork", "background: transparent; border: none;");
