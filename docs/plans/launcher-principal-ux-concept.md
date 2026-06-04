@@ -208,7 +208,7 @@ Ideal path:
 
 Goal:
 
-- assemble a reviewable package
+- assemble a release package
 - verify what is included
 - produce manifests and checksums
 - keep publish sign-off separate
@@ -217,7 +217,7 @@ Ideal path:
 
 1. Package screen shows release readiness summary.
 2. It lists missing package inputs, not a vague planned status.
-3. Primary CTA is `Assemble Review Package`.
+3. Primary CTA is `Assemble Release Package`.
 4. Secondary CTA is `Open Dist Folder`.
 5. Final validation remains a separate checklist/report.
 
@@ -262,7 +262,7 @@ Proposed primary navigation:
 | Build | What do I want to rebuild locally? | Build Missing, Build Editor, Build Runtime, Build Launcher, Build Cooking Tools, Build All |
 | Cook | What generated content do I need? | Cook Missing, Cook All, Cook Shaders, Cook Textures, Cook Scenes And Meshes |
 | Validate | How do I test or diagnose? | Run Smoke Test, Run Custom |
-| Package | How do I assemble a review package? | Assemble Review Package, Open Dist Folder |
+| Package | How do I assemble a release package? | Assemble Release Package, Open Dist Folder |
 | Maintain | What generated state should I clean? | Clean Generated Files, Format Code |
 
 ## Proposed Screen Model
@@ -374,7 +374,7 @@ Recommended renames:
 | Cook Scene Assets | Cook Scenes And Meshes | clearer domain |
 | Run | Validate | separates normal launch from tests |
 | Run Project | Run Custom | clearer that this is configurable launch |
-| Package Release | Assemble Review Package | avoids claiming publish-ready release |
+| Package Release | Assemble Release Package | avoids claiming publish-ready publication |
 | Maintenance | Maintain | shorter and active |
 | Clean Workspace | Clean Generated Files | emphasizes safety |
 
@@ -890,7 +890,7 @@ Use the commit bar for:
 
 - Build Editor / Build Runtime / Build Missing / Build All
 - Cook Missing / Cook Shaders / Cook Textures / Cook Scenes And Meshes
-- Assemble Review Package
+- Assemble Release Package
 - Clean Generated Files
 - Sync Source Tiers
 
@@ -1236,7 +1236,7 @@ Will write to
   dist/releases/<version>/SparkleShowcaseRuntime
 
 Impact
-Creates a reviewable runtime package. Does not publish or sign off a release.
+Creates a runtime package. Does not publish or sign off a release.
 
 [ASSEMBLE PACKAGE] [OPEN DIST]
 ```
@@ -1450,6 +1450,17 @@ Negative guardrails: do not use the old six-equal-card grid; do not show raw pat
 Validation: inspect Home structure and copy; confirm one primary CTA; confirm no build, launch, or package validation was run.
 ```
 
+Phase 1 implementation handoff:
+
+- Replaced the previous Home status grid with a product-led Home: identity/context bar, one launch-first hero, `Library`, and `Discover` sections.
+- Hero now presents the strongest available action first: open editor, open runtime, or the smallest real repair action when launch is blocked.
+- Library now contains runnable product tiles for `Showcase Editor` and `Showcase Runtime`, with calm package/local artifact provenance and direct open/build actions.
+- Discover now contains evidence and production-extension tiles for `Architecture`, `Dependency Tiers`, `Validation`, `Package`, `Content`, and `Tools`.
+- Removed the old Home evidence overflow helper so Home no longer starts from six equal status cards or a raw audit/dashboard model.
+- Kept readiness, next-action selection, operation IDs, backend requests, and workflow execution behavior intact.
+- Static validation target: Home has hero, library, and discover/evidence sections; one primary hero CTA; no raw paths, dependency inventories, or reviewer-specific copy in primary Home content.
+- No build, launch, package assembly, or final visual validation was run in this phase.
+
 ### Visual Redesign Phase 2: Tabbed Workflow Pages, Installer Complexity, And Rider Expert Surfaces
 
 Goal:
@@ -1520,6 +1531,19 @@ Negative guardrails: do not use cards for every row; do not show full inventorie
 
 Validation: inspect page structure and information hierarchy; confirm source tiers use workload/capability-card behavior; confirm consequential workflows show impact/selection summaries; confirm Settings has search/category/breadcrumb structure where dense; confirm Activity/logs are contextual and collapsible; confirm no build, launch, or package validation was run.
 ```
+
+Phase 2 implementation handoff:
+
+- Added shared NVIDIA-style page tabs below workflow headers so major pages have a title band plus section-tab rhythm.
+- Added `System` as an inspection page for project/root mode, toolchain, workspace files, source tiers, artifact roots, dist roots, and diagnostics locations.
+- Added `Settings` as a compact Rider-style preferences page with search placeholder, breadcrumb, launcher defaults, toolchain controls, and logs/diagnostics details.
+- Replaced Sync Source Tiers' default dependency dump with Visual Studio Installer-inspired source tier workload cards that explain capability unlocks first.
+- Kept individual dependency rows in secondary details so raw dependency inventories remain available without dominating the primary page.
+- Added package assembly selection details for launcher, Showcase products, manifests, and symbols so package consequences are clear before the primary action.
+- Added page-tab models for Prepare, Launch, Build, Cook, Validate, Package, Maintain, System, and Settings while preserving operation IDs and backend behavior.
+- Kept Activity/log output as the existing contextual drawer; no permanent Home or workflow terminal was reintroduced.
+- Static validation target: no full inventories by default, source tiers use workload cards, System/Settings use rows and compact controls, and package/clean-style consequential workflows expose selection/impact context.
+- No build, launch, package assembly, or final visual validation was run in this phase.
 
 ### Visual Redesign Phase 3: NVIDIA-Style Polish And Final Visual Validation
 

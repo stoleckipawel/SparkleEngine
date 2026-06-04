@@ -59,8 +59,8 @@ namespace SparkleLauncher
 	static constexpr int kSpaceLarge = 16;
 	static constexpr int kPanelHorizontalMargin = 18;
 	static constexpr int kPanelVerticalMargin = 14;
-	static constexpr int kWorkflowRailWidth = 82;
-	static constexpr int kWorkflowGroupMinHeight = 58;
+	static constexpr int kWorkflowRailWidth = 80;
+	static constexpr int kWorkflowGroupMinHeight = 54;
 	static constexpr int kWorkflowButtonMinHeight = 32;
 	static constexpr int kFieldLabelWidth = 116;
 	static constexpr int kOperationOutputMinHeight = 96;
@@ -74,6 +74,8 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateDestructive = "#ff7b72";
 	static constexpr const char* kColorStateWarning = "#ffb454";
 	static constexpr const char* kHomeOperationId = "home.quick-start";
+	static constexpr const char* kSystemOperationId = "system.overview";
+	static constexpr const char* kSettingsOperationId = "settings.launcher";
 
 	struct CleanScopeUiOption
 	{
@@ -600,7 +602,7 @@ namespace SparkleLauncher
 		}
 		if (operationId == "package.release")
 		{
-			return "Package outputs: assembles reviewable runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.";
+			return "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.";
 		}
 		if (operationId == "workspace.clean")
 		{
@@ -1621,6 +1623,126 @@ namespace SparkleLauncher
 		return combo;
 	}
 
+	void LauncherMainWindow::AddPageTabs(QVBoxLayout& layout, const QStringList& tabs, const QString& activeTab)
+	{
+		QFrame* tabRow = new QFrame(this);
+		tabRow->setObjectName("PageTabRow");
+		QHBoxLayout* tabLayout = new QHBoxLayout(tabRow);
+		tabLayout->setContentsMargins(0, 0, 0, 0);
+		tabLayout->setSpacing(18);
+		const QString active = activeTab.isEmpty() && !tabs.isEmpty() ? tabs.front() : activeTab;
+		for (const QString& tab : tabs)
+		{
+			QPushButton* tabButton = new QPushButton(tab, tabRow);
+			tabButton->setObjectName("PageTabButton");
+			tabButton->setCheckable(false);
+			tabButton->setProperty("ActiveState", tab == active ? "true" : "false");
+			tabButton->setAccessibleName(tab + " page tab");
+			tabButton->setToolTip(tab == active ? "Current section." : "Planned section in this page model.");
+			RegisterFocusable(tabButton);
+			tabLayout->addWidget(tabButton, 0, Qt::AlignLeft);
+		}
+		tabLayout->addStretch(1);
+		layout.addWidget(tabRow);
+	}
+
+	QFrame* LauncherMainWindow::CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
+	{
+		const int readyCount = CountReadyDependencies(group, dependencyCachePath);
+		const QString state = DependencyGroupStatusState(group, readyCount);
+		QFrame* card = new QFrame(this);
+		card->setObjectName("SourceTierCard");
+		card->setProperty("State", state);
+		card->setMinimumHeight(138);
+		QVBoxLayout* cardLayout = new QVBoxLayout(card);
+		cardLayout->setContentsMargins(16, 14, 16, 14);
+		cardLayout->setSpacing(8);
+
+		QHBoxLayout* titleRow = new QHBoxLayout();
+		titleRow->setContentsMargins(0, 0, 0, 0);
+		titleRow->setSpacing(kSpaceSmall);
+		QLabel* title = new QLabel(group.Label, card);
+		title->setObjectName("SourceTierTitle");
+		titleRow->addWidget(title, 1);
+		QLabel* chip = new QLabel(DependencyGroupStatusText(group, readyCount), card);
+		chip->setObjectName("SourceTierChip");
+		chip->setProperty("State", state);
+		titleRow->addWidget(chip, 0, Qt::AlignRight | Qt::AlignTop);
+		cardLayout->addLayout(titleRow);
+
+		QLabel* summary = new QLabel(group.Enabled ? group.UnlockSummary : FormatDependencyGroupDetail(group, dependencyCachePath, readyCount), card);
+		summary->setObjectName("SourceTierText");
+		summary->setWordWrap(true);
+		cardLayout->addWidget(summary, 1);
+
+		QHBoxLayout* metaRow = new QHBoxLayout();
+		metaRow->setContentsMargins(0, 0, 0, 0);
+		metaRow->setSpacing(kSpaceSmall);
+		const QString metaText = group.Required ? "Required" : (group.Enabled ? "Optional enabled" : "Optional disabled");
+		QLabel* meta = new QLabel(metaText, card);
+		meta->setObjectName("SourceTierMeta");
+		metaRow->addWidget(meta, 1);
+		if (group.Enabled)
+		{
+			QWidget* actions = CreateActionDependencyActions("workspace.setup", "Sync Source Tiers", "deps", "Clean Source Dependency Cache");
+			if (actions != nullptr)
+			{
+				actions->setParent(card);
+				metaRow->addWidget(actions, 0, Qt::AlignRight);
+			}
+		}
+		cardLayout->addLayout(metaRow);
+		return card;
+	}
+
+	void LauncherMainWindow::AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails)
+	{
+		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		QVBoxLayout* tiersLayout = AddOptionGroup(layout, title, detail);
+		QGridLayout* tierGrid = new QGridLayout();
+		tierGrid->setContentsMargins(0, 4, 0, 0);
+		tierGrid->setHorizontalSpacing(12);
+		tierGrid->setVerticalSpacing(12);
+		int index = 0;
+		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+		{
+			tierGrid->addWidget(CreateSourceTierCard(group, dependencyCachePath), index / 2, index % 2);
+			++index;
+		}
+		tiersLayout->addLayout(tierGrid);
+
+		if (!includeDependencyDetails)
+		{
+			return;
+		}
+
+		QVBoxLayout* inventoryLayout = AddDetailsGroup(
+		    layout,
+		    "Dependency Inventory",
+		    "Searchable dependency inventory is planned for this page model; raw dependency paths remain secondary here.",
+		    false);
+		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+		{
+			QVBoxLayout* dependenciesLayout = AddDetailsGroup(
+			    *inventoryLayout,
+			    group.Label + " Contents",
+			    group.Enabled ? group.UnlockSummary : FormatDependencyGroupDetail(group, dependencyCachePath, 0),
+			    false);
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
+				const bool dependencyReady = DirectoryHasEntries(dependencyPath);
+				AddStatusRow(
+				    *dependenciesLayout,
+				    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
+				    !group.Enabled ? "Disabled" : dependencyReady ? "Cached" : "Pending sync",
+				    FormatDependencyEntryDetail(group, dependency, dependencyPath),
+				    !group.Enabled ? "neutral" : dependencyReady ? "ok" : "warning",
+				    group.Enabled ? CreateTrackedDependencyActions(dependency) : nullptr);
+			}
+		}
+	}
+
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
 	{
 		if (operationId == kHomeOperationId)
@@ -1629,18 +1751,54 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (operationId == kSystemOperationId)
+		{
+			AddSystemOverviewPage(layout);
+			return;
+		}
+
+		if (operationId == kSettingsOperationId)
+		{
+			AddSettingsPage(layout);
+			return;
+		}
+
 		AddWorkflowPageHeader(layout, operationId);
+		if (operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check")
+		{
+			AddPageTabs(layout, {"Overview", "Host Tools", "Source Tiers", "Workspace Files", "Advanced"}, operationId == "workspace.setup" ? "Source Tiers" : "Overview");
+		}
+		else if (operationId.startsWith("project.open.") || operationId.startsWith("project.run."))
+		{
+			AddPageTabs(layout, {"Readiness", "Graphics", "Arguments", "Advanced"}, "Readiness");
+		}
+		else if (operationId.startsWith("project.build") || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
+		{
+			AddPageTabs(layout, {"Readiness", "Targets", "Outputs", "Advanced"}, "Readiness");
+		}
+		else if (operationId.startsWith("cook."))
+		{
+			AddPageTabs(layout, {"Readiness", "Selection", "Outputs", "Advanced"}, operationId == "cook.shaders" ? "Selection" : "Readiness");
+		}
+		else if (operationId == "package.release")
+		{
+			AddPageTabs(layout, {"Current", "Manifests", "Release Notes", "Symbols", "Advanced"}, "Current");
+		}
+		else if (operationId == "workspace.clean" || operationId == "quality.format")
+		{
+			AddPageTabs(layout, {"Overview", "Selection", "Locations", "Advanced"}, operationId == "workspace.clean" ? "Selection" : "Overview");
+		}
 
 		if (operationId == "package.release")
 		{
 			QVBoxLayout* packageLayout = AddOptionGroup(
 			    layout,
-			    "Readiness Summary",
-			    "Assemble a reviewable package layout while keeping final validation and publishing sign-off separate.");
+			    "Package Assembly",
+			    "Assemble a release package layout while keeping final validation and publishing sign-off separate.");
 			AddStatusRow(
 			    *packageLayout,
-			    "Review package",
-			    "Review target",
+			    "Release package",
+			    "Assembly target",
 			    "Build the sparkle_release_assembly CMake target to assemble launcher, editor/runtime, cooked content, manifests, checksums, notes, licenses, and a separate symbols archive under dist/releases/<version>.",
 			    "neutral");
 			AddStatusRow(
@@ -1649,6 +1807,15 @@ namespace SparkleLauncher
 			    "Separate sign-off",
 			    "This workflow assembles dist/ packages. Publish readiness still requires the final validation checklist and release report.",
 			    "neutral");
+			QVBoxLayout* contentsLayout = AddDetailsGroup(
+			    layout,
+			    "Selection Details",
+			    "Package inclusion follows product ownership, visibility, binary type, declared dependencies, and package navigation rules.",
+			    false);
+			AddStatusRow(*contentsLayout, "Launcher", "Included", "Package-root SparkleLauncher.exe and runtime support files.", "neutral");
+			AddStatusRow(*contentsLayout, "Showcase products", "Staged when present", "Showcase editor/runtime binaries and cooked Showcase content are staged from artifacts.", "neutral");
+			AddStatusRow(*contentsLayout, "Manifests", "Generated", "Release, build, dependency, bundled-runtime, file hash, checksum, and notes outputs.", "neutral");
+			AddStatusRow(*contentsLayout, "Symbols", "Separate archive", "Debug symbols stay outside user-facing runtime packages.", "neutral");
 			return;
 		}
 
@@ -2120,7 +2287,7 @@ namespace SparkleLauncher
 			AddStatusRow(
 			    *guideLayout,
 			    "Scope",
-			    operationId == "package.release" ? "Review target" : "Scoped",
+			    operationId == "package.release" ? "Assembly target" : "Scoped",
 			    impactText,
 			    operationId == "package.release" ? "neutral" : "ok");
 		}
@@ -2230,15 +2397,16 @@ namespace SparkleLauncher
 		return card;
 	}
 
-	QFrame* LauncherMainWindow::CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action)
+	QFrame* LauncherMainWindow::CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action, const QString& tileRole)
 	{
 		QFrame* card = new QFrame(this);
 		card->setObjectName("CommandCapabilityCard");
 		card->setProperty("State", state);
-		card->setMinimumHeight(132);
+		card->setProperty("TileRole", tileRole);
+		card->setMinimumHeight(tileRole == "library" ? 178 : 148);
 		QVBoxLayout* layout = new QVBoxLayout(card);
-		layout->setContentsMargins(16, 14, 16, 14);
-		layout->setSpacing(10);
+		layout->setContentsMargins(tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14, tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
+		layout->setSpacing(tileRole == "library" ? 12 : 10);
 
 		QHBoxLayout* titleRow = new QHBoxLayout();
 		titleRow->setContentsMargins(0, 0, 0, 0);
@@ -2292,7 +2460,6 @@ namespace SparkleLauncher
 		const std::filesystem::path releaseRoot = m_repositoryRoot / "dist" / "releases";
 		const bool sourceRoot = PathExists(m_repositoryRoot / "CMakeLists.txt");
 		const bool packageRoot = PathExists(m_repositoryRoot / "SparkleLauncher.exe") && DirectoryHasEntries(m_repositoryRoot / "manifests");
-		const QString selectedProject = m_projectModel.SelectedProjectId().isEmpty() ? "No project selected" : m_projectModel.SelectedProjectId();
 
 		const auto planLaunch = [this](const QString& operationId) {
 			LauncherOperationRequest request = BuildOperationRequest(operationId);
@@ -2402,7 +2569,7 @@ namespace SparkleLauncher
 		}
 		else if (!packagePlan.CanRun)
 		{
-			secondaryAction = {"package.release", "Review Package Assembly", FirstBlockingReadinessMessage(packagePlan), true};
+			secondaryAction = {"package.release", "Inspect Package Assembly", FirstBlockingReadinessMessage(packagePlan), true};
 		}
 
 		int enabledDependencyCount = 0;
@@ -2426,20 +2593,34 @@ namespace SparkleLauncher
 		const bool architectureDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md");
 		const bool uxDoc = PathExists(m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md");
 		const bool dependencyDoc = PathExists(m_repositoryRoot / "docs" / "dependency-capability-tiers.md");
-		const int availableEvidence = static_cast<int>(architectureDoc) + static_cast<int>(uxDoc) + static_cast<int>(dependencyDoc);
+		const std::filesystem::path validationReportPath = m_repositoryRoot / "docs" / "plans" / "build-artifacts-phase6-final-validation-report.md";
+		const bool validationReport = PathExists(validationReportPath);
 		int storedFailureCount = 0;
-		QString firstFailedOperation;
 		for (auto it = m_actionHistory.cbegin(); it != m_actionHistory.cend(); ++it)
 		{
 			if (it.value().ExitCode != 0)
 			{
 				++storedFailureCount;
-				if (firstFailedOperation.isEmpty())
-				{
-					firstFailedOperation = it.key();
-				}
 			}
 		}
+		const auto createOpenButton = [this](const QString& label, const std::filesystem::path& path) {
+			QPushButton* button = new QPushButton(label, this);
+			button->setObjectName("CommandSecondaryButton");
+			button->setMinimumHeight(30);
+			button->setToolTip("Open the referenced file or folder.");
+			button->setAccessibleName(label);
+			RegisterFocusable(button);
+			connect(button, &QPushButton::clicked, this, [this, path]() {
+				OpenLocalPath(path);
+			});
+			return button;
+		};
+		const auto addHomeSection = [&layout](const QString& title) {
+			QLabel* section = new QLabel(title);
+			section->setObjectName("CommandSectionTitle");
+			section->setAccessibleName(title);
+			layout.addWidget(section);
+		};
 
 		QFrame* identity = new QFrame(this);
 		identity->setObjectName("CommandIdentityBar");
@@ -2467,11 +2648,12 @@ namespace SparkleLauncher
 
 		const bool launchReady = editorPlan.CanRun || runtimePlan.CanRun;
 		const QString heroState = launchReady ? "ok" : "warning";
-		const QString heroTitle = launchReady ? (packageRoot ? "Ready from package" : "Ready from local build") :
-		                          (!workspacePlan.Freshness.Current ? "Source workspace stale" :
-		                                                        "Needs local outputs");
+		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
+		const QString heroTitle = launchReady ? (editorPlan.CanRun ? "Open Showcase Editor" : "Open Showcase Runtime") :
+		                          (!workspacePlan.Freshness.Current && !editorExecutableMissing && !runtimeExecutableMissing ? "Prepare Showcase" :
+		                                                                                                         primaryAction.Label);
 		const QString heroDetail = launchReady ?
-		    "Open the strongest available Showcase target. Rebuild and recook are optional." :
+		    QStringLiteral("Launch from %1. Rebuild and recook remain optional refresh paths.").arg(launchProvenance) :
 		    primaryAction.Detail;
 		layout.addWidget(CreateHomeHeroCard(
 		    heroTitle,
@@ -2480,75 +2662,173 @@ namespace SparkleLauncher
 		    primaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(primaryAction.OperationId, primaryAction.Label, true, !primaryAction.NavigateOnly),
 		    secondaryAction.OperationId.isEmpty() ? nullptr : CreateCommandActionButton(secondaryAction.OperationId, secondaryAction.Label, false)));
 
-		QGridLayout* cardGrid = new QGridLayout();
-		cardGrid->setContentsMargins(0, 12, 0, 0);
-		cardGrid->setHorizontalSpacing(14);
-		cardGrid->setVerticalSpacing(14);
+		addHomeSection("Library");
+		QGridLayout* libraryGrid = new QGridLayout();
+		libraryGrid->setContentsMargins(0, 0, 0, 4);
+		libraryGrid->setHorizontalSpacing(16);
+		libraryGrid->setVerticalSpacing(16);
 
-		const QString launchStatus = launchReady ? "Ready" : (editorExecutableMissing || runtimeExecutableMissing ? "Missing" : "Blocked");
-		const QString launchDetail = QStringLiteral("Editor: %1\nRuntime: %2")
-		                                 .arg(editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked"))
-		                                 .arg(runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked"));
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Launch",
-		                        launchStatus,
-		                        launchDetail,
-		                        launchReady ? "ok" : "warning",
-		                        CreateCommandActionButton(editorPlan.CanRun ? "project.open.editor" : "project.build.editor", editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun)),
+		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
+		const QString editorDetail = editorPlan.CanRun ?
+		    QStringLiteral("Launch the Showcase editor from %1.").arg(launchProvenance) :
+		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
+		libraryGrid->addWidget(CreateHomeCapabilityCard(
+		                           "Showcase Editor",
+		                           editorStatus,
+		                           editorDetail,
+		                           editorPlan.CanRun ? "ok" : "warning",
+		                           CreateCommandActionButton(editorPlan.CanRun ? "project.open.editor" : "project.build.editor", editorPlan.CanRun ? "Open Editor" : "Build Editor", false, editorPlan.CanRun),
+		                           "library"),
 		    0,
 		    0);
-		const QString sourceStatus = workspacePlan.Freshness.Current ? "Ready" : "Stale";
-		const QString sourceDetail = QStringLiteral("Host tools: %1\nSource tiers: %2\nWorkspace files: %3")
-		                                 .arg(workspacePlan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed")
-		                                 .arg(readyDependencyCount == enabledDependencyCount ? "Cached" : "Partial")
-		                                 .arg(workspacePlan.Freshness.Current ? "Current" : "Stale");
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Prepare",
-		                        sourceStatus,
-		                        sourceDetail,
-		                        workspacePlan.Toolchain.RequiredToolsAvailable && workspacePlan.Freshness.Current ? "ok" : "warning",
-		                        CreateCommandActionButton(workspacePlan.Freshness.Current ? "workspace.setup" : "workspace.generate-solution", workspacePlan.Freshness.Current ? "Sync Source Tiers" : "Generate Workspace Files", false)),
+		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
+		const QString runtimeDetail = runtimePlan.CanRun ?
+		    QStringLiteral("Run the Showcase runtime from %1.").arg(launchProvenance) :
+		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
+		libraryGrid->addWidget(CreateHomeCapabilityCard(
+		                           "Showcase Runtime",
+		                           runtimeStatus,
+		                           runtimeDetail,
+		                           runtimePlan.CanRun ? "ok" : "warning",
+		                           CreateCommandActionButton(runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime", runtimePlan.CanRun ? "Open Runtime" : "Build Runtime", false, runtimePlan.CanRun),
+		                           "library"),
 		    0,
 		    1);
-		const QString contentStatus = missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains);
-		const QString contentDetail = QStringLiteral("Scenes: %1\nTextures: %2\nShaders: %3")
-		                                  .arg(cookedMeshesMissing ? "Missing" : "Ready")
-		                                  .arg(cookedTexturesMissing ? "Missing" : "Ready")
-		                                  .arg(cookedShadersMissing ? "Missing" : "Ready");
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Content",
-		                        contentStatus,
-		                        contentDetail,
-		                        missingCookDomains == 0 ? "ok" : "warning",
-		                        CreateCommandActionButton(missingCookDomains == 0 ? "cook.project" : "cook.project", missingCookDomains == 0 ? "Cook All" : "Cook Missing", false)),
-		    0,
-		    2);
+		layout.addLayout(libraryGrid);
+
+		addHomeSection("Discover");
+		QGridLayout* discoverGrid = new QGridLayout();
+		discoverGrid->setContentsMargins(0, 0, 0, 0);
+		discoverGrid->setHorizontalSpacing(16);
+		discoverGrid->setVerticalSpacing(16);
+
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Package",
-		                        packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
-		                        packagePresent ? "Release folders exist under dist/releases." : "Assemble reviewable packages from artifacts; publishing remains separate.",
-		                        packagePresent || packagePlan.CanRun ? "ok" : "warning",
-		                        CreateCommandActionButton("package.release", "Assemble", false)),
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Architecture",
+		                            architectureDoc ? "Available" : "Pending",
+		                            "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
+		                            architectureDoc ? "ok" : "warning",
+		                            architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr),
+		    0,
+		    0);
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Dependency Tiers",
+		                            dependencyDoc ? "Available" : "Pending",
+		                            readyDependencyCount == enabledDependencyCount ? "Enabled source tiers are cached; optional tiers unlock more build and cook capability." :
+		                                                                          "Sync source tiers only when you need the extra local build or cook capability.",
+		                            dependencyDoc ? "ok" : "warning",
+		                            dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false)),
+		    0,
+		    1);
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Validation",
+		                            validationReport ? "Available" : (storedFailureCount == 0 ? "No active issue" : "Review activity"),
+		                            validationReport ? "Open the latest final validation report." :
+		                                               "Run smoke tests or open Activity when you want runtime confidence.",
+		                            validationReport || storedFailureCount == 0 ? "ok" : "warning",
+		                            validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false)),
+		    0,
+		    2);
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Package",
+		                            packagePresent ? "Present" : (packagePlan.CanRun ? "Ready" : "Blocked"),
+		                            packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
+		                            packagePresent || packagePlan.CanRun ? "ok" : "warning",
+		                            packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false)),
 		    1,
 		    0);
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Evidence",
-		                        availableEvidence > 0 ? QStringLiteral("%1 links").arg(availableEvidence) : "Pending",
-		                        DirectoryHasEntries(releaseRoot) ? "Docs and release manifests are available." : "Architecture, dependency tiers, and UX records are available; manifests need package assembly.",
-		                        availableEvidence > 0 ? "ok" : "warning",
-		                        CreateHomeEvidenceActions()),
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Content",
+		                            missingCookDomains == 0 ? "Ready" : QStringLiteral("%1 missing").arg(missingCookDomains),
+		                            missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
+		                            missingCookDomains == 0 ? "ok" : "warning",
+		                            CreateCommandActionButton("cook.project", missingCookDomains == 0 ? "Cook All" : "Cook Missing", false)),
 		    1,
 		    1);
-		cardGrid->addWidget(CreateHomeCapabilityCard(
-		                        "Activity",
-		                        storedFailureCount == 0 ? "Clear" : QStringLiteral("%1 issue").arg(storedFailureCount),
-		                        storedFailureCount == 0 ? "No stored workflow failure is blocking first contact." : "Stored failures are quiet until opened; raw logs remain available.",
-		                        storedFailureCount == 0 ? "ok" : "warning",
-		                        firstFailedOperation.isEmpty() ? nullptr : CreateCommandActionButton(firstFailedOperation, "Resolve", false)),
+		discoverGrid->addWidget(CreateHomeCapabilityCard(
+		                            "Tools",
+		                            uxDoc ? "Available" : "Pending",
+		                            "Open UX notes or continue into Prepare, Build, Cook, Validate, Package, and System workflows from the rail.",
+		                            uxDoc ? "ok" : "warning",
+		                            uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr),
 		    1,
 		    2);
-		layout.addLayout(cardGrid);
+		layout.addLayout(discoverGrid);
+	}
+
+	void LauncherMainWindow::AddSystemOverviewPage(QVBoxLayout& layout)
+	{
+		AddPageTabs(layout, {"Overview", "Toolchain", "Artifacts", "Dependencies", "Diagnostics"}, "Overview");
+
+		BuildWorkspaceOperationRequest request = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
+		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation("workspace.generate-solution", request);
+		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
+		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
+		int enabledDependencyCount = 0;
+		int readyDependencyCount = 0;
+		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
+		{
+			if (!group.Enabled)
+			{
+				continue;
+			}
+			for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
+			{
+				++enabledDependencyCount;
+				if (DirectoryHasEntries(dependencyCachePath / dependency.CacheDirectoryName.toStdString()))
+				{
+					++readyDependencyCount;
+				}
+			}
+		}
+
+		QVBoxLayout* statsLayout = AddOptionGroup(layout, "Statistics", "Current workspace and machine state, kept compact for daily production checks.");
+		AddStatusRow(*statsLayout, "Project", m_projectModel.SelectedProjectId().isEmpty() ? "Not selected" : m_projectModel.SelectedProjectId(), "Selected project used by launch, build, cook, and validate workflows.", m_projectModel.SelectedProjectId().isEmpty() ? "warning" : "ok");
+		AddStatusRow(*statsLayout, "Root mode", PathExists(m_repositoryRoot / "SparkleLauncher.exe") ? "Package" : "Source checkout", "Package mode uses bundled components first; source checkout uses local artifacts and generated workspace state.", "neutral");
+		AddStatusRow(*statsLayout, "Toolchain", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad", CreateActionDependencyActions("toolchain.check", "Verify Host Environment", QString(), QString(), true));
+		AddStatusRow(*statsLayout, "Workspace files", plan.Freshness.Current ? "Current" : "Needs refresh", QString::fromStdString(plan.Freshness.Summary), plan.Freshness.Current ? "ok" : "warning", CreateActionDependencyActions("workspace.generate-solution", "Generate Workspace Files", "build-tree", "Clean Build Files", true));
+		AddStatusRow(*statsLayout, "Source tiers", QStringLiteral("%1 / %2 cached").arg(readyDependencyCount).arg(enabledDependencyCount), "Enabled source tiers unlock optional local build and cook capabilities.", readyDependencyCount == enabledDependencyCount ? "ok" : "warning", CreateActionDependencyActions("workspace.setup", "Sync Source Tiers", "deps", "Clean Source Dependency Cache", true));
+
+		QVBoxLayout* artifactLayout = AddDetailsGroup(layout, "Locations", "Declared workspace roots. Paths are intentionally kept in System rather than Home.", false);
+		AddStatusRow(*artifactLayout, "Build root", "Generated", ToDisplayPath(m_repositoryRoot, GetBuildDirectory(m_repositoryRoot)), "neutral");
+		AddStatusRow(*artifactLayout, "Artifacts root", "Generated", ToDisplayPath(m_repositoryRoot, GetArtifactDirectory(m_repositoryRoot)), "neutral");
+		AddStatusRow(*artifactLayout, "Dist root", "Package output", ToDisplayPath(m_repositoryRoot, m_repositoryRoot / "dist"), "neutral");
+		AddStatusRow(*artifactLayout, "Launcher logs", "Available", ToDisplayPath(m_repositoryRoot, statePaths.LogsDirectory), "neutral");
+
+		AddSourceTierCards(layout, "Source Tiers", "Capability workload cards. Sync only the tiers needed for the local work you intend to do.", false);
+	}
+
+	void LauncherMainWindow::AddSettingsPage(QVBoxLayout& layout)
+	{
+		AddPageTabs(layout, {"Launcher", "Toolchain", "Locations", "Logs", "About"}, "Launcher");
+
+		QVBoxLayout* searchLayout = AddOptionGroup(layout, "Settings", "Rider-style compact settings surface for daily launcher preferences.");
+		QLineEdit* search = new QLineEdit(this);
+		search->setObjectName("SettingsSearch");
+		search->setPlaceholderText("Search settings");
+		search->setAccessibleName("Search settings");
+		search->setToolTip("Static search field placeholder for the settings page model.");
+		RegisterFocusable(search);
+		searchLayout->addWidget(search);
+		QLabel* breadcrumb = new QLabel("Appearance & Behavior  >  Launcher", this);
+		breadcrumb->setObjectName("SettingsBreadcrumb");
+		searchLayout->addWidget(breadcrumb);
+
+		QVBoxLayout* launcherLayout = AddOptionGroup(layout, "Launcher Defaults", "Default project, launch target, and safety behavior.");
+		AddOptionField(*launcherLayout, "Project", CreateProjectCombo());
+		AddOptionField(*launcherLayout, "Launch target", CreateValueCombo({{"Editor", "editor"}, {"Runtime", "runtime"}}, m_settings.LaunchTarget(), &LauncherSettings::SetLaunchTarget));
+		AddOptionField(*launcherLayout, "Build configuration", CreateValueCombo({{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}}, m_settings.BuildConfiguration(), &LauncherSettings::SetBuildConfiguration));
+		AddOptionCheckBox(*launcherLayout, CreateBoundCheckBox("Confirm force recook", "Require confirmation before force recook workflows run.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook));
+		AddOptionCheckBox(*launcherLayout, CreateBoundCheckBox("Confirm clean scopes", "Require confirmation before destructive clean workflows run.", m_settings.ConfirmClean(), &LauncherSettings::SetConfirmClean));
+
+		QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Toolchain", "Preferred source workspace integration.");
+		AddOptionField(*toolchainLayout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
+		AddOptionCheckBox(*toolchainLayout, CreateBoundCheckBox("Force configure", "Regenerate CMake configuration even when workspace files look current.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
+		AddStatusRow(*toolchainLayout, "Qt kit", "Auto discovered", "Qt discovery remains automatic and documented through Prepare > Verify Host Environment.", "neutral", CreateActionDependencyActions("toolchain.check", "Verify Host Environment", QString(), QString(), true));
+
+		QVBoxLayout* logsLayout = AddDetailsGroup(layout, "Logs And Diagnostics", "Daily diagnostics stay accessible without becoming permanent Home clutter.", false);
+		AddStatusRow(*logsLayout, "Activity", "Drawer", "Activity opens from the header utility or automatically during active/failed runs.", "neutral");
+		AddStatusRow(*logsLayout, "Diagnostics bundle", "Copyable", "Use the header Diagnostics action to copy repository, artifact, dist, and launcher state context.", "neutral");
 	}
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
@@ -2724,33 +3004,11 @@ namespace SparkleLauncher
 			}
 			if (operationId == "workspace.setup")
 			{
-				QVBoxLayout* groupsLayout = AddDetailsGroup(
+				AddSourceTierCards(
 				    layout,
-				    "Source Tier Details",
-				    "Each enabled group maps the local dependency cache to concrete launcher capabilities. Users do not need to sync every group up front.",
-				    false);
-				addRelevantDependencyGroups(*groupsLayout);
-
-				for (const DependencyGroupUiEntry& group : GetDependencyGroups())
-				{
-					QVBoxLayout* dependenciesLayout = AddDetailsGroup(
-					    *groupsLayout,
-					    group.Label + " Sync Contents",
-					    group.Enabled ? group.UnlockSummary : FormatDependencyGroupDetail(group, dependencyCachePath, 0),
-					    false);
-					for (const ThirdPartyDependencyUiEntry& dependency : group.Dependencies)
-					{
-						const std::filesystem::path dependencyPath = dependencyCachePath / dependency.CacheDirectoryName.toStdString();
-						const bool dependencyReady = DirectoryHasEntries(dependencyPath);
-						AddStatusRow(
-						    *dependenciesLayout,
-						    QStringLiteral("%1 (%2)").arg(dependency.Label, dependency.Version),
-						    !group.Enabled ? "Disabled" : dependencyReady ? "Cached" : "Pending sync",
-						    FormatDependencyEntryDetail(group, dependency, dependencyPath),
-						    !group.Enabled ? "neutral" : dependencyReady ? "ok" : "warning",
-						    group.Enabled ? CreateTrackedDependencyActions(dependency) : nullptr);
-					}
-				}
+				    "Source Tier Workloads",
+				    "Capability cards show what each tier unlocks. Individual dependency rows stay in details so Sync Source Tiers does not become a dependency log by default.",
+				    true);
 			}
 			return;
 		}
@@ -3205,48 +3463,6 @@ namespace SparkleLauncher
 		return button;
 	}
 
-	QWidget* LauncherMainWindow::CreateHomeEvidenceActions()
-	{
-		QVector<LauncherActionMenuEntry> entries;
-		const auto addIfPresent = [this, &entries](const QString& label, const std::filesystem::path& path) {
-			if (!PathExists(path) && !DirectoryHasEntries(path))
-			{
-				return;
-			}
-			entries.push_back(LauncherActionMenuEntry{
-			    label,
-			    [this, path]() {
-				    OpenLocalPath(path);
-			    }});
-		};
-
-		addIfPresent("Open release architecture plan", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md");
-		addIfPresent("Open launcher UX concept", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md");
-		addIfPresent("Open dependency tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md");
-		addIfPresent("Open release folders", m_repositoryRoot / "dist" / "releases");
-		if (entries.empty())
-		{
-			return nullptr;
-		}
-
-		QToolButton* button = CreateLauncherOverflowActionButton(
-		    this,
-		    "Engineering evidence actions",
-		    "Evidence actions",
-		    entries);
-		button->setObjectName("CommandSecondaryButton");
-		button->setText("View Evidence");
-		button->setIcon(QIcon());
-		button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-		button->setAutoRaise(false);
-		button->setToolTip("Open architecture notes, dependency tiers, UX records, or assembled release folders when available.");
-		button->setAccessibleDescription(button->toolTip());
-		button->setMinimumHeight(28);
-		button->setMinimumWidth(126);
-		RegisterFocusable(button);
-		return button;
-	}
-
 	QWidget* LauncherMainWindow::CreateFolderShortcutActions()
 	{
 		const LauncherStatePaths statePaths = GetLauncherStatePaths(m_repositoryRoot);
@@ -3656,14 +3872,14 @@ namespace SparkleLauncher
 			painter.setRenderHint(QPainter::Antialiasing, true);
 			const QRectF bounds(1.0, 1.0, size - 2.0, size - 2.0);
 			const qreal radius = qMax(3.0, size * 0.18);
-			painter.setPen(QColor("#3d4652"));
-			painter.setBrush(QColor("#1f242b"));
+			painter.setPen(QColor("#3f4d35"));
+			painter.setBrush(QColor("#151713"));
 			painter.drawRoundedRect(bounds, radius, radius);
 
 			painter.setPen(Qt::NoPen);
-			painter.setBrush(QColor("#0969da"));
+			painter.setBrush(QColor("#76b900"));
 			painter.drawRoundedRect(QRectF(size * 0.18, size * 0.18, size * 0.64, size * 0.16), radius * 0.45, radius * 0.45);
-			painter.setBrush(QColor("#7ee787"));
+			painter.setBrush(QColor("#dff3cf"));
 			painter.drawEllipse(QRectF(size * 0.62, size * 0.62, size * 0.18, size * 0.18));
 
 			QFont font("Segoe UI");
@@ -3694,6 +3910,10 @@ namespace SparkleLauncher
 			return QChar(0xf04b);
 		case LauncherIcon::Package:
 			return QChar(0xf466);
+		case LauncherIcon::System:
+			return QChar(0xf108);
+		case LauncherIcon::Settings:
+			return QChar(0xf013);
 		case LauncherIcon::Maintain:
 			return QChar(0xf1de);
 		case LauncherIcon::Queued:
@@ -3753,6 +3973,10 @@ namespace SparkleLauncher
 		case 6:
 			return CreateLauncherIcon(LauncherIcon::Package, QColor(kColorStateQueued));
 		case 7:
+			return CreateLauncherIcon(LauncherIcon::System, QColor(kColorStateQueued));
+		case 8:
+			return CreateLauncherIcon(LauncherIcon::Settings, QColor(kColorStateQueued));
+		case 9:
 			return CreateLauncherIcon(LauncherIcon::Maintain, QColor(kColorStateQueued));
 		default:
 			return {};
@@ -3855,6 +4079,20 @@ namespace SparkleLauncher
 			return;
 		}
 
+		if (m_selectedOperationId == kSystemOperationId || m_selectedOperationId == kSettingsOperationId)
+		{
+			const QString reason = "This page is for inspection and configuration. Use workflow tabs for executable actions.";
+			m_cleanButton->setVisible(false);
+			m_cleanButton->setEnabled(false);
+			m_cleanButton->setToolTip(reason);
+			m_cleanButton->setAccessibleDescription(reason);
+			m_runButton->setVisible(false);
+			m_runButton->setEnabled(false);
+			m_runButton->setToolTip(reason);
+			m_runButton->setAccessibleDescription(reason);
+			return;
+		}
+
 		m_runButton->setVisible(true);
 		m_cleanButton->setVisible(ShouldShowActionSpecificCleanButton(m_selectedOperationId));
 
@@ -3927,9 +4165,17 @@ namespace SparkleLauncher
 		{
 			return "Command Center";
 		}
+		if (operationId == kSystemOperationId)
+		{
+			return "System";
+		}
+		if (operationId == kSettingsOperationId)
+		{
+			return "Settings";
+		}
 		if (operationId == "package.release")
 		{
-			return "Assemble Review Package";
+			return "Assemble Release Package";
 		}
 		const LauncherOperationDescriptor* operation = FindOperationDescriptor(operationId);
 		return operation == nullptr ? operationId : operation->DisplayName;
@@ -4464,7 +4710,7 @@ namespace SparkleLauncher
 		const QString title = DisplayNameForOperation(operationId);
 		SetControlsEnabled(true);
 		UpdateActionHistoryDisplay();
-		const bool isHomeOperation = operationId == kHomeOperationId;
+		const bool isStaticPage = operationId == kHomeOperationId || operationId == kSystemOperationId || operationId == kSettingsOperationId;
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
@@ -4472,7 +4718,7 @@ namespace SparkleLauncher
 		}
 		if (m_actionMetaPanel != nullptr)
 		{
-			m_actionMetaPanel->setVisible(!isHomeOperation);
+			m_actionMetaPanel->setVisible(!isStaticPage);
 		}
 		if (m_runButton != nullptr)
 		{
@@ -4746,7 +4992,9 @@ namespace SparkleLauncher
 		    {"Build", "Optional local rebuilds", {"workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
 		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
 		    {"Validate", "Test or customize", {"project.run.smoke", "project.run"}},
-		    {"Package", "Review assembly", {"package.release"}},
+		    {"Package", "Release assembly", {"package.release"}},
+		    {"System", "Workspace and machine state", {kSystemOperationId}},
+		    {"Settings", "Launcher preferences", {kSettingsOperationId}},
 		    {"Maintain", "Clean and format", {"workspace.clean", "quality.format"}},
 		};
 	}
@@ -4804,33 +5052,37 @@ namespace SparkleLauncher
 		addRule("#HeaderUtilityButton:focus", "border: 1px solid " + focus + ";");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
-		addRule("#OptionRow", "background: transparent; min-height: 26px;");
+		addRule("#OptionRow", "background: transparent; border-top: 1px solid " + divider + "; min-height: 32px;");
 		addRule("#OptionGroup", "background: transparent; border: none; margin-top: 12px;");
-		addRule("#OptionLabelCell", "background: #2a2d31; border-top: 1px solid #3b4047; border-right: 1px solid " + border + ";");
-		addRule("#OptionValueCell", "background: #24282d; border-top: 1px solid #363b42;");
+		addRule("#OptionLabelCell", "background: transparent; border: none;");
+		addRule("#OptionValueCell", "background: transparent; border: none;");
 
 		addRule("#ActiveOperationLabel", "color: " + textPrimary + "; font-size: 15pt; font-weight: 800; letter-spacing: -0.15px;");
 		addRule("#CommandIdentityBar", "background: transparent; border: none; padding: 2px 0 8px 0;");
 		addRule("#CommandProductTitle", "color: " + textPrimary + "; font-size: 20pt; font-weight: 900; letter-spacing: -0.35px;");
 		addRule("#CommandProductSubtitle", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600;");
-		addRule("#CommandContextPill", "background: #202a32; color: #d8e8f5; border: 1px solid #3a5367; border-radius: 3px; padding: 5px 10px; font-size: 8pt; font-weight: 750;");
+		addRule("#CommandContextPill", "background: #20251d; color: #e5f3d5; border: 1px solid #4d6f29; border-radius: 3px; padding: 5px 10px; font-size: 8pt; font-weight: 750;");
 		addRule("#CommandHeroCard", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #24291f, stop:0.55 #1d211b, stop:1 #141615); border: 1px solid #354126; border-left: 3px solid " + accent + "; border-radius: 4px;");
 		addRule("#CommandHeroCard[State=\"warning\"]", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #584129, stop:0.58 #3a3026, stop:1 #292923); border-color: #8a662f; border-top-color: #bd8939;");
 		addRule("#CommandHeroTitle", "color: #ffffff; font-size: 18pt; font-weight: 900; letter-spacing: -0.25px;");
-		addRule("#CommandHeroText", "color: #e0ebf2; font-size: 9.5pt; line-height: 135%;");
+		addRule("#CommandHeroText", "color: " + textBody + "; font-size: 9.5pt; line-height: 135%;");
 		addRule("#CommandHeroChip", "color: #dff3cf; border: 1px solid #4d6f29; border-radius: 3px; background: #26351f; padding: 3px 9px; font-size: 7.75pt; font-weight: 800;");
 		addRule("#CommandHeroChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addRule("#CommandSectionTitle", "color: " + textPrimary + "; font-size: 13pt; font-weight: 900; padding: 16px 0 4px 0; letter-spacing: -0.1px;");
 		addRule("#CommandCapabilityCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px;");
+		addRule("#CommandCapabilityCard[TileRole=\"library\"]", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252925, stop:0.62 #1e211f, stop:1 #161816); border: 1px solid #384033; border-left: 3px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[State=\"warning\"]", "border-left: 4px solid #b37726;");
+		addRule("#CommandCapabilityCard[TileRole=\"library\"][State=\"ok\"]", "border-left: 4px solid " + accent + ";");
+		addRule("#CommandCapabilityCard[TileRole=\"library\"][State=\"warning\"]", "border-left: 4px solid #b37726;");
 		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 11.5pt; font-weight: 900; letter-spacing: -0.1px;");
 		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 8.75pt; line-height: 135%;");
-		addRule("#CommandCardChip", "color: #c8d4df; border: 1px solid #4a515a; border-radius: 3px; background: #2d333a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
+		addRule("#CommandCardChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
 		addRule("#CommandCardChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 		addRule("#CommandCardChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
 		addRule("#CommandPrimaryButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
 		addRule("#CommandPrimaryButton:hover", "background: " + primaryHover + ";");
-		addRule("#CommandSecondaryButton", "background: #343a42; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #5c636d; border-radius: 3px; padding: 6px 13px; font-weight: 750; min-width: 112px;");
+		addRule("#CommandSecondaryButton", "background: #2b2f2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #42493f; border-radius: 3px; padding: 6px 13px; font-weight: 750; min-width: 112px;");
 		addRule("#CommandSecondaryButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
 		addRule("#WorkflowRailTitle", "color: " + textPrimary + "; font-size: 9.5pt; font-weight: 700; padding: 0 0 3px 0;");
 		addRule("#SectionLabel", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 800; padding: 6px 0 1px 0; letter-spacing: 0.35px;");
@@ -4845,17 +5097,17 @@ namespace SparkleLauncher
 		addRule("#ActionMetaTitle", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 700;");
 		addRule("#ActionMetaText", "color: " + textBody + "; font-size: 7.75pt;");
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
-		addRule("#StatusRow", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #2f3338, stop:1 #282c31); border: 1px solid #343940; border-top-color: #454b54; padding: 8px 10px 8px 10px; margin-top: 3px;");
+		addRule("#StatusRow", "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 9px 10px 9px 10px; margin-top: 0;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.5pt; font-weight: 700;");
-		addRule("#StatusValue", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 800; padding: 2px 8px; border: 1px solid #4a515a; background: #2d333a; min-width: 58px;");
+		addRule("#StatusValue", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 800; padding: 2px 8px; border: 1px solid #4c5149; background: #2b2f2a; min-width: 58px;");
 		addRule("#StatusValue[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 		addRule("#StatusValue[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
 		addRule("#StatusValue[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
-		addRule("#StatusValue[State=\"neutral\"]", "color: #c8d4df; border-color: #4a515a; background: #2d333a;");
+		addRule("#StatusValue[State=\"neutral\"]", "color: " + textSecondary + "; border-color: #4c5149; background: #2b2f2a;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 7.75pt;");
 		addRule("#ActionRow", "background: transparent; border: none; padding: 4px 0;");
 		addRule("#ActionTitle", "color: " + textPrimary + "; font-size: 8.5pt; font-weight: 700;");
-		addRule("#InlineActionButton", "background: #31363b; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #575d66; padding: 4px 10px; min-width: 116px;");
+		addRule("#InlineActionButton", "background: #2b2f2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #42493f; padding: 4px 10px; min-width: 116px;");
 		addRule("#InlineActionButton:hover", "background: " + panelHover + ";");
 		addRule("#MutedLabel", "color: " + textMuted + "; padding: 4px 0;");
 		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 9pt; font-weight: 700;");
@@ -4870,22 +5122,39 @@ namespace SparkleLauncher
 		addRule("#WorkflowButton:hover", "background: #1b1e1b; color: " + textPrimary + ";");
 		addRule("#WorkflowButton:checked", "background: transparent; border-bottom: 3px solid " + accent + "; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
+		addRule("#PageTabRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + "; margin-bottom: 4px;");
+		addRule("#PageTabButton", "background: transparent; color: " + textSecondary + "; border: none; border-bottom: 3px solid transparent; padding: 9px 2px 8px 2px; font-size: 9pt; font-weight: 750; min-width: 78px;");
+		addRule("#PageTabButton:hover", "color: " + textPrimary + ";");
+		addRule("#PageTabButton:checked, #PageTabButton[ActiveState=\"true\"]", "color: #ffffff; border-bottom: 3px solid " + accent + ";");
+		addRule("#PageTabButton:focus", "border: 1px solid " + focus + ";");
+		addRule("#SourceTierCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px; border-left: 4px solid #4a515a;");
+		addRule("#SourceTierCard[State=\"ok\"]", "border-left-color: " + accent + ";");
+		addRule("#SourceTierCard[State=\"warning\"]", "border-left-color: #b37726;");
+		addRule("#SourceTierCard[State=\"neutral\"]", "border-left-color: #4a515a;");
+		addRule("#SourceTierTitle", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 900;");
+		addRule("#SourceTierText", "color: " + textSecondary + "; font-size: 8.25pt; line-height: 130%;");
+		addRule("#SourceTierMeta", "color: " + textMuted + "; font-size: 7.5pt; font-weight: 750;");
+		addRule("#SourceTierChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
+		addRule("#SourceTierChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
+		addRule("#SourceTierChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addRule("#SettingsSearch", "background: #171a18; border: 1px solid " + borderStrong + "; border-radius: 3px; padding: 7px 10px; color: " + textBody + ";");
+		addRule("#SettingsBreadcrumb", "color: " + textSecondary + "; font-size: 8pt; font-weight: 750; padding: 3px 0 0 0;");
 
 		addRule("QPushButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 2px; padding: 6px 14px; font-weight: 750;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
-		addRule("QPushButton:disabled", "background: #31353a; border: 1px solid " + border + "; border-top-color: #454a51; color: " + textMuted + ";");
+		addRule("QPushButton:disabled", "background: #2d312d; border: 1px solid " + border + "; border-top-color: #41483e; color: " + textMuted + ";");
 		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; min-width: 112px; padding-left: 18px; padding-right: 18px; font-weight: 900;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
 		addRule("#SecondaryButton", "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
 		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 		addRule("#DependencyActionButton", "background: transparent; color: " + textMuted + "; border: none; padding: 0; min-width: 16px; max-width: 16px; min-height: 16px; max-height: 16px;");
-		addRule("#DependencyActionButton:hover", "background: #3a3f46; color: " + textPrimary + "; border-radius: 2px;");
-		addRule("#DependencyActionButton:pressed", "background: #444a52; color: " + textPrimary + "; border-radius: 2px;");
+		addRule("#DependencyActionButton:hover", "background: #30362e; color: " + textPrimary + "; border-radius: 2px;");
+		addRule("#DependencyActionButton:pressed", "background: #384033; color: " + textPrimary + "; border-radius: 2px;");
 		addRule("#DependencyActionButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + "; border-radius: 2px;");
 		addRule("#DependencyActionButton::menu-indicator", "image: none; width: 0px;");
-		addRule("#OverflowMenu", "background: #2a2e33; color: " + textBody + "; border: 1px solid " + borderStrong + "; padding: 1px 0;");
+		addRule("#OverflowMenu", "background: #20231f; color: " + textBody + "; border: 1px solid " + borderStrong + "; padding: 1px 0;");
 		addRule("#OverflowMenu::item", "background: transparent; padding: 3px 10px 3px 8px; color: " + textBody + "; font-size: 7.75pt;");
 		addRule("#OverflowMenu::item:selected", "background: " + selection + "; color: #ffffff;");
 		addRule("#OverflowMenu::separator", "height: 1px; background: " + borderSoft + "; margin: 2px 6px;");
@@ -4902,6 +5171,16 @@ namespace SparkleLauncher
 		addRule("QListWidget:focus", "border: 1px solid " + focus + ";");
 		addRule("QListWidget::item", "padding: 3px 4px; border-radius: 0; color: " + textBody + ";");
 		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
+		addRule("QScrollBar:vertical", "background: #151713; width: 10px; margin: 0;");
+		addRule("QScrollBar::handle:vertical", "background: #3a4037; border-radius: 4px; min-height: 36px;");
+		addRule("QScrollBar::handle:vertical:hover", "background: #58614f;");
+		addRule("QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical", "height: 0; background: transparent;");
+		addRule("QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical", "background: transparent;");
+		addRule("QScrollBar:horizontal", "background: #151713; height: 10px; margin: 0;");
+		addRule("QScrollBar::handle:horizontal", "background: #3a4037; border-radius: 4px; min-width: 36px;");
+		addRule("QScrollBar::handle:horizontal:hover", "background: #58614f;");
+		addRule("QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal", "width: 0; background: transparent;");
+		addRule("QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal", "background: transparent;");
 		addRule("#ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#ActivityList", "background: transparent; border: none; border-radius: 0; padding: 0;");
 		addRule("#ActivityRunRow", "background: transparent; border: 1px solid transparent; padding: 1px 0;");

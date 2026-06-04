@@ -30,6 +30,7 @@ namespace SparkleLauncher
 	struct LauncherOperationDescriptor;
 	class LauncherProjectModel;
 	class LauncherSettings;
+	struct DependencyGroupUiEntry;
 	struct ThirdPartyDependencyUiEntry;
 
 	class LauncherMainWindow final : public QMainWindow
@@ -104,6 +105,8 @@ namespace SparkleLauncher
 			Cook,
 			Run,
 			Package,
+			System,
+			Settings,
 			Maintain,
 			Queued,
 			Running,
@@ -129,16 +132,21 @@ namespace SparkleLauncher
 		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
+		void AddPageTabs(QVBoxLayout& layout, const QStringList& tabs, const QString& activeTab = QString());
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
 		QVBoxLayout* AddDetailsGroup(QVBoxLayout& layout, const QString& title, const QString& detail, bool expanded = false);
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
+		QFrame* CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
+		void AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails);
 		QFrame* CreateHomeHeroCard(const QString& status, const QString& detail, const QString& state, QWidget* primaryAction, QWidget* secondaryAction = nullptr);
-		QFrame* CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action = nullptr);
+		QFrame* CreateHomeCapabilityCard(const QString& title, const QString& status, const QString& detail, const QString& state, QWidget* action = nullptr, const QString& tileRole = "discover");
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeCommandCenter(QVBoxLayout& layout);
+		void AddSystemOverviewPage(QVBoxLayout& layout);
+		void AddSettingsPage(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
@@ -175,7 +183,6 @@ namespace SparkleLauncher
 		    const QString& cleanScope = QString(),
 		    const QString& cleanTitle = QString(),
 		    bool navigateInsteadOfRun = false);
-		QWidget* CreateHomeEvidenceActions();
 		QWidget* CreateFolderShortcutActions();
 		void OpenLocalPath(const std::filesystem::path& path);
 		void CopyDiagnosticsSummary();
