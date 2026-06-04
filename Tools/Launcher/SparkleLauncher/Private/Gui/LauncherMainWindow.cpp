@@ -3334,6 +3334,7 @@ namespace SparkleLauncher
 		static constexpr int kProductCardMaxWidth = 720;
 		static constexpr int kDiscoverCardMinWidth = (kProductCardMinWidth - kHomeTileSpacing) / 2;
 		static constexpr int kDiscoverCardMaxWidth = (kProductCardMaxWidth - kHomeTileSpacing) / 2;
+		static constexpr int kDiscoverCardMaxColumns = 6;
 		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(kProductCardMinWidth, kProductCardMaxWidth, 2, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
@@ -3373,7 +3374,7 @@ namespace SparkleLauncher
 		}
 
 		addHomeSection("Discover");
-		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(kDiscoverCardMinWidth, kDiscoverCardMaxWidth, 4, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
+		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(kDiscoverCardMinWidth, kDiscoverCardMaxWidth, kDiscoverCardMaxColumns, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
 
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
