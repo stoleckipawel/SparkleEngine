@@ -133,6 +133,7 @@ namespace SparkleLauncher
 		void AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails);
 		std::filesystem::path FindLauncherVisualAsset(const QString& fileName) const;
 		QLabel* CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize);
+		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
 		QFrame* CreateHomeHeroCard(
 		    const QString& status,
 		    const QString& detail,
@@ -153,7 +154,7 @@ namespace SparkleLauncher
 		void AddHomeQuickStart(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
-		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail);
+		void AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeStartupLevel);
 		void AddLaunchApplicationOptions(QVBoxLayout& layout);
 		void AddSmokeValidationOptions(QVBoxLayout& layout);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);

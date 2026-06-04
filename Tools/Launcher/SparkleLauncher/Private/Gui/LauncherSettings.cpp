@@ -108,6 +108,11 @@ namespace SparkleLauncher
 		return m_launchTarget;
 	}
 
+	const QString& LauncherSettings::LaunchStartupLevel() const
+	{
+		return m_launchStartupLevel;
+	}
+
 	const QString& LauncherSettings::LaunchVSync() const
 	{
 		return m_launchVSync;
@@ -348,6 +353,17 @@ namespace SparkleLauncher
 			return;
 		}
 		m_launchTarget = target;
+		emit SettingsChanged();
+	}
+
+	void LauncherSettings::SetLaunchStartupLevel(const QString& levelName)
+	{
+		const QString normalized = levelName.trimmed().isEmpty() ? QString("Sponza") : levelName.trimmed();
+		if (m_launchStartupLevel == normalized)
+		{
+			return;
+		}
+		m_launchStartupLevel = normalized;
 		emit SettingsChanged();
 	}
 

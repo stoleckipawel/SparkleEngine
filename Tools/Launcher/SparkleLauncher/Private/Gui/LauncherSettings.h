@@ -25,6 +25,7 @@ namespace SparkleLauncher
 		const QString& ShaderDebugArtifactDirectory() const;
 		const QString& LaunchBackend() const;
 		const QString& LaunchTarget() const;
+		const QString& LaunchStartupLevel() const;
 		const QString& LaunchVSync() const;
 		const QString& LaunchHighPerformanceAdapter() const;
 		const QString& LaunchMeshAutoBatching() const;
@@ -69,6 +70,7 @@ namespace SparkleLauncher
 		void SetShaderStripDebugInfo(bool enabled);
 		void SetLaunchBackend(const QString& backend);
 		void SetLaunchTarget(const QString& target);
+		void SetLaunchStartupLevel(const QString& levelName);
 		void SetLaunchVSync(const QString& value);
 		void SetLaunchHighPerformanceAdapter(const QString& value);
 		void SetLaunchMeshAutoBatching(const QString& value);
@@ -104,6 +106,7 @@ namespace SparkleLauncher
 		QString m_shaderDebugArtifactDirectory;
 		QString m_launchBackend;
 		QString m_launchTarget = "editor";
+		QString m_launchStartupLevel = "Sponza";
 		QString m_launchVSync;
 		QString m_launchHighPerformanceAdapter;
 		QString m_launchMeshAutoBatching;

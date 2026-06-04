@@ -206,6 +206,7 @@ namespace SparkleLauncher
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 		launchRequest.Target = request.LaunchTarget.toStdString();
+		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();

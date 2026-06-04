@@ -31,7 +31,9 @@
 #include <QtGui/QFontDatabase>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QKeySequence>
+#include <QtGui/QLinearGradient>
 #include <QtGui/QPainter>
+#include <QtGui/QPen>
 #include <QtGui/QPixmap>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
@@ -68,10 +70,10 @@ namespace SparkleLauncher
 	static constexpr int kSpaceLarge = 16;
 	static constexpr int kPanelHorizontalMargin = 18;
 	static constexpr int kPanelVerticalMargin = 14;
-	static constexpr int kWorkflowRailWidth = 80;
+	static constexpr int kWorkflowRailWidth = 86;
 	static constexpr int kWorkflowGroupMinHeight = 58;
-	static constexpr int kWorkflowButtonMinHeight = 32;
-	static constexpr int kFieldLabelWidth = 116;
+	static constexpr int kWorkflowButtonMinHeight = 36;
+	static constexpr int kFieldLabelWidth = 132;
 	static constexpr int kOperationOutputMinHeight = 96;
 	static constexpr int kOperationOutputCompactMaxHeight = 128;
 	static constexpr int kOperationOutputProminentMinHeight = 136;
@@ -122,6 +124,182 @@ namespace SparkleLauncher
 		QString Detail;
 		bool NavigateOnly = false;
 	};
+
+	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool heroTreatment, bool softTreatment)
+	{
+		if (source.isNull() || targetSize.isEmpty())
+		{
+			return source;
+		}
+
+		const QPixmap scaled = source.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+		const QRect cropRect(
+		    std::max(0, (scaled.width() - targetSize.width()) / 2),
+		    std::max(0, (scaled.height() - targetSize.height()) / 2),
+		    targetSize.width(),
+		    targetSize.height());
+		QPixmap result(targetSize);
+		result.fill(Qt::transparent);
+
+		QPainter painter(&result);
+		painter.setRenderHint(QPainter::Antialiasing, true);
+		painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
+
+		QLinearGradient leftFade(0, 0, targetSize.width(), 0);
+		leftFade.setColorAt(0.0, QColor(4, 6, 5, heroTreatment ? 238 : 210));
+		leftFade.setColorAt(heroTreatment ? 0.38 : 0.28, QColor(4, 6, 5, heroTreatment ? 190 : 128));
+		leftFade.setColorAt(0.72, QColor(4, 6, 5, softTreatment ? 96 : 42));
+		leftFade.setColorAt(1.0, QColor(4, 6, 5, 18));
+		painter.fillRect(result.rect(), leftFade);
+
+		QLinearGradient bottomFade(0, 0, 0, targetSize.height());
+		bottomFade.setColorAt(0.0, QColor(4, 6, 5, softTreatment ? 32 : 8));
+		bottomFade.setColorAt(0.58, QColor(4, 6, 5, 12));
+		bottomFade.setColorAt(1.0, QColor(4, 6, 5, heroTreatment ? 210 : 170));
+		painter.fillRect(result.rect(), bottomFade);
+
+		QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
+		limeSweep.setColorAt(0.0, QColor(118, 185, 0, heroTreatment ? 18 : 10));
+		limeSweep.setColorAt(0.48, QColor(118, 185, 0, heroTreatment ? 36 : 22));
+		limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
+		painter.fillRect(result.rect(), limeSweep);
+
+		if (heroTreatment)
+		{
+			painter.setPen(QPen(QColor(118, 185, 0, 165), 2));
+			const int accentX = std::clamp(targetSize.width() / 3, 140, targetSize.width() - 48);
+			painter.drawLine(accentX, 0, accentX, targetSize.height());
+		}
+
+		return result;
+	}
+
+	static QString VisualAssetForOperation(const QString& operationId)
+	{
+		if (operationId == "project.open.editor" || operationId == "project.run" || operationId == "project.run.smoke")
+		{
+			return operationId == "project.run.smoke" ? "sparkle-validation.png" : "showcase-editor.png";
+		}
+		if (operationId == "project.open.runtime")
+		{
+			return "showcase-runtime.png";
+		}
+		if (operationId == "workspace.setup" || operationId == "toolchain.check")
+		{
+			return "sparkle-source-tiers.png";
+		}
+		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "workspace.build-all" || operationId.startsWith("project.build.") || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
+		{
+			return "sparkle-tools.png";
+		}
+		if (operationId.startsWith("cook."))
+		{
+			return "showcase-content.png";
+		}
+		if (operationId == "package.release")
+		{
+			return "sparkle-package.png";
+		}
+		if (operationId == "workspace.clean")
+		{
+			return "sparkle-architecture.png";
+		}
+		if (operationId == "quality.format")
+		{
+			return "sparkle-validation.png";
+		}
+		return {};
+	}
+
+	static QString VisualBannerTitleForOperation(const QString& operationId)
+	{
+		if (operationId == "project.open.editor" || operationId == "project.open.runtime" || operationId == "project.run")
+		{
+			return "Launch view";
+		}
+		if (operationId == "workspace.setup")
+		{
+			return "Source tiers";
+		}
+		if (operationId == "toolchain.check")
+		{
+			return "Host readiness";
+		}
+		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution")
+		{
+			return "Workspace files";
+		}
+		if (operationId.startsWith("project.build.") || operationId == "workspace.build-all" || operationId == "launcher.build.self")
+		{
+			return "Build outputs";
+		}
+		if (operationId.startsWith("cook."))
+		{
+			return "Content outputs";
+		}
+		if (operationId == "project.run.smoke")
+		{
+			return "Validation run";
+		}
+		if (operationId == "package.release")
+		{
+			return "Release assembly";
+		}
+		if (operationId == "workspace.clean")
+		{
+			return "Generated files";
+		}
+		if (operationId == "quality.format")
+		{
+			return "Code quality";
+		}
+		return "Workflow";
+	}
+
+	static QString VisualBannerTextForOperation(const QString& operationId)
+	{
+		if (operationId == "project.open.editor" || operationId == "project.open.runtime" || operationId == "project.run")
+		{
+			return "Uses the selected project, target, startup level, and runtime options from this page.";
+		}
+		if (operationId == "workspace.setup")
+		{
+			return "Sync only the capability tiers you need; optional tiers unlock build and cook paths without becoming first-run blockers.";
+		}
+		if (operationId == "toolchain.check")
+		{
+			return "Checks installed tools without changing source dependencies, artifacts, or cooked outputs.";
+		}
+		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution")
+		{
+			return "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.";
+		}
+		if (operationId.startsWith("project.build.") || operationId == "workspace.build-all" || operationId == "launcher.build.self")
+		{
+			return "Creates local artifacts that can replace packaged binaries during daily development.";
+		}
+		if (operationId.startsWith("cook."))
+		{
+			return "Refreshes cooked content for the selected project and startup level.";
+		}
+		if (operationId == "project.run.smoke")
+		{
+			return "Runs a focused confidence check using the same launch parameters as the product path.";
+		}
+		if (operationId == "package.release")
+		{
+			return "Stages reviewable release packages from artifacts and manifests; publishing remains a separate sign-off.";
+		}
+		if (operationId == "workspace.clean")
+		{
+			return "Shows what generated state will be removed and what will stay before destructive cleanup.";
+		}
+		if (operationId == "quality.format")
+		{
+			return "Applies source formatting while leaving build artifacts and cooked content alone.";
+		}
+		return "Context artwork is informational; the primary action remains in the workflow controls below.";
+	}
 
 	static void ApplyNativeDarkTitleBar(QWidget& window)
 	{
@@ -1233,8 +1411,8 @@ namespace SparkleLauncher
 		QFrame* titleBand = new QFrame(panel);
 		titleBand->setObjectName("TitleBand");
 		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
-		titleBandLayout->setContentsMargins(18, 0, 12, 0);
-		titleBandLayout->setSpacing(12);
+		titleBandLayout->setContentsMargins(20, 0, 12, 0);
+		titleBandLayout->setSpacing(14);
 
 		QVBoxLayout* titleStack = new QVBoxLayout();
 		titleStack->setContentsMargins(0, 0, 0, 0);
@@ -1325,7 +1503,7 @@ namespace SparkleLauncher
 		panel->setObjectName("HeaderUtilityPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(8);
+		rowLayout->setSpacing(10);
 
 		QLabel* projectLabel = CreateFieldLabel("Project");
 		projectLabel->setObjectName("HeaderFieldLabel");
@@ -1382,14 +1560,14 @@ namespace SparkleLauncher
 		scrollArea->setObjectName("OptionsScrollArea");
 		scrollArea->setWidgetResizable(true);
 		scrollArea->setFrameShape(QFrame::NoFrame);
-		scrollArea->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+		scrollArea->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
-		content->setMaximumWidth(1320);
+		content->setMaximumWidth(1340);
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(24, 18, 24, 28);
-		layout->setSpacing(8);
+		layout->setContentsMargins(28, 22, 28, 32);
+		layout->setSpacing(10);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -1653,6 +1831,7 @@ namespace SparkleLauncher
 		}
 
 		AddWorkflowPageHeader(layout, operationId);
+		AddWorkflowVisualBanner(layout, operationId);
 
 		if (operationId == "package.release")
 		{
@@ -1857,7 +2036,7 @@ namespace SparkleLauncher
 		if (operationId == "project.run.smoke")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			AddLaunchTargetOptions(layout, "Smoke Target", "Choose which project executable should run with smoke validation.");
+			AddLaunchTargetOptions(layout, "Smoke Target", "Choose which project executable should run with smoke validation.", false);
 			AddLaunchApplicationOptions(layout);
 			AddSmokeValidationOptions(layout);
 			QVBoxLayout* gateLayout = AddDetailsGroup(
@@ -1874,7 +2053,7 @@ namespace SparkleLauncher
 		if (operationId == "project.run")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			AddLaunchTargetOptions(layout, "Launch Target", "Choose whether this launch starts the editor or runtime.");
+			AddLaunchTargetOptions(layout, "Launch Project", "Choose target and startup level for the selected project.", true);
 			AddLaunchApplicationOptions(layout);
 			return;
 		}
@@ -2265,11 +2444,57 @@ namespace SparkleLauncher
 
 		QLabel* artwork = new QLabel(this);
 		artwork->setObjectName(objectName);
-		artwork->setPixmap(pixmap);
+		const bool heroTreatment = objectName == "CommandHeroArtwork";
+		const bool softTreatment = objectName == "WorkflowVisualArtwork" || objectName == "CommandCardArtwork";
+		const QSize artworkSize = minimumSize.isEmpty() ? QSize(360, 180) : minimumSize;
+		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, heroTreatment, softTreatment));
 		artwork->setScaledContents(true);
 		artwork->setMinimumSize(minimumSize);
 		artwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
 		return artwork;
+	}
+
+	void LauncherMainWindow::AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId)
+	{
+		const QString artworkFileName = VisualAssetForOperation(operationId);
+		if (artworkFileName.isEmpty())
+		{
+			return;
+		}
+
+		QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", QSize(360, 118));
+		if (artwork == nullptr)
+		{
+			return;
+		}
+
+		QFrame* banner = new QFrame(this);
+		banner->setObjectName("WorkflowVisualBanner");
+		banner->setMinimumHeight(118);
+		QHBoxLayout* shellLayout = new QHBoxLayout(banner);
+		shellLayout->setContentsMargins(0, 0, 0, 0);
+		shellLayout->setSpacing(0);
+
+		QWidget* copyPane = new QWidget(banner);
+		copyPane->setObjectName("WorkflowVisualCopyPane");
+		QVBoxLayout* copyLayout = new QVBoxLayout(copyPane);
+		copyLayout->setContentsMargins(18, 14, 18, 14);
+		copyLayout->setSpacing(8);
+
+		QLabel* title = new QLabel(VisualBannerTitleForOperation(operationId), banner);
+		title->setObjectName("WorkflowVisualTitle");
+		copyLayout->addWidget(title);
+
+		QLabel* detail = new QLabel(VisualBannerTextForOperation(operationId), banner);
+		detail->setObjectName("WorkflowVisualText");
+		detail->setWordWrap(true);
+		copyLayout->addWidget(detail, 1);
+
+		shellLayout->addWidget(copyPane, 1);
+		artwork->setParent(banner);
+		shellLayout->addWidget(artwork, 0);
+
+		layout.addWidget(banner);
 	}
 
 	QFrame* LauncherMainWindow::CreateHomeHeroCard(
@@ -2329,10 +2554,32 @@ namespace SparkleLauncher
 
 		shellLayout->addWidget(copyPane, 1);
 
-		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(420, 220)))
+		if (QLabel* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandHeroArtwork", QSize(520, 220)))
 		{
-			artwork->setParent(card);
-			shellLayout->addWidget(artwork, 2);
+			QFrame* artworkPane = new QFrame(card);
+			artworkPane->setObjectName("CommandHeroArtworkPane");
+			QVBoxLayout* artworkLayout = new QVBoxLayout(artworkPane);
+			artworkLayout->setContentsMargins(0, 0, 0, 10);
+			artworkLayout->setSpacing(0);
+			artwork->setParent(artworkPane);
+			artworkLayout->addWidget(artwork, 1);
+
+			QHBoxLayout* carouselLayout = new QHBoxLayout();
+			carouselLayout->setContentsMargins(0, 0, 0, 0);
+			carouselLayout->setSpacing(8);
+			carouselLayout->addStretch(1);
+			for (int index = 0; index < 5; ++index)
+			{
+				QFrame* dot = new QFrame(artworkPane);
+				dot->setObjectName("CommandCarouselDot");
+				dot->setProperty("Active", index == 0);
+				dot->setFixedSize(index == 0 ? QSize(34, 5) : QSize(28, 5));
+				carouselLayout->addWidget(dot);
+			}
+			carouselLayout->addStretch(1);
+			artworkLayout->addLayout(carouselLayout);
+
+			shellLayout->addWidget(artworkPane, 2);
 		}
 		return card;
 	}
@@ -2423,6 +2670,7 @@ namespace SparkleLauncher
 			launchRequest.EditorProfile = request.EditorProfile.toStdString();
 			launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 			launchRequest.Target = request.LaunchTarget.toStdString();
+			launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
 			launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 			launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 			launchRequest.VSync = request.LaunchVSync.toStdString();
@@ -2523,15 +2771,18 @@ namespace SparkleLauncher
 		QLabel* productTitle = new QLabel("Sparkle Engine", identity);
 		productTitle->setObjectName("CommandProductTitle");
 		titleLayout->addWidget(productTitle);
-		QLabel* productSubtitle = new QLabel("Quick start for the Showcase project", identity);
+		const QString selectedProjectName = m_projectModel.SelectedProjectId();
+		const QString quickStartSubtitle = selectedProjectName.isEmpty() ? QString("Quick start for the selected project") : QStringLiteral("Quick start for the %1 project").arg(selectedProjectName);
+		QLabel* productSubtitle = new QLabel(quickStartSubtitle, identity);
 		productSubtitle->setObjectName("CommandProductSubtitle");
 		titleLayout->addWidget(productSubtitle);
 		identityLayout->addLayout(titleLayout, 1);
 		layout.addWidget(identity);
 
 		const QString launchProvenance = packageRoot ? "bundled package components" : "local source artifacts";
-		const QString heroTitle = "Explore Showcase";
-		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products launch from %1 when available; rebuild and recook remain optional refresh paths.").arg(launchProvenance);
+		const QString heroTitle = "Explore Project";
+		const QString heroDetail = QStringLiteral("Choose Editor or Runtime below. Products use the Launch Project settings, including startup level %1, and launch from %2 when available.")
+		                               .arg(m_settings.LaunchStartupLevel(), launchProvenance);
 		layout.addWidget(CreateHomeHeroCard(
 		    heroTitle,
 		    heroDetail,
@@ -2548,11 +2799,11 @@ namespace SparkleLauncher
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
-		    QStringLiteral("Launch the Showcase editor from %1.").arg(launchProvenance) :
+		    QStringLiteral("Launch the selected project editor from %1.").arg(launchProvenance) :
 		    "Editor output is not ready yet. Build the editor target to unlock this launch path.";
 		const QString editorCardOperationId = editorPlan.CanRun ? "project.open.editor" : "project.build.editor";
 		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Showcase Editor",
+		                           "Editor",
 		                           editorStatus,
 		                           editorDetail,
 		                           editorPlan.CanRun ? "ok" : "warning",
@@ -2563,11 +2814,11 @@ namespace SparkleLauncher
 		    libraryColumn++);
 		const QString runtimeStatus = runtimePlan.CanRun ? "Ready" : (runtimeExecutableMissing ? "Missing" : "Blocked");
 		const QString runtimeDetail = runtimePlan.CanRun ?
-		    QStringLiteral("Run the Showcase runtime from %1.").arg(launchProvenance) :
+		    QStringLiteral("Run the selected project runtime from %1.").arg(launchProvenance) :
 		    "Runtime output is not ready yet. Build the runtime target to unlock the standalone path.";
 		const QString runtimeCardOperationId = runtimePlan.CanRun ? "project.open.runtime" : "project.build.runtime";
 		libraryGrid->addWidget(CreateHomeCapabilityCard(
-		                           "Showcase Runtime",
+		                           "Runtime",
 		                           runtimeStatus,
 		                           runtimeDetail,
 		                           runtimePlan.CanRun ? "ok" : "warning",
@@ -2922,6 +3173,7 @@ namespace SparkleLauncher
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 		launchRequest.Target = request.LaunchTarget.toStdString();
+		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
 		launchRequest.EnableSmokeTest = request.LaunchSmokeTest;
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
@@ -3020,7 +3272,7 @@ namespace SparkleLauncher
 		    CreateActionDependencyActions("cook.shaders", "Cook Shaders"));
 	}
 
-	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail)
+	void LauncherMainWindow::AddLaunchTargetOptions(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeStartupLevel)
 	{
 		QVBoxLayout* targetLayout = AddOptionGroup(layout, title, detail);
 		AddOptionField(
@@ -3030,6 +3282,22 @@ namespace SparkleLauncher
 		        {{"Editor", "editor"}, {"Runtime", "runtime"}},
 		        m_settings.LaunchTarget(),
 		        &LauncherSettings::SetLaunchTarget));
+		if (includeStartupLevel)
+		{
+			AddOptionField(
+			    *targetLayout,
+			    "Startup level",
+			    CreateValueCombo(
+			        {{"Sponza", "Sponza"},
+			            {"Bistro", "Bistro"},
+			            {"A Beautiful Game", "ABeautifulGame"},
+			            {"Damaged Helmet", "DamagedHelmet"},
+			            {"Cesium Man", "CesiumMan"},
+			            {"Diffuse Transmission Plant", "DiffuseTransmissionPlant"},
+			            {"Empty", "Empty"}},
+			        m_settings.LaunchStartupLevel(),
+			        &LauncherSettings::SetLaunchStartupLevel));
+		}
 	}
 
 	void LauncherMainWindow::AddLaunchApplicationOptions(QVBoxLayout& layout)
@@ -4141,6 +4409,7 @@ namespace SparkleLauncher
 		                                          QString();
 		request.LaunchBackend = m_settings.LaunchBackend();
 		request.LaunchTarget = m_settings.LaunchTarget();
+		request.LaunchStartupLevel = m_settings.LaunchStartupLevel();
 		request.LaunchVSync = m_settings.LaunchVSync();
 		request.LaunchHighPerformanceAdapter = m_settings.LaunchHighPerformanceAdapter();
 		request.LaunchMeshAutoBatching = m_settings.LaunchMeshAutoBatching();
@@ -4347,6 +4616,7 @@ namespace SparkleLauncher
 		launchRequest.EditorProfile = request.EditorProfile.toStdString();
 		launchRequest.RuntimeProfile = request.RuntimeProfile.toStdString();
 		launchRequest.Target = request.LaunchTarget.toStdString();
+		launchRequest.StartupLevel = request.LaunchStartupLevel.toStdString();
 		launchRequest.GraphicsBackend = request.LaunchBackend.toStdString();
 		launchRequest.VSync = request.LaunchVSync.toStdString();
 		launchRequest.PreferHighPerformanceAdapter = request.LaunchHighPerformanceAdapter.toStdString();

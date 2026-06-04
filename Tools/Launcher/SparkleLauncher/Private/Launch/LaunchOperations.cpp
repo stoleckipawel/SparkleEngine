@@ -23,6 +23,14 @@ namespace SparkleLauncher
 		plan.PlannedEffects.push_back(std::move(message));
 	}
 
+	static void AddEnvironment(LaunchOperationPlan& plan, std::string name, std::string value)
+	{
+		EnvironmentOverride overrideValue;
+		overrideValue.Name = std::move(name);
+		overrideValue.Value = std::move(value);
+		plan.Environment.push_back(std::move(overrideValue));
+	}
+
 	static bool IsRuntimeLaunchTarget(const LaunchOperationRequest& request)
 	{
 		return request.Target == "runtime";
@@ -195,6 +203,10 @@ namespace SparkleLauncher
 		plan.Operation.Inputs.push_back({"project", request.ProjectId});
 		plan.Operation.Inputs.push_back({"target", IsRuntimeLaunchTarget(request) ? "runtime" : "editor"});
 		plan.Operation.Inputs.push_back({"profile", plan.Profile});
+		if (!request.StartupLevel.empty())
+		{
+			plan.Operation.Inputs.push_back({"startupLevel", request.StartupLevel});
+		}
 		if (request.EnableSmokeTest)
 		{
 			plan.Operation.Inputs.push_back({"smokeTest", "enabled"});
@@ -237,6 +249,10 @@ namespace SparkleLauncher
 		plan.ExecutablePath = ResolveLaunchExecutablePath(request, plan.Profile, plan.TargetName);
 		plan.WorkingDirectory = request.RepositoryRoot / "Projects" / request.ProjectId;
 		PopulateRhiSmokeLaunchEnvironment(plan);
+		if (!request.StartupLevel.empty())
+		{
+			AddEnvironment(plan, "SPARKLE_STARTUP_LEVEL", request.StartupLevel);
+		}
 
 		std::error_code errorCode;
 		const bool executableExists = std::filesystem::exists(plan.ExecutablePath, errorCode);
@@ -268,6 +284,10 @@ namespace SparkleLauncher
 		if (!request.MeshAutoBatching.empty())
 		{
 			AddPlannedEffect(plan, "Set r.MeshAutoBatching=" + request.MeshAutoBatching + ".");
+		}
+		if (!request.StartupLevel.empty())
+		{
+			AddPlannedEffect(plan, "Use startup level: " + request.StartupLevel + ".");
 		}
 		if (!request.CustomArguments.empty())
 		{

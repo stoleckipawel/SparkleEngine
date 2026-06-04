@@ -25,6 +25,7 @@ namespace SparkleLauncher
 		WorkspaceIde WorkspaceIdePreference = WorkspaceIde::VisualStudio;
 		std::string DryRunOperationId;
 		std::string LaunchTarget = "editor";
+		std::string LaunchStartupLevel = "Sponza";
 		bool EnableSmokeTest = false;
 		std::string SmokeBackend;
 		std::string SmokeFrameLimit;

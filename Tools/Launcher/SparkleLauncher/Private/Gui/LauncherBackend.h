@@ -53,6 +53,7 @@ namespace SparkleLauncher
 		QString ShaderDebugArtifactDirectory;
 		QString LaunchBackend;
 		QString LaunchTarget;
+		QString LaunchStartupLevel;
 		QString LaunchVSync;
 		QString LaunchHighPerformanceAdapter;
 		QString LaunchMeshAutoBatching;

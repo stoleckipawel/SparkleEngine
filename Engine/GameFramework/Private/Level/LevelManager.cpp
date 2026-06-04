@@ -8,10 +8,26 @@
 #include "Scene/GameScene.h"
 #include "Scene/Camera/SceneCamera.h"
 #include "Scene/Lighting/SceneLighting.h"
+#include "Environment/EnvironmentVariables.h"
 
 #include <algorithm>
 
 static const auto g_levelManagerLogger = Logging::GetOrCreateLogger("GameFramework.LevelManager");
+
+namespace
+{
+	constexpr std::string_view kDefaultStartupLevelName = "Sponza";
+	std::string ResolveStartupLevelName() noexcept
+	{
+		std::string requestedLevelName;
+		if (Environment::TryGetVariable("SPARKLE_STARTUP_LEVEL", requestedLevelName) && !requestedLevelName.empty())
+		{
+			return requestedLevelName;
+		}
+
+		return std::string(kDefaultStartupLevelName);
+	}
+}
 
 LevelManager::LevelManager(GameScene& scene, Assets::SceneAssetManager& sceneAssetManager) noexcept :
     m_gameScene(&scene), m_sceneAssetManager(&sceneAssetManager)
@@ -27,12 +43,14 @@ void LevelManager::InitializeStartupLevel() noexcept
 		return;
 	}
 
-	LevelAsset* startupLevel = m_levelRegistry.FindLevelOrDefault(GetStartupLevelName());
+	const std::string requestedStartupLevelName = ResolveStartupLevelName();
+	LevelAsset* startupLevel = m_levelRegistry.FindLevelOrDefault(requestedStartupLevelName);
 	if (!startupLevel)
 	{
 		SPDLOG_LOGGER_WARN(
 		    g_levelManagerLogger,
-		    "LevelManager: Startup level initialization failed because no registered level could be resolved");
+		    "LevelManager: Startup level initialization failed because no registered level could be resolved for '{}'",
+		    requestedStartupLevelName);
 		m_activeLevel = nullptr;
 		return;
 	}
