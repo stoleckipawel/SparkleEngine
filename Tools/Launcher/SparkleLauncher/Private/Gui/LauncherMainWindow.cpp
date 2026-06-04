@@ -136,14 +136,50 @@ namespace SparkleLauncher
 	class FadingArtworkWidget final : public QWidget
 	{
 	public:
-		FadingArtworkWidget(QPixmap source, bool heroTreatment, bool softTreatment, QWidget* parent = nullptr)
+		FadingArtworkWidget(QPixmap source, bool heroTreatment, bool softTreatment, double targetAspectRatio = 0.0, QWidget* parent = nullptr)
 		    : QWidget(parent)
 		    , m_source(std::move(source))
 		    , m_heroTreatment(heroTreatment)
 		    , m_softTreatment(softTreatment)
+		    , m_aspectRatio(targetAspectRatio > 0.0 ? targetAspectRatio : AspectRatioFor(m_source))
 		{
 			setAttribute(Qt::WA_StyledBackground, true);
 			setAttribute(Qt::WA_OpaquePaintEvent, false);
+			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+			policy.setHeightForWidth(true);
+			setSizePolicy(policy);
+		}
+
+		bool hasHeightForWidth() const override
+		{
+			return true;
+		}
+
+		int heightForWidth(int width) const override
+		{
+			if (width <= 0 || m_aspectRatio <= 0.0)
+			{
+				return QWidget::heightForWidth(width);
+			}
+
+			return std::max(1, static_cast<int>(std::round(static_cast<double>(width) / m_aspectRatio)));
+		}
+
+		QSize sizeHint() const override
+		{
+			const int width = m_source.isNull() ? 360 : std::clamp(m_source.width(), 240, 960);
+			return QSize(width, heightForWidth(width));
+		}
+
+	private:
+		static double AspectRatioFor(const QPixmap& pixmap)
+		{
+			if (pixmap.isNull() || pixmap.height() <= 0)
+			{
+				return 16.0 / 9.0;
+			}
+
+			return static_cast<double>(pixmap.width()) / static_cast<double>(pixmap.height());
 		}
 
 	protected:
@@ -258,6 +294,33 @@ namespace SparkleLauncher
 		QPixmap m_source;
 		bool m_heroTreatment = false;
 		bool m_softTreatment = false;
+		double m_aspectRatio = 16.0 / 9.0;
+	};
+
+	class ProportionalCardFrame final : public QFrame
+	{
+	public:
+		explicit ProportionalCardFrame(double aspectRatio, QWidget* parent = nullptr)
+		    : QFrame(parent)
+		    , m_aspectRatio(aspectRatio > 0.0 ? aspectRatio : 16.0 / 9.0)
+		{
+			QSizePolicy policy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+			policy.setHeightForWidth(true);
+			setSizePolicy(policy);
+		}
+
+		bool hasHeightForWidth() const override
+		{
+			return true;
+		}
+
+		int heightForWidth(int width) const override
+		{
+			return std::max(1, static_cast<int>(std::round(static_cast<double>(std::max(1, width)) / m_aspectRatio)));
+		}
+
+	private:
+		double m_aspectRatio = 16.0 / 9.0;
 	};
 
 	class HomeHeroCardWidget final : public QFrame
@@ -579,6 +642,12 @@ namespace SparkleLauncher
 			{
 				m_cards[index]->setMinimumWidth(cardWidth);
 				m_cards[index]->setMaximumWidth(cardWidth);
+				if (m_cards[index]->hasHeightForWidth())
+				{
+					const int cardHeight = m_cards[index]->heightForWidth(cardWidth);
+					m_cards[index]->setMinimumHeight(cardHeight);
+					m_cards[index]->setMaximumHeight(cardHeight);
+				}
 				m_layout->addWidget(m_cards[index], index / columns, index % columns, Qt::AlignLeft | Qt::AlignTop);
 			}
 
@@ -2909,14 +2978,12 @@ namespace SparkleLauncher
 			return nullptr;
 		}
 
-		QLabel* artwork = new QLabel(this);
-		artwork->setObjectName(objectName);
 		const bool heroTreatment = objectName == "CommandHeroArtwork";
 		const bool softTreatment = objectName == "WorkflowVisualArtwork" || objectName == "CommandCardArtwork";
 		const QSize artworkSize = minimumSize.isEmpty() ? QSize(360, 180) : minimumSize;
 		if (heroTreatment)
 		{
-			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, this);
+			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, 0.0, this);
 			heroArtwork->setObjectName(objectName);
 			heroArtwork->setMinimumHeight(minimumSize.height());
 			heroArtwork->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -2924,7 +2991,23 @@ namespace SparkleLauncher
 			return heroArtwork;
 		}
 
-		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, softTreatment));
+		if (softTreatment)
+		{
+			const double artworkAspectRatio =
+			    artworkSize.height() > 0 ? static_cast<double>(artworkSize.width()) / static_cast<double>(artworkSize.height()) : 0.0;
+			FadingArtworkWidget* processedArtwork = new FadingArtworkWidget(pixmap, false, true, artworkAspectRatio, this);
+			processedArtwork->setObjectName(objectName);
+			processedArtwork->setMinimumSize(QSize(artworkSize.width(), processedArtwork->heightForWidth(artworkSize.width())));
+			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+			policy.setHeightForWidth(true);
+			processedArtwork->setSizePolicy(policy);
+			processedArtwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
+			return processedArtwork;
+		}
+
+		QLabel* artwork = new QLabel(this);
+		artwork->setObjectName(objectName);
+		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, false));
 		artwork->setScaledContents(true);
 		artwork->setMinimumSize(minimumSize);
 		artwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
@@ -3038,24 +3121,29 @@ namespace SparkleLauncher
 	    const QString& tileRole,
 	    const QString& artworkFileName)
 	{
-		QFrame* card = new QFrame(this);
+		static constexpr double kHomeTileAspectRatio = 1.64;
+		QFrame* card = new ProportionalCardFrame(kHomeTileAspectRatio, this);
 		card->setObjectName("CommandCapabilityCard");
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
 		const bool hasArtwork = !FindLauncherVisualAsset(artworkFileName).empty();
 		const bool isLibraryCard = tileRole == "library";
-		const bool flushArtwork = isLibraryCard && hasArtwork;
-		card->setMinimumHeight(isLibraryCard ? (hasArtwork ? 300 : 178) : (hasArtwork ? 190 : 148));
+		const bool isDiscoverCard = tileRole == "discover";
+		const bool flushArtwork = hasArtwork;
 		QVBoxLayout* layout = new QVBoxLayout(card);
 		layout->setContentsMargins(
 		    flushArtwork ? QMargins(0, 0, 0, 16) :
 		                   QMargins(isLibraryCard ? 18 : 16, hasArtwork ? 12 : (isLibraryCard ? 16 : 14), isLibraryCard ? 18 : 16, isLibraryCard ? 16 : 14));
-		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? 12 : 10));
+		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? 12 : (isDiscoverCard ? 10 : 9)));
 
-		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, isLibraryCard ? 164 : 86)))
+		const QSize artworkDesignSize = isLibraryCard ? QSize(720, 240) : QSize(351, 105);
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", artworkDesignSize))
 		{
 			artwork->setParent(card);
 			artwork->setProperty("TileRole", tileRole);
+			QSizePolicy artworkPolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+			artworkPolicy.setHeightForWidth(true);
+			artwork->setSizePolicy(artworkPolicy);
 			layout->addWidget(artwork);
 		}
 
@@ -3241,7 +3329,12 @@ namespace SparkleLauncher
 		    nullptr,
 		    "showcase-hero.png"));
 
-		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(420, 620, 2, 16, 16, quickStartBody);
+		static constexpr int kHomeTileSpacing = 18;
+		static constexpr int kProductCardMinWidth = 500;
+		static constexpr int kProductCardMaxWidth = 720;
+		static constexpr int kDiscoverCardMinWidth = (kProductCardMinWidth - kHomeTileSpacing) / 2;
+		static constexpr int kDiscoverCardMaxWidth = (kProductCardMaxWidth - kHomeTileSpacing) / 2;
+		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(kProductCardMinWidth, kProductCardMaxWidth, 2, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
@@ -3280,7 +3373,7 @@ namespace SparkleLauncher
 		}
 
 		addHomeSection("Discover");
-		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(260, 340, 5, 16, 16, quickStartBody);
+		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(kDiscoverCardMinWidth, kDiscoverCardMaxWidth, 4, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
 
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
@@ -3289,6 +3382,7 @@ namespace SparkleLauncher
 		    "Product boundaries, artifact layout, packaging model, and launcher workflow intent.",
 		    architectureDoc ? "ok" : "warning",
 		    architectureDoc ? createOpenButton("Open Architecture", m_repositoryRoot / "docs" / "plans" / "build-artifacts-release-architecture-roadmap.md") : nullptr,
+		    "discover",
 		    "sparkle-architecture.png"));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    "Dependency Tiers",
@@ -3297,6 +3391,7 @@ namespace SparkleLauncher
 		                                                  "Sync source tiers only when you need the extra local build or cook capability.",
 		    dependencyDoc ? "ok" : "warning",
 		    dependencyDoc ? createOpenButton("Open Tiers", m_repositoryRoot / "docs" / "dependency-capability-tiers.md") : CreateCommandActionButton("workspace.setup", "Sync Source Tiers", false),
+		    "discover",
 		    "sparkle-source-tiers.png"));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    "Validation",
@@ -3305,6 +3400,7 @@ namespace SparkleLauncher
 		                       "Run smoke tests or open Activity when you want runtime confidence.",
 		    validationReport || storedFailureCount == 0 ? "ok" : "warning",
 		    validationReport ? createOpenButton("Open Report", validationReportPath) : CreateCommandActionButton("project.run.smoke", "Run Smoke Test", false),
+		    "discover",
 		    "sparkle-validation.png"));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    "Package",
@@ -3312,6 +3408,7 @@ namespace SparkleLauncher
 		    packagePresent ? "Open assembled release folders." : "Assemble a release package from artifacts; publishing remains separate.",
 		    packagePresent || packagePlan.CanRun ? "ok" : "warning",
 		    packagePresent ? createOpenButton("Open Packages", releaseRoot) : CreateCommandActionButton("package.release", "Assemble", false),
+		    "discover",
 		    "sparkle-package.png"));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    "Content",
@@ -3319,6 +3416,7 @@ namespace SparkleLauncher
 		    missingCookDomains == 0 ? "Cooked content is ready for launch workflows." : "Cook only the missing generated content when local artifacts need it.",
 		    missingCookDomains == 0 ? "ok" : "warning",
 		    CreateCommandActionButton("cook.project", missingCookDomains == 0 ? QStringLiteral("Cook All") : QStringLiteral("Cook Missing"), false),
+		    "discover",
 		    "showcase-content.png"));
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
 		    "Tools",
@@ -3326,6 +3424,7 @@ namespace SparkleLauncher
 		    "Open UX notes or continue into Sync, Build, Cook, Test, Package, and Maintain workflows from the rail.",
 		    uxDoc ? "ok" : "warning",
 		    uxDoc ? createOpenButton("Open UX Notes", m_repositoryRoot / "docs" / "plans" / "launcher-principal-ux-concept.md") : nullptr,
+		    "discover",
 		    "sparkle-tools.png"));
 		bodyLayout->addWidget(discoverGrid);
 		layout.addWidget(quickStartBody);
