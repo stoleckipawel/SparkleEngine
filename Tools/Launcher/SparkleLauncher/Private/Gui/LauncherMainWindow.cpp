@@ -5,6 +5,7 @@
 #include "LauncherProjectModel.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherSettings.h"
+#include "LauncherWorkflowCatalog.h"
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
@@ -73,10 +74,6 @@ namespace SparkleLauncher
 	static constexpr const char* kColorStateSuccess = "#7ee787";
 	static constexpr const char* kColorStateDestructive = "#ff7b72";
 	static constexpr const char* kColorStateWarning = "#ffb454";
-	static constexpr const char* kHomeOperationId = "home.quick-start";
-	static constexpr const char* kSystemOperationId = "system.overview";
-	static constexpr const char* kSettingsOperationId = "settings.launcher";
-
 	struct CleanScopeUiOption
 	{
 		QString Label;
@@ -566,104 +563,6 @@ namespace SparkleLauncher
 		return QString();
 	}
 
-	static QString OperationImpactText(const QString& operationId)
-	{
-		if (operationId == "toolchain.check")
-		{
-			return "Diagnostics only: audits installed host prerequisites and does not modify workspace dependencies or outputs.";
-		}
-		if (operationId == "workspace.setup")
-		{
-			return "Source tiers: populates enabled workspace source tiers and configure state; it does not install host tools.";
-		}
-		if (operationId == "workspace.generate-solution")
-		{
-			return "Workspace files: refreshes generated CMake and IDE state without building products.";
-		}
-		if (operationId == "workspace.open-solution")
-		{
-			return "Navigation only: opens the selected IDE once generated project files are current.";
-		}
-		if (operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId == "cook.tools.prepare")
-		{
-			return "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Cooked outputs: optional local recook that refreshes generated project content.";
-		}
-		if (operationId == "project.open.editor" || operationId == "project.open.runtime")
-		{
-			return "Launch workflow: opens available editor/runtime components and shows which rebuild or recook would refresh missing local outputs.";
-		}
-		if (operationId == "project.run.smoke" || operationId == "project.run")
-		{
-			return "Validate workflow: executes smoke validation or custom launch arguments against the selected target.";
-		}
-		if (operationId == "package.release")
-		{
-			return "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "Maintain: removes selected generated outputs, caches, logs, or local workspace state after confirmation.";
-		}
-		if (operationId == "quality.format")
-		{
-			return "Maintain: formats or checks source files; it does not build, cook, or sync dependencies.";
-		}
-		return QString();
-	}
-
-	static QString WorkflowPrimaryVerb(const QString& operationId)
-	{
-		if (operationId == "toolchain.check")
-		{
-			return "Audit";
-		}
-		if (operationId == "workspace.setup")
-		{
-			return "Sync";
-		}
-		if (operationId == "workspace.generate-solution")
-		{
-			return "Generate";
-		}
-		if (operationId == "workspace.open-solution")
-		{
-			return "Open";
-		}
-		if (operationId.startsWith("project.open."))
-		{
-			return "Launch";
-		}
-		if (operationId.startsWith("project.run."))
-		{
-			return "Validate";
-		}
-		if (operationId.startsWith("project.build") || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
-		{
-			return "Build";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Cook";
-		}
-		if (operationId == "package.release")
-		{
-			return "Assemble";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "Clean";
-		}
-		if (operationId == "quality.format")
-		{
-			return "Format";
-		}
-		return "Run";
-	}
-
 	static HomeNextAction RecoveryActionForFailure(const QString& operationId, const QString& statusText)
 	{
 		if (statusText.contains("generator platform", Qt::CaseInsensitive) || statusText.contains("CMakeCache", Qt::CaseInsensitive) ||
@@ -902,7 +801,7 @@ namespace SparkleLauncher
 		bodyLayout->addWidget(CreateWorkflowSurface(), 1);
 		rootLayout->addLayout(bodyLayout, 1);
 		setCentralWidget(centralWidget);
-		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
 		{
 			SetSelectedOperation(workflows.front().OperationIds.front());
@@ -957,7 +856,7 @@ namespace SparkleLauncher
 			m_operationStack->setCurrentIndex(workflowIndex);
 			SetActiveWorkflowGroup(workflowIndex);
 
-			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+			const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 			if (workflowIndex < workflows.size() && !workflows[workflowIndex].OperationIds.empty())
 			{
 				m_operationStack->setVisible(workflows[workflowIndex].OperationIds.size() > 1);
@@ -1021,7 +920,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == kHomeOperationId)
+		if (m_selectedOperationId == LauncherHomeOperationId())
 		{
 			SetStatusMessage("Use the Command Center cards to launch, prepare, cook, validate, or package.");
 			return;
@@ -1213,10 +1112,10 @@ namespace SparkleLauncher
 		m_operationStack = new QStackedWidget(panel);
 		m_operationStack->setObjectName("OperationStack");
 
-		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
 		{
-			const WorkflowDefinition& workflow = workflows[workflowIndex];
+			const LauncherWorkflowDefinition& workflow = workflows[workflowIndex];
 			QToolButton* groupButton = new QToolButton(panel);
 			groupButton->setText(workflow.Title);
 			groupButton->setObjectName("WorkflowGroupButton");
@@ -1228,7 +1127,7 @@ namespace SparkleLauncher
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
 			groupButton->setProperty("ActiveState", "false");
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
-			groupButton->setIcon(WorkflowIconForIndex(workflowIndex));
+			groupButton->setIcon(WorkflowIconForKey(workflow.IconKey));
 			groupButton->setIconSize(QSize(18, 18));
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
@@ -1623,29 +1522,6 @@ namespace SparkleLauncher
 		return combo;
 	}
 
-	void LauncherMainWindow::AddPageTabs(QVBoxLayout& layout, const QStringList& tabs, const QString& activeTab)
-	{
-		QFrame* tabRow = new QFrame(this);
-		tabRow->setObjectName("PageTabRow");
-		QHBoxLayout* tabLayout = new QHBoxLayout(tabRow);
-		tabLayout->setContentsMargins(0, 0, 0, 0);
-		tabLayout->setSpacing(18);
-		const QString active = activeTab.isEmpty() && !tabs.isEmpty() ? tabs.front() : activeTab;
-		for (const QString& tab : tabs)
-		{
-			QPushButton* tabButton = new QPushButton(tab, tabRow);
-			tabButton->setObjectName("PageTabButton");
-			tabButton->setCheckable(false);
-			tabButton->setProperty("ActiveState", tab == active ? "true" : "false");
-			tabButton->setAccessibleName(tab + " page tab");
-			tabButton->setToolTip(tab == active ? "Current section." : "Planned section in this page model.");
-			RegisterFocusable(tabButton);
-			tabLayout->addWidget(tabButton, 0, Qt::AlignLeft);
-		}
-		tabLayout->addStretch(1);
-		layout.addWidget(tabRow);
-	}
-
 	QFrame* LauncherMainWindow::CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath)
 	{
 		const int readyCount = CountReadyDependencies(group, dependencyCachePath);
@@ -1745,49 +1621,19 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId)
 	{
-		if (operationId == kHomeOperationId)
+		if (operationId == LauncherHomeOperationId())
 		{
 			AddHomeCommandCenter(layout);
 			return;
 		}
 
-		if (operationId == kSystemOperationId)
+		if (operationId == LauncherSystemOperationId())
 		{
 			AddSystemOverviewPage(layout);
 			return;
 		}
 
-		if (operationId == kSettingsOperationId)
-		{
-			AddSettingsPage(layout);
-			return;
-		}
-
 		AddWorkflowPageHeader(layout, operationId);
-		if (operationId == "workspace.setup" || operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "toolchain.check")
-		{
-			AddPageTabs(layout, {"Overview", "Host Tools", "Source Tiers", "Workspace Files", "Advanced"}, operationId == "workspace.setup" ? "Source Tiers" : "Overview");
-		}
-		else if (operationId.startsWith("project.open.") || operationId.startsWith("project.run."))
-		{
-			AddPageTabs(layout, {"Readiness", "Graphics", "Arguments", "Advanced"}, "Readiness");
-		}
-		else if (operationId.startsWith("project.build") || operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
-		{
-			AddPageTabs(layout, {"Readiness", "Targets", "Outputs", "Advanced"}, "Readiness");
-		}
-		else if (operationId.startsWith("cook."))
-		{
-			AddPageTabs(layout, {"Readiness", "Selection", "Outputs", "Advanced"}, operationId == "cook.shaders" ? "Selection" : "Readiness");
-		}
-		else if (operationId == "package.release")
-		{
-			AddPageTabs(layout, {"Current", "Manifests", "Release Notes", "Symbols", "Advanced"}, "Current");
-		}
-		else if (operationId == "workspace.clean" || operationId == "quality.format")
-		{
-			AddPageTabs(layout, {"Overview", "Selection", "Locations", "Advanced"}, operationId == "workspace.clean" ? "Selection" : "Overview");
-		}
 
 		if (operationId == "package.release")
 		{
@@ -2016,10 +1862,8 @@ namespace SparkleLauncher
 		if (operationId == "project.run")
 		{
 			AddLaunchEnvironmentStatus(layout, operationId);
-			QVBoxLayout* modeLayout = AddOptionGroup(layout, "Validation Mode", "Choose which project executable to run and whether smoke validation should be enabled.");
+			QVBoxLayout* modeLayout = AddOptionGroup(layout, "Launch Target", "Choose whether this launch starts the editor or runtime.");
 			AddOptionField(*modeLayout, "Target", CreateValueCombo({{"Editor", "editor"}, {"Runtime", "runtime"}}, m_settings.LaunchTarget(), &LauncherSettings::SetLaunchTarget));
-			QCheckBox* smokeTestBox = CreateBoundCheckBox("Enable smoke test", "Run this launch with smoke validation enabled.", m_settings.LaunchSmokeTest(), &LauncherSettings::SetLaunchSmokeTest);
-			AddOptionCheckBox(*modeLayout, smokeTestBox);
 
 			QVBoxLayout* appOptionsLayout = AddOptionGroup(layout, "Options", "Arguments and runtime CVars passed to the selected process.");
 			AddOptionField(*appOptionsLayout, "Graphics backend", CreateValueCombo({{"D3D12", ""}, {"Vulkan", "vulkan"}}, m_settings.LaunchBackend(), &LauncherSettings::SetLaunchBackend));
@@ -2027,13 +1871,6 @@ namespace SparkleLauncher
 			AddOptionField(*appOptionsLayout, "GPU preference", CreateValueCombo({{"High performance", ""}, {"System default", "false"}}, m_settings.LaunchHighPerformanceAdapter(), &LauncherSettings::SetLaunchHighPerformanceAdapter));
 			AddOptionField(*appOptionsLayout, "Arguments", CreateBoundLineEdit(m_settings.LaunchCommandLineArguments(), "--flag value \"quoted value\"", "Extra command-line arguments appended after launcher-managed options.", &LauncherSettings::SetLaunchCommandLineArguments));
 			AddOptionField(*appOptionsLayout, "CVars", CreateBoundTextEdit(m_settings.LaunchCVars(), "r.SomeCVar=1\nr.OtherCVar=false", "One CVar assignment per line, comma, or semicolon. Each entry is passed as --cvar name=value.", &LauncherSettings::SetLaunchCVars));
-			QVBoxLayout* smokeOptionsLayout = AddOptionGroup(layout, "Validation Options", "Smoke-test controls for capture length and diagnostic behavior.");
-			QWidget* smokeOptionsPanel = smokeOptionsLayout->parentWidget();
-			AddOptionField(*smokeOptionsLayout, "Frame limit", CreateValueCombo({{"120 frames", ""}, {"60 frames", "60"}, {"300 frames", "300"}, {"600 frames", "600"}}, m_settings.SmokeFrameLimit(), &LauncherSettings::SetSmokeFrameLimit));
-			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Capture trace", "Write smoke trace output.", m_settings.SmokeTrace(), &LauncherSettings::SetSmokeTrace));
-			AddOptionCheckBox(*smokeOptionsLayout, CreateBoundCheckBox("Skip level switching", "Do not switch levels during smoke.", m_settings.SmokeSkipLevelSwitching(), &LauncherSettings::SetSmokeSkipLevelSwitching));
-			smokeOptionsPanel->setVisible(m_settings.LaunchSmokeTest());
-			connect(smokeTestBox, &QCheckBox::toggled, smokeOptionsPanel, &QWidget::setVisible);
 			return;
 		}
 
@@ -2264,11 +2101,11 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId)
 	{
-		const QString impactText = OperationImpactText(operationId);
-		const QString primaryVerb = WorkflowPrimaryVerb(operationId);
+		const QString impactText = LauncherOperationImpactText(operationId);
+		const QString primaryVerb = LauncherWorkflowPrimaryVerb(operationId);
 		const bool navigationOnly = operationId == "workspace.open-solution";
 		const bool destructive = operationId == "workspace.clean";
-		const bool launchOrValidate = operationId.startsWith("project.open.") || operationId.startsWith("project.run.");
+		const bool launchOrValidate = operationId.startsWith("project.open.") || operationId == "project.run" || operationId.startsWith("project.run.");
 		const QString recommendedStatus = launchOrValidate ? "Readiness first" : primaryVerb;
 		const QString recommendedDetail = launchOrValidate ?
 		    "Use the primary action only when readiness has no blocking Missing or Stale rows. Follow the first blocker below otherwise." :
@@ -2637,13 +2474,6 @@ namespace SparkleLauncher
 		productSubtitle->setObjectName("CommandProductSubtitle");
 		titleLayout->addWidget(productSubtitle);
 		identityLayout->addLayout(titleLayout, 1);
-		QLabel* contextLabel = new QLabel(QStringLiteral("%1   |   %2   |   %3")
-		                                      .arg(packageRoot ? "Package Mode" : (sourceRoot ? "Source Checkout" : "Workspace Root"))
-		                                      .arg(m_settings.BuildConfiguration())
-		                                      .arg(SelectedWorkspaceIdeName(m_settings)),
-		    identity);
-		contextLabel->setObjectName("CommandContextPill");
-		identityLayout->addWidget(contextLabel, 0, Qt::AlignRight | Qt::AlignVCenter);
 		layout.addWidget(identity);
 
 		const bool launchReady = editorPlan.CanRun || runtimePlan.CanRun;
@@ -2758,8 +2588,6 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddSystemOverviewPage(QVBoxLayout& layout)
 	{
-		AddPageTabs(layout, {"Overview", "Toolchain", "Artifacts", "Dependencies", "Diagnostics"}, "Overview");
-
 		BuildWorkspaceOperationRequest request = MakeWorkspacePlanRequest(m_repositoryRoot, m_projectModel, m_settings);
 		const BuildWorkspaceOperationPlan plan = PlanBuildWorkspaceOperation("workspace.generate-solution", request);
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
@@ -2796,39 +2624,6 @@ namespace SparkleLauncher
 		AddStatusRow(*artifactLayout, "Launcher logs", "Available", ToDisplayPath(m_repositoryRoot, statePaths.LogsDirectory), "neutral");
 
 		AddSourceTierCards(layout, "Source Tiers", "Capability workload cards. Sync only the tiers needed for the local work you intend to do.", false);
-	}
-
-	void LauncherMainWindow::AddSettingsPage(QVBoxLayout& layout)
-	{
-		AddPageTabs(layout, {"Launcher", "Toolchain", "Locations", "Logs", "About"}, "Launcher");
-
-		QVBoxLayout* searchLayout = AddOptionGroup(layout, "Settings", "Rider-style compact settings surface for daily launcher preferences.");
-		QLineEdit* search = new QLineEdit(this);
-		search->setObjectName("SettingsSearch");
-		search->setPlaceholderText("Search settings");
-		search->setAccessibleName("Search settings");
-		search->setToolTip("Static search field placeholder for the settings page model.");
-		RegisterFocusable(search);
-		searchLayout->addWidget(search);
-		QLabel* breadcrumb = new QLabel("Appearance & Behavior  >  Launcher", this);
-		breadcrumb->setObjectName("SettingsBreadcrumb");
-		searchLayout->addWidget(breadcrumb);
-
-		QVBoxLayout* launcherLayout = AddOptionGroup(layout, "Launcher Defaults", "Default project, launch target, and safety behavior.");
-		AddOptionField(*launcherLayout, "Project", CreateProjectCombo());
-		AddOptionField(*launcherLayout, "Launch target", CreateValueCombo({{"Editor", "editor"}, {"Runtime", "runtime"}}, m_settings.LaunchTarget(), &LauncherSettings::SetLaunchTarget));
-		AddOptionField(*launcherLayout, "Build configuration", CreateValueCombo({{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}}, m_settings.BuildConfiguration(), &LauncherSettings::SetBuildConfiguration));
-		AddOptionCheckBox(*launcherLayout, CreateBoundCheckBox("Confirm force recook", "Require confirmation before force recook workflows run.", m_settings.ConfirmForceRecook(), &LauncherSettings::SetConfirmForceRecook));
-		AddOptionCheckBox(*launcherLayout, CreateBoundCheckBox("Confirm clean scopes", "Require confirmation before destructive clean workflows run.", m_settings.ConfirmClean(), &LauncherSettings::SetConfirmClean));
-
-		QVBoxLayout* toolchainLayout = AddOptionGroup(layout, "Toolchain", "Preferred source workspace integration.");
-		AddOptionField(*toolchainLayout, "IDE", CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde));
-		AddOptionCheckBox(*toolchainLayout, CreateBoundCheckBox("Force configure", "Regenerate CMake configuration even when workspace files look current.", m_settings.ForceConfigure(), &LauncherSettings::SetForceConfigure));
-		AddStatusRow(*toolchainLayout, "Qt kit", "Auto discovered", "Qt discovery remains automatic and documented through Prepare > Verify Host Environment.", "neutral", CreateActionDependencyActions("toolchain.check", "Verify Host Environment", QString(), QString(), true));
-
-		QVBoxLayout* logsLayout = AddDetailsGroup(layout, "Logs And Diagnostics", "Daily diagnostics stay accessible without becoming permanent Home clutter.", false);
-		AddStatusRow(*logsLayout, "Activity", "Drawer", "Activity opens from the header utility or automatically during active/failed runs.", "neutral");
-		AddStatusRow(*logsLayout, "Diagnostics bundle", "Copyable", "Use the header Diagnostics action to copy repository, artifact, dist, and launcher state context.", "neutral");
 	}
 
 	void LauncherMainWindow::AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId)
@@ -3912,8 +3707,6 @@ namespace SparkleLauncher
 			return QChar(0xf466);
 		case LauncherIcon::System:
 			return QChar(0xf108);
-		case LauncherIcon::Settings:
-			return QChar(0xf013);
 		case LauncherIcon::Maintain:
 			return QChar(0xf1de);
 		case LauncherIcon::Queued:
@@ -3954,33 +3747,45 @@ namespace SparkleLauncher
 		return QIcon(pixmap);
 	}
 
-	QIcon LauncherMainWindow::WorkflowIconForIndex(int workflowIndex) const
+	QIcon LauncherMainWindow::WorkflowIconForKey(const QString& iconKey) const
 	{
-		switch (workflowIndex)
+		if (iconKey == "home")
 		{
-		case 0:
 			return CreateLauncherIcon(LauncherIcon::Start, QColor(kColorStateQueued));
-		case 1:
-			return CreateLauncherIcon(LauncherIcon::Run, QColor(kColorStateQueued));
-		case 2:
-			return CreateLauncherIcon(LauncherIcon::Setup, QColor(kColorStateQueued));
-		case 3:
-			return CreateLauncherIcon(LauncherIcon::Build, QColor(kColorStateQueued));
-		case 4:
-			return CreateLauncherIcon(LauncherIcon::Cook, QColor(kColorStateQueued));
-		case 5:
-			return CreateLauncherIcon(LauncherIcon::Done, QColor(kColorStateQueued));
-		case 6:
-			return CreateLauncherIcon(LauncherIcon::Package, QColor(kColorStateQueued));
-		case 7:
-			return CreateLauncherIcon(LauncherIcon::System, QColor(kColorStateQueued));
-		case 8:
-			return CreateLauncherIcon(LauncherIcon::Settings, QColor(kColorStateQueued));
-		case 9:
-			return CreateLauncherIcon(LauncherIcon::Maintain, QColor(kColorStateQueued));
-		default:
-			return {};
 		}
+		if (iconKey == "launch")
+		{
+			return CreateLauncherIcon(LauncherIcon::Run, QColor(kColorStateQueued));
+		}
+		if (iconKey == "prepare")
+		{
+			return CreateLauncherIcon(LauncherIcon::Setup, QColor(kColorStateQueued));
+		}
+		if (iconKey == "build")
+		{
+			return CreateLauncherIcon(LauncherIcon::Build, QColor(kColorStateQueued));
+		}
+		if (iconKey == "cook")
+		{
+			return CreateLauncherIcon(LauncherIcon::Cook, QColor(kColorStateQueued));
+		}
+		if (iconKey == "validate")
+		{
+			return CreateLauncherIcon(LauncherIcon::Done, QColor(kColorStateQueued));
+		}
+		if (iconKey == "package")
+		{
+			return CreateLauncherIcon(LauncherIcon::Package, QColor(kColorStateQueued));
+		}
+		if (iconKey == "system")
+		{
+			return CreateLauncherIcon(LauncherIcon::System, QColor(kColorStateQueued));
+		}
+		if (iconKey == "maintain")
+		{
+			return CreateLauncherIcon(LauncherIcon::Maintain, QColor(kColorStateQueued));
+		}
+		return {};
 	}
 
 	QIcon LauncherMainWindow::ActivityIconForState(RunState state) const
@@ -4065,7 +3870,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == kHomeOperationId)
+		if (m_selectedOperationId == LauncherHomeOperationId())
 		{
 			const QString reason = "Use the Command Center cards for the next best action.";
 			m_cleanButton->setVisible(false);
@@ -4079,9 +3884,9 @@ namespace SparkleLauncher
 			return;
 		}
 
-		if (m_selectedOperationId == kSystemOperationId || m_selectedOperationId == kSettingsOperationId)
+		if (m_selectedOperationId == LauncherSystemOperationId())
 		{
-			const QString reason = "This page is for inspection and configuration. Use workflow tabs for executable actions.";
+			const QString reason = "This page is for inspection. Use workflow pages for executable actions.";
 			m_cleanButton->setVisible(false);
 			m_cleanButton->setEnabled(false);
 			m_cleanButton->setToolTip(reason);
@@ -4161,21 +3966,10 @@ namespace SparkleLauncher
 
 	QString LauncherMainWindow::DisplayNameForOperation(const QString& operationId) const
 	{
-		if (operationId == kHomeOperationId)
+		const QString overrideName = LauncherOperationDisplayNameOverride(operationId);
+		if (!overrideName.isEmpty())
 		{
-			return "Command Center";
-		}
-		if (operationId == kSystemOperationId)
-		{
-			return "System";
-		}
-		if (operationId == kSettingsOperationId)
-		{
-			return "Settings";
-		}
-		if (operationId == "package.release")
-		{
-			return "Assemble Release Package";
+			return overrideName;
 		}
 		const LauncherOperationDescriptor* operation = FindOperationDescriptor(operationId);
 		return operation == nullptr ? operationId : operation->DisplayName;
@@ -4314,6 +4108,10 @@ namespace SparkleLauncher
 		else if (operationId == "project.run.smoke")
 		{
 			request.LaunchSmokeTest = true;
+		}
+		else if (operationId == "project.run")
+		{
+			request.LaunchSmokeTest = false;
 		}
 		return request;
 	}
@@ -4710,7 +4508,7 @@ namespace SparkleLauncher
 		const QString title = DisplayNameForOperation(operationId);
 		SetControlsEnabled(true);
 		UpdateActionHistoryDisplay();
-		const bool isStaticPage = operationId == kHomeOperationId || operationId == kSystemOperationId || operationId == kSettingsOperationId;
+		const bool isStaticPage = operationId == LauncherHomeOperationId() || operationId == LauncherSystemOperationId();
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
@@ -4747,7 +4545,7 @@ namespace SparkleLauncher
 			m_lastOperationByWorkflowIndex.insert(workflowIndex, operationId);
 			m_operationStack->setCurrentIndex(workflowIndex);
 			SetActiveWorkflowGroup(workflowIndex);
-			const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
+			const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 			if (workflowIndex >= 0 && workflowIndex < workflows.size())
 			{
 				m_operationStack->setVisible(workflows[workflowIndex].OperationIds.size() > 1);
@@ -4983,22 +4781,6 @@ namespace SparkleLauncher
 		combo.setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
 	}
 
-	QVector<LauncherMainWindow::WorkflowDefinition> LauncherMainWindow::CreateWorkflowDefinitions() const
-	{
-		return {
-		    {"Home", "First-contact command center", {kHomeOperationId}},
-		    {"Launch", "Open what is ready", {"project.open.editor", "project.open.runtime"}},
-		    {"Prepare", "Make source work ready", {"toolchain.check", "workspace.setup", "workspace.generate-solution", "workspace.open-solution"}},
-		    {"Build", "Optional local rebuilds", {"workspace.build-all", "launcher.build.self", "project.build.editor", "project.build.runtime", "cook.tools.prepare"}},
-		    {"Cook", "Optional content refresh", {"cook.project", "cook.shaders", "cook.textures", "cook.assets"}},
-		    {"Validate", "Test or customize", {"project.run.smoke", "project.run"}},
-		    {"Package", "Release assembly", {"package.release"}},
-		    {"System", "Workspace and machine state", {kSystemOperationId}},
-		    {"Settings", "Launcher preferences", {kSettingsOperationId}},
-		    {"Maintain", "Clean and format", {"workspace.clean", "quality.format"}},
-		};
-	}
-
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
 		const QString background = "#111312";
@@ -5124,11 +4906,6 @@ namespace SparkleLauncher
 		addRule("#WorkflowButton:hover", "background: #1b1e1b; color: " + textPrimary + ";");
 		addRule("#WorkflowButton:checked", "background: transparent; border-bottom: 3px solid " + accent + "; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("#PageTabRow", "background: transparent; border: none; border-bottom: 1px solid " + divider + "; margin-bottom: 4px;");
-		addRule("#PageTabButton", "background: transparent; color: " + textSecondary + "; border: none; border-bottom: 3px solid transparent; padding: 9px 2px 8px 2px; font-size: 9pt; font-weight: 750; min-width: 78px;");
-		addRule("#PageTabButton:hover", "color: " + textPrimary + ";");
-		addRule("#PageTabButton:checked, #PageTabButton[ActiveState=\"true\"]", "color: #ffffff; border-bottom: 3px solid " + accent + ";");
-		addRule("#PageTabButton:focus", "border: 1px solid " + focus + ";");
 		addRule("#SourceTierCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px; border-left: 4px solid #4a515a;");
 		addRule("#SourceTierCard[State=\"ok\"]", "border-left-color: " + accent + ";");
 		addRule("#SourceTierCard[State=\"warning\"]", "border-left-color: #b37726;");
@@ -5139,9 +4916,6 @@ namespace SparkleLauncher
 		addRule("#SourceTierChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
 		addRule("#SourceTierChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 		addRule("#SourceTierChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
-		addRule("#SettingsSearch", "background: #171a18; border: 1px solid " + borderStrong + "; border-radius: 3px; padding: 7px 10px; color: " + textBody + ";");
-		addRule("#SettingsBreadcrumb", "color: " + textSecondary + "; font-size: 8pt; font-weight: 750; padding: 3px 0 0 0;");
-
 		addRule("QPushButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 2px; padding: 6px 14px; font-weight: 750;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");

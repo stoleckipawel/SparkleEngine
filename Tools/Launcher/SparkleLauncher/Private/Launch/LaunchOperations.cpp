@@ -161,7 +161,7 @@ namespace SparkleLauncher
 		    {LaunchOperationKind::RunProject, "project.open.editor", "Launch", "Open Editor", "Launch the selected project in editor mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.open.runtime", "Launch", "Open Runtime", "Launch the selected project in runtime mode using available runtime components."},
 		    {LaunchOperationKind::RunProject, "project.run.smoke", "Validate", "Run Smoke Test", "Run the selected project with smoke validation enabled."},
-		    {LaunchOperationKind::RunProject, "project.run", "Validate", "Run Custom", "Run the selected project in editor or runtime mode, optionally with smoke validation."},
+		    {LaunchOperationKind::RunProject, "project.run", "Launch", "Launch Project", "Launch the selected project in editor or runtime mode using shared launch options."},
 		};
 		return definitions;
 	}

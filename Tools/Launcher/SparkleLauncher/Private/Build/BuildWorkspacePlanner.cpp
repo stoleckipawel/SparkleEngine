@@ -247,7 +247,7 @@ namespace SparkleLauncher
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
 		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Prepare", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source tiers and configure workspace state without installing host tools."},
 		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Prepare", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE workspace files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Prepare", std::string(ArtifactNaming::kActionOpenWorkspace), "Open the selected IDE after generated workspace files are current."},
+		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Launch", "Open IDE", "Open the selected IDE after generated workspace files are current."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Prepare", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without syncing source tiers or changing workspace files."},
 		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Optional local rebuild of launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},

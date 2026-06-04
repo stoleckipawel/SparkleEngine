@@ -257,11 +257,11 @@ Proposed primary navigation:
 | Group | Primary User Question | Actions |
 | --- | --- | --- |
 | Home / Quick Start | What should I do next? | Command Center, Run Showcase, View Evidence |
-| Launch | What can I open now? | Open Editor, Open Runtime |
-| Prepare | What does this machine/workspace need? | Prepare Source Workspace, Verify Host Tools, Sync Source Tiers, Generate Workspace Files, Open IDE |
+| Launch | What can I open now? | Launch Project, Open IDE |
+| Prepare | What does this machine/workspace need? | Prepare Source Workspace, Verify Host Tools, Sync Source Tiers, Generate Workspace Files |
 | Build | What do I want to rebuild locally? | Build Missing, Build Editor, Build Runtime, Build Launcher, Build Cooking Tools, Build All |
 | Cook | What generated content do I need? | Cook Missing, Cook All, Cook Shaders, Cook Textures, Cook Scenes And Meshes |
-| Validate | How do I test or diagnose? | Run Smoke Test, Run Custom |
+| Validate | How do I test or diagnose? | Run Smoke Test |
 | Package | How do I assemble a release package? | Assemble Release Package, Open Dist Folder |
 | Maintain | What generated state should I clean? | Clean Generated Files, Format Code |
 
@@ -291,9 +291,7 @@ Purpose:
 Layout sketch:
 
 ```text
-Sparkle Engine Showcase
-
-[Showcase] [Development] [Visual Studio]              [Architecture] [Diagnostics] [Settings]
+Sparkle Engine Showcase                                      [System] [Activity] [Diagnostics]
 
 +------------------------------------------------------------------------------+
 | Ready to explore / Needs local outputs / Source workspace stale               |
@@ -369,11 +367,12 @@ Recommended renames:
 | Sync Source Dependencies | Sync Source Tiers | matches capability-tier language |
 | Generate Project Files | Generate Workspace Files | covers CMake/IDE state more clearly |
 | Open Workspace | Open IDE | direct user language |
+| Launch Editor / Launch Runtime | Launch Project target selector | avoids duplicated pages with identical options |
 | Build All | Build Missing or Build All | `Build All` should not be default if only one target is missing |
 | Build Cook Tools | Build Cooking Tools | more natural noun phrase |
 | Cook Scene Assets | Cook Scenes And Meshes | clearer domain |
 | Run | Validate | separates normal launch from tests |
-| Run Project | Run Custom | clearer that this is configurable launch |
+| Run Project | Launch Project | configurable editor/runtime launch belongs under Launch |
 | Package Release | Assemble Release Package | avoids claiming publish-ready publication |
 | Maintenance | Maintain | shorter and active |
 | Clean Workspace | Clean Generated Files | emphasizes safety |
@@ -1529,20 +1528,22 @@ Positive guardrails: use NVIDIA App for visual shell and page rhythm; use Visual
 
 Negative guardrails: do not use cards for every row; do not show full inventories by default; do not keep secondary vertical operation menus when tabs fit better; do not use Visual Studio Installer colors; do not make Sparkle look like a full IDE; do not let Rider-style tool windows become Home clutter; do not add commit bars to simple launch/evidence actions; do not build or launch in this phase.
 
-Validation: inspect page structure and information hierarchy; confirm source tiers use workload/capability-card behavior; confirm consequential workflows show impact/selection summaries; confirm Settings has search/category/breadcrumb structure where dense; confirm Activity/logs are contextual and collapsible; confirm no build, launch, or package validation was run.
+Validation: inspect page structure and information hierarchy; confirm source tiers use workload/capability-card behavior; confirm consequential workflows show impact/selection summaries; confirm System/details surfaces carry dense settings-like information without creating a duplicate Settings workflow; confirm Activity/logs are contextual and collapsible; confirm no build, launch, or package validation was run.
 ```
 
 Phase 2 implementation handoff:
 
 - Added shared NVIDIA-style page tabs below workflow headers so major pages have a title band plus section-tab rhythm.
 - Added `System` as an inspection page for project/root mode, toolchain, workspace files, source tiers, artifact roots, dist roots, and diagnostics locations.
-- Added `Settings` as a compact Rider-style preferences page with search placeholder, breadcrumb, launcher defaults, toolchain controls, and logs/diagnostics details.
+- Removed the standalone `Settings` workflow from the target model after deduplication. Project, configuration, IDE, Activity, diagnostics, and root context belong in the shell/header or System/details surfaces, not in a duplicate workflow page.
 - Replaced Sync Source Tiers' default dependency dump with Visual Studio Installer-inspired source tier workload cards that explain capability unlocks first.
 - Kept individual dependency rows in secondary details so raw dependency inventories remain available without dominating the primary page.
 - Added package assembly selection details for launcher, Showcase products, manifests, and symbols so package consequences are clear before the primary action.
-- Added page-tab models for Prepare, Launch, Build, Cook, Validate, Package, Maintain, System, and Settings while preserving operation IDs and backend behavior.
+- Removed non-functional page-tab buttons until the pages have real tab switching. Section hierarchy is acceptable; fake clickable tabs are not.
+- Unified duplicated `Launch Editor` and `Launch Runtime` workflow pages into `Launch Project` with an editor/runtime target selector. Home product tiles may still act as direct shortcuts.
+- Moved `Open IDE` from Prepare to Launch because opening the workspace is a navigation action, not setup.
 - Kept Activity/log output as the existing contextual drawer; no permanent Home or workflow terminal was reintroduced.
-- Static validation target: no full inventories by default, source tiers use workload cards, System/Settings use rows and compact controls, and package/clean-style consequential workflows expose selection/impact context.
+- Static validation target: no full inventories by default, source tiers use workload cards, System/details use rows and compact controls, package/clean-style consequential workflows expose selection/impact context, and visible controls either perform work or are removed.
 - No build, launch, package assembly, or final visual validation was run in this phase.
 
 ### Visual Redesign Phase 3: NVIDIA-Style Polish And Final Visual Validation

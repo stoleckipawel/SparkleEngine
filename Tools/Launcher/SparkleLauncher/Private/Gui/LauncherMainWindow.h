@@ -1,6 +1,7 @@
 #pragma once
 
 #include "LauncherBackend.h"
+#include "LauncherWorkflowCatalog.h"
 
 #include <QtCore/QString>
 #include <QtCore/QDateTime>
@@ -61,13 +62,6 @@ namespace SparkleLauncher
 		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
-		struct WorkflowDefinition
-		{
-			QString Title;
-			QString Subtitle;
-			QVector<QString> OperationIds;
-		};
-
 		struct ActionHistoryRecord
 		{
 			QString CompletedAtUtc;
@@ -106,7 +100,6 @@ namespace SparkleLauncher
 			Run,
 			Package,
 			System,
-			Settings,
 			Maintain,
 			Queued,
 			Running,
@@ -132,7 +125,6 @@ namespace SparkleLauncher
 		QComboBox* CreateProjectCombo();
 		QComboBox* CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&));
 		void AddOptionsForOperation(QVBoxLayout& layout, const QString& operationId);
-		void AddPageTabs(QVBoxLayout& layout, const QStringList& tabs, const QString& activeTab = QString());
 		QWidget* AddOptionField(QVBoxLayout& layout, const QString& label, QWidget* control);
 		QWidget* AddOptionCheckBox(QVBoxLayout& layout, QCheckBox* checkBox);
 		QVBoxLayout* AddOptionGroup(QVBoxLayout& layout, const QString& title, const QString& detail);
@@ -146,7 +138,6 @@ namespace SparkleLauncher
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeCommandCenter(QVBoxLayout& layout);
 		void AddSystemOverviewPage(QVBoxLayout& layout);
-		void AddSettingsPage(QVBoxLayout& layout);
 		void AddBuildEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddLaunchEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
 		void AddMaintenanceEnvironmentStatus(QVBoxLayout& layout, const QString& operationId);
@@ -163,7 +154,7 @@ namespace SparkleLauncher
 		QIcon CreateApplicationIcon() const;
 		QString IconGlyph(LauncherIcon icon) const;
 		QIcon CreateLauncherIcon(LauncherIcon icon, const QColor& color) const;
-		QIcon WorkflowIconForIndex(int workflowIndex) const;
+		QIcon WorkflowIconForKey(const QString& iconKey) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
 		void SetActiveWorkflowGroup(int workflowIndex);
@@ -214,7 +205,6 @@ namespace SparkleLauncher
 		void UpdateProgress();
 		void PopulateProjectSelectors();
 		void PopulateProjectCombo(QComboBox& combo) const;
-		QVector<WorkflowDefinition> CreateWorkflowDefinitions() const;
 		void ApplyVisualStyle();
 
 		std::filesystem::path m_repositoryRoot;
