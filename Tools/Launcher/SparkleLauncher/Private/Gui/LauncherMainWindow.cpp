@@ -263,9 +263,16 @@ namespace SparkleLauncher
 	class ResponsiveCardGridWidget final : public QWidget
 	{
 	public:
-		ResponsiveCardGridWidget(int minimumCardWidth, int maximumColumns, int horizontalSpacing, int verticalSpacing, QWidget* parent = nullptr)
+		ResponsiveCardGridWidget(
+		    int minimumCardWidth,
+		    int maximumCardWidth,
+		    int maximumColumns,
+		    int horizontalSpacing,
+		    int verticalSpacing,
+		    QWidget* parent = nullptr)
 		    : QWidget(parent)
 		    , m_minimumCardWidth(std::max(1, minimumCardWidth))
+		    , m_maximumCardWidth(std::max(m_minimumCardWidth, maximumCardWidth))
 		    , m_maximumColumns(std::max(1, maximumColumns))
 		{
 			setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -273,6 +280,8 @@ namespace SparkleLauncher
 			m_layout->setContentsMargins(0, 0, 0, 0);
 			m_layout->setHorizontalSpacing(horizontalSpacing);
 			m_layout->setVerticalSpacing(verticalSpacing);
+			m_layout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+			m_layout->setSizeConstraint(QLayout::SetNoConstraint);
 		}
 
 		void AddCard(QWidget* card)
@@ -283,7 +292,7 @@ namespace SparkleLauncher
 			}
 
 			card->setParent(this);
-			card->setSizePolicy(QSizePolicy::Expanding, card->sizePolicy().verticalPolicy());
+			card->setSizePolicy(QSizePolicy::Fixed, card->sizePolicy().verticalPolicy());
 			m_cards.push_back(card);
 			Reflow();
 		}
@@ -291,6 +300,18 @@ namespace SparkleLauncher
 		int CardCount() const
 		{
 			return static_cast<int>(m_cards.size());
+		}
+
+		QSize minimumSizeHint() const override
+		{
+			const QSize layoutMinimum = m_layout != nullptr ? m_layout->minimumSize() : QWidget::minimumSizeHint();
+			return QSize(m_minimumCardWidth, std::max(1, layoutMinimum.height()));
+		}
+
+		QSize sizeHint() const override
+		{
+			const QSize layoutHint = m_layout != nullptr ? m_layout->sizeHint() : QWidget::sizeHint();
+			return QSize(std::min(m_maximumCardWidth, std::max(m_minimumCardWidth, AvailableLayoutWidth())), std::max(1, layoutHint.height()));
 		}
 
 	protected:
@@ -301,12 +322,36 @@ namespace SparkleLauncher
 		}
 
 	private:
+		int AvailableLayoutWidth() const
+		{
+			int availableWidth = std::max(1, contentsRect().width());
+			for (const QWidget* ancestor = parentWidget(); ancestor != nullptr; ancestor = ancestor->parentWidget())
+			{
+				if (const QScrollArea* scrollArea = qobject_cast<const QScrollArea*>(ancestor))
+				{
+					availableWidth = std::min(availableWidth, std::max(1, scrollArea->viewport()->contentsRect().width()));
+					break;
+				}
+			}
+			return std::max(1, availableWidth);
+		}
+
 		int DesiredColumnCount() const
 		{
 			const int spacing = std::max(0, m_layout->horizontalSpacing());
-			const int availableWidth = std::max(1, contentsRect().width());
+			const int availableWidth = AvailableLayoutWidth();
 			const int columnsByWidth = std::max(1, (availableWidth + spacing) / (m_minimumCardWidth + spacing));
 			return std::clamp(columnsByWidth, 1, std::min(m_maximumColumns, std::max(1, static_cast<int>(m_cards.size()))));
+		}
+
+		int DesiredCardWidth(int columns) const
+		{
+			const int spacing = std::max(0, m_layout->horizontalSpacing());
+			const int availableWidth = AvailableLayoutWidth();
+			const int availableForCards = std::max(1, availableWidth - (std::max(1, columns) - 1) * spacing);
+			const int proportionalWidth = std::max(1, availableForCards / std::max(1, columns));
+			const int lowerBound = std::min(m_minimumCardWidth, proportionalWidth);
+			return std::clamp(proportionalWidth, lowerBound, m_maximumCardWidth);
 		}
 
 		void Reflow()
@@ -317,7 +362,8 @@ namespace SparkleLauncher
 			}
 
 			const int columns = DesiredColumnCount();
-			if (columns == m_currentColumns && m_layout->count() == static_cast<int>(m_cards.size()))
+			const int cardWidth = DesiredCardWidth(columns);
+			if (columns == m_currentColumns && cardWidth == m_currentCardWidth && m_layout->count() == static_cast<int>(m_cards.size()))
 			{
 				return;
 			}
@@ -327,25 +373,31 @@ namespace SparkleLauncher
 				delete item;
 			}
 
-			for (int column = 0; column < std::max(m_currentColumns, columns); ++column)
+			for (int column = 0; column < std::max(m_currentColumns, columns) + 1; ++column)
 			{
-				m_layout->setColumnStretch(column, column < columns ? 1 : 0);
+				m_layout->setColumnStretch(column, column == columns ? 1 : 0);
+				m_layout->setColumnMinimumWidth(column, column < columns ? cardWidth : 0);
 			}
 
 			for (int index = 0; index < static_cast<int>(m_cards.size()); ++index)
 			{
-				m_layout->addWidget(m_cards[index], index / columns, index % columns);
+				m_cards[index]->setMinimumWidth(cardWidth);
+				m_cards[index]->setMaximumWidth(cardWidth);
+				m_layout->addWidget(m_cards[index], index / columns, index % columns, Qt::AlignLeft | Qt::AlignTop);
 			}
 
 			m_currentColumns = columns;
+			m_currentCardWidth = cardWidth;
 			updateGeometry();
 		}
 
 		QGridLayout* m_layout = nullptr;
 		QVector<QWidget*> m_cards;
 		int m_minimumCardWidth = 320;
+		int m_maximumCardWidth = 420;
 		int m_maximumColumns = 3;
 		int m_currentColumns = 0;
+		int m_currentCardWidth = 0;
 	};
 
 	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool softTreatment)
@@ -2002,7 +2054,7 @@ namespace SparkleLauncher
 	{
 		const std::filesystem::path dependencyCachePath = GetBuildDirectory(m_repositoryRoot) / "_deps";
 		QVBoxLayout* tiersLayout = AddOptionGroup(layout, title, detail);
-		ResponsiveCardGridWidget* tierGrid = new ResponsiveCardGridWidget(320, 4, 12, 12, this);
+		ResponsiveCardGridWidget* tierGrid = new ResponsiveCardGridWidget(300, 380, 4, 12, 12, this);
 		for (const DependencyGroupUiEntry& group : GetDependencyGroups())
 		{
 			tierGrid->AddCard(CreateSourceTierCard(group, dependencyCachePath));
@@ -2813,15 +2865,32 @@ namespace SparkleLauncher
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
 		const bool hasArtwork = !FindLauncherVisualAsset(artworkFileName).empty();
-		card->setMinimumHeight(tileRole == "library" ? (hasArtwork ? 300 : 178) : (hasArtwork ? 190 : 148));
+		const bool isLibraryCard = tileRole == "library";
+		const bool flushArtwork = isLibraryCard && hasArtwork;
+		card->setMinimumHeight(isLibraryCard ? (hasArtwork ? 300 : 178) : (hasArtwork ? 190 : 148));
 		QVBoxLayout* layout = new QVBoxLayout(card);
-		layout->setContentsMargins(tileRole == "library" ? 18 : 16, hasArtwork ? 12 : (tileRole == "library" ? 16 : 14), tileRole == "library" ? 18 : 16, tileRole == "library" ? 16 : 14);
-		layout->setSpacing(tileRole == "library" ? 12 : 10);
+		layout->setContentsMargins(
+		    flushArtwork ? QMargins(0, 0, 0, 16) :
+		                   QMargins(isLibraryCard ? 18 : 16, hasArtwork ? 12 : (isLibraryCard ? 16 : 14), isLibraryCard ? 18 : 16, isLibraryCard ? 16 : 14));
+		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? 12 : 10));
 
-		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, tileRole == "library" ? 164 : 86)))
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", QSize(320, isLibraryCard ? 164 : 86)))
 		{
 			artwork->setParent(card);
+			artwork->setProperty("TileRole", tileRole);
 			layout->addWidget(artwork);
+		}
+
+		QVBoxLayout* contentLayout = layout;
+		if (flushArtwork)
+		{
+			QWidget* body = new QWidget(card);
+			body->setObjectName("CommandCardBody");
+			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
+			bodyLayout->setContentsMargins(18, 14, 18, 0);
+			bodyLayout->setSpacing(12);
+			layout->addWidget(body, 1);
+			contentLayout = bodyLayout;
 		}
 
 		QHBoxLayout* titleRow = new QHBoxLayout();
@@ -2834,17 +2903,17 @@ namespace SparkleLauncher
 		statusLabel->setObjectName("CommandCardChip");
 		statusLabel->setProperty("State", state);
 		titleRow->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
-		layout->addLayout(titleRow);
+		contentLayout->addLayout(titleRow);
 
 		QLabel* detailLabel = new QLabel(detail, card);
 		detailLabel->setObjectName("CommandCardText");
 		detailLabel->setWordWrap(true);
-		layout->addWidget(detailLabel, 1);
+		contentLayout->addWidget(detailLabel, 1);
 
 		if (action != nullptr)
 		{
 			action->setParent(card);
-			layout->addWidget(action, 0, Qt::AlignLeft);
+			contentLayout->addWidget(action, 0, Qt::AlignLeft);
 		}
 		return card;
 	}
@@ -2994,7 +3063,7 @@ namespace SparkleLauncher
 		    nullptr,
 		    "showcase-hero.png"));
 
-		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(420, 2, 16, 16, quickStartBody);
+		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(420, 620, 2, 16, 16, quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
@@ -3033,7 +3102,7 @@ namespace SparkleLauncher
 		}
 
 		addHomeSection("Discover");
-		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(300, 5, 16, 16, quickStartBody);
+		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(260, 340, 5, 16, 16, quickStartBody);
 
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
 		discoverGrid->AddCard(CreateHomeCapabilityCard(

@@ -90,6 +90,7 @@ namespace SparkleLauncher
 		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[State=\"warning\"]", "border-left: 4px solid #b37726;");
 		addRule("#CommandCardArtwork", "background: #070807; border: 1px solid #30372b; border-radius: 3px;");
+		addRule("#CommandCardArtwork[TileRole=\"library\"]", "background: #070807; border: none; border-radius: 0;");
 		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 11.25pt; font-weight: 900; letter-spacing: -0.08px;");
 		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 9pt; line-height: 135%;");
 		addRule("#CommandCardChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
