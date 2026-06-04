@@ -119,7 +119,7 @@ namespace SparkleLauncher
 		QWidget* CreateOptionsPanel(QWidget* parent);
 		QWidget* CreateOptionsPage(const QString& operationId, QWidget* parent);
 		QWidget* CreateOutputPanel();
-		QWidget* CreateFooterContextPanel(QWidget* parent);
+		QWidget* CreateHeaderContextPanel(QWidget* parent);
 		QLabel* CreateSectionLabel(const QString& title) const;
 		QLabel* CreateFieldLabel(const QString& title) const;
 		QCheckBox* CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool));
@@ -221,7 +221,7 @@ namespace SparkleLauncher
 		QHash<QString, int> m_workflowPageByOperation;
 		QHash<int, QString> m_lastOperationByWorkflowIndex;
 		QVector<QWidget*> m_tabOrderWidgets;
-		QWidget* m_footerContextPanel = nullptr;
+		QWidget* m_headerContextPanel = nullptr;
 		QStackedWidget* m_optionsStack = nullptr;
 		QHash<QString, int> m_optionsPageByOperation;
 		QVector<QComboBox*> m_projectSelectors;

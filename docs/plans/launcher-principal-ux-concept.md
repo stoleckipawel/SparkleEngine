@@ -1390,6 +1390,18 @@ Negative guardrails: do not clone NVIDIA branding; do not keep the current equal
 Validation: inspect shell/style implementation for the new structure and old blue-primary remnants; confirm Activity/logs moved out of default bottom chrome; confirm no build, launch, or package validation was run.
 ```
 
+Reset implementation handoff:
+
+- Replaced the dominant wide workflow/action rail with a narrow icon-led rail using text-under-icon navigation and a lime active indicator.
+- Moved workflow operation choices into a tab row under a persistent title/header band.
+- Moved root mode, folder shortcuts, Activity, diagnostics, project, build configuration, and IDE context into header utilities instead of a bottom footer.
+- Converted the old persistent bottom output/log area into a right-side Activity drawer that opens for active or failed runs and remains hidden by default.
+- Added an explicit bounded content body for workflow pages so rows and cards do not stretch across ultrawide displays.
+- Replaced old blue primary/selected styling with the NVIDIA-inspired lime accent for primary CTAs, selected tabs, active rail state, focus, and ready/running emphasis.
+- Preserved workflow definitions, operation IDs, backend requests, dependency/readiness logic, and operation execution behavior.
+- Static validation: source grep found no old footer/blue-primary remnants in launcher shell code, and `git diff --check` passed with only normal CRLF warnings.
+- No build, launch, package assembly, or final visual validation was run in this reset phase.
+
 ### Visual Redesign Phase 1: NVIDIA-Style Home
 
 Goal:

@@ -59,8 +59,8 @@ namespace SparkleLauncher
 	static constexpr int kSpaceLarge = 16;
 	static constexpr int kPanelHorizontalMargin = 18;
 	static constexpr int kPanelVerticalMargin = 14;
-	static constexpr int kWorkflowRailWidth = 264;
-	static constexpr int kWorkflowGroupMinHeight = 30;
+	static constexpr int kWorkflowRailWidth = 82;
+	static constexpr int kWorkflowGroupMinHeight = 58;
 	static constexpr int kWorkflowButtonMinHeight = 32;
 	static constexpr int kFieldLabelWidth = 116;
 	static constexpr int kOperationOutputMinHeight = 96;
@@ -69,7 +69,7 @@ namespace SparkleLauncher
 	static constexpr int kOperationOutputMaxHeight = 220;
 	static constexpr int kLauncherIconSize = 14;
 	static constexpr const char* kColorStateQueued = "#8b949e";
-	static constexpr const char* kColorStateRunning = "#58a6ff";
+	static constexpr const char* kColorStateRunning = "#76b900";
 	static constexpr const char* kColorStateSuccess = "#7ee787";
 	static constexpr const char* kColorStateDestructive = "#ff7b72";
 	static constexpr const char* kColorStateWarning = "#ffb454";
@@ -899,8 +899,6 @@ namespace SparkleLauncher
 		bodyLayout->setSpacing(0);
 		bodyLayout->addWidget(CreateWorkflowSurface(), 1);
 		rootLayout->addLayout(bodyLayout, 1);
-		rootLayout->addWidget(CreateOutputPanel());
-		rootLayout->addWidget(CreateFooterContextPanel(centralWidget));
 		setCentralWidget(centralWidget);
 		const QVector<WorkflowDefinition> workflows = CreateWorkflowDefinitions();
 		if (!workflows.empty() && !workflows.front().OperationIds.empty())
@@ -1188,6 +1186,7 @@ namespace SparkleLauncher
 		layout->setSpacing(0);
 		layout->addWidget(CreateProcessPicker(surface), 0);
 		layout->addWidget(CreateOptionsPanel(surface), 1);
+		layout->addWidget(CreateOutputPanel(), 0);
 		return surface;
 	}
 
@@ -1197,20 +1196,12 @@ namespace SparkleLauncher
 		panel->setObjectName("ProcessPanel");
 		panel->setFixedWidth(kWorkflowRailWidth);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(kSpaceSmall, kSpaceSmall, kSpaceSmall, kSpaceSmall);
-		layout->setSpacing(kSpaceSmall);
-
-		QLabel* railTitle = new QLabel("Workflows", panel);
-		railTitle->setObjectName("WorkflowRailTitle");
-		layout->addWidget(railTitle);
-
-		QHBoxLayout* workflowLayout = new QHBoxLayout();
-		workflowLayout->setContentsMargins(0, 0, 0, 0);
-		workflowLayout->setSpacing(kSpaceSmall);
+		layout->setContentsMargins(0, 10, 0, 10);
+		layout->setSpacing(4);
 
 		QVBoxLayout* groupLayout = new QVBoxLayout();
 		groupLayout->setContentsMargins(0, 0, 0, 0);
-		groupLayout->setSpacing(kSpaceTiny);
+		groupLayout->setSpacing(2);
 
 		m_workflowGroupButtonGroup = new QButtonGroup(this);
 		m_workflowGroupButtonGroup->setExclusive(true);
@@ -1224,22 +1215,27 @@ namespace SparkleLauncher
 		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
 		{
 			const WorkflowDefinition& workflow = workflows[workflowIndex];
-			QPushButton* groupButton = new QPushButton(workflow.Title, panel);
+			QToolButton* groupButton = new QToolButton(panel);
+			groupButton->setText(workflow.Title);
 			groupButton->setObjectName("WorkflowGroupButton");
+			groupButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
+			groupButton->setMaximumHeight(kWorkflowGroupMinHeight);
+			groupButton->setMinimumWidth(kWorkflowRailWidth);
+			groupButton->setMaximumWidth(kWorkflowRailWidth);
 			groupButton->setProperty("WorkflowIndex", workflowIndex);
 			groupButton->setProperty("ActiveState", "false");
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
 			groupButton->setIcon(WorkflowIconForIndex(workflowIndex));
-			groupButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
+			groupButton->setIconSize(QSize(18, 18));
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
 			groupLayout->addWidget(groupButton);
 
 			QWidget* tabPage = new QWidget(m_operationStack);
-			QVBoxLayout* actionLayout = new QVBoxLayout();
+			QHBoxLayout* actionLayout = new QHBoxLayout();
 			actionLayout->setContentsMargins(0, 0, 0, 0);
-			actionLayout->setSpacing(kSpaceTiny);
+			actionLayout->setSpacing(18);
 			if (workflow.OperationIds.size() > 1)
 			{
 				for (int index = 0; index < workflow.OperationIds.size(); ++index)
@@ -1259,11 +1255,9 @@ namespace SparkleLauncher
 			}
 		}
 		groupLayout->addStretch(1);
-		workflowLayout->addLayout(groupLayout, 0);
-		workflowLayout->addWidget(m_operationStack, 1);
 		connect(m_workflowGroupButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectWorkflowGroupButton);
 		connect(m_processButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectProcessButton);
-		layout->addLayout(workflowLayout, 1);
+		layout->addLayout(groupLayout, 1);
 		return panel;
 	}
 
@@ -1284,13 +1278,36 @@ namespace SparkleLauncher
 		QFrame* panel = new QFrame(parent);
 		panel->setObjectName("OptionsPanel");
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(12, 10, 12, 10);
-		layout->setSpacing(6);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
 
-		m_activeOperationLabel = new QLabel("No workflow selected", panel);
+		QFrame* titleBand = new QFrame(panel);
+		titleBand->setObjectName("TitleBand");
+		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
+		titleBandLayout->setContentsMargins(18, 0, 12, 0);
+		titleBandLayout->setSpacing(12);
+
+		QVBoxLayout* titleStack = new QVBoxLayout();
+		titleStack->setContentsMargins(0, 0, 0, 0);
+		titleStack->setSpacing(0);
+		m_activeOperationLabel = new QLabel("No workflow selected", titleBand);
 		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
 		m_activeOperationLabel->setAccessibleName("Selected workflow");
-		layout->addWidget(m_activeOperationLabel);
+		titleStack->addWidget(m_activeOperationLabel, 0, Qt::AlignVCenter);
+		titleBandLayout->addLayout(titleStack, 1);
+
+		QWidget* headerUtilities = CreateHeaderContextPanel(titleBand);
+		if (headerUtilities != nullptr)
+		{
+			titleBandLayout->addWidget(headerUtilities, 0, Qt::AlignRight | Qt::AlignVCenter);
+		}
+		layout->addWidget(titleBand, 0);
+
+		if (m_operationStack != nullptr)
+		{
+			m_operationStack->setParent(panel);
+			layout->addWidget(m_operationStack, 0);
+		}
 
 		m_optionsStack = new QStackedWidget(panel);
 		m_optionsStack->setObjectName("OptionsStack");
@@ -1353,13 +1370,13 @@ namespace SparkleLauncher
 		return panel;
 	}
 
-	QWidget* LauncherMainWindow::CreateFooterContextPanel(QWidget* parent)
+	QWidget* LauncherMainWindow::CreateHeaderContextPanel(QWidget* parent)
 	{
 		QFrame* panel = new QFrame(parent);
-		panel->setObjectName("FooterContextPanel");
+		panel->setObjectName("HeaderUtilityPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(6);
+		rowLayout->setSpacing(8);
 
 		m_rootModeLabel = new QLabel(panel);
 		m_rootModeLabel->setObjectName("RootModeBadge");
@@ -1374,8 +1391,18 @@ namespace SparkleLauncher
 			rowLayout->addWidget(folderShortcuts, 0, Qt::AlignLeft | Qt::AlignVCenter);
 		}
 
+		QPushButton* activityButton = new QPushButton("Activity", panel);
+		activityButton->setObjectName("HeaderUtilityButton");
+		activityButton->setToolTip("Open recent run activity and raw logs when you need diagnostics.");
+		activityButton->setAccessibleName("Open activity drawer");
+		activityButton->setMinimumHeight(28);
+		activityButton->setMaximumHeight(30);
+		RegisterFocusable(activityButton);
+		connect(activityButton, &QPushButton::clicked, this, &LauncherMainWindow::ToggleActivityLogPanel);
+		rowLayout->addWidget(activityButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
+
 		m_copyDiagnosticsButton = new QPushButton("Diagnostics", panel);
-		m_copyDiagnosticsButton->setObjectName("SecondaryButton");
+		m_copyDiagnosticsButton->setObjectName("HeaderUtilityButton");
 		m_copyDiagnosticsButton->setToolTip("Copy a concise launcher diagnostics summary with declared roots, selected workflow, and current context.");
 		m_copyDiagnosticsButton->setAccessibleName("Copy launcher diagnostics summary");
 		m_copyDiagnosticsButton->setMinimumHeight(24);
@@ -1384,13 +1411,11 @@ namespace SparkleLauncher
 		connect(m_copyDiagnosticsButton, &QPushButton::clicked, this, &LauncherMainWindow::CopyDiagnosticsSummary);
 		rowLayout->addWidget(m_copyDiagnosticsButton, 0, Qt::AlignLeft | Qt::AlignVCenter);
 
-		rowLayout->addStretch(1);
-
 		QLabel* projectLabel = CreateFieldLabel("Project");
-		projectLabel->setObjectName("FooterFieldLabel");
+		projectLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(projectLabel, 0);
 		QComboBox* projectCombo = CreateProjectCombo();
-		projectCombo->setObjectName("FooterContextCombo");
+		projectCombo->setObjectName("HeaderContextCombo");
 		projectCombo->setAccessibleName("Project");
 		projectCombo->setToolTip("Global project context used by project, cook, launch, and smoke workflows.");
 		projectCombo->setMinimumWidth(140);
@@ -1401,13 +1426,13 @@ namespace SparkleLauncher
 		rowLayout->addWidget(projectCombo, 0);
 
 		QLabel* configurationLabel = CreateFieldLabel("Config");
-		configurationLabel->setObjectName("FooterFieldLabel");
+		configurationLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(configurationLabel, 0);
 		QComboBox* configurationCombo = CreateValueCombo(
 		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
 		    m_settings.BuildConfiguration(),
 		    &LauncherSettings::SetBuildConfiguration);
-		configurationCombo->setObjectName("FooterContextCombo");
+		configurationCombo->setObjectName("HeaderContextCombo");
 		configurationCombo->setAccessibleName("Build Configuration");
 		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
 		configurationCombo->setMinimumWidth(140);
@@ -1418,10 +1443,10 @@ namespace SparkleLauncher
 		rowLayout->addWidget(configurationCombo, 0);
 
 		QLabel* ideLabel = CreateFieldLabel("IDE");
-		ideLabel->setObjectName("FooterFieldLabel");
+		ideLabel->setObjectName("HeaderFieldLabel");
 		rowLayout->addWidget(ideLabel, 0);
 		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
-		ideCombo->setObjectName("FooterContextCombo");
+		ideCombo->setObjectName("HeaderContextCombo");
 		ideCombo->setAccessibleName("IDE");
 		ideCombo->setToolTip("Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
 		ideCombo->setMinimumWidth(120);
@@ -1431,7 +1456,7 @@ namespace SparkleLauncher
 		ideLabel->setBuddy(ideCombo);
 		rowLayout->addWidget(ideCombo, 0);
 
-		m_footerContextPanel = panel;
+		m_headerContextPanel = panel;
 		UpdateRootModeIndicator();
 		return panel;
 	}
@@ -1442,12 +1467,14 @@ namespace SparkleLauncher
 		scrollArea->setObjectName("OptionsScrollArea");
 		scrollArea->setWidgetResizable(true);
 		scrollArea->setFrameShape(QFrame::NoFrame);
+		scrollArea->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
 
 		QWidget* content = new QWidget(scrollArea);
 		content->setObjectName("OptionsContent");
+		content->setMaximumWidth(1320);
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(0, 4, 0, 0);
-		layout->setSpacing(6);
+		layout->setContentsMargins(24, 18, 24, 28);
+		layout->setSpacing(8);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -1465,6 +1492,12 @@ namespace SparkleLauncher
 		    [this]() { CopySelectedRunOutput(); },
 		    [this](QListWidgetItem* current, QListWidgetItem* previous) { DisplaySelectedRunOutput(current, previous); });
 
+		if (widgets.Root != nullptr)
+		{
+			widgets.Root->setObjectName("ActivityDrawer");
+			widgets.Root->setMinimumWidth(360);
+			widgets.Root->setMaximumWidth(460);
+		}
 		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
 		m_activityList = widgets.ActivityList;
 		m_selectedRunSummary = widgets.SelectedRunSummary;
@@ -3240,7 +3273,7 @@ namespace SparkleLauncher
 		    "Declared workspace folder shortcuts",
 		    "Open folders",
 		    entries);
-		button->setObjectName("FooterUtilityButton");
+		button->setObjectName("HeaderUtilityButton");
 		button->setText("Folders");
 		button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 		button->setAutoRaise(false);
@@ -4435,7 +4468,7 @@ namespace SparkleLauncher
 		if (m_activeOperationLabel != nullptr)
 		{
 			m_activeOperationLabel->setText(title);
-			m_activeOperationLabel->setVisible(!isHomeOperation);
+			m_activeOperationLabel->setVisible(true);
 		}
 		if (m_actionMetaPanel != nullptr)
 		{
@@ -4616,6 +4649,10 @@ namespace SparkleLauncher
 	void LauncherMainWindow::SetActivityLogExpanded(bool expanded)
 	{
 		m_activityLogExpanded = expanded;
+		if (m_activityDetailsPanel != nullptr)
+		{
+			m_activityDetailsPanel->setVisible(expanded);
+		}
 		if (m_operationOutput != nullptr)
 		{
 			m_operationOutput->setVisible(expanded);
@@ -4657,7 +4694,7 @@ namespace SparkleLauncher
 		const bool hasRuns = m_startedRunCount > 0;
 		if (m_activityDetailsPanel != nullptr)
 		{
-			m_activityDetailsPanel->setVisible(hasRuns);
+			m_activityDetailsPanel->setVisible(hasRuns && m_activityLogExpanded);
 		}
 		if (m_copyOutputButton != nullptr && !hasRuns)
 		{
@@ -4716,29 +4753,28 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::ApplyVisualStyle()
 	{
-		const QString background = "#232528";
-		const QString shell = "#1a1c1f";
-		const QString panel = "#2a2c2f";
-		const QString panelRaised = "#303338";
-		const QString panelHover = "#373b40";
-		const QString field = "#24272b";
-		const QString fieldRaised = "#2b2f34";
-		const QString border = "#111315";
-		const QString borderSoft = "#3a3e44";
-		const QString borderStrong = "#4c5159";
-		const QString divider = "#2f3338";
-		const QString focus = "#4aa3e0";
-		const QString primary = "#0d82d8";
-		const QString primaryHover = "#1792ea";
-		const QString selection = "#0877c9";
+		const QString background = "#111312";
+		const QString shell = "#181a19";
+		const QString panel = "#202220";
+		const QString panelHover = "#2c302c";
+		const QString field = "#202321";
+		const QString border = "#0b0d0c";
+		const QString borderSoft = "#303430";
+		const QString borderStrong = "#444943";
+		const QString divider = "#2b2f2b";
 		const QString accent = "#76b900";
+		const QString accentHover = "#8bd80f";
+		const QString accentDim = "#31451f";
+		const QString focus = accent;
+		const QString primary = accent;
+		const QString primaryHover = accentHover;
+		const QString selection = "#31451f";
 		const QString warning = QString::fromLatin1(kColorStateWarning);
 		const QString destructive = QString::fromLatin1(kColorStateDestructive);
-		const QString textPrimary = "#f1f3f5";
-		const QString textBody = "#d5d7da";
-		const QString textSecondary = "#b7bcc3";
-		const QString textMuted = "#8c929a";
-		const QString headerBlue = "#0e83d7";
+		const QString textPrimary = "#f2f4f1";
+		const QString textBody = "#d9ddd7";
+		const QString textSecondary = "#b9c0b6";
+		const QString textMuted = "#858d82";
 
 		QString style;
 		const auto addRule = [&style](const QString& selector, const QString& body) {
@@ -4748,22 +4784,24 @@ namespace SparkleLauncher
 		addRule("QMainWindow, QWidget", "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 9pt;");
 		addRule("QLabel", "color: " + textBody + "; background: transparent;");
 		addRule("#WorkflowSurface", "background: " + background + ";");
-		addRule("#ProcessPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #25282c, stop:1 " + shell + "); border: 1px solid " + border + "; border-right-color: #0e1012; padding: 0;");
-		addRule("#OptionsPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #303338, stop:1 " + panel + "); border: 1px solid " + border + "; border-left: none;");
-		addRule("#OutputPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #24272b, stop:1 #1d2023); border-top: 1px solid " + border + ";");
+		addRule("#ProcessPanel", "background: " + shell + "; border: none; border-right: 1px solid #252923; padding: 0;");
+		addRule("#OptionsPanel", "background: " + background + "; border: none;");
+		addRule("#TitleBand", "background: #242622; border: none; border-bottom: 1px solid " + divider + "; min-height: 58px; max-height: 58px;");
+		addRule("#HeaderUtilityPanel", "background: transparent; border: none;");
+		addRule("#ActivityDrawer", "background: #181a19; border: none; border-left: 1px solid " + divider + ";");
+		addRule("#OutputPanel", "background: #181a19; border: none;");
 		addRule("#OutputPaneLabel", "color: " + textSecondary + "; font-size: 8pt; font-weight: 700; letter-spacing: 0.2px;");
 		addRule("#ActivityRail", "background: #23262a; border: none; border-right: 1px solid " + border + ";");
 		addRule("#OutputPane", "background: #202327; border: none;");
-		addRule("#FooterContextPanel", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #202328, stop:1 " + shell + "); border-top: 1px solid " + border + "; padding: 4px 10px 5px 10px;");
-		addRule("#FooterFieldLabel", "color: " + textMuted + "; font-size: 8pt; font-weight: 600;");
-		addRule("#FooterContextCombo", "background: " + field + "; border: 1px solid " + borderStrong + "; border-top-color: #666c75; border-radius: 0; padding: 1px 8px; color: " + textBody + "; min-height: 22px; max-height: 24px; font-size: 8pt;");
-		addRule("#FooterContextCombo:focus", "border: 1px solid " + focus + ";");
-		addRule("#RootModeBadge", "background: #26301f; color: #dff3cf; border: 1px solid #4d6f29; padding: 3px 9px; font-size: 7.75pt; font-weight: 800; letter-spacing: 0.25px;");
-		addRule("#RootModeBadge[Mode=\"source\"]", "background: #1f2d3a; color: #cfe7ff; border-color: #3a6488;");
+		addRule("#HeaderFieldLabel", "color: " + textMuted + "; font-size: 8pt; font-weight: 600;");
+		addRule("#HeaderContextCombo", "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 2px 8px; color: " + textBody + "; min-height: 24px; max-height: 28px; font-size: 8pt;");
+		addRule("#HeaderContextCombo:focus", "border: 1px solid " + focus + ";");
+		addRule("#RootModeBadge", "background: " + accentDim + "; color: #ecffd8; border: 1px solid #5c8c22; padding: 4px 9px; font-size: 7.75pt; font-weight: 800; letter-spacing: 0.25px;");
+		addRule("#RootModeBadge[Mode=\"source\"]", "background: " + accentDim + "; color: #ecffd8; border-color: #5c8c22;");
 		addRule("#RootModeBadge[Mode=\"workspace\"]", "background: #332b20; color: #ffe2a8; border-color: #7a5a23;");
-		addRule("#FooterUtilityButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #383d44, stop:1 #2f343a); color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #5c636d; padding: 3px 10px; font-size: 8pt; font-weight: 650;");
-		addRule("#FooterUtilityButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
-		addRule("#FooterUtilityButton:focus", "border: 1px solid " + focus + ";");
+		addRule("#HeaderUtilityButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; padding: 5px 9px; font-size: 8pt; font-weight: 750;");
+		addRule("#HeaderUtilityButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
+		addRule("#HeaderUtilityButton:focus", "border: 1px solid " + focus + ";");
 		addRule("#OptionsScrollArea, #OptionsStack, #OptionsContent, #OperationStack, #InlineOptionsSection, #ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#OptionsScrollArea QWidget", "background: transparent;");
 		addRule("#OptionRow", "background: transparent; min-height: 26px;");
@@ -4776,21 +4814,21 @@ namespace SparkleLauncher
 		addRule("#CommandProductTitle", "color: " + textPrimary + "; font-size: 20pt; font-weight: 900; letter-spacing: -0.35px;");
 		addRule("#CommandProductSubtitle", "color: " + textSecondary + "; font-size: 9pt; font-weight: 600;");
 		addRule("#CommandContextPill", "background: #202a32; color: #d8e8f5; border: 1px solid #3a5367; border-radius: 3px; padding: 5px 10px; font-size: 8pt; font-weight: 750;");
-		addRule("#CommandHeroCard", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #35475f, stop:0.55 #2a3745, stop:1 #222b34); border: 1px solid #5d7388; border-top-color: #88a2b8; border-radius: 5px;");
+		addRule("#CommandHeroCard", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #24291f, stop:0.55 #1d211b, stop:1 #141615); border: 1px solid #354126; border-left: 3px solid " + accent + "; border-radius: 4px;");
 		addRule("#CommandHeroCard[State=\"warning\"]", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #584129, stop:0.58 #3a3026, stop:1 #292923); border-color: #8a662f; border-top-color: #bd8939;");
 		addRule("#CommandHeroTitle", "color: #ffffff; font-size: 18pt; font-weight: 900; letter-spacing: -0.25px;");
 		addRule("#CommandHeroText", "color: #e0ebf2; font-size: 9.5pt; line-height: 135%;");
 		addRule("#CommandHeroChip", "color: #dff3cf; border: 1px solid #4d6f29; border-radius: 3px; background: #26351f; padding: 3px 9px; font-size: 7.75pt; font-weight: 800;");
 		addRule("#CommandHeroChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
-		addRule("#CommandCapabilityCard", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #32373d, stop:1 #252a30); border: 1px solid #424a53; border-top-color: #59626e; border-radius: 4px;");
-		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid #6c9638;");
+		addRule("#CommandCapabilityCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px;");
+		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[State=\"warning\"]", "border-left: 4px solid #b37726;");
 		addRule("#CommandCardTitle", "color: " + textPrimary + "; font-size: 11.5pt; font-weight: 900; letter-spacing: -0.1px;");
 		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 8.75pt; line-height: 135%;");
 		addRule("#CommandCardChip", "color: #c8d4df; border: 1px solid #4a515a; border-radius: 3px; background: #2d333a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
 		addRule("#CommandCardChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
 		addRule("#CommandCardChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
-		addRule("#CommandPrimaryButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + primaryHover + ", stop:1 " + primary + "); color: #ffffff; border: 1px solid #0b4b81; border-top-color: #79c0ef; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
+		addRule("#CommandPrimaryButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 3px; padding: 7px 18px; font-weight: 900; min-width: 150px;");
 		addRule("#CommandPrimaryButton:hover", "background: " + primaryHover + ";");
 		addRule("#CommandSecondaryButton", "background: #343a42; color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #5c636d; border-radius: 3px; padding: 6px 13px; font-weight: 750; min-width: 112px;");
 		addRule("#CommandSecondaryButton:hover", "background: " + panelHover + "; color: " + textPrimary + ";");
@@ -4823,23 +4861,23 @@ namespace SparkleLauncher
 		addRule("#ProgressLabel", "color: " + textPrimary + "; font-size: 9pt; font-weight: 700;");
 		addRule("#ActivitySummary", "color: " + textSecondary + "; background: transparent; font-size: 7.75pt; font-weight: 600; padding: 0 0 2px 0;");
 
-		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: 1px solid transparent; padding: 6px 8px 6px 9px; text-align: left; font-size: 8.5pt; font-weight: 650; min-width: 78px;");
-		addRule("#WorkflowGroupButton:hover", "background: #2b2f34; color: " + textBody + "; border: 1px solid #343940;");
-		addRule("#WorkflowGroupButton:pressed", "background: #30353b; color: " + textPrimary + "; border: 1px solid #414750; border-left: 2px solid " + headerBlue + "; padding-left: 8px;");
-		addRule("#WorkflowGroupButton[ActiveState=\"true\"]", "background: #2d3136; color: " + textPrimary + "; border: 1px solid #414750; border-left: 2px solid " + headerBlue + "; padding-left: 8px;");
+		addRule("#WorkflowGroupButton", "background: transparent; color: " + textMuted + "; border: none; border-left: 3px solid transparent; padding: 5px 4px 5px 4px; text-align: center; font-size: 7.6pt; font-weight: 700; min-width: 76px;");
+		addRule("#WorkflowGroupButton:hover", "background: #20231f; color: " + textBody + "; border-left: 3px solid #3a4234;");
+		addRule("#WorkflowGroupButton:pressed", "background: #242a20; color: " + textPrimary + "; border-left: 3px solid " + accent + ";");
+		addRule("#WorkflowGroupButton[ActiveState=\"true\"]", "background: #20251d; color: " + textPrimary + "; border-left: 3px solid " + accent + ";");
 		addRule("#WorkflowGroupButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
-		addRule("#WorkflowButton", "background: transparent; color: " + textBody + "; border: 1px solid transparent; padding: 7px 10px; text-align: left; font-size: 9pt; font-weight: 600;");
-		addRule("#WorkflowButton:hover", "background: #2e3338; border: 1px solid #363b42;");
-		addRule("#WorkflowButton:checked", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #108be6, stop:1 " + selection + "); border: 1px solid #6cbef4; color: #ffffff;");
+		addRule("#WorkflowButton", "background: transparent; color: " + textSecondary + "; border: none; border-bottom: 3px solid transparent; padding: 10px 16px 8px 16px; text-align: center; font-size: 9pt; font-weight: 750;");
+		addRule("#WorkflowButton:hover", "background: #1b1e1b; color: " + textPrimary + ";");
+		addRule("#WorkflowButton:checked", "background: transparent; border-bottom: 3px solid " + accent + "; color: #ffffff;");
 		addRule("#WorkflowButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 
-		addRule("QPushButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + primaryHover + ", stop:1 " + primary + "); color: #ffffff; border: 1px solid #0b4b81; border-top-color: #79c0ef; border-radius: 0; padding: 6px 14px; font-weight: 650;");
+		addRule("QPushButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 2px; padding: 6px 14px; font-weight: 750;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
 		addRule("QPushButton:disabled", "background: #31353a; border: 1px solid " + border + "; border-top-color: #454a51; color: " + textMuted + ";");
-		addRule("#PrimaryActionButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + primaryHover + ", stop:1 " + primary + "); min-width: 112px; padding-left: 18px; padding-right: 18px; font-weight: 800;");
+		addRule("#PrimaryActionButton", "background: " + primary + "; color: #071006; min-width: 112px; padding-left: 18px; padding-right: 18px; font-weight: 900;");
 		addRule("#PrimaryActionButton:hover", "background: " + primaryHover + ";");
-		addRule("#SecondaryButton", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #42474e, stop:1 #33373d); color: " + textBody + "; border: 1px solid " + borderSoft + "; border-top-color: #646a73; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
+		addRule("#SecondaryButton", "background: #2a2d2a; color: " + textBody + "; border: 1px solid " + borderSoft + "; padding: 4px 10px; font-size: 8pt; font-weight: 650;");
 		addRule("#SecondaryButton:hover", "background: " + panelHover + ";");
 		addRule("#SecondaryButton:focus", "border: 1px solid " + focus + "; color: " + textPrimary + ";");
 		addRule("#DependencyActionButton", "background: transparent; color: " + textMuted + "; border: none; padding: 0; min-width: 16px; max-width: 16px; min-height: 16px; max-height: 16px;");
@@ -4851,7 +4889,7 @@ namespace SparkleLauncher
 		addRule("#OverflowMenu::item", "background: transparent; padding: 3px 10px 3px 8px; color: " + textBody + "; font-size: 7.75pt;");
 		addRule("#OverflowMenu::item:selected", "background: " + selection + "; color: #ffffff;");
 		addRule("#OverflowMenu::separator", "height: 1px; background: " + borderSoft + "; margin: 2px 6px;");
-		addRule("QComboBox, QLineEdit, QTextEdit", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 " + fieldRaised + ", stop:1 " + field + "); border: 1px solid " + borderStrong + "; border-top-color: #676d76; border-left: none; border-radius: 0; padding: 4px 8px; color: " + textBody + "; selection-background-color: " + selection + ";");
+		addRule("QComboBox, QLineEdit, QTextEdit", "background: " + field + "; border: 1px solid " + borderStrong + "; border-radius: 2px; padding: 4px 8px; color: " + textBody + "; selection-background-color: " + selection + ";");
 		addRule("QComboBox:focus, QLineEdit:focus, QTextEdit:focus", "border: 1px solid " + focus + ";");
 		addRule("QComboBox:disabled", "background: " + shell + "; border: 1px solid " + border + "; color: " + textMuted + ";");
 		addRule("QCheckBox", "spacing: 8px; padding: 0; color: " + textBody + "; font-size: 8pt;");
@@ -4863,11 +4901,11 @@ namespace SparkleLauncher
 		addRule("QListWidget", "background: transparent; border: none; border-radius: 0; padding: 0; outline: 0;");
 		addRule("QListWidget:focus", "border: 1px solid " + focus + ";");
 		addRule("QListWidget::item", "padding: 3px 4px; border-radius: 0; color: " + textBody + ";");
-		addRule("QListWidget::item:selected", "background: #0d7ecf; color: #ffffff;");
+		addRule("QListWidget::item:selected", "background: " + selection + "; color: #ffffff;");
 		addRule("#ActivityDetailsPanel", "background: transparent; border: none;");
 		addRule("#ActivityList", "background: transparent; border: none; border-radius: 0; padding: 0;");
 		addRule("#ActivityRunRow", "background: transparent; border: 1px solid transparent; padding: 1px 0;");
-		addRule("#ActivityRunRow[Selected=\"true\"]", "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #168be2, stop:1 #0d73c0); border: 1px solid #75c2f5; border-radius: 0;");
+		addRule("#ActivityRunRow[Selected=\"true\"]", "background: " + selection + "; border: 1px solid #5c8c22; border-radius: 2px;");
 		addRule("#ActivityRunIndicator", "background: " + QString::fromLatin1(kColorStateQueued) + "; border-radius: 1px;");
 		addRule("#ActivityRunIndicator[RunState=\"queued\"]", "background: " + QString::fromLatin1(kColorStateQueued) + ";");
 		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + QString::fromLatin1(kColorStateRunning) + ";");
@@ -4876,7 +4914,7 @@ namespace SparkleLauncher
 		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8pt; font-weight: 650; padding: 0; margin: 0;");
 		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7pt; font-weight: 700; padding: 0; margin: 0;");
 		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunTitle", "color: #ffffff;");
-		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunState", "color: #d7e7f7;");
+		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunState", "color: #dff3cf;");
 		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 2px 0 0 0; font-family: 'Cascadia Mono'; font-size: 8.25pt;");
 		setStyleSheet(style);
 	}
