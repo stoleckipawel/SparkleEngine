@@ -347,339 +347,17 @@ Production home behavior:
 - daily production shortcuts should be persistent: Prepare, Build Missing, Cook Missing, Validate, Package, Maintain
 - quick-start copy should never block or obscure expert operations; it should simply set the default attention order
 
-## Phase 0 Handoff: First-Contact Quick Start Contract
+## Archived Early Prototype Concepts
 
-Status:
+The earlier Direction A card-grid handoff, old workflow-page examples, and old activity/log concept were moved to:
 
-- Direction A: Command Center is the accepted target for this contract.
-- This phase defines product copy, state names, CTA priority, evidence ownership, and stale-failure behavior only.
-- No launcher code, build, launch, or package validation is part of this phase.
+- docs/plans/launcher-principal-ux-implemented-prototype-archive.md
 
-### Home Identity And Hero Copy
+Keep the main concept focused on the current reference stack:
 
-Home title:
-
-- `Sparkle Engine`
-
-Project subtitle:
-
-- `Showcase project`
-- Use the selected project name when the launcher supports multiple projects.
-
-Mode labels:
-
-| Label | Meaning | Source |
-| --- | --- | --- |
-| `Package Mode` | Launcher is running from an assembled package root with package manifests available | package-root discovery, `dist/releases/<version>/.../manifests/` |
-| `Source Checkout` | Launcher is running from a repository checkout with source/project markers available | repository root discovery |
-| `Source Checkout + Local Artifacts` | Source checkout has local runnable artifacts under `artifacts/dev` | artifact-root discovery |
-| `Mixed State` | Package or source markers exist, but expected manifests/artifacts are incomplete | root discovery plus manifest/artifact checks |
-
-Hero state labels:
-
-| State | Copy | Primary Meaning |
-| --- | --- | --- |
-| `Ready to explore` | `Open the strongest available Showcase target. Rebuild and recook are optional.` | At least one editor/runtime launch target is available from package or local artifacts |
-| `Ready from package` | `This launch uses bundled package components. Local rebuilds are optional.` | Package editor/runtime and required cooked content are present |
-| `Ready from local build` | `This launch uses local development artifacts. Package components are not required.` | Local editor/runtime and required content are present |
-| `Needs one action` | `One preparation step unlocks the selected launch path.` | One clear missing/stale blocker maps to one workflow |
-| `Source checkout requires preparation` | `Prepare the workspace before local rebuilds. Package launch may still be available.` | Source exists but workspace files/dependencies/artifacts are not ready |
-| `Package incomplete` | `Expected package files or manifests are missing. Use a complete package or switch to source workflows.` | Package markers exist but package launch cannot be trusted |
-
-Hero CTA order:
-
-1. `Open Editor` when editor launch is ready.
-2. `Open Runtime` when runtime launch is ready and editor is unavailable.
-3. `Build Missing` when a local executable is the smallest blocker.
-4. `Cook Missing` when cooked content is the smallest blocker.
-5. `Generate Workspace Files` when stale/missing project files block build/cook workflows.
-6. `Prepare Source Workspace` when multiple source-preparation blockers exist.
-7. `View Details` when no safe single action can be inferred.
-
-Secondary CTA rules:
-
-- show at most two secondary actions in the hero
-- prefer `Open Runtime`, `Open Editor`, `View Evidence`, `Prepare Source Workspace`, `Build Missing`, or `Cook Missing`
-- never place `Sync Source Tiers`, `Clean Workspace`, or full dependency repair as a hero primary action unless it is the only honest next step
-
-### Direction A Home Card Contract
-
-Home cards:
-
-| Card | Purpose | Primary Sources | Default Action |
-| --- | --- | --- | --- |
-| `Launch` | Shows editor/runtime availability and launch provenance | package manifests, bundled component manifest, artifact discovery | `Open Editor` or `Open Runtime` |
-| `Prepare` | Shows host/workspace readiness without dumping full tool lists | host prerequisite checks, source dependency tier state, workspace file state | `Prepare Source Workspace` or `Generate Workspace Files` |
-| `Content` | Shows cooked domain readiness | cooked root discovery, shader/texture/scene readiness | `Cook Missing` |
-| `Package` | Shows whether review package assembly/inspection is available | `dist/releases/<version>`, release assembly manifests | `Assemble Review Package` or `Open Dist Folder` |
-| `Evidence` | Shows concrete engineering proof links | docs, generated manifests, validation reports, source map | `View Evidence` |
-| `Activity` | Shows only relevant current or recent issues | action history, latest logs, dismissed-run state | `Resolve`, `Dismiss`, or `View Log` |
-
-Card density rules:
-
-- each card should show one status chip, one sentence, and one action by default
-- details move to card expansion, workflow page, diagnostics, or logs
-- raw paths never appear on Home unless a path problem is the blocker
-- cards must not become a target/output matrix; Direction C density belongs in Details or Advanced
-
-### Engineering Evidence Link Contract
-
-Every Home evidence link must resolve to a concrete source. If the source does not exist yet, the link should explain the producing workflow rather than pretending it is available.
-
-| Evidence Link | User-Facing Purpose | Owner | Expected Source |
-| --- | --- | --- | --- |
-| `Architecture` | Explain product boundaries, artifact layout, launcher workflows, and engine structure | docs owner | architecture or roadmap docs under `docs/` |
-| `Dependency Tiers` | Explain host prerequisites versus syncable capability tiers | dependency/system owner | `docs/dependency-capability-tiers.md` and launcher dependency tier metadata |
-| `Release Manifests` | Show package contents, build metadata, dependencies, checksums, and bundled components | release assembly owner | `dist/releases/<version>/.../manifests/` generated by `CMake/SparkleReleaseAssembly.cmake` |
-| `Validation Report` | Show final build/package/smoke results when available | validation owner | final validation report under `docs/plans/` or generated package report |
-| `Source Map` | Show where launcher, editor, runtime, cook tools, projects, artifacts, and packages live | docs/build owner | repository navigation docs plus artifact contract |
-| `Diagnostics` | Provide copyable logs, tool versions, selected options, package/source mode, and current blockers | launcher owner | launcher state, action history, latest operation logs, manifests |
-
-Evidence status labels:
-
-| Label | Meaning |
-| --- | --- |
-| `Available` | Link opens an existing file, folder, manifest, report, or launcher view |
-| `Generated` | Link opens generated output from the current workspace or package |
-| `Pending` | Expected output is missing and the card names the workflow that creates it |
-| `Not configured` | Feature is intentionally disabled by the selected dependency/capability configuration |
-
-### Stale Failure And Activity Contract
-
-Home must not make the whole launcher feel broken because an unrelated old action failed.
-
-Activity display rules:
-
-- active current workflow failure: show inline recovery on that workflow and a compact Home Activity card
-- old unrelated failure: show a quiet Activity badge/card only
-- dismissed old failure: hide from primary Home/workflow attention, keep raw logs and history
-- clean failure caused by live launcher artifacts: show `Close launcher and retry clean` as a recovery insight
-- package/build/cook failure: show the failed workflow, one likely next action, and `View Log`
-
-Activity card copy examples:
-
-```text
-Activity
-Clean Workspace failed because launcher artifacts were locked.
-[Close Launcher And Retry] [Dismiss] [View Log]
-```
-
-```text
-Activity
-No blocking activity for the selected workflow.
-[View History]
-```
-
-### First-Contact Timing Review
-
-| Journey Point | Contract Check |
-| --- | --- |
-| 30 seconds | Home title, project, package/source mode, hero state, and primary CTA are visible without scrolling |
-| 2 minutes | User can launch editor/runtime if available, or sees the exact smallest blocker |
-| 5 minutes | User can open Architecture, Dependency Tiers, Release Manifests, Validation Report, Source Map, or Diagnostics |
-| 15 minutes | User can continue from Quick Start into Prepare, Build Missing, Cook Missing, Package, or Validate without switching roles |
-
-### Phase 0 Validation Result
-
-- Home / Quick Start contract maps to Direction A's hero, Launch/Prepare/Content/Package/Evidence/Activity cards, and one next action.
-- Every proposed evidence link has an owner and expected source.
-- The contract does not introduce `Reviewer Mode`, `Developer Mode`, or interview-specific app copy.
-- Rebuild, recook, dependency sync, and clean remain secondary unless they are the smallest honest next action.
-- Final build, launch, package, and visual validation were not run in this phase.
-
-What earns attention:
-
-- project/package state
-- primary launch CTA
-- one recommended next action
-- critical blocker from the current funnel
-- quick links that prove engineering depth without interrupting first launch
-
-What does not earn primary attention:
-
-- full tool list
-- every cached dependency
-- raw paths
-- stale unrelated logs
-
-## Workflow Page Concept
-
-Example: Build Editor
-
-```text
-Build Editor                                             Needs project files refresh
-Rebuild the Showcase editor locally. This replaces package/editor artifacts only.
-
-Recommended next action
-Generated project files are stale.
-[Generate Workspace Files]    Secondary: Clean Build Files
-
-Readiness
-OK Host tools ready
-! Project files stale
-OK Core source tier cached
-OK Editor target discovered
-
-Build options
-Configuration: DevelopmentEditor
-Project: Showcase
-
-Details >
-```
-
-Important changes from current UI:
-
-- Host tool details collapse by default after the dependency set is ready.
-- Dependency tiers show as chips or compact cards, not full rows unless expanded.
-- `Build files` stale state becomes the main recommendation instead of one row among many.
-- Full paths are hidden behind Details unless a path is the actual problem.
-
-## Launch Page Concept
-
-Example: Open Runtime
-
-```text
-Open Runtime                                             Blocked: missing runtime
-Launch the packaged or locally built runtime for Showcase.
-
-Recommended next action
-Runtime executable is missing.
-[Build Runtime]    Secondary: Open package docs
-
-Readiness
-OK Project directory ready
-! Runtime executable missing
-! Cooked scene assets missing
-! Cooked textures missing
-! Cooked shaders missing
-
-Runtime options >
-Graphics backend: D3D12
-VSync: On
-GPU preference: High performance
-
-Details >
-```
-
-If package components exist, the status should say:
-
-```text
-Ready from package
-This launch uses packaged runtime components. Local rebuild is optional.
-```
-
-If source artifacts exist:
-
-```text
-Ready from local build
-This launch uses artifacts/dev/projects/Showcase/runtime/DevelopmentGame.
-```
-
-## Prepare Page Concept
-
-Current Setup has too many sibling actions: Verify Host Environment, Sync Source Dependencies, Generate Project Files, Open Workspace.
-
-Proposed Prepare Source Workspace combines them into a guided sequence:
-
-```text
-Prepare Source Workspace                                  Needs project files refresh
-Make this checkout ready for local rebuilds.
-
-1. Host tools                      Ready
-2. Source tiers                    Core ready, Content cached, Shader cached, KTX disabled
-3. Project files                   Needs refresh
-4. IDE workspace                   Available after generation
-
-[Generate Workspace Files]
-
-Advanced actions
-[Verify Host Tools] [Sync Source Tiers] [Open IDE]
-```
-
-This keeps expert escape hatches while making the common path obvious.
-
-## Cook Page Concept
-
-Cook should be asset-domain-first.
-
-```text
-Cook Content                                              Missing outputs
-Prepare generated runtime content for Showcase.
-
-Asset domains
-* Shaders       Missing   [Cook Shaders]       Uses Shader Compiler Source Tier
-* Textures      Missing   [Cook Textures]      Uses Content Pipeline Source Tier
-* Scenes/Meshes  Missing  [Cook Scenes And Meshes]  Uses Content Pipeline Source Tier
-
-Primary action
-[Cook Missing]   Secondary: Cook All
-
-Advanced shader options >
-```
-
-Current issue:
-
-- Cook Shaders exposes many advanced controls immediately.
-
-Recommended:
-
-- Default view should show package, backend, and target preset only.
-- Cache/debug/stats controls should be under `Advanced shader cook`.
-
-## Maintain Page Concept
-
-Maintenance should feel safe. The current Clean Workspace page shows many checkboxes and a failed log, which makes it feel dangerous and broken.
-
-Proposed:
-
-```text
-Clean Generated Files                                    Safe scopes selected
-Remove generated files. Source files and installed tools are never deleted.
-
-Recommended clean
-OK Project cooked outputs
-OK Build outputs
-OK Logs
-
-Danger zone >
-Source dependency cache
-Generated workspace reset
-
-Blocked cleanup from last run
-Launcher is currently using artifacts/dev/launcher-state/Live.
-[Close Launcher And Retry] [Open log] [Dismiss]
-```
-
-Important:
-
-- A failed clean caused by the launcher locking its live artifact should become an actionable maintenance insight, not a global failure shown on every page.
-- Dangerous scopes need progressive disclosure and stronger confirmation copy.
-
-## Activity And Logs
-
-Current bottom log panel problems:
-
-- It consumes a large permanent portion of the viewport.
-- It repeats stale errors on unrelated pages.
-- It uses raw terminal text as primary UI.
-- Runs list and log panel compete with the main workflow.
-
-Proposed:
-
-- Activity dock is collapsed by default unless a run is active or the selected workflow has a relevant recent failure.
-- A global toast/insight should summarize failures in human language.
-- Raw logs live in an expandable drawer.
-- Users can dismiss old failures from the main view without deleting logs.
-
-Activity states:
-
-| State | UI Treatment |
-| --- | --- |
-| Running | bottom drawer expands with progress and live log |
-| Failed current workflow | inline recovery card plus log drawer |
-| Failed unrelated workflow | compact Activity badge only |
-| Completed | short success toast, log available in Activity |
-
+- NVIDIA App for product shell and visual language
+- Visual Studio Installer for source-tier/component/commit-flow complexity
+- Rider for dense expert settings, Activity, logs, diagnostics, and compact action menus
 ## Naming Refinement
 
 Recommended renames:
@@ -710,18 +388,858 @@ Names to avoid:
 
 ## Visual Direction
 
-The current dark industrial direction is appropriate, but it needs stronger hierarchy and more atmosphere.
+The previous Sparkle Launcher execution is not visually accepted. It moved the information architecture toward a command center, but it did not capture the calm, high-confidence product language we want. The new target is an NVIDIA App-inspired engine launcher: restrained, sparse, dark, precise, and operational, with strong hierarchy and very little decorative chrome.
+
+The goal is not to clone NVIDIA branding or make Sparkle pretend to be an NVIDIA product. The goal is to learn from the NVIDIA App's product discipline: simple shell, bright active accent, generous negative space, crisp tabs, clear page titles, compact cards, and settings/detail pages that feel quiet until the user asks for depth.
 
 Recommended art direction:
 
-- NVIDIA-adjacent but not NVIDIA-branded: graphite, tungsten, warm black, electric blue accent, restrained green for ready states, amber for stale/missing.
-- Use cards and summary strips instead of full-width row tables everywhere.
-- Keep the technical precision, but make it scannable.
-- Larger type for primary state and CTAs.
-- Use status chips consistently: Ready, Ready from package, Ready from local build, Missing, Stale, Disabled, Optional.
-- Reserve bright blue for primary action only.
-- Use green for success, amber for attention, red only for destructive/failure states.
-- Paths should be muted monospace in detail drawers, not paragraph text in primary rows.
+- NVIDIA App-inspired, not NVIDIA-branded: near-black canvas, charcoal header/content bands, graphite cards, thin dividers, white text, muted gray secondary text, and a single electric lime accent.
+- Replace the old blue CTA language with lime-green primary actions and active states.
+- Use cards only when they have strong product purpose: hero media, launch target, package/evidence tile, stat tile, or capability tile.
+- Use list rows and section dividers for settings, prerequisites, dependency tiers, and diagnostics instead of boxing every line as a card.
+- Keep technical precision, but make it scannable through page sections, tabs, concise summaries, and expandable detail.
+- Use larger type for page titles, hero headline, and primary CTA copy; keep dense operational metadata smaller and quieter.
+- Use status labels consistently: Ready, Ready from package, Ready from local build, Missing, Stale, Disabled, Optional, Pending.
+- Use lime green for active navigation, ready/available states, primary action buttons, and selected tabs.
+- Use amber for stale/missing action-needed states, red only for destructive/failure states, and gray for optional/disabled.
+- Paths should be muted monospace in detail drawers, diagnostics, or copyable output, not paragraph text in primary rows.
+- The launcher should feel like a serious control center with product-grade restraint, not a raw CMake dashboard and not a portfolio slideshow.
+
+## NVIDIA App Reference Analysis And Sparkle Translation
+
+This section analyzes the supplied NVIDIA App screenshots and translates them into Sparkle Launcher rules. The reference is the visual and interaction language, not the brand identity.
+
+### What NVIDIA App Does Well
+
+Shell:
+
+- very narrow icon rail on the far left
+- active navigation uses a bright lime vertical bar and a quiet selected background
+- page title lives in a broad top header band
+- top-right utility actions are small icons, not large labeled buttons
+- the shell does not have a persistent bottom terminal or footer fighting for attention
+
+Page structure:
+
+- each page has one clear title: `Home`, `Drivers`, `System`, `Settings`
+- many pages use horizontal tabs directly under the title: `Monitors`, `Video`, `Performance`, `My Rig`, `Advanced`
+- page content starts after a thin divider; the divider gives structure without boxing everything
+- content width is intentionally bounded; it does not stretch every row across the entire monitor just because space exists
+- large empty space is allowed when the page does not need more information
+
+Home / discovery:
+
+- Home uses a large visual hero with strong editorial hierarchy
+- the hero has one headline, one short body, one lime primary CTA, and carousel indicators
+- secondary product tiles use image-heavy cards, not status-table cards
+- cards are large enough to feel touchable and deliberate
+- empty library state is one calm card, not a warning wall
+
+Drivers:
+
+- driver state is summarized first, then a large visual details panel
+- release notes are split into readable cards: `What's New`, `What's Fixed`
+- status/action text like reinstall or refresh is small and positioned consistently
+- the page feels product/editorial, not a build log
+
+System:
+
+- `Performance` uses compact stat cards for high-signal values only
+- `My Rig` uses plain information sections instead of cards for every item
+- `Advanced` uses settings rows with toggles and dropdowns, not giant forms
+- the monitoring page has one large diagram area and one expandable properties panel
+
+Settings:
+
+- settings are grouped by section with thin dividers
+- toggles sit on the right edge of the row
+- dropdowns are modest, dark, and rectangular
+- links use a small external-link icon plus text
+- legal/privacy/info pages remain calm and text-first
+
+Visual language:
+
+- background: almost black, not blue-black
+- surface: dark charcoal, slightly lighter than background
+- cards: modest elevation through shade and spacing, not heavy borders
+- active accent: lime green, used sparingly but confidently
+- typography: white headings, pale gray body, dim gray metadata
+- layout density: sparse by default; detail appears only inside focused pages, tabs, drawers, or expandable sections
+
+### Sparkle Shell Translation
+
+Sparkle should adopt the NVIDIA-style shell structure:
+
+```text
+Top chrome
+NVIDIA-style product strip: Sparkle mark + Sparkle Launcher
+Window controls remain native.
+
+Left rail
+Home
+Launch
+Prepare
+Build
+Cook
+Validate
+Package
+System
+Settings
+
+Main header band
+Page title on left
+Small utilities on right: Share/Copy diagnostics, Activity, Account/Root mode or Settings
+
+Content
+Tabs when a page has sub-domains
+Focused page body with bounded content width
+No persistent bottom terminal on default pages
+```
+
+Sparkle navigation mapping:
+
+| NVIDIA App Pattern | Sparkle Equivalent | Rule |
+| --- | --- | --- |
+| Home | Home | Product hero, strongest launch path, library/project tiles, evidence/discovery cards |
+| Drivers | Package / Updates | Package assembly, bundled runtime status, release notes, manifests, checksums |
+| Graphics | Launch / Runtime Settings | graphics backend, VSync, GPU preference, project launch settings |
+| System | System | host tools, dependency tiers, artifact roots, hardware/toolchain summary |
+| Settings | Settings | launcher preferences, toolchain defaults, Qt kit, privacy/logging, diagnostics |
+| Redeem / Discover cards | Evidence / Tools | engineering evidence, docs, optional tools, package reports |
+
+Recommended Sparkle left rail:
+
+- `Home`
+- `Launch`
+- `Prepare`
+- `Build`
+- `Cook`
+- `Validate`
+- `Package`
+- `System`
+- `Settings`
+
+Notes:
+
+- `Maintain` should move under `Settings` or `System > Maintenance` unless it is actively needed. Cleaning generated files is a utility, not a primary product pillar.
+- `Activity` should be a top-right icon or drawer, not a permanent rail item and not a bottom panel.
+- `Diagnostics` should be a top-right utility or a `System` tab, not a footer button competing with project context.
+
+### Sparkle Home Translation
+
+Home should be closer to NVIDIA App Home than to the current Sparkle card grid.
+
+Target Home:
+
+```text
+Sparkle Engine
+
++--------------------------------------------------------------------------------+
+| HERO                                                                           |
+| Realtime renderer showcase                                                     |
+| Open the Showcase editor from package or local artifacts.                      |
+| [OPEN EDITOR]                                                                  |
+| Secondary links: Open Runtime | View Architecture | Package Manifest           |
+|                                                        visual/preview area      |
++--------------------------------------------------------------------------------+
+
+Library
++------------------------------+ +------------------------------+
+| Showcase Editor              | | Showcase Runtime             |
+| Ready from package/local      | | Missing local output          |
+| [OPEN] or [BUILD]             | | [BUILD RUNTIME]               |
++------------------------------+ +------------------------------+
+
+Discover / Evidence
++------------------+ +------------------+ +------------------+ +------------------+
+| Architecture     | | Dependency Tiers | | Validation       | | Release Package  |
+| Open docs        | | Source capability| | Latest report    | | Assemble / Open  |
++------------------+ +------------------+ +------------------+ +------------------+
+```
+
+Home rules:
+
+- one hero, not six equally weighted cards at the top
+- hero primary CTA is launch-first whenever possible
+- if launch is blocked, hero CTA is the smallest real repair action
+- project/editor/runtime targets become `Library` cards, inspired by NVIDIA App's game/app library
+- architecture, validation, packages, and optional tools become `Discover` cards, inspired by NVIDIA App's discover/product tiles
+- source preparation status should be present but secondary, not the emotional center of first contact
+- stale workspace should not turn the whole hero amber if a package launch is available
+- when source checkout has no runnable package/local output, the hero can say `Prepare source workspace` but should remain calm and product-like
+
+### Sparkle Workflow Page Translation
+
+Use NVIDIA-style tabs and sections rather than old audit tables.
+
+Prepare page:
+
+```text
+Prepare
+
+[Overview] [Host Tools] [Source Tiers] [Workspace Files] [Advanced]
+
+Overview
+Source checkout needs one refresh before local builds.
+[GENERATE WORKSPACE FILES]
+
+Host tools
+Visual Studio        Ready
+CMake                Ready
+Qt kit               Ready
+
+Source tiers
+Core                 Cached
+Content Pipeline     Optional / Disabled / Cached
+Shader Compiler      Optional / Disabled / Cached
+```
+
+System page:
+
+```text
+System
+
+[Overview] [Toolchain] [Artifacts] [Dependencies] [Diagnostics]
+
+Statistics
+Build profile        Development
+IDE                  Visual Studio
+Qt kit               6.11.1 MSVC
+Source tiers         3 cached
+Package mode         Source checkout
+
+My workspace
+Repository root      ...
+Artifacts root       ...
+Dist root            ...
+```
+
+Settings page:
+
+```text
+Settings
+
+[Launcher] [Toolchain] [Privacy / Logs] [About]
+
+Launcher
+Default project                                     [Showcase v]
+Default launch target                               [Editor v]
+Auto-open Activity when a run fails                 [toggle]
+
+Toolchain
+Preferred IDE                                       [Visual Studio v]
+Qt kit                                              [Auto detect v]
+Use clang-cl when available                         [toggle]
+```
+
+Package page:
+
+```text
+Package
+
+[Current] [Manifests] [Release Notes] [Symbols] [Advanced]
+
+Current package
+Sparkle Showcase Runtime Package
+Version, commit, toolchain, Qt kit
+[ASSEMBLE PACKAGE] [OPEN DIST]
+
+What's included
+Launcher
+Showcase Editor
+Showcase Runtime
+Cooked Showcase Content
+
+What's missing
+Only show blockers that prevent a package review.
+```
+
+Launch page:
+
+```text
+Launch
+
+[Editor] [Runtime] [Graphics] [Arguments] [Advanced]
+
+Showcase Editor
+Ready from package/local artifact.
+[OPEN EDITOR]
+
+Runtime settings
+Graphics backend      D3D12
+VSync                 On
+GPU preference        High performance
+```
+
+### Visual Token Contract
+
+Use these as implementation targets:
+
+| Token | Target |
+| --- | --- |
+| App background | `#121212` to `#151515` |
+| Header band | `#252525` to `#2a2a2a` |
+| Rail background | `#181818` |
+| Card/surface | `#202020` to `#252525` |
+| Divider | `#303030` |
+| Primary text | `#f2f2f2` |
+| Secondary text | `#c9c9c9` |
+| Muted text | `#8f8f8f` |
+| NVIDIA-like accent | `#76b900` or nearby Sparkle lime |
+| Accent hover | brighter lime, not blue |
+| Warning | amber, used sparingly |
+| Error/destructive | red only for failure/destructive confirmation |
+
+Typography:
+
+- page title: 18 to 22 pt, bold, white
+- tab labels: 10 to 11 pt, semibold
+- section titles: 11 to 13 pt, bold
+- body: 9 to 10 pt
+- metadata: 8 to 9 pt, muted
+- primary CTA: uppercase or semibold label, lime background, black text if contrast is better
+
+Spacing:
+
+- left rail width: narrow icon rail or icon+short-label rail; avoid a wide workflow rail
+- page left inset: roughly 24 px from content rail
+- content max width: do not stretch text rows across ultrawide screens
+- section spacing: generous vertical gaps with thin dividers
+- card grid: large cards for product/evidence tiles, not tiny status boxes
+
+Interaction:
+
+- active nav: lime vertical bar plus selected background
+- active tab: lime underline
+- buttons: primary lime, secondary transparent/text or dark gray
+- toggles: gray off, lime on
+- activity/logs: drawer or icon-triggered panel; never always-on terminal
+- details: expandable sections or tabs, not full visible inventories
+
+### What To Avoid From The Current Sparkle Execution
+
+- equal-weight status card grid as the first visual impression
+- blue primary action color
+- footer controls competing with page content
+- permanent bottom log panel
+- heavy borders on every row
+- page-wide rows that stretch to ultrawide monitors
+- showing old failed operations on unrelated pages
+- turning every workflow into a card dashboard
+- making Home look like a build status monitor instead of a product launcher
+
+### NVIDIA-Inspired Acceptance Criteria
+
+- Home visually reads as a product launcher within 5 seconds: title, hero, primary CTA, project/library cards, evidence/discovery tiles.
+- The app uses lime accent for navigation, tabs, primary CTAs, and ready states; blue is removed from the primary visual language.
+- The left rail is narrow and icon-led, with selected state matching the NVIDIA App pattern.
+- Page tabs are used for sub-domains instead of secondary vertical operation menus where possible.
+- The default surface does not show a bottom terminal/log panel.
+- Settings, System, Prepare, and Package pages use section rows, dividers, toggles, dropdowns, and tabs in the NVIDIA App style.
+- Cards are reserved for hero/product/evidence/stat surfaces; technical inventories use rows, sections, or details.
+- Content width is intentionally bounded so wide screens do not create sparse, awkward status strips.
+- The visual design feels product-grade and restrained, not like a restyled CMake dashboard.
+
+### Visual Studio Installer-Inspired Acceptance Criteria
+
+- Source dependency tiers are shown as capability/workload selections with summaries, unlocks, selected state, and optional/disabled state.
+- Individual dependencies/components are reachable through a detailed searchable tab, not shown by default on first-contact or overview pages.
+- Consequential workflows show what will change before running: selected tiers, build outputs, cooked domains, package contents, clean scopes, target roots, and relevant paths.
+- Package assembly has a contents/details model that separates included, optional, missing, and output-location information.
+- Location/path configuration lives in dedicated `Locations` or detail surfaces, not scattered across primary cards.
+- Primary actions are consistently placed and clearly named, with secondary `More`/details paths for advanced choices.
+- Simple launch/evidence flows remain simple and are not burdened with installer-style commit bars.
+
+### Rider-Inspired Acceptance Criteria
+
+- Dense expert surfaces remain compact and readable without becoming cramped.
+- Settings and advanced pages support search, left category navigation, breadcrumbs, and clear section grouping.
+- Tool/activity panels can be docked, collapsed, or opened contextually rather than permanently occupying primary attention.
+- Context menus and `More` actions are compact, keyboard-friendly, and predictable.
+- Status/progress information lives in a calm bottom/status area only when useful; it does not become a persistent log terminal.
+- Dark theme colors use subtle contrast, not heavy borders, and selected states are clear without visual noise.
+- Expert workflows preserve speed: power users can reach Build, Cook, Validate, logs, and settings quickly without stepping through a beginner wizard.
+
+## Visual Studio Installer Reference Analysis And Sparkle Translation
+
+The Visual Studio Installer is not the primary visual reference. Its light color palette and Microsoft installer branding are not a fit for Sparkle. The useful reference is its flow model: complexity is available exactly where it is needed, while the default path remains obvious. It is especially relevant for Sparkle's source tiers, host prerequisites, optional components, package/dependency selection, and setup/build/cook consequences.
+
+### What Visual Studio Installer Does Well
+
+High-level install management:
+
+- the top-level `Installed` / `Available` tabs make the user's current mode obvious
+- each installed product is represented by one large product row/card with version, update state, and clear actions
+- primary actions such as `Modify`, `Launch`, `Install`, and `More` are predictable and consistently placed on the right
+- developer news/help is separated in a side column; it does not interrupt the install action flow
+- update state is summarized in a calm banner instead of a noisy warning wall
+
+Workload selection:
+
+- complexity is grouped into visible categories such as Web/Cloud, Desktop/Mobile, Gaming, etc.
+- workload cards are large enough to read quickly and include icon, title, summary, and checkbox
+- selected workload cards get a strong left accent and checked state
+- cards represent capability bundles, not individual packages
+- the user can understand "what to install" before seeing the deep component list
+
+Individual components:
+
+- individual packages are available in a separate tab with search
+- the list is dense because the user intentionally entered a detailed mode
+- checkboxes are aligned and predictable
+- categories break a long list into navigable chunks
+- search is prominent and keyboard-friendly
+
+Installation details:
+
+- a persistent right panel shows exactly what the current selection includes
+- included versus optional components are separated
+- hierarchy is expandable/collapsible
+- the selected work is summarized before the user commits
+- the user can see consequences without leaving the selection page
+
+Install locations and commitment:
+
+- install/cache/shared paths live in a dedicated tab, not scattered across the primary workflow
+- the bottom commitment bar shows location, license/notice text, required space, install behavior, and final action
+- destructive or consequential choices are explicit and located near the final commit button
+- users can review before applying changes
+
+### Sparkle Translation From Visual Studio Installer
+
+Sparkle should borrow the Installer's complexity model for any workflow that has selectable components, dependency groups, package contents, or generated-output consequences.
+
+Sparkle equivalents:
+
+| Visual Studio Installer Pattern | Sparkle Equivalent | Rule |
+| --- | --- | --- |
+| Installed / Available | Package / Source or Ready / Available Products | Separate what exists now from what can be prepared or built |
+| Product row with Modify/Launch/More | Project/product row with Open/Prepare/More | Put predictable actions on the right side of each product row/card |
+| Workloads tab | Source Tiers / Capability Bundles | Show optional dependency groups as capability cards |
+| Individual Components tab | Advanced Dependencies / Package Files | Dense lists belong behind search/detail tabs |
+| Installation Details side panel | Selection Details / Workflow Impact panel | Keep a persistent summary of what the chosen action will change |
+| Installation Locations tab | Artifact Roots / Package Roots / Cache Locations | Paths belong in a dedicated tab or details surface |
+| Bottom install bar | Commit bar for build/cook/package/clean | Show required outputs, target root, consequence, and final action before running |
+
+### Source Tier And Dependency UX
+
+Source dependency management should feel more like Visual Studio workloads than a package manager log.
+
+Target model:
+
+```text
+Prepare
+
+[Overview] [Source Tiers] [Individual Dependencies] [Locations] [Advanced]
+
+Source Tiers
+Select capability bundles to make more workflows available.
+
++--------------------------------------+ +--------------------------------------+
+| Core Workspace Source Tier        [x]| | Content Pipeline Source Tier      [ ]|
+| Required for launcher, editor, build | | Unlocks mesh import and texture cook |
+| 3 dependencies cached                | | 6 dependencies available             |
++--------------------------------------+ +--------------------------------------+
+
++--------------------------------------+ +--------------------------------------+
+| Shader Compiler Source Tier       [ ]| | KTX Container Source Tier         [ ]|
+| Unlocks offline shader cooking       | | Extends texture container workflows  |
+| 1 dependency available               | | Disabled by configuration            |
++--------------------------------------+ +--------------------------------------+
+
+Selection Details
+Included
+  Core Workspace Source Tier
+Optional
+  Content Pipeline Source Tier
+  Shader Compiler Source Tier
+
+[SYNC SELECTED TIERS]
+```
+
+Rules:
+
+- source tiers are capability bundles first, dependency lists second
+- each tier card says what workflows it unlocks
+- dense individual dependency lists require an explicit `Individual Dependencies` tab and search
+- host prerequisites never appear as syncable source tiers
+- optional disabled tiers say which setting disables them
+- selection details show what will change before running sync
+
+### Build, Cook, Package, And Clean Commit Bar
+
+For consequential workflows, Sparkle should borrow the Installer's commitment model. The user should always know what will be changed before pressing the primary action.
+
+Commit bar model:
+
+```text
+Target
+artifacts/dev/projects/Showcase/editor/DevelopmentEditor
+
+Impact
+Builds missing editor output. Does not sync dependencies, recook assets, or modify package releases.
+
+Estimated/generated size
+Known size or "computed after build"
+
+[BUILD EDITOR] [More options v]
+```
+
+Use the commit bar for:
+
+- Build Editor / Build Runtime / Build Missing / Build All
+- Cook Missing / Cook Shaders / Cook Textures / Cook Scenes And Meshes
+- Assemble Review Package
+- Clean Generated Files
+- Sync Source Tiers
+
+Do not use the commit bar for:
+
+- Home hero launch
+- simple Open Editor/Open Runtime when already ready
+- passive diagnostics or evidence links
+
+### Package Assembly UX
+
+Package assembly should combine NVIDIA's release/details feel with Visual Studio Installer's details/commit clarity.
+
+Package page target:
+
+```text
+Package
+
+[Current] [Contents] [Manifests] [Locations] [Advanced]
+
+Current
+Sparkle Showcase Runtime Package
+Version: pending / selected
+Status: ready to assemble / missing cooked content / missing launcher artifact
+
+Contents
++ Launcher
++ Showcase Editor
++ Showcase Runtime
++ Cooked Showcase Content
++ Manifests and checksums
++ Licenses
+
+Selection Details
+Included outputs
+  artifacts/dev/launcher/...
+  artifacts/dev/projects/Showcase/...
+  artifacts/dev/projects/Showcase/cooked/...
+Written to
+  dist/releases/<version>/...
+
+[ASSEMBLE PACKAGE]
+```
+
+Rules:
+
+- package contents should be previewable before assembly
+- included versus missing inputs must be separated
+- package roots and artifact roots are visible in `Locations`, not in every row
+- final package action says `Assemble`, not `Publish`, unless publishing/sign-off exists
+
+### Workflow Simplicity Rules From Visual Studio Installer
+
+- simple pages stay simple; complex pages expose tabs
+- one product/workflow row should have predictable right-side actions
+- optional depth should be discoverable through tabs, search, details, and "More"
+- a selected set of changes should always have a visible summary
+- location/path decisions belong in dedicated locations tabs
+- advanced individual dependency/component lists must be searchable
+- a workflow should show what will happen before a destructive or long-running action starts
+- secondary news/help/evidence areas should not interrupt the main action path
+
+### Combined Reference Strategy
+
+NVIDIA App remains the primary reference for:
+
+- visual language
+- shell
+- left rail
+- dark surfaces
+- lime accent
+- Home hero
+- product/evidence cards
+- tabbed system/settings pages
+
+Visual Studio Installer becomes the secondary reference for:
+
+- workload/source-tier selection
+- optional component complexity
+- install/build/cook/package impact summaries
+- right-side or drawer-based selection details
+- locations/path management
+- final commit bar for consequential actions
+- predictable primary/secondary action placement
+
+The combined Sparkle goal:
+
+- NVIDIA App outside: confident product shell and visual language
+- Visual Studio Installer inside complex workflows: clear selection, detail, consequence, and commit flow
+
+## Rider Reference Analysis And Sparkle Translation
+
+Rider is a valuable third reference for expert-tool clarity. It should not replace the NVIDIA App as the main product-shell reference and should not turn Sparkle Launcher into an IDE. The useful lessons are compact dark styling, discoverable expert controls, contextual tool windows, searchable settings, and high information density without panic.
+
+### What Rider Does Well
+
+Shell and expert navigation:
+
+- narrow tool-window rails can expose many expert areas without making all of them visually dominant
+- panels can be docked, collapsed, or opened only when relevant
+- the main canvas stays calm even while side and bottom tools carry dense technical information
+- menus are compact and action-oriented, with keyboard shortcuts visible for power users
+- project trees and issue/navigation panels support deep structure without replacing the primary workspace
+
+Settings:
+
+- settings use a left category tree, search field, breadcrumbs, and a clear detail pane
+- dense options are grouped into named sections with horizontal dividers
+- checkboxes, dropdowns, disabled states, and explanatory text are compact but legible
+- Save/Cancel remain obvious and stable at the bottom
+- settings density is acceptable because the user intentionally entered the settings surface
+
+Activity and diagnostics:
+
+- bottom tool windows are powerful but contextual; they are not the product's first impression
+- logs and build output can be detailed and technical while remaining visually contained
+- errors use color and icons sparingly, with enough text to diagnose the problem
+- status/progress information is available in a calm status bar rather than through modal interruption
+
+Dark styling:
+
+- surfaces use subtle contrast rather than thick borders
+- selected rows use a quiet colored background
+- disabled and secondary text are readable but clearly lower priority
+- dense UI controls remain small, aligned, and predictable
+- the app trusts spacing, hierarchy, and typography more than decorative cards
+
+### Sparkle Translation From Rider
+
+Use Rider patterns for Sparkle's expert and daily-production depth:
+
+| Rider Pattern | Sparkle Equivalent | Rule |
+| --- | --- | --- |
+| Tool window rails | Activity, Logs, Diagnostics, Project Structure | Make these collapsible/contextual, not permanent Home clutter |
+| Settings category tree | Sparkle Settings | Use searchable categories for Launcher, Toolchain, Projects, Logs, Advanced |
+| Breadcrumb path | Settings/System location | Show where the user is inside dense settings or system pages |
+| Compact action menus | `More`, workflow actions, dependency actions | Keep expert actions discoverable without making them primary buttons |
+| Bottom tool window | Build/cook/log output | Open when running or failed; collapse otherwise |
+| Status bar | Progress/root/project/build context | Keep lightweight context available without stealing page attention |
+| Project tree | Source Map / Project Structure | Use for source layout/evidence, not as the default Home |
+
+### Sparkle Settings Model Inspired By Rider
+
+Settings should lean more Rider than NVIDIA App because settings are inherently dense.
+
+```text
+Settings
+
+[search settings]
+
+Launcher
+  Appearance
+  Activity
+  Diagnostics
+Projects
+  Default Project
+  Launch Profiles
+Toolchain
+  Visual Studio
+  Qt Kit
+  CMake
+  Clang
+Artifacts
+  Build Roots
+  Package Roots
+  Logs
+Advanced
+  Experimental
+  Environment
+
+Toolchain > Qt Kit
+Qt kit discovery
+  Auto-detect Qt kits                         [x]
+  Preferred Qt root                           [C:/Qt/6.11.1/msvc2022_64]
+  Require MSVC kit for default Windows path   [x]
+
+Details
+  Discovered kits...
+
+[SAVE] [CANCEL]
+```
+
+Rules:
+
+- settings can be dense because the user intentionally opened them
+- use search and category tree to keep density manageable
+- use breadcrumbs for deep pages
+- keep Save/Cancel stable and visible
+- keep advanced and experimental settings separated from everyday settings
+
+### Sparkle Activity And Diagnostics Inspired By Rider
+
+Activity should behave like a tool window, not a permanent bottom console.
+
+```text
+Activity drawer
+
+Build Editor
+Failed
+Compiler error C2065 ...
+[Open Log] [Copy Diagnostics] [Retry] [Dismiss]
+
+Raw output
+collapsed by default unless current operation is running or failed
+```
+
+Rules:
+
+- open Activity automatically for active runs and current failures
+- collapse Activity when the user returns to first-contact Home
+- keep raw logs available but not always visible
+- use compact rows with icons, state, timestamp, and one action
+- show keyboard-friendly copy/open actions for expert users
+
+### Sparkle Expert Menu Model Inspired By Rider
+
+Use compact menus for secondary operations:
+
+- `More` on product/library cards: Open Folder, Copy Path, View Manifest, Rebuild, Clean Output
+- `More` on source tier cards: Clean Cache, Open Cache, View Dependencies, Configure Tier
+- `More` on package page: Open Dist, View Checksums, Copy Package Path, Create Symbols Archive
+- `More` on Activity rows: Copy Output, Open Log, Dismiss, Retry, Open Diagnostics
+
+Rules:
+
+- primary action remains visible
+- expert actions live in predictable `More` menus
+- menu labels should be verbs and should not expose internal helper names
+- keyboard shortcuts can be shown where they exist, but do not invent shortcuts only for decoration
+
+### Rider Styling Lessons For Sparkle
+
+Apply these especially to System, Settings, Activity, Advanced, and Diagnostics:
+
+- compact row height is acceptable when sections are clear
+- subtle blue-gray selection can be used inside expert/settings surfaces, while lime remains the product accent
+- avoid thick card borders in dense settings; use dividers and indentation
+- use muted explanatory text under settings labels
+- use clear disabled states
+- use icons sparingly and consistently
+- prefer alignment and grouping over visual ornament
+
+### Combined Reference Strategy With Rider
+
+NVIDIA App remains primary for:
+
+- product shell
+- Home visual language
+- lime accent and dark surfaces
+- hero/library/discover structure
+- top-level page rhythm
+
+Visual Studio Installer remains secondary for:
+
+- source tier/workload selection
+- optional component complexity
+- selection details
+- locations and commit bars
+- package/build/cook consequence summaries
+
+Rider becomes tertiary for:
+
+- compact expert surfaces
+- settings search/category/breadcrumb model
+- dockable Activity/log/diagnostic tool windows
+- action menus and keyboard-friendly expert workflows
+- dense dark UI clarity
+
+The combined Sparkle goal becomes:
+
+- NVIDIA App for first impression and product confidence
+- Visual Studio Installer for workflow consequence clarity
+- Rider for expert depth, settings, diagnostics, and daily production compactness
+
+### Combined Prepare Flow Sketch
+
+```text
+Prepare
+
+[Overview] [Source Tiers] [Individual Dependencies] [Locations] [Advanced]
+
+Overview
+Source checkout is almost ready for local builds.
+[GENERATE WORKSPACE FILES]
+
+Source Tiers
++-------------------------------------+ +-------------------------------------+
+| Core Workspace Source Tier       [x]| | Content Pipeline Source Tier     [ ]|
+| Required for launcher/editor builds | | Unlocks import, texture, mesh cook   |
+| Ready: 3 of 3                       | | Cached: 6 of 6                       |
++-------------------------------------+ +-------------------------------------+
+
++-------------------------------------+ +-------------------------------------+
+| Shader Compiler Source Tier      [ ]| | KTX Container Source Tier        [ ]|
+| Unlocks offline shader cook         | | Optional texture container support   |
+| Cached: 1 of 1                      | | Disabled by current configuration    |
++-------------------------------------+ +-------------------------------------+
+
+Selection Details
+Included
+  Core Workspace Source Tier
+Optional
+  Content Pipeline Source Tier
+  Shader Compiler Source Tier
+Disabled
+  KTX Container Source Tier
+
+Impact
+Syncs selected source tiers into the workspace dependency cache.
+Does not install Visual Studio, Qt, CMake, Git, or Windows SDK.
+
+[SYNC SELECTED TIERS] [MORE OPTIONS]
+```
+
+### Combined Package Flow Sketch
+
+```text
+Package
+
+[Current] [Contents] [Manifests] [Locations] [Advanced]
+
+Current
+Sparkle Showcase Runtime Package
+Status: Missing cooked shaders
+[COOK SHADERS] [ASSEMBLE WHEN READY]
+
+Contents
++ Launcher                         Ready
++ Showcase Editor                  Ready from local artifact
++ Showcase Runtime                 Missing
++ Cooked Scenes And Meshes         Ready
++ Cooked Textures                  Ready
+! Cooked Shaders                   Missing
++ Manifests / Checksums            Generated during assembly
+
+Selection Details
+Will read from
+  artifacts/dev/launcher/...
+  artifacts/dev/projects/Showcase/...
+  artifacts/dev/projects/Showcase/cooked/...
+
+Will write to
+  dist/releases/<version>/SparkleShowcaseRuntime
+
+Impact
+Creates a reviewable runtime package. Does not publish or sign off a release.
+
+[ASSEMBLE PACKAGE] [OPEN DIST]
+```
 
 ## What To Hide By Default
 
@@ -802,10 +1320,11 @@ UX blocking rule:
 
 Chosen direction:
 
-- Direction A: Command Center is the target UX architecture.
-- Direction B may contribute only guided copy patterns: "what this unlocks", simple next-step language, and after-action suggestions.
-- Direction C may contribute only advanced/details patterns: compact target matrices, command previews, diagnostics, and provenance.
+- NVIDIA App is the primary reference for product shell, visual hierarchy, Home, tabs, cards, settings rows, dark palette, lime accent, and restraint.
+- Visual Studio Installer is the secondary reference for capability tier selection, component details, location/configuration pages, and commit bars for consequential actions.
+- Rider is the tertiary reference for expert-density surfaces: settings search, category trees, breadcrumbs, compact action menus, diagnostics, logs, and command visibility.
 - Phases should not drift toward a pure wizard, a raw production console, or a portfolio-specific demo shell.
+- The previous Sparkle visual implementation is not accepted as final; it is a functional prototype that must be redesigned against the NVIDIA-inspired visual contract above.
 
 Shared rules for all implementation phases:
 
@@ -815,504 +1334,240 @@ Shared rules for all implementation phases:
 - do not add UI copy that promises readiness unless the backend can prove that state
 - do not hide missing backend capability behind cosmetic labels; add the capability or mark the UX as blocked
 - preserve daily production workflows while improving the launch-first hierarchy
-- converge every phase toward Direction A: Command Center
+- converge every phase toward Direction A information architecture with NVIDIA App-inspired visual execution
 
-Final build, launch, and visual validation happen only after Phase 5 is complete.
+Final build, launch, and visual validation happen only after the Visual Redesign Reset and Visual Redesign Phases 1-3 are complete.
 
-### Phase 0: First-Contact Quick Start Contract
+### Visual Redesign Reset: NVIDIA-Inspired Launcher Shell
 
 Goal:
 
-- make the launcher explicitly support first-contact usage before changing widget layout
+- replace the visually rejected Sparkle shell with an NVIDIA App-inspired product shell before another final validation
+- keep the real workflow/backend model, but rebuild the presentation layer around the reference language
 
 Work:
 
-- define Home copy, primary CTA rules, and engineering evidence links
-- decide which docs/manifests/logs should be one click from Home
-- define package/source mode labels and launch-readiness language
-- define how stale unrelated failures are hidden, summarized, or dismissed during first contact
+- remove the wide workflow rail as the dominant navigation object
+- introduce a narrow icon-led rail with lime active indicator
+- move root mode, diagnostics, activity, and settings into top/header utilities or dedicated pages
+- remove footer controls from the default visual hierarchy
+- convert Activity/log output into a drawer or page-level detail surface
+- define shared page scaffolding: title band, tab row, bounded content body, section rows, cards only where appropriate
 
 Positive guardrails:
 
-- define the first-contact path using real launcher states: package/source mode, launch readiness, evidence availability, and next action
-- keep production workflows visible as secondary paths
-- decide which evidence links must resolve to concrete files, folders, manifests, reports, or launcher views
-- define this contract as the top hero and evidence area of Direction A, not a separate wizard or role mode
+- treat the screenshots as a layout/product-language reference, not as branding to copy
+- keep Sparkle identity, icons, project names, and engineering evidence honest and original
+- preserve existing workflows and operation IDs while changing how users navigate them
+- use lime accent consistently for active nav, selected tabs, ready states, and primary CTAs
+- verify every old blue primary-action or selected-state style is replaced or intentionally kept only in non-primary technical contexts
 
 Negative guardrails:
 
-- do not add code in this phase
-- do not invent marketing claims that are not backed by real artifacts
-- do not make rebuild, recook, or dependency sync the first decision for a packaged user
-- do not introduce role-specific UI such as `Reviewer Mode` or `Developer Mode`
-- do not turn Quick Start into Direction B's full step-by-step runway
+- do not make a fake NVIDIA clone
+- do not retain the current equal-weight six-card Home grid as the primary first impression
+- do not keep a persistent bottom log/terminal panel
+- do not keep footer project/config/IDE selectors as permanent competing chrome
+- do not stretch rows/cards across ultrawide screens without a content-width rule
+- do not build or launch in this reset phase
 
 Validation:
 
-- review the Home / Quick Start contract against the 30-second, 2-minute, 5-minute, and 15-minute first-contact journey
-- confirm every proposed evidence link has an owner and expected source
-- confirm the contract maps to Direction A's hero, cards, evidence, and Activity areas
+- inspect launcher shell code and style rules for old blue active/primary states
+- confirm the default shell can be described as narrow rail + title band + content tabs + bounded body
+- confirm Activity/logs are not default persistent bottom chrome
 - confirm no build, launch, or package validation was run
 
 Prompt:
 
 ```text
-Please perform Phase 0 of docs/plans/launcher-principal-ux-concept.md. Add a first-contact Quick Start contract to the launcher UX design without changing code yet. Define the Home screen copy, package/source mode states, primary CTA rules, engineering evidence links, and stale-failure behavior for a first-time user or external evaluator with limited time.
+Please perform the Visual Redesign Reset from docs/plans/launcher-principal-ux-concept.md. Replace the visually rejected launcher shell with an NVIDIA App-inspired product shell while preserving workflow behavior. Implement a narrow icon-led rail, lime active indicator, title/header band, top utility actions, tab-capable page scaffold, bounded content width, and remove footer/log chrome from default attention. Preserve operation IDs and backend workflows.
 
-Positive guardrails: use real package/source, launch-readiness, evidence, and next-action states; keep daily production workflows visible as a natural continuation of Quick Start; assign every evidence link to a concrete file, folder, manifest, report, or launcher view; define the contract as Direction A's hero and evidence area, not a separate wizard or role mode.
+Positive guardrails: use the NVIDIA App screenshots as visual/product-language reference only; keep Sparkle identity original; use lime accent for active nav, selected tabs, ready states, and primary CTAs; keep Activity/logs accessible but not persistent bottom chrome.
 
-Negative guardrails: do not implement code; do not add marketing claims that are not backed by artifacts; do not make rebuild, recook, or dependency sync the first decision for a packaged user; do not introduce role-specific UI such as `Reviewer Mode` or `Developer Mode`; do not turn Quick Start into Direction B's full step-by-step runway.
+Negative guardrails: do not clone NVIDIA branding; do not keep the current equal-weight Home card grid; do not keep footer controls as permanent primary chrome; do not stretch rows/cards across ultrawide screens; do not build or launch in this phase.
 
-Validation: review the contract against the 30-second, 2-minute, 5-minute, and 15-minute first-contact journey; confirm every evidence link has an owner and source; confirm the contract maps to Direction A's hero, cards, evidence, and Activity areas; confirm no build, launch, or package validation was run.
+Validation: inspect shell/style implementation for the new structure and old blue-primary remnants; confirm Activity/logs moved out of default bottom chrome; confirm no build, launch, or package validation was run.
 ```
 
-### Phase 1: UX Contract And Copy
+### Visual Redesign Phase 1: NVIDIA-Style Home
 
 Goal:
 
-- make the current UI less cluttered without replacing layout yet
+- rebuild Home as a product launcher surface inspired by NVIDIA App Home
 
 Work:
 
-- rename groups/actions according to the naming table
-- remove phase-number language from primary UI copy
-- convert old failed runs into dismissible Activity entries
-- collapse full host tool/dependency details when ready
-- move raw paths to detail text or copyable diagnostics
+- replace the current six-card-first Home with hero + library + discover/evidence sections
+- hero presents Sparkle identity, selected project, launch provenance, strongest CTA, and one secondary path
+- library cards represent runnable products: Showcase Editor, Showcase Runtime, and future projects/tools
+- discover/evidence cards represent Architecture, Dependency Tiers, Validation, Package, and optional tools
+- source preparation appears as a secondary state unless it is the smallest blocker
 
 Positive guardrails:
 
-- make labels describe user outcomes rather than implementation functions
-- keep operation behavior unchanged while improving copy, grouping, and hierarchy
-- use existing readiness and dependency metadata wherever possible
-- align group/action naming with Direction A: Home / Quick Start, Launch, Prepare, Build, Cook, Validate, Package, Maintain
+- make Home visually understandable within 5 seconds
+- use a large hero with one headline, one short explanation, one lime CTA
+- make package/local artifact provenance visible without making it the headline unless launch depends on it
+- use product/evidence tiles with enough size and spacing to feel intentional
 
 Negative guardrails:
 
-- do not remove expert workflows
-- do not duplicate host prerequisites inside source dependency sync copy
-- do not expose raw local paths in primary UI unless the path itself is the blocker
+- do not begin Home with six equal status cards
+- do not turn stale workspace into the emotional headline if a package/local launch is available
+- do not show raw dependency/tool/path inventories on Home
+- do not make Home a reviewer-specific showcase page
 - do not build or launch in this phase
-- do not over-script the UI with Direction B step numbers
 
 Validation:
 
-- inspect user-facing strings for naming consistency with Launch, Prepare, Build, Cook, Validate, Package, and Maintain
-- grep for legacy labels that should no longer appear in primary UI copy
-- confirm labels match Direction A's command-center tone rather than wizard or raw-console tone
-- confirm operation commands and workflow behavior were not intentionally changed
-- confirm no build, launch, or package validation was run
+- static inspection confirms Home has hero, library, discover/evidence sections
+- Home has one primary CTA and at most two secondary hero links
+- no raw paths or full inventories appear in Home primary content
+- no build, launch, or package validation was run
 
 Prompt:
 
 ```text
-Please perform Phase 1 of docs/plans/launcher-principal-ux-concept.md. Keep the current Qt widget architecture, but improve naming, copy, and information hierarchy. Rename workflow groups/actions to Launch, Prepare, Build, Cook, Validate, Package, and Maintain where appropriate. Remove phase-number language from primary UI copy. Collapse or demote ready host/dependency details so each workflow elevates one recommended next action and one blocker. Keep raw paths available in details/logs, not primary rows.
+Please perform Visual Redesign Phase 1 from docs/plans/launcher-principal-ux-concept.md. Rebuild Home as an NVIDIA App-inspired product launcher surface: hero, library/product cards, and discover/evidence tiles. Preserve the real readiness and next-action model. The hero should prefer launch-first when possible and show the smallest blocker otherwise.
 
-Positive guardrails: make labels describe user outcomes; keep operation behavior unchanged; use existing readiness and dependency metadata where possible; align group/action naming with Direction A.
+Positive guardrails: one strong hero CTA; library cards for Showcase Editor/Runtime; evidence/discover tiles for architecture, dependency tiers, validation, package, and tools; package/local provenance visible but calm.
 
-Negative guardrails: do not remove expert workflows; do not duplicate host prerequisites inside source dependency sync copy; do not expose raw local paths in primary UI unless the path itself is the blocker; do not over-script the UI with Direction B step numbers; do not build or launch in this phase.
+Negative guardrails: do not use the old six-equal-card grid; do not show raw paths or dependency inventories; do not make reviewer-specific UI; do not build or launch in this phase.
 
-Validation: inspect user-facing strings for naming consistency; grep for legacy primary labels; confirm labels match Direction A's command-center tone rather than wizard or raw-console tone; confirm operation commands and workflow behavior were not intentionally changed; confirm no build, launch, or package validation was run.
+Validation: inspect Home structure and copy; confirm one primary CTA; confirm no build, launch, or package validation was run.
 ```
 
-Phase 1 validation result:
-
-- Workflow groups now use Direction A naming in launcher UI and shell grouping: Launch, Prepare, Build, Cook, Validate, Package, Maintain.
-- Primary action labels now use outcome names: Sync Source Tiers, Generate Workspace Files, Open IDE, Build Cooking Tools, Cook Scenes And Meshes, Assemble Review Package, Clean Generated Files.
-- Operation IDs, planner kinds, process requests, command construction, and workflow behavior were intentionally left unchanged.
-- Ready host tool inventory is demoted on build/cook pages; full installed-tool detail remains available through Verify Host Environment.
-- Source dependency/cache rows no longer expose machine-specific absolute cache paths in primary details.
-- Stored per-workflow run summaries can be dismissed from the main workflow attention area while preserving logs/history files.
-- Phase-number language was removed from primary launcher package copy.
-- Final build, launch, package, and visual validation were not run in this phase.
-
-### Phase 2: Command Center
+### Visual Redesign Phase 2: Tabbed Workflow Pages, Installer Complexity, And Rider Expert Surfaces
 
 Goal:
 
-- add a Home screen that owns the first-run funnel
+- make Prepare, Launch, Build, Cook, Validate, Package, System, and Settings follow the NVIDIA App page rhythm
+- use Visual Studio Installer-style selection details and commit bars where workflows become component-heavy or consequential
+- use Rider-style compact expert surfaces for Settings, Activity, logs, diagnostics, action menus, and advanced workflow details
 
 Work:
 
-- add Home workflow group
-- create project readiness hero
-- show Launch, Source, Content, and Package capability cards
-- show one Next Best Action
-- move global stale failures into Activity insight cards
+- introduce horizontal tabs for workflow subdomains
+- convert technical inventories into section rows with thin dividers
+- reserve cards for stat tiles, product tiles, package highlights, and evidence tiles
+- create a `System` page for host tools, toolchain, source tiers, artifacts, and diagnostics
+- create or strengthen a `Settings` page for launcher defaults, IDE/toolchain/Qt kit, logs/privacy, and about info
+- model source tiers as workload/capability cards with selected-state accents, optional checkboxes, and "what this unlocks" copy
+- add selection detail or workflow impact summaries for Sync Source Tiers, Build, Cook, Package, and Clean workflows
+- move individual dependency/package-file lists into searchable detail tabs
+- move path/location decisions into `Locations` tabs or details surfaces
+- add settings search/category/breadcrumb structure where settings become dense
+- make Activity/logs behave like a contextual tool window or drawer, not permanent page chrome
+- use compact `More` menus for secondary expert actions on cards, rows, dependency tiers, packages, and activity runs
 
 Positive guardrails:
 
-- make Home / Quick Start the default first-contact surface
-- show launch status, source status, content status, package status, and evidence links as summarized cards
-- drive the primary CTA from real readiness and next-action metadata
-- implement the Direction A card grid: Launch, Prepare/Source, Content, Package, Evidence, Activity
+- use NVIDIA App-style title band and tab underline
+- settings and system pages should be calm text/row surfaces, not dashboards
+- use toggles/dropdowns/action links aligned to the right where appropriate
+- preserve command previews and details in advanced tabs or drawers
+- use Visual Studio Installer-style details for selected components, included/optional items, output roots, and final action consequences
+- keep simple workflows simple; only introduce installer-style complexity where the user is selecting tiers, components, package contents, clean scopes, or output locations
+- use Rider-style density only in intentional expert surfaces, never as the default first-contact Home
+- keep settings, logs, and diagnostics fast for daily production users
 
 Negative guardrails:
 
-- do not make Home a dashboard of every raw prerequisite
-- do not hide blockers behind vague "not ready" copy
-- do not make Home depend on machine-specific paths
+- do not turn every page into cards
+- do not expose full host/dependency inventories by default
+- do not keep secondary vertical operation menus when tabs are more appropriate
+- do not hide real expert controls; move them to Advanced/Details
+- do not make NVIDIA App Home look like Visual Studio Installer
+- do not make Sparkle Launcher look like a full IDE
+- do not use the Visual Studio Installer color palette as the Sparkle visual target
+- do not add a commit bar to simple launch/evidence actions
+- do not let Rider-style tool windows become permanent Home clutter
 - do not build or launch in this phase
-- do not drift into Direction C density on the default Home view
 
 Validation:
 
-- inspect the Home data model and verify each displayed status has a real source
-- confirm the primary CTA rules cover package-ready, source-ready, missing-runtime, missing-cooked-content, and stale-workspace cases
-- confirm Home contains Direction A's hero plus compact cards and no raw target/output matrix by default
-- confirm stale unrelated failures are represented as Activity insights, not page-dominating errors
-- confirm no build, launch, or package validation was run
+- each major page has a title band and tab/section model
+- settings/system rows use dividers and right-aligned controls
+- raw logs, command lines, and full inventories are secondary
+- source tiers look like capability/workload cards, not dependency logs
+- consequential workflows show a clear impact/selection summary before the primary action
+- Settings has search/category/breadcrumb structure when dense
+- Activity/logs are contextual and collapsible
+- expert `More` menus are compact and predictable
+- no build, launch, or package validation was run
 
 Prompt:
 
 ```text
-Please perform Phase 2 of docs/plans/launcher-principal-ux-concept.md. Add a Home / Quick Start command center workflow screen that summarizes selected project readiness, package/source mode, launch availability, source workspace state, content readiness, package assembly readiness, and engineering evidence links. Show one primary next action and one secondary recovery action. Keep existing workflow pages intact.
+Please perform Visual Redesign Phase 2 from docs/plans/launcher-principal-ux-concept.md. Convert workflow pages to NVIDIA App-inspired title bands, tabs, section rows, stat cards only where appropriate, and advanced/details surfaces. Add or strengthen System and Settings pages for host/toolchain/artifact/dependency/diagnostic state and launcher defaults. Use Visual Studio Installer as a secondary reference for source tier/workload cards, individual dependency search/detail tabs, selection details, locations tabs, and commit bars for consequential workflows. Use Rider as a tertiary reference for compact expert surfaces: settings search/category/breadcrumbs, contextual Activity/log tool windows, diagnostics, and predictable compact More menus.
 
-Positive guardrails: make Home the default first-contact surface; summarize launch, source, content, package, evidence, and Activity state as Direction A cards; drive CTAs from real readiness and next-action metadata.
+Positive guardrails: use NVIDIA App for visual shell and page rhythm; use Visual Studio Installer for complexity management inside Prepare, Package, Build, Cook, and Clean; use Rider for Settings, Activity, logs, diagnostics, and expert menus; use rows/dividers for settings and inventories; keep expert controls in Advanced/Details; preserve workflow behavior.
 
-Negative guardrails: do not turn Home into a raw prerequisite dashboard; do not hide blockers behind vague "not ready" copy; do not depend on machine-specific paths; do not drift into Direction C density on the default Home view; do not build or launch in this phase.
+Negative guardrails: do not use cards for every row; do not show full inventories by default; do not keep secondary vertical operation menus when tabs fit better; do not use Visual Studio Installer colors; do not make Sparkle look like a full IDE; do not let Rider-style tool windows become Home clutter; do not add commit bars to simple launch/evidence actions; do not build or launch in this phase.
 
-Validation: inspect the Home data model and verify each displayed status has a real source; confirm primary CTA rules cover package-ready, source-ready, missing-runtime, missing-cooked-content, and stale-workspace cases; confirm Home contains Direction A's hero plus compact cards and no raw target/output matrix by default; confirm stale unrelated failures are Activity insights only; confirm no build, launch, or package validation was run.
+Validation: inspect page structure and information hierarchy; confirm source tiers use workload/capability-card behavior; confirm consequential workflows show impact/selection summaries; confirm Settings has search/category/breadcrumb structure where dense; confirm Activity/logs are contextual and collapsible; confirm no build, launch, or package validation was run.
 ```
 
-Phase 2 implementation handoff:
-
-- Added `Home > Command Center` as the default first workflow surface.
-- Home uses existing workspace, package, launch, dependency, and action-history planning data rather than a separate synthetic status model.
-- The hero shows workspace/package mode, selected project state, one next best action, and one secondary path.
-- The default card set now covers Launch, Source, Content, Package, Evidence, and Activity.
-- Launch cards use editor/runtime launch plans and only offer direct launch actions when those plans are ready.
-- Missing local executable, stale workspace, missing cooked content, and blocked package states route users to the existing Build, Prepare, Cook, or Package workflow pages instead of bypassing safety checks.
-- Evidence actions open concrete docs or release folders when present; missing evidence remains explicit.
-- Stored failed workflow history appears as a compact Activity insight instead of dominating first contact.
-- Home is UI-only: the bottom Run/Clean controls are disabled for the Command Center, and existing workflow pages remain intact.
-- Launcher source was checked for role-specific reviewer/developer/portfolio app copy; none was added.
-- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
-
-### Phase 3: Workflow Page Redesign
+### Visual Redesign Phase 3: NVIDIA-Style Polish And Final Visual Validation
 
 Goal:
 
-- replace audit-table pages with guided workflow pages
+- make the app feel product-grade before final UX validation
 
 Work:
 
-- introduce common page sections: header, recommended action, readiness summary, options, details drawer
-- update Build, Cook, Launch, Prepare, Package, and Maintain pages
-- collapse advanced shader options
-- make dependency tiers compact cards
+- apply the visual token contract: near-black background, charcoal surfaces, lime accent, muted text, thin dividers
+- replace old blue selected/primary states
+- tune icon size, rail width, title spacing, tabs, card radii, row heights, dropdowns, toggles, and buttons
+- tune expert surfaces against Rider clarity: settings tree/search/breadcrumbs, compact rows, contextual tool windows, readable logs, and predictable More menus
+- validate wide and normal window sizes against the NVIDIA-inspired acceptance criteria
+- update screenshots and final report honestly
 
 Positive guardrails:
 
-- use one page hierarchy everywhere: header, recommended action, readiness summary, options, details
-- make details available without making them the default attention field
-- preserve current operations, settings, and advanced controls behind better hierarchy
-- use Direction A workflow pages as the default page model, with Direction B's "what this unlocks" copy only where it clarifies an action
+- polish should strengthen clarity, not add novelty
+- the final app should look restrained and operational
+- dense expert areas should feel Rider-clear: compact, aligned, searchable, and controllable
+- screenshots must include Home, Launch, Prepare, Package, System, and Settings
+- final report must distinguish functional pass from visual acceptance
 
 Negative guardrails:
 
-- do not delete diagnostics or command visibility
-- do not bury the actual blocker behind decorative cards
-- do not introduce separate readiness logic per page when a shared model is possible
-- do not build or launch in this phase
-- do not expose Direction C matrices in primary pages unless placed in Details or Advanced
+- do not claim visual acceptance based only on build success
+- do not keep old accepted screenshots if the user rejects them
+- do not overfit to one ultrawide screenshot
+- do not let expert density bleed into first-contact Home
+- do not hide blocked criteria
 
 Validation:
 
-- inspect each redesigned page for exactly one dominant recommended action
-- confirm raw paths, command lines, full dependency rows, and logs are in details or diagnostics surfaces
-- confirm Build, Cook, Launch, Prepare, Package, and Maintain pages use the same section model
-- confirm Direction A hierarchy is visible on each primary workflow page
-- confirm no build, launch, or package validation was run
+- build and launch only after the reset and phases are complete
+- capture 1280x760 and wide desktop screenshots
+- pass/fail every NVIDIA-inspired, Visual Studio Installer-inspired, and Rider-inspired acceptance criterion
+- list remaining fixes explicitly
 
 Prompt:
 
 ```text
-Please perform Phase 3 of docs/plans/launcher-principal-ux-concept.md. Refactor workflow pages around header, recommended next action, compact readiness summary, workflow options, and expandable details. Build, Cook, Launch, Prepare, Package, and Maintain pages should show only high-signal blockers by default. Full host tools, dependency rows, raw paths, command lines, and logs should move into details. Preserve all current operations and settings.
+Please perform Visual Redesign Phase 3 from docs/plans/launcher-principal-ux-concept.md after the shell/Home/page redesign phases are complete. Apply final NVIDIA App-inspired polish, replace old blue primary/selected states, tune Rider-inspired expert surfaces, validate Home/Launch/Prepare/Package/System/Settings visually at 1280x760 and wide desktop sizes, build and launch once, capture screenshots, and produce a pass/fail visual acceptance report.
 
-Positive guardrails: use one Direction A page hierarchy everywhere; keep details available without making them primary; preserve advanced controls behind better hierarchy; use Direction B's "what this unlocks" copy only where it clarifies an action.
+Positive guardrails: prioritize restraint, clarity, lime accent consistency, bounded content width, Rider-clear expert density, and honest acceptance reporting.
 
-Negative guardrails: do not delete diagnostics or command visibility; do not bury the actual blocker behind decorative cards; do not introduce separate readiness logic per page when a shared model is possible; do not expose Direction C matrices in primary pages unless placed in Details or Advanced; do not build or launch in this phase.
+Negative guardrails: do not claim visual acceptance from build success alone; do not keep rejected screenshots as accepted evidence; do not overfit to ultrawide; do not let expert density bleed into first-contact Home; do not hide blocked criteria.
 
-Validation: inspect each redesigned page for exactly one dominant recommended action; confirm raw paths, command lines, dependency rows, and logs are secondary; confirm all major workflow pages use the same Direction A section model; confirm no build, launch, or package validation was run.
+Validation: build, launch, capture screenshots, and report pass/fail for every NVIDIA-inspired, Visual Studio Installer-inspired, and Rider-inspired acceptance criterion.
 ```
 
-Phase 3 implementation handoff:
+## Archived Prototype Implementation
 
-- Added a shared `Workflow Guide` section to non-Home workflow pages so each page starts with the recommended action and scoped impact before options or diagnostics.
-- Standardized primary readiness sections under `Readiness Summary` across Prepare, Build, Cook, Launch, Validate, Package, and Maintain workflows.
-- Added a reusable collapsed details drawer for secondary diagnostics and inventories.
-- Moved full host tool inventories, raw tool paths, source tier contents, and dependency-entry rows into details surfaces.
-- Collapsed shader cache/debug/compiler diagnostics under `Advanced Shader Options` while keeping common shader target choices visible.
-- Reordered Launch and Validate pages so readiness appears before launch/runtime options.
-- Reordered Maintain cleanup so confirmation/readiness appears before destructive scope choices.
-- Existing operation IDs, backend requests, run behavior, settings, clean scopes, and advanced controls were preserved.
-- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
+The earlier implemented Phase 0-5 prototype, handoff notes, build/launch validation, screenshot list, and visual rejection history were moved to:
 
-### Phase 4: Activity And Recovery Model
+- `docs/plans/launcher-principal-ux-implemented-prototype-archive.md`
 
-Goal:
+That archive is historical context only. The current target direction is the NVIDIA App-inspired launcher shell, Visual Studio Installer-inspired complexity/commit model, and Rider-inspired expert/settings/activity model defined above.
 
-- make logs useful without polluting every workflow
-
-Work:
-
-- collapse bottom log panel by default
-- expand when active run starts
-- show stale unrelated failures as Activity badges only
-- add recovery cards for current workflow failures
-- add dismiss action for old run summaries
-
-Positive guardrails:
-
-- make active and current-workflow failures highly visible
-- make unrelated old failures available but quiet
-- keep raw logs preserved and accessible
-- provide recovery actions that map to real workflow fixes
-- present Activity as Direction A's compact Home card plus scoped workflow recovery, not as a permanent terminal panel
-
-Negative guardrails:
-
-- do not delete logs when dismissing a failure from the main view
-- do not show stale unrelated failure text on every workflow page
-- do not convert every failure into a generic toast without recovery context
-- do not build or launch in this phase
-- do not let Activity recreate the current bottom-panel clutter
-
-Validation:
-
-- inspect run-history matching so failures are scoped to relevant workflows
-- confirm dismissing a run changes UI attention, not stored log files
-- confirm current failed workflows show recovery cards and raw log access
-- confirm Home Activity follows Direction A's compact card pattern
-- confirm no build, launch, or package validation was run
-
-Prompt:
-
-```text
-Please perform Phase 4 of docs/plans/launcher-principal-ux-concept.md. Redesign Activity and logs so old unrelated failures do not dominate every workflow. Collapse raw logs by default, expand for running/current failed operations, add current-workflow recovery cards, and make stale failures dismissible from the main view while preserving log files.
-
-Positive guardrails: make active and current-workflow failures visible; keep unrelated old failures quiet but accessible; preserve raw logs; map recovery actions to real workflow fixes; present Activity as Direction A's compact Home card plus scoped workflow recovery.
-
-Negative guardrails: do not delete logs when dismissing UI failures; do not show stale unrelated failure text on every page; do not replace recovery context with generic toasts; do not let Activity recreate the current bottom-panel clutter; do not build or launch in this phase.
-
-Validation: inspect workflow-to-run matching; confirm dismissal affects UI attention but not log storage; confirm current failures show recovery cards and raw log access; confirm Home Activity follows Direction A's compact card pattern; confirm no build, launch, or package validation was run.
-```
-
-Phase 4 implementation handoff:
-
-- Added a raw-log toggle to the Activity/output panel so logs are collapsed by default but preserved.
-- Raw logs now auto-expand when an operation starts and when the selected/current run is running or failed.
-- Successful or unrelated old runs remain compact in Activity unless the user explicitly opens raw output.
-- Added scoped current-workflow recovery rows to workflow pages when that exact workflow has a failed stored result.
-- Recovery rows map to real follow-up workflows such as Verify Host Environment, Generate Workspace Files, Build Editor/Runtime, Build Cooking Tools, or the relevant Cook action.
-- Updated per-workflow run history copy so failed results show recovery guidance while successful history stays calm.
-- Dismiss removes stored UI attention for the selected workflow and refreshes the page; raw run logs remain available.
-- Home Activity remains a compact summary card and does not become a permanent terminal panel.
-- Static validation used `rg` and `git diff --check`; final build, launch, package, and visual validation were not run in this phase.
-
-### Phase 5: Product Polish
-
-Goal:
-
-- make the launcher feel like a serious engine product
-
-Work:
-
-- refine spacing, typography, status chips, cards, and CTA hierarchy
-- add package/source mode indicator
-- add copyable diagnostics bundle action
-- add folder shortcuts for artifacts, dist, logs
-- prepare final desktop and smaller-window validation scenarios
-
-Positive guardrails:
-
-- strengthen hierarchy without changing the accepted workflow model
-- keep visual styling precise, restrained, and consistent with a serious engine tool
-- make primary CTAs unmistakable and secondary actions calm
-- keep folder shortcuts and diagnostics grounded in real paths from the artifact/package contract
-- polish Direction A's command-center cards, hero, status chips, and details surfaces as the final target
-
-Negative guardrails:
-
-- do not introduce visual novelty that reduces clarity
-- do not add new buttons just because helper functions exist
-- do not use color alone to communicate state
-- do not build or launch in this phase
-- do not make the app look like a portfolio slideshow or a raw enterprise dashboard
-
-Validation:
-
-- inspect style and layout changes against the accepted hierarchy
-- confirm status chips use consistent labels and severity
-- confirm diagnostics/folder shortcuts point to declared roots only
-- confirm the final static layout matches Direction A with selected Direction B/C support patterns only
-- prepare the final validation checklist for the build-and-launch pass
-- confirm no build, launch, or package validation was run
-
-Prompt:
-
-```text
-Please perform Phase 5 of docs/plans/launcher-principal-ux-concept.md. Apply visual polish to the accepted UX model: stronger typography hierarchy, command-center cards, consistent status chips, restrained accent color usage, package/source mode indicator, copyable diagnostics bundle, and useful folder shortcuts. Prepare desktop and smaller-window validation scenarios for the final pass.
-
-Positive guardrails: strengthen hierarchy without changing the accepted workflow model; polish Direction A's command-center cards, hero, status chips, and details surfaces; keep styling precise and restrained; make primary CTAs unmistakable and secondary actions calm; keep shortcuts and diagnostics grounded in declared artifact/package roots.
-
-Negative guardrails: do not introduce visual novelty that reduces clarity; do not add new buttons just because helper functions exist; do not use color alone to communicate state; do not make the app look like a portfolio slideshow or a raw enterprise dashboard; do not build or launch in this phase.
-
-Validation: inspect style/layout changes against the accepted hierarchy; confirm status chips use consistent labels and severity; confirm diagnostics/folder shortcuts point to declared roots only; confirm the final static layout matches Direction A with selected Direction B/C support patterns only; prepare the final validation checklist; confirm no build, launch, or package validation was run.
-```
-
-Phase 5 implementation handoff:
-
-- Added an always-visible root-mode chip in the launcher footer so package roots, source checkouts, and fallback workspace roots are identifiable without adding role-specific UI.
-- Added grounded footer shortcuts for declared generated roots: `artifacts/`, `dist/`, and `artifacts/dev/launcher-state/Logs`.
-- Added a copyable diagnostics summary that records root mode, root path, selected project, build configuration, IDE, profiles, selected workflow, artifact roots, package root, log root, build tree, and active run state when present.
-- Refined visual hierarchy around Direction A: stronger page titles, calmer secondary actions, clearer primary CTA weight, consistent neutral/ready/warning/error status chip styling, and restrained footer utility styling.
-- Preserved the accepted workflow model and existing operations; Phase 5 did not add new workflow behavior just because helper functions existed.
-- Static validation scope remains UI/code inspection only; final build, launch, package, and visual validation were not run in this phase.
-
-Prepared final validation scenarios:
-
-- Desktop command-center pass: open at a wide desktop size, verify Home first, then inspect Launch, Prepare, Build, Cook, Validate, Package, and Maintain for one dominant recommended action and compact readiness.
-- Smaller-window pass: inspect the same pages at a constrained window size and verify footer context, root-mode chip, CTAs, Activity, and Details remain reachable without crowding primary content.
-- Package-root pass: from a packaged root, verify the mode chip says `Package Root`, Home prefers launch-first bundled components, and diagnostics/folder shortcuts point to package/artifact/log roots.
-- Source-checkout pass: from a source root, verify the mode chip says `Source Checkout`, rebuild/recook/sync paths are optional production extensions, and package outputs remain clearly distinct from local artifacts.
-- Activity pass: verify old unrelated failures are compact Activity insights, current-workflow failures show recovery actions, and raw logs remain behind `Show raw log`.
-- Diagnostics pass: use `Copy diagnostics`, paste the summary, and confirm every listed path is a declared root from the artifact/package contract rather than a hard-coded machine-specific assumption.
-
-### Final UX Validation Pass: Build, Launch, And Review
-
-Goal:
-
-- validate the completed UX implementation only after all implementation phases are done
-- confirm the implemented launcher matches Direction A: Command Center
-
-Work:
-
-- build SparkleLauncher once from a clean or intentionally selected build tree
-- launch SparkleLauncher
-- capture first-contact Home / Quick Start behavior
-- review Launch, Prepare, Build, Cook, Validate, Package, and Maintain workflows
-- verify desktop and smaller-window layouts
-- verify launch-first first-contact path and daily production path both remain usable
-
-Positive guardrails:
-
-- record exact commands, build paths, artifact paths, package/source mode, and launcher version/state
-- validate against real package/source/artifact/evidence states instead of screenshots alone
-- capture failures as implementation fixes, not as excuses to weaken the UX contract
-
-Negative guardrails:
-
-- do not start this pass until Phases 0-5 are complete
-- do not quietly skip blocked acceptance criteria
-- do not treat a successful build as proof of UX acceptance without visual and workflow review
-
-Validation:
-
-- a first-time user can understand identity, mode, launch status, primary CTA, and evidence links from Home
-- daily production users can still prepare, build, cook, validate, package, and maintain without fighting the Quick Start hierarchy
-- Home matches Direction A: hero, launch/source/content/package/evidence/Activity cards, and one next action
-- Direction B/C elements appear only in approved places: guidance copy, after-action suggestions, details, diagnostics, command previews, and advanced matrices
-- stale unrelated failures do not dominate unrelated pages
-- raw logs, commands, paths, and dependency inventories remain available in secondary surfaces
-- final report lists pass/fail for every acceptance criterion
-
-Prompt:
-
-```text
-Please perform the Final UX Validation Pass from docs/plans/launcher-principal-ux-concept.md only after Phases 0-5 are complete. Build SparkleLauncher once, launch it, and validate that the implemented launcher matches Direction A: Command Center. Validate the launch-first Home / Quick Start path plus daily production workflows. Review Launch, Prepare, Build, Cook, Validate, Package, and Maintain at desktop and smaller-window sizes. Validate package/source mode, launch readiness, engineering evidence links, next-action mapping, Activity behavior, diagnostics/details access, and status-chip consistency.
-
-Positive guardrails: record exact commands, build paths, artifact paths, package/source mode, and launcher state; validate against real package/source/artifact/evidence states; convert failures into concrete implementation fixes.
-
-Negative guardrails: do not run before Phases 0-5 are complete; do not skip blocked acceptance criteria; do not treat build success alone as UX acceptance.
-
-Validation: produce a final pass/fail report for every acceptance criterion and list remaining fixes.
-```
-
-Final UX validation result - 2026-06-04:
-
-Visual acceptance correction:
-
-- The first validation pass proved the launcher built and opened, but the captured Home layout still looked like the legacy workflow/audit shell with new copy. That visual result was rejected because it did not match Direction A closely enough.
-- Home was corrected into an actual Command Center surface: the redundant operation-title chrome is hidden, the legacy Home run/footer strip is removed, and Home now owns a hero plus Launch, Prepare, Content, Package, Evidence, and Activity cards.
-- Evidence is now a visible card-level action instead of a tiny overflow-only affordance.
-- Corrected screenshot evidence:
-  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-corrected.png`
-  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-polished.png`
-  - `artifacts/diagnostics/launcher-ux-validation/command-center-home-final-1280.png`
-- This correction supersedes the earlier Home visual acceptance claim. Package-root first-run validation is still conditional until a real packaged runtime fixture exists.
-
-Validation environment:
-
-- Repository root: `C:/Users/stole/Documents/GitHub/SparkleEngine`
-- Build tree: `build/ux-validation-msvc`
-- Launcher artifact: `artifacts/dev/launcher/DevelopmentEditor/SparkleLauncher.exe`
-- Runtime launcher process: `artifacts/dev/launcher-state/Live/SparkleLauncher.exe`
-- Qt kit: `C:/Qt/6.11.1/msvc2022_64`
-- Generator: `Visual Studio 18 2026`
-- Platform: `x64`
-- CMake: `4.3.3`
-- Git: `2.54.0.windows.1`
-- MSVC compiler: `19.51.36246.0`
-- Windows SDK: `10.0.26100.0`
-- Optional source tiers for this launcher validation: content pipeline `OFF`, shader compiler `OFF`, KTX `OFF`
-
-Commands run:
-
-```powershell
-cmake -S . -B build\ux-validation-msvc -G "Visual Studio 18 2026" -A x64 -DSPARKLE_ENABLE_CONTENT_PIPELINE=OFF -DSPARKLE_ENABLE_SHADER_COMPILER=OFF -DSPARKLE_ENABLE_KTX_SUPPORT=OFF -DSPARKLE_QT_ROOT="C:/Qt/6.11.1/msvc2022_64"
-cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
-artifacts\dev\launcher\DevelopmentEditor\SparkleLauncher.exe
-```
-
-Build and launch results:
-
-- Configure passed from a clean validation tree.
-- The attempted generic `Development|x64` build failed because Sparkle's actual CMake configurations are profile names such as `DevelopmentEditor` and `DevelopmentGame`; validation continued with the correct `DevelopmentEditor` profile.
-- `SparkleLauncher` built successfully into `artifacts/dev/launcher/DevelopmentEditor`.
-- Qt runtime deployment completed into the launcher artifact folder.
-- `windeployqt` emitted `VCINSTALLDIR is not set`, but did not block artifact deployment or launcher startup.
-- Launcher startup passed; the executable starts the live-copy instance under `artifacts/dev/launcher-state/Live`.
-- Screenshots captured into `artifacts/diagnostics/launcher-ux-validation/`.
-
-Implementation fixes made during validation:
-
-- Rebuilt Home after project selection/discovery changes so the Command Center no longer shows `Project: Missing` while the footer selects `Showcase`.
-- Changed Launch/Validate workflow guide copy from unconditional launch/run verbs to `Readiness first` so missing executable or cooked content blockers are not contradicted by the top recommendation.
-- Changed the package primary CTA from stale `Planned` copy to `Assemble`.
-- Compacted footer utility labels and control widths so the 980x620 smaller-window pass no longer overlaps Project, Config, and IDE context controls.
-- Removed an MSVC `C4804` bool-comparison warning in dismissed history handling.
-
-Screenshot evidence:
-
-- `artifacts/diagnostics/launcher-ux-validation/accepted-home-wide.png`
-- `artifacts/diagnostics/launcher-ux-validation/accepted-package-wide.png`
-- `artifacts/diagnostics/launcher-ux-validation/accepted-home-small-final.png`
-- Supporting workflow captures: `final-launch-wide.png`, `final-prepare-wide.png`, `final-build-wide.png`, `final-cook-wide.png`, `final-validate-wide.png`, `final-maintain-wide.png`
-
-Acceptance checklist:
-
-- PASS: A first-time user can understand project identity, source/package mode, launch status, and next action from Home within 30 seconds in the source-checkout state.
-- CONDITIONAL: A first-time user can launch packaged editor/runtime within 2 minutes only when a runtime package with bundled components exists. This source-checkout validation did not include a package-root runtime fixture, so package-root launch-first must be revalidated after package assembly.
-- PASS: Concrete engineering evidence is reachable from Home through evidence actions when files/folders exist, and footer diagnostics/folder utilities are one click away.
-- PASS: Optional source rebuild/cook/sync paths are visible as production extensions rather than first-contact blockers.
-- PASS: Launcher source contains no role-specific `Reviewer Mode`, `Developer Mode`, portfolio, or interview UI copy.
-- PASS: Primary workflow pages now use a shared guide/readiness/options/details hierarchy with one dominant recommendation area.
-- PASS: Ready workflows keep full prerequisite inventories in details or scoped readiness sections instead of raw audit tables.
-- PASS: Missing launch/content/build states point to specific missing executable, stale workspace, texture, shader, or cook/build actions instead of a generic dependency checklist.
-- PASS: Old unrelated failures are compact Activity/history information; raw logs stay behind the Activity log toggle.
-- PASS: Source dependencies are described as source tiers and capability unlocks.
-- PASS: Package artifacts and local source artifacts are distinguished through source/package mode, package copy, artifact roots, and `dist/releases/<version>` language.
-- PASS: Advanced controls remain available but are not the first attention field.
-- PASS: The implemented launcher reads as a command-center engine tool rather than a raw CMake dashboard.
-- PASS: Direction A is the primary architecture: Home Command Center, compact cards/status rows, workflow pages, details, Activity, and footer utilities.
-
-Remaining risks / follow-up:
-
-- Package-root first-run behavior needs a real assembled runtime package fixture with bundled editor/runtime/cooked assets before the conditional launch-first acceptance criterion can be fully closed.
-- `windeployqt` warns that `VCINSTALLDIR` is not set when launched from this shell. The build remains usable, but final release validation should run from a Visual Studio developer environment or set the expected deployment environment variables.
-- The footer `Build Configuration` selector intentionally shows simplified state names (`Development`, `Debug`, `Shipping`) while CMake uses full profile configurations (`DevelopmentEditor`, `DevelopmentGame`, etc.); this is acceptable UX, but final developer docs should call out the mapping.
+Do not use the archived prototype screenshots as acceptance evidence for the next redesign pass.
 
 ## Acceptance Criteria
 
@@ -1329,248 +1584,13 @@ Remaining risks / follow-up:
 - Package artifacts and local source artifacts are clearly distinguished.
 - Advanced controls remain available but do not dominate first-run workflows.
 - The app feels like an engine launcher and command center, not a raw CMake dashboard.
-- The implemented UX matches Direction A: Command Center as the primary architecture.
+- The implemented UX matches the NVIDIA App-inspired command-center architecture as the primary product direction.
+- The visual execution matches the NVIDIA App-inspired contract: narrow rail, lime accent, title band, tabbed page rhythm, hero/library/discover Home, bounded content width, quiet settings/system rows, and no persistent bottom terminal.
 
-## Example App View Directions
+## Archived Example Direction Sketches
 
-These are selectable product directions, not implementation promises yet. Each direction uses the same real workflows and backend readiness model. The difference is the default hierarchy, density, and emotional feel.
+The earlier Direction A/B/C sketches were moved to:
 
-Selection criteria:
+- `docs/plans/launcher-principal-ux-implemented-prototype-archive.md`
 
-- first contact: can a new user understand what to do in 30 seconds?
-- production depth: can a daily developer keep working without friction?
-- engineering confidence: does the launcher show proof without feeling like a portfolio slideshow?
-- scalability: can this layout grow as the engine adds projects, tools, packages, and diagnostics?
-
-### Direction A: Command Center
-
-Summary:
-
-- recommended default direction
-- strongest balance between first-contact clarity and daily production utility
-- feels like an engine operations surface, not a setup wizard
-
-Home:
-
-```text
-Sparkle Engine                                      Source Checkout
-Project: Showcase        Config: Development        IDE: Visual Studio
-
-+------------------------------------------------------------------------------+
-| Ready to explore                                                             |
-| Open the strongest available Showcase target. Rebuild and recook are optional.|
-|                                                                              |
-| [Open Editor] [Open Runtime]                         Details: source artifacts|
-+------------------------------------------------------------------------------+
-
-+----------------------+ +----------------------+ +----------------------+
-| Launch               | | Prepare              | | Content              |
-| Editor: Ready        | | Host tools: Ready    | | Shaders: Missing    |
-| Runtime: Missing     | | Source tiers: Ready  | | Textures: Missing   |
-| Next: Build Runtime  | | Files: Stale         | | Next: Cook Missing  |
-+----------------------+ +----------------------+ +----------------------+
-
-+----------------------+ +----------------------+ +----------------------+
-| Package              | | Evidence             | | Activity             |
-| Review package: N/A  | | Manifests: Available | | Last clean: Failed   |
-| Next: Assemble       | | Validation: Latest   | | [Resolve] [Dismiss] |
-+----------------------+ +----------------------+ +----------------------+
-```
-
-Launch:
-
-```text
-Open Editor                                                 Ready from local build
-Launch the Showcase editor. Package components are used first when available.
-
-Recommended action
-[Open Editor]                              Secondary: Open Runtime
-
-Readiness
-Ready   Editor executable
-Ready   Project directory
-Missing Cooked scene assets       [Cook Scene Assets]
-Missing Cooked textures           [Cook Textures]
-Missing Cooked shaders            [Cook Shaders]
-
-Options
-Graphics backend: D3D12        VSync: On        GPU: High performance
-
-Details >
-```
-
-Prepare:
-
-```text
-Prepare Source Workspace                                  Project files stale
-Make this checkout ready for local rebuilds and IDE work.
-
-Recommended action
-[Generate Workspace Files]
-
-Readiness
-Ready   Host tools
-Ready   Core source tier
-Cached  Content pipeline tier
-Cached  Shader compiler tier
-Stale   Workspace files
-
-Advanced actions
-[Verify Host Tools] [Sync Source Tiers] [Open IDE]
-
-Details >
-```
-
-Why choose this:
-
-- gives first-time users a clear launch path
-- gives developers compact production status without a wizard feeling
-- scales well to more projects and package states
-- keeps evidence visible but secondary
-
-Risk:
-
-- if cards get too numerous, Home could become a dashboard again
-- needs disciplined rules for what earns a Home card
-
-### Direction B: Guided Runway
-
-Summary:
-
-- more guided and beginner-friendly
-- best if the launcher should actively coach users through preparation
-- slightly less "pro operations console" than Direction A
-
-Home:
-
-```text
-Sparkle Engine
-Start with the Showcase, then go deeper when you are ready.
-
-1. Explore
-+------------------------------------------------------------------------------+
-| Open the Showcase editor or runtime using available package/local artifacts.  |
-| [Open Editor] [Open Runtime]                                                  |
-+------------------------------------------------------------------------------+
-
-2. Prepare source workspace
-+------------------------------------------------------------------------------+
-| Project files are stale. Generate workspace files before local rebuilds.      |
-| [Generate Workspace Files]                                                    |
-+------------------------------------------------------------------------------+
-
-3. Build and cook only what is missing
-+---------------------------+ +---------------------------+
-| Build Missing             | | Cook Missing              |
-| Runtime executable missing| | 3 cooked domains missing  |
-+---------------------------+ +---------------------------+
-
-4. Review engineering evidence
-[Architecture] [Manifests] [Validation] [Dependency Tiers]
-```
-
-Workflow page:
-
-```text
-Build Missing                                            Step 3 of production path
-Build only the missing local artifacts for Showcase.
-
-What this unlocks
-Runtime launch from local build.
-
-Blockers
-Stale workspace files
-[Generate Workspace Files]
-
-After this
-[Open Runtime] [Cook Missing]
-
-Details >
-```
-
-Why choose this:
-
-- very easy for first-time users
-- makes the funnel almost impossible to misunderstand
-- excellent for onboarding and package-first exploration
-
-Risk:
-
-- can feel less like a power tool for daily production
-- step numbers may become awkward when users jump around
-- needs careful language so it does not feel like an installer
-
-### Direction C: Production Console
-
-Summary:
-
-- densest and most technical direction
-- best for daily developers who want maximum state visibility
-- weakest first-contact experience unless carefully softened
-
-Home:
-
-```text
-Sparkle Engine Console                         Showcase / Development / VS
-
-+-----------------+------------------+------------------+------------------+
-| Launch          | Source           | Content          | Package          |
-| Editor Ready    | Host Ready       | Shaders Missing  | Dist Missing     |
-| Runtime Missing | Tiers Cached     | Textures Missing | Manifests N/A    |
-| [Open Editor]   | Files Stale      | Scenes Missing   | [Assemble]       |
-+-----------------+------------------+------------------+------------------+
-
-Next action: Generate Workspace Files
-[Run] [Details] [Copy Diagnostics]
-
-Recent runs
-Clean Generated Files failed: launcher artifacts are locked. [Resolve] [Dismiss]
-```
-
-Build:
-
-```text
-Build Matrix
-
-Target                  State       Output Root                         Action
-Launcher                Ready       artifacts/dev/launcher              [Build]
-ShowcaseEditor          Missing     artifacts/dev/projects/Showcase     [Build]
-ShowcaseRuntime         Missing     artifacts/dev/projects/Showcase     [Build]
-CookTools               Ready       artifacts/dev/tools                 [Build]
-
-Details >
-```
-
-Why choose this:
-
-- strong daily production control
-- easy to compare targets and outputs
-- feels technical and serious
-
-Risk:
-
-- most likely to become cluttered
-- first-contact users may see a wall of state instead of a launch path
-- raw paths and target names can dominate if not aggressively managed
-
-### Recommended Direction
-
-Choose Direction A: Command Center as the base.
-
-Use selected ideas from Direction B:
-
-- first-contact copy that explains the next step plainly
-- "what this unlocks" text on workflow pages
-- small after-action suggestions
-
-Use selected ideas from Direction C:
-
-- compact target/output matrix only inside details or advanced production views
-- copyable diagnostics and command preview
-- strong artifact/package provenance
-
-Do not choose:
-
-- a separate reviewer/demo mode
-- a pure wizard that hides the real engine workflows
-- a raw production console as the default first impression
+The active direction is no longer selected from those sketches. The current target is the combined NVIDIA App + Visual Studio Installer + Rider reference strategy above.
