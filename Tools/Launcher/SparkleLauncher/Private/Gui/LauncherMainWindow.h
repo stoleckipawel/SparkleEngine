@@ -33,6 +33,7 @@ namespace SparkleLauncher
 	class LauncherSettings;
 	struct DependencyGroupUiEntry;
 	struct ThirdPartyDependencyUiEntry;
+	enum class LauncherArtworkPreset;
 
 	class LauncherMainWindow final : public QMainWindow
 	{
@@ -132,7 +133,7 @@ namespace SparkleLauncher
 		QFrame* CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
 		void AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails);
 		std::filesystem::path FindLauncherVisualAsset(const QString& fileName) const;
-		QWidget* CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize);
+		QWidget* CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize, LauncherArtworkPreset preset);
 		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
 		QFrame* CreateHomeHeroCard(
 		    const QString& status,

@@ -1,6 +1,7 @@
 #include "LauncherMainWindow.h"
 
 #include "LauncherActionWidgets.h"
+#include "LauncherArtworkWidgets.h"
 #include "LauncherBackend.h"
 #include "LauncherProjectModel.h"
 #include "LauncherOutputWidgets.h"
@@ -36,7 +37,6 @@
 #include <QtGui/QImage>
 #include <QtGui/QKeyEvent>
 #include <QtGui/QKeySequence>
-#include <QtGui/QLinearGradient>
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
 #include <QtGui/QPen>
@@ -137,170 +137,6 @@ namespace SparkleLauncher
 		QString Label;
 		QString Detail;
 		bool NavigateOnly = false;
-	};
-
-	class FadingArtworkWidget final : public QWidget
-	{
-	public:
-		FadingArtworkWidget(QPixmap source, bool heroTreatment, bool softTreatment, double targetAspectRatio = 0.0, QWidget* parent = nullptr)
-		    : QWidget(parent)
-		    , m_source(std::move(source))
-		    , m_heroTreatment(heroTreatment)
-		    , m_softTreatment(softTreatment)
-		    , m_aspectRatio(targetAspectRatio > 0.0 ? targetAspectRatio : AspectRatioFor(m_source))
-		{
-			setAttribute(Qt::WA_StyledBackground, true);
-			setAttribute(Qt::WA_OpaquePaintEvent, false);
-			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-			policy.setHeightForWidth(true);
-			setSizePolicy(policy);
-		}
-
-		bool hasHeightForWidth() const override
-		{
-			return true;
-		}
-
-		int heightForWidth(int width) const override
-		{
-			if (width <= 0 || m_aspectRatio <= 0.0)
-			{
-				return QWidget::heightForWidth(width);
-			}
-
-			return std::max(1, static_cast<int>(std::round(static_cast<double>(width) / m_aspectRatio)));
-		}
-
-		QSize sizeHint() const override
-		{
-			const int width = m_source.isNull() ? 360 : std::clamp(m_source.width(), 240, 960);
-			return QSize(width, heightForWidth(width));
-		}
-
-	private:
-		static double AspectRatioFor(const QPixmap& pixmap)
-		{
-			if (pixmap.isNull() || pixmap.height() <= 0)
-			{
-				return 16.0 / 9.0;
-			}
-
-			return static_cast<double>(pixmap.width()) / static_cast<double>(pixmap.height());
-		}
-
-	protected:
-		void paintEvent(QPaintEvent*) override
-		{
-			const QSize targetSize = size();
-			if (m_source.isNull() || targetSize.isEmpty())
-			{
-				return;
-			}
-
-			const QPixmap scaled = m_source.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-			const QRect cropRect(
-			    std::max(0, (scaled.width() - targetSize.width()) / 2),
-			    std::max(0, (scaled.height() - targetSize.height()) / 2),
-			    targetSize.width(),
-			    targetSize.height());
-
-			QPainter painter(this);
-			painter.setRenderHint(QPainter::Antialiasing, true);
-			painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-			if (m_heroTreatment)
-			{
-				QImage heroLayer(targetSize, QImage::Format_ARGB32_Premultiplied);
-				heroLayer.fill(Qt::transparent);
-				QPainter heroPainter(&heroLayer);
-				heroPainter.setRenderHint(QPainter::Antialiasing, true);
-				heroPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-				heroPainter.fillRect(heroLayer.rect(), LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground));
-
-				QImage imageLayer(targetSize, QImage::Format_ARGB32_Premultiplied);
-				imageLayer.fill(Qt::transparent);
-				{
-					QPainter imagePainter(&imageLayer);
-					imagePainter.setRenderHint(QPainter::Antialiasing, true);
-					imagePainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-					imagePainter.drawPixmap(QPoint(0, 0), scaled, cropRect);
-
-					QImage alphaMask(targetSize, QImage::Format_ARGB32_Premultiplied);
-					alphaMask.fill(Qt::transparent);
-					QPainter maskPainter(&alphaMask);
-					QLinearGradient alphaGradient(0, 0, targetSize.width(), 0);
-					alphaGradient.setColorAt(0.00, QColor(255, 255, 255, 0));
-					alphaGradient.setColorAt(0.16, QColor(255, 255, 255, 8));
-					alphaGradient.setColorAt(0.30, QColor(255, 255, 255, 28));
-					alphaGradient.setColorAt(0.44, QColor(255, 255, 255, 72));
-					alphaGradient.setColorAt(0.58, QColor(255, 255, 255, 138));
-					alphaGradient.setColorAt(0.72, QColor(255, 255, 255, 218));
-					alphaGradient.setColorAt(0.88, QColor(255, 255, 255, 252));
-					alphaGradient.setColorAt(1.00, QColor(255, 255, 255, 255));
-					maskPainter.fillRect(alphaMask.rect(), alphaGradient);
-
-					imagePainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-					imagePainter.drawImage(0, 0, alphaMask);
-				}
-
-				heroPainter.drawImage(0, 0, imageLayer);
-
-				QLinearGradient bottomGradient(0, 0, 0, targetSize.height());
-				bottomGradient.setColorAt(0.00, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 0));
-				bottomGradient.setColorAt(0.68, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 0));
-				bottomGradient.setColorAt(1.00, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 48));
-				heroPainter.fillRect(heroLayer.rect(), bottomGradient);
-
-				heroPainter.setPen(QPen(LauncherUi::Color::Hex(LauncherUi::Color::Accent, 180), 2));
-				const int accentX = std::clamp(static_cast<int>(targetSize.width() * 0.36), 280, targetSize.width() - 48);
-				heroPainter.drawLine(accentX, 0, accentX, targetSize.height());
-
-				QImage sectionMask(targetSize, QImage::Format_ARGB32_Premultiplied);
-				sectionMask.fill(Qt::transparent);
-				QPainter sectionMaskPainter(&sectionMask);
-				QLinearGradient sectionFade(0, 0, 0, targetSize.height());
-				sectionFade.setColorAt(0.00, QColor(255, 255, 255, 255));
-				sectionFade.setColorAt(0.66, QColor(255, 255, 255, 255));
-				sectionFade.setColorAt(0.84, QColor(255, 255, 255, 205));
-				sectionFade.setColorAt(0.94, QColor(255, 255, 255, 88));
-				sectionFade.setColorAt(1.00, QColor(255, 255, 255, 0));
-				sectionMaskPainter.fillRect(sectionMask.rect(), sectionFade);
-
-				heroPainter.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-				heroPainter.drawImage(0, 0, sectionMask);
-
-				painter.drawImage(0, 0, heroLayer);
-				return;
-			}
-
-			painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
-
-			QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-			leftFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 210));
-			leftFade.setColorAt(0.28, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 128));
-			leftFade.setColorAt(0.72, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, m_softTreatment ? 96 : 42));
-			leftFade.setColorAt(0.82, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
-			leftFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
-			painter.fillRect(rect(), leftFade);
-
-			QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-			bottomFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, m_softTreatment ? 32 : 8));
-			bottomFade.setColorAt(0.58, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 12));
-			bottomFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 170));
-			painter.fillRect(rect(), bottomFade);
-
-			QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-			limeSweep.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 10));
-			limeSweep.setColorAt(0.48, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 22));
-			limeSweep.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 0));
-			painter.fillRect(rect(), limeSweep);
-		}
-
-	private:
-		QPixmap m_source;
-		bool m_heroTreatment = false;
-		bool m_softTreatment = false;
-		double m_aspectRatio = 16.0 / 9.0;
 	};
 
 	class ProportionalCardFrame final : public QFrame
@@ -431,42 +267,17 @@ namespace SparkleLauncher
 			}
 
 			QImage heroLayer(QSize(kDesignWidth, kDesignHeight), QImage::Format_ARGB32_Premultiplied);
-			heroLayer.fill(kHeroBackground);
+			heroLayer.fill(Qt::transparent);
 			QPainter heroPainter(&heroLayer);
 			heroPainter.setRenderHint(QPainter::Antialiasing, true);
 			heroPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
 			const QRect designRect(0, 0, kDesignWidth, kDesignHeight);
-			const QPixmap scaled = m_source.scaled(designRect.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-			const QRect cropRect(
-			    std::max(0, (scaled.width() - designRect.width()) / 2),
-			    std::max(0, (scaled.height() - designRect.height()) / 2),
-			    designRect.width(),
-			    designRect.height());
-
-			heroPainter.drawPixmap(designRect.topLeft(), scaled, cropRect);
-
-			QLinearGradient copyReadability(0, 0, kCopyDividerX, 0);
-			copyReadability.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 72));
-			copyReadability.setColorAt(0.74, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 34));
-			copyReadability.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
-			heroPainter.fillRect(QRect(0, 0, kCopyDividerX, kDesignHeight), copyReadability);
-
-			QLinearGradient imageRightBlend(kDesignWidth - 300, 0, kDesignWidth, 0);
-			imageRightBlend.setColorAt(0.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 0));
-			imageRightBlend.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 132));
-			heroPainter.fillRect(designRect, imageRightBlend);
-
-			heroPainter.setPen(QPen(LauncherUi::Color::Hex(LauncherUi::Color::Accent, 210), 2));
-			heroPainter.drawLine(kCopyDividerX, 0, kCopyDividerX, kDesignHeight - 1);
-
-			QLinearGradient topLevelFade(0, 0, 0, kDesignHeight);
-			topLevelFade.setColorAt(0.00, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 0));
-			topLevelFade.setColorAt(0.50, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 0));
-			topLevelFade.setColorAt(0.70, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 50));
-			topLevelFade.setColorAt(0.86, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 172));
-			topLevelFade.setColorAt(1.00, QColor(kPageBackground.red(), kPageBackground.green(), kPageBackground.blue(), 255));
-			heroPainter.fillRect(heroLayer.rect(), topLevelFade);
+			PaintLauncherArtwork(
+			    heroPainter,
+			    designRect,
+			    m_source,
+			    LauncherArtworkSpec::ForPreset(LauncherArtworkPreset::HeroPanorama));
 
 			painter.drawImage(HeroSceneRect(), heroLayer);
 		}
@@ -551,13 +362,12 @@ namespace SparkleLauncher
 
 		static constexpr int kDesignWidth = LauncherUi::Hero::DesignWidth;
 		static constexpr int kDesignHeight = LauncherUi::Hero::DesignHeight;
-		static constexpr int kCopyDividerX = LauncherUi::Hero::CopyDividerX;
 		static constexpr int kMinimumHeight = LauncherUi::Hero::MinimumHeight;
+		static constexpr int kCopyDividerX = LauncherUi::Hero::CopyDividerX;
 		static constexpr int kCopyLeft = LauncherUi::Hero::CopyLeft;
 		static constexpr int kCopyTop = LauncherUi::Hero::CopyTop;
 		static constexpr int kCopyBottom = LauncherUi::Hero::CopyBottom;
 		static constexpr int kCopyWidth = LauncherUi::Hero::CopyWidth;
-		static const inline QColor kHeroBackground = LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground);
 		static const inline QColor kPageBackground = LauncherUi::Color::Hex(LauncherUi::Color::Background);
 
 		QPixmap m_source;
@@ -709,50 +519,6 @@ namespace SparkleLauncher
 		int m_currentColumns = 0;
 		int m_currentCardWidth = 0;
 	};
-
-	static QPixmap CreateProcessedArtworkPixmap(const QPixmap& source, const QSize& targetSize, bool softTreatment)
-	{
-		if (source.isNull() || targetSize.isEmpty())
-		{
-			return source;
-		}
-
-		const QPixmap scaled = source.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-		const QRect cropRect(
-		    std::max(0, (scaled.width() - targetSize.width()) / 2),
-		    std::max(0, (scaled.height() - targetSize.height()) / 2),
-		    targetSize.width(),
-		    targetSize.height());
-		QPixmap result(targetSize);
-		result.fill(Qt::transparent);
-
-		QPainter painter(&result);
-		painter.setRenderHint(QPainter::Antialiasing, true);
-
-		painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
-
-		QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-		leftFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 210));
-		leftFade.setColorAt(0.28, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 128));
-		leftFade.setColorAt(0.72, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, softTreatment ? 96 : 42));
-		leftFade.setColorAt(0.82, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
-		leftFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
-		painter.fillRect(result.rect(), leftFade);
-
-		QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-		bottomFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, softTreatment ? 32 : 8));
-		bottomFade.setColorAt(0.58, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 12));
-		bottomFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 170));
-		painter.fillRect(result.rect(), bottomFade);
-
-		QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-		limeSweep.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 10));
-		limeSweep.setColorAt(0.48, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 22));
-		limeSweep.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 0));
-		painter.fillRect(result.rect(), limeSweep);
-
-		return result;
-	}
 
 	static QString VisualAssetForOperation(const QString& operationId)
 	{
@@ -2370,8 +2136,6 @@ namespace SparkleLauncher
 
 		if (operationId == "cook.shaders")
 		{
-			AddBuildEnvironmentStatus(layout, operationId);
-
 			QVBoxLayout* selectionLayout = AddOptionGroup(layout, "Options", "Shader cook target selection. Advanced cache, debug, and compiler controls are available below.");
 			AddOptionField(*selectionLayout, "Shader package", CreateValueCombo(
 			    {{"All shader packages", ""},
@@ -2486,6 +2250,7 @@ namespace SparkleLauncher
 			        "Run the cooked-shader-stats analysis pass after the shader cook and write CSV output into the shader cache analysis folder.",
 			        m_settings.ShaderWriteCookedShaderStats(),
 			        &LauncherSettings::SetShaderWriteCookedShaderStats));
+			AddBuildEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -2497,14 +2262,13 @@ namespace SparkleLauncher
 
 		if (operationId == "project.open.editor" || operationId == "project.open.runtime")
 		{
-			AddLaunchEnvironmentStatus(layout, operationId);
 			AddLaunchApplicationOptions(layout);
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "project.run.smoke")
 		{
-			AddLaunchEnvironmentStatus(layout, operationId);
 			AddLaunchTargetOptions(layout, "Smoke Target", "Choose which project executable should run with smoke validation.", false);
 			AddLaunchApplicationOptions(layout);
 			AddSmokeValidationOptions(layout);
@@ -2516,20 +2280,20 @@ namespace SparkleLauncher
 			AddStatusRow(*gateLayout, "Smoke validation", "Available", "Runs the selected editor or runtime with smoke validation enabled.", "ok");
 			AddStatusRow(*gateLayout, "Sanitizer builds", "Configured in CMake", "Root CMake exposes ENABLE_SANITIZERS and SANITIZER_TYPE for Clang-based ASan, UBSan, TSan, MSan, and LSan builds; launcher presets still need a dedicated workflow before this becomes one-click.", "neutral");
 			AddStatusRow(*gateLayout, "Unit / integration / coverage", "Not wired", "No launcher-backed test or coverage runner is currently configured. Add a real CTest/coverage pipeline before exposing executable buttons here.", "neutral");
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "project.run")
 		{
-			AddLaunchEnvironmentStatus(layout, operationId);
 			AddLaunchTargetOptions(layout, "Launch Project", "Choose target and startup level for the selected project.", true);
 			AddLaunchApplicationOptions(layout);
+			AddLaunchEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "quality.format")
 		{
-			AddMaintenanceEnvironmentStatus(layout, operationId);
 			QVBoxLayout* formatOptionsLayout = AddOptionGroup(layout, "Formatting Mode", "Run clang-format as a quality gate or explicitly apply formatting changes.");
 			AddOptionField(
 			    *formatOptionsLayout,
@@ -2538,13 +2302,12 @@ namespace SparkleLauncher
 			        {{"Check only", "check"}, {"Apply formatting", "apply"}},
 			        m_settings.FormatMode(),
 			        &LauncherSettings::SetFormatMode));
+			AddMaintenanceEnvironmentStatus(layout, operationId);
 			return;
 		}
 
 		if (operationId == "workspace.clean")
 		{
-			AddMaintenanceEnvironmentStatus(layout, operationId);
-
 			const std::array<CleanScopeUiOption, 7> cleanScopes = {{
 			    {"Selected project cooked content", "selected-cooked", "Cooked asset outputs for only the selected project under artifacts/dev/projects/<Project>/cooked.", QString(), "Cooked content"},
 			    {"All cooked content", "all-cooked", "Cooked asset domains for every project plus the shared cooked domain. Keeps editor/runtime artifacts and source dependency caches.", "artifacts/dev/projects/*/cooked", "Cooked content"},
@@ -2662,6 +2425,7 @@ namespace SparkleLauncher
 				connect(scopeBox, &QCheckBox::toggled, this, updateCleanScopeSetting);
 			}
 			updateCleanScopeSetting();
+			AddMaintenanceEnvironmentStatus(layout, operationId);
 			return;
 		}
 
@@ -2897,7 +2661,11 @@ namespace SparkleLauncher
 		return {};
 	}
 
-	QWidget* LauncherMainWindow::CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize)
+	QWidget* LauncherMainWindow::CreateVisualArtworkLabel(
+	    const QString& fileName,
+	    const QString& objectName,
+	    const QSize& minimumSize,
+	    LauncherArtworkPreset preset)
 	{
 		const std::filesystem::path artworkPath = FindLauncherVisualAsset(fileName);
 		if (artworkPath.empty())
@@ -2911,38 +2679,13 @@ namespace SparkleLauncher
 			return nullptr;
 		}
 
-		const bool heroTreatment = objectName == "CommandHeroArtwork";
-		const bool softTreatment = objectName == "WorkflowVisualArtwork" || objectName == "CommandCardArtwork";
 		const QSize artworkSize = minimumSize.isEmpty() ? LauncherUi::WorkflowVisual::FallbackArtworkSize() : minimumSize;
-		if (heroTreatment)
-		{
-			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, 0.0, this);
-			heroArtwork->setObjectName(objectName);
-			heroArtwork->setMinimumHeight(minimumSize.height());
-			heroArtwork->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-			heroArtwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
-			return heroArtwork;
-		}
-
-		if (softTreatment)
-		{
-			const double artworkAspectRatio =
-			    artworkSize.height() > 0 ? static_cast<double>(artworkSize.width()) / static_cast<double>(artworkSize.height()) : 0.0;
-			FadingArtworkWidget* processedArtwork = new FadingArtworkWidget(pixmap, false, true, artworkAspectRatio, this);
-			processedArtwork->setObjectName(objectName);
-			processedArtwork->setMinimumSize(QSize(artworkSize.width(), processedArtwork->heightForWidth(artworkSize.width())));
-			QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-			policy.setHeightForWidth(true);
-			processedArtwork->setSizePolicy(policy);
-			processedArtwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
-			return processedArtwork;
-		}
-
-		QLabel* artwork = new QLabel(this);
+		LauncherArtworkWidget* artwork = new LauncherArtworkWidget(pixmap, LauncherArtworkSpec::ForPreset(preset), artworkSize, this);
 		artwork->setObjectName(objectName);
-		artwork->setPixmap(CreateProcessedArtworkPixmap(pixmap, artworkSize, false));
-		artwork->setScaledContents(true);
-		artwork->setMinimumSize(minimumSize);
+		artwork->setMinimumSize(QSize(artworkSize.width(), artwork->heightForWidth(artworkSize.width())));
+		QSizePolicy policy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+		policy.setHeightForWidth(true);
+		artwork->setSizePolicy(policy);
 		artwork->setAccessibleName(QStringLiteral("Visual artwork: %1").arg(fileName));
 		return artwork;
 	}
@@ -2955,7 +2698,11 @@ namespace SparkleLauncher
 			return;
 		}
 
-		QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", LauncherUi::WorkflowVisual::ArtworkSize());
+		QWidget* artwork = CreateVisualArtworkLabel(
+		    artworkFileName,
+		    "WorkflowVisualArtwork",
+		    LauncherUi::WorkflowVisual::ArtworkSize(),
+		    LauncherArtworkPreset::WorkflowBanner);
 		if (artwork == nullptr)
 		{
 			return;
@@ -3069,7 +2816,9 @@ namespace SparkleLauncher
 		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? LauncherUi::Card::ProductSpacing : LauncherUi::Card::DiscoverSpacing));
 
 		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize() : LauncherUi::Card::DiscoverArtworkSize();
-		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", artworkDesignSize))
+		const LauncherArtworkPreset artworkPreset =
+		    isLibraryCard ? LauncherArtworkPreset::ProductCard : LauncherArtworkPreset::DiscoverTile;
+		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", artworkDesignSize, artworkPreset))
 		{
 			artwork->setParent(card);
 			artwork->setProperty("TileRole", tileRole);
@@ -5329,13 +5078,23 @@ namespace SparkleLauncher
 	void LauncherMainWindow::SetSelectedOperation(const QString& operationId)
 	{
 		m_selectedOperationId = operationId;
-		const QString title = DisplayNameForOperation(operationId);
+		const QString operationTitle = DisplayNameForOperation(operationId);
+		QString workflowTitle = operationTitle;
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
+		if (m_workflowPageByOperation.contains(operationId))
+		{
+			const int workflowIndex = m_workflowPageByOperation.value(operationId);
+			if (workflowIndex >= 0 && workflowIndex < workflows.size())
+			{
+				workflowTitle = workflows[workflowIndex].Title;
+			}
+		}
 		SetControlsEnabled(true);
 		UpdateActionHistoryDisplay();
 		const bool isStaticPage = operationId == LauncherHomeOperationId();
 		if (m_activeOperationLabel != nullptr)
 		{
-			m_activeOperationLabel->setText(title);
+			m_activeOperationLabel->setText(workflowTitle);
 			m_activeOperationLabel->setVisible(true);
 		}
 		if (m_actionMetaPanel != nullptr)
@@ -5369,7 +5128,6 @@ namespace SparkleLauncher
 			m_lastOperationByWorkflowIndex.insert(workflowIndex, operationId);
 			m_operationStack->setCurrentIndex(workflowIndex);
 			SetActiveWorkflowGroup(workflowIndex);
-			const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
 			if (workflowIndex >= 0 && workflowIndex < workflows.size())
 			{
 				m_operationStack->setVisible(workflows[workflowIndex].OperationIds.size() > 1);

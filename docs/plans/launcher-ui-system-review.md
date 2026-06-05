@@ -595,7 +595,7 @@ Pass/fail review:
 - PASS: source tiers, clean scopes, option rows, text edits, and workflow banners use named layout families.
 - PASS: state chips now share semantic styling rules for neutral, ok, warning, and bad states.
 - PASS: the screenshot set confirms the app is visually coherent across all major modules after this pass.
-- PARTIAL: hero/image fade math is centralized around `LauncherUiDesign`, but the custom renderer still contains paint-level gradient stops. This is acceptable for the custom hero component, but should move into a dedicated hero widget file during component extraction.
+- PASS: hero, workflow banner, product-card, and discover-tile image treatment now route through the shared layered artwork compositor added in Coherence Pass 3.
 - PARTIAL: `LauncherVisualStyle.cpp` centralizes QSS, but still contains many raw style literals. This is acceptable as the stylesheet owner, but future polish should split semantic style fragments if the stylesheet grows further.
 - PARTIAL: `LauncherMainWindow.cpp` still owns too much UI assembly. The token pass makes it safer, but it is not yet a clean component architecture.
 
@@ -612,3 +612,71 @@ Remaining architecture cleanup:
 - Replace operation-ID branching inside option assembly with `LauncherUiModel` or a new `LauncherWorkflowPageModel`.
 - Give media usage a stronger product/project media model so images are assigned by product role instead of UI construction code.
 - Add a dedicated click/state audit that checks every safe control and inspects destructive controls without running them accidentally.
+
+## Coherence Pass 3: Layered Artwork System
+
+Status: completed on 2026-06-05.
+
+Goal:
+
+- replace one-off image/fade/gradient handling with a shared artwork compositor
+- make hero, workflow banners, product cards, and discover tiles use predictable layer ordering
+- keep the accepted visual direction while reducing hardcoded paint behavior in `LauncherMainWindow`
+
+What changed:
+
+- Added `LauncherArtworkWidgets` as the shared owner of complex artwork layering.
+- Replaced the old local `FadingArtworkWidget` and pixmap preprocessing helper in `LauncherMainWindow.cpp`.
+- Routed workflow banners, product cards, and discover tiles through semantic artwork presets instead of local widget-specific image treatment.
+- Kept the existing custom hero shape, layout, and copy placement, but moved its actual image/gradient/accent composition to the shared compositor.
+
+Layer contract:
+
+- Base fill: every artwork starts from the launcher surface color.
+- Image layer: artwork is cover-cropped proportionally into the target rect.
+- Semantic overlays: readability, ambient tint, vignette, and accent washes are applied from normalized coordinates.
+- Accent line: optional vertical accent/divider is drawn after normal overlays.
+- Top overlays: final fades that must affect the entire object, including image and accent line, are applied last.
+
+Supported presets:
+
+- `HeroPanorama`: wide Quick Start hero image with left text readability, right-side blend, lime divider, and final top-level fade into the app background.
+- `WorkflowBanner`: compact workflow-page image treatment for contextual page visuals.
+- `ProductCard`: launchable product card image treatment with proportional cover fill and stronger readability treatment.
+- `DiscoverTile`: small evidence/tool tile treatment designed for title-only cards.
+
+Files changed:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherArtworkWidgets.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherArtworkWidgets.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherMainWindow.cpp`
+- `Tools/Launcher/SparkleLauncher/CMakeLists.txt`
+
+Validation performed:
+
+```powershell
+cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
+```
+
+Result:
+
+- Build passed.
+- The shared compositor is compiled into `SparkleLauncher`.
+- The known `windeployqt` warning about `VCINSTALLDIR` remains external to this pass and did not block launcher artifact generation.
+
+Pass/fail review:
+
+- PASS: layered image treatment is now a reusable UI system, not hidden inside the main window.
+- PASS: layer order is explicit and predictable.
+- PASS: hero, workflow banners, product cards, and discover tiles identify their visual role through presets.
+- PASS: proportional cover-crop logic is shared across artwork roles.
+- PASS: top-level fades can be applied after all lower layers, which prevents the previous class of accidental hard transitions.
+- PARTIAL: QSS surface gradients still live in `LauncherVisualStyle.cpp`. That is acceptable because QSS owns static surface styling, while `LauncherArtworkWidgets` owns dynamic image composition.
+- PARTIAL: blur is not implemented as a first-class layer yet. If blur is needed later, it should be added to the artwork compositor as an explicit layer type, not added ad hoc in a page builder.
+
+Remaining architecture cleanup:
+
+- Move `HomeHeroCardWidget` itself into a dedicated hero component file once page extraction starts.
+- Add a `LauncherMediaCatalog` so project/product/evidence imagery is assigned by product metadata instead of UI construction branches.
+- Add screenshot validation for all artwork presets in the next visual pass.

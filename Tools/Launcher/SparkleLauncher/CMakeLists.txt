@@ -78,6 +78,7 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets)
 
 set(SPARKLE_LAUNCHER_GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherActionWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherArtworkWidgets.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.cpp
@@ -91,6 +92,7 @@ set(SPARKLE_LAUNCHER_GUI_SOURCES
 
 set(SPARKLE_LAUNCHER_GUI_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherActionWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherArtworkWidgets.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherOutputWidgets.h
