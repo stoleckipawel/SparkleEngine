@@ -1,0 +1,367 @@
+#pragma once
+
+#include <QtCore/QMargins>
+#include <QtCore/QSize>
+#include <QtCore/QString>
+#include <QtCore/QtGlobal>
+#include <QtGui/QColor>
+
+namespace SparkleLauncher::LauncherUi
+{
+	namespace Color
+	{
+		inline constexpr const char* Background = "#111312";
+		inline constexpr const char* HeroBackground = "#030404";
+		inline constexpr const char* Shell = "#181a19";
+		inline constexpr const char* Panel = "#202220";
+		inline constexpr const char* PanelHover = "#2c302c";
+		inline constexpr const char* Field = "#202321";
+		inline constexpr const char* Border = "#0b0d0c";
+		inline constexpr const char* BorderSoft = "#303430";
+		inline constexpr const char* BorderStrong = "#444943";
+		inline constexpr const char* Divider = "#2b2f2b";
+		inline constexpr const char* Accent = "#76b900";
+		inline constexpr const char* AccentHover = "#8bd80f";
+		inline constexpr const char* Selection = "#31451f";
+		inline constexpr const char* TextPrimary = "#f2f4f1";
+		inline constexpr const char* TextBody = "#d9ddd7";
+		inline constexpr const char* TextSecondary = "#b9c0b6";
+		inline constexpr const char* TextMuted = "#858d82";
+		inline constexpr const char* StateQueued = "#8b949e";
+		inline constexpr const char* StateRunning = Accent;
+		inline constexpr const char* StateSuccess = "#7ee787";
+		inline constexpr const char* StateDestructive = "#ff7b72";
+		inline constexpr const char* StateWarning = "#ffb454";
+
+		inline QColor Hex(const char* value, int alpha = 255)
+		{
+			QColor color(QString::fromLatin1(value));
+			color.setAlpha(alpha);
+			return color;
+		}
+	}
+
+	namespace Space
+	{
+		inline constexpr int Tiny = 2;
+		inline constexpr int XSmall = 4;
+		inline constexpr int Small = 8;
+		inline constexpr int Medium = 12;
+		inline constexpr int Large = 16;
+		inline constexpr int XLarge = 18;
+		inline constexpr int SectionGap = 18;
+	}
+
+	namespace Window
+	{
+		inline constexpr int MinimumWidth = 1280;
+		inline constexpr int MinimumHeight = 720;
+		inline constexpr int InitialWidth = 1480;
+		inline constexpr int InitialHeight = 860;
+	}
+
+	namespace Icon
+	{
+		inline constexpr int DefaultSize = 14;
+	}
+
+	namespace Shell
+	{
+		inline constexpr int RailWidth = 86;
+		inline constexpr int RailItemMinHeight = 58;
+		inline constexpr int TabMinHeight = 36;
+		inline constexpr int RailIconSize = 18;
+		inline constexpr int RailBottomPadding = 10;
+		inline constexpr int RailGroupSpacing = 2;
+		inline constexpr int WorkflowTabSpacing = 18;
+		inline constexpr int PanelHorizontalMargin = 18;
+		inline constexpr int PanelVerticalMargin = 14;
+	}
+
+	namespace TitleBand
+	{
+		inline constexpr int Spacing = 14;
+
+		inline QMargins Margins()
+		{
+			return QMargins(20, 0, 12, 0);
+		}
+	}
+
+	namespace HeaderContext
+	{
+		inline constexpr int Spacing = 10;
+		inline constexpr int ComboHeight = 28;
+		inline constexpr int ProjectComboMinWidth = 140;
+		inline constexpr int ProjectComboMaxWidth = 180;
+		inline constexpr int ConfigurationComboMinWidth = 140;
+		inline constexpr int ConfigurationComboMaxWidth = 180;
+		inline constexpr int IdeComboMinWidth = 120;
+		inline constexpr int IdeComboMaxWidth = 150;
+	}
+
+	namespace Row
+	{
+		inline constexpr int FieldLabelWidth = 132;
+		inline constexpr int StatusChipColumnWidth = 118;
+		inline constexpr int StatusActionColumnWidth = 28;
+	}
+
+	namespace Button
+	{
+		inline constexpr int PrimaryMinHeight = 34;
+		inline constexpr int SecondaryMinHeight = 30;
+	}
+
+	namespace Page
+	{
+		inline constexpr int MaxContentWidth = 1340;
+		inline constexpr int Spacing = 10;
+		inline constexpr int BottomMargin = 32;
+
+		inline QMargins ContentMargins()
+		{
+			return QMargins(28, 22, 28, BottomMargin);
+		}
+
+		inline QMargins QuickStartMargins()
+		{
+			return QMargins(0, 0, 0, BottomMargin);
+		}
+	}
+
+	namespace ActionMeta
+	{
+		inline constexpr int Spacing = 8;
+
+		inline QMargins Margins()
+		{
+			return QMargins(0, 8, 0, 0);
+		}
+	}
+
+	namespace TextEdit
+	{
+		inline constexpr int MinHeight = 78;
+		inline constexpr int MaxHeight = 118;
+	}
+
+	namespace Overflow
+	{
+		inline constexpr int IconExtent = 12;
+		inline constexpr int IconSize = 8;
+		inline constexpr int ButtonSize = 16;
+		inline constexpr qreal MenuFontPointSize = 8.0;
+		inline constexpr qreal DotRadius = 1.15;
+		inline constexpr qreal DotCenterX = IconExtent * 0.5;
+		inline constexpr qreal DotY1 = 2.5;
+		inline constexpr qreal DotY2 = 6.0;
+		inline constexpr qreal DotY3 = 9.5;
+	}
+
+	namespace OperationOutput
+	{
+		inline constexpr int MinHeight = 96;
+		inline constexpr int CompactMaxHeight = 128;
+		inline constexpr int ProminentMinHeight = 136;
+		inline constexpr int MaxHeight = 220;
+	}
+
+	namespace SourceTier
+	{
+		inline constexpr int MinHeight = 138;
+		inline constexpr int Spacing = 8;
+
+		inline QMargins Margins()
+		{
+			return QMargins(16, 14, 16, 14);
+		}
+	}
+
+	namespace Clean
+	{
+		inline constexpr int ScopeCardSpacing = 6;
+		inline constexpr int GridTopMargin = 4;
+		inline constexpr int GridSpacing = 12;
+
+		inline QMargins ScopeCardMargins()
+		{
+			return QMargins(12, 10, 12, 10);
+		}
+
+		inline QMargins GridMargins()
+		{
+			return QMargins(0, GridTopMargin, 0, 0);
+		}
+	}
+
+	namespace Option
+	{
+		inline constexpr int LabelHorizontalPadding = 10;
+		inline constexpr int ValueLeftPadding = 10;
+		inline constexpr int GroupSpacing = 4;
+		inline constexpr int DetailsTopMargin = 4;
+		inline constexpr int StatusDetailSpacing = 3;
+
+		inline QMargins LabelMargins()
+		{
+			return QMargins(LabelHorizontalPadding, 0, LabelHorizontalPadding, 0);
+		}
+
+		inline QMargins ValueMargins()
+		{
+			return QMargins(ValueLeftPadding, 0, 0, 0);
+		}
+
+		inline QMargins GroupMargins()
+		{
+			return QMargins(0, 8, 0, 8);
+		}
+
+		inline QMargins DetailsMargins()
+		{
+			return QMargins(0, DetailsTopMargin, 0, 0);
+		}
+	}
+
+	namespace WorkflowVisual
+	{
+		inline constexpr int MinHeight = 118;
+		inline constexpr int FallbackWidth = 360;
+		inline constexpr int FallbackHeight = 180;
+		inline constexpr int ContainerSpacing = 18;
+		inline constexpr int CopySpacing = 8;
+		inline constexpr int ActionTopMargin = 2;
+
+		inline QSize ArtworkSize()
+		{
+			return QSize(360, MinHeight);
+		}
+
+		inline QSize FallbackArtworkSize()
+		{
+			return QSize(FallbackWidth, FallbackHeight);
+		}
+
+		inline QMargins CopyMargins()
+		{
+			return QMargins(18, 14, 18, 14);
+		}
+	}
+
+	namespace Activity
+	{
+		inline constexpr int CollapsedHeight = 36;
+		inline constexpr int ExpandedHeight = 260;
+		inline constexpr int ListWidth = 280;
+		inline constexpr int RowHeight = 26;
+		inline constexpr int HistoryRowHeight = 34;
+		inline constexpr int RunIndicatorWidth = 4;
+		inline constexpr const char* ExpandGlyph = "+";
+		inline constexpr const char* CollapseGlyph = "-";
+
+		inline QSize ToggleButtonSize()
+		{
+			return QSize(28, 24);
+		}
+
+		inline QMargins HeaderMargins()
+		{
+			return QMargins(10, 5, 10, 5);
+		}
+
+		inline QMargins RailMargins()
+		{
+			return QMargins(4, 4, 4, 4);
+		}
+
+		inline QMargins OutputMargins()
+		{
+			return QMargins(6, 4, 6, 6);
+		}
+	}
+
+	namespace Section
+	{
+		inline constexpr int Spacing = 4;
+	}
+
+	namespace Hero
+	{
+		inline constexpr int DesignWidth = 1560;
+		inline constexpr int DesignHeight = 360;
+		inline constexpr int CopyDividerX = 624;
+		inline constexpr int MinimumHeight = 260;
+		inline constexpr int MinimumWidth = 720;
+		inline constexpr int CopyLeft = 48;
+		inline constexpr int CopyTop = 58;
+		inline constexpr int CopyBottom = 44;
+		inline constexpr int CopyWidth = 430;
+		inline constexpr int CopySpacing = 18;
+		inline constexpr int ActionTopMargin = 2;
+		inline constexpr double MinimumCopyScale = 0.74;
+		inline constexpr double MaximumCopyScale = 1.12;
+	}
+
+	namespace Home
+	{
+		inline constexpr int BodyLeft = 28;
+		inline constexpr int BodyTop = 24;
+		inline constexpr int BodyRight = 28;
+		inline constexpr int BodyBottom = 0;
+		inline constexpr int SectionSpacing = 10;
+		inline constexpr int TileSpacing = 18;
+		inline constexpr int ProductCardMinWidth = 500;
+		inline constexpr int ProductCardMaxWidth = 720;
+		inline constexpr int ProductCardMaxColumns = 2;
+		inline constexpr int DiscoverCardMinWidth = (ProductCardMinWidth - TileSpacing) / 2;
+		inline constexpr int DiscoverCardMaxWidth = (ProductCardMaxWidth - TileSpacing) / 2;
+		inline constexpr int DiscoverCardMaxColumns = 6;
+	}
+
+	namespace Card
+	{
+		inline constexpr double HomeTileAspectRatio = 1.64;
+		inline constexpr int ProductBodyTop = 14;
+		inline constexpr int DiscoverBodyTop = 0;
+		inline constexpr int ProductBodyBottom = 0;
+		inline constexpr int DiscoverBodyBottom = 12;
+		inline constexpr int ProductSpacing = 12;
+		inline constexpr int DiscoverSpacing = 6;
+
+		inline QSize ProductArtworkSize()
+		{
+			return QSize(720, 240);
+		}
+
+		inline QSize DiscoverArtworkSize()
+		{
+			return QSize(351, 105);
+		}
+
+		inline QMargins FlushArtworkMargins()
+		{
+			return QMargins(0, 0, 0, Space::Large);
+		}
+
+		inline QMargins ProductMargins(bool hasArtwork)
+		{
+			return QMargins(18, hasArtwork ? 12 : 16, 18, 16);
+		}
+
+		inline QMargins DiscoverMargins(bool hasArtwork)
+		{
+			return QMargins(16, hasArtwork ? 12 : 14, 16, 14);
+		}
+
+		inline QMargins ProductBodyMargins()
+		{
+			return QMargins(Space::XLarge, ProductBodyTop, Space::XLarge, ProductBodyBottom);
+		}
+
+		inline QMargins DiscoverBodyMargins()
+		{
+			return QMargins(Space::XLarge, DiscoverBodyTop, Space::XLarge, DiscoverBodyBottom);
+		}
+	}
+}

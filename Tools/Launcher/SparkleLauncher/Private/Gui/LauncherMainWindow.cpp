@@ -5,6 +5,8 @@
 #include "LauncherProjectModel.h"
 #include "LauncherOutputWidgets.h"
 #include "LauncherSettings.h"
+#include "LauncherUiDesign.h"
+#include "LauncherUiModel.h"
 #include "LauncherVisualStyle.h"
 #include "LauncherWorkflowCatalog.h"
 
@@ -72,34 +74,34 @@
 namespace SparkleLauncher
 {
 	static constexpr int kMaxOperationOutputCharacters = 1000000;
-	static constexpr int kSpaceTiny = 2;
-	static constexpr int kSpaceSmall = 8;
-	static constexpr int kSpaceMedium = 12;
-	static constexpr int kSpaceLarge = 16;
-	static constexpr int kPanelHorizontalMargin = 18;
-	static constexpr int kPanelVerticalMargin = 14;
-	static constexpr int kWorkflowRailWidth = 86;
-	static constexpr int kWorkflowGroupMinHeight = 58;
-	static constexpr int kWorkflowButtonMinHeight = 36;
-	static constexpr int kFieldLabelWidth = 132;
-	static constexpr int kOperationOutputMinHeight = 96;
-	static constexpr int kOperationOutputCompactMaxHeight = 128;
-	static constexpr int kOperationOutputProminentMinHeight = 136;
-	static constexpr int kOperationOutputMaxHeight = 220;
-	static constexpr int kActivityPanelCollapsedHeight = 36;
-	static constexpr int kActivityPanelExpandedHeight = 260;
-	static constexpr int kLauncherIconSize = 14;
-	static constexpr int kLauncherMinimumWidth = 1280;
-	static constexpr int kLauncherMinimumHeight = 720;
-	static constexpr int kLauncherInitialWidth = 1480;
-	static constexpr int kLauncherInitialHeight = 860;
-	static constexpr int kStatusChipColumnWidth = 118;
-	static constexpr int kStatusActionColumnWidth = 28;
-	static constexpr const char* kColorStateQueued = "#8b949e";
-	static constexpr const char* kColorStateRunning = "#76b900";
-	static constexpr const char* kColorStateSuccess = "#7ee787";
-	static constexpr const char* kColorStateDestructive = "#ff7b72";
-	static constexpr const char* kColorStateWarning = "#ffb454";
+	static constexpr int kSpaceTiny = LauncherUi::Space::Tiny;
+	static constexpr int kSpaceSmall = LauncherUi::Space::Small;
+	static constexpr int kSpaceMedium = LauncherUi::Space::Medium;
+	static constexpr int kSpaceLarge = LauncherUi::Space::Large;
+	static constexpr int kPanelHorizontalMargin = LauncherUi::Shell::PanelHorizontalMargin;
+	static constexpr int kPanelVerticalMargin = LauncherUi::Shell::PanelVerticalMargin;
+	static constexpr int kWorkflowRailWidth = LauncherUi::Shell::RailWidth;
+	static constexpr int kWorkflowGroupMinHeight = LauncherUi::Shell::RailItemMinHeight;
+	static constexpr int kWorkflowButtonMinHeight = LauncherUi::Shell::TabMinHeight;
+	static constexpr int kFieldLabelWidth = LauncherUi::Row::FieldLabelWidth;
+	static constexpr int kOperationOutputMinHeight = LauncherUi::OperationOutput::MinHeight;
+	static constexpr int kOperationOutputCompactMaxHeight = LauncherUi::OperationOutput::CompactMaxHeight;
+	static constexpr int kOperationOutputProminentMinHeight = LauncherUi::OperationOutput::ProminentMinHeight;
+	static constexpr int kOperationOutputMaxHeight = LauncherUi::OperationOutput::MaxHeight;
+	static constexpr int kActivityPanelCollapsedHeight = LauncherUi::Activity::CollapsedHeight;
+	static constexpr int kActivityPanelExpandedHeight = LauncherUi::Activity::ExpandedHeight;
+	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
+	static constexpr int kLauncherMinimumWidth = LauncherUi::Window::MinimumWidth;
+	static constexpr int kLauncherMinimumHeight = LauncherUi::Window::MinimumHeight;
+	static constexpr int kLauncherInitialWidth = LauncherUi::Window::InitialWidth;
+	static constexpr int kLauncherInitialHeight = LauncherUi::Window::InitialHeight;
+	static constexpr int kStatusChipColumnWidth = LauncherUi::Row::StatusChipColumnWidth;
+	static constexpr int kStatusActionColumnWidth = LauncherUi::Row::StatusActionColumnWidth;
+	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
+	static constexpr const char* kColorStateRunning = LauncherUi::Color::StateRunning;
+	static constexpr const char* kColorStateSuccess = LauncherUi::Color::StateSuccess;
+	static constexpr const char* kColorStateDestructive = LauncherUi::Color::StateDestructive;
+	static constexpr const char* kColorStateWarning = LauncherUi::Color::StateWarning;
 	struct CleanScopeUiOption
 	{
 		QString Label;
@@ -213,7 +215,7 @@ namespace SparkleLauncher
 				QPainter heroPainter(&heroLayer);
 				heroPainter.setRenderHint(QPainter::Antialiasing, true);
 				heroPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-				heroPainter.fillRect(heroLayer.rect(), QColor(3, 4, 4));
+				heroPainter.fillRect(heroLayer.rect(), LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground));
 
 				QImage imageLayer(targetSize, QImage::Format_ARGB32_Premultiplied);
 				imageLayer.fill(Qt::transparent);
@@ -244,12 +246,12 @@ namespace SparkleLauncher
 				heroPainter.drawImage(0, 0, imageLayer);
 
 				QLinearGradient bottomGradient(0, 0, 0, targetSize.height());
-				bottomGradient.setColorAt(0.00, QColor(3, 4, 4, 0));
-				bottomGradient.setColorAt(0.68, QColor(3, 4, 4, 0));
-				bottomGradient.setColorAt(1.00, QColor(3, 4, 4, 48));
+				bottomGradient.setColorAt(0.00, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 0));
+				bottomGradient.setColorAt(0.68, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 0));
+				bottomGradient.setColorAt(1.00, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 48));
 				heroPainter.fillRect(heroLayer.rect(), bottomGradient);
 
-				heroPainter.setPen(QPen(QColor(118, 185, 0, 180), 2));
+				heroPainter.setPen(QPen(LauncherUi::Color::Hex(LauncherUi::Color::Accent, 180), 2));
 				const int accentX = std::clamp(static_cast<int>(targetSize.width() * 0.36), 280, targetSize.width() - 48);
 				heroPainter.drawLine(accentX, 0, accentX, targetSize.height());
 
@@ -274,23 +276,23 @@ namespace SparkleLauncher
 			painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
 
 			QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-			leftFade.setColorAt(0.0, QColor(3, 4, 4, 210));
-			leftFade.setColorAt(0.28, QColor(3, 4, 4, 128));
-			leftFade.setColorAt(0.72, QColor(3, 4, 4, m_softTreatment ? 96 : 42));
-			leftFade.setColorAt(0.82, QColor(3, 4, 4, 18));
-			leftFade.setColorAt(1.0, QColor(3, 4, 4, 18));
+			leftFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 210));
+			leftFade.setColorAt(0.28, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 128));
+			leftFade.setColorAt(0.72, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, m_softTreatment ? 96 : 42));
+			leftFade.setColorAt(0.82, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
+			leftFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
 			painter.fillRect(rect(), leftFade);
 
 			QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-			bottomFade.setColorAt(0.0, QColor(3, 4, 4, m_softTreatment ? 32 : 8));
-			bottomFade.setColorAt(0.58, QColor(3, 4, 4, 12));
-			bottomFade.setColorAt(1.0, QColor(3, 4, 4, 170));
+			bottomFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, m_softTreatment ? 32 : 8));
+			bottomFade.setColorAt(0.58, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 12));
+			bottomFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 170));
 			painter.fillRect(rect(), bottomFade);
 
 			QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-			limeSweep.setColorAt(0.0, QColor(118, 185, 0, 10));
-			limeSweep.setColorAt(0.48, QColor(118, 185, 0, 22));
-			limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
+			limeSweep.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 10));
+			limeSweep.setColorAt(0.48, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 22));
+			limeSweep.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 0));
 			painter.fillRect(rect(), limeSweep);
 		}
 
@@ -412,7 +414,7 @@ namespace SparkleLauncher
 
 		QSize minimumSizeHint() const override
 		{
-			return QSize(720, kMinimumHeight);
+			return QSize(LauncherUi::Hero::MinimumWidth, kMinimumHeight);
 		}
 
 	protected:
@@ -455,7 +457,7 @@ namespace SparkleLauncher
 			imageRightBlend.setColorAt(1.00, QColor(kHeroBackground.red(), kHeroBackground.green(), kHeroBackground.blue(), 132));
 			heroPainter.fillRect(designRect, imageRightBlend);
 
-			heroPainter.setPen(QPen(QColor(118, 185, 0, 210), 2));
+			heroPainter.setPen(QPen(LauncherUi::Color::Hex(LauncherUi::Color::Accent, 210), 2));
 			heroPainter.drawLine(kCopyDividerX, 0, kCopyDividerX, kDesignHeight - 1);
 
 			QLinearGradient topLevelFade(0, 0, 0, kDesignHeight);
@@ -504,8 +506,8 @@ namespace SparkleLauncher
 
 			const double scale = std::clamp(
 			    HeroSceneScale(),
-			    0.74,
-			    1.12);
+			    LauncherUi::Hero::MinimumCopyScale,
+			    LauncherUi::Hero::MaximumCopyScale);
 			const QRectF sceneRect = HeroSceneRect();
 			const int left = static_cast<int>(std::round(sceneRect.left() + kCopyLeft * scale));
 			const int top = static_cast<int>(std::round(sceneRect.top() + kCopyTop * scale));
@@ -547,16 +549,16 @@ namespace SparkleLauncher
 			return std::min(static_cast<double>(width()) / kDesignWidth, static_cast<double>(height()) / kDesignHeight);
 		}
 
-		static constexpr int kDesignWidth = 1560;
-		static constexpr int kDesignHeight = 360;
-		static constexpr int kCopyDividerX = 624;
-		static constexpr int kMinimumHeight = 260;
-		static constexpr int kCopyLeft = 48;
-		static constexpr int kCopyTop = 58;
-		static constexpr int kCopyBottom = 44;
-		static constexpr int kCopyWidth = 430;
-		static const inline QColor kHeroBackground = QColor(3, 4, 4);
-		static const inline QColor kPageBackground = QColor(17, 19, 18);
+		static constexpr int kDesignWidth = LauncherUi::Hero::DesignWidth;
+		static constexpr int kDesignHeight = LauncherUi::Hero::DesignHeight;
+		static constexpr int kCopyDividerX = LauncherUi::Hero::CopyDividerX;
+		static constexpr int kMinimumHeight = LauncherUi::Hero::MinimumHeight;
+		static constexpr int kCopyLeft = LauncherUi::Hero::CopyLeft;
+		static constexpr int kCopyTop = LauncherUi::Hero::CopyTop;
+		static constexpr int kCopyBottom = LauncherUi::Hero::CopyBottom;
+		static constexpr int kCopyWidth = LauncherUi::Hero::CopyWidth;
+		static const inline QColor kHeroBackground = LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground);
+		static const inline QColor kPageBackground = LauncherUi::Color::Hex(LauncherUi::Color::Background);
 
 		QPixmap m_source;
 		QWidget* m_copyPane = nullptr;
@@ -730,23 +732,23 @@ namespace SparkleLauncher
 		painter.drawPixmap(QPoint(0, 0), scaled, cropRect);
 
 		QLinearGradient leftFade(0, 0, targetSize.width(), 0);
-		leftFade.setColorAt(0.0, QColor(3, 4, 4, 210));
-		leftFade.setColorAt(0.28, QColor(3, 4, 4, 128));
-		leftFade.setColorAt(0.72, QColor(3, 4, 4, softTreatment ? 96 : 42));
-		leftFade.setColorAt(0.82, QColor(3, 4, 4, 18));
-		leftFade.setColorAt(1.0, QColor(3, 4, 4, 18));
+		leftFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 210));
+		leftFade.setColorAt(0.28, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 128));
+		leftFade.setColorAt(0.72, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, softTreatment ? 96 : 42));
+		leftFade.setColorAt(0.82, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
+		leftFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 18));
 		painter.fillRect(result.rect(), leftFade);
 
 		QLinearGradient bottomFade(0, 0, 0, targetSize.height());
-		bottomFade.setColorAt(0.0, QColor(3, 4, 4, softTreatment ? 32 : 8));
-		bottomFade.setColorAt(0.58, QColor(3, 4, 4, 12));
-		bottomFade.setColorAt(1.0, QColor(3, 4, 4, 170));
+		bottomFade.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, softTreatment ? 32 : 8));
+		bottomFade.setColorAt(0.58, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 12));
+		bottomFade.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::HeroBackground, 170));
 		painter.fillRect(result.rect(), bottomFade);
 
 		QLinearGradient limeSweep(0, 0, targetSize.width(), targetSize.height());
-		limeSweep.setColorAt(0.0, QColor(118, 185, 0, 10));
-		limeSweep.setColorAt(0.48, QColor(118, 185, 0, 22));
-		limeSweep.setColorAt(1.0, QColor(118, 185, 0, 0));
+		limeSweep.setColorAt(0.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 10));
+		limeSweep.setColorAt(0.48, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 22));
+		limeSweep.setColorAt(1.0, LauncherUi::Color::Hex(LauncherUi::Color::Accent, 0));
 		painter.fillRect(result.rect(), limeSweep);
 
 		return result;
@@ -754,129 +756,19 @@ namespace SparkleLauncher
 
 	static QString VisualAssetForOperation(const QString& operationId)
 	{
-		if (operationId == "project.open.editor" || operationId == "project.run" || operationId == "project.run.smoke")
-		{
-			return operationId == "project.run.smoke" ? "sparkle-validation.png" : "showcase-editor.png";
-		}
-		if (operationId == "project.open.runtime")
-		{
-			return "showcase-runtime.png";
-		}
-		if (operationId == "workspace.setup" || operationId == "toolchain.check")
-		{
-			return "sparkle-source-tiers.png";
-		}
-		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "workspace.build-all" || operationId.startsWith("project.build.") || operationId == "launcher.build.self" || operationId == "cook.tools.prepare")
-		{
-			return "sparkle-tools.png";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "showcase-content.png";
-		}
-		if (operationId == "package.release")
-		{
-			return "sparkle-package.png";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "sparkle-architecture.png";
-		}
-		if (operationId == "quality.format")
-		{
-			return "sparkle-validation.png";
-		}
-		return {};
+		return LauncherUiModelForOperation(operationId).VisualAssetName;
 	}
 
 	static QString VisualBannerTitleForOperation(const QString& operationId)
 	{
-		if (operationId == "project.open.editor" || operationId == "project.open.runtime" || operationId == "project.run")
-		{
-			return "Launch view";
-		}
-		if (operationId == "workspace.setup")
-		{
-			return "Source tiers";
-		}
-		if (operationId == "toolchain.check")
-		{
-			return "Host readiness";
-		}
-		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution")
-		{
-			return "Workspace files";
-		}
-		if (operationId.startsWith("project.build.") || operationId == "workspace.build-all" || operationId == "launcher.build.self")
-		{
-			return "Build outputs";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Content outputs";
-		}
-		if (operationId == "project.run.smoke")
-		{
-			return "Validation run";
-		}
-		if (operationId == "package.release")
-		{
-			return "Release assembly";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "Generated files";
-		}
-		if (operationId == "quality.format")
-		{
-			return "Code quality";
-		}
-		return "Workflow";
+		const QString title = LauncherUiModelForOperation(operationId).VisualTitle;
+		return title.isEmpty() ? QString("Workflow") : title;
 	}
 
 	static QString VisualBannerTextForOperation(const QString& operationId)
 	{
-		if (operationId == "project.open.editor" || operationId == "project.open.runtime" || operationId == "project.run")
-		{
-			return "Uses the selected project, target, startup level, and runtime options from this page.";
-		}
-		if (operationId == "workspace.setup")
-		{
-			return "Sync only the capability tiers you need; optional tiers unlock build and cook paths without becoming first-run blockers.";
-		}
-		if (operationId == "toolchain.check")
-		{
-			return "Checks installed tools without changing source dependencies, artifacts, or cooked outputs.";
-		}
-		if (operationId == "workspace.generate-solution" || operationId == "workspace.open-solution")
-		{
-			return "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.";
-		}
-		if (operationId.startsWith("project.build.") || operationId == "workspace.build-all" || operationId == "launcher.build.self")
-		{
-			return "Creates local artifacts that can replace packaged binaries during daily development.";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Refreshes cooked content for the selected project and startup level.";
-		}
-		if (operationId == "project.run.smoke")
-		{
-			return "Runs a focused confidence check using the same launch parameters as the product path.";
-		}
-		if (operationId == "package.release")
-		{
-			return "Stages reviewable release packages from artifacts and manifests; publishing remains a separate sign-off.";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "Shows what generated state will be removed and what will stay before destructive cleanup.";
-		}
-		if (operationId == "quality.format")
-		{
-			return "Applies source formatting while leaving build artifacts and cooked content alone.";
-		}
-		return "Context artwork is informational; the primary action remains in the workflow controls below.";
+		const QString text = LauncherUiModelForOperation(operationId).VisualText;
+		return text.isEmpty() ? QString("Context artwork is informational; the primary action remains in the workflow controls below.") : text;
 	}
 
 	static void ApplyNativeDarkTitleBar(QWidget& window)
@@ -1901,12 +1793,12 @@ namespace SparkleLauncher
 		panel->setObjectName("ProcessPanel");
 		panel->setFixedWidth(kWorkflowRailWidth);
 		QVBoxLayout* layout = new QVBoxLayout(panel);
-		layout->setContentsMargins(0, 0, 0, 10);
-		layout->setSpacing(4);
+		layout->setContentsMargins(0, 0, 0, LauncherUi::Shell::RailBottomPadding);
+		layout->setSpacing(LauncherUi::Space::XSmall);
 
 		QVBoxLayout* groupLayout = new QVBoxLayout();
 		groupLayout->setContentsMargins(0, 0, 0, 0);
-		groupLayout->setSpacing(2);
+		groupLayout->setSpacing(LauncherUi::Shell::RailGroupSpacing);
 
 		m_workflowGroupButtonGroup = new QButtonGroup(this);
 		m_workflowGroupButtonGroup->setExclusive(true);
@@ -1932,7 +1824,7 @@ namespace SparkleLauncher
 			groupButton->setProperty("ActiveState", "false");
 			groupButton->setAccessibleName(workflow.Title + " workflow group");
 			groupButton->setIcon(WorkflowIconForKey(workflow.IconKey));
-			groupButton->setIconSize(QSize(18, 18));
+			groupButton->setIconSize(QSize(LauncherUi::Shell::RailIconSize, LauncherUi::Shell::RailIconSize));
 			RegisterFocusable(groupButton);
 			m_workflowGroupButtonGroup->addButton(groupButton);
 			groupLayout->addWidget(groupButton);
@@ -1940,7 +1832,7 @@ namespace SparkleLauncher
 			QWidget* tabPage = new QWidget(m_operationStack);
 			QHBoxLayout* actionLayout = new QHBoxLayout();
 			actionLayout->setContentsMargins(0, 0, 0, 0);
-			actionLayout->setSpacing(18);
+			actionLayout->setSpacing(LauncherUi::Shell::WorkflowTabSpacing);
 			if (workflow.OperationIds.size() > 1)
 			{
 				for (int index = 0; index < workflow.OperationIds.size(); ++index)
@@ -1989,8 +1881,8 @@ namespace SparkleLauncher
 		QFrame* titleBand = new QFrame(panel);
 		titleBand->setObjectName("TitleBand");
 		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
-		titleBandLayout->setContentsMargins(20, 0, 12, 0);
-		titleBandLayout->setSpacing(14);
+		titleBandLayout->setContentsMargins(LauncherUi::TitleBand::Margins());
+		titleBandLayout->setSpacing(LauncherUi::TitleBand::Spacing);
 
 		QVBoxLayout* titleStack = new QVBoxLayout();
 		titleStack->setContentsMargins(0, 0, 0, 0);
@@ -2023,8 +1915,8 @@ namespace SparkleLauncher
 		m_actionMetaPanel = new QFrame(panel);
 		m_actionMetaPanel->setObjectName("ActionMetaPanel");
 		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(m_actionMetaPanel);
-		actionMetaRowLayout->setContentsMargins(0, 8, 0, 0);
-		actionMetaRowLayout->setSpacing(8);
+		actionMetaRowLayout->setContentsMargins(LauncherUi::ActionMeta::Margins());
+		actionMetaRowLayout->setSpacing(LauncherUi::ActionMeta::Spacing);
 
 		QVBoxLayout* actionMetaLayout = new QVBoxLayout();
 		actionMetaLayout->setContentsMargins(0, 0, 0, 0);
@@ -2081,7 +1973,14 @@ namespace SparkleLauncher
 		panel->setObjectName("HeaderUtilityPanel");
 		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(10);
+		rowLayout->setSpacing(LauncherUi::HeaderContext::Spacing);
+
+		const auto applyComboMetrics = [](QComboBox& combo, int minWidth, int maxWidth) {
+			combo.setMinimumWidth(minWidth);
+			combo.setMaximumWidth(maxWidth);
+			combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
+			combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
+		};
 
 		QLabel* projectLabel = CreateFieldLabel("Project");
 		projectLabel->setObjectName("HeaderFieldLabel");
@@ -2090,10 +1989,7 @@ namespace SparkleLauncher
 		projectCombo->setObjectName("HeaderContextCombo");
 		projectCombo->setAccessibleName("Project");
 		projectCombo->setToolTip("Global project context used by project, cook, launch, and smoke workflows.");
-		projectCombo->setMinimumWidth(140);
-		projectCombo->setMaximumWidth(180);
-		projectCombo->setMinimumHeight(28);
-		projectCombo->setMaximumHeight(28);
+		applyComboMetrics(*projectCombo, LauncherUi::HeaderContext::ProjectComboMinWidth, LauncherUi::HeaderContext::ProjectComboMaxWidth);
 		projectLabel->setBuddy(projectCombo);
 		rowLayout->addWidget(projectCombo, 0);
 
@@ -2107,10 +2003,7 @@ namespace SparkleLauncher
 		configurationCombo->setObjectName("HeaderContextCombo");
 		configurationCombo->setAccessibleName("Build Configuration");
 		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
-		configurationCombo->setMinimumWidth(140);
-		configurationCombo->setMaximumWidth(180);
-		configurationCombo->setMinimumHeight(28);
-		configurationCombo->setMaximumHeight(28);
+		applyComboMetrics(*configurationCombo, LauncherUi::HeaderContext::ConfigurationComboMinWidth, LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
 		configurationLabel->setBuddy(configurationCombo);
 		rowLayout->addWidget(configurationCombo, 0);
 
@@ -2121,10 +2014,7 @@ namespace SparkleLauncher
 		ideCombo->setObjectName("HeaderContextCombo");
 		ideCombo->setAccessibleName("IDE");
 		ideCombo->setToolTip("Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
-		ideCombo->setMinimumWidth(120);
-		ideCombo->setMaximumWidth(150);
-		ideCombo->setMinimumHeight(28);
-		ideCombo->setMaximumHeight(28);
+		applyComboMetrics(*ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
 		ideLabel->setBuddy(ideCombo);
 		rowLayout->addWidget(ideCombo, 0);
 
@@ -2147,11 +2037,11 @@ namespace SparkleLauncher
 		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		if (!isQuickStart)
 		{
-			content->setMaximumWidth(1340);
+			content->setMaximumWidth(LauncherUi::Page::MaxContentWidth);
 		}
 		QVBoxLayout* layout = new QVBoxLayout(content);
-		layout->setContentsMargins(isQuickStart ? QMargins(0, 0, 0, 32) : QMargins(28, 22, 28, 32));
-		layout->setSpacing(isQuickStart ? 0 : 10);
+		layout->setContentsMargins(isQuickStart ? LauncherUi::Page::QuickStartMargins() : LauncherUi::Page::ContentMargins());
+		layout->setSpacing(isQuickStart ? 0 : LauncherUi::Page::Spacing);
 		AddOptionsForOperation(*layout, operationId);
 		layout->addStretch(1);
 		scrollArea->setWidget(content);
@@ -2240,8 +2130,8 @@ namespace SparkleLauncher
 		edit->setPlaceholderText(placeholder);
 		edit->setToolTip(tooltip);
 		edit->setAccessibleDescription(tooltip);
-		edit->setMinimumHeight(78);
-		edit->setMaximumHeight(118);
+		edit->setMinimumHeight(LauncherUi::TextEdit::MinHeight);
+		edit->setMaximumHeight(LauncherUi::TextEdit::MaxHeight);
 		RegisterFocusable(edit);
 		connect(edit, &QTextEdit::textChanged, this, [edit, setter, this]() {
 			(m_settings.*setter)(edit->toPlainText());
@@ -2307,10 +2197,10 @@ namespace SparkleLauncher
 		QFrame* card = new QFrame(this);
 		card->setObjectName("SourceTierCard");
 		card->setProperty("State", state);
-		card->setMinimumHeight(138);
+		card->setMinimumHeight(LauncherUi::SourceTier::MinHeight);
 		QVBoxLayout* cardLayout = new QVBoxLayout(card);
-		cardLayout->setContentsMargins(16, 14, 16, 14);
-		cardLayout->setSpacing(8);
+		cardLayout->setContentsMargins(LauncherUi::SourceTier::Margins());
+		cardLayout->setSpacing(LauncherUi::SourceTier::Spacing);
 
 		QHBoxLayout* titleRow = new QHBoxLayout();
 		titleRow->setContentsMargins(0, 0, 0, 0);
@@ -2700,8 +2590,8 @@ namespace SparkleLauncher
 				QFrame* scopeRow = new QFrame(this);
 				scopeRow->setObjectName("CleanScopeCard");
 				QVBoxLayout* scopeRowLayout = new QVBoxLayout(scopeRow);
-				scopeRowLayout->setContentsMargins(12, 10, 12, 10);
-				scopeRowLayout->setSpacing(6);
+				scopeRowLayout->setContentsMargins(LauncherUi::Clean::ScopeCardMargins());
+				scopeRowLayout->setSpacing(LauncherUi::Clean::ScopeCardSpacing);
 				scopeRowLayout->addWidget(scopeBox);
 				const std::filesystem::path previewPath = ResolveCleanScopePreviewPath(m_repositoryRoot, selectedProjectId, scope.Value);
 				const QString previewText = scope.Preview.isEmpty() ? ToDisplayPath(m_repositoryRoot, previewPath) + " - " + FormatDirectoryInventory(previewPath) : scope.Preview;
@@ -2717,9 +2607,9 @@ namespace SparkleLauncher
 			{
 				QVBoxLayout* cleanGroupLayout = AddOptionGroup(layout, cleanGroup.first, cleanGroup.second);
 				QGridLayout* cleanGrid = new QGridLayout();
-				cleanGrid->setContentsMargins(0, 4, 0, 0);
-				cleanGrid->setHorizontalSpacing(12);
-				cleanGrid->setVerticalSpacing(12);
+				cleanGrid->setContentsMargins(LauncherUi::Clean::GridMargins());
+				cleanGrid->setHorizontalSpacing(LauncherUi::Clean::GridSpacing);
+				cleanGrid->setVerticalSpacing(LauncherUi::Clean::GridSpacing);
 				int groupScopeIndex = 0;
 				for (const CleanScopeUiOption& scope : cleanScopes)
 				{
@@ -2789,7 +2679,7 @@ namespace SparkleLauncher
 		QFrame* labelCell = new QFrame(row);
 		labelCell->setObjectName("OptionLabelCell");
 		QHBoxLayout* labelLayout = new QHBoxLayout(labelCell);
-		labelLayout->setContentsMargins(10, 0, 10, 0);
+		labelLayout->setContentsMargins(LauncherUi::Option::LabelMargins());
 		labelLayout->setSpacing(0);
 
 		QLabel* fieldLabel = CreateFieldLabel(labelCell ? label : label);
@@ -2833,7 +2723,7 @@ namespace SparkleLauncher
 		QFrame* valueCell = new QFrame(row);
 		valueCell->setObjectName("OptionValueCell");
 		QHBoxLayout* valueLayout = new QHBoxLayout(valueCell);
-		valueLayout->setContentsMargins(10, 0, 0, 0);
+		valueLayout->setContentsMargins(LauncherUi::Option::ValueMargins());
 		valueLayout->setSpacing(0);
 		valueLayout->addWidget(checkBox, 1);
 
@@ -2848,8 +2738,8 @@ namespace SparkleLauncher
 		QFrame* group = new QFrame(this);
 		group->setObjectName("OptionGroup");
 		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(0, 8, 0, 8);
-		groupLayout->setSpacing(4);
+		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins());
+		groupLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 
 		QLabel* titleLabel = new QLabel(title, group);
 		titleLabel->setObjectName("OptionGroupTitle");
@@ -2872,8 +2762,8 @@ namespace SparkleLauncher
 		QFrame* group = new QFrame(this);
 		group->setObjectName("OptionGroup");
 		QVBoxLayout* groupLayout = new QVBoxLayout(group);
-		groupLayout->setContentsMargins(0, 8, 0, 8);
-		groupLayout->setSpacing(4);
+		groupLayout->setContentsMargins(LauncherUi::Option::GroupMargins());
+		groupLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 
 		QToolButton* toggle = new QToolButton(group);
 		toggle->setObjectName("DetailsToggleButton");
@@ -2896,8 +2786,8 @@ namespace SparkleLauncher
 		QFrame* detailsPanel = new QFrame(group);
 		detailsPanel->setObjectName("DetailsPanel");
 		QVBoxLayout* detailsLayout = new QVBoxLayout(detailsPanel);
-		detailsLayout->setContentsMargins(0, 4, 0, 0);
-		detailsLayout->setSpacing(4);
+		detailsLayout->setContentsMargins(LauncherUi::Option::DetailsMargins());
+		detailsLayout->setSpacing(LauncherUi::Option::GroupSpacing);
 		detailsPanel->setVisible(expanded);
 		groupLayout->addWidget(detailsPanel);
 
@@ -2942,7 +2832,7 @@ namespace SparkleLauncher
 
 		QVBoxLayout* textLayout = new QVBoxLayout();
 		textLayout->setContentsMargins(0, 0, 0, 0);
-		textLayout->setSpacing(3);
+		textLayout->setSpacing(LauncherUi::Option::StatusDetailSpacing);
 
 		QLabel* nameLabel = new QLabel(label, row);
 		nameLabel->setObjectName("StatusLabel");
@@ -3023,7 +2913,7 @@ namespace SparkleLauncher
 
 		const bool heroTreatment = objectName == "CommandHeroArtwork";
 		const bool softTreatment = objectName == "WorkflowVisualArtwork" || objectName == "CommandCardArtwork";
-		const QSize artworkSize = minimumSize.isEmpty() ? QSize(360, 180) : minimumSize;
+		const QSize artworkSize = minimumSize.isEmpty() ? LauncherUi::WorkflowVisual::FallbackArtworkSize() : minimumSize;
 		if (heroTreatment)
 		{
 			FadingArtworkWidget* heroArtwork = new FadingArtworkWidget(pixmap, true, false, 0.0, this);
@@ -3065,7 +2955,7 @@ namespace SparkleLauncher
 			return;
 		}
 
-		QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", QSize(360, 118));
+		QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "WorkflowVisualArtwork", LauncherUi::WorkflowVisual::ArtworkSize());
 		if (artwork == nullptr)
 		{
 			return;
@@ -3073,7 +2963,7 @@ namespace SparkleLauncher
 
 		QFrame* banner = new QFrame(this);
 		banner->setObjectName("WorkflowVisualBanner");
-		banner->setMinimumHeight(118);
+		banner->setMinimumHeight(LauncherUi::WorkflowVisual::MinHeight);
 		QHBoxLayout* shellLayout = new QHBoxLayout(banner);
 		shellLayout->setContentsMargins(0, 0, 0, 0);
 		shellLayout->setSpacing(0);
@@ -3081,8 +2971,8 @@ namespace SparkleLauncher
 		QWidget* copyPane = new QWidget(banner);
 		copyPane->setObjectName("WorkflowVisualCopyPane");
 		QVBoxLayout* copyLayout = new QVBoxLayout(copyPane);
-		copyLayout->setContentsMargins(18, 14, 18, 14);
-		copyLayout->setSpacing(8);
+		copyLayout->setContentsMargins(LauncherUi::WorkflowVisual::CopyMargins());
+		copyLayout->setSpacing(LauncherUi::WorkflowVisual::CopySpacing);
 
 		QLabel* title = new QLabel(VisualBannerTitleForOperation(operationId), banner);
 		title->setObjectName("WorkflowVisualTitle");
@@ -3123,7 +3013,7 @@ namespace SparkleLauncher
 		copyPane->setObjectName("CommandHeroCopyPane");
 		QVBoxLayout* layout = new QVBoxLayout(copyPane);
 		layout->setContentsMargins(0, 0, 0, 0);
-		layout->setSpacing(18);
+		layout->setSpacing(LauncherUi::Hero::CopySpacing);
 
 		QLabel* title = new QLabel(status, card);
 		title->setObjectName("CommandHeroTitle");
@@ -3135,7 +3025,7 @@ namespace SparkleLauncher
 		layout->addWidget(body);
 
 		QHBoxLayout* actionRow = new QHBoxLayout();
-		actionRow->setContentsMargins(0, 2, 0, 0);
+		actionRow->setContentsMargins(0, LauncherUi::Hero::ActionTopMargin, 0, 0);
 		actionRow->setSpacing(kSpaceSmall);
 		if (primaryAction != nullptr)
 		{
@@ -3164,8 +3054,7 @@ namespace SparkleLauncher
 	    const QString& tileRole,
 	    const QString& artworkFileName)
 	{
-		static constexpr double kHomeTileAspectRatio = 1.64;
-		ProportionalCardFrame* card = new ProportionalCardFrame(kHomeTileAspectRatio, this);
+		ProportionalCardFrame* card = new ProportionalCardFrame(LauncherUi::Card::HomeTileAspectRatio, this);
 		card->setObjectName("CommandCapabilityCard");
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
@@ -3175,11 +3064,11 @@ namespace SparkleLauncher
 		const bool flushArtwork = hasArtwork;
 		QVBoxLayout* layout = new QVBoxLayout(card);
 		layout->setContentsMargins(
-		    flushArtwork ? QMargins(0, 0, 0, 16) :
-		                   QMargins(isLibraryCard ? 18 : 16, hasArtwork ? 12 : (isLibraryCard ? 16 : 14), isLibraryCard ? 18 : 16, isLibraryCard ? 16 : 14));
-		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? 12 : (isDiscoverCard ? 10 : 9)));
+		    flushArtwork ? LauncherUi::Card::FlushArtworkMargins() :
+		                   (isLibraryCard ? LauncherUi::Card::ProductMargins(hasArtwork) : LauncherUi::Card::DiscoverMargins(hasArtwork)));
+		layout->setSpacing(flushArtwork ? 0 : (isLibraryCard ? LauncherUi::Card::ProductSpacing : LauncherUi::Card::DiscoverSpacing));
 
-		const QSize artworkDesignSize = isLibraryCard ? QSize(720, 240) : QSize(351, 105);
+		const QSize artworkDesignSize = isLibraryCard ? LauncherUi::Card::ProductArtworkSize() : LauncherUi::Card::DiscoverArtworkSize();
 		if (QWidget* artwork = CreateVisualArtworkLabel(artworkFileName, "CommandCardArtwork", artworkDesignSize))
 		{
 			artwork->setParent(card);
@@ -3196,8 +3085,8 @@ namespace SparkleLauncher
 			QWidget* body = new QWidget(card);
 			body->setObjectName("CommandCardBody");
 			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-			bodyLayout->setContentsMargins(18, isDiscoverCard ? 0 : 14, 18, isDiscoverCard ? 12 : 0);
-			bodyLayout->setSpacing(isDiscoverCard ? 6 : 12);
+			bodyLayout->setContentsMargins(isDiscoverCard ? LauncherUi::Card::DiscoverBodyMargins() : LauncherUi::Card::ProductBodyMargins());
+			bodyLayout->setSpacing(isDiscoverCard ? LauncherUi::Card::DiscoverSpacing : LauncherUi::Card::ProductSpacing);
 			layout->addWidget(body, 1);
 			contentLayout = bodyLayout;
 		}
@@ -3257,7 +3146,7 @@ namespace SparkleLauncher
 	{
 		QPushButton* button = new QPushButton(label, this);
 		button->setObjectName(primary ? "CommandPrimaryButton" : "CommandSecondaryButton");
-		button->setMinimumHeight(primary ? 34 : 30);
+		button->setMinimumHeight(primary ? LauncherUi::Button::PrimaryMinHeight : LauncherUi::Button::SecondaryMinHeight);
 		button->setAccessibleName(label);
 		button->setToolTip(runImmediately ? "Run this workflow now." : "Open this workflow.");
 		RegisterFocusable(button);
@@ -3363,7 +3252,7 @@ namespace SparkleLauncher
 		const auto createOpenButton = [this](const QString& label, const std::filesystem::path& path) {
 			QPushButton* button = new QPushButton(label, this);
 			button->setObjectName("CommandSecondaryButton");
-			button->setMinimumHeight(30);
+			button->setMinimumHeight(LauncherUi::Button::SecondaryMinHeight);
 			button->setToolTip("Open the referenced file or folder.");
 			button->setAccessibleName(label);
 			RegisterFocusable(button);
@@ -3376,8 +3265,8 @@ namespace SparkleLauncher
 		quickStartBody->setObjectName("QuickStartBody");
 		quickStartBody->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 		QVBoxLayout* bodyLayout = new QVBoxLayout(quickStartBody);
-		bodyLayout->setContentsMargins(28, 24, 28, 0);
-		bodyLayout->setSpacing(10);
+		bodyLayout->setContentsMargins(LauncherUi::Home::BodyLeft, LauncherUi::Home::BodyTop, LauncherUi::Home::BodyRight, LauncherUi::Home::BodyBottom);
+		bodyLayout->setSpacing(LauncherUi::Home::SectionSpacing);
 
 		const auto addHomeSection = [bodyLayout](const QString& title) {
 			QLabel* section = new QLabel(title);
@@ -3398,13 +3287,13 @@ namespace SparkleLauncher
 		    nullptr,
 		    "showcase-hero.png"));
 
-		static constexpr int kHomeTileSpacing = 18;
-		static constexpr int kProductCardMinWidth = 500;
-		static constexpr int kProductCardMaxWidth = 720;
-		static constexpr int kDiscoverCardMinWidth = (kProductCardMinWidth - kHomeTileSpacing) / 2;
-		static constexpr int kDiscoverCardMaxWidth = (kProductCardMaxWidth - kHomeTileSpacing) / 2;
-		static constexpr int kDiscoverCardMaxColumns = 6;
-		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(kProductCardMinWidth, kProductCardMaxWidth, 2, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
+		ResponsiveCardGridWidget* libraryGrid = new ResponsiveCardGridWidget(
+		    LauncherUi::Home::ProductCardMinWidth,
+		    LauncherUi::Home::ProductCardMaxWidth,
+		    LauncherUi::Home::ProductCardMaxColumns,
+		    LauncherUi::Home::TileSpacing,
+		    LauncherUi::Home::TileSpacing,
+		    quickStartBody);
 
 		const QString editorStatus = editorPlan.CanRun ? "Ready" : (editorExecutableMissing ? "Missing" : "Blocked");
 		const QString editorDetail = editorPlan.CanRun ?
@@ -3443,7 +3332,13 @@ namespace SparkleLauncher
 		}
 
 		addHomeSection("Discover");
-		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(kDiscoverCardMinWidth, kDiscoverCardMaxWidth, kDiscoverCardMaxColumns, kHomeTileSpacing, kHomeTileSpacing, quickStartBody);
+		ResponsiveCardGridWidget* discoverGrid = new ResponsiveCardGridWidget(
+		    LauncherUi::Home::DiscoverCardMinWidth,
+		    LauncherUi::Home::DiscoverCardMaxWidth,
+		    LauncherUi::Home::DiscoverCardMaxColumns,
+		    LauncherUi::Home::TileSpacing,
+		    LauncherUi::Home::TileSpacing,
+		    quickStartBody);
 
 		const bool packagePresent = DirectoryHasEntries(releaseRoot);
 		discoverGrid->AddCard(CreateHomeCapabilityCard(
@@ -4021,7 +3916,7 @@ namespace SparkleLauncher
 		section->setObjectName("InlineOptionsSection");
 		QVBoxLayout* sectionLayout = new QVBoxLayout(section);
 		sectionLayout->setContentsMargins(0, 0, 0, 0);
-		sectionLayout->setSpacing(4);
+		sectionLayout->setSpacing(LauncherUi::Section::Spacing);
 		layout.addWidget(section);
 		return sectionLayout;
 	}
@@ -5489,7 +5384,7 @@ namespace SparkleLauncher
 		++m_startedRunCount;
 		QListWidgetItem* item = new QListWidgetItem(m_activityList);
 		item->setData(Qt::UserRole, runId);
-		item->setSizeHint(QSize(0, 34));
+		item->setSizeHint(QSize(0, LauncherUi::Activity::HistoryRowHeight));
 		item->setText(QString());
 		const LauncherActivityRowWidgets rowWidgets = CreateLauncherActivityRow(m_activityList, title);
 		m_activityList->setItemWidget(item, rowWidgets.Root);
@@ -5637,7 +5532,7 @@ namespace SparkleLauncher
 		}
 		if (m_toggleOutputButton != nullptr)
 		{
-			m_toggleOutputButton->setText(expanded ? QStringLiteral("−") : QStringLiteral("□"));
+			m_toggleOutputButton->setText(QString::fromLatin1(expanded ? LauncherUi::Activity::CollapseGlyph : LauncherUi::Activity::ExpandGlyph));
 			m_toggleOutputButton->setToolTip(expanded ? "Minimize recent runs and raw process output." : "Show recent runs and raw process output.");
 			m_toggleOutputButton->setAccessibleDescription(m_toggleOutputButton->toolTip());
 		}

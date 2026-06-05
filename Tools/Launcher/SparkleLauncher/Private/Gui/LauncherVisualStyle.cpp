@@ -1,5 +1,7 @@
 #include "LauncherVisualStyle.h"
 
+#include "LauncherUiDesign.h"
+
 #include <QtCore/QString>
 #include <QtWidgets/QWidget>
 
@@ -7,45 +9,55 @@ namespace SparkleLauncher
 {
 	namespace
 	{
-		constexpr const char* kColorStateQueued = "#8b949e";
-		constexpr const char* kColorStateRunning = "#76b900";
-		constexpr const char* kColorStateSuccess = "#7ee787";
-		constexpr const char* kColorStateDestructive = "#ff7b72";
-		constexpr const char* kColorStateWarning = "#ffb454";
-
 		void AddStyleRule(QString& style, const QString& selector, const QString& body)
 		{
 			style += selector + " { " + body + " }";
+		}
+
+		QString UiColor(const char* color)
+		{
+			return QString::fromLatin1(color);
 		}
 	}
 
 	void ApplyLauncherVisualStyle(QWidget& rootWidget)
 	{
-		const QString background = "#111312";
-		const QString shell = "#181a19";
-		const QString panel = "#202220";
-		const QString panelHover = "#2c302c";
-		const QString field = "#202321";
-		const QString border = "#0b0d0c";
-		const QString borderSoft = "#303430";
-		const QString borderStrong = "#444943";
-		const QString divider = "#2b2f2b";
-		const QString accent = "#76b900";
-		const QString accentHover = "#8bd80f";
+		const QString background = UiColor(LauncherUi::Color::Background);
+		const QString shell = UiColor(LauncherUi::Color::Shell);
+		const QString panel = UiColor(LauncherUi::Color::Panel);
+		const QString panelHover = UiColor(LauncherUi::Color::PanelHover);
+		const QString field = UiColor(LauncherUi::Color::Field);
+		const QString border = UiColor(LauncherUi::Color::Border);
+		const QString borderSoft = UiColor(LauncherUi::Color::BorderSoft);
+		const QString borderStrong = UiColor(LauncherUi::Color::BorderStrong);
+		const QString divider = UiColor(LauncherUi::Color::Divider);
+		const QString accent = UiColor(LauncherUi::Color::Accent);
+		const QString accentHover = UiColor(LauncherUi::Color::AccentHover);
 		const QString focus = accent;
 		const QString primary = accent;
 		const QString primaryHover = accentHover;
-		const QString selection = "#31451f";
-		const QString warning = QString::fromLatin1(kColorStateWarning);
-		const QString destructive = QString::fromLatin1(kColorStateDestructive);
-		const QString textPrimary = "#f2f4f1";
-		const QString textBody = "#d9ddd7";
-		const QString textSecondary = "#b9c0b6";
-		const QString textMuted = "#858d82";
+		const QString selection = UiColor(LauncherUi::Color::Selection);
+		const QString warning = UiColor(LauncherUi::Color::StateWarning);
+		const QString destructive = UiColor(LauncherUi::Color::StateDestructive);
+		const QString textPrimary = UiColor(LauncherUi::Color::TextPrimary);
+		const QString textBody = UiColor(LauncherUi::Color::TextBody);
+		const QString textSecondary = UiColor(LauncherUi::Color::TextSecondary);
+		const QString textMuted = UiColor(LauncherUi::Color::TextMuted);
 
 		QString style;
 		const auto addRule = [&style](const QString& selector, const QString& body) {
 			AddStyleRule(style, selector, body);
+		};
+		const auto addStateChipRules = [&](const QString& selector, const QString& extra = QString()) {
+			addRule(
+			    selector,
+			    "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; "
+			                                  "padding: 2px 8px; font-size: 7.5pt; font-weight: 800;" +
+			        extra);
+			addRule(selector + "[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
+			addRule(selector + "[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+			addRule(selector + "[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
+			addRule(selector + "[State=\"neutral\"]", "color: " + textSecondary + "; border-color: #4c5149; background: #2b2f2a;");
 		};
 
 		addRule("QMainWindow, QWidget", "background: " + background + "; color: " + textBody + "; font-family: 'Segoe UI'; font-size: 9.25pt;");
@@ -99,9 +111,7 @@ namespace SparkleLauncher
 		addRule("#CommandCapabilityCard[TileRole=\"discover\"] #CommandCardTitle", "font-size: 10.5pt; letter-spacing: -0.06px;");
 		addRule("#CommandCardText", "color: " + textSecondary + "; font-size: 9pt; line-height: 135%;");
 		addRule("#CommandCapabilityCard[TileRole=\"discover\"] #CommandCardText", "font-size: 8.35pt; line-height: 128%;");
-		addRule("#CommandCardChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
-		addRule("#CommandCardChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
-		addRule("#CommandCardChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addStateChipRules("#CommandCardChip");
 		addRule("#WorkflowVisualBanner", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #20241e, stop:0.62 #181b18, stop:1 #111311); border: 1px solid #30372b; border-left: 3px solid " + accent + "; border-radius: 4px;");
 		addRule("#WorkflowVisualCopyPane", "background: transparent; border: none;");
 		addRule("#WorkflowVisualArtwork", "background: transparent; border: none; border-left: 1px solid #26301d;");
@@ -129,11 +139,7 @@ namespace SparkleLauncher
 		addRule("#ActionMetaDetail", "color: " + textMuted + "; font-size: 7.5pt;");
 		addRule("#StatusRow", "background: #1d201d; border: none; border-top: 1px solid " + divider + "; padding: 10px 10px 10px 10px; margin-top: 0;");
 		addRule("#StatusLabel", "color: " + textBody + "; font-size: 8.75pt; font-weight: 750;");
-		addRule("#StatusValue", "color: " + textSecondary + "; font-size: 7.75pt; font-weight: 850; padding: 2px 8px; border: 1px solid #4c5149; background: #2b2f2a; min-width: 58px;");
-		addRule("#StatusValue[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
-		addRule("#StatusValue[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
-		addRule("#StatusValue[State=\"bad\"]", "color: #ffd0cc; border-color: #79413d; background: #3a2928;");
-		addRule("#StatusValue[State=\"neutral\"]", "color: " + textSecondary + "; border-color: #4c5149; background: #2b2f2a;");
+		addStateChipRules("#StatusValue", " font-size: 7.75pt; font-weight: 850; min-width: 58px;");
 		addRule("#StatusActionCell", "background: transparent; border: none;");
 		addRule("#StatusDetail", "color: " + textMuted + "; font-size: 8pt;");
 		addRule("#ActionRow", "background: transparent; border: none; padding: 4px 0;");
@@ -157,9 +163,7 @@ namespace SparkleLauncher
 		addRule("#SourceTierTitle", "color: " + textPrimary + "; font-size: 10.5pt; font-weight: 900;");
 		addRule("#SourceTierText", "color: " + textSecondary + "; font-size: 8.25pt; line-height: 130%;");
 		addRule("#SourceTierMeta", "color: " + textMuted + "; font-size: 7.5pt; font-weight: 750;");
-		addRule("#SourceTierChip", "color: " + textSecondary + "; border: 1px solid #4c5149; border-radius: 3px; background: #2b2f2a; padding: 2px 8px; font-size: 7.5pt; font-weight: 800;");
-		addRule("#SourceTierChip[State=\"ok\"]", "color: #dff3cf; border-color: #4d6f29; background: #2b3522;");
-		addRule("#SourceTierChip[State=\"warning\"]", "color: #ffe2a8; border-color: #7a5a23; background: #3a3123;");
+		addStateChipRules("#SourceTierChip");
 		addRule("QPushButton", "background: " + primary + "; color: #071006; border: 1px solid #92d83a; border-radius: 2px; padding: 6px 14px; font-weight: 750;");
 		addRule("QPushButton:hover", "background: " + primaryHover + ";");
 		addRule("QPushButton:focus", "border: 1px solid " + focus + ";");
@@ -192,11 +196,11 @@ namespace SparkleLauncher
 		addRule("#ActivityList", "background: transparent; border: none; border-radius: 0; padding: 0;");
 		addRule("#ActivityRunRow", "background: transparent; border: 1px solid transparent; padding: 1px 0;");
 		addRule("#ActivityRunRow[Selected=\"true\"]", "background: " + selection + "; border: 1px solid #5c8c22; border-radius: 2px;");
-		addRule("#ActivityRunIndicator", "background: " + QString::fromLatin1(kColorStateQueued) + "; border-radius: 1px;");
-		addRule("#ActivityRunIndicator[RunState=\"queued\"]", "background: " + QString::fromLatin1(kColorStateQueued) + ";");
-		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + QString::fromLatin1(kColorStateRunning) + ";");
-		addRule("#ActivityRunIndicator[RunState=\"done\"]", "background: " + QString::fromLatin1(kColorStateSuccess) + ";");
-		addRule("#ActivityRunIndicator[RunState=\"failed\"]", "background: " + QString::fromLatin1(kColorStateDestructive) + ";");
+		addRule("#ActivityRunIndicator", "background: " + UiColor(LauncherUi::Color::StateQueued) + "; border-radius: 1px;");
+		addRule("#ActivityRunIndicator[RunState=\"queued\"]", "background: " + UiColor(LauncherUi::Color::StateQueued) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"running\"]", "background: " + UiColor(LauncherUi::Color::StateRunning) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"done\"]", "background: " + UiColor(LauncherUi::Color::StateSuccess) + ";");
+		addRule("#ActivityRunIndicator[RunState=\"failed\"]", "background: " + UiColor(LauncherUi::Color::StateDestructive) + ";");
 		addRule("#ActivityRunTitle", "color: " + textBody + "; font-size: 8pt; font-weight: 650; padding: 0; margin: 0;");
 		addRule("#ActivityRunState", "color: " + textMuted + "; font-size: 7pt; font-weight: 700; padding: 0; margin: 0;");
 		addRule("#ActivityRunRow[Selected=\"true\"] #ActivityRunTitle", "color: #ffffff;");

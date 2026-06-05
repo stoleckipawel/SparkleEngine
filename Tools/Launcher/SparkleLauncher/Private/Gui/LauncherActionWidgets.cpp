@@ -1,5 +1,8 @@
 #include "LauncherActionWidgets.h"
 
+#include "LauncherUiDesign.h"
+#include "LauncherUiModel.h"
+
 #include <QtGui/QColor>
 #include <QtGui/QFont>
 #include <QtGui/QIcon>
@@ -15,19 +18,16 @@ namespace SparkleLauncher
 	{
 		QIcon CreateOverflowMenuButtonIcon(const QColor& color)
 		{
-			constexpr int iconExtent = 12;
-			constexpr qreal dotRadius = 1.15;
-			QPixmap pixmap(iconExtent, iconExtent);
+			QPixmap pixmap(LauncherUi::Overflow::IconExtent, LauncherUi::Overflow::IconExtent);
 			pixmap.fill(Qt::transparent);
 
 			QPainter painter(&pixmap);
 			painter.setRenderHint(QPainter::Antialiasing, true);
 			painter.setPen(Qt::NoPen);
 			painter.setBrush(color);
-			const qreal centerX = iconExtent * 0.5;
-			for (const qreal centerY : {2.5, 6.0, 9.5})
+			for (const qreal centerY : {LauncherUi::Overflow::DotY1, LauncherUi::Overflow::DotY2, LauncherUi::Overflow::DotY3})
 			{
-				painter.drawEllipse(QPointF(centerX, centerY), dotRadius, dotRadius);
+				painter.drawEllipse(QPointF(LauncherUi::Overflow::DotCenterX, centerY), LauncherUi::Overflow::DotRadius, LauncherUi::Overflow::DotRadius);
 			}
 
 			return QIcon(pixmap);
@@ -42,20 +42,19 @@ namespace SparkleLauncher
 	{
 		QToolButton* button = new QToolButton(parent);
 		button->setObjectName("DependencyActionButton");
-		button->setIcon(CreateOverflowMenuButtonIcon(QColor("#c7c7c7")));
-		button->setIconSize(QSize(8, 8));
+		button->setIcon(CreateOverflowMenuButtonIcon(LauncherUi::Color::Hex(LauncherUi::Color::TextBody)));
+		button->setIconSize(QSize(LauncherUi::Overflow::IconSize, LauncherUi::Overflow::IconSize));
 		button->setToolTip(toolTip);
 		button->setAccessibleName(accessibleName);
 		button->setPopupMode(QToolButton::InstantPopup);
 		button->setAutoRaise(true);
-		button->setFixedSize(16, 16);
+		button->setFixedSize(LauncherUi::Overflow::ButtonSize, LauncherUi::Overflow::ButtonSize);
 
 		QMenu* menu = new QMenu(parent);
 		menu->setObjectName("OverflowMenu");
 		QFont menuFont = menu->font();
-		menuFont.setPointSizeF(8.0);
+		menuFont.setPointSizeF(LauncherUi::Overflow::MenuFontPointSize);
 		menu->setFont(menuFont);
-		menu->setStyleSheet("QMenu { padding: 2px 0; } QMenu::item { padding: 3px 10px 3px 8px; }");
 
 		for (const LauncherActionMenuEntry& entry : entries)
 		{
@@ -71,42 +70,7 @@ namespace SparkleLauncher
 
 	QString PrimaryActionLabelForOperationId(const QString& operationId)
 	{
-		if (operationId == "toolchain.check")
-		{
-			return "Check";
-		}
-		if (operationId == "workspace.setup")
-		{
-			return "Sync";
-		}
-		if (operationId == "workspace.generate-solution")
-		{
-			return "Generate";
-		}
-		if (operationId == "package.release")
-		{
-			return "Assemble";
-		}
-		if (operationId == "workspace.clean")
-		{
-			return "Clean";
-		}
-		if (operationId == "quality.format")
-		{
-			return "Run";
-		}
-		if (operationId.startsWith("cook."))
-		{
-			return "Cook";
-		}
-		if (operationId == "workspace.build-all" || operationId == "launcher.build.self" || operationId.startsWith("project.build"))
-		{
-			return "Build";
-		}
-		if (operationId.startsWith("project.run") || operationId.startsWith("workspace.run") || operationId.startsWith("project.open"))
-		{
-			return "Run";
-		}
-		return "Run";
+		const QString primaryVerb = LauncherUiModelForOperation(operationId).PrimaryVerb;
+		return primaryVerb.isEmpty() ? QString("Run") : primaryVerb;
 	}
 }

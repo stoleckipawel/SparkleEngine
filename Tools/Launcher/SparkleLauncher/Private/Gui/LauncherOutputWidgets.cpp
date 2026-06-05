@@ -1,17 +1,13 @@
 #include "LauncherOutputWidgets.h"
 
+#include "LauncherUiDesign.h"
+
 #include <QtGui/QKeySequence>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QVBoxLayout>
 
 namespace SparkleLauncher
 {
-	namespace
-	{
-		constexpr int kActivityListWidth = 280;
-		constexpr int kLauncherIconSize = 14;
-	}
-
 	LauncherOutputPanelWidgets CreateLauncherOutputPanel(
 	    QWidget* parent,
 	    const QIcon& copyIcon,
@@ -32,8 +28,8 @@ namespace SparkleLauncher
 		QFrame* header = new QFrame(panel);
 		header->setObjectName("ActivityHeader");
 		QHBoxLayout* headerLayout = new QHBoxLayout(header);
-		headerLayout->setContentsMargins(10, 5, 10, 5);
-		headerLayout->setSpacing(8);
+		headerLayout->setContentsMargins(LauncherUi::Activity::HeaderMargins());
+		headerLayout->setSpacing(LauncherUi::Space::Small);
 
 		QLabel* activityTitle = new QLabel("Activity", header);
 		activityTitle->setObjectName("OutputPaneLabel");
@@ -41,9 +37,9 @@ namespace SparkleLauncher
 
 		headerLayout->addStretch(1);
 
-		QPushButton* toggleOutputButton = new QPushButton(QStringLiteral("□"), header);
+		QPushButton* toggleOutputButton = new QPushButton(QString::fromLatin1(LauncherUi::Activity::ExpandGlyph), header);
 		toggleOutputButton->setObjectName("ActivityToggleButton");
-		toggleOutputButton->setFixedSize(28, 24);
+		toggleOutputButton->setFixedSize(LauncherUi::Activity::ToggleButtonSize());
 		toggleOutputButton->setToolTip("Show or minimize recent runs and raw process output.");
 		toggleOutputButton->setAccessibleName("Toggle Activity panel");
 		toggleOutputButton->setAccessibleDescription("Shows or minimizes recent runs and raw process output.");
@@ -62,10 +58,10 @@ namespace SparkleLauncher
 
 		QFrame* activityRail = new QFrame(detailsPanel);
 		activityRail->setObjectName("ActivityRail");
-		activityRail->setMinimumWidth(kActivityListWidth);
+		activityRail->setMinimumWidth(LauncherUi::Activity::ListWidth);
 		QVBoxLayout* activityRailLayout = new QVBoxLayout(activityRail);
-		activityRailLayout->setContentsMargins(4, 4, 4, 4);
-		activityRailLayout->setSpacing(3);
+		activityRailLayout->setContentsMargins(LauncherUi::Activity::RailMargins());
+		activityRailLayout->setSpacing(LauncherUi::Space::XSmall - 1);
 
 		QLabel* activityHeader = new QLabel("Runs", activityRail);
 		activityHeader->setObjectName("OutputPaneLabel");
@@ -85,12 +81,12 @@ namespace SparkleLauncher
 		QFrame* outputPane = new QFrame(detailsPanel);
 		outputPane->setObjectName("OutputPane");
 		QVBoxLayout* outputLayout = new QVBoxLayout(outputPane);
-		outputLayout->setContentsMargins(6, 4, 6, 6);
-		outputLayout->setSpacing(3);
+		outputLayout->setContentsMargins(LauncherUi::Activity::OutputMargins());
+		outputLayout->setSpacing(LauncherUi::Space::XSmall - 1);
 
 		QHBoxLayout* outputHeaderLayout = new QHBoxLayout();
 		outputHeaderLayout->setContentsMargins(0, 0, 0, 0);
-		outputHeaderLayout->setSpacing(6);
+		outputHeaderLayout->setSpacing(LauncherUi::Space::Small - 2);
 		QLabel* outputHeader = new QLabel("Log", outputPane);
 		outputHeader->setObjectName("OutputPaneLabel");
 		outputHeaderLayout->addWidget(outputHeader, 0);
@@ -99,7 +95,7 @@ namespace SparkleLauncher
 		QPushButton* copyOutputButton = new QPushButton("Copy output", panel);
 		copyOutputButton->setObjectName("SecondaryButton");
 		copyOutputButton->setIcon(copyIcon);
-		copyOutputButton->setIconSize(copyIconSize.isValid() ? copyIconSize : QSize(kLauncherIconSize, kLauncherIconSize));
+		copyOutputButton->setIconSize(copyIconSize.isValid() ? copyIconSize : QSize(LauncherUi::Icon::DefaultSize, LauncherUi::Icon::DefaultSize));
 		copyOutputButton->setEnabled(false);
 		copyOutputButton->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_C));
 		copyOutputButton->setToolTip("Select a run to copy its output. Shortcut: Ctrl+Shift+C.");
@@ -146,14 +142,14 @@ namespace SparkleLauncher
 
 		QWidget* row = new QWidget(parent);
 		row->setObjectName("ActivityRunRow");
-		row->setFixedHeight(26);
+		row->setFixedHeight(LauncherUi::Activity::RowHeight);
 		QHBoxLayout* rowLayout = new QHBoxLayout(row);
 		rowLayout->setContentsMargins(0, 0, 0, 0);
-		rowLayout->setSpacing(6);
+		rowLayout->setSpacing(LauncherUi::Space::Small - 2);
 
 		QFrame* indicator = new QFrame(row);
 		indicator->setObjectName("ActivityRunIndicator");
-		indicator->setFixedWidth(4);
+		indicator->setFixedWidth(LauncherUi::Activity::RunIndicatorWidth);
 		rowLayout->addWidget(indicator, 0);
 
 		QVBoxLayout* textLayout = new QVBoxLayout();
