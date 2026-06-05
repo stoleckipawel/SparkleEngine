@@ -24,6 +24,7 @@ namespace SparkleLauncher
 
 		const QVector<LauncherProjectSummary>& Projects() const;
 		const QString& SelectedProjectId() const;
+		QString ActiveProjectId() const;
 
 	public slots:
 		void Refresh(const std::filesystem::path& repositoryRoot);

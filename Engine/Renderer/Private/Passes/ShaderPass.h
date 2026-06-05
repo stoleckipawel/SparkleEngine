@@ -48,7 +48,8 @@ SPARKLE_RENDERER_API void BindComputeShaderPass(
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
-    const PassBindingOverrides* overrides = nullptr) noexcept;
+    const PassBindingOverrides* overrides = nullptr,
+    bool bindLayout = true) noexcept;
 
 SPARKLE_RENDERER_API void BindRasterShaderPass(
     RenderCommandContext& cmd,
@@ -59,7 +60,8 @@ SPARKLE_RENDERER_API void BindRasterShaderPass(
     const PassParameterSet& parameterSet,
     const char* const* bindingNames = nullptr,
     std::uint32_t bindingNameCount = 0,
-    const PassBindingOverrides* overrides = nullptr) noexcept;
+    const PassBindingOverrides* overrides = nullptr,
+    bool bindLayout = true) noexcept;
 
 SPARKLE_RENDERER_API void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept;
 
@@ -288,7 +290,8 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
 	    const PassBindingOverrides* overrides = nullptr,
-	    const char* passName = nullptr) noexcept
+	    const char* passName = nullptr,
+	    bool bindLayout = true) noexcept
 	{
 		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount, overrides))
 		{
@@ -304,7 +307,8 @@ template <typename TParameters> class ComputeShaderPass : public ShaderPass
 		    GetPassParameterSet(parameters),
 		    bindingNames,
 		    bindingNameCount,
-		    overrides);
+		    overrides,
+		    bindLayout);
 		DispatchComputeShaderPass(cmd, dispatch);
 		return true;
 	}
@@ -336,7 +340,8 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
 	    const PassBindingOverrides* overrides = nullptr,
-	    const char* passName = nullptr) noexcept
+	    const char* passName = nullptr,
+	    bool bindLayout = true) noexcept
 	{
 		if (!ValidateExecutionParameters(parameters, passName, bindingNames, bindingNameCount, overrides))
 		{
@@ -352,7 +357,8 @@ template <typename TParameters> class RasterShaderPass : public ShaderPass
 		    GetPassParameterSet(parameters),
 		    bindingNames,
 		    bindingNameCount,
-		    overrides);
+		    overrides,
+		    bindLayout);
 		return true;
 	}
 

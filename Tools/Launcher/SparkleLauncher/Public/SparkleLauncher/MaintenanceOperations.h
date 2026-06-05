@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
+#include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -66,7 +67,7 @@ namespace SparkleLauncher
 	struct MaintenanceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string ProjectId = "Showcase";
+		std::string ProjectId = kDefaultProjectId;
 		std::string EditorProfile = "DevelopmentEditor";
 		FormatMode RequestedFormatMode = FormatMode::Check;
 		CleanScope RequestedCleanScope = CleanScope::SelectedProjectCookedOutputs;

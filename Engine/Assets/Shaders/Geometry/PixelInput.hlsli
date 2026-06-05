@@ -12,6 +12,7 @@ namespace PS
 		float4 TangentWorld : TEXCOORD3;
 		float3 BitangentWorld : TEXCOORD4;
 		nointerpolation uint InstanceId : TEXCOORD5;
+		bool IsFrontFace : SV_IsFrontFace;
 	};
 
 

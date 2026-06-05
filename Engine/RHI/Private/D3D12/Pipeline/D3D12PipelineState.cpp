@@ -208,7 +208,10 @@ void D3D12PipelineState::SetRenderTargetBlendState(
     D3D12_RENDER_TARGET_BLEND_DESC blendDesc) noexcept
 {
 	psoDesc.BlendState = {};
-	psoDesc.BlendState.RenderTarget[0] = blendDesc;
+	for (D3D12_RENDER_TARGET_BLEND_DESC& renderTargetBlend : psoDesc.BlendState.RenderTarget)
+	{
+		renderTargetBlend = blendDesc;
+	}
 }
 
 void D3D12PipelineState::SetDepthTestState(D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, RhiDepthTestDesc depthDesc) noexcept

@@ -100,7 +100,7 @@ namespace SparkleLauncher
 			AddPlannedEffect(plan, "Audit installed host prerequisites for local rebuild, cook, and IDE workflows without syncing source dependencies or changing generated outputs.");
 			plan.CanRun = true;
 			return;
-		case BuildWorkspaceOperationKind::SetupWorkspace:
+		case BuildWorkspaceOperationKind::SyncSourceTiers:
 			if (needsConfigure)
 			{
 				AddConfigureStep(plan);
@@ -111,11 +111,11 @@ namespace SparkleLauncher
 			}
 			plan.CanRun = true;
 			return;
-		case BuildWorkspaceOperationKind::GenerateSolution:
+		case BuildWorkspaceOperationKind::GenerateBuildFiles:
 			AddConfigureStep(plan);
 			plan.CanRun = true;
 			return;
-		case BuildWorkspaceOperationKind::OpenSolution:
+		case BuildWorkspaceOperationKind::OpenIde:
 			if (!IsPreferredIdeAvailable(plan.Toolchain, plan.Request.PreferredIde))
 			{
 				AddReadiness(plan, DisplayName(plan.Request.PreferredIde) + " is not available on this machine.");
@@ -245,9 +245,9 @@ namespace SparkleLauncher
 	const std::vector<BuildWorkspaceOperationDefinition>& GetBuildWorkspaceOperationDefinitions()
 	{
 		static const std::vector<BuildWorkspaceOperationDefinition> definitions = {
-		    {BuildWorkspaceOperationKind::SetupWorkspace, "workspace.setup", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source tiers and configure workspace state without installing host tools."},
-		    {BuildWorkspaceOperationKind::GenerateSolution, "workspace.generate-solution", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
-		    {BuildWorkspaceOperationKind::OpenSolution, "workspace.open-solution", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
+		    {BuildWorkspaceOperationKind::SyncSourceTiers, "workspace.sync-source-tiers", "Sync", std::string(ArtifactNaming::kActionSyncSourceDependencies), "Populate enabled source tiers and configure workspace state without installing host tools."},
+		    {BuildWorkspaceOperationKind::GenerateBuildFiles, "workspace.generate-build-files", "Build", std::string(ArtifactNaming::kActionGenerateProjectFiles), "Refresh generated CMake and IDE build files for the selected generator, platform, toolset, and Qt kit."},
+		    {BuildWorkspaceOperationKind::OpenIde, "workspace.open-ide", "Launch", "Open IDE", "Open the selected IDE after generated build files are current."},
 		    {BuildWorkspaceOperationKind::CheckToolchain, "toolchain.check", "Sync", std::string(ArtifactNaming::kActionVerifyHostEnvironment), "Audit installed host prerequisites without syncing source tiers or changing build files."},
 		    {BuildWorkspaceOperationKind::BuildAll, "workspace.build-all", "Build", "Build All", "Optional local rebuild of launcher, project editor/runtime targets, and enabled cook tools."},
 		    {BuildWorkspaceOperationKind::CompileLauncher, "launcher.build.self", "Build", "Build Launcher", "Optional local rebuild of Sparkle Launcher for development or customization."},

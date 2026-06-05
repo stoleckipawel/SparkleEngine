@@ -226,18 +226,24 @@ template <typename TValue> class ShaderUniform final
 
 	ShaderUniform& operator=(const TValue& value) noexcept
 	{
-		m_value = &value;
+		m_value = value;
+		m_isBound = true;
 		return *this;
 	}
 
-	const TValue* GetValue() const noexcept { return m_value; }
+	const TValue* GetValue() const noexcept { return m_isBound ? &m_value : nullptr; }
 
-	bool IsBound() const noexcept { return m_value != nullptr; }
+	bool IsBound() const noexcept { return m_isBound; }
 
-	void Reset() noexcept { m_value = nullptr; }
+	void Reset() noexcept
+	{
+		m_value = {};
+		m_isBound = false;
+	}
 
   private:
-	const TValue* m_value = nullptr;
+	TValue m_value = {};
+	bool m_isBound = false;
 };
 
 class ShaderSamplerSet final

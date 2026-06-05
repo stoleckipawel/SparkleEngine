@@ -115,7 +115,8 @@ namespace PassUtilities
 	    const char* const* bindingNames = nullptr,
 	    std::uint32_t bindingNameCount = 0,
 	    const PassBindingOverrides* overrides = nullptr,
-	    const char* passName = nullptr) noexcept
+	    const char* passName = nullptr,
+	    bool bindLayout = true) noexcept
 	{
 		return RasterShaderPass<PassParameterSet>::Bind(
 		    resources,
@@ -127,7 +128,8 @@ namespace PassUtilities
 		    bindingNames,
 		    bindingNameCount,
 		    overrides,
-		    passName);
+		    passName,
+		    bindLayout);
 	}
 
 	template <typename TRasterPipelineRuntime>
@@ -138,7 +140,8 @@ namespace PassUtilities
 	    const TRasterPipelineRuntime& runtime,
 	    const PassParameterSet& parameters,
 	    const PassBindingOverrides* overrides = nullptr,
-	    const char* passName = nullptr) noexcept
+	    const char* passName = nullptr,
+	    bool bindLayout = true) noexcept
 	{
 		const std::vector<const char*> bindingNames = BuildBoundBindingNames(runtime.BindingLayout, parameters, overrides);
 		return BindRasterPassWithRuntime(
@@ -150,7 +153,8 @@ namespace PassUtilities
 		    bindingNames.data(),
 		    static_cast<std::uint32_t>(bindingNames.size()),
 		    overrides,
-		    passName);
+		    passName,
+		    bindLayout);
 	}
 
 	template <typename TRasterPipelineRuntime, std::size_t N>

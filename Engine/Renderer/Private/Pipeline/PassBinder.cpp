@@ -7,6 +7,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 
 #include <cassert>
+#include <string_view>
 
 void PassBindingOverrides::SetConstantBufferView(const char* name, RhiGpuVirtualAddress gpuAddress)
 {
@@ -90,9 +91,10 @@ void PassBinder::BindGraphics(
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
-    const PassBindingOverrides* overrides)
+    const PassBindingOverrides* overrides,
+    bool bindLayout)
 {
-	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, false);
+	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, false);
 }
 
 void PassBinder::BindCompute(
@@ -102,9 +104,10 @@ void PassBinder::BindCompute(
     const RenderBindingLayout& layout,
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
-    const PassBindingOverrides* overrides)
+    const PassBindingOverrides* overrides,
+    bool bindLayout)
 {
-	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, true);
+	BindImpl(cmd, resources, renderHardwareInterface, layout, parameterSet, bindingNames, overrides, bindLayout, true);
 }
 
 void PassBinder::BindImpl(
@@ -115,6 +118,7 @@ void PassBinder::BindImpl(
     const PassParameterSet& parameterSet,
     std::span<const char* const> bindingNames,
     const PassBindingOverrides* overrides,
+    bool bindLayout,
     bool isCompute)
 {
 	assert(parameterSet.HasLayout());
@@ -128,11 +132,11 @@ void PassBinder::BindImpl(
 		assert(sameLayoutInstance || matchingParameterShape);
 	}
 
-	if (isCompute)
+	if (bindLayout && isCompute)
 	{
 		cmd.SetComputeBindingLayout(layout);
 	}
-	else
+	else if (bindLayout)
 	{
 		cmd.SetGraphicsBindingLayout(layout);
 	}

@@ -4,6 +4,7 @@ set(SPARKLE_LAUNCHER_CORE_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/BuildProfileCatalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/CookOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LaunchOperations.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherProjectDefaults.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/MaintenanceOperations.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/LauncherPaths.h
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/SparkleLauncher/OperationModel.h
@@ -77,37 +78,61 @@ set(SPARKLE_LAUNCHER_CORE_LAUNCH_HEADERS
 find_package(Qt6 6.8 REQUIRED COMPONENTS Widgets)
 
 set(SPARKLE_LAUNCHER_GUI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherActionWidgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherArtworkWidgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherDependencyUiModel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherLayoutWidgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherOutputWidgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherRecoveryUiModel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherUiModel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherVisualStyle.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherWorkflowCatalog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherBackend.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherGuiApp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherProjectModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherRecoveryUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowActivity.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowHomePage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOptionPages.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowOperations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowPagePrimitives.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowShell.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowStatusPages.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindowSyncPages.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherIconLibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherVisualStyle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherActionWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherArtworkWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherHomeWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherLayoutWidgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherOutputWidgets.cpp
 )
 
 set(SPARKLE_LAUNCHER_GUI_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherActionWidgets.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherArtworkWidgets.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherBackend.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherDependencyUiModel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherLayoutWidgets.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherMainWindow.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherOutputWidgets.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherProjectModel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherRecoveryUiModel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherSettings.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherUiDesign.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherUiModel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherVisualStyle.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherWorkflowCatalog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherBackend.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherGuiApp.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App/LauncherSettings.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherActionHistoryModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherCleanUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherDependencyUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherOperationRequestFactory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherPrerequisitePrompts.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherProjectModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherRecoveryUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherToolchainUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherUiModel.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models/LauncherWorkflowCatalog.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherMainWindow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell/LauncherPageUtilities.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherIconLibrary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherUiDesign.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style/LauncherVisualStyle.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherActionWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherArtworkWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherHomeWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherLayoutWidgets.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets/LauncherOutputWidgets.h
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
@@ -116,7 +141,6 @@ set(SPARKLE_LAUNCHER_PRIVATE_SOURCES
 )
 
 set(SPARKLE_LAUNCHER_PRIVATE_HEADERS
-    ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/LauncherGuiApp.h
     ${SPARKLE_LAUNCHER_GUI_HEADERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell/LauncherShell.h
 )
@@ -168,6 +192,11 @@ sparkle_configure_host_tool_target(SparkleLauncher)
 target_include_directories(SparkleLauncher
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/App
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Models
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Shell
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Style
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private/Gui/Widgets
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Shell
 )
 

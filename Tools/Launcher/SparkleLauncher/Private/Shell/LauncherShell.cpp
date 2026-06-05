@@ -1,6 +1,7 @@
 #include "LauncherShell.h"
 
 #include "SparkleLauncher/BuildWorkspaceOperations.h"
+#include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/LauncherPaths.h"
 
 #include <algorithm>
@@ -44,7 +45,7 @@ namespace SparkleLauncher
 		std::vector<std::string> JobOutput;
 	};
 
-	static constexpr std::string_view kDefaultDryRunOperationId = "workspace.setup";
+	static constexpr std::string_view kDefaultDryRunOperationId = "workspace.sync-source-tiers";
 
 	static const std::vector<LauncherOperationRow>& GetLauncherOperationRows()
 	{
@@ -100,12 +101,12 @@ namespace SparkleLauncher
 			}
 		}
 
-		const auto showcaseProject = std::find_if(projects.begin(), projects.end(), [](const SparkleProject& project) {
-			return project.Id == "Showcase";
+		const auto defaultProject = std::find_if(projects.begin(), projects.end(), [](const SparkleProject& project) {
+			return project.Id == kDefaultProjectId;
 		});
-		if (showcaseProject != projects.end())
+		if (defaultProject != projects.end())
 		{
-			return showcaseProject->Id;
+			return defaultProject->Id;
 		}
 
 		return projects.empty() ? std::string() : projects.front().Id;
@@ -793,9 +794,9 @@ namespace SparkleLauncher
 		       << "\n"
 		       << "Examples:\n"
 		       << "  SparkleLauncher --dry-run\n"
-		       << "  SparkleLauncher --project Showcase --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
-		       << "  SparkleLauncher --project Showcase --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --dry-run project.run\n"
-		       << "  SparkleLauncher --project Showcase --force-recook --dry-run cook.project\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --runtime-profile DevelopmentGame --dry-run cook.shaders\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --launch-target runtime --startup-level Sponza --smoke-test --smoke-backend d3d12 --dry-run project.run\n"
+		       << "  SparkleLauncher --project " << kDefaultProjectId << " --force-recook --dry-run cook.project\n"
 		       << "  SparkleLauncher --format-mode check --dry-run quality.format\n"
 		       << "  SparkleLauncher --clean-scope selected-cooked --dry-run workspace.clean\n";
 	}

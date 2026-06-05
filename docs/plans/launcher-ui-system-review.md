@@ -680,3 +680,164 @@ Remaining architecture cleanup:
 - Move `HomeHeroCardWidget` itself into a dedicated hero component file once page extraction starts.
 - Add a `LauncherMediaCatalog` so project/product/evidence imagery is assigned by product metadata instead of UI construction branches.
 - Add screenshot validation for all artwork presets in the next visual pass.
+
+## De-Godification Pass 1: Launcher Responsibility Split
+
+Status: completed on 2026-06-05.
+
+Goal:
+
+- reduce launcher god-file risk across the whole launcher app, not only `LauncherMainWindow`
+- move reusable UI behavior into named systems so individual buttons/cards/views do not define their own private behavior
+- keep the approved NVIDIA-inspired presentation stable while improving the code structure underneath it
+
+What changed:
+
+- Added `LauncherActionHistoryModel` to own persisted action history, dismissal, failure lookup, and save/load rules.
+- Added `LauncherCleanUiModel` to own action-specific clean target planning and clean target metadata.
+- Added `LauncherToolchainUiModel` to own host toolchain display state, toolchain summary text, and required-tool problem summaries.
+- Added `LauncherIconLibrary` to own Font Awesome loading, application icon generation, and semantic launcher icon rendering.
+- Added `LauncherHomeWidgets` to own Quick Start hero, product card, discover tile, and launcher visual asset resolution.
+- Moved native dark-titlebar handling into `LauncherVisualStyle`.
+- Kept `LauncherMainWindow` responsible for shell orchestration, selected operation routing, backend signal wiring, and high-level page refresh.
+- Preserved existing backend operation IDs, command behavior, rail structure, Quick Start visuals, Activity behavior, and action wiring.
+
+Files added:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherActionHistoryModel.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherActionHistoryModel.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherCleanUiModel.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherCleanUiModel.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherToolchainUiModel.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherToolchainUiModel.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherIconLibrary.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherIconLibrary.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherHomeWidgets.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherHomeWidgets.cpp`
+
+Largest launcher files after this pass:
+
+- `LauncherMainWindow.cpp`: 3667 lines, still too large, but now primarily shell/page orchestration plus remaining page assembly.
+- `LauncherShell.cpp`: 723 lines.
+- `LauncherSettings.cpp`: 529 lines.
+- `MaintenanceOperations.cpp`: 439 lines.
+- `LauncherBackend.cpp`: 430 lines.
+- `BuildToolchainDetection.cpp`: 409 lines.
+- `LauncherUiModel.cpp`: 394 lines.
+- `ToolResolver.cpp`: 363 lines.
+- `CookOperations.cpp`: 323 lines.
+- `LauncherUiDesign.h`: 317 lines.
+- `LauncherLayoutWidgets.cpp`: 310 lines.
+- `ProcessRunner.cpp`: 309 lines.
+- `BuildWorkspacePlanner.cpp`: 306 lines.
+- `LaunchOperations.cpp`: 300 lines.
+
+Validation performed:
+
+```powershell
+cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
+```
+
+Result:
+
+- Build passed.
+- `SparkleLauncher.exe` was regenerated under `artifacts/dev/launcher/DevelopmentEditor`.
+- The known `windeployqt` warning about `VCINSTALLDIR` remains external to this pass and did not block launcher artifact generation.
+
+Pass/fail review:
+
+- PASS: action history is no longer owned by `LauncherMainWindow`.
+- PASS: clean target planning is no longer owned by `LauncherMainWindow`.
+- PASS: toolchain status copy is no longer owned by `LauncherMainWindow`.
+- PASS: icon font loading and icon painting are no longer owned by `LauncherMainWindow`.
+- PASS: Home hero/product/discover card construction is no longer owned by `LauncherMainWindow`.
+- PASS: native dark titlebar handling is centralized with visual styling.
+- PASS: CMake target membership includes the extracted modules.
+- PARTIAL: `LauncherMainWindow.cpp` remains a god-file candidate at 3667 lines.
+- PARTIAL: page construction still uses operation-specific branches and should move into workflow-family page builders.
+- PARTIAL: operation request assembly still lives in `LauncherMainWindow`; it should move into an operation/request factory.
+
+Next de-godification seams:
+
+- `LauncherWorkflowPageBuilder`: owns Launch, Sync, Build, Cook, Test, Package, and Maintain page assembly.
+- `LauncherOperationRequestFactory`: owns conversion from settings/UI state to backend request structs.
+- `LauncherActionDependencyPanel`: owns collapsed action dependency presentation, row alignment, and granular recovery affordances.
+- `LauncherActivityPanel`: owns bottom Activity history, raw log visibility, dismissal attention state, and run output rendering.
+- `LauncherMediaCatalog`: owns project/product/evidence image selection by role instead of passing image filenames from page code.
+- `LauncherSelectionWorkflowWidgets`: owns clean scopes, source tiers, package contents, and future quality-gate selection/commit surfaces.
+
+## De-Godification Pass 2: Operation Request And Prerequisite Policy Split
+
+Status: completed on 2026-06-05.
+
+Goal:
+
+- remove backend request assembly from the main window
+- remove prerequisite planning/prompt policy from workflow button handlers
+- make similar actions use shared request/prerequisite behavior instead of per-button local branches
+- preserve all current operation IDs and workflow behavior
+
+What changed:
+
+- Added `LauncherOperationRequestFactory` as the single GUI-side translator from repository/project/settings state to `LauncherOperationRequest` and `BuildWorkspaceOperationRequest`.
+- Added `LauncherPrerequisitePrompts` as the shared readiness/prerequisite coordinator for workspace, launch, and cook operations.
+- Kept `LauncherMainWindow` as the owner of final confirmation and `StartOperation`, while prerequisite helpers decide whether an action is ready, blocked, or should run a prerequisite operation.
+- Replaced main-window-local request helpers with factory functions.
+- Replaced large main-window prerequisite prompt bodies with compact delegation to the shared prerequisite coordinator.
+
+Files added:
+
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherOperationRequestFactory.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherOperationRequestFactory.cpp`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherPrerequisitePrompts.h`
+- `Tools/Launcher/SparkleLauncher/Private/Gui/LauncherPrerequisitePrompts.cpp`
+
+Largest launcher files after this pass:
+
+- `LauncherMainWindow.cpp`: 3330 lines, still the primary god-file target, but now mostly shell/page orchestration instead of request/prerequisite policy.
+- `LauncherShell.cpp`: 723 lines.
+- `LauncherSettings.cpp`: 529 lines.
+- `MaintenanceOperations.cpp`: 439 lines.
+- `LauncherBackend.cpp`: 430 lines.
+- `BuildToolchainDetection.cpp`: 409 lines.
+- `LauncherUiModel.cpp`: 394 lines.
+- `ToolResolver.cpp`: 363 lines.
+- `CookOperations.cpp`: 323 lines.
+- `LauncherUiDesign.h`: 317 lines.
+- `LauncherLayoutWidgets.cpp`: 310 lines.
+- `ProcessRunner.cpp`: 309 lines.
+- `BuildWorkspacePlanner.cpp`: 306 lines.
+- `LaunchOperations.cpp`: 300 lines.
+- `LauncherPrerequisitePrompts.cpp`: 297 lines.
+
+Validation performed:
+
+```powershell
+cmake --build build\ux-validation-msvc --config DevelopmentEditor --target SparkleLauncher --parallel
+```
+
+Result:
+
+- Build passed.
+- `SparkleLauncher.exe` was regenerated under `artifacts/dev/launcher/DevelopmentEditor`.
+- CMake reconfigured because launcher CMake membership changed.
+- The known `windeployqt` warning about `VCINSTALLDIR` remains external to this pass and did not block launcher artifact generation.
+
+Pass/fail review:
+
+- PASS: operation request assembly is no longer owned by `LauncherMainWindow`.
+- PASS: action-specific clean request assembly is no longer owned by `LauncherMainWindow`.
+- PASS: source dependency clean/regenerate request assembly uses shared factory behavior.
+- PASS: workspace/launch/cook prerequisite prompt policy is no longer embedded in workflow button handlers.
+- PASS: `LauncherMainWindow` still owns final confirmation and operation start, preserving a single execution gate.
+- PASS: new modules are wired into `Tools/Launcher/SparkleLauncher/CMakeLists.txt`.
+- PARTIAL: `LauncherMainWindow.cpp` remains too large at 3330 lines and should be split further by page-builder families.
+- PARTIAL: `LauncherSettings.cpp` and `LauncherShell.cpp` are the next non-window files to audit after page builders.
+
+Recommended next seams:
+
+- `LauncherWorkflowPageBuilder`: move operation page construction out of `LauncherMainWindow`.
+- `LauncherHeaderBar`: own group title, project/config/IDE selectors, and header-level layout rules.
+- `LauncherActivityPanel`: own bottom Activity panel, run list, raw log toggle, copy, dismissal, and sizing.
+- `LauncherActionDependencyPanel`: own collapsed dependency summaries and recovery affordance alignment.
+- `LauncherSelectionSurfaces`: own source tier cards, clean scope cards, package contents, and future quality-gate cards.

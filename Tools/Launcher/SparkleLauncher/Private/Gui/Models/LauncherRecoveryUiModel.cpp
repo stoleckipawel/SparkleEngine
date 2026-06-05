@@ -9,7 +9,7 @@ namespace SparkleLauncher
 		if (statusText.contains("generator platform", Qt::CaseInsensitive) || statusText.contains("CMakeCache", Qt::CaseInsensitive) ||
 		    statusText.contains("Generate Workspace", Qt::CaseInsensitive) || statusText.contains("Generated workspace", Qt::CaseInsensitive))
 		{
-			return {"workspace.generate-solution", "Generate Build Files", "Refresh generated CMake and IDE files for the selected toolchain.", true};
+			return {"workspace.generate-build-files", "Generate Build Files", "Refresh generated CMake and IDE files for the selected toolchain.", true};
 		}
 		if (statusText.contains("tool", Qt::CaseInsensitive) || statusText.contains("MSBuild", Qt::CaseInsensitive) || statusText.contains("Visual Studio", Qt::CaseInsensitive) ||
 		    statusText.contains("Qt", Qt::CaseInsensitive))

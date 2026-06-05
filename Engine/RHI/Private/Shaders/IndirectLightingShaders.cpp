@@ -17,6 +17,10 @@ class IndirectLightingCS final : public TGlobalShader<IndirectLightingCS>
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectDiffuse, IndirectDiffuseTexture)
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectSpecular, IndirectSpecularTexture)
 	SHADER_PARAMETER_UAV_NAMED(RWTexture2D, IndirectSubsurface, IndirectSubsurfaceTexture)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferNormal)
+	SHADER_PARAMETER_TEXTURE(Texture2D, GBufferDeviceZ)
+	SHADER_PARAMETER_TEXTURE(Texture2D, SkyTexture)
+	SHADER_PARAMETER_SHARED_SAMPLER(SamplerLinearNoMipClamp)
 	END_SHADER_PARAMETER_STRUCT()
 };
 

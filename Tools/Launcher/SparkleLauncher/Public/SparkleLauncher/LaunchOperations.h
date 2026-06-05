@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SparkleLauncher/BuildProfileCatalog.h"
+#include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
 
@@ -30,7 +31,7 @@ namespace SparkleLauncher
 	{
 		std::filesystem::path RepositoryRoot;
 		std::string OperationId = "project.run";
-		std::string ProjectId = "Showcase";
+		std::string ProjectId = kDefaultProjectId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		std::string Target = "editor";

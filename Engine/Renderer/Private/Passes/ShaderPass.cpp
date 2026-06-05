@@ -101,9 +101,10 @@ void BindComputeShaderPass(
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,
-    const PassBindingOverrides* overrides) noexcept
+    const PassBindingOverrides* overrides,
+    bool bindLayout) noexcept
 {
-	if (renderHardwareInterface != nullptr)
+	if (bindLayout && renderHardwareInterface != nullptr)
 	{
 		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
@@ -116,7 +117,8 @@ void BindComputeShaderPass(
 	    bindingLayout,
 	    parameterSet,
 	    bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
-	    overrides);
+	    overrides,
+	    bindLayout);
 }
 
 void BindRasterShaderPass(
@@ -128,9 +130,10 @@ void BindRasterShaderPass(
     const PassParameterSet& parameterSet,
     const char* const* bindingNames,
     std::uint32_t bindingNameCount,
-    const PassBindingOverrides* overrides) noexcept
+    const PassBindingOverrides* overrides,
+    bool bindLayout) noexcept
 {
-	if (renderHardwareInterface != nullptr)
+	if (bindLayout && renderHardwareInterface != nullptr)
 	{
 		renderHardwareInterface->BindGlobalDescriptorState(cmd.GetRenderCommandList());
 	}
@@ -143,7 +146,8 @@ void BindRasterShaderPass(
 	    bindingLayout,
 	    parameterSet,
 	    bindingNames != nullptr ? std::span<const char* const>(bindingNames, bindingNameCount) : std::span<const char* const>{},
-	    overrides);
+	    overrides,
+	    bindLayout);
 }
 
 void ReportInvalidShaderPassParameterSet(const char* passName, const PassParameterSet& parameterSet) noexcept

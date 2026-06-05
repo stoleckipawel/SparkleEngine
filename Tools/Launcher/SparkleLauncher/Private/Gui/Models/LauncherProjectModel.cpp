@@ -1,5 +1,6 @@
 #include "LauncherProjectModel.h"
 
+#include "SparkleLauncher/LauncherProjectDefaults.h"
 #include "SparkleLauncher/ProjectDiscovery.h"
 
 namespace SparkleLauncher
@@ -35,6 +36,16 @@ namespace SparkleLauncher
 	const QString& LauncherProjectModel::SelectedProjectId() const
 	{
 		return m_selectedProjectId;
+	}
+
+	QString LauncherProjectModel::ActiveProjectId() const
+	{
+		if (!m_selectedProjectId.isEmpty())
+		{
+			return m_selectedProjectId;
+		}
+
+		return ChooseInitialProjectId(m_projects);
 	}
 
 	void LauncherProjectModel::Refresh(const std::filesystem::path& repositoryRoot)
@@ -106,7 +117,7 @@ namespace SparkleLauncher
 	{
 		for (const LauncherProjectSummary& project : projects)
 		{
-			if (project.Id == "Showcase")
+			if (project.Id == kDefaultProjectId)
 			{
 				return project.Id;
 			}

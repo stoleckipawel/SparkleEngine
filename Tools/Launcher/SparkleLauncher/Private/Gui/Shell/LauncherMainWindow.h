@@ -1,10 +1,12 @@
 #pragma once
 
+#include "LauncherActionHistoryModel.h"
 #include "LauncherBackend.h"
+#include "LauncherCleanUiModel.h"
+#include "LauncherIconLibrary.h"
 #include "LauncherWorkflowCatalog.h"
 
 #include <QtCore/QString>
-#include <QtCore/QDateTime>
 #include <QtCore/QVector>
 #include <QtCore/QHash>
 #include <QtGui/QColor>
@@ -63,13 +65,6 @@ namespace SparkleLauncher
 		void DisplayOperationFinished(const QString& runId, const QString& operationId, const QString& title, const QString& statusText, int exitCode);
 
 	private:
-		struct ActionHistoryRecord
-		{
-			QString CompletedAtUtc;
-			QString ResultText;
-			int ExitCode = 0;
-		};
-
 		struct PendingFollowUpOperation
 		{
 			LauncherOperationRequest Request;
@@ -90,23 +85,6 @@ namespace SparkleLauncher
 			Running,
 			Done,
 			Failed,
-		};
-
-		enum class LauncherIcon
-		{
-			Start,
-			Setup,
-			Build,
-			Cook,
-			Run,
-			Package,
-			Maintain,
-			Queued,
-			Running,
-			Done,
-			Failed,
-			Copy,
-			Overflow,
 		};
 
 		QWidget* CreateWorkflowSurface();
@@ -132,24 +110,7 @@ namespace SparkleLauncher
 		void AddStatusRow(QVBoxLayout& layout, const QString& label, const QString& status, const QString& detail, const QString& state, QWidget* accessory = nullptr);
 		QFrame* CreateSourceTierCard(const DependencyGroupUiEntry& group, const std::filesystem::path& dependencyCachePath);
 		void AddSourceTierCards(QVBoxLayout& layout, const QString& title, const QString& detail, bool includeDependencyDetails);
-		std::filesystem::path FindLauncherVisualAsset(const QString& fileName) const;
-		QWidget* CreateVisualArtworkLabel(const QString& fileName, const QString& objectName, const QSize& minimumSize, LauncherArtworkPreset preset);
 		void AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId);
-		QFrame* CreateHomeHeroCard(
-		    const QString& status,
-		    const QString& detail,
-		    const QString& state,
-		    QWidget* primaryAction,
-		    QWidget* secondaryAction = nullptr,
-		    const QString& artworkFileName = QString());
-		QFrame* CreateHomeCapabilityCard(
-		    const QString& title,
-		    const QString& status,
-		    const QString& detail,
-		    const QString& state,
-		    QWidget* action = nullptr,
-		    const QString& tileRole = "discover",
-		    const QString& artworkFileName = QString());
 		QPushButton* CreateCommandActionButton(const QString& operationId, const QString& label, bool primary, bool runImmediately = false);
 		void AddWorkflowPageHeader(QVBoxLayout& layout, const QString& operationId);
 		void AddHomeQuickStart(QVBoxLayout& layout);
@@ -164,27 +125,14 @@ namespace SparkleLauncher
 		void SetControlsEnabled(bool enabled);
 		void EnsureOptionsPage(const QString& operationId);
 		void RebuildOptionsPages();
-		void LoadActionHistory();
-		void SaveActionHistory() const;
 		void UpdateActionHistoryDisplay();
 		void DismissSelectedActionHistory();
-		void LoadLauncherIconFont();
-		QIcon CreateApplicationIcon() const;
-		QString IconGlyph(LauncherIcon icon) const;
-		QIcon CreateLauncherIcon(LauncherIcon icon, const QColor& color) const;
 		QIcon WorkflowIconForKey(const QString& iconKey) const;
 		QIcon ActivityIconForState(RunState state) const;
 		void RegisterFocusable(QWidget* widget);
 		void SetActiveWorkflowGroup(int workflowIndex);
 		void ConfigureTabOrder();
 		void UpdateRunAvailability();
-		bool ShouldShowActionSpecificCleanButton(const QString& operationId) const;
-		bool SupportsActionSpecificClean(const QString& operationId) const;
-		QVector<LauncherCleanTarget> BuildActionSpecificCleanTargets(const QString& operationId) const;
-		LauncherOperationRequest BuildCleanOperationRequest(const QString& operationId) const;
-		LauncherOperationRequest BuildScopedCleanRequest(const QString& cleanScope) const;
-		LauncherOperationRequest BuildDependencyCleanRequest(const ThirdPartyDependencyUiEntry& dependency) const;
-		LauncherOperationRequest BuildDependencyRegenerateRequest() const;
 		QWidget* CreateTrackedDependencyActions(const ThirdPartyDependencyUiEntry& dependency);
 		QWidget* CreateDisabledSourceTierActions(const DependencyGroupUiEntry& group);
 		QWidget* CreateActionDependencyActions(
@@ -203,14 +151,12 @@ namespace SparkleLauncher
 		bool OperationNeedsProject(const QString& operationId) const;
 		bool OperationNeedsConfirmation(const QString& operationId) const;
 		QString FailureRecoveryHint(const QString& operationId, const QString& statusText) const;
-		LauncherOperationRequest BuildOperationRequest(const QString& operationId) const;
 		bool ConfirmRunRequest(LauncherOperationRequest& request) const;
 		void PromptForLauncherRestart();
 		bool OfferWorkspacePrerequisiteOperation(const QString& operationId);
 		bool OfferCookPrerequisiteOperation(const QString& operationId);
 		bool OfferLaunchPrerequisiteOperation(const QString& operationId);
 		void StartOperation(LauncherOperationRequest request, const QString& title);
-		void SetStatusMessage(const QString& message);
 		void SetSelectedOperation(const QString& operationId);
 		void RegisterRun(const QString& runId, const QString& title);
 		void SetRunState(const QString& runId, RunState state, const QString& title);
@@ -227,7 +173,7 @@ namespace SparkleLauncher
 		LauncherProjectModel& m_projectModel;
 		LauncherSettings& m_settings;
 		LauncherBackend& m_backend;
-		QString m_iconFontFamily;
+		LauncherIconLibrary m_icons;
 		QButtonGroup* m_workflowGroupButtonGroup = nullptr;
 		QButtonGroup* m_processButtonGroup = nullptr;
 		QStackedWidget* m_operationStack = nullptr;
@@ -259,7 +205,7 @@ namespace SparkleLauncher
 		QHash<QString, RunState> m_runStates;
 		QHash<QString, QString> m_runTitles;
 		QHash<QString, QString> m_runOutputs;
-		QHash<QString, ActionHistoryRecord> m_actionHistory;
+		LauncherActionHistoryModel m_actionHistory;
 		QHash<QString, PendingFollowUpOperation> m_pendingFollowUpOperations;
 		QString m_activeRunId;
 		QString m_selectedOperationId;

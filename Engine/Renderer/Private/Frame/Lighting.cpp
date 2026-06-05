@@ -10,7 +10,7 @@
 void AddLightingPasses(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
 {
 	AddDirectLightingPass(builder, lighting, gbuffer);
-	AddIndirectLightingPass(builder, lighting);
+	AddIndirectLightingPass(builder, lighting, gbuffer);
 	AddLightingCompositePass(builder, sceneTargets, lighting, gbuffer);
 	AddVisualizeBuffersPass(builder, sceneTargets, lighting, gbuffer);
 	AddSkyPass(builder, sceneTargets, gbuffer);

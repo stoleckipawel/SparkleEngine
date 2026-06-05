@@ -2,6 +2,7 @@
 
 #include "SparkleLauncher/OperationModel.h"
 #include "SparkleLauncher/ProcessRunner.h"
+#include "SparkleLauncher/LauncherProjectDefaults.h"
 
 #include <filesystem>
 #include <optional>
@@ -80,9 +81,9 @@ namespace SparkleLauncher
 	enum class BuildWorkspaceOperationKind
 	{
 		CheckToolchain,
-		SetupWorkspace,
-		GenerateSolution,
-		OpenSolution,
+		SyncSourceTiers,
+		GenerateBuildFiles,
+		OpenIde,
 		BuildAll,
 		CompileLauncher,
 		CompileEditor,
@@ -103,7 +104,7 @@ namespace SparkleLauncher
 	struct BuildWorkspaceOperationRequest
 	{
 		std::filesystem::path RepositoryRoot;
-		std::string ProjectId = "Showcase";
+		std::string ProjectId = kDefaultProjectId;
 		std::string EditorProfile = "DevelopmentEditor";
 		std::string RuntimeProfile = "DevelopmentGame";
 		WorkspaceIde PreferredIde = WorkspaceIde::VisualStudio;

@@ -52,12 +52,12 @@ namespace SparkleLauncher
 		{
 		case BuildWorkspaceOperationKind::CheckToolchain:
 			return "CheckToolchain";
-		case BuildWorkspaceOperationKind::SetupWorkspace:
-			return "SetupWorkspace";
-		case BuildWorkspaceOperationKind::GenerateSolution:
-			return "GenerateSolution";
-		case BuildWorkspaceOperationKind::OpenSolution:
-			return "OpenSolution";
+		case BuildWorkspaceOperationKind::SyncSourceTiers:
+			return "SyncSourceTiers";
+		case BuildWorkspaceOperationKind::GenerateBuildFiles:
+			return "GenerateBuildFiles";
+		case BuildWorkspaceOperationKind::OpenIde:
+			return "OpenIde";
 		case BuildWorkspaceOperationKind::BuildAll:
 			return "BuildAll";
 		case BuildWorkspaceOperationKind::CompileLauncher:

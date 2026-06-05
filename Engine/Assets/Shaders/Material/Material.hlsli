@@ -193,6 +193,10 @@ namespace Material
 		ApplyAlphaMode(props.Alpha);
 		props.NormalTangent = SampleNormalTangent(Input.TexCoord);
 		props.NormalWorld = TransformNormalToWorld(props.NormalTangent, Input.NormalWorld, Input.TangentWorld.xyz, Input.BitangentWorld);
+		if (!Input.IsFrontFace)
+		{
+			props.NormalWorld = -props.NormalWorld;
+		}
 		props.Roughness = SampleRoughness(Input.TexCoord);
 		props.Metallic = SampleMetallic(Input.TexCoord);
 		props.DielectricF0 = SampleDielectricF0(Input.TexCoord);

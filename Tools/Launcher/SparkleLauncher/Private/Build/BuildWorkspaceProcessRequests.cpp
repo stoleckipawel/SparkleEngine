@@ -38,11 +38,11 @@ namespace SparkleLauncher
 #endif
 	}
 
-	static ProcessRequest MakeOpenSolutionRequest(const BuildWorkspaceOperationPlan& plan)
+	static ProcessRequest MakeOpenIdeRequest(const BuildWorkspaceOperationPlan& plan)
 	{
 		ProcessRequest process;
 		process.WorkingDirectory = plan.RepositoryRoot;
-		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "OpenWorkspace.txt");
+		process.LogPath = GetLauncherOperationLogPath(plan.RepositoryRoot, plan.Operation.Id, "OpenIde.txt");
 #if defined(_WIN32)
 		process.ExecutablePath = GetCommandProcessorPath();
 		if (plan.Request.PreferredIde == WorkspaceIde::Rider)
@@ -111,12 +111,12 @@ namespace SparkleLauncher
 		steps.push_back(std::move(step));
 	}
 
-	static void AddOpenSolutionStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
+	static void AddOpenIdeStep(std::vector<BuildWorkspaceProcessStep>& steps, const BuildWorkspaceOperationPlan& plan)
 	{
 		BuildWorkspaceProcessStep step;
-		step.Id = "open-solution";
+		step.Id = "open-ide";
 		step.DisplayName = plan.Request.PreferredIde == WorkspaceIde::Rider ? "Open Rider" : "Open Visual Studio";
-		step.Request = MakeOpenSolutionRequest(plan);
+		step.Request = MakeOpenIdeRequest(plan);
 		steps.push_back(std::move(step));
 	}
 
@@ -133,17 +133,17 @@ namespace SparkleLauncher
 		{
 		case BuildWorkspaceOperationKind::CheckToolchain:
 			return steps;
-		case BuildWorkspaceOperationKind::SetupWorkspace:
+		case BuildWorkspaceOperationKind::SyncSourceTiers:
 			if (needsConfigure)
 			{
 				AddConfigureStep(steps, plan);
 			}
 			return steps;
-		case BuildWorkspaceOperationKind::GenerateSolution:
+		case BuildWorkspaceOperationKind::GenerateBuildFiles:
 			AddConfigureStep(steps, plan);
 			return steps;
-		case BuildWorkspaceOperationKind::OpenSolution:
-			AddOpenSolutionStep(steps, plan);
+		case BuildWorkspaceOperationKind::OpenIde:
+			AddOpenIdeStep(steps, plan);
 			return steps;
 		case BuildWorkspaceOperationKind::BuildAll:
 			AddBuildStep(steps, plan, plan.Request.EditorProfile, {"SparkleLauncher"});

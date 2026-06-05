@@ -131,6 +131,17 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	return m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}).Value;
 }
 
+NativeResourceHandle Renderer::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
+{
+	if (!handle || !m_frameGraph)
+	{
+		return NativeResourceHandle{};
+	}
+
+	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
+	return m_frameGraph->ResolveResource(FrameGraphTextureHandle{resourceHandle});
+}
+
 void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept
 {
 	if (!handle || !m_frameGraph)

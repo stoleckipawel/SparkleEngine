@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <utility>
 
 struct GltfMeshGpuInstancingTransforms
 {
@@ -183,6 +184,32 @@ void GltfGeometryImporter::ReadIndices(const cgltf_accessor* accessor, std::vect
 	}
 }
 
+DirectX::XMFLOAT3 GltfGeometryImporter::ConvertGltfVectorToEngine(const DirectX::XMFLOAT3& value) noexcept
+{
+	// glTF is right-handed (+Y up, +Z forward); the runtime renderer is left-handed.
+	return DirectX::XMFLOAT3(value.x, value.y, -value.z);
+}
+
+DirectX::XMFLOAT4 GltfGeometryImporter::ConvertGltfTangentToEngine(const DirectX::XMFLOAT4& value) noexcept
+{
+	// Mirroring Z flips the tangent frame handedness, so tangent.w must flip too.
+	return DirectX::XMFLOAT4(value.x, value.y, -value.z, -value.w);
+}
+
+DirectX::XMMATRIX GltfGeometryImporter::ConvertGltfMatrixToEngine(DirectX::FXMMATRIX matrix) noexcept
+{
+	const DirectX::XMMATRIX handedness = DirectX::XMMatrixScaling(1.0f, 1.0f, -1.0f);
+	return DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(handedness, matrix), handedness);
+}
+
+void GltfGeometryImporter::ConvertGltfTriangleWindingToEngine(std::vector<std::uint32_t>& indices) noexcept
+{
+	for (std::size_t index = 0; index + 2 < indices.size(); index += 3)
+	{
+		std::swap(indices[index + 1], indices[index + 2]);
+	}
+}
+
 DirectX::XMFLOAT2 GltfGeometryImporter::ReadFloat2(const cgltf_accessor* accessor, std::size_t index)
 {
 	DirectX::XMFLOAT2 element{};
@@ -262,7 +289,7 @@ DirectX::XMMATRIX GltfGeometryImporter::ComputeNodeWorldTransform(const cgltf_no
 		worldTransform = DirectX::XMMatrixMultiply(worldTransform, localTransform);
 	}
 
-	return worldTransform;
+	return ConvertGltfMatrixToEngine(worldTransform);
 }
 
 const cgltf_accessor* GltfGeometryImporter::FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName)
@@ -351,7 +378,7 @@ DirectX::XMMATRIX GltfGeometryImporter::BuildMeshGpuInstancingTransform(
 {
 	if (transforms.matrices != nullptr)
 	{
-		return ReadFloat4x4(transforms.matrices, instanceIndex);
+		return ConvertGltfMatrixToEngine(ReadFloat4x4(transforms.matrices, instanceIndex));
 	}
 
 	DirectX::XMFLOAT3 translation = {0.0f, 0.0f, 0.0f};
@@ -370,9 +397,11 @@ DirectX::XMMATRIX GltfGeometryImporter::BuildMeshGpuInstancingTransform(
 		scale = ReadFloat3(transforms.scales, instanceIndex);
 	}
 
-	return DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
-	       DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
-	       DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
+	const DirectX::XMMATRIX authoredTransform =
+	    DirectX::XMMatrixScaling(scale.x, scale.y, scale.z) *
+	    DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&rotation)) *
+	    DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
+	return ConvertGltfMatrixToEngine(authoredTransform);
 }
 
 void GltfGeometryImporter::AppendMeshInstance(
@@ -470,12 +499,12 @@ ImportedMeshGeometry GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primi
 	for (std::uint32_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
 		ImportedVertex& vertex = meshGeometry.vertices[vertexIndex];
-		vertex.position = ReadFloat3(positions, vertexIndex);
+		vertex.position = ConvertGltfVectorToEngine(ReadFloat3(positions, vertexIndex));
 		vertex.color = {1.0f, 1.0f, 1.0f, 1.0f};
 
 		if (normals)
 		{
-			vertex.normal = ReadFloat3(normals, vertexIndex);
+			vertex.normal = ConvertGltfVectorToEngine(ReadFloat3(normals, vertexIndex));
 		}
 
 		if (texcoords)
@@ -485,10 +514,11 @@ ImportedMeshGeometry GltfGeometryImporter::ExtractMeshGeometry(const cgltf_primi
 
 		if (tangents)
 		{
-			vertex.tangent = ReadFloat4(tangents, vertexIndex);
+			vertex.tangent = ConvertGltfTangentToEngine(ReadFloat4(tangents, vertexIndex));
 		}
 	}
 
 	ReadIndices(primitive.indices, meshGeometry.indices);
+	ConvertGltfTriangleWindingToEngine(meshGeometry.indices);
 	return meshGeometry;
 }

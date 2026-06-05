@@ -30,6 +30,10 @@ class GltfGeometryImporter final
 	static DirectX::XMFLOAT3 ReadFloat3(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMFLOAT4 ReadFloat4(const cgltf_accessor* accessor, std::size_t index);
 	static DirectX::XMMATRIX ReadFloat4x4(const cgltf_accessor* accessor, std::size_t index);
+	static DirectX::XMFLOAT3 ConvertGltfVectorToEngine(const DirectX::XMFLOAT3& value) noexcept;
+	static DirectX::XMFLOAT4 ConvertGltfTangentToEngine(const DirectX::XMFLOAT4& value) noexcept;
+	static DirectX::XMMATRIX ConvertGltfMatrixToEngine(DirectX::FXMMATRIX matrix) noexcept;
+	static void ConvertGltfTriangleWindingToEngine(std::vector<std::uint32_t>& indices) noexcept;
 	static DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node);
 	static const cgltf_accessor* FindMeshGpuInstancingAttribute(const cgltf_node& node, std::string_view attributeName);
 	static bool TryReadMeshGpuInstancingTransforms(

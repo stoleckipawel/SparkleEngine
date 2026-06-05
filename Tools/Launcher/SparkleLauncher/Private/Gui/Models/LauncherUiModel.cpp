@@ -93,7 +93,7 @@ namespace SparkleLauncher
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
 			    "showcase-editor.png");
 		}
-		if (operationId == "workspace.open-solution")
+		if (operationId == "workspace.open-ide")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -119,7 +119,7 @@ namespace SparkleLauncher
 			    "Checks installed tools without changing source dependencies, artifacts, or cooked outputs.",
 			    "sparkle-source-tiers.png");
 		}
-		if (operationId == "workspace.setup")
+		if (operationId == "workspace.sync-source-tiers")
 		{
 			return MakeOperationUiModel(
 			    operationId,
@@ -132,7 +132,7 @@ namespace SparkleLauncher
 			    "Sync only the capability tiers you need; optional tiers unlock build and cook paths without becoming first-run blockers.",
 			    "sparkle-source-tiers.png");
 		}
-		if (operationId == "workspace.generate-solution")
+		if (operationId == "workspace.generate-build-files")
 		{
 			return MakeOperationUiModel(
 			    operationId,

@@ -1,0 +1,452 @@
+#include "LauncherMainWindow.h"
+
+#include "LauncherLayoutWidgets.h"
+#include "LauncherOutputWidgets.h"
+#include "LauncherProjectModel.h"
+#include "LauncherSettings.h"
+#include "LauncherUiDesign.h"
+#include "LauncherWorkflowCatalog.h"
+
+#include <QtGui/QColor>
+#include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QFrame>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollArea>
+#include <QtWidgets/QSizePolicy>
+#include <QtWidgets/QStackedWidget>
+#include <QtWidgets/QTextEdit>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QVBoxLayout>
+
+namespace SparkleLauncher
+{
+	static constexpr int kSpaceTiny = LauncherUi::Space::Tiny;
+	static constexpr int kWorkflowRailWidth = LauncherUi::Shell::RailWidth;
+	static constexpr int kWorkflowGroupMinHeight = LauncherUi::Shell::RailItemMinHeight;
+	static constexpr int kWorkflowButtonMinHeight = LauncherUi::Shell::TabMinHeight;
+	static constexpr int kOperationOutputMinHeight = LauncherUi::OperationOutput::MinHeight;
+	static constexpr int kOperationOutputMaxHeight = LauncherUi::OperationOutput::MaxHeight;
+	static constexpr int kActivityPanelCollapsedHeight = LauncherUi::Activity::CollapsedHeight;
+	static constexpr int kLauncherIconSize = LauncherUi::Icon::DefaultSize;
+	static constexpr const char* kColorStateQueued = LauncherUi::Color::StateQueued;
+
+	QWidget* LauncherMainWindow::CreateWorkflowSurface()
+	{
+		QFrame* surface = new QFrame(this);
+		surface->setObjectName("WorkflowSurface");
+		QHBoxLayout* layout = new QHBoxLayout(surface);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
+		layout->addWidget(CreateProcessPicker(surface), 0);
+		layout->addWidget(CreateOptionsPanel(surface), 1);
+		return surface;
+	}
+
+	QWidget* LauncherMainWindow::CreateProcessPicker(QWidget* parent)
+	{
+		QFrame* panel = new QFrame(parent);
+		panel->setObjectName("ProcessPanel");
+		panel->setFixedWidth(kWorkflowRailWidth);
+		QVBoxLayout* layout = new QVBoxLayout(panel);
+		layout->setContentsMargins(0, 0, 0, LauncherUi::Shell::RailBottomPadding);
+		layout->setSpacing(LauncherUi::Space::XSmall);
+
+		QVBoxLayout* groupLayout = new QVBoxLayout();
+		groupLayout->setContentsMargins(0, 0, 0, 0);
+		groupLayout->setSpacing(LauncherUi::Shell::RailGroupSpacing);
+
+		m_workflowGroupButtonGroup = new QButtonGroup(this);
+		m_workflowGroupButtonGroup->setExclusive(true);
+		m_processButtonGroup = new QButtonGroup(this);
+		m_processButtonGroup->setExclusive(true);
+
+		m_operationStack = new QStackedWidget(panel);
+		m_operationStack->setObjectName("OperationStack");
+
+		const QVector<LauncherWorkflowDefinition> workflows = CreateLauncherWorkflowCatalog();
+		for (int workflowIndex = 0; workflowIndex < workflows.size(); ++workflowIndex)
+		{
+			const LauncherWorkflowDefinition& workflow = workflows[workflowIndex];
+			QToolButton* groupButton = new QToolButton(panel);
+			groupButton->setText(workflow.Title);
+			groupButton->setObjectName("WorkflowGroupButton");
+			groupButton->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+			groupButton->setMinimumHeight(kWorkflowGroupMinHeight);
+			groupButton->setMaximumHeight(kWorkflowGroupMinHeight);
+			groupButton->setMinimumWidth(kWorkflowRailWidth);
+			groupButton->setMaximumWidth(kWorkflowRailWidth);
+			groupButton->setProperty("WorkflowIndex", workflowIndex);
+			groupButton->setProperty("ActiveState", "false");
+			groupButton->setAccessibleName(workflow.Title + " workflow group");
+			groupButton->setIcon(WorkflowIconForKey(workflow.IconKey));
+			groupButton->setIconSize(QSize(LauncherUi::Shell::RailIconSize, LauncherUi::Shell::RailIconSize));
+			RegisterFocusable(groupButton);
+			m_workflowGroupButtonGroup->addButton(groupButton);
+			groupLayout->addWidget(groupButton);
+
+			QWidget* tabPage = new QWidget(m_operationStack);
+			QHBoxLayout* actionLayout = new QHBoxLayout();
+			actionLayout->setContentsMargins(0, 0, 0, 0);
+			actionLayout->setSpacing(LauncherUi::Shell::WorkflowTabSpacing);
+			if (workflow.OperationIds.size() > 1)
+			{
+				for (int index = 0; index < workflow.OperationIds.size(); ++index)
+				{
+					const QString& operationId = workflow.OperationIds[index];
+					QPushButton* button = CreateProcessButton(DisplayNameForOperation(operationId), operationId, tabPage);
+					m_processButtonGroup->addButton(button);
+					actionLayout->addWidget(button);
+				}
+			}
+			actionLayout->addStretch(1);
+			tabPage->setLayout(actionLayout);
+			const int pageIndex = m_operationStack->addWidget(tabPage);
+			for (const QString& operationId : workflow.OperationIds)
+			{
+				m_workflowPageByOperation.insert(operationId, pageIndex);
+			}
+		}
+		groupLayout->addStretch(1);
+		connect(m_workflowGroupButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectWorkflowGroupButton);
+		connect(m_processButtonGroup, &QButtonGroup::buttonClicked, this, &LauncherMainWindow::SelectProcessButton);
+		layout->addLayout(groupLayout, 1);
+		return panel;
+	}
+
+	QPushButton* LauncherMainWindow::CreateProcessButton(const QString& label, const QString& operationId, QWidget* parent)
+	{
+		QPushButton* button = new QPushButton(label, parent);
+		button->setObjectName("WorkflowButton");
+		button->setCheckable(true);
+		button->setMinimumHeight(kWorkflowButtonMinHeight);
+		button->setProperty("OperationId", operationId);
+		button->setAccessibleName(label + " workflow");
+		RegisterFocusable(button);
+		return button;
+	}
+
+	QWidget* LauncherMainWindow::CreateOptionsPanel(QWidget* parent)
+	{
+		QFrame* panel = new QFrame(parent);
+		panel->setObjectName("OptionsPanel");
+		QVBoxLayout* layout = new QVBoxLayout(panel);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->setSpacing(0);
+
+		QFrame* titleBand = new QFrame(panel);
+		titleBand->setObjectName("TitleBand");
+		QHBoxLayout* titleBandLayout = new QHBoxLayout(titleBand);
+		titleBandLayout->setContentsMargins(LauncherUi::TitleBand::Margins());
+		titleBandLayout->setSpacing(LauncherUi::TitleBand::Spacing);
+
+		QVBoxLayout* titleStack = new QVBoxLayout();
+		titleStack->setContentsMargins(0, 0, 0, 0);
+		titleStack->setSpacing(0);
+		m_activeOperationLabel = new QLabel("No workflow selected", titleBand);
+		m_activeOperationLabel->setObjectName("ActiveOperationLabel");
+		m_activeOperationLabel->setAccessibleName("Selected workflow");
+		titleStack->addWidget(m_activeOperationLabel, 0, Qt::AlignVCenter);
+		titleBandLayout->addLayout(titleStack, 1);
+
+		QWidget* headerUtilities = CreateHeaderContextPanel(titleBand);
+		if (headerUtilities != nullptr)
+		{
+			titleBandLayout->addWidget(headerUtilities, 0, Qt::AlignRight | Qt::AlignVCenter);
+		}
+		layout->addWidget(titleBand, 0);
+
+		if (m_operationStack != nullptr)
+		{
+			m_operationStack->setParent(panel);
+			layout->addWidget(m_operationStack, 0);
+		}
+
+		m_optionsStack = new QStackedWidget(panel);
+		m_optionsStack->setObjectName("OptionsStack");
+		RebuildOptionsPages();
+		layout->addWidget(m_optionsStack, 1);
+		m_optionsStack->setVisible(false);
+
+		m_actionMetaPanel = new QFrame(panel);
+		m_actionMetaPanel->setObjectName("ActionMetaPanel");
+		QHBoxLayout* actionMetaRowLayout = new QHBoxLayout(m_actionMetaPanel);
+		actionMetaRowLayout->setContentsMargins(LauncherUi::ActionMeta::Margins());
+		actionMetaRowLayout->setSpacing(LauncherUi::ActionMeta::Spacing);
+
+		QVBoxLayout* actionMetaLayout = new QVBoxLayout();
+		actionMetaLayout->setContentsMargins(0, 0, 0, 0);
+		actionMetaLayout->setSpacing(kSpaceTiny);
+		QLabel* actionMetaTitle = new QLabel("Last completed run", m_actionMetaPanel);
+		actionMetaTitle->setObjectName("ActionMetaTitle");
+		actionMetaLayout->addWidget(actionMetaTitle);
+		m_lastRunSummaryLabel = new QLabel("No recorded run for this workflow yet.", m_actionMetaPanel);
+		m_lastRunSummaryLabel->setObjectName("ActionMetaText");
+		m_lastRunSummaryLabel->setWordWrap(true);
+		actionMetaLayout->addWidget(m_lastRunSummaryLabel);
+		m_lastRunResultLabel = new QLabel("Result data will persist between launcher sessions.", m_actionMetaPanel);
+		m_lastRunResultLabel->setObjectName("ActionMetaDetail");
+		m_lastRunResultLabel->setWordWrap(true);
+		actionMetaLayout->addWidget(m_lastRunResultLabel);
+		actionMetaRowLayout->addLayout(actionMetaLayout, 1);
+
+		m_cleanButton = new QPushButton("Clean", panel);
+		m_cleanButton->setObjectName("SecondaryButton");
+		m_cleanButton->setToolTip("Clean only the generated outputs tied to this action.");
+		m_cleanButton->setEnabled(false);
+		m_cleanButton->setAccessibleName("Clean selected workflow outputs");
+		RegisterFocusable(m_cleanButton);
+		connect(m_cleanButton, &QPushButton::clicked, this, &LauncherMainWindow::CleanSelectedOperation);
+		actionMetaRowLayout->addWidget(m_cleanButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+		m_dismissHistoryButton = new QPushButton("Dismiss", panel);
+		m_dismissHistoryButton->setObjectName("SecondaryButton");
+		m_dismissHistoryButton->setToolTip("Hide the stored result summary for this workflow. Log files remain available.");
+		m_dismissHistoryButton->setEnabled(false);
+		m_dismissHistoryButton->setAccessibleName("Dismiss stored workflow result");
+		RegisterFocusable(m_dismissHistoryButton);
+		connect(m_dismissHistoryButton, &QPushButton::clicked, this, &LauncherMainWindow::DismissSelectedActionHistory);
+		actionMetaRowLayout->addWidget(m_dismissHistoryButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+
+		m_runButton = new QPushButton("Run", panel);
+		m_runButton->setObjectName("PrimaryActionButton");
+		m_runButton->setIcon(m_icons.Icon(LauncherIcon::Run, QColor("#ffffff")));
+		m_runButton->setIconSize(QSize(kLauncherIconSize, kLauncherIconSize));
+		m_runButton->setToolTip("Run the selected workflow. Existing runs keep going.");
+		m_runButton->setEnabled(false);
+		m_runButton->setAccessibleName("Run selected workflow");
+		RegisterFocusable(m_runButton);
+		connect(m_runButton, &QPushButton::clicked, this, &LauncherMainWindow::RunSelectedOperation);
+		actionMetaRowLayout->addWidget(m_runButton, 0, Qt::AlignRight | Qt::AlignVCenter);
+		layout->addWidget(m_actionMetaPanel);
+		UpdateActionHistoryDisplay();
+		return panel;
+	}
+
+	QWidget* LauncherMainWindow::CreateHeaderContextPanel(QWidget* parent)
+	{
+		QFrame* panel = new QFrame(parent);
+		panel->setObjectName("HeaderUtilityPanel");
+		QHBoxLayout* rowLayout = new QHBoxLayout(panel);
+		rowLayout->setContentsMargins(0, 0, 0, 0);
+		rowLayout->setSpacing(LauncherUi::HeaderContext::Spacing);
+
+		const auto applyComboMetrics = [](QComboBox& combo, int minWidth, int maxWidth) {
+			combo.setMinimumWidth(minWidth);
+			combo.setMaximumWidth(maxWidth);
+			combo.setMinimumHeight(LauncherUi::HeaderContext::ComboHeight);
+			combo.setMaximumHeight(LauncherUi::HeaderContext::ComboHeight);
+		};
+
+		QLabel* projectLabel = CreateFieldLabel("Project");
+		projectLabel->setObjectName("HeaderFieldLabel");
+		rowLayout->addWidget(projectLabel, 0);
+		QComboBox* projectCombo = CreateProjectCombo();
+		projectCombo->setObjectName("HeaderContextCombo");
+		projectCombo->setAccessibleName("Project");
+		projectCombo->setToolTip("Global project context used by project, cook, launch, and smoke workflows.");
+		applyComboMetrics(*projectCombo, LauncherUi::HeaderContext::ProjectComboMinWidth, LauncherUi::HeaderContext::ProjectComboMaxWidth);
+		projectLabel->setBuddy(projectCombo);
+		rowLayout->addWidget(projectCombo, 0);
+
+		QLabel* configurationLabel = CreateFieldLabel("Config");
+		configurationLabel->setObjectName("HeaderFieldLabel");
+		rowLayout->addWidget(configurationLabel, 0);
+		QComboBox* configurationCombo = CreateValueCombo(
+		    {{"Development", "development"}, {"Debug", "debug"}, {"Shipping", "shipping"}},
+		    m_settings.BuildConfiguration(),
+		    &LauncherSettings::SetBuildConfiguration);
+		configurationCombo->setObjectName("HeaderContextCombo");
+		configurationCombo->setAccessibleName("Build Configuration");
+		configurationCombo->setToolTip("Global build configuration used for editor, runtime, and tool workflows.");
+		applyComboMetrics(*configurationCombo, LauncherUi::HeaderContext::ConfigurationComboMinWidth, LauncherUi::HeaderContext::ConfigurationComboMaxWidth);
+		configurationLabel->setBuddy(configurationCombo);
+		rowLayout->addWidget(configurationCombo, 0);
+
+		QLabel* ideLabel = CreateFieldLabel("IDE");
+		ideLabel->setObjectName("HeaderFieldLabel");
+		rowLayout->addWidget(ideLabel, 0);
+		QComboBox* ideCombo = CreateValueCombo({{"Visual Studio", "visual-studio"}, {"Rider", "rider"}}, m_settings.WorkspaceIde(), &LauncherSettings::SetWorkspaceIde);
+		ideCombo->setObjectName("HeaderContextCombo");
+		ideCombo->setAccessibleName("IDE");
+		ideCombo->setToolTip("Visual Studio with an MSVC-compatible Qt kit is the supported Windows workflow. ClangCL remains supported as an optional toolset, and Rider remains optional IDE integration.");
+		applyComboMetrics(*ideCombo, LauncherUi::HeaderContext::IdeComboMinWidth, LauncherUi::HeaderContext::IdeComboMaxWidth);
+		ideLabel->setBuddy(ideCombo);
+		rowLayout->addWidget(ideCombo, 0);
+
+		m_headerContextPanel = panel;
+		return panel;
+	}
+
+	QWidget* LauncherMainWindow::CreateOptionsPage(const QString& operationId, QWidget* parent)
+	{
+		QScrollArea* scrollArea = new QScrollArea(parent);
+		scrollArea->setObjectName("OptionsScrollArea");
+		scrollArea->setWidgetResizable(true);
+		scrollArea->setFrameShape(QFrame::NoFrame);
+		scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+		QWidget* content = new QWidget(scrollArea);
+		content->setObjectName("OptionsContent");
+		const bool isQuickStart = operationId == LauncherHomeOperationId();
+		scrollArea->setAlignment(isQuickStart ? Qt::AlignTop : (Qt::AlignLeft | Qt::AlignTop));
+		content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+		if (!isQuickStart)
+		{
+			content->setMaximumWidth(LauncherUi::Page::MaxContentWidth);
+		}
+		QVBoxLayout* layout = new QVBoxLayout(content);
+		layout->setContentsMargins(isQuickStart ? LauncherUi::Page::QuickStartMargins() : LauncherUi::Page::ContentMargins());
+		layout->setSpacing(isQuickStart ? 0 : LauncherUi::Page::Spacing);
+		AddOptionsForOperation(*layout, operationId);
+		layout->addStretch(1);
+		scrollArea->setWidget(content);
+		return scrollArea;
+	}
+
+	QWidget* LauncherMainWindow::CreateOutputPanel()
+	{
+		const LauncherOutputPanelWidgets widgets = CreateLauncherOutputPanel(
+		    this,
+		    m_icons.Icon(LauncherIcon::Copy, QColor(kColorStateQueued)),
+		    QSize(kLauncherIconSize, kLauncherIconSize),
+		    [this](QWidget* widget) { RegisterFocusable(widget); },
+		    [this]() { ToggleActivityLogPanel(); },
+		    [this]() { CopySelectedRunOutput(); },
+		    [this](QListWidgetItem* current, QListWidgetItem* previous) { DisplaySelectedRunOutput(current, previous); });
+
+		if (widgets.Root != nullptr)
+		{
+			widgets.Root->setObjectName("ActivityBottomPanel");
+			widgets.Root->setMinimumHeight(kActivityPanelCollapsedHeight);
+			widgets.Root->setMaximumHeight(kActivityPanelCollapsedHeight);
+		}
+		m_activityPanel = widgets.Root;
+		m_activityDetailsPanel = widgets.ActivityDetailsPanel;
+		m_activityHeaderSummary = widgets.ActivityHeaderSummary;
+		m_activityList = widgets.ActivityList;
+		m_selectedRunSummary = widgets.SelectedRunSummary;
+		m_operationOutput = widgets.OperationOutput;
+		m_toggleOutputButton = widgets.ToggleOutputButton;
+		m_copyOutputButton = widgets.CopyOutputButton;
+		m_progressLabel = widgets.ProgressLabel;
+		if (m_operationOutput != nullptr)
+		{
+			m_operationOutput->setMinimumHeight(kOperationOutputMinHeight);
+			m_operationOutput->setMaximumHeight(kOperationOutputMaxHeight);
+		}
+		SetActivityLogExpanded(false);
+		return widgets.Root;
+	}
+
+	QLabel* LauncherMainWindow::CreateSectionLabel(const QString& title) const
+	{
+		QLabel* label = new QLabel(title);
+		label->setObjectName("SectionLabel");
+		label->setAccessibleName(title);
+		return label;
+	}
+
+	QLabel* LauncherMainWindow::CreateFieldLabel(const QString& title) const
+	{
+		QLabel* label = new QLabel(title);
+		label->setObjectName("FieldLabel");
+		label->setAccessibleName(title);
+		return label;
+	}
+
+	QCheckBox* LauncherMainWindow::CreateBoundCheckBox(const QString& label, const QString& tooltip, bool checked, void (LauncherSettings::*setter)(bool))
+	{
+		QCheckBox* box = new QCheckBox(label, this);
+		box->setToolTip(tooltip);
+		box->setAccessibleName(label);
+		box->setAccessibleDescription(tooltip);
+		box->setChecked(checked);
+		RegisterFocusable(box);
+		connect(box, &QCheckBox::toggled, &m_settings, setter);
+		return box;
+	}
+
+	QLineEdit* LauncherMainWindow::CreateBoundLineEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	{
+		QLineEdit* edit = new QLineEdit(this);
+		edit->setText(text);
+		edit->setPlaceholderText(placeholder);
+		edit->setToolTip(tooltip);
+		edit->setAccessibleDescription(tooltip);
+		RegisterFocusable(edit);
+		connect(edit, &QLineEdit::textChanged, &m_settings, setter);
+		return edit;
+	}
+
+	QTextEdit* LauncherMainWindow::CreateBoundTextEdit(const QString& text, const QString& placeholder, const QString& tooltip, void (LauncherSettings::*setter)(const QString&))
+	{
+		QTextEdit* edit = new QTextEdit(this);
+		edit->setPlainText(text);
+		edit->setPlaceholderText(placeholder);
+		edit->setToolTip(tooltip);
+		edit->setAccessibleDescription(tooltip);
+		edit->setMinimumHeight(LauncherUi::TextEdit::MinHeight);
+		edit->setMaximumHeight(LauncherUi::TextEdit::MaxHeight);
+		RegisterFocusable(edit);
+		connect(edit, &QTextEdit::textChanged, this, [edit, setter, this]() {
+			(m_settings.*setter)(edit->toPlainText());
+		});
+		return edit;
+	}
+
+	QComboBox* LauncherMainWindow::CreateProfileCombo(const QStringList& profiles, const QString& currentProfile, void (LauncherSettings::*setter)(const QString&))
+	{
+		QComboBox* combo = new QComboBox(this);
+		combo->addItems(profiles);
+		combo->setAccessibleName("Profile");
+		combo->setAccessibleDescription("Build profile used by this workflow.");
+		combo->setCurrentText(currentProfile);
+		RegisterFocusable(combo);
+		connect(combo, &QComboBox::currentTextChanged, &m_settings, setter);
+		return combo;
+	}
+
+	QComboBox* LauncherMainWindow::CreateProjectCombo()
+	{
+		QComboBox* combo = new QComboBox(this);
+		combo->setObjectName("ProjectCombo");
+		combo->setProperty("ProjectSelector", true);
+		combo->setToolTip("Project used by this workflow.");
+		combo->setAccessibleName("Project");
+		combo->setAccessibleDescription("Project used by this workflow.");
+		RegisterFocusable(combo);
+		m_projectSelectors.push_back(combo);
+		connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [combo, this]() {
+			const QString projectId = combo->currentData().toString();
+			if (!projectId.isEmpty())
+			{
+				m_projectModel.SelectProject(projectId);
+			}
+		});
+		PopulateProjectCombo(*combo);
+		return combo;
+	}
+
+	QComboBox* LauncherMainWindow::CreateValueCombo(const QVector<QPair<QString, QString>>& options, const QString& currentValue, void (LauncherSettings::*setter)(const QString&))
+	{
+		QComboBox* combo = new QComboBox(this);
+		combo->setAccessibleName("Option value");
+		RegisterFocusable(combo);
+		for (const QPair<QString, QString>& option : options)
+		{
+			combo->addItem(option.first, option.second);
+		}
+		const int currentIndex = combo->findData(currentValue);
+		combo->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
+		connect(combo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [combo, setter, this]() {
+			(m_settings.*setter)(combo->currentData().toString());
+		});
+		return combo;
+	}
+
+}

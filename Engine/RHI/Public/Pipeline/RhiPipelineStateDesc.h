@@ -139,7 +139,7 @@ struct GraphicsPipelineStateDesc
 	RhiShaderStageDesc PixelShader = {};
 	bool RenderWireframe = false;
 	ERhiCullMode CullMode = ERhiCullMode::Back;
-	ERhiFrontFaceWinding FrontFaceWinding = ERhiFrontFaceWinding::CounterClockwise;
+	ERhiFrontFaceWinding FrontFaceWinding = ERhiFrontFaceWinding::Clockwise;
 	RhiDepthTestDesc DepthTest = {};
 	RhiStencilTestDesc StencilTest = {};
 	std::array<PixelFormat, 8> RenderTargetFormats = {};

@@ -5,6 +5,13 @@
 #include <QtCore/QString>
 #include <QtWidgets/QWidget>
 
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace SparkleLauncher
 {
 	namespace
@@ -208,5 +215,44 @@ namespace SparkleLauncher
 		addRule("#OperationOutput", "background: transparent; border: none; border-radius: 0; padding: 2px 0 0 0; font-family: 'Cascadia Mono'; font-size: 8.25pt;");
 
 		rootWidget.setStyleSheet(style);
+	}
+
+	void ApplyNativeDarkTitleBar(QWidget& window)
+	{
+#ifdef Q_OS_WIN
+		using DwmSetWindowAttributeFn = HRESULT(WINAPI*)(HWND, DWORD, LPCVOID, DWORD);
+		HMODULE dwmapi = LoadLibraryW(L"dwmapi.dll");
+		if (dwmapi == nullptr)
+		{
+			return;
+		}
+
+		auto setWindowAttribute = reinterpret_cast<DwmSetWindowAttributeFn>(GetProcAddress(dwmapi, "DwmSetWindowAttribute"));
+		if (setWindowAttribute == nullptr)
+		{
+			FreeLibrary(dwmapi);
+			return;
+		}
+
+		HWND hwnd = reinterpret_cast<HWND>(window.winId());
+		BOOL darkMode = TRUE;
+		constexpr DWORD kDwmUseImmersiveDarkMode = 20;
+		constexpr DWORD kDwmUseImmersiveDarkModeLegacy = 19;
+		HRESULT result = setWindowAttribute(hwnd, kDwmUseImmersiveDarkMode, &darkMode, sizeof(darkMode));
+		if (FAILED(result))
+		{
+			setWindowAttribute(hwnd, kDwmUseImmersiveDarkModeLegacy, &darkMode, sizeof(darkMode));
+		}
+
+		constexpr DWORD kDwmCaptionColor = 35;
+		constexpr DWORD kDwmTextColor = 36;
+		const COLORREF captionColor = RGB(17, 19, 18);
+		const COLORREF textColor = RGB(242, 244, 241);
+		setWindowAttribute(hwnd, kDwmCaptionColor, &captionColor, sizeof(captionColor));
+		setWindowAttribute(hwnd, kDwmTextColor, &textColor, sizeof(textColor));
+		FreeLibrary(dwmapi);
+#else
+		Q_UNUSED(window);
+#endif
 	}
 }

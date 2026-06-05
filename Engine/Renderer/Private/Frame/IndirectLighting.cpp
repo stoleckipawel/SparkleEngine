@@ -6,10 +6,10 @@
 #include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/IndirectLightingPass.h"
 
-void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting)
+void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
 {
 	auto& parameters = builder.AllocPassParameters<IndirectLightingPass>();
-	IndirectLightingPass::DeclareResources(builder, lighting, parameters);
+	IndirectLightingPass::DeclareResources(builder, lighting, gbuffer, parameters);
 	builder.AddComputePass<IndirectLightingPass>(
 	    IndirectLightingPass::PassName,
 	    parameters,

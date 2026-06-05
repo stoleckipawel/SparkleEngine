@@ -257,7 +257,8 @@ void GBufferPass::DrawOpaqueMeshes(
 		    batchRuntime,
 		    drawParameters.GetPassParameterSet(),
 		    &overrides,
-		    PassName);
+		    PassName,
+		    false);
 		if (!bound)
 		{
 			SPDLOG_LOGGER_WARN(

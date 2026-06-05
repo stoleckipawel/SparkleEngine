@@ -203,13 +203,13 @@ namespace SparkleLauncher
 
 	bool OperationUsesDependencyGroup(const QString& operationId, const DependencyGroupUiEntry& group)
 	{
-		if (operationId == "workspace.setup")
+		if (operationId == "workspace.sync-source-tiers")
 		{
 			return true;
 		}
 		if (group.Id == "core-workspace")
 		{
-			return operationId == "workspace.generate-solution" || operationId == "workspace.open-solution" || operationId == "workspace.build-all" ||
+			return operationId == "workspace.generate-build-files" || operationId == "workspace.open-ide" || operationId == "workspace.build-all" ||
 			    operationId == "launcher.build.self" || operationId.startsWith("project.build") || operationId.startsWith("cook.");
 		}
 		if (group.Id == "content-pipeline")
@@ -224,7 +224,7 @@ namespace SparkleLauncher
 		}
 		if (group.Id == "ktx-support")
 		{
-			return operationId == "workspace.setup" || operationId == "cook.textures" || operationId == "cook.project";
+			return operationId == "workspace.sync-source-tiers" || operationId == "cook.textures" || operationId == "cook.project";
 		}
 		return false;
 	}

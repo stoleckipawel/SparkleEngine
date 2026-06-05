@@ -4,4 +4,4 @@
 
 class FrameGraphBuilder;
 
-void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting);
+void AddIndirectLightingPass(FrameGraphBuilder& builder, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer);

@@ -21,7 +21,8 @@ class PassBinder final
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
-	    const PassBindingOverrides* overrides = nullptr);
+	    const PassBindingOverrides* overrides = nullptr,
+	    bool bindLayout = true);
 
 	static void BindCompute(
 	    RenderCommandContext& cmd,
@@ -30,7 +31,8 @@ class PassBinder final
 	    const RenderBindingLayout& layout,
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames = {},
-	    const PassBindingOverrides* overrides = nullptr);
+	    const PassBindingOverrides* overrides = nullptr,
+	    bool bindLayout = true);
 
   private:
 	static void BindImpl(
@@ -41,6 +43,7 @@ class PassBinder final
 	    const PassParameterSet& parameterSet,
 	    std::span<const char* const> bindingNames,
 	    const PassBindingOverrides* overrides,
+	    bool bindLayout,
 	    bool isCompute);
 	static void BindCompiledBinding(
 	    RenderCommandContext& cmd,
