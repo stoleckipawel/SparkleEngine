@@ -28,6 +28,17 @@ namespace SparkleLauncher
 			return LauncherUi::Color::Hex(LauncherUi::Color::Accent, alpha);
 		}
 
+		QColor NeutralShade(int alpha)
+		{
+			return QColor(0, 0, 0, alpha);
+		}
+
+		QColor SurfaceShade(int alpha)
+		{
+			const QColor surface = SurfaceColor();
+			return QColor(surface.red(), surface.green(), surface.blue(), alpha);
+		}
+
 		QRectF ResolveArea(const QRectF& targetRect, const QRectF& normalizedArea)
 		{
 			return QRectF(
@@ -102,40 +113,35 @@ namespace SparkleLauncher
 			spec.AccentLineColor = AccentColor(210);
 			spec.AccentLineWidth = 2.0;
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, HeroColor(72)},
-			    {0.74, HeroColor(34)},
-			    {1.00, HeroColor(0)},
+			    {0.00, NeutralShade(132)},
+			    {0.52, NeutralShade(72)},
+			    {1.00, NeutralShade(0)},
 			}, QRectF(0.0, 0.0, spec.AccentLineX, 1.0));
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, HeroColor(0)},
-			    {1.00, HeroColor(132)},
+			    {0.00, NeutralShade(0)},
+			    {1.00, NeutralShade(84)},
 			}, QRectF(0.80, 0.0, 0.20, 1.0));
 			AddLayer(spec.TopLayers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, QColor(SurfaceColor().red(), SurfaceColor().green(), SurfaceColor().blue(), 0)},
-			    {0.50, QColor(SurfaceColor().red(), SurfaceColor().green(), SurfaceColor().blue(), 0)},
-			    {0.70, QColor(SurfaceColor().red(), SurfaceColor().green(), SurfaceColor().blue(), 50)},
-			    {0.86, QColor(SurfaceColor().red(), SurfaceColor().green(), SurfaceColor().blue(), 172)},
-			    {1.00, QColor(SurfaceColor().red(), SurfaceColor().green(), SurfaceColor().blue(), 255)},
+			    {0.00, SurfaceShade(0)},
+			    {0.50, SurfaceShade(0)},
+			    {0.70, SurfaceShade(50)},
+			    {0.86, SurfaceShade(172)},
+			    {1.00, SurfaceShade(255)},
 			});
 			break;
 
 		case LauncherArtworkPreset::WorkflowBanner:
 			spec.AspectRatio = 2.4;
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, HeroColor(218)},
-			    {0.32, HeroColor(142)},
-			    {0.72, HeroColor(74)},
-			    {1.00, HeroColor(28)},
+			    {0.00, NeutralShade(172)},
+			    {0.30, NeutralShade(96)},
+			    {0.74, NeutralShade(44)},
+			    {1.00, NeutralShade(14)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, HeroColor(26)},
-			    {0.60, HeroColor(10)},
-			    {1.00, HeroColor(162)},
-			});
-			AddLayer(spec.Layers, LauncherArtworkGradientAxis::DiagonalDown, {
-			    {0.00, AccentColor(10)},
-			    {0.48, AccentColor(20)},
-			    {1.00, AccentColor(0)},
+			    {0.00, NeutralShade(10)},
+			    {0.58, NeutralShade(0)},
+			    {1.00, NeutralShade(150)},
 			});
 			break;
 
@@ -143,21 +149,16 @@ namespace SparkleLauncher
 			spec.AspectRatio = static_cast<double>(LauncherUi::Card::ProductArtworkSize().width()) /
 			                   static_cast<double>(LauncherUi::Card::ProductArtworkSize().height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, HeroColor(210)},
-			    {0.28, HeroColor(126)},
-			    {0.72, HeroColor(88)},
-			    {0.90, HeroColor(24)},
-			    {1.00, HeroColor(18)},
+			    {0.00, NeutralShade(158)},
+			    {0.30, NeutralShade(88)},
+			    {0.72, NeutralShade(42)},
+			    {0.92, NeutralShade(14)},
+			    {1.00, NeutralShade(6)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, HeroColor(26)},
-			    {0.58, HeroColor(8)},
-			    {1.00, HeroColor(172)},
-			});
-			AddLayer(spec.Layers, LauncherArtworkGradientAxis::DiagonalDown, {
-			    {0.00, AccentColor(8)},
-			    {0.50, AccentColor(20)},
-			    {1.00, AccentColor(0)},
+			    {0.00, NeutralShade(8)},
+			    {0.56, NeutralShade(0)},
+			    {1.00, NeutralShade(164)},
 			});
 			break;
 
@@ -165,20 +166,15 @@ namespace SparkleLauncher
 			spec.AspectRatio = static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().width()) /
 			                   static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, HeroColor(196)},
-			    {0.36, HeroColor(110)},
-			    {0.78, HeroColor(62)},
-			    {1.00, HeroColor(22)},
+			    {0.00, NeutralShade(142)},
+			    {0.38, NeutralShade(74)},
+			    {0.80, NeutralShade(30)},
+			    {1.00, NeutralShade(8)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, HeroColor(18)},
-			    {0.58, HeroColor(8)},
-			    {1.00, HeroColor(146)},
-			});
-			AddLayer(spec.Layers, LauncherArtworkGradientAxis::DiagonalDown, {
-			    {0.00, AccentColor(6)},
-			    {0.52, AccentColor(18)},
-			    {1.00, AccentColor(0)},
+			    {0.00, NeutralShade(6)},
+			    {0.58, NeutralShade(0)},
+			    {1.00, NeutralShade(138)},
 			});
 			break;
 		}
