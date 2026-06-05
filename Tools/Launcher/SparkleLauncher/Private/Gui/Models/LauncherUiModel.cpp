@@ -53,7 +53,7 @@ namespace SparkleLauncher
 			    {},
 			    "Explore Project",
 			    "Choose Editor or Runtime below. Products use the Launch Project settings, including startup level, and launch from local source artifacts when available.",
-			    "showcase-editor.png");
+			    "showcase-hero.png");
 		}
 		if (operationId == "project.open.editor")
 		{
@@ -66,7 +66,7 @@ namespace SparkleLauncher
 			    "Product shortcut: opens the selected editor directly from Quick Start when ready.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from the Launch Project page.",
-			    "showcase-editor.png");
+			    "showcase-editor-workflow.png");
 		}
 		if (operationId == "project.open.runtime")
 		{
@@ -92,7 +92,7 @@ namespace SparkleLauncher
 			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and argument options.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
-			    "showcase-editor.png");
+			    "showcase-editor-workflow.png");
 		}
 		if (operationId == "workspace.open-ide")
 		{
@@ -183,7 +183,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled editor binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "showcase-editor.png");
+			    "showcase-editor-workflow.png");
 		}
 		if (operationId == "project.build.runtime")
 		{

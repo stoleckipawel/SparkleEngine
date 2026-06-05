@@ -8,6 +8,7 @@ Asset slots:
 
 - `showcase-hero.png`: Home hero artwork.
 - `showcase-editor.png`: Editor product library card.
+- `showcase-editor-workflow.png`: Editor-focused workflow banner artwork.
 - `showcase-runtime.png`: Runtime product library card.
 - `showcase-content.png`: Cooked content / scene asset tile.
 - `sparkle-architecture.png`: Architecture evidence tile.

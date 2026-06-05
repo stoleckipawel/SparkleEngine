@@ -133,15 +133,15 @@ namespace SparkleLauncher
 		case LauncherArtworkPreset::WorkflowBanner:
 			spec.AspectRatio = 2.4;
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, NeutralShade(172)},
-			    {0.30, NeutralShade(96)},
-			    {0.74, NeutralShade(44)},
-			    {1.00, NeutralShade(14)},
+			    {0.00, NeutralShade(64)},
+			    {0.30, NeutralShade(28)},
+			    {0.74, NeutralShade(8)},
+			    {1.00, NeutralShade(0)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, NeutralShade(10)},
+			    {0.00, NeutralShade(0)},
 			    {0.58, NeutralShade(0)},
-			    {1.00, NeutralShade(150)},
+			    {1.00, NeutralShade(56)},
 			});
 			break;
 
@@ -149,16 +149,16 @@ namespace SparkleLauncher
 			spec.AspectRatio = static_cast<double>(LauncherUi::Card::ProductArtworkSize().width()) /
 			                   static_cast<double>(LauncherUi::Card::ProductArtworkSize().height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, NeutralShade(158)},
-			    {0.30, NeutralShade(88)},
-			    {0.72, NeutralShade(42)},
-			    {0.92, NeutralShade(14)},
-			    {1.00, NeutralShade(6)},
+			    {0.00, NeutralShade(72)},
+			    {0.30, NeutralShade(34)},
+			    {0.72, NeutralShade(12)},
+			    {0.92, NeutralShade(2)},
+			    {1.00, NeutralShade(0)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, NeutralShade(8)},
+			    {0.00, NeutralShade(0)},
 			    {0.56, NeutralShade(0)},
-			    {1.00, NeutralShade(164)},
+			    {1.00, NeutralShade(72)},
 			});
 			break;
 
@@ -166,15 +166,15 @@ namespace SparkleLauncher
 			spec.AspectRatio = static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().width()) /
 			                   static_cast<double>(LauncherUi::Card::DiscoverArtworkSize().height());
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Horizontal, {
-			    {0.00, NeutralShade(142)},
-			    {0.38, NeutralShade(74)},
-			    {0.80, NeutralShade(30)},
-			    {1.00, NeutralShade(8)},
+			    {0.00, NeutralShade(96)},
+			    {0.38, NeutralShade(46)},
+			    {0.80, NeutralShade(18)},
+			    {1.00, NeutralShade(4)},
 			});
 			AddLayer(spec.Layers, LauncherArtworkGradientAxis::Vertical, {
-			    {0.00, NeutralShade(6)},
+			    {0.00, NeutralShade(2)},
 			    {0.58, NeutralShade(0)},
-			    {1.00, NeutralShade(138)},
+			    {1.00, NeutralShade(92)},
 			});
 			break;
 		}
