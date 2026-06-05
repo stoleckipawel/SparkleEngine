@@ -35,6 +35,7 @@ namespace SparkleLauncher
 			model.PrimaryVerb = "Run";
 			model.VisualTitle = "Workflow";
 			model.VisualText = "Context artwork is informational; the primary action remains in the workflow controls below.";
+			model.VisualAssetName = "sparkle-tools.png";
 			return model;
 		}
 	}
@@ -143,7 +144,7 @@ namespace SparkleLauncher
 			    "Build files: refreshes generated CMake and IDE build-system state without building products.",
 			    "Workspace files",
 			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
-			    "sparkle-tools.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId == "workspace.build-all")
 		{
@@ -156,7 +157,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId == "launcher.build.self")
 		{
@@ -169,7 +170,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that refreshes the launcher artifact for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId == "project.build.editor")
 		{
@@ -182,7 +183,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled editor binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "showcase-editor.png");
 		}
 		if (operationId == "project.build.runtime")
 		{
@@ -195,7 +196,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled runtime binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "showcase-runtime.png");
 		}
 		if (operationId == "cook.tools.prepare")
 		{
@@ -234,7 +235,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated shader content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "showcase-content.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId == "cook.textures")
 		{
@@ -260,7 +261,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated scene content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "showcase-content.png");
+			    "sparkle-source-tiers.png");
 		}
 		if (operationId == "project.run.smoke")
 		{
@@ -286,7 +287,7 @@ namespace SparkleLauncher
 			    "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.",
 			    "Code quality",
 			    "Applies source formatting while leaving build artifacts and cooked content alone.",
-			    "sparkle-validation.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId == "package.release")
 		{
@@ -312,7 +313,7 @@ namespace SparkleLauncher
 			    "Maintain: removes selected generated outputs, caches, logs, or local workspace state after confirmation.",
 			    "Generated files",
 			    "Shows what generated state will be removed and what will stay before destructive cleanup.",
-			    "sparkle-architecture.png");
+			    "sparkle-validation.png");
 		}
 
 		if (operationId.startsWith("project.build."))
@@ -326,7 +327,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "sparkle-architecture.png");
 		}
 		if (operationId.startsWith("cook."))
 		{

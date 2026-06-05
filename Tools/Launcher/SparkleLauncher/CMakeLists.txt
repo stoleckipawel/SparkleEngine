@@ -221,6 +221,13 @@ set_target_properties(SparkleLauncher PROPERTIES
 sparkle_configure_launcher_artifacts(SparkleLauncher)
 sparkle_declare_runtime_dll_owner(SparkleLauncher SparkleCore)
 
+add_custom_command(TARGET SparkleLauncher POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Assets/Visuals"
+        "$<TARGET_FILE_DIR:SparkleLauncher>/Visuals"
+    COMMENT "Deploying SparkleLauncher visual artwork"
+)
+
 if(WIN32)
     get_target_property(SPARKLE_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
     get_filename_component(SPARKLE_QT_BIN_DIR "${SPARKLE_QMAKE_EXECUTABLE}" DIRECTORY)

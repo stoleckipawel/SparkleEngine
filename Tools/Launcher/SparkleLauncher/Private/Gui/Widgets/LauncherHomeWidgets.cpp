@@ -5,6 +5,7 @@
 
 #include "SparkleLauncher/LauncherPaths.h"
 
+#include <QtCore/QCoreApplication>
 #include <QtCore/Qt>
 #include <QtGui/QPixmap>
 #include <QtWidgets/QAbstractButton>
@@ -32,8 +33,11 @@ namespace SparkleLauncher
 		}
 
 		const std::string assetName = fileName.toStdString();
-		const std::array<std::filesystem::path, 4> candidates = {
+		const std::filesystem::path applicationVisualPath =
+		    std::filesystem::path(QCoreApplication::applicationDirPath().toStdString()) / "Visuals" / assetName;
+		const std::array<std::filesystem::path, 5> candidates = {
 		    repositoryRoot / "Tools" / "Launcher" / "SparkleLauncher" / "Assets" / "Visuals" / assetName,
+		    applicationVisualPath,
 		    GetArtifactDirectory(repositoryRoot) / "dev" / "launcher" / "Visuals" / assetName,
 		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" / assetName,
 		    GetArtifactDirectory(repositoryRoot) / "diagnostics" / "launcher-visual-assets" / (std::filesystem::path(assetName).stem().string() + ".png")};
