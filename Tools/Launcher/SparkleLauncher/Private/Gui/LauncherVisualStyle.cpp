@@ -88,6 +88,7 @@ namespace SparkleLauncher
 		addRule("#CommandCapabilityCard", "background: " + panel + "; border: 1px solid " + divider + "; border-radius: 4px;");
 		addRule("#CommandCapabilityCard[TileRole=\"library\"]", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252925, stop:0.62 #1e211f, stop:1 #161816); border: 1px solid #384033; border-left: 3px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[TileRole=\"discover\"]", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #20231f, stop:0.62 #191c19, stop:1 #121512); border: 1px solid #30372b; border-left: 3px solid #b37726;");
+		addRule("#CommandCapabilityCard[TileRole=\"discover\"][Interactive=\"true\"]:hover", "background: qlineargradient(x1:0,y1:0,x2:1,y2:1, stop:0 #252a22, stop:0.62 #1b2019, stop:1 #121512); border-color: #4b573f;");
 		addRule("#CommandCapabilityCard[State=\"ok\"]", "border-left: 4px solid " + accent + ";");
 		addRule("#CommandCapabilityCard[State=\"warning\"]", "border-left: 4px solid #b37726;");
 		addRule("#CommandCardArtwork", "background: #070807; border: 1px solid #30372b; border-radius: 3px;");

@@ -17,6 +17,7 @@
 
 #include <QtCore/QSignalBlocker>
 #include <QtCore/QCoreApplication>
+#include <QtCore/QPointer>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
 #include <QtCore/QStringList>
@@ -31,14 +32,17 @@
 #include <QtGui/QFontDatabase>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QImage>
+#include <QtGui/QKeyEvent>
 #include <QtGui/QKeySequence>
 #include <QtGui/QLinearGradient>
+#include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
 #include <QtGui/QPen>
 #include <QtGui/QPixmap>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextDocument>
+#include <QtWidgets/QAbstractButton>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QMessageBox>
@@ -309,6 +313,19 @@ namespace SparkleLauncher
 			setSizePolicy(policy);
 		}
 
+		void SetActivationButton(QAbstractButton* button)
+		{
+			m_activationButton = button;
+			const bool interactive = m_activationButton != nullptr;
+			setCursor(interactive ? Qt::PointingHandCursor : Qt::ArrowCursor);
+			setFocusPolicy(interactive ? Qt::StrongFocus : Qt::NoFocus);
+			setProperty("Interactive", interactive ? "true" : "false");
+			if (m_activationButton != nullptr)
+			{
+				m_activationButton->setFocusPolicy(Qt::NoFocus);
+			}
+		}
+
 		bool hasHeightForWidth() const override
 		{
 			return true;
@@ -319,7 +336,33 @@ namespace SparkleLauncher
 			return std::max(1, static_cast<int>(std::round(static_cast<double>(std::max(1, width)) / m_aspectRatio)));
 		}
 
+	protected:
+		void mouseReleaseEvent(QMouseEvent* event) override
+		{
+			if (m_activationButton != nullptr && event != nullptr && event->button() == Qt::LeftButton && rect().contains(event->pos()))
+			{
+				m_activationButton->click();
+				event->accept();
+				return;
+			}
+
+			QFrame::mouseReleaseEvent(event);
+		}
+
+		void keyPressEvent(QKeyEvent* event) override
+		{
+			if (m_activationButton != nullptr && event != nullptr && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter || event->key() == Qt::Key_Space))
+			{
+				m_activationButton->click();
+				event->accept();
+				return;
+			}
+
+			QFrame::keyPressEvent(event);
+		}
+
 	private:
+		QPointer<QAbstractButton> m_activationButton;
 		double m_aspectRatio = 16.0 / 9.0;
 	};
 
@@ -3122,7 +3165,7 @@ namespace SparkleLauncher
 	    const QString& artworkFileName)
 	{
 		static constexpr double kHomeTileAspectRatio = 1.64;
-		QFrame* card = new ProportionalCardFrame(kHomeTileAspectRatio, this);
+		ProportionalCardFrame* card = new ProportionalCardFrame(kHomeTileAspectRatio, this);
 		card->setObjectName("CommandCapabilityCard");
 		card->setProperty("State", state);
 		card->setProperty("TileRole", tileRole);
@@ -3153,10 +3196,15 @@ namespace SparkleLauncher
 			QWidget* body = new QWidget(card);
 			body->setObjectName("CommandCardBody");
 			QVBoxLayout* bodyLayout = new QVBoxLayout(body);
-			bodyLayout->setContentsMargins(18, 14, 18, 0);
-			bodyLayout->setSpacing(12);
+			bodyLayout->setContentsMargins(18, isDiscoverCard ? 0 : 14, 18, isDiscoverCard ? 12 : 0);
+			bodyLayout->setSpacing(isDiscoverCard ? 6 : 12);
 			layout->addWidget(body, 1);
 			contentLayout = bodyLayout;
+		}
+
+		if (isDiscoverCard)
+		{
+			contentLayout->addStretch(1);
 		}
 
 		QHBoxLayout* titleRow = new QHBoxLayout();
@@ -3165,11 +3213,32 @@ namespace SparkleLauncher
 		QLabel* titleLabel = new QLabel(title, card);
 		titleLabel->setObjectName("CommandCardTitle");
 		titleRow->addWidget(titleLabel, 1);
-		QLabel* statusLabel = new QLabel(status, card);
-		statusLabel->setObjectName("CommandCardChip");
-		statusLabel->setProperty("State", state);
-		titleRow->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
+		if (!isDiscoverCard)
+		{
+			QLabel* statusLabel = new QLabel(status, card);
+			statusLabel->setObjectName("CommandCardChip");
+			statusLabel->setProperty("State", state);
+			titleRow->addWidget(statusLabel, 0, Qt::AlignRight | Qt::AlignTop);
+		}
 		contentLayout->addLayout(titleRow);
+
+		if (isDiscoverCard)
+		{
+			card->setToolTip(QString("%1 - %2").arg(status, detail));
+			card->setAccessibleName(title);
+			card->setAccessibleDescription(QString("%1. %2").arg(status, detail));
+			if (QAbstractButton* activationButton = qobject_cast<QAbstractButton*>(action))
+			{
+				activationButton->setParent(card);
+				activationButton->hide();
+				card->SetActivationButton(activationButton);
+			}
+			else if (action != nullptr)
+			{
+				action->deleteLater();
+			}
+			return card;
+		}
 
 		QLabel* detailLabel = new QLabel(detail, card);
 		detailLabel->setObjectName("CommandCardText");
