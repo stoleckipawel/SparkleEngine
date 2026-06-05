@@ -35,7 +35,7 @@ namespace SparkleLauncher
 			model.PrimaryVerb = "Run";
 			model.VisualTitle = "Workflow";
 			model.VisualText = "Context artwork is informational; the primary action remains in the workflow controls below.";
-			model.VisualAssetName = "sparkle-tools.png";
+			model.VisualAssetName = "workflow-fallback-tools.png";
 			return model;
 		}
 	}
@@ -53,7 +53,7 @@ namespace SparkleLauncher
 			    {},
 			    "Explore Project",
 			    "Choose Editor or Runtime below. Products use the Launch Project settings, including startup level, and launch from local source artifacts when available.",
-			    "showcase-hero.png");
+			    "workflow-home-quickstart.png");
 		}
 		if (operationId == "project.open.editor")
 		{
@@ -66,7 +66,7 @@ namespace SparkleLauncher
 			    "Product shortcut: opens the selected editor directly from Quick Start when ready.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from the Launch Project page.",
-			    "showcase-editor-workflow.png");
+			    "workflow-editor-open.png");
 		}
 		if (operationId == "project.open.runtime")
 		{
@@ -79,7 +79,7 @@ namespace SparkleLauncher
 			    "Product shortcut: opens the selected runtime directly from Quick Start when ready.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from the Launch Project page.",
-			    "showcase-runtime.png");
+			    "workflow-runtime-open.png");
 		}
 		if (operationId == "project.run")
 		{
@@ -92,7 +92,7 @@ namespace SparkleLauncher
 			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and argument options.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
-			    "showcase-editor-workflow.png");
+			    "workflow-project-run.png");
 		}
 		if (operationId == "workspace.open-ide")
 		{
@@ -105,7 +105,7 @@ namespace SparkleLauncher
 			    "Navigation only: opens the selected IDE once generated project files are current.",
 			    "Workspace files",
 			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
-			    "sparkle-tools.png");
+			    "workflow-open-ide.png");
 		}
 		if (operationId == "toolchain.check")
 		{
@@ -118,7 +118,7 @@ namespace SparkleLauncher
 			    "Diagnostics only: audits installed host prerequisites and does not modify workspace dependencies or outputs.",
 			    "Host readiness",
 			    "Checks installed tools without changing source dependencies, artifacts, or cooked outputs.",
-			    "sparkle-source-tiers.png");
+			    "workflow-toolchain-check.png");
 		}
 		if (operationId == "workspace.sync-source-tiers")
 		{
@@ -131,7 +131,7 @@ namespace SparkleLauncher
 			    "Source tiers: populates enabled workspace source tiers and configure state; it does not install host tools.",
 			    "Source tiers",
 			    "Sync only the capability tiers you need; optional tiers unlock build and cook paths without becoming first-run blockers.",
-			    "sparkle-source-tiers.png");
+			    "workflow-source-sync.png");
 		}
 		if (operationId == "workspace.generate-build-files")
 		{
@@ -144,7 +144,7 @@ namespace SparkleLauncher
 			    "Build files: refreshes generated CMake and IDE build-system state without building products.",
 			    "Workspace files",
 			    "Refreshes project files for the selected toolchain and opens the IDE when the workspace is current.",
-			    "sparkle-architecture.png");
+			    "workflow-generate-build-files.png");
 		}
 		if (operationId == "workspace.build-all")
 		{
@@ -157,7 +157,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-architecture.png");
+			    "workflow-build-all.png");
 		}
 		if (operationId == "launcher.build.self")
 		{
@@ -170,7 +170,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that refreshes the launcher artifact for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-architecture.png");
+			    "workflow-launcher-build.png");
 		}
 		if (operationId == "project.build.editor")
 		{
@@ -183,7 +183,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled editor binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "showcase-editor-workflow.png");
+			    "workflow-editor-build.png");
 		}
 		if (operationId == "project.build.runtime")
 		{
@@ -196,7 +196,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled runtime binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "showcase-runtime.png");
+			    "workflow-runtime-build.png");
 		}
 		if (operationId == "cook.tools.prepare")
 		{
@@ -209,7 +209,7 @@ namespace SparkleLauncher
 			    "Build outputs: prepares local cook tools for optional content refresh workflows.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-tools.png");
+			    "workflow-cook-tools.png");
 		}
 		if (operationId == "cook.project")
 		{
@@ -222,7 +222,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes all generated project content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "showcase-content.png");
+			    "workflow-cook-all.png");
 		}
 		if (operationId == "cook.shaders")
 		{
@@ -235,7 +235,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated shader content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "sparkle-architecture.png");
+			    "workflow-cook-shaders.png");
 		}
 		if (operationId == "cook.textures")
 		{
@@ -248,7 +248,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated texture content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "showcase-content.png");
+			    "workflow-cook-textures.png");
 		}
 		if (operationId == "cook.assets")
 		{
@@ -261,7 +261,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated scene content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "sparkle-source-tiers.png");
+			    "workflow-cook-assets.png");
 		}
 		if (operationId == "project.run.smoke")
 		{
@@ -274,7 +274,7 @@ namespace SparkleLauncher
 			    "Test workflow: runs the selected target with smoke validation enabled.",
 			    "Validation run",
 			    "Runs a focused confidence check using the same launch parameters as the product path.",
-			    "sparkle-validation.png");
+			    "workflow-smoke-test.png");
 		}
 		if (operationId == "quality.format")
 		{
@@ -287,7 +287,7 @@ namespace SparkleLauncher
 			    "Quality gate: checks or applies clang-format for source files; it does not build, cook, or sync dependencies.",
 			    "Code quality",
 			    "Applies source formatting while leaving build artifacts and cooked content alone.",
-			    "sparkle-architecture.png");
+			    "workflow-format-check.png");
 		}
 		if (operationId == "package.release")
 		{
@@ -300,7 +300,7 @@ namespace SparkleLauncher
 			    "Package outputs: assembles runtime and symbols packages from artifacts into dist/releases/<version>; publishing and release sign-off stay separate.",
 			    "Release assembly",
 			    "Stages reviewable release packages from artifacts and manifests; publishing remains a separate sign-off.",
-			    "sparkle-package.png");
+			    "workflow-package-release.png");
 		}
 		if (operationId == "workspace.clean")
 		{
@@ -313,7 +313,7 @@ namespace SparkleLauncher
 			    "Maintain: removes selected generated outputs, caches, logs, or local workspace state after confirmation.",
 			    "Generated files",
 			    "Shows what generated state will be removed and what will stay before destructive cleanup.",
-			    "sparkle-validation.png");
+			    "workflow-clean-workspace.png");
 		}
 
 		if (operationId.startsWith("project.build."))
@@ -327,7 +327,7 @@ namespace SparkleLauncher
 			    "Build outputs: optional local rebuild that can replace ready-to-use bundled binaries for development work.",
 			    "Build outputs",
 			    "Creates local artifacts that can replace packaged binaries during daily development.",
-			    "sparkle-architecture.png");
+			    "workflow-build-generic.png");
 		}
 		if (operationId.startsWith("cook."))
 		{
@@ -340,7 +340,7 @@ namespace SparkleLauncher
 			    "Cooked outputs: optional local recook that refreshes generated project content.",
 			    "Content outputs",
 			    "Refreshes cooked content for the selected project and startup level.",
-			    "showcase-content.png");
+			    "workflow-cook-generic.png");
 		}
 
 		return UnknownOperationUiModel(operationId);
