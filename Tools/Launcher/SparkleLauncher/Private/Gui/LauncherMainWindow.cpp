@@ -3232,19 +3232,6 @@ namespace SparkleLauncher
 		};
 		if (isToolchainCheck)
 		{
-			QVBoxLayout* toolchainLayout = AddDetailsGroup(
-			    layout,
-			    plan.Toolchain.RequiredToolsAvailable ? "Action Dependencies - Ready" : "Action Dependencies - Needs action",
-			    "Authoritative machine audit for local rebuilds, workspace generation, cook tooling, and IDE integration.",
-			    false);
-			AddStatusRow(*toolchainLayout, "Dependency set", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
-			AddStatusRow(
-			    *toolchainLayout,
-			    "Selected IDE",
-			    workspaceIdeName,
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : "Rider executable is available.") :
-			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : "Visual Studio workspace discovery is available."),
-			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
 			QVBoxLayout* hostDetailsLayout = AddDetailsGroup(
 			    layout,
 			    "Host Tool Details",
@@ -3271,6 +3258,19 @@ namespace SparkleLauncher
 			    workspaceIdeName,
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : QString::fromStdString(plan.Toolchain.RiderPath.string())) :
 			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : QString::fromStdString(plan.Freshness.SolutionPath.string())),
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
+			QVBoxLayout* toolchainLayout = AddDetailsGroup(
+			    layout,
+			    plan.Toolchain.RequiredToolsAvailable ? "Action Dependencies - Ready" : "Action Dependencies - Needs action",
+			    "Authoritative machine audit for local rebuilds, workspace generation, cook tooling, and IDE integration.",
+			    false);
+			AddStatusRow(*toolchainLayout, "Dependency set", plan.Toolchain.RequiredToolsAvailable ? "Ready" : "Action needed", BuildGeneratorSummary(plan.Toolchain), plan.Toolchain.RequiredToolsAvailable ? "ok" : "bad");
+			AddStatusRow(
+			    *toolchainLayout,
+			    "Selected IDE",
+			    workspaceIdeName,
+			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "Rider executable was not found." : "Rider executable is available.") :
+			                                                 (plan.Toolchain.VswherePath.empty() ? "Visual Studio discovery is not ready." : "Visual Studio workspace discovery is available."),
 			    request.PreferredIde == WorkspaceIde::Rider ? (plan.Toolchain.RiderPath.empty() ? "warning" : "ok") : (plan.Toolchain.VswherePath.empty() ? "warning" : "ok"));
 			return;
 		}
@@ -3299,6 +3299,14 @@ namespace SparkleLauncher
 			                               QString("Source dependency cache is available.") :
 			                               QString("Source dependency cache will be populated when Sync Source Tiers runs.");
 			const bool setupNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || (isSourceSyncWorkflow && !dependencyCacheReady) || !plan.Freshness.Current;
+			if (operationId == "workspace.setup")
+			{
+				AddSourceTierCards(
+				    layout,
+				    "Source Tier Workloads",
+				    "Capability cards show what each tier unlocks. Individual dependency rows stay in details so Sync Source Tiers does not become a dependency log by default.",
+				    true);
+			}
 			QVBoxLayout* workspaceLayout = AddDetailsGroup(
 			    layout,
 			    setupNeedsAttention ? setupGroupTitle + " - Needs action" : setupGroupTitle + " - Ready",
@@ -3333,20 +3341,17 @@ namespace SparkleLauncher
 				    "bad",
 				    CreateActionDependencyActions("toolchain.check", "Verify Host Environment"));
 			}
-			if (operationId == "workspace.setup")
-			{
-				AddSourceTierCards(
-				    layout,
-				    "Source Tier Workloads",
-				    "Capability cards show what each tier unlocks. Individual dependency rows stay in details so Sync Source Tiers does not become a dependency log by default.",
-				    true);
-			}
 			return;
 		}
 
 		if (isBuildWorkflow)
 		{
 			const bool buildNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current;
+			addHostDependencyStatus(
+			    layout,
+			    operationId == "launcher.build.self" ?
+			        "Even if this launcher came from a ready-to-run package, rebuilding it locally still requires Visual Studio/MSVC, a Qt 6 MSVC kit, CMake, Git, and the Windows SDK." :
+			        "Prebuilt package binaries do not remove the local host dependencies needed to rebuild this workspace.");
 			QVBoxLayout* buildLayout = AddDetailsGroup(
 			    layout,
 			    buildNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
@@ -3367,17 +3372,15 @@ namespace SparkleLauncher
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-solution", "Generate Build Files", "build-tree", "Clean Build Files"));
 			addRelevantDependencyGroups(*buildLayout);
-			addHostDependencyStatus(
-			    layout,
-			    operationId == "launcher.build.self" ?
-			        "Even if this launcher came from a ready-to-run package, rebuilding it locally still requires Visual Studio/MSVC, a Qt 6 MSVC kit, CMake, Git, and the Windows SDK." :
-			        "Prebuilt package binaries do not remove the local host dependencies needed to rebuild this workspace.");
 			return;
 		}
 
 		if (isCookWorkflow)
 		{
 			const bool cookNeedsAttention = !plan.Toolchain.RequiredToolsAvailable || !plan.Freshness.Current;
+			addHostDependencyStatus(
+			    layout,
+			    "Cook workflows may ship ready-to-use outputs, but rebuilding or recooking them locally still requires the same host build dependencies and any enabled optional dependency groups.");
 			QVBoxLayout* cookLayout = AddDetailsGroup(
 			    layout,
 			    cookNeedsAttention ? "Action Dependencies - Needs action" : "Action Dependencies - Ready",
@@ -3398,9 +3401,6 @@ namespace SparkleLauncher
 			    plan.Freshness.Current ? "ok" : "warning",
 			    CreateActionDependencyActions("workspace.generate-solution", "Generate Build Files", "build-tree", "Clean Build Files"));
 			addRelevantDependencyGroups(*cookLayout);
-			addHostDependencyStatus(
-			    layout,
-			    "Cook workflows may ship ready-to-use outputs, but rebuilding or recooking them locally still requires the same host build dependencies and any enabled optional dependency groups.");
 		}
 	}
 
