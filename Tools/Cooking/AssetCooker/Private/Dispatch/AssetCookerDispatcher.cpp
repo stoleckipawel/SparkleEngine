@@ -510,6 +510,7 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("meshPrimitives", std::to_string(importResult.GetMeshPrimitiveCount())),
 	     ToolConsole::Field("meshInstances", std::to_string(importResult.GetMeshInstanceCount())),
 	     ToolConsole::Field("cameras", std::to_string(importResult.GetCameraCount())),
+	     ToolConsole::Field("lights", std::to_string(importResult.GetLightCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
 	     ToolConsole::Field("importSourceMeshes", std::to_string(importResult.diagnostics.summary.sourceMeshCount)),
 	     ToolConsole::Field("importSourceMaterials", std::to_string(importResult.diagnostics.summary.sourceMaterialCount)),
@@ -529,6 +530,7 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
 	     ToolConsole::Field("cookedInstanceGroups", std::to_string(build.manifest.instanceGroups.size())),
 	     ToolConsole::Field("cookedCameras", std::to_string(build.manifest.cameras.size())),
+	     ToolConsole::Field("cookedLights", std::to_string(build.manifest.lights.size())),
 	     ToolConsole::PathField("manifest", build.identity.manifestPath)});
 	return true;
 }

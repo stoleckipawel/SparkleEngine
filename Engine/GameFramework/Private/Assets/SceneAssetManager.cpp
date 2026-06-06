@@ -10,6 +10,7 @@
 #include "Assets/Loaders/MeshAssetLoader.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
 #include "Translators/SceneAssetCameraTranslator.h"
+#include "Translators/SceneAssetLightTranslator.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "Scene/Transform.h"
@@ -265,21 +266,29 @@ namespace Assets
 			sceneAssetPayload.cameras.push_back(BuildSceneAssetCamera(sceneManifest.cameras[cameraIndex], cameraIndex));
 		}
 
+		sceneAssetPayload.lights.reserve(sceneAssetPayload.lights.size() + sceneManifest.lights.size());
+		for (std::size_t lightIndex = 0; lightIndex < sceneManifest.lights.size(); ++lightIndex)
+		{
+			sceneAssetPayload.lights.push_back(BuildSceneAssetLight(sceneManifest.lights[lightIndex], lightIndex));
+		}
+
 		sceneAssetPayload.diagnostics.loadedSceneAssetCount += 1u;
 		sceneAssetPayload.diagnostics.meshAssetReferenceCount += sceneManifest.meshAssetReferences.size();
 		sceneAssetPayload.diagnostics.meshInstanceCount += sceneManifest.instances.size();
 		sceneAssetPayload.diagnostics.meshInstanceGroupCount += sceneManifest.instanceGroups.size();
 		sceneAssetPayload.diagnostics.cameraCount += sceneManifest.cameras.size();
+		sceneAssetPayload.diagnostics.lightCount += sceneManifest.lights.size();
 
 		SPDLOG_LOGGER_INFO(
 		    g_sceneAssetManagerLogger,
-		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, cameras={}",
+		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, cameras={}, lights={}",
 		    sceneAssetId.value,
 		    sceneManifest.meshAssetReferences.size(),
 		    sceneManifest.instances.size(),
 		    sceneManifest.instanceGroups.size(),
 		    sceneManifest.materialAssetReferences.size(),
-		    sceneManifest.cameras.size());
+		    sceneManifest.cameras.size(),
+		    sceneManifest.lights.size());
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());
 		errorMessage.clear();

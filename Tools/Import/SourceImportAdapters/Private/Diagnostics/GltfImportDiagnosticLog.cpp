@@ -57,11 +57,12 @@ void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& fil
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
 	    std::format(
-	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} cameras, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
+	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} cameras, {} lights, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
 	        filePath.filename().string(),
 	        result.scene.meshPrimitives.size(),
 	        result.scene.meshInstances.size(),
 	        result.scene.cameras.size(),
+	        result.scene.lights.size(),
 	        result.scene.materials.size(),
 	        result.diagnostics.textures.resolvedTextureBindingCount,
 	        result.diagnostics.issues.warningMessageCount,
@@ -82,15 +83,21 @@ void GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(std::size_t count, S
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
-void GltfImportDiagnosticLog::ReportIgnoredCameraNodes(std::size_t count, SourceImportResult& result)
+void GltfImportDiagnosticLog::ReportUnsupportedPointLights(std::size_t count, SourceImportResult& result)
 {
-	SPDLOG_LOGGER_WARN(g_gltfImportDiagnosticLogger, "{}", std::format("GltfImporter: {} nodes contain cameras and they will be ignored", count));
+	SPDLOG_LOGGER_WARN(
+	    g_gltfImportDiagnosticLogger,
+	    "{}",
+	    std::format("GltfImporter: {} point lights were imported as metadata only because runtime point lighting is not supported yet", count));
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
-void GltfImportDiagnosticLog::ReportIgnoredLightNodes(std::size_t count, SourceImportResult& result)
+void GltfImportDiagnosticLog::ReportUnsupportedSpotLights(std::size_t count, SourceImportResult& result)
 {
-	SPDLOG_LOGGER_WARN(g_gltfImportDiagnosticLogger, "{}", std::format("GltfImporter: {} nodes contain lights and they will be ignored", count));
+	SPDLOG_LOGGER_WARN(
+	    g_gltfImportDiagnosticLogger,
+	    "{}",
+	    std::format("GltfImporter: {} spot lights were imported as metadata only because runtime spot lighting is not supported yet", count));
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 

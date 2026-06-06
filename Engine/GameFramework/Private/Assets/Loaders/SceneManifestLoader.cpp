@@ -34,7 +34,8 @@ namespace Assets
 		    !reader.ReadArray(outManifest.header.materialAssetReferenceCount, outManifest.materialAssetReferences, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.instanceCount, outManifest.instances, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.instanceGroupCount, outManifest.instanceGroups, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.cameraCount, outManifest.cameras, outErrorMessage))
+		    !reader.ReadArray(outManifest.header.cameraCount, outManifest.cameras, outErrorMessage) ||
+		    !reader.ReadArray(outManifest.header.lightCount, outManifest.lights, outErrorMessage))
 	{
 		return false;
 	}
@@ -186,6 +187,19 @@ namespace Assets
 			    camera.projectionKind != CookedSceneCameraProjectionKind::Unknown)
 			{
 				outErrorMessage = std::format("Cooked scene camera {} uses an unknown projection kind", cameraIndex);
+				return false;
+			}
+		}
+
+		for (std::size_t lightIndex = 0; lightIndex < manifest.lights.size(); ++lightIndex)
+		{
+			const CookedSceneLightRecord& light = manifest.lights[lightIndex];
+			if (light.kind != CookedSceneLightKind::Directional &&
+			    light.kind != CookedSceneLightKind::Point &&
+			    light.kind != CookedSceneLightKind::Spot &&
+			    light.kind != CookedSceneLightKind::Unknown)
+			{
+				outErrorMessage = std::format("Cooked scene light {} uses an unknown light kind", lightIndex);
 				return false;
 			}
 		}

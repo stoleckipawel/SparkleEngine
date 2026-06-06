@@ -34,10 +34,13 @@ void AssetConverterCommands::PrintCookSceneSummary(
 	          << "  meshInstances=" << importResult.GetMeshInstanceCount() << "\n"
 	          << "  meshInstanceGroups=" << importResult.GetMeshInstanceGroupCount() << "\n"
 	          << "  cameras=" << importResult.GetCameraCount() << "\n"
+	          << "  lights=" << importResult.GetLightCount() << "\n"
 	          << "  materials=" << importResult.GetMaterialCount() << "\n"
 	          << "  cookedMeshAssetRefs=" << cookedSceneBuild.manifest.meshAssetReferences.size() << "\n"
 	          << "  cookedInstances=" << cookedSceneBuild.manifest.instances.size() << "\n"
 	          << "  cookedInstanceGroups=" << cookedSceneBuild.manifest.instanceGroups.size() << "\n"
+	          << "  cookedCameras=" << cookedSceneBuild.manifest.cameras.size() << "\n"
+	          << "  cookedLights=" << cookedSceneBuild.manifest.lights.size() << "\n"
 	          << "  sceneManifest='" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
 }
 

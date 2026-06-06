@@ -24,6 +24,7 @@ class SPARKLE_ENGINE_API SceneLighting final
 	SceneLighting& operator=(SceneLighting&&) = delete;
 
 	std::size_t GetDirectionalLightCount() const noexcept { return m_directionalLightComponents.size(); }
+	bool CanAppendDirectionalLight() const noexcept { return m_directionalLightComponents.size() < MaxDirectionalLights; }
 
 	const DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) const noexcept
 	{
@@ -34,6 +35,7 @@ class SPARKLE_ENGINE_API SceneLighting final
 	const std::vector<DirectionalLightComponent>& GetDirectionalLightComponents() const noexcept { return m_directionalLightComponents; }
 
 	void ApplyFromDesc(const LevelLightingDesc& desc) noexcept;
+	bool AppendDirectionalLight(const DirectionalLightDesc& desc, bool visible = true) noexcept;
 	LevelLightingDesc CaptureToDesc() const noexcept;
 	LightingSnapshot CaptureSnapshot() const noexcept;
 

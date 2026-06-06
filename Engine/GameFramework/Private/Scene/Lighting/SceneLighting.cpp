@@ -12,6 +12,18 @@ void SceneLighting::ApplyFromDesc(const LevelLightingDesc& desc) noexcept
 	}
 }
 
+bool SceneLighting::AppendDirectionalLight(const DirectionalLightDesc& desc, bool visible) noexcept
+{
+	if (!CanAppendDirectionalLight())
+	{
+		return false;
+	}
+
+	DirectionalLightComponent& lightComponent = m_directionalLightComponents.emplace_back(desc);
+	lightComponent.SetVisible(visible);
+	return true;
+}
+
 LevelLightingDesc SceneLighting::CaptureToDesc() const noexcept
 {
 	LevelLightingDesc desc = {};

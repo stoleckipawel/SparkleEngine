@@ -2,42 +2,14 @@
 
 #include "Gltf/GltfCameraImporter.h"
 
+#include "Gltf/GltfNodeTransformUtils.h"
+
 #include <cgltf.h>
 
-#include <algorithm>
 #include <format>
 
 namespace
 {
-	DirectX::XMMATRIX ConvertGltfMatrixToEngine(DirectX::FXMMATRIX matrix) noexcept
-	{
-		const DirectX::XMMATRIX handedness = DirectX::XMMatrixScaling(1.0f, 1.0f, -1.0f);
-		return DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(handedness, matrix), handedness);
-	}
-
-	DirectX::XMMATRIX ComputeNodeWorldTransform(const cgltf_node* node)
-	{
-		DirectX::XMMATRIX worldTransform = DirectX::XMMatrixIdentity();
-
-		const cgltf_node* nodeChain[64];
-		int depth = 0;
-		for (const cgltf_node* currentNode = node; currentNode != nullptr && depth < 64; currentNode = currentNode->parent)
-		{
-			nodeChain[depth++] = currentNode;
-		}
-
-		for (int chainIndex = depth - 1; chainIndex >= 0; --chainIndex)
-		{
-			float localMatrix[16];
-			cgltf_node_transform_local(nodeChain[chainIndex], localMatrix);
-			const DirectX::XMMATRIX localTransform =
-			    DirectX::XMLoadFloat4x4(reinterpret_cast<const DirectX::XMFLOAT4X4*>(localMatrix));
-			worldTransform = DirectX::XMMatrixMultiply(worldTransform, localTransform);
-		}
-
-		return ConvertGltfMatrixToEngine(worldTransform);
-	}
-
 	std::string ResolveCameraName(const cgltf_node& node, std::uint32_t nodeIndex)
 	{
 		if (node.name != nullptr && node.name[0] != '\0')
@@ -73,7 +45,7 @@ void GltfCameraImporter::ImportCameras(const cgltf_data* data, SourceImportResul
 		ImportedCamera camera;
 		camera.name = ResolveCameraName(node, static_cast<std::uint32_t>(nodeIndex));
 		camera.sourceNodeIndex = static_cast<std::uint32_t>(nodeIndex);
-		DirectX::XMStoreFloat4x4(&camera.worldTransform, ComputeNodeWorldTransform(&node));
+		DirectX::XMStoreFloat4x4(&camera.worldTransform, GltfNodeTransformUtils::ComputeNodeWorldTransform(&node));
 
 		const cgltf_camera& sourceCamera = *node.camera;
 		if (sourceCamera.type == cgltf_camera_type_perspective)

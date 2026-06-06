@@ -19,8 +19,8 @@ class GltfImportDiagnosticLog final
 
 	static void ReportIgnoredAnimations(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredMaterialVariants(std::size_t count, SourceImportResult& result);
-	static void ReportIgnoredCameraNodes(std::size_t count, SourceImportResult& result);
-	static void ReportIgnoredLightNodes(std::size_t count, SourceImportResult& result);
+	static void ReportUnsupportedPointLights(std::size_t count, SourceImportResult& result);
+	static void ReportUnsupportedSpotLights(std::size_t count, SourceImportResult& result);
 	static void ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredWeightedNodes(std::size_t count, SourceImportResult& result);
 	static void ReportFlattenedGpuInstancingNodes(std::size_t count, SourceImportResult& result);

@@ -8,12 +8,32 @@
 #include "Level/LevelDesc.h"
 
 #include <memory>
+#include <string_view>
 
 static const auto g_gameSceneLogger = Logging::GetOrCreateLogger("GameFramework.GameScene");
 
 GameScene::GameScene() = default;
 
 GameScene::~GameScene() noexcept = default;
+
+namespace
+{
+	std::string_view ToLogString(SceneLightKind lightKind) noexcept
+	{
+		switch (lightKind)
+		{
+			case SceneLightKind::Directional:
+				return "directional";
+			case SceneLightKind::Point:
+				return "point";
+			case SceneLightKind::Spot:
+				return "spot";
+			case SceneLightKind::Unknown:
+			default:
+				return "unknown";
+		}
+	}
+}  // namespace
 
 GameSceneLoadResult GameScene::LoadLevel(const LevelAsset& level)
 {
@@ -28,6 +48,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 	Clear();
 	m_cameras.Reset(desc.cameraDesc);
+	m_lighting.ApplyFromDesc(desc.lightingDesc);
 
 	result.status = GameSceneLoadStatus::Succeeded;
 
@@ -37,7 +58,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty())
+	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty())
 	{
 		return false;
 	}
@@ -109,16 +130,50 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 		m_cameras.AppendCamera(std::move(sceneCamera));
 	}
 
+	std::size_t appendedDirectionalLightCount = 0;
+	std::size_t skippedUnsupportedLightCount = 0;
+	std::size_t truncatedDirectionalLightCount = 0;
+	for (const SceneLightDesc& light : sceneAssetPayload.lights)
+	{
+		if (!light.IsDirectional())
+		{
+			++skippedUnsupportedLightCount;
+			SPDLOG_LOGGER_WARN(
+			    g_gameSceneLogger,
+			    "Scene: Light '{}' of type '{}' is loaded as metadata but is not supported by runtime scene lighting yet",
+			    light.name,
+			    ToLogString(light.kind));
+			continue;
+		}
+
+		if (!m_lighting.AppendDirectionalLight(light.directional, light.visible))
+		{
+			++truncatedDirectionalLightCount;
+			SPDLOG_LOGGER_WARN(
+			    g_gameSceneLogger,
+			    "Scene: Directional light '{}' was skipped because the scene reached the directional light limit ({})",
+			    light.name,
+			    SceneLighting::MaxDirectionalLights);
+			continue;
+		}
+
+		++appendedDirectionalLightCount;
+	}
+
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}",
+	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}, directionalLightsApplied={}, unsupportedLights={}, truncatedDirectionalLights={}",
 	    m_meshes.GetMeshCount(),
 	    m_materials.GetMaterialCount(),
 	    diagnostics.loadedSceneAssetCount,
 	    diagnostics.meshAssetReferenceCount,
 	    diagnostics.meshInstanceCount,
 	    diagnostics.meshInstanceGroupCount,
-	    diagnostics.cameraCount);
+	    diagnostics.cameraCount,
+	    diagnostics.lightCount,
+	    appendedDirectionalLightCount,
+	    skippedUnsupportedLightCount,
+	    truncatedDirectionalLightCount);
 
 	return true;
 }

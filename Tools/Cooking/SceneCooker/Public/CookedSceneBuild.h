@@ -23,6 +23,7 @@ struct CookedSceneManifestBuildData final
 	std::vector<Assets::CookedSceneInstanceRecord> instances;
 	std::vector<Assets::CookedSceneInstanceGroupRecord> instanceGroups;
 	std::vector<Assets::CookedSceneCameraRecord> cameras;
+	std::vector<Assets::CookedSceneLightRecord> lights;
 };
 
 struct CookedSceneAssetOutputs final

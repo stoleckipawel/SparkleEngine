@@ -14,5 +14,6 @@ namespace Assets
 		std::vector<CookedSceneInstanceRecord> instances;
 		std::vector<CookedSceneInstanceGroupRecord> instanceGroups;
 		std::vector<CookedSceneCameraRecord> cameras;
+		std::vector<CookedSceneLightRecord> lights;
 	};
 }

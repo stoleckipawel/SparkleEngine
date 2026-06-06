@@ -70,7 +70,6 @@ void LevelManager::InitializeStartupLevel() noexcept
 	}
 
 	m_activeLevel = startupLevel;
-	ApplyLevelToScene();
 
 	SPDLOG_LOGGER_INFO(g_levelManagerLogger, "LevelManager: Startup level initialized to '{}'", std::string(startupLevel->GetName()));
 }
@@ -212,8 +211,9 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	const bool hasSceneAssetPayload =
-	    sceneAssetLoadResult.sceneAssetPayload.HasMeshes() || !sceneAssetLoadResult.sceneAssetPayload.cameras.empty();
+	const bool hasSceneAssetPayload = sceneAssetLoadResult.sceneAssetPayload.HasMeshes() ||
+	                                  !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
+	                                  !sceneAssetLoadResult.sceneAssetPayload.lights.empty();
 	if (hasSceneAssetPayload && !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;
@@ -224,25 +224,6 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 	m_gameScene->GetCameras().ApplyPrimaryCamera();
 
 	return loadResult;
-}
-
-void LevelManager::ApplyLevelToScene() noexcept
-{
-	if (m_activeLevel == nullptr)
-	{
-		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Skipping level apply because there is no active level");
-		return;
-	}
-
-	if (!m_gameScene)
-	{
-		SPDLOG_LOGGER_DEBUG(g_levelManagerLogger, "LevelManager: Skipping level apply because the scene is unavailable");
-		return;
-	}
-
-	const LevelDesc& desc = m_activeLevel->GetLevelDesc();
-
-	m_gameScene->GetLighting().ApplyFromDesc(desc.lightingDesc);
 }
 
 void LevelManager::CaptureSceneToLevel() noexcept
@@ -332,8 +313,6 @@ void LevelManager::ProcessLevelChangeRequest(LevelAsset& requestedLevel) noexcep
 	{
 		m_activeLevel = &requestedLevel;
 	}
-
-	ApplyLevelToScene();
 
 	LevelChangedEventArgs changedArgs;
 	changedArgs.previousLevelName = previousLevelName;

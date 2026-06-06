@@ -44,7 +44,6 @@ class SPARKLE_ENGINE_API LevelManager final
   private:
 	static constexpr std::string_view GetEmptyLevelName() noexcept { return "Empty"; }
 
-	void ApplyLevelToScene() noexcept;
 	void CaptureSceneToLevel() noexcept;
 	void InitializeStartupLevel() noexcept;
 	GameSceneLoadResult LoadLevelFromUnloadedState(const LevelAsset& level) noexcept;
