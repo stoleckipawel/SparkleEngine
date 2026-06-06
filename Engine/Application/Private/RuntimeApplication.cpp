@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "RuntimeApplication.h"
 
 #include "Window/Window.h"
@@ -74,7 +74,7 @@ void RuntimeApplication::Initialize()
 		m_gameScene = std::make_unique<GameScene>();
 		m_sceneAssetManager = std::make_unique<Assets::SceneAssetManager>();
 		m_levelManager = std::make_unique<LevelManager>(*m_gameScene, *m_sceneAssetManager);
-		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetSceneCamera());
+		m_gameCameraController = std::make_unique<GameCameraController>(*m_timer, *m_inputSystem, *m_window, m_gameScene->GetCameras().GetActiveCamera());
 	}
 
 	{

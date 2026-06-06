@@ -6,10 +6,12 @@
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
+#include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
@@ -18,6 +20,7 @@ struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
 	std::size_t meshAssetReferenceCount = 0;
 	std::size_t meshInstanceCount = 0;
 	std::size_t meshInstanceGroupCount = 0;
+	std::size_t cameraCount = 0;
 };
 
 struct SPARKLE_ENGINE_API SceneAssetPayload
@@ -46,9 +49,18 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 		std::uint32_t flags = 0;
 	};
 
+	struct Camera
+	{
+		std::string name;
+		CameraDesc desc;
+
+		bool IsPerspective() const noexcept { return desc.projectionKind == CameraProjectionKind::Perspective; }
+	};
+
 	std::vector<MeshAsset> meshAssets;
 	std::vector<MeshInstance> meshInstances;
 	std::vector<MeshInstanceGroup> meshInstanceGroups;
+	std::vector<Camera> cameras;
 	std::vector<MaterialDesc> materials;
 	SceneAssetPayloadDiagnostics diagnostics;
 

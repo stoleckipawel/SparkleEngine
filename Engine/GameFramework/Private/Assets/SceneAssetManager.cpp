@@ -9,9 +9,14 @@
 #include "Assets/Loaders/MaterialAssetLoader.h"
 #include "Assets/Loaders/MeshAssetLoader.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
+#include "Translators/SceneAssetCameraTranslator.h"
 #include "Core/Public/Formatting/HexFormat.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
+#include "Scene/Transform.h"
 
+#include <DirectXMath.h>
+
+#include <cmath>
 #include <format>
 
 static const auto g_sceneAssetManagerLogger = Logging::GetOrCreateLogger("GameFramework.SceneAssets");
@@ -254,19 +259,27 @@ namespace Assets
 			sceneAssetPayload.meshInstanceGroups.push_back(meshInstanceGroup);
 		}
 
+		sceneAssetPayload.cameras.reserve(sceneAssetPayload.cameras.size() + sceneManifest.cameras.size());
+		for (std::size_t cameraIndex = 0; cameraIndex < sceneManifest.cameras.size(); ++cameraIndex)
+		{
+			sceneAssetPayload.cameras.push_back(BuildSceneAssetCamera(sceneManifest.cameras[cameraIndex], cameraIndex));
+		}
+
 		sceneAssetPayload.diagnostics.loadedSceneAssetCount += 1u;
 		sceneAssetPayload.diagnostics.meshAssetReferenceCount += sceneManifest.meshAssetReferences.size();
 		sceneAssetPayload.diagnostics.meshInstanceCount += sceneManifest.instances.size();
 		sceneAssetPayload.diagnostics.meshInstanceGroupCount += sceneManifest.instanceGroups.size();
+		sceneAssetPayload.diagnostics.cameraCount += sceneManifest.cameras.size();
 
 		SPDLOG_LOGGER_INFO(
 		    g_sceneAssetManagerLogger,
-		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}",
+		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, cameras={}",
 		    sceneAssetId.value,
 		    sceneManifest.meshAssetReferences.size(),
 		    sceneManifest.instances.size(),
 		    sceneManifest.instanceGroups.size(),
-		    sceneManifest.materialAssetReferences.size());
+		    sceneManifest.materialAssetReferences.size(),
+		    sceneManifest.cameras.size());
 
 		materialBaseIndex += static_cast<std::uint32_t>(sceneManifest.materialAssetReferences.size());
 		errorMessage.clear();

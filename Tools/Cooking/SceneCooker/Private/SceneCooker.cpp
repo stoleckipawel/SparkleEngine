@@ -2,6 +2,7 @@
 
 #include "SceneCooker.h"
 
+#include "Features/Cameras/CookedSceneCameraBuilder.h"
 #include "Core/Public/Assets/AssetTypes.h"
 #include "Core/Public/Files/BinaryStreamWriter.h"
 #include "Core/Public/Files/FileUtils.h"
@@ -128,10 +129,13 @@ bool SceneCooker::BuildManifest(
 		        .flags = importedGroup.flags});
 	}
 
+	CookedSceneCameraBuilder::BuildCameras(importResult, outBuild);
+
 	outBuild.manifest.header.meshAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.meshAssetReferences.size());
 	outBuild.manifest.header.materialAssetReferenceCount = static_cast<std::uint32_t>(outBuild.manifest.materialAssetReferences.size());
 	outBuild.manifest.header.instanceCount = static_cast<std::uint32_t>(outBuild.manifest.instances.size());
 	outBuild.manifest.header.instanceGroupCount = static_cast<std::uint32_t>(outBuild.manifest.instanceGroups.size());
+	outBuild.manifest.header.cameraCount = static_cast<std::uint32_t>(outBuild.manifest.cameras.size());
 	outErrorMessage.clear();
 	return true;
 }
@@ -148,7 +152,8 @@ bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, s
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.meshAssetReferences, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.materialAssetReferences, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instances, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, outErrorMessage))
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.instanceGroups, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, outErrorMessage))
 	{
 		return false;
 	}

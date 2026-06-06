@@ -62,6 +62,26 @@ namespace LevelParsing
 			}
 		}
 
+		if (parsedLine.key == "NearZ")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.nearZ))
+			{
+				errorMessage = "Invalid camera near plane";
+				return false;
+			}
+			return true;
+		}
+
+		if (parsedLine.key == "FarZ")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, levelDesc.cameraDesc.farZ))
+			{
+				errorMessage = "Invalid camera far plane";
+				return false;
+			}
+			return true;
+		}
+
 		return true;
 	}
 
@@ -74,6 +94,8 @@ namespace LevelParsing
 		output << "YawRadians = " << levelDesc.cameraDesc.yawRadians << "\n";
 		output << "PitchRadians = " << levelDesc.cameraDesc.pitchRadians << "\n";
 		output << "FovYDegrees = " << levelDesc.cameraDesc.fovYDegrees << "\n";
+		output << "NearZ = " << levelDesc.cameraDesc.nearZ << "\n";
+		output << "FarZ = " << levelDesc.cameraDesc.farZ << "\n";
 		output << "MoveSpeed = " << levelDesc.cameraDesc.moveSpeed << "\n\n";
 	}
 }  // namespace LevelParsing

@@ -1,0 +1,10 @@
+[Level]
+Name = CameraCubeImportedCamera
+
+[Lighting]
+DirectionalLight0Direction = 0.42, -0.82, 0.39
+DirectionalLight0Intensity = 2.35
+DirectionalLight0Color = 1.0, 0.93, 0.82
+
+[SceneAssets]
+Asset = CameraCube/CameraCube

@@ -17,7 +17,7 @@ struct SceneObjectSelection final
 	std::size_t index = 0;
 
 	static SceneObjectSelection None() noexcept { return {}; }
-	static SceneObjectSelection Camera() noexcept { return {SceneObjectType::Camera, 0}; }
+	static SceneObjectSelection Camera(std::size_t cameraIndex = 0) noexcept { return {SceneObjectType::Camera, cameraIndex}; }
 	static SceneObjectSelection DirectionalLight(std::size_t lightIndex) noexcept
 	{
 		return {SceneObjectType::DirectionalLight, lightIndex};

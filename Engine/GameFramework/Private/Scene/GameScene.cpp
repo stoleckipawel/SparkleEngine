@@ -1,6 +1,7 @@
 ﻿#include "PCH.h"
 #include "Scene/GameScene.h"
 
+#include "Assets/SceneAssetPayload.h"
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Level/Level.h"
@@ -26,6 +27,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 	SPDLOG_LOGGER_INFO(g_gameSceneLogger, "Scene: Loading level '{}'", desc.name);
 
 	Clear();
+	m_cameras.Reset(desc.cameraDesc);
 
 	result.status = GameSceneLoadStatus::Succeeded;
 
@@ -35,7 +37,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!sceneAssetPayload.HasMeshes())
+	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty())
 	{
 		return false;
 	}
@@ -99,15 +101,24 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 	}
 	m_meshes.AppendMeshInstanceGroups(std::move(meshInstanceGroups));
 
+	for (SceneAssetPayload::Camera& camera : sceneAssetPayload.cameras)
+	{
+		SceneCameraEntry sceneCamera;
+		sceneCamera.name = std::move(camera.name);
+		sceneCamera.desc = camera.desc;
+		m_cameras.AppendCamera(std::move(sceneCamera));
+	}
+
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}",
+	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}",
 	    m_meshes.GetMeshCount(),
 	    m_materials.GetMaterialCount(),
 	    diagnostics.loadedSceneAssetCount,
 	    diagnostics.meshAssetReferenceCount,
 	    diagnostics.meshInstanceCount,
-	    diagnostics.meshInstanceGroupCount);
+	    diagnostics.meshInstanceGroupCount,
+	    diagnostics.cameraCount);
 
 	return true;
 }
@@ -115,7 +126,7 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 GameSceneSnapshot GameScene::CaptureSnapshot() const
 {
 	GameSceneSnapshot snapshot;
-	snapshot.camera = m_sceneCamera.CaptureSnapshot();
+	snapshot.camera = m_cameras.GetActiveCamera().CaptureSnapshot();
 	snapshot.lighting = m_lighting.CaptureSnapshot();
 	snapshot.textures = m_textures.CaptureSnapshot();
 	snapshot.materials = m_materials.CaptureSnapshot();
@@ -129,4 +140,5 @@ void GameScene::Clear()
 	m_materials.Reset();
 	m_meshes.Reset();
 	m_textures.Reset();
+	m_cameras.Reset();
 }

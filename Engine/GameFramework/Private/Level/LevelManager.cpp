@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Level/LevelManager.h"
 
 #include "Assets/SceneAssetManager.h"
@@ -212,13 +212,16 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 		return loadResult;
 	}
 
-	if (sceneAssetLoadResult.sceneAssetPayload.HasMeshes() &&
-	    !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
+	const bool hasSceneAssetPayload =
+	    sceneAssetLoadResult.sceneAssetPayload.HasMeshes() || !sceneAssetLoadResult.sceneAssetPayload.cameras.empty();
+	if (hasSceneAssetPayload && !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;
 		loadResult.errorMessage = "GameScene rejected the loaded scene asset payload";
 		return loadResult;
 	}
+
+	m_gameScene->GetCameras().ApplyPrimaryCamera();
 
 	return loadResult;
 }
@@ -240,7 +243,6 @@ void LevelManager::ApplyLevelToScene() noexcept
 	const LevelDesc& desc = m_activeLevel->GetLevelDesc();
 
 	m_gameScene->GetLighting().ApplyFromDesc(desc.lightingDesc);
-	m_gameScene->GetSceneCamera().ApplyFromDesc(desc.cameraDesc);
 }
 
 void LevelManager::CaptureSceneToLevel() noexcept
@@ -253,7 +255,7 @@ void LevelManager::CaptureSceneToLevel() noexcept
 	LevelDesc desc = m_activeLevel->BuildDescription();
 
 	desc.lightingDesc = m_gameScene->GetLighting().CaptureToDesc();
-	desc.cameraDesc = m_gameScene->GetSceneCamera().CaptureToDesc();
+	desc.cameraDesc = m_gameScene->GetCameras().GetActiveCamera().CaptureToDesc();
 
 	m_activeLevel->SetLevelDesc(desc);
 }

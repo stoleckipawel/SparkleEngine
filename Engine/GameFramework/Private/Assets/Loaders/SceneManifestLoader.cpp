@@ -33,10 +33,11 @@ namespace Assets
 		if (!reader.ReadArray(outManifest.header.meshAssetReferenceCount, outManifest.meshAssetReferences, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.materialAssetReferenceCount, outManifest.materialAssetReferences, outErrorMessage) ||
 		    !reader.ReadArray(outManifest.header.instanceCount, outManifest.instances, outErrorMessage) ||
-		    !reader.ReadArray(outManifest.header.instanceGroupCount, outManifest.instanceGroups, outErrorMessage))
-		{
-			return false;
-		}
+		    !reader.ReadArray(outManifest.header.instanceGroupCount, outManifest.instanceGroups, outErrorMessage) ||
+		    !reader.ReadArray(outManifest.header.cameraCount, outManifest.cameras, outErrorMessage))
+	{
+		return false;
+	}
 
 		if (!ValidateRecords(outManifest, outErrorMessage))
 		{
@@ -174,6 +175,18 @@ namespace Assets
 					    manifest.instances[instanceIndex].groupIndex);
 					return false;
 				}
+			}
+		}
+
+		for (std::size_t cameraIndex = 0; cameraIndex < manifest.cameras.size(); ++cameraIndex)
+		{
+			const CookedSceneCameraRecord& camera = manifest.cameras[cameraIndex];
+			if (camera.projectionKind != CookedSceneCameraProjectionKind::Perspective &&
+			    camera.projectionKind != CookedSceneCameraProjectionKind::Orthographic &&
+			    camera.projectionKind != CookedSceneCameraProjectionKind::Unknown)
+			{
+				outErrorMessage = std::format("Cooked scene camera {} uses an unknown projection kind", cameraIndex);
+				return false;
 			}
 		}
 

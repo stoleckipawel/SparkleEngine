@@ -1,4 +1,4 @@
-﻿#include "PCH.h"
+#include "PCH.h"
 #include "Panels/SceneOutlinerPanel.h"
 
 #include "Core/Public/Strings/StringUtils.h"
@@ -141,7 +141,8 @@ void SceneOutlinerPanel::BuildToolbar() noexcept
 
 void SceneOutlinerPanel::BuildFooter() noexcept
 {
-	const std::size_t totalCount = 1 + m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount();
+	const std::size_t totalCount = m_gameScene->GetCameras().GetCameraCount() +
+	                               m_gameScene->GetLighting().GetDirectionalLightCount() + m_gameScene->GetMeshes().GetMeshCount();
 	const std::size_t displayedCount = CountVisibleEntries();
 	const bool hasValidSelection = IsSelectionValid();
 	ImGui::Separator();
@@ -163,7 +164,7 @@ bool SceneOutlinerPanel::IsSelectionValid() const noexcept
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
-			return true;
+			return m_selection->index < m_gameScene->GetCameras().GetCameraCount();
 		case SceneObjectType::DirectionalLight:
 			return m_selection->index < m_gameScene->GetLighting().GetDirectionalLightCount();
 		case SceneObjectType::Mesh:
@@ -195,13 +196,20 @@ void SceneOutlinerPanel::BuildCameraSection() noexcept
 	}
 
 	bool open = true;
-	DrawSectionRow("Camera", "Camera", 1, open);
+	const std::size_t cameraCount = m_gameScene->GetCameras().GetCameraCount();
+	DrawSectionRow("Camera", "Camera", cameraCount, open);
 	if (open)
 	{
-		const SceneObjectSelection selection = SceneObjectSelection::Camera();
-		if (PassesActiveFilter(selection) && MatchesSearch("Scene Camera", "Camera"))
+		const std::vector<SceneCameraEntry>& sceneCameras = m_gameScene->GetCameras().GetCameraEntries();
+		for (std::size_t cameraIndex = 0; cameraIndex < sceneCameras.size(); ++cameraIndex)
 		{
-			DrawSelectionEntry("Scene Camera", "Camera", selection);
+			const SceneCameraEntry& camera = sceneCameras[cameraIndex];
+			const std::string label = camera.name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.name;
+			const SceneObjectSelection cameraSelection = SceneObjectSelection::Camera(cameraIndex);
+			if (PassesActiveFilter(cameraSelection) && MatchesSearch(label.c_str(), "Camera"))
+			{
+				DrawSelectionEntry(label.c_str(), "Camera", cameraSelection);
+			}
 		}
 	}
 }
@@ -292,10 +300,16 @@ bool SceneOutlinerPanel::MatchesSearch(const char* label, const char* typeLabel)
 std::size_t SceneOutlinerPanel::CountVisibleEntries() const noexcept
 {
 	std::size_t count = 0;
-	const SceneObjectSelection cameraSelection = SceneObjectSelection::Camera();
-	if (PassesActiveFilter(cameraSelection) && MatchesSearch("Scene Camera", "Camera"))
+	const std::vector<SceneCameraEntry>& sceneCameras = m_gameScene->GetCameras().GetCameraEntries();
+	for (std::size_t cameraIndex = 0; cameraIndex < sceneCameras.size(); ++cameraIndex)
 	{
-		++count;
+		const SceneCameraEntry& camera = sceneCameras[cameraIndex];
+		const std::string label = camera.name.empty() ? "Camera " + std::to_string(cameraIndex + 1) : camera.name;
+		const SceneObjectSelection selection = SceneObjectSelection::Camera(cameraIndex);
+		if (PassesActiveFilter(selection) && MatchesSearch(label.c_str(), "Camera"))
+		{
+			++count;
+		}
 	}
 
 	const std::size_t lightCount = m_gameScene->GetLighting().GetDirectionalLightCount();
@@ -328,7 +342,7 @@ bool SceneOutlinerPanel::IsEntryVisible(const SceneObjectSelection& selection) c
 	switch (selection.type)
 	{
 		case SceneObjectType::Camera:
-			return m_gameScene->GetSceneCamera().GetCameraComponent().IsVisible();
+			return m_gameScene->GetCameras().GetActiveCamera().GetCameraComponent().IsVisible();
 		case SceneObjectType::DirectionalLight:
 			return selection.index >= m_gameScene->GetLighting().GetDirectionalLightCount() ||
 			       m_gameScene->GetLighting().GetDirectionalLightComponent(selection.index).IsVisible();
@@ -354,7 +368,11 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 	{
 		case SceneObjectType::Camera:
 		{
-			CameraComponent& camera = m_gameScene->GetSceneCamera().GetCameraComponent();
+			if (!m_gameScene->GetCameras().ApplyCamera(selection.index))
+			{
+				break;
+			}
+			CameraComponent& camera = m_gameScene->GetCameras().GetActiveCamera().GetCameraComponent();
 			camera.SetVisible(!camera.IsVisible());
 			break;
 		}
@@ -377,6 +395,20 @@ void SceneOutlinerPanel::ToggleEntryVisibility(const SceneObjectSelection& selec
 		case SceneObjectType::None:
 		default:
 			break;
+	}
+}
+
+void SceneOutlinerPanel::SelectEntry(const SceneObjectSelection& selection) noexcept
+{
+	if (m_selection == nullptr || m_gameScene == nullptr)
+	{
+		return;
+	}
+
+	*m_selection = selection;
+	if (selection.type == SceneObjectType::Camera)
+	{
+		m_gameScene->GetCameras().ApplyCamera(selection.index);
 	}
 }
 
@@ -421,7 +453,7 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	UiUtil::DrawEditorIcon(BuildSelectionIcon(selection), typeLabel, !isSelected);
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 	{
-		*m_selection = selection;
+		SelectEntry(selection);
 	}
 	ImGui::SameLine(0.0f, 6.0f);
 	if (!isVisible)
@@ -439,7 +471,7 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	}
 	if (ImGui::Selectable(label, false, ImGuiSelectableFlags_SpanAllColumns, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
 	{
-		*m_selection = selection;
+		SelectEntry(selection);
 	}
 	if (isSelected)
 	{
@@ -461,7 +493,7 @@ void SceneOutlinerPanel::DrawSelectionEntry(const char* label, const char* typeL
 	}
 	if (ImGui::Selectable(typeLabel, false, 0, ImVec2(ImGui::GetContentRegionAvail().x, 0.0f)))
 	{
-		*m_selection = selection;
+		SelectEntry(selection);
 	}
 	if (isSelected)
 	{

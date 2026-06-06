@@ -5,6 +5,7 @@
 #include "Diagnostics/GltfImportDiagnosticLog.h"
 #include "Diagnostics/GltfGeometryInstancingDiagnostics.h"
 #include "Diagnostics/SourceImportDiagnosticsRecorder.h"
+#include "Gltf/GltfCameraImporter.h"
 #include "Gltf/GltfSceneReader.h"
 #include "Gltf/GltfGeometryImporter.h"
 #include "Gltf/GltfMaterialImporter.h"
@@ -29,6 +30,13 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	}
 
 	GltfSceneReader::CollectSceneWarnings(scene.data, result);
+	GltfCameraImporter::ImportCameras(scene.data, result);
+	if (!result.scene.cameras.empty())
+	{
+		result.diagnostics.featureCapabilities.cameraNodes = {
+		    result.scene.cameras.size(),
+		    SourceImportFeatureSupport::Imported};
+	}
 
 	const std::filesystem::path sourceDirectory = filePath.parent_path();
 	SourceImportDiagnosticsRecorder::RecordSourceSummary(result, scene.data->meshes_count, scene.data->materials_count);

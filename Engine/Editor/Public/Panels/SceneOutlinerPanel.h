@@ -45,6 +45,7 @@ class SceneOutlinerPanel final
 	std::size_t CountVisibleEntries() const noexcept;
 	bool IsEntryVisible(const SceneObjectSelection& selection) const noexcept;
 	void ToggleEntryVisibility(const SceneObjectSelection& selection) noexcept;
+	void SelectEntry(const SceneObjectSelection& selection) noexcept;
 	void DrawSectionRow(const char* id, const char* label, std::size_t count, bool& open) noexcept;
 	void DrawSelectionEntry(const char* label, const char* typeLabel, const SceneObjectSelection& selection) noexcept;
 

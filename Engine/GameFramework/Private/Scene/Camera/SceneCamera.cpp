@@ -14,6 +14,7 @@ void SceneCamera::ApplyFromDesc(const CameraDesc& desc) noexcept
 	m_camera.SetPosition(desc.position);
 	m_camera.SetYawPitch(desc.yawRadians, desc.pitchRadians);
 	m_camera.SetFovYDegrees(desc.fovYDegrees);
+	m_camera.SetNearFar(desc.nearZ, desc.farZ);
 	m_settings.moveSpeed = ClampMoveSpeed(desc.moveSpeed);
 }
 
@@ -26,6 +27,8 @@ CameraDesc SceneCamera::CaptureToDesc() const noexcept
 	desc.yawRadians = rotationEuler.y;
 	desc.pitchRadians = rotationEuler.x;
 	desc.fovYDegrees = m_camera.GetFovYDegrees();
+	desc.nearZ = m_camera.GetNearZ();
+	desc.farZ = m_camera.GetFarZ();
 	desc.moveSpeed = m_settings.moveSpeed;
 	return desc;
 }

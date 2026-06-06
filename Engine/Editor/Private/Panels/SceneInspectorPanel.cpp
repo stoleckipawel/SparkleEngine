@@ -73,6 +73,11 @@ std::string SceneInspectorPanel::BuildSelectionTitle() const
 	switch (m_selection->type)
 	{
 		case SceneObjectType::Camera:
+			if (m_gameScene != nullptr && m_selection->index < m_gameScene->GetCameras().GetCameraCount())
+			{
+				const std::string& name = m_gameScene->GetCameras().GetCameraEntries()[m_selection->index].name;
+				return name.empty() ? "Camera " + std::to_string(m_selection->index + 1) : name;
+			}
 			return "Scene Camera";
 		case SceneObjectType::DirectionalLight:
 			return "Directional Light " + std::to_string(m_selection->index + 1);
@@ -219,7 +224,7 @@ bool SceneInspectorPanel::ShouldShowDetailsCategory(SceneInspectorFilter, const 
 
 void SceneInspectorPanel::BuildCameraInspector() noexcept
 {
-	SceneCamera& sceneCamera = m_gameScene->GetSceneCamera();
+	SceneCamera& sceneCamera = m_gameScene->GetCameras().GetActiveCamera();
 	CameraComponent& cameraComponent = sceneCamera.GetCameraComponent();
 
 	BuildCameraTransformCategory(cameraComponent);

@@ -1,19 +1,20 @@
 #pragma once
 
-#include "GameFramework/Public/Assets/SceneAssetPayload.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
-#include "GameFramework/Public/Scene/Camera/SceneCamera.h"
+#include "GameFramework/Public/Scene/Camera/SceneCameras.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
 #include "GameFramework/Public/Scene/GameSceneSnapshot.h"
 #include "GameFramework/Public/Scene/Textures/SceneTextures.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
 class LevelAsset;
+struct SceneAssetPayload;
 
 enum class GameSceneLoadStatus : std::uint8_t
 {
@@ -40,8 +41,8 @@ class SPARKLE_ENGINE_API GameScene final
 	GameScene(GameScene&&) = delete;
 	GameScene& operator=(GameScene&&) = delete;
 
-	SceneCamera& GetSceneCamera() noexcept { return m_sceneCamera; }
-	const SceneCamera& GetSceneCamera() const noexcept { return m_sceneCamera; }
+	SceneCameras& GetCameras() noexcept { return m_cameras; }
+	const SceneCameras& GetCameras() const noexcept { return m_cameras; }
 	SceneLighting& GetLighting() noexcept { return m_lighting; }
 	const SceneLighting& GetLighting() const noexcept { return m_lighting; }
 
@@ -60,7 +61,7 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneTextures& GetTextures() const noexcept { return m_textures; }
 
   private:
-	SceneCamera m_sceneCamera;
+	SceneCameras m_cameras;
 	SceneLighting m_lighting;
 	SceneMaterials m_materials;
 	SceneMeshes m_meshes;
