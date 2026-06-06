@@ -13,6 +13,14 @@
 
 #include <objbase.h>
 
+static void PrintFeatureCapability(
+    std::ostream& output,
+    std::string_view name,
+    const SourceImportFeatureCapability& capability)
+{
+	output << " " << name << "=" << capability.count << "/" << ToString(capability.support);
+}
+
 void AssetConverterCommands::PrintCookSceneSummary(
     const std::filesystem::path& sourceScenePath,
     const SourceImportResult& importResult,
@@ -30,6 +38,23 @@ void AssetConverterCommands::PrintCookSceneSummary(
 	          << "  cookedInstances=" << cookedSceneBuild.manifest.instances.size() << "\n"
 	          << "  cookedInstanceGroups=" << cookedSceneBuild.manifest.instanceGroups.size() << "\n"
 	          << "  sceneManifest='" << cookedSceneBuild.identity.manifestPath.string() << "'\n";
+}
+
+void AssetConverterCommands::PrintImportFeatureSummary(
+    const std::filesystem::path& sourceScenePath,
+    const SourceImportResult& importResult)
+{
+	const SourceImportFeatureCapabilitySummary& features = importResult.diagnostics.featureCapabilities;
+	std::cout << "AssetConverter Import Features: source='" << sourceScenePath.string() << "'";
+	PrintFeatureCapability(std::cout, "animations", features.animations);
+	PrintFeatureCapability(std::cout, "cameraNodes", features.cameraNodes);
+	PrintFeatureCapability(std::cout, "lightNodes", features.lightNodes);
+	PrintFeatureCapability(std::cout, "skinnedNodes", features.skinnedNodes);
+	PrintFeatureCapability(std::cout, "weightedNodes", features.weightedNodes);
+	PrintFeatureCapability(std::cout, "morphTargets", features.morphTargets);
+	PrintFeatureCapability(std::cout, "materialVariants", features.materialVariants);
+	PrintFeatureCapability(std::cout, "meshGpuInstancing", features.meshGpuInstancing);
+	std::cout << "\n";
 }
 
 void AssetConverterCommands::PrintCollectTextureSummary(
@@ -66,6 +91,8 @@ int AssetConverterCommands::RunWithImportedScene(
 		std::cerr << "AssetConverter: failed to import '" << sourceScenePath.string() << "'\n";
 		return 2;
 	}
+
+	PrintImportFeatureSummary(sourceScenePath, importResult);
 
 	const int exitCode = onImportedScene(importResult);
 

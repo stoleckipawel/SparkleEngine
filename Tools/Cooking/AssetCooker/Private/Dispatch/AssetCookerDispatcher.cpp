@@ -84,6 +84,29 @@ static const char* AssetCookerCategoryName(AssetCookerCategory category) noexcep
 	}
 }
 
+static std::string AssetCookerFeatureCapabilityValue(const SourceImportFeatureCapability& capability)
+{
+	return std::to_string(capability.count) + "/" + std::string(ToString(capability.support));
+}
+
+static void AssetCookerPrintImportFeatureSummary(const AssetCookerSceneEntry& sceneEntry, const SourceImportResult& importResult)
+{
+	const SourceImportFeatureCapabilitySummary& features = importResult.diagnostics.featureCapabilities;
+	ToolConsole::Message(
+	    std::cout,
+	    ToolConsoleSeverity::Info,
+	    "Import feature summary",
+	    {ToolConsole::QuotedField("source", sceneEntry.relativePath),
+	     ToolConsole::Field("animations", AssetCookerFeatureCapabilityValue(features.animations)),
+	     ToolConsole::Field("cameraNodes", AssetCookerFeatureCapabilityValue(features.cameraNodes)),
+	     ToolConsole::Field("lightNodes", AssetCookerFeatureCapabilityValue(features.lightNodes)),
+	     ToolConsole::Field("skinnedNodes", AssetCookerFeatureCapabilityValue(features.skinnedNodes)),
+	     ToolConsole::Field("weightedNodes", AssetCookerFeatureCapabilityValue(features.weightedNodes)),
+	     ToolConsole::Field("morphTargets", AssetCookerFeatureCapabilityValue(features.morphTargets)),
+	     ToolConsole::Field("materialVariants", AssetCookerFeatureCapabilityValue(features.materialVariants)),
+	     ToolConsole::Field("meshGpuInstancing", AssetCookerFeatureCapabilityValue(features.meshGpuInstancing))});
+}
+
 static std::string AssetCookerBuildPlanStepList(const std::vector<AssetCookerPlanStep>& steps)
 {
 	std::ostringstream output;
@@ -411,6 +434,8 @@ static bool AssetCookerRunWithImportedScene(
 		diagnostics.AddError(category, "Failed to import source scene.", sceneEntry.sourcePath);
 		return false;
 	}
+
+	AssetCookerPrintImportFeatureSummary(sceneEntry, importResult);
 
 	const bool result = importedSceneHandler(importResult);
 	if (SUCCEEDED(coInitializeResult))

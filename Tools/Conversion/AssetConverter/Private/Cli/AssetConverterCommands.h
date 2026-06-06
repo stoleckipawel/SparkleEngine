@@ -21,6 +21,9 @@ private:
 	    const std::filesystem::path& sourceScenePath,
 	    const SourceImportResult& importResult,
 	    const CookedSceneBuild& cookedSceneBuild);
+	static void PrintImportFeatureSummary(
+	    const std::filesystem::path& sourceScenePath,
+	    const SourceImportResult& importResult);
 	static void PrintCollectTextureSummary(
 	    const std::filesystem::path& sourceScenePath,
 	    std::size_t requestCount,

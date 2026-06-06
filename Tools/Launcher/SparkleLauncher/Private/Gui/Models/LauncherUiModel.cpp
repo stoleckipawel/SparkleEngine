@@ -92,7 +92,7 @@ namespace SparkleLauncher
 			    "Launch workflow: runs the selected editor or runtime target with shared graphics, startup level, and argument options.",
 			    "Launch view",
 			    "Uses the selected project, target, startup level, and runtime options from this page.",
-			    "workflow-project-run.png");
+			    "workflow-project-run-editor.png");
 		}
 		if (operationId == "workspace.open-ide")
 		{

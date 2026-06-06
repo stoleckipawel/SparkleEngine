@@ -18,6 +18,30 @@ void SourceImportDiagnosticsRecorder::RecordSceneFeatures(
     const SourceSceneFeatureDiagnostics& diagnostics) noexcept
 {
 	result.diagnostics.sceneFeatures = diagnostics;
+	result.diagnostics.featureCapabilities.animations = {
+	    diagnostics.animationCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.cameraNodes = {
+	    diagnostics.cameraNodeCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.lightNodes = {
+	    diagnostics.lightNodeCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.skinnedNodes = {
+	    diagnostics.skinnedNodeCount,
+	    SourceImportFeatureSupport::PartiallyImported};
+	result.diagnostics.featureCapabilities.weightedNodes = {
+	    diagnostics.weightedNodeCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.morphTargets = {
+	    diagnostics.morphTargetPrimitiveCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.materialVariants = {
+	    diagnostics.materialVariantCount + diagnostics.materialVariantPrimitiveCount,
+	    SourceImportFeatureSupport::Unsupported};
+	result.diagnostics.featureCapabilities.meshGpuInstancing = {
+	    diagnostics.authoredInstancingNodeCount,
+	    SourceImportFeatureSupport::PartiallyImported};
 }
 
 void SourceImportDiagnosticsRecorder::RecordImportedScenePayload(SourceImportResult& result) noexcept

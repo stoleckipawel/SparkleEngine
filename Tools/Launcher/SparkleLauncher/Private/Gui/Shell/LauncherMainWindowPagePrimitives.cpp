@@ -130,7 +130,10 @@ namespace SparkleLauncher
 
 	void LauncherMainWindow::AddWorkflowVisualBanner(QVBoxLayout& layout, const QString& operationId)
 	{
-		const QString artworkFileName = VisualAssetForOperation(operationId);
+		const QString artworkFileName =
+		    operationId == "project.run" ?
+		        (m_settings.LaunchTarget() == "runtime" ? QStringLiteral("workflow-project-run-runtime.png") : VisualAssetForOperation(operationId)) :
+		        VisualAssetForOperation(operationId);
 		if (artworkFileName.isEmpty())
 		{
 			return;
