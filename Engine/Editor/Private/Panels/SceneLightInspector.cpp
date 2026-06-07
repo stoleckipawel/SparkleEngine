@@ -8,7 +8,6 @@
 #include "Scene/Lighting/SceneLightDesc.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Lighting/SpotLightDesc.h"
-#include "Util/EditorInspectorValueSanitizers.h"
 #include "Util/UiUtil.h"
 
 #include <algorithm>
@@ -68,8 +67,6 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	constexpr float kDefaultIntensity = 1.0f;
 	if (UiUtil::EditDetailsFloat("Intensity", intensity, 0.05f, kIntensitySliderMin, kIntensitySliderMax, "%.3f", &kDefaultIntensity))
 	{
-		DirectX::XMFLOAT3 dummyColor = {1.0f, 1.0f, 1.0f};
-		EditorInspectorValueSanitizers::ClampLightValues(dummyColor, intensity);
 		lightDesc.common.intensity = intensity;
 	}
 
@@ -77,10 +74,7 @@ void SceneLightInspector::BuildLightCommonCategory(const std::string& filterText
 	const float defaultColor[3] = {1.0f, 1.0f, 1.0f};
 	if (UiUtil::EditDetailsColor3("Color", colorValues, defaultColor))
 	{
-		DirectX::XMFLOAT3 clampedColor = {colorValues[0], colorValues[1], colorValues[2]};
-		float dummyIntensity = 1.0f;
-		EditorInspectorValueSanitizers::ClampLightValues(clampedColor, dummyIntensity);
-		lightDesc.common.color = clampedColor;
+		lightDesc.common.color = {colorValues[0], colorValues[1], colorValues[2]};
 	}
 
 	constexpr bool kDefaultVisible = true;

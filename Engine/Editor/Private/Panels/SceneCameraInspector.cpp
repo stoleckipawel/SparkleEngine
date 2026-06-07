@@ -5,7 +5,6 @@
 #include "Scene/GameScene.h"
 #include "Scene/Camera/CameraComponent.h"
 #include "Scene/Camera/SceneCamera.h"
-#include "Util/EditorInspectorValueSanitizers.h"
 #include "Util/UiUtil.h"
 
 #include <cstdio>
@@ -79,8 +78,6 @@ void SceneCameraInspector::BuildCameraCategory(const std::string& filterText, Ca
 	constexpr float kDefaultFovYDegrees = 60.0f;
 	if (UiUtil::EditDetailsFloat("Field Of View", fovYDegrees, 0.1f, 1.0f, 179.0f, "%.1f", &kDefaultFovYDegrees))
 	{
-		float dummySpeed = 0.15f;
-		EditorInspectorValueSanitizers::ClampCameraValues(fovYDegrees, dummySpeed);
 		cameraComponent.SetFovYDegrees(fovYDegrees);
 	}
 
@@ -120,8 +117,6 @@ void SceneCameraInspector::BuildMovementCategory(const std::string& filterText, 
 	constexpr float kDefaultMoveSpeed = 0.10f;
 	if (UiUtil::EditDetailsFloat("Move Speed", moveSpeed, 0.01f, 0.0001f, 10.0f, "%.4f", &kDefaultMoveSpeed))
 	{
-		float dummyFov = 60.0f;
-		EditorInspectorValueSanitizers::ClampCameraValues(dummyFov, moveSpeed);
 		settings.moveSpeed = moveSpeed;
 		sceneCamera.SetSettings(settings);
 	}
