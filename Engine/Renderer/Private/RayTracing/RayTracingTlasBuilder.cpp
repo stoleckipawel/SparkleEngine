@@ -3,11 +3,21 @@
 #include "RayTracing/RayTracingTlasBuilder.h"
 
 #include "Commands/RenderCommandContext.h"
+#include "Core/Public/Math/MathUtils.h"
+#include "Meshes/GPUMesh.h"
 #include "SceneData/RenderSceneData.h"
 
 #include <unordered_set>
 
 static const auto g_rayTracingTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
+
+namespace
+{
+	std::uint64_t AlignRayTracingBufferSize(std::uint64_t sizeInBytes, std::uint64_t alignment) noexcept
+	{
+		return alignment > 0 ? MathUtils::AlignUp(sizeInBytes, alignment) : sizeInBytes;
+	}
+}
 
 RayTracingTlasBuilder::RayTracingTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
     m_renderHardwareInterface(&renderHardwareInterface)
@@ -235,16 +245,22 @@ bool RayTracingTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStruc
 
 	if (!m_scratchBuffer)
 	{
+		const std::uint64_t alignedScratchSize = AlignRayTracingBufferSize(
+		    prebuildInfo.ScratchDataSizeInBytes,
+		    m_renderHardwareInterface->GetCapabilities().RayTracing.ScratchBufferByteAlignment);
 		m_scratchBuffer =
-		    m_renderHardwareInterface->CreateRayTracingScratchBuffer(prebuildInfo.ScratchDataSizeInBytes, L"RayTracingTlasScratch");
-		m_scratchBufferSizeInBytes = prebuildInfo.ScratchDataSizeInBytes;
+		    m_renderHardwareInterface->CreateRayTracingScratchBuffer(alignedScratchSize, L"RayTracingTlasScratch");
+		m_scratchBufferSizeInBytes = alignedScratchSize;
 	}
 	if (!m_accelerationStructureBuffer)
 	{
-		m_accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
+		const std::uint64_t alignedAccelerationStructureSize = AlignRayTracingBufferSize(
 		    prebuildInfo.ResultDataMaxSizeInBytes,
+		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
+		m_accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
+		    alignedAccelerationStructureSize,
 		    L"RayTracingTlas");
-		m_accelerationStructureSizeInBytes = prebuildInfo.ResultDataMaxSizeInBytes;
+		m_accelerationStructureSizeInBytes = alignedAccelerationStructureSize;
 	}
 
 	if (!m_scratchBuffer || !m_accelerationStructureBuffer)

@@ -3,6 +3,7 @@
 
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
+#include "FrameGraph/PassRuntimeServices.h"
 #include "Passes/DirectLightingPass.h"
 
 void AddDirectLightingPass(
@@ -19,7 +20,8 @@ void AddDirectLightingPass(
 	    parameters,
 	    [](PassExecutionContext& context, DirectLightingPass::ParameterInstance& passParameters)
 	    {
-		    const DirectLightingPass pass(context.RuntimeServices.GetPassRuntime<DirectLightingPass>());
+		    const auto& runtime = context.RuntimeServices.GetPassRuntime<DirectLightingPass>();
+		    const DirectLightingPass pass{runtime};
 		    pass.Execute(context, passParameters);
 	    });
 }

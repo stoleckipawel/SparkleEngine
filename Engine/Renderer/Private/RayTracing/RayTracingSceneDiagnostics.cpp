@@ -2,6 +2,8 @@
 
 #include "RayTracing/RayTracingSceneDiagnostics.h"
 
+#include "RHI/Public/Core/RhiBackendSelection.h"
+
 static const auto g_rayTracingSceneLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 
 void RayTracingSceneDiagnostics::LogSceneUpdate(
