@@ -1,0 +1,17 @@
+[Level]
+Name = SkeletalMorphTriangle
+
+[Camera]
+Position = 0.0, 0.45, -2.0
+YawRadians = 0.0
+PitchRadians = 0.0
+FovYDegrees = 60.0
+MoveSpeed = 0.05
+
+[Lighting]
+DirectionalLight0Direction = 0.25, -0.85, 0.45
+DirectionalLight0Intensity = 2.0
+DirectionalLight0Color = 1.0, 0.95, 0.85
+
+[SceneAssets]
+Asset = SkeletalMorphTriangle/SkeletalMorphTriangle

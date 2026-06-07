@@ -19,26 +19,26 @@ This plan turns glTF importer warnings into staged feature work. The order is in
 | Stage 0: Import Feature Diagnostics | Implemented | `SourceImportResult` exposes diagnostics and counts; cooker/converter print summaries. |
 | Stage 1: glTF Camera Import | Implemented | glTF cameras import into cooked scene camera records and become ordinary `SceneCameraEntry` data in `SceneCameras`. |
 | Stage 2: glTF Light Import | Implemented through GameFramework | glTF punctual lights import into cooked scene light records and ordinary `SceneLightDesc` data in `SceneLighting`; renderer shading currently consumes directional light snapshots. |
-| Stage 3: Scene Metadata Manifest Versioning | Implemented as metadata foundation | Manifest version is `8` and includes camera records, light records, skeleton refs, optional animation refs, morph weights, material variant records, material variant mappings, scene feature flags, and per-instance skeleton bindings. |
+| Stage 3: Scene Metadata Manifest Versioning | Implemented as metadata foundation | Manifest version is `9` and includes camera records, light records, skeleton refs, optional animation refs, morph weights, material variant records, material variant mappings, scene feature flags, per-instance skeleton bindings, and per-instance source node identity. |
 | Stage 4: Skeleton and Skin Data Import | Implemented through bind-pose data path | glTF skins import into cooked skeleton assets, separate mesh skin influence streams, cooked scene skeleton refs, GameFramework `SceneSkeletons`, and mesh skeleton bindings. Animation playback and GPU skinning remain later stages. |
 | Stage 4.5: Static/Skeletal Mesh Asset Split | Implemented | Static Mesh and Skeletal Mesh are explicit cooked/runtime concepts; Stage 5+ animation work must keep using this split instead of reintroducing optional skin fields into the static mesh path. |
-| Stage 5: Animation Clip Import and Cooking | Implemented for TRS clips | glTF animations import into cooked animation assets and manifest animation refs; runtime can enumerate clips from cooked data. |
-| Stage 6: Runtime Animation Playback | Implemented for skeletal TRS playback | GameFramework owns playback/evaluation; Renderer consumes immutable pose snapshots. Morph-weight channels remain deferred. |
+| Stage 5: Animation Clip Import and Cooking | Implemented for TRS and weight channels | glTF animations import into cooked animation assets and manifest animation refs; runtime can enumerate clips from cooked data. |
+| Stage 6: Runtime Animation Playback | Implemented for skeletal TRS and morph-weight playback | GameFramework owns playback/evaluation; Renderer consumes immutable pose and morph-weight snapshots. |
 | Stage 7: Renderer Skinning Path | Implemented baseline, scalability pending | Renderer has explicit skeletal draw classification, skin influence buffers, and per-frame joint palette upload. Compute/batched skinning remains future scalability work. |
-| Stage 8: Renderer Point and Spot Light Shading | Implemented with D3D12 validation | GameFramework and renderer snapshots carry directional, point, and spot lights; Vulkan validation is still blocked by the existing Vulkan texture/material fallback failure. |
-| Stage 9: Morph Targets and Weighted Nodes | Deferred to skeletal/deformable mesh work | Static mesh content stays clean. Morph playback should land only through the skeletal/deformable path, with a dedicated validation sample when that path is implemented. |
-| Stage 10: Material Variants and Mesh Instancing | Implemented with D3D12 validation | Material variants import/cook/load into scene metadata and are selectable through GameFramework/editor. Authored mesh GPU instancing preserves instance groups through renderer batching diagnostics. Vulkan render validation is blocked by the existing texture/material fallback failure. |
+| Stage 8: Renderer Point and Spot Light Shading | Implemented with D3D12 and Vulkan validation | GameFramework and renderer snapshots carry directional, point, and spot lights; Vulkan default texture upload, sampler binding, and descriptor-set submission now validate the path. |
+| Stage 9: Morph Targets and Weighted Nodes | Implemented for skeletal/deformable meshes | Skeletal morph target streams import/cook/load, weighted nodes initialize morph state, weight animation channels drive runtime skeletal morph weights, and static mesh data remains clean. |
+| Stage 10: Material Variants and Mesh Instancing | Implemented with D3D12 and Vulkan validation | Material variants import/cook/load into scene metadata and are selectable through GameFramework/editor. Authored mesh GPU instancing preserves instance groups through renderer batching diagnostics. |
 
 ## Current Warning Map
 
 | Warning | Current owner | Missing feature | First functional owner |
 | --- | --- | --- | --- |
-| `animations are present and will be ignored` | Former glTF warning for supported TRS clips | Morph-weight animation channels remain unsupported | GameFramework animation system evaluates TRS clips, with Renderer consuming evaluated skinning data |
+| `animations are present and will be ignored` | Former glTF warning for supported TRS and weight clips | Unsupported/unknown channels only | GameFramework animation system evaluates TRS clips and skeletal morph-weight channels, with Renderer consuming evaluated skinning/deformable data |
 | `nodes contain cameras and they will be ignored` | Former glTF warning | Implemented as camera import and cooked scene camera records | SourceImportAdapters -> SceneCooker -> GameFramework `SceneCameras` |
 | `nodes contain lights and they will be ignored` | Former glTF warning | Implemented as punctual light import and cooked scene light records | SourceImportAdapters -> SceneCooker -> GameFramework `SceneLighting`; Renderer directional snapshot path consumes supported render data |
 | `skinned nodes are present and will be imported as static data only` | Conditional glTF fallback warning | Only malformed or incomplete skin data should still hit this fallback | SourceImportAdapters -> cooked skeleton/mesh data -> GameFramework `SceneSkeletons` and mesh bindings -> Renderer skinning |
 
-Remaining diagnostics to keep explicit when source assets actually contain them: skeletal morph/weight animation channels until the deformable path lands, unsupported glTF material extensions, unsupported embedded/encoded texture sources, Draco-compressed primitives, and non-triangle primitives.
+Remaining diagnostics to keep explicit when source assets actually contain them: unsupported glTF material extensions, unsupported embedded/encoded texture sources, Draco-compressed primitives, non-triangle primitives, and malformed skin/morph data that cannot satisfy the skeletal/deformable path.
 
 ## Shared Rules
 
@@ -242,20 +242,20 @@ Validation prompt:
 
 ```text
 Recook Showcase, inspect one static sample and one skeletal sample. Verify static mesh cooked assets contain no skin/skeleton payload, CesiumMan is classified as a skeletal mesh with one skeleton binding, and D3D12 runtime smoke loads both paths. Run Vulkan smoke as far as the existing texture path allows and verify scene payload classification happens before any renderer texture failure.
+```
 
 Current validation evidence:
 
 - CesiumMan cooked mesh `A5E88B024417D647.smsh` uses mesh asset version `4`, `AssetKind=1`, `SkinInfluenceCount=3273`, and `Flags=1`.
 - DamagedHelmet cooked mesh `DAFD3D6CF4F664E7.smsh` uses mesh asset version `4`, `AssetKind=0`, `SkinInfluenceCount=0`, and `Flags=0`.
-- CesiumMan scene manifest version `8` has `FirstMeshRefKind=1`, `SkeletonRefs=1`, `AnimationRefs=1`, and `FirstInstanceSkeletonRefIndex=0`.
-- DamagedHelmet scene manifest version `8` has `FirstMeshRefKind=0`, `SkeletonRefs=0`, and no instance skeleton ref.
+- CesiumMan scene manifest version `9` has `FirstMeshRefKind=1`, `SkeletonRefs=1`, `AnimationRefs=1`, and `FirstInstanceSkeletonRefIndex=0`.
+- DamagedHelmet scene manifest version `9` has `FirstMeshRefKind=0`, `SkeletonRefs=0`, and no instance skeleton ref.
 - D3D12 smoke passes for CesiumMan and DamagedHelmet with scene payload classification before renderer submission.
-- Vulkan smoke reaches CesiumMan cooked scene payload classification (`meshInstances=1`, `skeletonRefs=1`, `loadedSkeletons=1`) before the existing Vulkan texture/material fallback failure.
-```
+- Vulkan smoke passes for CesiumMan after the Vulkan default texture/material path fix.
 
 ## Stage 5: Animation Clip Import and Cooking
 
-Status: Implemented for cooked TRS animation clips. Morph-weight animation channels remain deferred to the morph runtime work.
+Status: Implemented for cooked TRS and morph-weight animation clips.
 
 Goal: Import glTF animation clips into cooked animation assets while keeping playback disabled until the runtime pose system exists.
 
@@ -266,7 +266,7 @@ Implementation prompt:
 ```text
 Implement glTF animation clip import and cooked animation assets.
 
-Add ImportedAnimationClip, ImportedAnimationSampler, and ImportedAnimationChannel data for translation, rotation, scale, and weights if morph targets are still deferred. Parse cgltf animations into normalized clip data. Cook clips into versioned animation assets referenced by cooked scene metadata. Runtime should load animation assets and expose clip metadata, duration, channel count, target skeleton, and sampling mode without applying poses yet.
+Add ImportedAnimationClip, ImportedAnimationSampler, and ImportedAnimationChannel data for translation, rotation, scale, and morph weights. Parse cgltf animations into normalized clip data. Cook clips into versioned animation assets referenced by cooked scene metadata. Runtime should load animation assets and expose clip metadata, duration, channel count, target skeleton, and sampling mode without applying poses yet.
 ```
 
 Acceptance criteria:
@@ -286,12 +286,13 @@ Recook a scene with at least one glTF animation, verify cooked animation assets 
 Current validation evidence:
 
 - `CesiumMan/CesiumMan.gltf` recook reports `animations=1/imported`.
-- CesiumMan cooked scene manifest version `8` has `animationRefs=1`.
+- `SkeletalMorphTriangle/SkeletalMorphTriangle.gltf` recook reports `animations=1/imported` with a weight channel targeting the skeletal mesh node.
+- CesiumMan and SkeletalMorphTriangle cooked scene manifests use version `9` and carry animation refs.
 - GameFramework scene load logs enumerate one loaded animation clip from cooked scene payload data.
 
 ## Stage 6: Runtime Animation Playback
 
-Status: Implemented for cooked TRS skeletal animation playback. GameFramework owns playback state and pose evaluation; Renderer consumes immutable pose snapshots and uploads per-frame joint palettes for skeletal mesh draws. Morph-weight animation channels remain deferred and are reported by `SceneAnimations` as unsupported runtime channels.
+Status: Implemented for cooked TRS skeletal animation playback and skeletal morph-weight playback. GameFramework owns playback state, pose evaluation, and mutable skeletal morph weights; Renderer consumes immutable pose/deformable mesh data and uploads per-frame joint palettes for skeletal mesh draws.
 
 Goal: Evaluate cooked animation clips into skeleton poses at runtime.
 
@@ -353,7 +354,7 @@ Build ShowcaseRuntime and ShowcaseEditor, force recook animated assets, run D3D1
 
 ## Stage 8: Renderer Point and Spot Light Shading
 
-Status: Implemented in the renderer lighting path with D3D12 validation. Vulkan validation is blocked before lighting submission by the existing Vulkan texture/material fallback failure (`MaterialCacheManager::Rebuild: Material texture slot 0 resolved to null`) after default texture creation fails.
+Status: Implemented in the renderer lighting path with D3D12 and Vulkan validation. Vulkan default texture upload, immutable sampler binding, and descriptor-set submission now validate the lighting path beyond cooked payload classification.
 
 Goal: Consume already-imported point and spot lights in Renderer so all punctual light types affect shading.
 
@@ -379,6 +380,7 @@ Validation prompt:
 
 ```text
 Recook a scene with directional, point, and spot glTF lights. Launch editor and runtime smoke on D3D12 and Vulkan and verify each light type contributes visibly or through deterministic renderer diagnostics.
+```
 
 Current validation evidence:
 
@@ -387,12 +389,11 @@ Current validation evidence:
 - Renderer scene data and per-view lighting constants carry point and spot lights through RHI-neutral layouts shared by D3D12 and Vulkan shader packages.
 - DirectLighting HLSL consumes directional, point, and spot arrays from the same per-view lighting block.
 - D3D12 runtime smoke on `CameraCubeImportedCamera` reaches frame 40 and logs `RenderLightingBuilder: prepared scene lighting (directionalLights=2, pointLights=1, spotLights=1)`.
-- Vulkan runtime smoke loads the same scene asset with `lights=3` but fails before renderer scene extraction because default Vulkan texture creation leaves material texture slot 0 null.
-```
+- Vulkan runtime smoke now validates the same cooked lighting path after the Vulkan default texture/material null path fix.
 
 ## Stage 9: Morph Targets and Weighted Nodes
 
-Status: Deferred to the skeletal/deformable mesh path. Static mesh data remains plain geometry and static mesh instances do not carry morph weights. glTF morph target deltas can be parsed into imported deformation data, but active Showcase content no longer carries intentionally unsupported static morph samples. Remaining work is a skeletal morph validation sample, runtime mutable morph weight state, and animation channels targeting weights.
+Status: Implemented for skeletal/deformable meshes. Static mesh data remains plain geometry and static mesh instances do not carry morph streams or morph weights. Skeletal glTF morph target deltas import into cooked skeletal mesh morph streams, weighted nodes initialize runtime morph state, and animation channels targeting weights drive mutable skeletal morph weights.
 
 Goal: Address morph target and weighted-node warnings after the animation/skinning data model exists.
 
@@ -413,7 +414,7 @@ Acceptance criteria:
 - Animation channels targeting weights can drive morph weights if Stage 6 animation playback exists.
 - Renderer path works on D3D12 and Vulkan without backend-specific renderer branches.
 - Static meshes stay on the static path and do not cook/load morph streams.
-- Static glTF primitives with morph targets are outside the active supported Showcase baseline; add a dedicated skeletal/deformable validation sample when implementing morph playback.
+- Static glTF primitives with morph targets remain outside the active supported Showcase baseline; supported morph playback is intentionally owned by the skeletal/deformable path.
 
 Validation prompt:
 
@@ -421,14 +422,17 @@ Validation prompt:
 Use a glTF sample with visible morph targets, recook, run D3D12 and Vulkan smoke, and verify default and animated weights produce expected mesh deformation without warnings about ignored weighted nodes.
 ```
 
-Current validation notes:
+Current validation evidence:
 
-- `ShowcaseRuntime`, `ShowcaseEditor`, and `AssetCooker` build in `build-codex-ninja` after the skeletal morph runtime state pass.
+- `Projects/Showcase/Assets/Meshes/SkeletalMorphTriangle/SkeletalMorphTriangle.gltf` is the Stage 9 validation fixture: one skeletal triangle, one joint, one morph target, default node weight state, and one animated weight channel.
+- `SkeletalMorphTriangle.level` loads that fixture through the normal cooked scene asset path.
+- Showcase recook reports `SkeletalMorphTriangle/SkeletalMorphTriangle.gltf` with `animations=1/imported`, `skinnedNodes=1/imported`, `weightedNodes=1/imported`, `morphTargets=1/imported`, and `warnings=0`; no ignored morph/weighted-node warnings appear.
 - Showcase recook writes scene manifest version `9`, preserving source node identity for mesh instances so animation weight channels can target skeletal/deformable mesh components deterministically.
-- Runtime now has mutable skeletal morph weight state on `SkeletalCookedMesh`; animation weight channels produce node-targeted morph weight snapshots and `SceneMeshes` applies them only to skeletal components.
+- Runtime has mutable skeletal morph weight state on `SkeletalCookedMesh`; animation weight channels produce node-targeted morph weight snapshots and `SceneMeshes` applies them only to skeletal components.
+- D3D12 runtime smoke on `SkeletalMorphTriangle` reaches frame limit 45 and logs active playback with `poses=1`, `morphWeights=1`, and animated `firstMorphWeight` values.
+- Vulkan runtime smoke on `SkeletalMorphTriangle` reaches frame limit 45 and logs the same skeletal morph playback path.
 - Renderer remains importer-agnostic: changed CPU mesh geometry is detected through mesh geometry revisions and `GPUMeshCache` reuploads revised meshes without adding morph-specific renderer branches.
 - Static meshes stay on the static path and do not cook/load morph streams.
-- A visible skeletal morph validation sample is still needed to prove authored animated deformation visually, but the runtime plumbing for weight-channel playback is now in place.
 
 ## Stage 10: Material Variants and Mesh Instancing
 
@@ -474,15 +478,14 @@ Current validation evidence:
 
 Stage 0 through Stage 10 are now implemented except where explicitly called out below. Future work should preserve the static/skeletal mesh split, keep import/cook/runtime/renderer boundaries separate, and avoid routing feature-specific state through generic static mesh data.
 
-- Add a visible skeletal/deformable morph target validation sample and assert animated weight-channel deformation in screenshots or deterministic geometry diagnostics.
 - Decide which advanced glTF material extensions Sparkle should care about next. Current importer diagnostics still report unsupported approximation for extensions such as clearcoat, transmission, volume, sheen, specular, iridescence, anisotropy, dispersion, unlit, and specular-glossiness.
 - Keep Draco-compressed primitives, non-triangle primitive modes, unsupported embedded/encoded texture sources, and FBX-only feature gaps explicit as unsupported diagnostics until they receive dedicated feature work.
 
 Suggested next implementation prompt:
 
 ```text
-Add skeletal morph target validation without polluting static meshes.
+Triage advanced glTF material extension support.
 
-Add a skeletal morph validation sample that exercises the existing mutable skeletal morph weight state in GameFramework, cooked/runtime source-node mapping, animation weight channels, and geometry-revision renderer upload path. Static mesh data and static mesh instances must remain free of morph streams, morph weights, and deformation flags.
+Choose the next material extension family Sparkle should support beyond the current PBR baseline. Keep unsupported material extensions explicit as approximation diagnostics until import, cook, GameFramework material ownership, renderer shading, and D3D12/Vulkan validation all exist for the selected feature.
 ```
 

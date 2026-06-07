@@ -4,7 +4,6 @@
 #include "Meshes/GPUMesh.h"
 
 #include <memory>
-#include <cstdint>
 #include <unordered_map>
 
 class Mesh;
@@ -33,7 +32,6 @@ class SPARKLE_RENDERER_API GPUMeshCache final
 	struct CacheEntry final
 	{
 		std::unique_ptr<GPUMesh> Mesh;
-		std::uint64_t GeometryRevision = 0;
 	};
 
 	RenderHardwareInterface* m_renderHardwareInterface = nullptr;

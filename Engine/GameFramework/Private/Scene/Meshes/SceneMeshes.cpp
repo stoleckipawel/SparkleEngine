@@ -3,7 +3,7 @@
 #include "Scene/Meshes/SceneMeshes.h"
 
 #include "Scene/Meshes/MeshComponent.h"
-#include "Scene/Meshes/SkeletalCookedMesh.h"
+#include "Scene/Meshes/SceneMorphWeightApplicator.h"
 
 SceneMeshes::SceneMeshes() noexcept = default;
 
@@ -49,21 +49,7 @@ void SceneMeshes::ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> mo
 		return;
 	}
 
-	for (const SceneMorphWeightSnapshot& morphWeight : morphWeights)
-	{
-		for (const std::unique_ptr<MeshComponent>& mesh : m_meshes)
-		{
-			if (!mesh || !mesh->IsSkeletalMeshComponent() || mesh->GetSourceNodeIndex() != morphWeight.targetNodeIndex)
-			{
-				continue;
-			}
-
-			if (auto* skeletalMesh = dynamic_cast<SkeletalCookedMesh*>(mesh->GetMesh()))
-			{
-				skeletalMesh->SetMorphWeights(morphWeight.weights);
-			}
-		}
-	}
+	SceneMorphWeightApplicator::Apply(morphWeights, m_meshes);
 }
 
 bool SceneMeshes::SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept
