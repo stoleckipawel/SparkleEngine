@@ -18,6 +18,7 @@ struct SPARKLE_ENGINE_API MeshInstanceSnapshot
 	DirectX::XMFLOAT3X4 worldInvTranspose = {};
 	MaterialHandle materialHandle = MaterialHandle::Invalid();
 	Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId;
+	Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
 	SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex instanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 };

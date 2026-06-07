@@ -6,6 +6,7 @@
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
+#include "GameFramework/Public/Scene/Skeletons/SceneSkeleton.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 #include "GameFramework/Public/Scene/Transform.h"
@@ -23,6 +24,9 @@ struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
 	std::size_t meshInstanceGroupCount = 0;
 	std::size_t cameraCount = 0;
 	std::size_t lightCount = 0;
+	std::size_t skeletonRefCount = 0;
+	std::size_t animationRefCount = 0;
+	std::uint32_t sceneFeatureFlags = 0;
 };
 
 struct SPARKLE_ENGINE_API SceneAssetPayload
@@ -39,6 +43,7 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 		Transform transform;
 		MaterialHandle material;
 		SceneMeshInstanceGroupIndex groupIndex = kInvalidSceneMeshInstanceGroupIndex;
+		Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
 	};
 
 	struct MeshInstanceGroup
@@ -64,6 +69,7 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 	std::vector<MeshInstanceGroup> meshInstanceGroups;
 	std::vector<Camera> cameras;
 	std::vector<SceneLightDesc> lights;
+	std::vector<SceneSkeletonDesc> skeletons;
 	std::vector<MaterialDesc> materials;
 	SceneAssetPayloadDiagnostics diagnostics;
 

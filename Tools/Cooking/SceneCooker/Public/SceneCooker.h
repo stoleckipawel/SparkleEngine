@@ -29,5 +29,4 @@ private:
 	    std::string& outSceneAssetId,
 	    std::string& outErrorMessage);
 	static bool UpdateSceneAssetRegistry(const CookedSceneBuild& build, std::string& outErrorMessage);
-	static Assets::CookedSceneInstanceGroupKind ToCookedInstanceGroupKind(ImportedMeshInstanceGroupKind groupKind) noexcept;
 };

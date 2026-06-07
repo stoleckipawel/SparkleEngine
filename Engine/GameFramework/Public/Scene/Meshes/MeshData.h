@@ -2,8 +2,10 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Core/Public/CoreTypes.h"
+#include "MeshSkinningData.h"
 
 #include <DirectXMath.h>
+#include <type_traits>
 #include <vector>
 
 struct VertexData
@@ -35,11 +37,15 @@ struct MeshData
 {
 	std::vector<VertexData> vertices;
 	std::vector<uint32> indices;
+	std::vector<VertexSkinInfluence> skinInfluences;
 
-	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
+	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty() && IsSkinInfluenceStreamValid(); }
+	bool HasSkinInfluences() const noexcept { return !skinInfluences.empty(); }
+	bool IsSkinInfluenceStreamValid() const noexcept { return skinInfluences.empty() || skinInfluences.size() == vertices.size(); }
 
 	uint32 GetVertexCount() const noexcept { return static_cast<uint32>(vertices.size()); }
 	uint32 GetIndexCount() const noexcept { return static_cast<uint32>(indices.size()); }
+	uint32 GetSkinInfluenceCount() const noexcept { return static_cast<uint32>(skinInfluences.size()); }
 
 	SizeType GetVertexBufferSize() const noexcept { return vertices.size() * sizeof(VertexData); }
 	SizeType GetIndexBufferSize() const noexcept { return indices.size() * sizeof(uint32); }
@@ -51,6 +57,7 @@ struct MeshData
 	{
 		vertices.clear();
 		indices.clear();
+		skinInfluences.clear();
 	}
 
 	void Reserve(uint32 vertexCount, uint32 indexCount)

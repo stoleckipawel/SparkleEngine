@@ -9,6 +9,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/MeshComponent.h"
 #include "Scene/Meshes/SceneMeshes.h"
+#include "Scene/Skeletons/SceneSkeletons.h"
 #include "Scene/Textures/SceneTextures.h"
 
 #include <memory>
@@ -19,16 +20,23 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     SceneLighting& lighting,
     SceneMaterials& materials,
     SceneMeshes& meshes,
+    SceneSkeletons& skeletons,
     SceneTextures& textures) noexcept :
-    m_cameras(cameras), m_lighting(lighting), m_materials(materials), m_meshes(meshes), m_textures(textures)
+    m_cameras(cameras), m_lighting(lighting), m_materials(materials), m_meshes(meshes), m_skeletons(skeletons), m_textures(textures)
 {
 }
 
 bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty())
+	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty() &&
+	    sceneAssetPayload.skeletons.empty())
 	{
 		return false;
+	}
+
+	if (!sceneAssetPayload.skeletons.empty())
+	{
+		m_skeletons.AppendSkeletons(std::move(sceneAssetPayload.skeletons));
 	}
 
 	if (!sceneAssetPayload.materials.empty())
@@ -66,7 +74,8 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 		    materialHandle,
 		    meshAsset.assetId,
 		    meshInstance.meshAssetIndex,
-		    sceneGroupIndex));
+		    sceneGroupIndex,
+		    meshInstance.skeletonAssetId));
 	}
 
 	m_meshes.AppendMeshComponents(std::move(meshComponents));

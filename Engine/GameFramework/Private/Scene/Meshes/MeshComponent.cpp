@@ -11,14 +11,16 @@ MeshComponent::MeshComponent(
 	MaterialHandle materialHandle,
 	Assets::CookedAssetId meshAssetId,
 	SceneMeshAssetIndex meshAssetIndex,
-	SceneMeshInstanceGroupIndex meshInstanceGroupIndex) noexcept :
+	SceneMeshInstanceGroupIndex meshInstanceGroupIndex,
+	Assets::CookedAssetId skeletonAssetId) noexcept :
 	Component(),
 	m_mesh(std::move(mesh)),
 	m_transform(transform),
 	m_materialHandle(materialHandle),
 	m_meshAssetId(meshAssetId),
 	m_meshAssetIndex(meshAssetIndex),
-	m_meshInstanceGroupIndex(meshInstanceGroupIndex)
+	m_meshInstanceGroupIndex(meshInstanceGroupIndex),
+	m_skeletonAssetId(skeletonAssetId)
 {
 }
 

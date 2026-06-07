@@ -3,11 +3,21 @@
 #include "CookedMaterialAssetBuild.h"
 #include "CookedMeshAssetBuild.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
+#include "GameFramework/Public/Assets/Cooked/CookedSkeletonAsset.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
 #include <vector>
+
+struct CookedSkeletonAssetBuild final
+{
+	Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
+	std::uint32_t sourceSkinIndex = 0;
+	std::filesystem::path sourcePath;
+	std::vector<Assets::CookedSkeletonJointRecord> joints;
+};
 
 struct CookedSceneIdentity final
 {
@@ -24,12 +34,15 @@ struct CookedSceneManifestBuildData final
 	std::vector<Assets::CookedSceneInstanceGroupRecord> instanceGroups;
 	std::vector<Assets::CookedSceneCameraRecord> cameras;
 	std::vector<Assets::CookedSceneLightRecord> lights;
+	std::vector<Assets::CookedSceneSkeletonRef> skeletonRefs;
+	std::vector<Assets::CookedSceneAnimationRef> animationRefs;
 };
 
 struct CookedSceneAssetOutputs final
 {
 	std::vector<CookedMeshAssetBuild> meshAssets;
 	std::vector<CookedMaterialAssetBuild> materialAssets;
+	std::vector<CookedSkeletonAssetBuild> skeletonAssets;
 };
 
 struct CookedSceneBuildStatus final

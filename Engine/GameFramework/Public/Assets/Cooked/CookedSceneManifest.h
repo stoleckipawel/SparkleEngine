@@ -4,6 +4,7 @@
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneCameraRecord.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneLightRecord.h"
+#include "GameFramework/Public/Assets/Cooked/CookedSceneMetadataRecords.h"
 
 #include <DirectXMath.h>
 
@@ -14,9 +15,10 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = MakeCookedAssetMagic('S', 'S', 'C', 'N');
-	inline constexpr std::uint32_t kCookedSceneManifestVersion = 4;
+	inline constexpr std::uint32_t kCookedSceneManifestVersion = 6;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();
+	inline constexpr std::uint32_t kInvalidCookedSceneSkeletonRefIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	enum class CookedSceneInstanceGroupKind : std::uint32_t
 	{
@@ -40,6 +42,7 @@ namespace Assets
 		std::uint32_t meshAssetIndex = 0;
 		std::uint32_t materialAssetIndex = 0;
 		std::uint32_t groupIndex = kInvalidCookedSceneInstanceGroupIndex;
+		std::uint32_t skeletonRefIndex = kInvalidCookedSceneSkeletonRefIndex;
 		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	};
 
@@ -62,6 +65,9 @@ namespace Assets
 		std::uint32_t instanceGroupCount = 0;
 		std::uint32_t cameraCount = 0;
 		std::uint32_t lightCount = 0;
+		std::uint32_t skeletonRefCount = 0;
+		std::uint32_t animationRefCount = 0;
+		std::uint32_t featureFlags = 0;
 	};
 }
 

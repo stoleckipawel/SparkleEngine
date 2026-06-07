@@ -60,8 +60,9 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
+	m_hasSkinInfluences = meshData.HasSkinInfluences();
 
-	SPDLOG_LOGGER_TRACE(g_gpuMeshLogger, "[GPUMesh] Uploaded mesh buffers");
+	SPDLOG_LOGGER_TRACE(g_gpuMeshLogger, "[GPUMesh] Uploaded {} mesh buffers", m_hasSkinInfluences ? "skinned" : "static");
 
 	return true;
 }

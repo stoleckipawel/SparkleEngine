@@ -50,6 +50,7 @@ class MeshInstanceBatchBuilder final
 		const GPUMesh* gpuMesh = nullptr;
 		const RenderBindingSet* materialBindingSet = nullptr;
 		std::uint32_t materialSlot = 0;
+		std::uint64_t skeletonAssetId = 0;
 		std::uint32_t renderStateKey = 0;
 		std::uint32_t renderLayer = 0;
 

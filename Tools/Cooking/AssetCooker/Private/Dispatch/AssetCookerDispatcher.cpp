@@ -9,8 +9,10 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Json/JsonWriter.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
+#include "CookedMeshAssetBuilder.h"
+#include "CookedMeshAssetWriter.h"
+#include "CookedSkeletonAssetWriter.h"
 #include "MaterialCooker.h"
-#include "MeshCooker.h"
 #include "SceneCooker.h"
 #include "SourceSceneImporter.h"
 #include "ToolConsole.h"
@@ -468,7 +470,7 @@ static bool AssetCookerCookImportedScene(
 		return false;
 	}
 
-	build.ApplyMeshOutput(MeshCooker::BuildMeshAssets(importResult, build.identity.assetId));
+	build.ApplyMeshOutput(CookedMeshAssetBuilder::BuildMeshAssets(importResult, build.identity.assetId));
 	MaterialCookOutput materialOutput;
 	if (!MaterialCooker::BuildMaterialAssets(importResult, build.identity.assetId, materialOutput, build.status.errorMessage))
 	{
@@ -483,7 +485,7 @@ static bool AssetCookerCookImportedScene(
 		return false;
 	}
 
-	if (!MeshCooker::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage))
+	if (!CookedMeshAssetWriter::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage))
 	{
 		diagnostics.AddError(AssetCookerCategory_Mesh, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
@@ -492,6 +494,12 @@ static bool AssetCookerCookImportedScene(
 	if (!MaterialCooker::WriteMaterialAssets(build.outputs.materialAssets, build.status.errorMessage))
 	{
 		diagnostics.AddError(AssetCookerCategory_Material, build.status.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!CookedSkeletonAssetWriter::WriteSkeletonAssets(build.outputs.skeletonAssets, build.status.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;
 	}
 

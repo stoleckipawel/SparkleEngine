@@ -2,8 +2,9 @@
 
 #include "Cli/AssetConverterCommands.h"
 
+#include "CookedMeshAssetBuilder.h"
+#include "CookedMeshAssetWriter.h"
 #include "MaterialCooker.h"
-#include "MeshCooker.h"
 #include "SceneCooker.h"
 #include "SourceSceneImporter.h"
 
@@ -124,7 +125,7 @@ CookedSceneBuild AssetConverterCommands::CookImportedScene(
 		return build;
 	}
 
-	build.ApplyMeshOutput(MeshCooker::BuildMeshAssets(importResult, build.identity.assetId));
+	build.ApplyMeshOutput(CookedMeshAssetBuilder::BuildMeshAssets(importResult, build.identity.assetId));
 	MaterialCookOutput materialOutput;
 	if (!MaterialCooker::BuildMaterialAssets(importResult, build.identity.assetId, materialOutput, build.status.errorMessage))
 	{
@@ -137,7 +138,7 @@ CookedSceneBuild AssetConverterCommands::CookImportedScene(
 		return build;
 	}
 
-	if (!MeshCooker::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage) ||
+	if (!CookedMeshAssetWriter::WriteMeshAssets(build.outputs.meshAssets, build.status.errorMessage) ||
 	    !MaterialCooker::WriteMaterialAssets(build.outputs.materialAssets, build.status.errorMessage) ||
 	    !SceneCooker::WriteSceneManifestAndRegistry(build, build.status.errorMessage))
 	{

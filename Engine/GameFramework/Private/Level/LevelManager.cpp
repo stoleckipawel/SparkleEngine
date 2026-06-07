@@ -213,7 +213,8 @@ GameSceneLoadResult LevelManager::LoadLevelFromUnloadedState(const LevelAsset& l
 
 	const bool hasSceneAssetPayload = sceneAssetLoadResult.sceneAssetPayload.HasMeshes() ||
 	                                  !sceneAssetLoadResult.sceneAssetPayload.cameras.empty() ||
-	                                  !sceneAssetLoadResult.sceneAssetPayload.lights.empty();
+	                                  !sceneAssetLoadResult.sceneAssetPayload.lights.empty() ||
+	                                  !sceneAssetLoadResult.sceneAssetPayload.skeletons.empty();
 	if (hasSceneAssetPayload && !m_gameScene->AppendSceneAssetPayload(std::move(sceneAssetLoadResult.sceneAssetPayload)))
 	{
 		loadResult.status = GameSceneLoadStatus::Failed;

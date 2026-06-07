@@ -15,6 +15,9 @@ struct CookedMeshAssetBuild
 	std::filesystem::path sourcePath;
 	std::vector<Assets::CookedMeshVertex> vertices;
 	std::vector<std::uint32_t> indices;
+	std::vector<Assets::CookedMeshSkinInfluence> skinInfluences;
+
+	bool HasSkinInfluences() const noexcept { return !skinInfluences.empty(); }
 };
 
 struct MeshCookOutput final

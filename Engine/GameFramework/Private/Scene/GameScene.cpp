@@ -38,7 +38,7 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
 	const SceneAssetPayloadDiagnostics diagnostics = sceneAssetPayload.diagnostics;
-	GameSceneAssetPayloadAppender appender(m_cameras, m_lighting, m_materials, m_meshes, m_textures);
+	GameSceneAssetPayloadAppender appender(m_cameras, m_lighting, m_materials, m_meshes, m_skeletons, m_textures);
 	if (!appender.Append(std::move(sceneAssetPayload)))
 	{
 		return false;
@@ -46,15 +46,19 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}",
+	    "Scene: Loaded {} meshes, {} materials, {} skeletons, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}, skeletonRefs={}, animationRefs={}, featureFlags=0x{:08X}",
 	    m_meshes.GetMeshCount(),
 	    m_materials.GetMaterialCount(),
+	    m_skeletons.GetSkeletonCount(),
 	    diagnostics.loadedSceneAssetCount,
 	    diagnostics.meshAssetReferenceCount,
 	    diagnostics.meshInstanceCount,
 	    diagnostics.meshInstanceGroupCount,
 	    diagnostics.cameraCount,
-	    diagnostics.lightCount);
+	    diagnostics.lightCount,
+	    diagnostics.skeletonRefCount,
+	    diagnostics.animationRefCount,
+	    diagnostics.sceneFeatureFlags);
 
 	return true;
 }
@@ -75,6 +79,7 @@ void GameScene::Clear()
 	m_lighting.Reset();
 	m_materials.Reset();
 	m_meshes.Reset();
+	m_skeletons.Clear();
 	m_textures.Reset();
 	m_cameras.Reset();
 }

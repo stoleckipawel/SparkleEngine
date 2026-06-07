@@ -4,6 +4,7 @@
 #include "ImportedGeometry.h"
 #include "ImportedLight.h"
 #include "ImportedMaterial.h"
+#include "ImportedSkin.h"
 
 #include <cstddef>
 #include <filesystem>
@@ -18,6 +19,7 @@ struct ImportedScene
 	std::vector<ImportedCamera> cameras;
 	std::vector<ImportedLight> lights;
 	std::vector<ImportedMaterial> materials;
+	std::vector<ImportedSkeleton> skeletons;
 	std::filesystem::path sourcePath;
 	std::string importerName = "SourceSceneImporter";
 
@@ -28,6 +30,7 @@ struct ImportedScene
 	std::size_t GetCameraCount() const noexcept { return cameras.size(); }
 	std::size_t GetLightCount() const noexcept { return lights.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
+	std::size_t GetSkeletonCount() const noexcept { return skeletons.size(); }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)
 	{

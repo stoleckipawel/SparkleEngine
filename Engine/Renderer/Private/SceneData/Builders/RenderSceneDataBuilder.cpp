@@ -79,6 +79,7 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		draw.worldMatrix = meshInstance.worldMatrix;
 		draw.worldInvTranspose = meshInstance.worldInvTranspose;
 		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
+		draw.skeletonAssetId = meshInstance.skeletonAssetId;
 		draw.gpuMesh = gpuMesh;
 
 		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;

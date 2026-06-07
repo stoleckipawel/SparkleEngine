@@ -1,15 +1,36 @@
 ﻿# glTF Feature Warning Roadmap
 
-This plan turns the current glTF importer warnings into staged feature work. The order is intentionally easiest to hardest: first make importer capabilities explicit, then wire features that already have engine runtime concepts, then build the animation and skinning foundation that needs new cooked formats and renderer support.
+This plan turns glTF importer warnings into staged feature work. The order is intentionally easiest to hardest: first make importer capabilities explicit, then wire features that already have engine runtime concepts, then build the animation and skinning foundation that needs new cooked formats and renderer support.
+
+## Current Architecture Baseline
+
+- Source import creates normalized source data in `SourceImportResult`; it does not create runtime objects and runtime code must not depend on source importer internals.
+- Cooked scene manifests are the durable handoff. Camera and light records now live in the cooked scene manifest alongside mesh/material/instance data.
+- GameFramework owns ordinary scene objects through `SceneCameras`, `SceneLighting`, `SceneMaterials`, `SceneMeshes`, and `SceneTextures`. Imported cameras and lights are not special at runtime; import is just one authoring path that creates the same scene camera/light data.
+- Mesh identity should distinguish static mesh assets from skeletal mesh assets. A skeletal mesh is not just a static mesh with optional skin fields; it is a separate asset/runtime concept with skeleton binding, skin influence streams, and later animation/pose requirements.
+- `GameSceneAssetPayloadAppender` is the assembly boundary that applies cooked scene payloads to GameFramework owners.
+- `SceneLighting` is the runtime light collection. Loading helpers live under `Engine/GameFramework/Private/Scene/Lighting/Loading`, and frame/export snapshot helpers live under `Engine/GameFramework/Private/Scene/Lighting/Snapshots`.
+- Renderer and RHI consume snapshots and cooked/render data only. They must not learn about glTF, source import data, imported-vs-authored flags, or editor selection state.
+
+## Implementation Status
+
+| Stage | Status | Notes |
+| --- | --- | --- |
+| Stage 0: Import Feature Diagnostics | Implemented | `SourceImportResult` exposes diagnostics and counts; cooker/converter print summaries. |
+| Stage 1: glTF Camera Import | Implemented | glTF cameras import into cooked scene camera records and become ordinary `SceneCameraEntry` data in `SceneCameras`. |
+| Stage 2: glTF Light Import | Implemented through GameFramework | glTF punctual lights import into cooked scene light records and ordinary `SceneLightDesc` data in `SceneLighting`; renderer shading currently consumes directional light snapshots. |
+| Stage 3: Scene Metadata Manifest Versioning | Implemented as metadata foundation | Manifest version is `6` and includes camera records, light records, skeleton refs, optional animation refs, scene feature flags, and per-instance skeleton bindings. |
+| Stage 4: Skeleton and Skin Data Import | Implemented through bind-pose data path | glTF skins import into cooked skeleton assets, separate mesh skin influence streams, cooked scene skeleton refs, GameFramework `SceneSkeletons`, and mesh skeleton bindings. Animation playback and GPU skinning remain later stages. |
+| Stage 4.5: Static/Skeletal Mesh Asset Split | Planned cleanup before animation | Introduce explicit Static Mesh and Skeletal Mesh asset/runtime concepts so Stage 5+ animation work does not build on optional skin fields inside the generic static mesh path. |
 
 ## Current Warning Map
 
 | Warning | Current owner | Missing feature | First functional owner |
 | --- | --- | --- | --- |
 | `animations are present and will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Animation clip import, cooking, runtime playback | GameFramework animation system, with Renderer consuming evaluated skinning data |
-| `nodes contain cameras and they will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | Camera metadata import and level camera handoff | SourceImportAdapters -> SceneCooker -> GameFramework level camera |
-| `nodes contain lights and they will be ignored` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` | glTF light import and scene/level lighting handoff | SourceImportAdapters -> SceneCooker -> GameFramework lighting |
-| `skinned nodes are present and will be imported as static data only` | `Tools/Import/SourceImportAdapters/Private/Gltf/GltfSceneReader.cpp` and `GltfGeometryImporter.cpp` | Skeletons, joint weights, inverse bind matrices, animation pose evaluation, skinning path | SourceImportAdapters -> cooked skeleton/mesh data -> GameFramework animation -> Renderer skinning |
+| `nodes contain cameras and they will be ignored` | Former glTF warning | Implemented as camera import and cooked scene camera records | SourceImportAdapters -> SceneCooker -> GameFramework `SceneCameras` |
+| `nodes contain lights and they will be ignored` | Former glTF warning | Implemented as punctual light import and cooked scene light records | SourceImportAdapters -> SceneCooker -> GameFramework `SceneLighting`; Renderer directional snapshot path consumes supported render data |
+| `skinned nodes are present and will be imported as static data only` | Conditional glTF fallback warning | Bind-pose skeleton/skin import is implemented; animation pose evaluation and GPU skinning remain | SourceImportAdapters -> cooked skeleton/mesh data -> GameFramework `SceneSkeletons` and mesh bindings -> Renderer skinning |
 
 Related warnings to keep in the same backlog, but not let block the four warnings above: material variants, morph targets, weighted nodes, and mesh GPU instancing.
 
@@ -22,6 +43,11 @@ Related warnings to keep in the same backlog, but not let block the four warning
 - Keep Renderer responsible for render-side snapshots, GPU resources, skinning dispatch/draw setup, and shader-facing layouts.
 - Preserve runtime cooked-only loading. Do not add runtime glTF parsing.
 - Prefer versioned cooked asset/manifest changes over sidecar compatibility shims.
+- Do not introduce imported-vs-created behavior branches in GameFramework, Editor, Renderer, or RHI. Imported cameras/lights must become the same scene data as authored/default cameras/lights.
+- Do not add camera overrides for imported cameras. A scene has a set of cameras with deterministic active/default selection.
+- Do not make import code directional-light-specific. Import and cooked scene metadata should carry directional, point, and spot light data; renderer shading support can land independently through snapshot/render updates.
+- Do not model skeletal meshes as a permanent optional extension of static meshes. Static and skeletal mesh paths may share lower-level buffer helpers, but asset identity, cooked validation, runtime component semantics, editor labeling, and renderer draw classification should be explicit.
+- Keep orchestrators thin. Feature extraction, cooked record translation, scene payload assembly, loading conversion, and snapshot building should live in dedicated files/folders with names that match their responsibility.
 
 ## Stage 0: Import Feature Diagnostics
 
@@ -47,26 +73,29 @@ Acceptance criteria:
 
 ## Stage 1: glTF Camera Import
 
-Goal: Convert glTF camera nodes into a usable initial level camera or selectable imported camera metadata.
+Status: Implemented. Keep this section as the design contract for maintenance and regression checks.
 
-Why this is easiest: Sparkle already has `CameraDesc`, `SceneCamera`, `LevelDesc::cameraDesc`, level parsing, and runtime camera application. The missing piece is the source-to-cooked bridge.
+Goal: Convert glTF camera nodes into ordinary scene cameras that can be selected and used by the editor/runtime camera system.
+
+Why this is easiest: Sparkle already has `CameraDesc`, `SceneCamera`, `SceneCameras`, level parsing, and runtime camera application. The source-to-cooked bridge now creates the same camera data as authored/default cameras.
 
 Implementation prompt:
 
 ```text
 Implement glTF camera import as a functional feature.
 
-Add ImportedCamera data to SourceImportResult with name, world transform, projection kind, vertical FOV, near/far planes when available, and source node index. GltfSceneReader or a small GltfCameraImporter should extract camera nodes from cgltf. SceneCooker should persist the primary imported camera into the cooked scene or a scene metadata record. Level loading should be able to use that camera as the default view when a level references the cooked scene and does not override camera settings.
+Add ImportedCamera data to SourceImportResult with name, world transform, projection kind, vertical FOV, near/far planes when available, and source node index. GltfCameraImporter should extract camera nodes from cgltf. SceneCooker should persist cameras into cooked scene camera records. SceneManifestLoader should read cooked camera records, SceneAssetManager should include them in SceneAssetPayload, and GameSceneAssetPayloadAppender should append them to SceneCameras as ordinary SceneCameraEntry values.
 
-Keep SourceImportAdapters format-focused. Keep GameFramework responsible for turning imported camera metadata into CameraDesc. Do not make Renderer or RHI aware of glTF cameras.
+Keep SourceImportAdapters format-focused. Keep GameFramework responsible for turning cooked camera records into CameraDesc/SceneCameraEntry. Do not make Renderer or RHI aware of glTF cameras. Do not add imported-camera override behavior; imported cameras and default/authored cameras are the same runtime concept.
 ```
 
 Acceptance criteria:
 
-- glTF camera nodes no longer produce an ignored-camera warning when camera metadata is imported and consumed.
-- At least one imported camera can seed `LevelDesc::cameraDesc` or an equivalent scene camera handoff.
+- glTF camera nodes no longer produce an ignored-camera warning when camera data is imported, cooked, loaded, and consumed.
+- Imported cameras are appended to `SceneCameras` as ordinary selectable scene cameras.
+- Clicking a camera in the scene outliner can make it the viewport camera using the same behavior as any other scene camera.
 - Perspective cameras map FOV and transform correctly enough to frame known sample content.
-- Orthographic cameras are either supported or explicitly reported as imported metadata but not selected for runtime view.
+- Orthographic cameras are imported as scene camera data and either selected only when runtime support exists or diagnosed without changing renderer/RHI ownership.
 - The feature handles multiple cameras deterministically, using a documented primary-camera policy.
 - A recooked sample scene with glTF cameras launches with the imported camera on D3D12 and Vulkan.
 
@@ -78,53 +107,63 @@ Force recook Showcase, launch runtime smoke with a glTF-camera scene on D3D12 an
 
 ## Stage 2: glTF Light Import
 
-Goal: Convert glTF lights into functional scene lighting where Sparkle already has matching runtime light concepts.
+Status: Implemented through import, cook, load, editor, and GameFramework scene data. Renderer shading currently consumes the directional subset through `LightingSnapshot`.
 
-Why second: Directional lighting already exists in GameFramework and Renderer. Point and spot lights may require a renderer feature decision, so directional lights should land first while unsupported light types remain explicit.
+Goal: Convert glTF lights into ordinary scene lights where Sparkle has matching runtime light concepts, without making imported lights special.
+
+Why second: Lighting already has GameFramework and Renderer concepts. Import/cook/load should carry all glTF punctual light types up front; renderer support can consume additional light types later through snapshots and shaders.
 
 Implementation prompt:
 
 ```text
-Implement glTF KHR_lights_punctual import with functional directional light support first.
+Implement glTF KHR_lights_punctual import.
 
-Add ImportedLight data to SourceImportResult with type, name, world transform, direction, color, intensity, range, cone angles, and source node index. Parse glTF node lights from cgltf. Map directional lights to DirectionalLightDesc and feed them into LevelLightingDesc or cooked scene lighting metadata. Preserve point and spot lights as imported metadata if the renderer cannot consume them yet, but keep warnings specific: unsupported point/spot runtime lighting rather than all lights ignored.
+Add ImportedLight data to SourceImportResult with type, name, world transform, direction, color, intensity, range, cone angles, visibility/default enabled state, and source node index. GltfLightImporter should parse glTF node lights from cgltf. SceneCooker should persist all punctual light types into cooked scene light records. SceneManifestLoader should read cooked light records, SceneAssetManager should include them in SceneAssetPayload, and GameSceneAssetPayloadAppender should append them to SceneLighting as ordinary SceneLightDesc values.
+
+Do not make import code directional-specific. Directional, point, and spot payloads should share common light data and specialize only the fields unique to that light kind. Keep renderer support separate: the current snapshot/shader path may consume directional lights first, but that must not leak back into import, cooking, GameFramework ownership, or editor presentation.
 ```
 
 Acceptance criteria:
 
-- Directional glTF lights are imported and affect the rendered scene.
-- `nodes contain lights and they will be ignored` is replaced by type-specific diagnostics only for light types not yet consumed.
-- Direction, color, intensity, and enabled/default visibility survive import, cook, load, and renderer snapshot capture.
-- Multiple directional lights obey `LevelLightingDesc::MaxDirectionalLights` with deterministic truncation diagnostics.
+- Directional, point, and spot glTF lights are imported, cooked, loaded, and represented as ordinary `SceneLightDesc` values.
+- Direction, color, intensity, range, cone angles, world transform, source node index, and enabled/default visibility survive import, cook, and load.
+- Editor scene outliner and inspector show distinct light kinds and do not use directional-light stand-ins for point or spot lights.
+- `nodes contain lights and they will be ignored` is removed for scenes whose light records are imported and loaded into GameFramework.
+- Renderer-facing directional snapshots obey `RenderConfig::Lights::MaxDirectionalLights` with deterministic truncation behavior until broader punctual light shading lands.
 - D3D12 and Vulkan smoke renders show the same imported lighting path.
 
 Validation prompt:
 
 ```text
-Recook a scene with KHR_lights_punctual directional lights, launch runtime/editor smoke on D3D12 and Vulkan, and verify imported directional lights appear in GameFramework lighting snapshots and renderer lighting input.
+Recook a scene with KHR_lights_punctual directional, point, and spot lights. Launch runtime/editor smoke on D3D12 and Vulkan. Verify all light types appear in GameFramework scene lighting and editor presentation, and verify directional lights appear in renderer lighting input.
 ```
 
 ## Stage 3: Scene Metadata Manifest Versioning
 
-Goal: Create the durable cooked scene metadata path needed by cameras, lights, skeletons, and animations.
+Status: Implemented as the metadata foundation. Cooked scene manifest version `6` carries camera records, light records, skeleton refs, optional animation refs, scene feature flags, and per-instance skeleton-ref bindings.
 
-Why here: Stage 1 and 2 can start narrowly, but animation and skinning should not be built on ad hoc sidecars. The cooked scene manifest currently stores mesh refs, material refs, and instances only.
+Goal: Maintain the durable cooked scene metadata path needed by cameras, lights, skeletons, and animations while preserving the GameFramework cooked payload boundary.
+
+Why here: Cameras and lights already proved the cooked scene metadata path. Animation and skinning should build on the same manifest model rather than adding ad hoc sidecars or source-runtime shortcuts.
 
 Implementation prompt:
 
 ```text
-Version the cooked scene manifest to carry optional scene metadata blocks.
+Extend the versioned cooked scene manifest metadata path.
 
-Extend CookedSceneManifest with a versioned metadata section for cameras, lights, skeleton refs, animation refs, and feature flags. Update SceneCooker writer and SceneManifestLoader reader together. Keep the runtime cooked-only. Add validation that old assumptions about mesh/material/instance ordering still hold, and make new metadata optional for scenes without these features.
+Preserve existing camera and light records in CookedSceneManifest. Add optional skeleton refs, animation refs, and feature flags using the same manifest writer/reader pattern. Update SceneCooker writer and SceneManifestLoader reader together. Keep the runtime cooked-only. Add validation that mesh/material/instance ordering still holds, and make every new metadata block optional for scenes without those features.
+
+Do not replace the current GameFramework handoff. SceneAssetPayload remains the cooked payload boundary, and GameSceneAssetPayloadAppender remains responsible for applying loaded payload data to GameFramework owners.
 ```
 
 Acceptance criteria:
 
-- Cooked scene manifest version increments and load validation rejects mismatched versions with a clear error.
-- SceneManifestLoader can read camera and light metadata without touching source glTF files.
-- SceneAssetManager applies available scene metadata through GameFramework owners.
-- Scenes without metadata remain valid after recook under the new manifest version.
-- Source validation or a focused cooker test proves metadata counts in the manifest match imported counts.
+- Cooked scene manifest version is `6`, and load validation rejects mismatched versions with a clear recook error.
+- SceneManifestLoader reads camera, light, skeleton-ref, animation-ref, and feature-flag metadata without touching source glTF files.
+- SceneAssetManager carries available scene metadata through `SceneAssetPayload`; GameSceneAssetPayloadAppender remains the GameFramework application boundary for concrete scene owners.
+- Scenes without metadata remain valid after recook under manifest version `6`.
+- Source validation or focused cooker validation proves camera/light/skeleton metadata counts in the manifest match imported counts, and animation refs remain empty until animation asset cooking exists.
+- Existing camera/light metadata behavior remains unchanged after the version update.
 
 Validation prompt:
 
@@ -133,6 +172,8 @@ Force recook Showcase, verify all .sscn manifests use the new version, then laun
 ```
 
 ## Stage 4: Skeleton and Skin Data Import
+
+Status: Implemented through import, cook, load, and runtime bind-pose data ownership. This stage does not implement animation playback or GPU skinning; those remain Stage 5 through Stage 7.
 
 Goal: Stop treating skinned nodes as ordinary static meshes by importing skeletons, joints, inverse bind matrices, and vertex joint weights.
 
@@ -143,24 +184,58 @@ Implementation prompt:
 ```text
 Implement glTF skeleton and skin data import without animation playback yet.
 
-Extend SourceImportResult with ImportedSkeleton, ImportedJoint, ImportedSkinBinding, and skinned mesh vertex influences. GltfGeometryImporter should read JOINTS_0 and WEIGHTS_0, normalize weights, and associate mesh instances with a skin. Add cooked skeleton assets or scene metadata references. Update MeshCooker and cooked mesh loading to preserve skin influence streams. Runtime should load skeleton bind pose and expose a neutral pose for skinned meshes.
+Extend SourceImportResult with ImportedSkeleton, ImportedJoint, ImportedSkinBinding, and skinned mesh vertex influences. GltfGeometryImporter should read JOINTS_0 and WEIGHTS_0, normalize weights, and associate mesh instances with a skin. Cook skeletons as versioned `.sskel` assets referenced by manifest skeleton refs. Update MeshCooker and cooked mesh loading to preserve skin influences as a separate optional stream, not as permanent fields on static mesh vertices. Runtime should load skeleton bind pose into `SceneSkeletons`, attach skeleton asset IDs to ordinary mesh components, and expose a neutral pose for skinned meshes.
 
-Do not implement animation playback in this stage. The acceptance target is correct bind-pose skinned rendering or a clearly equivalent neutral-pose path, not moving characters.
+Do not implement animation playback in this stage. The acceptance target is correct bind-pose/neutral-pose data handoff, not moving characters. Do not make Renderer or RHI aware of glTF or source import data; renderer-side work should only see ordinary mesh data, opaque skeleton IDs, and later pose snapshots.
 ```
 
 Acceptance criteria:
 
 - Skinned glTF nodes import skeleton and skin binding data instead of only static mesh data.
-- Vertex joint indices and weights are validated, normalized, cooked, loaded, and visible to renderer-side mesh setup.
+- Vertex joint indices and weights are validated, normalized, cooked, loaded, and visible to renderer-side mesh setup as a separate skinned mesh stream.
 - Inverse bind matrices are preserved and associated with the correct joints.
-- The runtime can render skinned assets in bind pose or neutral pose through a distinct skinned mesh path.
+- The runtime loads skeleton bind pose/neutral pose data and attaches mesh instances to skeleton asset IDs through ordinary GameFramework scene owners.
 - The old `skinned nodes are present and will be imported as static data only` warning is removed only for assets that successfully load through the skinned path.
 - Static mesh import remains unchanged for non-skinned assets.
+- Static mesh cooked/runtime vertex records do not contain joint indices or weights.
 
 Validation prompt:
 
 ```text
 Recook a known skinned glTF sample, inspect cooked skeleton/mesh metadata counts, launch D3D12 and Vulkan runtime smoke, and verify the asset renders through the skinned path without falling back to static-only import.
+```
+
+## Stage 4.5: Static/Skeletal Mesh Asset Split
+
+Status: Planned cleanup before Stage 5 animation work.
+
+Goal: Make Static Mesh and Skeletal Mesh separate asset/runtime concepts, similar to Unreal Engine's high-level distinction, while preserving Sparkle's existing cook/load boundaries.
+
+Why before animation: Animation playback and renderer skinning become much easier to reason about when the engine can ask "is this a skeletal mesh?" from the asset/component type instead of inferring it from optional skin fields. This also keeps static mesh memory layout, editor presentation, diagnostics, batching, and renderer paths clean for non-skinned assets.
+
+Implementation prompt:
+
+```text
+Split static and skeletal mesh concepts without leaking source import details.
+
+Introduce explicit cooked skeletal mesh records/assets or a versioned mesh asset kind that cleanly separates static mesh payloads from skeletal mesh payloads. Add GameFramework runtime types/components that distinguish static mesh instances from skeletal mesh instances while sharing only reusable low-level geometry/buffer helpers. SceneAssetPayload should carry static mesh and skeletal mesh entries explicitly. SceneManifestLoader and SceneAssetManager should bind skeletal mesh instances to skeleton refs through normal cooked metadata, not importer internals.
+
+Keep SourceImportAdapters responsible only for detecting whether imported geometry should become a static mesh or skeletal mesh. Keep MeshCooker or a dedicated SkeletalMeshCooker responsible for skeletal mesh cooked payloads. Keep Renderer classification explicit: static draws and skeletal draws may share common submission helpers, but they should not rely on optional skin fields in a generic mesh to decide the whole path.
+```
+
+Acceptance criteria:
+
+- Static meshes and skeletal meshes have explicit asset identity in cooked data, runtime payloads, editor labels, and diagnostics.
+- Non-skinned assets use the static mesh path and do not carry skin influence streams, skeleton refs, or skeletal mesh flags.
+- Skinned assets use the skeletal mesh path and require a valid skeleton binding, validated joint indices/weights, and cooked skeleton metadata.
+- GameFramework scene ownership distinguishes static mesh instances from skeletal mesh instances without introducing imported-vs-authored behavior branches.
+- Renderer draw classification can identify static vs skeletal work without inspecting source importer data.
+- Existing Stage 4 CesiumMan validation still passes after the split, and existing static samples recook/load without skeletal metadata.
+
+Validation prompt:
+
+```text
+Recook Showcase, inspect one static sample and one skeletal sample. Verify static mesh cooked assets contain no skin/skeleton payload, CesiumMan is classified as a skeletal mesh with one skeleton binding, and D3D12 runtime smoke loads both paths. Run Vulkan smoke as far as the existing texture path allows and verify scene payload classification happens before any renderer texture failure.
 ```
 
 ## Stage 5: Animation Clip Import and Cooking
@@ -249,27 +324,27 @@ Validation prompt:
 Build ShowcaseRuntime and ShowcaseEditor, force recook animated assets, run D3D12 and Vulkan smoke with animated skinned content, then inspect logs for missing shader layouts, RHI binding errors, and backend divergence.
 ```
 
-## Stage 8: Point and Spot Lights
+## Stage 8: Renderer Point and Spot Light Shading
 
-Goal: Complete remaining glTF punctual light types after the scene metadata path is proven.
+Goal: Consume already-imported point and spot lights in Renderer so all punctual light types affect shading.
 
-Why after skinning foundation starts: Directional lights are the easy lighting win. Point and spot lights likely require new renderer light lists, culling, shading changes, and editor controls.
+Why after the scene metadata path is proven: Import, cook, load, GameFramework ownership, and editor presentation already carry point and spot lights. The remaining work crosses Renderer, RHI-facing constant/storage layouts, light culling policy, shading changes, and backend parity.
 
 Implementation prompt:
 
 ```text
-Implement point and spot light support for imported glTF lights.
+Implement renderer shading support for scene point and spot lights.
 
-Extend GameFramework lighting descriptors beyond directional lights, add renderer snapshots for punctual lights, and update lighting passes/shaders to consume point and spot light data. Import glTF range and spot cone angles. Keep light ownership in GameFramework and render data extraction in Renderer.
+Extend GameFramework lighting snapshots to include point and spot lights from existing SceneLightDesc data. Update renderer scene data, lighting passes, shaders, and RHI-visible layouts to consume point and spot light data. Preserve imported glTF range and spot cone angles already stored in cooked scene light records. Keep light ownership in GameFramework and render data extraction in snapshot/build steps; do not move playback or ownership state into Renderer.
 ```
 
 Acceptance criteria:
 
 - Imported point and spot lights affect rendering on D3D12 and Vulkan.
-- Range, color, intensity, and spot cone angles are preserved through import, cook, load, snapshot, and renderer consumption.
+- Range, color, intensity, world transform/direction, and spot cone angles are preserved through import, cook, load, snapshot, and renderer consumption.
 - Existing directional light behavior is unchanged.
-- Logs no longer report supported punctual lights as ignored.
-- Editor scene inspector can display or at least diagnose imported punctual light counts.
+- Logs no longer report loaded punctual lights as ignored.
+- Editor scene inspector continues to display distinct light kinds without renderer-specific stand-ins.
 
 Validation prompt:
 
@@ -333,15 +408,15 @@ Validation prompt:
 Recook variant and instancing samples, launch editor/runtime smoke on D3D12 and Vulkan, switch variants at runtime, and verify instance counts and material bindings match imported metadata.
 ```
 
-## Recommended First Slice
+## Recommended Next Slice
 
-Start with Stage 0, then Stage 1. That gives immediate value without committing to animation architecture too early. Stage 1 also exercises the full source-import -> cook -> level-load -> runtime-consume chain that later stages need.
+Stage 0 through Stage 4 are now the baseline. The next architectural slice is Stage 4.5, which should split Static Mesh and Skeletal Mesh asset/runtime concepts before Stage 5 animation clip import. After that, continue with Stage 5 animation clip cooking, Stage 6 pose evaluation, and Stage 7 renderer skinning.
 
-Suggested first implementation prompt:
+Suggested next implementation prompt:
 
 ```text
-Implement Stage 0 from docs/plans/gltf-feature-warning-roadmap.md.
+Implement Stage 4.5 from docs/plans/gltf-feature-warning-roadmap.md.
 
-Add structured glTF feature diagnostics to SourceImportResult and populate them from GltfSceneReader/GltfGeometryImporter. Print a concise summary from AssetCooker and AssetConverter. Preserve existing warnings. Do not change runtime behavior. Acceptance criteria are the Stage 0 checklist in the document, and validation is the DevelopmentEditor AssetCooker/AssetConverter build plus a Showcase force recook log showing the summary.
+Split Static Mesh and Skeletal Mesh into explicit cooked asset/runtime concepts. Preserve the existing source-import -> cook -> manifest -> SceneAssetPayload -> GameFramework handoff, but stop treating skeletal data as optional fields on a generic static mesh path. Static assets should carry no skin/skeleton payload; skeletal assets should require skeleton binding and validated influences. Do not add sidecars, runtime source parsing, imported-vs-authored behavior branches, or renderer/RHI knowledge of source formats.
 ```
 

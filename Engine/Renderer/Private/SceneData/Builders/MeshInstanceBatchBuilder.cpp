@@ -184,6 +184,7 @@ MeshInstanceBatchBuilder::BatchKey MeshInstanceBatchBuilder::MakeBatchKey(const 
 	    .gpuMesh = item.draw.gpuMesh,
 	    .materialBindingSet = item.materialBindingSet,
 	    .materialSlot = item.draw.materialSlot,
+	    .skeletonAssetId = item.draw.skeletonAssetId,
 	    .renderStateKey = item.renderStateKey,
 	    .renderLayer = item.renderLayer};
 }

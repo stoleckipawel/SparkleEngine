@@ -4,10 +4,30 @@
 
 #include <cgltf.h>
 
+#include <utility>
+
 DirectX::XMMATRIX GltfNodeTransformUtils::ConvertGltfMatrixToEngine(DirectX::FXMMATRIX matrix) noexcept
 {
 	const DirectX::XMMATRIX handedness = DirectX::XMMatrixScaling(1.0f, 1.0f, -1.0f);
 	return DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(handedness, matrix), handedness);
+}
+
+DirectX::XMFLOAT3 GltfNodeTransformUtils::ConvertGltfVectorToEngine(const DirectX::XMFLOAT3& value) noexcept
+{
+	return DirectX::XMFLOAT3(value.x, value.y, -value.z);
+}
+
+DirectX::XMFLOAT4 GltfNodeTransformUtils::ConvertGltfTangentToEngine(const DirectX::XMFLOAT4& value) noexcept
+{
+	return DirectX::XMFLOAT4(value.x, value.y, -value.z, -value.w);
+}
+
+void GltfNodeTransformUtils::ConvertGltfTriangleWindingToEngine(std::vector<std::uint32_t>& indices) noexcept
+{
+	for (std::size_t index = 0; index + 2 < indices.size(); index += 3)
+	{
+		std::swap(indices[index + 1], indices[index + 2]);
+	}
 }
 
 DirectX::XMMATRIX GltfNodeTransformUtils::ComputeNodeWorldTransform(const cgltf_node* node)

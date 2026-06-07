@@ -124,6 +124,11 @@ namespace Paths
 		return Filesystem::GetCookedMaterialRootPath();
 	}
 
+	inline const std::filesystem::path& CookedSkeletonRoot()
+	{
+		return Filesystem::GetCookedSkeletonRootPath();
+	}
+
 	inline const std::filesystem::path& ShaderCacheRoot()
 	{
 		return Filesystem::GetShaderCacheRootPath();
@@ -384,6 +389,11 @@ namespace Paths
 	inline std::filesystem::path CookedMaterialAsset(std::uint64_t materialAssetId)
 	{
 		return CookedMaterialRoot() / (Formatting::FormatHexUInt64(materialAssetId) + ".smat");
+	}
+
+	inline std::filesystem::path CookedSkeletonAsset(std::uint64_t skeletonAssetId)
+	{
+		return CookedSkeletonRoot() / (Formatting::FormatHexUInt64(skeletonAssetId) + ".sskel");
 	}
 
 	// Shader cache/control files

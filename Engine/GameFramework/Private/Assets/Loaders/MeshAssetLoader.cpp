@@ -30,9 +30,19 @@ namespace Assets
 			return false;
 		}
 
+		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
+		if ((hasSkinInfluences && header.skinInfluenceCount != header.vertexCount) ||
+		    (!hasSkinInfluences && header.skinInfluenceCount != 0u) ||
+		    header.skinInfluenceStride != sizeof(CookedMeshSkinInfluence))
+		{
+			outErrorMessage = "Invalid cooked mesh skin influence stream";
+			return false;
+		}
+
 		std::vector<CookedMeshVertex> cookedVertices;
 		if (!reader.ReadArray(header.vertexCount, cookedVertices, outErrorMessage) ||
-		    !reader.ReadArray(header.indexCount, outMeshData.indices, outErrorMessage))
+		    !reader.ReadArray(header.indexCount, outMeshData.indices, outErrorMessage) ||
+		    !reader.ReadArray(header.skinInfluenceCount, outMeshData.skinInfluences, outErrorMessage))
 		{
 			return false;
 		}

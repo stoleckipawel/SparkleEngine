@@ -23,7 +23,8 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	    MaterialHandle materialHandle = MaterialHandle::Invalid(),
 	    Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId,
 	    SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex,
-	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex) noexcept;
+	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex,
+	    Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId) noexcept;
 	~MeshComponent() override;
 
 	MeshComponent(const MeshComponent&) = delete;
@@ -50,6 +51,8 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 		m_meshInstanceGroupIndex = meshInstanceGroupIndex;
 	}
 	SceneMeshInstanceGroupIndex GetMeshInstanceGroupIndex() const noexcept { return m_meshInstanceGroupIndex; }
+	void SetSkeletonAssetId(Assets::CookedAssetId skeletonAssetId) noexcept { m_skeletonAssetId = skeletonAssetId; }
+	Assets::CookedAssetId GetSkeletonAssetId() const noexcept { return m_skeletonAssetId; }
 
 	DirectX::XMMATRIX GetWorldMatrix() const noexcept;
 	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
@@ -61,4 +64,5 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	Assets::CookedAssetId m_meshAssetId = Assets::InvalidCookedAssetId;
 	SceneMeshAssetIndex m_meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex m_meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
+	Assets::CookedAssetId m_skeletonAssetId = Assets::InvalidCookedAssetId;
 };

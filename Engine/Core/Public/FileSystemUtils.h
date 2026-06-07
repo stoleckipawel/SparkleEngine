@@ -44,6 +44,7 @@ namespace Filesystem
 	const std::filesystem::path& GetCookedSceneManifestRootPath();
 	const std::filesystem::path& GetCookedMeshRootPath();
 	const std::filesystem::path& GetCookedMaterialRootPath();
+	const std::filesystem::path& GetCookedSkeletonRootPath();
 	const std::filesystem::path& GetSceneAssetRegistryPath();
 	const std::filesystem::path& GetShaderCacheRootPath();
 	const std::filesystem::path& GetShaderDebugArtifactRootPath();

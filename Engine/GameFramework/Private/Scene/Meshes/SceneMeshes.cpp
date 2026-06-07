@@ -71,6 +71,7 @@ MeshSnapshot SceneMeshes::CaptureSnapshot() const
 		DirectX::XMStoreFloat3x4(&meshInstance.worldInvTranspose, mesh->GetWorldInverseTransposeMatrix());
 		meshInstance.materialHandle = mesh->GetMaterialHandle();
 		meshInstance.meshAssetId = mesh->GetMeshAssetId();
+		meshInstance.skeletonAssetId = mesh->GetSkeletonAssetId();
 		meshInstance.meshAssetIndex = mesh->GetMeshAssetIndex();
 		meshInstance.instanceGroupIndex = mesh->GetMeshInstanceGroupIndex();
 		if (meshInstance.instanceGroupIndex < snapshot.meshInstanceGroups.size())
