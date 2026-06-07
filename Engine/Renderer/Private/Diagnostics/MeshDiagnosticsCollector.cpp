@@ -56,10 +56,11 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		{
 			++row->VisibleInstanceCount;
 		}
-		if (meshComponent->GetSkeletonAssetId() != Assets::InvalidCookedAssetId)
+		if (meshComponent->IsSkeletalMeshComponent())
 		{
 			++row->SkinnedInstanceCount;
 			row->HasSkeletonBinding = true;
+			row->HasSkinInfluences = true;
 		}
 
 		const MaterialHandle materialHandle = meshComponent->GetMaterialHandle();
@@ -127,6 +128,7 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		            .worldInvTranspose = meshInstance.worldInvTranspose,
 		            .materialSlot = meshInstance.materialHandle.IsValid() ? meshInstance.materialHandle.GetIndex() : 0u,
 		            .skeletonAssetId = meshInstance.skeletonAssetId,
+		            .meshKind = meshInstance.meshKind,
 		            .gpuMesh = gpuMesh},
 		        .instanceGroupIndex = meshInstance.instanceGroupIndex,
 		        .instanceGroupKind = instanceGroupKind,
@@ -160,7 +162,6 @@ void MeshDiagnosticsCollector::PopulateMeshRow(MeshDiagnosticsRow& row, const Me
 
 	row.MeshRuntimeId = reinterpret_cast<std::uintptr_t>(&mesh);
 	row.CpuLoaded = meshData.IsValid();
-	row.HasSkinInfluences = meshData.HasSkinInfluences();
 	row.VertexCount = meshData.GetVertexCount();
 	row.IndexCount = meshData.GetIndexCount();
 	row.TriangleCount = row.IndexCount / 3u;

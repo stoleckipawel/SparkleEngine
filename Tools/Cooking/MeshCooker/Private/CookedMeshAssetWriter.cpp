@@ -44,7 +44,8 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 		    .vertexStride = sizeof(Assets::CookedMeshVertex),
 		    .indexStride = sizeof(std::uint32_t),
 		    .skinInfluenceStride = sizeof(Assets::CookedMeshSkinInfluence),
-		    .flags = meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u};
+		    .flags = meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u,
+		    .assetKind = meshAsset.assetKind};
 		std::ofstream output;
 		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
 		{

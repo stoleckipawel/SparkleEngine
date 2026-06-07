@@ -4,15 +4,16 @@
 
 #include "Diagnostics/GltfImportDiagnosticLog.h"
 #include "Gltf/GltfMeshGeometryExtractor.h"
+#include "Gltf/GltfMeshInstanceAppender.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
 #include "Gltf/GltfNodeTransformUtils.h"
+#include "Gltf/GltfPrimitiveMaterialResolver.h"
 #include "Gltf/GltfSkinImporter.h"
 
 #include <cgltf.h>
 
 #include <cstdint>
 #include <format>
-#include <utility>
 
 std::size_t GltfGeometryImporter::CountImportedMeshInstances(const cgltf_data* data)
 {
@@ -110,10 +111,10 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				result.scene.meshPrimitives.push_back(std::move(primitiveEntry));
 			}
 
-			const ImportedMaterialIndex materialIndex = ResolveMaterialIndex(primitive, data, primitiveLabel, result);
+			const ImportedMaterialIndex materialIndex = GltfPrimitiveMaterialResolver::Resolve(primitive, data, primitiveLabel, result);
 			if (importMeshGpuInstancing)
 			{
-				AppendMeshGpuInstancingGroup(
+				GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 				    result,
 				    meshGpuInstancingTransforms,
 				    importedPrimitiveIndex,
@@ -125,7 +126,7 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 			}
 			else
 			{
-				AppendMeshInstance(
+				GltfMeshInstanceAppender::AppendMeshInstance(
 				    result,
 				    importedPrimitiveIndex,
 				    materialIndex,
@@ -154,84 +155,4 @@ ImportedMeshPrimitiveIndex GltfGeometryImporter::FindImportedPrimitiveIndex(
 	}
 
 	return kInvalidImportedMeshPrimitiveIndex;
-}
-
-void GltfGeometryImporter::AppendMeshInstance(
-    SourceImportResult& result,
-    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
-    ImportedMaterialIndex materialIndex,
-    DirectX::FXMMATRIX worldTransform,
-    ImportedMeshInstanceGroupIndex groupIndex,
-    ImportedSkeletonIndex skeletonIndex,
-    std::uint32_t sourceNodeIndex,
-    std::string_view sourceNodeName)
-{
-	ImportedMeshInstance instanceEntry;
-	instanceEntry.primitiveIndex = importedPrimitiveIndex;
-	instanceEntry.materialIndex = materialIndex;
-	instanceEntry.groupIndex = groupIndex;
-	instanceEntry.skeletonIndex = skeletonIndex;
-	DirectX::XMStoreFloat4x4(&instanceEntry.worldTransform, worldTransform);
-	instanceEntry.sourceNodeIndex = sourceNodeIndex;
-	instanceEntry.sourceNodeName = sourceNodeName;
-	result.scene.meshInstances.push_back(std::move(instanceEntry));
-}
-
-void GltfGeometryImporter::AppendMeshGpuInstancingGroup(
-    SourceImportResult& result,
-    const GltfMeshGpuInstancingTransforms& transforms,
-    ImportedMeshPrimitiveIndex importedPrimitiveIndex,
-    ImportedMaterialIndex materialIndex,
-    DirectX::FXMMATRIX nodeWorldTransform,
-    ImportedSkeletonIndex skeletonIndex,
-    std::uint32_t sourceNodeIndex,
-    std::string_view sourceNodeName)
-{
-	const ImportedMeshInstanceGroupIndex groupIndex = static_cast<ImportedMeshInstanceGroupIndex>(result.scene.meshInstanceGroups.size());
-	const ImportedMeshInstanceIndex firstInstanceIndex = static_cast<ImportedMeshInstanceIndex>(result.scene.meshInstances.size());
-
-	for (std::size_t instanceIndex = 0; instanceIndex < transforms.instanceCount; ++instanceIndex)
-	{
-		const DirectX::XMMATRIX authoredInstanceTransform =
-		    GltfMeshInstancingImporter::BuildMeshGpuInstancingTransform(transforms, instanceIndex);
-		const DirectX::XMMATRIX worldTransform = DirectX::XMMatrixMultiply(nodeWorldTransform, authoredInstanceTransform);
-		AppendMeshInstance(
-		    result,
-		    importedPrimitiveIndex,
-		    materialIndex,
-		    worldTransform,
-		    groupIndex,
-		    skeletonIndex,
-		    sourceNodeIndex,
-		    sourceNodeName);
-	}
-
-	ImportedMeshInstanceGroup groupEntry;
-	groupEntry.primitiveIndex = importedPrimitiveIndex;
-	groupEntry.materialIndex = materialIndex;
-	groupEntry.firstInstanceIndex = firstInstanceIndex;
-	groupEntry.instanceCount = static_cast<std::uint32_t>(transforms.instanceCount);
-	groupEntry.groupKind = ImportedMeshInstanceGroupKind::AuthoredInstanceGroup;
-	result.scene.meshInstanceGroups.push_back(groupEntry);
-}
-
-ImportedMaterialIndex GltfGeometryImporter::ResolveMaterialIndex(
-	const cgltf_primitive& primitive,
-	const cgltf_data* data,
-	std::string_view primitiveLabel,
-	SourceImportResult& result)
-{
-	if (!primitive.material || result.scene.materials.empty())
-	{
-		return kInvalidImportedMaterialIndex;
-	}
-
-	const std::uint32_t materialIndex = static_cast<std::uint32_t>(primitive.material - data->materials);
-	if (materialIndex < result.scene.materials.size())
-	{
-		return materialIndex;
-	}
-
-	GltfImportDiagnosticLog::ReportInvalidMaterialIndex(primitiveLabel, materialIndex, result);
-	return kInvalidImportedMaterialIndex;
 }

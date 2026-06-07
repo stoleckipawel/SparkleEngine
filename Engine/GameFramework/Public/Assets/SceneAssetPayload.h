@@ -2,14 +2,11 @@
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Assets/SceneMeshAssetPayload.h"
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
-#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
-#include "GameFramework/Public/Scene/Meshes/MeshData.h"
-#include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeleton.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
-#include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -31,30 +28,11 @@ struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
 
 struct SPARKLE_ENGINE_API SceneAssetPayload
 {
-	struct MeshAsset
-	{
-		MeshData mesh;
-		Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
-	};
-
-	struct MeshInstance
-	{
-		SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
-		Transform transform;
-		MaterialHandle material;
-		SceneMeshInstanceGroupIndex groupIndex = kInvalidSceneMeshInstanceGroupIndex;
-		Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
-	};
-
-	struct MeshInstanceGroup
-	{
-		SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
-		MaterialHandle material;
-		SceneMeshInstanceIndex firstInstance = kInvalidSceneMeshInstanceIndex;
-		std::uint32_t instanceCount = 0;
-		SceneMeshInstanceGroupKind groupKind = SceneMeshInstanceGroupKind::None;
-		std::uint32_t flags = 0;
-	};
+	using StaticMeshAsset = SceneAssetStaticMeshAsset;
+	using SkeletalMeshAsset = SceneAssetSkeletalMeshAsset;
+	using StaticMeshInstance = SceneAssetStaticMeshInstance;
+	using SkeletalMeshInstance = SceneAssetSkeletalMeshInstance;
+	using MeshInstanceGroup = SceneAssetMeshInstanceGroup;
 
 	struct Camera
 	{
@@ -64,8 +42,10 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 		bool IsPerspective() const noexcept { return desc.projectionKind == CameraProjectionKind::Perspective; }
 	};
 
-	std::vector<MeshAsset> meshAssets;
-	std::vector<MeshInstance> meshInstances;
+	std::vector<StaticMeshAsset> staticMeshAssets;
+	std::vector<SkeletalMeshAsset> skeletalMeshAssets;
+	std::vector<StaticMeshInstance> staticMeshInstances;
+	std::vector<SkeletalMeshInstance> skeletalMeshInstances;
 	std::vector<MeshInstanceGroup> meshInstanceGroups;
 	std::vector<Camera> cameras;
 	std::vector<SceneLightDesc> lights;

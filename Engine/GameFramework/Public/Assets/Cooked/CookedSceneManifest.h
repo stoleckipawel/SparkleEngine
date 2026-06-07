@@ -2,6 +2,7 @@
 
 #include "Core/Public/Math/MathUtils.h"
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Assets/Cooked/CookedMeshAsset.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneCameraRecord.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneLightRecord.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneMetadataRecords.h"
@@ -30,6 +31,7 @@ namespace Assets
 	struct SPARKLE_ENGINE_API CookedSceneMeshAssetRef
 	{
 		CookedAssetId meshAssetId = InvalidCookedAssetId;
+		CookedMeshAssetKind meshAssetKind = CookedMeshAssetKind::Static;
 	};
 
 	struct SPARKLE_ENGINE_API CookedSceneMaterialAssetRef

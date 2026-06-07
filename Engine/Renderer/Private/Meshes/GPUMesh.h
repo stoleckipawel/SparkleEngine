@@ -25,7 +25,6 @@ class SPARKLE_RENDERER_API GPUMesh final
 
 	std::uint32_t GetIndexCount() const noexcept { return m_indexCount; }
 	std::uint32_t GetVertexCount() const noexcept { return m_vertexCount; }
-	bool HasSkinInfluences() const noexcept { return m_hasSkinInfluences; }
 
 	bool IsValid() const noexcept { return m_vertexBuffer && m_indexBuffer; }
 
@@ -44,5 +43,4 @@ class SPARKLE_RENDERER_API GPUMesh final
 
 	std::uint32_t m_vertexCount = 0;
 	std::uint32_t m_indexCount = 0;
-	bool m_hasSkinInfluences = false;
 };

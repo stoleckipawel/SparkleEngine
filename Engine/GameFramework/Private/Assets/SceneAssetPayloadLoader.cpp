@@ -38,7 +38,7 @@ namespace Assets
 		}
 
 		SceneMeshAssetIndex meshAssetBaseIndex = kInvalidSceneMeshAssetIndex;
-		const auto instanceBaseIndex = static_cast<SceneMeshInstanceIndex>(sceneAssetPayload.meshInstances.size());
+		const auto instanceBaseIndex = static_cast<SceneMeshInstanceIndex>(sceneAssetPayload.staticMeshInstances.size());
 		const auto groupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(sceneAssetPayload.meshInstanceGroups.size());
 		if (!SceneAssetPayloadMeshAppender::AppendMeshAssets(
 		        sceneAssetId,

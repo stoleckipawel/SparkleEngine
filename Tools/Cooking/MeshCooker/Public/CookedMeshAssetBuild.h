@@ -13,11 +13,13 @@ struct CookedMeshAssetBuild
 	Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
 	std::string displayName;
 	std::filesystem::path sourcePath;
+	Assets::CookedMeshAssetKind assetKind = Assets::CookedMeshAssetKind::Static;
 	std::vector<Assets::CookedMeshVertex> vertices;
 	std::vector<std::uint32_t> indices;
 	std::vector<Assets::CookedMeshSkinInfluence> skinInfluences;
 
 	bool HasSkinInfluences() const noexcept { return !skinInfluences.empty(); }
+	bool IsSkeletal() const noexcept { return assetKind == Assets::CookedMeshAssetKind::Skeletal; }
 };
 
 struct MeshCookOutput final

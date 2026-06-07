@@ -7,6 +7,7 @@ MeshComponent::MeshComponent(std::unique_ptr<Mesh>&& mesh) noexcept : m_mesh(std
 
 MeshComponent::MeshComponent(
 	std::unique_ptr<Mesh>&& mesh,
+	SceneMeshKind meshKind,
 	const Transform& transform,
 	MaterialHandle materialHandle,
 	Assets::CookedAssetId meshAssetId,
@@ -20,7 +21,8 @@ MeshComponent::MeshComponent(
 	m_meshAssetId(meshAssetId),
 	m_meshAssetIndex(meshAssetIndex),
 	m_meshInstanceGroupIndex(meshInstanceGroupIndex),
-	m_skeletonAssetId(skeletonAssetId)
+	m_skeletonAssetId(skeletonAssetId),
+	m_kind(meshKind)
 {
 }
 

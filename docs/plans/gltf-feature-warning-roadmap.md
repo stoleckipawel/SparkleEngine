@@ -21,7 +21,7 @@ This plan turns glTF importer warnings into staged feature work. The order is in
 | Stage 2: glTF Light Import | Implemented through GameFramework | glTF punctual lights import into cooked scene light records and ordinary `SceneLightDesc` data in `SceneLighting`; renderer shading currently consumes directional light snapshots. |
 | Stage 3: Scene Metadata Manifest Versioning | Implemented as metadata foundation | Manifest version is `6` and includes camera records, light records, skeleton refs, optional animation refs, scene feature flags, and per-instance skeleton bindings. |
 | Stage 4: Skeleton and Skin Data Import | Implemented through bind-pose data path | glTF skins import into cooked skeleton assets, separate mesh skin influence streams, cooked scene skeleton refs, GameFramework `SceneSkeletons`, and mesh skeleton bindings. Animation playback and GPU skinning remain later stages. |
-| Stage 4.5: Static/Skeletal Mesh Asset Split | Planned cleanup before animation | Introduce explicit Static Mesh and Skeletal Mesh asset/runtime concepts so Stage 5+ animation work does not build on optional skin fields inside the generic static mesh path. |
+| Stage 4.5: Static/Skeletal Mesh Asset Split | Implemented | Static Mesh and Skeletal Mesh are explicit cooked/runtime concepts; Stage 5+ animation work must keep using this split instead of reintroducing optional skin fields into the static mesh path. |
 
 ## Current Warning Map
 
@@ -207,7 +207,7 @@ Recook a known skinned glTF sample, inspect cooked skeleton/mesh metadata counts
 
 ## Stage 4.5: Static/Skeletal Mesh Asset Split
 
-Status: Planned cleanup before Stage 5 animation work.
+Status: Implemented. Cooked mesh assets carry an explicit static/skeletal kind, scene manifests preserve that kind on mesh references, `SceneAssetPayload` separates static and skeletal mesh assets/instances, GameFramework creates static vs skeletal mesh components, and renderer draw classification receives an explicit scene mesh kind.
 
 Goal: Make Static Mesh and Skeletal Mesh separate asset/runtime concepts, similar to Unreal Engine's high-level distinction, while preserving Sparkle's existing cook/load boundaries.
 
@@ -220,7 +220,7 @@ Split static and skeletal mesh concepts without leaking source import details.
 
 Introduce explicit cooked skeletal mesh records/assets or a versioned mesh asset kind that cleanly separates static mesh payloads from skeletal mesh payloads. Add GameFramework runtime types/components that distinguish static mesh instances from skeletal mesh instances while sharing only reusable low-level geometry/buffer helpers. SceneAssetPayload should carry static mesh and skeletal mesh entries explicitly. SceneManifestLoader and SceneAssetManager should bind skeletal mesh instances to skeleton refs through normal cooked metadata, not importer internals.
 
-Keep SourceImportAdapters responsible only for detecting whether imported geometry should become a static mesh or skeletal mesh. Keep MeshCooker or a dedicated SkeletalMeshCooker responsible for skeletal mesh cooked payloads. Keep Renderer classification explicit: static draws and skeletal draws may share common submission helpers, but they should not rely on optional skin fields in a generic mesh to decide the whole path.
+Keep SourceImportAdapters responsible only for detecting whether imported geometry should become a static mesh or skeletal mesh. Keep MeshCooker or a dedicated SkeletalMeshCooker responsible for skeletal mesh cooked payloads. Keep Renderer classification explicit: static draws and skeletal draws may share common submission helpers, but they should use the cooked/runtime mesh kind rather than optional skin fields in a generic mesh to decide the whole path.
 ```
 
 Acceptance criteria:
@@ -236,6 +236,15 @@ Validation prompt:
 
 ```text
 Recook Showcase, inspect one static sample and one skeletal sample. Verify static mesh cooked assets contain no skin/skeleton payload, CesiumMan is classified as a skeletal mesh with one skeleton binding, and D3D12 runtime smoke loads both paths. Run Vulkan smoke as far as the existing texture path allows and verify scene payload classification happens before any renderer texture failure.
+
+Current validation evidence:
+
+- CesiumMan cooked mesh `A5E88B024417D647.smsh` uses mesh asset version `4`, `AssetKind=1`, `SkinInfluenceCount=3273`, and `Flags=1`.
+- DamagedHelmet cooked mesh `DAFD3D6CF4F664E7.smsh` uses mesh asset version `4`, `AssetKind=0`, `SkinInfluenceCount=0`, and `Flags=0`.
+- CesiumMan scene manifest version `6` has `FirstMeshRefKind=1`, `SkeletonRefs=1`, and `FirstInstanceSkeletonRefIndex=0`.
+- DamagedHelmet scene manifest version `6` has `FirstMeshRefKind=0`, `SkeletonRefs=0`, and no instance skeleton ref.
+- D3D12 smoke passes for CesiumMan and DamagedHelmet with scene payload classification before renderer submission.
+- Vulkan smoke reaches CesiumMan cooked scene payload classification (`meshInstances=1`, `skeletonRefs=1`, `loadedSkeletons=1`) before the existing Vulkan texture/material fallback failure.
 ```
 
 ## Stage 5: Animation Clip Import and Cooking
@@ -410,12 +419,12 @@ Recook variant and instancing samples, launch editor/runtime smoke on D3D12 and 
 
 ## Recommended Next Slice
 
-Stage 0 through Stage 4 are now the baseline. The next architectural slice is Stage 4.5, which should split Static Mesh and Skeletal Mesh asset/runtime concepts before Stage 5 animation clip import. After that, continue with Stage 5 animation clip cooking, Stage 6 pose evaluation, and Stage 7 renderer skinning.
+Stage 0 through Stage 4.5 are now the baseline. The next architectural slice is Stage 5 animation clip cooking, followed by Stage 6 pose evaluation and Stage 7 renderer skinning. Future work should preserve the static/skeletal mesh split and avoid routing animation state through static mesh data.
 
 Suggested next implementation prompt:
 
 ```text
-Implement Stage 4.5 from docs/plans/gltf-feature-warning-roadmap.md.
+Implement Stage 5 from docs/plans/gltf-feature-warning-roadmap.md.
 
 Split Static Mesh and Skeletal Mesh into explicit cooked asset/runtime concepts. Preserve the existing source-import -> cook -> manifest -> SceneAssetPayload -> GameFramework handoff, but stop treating skeletal data as optional fields on a generic static mesh path. Static assets should carry no skin/skeleton payload; skeletal assets should require skeleton binding and validated influences. Do not add sidecars, runtime source parsing, imported-vs-authored behavior branches, or renderer/RHI knowledge of source formats.
 ```

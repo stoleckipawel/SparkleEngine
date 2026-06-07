@@ -2,7 +2,6 @@
 
 #include "Renderer/Public/Meshes/MeshDiagnostics.h"
 #include "Renderer/Public/SceneData/MeshDraw.h"
-#include "Scene/Meshes/MeshSnapshot.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -15,8 +14,8 @@ struct MeshRenderItem final
 {
 	MeshDraw draw;
 	const RenderBindingSet* materialBindingSet = nullptr;
-	SceneMeshInstanceGroupIndex instanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
-	SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
+	RenderMeshInstanceGroupIndex instanceGroupIndex = kInvalidRenderMeshInstanceGroupIndex;
+	RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
 	std::uint32_t sourceInstanceIndex = 0;
 	std::uint32_t renderStateKey = 0;
 	std::uint32_t renderLayer = 0;
@@ -41,7 +40,7 @@ class MeshInstanceBatchBuilder final
   public:
 	MeshInstanceBatchBuildResult Build(
 	    const std::vector<MeshRenderItem>& renderItems,
-	    const std::vector<MeshInstanceGroupSnapshot>& instanceGroups,
+	    const std::vector<RenderMeshInstanceGroup>& instanceGroups,
 	    const MeshInstanceBatchBuildOptions& options) const;
 
   private:
@@ -51,6 +50,7 @@ class MeshInstanceBatchBuilder final
 		const RenderBindingSet* materialBindingSet = nullptr;
 		std::uint32_t materialSlot = 0;
 		std::uint64_t skeletonAssetId = 0;
+		RenderMeshKind meshKind = RenderMeshKind::Static;
 		std::uint32_t renderStateKey = 0;
 		std::uint32_t renderLayer = 0;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RendererAPI.h"
+#include "Renderer/Public/SceneData/RenderMeshClassification.h"
 
 #include <DirectXMath.h>
 #include <cstdint>
@@ -21,6 +22,7 @@ struct SPARKLE_RENDERER_API MeshDraw
 	DirectX::XMFLOAT3X4 worldInvTranspose = {};
 	std::uint32_t materialSlot = 0;
 	std::uint64_t skeletonAssetId = 0;
+	RenderMeshKind meshKind = RenderMeshKind::Static;
 	const GPUMesh* gpuMesh = nullptr;
 };
 

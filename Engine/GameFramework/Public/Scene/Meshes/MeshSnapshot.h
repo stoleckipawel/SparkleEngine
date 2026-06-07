@@ -4,6 +4,7 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
+#include "GameFramework/Public/Scene/Meshes/SceneMeshKind.h"
 
 #include <DirectXMath.h>
 
@@ -19,6 +20,7 @@ struct SPARKLE_ENGINE_API MeshInstanceSnapshot
 	MaterialHandle materialHandle = MaterialHandle::Invalid();
 	Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId;
 	Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
+	SceneMeshKind meshKind = SceneMeshKind::Static;
 	SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex instanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 };

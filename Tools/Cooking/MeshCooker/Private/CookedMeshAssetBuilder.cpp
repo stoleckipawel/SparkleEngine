@@ -44,6 +44,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, primitiveIndex);
 		meshAsset.displayName = importedPrimitive.displayName;
 		meshAsset.sourcePath = importResult.scene.sourcePath;
+		meshAsset.assetKind = meshGeometry.hasSkinInfluences ? Assets::CookedMeshAssetKind::Skeletal : Assets::CookedMeshAssetKind::Static;
 		meshAsset.vertices.reserve(meshGeometry.vertices.size());
 		if (meshGeometry.hasSkinInfluences)
 		{
@@ -66,7 +67,7 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 		}
 		meshAsset.indices = meshGeometry.indices;
 
-		output.assetReferences.push_back({meshAsset.assetId});
+		output.assetReferences.push_back({meshAsset.assetId, meshAsset.assetKind});
 		output.assets.push_back(std::move(meshAsset));
 	}
 

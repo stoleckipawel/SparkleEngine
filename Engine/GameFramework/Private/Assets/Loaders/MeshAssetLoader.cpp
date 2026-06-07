@@ -6,9 +6,13 @@
 #include "Assets/Loaders/CookedAssetByteReader.h"
 #include "Core/Public/Files/FileUtils.h"
 
+#include <algorithm>
+#include <iterator>
+#include <utility>
+
 namespace Assets
 {
-	bool MeshAssetLoader::Load(const std::filesystem::path& path, MeshData& outMeshData, std::string& outErrorMessage) const
+	bool MeshAssetLoader::Load(const std::filesystem::path& path, LoadedMeshAsset& outMeshAsset, std::string& outErrorMessage) const
 	{
 		std::vector<std::uint8_t> fileBytes;
 		if (!Files::TryReadAllBytes(path, fileBytes, outErrorMessage))
@@ -31,8 +35,15 @@ namespace Assets
 		}
 
 		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
-		if ((hasSkinInfluences && header.skinInfluenceCount != header.vertexCount) ||
-		    (!hasSkinInfluences && header.skinInfluenceCount != 0u) ||
+		const bool isSkeletal = header.assetKind == CookedMeshAssetKind::Skeletal;
+		if (header.assetKind != CookedMeshAssetKind::Static && header.assetKind != CookedMeshAssetKind::Skeletal)
+		{
+			outErrorMessage = "Invalid cooked mesh asset kind";
+			return false;
+		}
+
+		if ((isSkeletal && (!hasSkinInfluences || header.skinInfluenceCount != header.vertexCount)) ||
+		    (!isSkeletal && (hasSkinInfluences || header.skinInfluenceCount != 0u)) ||
 		    header.skinInfluenceStride != sizeof(CookedMeshSkinInfluence))
 		{
 			outErrorMessage = "Invalid cooked mesh skin influence stream";
@@ -40,9 +51,11 @@ namespace Assets
 		}
 
 		std::vector<CookedMeshVertex> cookedVertices;
+		std::vector<std::uint32_t> cookedIndices;
+		std::vector<CookedMeshSkinInfluence> cookedSkinInfluences;
 		if (!reader.ReadArray(header.vertexCount, cookedVertices, outErrorMessage) ||
-		    !reader.ReadArray(header.indexCount, outMeshData.indices, outErrorMessage) ||
-		    !reader.ReadArray(header.skinInfluenceCount, outMeshData.skinInfluences, outErrorMessage))
+		    !reader.ReadArray(header.indexCount, cookedIndices, outErrorMessage) ||
+		    !reader.ReadArray(header.skinInfluenceCount, cookedSkinInfluences, outErrorMessage))
 		{
 			return false;
 		}
@@ -53,12 +66,32 @@ namespace Assets
 			return false;
 		}
 
-		outMeshData.vertices.resize(cookedVertices.size());
+		MeshData geometry;
+		geometry.indices = std::move(cookedIndices);
+		geometry.vertices.resize(cookedVertices.size());
 		for (std::size_t vertexIndex = 0; vertexIndex < cookedVertices.size(); ++vertexIndex)
 		{
 			const CookedMeshVertex& cookedVertex = cookedVertices[vertexIndex];
-			outMeshData.vertices[vertexIndex] =
+			geometry.vertices[vertexIndex] =
 			    VertexData(cookedVertex.position, cookedVertex.uv, cookedVertex.color, cookedVertex.normal, cookedVertex.tangent);
+		}
+		if (isSkeletal)
+		{
+			SkeletalMeshData loadedSkeletalMesh;
+			loadedSkeletalMesh.geometry = std::move(geometry);
+			loadedSkeletalMesh.skinInfluences.resize(cookedSkinInfluences.size());
+			for (std::size_t influenceIndex = 0; influenceIndex < cookedSkinInfluences.size(); ++influenceIndex)
+			{
+				const CookedMeshSkinInfluence& cookedInfluence = cookedSkinInfluences[influenceIndex];
+				VertexSkinInfluence& influence = loadedSkeletalMesh.skinInfluences[influenceIndex];
+				std::copy(std::begin(cookedInfluence.jointIndices), std::end(cookedInfluence.jointIndices), std::begin(influence.jointIndices));
+				std::copy(std::begin(cookedInfluence.jointWeights), std::end(cookedInfluence.jointWeights), std::begin(influence.jointWeights));
+			}
+			outMeshAsset.payload = std::move(loadedSkeletalMesh);
+		}
+		else
+		{
+			outMeshAsset.payload = std::move(geometry);
 		}
 
 		outErrorMessage.clear();

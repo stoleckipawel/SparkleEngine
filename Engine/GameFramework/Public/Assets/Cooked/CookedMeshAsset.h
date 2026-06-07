@@ -10,7 +10,13 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedMeshAssetMagic = MakeCookedAssetMagic('S', 'M', 'S', 'H');
-	inline constexpr std::uint32_t kCookedMeshAssetVersion = 3;
+	inline constexpr std::uint32_t kCookedMeshAssetVersion = 4;
+
+	enum class CookedMeshAssetKind : std::uint32_t
+	{
+		Static = 0,
+		Skeletal = 1,
+	};
 
 	struct SPARKLE_ENGINE_API CookedMeshSkinInfluence
 	{
@@ -37,6 +43,7 @@ namespace Assets
 		std::uint32_t indexStride = sizeof(std::uint32_t);
 		std::uint32_t skinInfluenceStride = sizeof(CookedMeshSkinInfluence);
 		std::uint32_t flags = 0;
+		CookedMeshAssetKind assetKind = CookedMeshAssetKind::Static;
 	};
 
 	enum CookedMeshAssetFlags : std::uint32_t

@@ -5,20 +5,21 @@
 #include "GameFramework/Public/Scene/Component.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
+#include "GameFramework/Public/Scene/Meshes/SceneMeshKind.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <DirectXMath.h>
-#include <cstdint>
 #include <memory>
 
 class Mesh;
 
-class SPARKLE_ENGINE_API MeshComponent final : public Component
+class SPARKLE_ENGINE_API MeshComponent : public Component
 {
   public:
 	explicit MeshComponent(std::unique_ptr<Mesh>&& mesh) noexcept;
 	MeshComponent(
 	    std::unique_ptr<Mesh>&& mesh,
+	    SceneMeshKind meshKind,
 	    const Transform& transform,
 	    MaterialHandle materialHandle = MaterialHandle::Invalid(),
 	    Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId,
@@ -53,6 +54,8 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	SceneMeshInstanceGroupIndex GetMeshInstanceGroupIndex() const noexcept { return m_meshInstanceGroupIndex; }
 	void SetSkeletonAssetId(Assets::CookedAssetId skeletonAssetId) noexcept { m_skeletonAssetId = skeletonAssetId; }
 	Assets::CookedAssetId GetSkeletonAssetId() const noexcept { return m_skeletonAssetId; }
+	SceneMeshKind GetMeshKind() const noexcept { return m_kind; }
+	bool IsSkeletalMeshComponent() const noexcept { return m_kind == SceneMeshKind::Skeletal; }
 
 	DirectX::XMMATRIX GetWorldMatrix() const noexcept;
 	DirectX::XMMATRIX GetWorldInverseTransposeMatrix() const noexcept;
@@ -65,4 +68,5 @@ class SPARKLE_ENGINE_API MeshComponent final : public Component
 	SceneMeshAssetIndex m_meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex m_meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 	Assets::CookedAssetId m_skeletonAssetId = Assets::InvalidCookedAssetId;
+	SceneMeshKind m_kind = SceneMeshKind::Static;
 };

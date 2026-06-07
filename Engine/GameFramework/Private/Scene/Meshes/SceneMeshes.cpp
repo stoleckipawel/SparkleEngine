@@ -72,6 +72,7 @@ MeshSnapshot SceneMeshes::CaptureSnapshot() const
 		meshInstance.materialHandle = mesh->GetMaterialHandle();
 		meshInstance.meshAssetId = mesh->GetMeshAssetId();
 		meshInstance.skeletonAssetId = mesh->GetSkeletonAssetId();
+		meshInstance.meshKind = mesh->GetMeshKind();
 		meshInstance.meshAssetIndex = mesh->GetMeshAssetIndex();
 		meshInstance.instanceGroupIndex = mesh->GetMeshInstanceGroupIndex();
 		if (meshInstance.instanceGroupIndex < snapshot.meshInstanceGroups.size())

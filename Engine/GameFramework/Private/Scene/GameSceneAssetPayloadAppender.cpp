@@ -6,8 +6,7 @@
 #include "Scene/Camera/SceneCameras.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Materials/SceneMaterials.h"
-#include "Scene/Meshes/CookedMesh.h"
-#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/Meshes/SceneAssetMeshComponentFactory.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Skeletons/SceneSkeletons.h"
 #include "Scene/Textures/SceneTextures.h"
@@ -51,56 +50,19 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_meshes.GetMeshInstanceGroupCount());
 
 	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
-	meshComponents.reserve(sceneAssetPayload.meshInstances.size());
-	for (SceneAssetPayload::MeshInstance& meshInstance : sceneAssetPayload.meshInstances)
+	if (!SceneAssetMeshComponentFactory::BuildMeshComponents(
+	        sceneAssetPayload,
+	        m_materials,
+	        materialBaseHandle,
+	        sceneGroupBaseIndex,
+	        meshComponents))
 	{
-		if (meshInstance.meshAssetIndex >= sceneAssetPayload.meshAssets.size())
-		{
-			return false;
-		}
-
-		const SceneAssetPayload::MeshAsset& meshAsset = sceneAssetPayload.meshAssets[meshInstance.meshAssetIndex];
-		MeshData meshData = meshAsset.mesh;
-		auto mesh = std::make_unique<CookedMesh>(std::move(meshData), meshAsset.assetId);
-		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()
-		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + meshInstance.material.GetIndex())
-		                                          : m_materials.GetOrCreateDefaultMaterialHandle();
-		const SceneMeshInstanceGroupIndex sceneGroupIndex = meshInstance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
-		                                                    ? kInvalidSceneMeshInstanceGroupIndex
-		                                                    : sceneGroupBaseIndex + meshInstance.groupIndex;
-		meshComponents.push_back(std::make_unique<MeshComponent>(
-		    std::move(mesh),
-		    meshInstance.transform,
-		    materialHandle,
-		    meshAsset.assetId,
-		    meshInstance.meshAssetIndex,
-		    sceneGroupIndex,
-		    meshInstance.skeletonAssetId));
+		return false;
 	}
 
 	m_meshes.AppendMeshComponents(std::move(meshComponents));
-
-	std::vector<MeshInstanceGroupSnapshot> meshInstanceGroups;
-	meshInstanceGroups.reserve(sceneAssetPayload.meshInstanceGroups.size());
-	for (const SceneAssetPayload::MeshInstanceGroup& payloadGroup : sceneAssetPayload.meshInstanceGroups)
-	{
-		MeshInstanceGroupSnapshot meshInstanceGroup;
-		meshInstanceGroup.meshAssetIndex = payloadGroup.meshAssetIndex;
-		meshInstanceGroup.meshAssetId = payloadGroup.meshAssetIndex < sceneAssetPayload.meshAssets.size()
-		                                ? sceneAssetPayload.meshAssets[payloadGroup.meshAssetIndex].assetId
-		                                : Assets::InvalidCookedAssetId;
-		meshInstanceGroup.materialHandle = payloadGroup.material.IsValid() && materialBaseHandle.IsValid()
-		                                       ? MaterialHandle(materialBaseHandle.GetIndex() + payloadGroup.material.GetIndex())
-		                                       : MaterialHandle::Invalid();
-		meshInstanceGroup.firstInstance = payloadGroup.firstInstance == kInvalidSceneMeshInstanceIndex
-		                                  ? kInvalidSceneMeshInstanceIndex
-		                                  : sceneMeshBaseIndex + payloadGroup.firstInstance;
-		meshInstanceGroup.instanceCount = payloadGroup.instanceCount;
-		meshInstanceGroup.groupKind = payloadGroup.groupKind;
-		meshInstanceGroup.flags = payloadGroup.flags;
-		meshInstanceGroups.push_back(meshInstanceGroup);
-	}
-	m_meshes.AppendMeshInstanceGroups(std::move(meshInstanceGroups));
+	m_meshes.AppendMeshInstanceGroups(
+	    SceneAssetMeshComponentFactory::BuildMeshInstanceGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
 
 	for (SceneAssetPayload::Camera& camera : sceneAssetPayload.cameras)
 	{
