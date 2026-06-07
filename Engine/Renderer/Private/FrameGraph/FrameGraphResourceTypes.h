@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
@@ -11,7 +12,8 @@
 enum class FrameGraphResourceClass : std::uint8_t
 {
 	Texture,
-	Buffer
+	Buffer,
+	AccelerationStructure
 };
 
 enum class FrameGraphResourceKind : std::uint8_t
@@ -19,14 +21,21 @@ enum class FrameGraphResourceKind : std::uint8_t
 	BackBuffer,
 	DepthStencil,
 	ColorRenderTarget,
-	Buffer
+	Buffer,
+	AccelerationStructure
 };
 
 enum class FrameGraphResourceOwnership : std::uint8_t
 {
 	Transient,
 	Imported,
+	ExternalPersistent,
 };
+
+constexpr bool IsExternalFrameGraphResource(FrameGraphResourceOwnership ownership) noexcept
+{
+	return ownership == FrameGraphResourceOwnership::Imported || ownership == FrameGraphResourceOwnership::ExternalPersistent;
+}
 
 struct FrameGraphResourceMetadata
 {
@@ -39,4 +48,5 @@ struct FrameGraphResourceMetadata
 	std::string debugName;
 	FrameGraphTextureDesc textureDesc{};
 	FrameGraphBufferDesc bufferDesc{};
+	FrameGraphAccelerationStructureDesc accelerationStructureDesc{};
 };

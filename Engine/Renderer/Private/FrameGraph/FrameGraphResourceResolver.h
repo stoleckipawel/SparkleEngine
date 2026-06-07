@@ -9,6 +9,7 @@
 struct FrameGraphResourceAccess
 {
 	NativeResourceHandle resource = {};
+	RhiGpuVirtualAddress accelerationStructureGpuAddress = 0;
 	RhiResourceViewHandle renderTargetView = {};
 	RhiResourceViewHandle depthStencilView = {};
 	RhiResourceViewHandle shaderResourceView = {};

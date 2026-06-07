@@ -35,9 +35,9 @@ namespace
 	}
 }  // namespace
 
-void DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet) noexcept
+bool DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet, const char* passName) noexcept
 {
-	builder.DeclareParameterUsages(parameterSet);
+	return builder.DeclareParameterUsages(parameterSet, passName != nullptr ? passName : "");
 }
 
 void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept

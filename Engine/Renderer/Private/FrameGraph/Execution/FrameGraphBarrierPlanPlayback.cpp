@@ -1,5 +1,7 @@
 #include "PCH.h"
+
 #include "FrameGraph/FrameGraph.h"
+
 #include "Commands/RenderCommandContext.h"
 
 #include <cassert>
@@ -35,7 +37,8 @@ void FrameGraph::EmitTransientAliasingBarriers(
 			assert(false);
 			SPDLOG_LOGGER_WARN(
 			    g_frameGraphBarrierLogger,
-			    "FrameGraph::EmitTransientAliasingBarriers: unresolved aliasing barrier resources.");
+			    "FrameGraph::EmitTransientAliasingBarriers: unresolved aliasing barrier resources for pass '{}'.",
+			    passName);
 			continue;
 		}
 
@@ -52,7 +55,10 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 		if (!resource)
 		{
 			assert(false);
-			SPDLOG_LOGGER_WARN(g_frameGraphBarrierLogger, "FrameGraph::EmitCompiledBarriers: unresolved resource handle.");
+			SPDLOG_LOGGER_WARN(
+			    g_frameGraphBarrierLogger,
+			    "FrameGraph::EmitCompiledBarriers: unresolved resource handle for pass '{}'.",
+			    passName);
 			continue;
 		}
 
@@ -62,6 +68,7 @@ void FrameGraph::EmitCompiledBarriers(RenderCommandContext& cmd, std::string_vie
 				cmd.TransitionResource(resource, barrier.before, barrier.after);
 				break;
 			case FrameGraphBarrier::Type::UnorderedAccess:
+			case FrameGraphBarrier::Type::AccelerationStructure:
 				cmd.UnorderedAccessBarrier(resource);
 				break;
 			default:

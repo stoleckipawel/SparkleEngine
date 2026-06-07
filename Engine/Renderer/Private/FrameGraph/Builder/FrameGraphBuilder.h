@@ -7,6 +7,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
@@ -53,9 +55,27 @@ class FrameGraphBuilder final
 
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphTextureHandle ImportPersistentTexture(
+	    const FrameGraphTextureDesc& desc,
+	    NativeResourceHandle resource,
+	    ResourceState initialState) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphBufferHandle ImportPersistentBuffer(
+	    const FrameGraphBufferDesc& desc,
+	    NativeResourceHandle resource,
+	    ResourceState initialState) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
+	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	FrameGraphAccelerationStructureHandle ImportPersistentAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -85,6 +105,11 @@ class FrameGraphBuilder final
 	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(FrameGraphBufferHandle handle) const noexcept
 	{
 		return m_frameGraph.CreateUAV<TValue>(handle);
+	}
+
+	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept
+	{
+		return m_frameGraph.Read(handle);
 	}
 
 	ShaderRenderTarget CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept;

@@ -2,6 +2,7 @@
 
 #include "FrameGraph/FrameGraphPassFlags.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferDesc.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "FrameGraph/PassResourceDeclaration.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 #include "FrameGraph/Compiler/FrameGraphPlan.h"
@@ -10,6 +11,7 @@
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphBufferHandle.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "Renderer/Public/FrameGraph/FrameGraphResourceHandle.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureHandle.h"
@@ -169,9 +171,27 @@ class FrameGraph
 
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, ResourceState initialState) noexcept;
 	FrameGraphTextureHandle ImportTexture(const FrameGraphTextureDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphTextureHandle ImportPersistentTexture(
+	    const FrameGraphTextureDesc& desc,
+	    NativeResourceHandle resource,
+	    ResourceState initialState) noexcept;
 	FrameGraphTextureHandle CreateTexture(const FrameGraphTextureDesc& desc) noexcept;
 	FrameGraphBufferHandle ImportBuffer(const FrameGraphBufferDesc& desc, NativeResourceHandle resource, ResourceState initialState) noexcept;
+	FrameGraphBufferHandle ImportPersistentBuffer(
+	    const FrameGraphBufferDesc& desc,
+	    NativeResourceHandle resource,
+	    ResourceState initialState) noexcept;
 	FrameGraphBufferHandle CreateBuffer(const FrameGraphBufferDesc& desc) noexcept;
+	FrameGraphAccelerationStructureHandle ImportAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	FrameGraphAccelerationStructureHandle ImportPersistentAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(
@@ -191,6 +211,7 @@ class FrameGraph
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphBufferHandle handle) const noexcept;
+	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -223,6 +244,13 @@ class FrameGraph
 	template <typename TValue = void> ShaderRWBuffer<TValue> CreateUAV(FrameGraphBufferHandle handle) const noexcept
 	{
 		ShaderRWBuffer<TValue> field;
+		field = handle;
+		return field;
+	}
+
+	ShaderAccelerationStructure Read(FrameGraphAccelerationStructureHandle handle) const noexcept
+	{
+		ShaderAccelerationStructure field;
 		field = handle;
 		return field;
 	}
@@ -308,6 +336,7 @@ class FrameGraph
 	RhiCpuDescriptorHandle ResolveDepthStencilView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphResourceHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphResourceHandle handle) const noexcept;
+	RhiGpuVirtualAddress ResolveAccelerationStructureGpuAddress(FrameGraphResourceHandle handle) const noexcept;
 	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;

@@ -32,7 +32,8 @@ struct FrameGraphBarrier
 	enum class Type : std::uint8_t
 	{
 		Transition,
-		UnorderedAccess
+		UnorderedAccess,
+		AccelerationStructure
 	};
 
 	FrameGraphResourceHandle handle = FrameGraphResourceHandle::Invalid();

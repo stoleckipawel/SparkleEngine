@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PassParameterSet.h"
+#include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
 
 #include <array>
 #include <cstddef>
@@ -145,22 +146,34 @@ class ShaderAccelerationStructure final
 
 	ShaderAccelerationStructure& operator=(RhiGpuVirtualAddress gpuAddress) noexcept
 	{
+		m_handle = FrameGraphAccelerationStructureHandle::Invalid();
 		m_gpuAddress = gpuAddress;
 		m_isBound = true;
 		return *this;
 	}
 
+	ShaderAccelerationStructure& operator=(FrameGraphAccelerationStructureHandle handle) noexcept
+	{
+		m_handle = handle;
+		m_gpuAddress = 0;
+		m_isBound = handle.IsValid();
+		return *this;
+	}
+
 	RhiGpuVirtualAddress GetGpuAddress() const noexcept { return m_gpuAddress; }
+	FrameGraphAccelerationStructureHandle GetHandle() const noexcept { return m_handle; }
 
 	bool IsBound() const noexcept { return m_isBound; }
 
 	void Reset() noexcept
 	{
+		m_handle = FrameGraphAccelerationStructureHandle::Invalid();
 		m_gpuAddress = 0;
 		m_isBound = false;
 	}
 
   private:
+	FrameGraphAccelerationStructureHandle m_handle = FrameGraphAccelerationStructureHandle::Invalid();
 	RhiGpuVirtualAddress m_gpuAddress = 0;
 	bool m_isBound = false;
 };
@@ -431,7 +444,9 @@ inline bool BindParameterField(PassParameterSet& parameterSet, const char* name,
 
 inline bool BindParameterField(PassParameterSet& parameterSet, const char* name, const ShaderAccelerationStructure& field)
 {
-	return field.IsBound() && parameterSet.SetAccelerationStructure(name, field.GetGpuAddress());
+	return field.IsBound() &&
+	       (field.GetHandle().IsValid() ? parameterSet.SetAccelerationStructure(name, field.GetHandle())
+	                                    : parameterSet.SetAccelerationStructure(name, field.GetGpuAddress()));
 }
 
 template <typename TValue, std::size_t ArrayCount>

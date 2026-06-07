@@ -116,6 +116,8 @@ Implementation boundaries:
 
 ## Stage 1: FrameGraph Front-End And Back-End Cleanup
 
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
+
 Goal: Make FrameGraph strong enough to host ray traced shadows, AS resources, and NRD without manual side channels.
 
 Implementation prompt:
@@ -141,6 +143,14 @@ Acceptance criteria:
 - Pass parameter layouts validate declared resources against shader reflection before execution.
 - D3D12 and Vulkan execution consume the same compiled plan model.
 - Refactor gate: no ray tracing or denoiser feature stage may add hidden resource lifetime, barrier, or descriptor behavior outside FrameGraph unless it is explicitly documented as an external resource bridge.
+
+Implementation boundaries:
+
+- Public FrameGraph vocabulary owns typed texture, buffer, and acceleration-structure handles plus persistent-external import entry points.
+- `PassResourceBuilder` owns setup-time declaration extraction from reflected pass layouts, including validation that acceleration structures are bound through FrameGraph handles instead of raw side-channel GPU addresses.
+- `FrameGraphCompiler.cpp` remains the orchestration path; ray tracing state/barrier rules live in `FrameGraphCompilerRayTracing.*`, and external-resource boundary rules live in `FrameGraphCompilerExternalResources.*`.
+- `FrameGraphResourceContractDiagnostics.*` owns pass/declaration validation and keeps contract logging out of `FrameGraphDeclaration.cpp`.
+- Barrier command emission lives in `Execution/FrameGraphBarrierPlanPlayback.cpp`, leaving `FrameGraphExecution.cpp` focused on pass sequencing and diagnostics scopes.
 
 ## Stage 2: Renderer Ray Tracing Scene
 

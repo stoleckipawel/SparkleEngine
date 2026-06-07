@@ -24,6 +24,7 @@ void FrameGraphResourceRegistry::RegisterBackBuffer(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterTransientTexture(
@@ -42,6 +43,7 @@ void FrameGraphResourceRegistry::RegisterTransientTexture(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterImportedTexture(
@@ -60,6 +62,7 @@ void FrameGraphResourceRegistry::RegisterImportedTexture(
 	    initialState);
 	metadata.textureDesc = desc;
 	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterTransientBuffer(
@@ -77,6 +80,7 @@ void FrameGraphResourceRegistry::RegisterTransientBuffer(
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
+	metadata.accelerationStructureDesc = {};
 }
 
 void FrameGraphResourceRegistry::RegisterImportedBuffer(
@@ -94,6 +98,80 @@ void FrameGraphResourceRegistry::RegisterImportedBuffer(
 	    initialState);
 	metadata.textureDesc = {};
 	metadata.bufferDesc = desc;
+	metadata.accelerationStructureDesc = {};
+}
+
+void FrameGraphResourceRegistry::RegisterPersistentTexture(
+    FrameGraphResourceHandle handle,
+    const FrameGraphTextureDesc& desc,
+    FrameGraphResourceKind kind,
+    ResourceState initialState) noexcept
+{
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::Texture,
+	    kind,
+	    FrameGraphResourceOwnership::ExternalPersistent,
+	    desc.name,
+	    initialState,
+	    initialState);
+	metadata.textureDesc = desc;
+	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = {};
+}
+
+void FrameGraphResourceRegistry::RegisterPersistentBuffer(
+    FrameGraphResourceHandle handle,
+    const FrameGraphBufferDesc& desc,
+    ResourceState initialState) noexcept
+{
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::Buffer,
+	    FrameGraphResourceKind::Buffer,
+	    FrameGraphResourceOwnership::ExternalPersistent,
+	    desc.name,
+	    initialState,
+	    initialState);
+	metadata.textureDesc = {};
+	metadata.bufferDesc = desc;
+	metadata.accelerationStructureDesc = {};
+}
+
+void FrameGraphResourceRegistry::RegisterImportedAccelerationStructure(
+    FrameGraphResourceHandle handle,
+    const FrameGraphAccelerationStructureDesc& desc,
+    ResourceState initialState) noexcept
+{
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::AccelerationStructure,
+	    FrameGraphResourceKind::AccelerationStructure,
+	    FrameGraphResourceOwnership::Imported,
+	    desc.name,
+	    initialState,
+	    initialState);
+	metadata.textureDesc = {};
+	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = desc;
+}
+
+void FrameGraphResourceRegistry::RegisterPersistentAccelerationStructure(
+    FrameGraphResourceHandle handle,
+    const FrameGraphAccelerationStructureDesc& desc,
+    ResourceState initialState) noexcept
+{
+	FrameGraphResourceMetadata& metadata = RegisterMetadata(
+	    handle,
+	    FrameGraphResourceClass::AccelerationStructure,
+	    FrameGraphResourceKind::AccelerationStructure,
+	    FrameGraphResourceOwnership::ExternalPersistent,
+	    desc.name,
+	    initialState,
+	    initialState);
+	metadata.textureDesc = {};
+	metadata.bufferDesc = {};
+	metadata.accelerationStructureDesc = desc;
 }
 
 void FrameGraphResourceRegistry::SetBoundaryStates(

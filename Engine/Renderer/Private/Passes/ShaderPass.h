@@ -33,7 +33,10 @@ struct ComputeDispatchDesc
 	std::uint32_t GroupCountZ = 1;
 };
 
-SPARKLE_RENDERER_API void DeclareShaderPassParameterUsages(PassResourceBuilder& builder, const PassParameterSet& parameterSet) noexcept;
+SPARKLE_RENDERER_API bool DeclareShaderPassParameterUsages(
+    PassResourceBuilder& builder,
+    const PassParameterSet& parameterSet,
+    const char* passName = nullptr) noexcept;
 SPARKLE_RENDERER_API void DispatchComputeShaderPass(RenderCommandContext& cmd, const ComputeDispatchDesc& dispatch) noexcept;
 SPARKLE_RENDERER_API bool ValidateShaderPassLayout(
     const PassParameterLayout& layout,
@@ -108,8 +111,7 @@ class SPARKLE_RENDERER_API ShaderPass
 			return false;
 		}
 
-		DeclareShaderPassParameterUsages(builder, parameterSet);
-		return true;
+		return DeclareShaderPassParameterUsages(builder, parameterSet, passName);
 	}
 
 	template <typename TParameterBindings>
@@ -222,10 +224,10 @@ class SPARKLE_RENDERER_API ShaderPass
 			case ShaderParameterSemanticKind::RWBuffer:
 			case ShaderParameterSemanticKind::RenderTarget:
 			case ShaderParameterSemanticKind::DepthTarget:
+			case ShaderParameterSemanticKind::AccelerationStructure:
 				return true;
 			case ShaderParameterSemanticKind::UniformData:
 			case ShaderParameterSemanticKind::SamplerSet:
-			case ShaderParameterSemanticKind::AccelerationStructure:
 				return false;
 			default:
 				return false;

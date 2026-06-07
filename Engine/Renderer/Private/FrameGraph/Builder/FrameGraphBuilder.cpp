@@ -20,6 +20,14 @@ FrameGraphTextureHandle FrameGraphBuilder::ImportTexture(
 	return m_frameGraph.ImportTexture(desc, resource, initialState);
 }
 
+FrameGraphTextureHandle FrameGraphBuilder::ImportPersistentTexture(
+    const FrameGraphTextureDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ImportPersistentTexture(desc, resource, initialState);
+}
+
 FrameGraphTextureHandle FrameGraphBuilder::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
 {
 	return m_frameGraph.CreateTexture(desc);
@@ -33,9 +41,35 @@ FrameGraphBufferHandle FrameGraphBuilder::ImportBuffer(
 	return m_frameGraph.ImportBuffer(desc, resource, initialState);
 }
 
+FrameGraphBufferHandle FrameGraphBuilder::ImportPersistentBuffer(
+    const FrameGraphBufferDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ImportPersistentBuffer(desc, resource, initialState);
+}
+
 FrameGraphBufferHandle FrameGraphBuilder::CreateBuffer(const FrameGraphBufferDesc& desc) noexcept
 {
 	return m_frameGraph.CreateBuffer(desc);
+}
+
+FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportAccelerationStructure(
+    const FrameGraphAccelerationStructureDesc& desc,
+    NativeResourceHandle resource,
+    RhiGpuVirtualAddress gpuAddress,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ImportAccelerationStructure(desc, resource, gpuAddress, initialState);
+}
+
+FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportPersistentAccelerationStructure(
+    const FrameGraphAccelerationStructureDesc& desc,
+    NativeResourceHandle resource,
+    RhiGpuVirtualAddress gpuAddress,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ImportPersistentAccelerationStructure(desc, resource, gpuAddress, initialState);
 }
 
 ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept

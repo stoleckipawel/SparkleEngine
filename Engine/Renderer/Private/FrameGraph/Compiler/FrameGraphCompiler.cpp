@@ -1,14 +1,13 @@
 #include "PCH.h"
 #include "FrameGraphCompiler.h"
 
+#include "FrameGraph/Compiler/FrameGraphCompilerExternalResources.h"
+#include "FrameGraph/Compiler/FrameGraphCompilerRayTracing.h"
 #include "FrameGraph/FrameGraphResourceRegistry.h"
 #include "FrameGraph/FrameGraphResourceStateTracker.h"
-#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <algorithm>
 #include <cassert>
-#include <format>
-#include <string>
 
 namespace
 {
@@ -53,25 +52,6 @@ namespace
 			}
 		}
 	}
-
-	void ValidateResourceBoundaryState(const FrameGraphResourceMetadata& metadata, const FrameGraphResourceRuntimeState& runtimeState) noexcept
-	{
-		if (metadata.ownership != FrameGraphResourceOwnership::Imported || runtimeState.currentState == metadata.initialState)
-		{
-			return;
-		}
-
-		const std::string condition = std::format(
-		    "resource '{}' declared initialState='{}' but tracked runtime state is '{}'",
-		    metadata.debugName.empty() ? "<unnamed>" : metadata.debugName,
-		    ResourceStateToString(metadata.initialState),
-		    ResourceStateToString(runtimeState.currentState));
-		RhiValidation::ReportContractViolation(
-		    "Renderer.FrameGraph",
-		    condition,
-		    "update the import/boundary state at the host handoff or transition the resource through FrameGraph before declaring pass usage");
-	}
-
 }  // namespace
 
 FrameGraphCompiler::FrameGraphCompiler(
@@ -118,7 +98,20 @@ void FrameGraphCompiler::Compile() noexcept
 
 			FrameGraphResourceNode& compiledResource = GetCompiledResourceEntry(declaration.handle);
 			const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
-			if (compiledResource.currentState != requiredState)
+			if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
+			{
+				if (FrameGraphCompilerRayTracing::RequiresExecutionBarrier(declaration, compiledResource.currentState, requiredState))
+				{
+					passRecord.compiledBarriers.push_back(FrameGraphCompilerRayTracing::BuildExecutionBarrier(
+					    declaration.handle,
+					    declaration,
+					    compiledResource.currentState,
+					    requiredState));
+					compiledResource.currentState = requiredState;
+					m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
+				}
+			}
+			else if (compiledResource.currentState != requiredState)
 			{
 				passRecord.compiledBarriers.push_back(
 				    FrameGraphBarrier{
@@ -181,7 +174,7 @@ void FrameGraphCompiler::BuildCompiledPlanResources() noexcept
 		const FrameGraphResourceHandle handle = registeredHandles[resourceIndex];
 		const FrameGraphResourceMetadata& entry = m_resourceRegistry.GetMetadata(handle);
 		const FrameGraphResourceRuntimeState& runtimeState = m_resourceStateTracker.GetRuntimeState(handle);
-		ValidateResourceBoundaryState(entry, runtimeState);
+		FrameGraphCompilerExternalResources::ValidateResourceBoundaryState(entry, runtimeState);
 		m_plan.resources.push_back(
 		    FrameGraphResourceNode{
 		        .index = static_cast<FrameGraphResourceIndex>(resourceIndex),
@@ -212,6 +205,11 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
     const PassResourceDeclaration& declaration,
     const FrameGraphResourceNode& resource) const noexcept
 {
+	if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
+	{
+		return FrameGraphCompilerRayTracing::InferRequiredResourceState(declaration, resource);
+	}
+
 	if (IsReadOnlyUsage(declaration.usage))
 	{
 		switch (declaration.usage)
@@ -265,7 +263,7 @@ ResourceState FrameGraphCompiler::InferRequiredResourceState(
 
 bool FrameGraphCompiler::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) const noexcept
 {
-	return resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil;
+	return FrameGraphCompilerExternalResources::ShouldRestoreFinalState(resource);
 }
 
 FrameGraphResourceVersion& FrameGraphCompiler::GetCurrentResourceVersion(FrameGraphResourceNode& resource) noexcept

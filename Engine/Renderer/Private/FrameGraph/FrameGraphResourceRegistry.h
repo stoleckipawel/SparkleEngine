@@ -30,6 +30,20 @@ class FrameGraphResourceRegistry final
 	    ResourceState initialState) noexcept;
 	void RegisterTransientBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
 	void RegisterImportedBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
+	void RegisterPersistentTexture(
+	    FrameGraphResourceHandle handle,
+	    const FrameGraphTextureDesc& desc,
+	    FrameGraphResourceKind kind,
+	    ResourceState initialState) noexcept;
+	void RegisterPersistentBuffer(FrameGraphResourceHandle handle, const FrameGraphBufferDesc& desc, ResourceState initialState) noexcept;
+	void RegisterImportedAccelerationStructure(
+	    FrameGraphResourceHandle handle,
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    ResourceState initialState) noexcept;
+	void RegisterPersistentAccelerationStructure(
+	    FrameGraphResourceHandle handle,
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    ResourceState initialState) noexcept;
 	void SetBoundaryStates(FrameGraphResourceHandle handle, ResourceState initialState, ResourceState finalState) noexcept;
 	bool IsRegistered(FrameGraphResourceHandle handle) const noexcept;
 

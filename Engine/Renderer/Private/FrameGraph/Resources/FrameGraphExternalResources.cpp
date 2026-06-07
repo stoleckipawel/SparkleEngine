@@ -34,12 +34,17 @@ void FrameGraph::SyncImportedResourceAccesses() const noexcept
 	{
 		const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
 		FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
-		if (metadata.ownership != FrameGraphResourceOwnership::Imported || metadata.kind == FrameGraphResourceKind::BackBuffer)
+		if (!IsExternalFrameGraphResource(metadata.ownership) || metadata.kind == FrameGraphResourceKind::BackBuffer)
 		{
 			continue;
 		}
 
 		if (!access.resource)
+		{
+			continue;
+		}
+
+		if (metadata.kind == FrameGraphResourceKind::AccelerationStructure)
 		{
 			continue;
 		}
@@ -125,7 +130,7 @@ void FrameGraph::ReleaseExternalResourceViews() noexcept
 	for (const FrameGraphResourceHandle handle : m_resourceRegistry.GetRegisteredHandles())
 	{
 		const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
-		if (metadata.ownership != FrameGraphResourceOwnership::Imported || metadata.kind == FrameGraphResourceKind::BackBuffer)
+		if (!IsExternalFrameGraphResource(metadata.ownership) || metadata.kind == FrameGraphResourceKind::BackBuffer)
 		{
 			continue;
 		}

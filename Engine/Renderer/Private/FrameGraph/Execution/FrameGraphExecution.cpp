@@ -148,6 +148,12 @@ RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveUnorderedAccessView(Fr
 	return m_frameGraph->ResolveUnorderedAccessView(handle);
 }
 
+RhiGpuVirtualAddress FrameGraphResourceCommands::ResolveAccelerationStructureGpuAddress(
+    FrameGraphAccelerationStructureHandle handle) const noexcept
+{
+	return m_frameGraph->ResolveAccelerationStructureGpuAddress(handle);
+}
+
 void FrameGraph::BindRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle renderTargetHandle, FrameGraphTextureHandle depthStencilHandle) const noexcept
 {
 	FrameGraphFramebuffer framebuffer{};
@@ -211,6 +217,12 @@ RhiGpuDescriptorHandle FrameGraph::ResolveUnorderedAccessView(FrameGraphBufferHa
 {
 	assert(handle.IsValid());
 	return ResolveUnorderedAccessView(handle.GetResourceHandle());
+}
+
+RhiGpuVirtualAddress FrameGraph::ResolveAccelerationStructureGpuAddress(FrameGraphAccelerationStructureHandle handle) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveAccelerationStructureGpuAddress(handle.GetResourceHandle());
 }
 
 void FrameGraph::CopyTexture(RenderCommandContext& cmd, FrameGraphTextureHandle destinationHandle, FrameGraphTextureHandle sourceHandle) const noexcept

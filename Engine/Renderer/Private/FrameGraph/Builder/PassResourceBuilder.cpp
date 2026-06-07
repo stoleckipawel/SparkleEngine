@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "FrameGraph/Builder/PassResourceBuilder.h"
 
+#include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
+
 #include <cassert>
 #include <string>
 #include <utility>
@@ -106,7 +108,25 @@ FrameGraphBufferHandle PassResourceBuilder::Use(FrameGraphBufferHandle handle, R
 	return FrameGraphBufferHandle{Use(handle.GetResourceHandle(), usage)};
 }
 
-void PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& parameterSet) noexcept
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Read(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
+{
+	assert(handle.IsValid());
+	return FrameGraphAccelerationStructureHandle{Read(handle.GetResourceHandle(), usage)};
+}
+
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Write(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
+{
+	assert(handle.IsValid());
+	return FrameGraphAccelerationStructureHandle{Write(handle.GetResourceHandle(), usage)};
+}
+
+FrameGraphAccelerationStructureHandle PassResourceBuilder::Use(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept
+{
+	assert(handle.IsValid());
+	return FrameGraphAccelerationStructureHandle{Use(handle.GetResourceHandle(), usage)};
+}
+
+bool PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& parameterSet, std::string_view passName) noexcept
 {
 	assert(m_declarations != nullptr);
 	assert(parameterSet.HasLayout());
@@ -128,6 +148,10 @@ void PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 		const PassParameterBinding* binding = parameterSet.GetBinding(index);
 		assert(binding != nullptr);
 		assert(binding->IsBound());
+		if (!FrameGraphResourceContractDiagnostics::ValidatePassParameterBinding(passName, parameter, *binding))
+		{
+			return false;
+		}
 
 		if (parameter.ResourceDomain == ShaderParameterResourceDomain::Texture)
 		{
@@ -141,8 +165,16 @@ void PassResourceBuilder::DeclareParameterUsages(const PassParameterSet& paramet
 			continue;
 		}
 
+		if (parameter.ResourceDomain == ShaderParameterResourceDomain::AccelerationStructure)
+		{
+			DeclareAccelerationStructureBinding(parameter, *binding);
+			continue;
+		}
+
 		assert(false);
 	}
+
+	return true;
 }
 
 bool PassResourceBuilder::HasFrameGraphUsage(const PassParameterDesc& parameter) noexcept
@@ -155,10 +187,10 @@ bool PassResourceBuilder::HasFrameGraphUsage(const PassParameterDesc& parameter)
 		case ShaderParameterSemanticKind::RWBuffer:
 		case ShaderParameterSemanticKind::RenderTarget:
 		case ShaderParameterSemanticKind::DepthTarget:
+		case ShaderParameterSemanticKind::AccelerationStructure:
 			return true;
 		case ShaderParameterSemanticKind::UniformData:
 		case ShaderParameterSemanticKind::SamplerSet:
-		case ShaderParameterSemanticKind::AccelerationStructure:
 			return false;
 		default:
 			assert(false);
@@ -180,13 +212,24 @@ ResourceUsage PassResourceBuilder::GetFrameGraphUsage(const PassParameterDesc& p
 			return ResourceUsage::RenderTarget;
 		case ShaderParameterSemanticKind::DepthTarget:
 			return ResourceUsage::DepthWrite;
+		case ShaderParameterSemanticKind::AccelerationStructure:
+			return ResourceUsage::AccelerationStructureRead;
 		case ShaderParameterSemanticKind::UniformData:
 		case ShaderParameterSemanticKind::SamplerSet:
-		case ShaderParameterSemanticKind::AccelerationStructure:
 		default:
 			assert(false);
 			return ResourceUsage::ShaderRead;
 	}
+}
+
+void PassResourceBuilder::DeclareAccelerationStructureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept
+{
+	assert(parameter.ResourceDomain == ShaderParameterResourceDomain::AccelerationStructure);
+	const PassParameterAccelerationStructureBindingData* accelerationStructureData = binding.AsAccelerationStructureData();
+	assert(accelerationStructureData != nullptr);
+	assert(accelerationStructureData->Handle.IsValid());
+
+	DeclareResourceHandle(accelerationStructureData->Handle.GetResourceHandle(), GetFrameGraphUsage(parameter), parameter, 0);
 }
 
 void PassResourceBuilder::DeclareTextureBinding(const PassParameterDesc& parameter, const PassParameterBinding& binding) noexcept

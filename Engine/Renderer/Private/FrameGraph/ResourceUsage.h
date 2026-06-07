@@ -9,6 +9,8 @@ enum class ResourceUsage : std::uint8_t
 	DepthWrite,
 	ShaderRead,
 	UnorderedAccess,
+	AccelerationStructureRead,
+	AccelerationStructureBuild,
 	CopySource,
 	CopyDest,
 	Present,
@@ -28,6 +30,10 @@ constexpr const char* ResourceUsageToString(ResourceUsage usage) noexcept
 			return "ShaderRead";
 		case ResourceUsage::UnorderedAccess:
 			return "UnorderedAccess";
+		case ResourceUsage::AccelerationStructureRead:
+			return "AccelerationStructureRead";
+		case ResourceUsage::AccelerationStructureBuild:
+			return "AccelerationStructureBuild";
 		case ResourceUsage::CopySource:
 			return "CopySource";
 		case ResourceUsage::CopyDest:
@@ -44,6 +50,7 @@ constexpr bool IsReadWriteUsage(ResourceUsage usage) noexcept
 	switch (usage)
 	{
 		case ResourceUsage::UnorderedAccess:
+		case ResourceUsage::AccelerationStructureBuild:
 			return true;
 		default:
 			return false;
@@ -56,6 +63,7 @@ constexpr bool IsReadOnlyUsage(ResourceUsage usage) noexcept
 	{
 		case ResourceUsage::DepthRead:
 		case ResourceUsage::ShaderRead:
+		case ResourceUsage::AccelerationStructureRead:
 		case ResourceUsage::CopySource:
 		case ResourceUsage::Present:
 			return true;
@@ -90,4 +98,9 @@ constexpr bool WritesToUsage(ResourceUsage usage) noexcept
 constexpr bool UsesUnorderedAccess(ResourceUsage usage) noexcept
 {
 	return usage == ResourceUsage::UnorderedAccess;
+}
+
+constexpr bool UsesAccelerationStructure(ResourceUsage usage) noexcept
+{
+	return usage == ResourceUsage::AccelerationStructureRead || usage == ResourceUsage::AccelerationStructureBuild;
 }

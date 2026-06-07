@@ -64,6 +64,26 @@ FrameGraphTextureHandle FrameGraph::ImportTexture(
 	return FrameGraphTextureHandle{handle};
 }
 
+FrameGraphTextureHandle FrameGraph::ImportPersistentTexture(
+    const FrameGraphTextureDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
+{
+	if (!resource)
+	{
+		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportPersistentTexture: persistent texture has no backing resource.");
+		return FrameGraphTextureHandle::Invalid();
+	}
+
+	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "PersistentTexture");
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
+	m_resourceRegistry.RegisterPersistentTexture(handle, resolvedDesc, ResolveTextureResourceKind(desc.kind), initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.RegisterResource(handle, resource);
+	return FrameGraphTextureHandle{handle};
+}
+
 FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& desc) noexcept
 {
 	const FrameGraphTextureDesc resolvedDesc = ResolveTextureDesc(desc, *m_window, "Texture");
@@ -109,6 +129,26 @@ FrameGraphBufferHandle FrameGraph::CreateBuffer(const FrameGraphBufferDesc& desc
 	m_resourceRegistry.RegisterTransientBuffer(handle, resolvedDesc, ResourceState::Common);
 	m_resourceStateTracker.RegisterResource(handle, ResourceState::Common);
 	m_resourceResolver.ClearResolvedAccess(handle);
+	return FrameGraphBufferHandle{handle};
+}
+
+FrameGraphBufferHandle FrameGraph::ImportPersistentBuffer(
+    const FrameGraphBufferDesc& desc,
+    NativeResourceHandle resource,
+    ResourceState initialState) noexcept
+{
+	if (!resource)
+	{
+		SPDLOG_LOGGER_WARN(g_frameGraphTextureLogger, "FrameGraph::ImportPersistentBuffer: persistent buffer has no backing resource.");
+		return FrameGraphBufferHandle::Invalid();
+	}
+
+	const FrameGraphBufferDesc resolvedDesc = ResolveBufferDesc(desc, "PersistentBuffer");
+	const FrameGraphResourceHandle handle = AllocateDynamicResourceHandle();
+	m_resourceRegistry.RegisterPersistentBuffer(handle, resolvedDesc, initialState);
+	m_resourceStateTracker.RegisterResource(handle, initialState);
+	m_resourceStateTracker.UpdateCurrentState(handle, initialState);
+	m_resourceResolver.RegisterResource(handle, resource);
 	return FrameGraphBufferHandle{handle};
 }
 

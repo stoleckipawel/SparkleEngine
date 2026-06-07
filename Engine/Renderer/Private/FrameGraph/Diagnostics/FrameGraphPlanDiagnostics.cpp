@@ -81,6 +81,8 @@ namespace FrameGraphPlanDiagnostics
 				return "Transition";
 			case FrameGraphBarrier::Type::UnorderedAccess:
 				return "UnorderedAccess";
+			case FrameGraphBarrier::Type::AccelerationStructure:
+				return "AccelerationStructure";
 			default:
 				return "Unknown";
 		}
@@ -98,6 +100,8 @@ namespace FrameGraphPlanDiagnostics
 				return "ColorRenderTarget";
 			case FrameGraphResourceKind::Buffer:
 				return "Buffer";
+			case FrameGraphResourceKind::AccelerationStructure:
+				return "AccelerationStructure";
 			default:
 				return "Unknown";
 		}
@@ -111,6 +115,8 @@ namespace FrameGraphPlanDiagnostics
 				return "Transient";
 			case FrameGraphResourceOwnership::Imported:
 				return "Imported";
+			case FrameGraphResourceOwnership::ExternalPersistent:
+				return "ExternalPersistent";
 			default:
 				return "Unknown";
 		}

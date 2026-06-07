@@ -4,6 +4,7 @@
 #include "../../../RHI/Public/Descriptors/RhiDescriptorHandles.h"
 #include "../../../RHI/Public/Resources/RhiResourceDesc.h"
 #include "../../../RHI/Public/Samplers/RhiSamplerDesc.h"
+#include "../FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "../FrameGraph/FrameGraphBufferHandle.h"
 #include "../FrameGraph/FrameGraphTextureHandle.h"
 
@@ -49,9 +50,10 @@ struct PassParameterDescriptorTableBindingData
 
 struct PassParameterAccelerationStructureBindingData
 {
+	FrameGraphAccelerationStructureHandle Handle = FrameGraphAccelerationStructureHandle::Invalid();
 	RhiGpuVirtualAddress GpuAddress = 0;
 
-	bool IsBound() const noexcept { return true; }
+	bool IsBound() const noexcept { return Handle.IsValid() || GpuAddress != 0; }
 };
 
 struct PassParameterUniformBindingData
@@ -333,6 +335,24 @@ class PassParameterSet final
 		}
 
 		m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.GpuAddress = gpuAddress});
+		return true;
+	}
+
+	bool SetAccelerationStructure(const char* name, FrameGraphAccelerationStructureHandle handle)
+	{
+		std::uint32_t index = 0;
+		const PassParameterDesc* parameter = FindParameter(name, index);
+		if (parameter == nullptr || parameter->Kind != ShaderParameterSemanticKind::AccelerationStructure)
+		{
+			return false;
+		}
+
+		if (parameter->ArrayCount != 1u || !handle.IsValid())
+		{
+			return false;
+		}
+
+		m_bindings[index].SetValue(PassParameterAccelerationStructureBindingData{.Handle = handle});
 		return true;
 	}
 

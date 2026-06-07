@@ -232,7 +232,11 @@ void PassBinder::BindCompiledBinding(
 			const PassParameterAccelerationStructureBindingData* accelerationStructureData =
 			    parameterBinding->AsAccelerationStructureData();
 			assert(accelerationStructureData != nullptr);
-			BindGpuAddress(cmd, compiledBinding, accelerationStructureData->GpuAddress, isCompute);
+			const RhiGpuVirtualAddress gpuAddress = accelerationStructureData->Handle.IsValid()
+			                                            ? resources.ResolveAccelerationStructureGpuAddress(
+			                                                  accelerationStructureData->Handle)
+			                                            : accelerationStructureData->GpuAddress;
+			BindGpuAddress(cmd, compiledBinding, gpuAddress, isCompute);
 			return;
 		}
 		case CompiledBindingType::ReadWriteAddress:

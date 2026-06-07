@@ -1,13 +1,11 @@
 #include "PCH.h"
 #include "FrameGraph/FrameGraph.h"
 
+#include "FrameGraph/Diagnostics/FrameGraphResourceContractDiagnostics.h"
 #include "Frame/FrameContext.h"
 
-#include <cassert>
 #include <string>
 #include <utility>
-
-static const auto g_frameGraphDeclarationLogger = Logging::GetOrCreateLogger("Renderer.FrameGraph");
 
 namespace
 {
@@ -39,35 +37,6 @@ namespace
 		name.append(passName.begin(), passName.end());
 		return name;
 	}
-
-	void ValidatePassDeclarations(
-	    std::string_view passName,
-	    EFrameGraphPassFlags flags,
-	    const std::vector<PassResourceDeclaration>& declarations) noexcept
-	{
-		assert(HasExactlyOnePassKind(flags));
-
-		for (const PassResourceDeclaration& declaration : declarations)
-		{
-			if (ReadsFromUsage(declaration.usage) || WritesToUsage(declaration.usage))
-			{
-				continue;
-			}
-
-			std::string message{"FrameGraph pass '"};
-			message.append(passName.begin(), passName.end());
-			if (!declaration.label.empty())
-			{
-				message += "' parameter '";
-				message += declaration.label;
-			}
-			message += "' uses unsupported resource usage ";
-			message += ResourceUsageToString(declaration.usage);
-			message += ".";
-			SPDLOG_LOGGER_WARN(g_frameGraphDeclarationLogger, "{}", message);
-			assert(false);
-		}
-	}
 }  // namespace
 
 void FrameGraph::Setup(const FrameContext& frame)
@@ -82,7 +51,7 @@ void FrameGraph::Setup(const FrameContext& frame)
 		PassResourceDeclarationSink declarationSink(declarations);
 		PassResourceBuilder builder(declarationSink);
 		pass.setupCallback(builder, frame);
-		ValidatePassDeclarations(pass.name, pass.flags, declarations);
+		FrameGraphResourceContractDiagnostics::ValidatePassDeclarations(pass.name, pass.flags, declarations);
 		m_compiledPlan.passes.push_back(
 		    FrameGraphPassNode{
 		        .index = static_cast<FrameGraphPassIndex>(passIndex),
