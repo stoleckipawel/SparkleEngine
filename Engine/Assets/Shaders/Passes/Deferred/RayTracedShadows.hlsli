@@ -1,6 +1,10 @@
 #ifndef SPARKLE_RAY_TRACED_SHADOWS_HLSLI
 #define SPARKLE_RAY_TRACED_SHADOWS_HLSLI
 
+#include "Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli"
+#include "Passes/Deferred/RayTracedShadowSampling.hlsli"
+#include "Passes/Deferred/RayTracedShadowSignals.hlsli"
+
 RaytracingAccelerationStructure SceneTlas;
 
 cbuffer RayTracedShadowUniformData
@@ -8,7 +12,7 @@ cbuffer RayTracedShadowUniformData
 	uint RayTracedDirectionalShadowsEnabled;
 	uint RayTracedLocalLightShadowsEnabled;
 	uint RayTracedShadowDiagnosticsEnabled;
-	uint RayTracedShadowRaysPerPixel;
+	uint RayTracedShadowQualityMode;
 	float RayTracedShadowNormalBias;
 	float RayTracedShadowMaxDistance;
 	float RayTracedShadowPadding0;
@@ -20,6 +24,8 @@ namespace RayTracedShadows
 	static const uint ShadowInstanceMask = 0xFFu;
 	static const uint ShadowRayFlags = RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES;
 	static const float MinimumShadowTMin = 0.001f;
+	static const uint ShadowQualityModeHard = 0u;
+	static const uint ShadowQualityModeSoftAreaLights = 1u;
 
 	bool SupportsDirectionalShadows()
 	{
@@ -31,13 +37,24 @@ namespace RayTracedShadows
 		return RayTracedLocalLightShadowsEnabled != 0u;
 	}
 
-	float TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
+	bool UsesHardShadowVisibility()
 	{
+		return RayTracedShadowQualityMode == ShadowQualityModeHard;
+	}
+
+	float3 BuildRayOrigin(float3 positionWorld, float3 normalWorld)
+	{
+		return positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
+	}
+
+	ShadowVisibilitySignal TraceShadowRay(float3 originWorld, float3 directionWorld, float maxDistance)
+	{
+		const float clampedMaxDistance = max(maxDistance, MinimumShadowTMin);
 		RayDesc shadowRay;
 		shadowRay.Origin = originWorld;
 		shadowRay.Direction = normalize(directionWorld);
 		shadowRay.TMin = MinimumShadowTMin;
-		shadowRay.TMax = max(maxDistance, MinimumShadowTMin);
+		shadowRay.TMax = clampedMaxDistance;
 
 		RayQuery<ShadowRayFlags> query;
 		query.TraceRayInline(SceneTlas, ShadowRayFlags, ShadowInstanceMask, shadowRay);
@@ -45,79 +62,130 @@ namespace RayTracedShadows
 		{
 		}
 
-		return query.CommittedStatus() == COMMITTED_TRIANGLE_HIT ? 0.0f : 1.0f;
+		if (query.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
+		{
+			return RayTracedShadowSignals::BuildOccludedSignal(query.CommittedRayT(), clampedMaxDistance);
+		}
+
+		return RayTracedShadowSignals::BuildUnshadowedSignal(clampedMaxDistance);
 	}
 
-	float TraceDirectionalShadow(float3 positionWorld, float3 normalWorld, float3 lightDirectionWorld, bool castsShadow)
+	ShadowVisibilitySignal TraceDirectionalShadowSignal(
+	    float3 positionWorld,
+	    float3 normalWorld,
+	    float3 lightDirectionWorld,
+	    float angularDiameterRadians,
+	    uint2 pixelCoord,
+	    uint lightIndex,
+	    bool castsShadow)
 	{
 		if (!castsShadow || !SupportsDirectionalShadows())
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
 		}
 
-		const float3 originWorld = positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
-		return TraceShadowRay(originWorld, lightDirectionWorld, RayTracedShadowMaxDistance);
+		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
+		if (UsesHardShadowVisibility())
+		{
+			return TraceShadowRay(originWorld, lightDirectionWorld, RayTracedShadowMaxDistance);
+		}
+
+		const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 0u);
+		const float coneHalfAngle = max(angularDiameterRadians, 0.0f) * 0.5f;
+		const float3 sampledDirection = RayTracedShadowSampling::SampleConeDirection(lightDirectionWorld, coneHalfAngle, sample);
+		return TraceShadowRay(originWorld, sampledDirection, RayTracedShadowMaxDistance);
 	}
 
-	float TracePointShadow(float3 positionWorld, float3 normalWorld, float3 lightPositionWorld, float lightRange, bool castsShadow)
+	ShadowVisibilitySignal TracePointShadowSignal(
+	    float3 positionWorld,
+	    float3 normalWorld,
+	    float3 lightPositionWorld,
+	    float lightRange,
+	    float sourceRadius,
+	    uint2 pixelCoord,
+	    uint lightIndex,
+	    bool castsShadow)
 	{
 		if (!castsShadow || !SupportsLocalLightShadows())
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
 		}
 
-		const float3 surfaceToLight = lightPositionWorld - positionWorld;
+		float3 sampledLightPosition = lightPositionWorld;
+		if (!UsesHardShadowVisibility())
+		{
+			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 1u);
+			sampledLightPosition = RayTracedShadowSampling::SampleSpherePoint(
+			    lightPositionWorld,
+			    max(sourceRadius, 0.0f),
+			    positionWorld - lightPositionWorld,
+			    sample);
+		}
+		const float3 surfaceToLight = sampledLightPosition - positionWorld;
 		const float distanceToLight = length(surfaceToLight);
 		if (distanceToLight <= MinimumShadowTMin)
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(MinimumShadowTMin);
 		}
 
 		const float maxDistance = lightRange > 0.0f ? min(distanceToLight, lightRange) : distanceToLight;
 		if (maxDistance <= MinimumShadowTMin)
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(maxDistance);
 		}
 
-		const float3 originWorld = positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
+		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
 		return TraceShadowRay(originWorld, surfaceToLight, maxDistance - MinimumShadowTMin);
 	}
 
-	float TraceSpotShadow(
+	ShadowVisibilitySignal TraceSpotShadowSignal(
 	    float3 positionWorld,
 	    float3 normalWorld,
 	    float3 lightPositionWorld,
 	    float3 spotDirectionWorld,
 	    float lightRange,
+	    float sourceRadius,
 	    float outerConeCosine,
+	    uint2 pixelCoord,
+	    uint lightIndex,
 	    bool castsShadow)
 	{
 		if (!castsShadow || !SupportsLocalLightShadows())
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(RayTracedShadowMaxDistance);
 		}
 
-		const float3 surfaceToLight = lightPositionWorld - positionWorld;
+		float3 sampledLightPosition = lightPositionWorld;
+		if (!UsesHardShadowVisibility())
+		{
+			const float2 sample = RayTracedShadowSampling::BuildAnimatedSample(pixelCoord, lightIndex, 2u);
+			sampledLightPosition = RayTracedShadowSampling::SampleDiskPoint(
+			    lightPositionWorld,
+			    spotDirectionWorld,
+			    max(sourceRadius, 0.0f),
+			    sample);
+		}
+		const float3 surfaceToLight = sampledLightPosition - positionWorld;
 		const float distanceToLight = length(surfaceToLight);
 		if (distanceToLight <= MinimumShadowTMin)
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(MinimumShadowTMin);
 		}
 
 		const float3 lightDirection = surfaceToLight / max(distanceToLight, 0.0001f);
 		const float coneVisibility = dot(-lightDirection, normalize(spotDirectionWorld));
 		if (coneVisibility < outerConeCosine)
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(distanceToLight);
 		}
 
 		const float maxDistance = lightRange > 0.0f ? min(distanceToLight, lightRange) : distanceToLight;
 		if (maxDistance <= MinimumShadowTMin)
 		{
-			return 1.0f;
+			return RayTracedShadowSignals::BuildUnshadowedSignal(maxDistance);
 		}
 
-		const float3 originWorld = positionWorld + normalize(normalWorld) * RayTracedShadowNormalBias;
+		const float3 originWorld = BuildRayOrigin(positionWorld, normalWorld);
 		return TraceShadowRay(originWorld, surfaceToLight, maxDistance - MinimumShadowTMin);
 	}
 }

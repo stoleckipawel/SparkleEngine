@@ -122,6 +122,16 @@ namespace LevelParsing
 			return true;
 		}
 
+		if (directionalLightField == "AngularDiameterRadians")
+		{
+			if (!Strings::TryParseFloat(parsedLine.value, directionalLightDesc.angularDiameterRadians))
+			{
+				errorMessage = "Invalid directional light angular diameter";
+				return false;
+			}
+			return true;
+		}
+
 		return false;
 	}
 
@@ -165,6 +175,7 @@ namespace LevelParsing
 			output << "DirectionalLight" << lightIndex << "Intensity = " << directionalLight.intensity << "\n";
 			output << "DirectionalLight" << lightIndex << "Color = " << directionalLight.color.x << ", " << directionalLight.color.y << ", "
 			       << directionalLight.color.z << "\n";
+			output << "DirectionalLight" << lightIndex << "AngularDiameterRadians = " << directionalLight.angularDiameterRadians << "\n";
 			output << "DirectionalLight" << lightIndex << "CastShadow = " << (directionalLight.castShadow ? "true" : "false") << "\n";
 		}
 

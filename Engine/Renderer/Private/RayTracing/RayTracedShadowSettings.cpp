@@ -38,15 +38,6 @@ void LogRayTracedShadowSettingsOnce(
 	    settings.DiagnosticsEnabled ? "true" : "false",
 	    settings.RequiresDenoiser() ? "true" : "false");
 
-	if (settings.QualityMode != RayTracedShadowQualityMode::Hard)
-	{
-		SPDLOG_LOGGER_INFO(
-		    logger,
-		    "Directional ray traced shadow visibility currently uses the hard-shadow path; requested quality '{}' will not change "
-		    "behavior until the stochastic soft-shadow stages land.",
-		    RayTracedShadowQualityModeToString(settings.QualityMode));
-	}
-
 	if (!capabilities.CanUseInlineRayQueryShadows())
 	{
 		SPDLOG_LOGGER_ERROR(

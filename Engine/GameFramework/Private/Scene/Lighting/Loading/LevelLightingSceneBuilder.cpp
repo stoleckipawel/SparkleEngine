@@ -28,6 +28,7 @@ namespace LevelLightingSceneBuilder
 			light.common.intensity = desc.directionalLights[i].intensity;
 			SceneDirectionalLightDesc directional;
 			directional.direction = desc.directionalLights[i].direction;
+			directional.angularDiameterRadians = desc.directionalLights[i].angularDiameterRadians;
 			directional.castShadow = desc.directionalLights[i].castShadow;
 			light.payload = directional;
 			lights.push_back(std::move(light));

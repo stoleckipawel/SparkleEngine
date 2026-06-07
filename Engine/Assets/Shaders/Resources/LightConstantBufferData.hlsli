@@ -8,7 +8,10 @@ struct DirectionalLightConstantBufferData
 	float Intensity;
 
 	float3 Color;
+	float AngularDiameter;
+
 	uint CastShadow;
+	uint3 Padding;
 };
 
 struct PointLightConstantBufferData
@@ -19,8 +22,9 @@ struct PointLightConstantBufferData
 	float3 Color;
 	float Intensity;
 
+	float SourceRadius;
 	uint CastShadow;
-	uint3 Padding;
+	uint2 Padding;
 };
 
 struct SpotLightConstantBufferData
@@ -36,7 +40,8 @@ struct SpotLightConstantBufferData
 
 	float OuterConeCosine;
 	uint CastShadow;
-	uint2 Padding;
+	float SourceRadius;
+	uint Padding;
 };
 
 struct PerViewLightingConstantBufferData

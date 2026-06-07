@@ -13,6 +13,13 @@
 #include <algorithm>
 #include <utility>
 
+namespace
+{
+	constexpr float kAngularDiameterDragSpeedDegrees = 0.1f;
+	constexpr float kAngularDiameterSliderMaxDegrees = 30.0f;
+	constexpr float kSourceRadiusSliderMax = 25.0f;
+}
+
 void SceneLightInspector::Build(GameScene& gameScene, std::size_t lightIndex, const std::string& filterText) noexcept
 {
 	const SceneLightDesc* sceneLight = gameScene.GetLighting().GetLight(lightIndex);
@@ -137,6 +144,20 @@ void SceneLightInspector::BuildDirectionalLightCategory(const std::string& filte
 	{
 		lightDesc.castShadow = castShadow;
 	}
+
+	float angularDiameterDegrees = MathUtils::RadiansToDegrees(lightDesc.angularDiameterRadians);
+	constexpr float kDefaultAngularDiameterDegrees = 0.533f;
+	if (UiUtil::EditDetailsFloat(
+	        "Angular Diameter",
+	        angularDiameterDegrees,
+	        kAngularDiameterDragSpeedDegrees,
+	        0.0f,
+	        kAngularDiameterSliderMaxDegrees,
+	        "%.3f",
+	        &kDefaultAngularDiameterDegrees))
+	{
+		lightDesc.angularDiameterRadians = MathUtils::DegreesToRadians((std::max) (0.0f, angularDiameterDegrees));
+	}
 	UiUtil::EndDetailsCategory();
 }
 
@@ -157,6 +178,20 @@ void SceneLightInspector::BuildPointLightCategory(const std::string& filterText,
 	if (UiUtil::EditDetailsFloat("Range", range, 0.05f, 0.0f, kRangeSliderMax, "%.3f", &kDefaultRange))
 	{
 		lightDesc.range = (std::max) (0.0f, range);
+	}
+
+	float sourceRadius = lightDesc.sourceRadius;
+	constexpr float kDefaultSourceRadius = 0.05f;
+	if (UiUtil::EditDetailsFloat(
+	        "Source Radius",
+	        sourceRadius,
+	        0.01f,
+	        0.0f,
+	        kSourceRadiusSliderMax,
+	        "%.3f",
+	        &kDefaultSourceRadius))
+	{
+		lightDesc.sourceRadius = (std::max) (0.0f, sourceRadius);
 	}
 
 	UiUtil::EndDetailsCategory();
@@ -186,6 +221,20 @@ void SceneLightInspector::BuildSpotLightCategory(const std::string& filterText, 
 	if (UiUtil::EditDetailsFloat("Range", range, 0.05f, 0.0f, kRangeSliderMax, "%.3f", &kDefaultRange))
 	{
 		lightDesc.range = (std::max) (0.0f, range);
+	}
+
+	float sourceRadius = lightDesc.sourceRadius;
+	constexpr float kDefaultSourceRadius = 0.05f;
+	if (UiUtil::EditDetailsFloat(
+	        "Source Radius",
+	        sourceRadius,
+	        0.01f,
+	        0.0f,
+	        kSourceRadiusSliderMax,
+	        "%.3f",
+	        &kDefaultSourceRadius))
+	{
+		lightDesc.sourceRadius = (std::max) (0.0f, sourceRadius);
 	}
 
 	float innerConeDegrees = MathUtils::RadiansToDegrees(lightDesc.innerConeAngleRadians);

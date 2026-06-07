@@ -2,21 +2,25 @@
 Name = Sponza
 
 [Camera]
-Position = 4.71188259, 2.31712008, -0.22036922
-YawRadians = 4.73744774
-PitchRadians = -0.0652962625
+Position = 5.39070892, 6.53460836, 0.260092318
+YawRadians = 4.76995611
+PitchRadians = -0.575296998
 FovYDegrees = 66.9000015
+NearZ = 0.100000001
+FarZ = 1000
 MoveSpeed = 0.00999999978
 
 [Lighting]
-DirectionalLight0Direction = -0.44095999, -0.885823846, 0.14446567
+DirectionalLight0Direction = -0.44096005, -0.885823965, 0.144465685
 DirectionalLight0Intensity = 11.220294
 DirectionalLight0Color = 1, 0.930000007, 0.819999993
+DirectionalLight0AngularDiameterRadians = 0.0837758034
 DirectionalLight0CastShadow = true
-DirectionalLight1Direction = -0.0154964291, -0.893393636, -0.449007571
-DirectionalLight1Intensity = 1.87115693
+DirectionalLight1Direction = -0.022054093, -0.862778544, -0.505100787
+DirectionalLight1Intensity = 3.29999995
 DirectionalLight1Color = 0.419999987, 0.5, 0.720000029
-DirectionalLight1CastShadow = false
+DirectionalLight1AngularDiameterRadians = 0.164636895
+DirectionalLight1CastShadow = true
 
 [SceneAssets]
 Asset = Sponza/Sponza

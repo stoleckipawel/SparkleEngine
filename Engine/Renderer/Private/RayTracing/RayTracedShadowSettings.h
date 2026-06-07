@@ -27,6 +27,11 @@ struct RayTracedShadowSettings final
 	{
 		return QualityMode == RayTracedShadowQualityMode::Hard;
 	}
+
+	bool UsesStochasticSoftShadowVisibility() const noexcept
+	{
+		return QualityMode == RayTracedShadowQualityMode::SoftAreaLights;
+	}
 };
 
 RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept;

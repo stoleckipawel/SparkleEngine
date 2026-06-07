@@ -24,6 +24,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		lighting.DirectionalLights[lightIndex].Direction = {sourceLight.direction.x, sourceLight.direction.y, sourceLight.direction.z};
 		lighting.DirectionalLights[lightIndex].Intensity = sourceLight.intensity;
 		lighting.DirectionalLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};
+		lighting.DirectionalLights[lightIndex].AngularDiameter = sourceLight.angularDiameterRadians;
 		lighting.DirectionalLights[lightIndex].CastShadow = sourceLight.castShadow ? 1u : 0u;
 	}
 
@@ -34,6 +35,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		lighting.PointLights[lightIndex].Range = sourceLight.range;
 		lighting.PointLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};
 		lighting.PointLights[lightIndex].Intensity = sourceLight.intensity;
+		lighting.PointLights[lightIndex].SourceRadius = sourceLight.sourceRadius;
 		lighting.PointLights[lightIndex].CastShadow = sourceLight.castShadow ? 1u : 0u;
 	}
 
@@ -42,6 +44,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		const auto& sourceLight = sceneData.spotLights[lightIndex];
 		lighting.SpotLights[lightIndex].Position = {sourceLight.position.x, sourceLight.position.y, sourceLight.position.z};
 		lighting.SpotLights[lightIndex].Range = sourceLight.range;
+		lighting.SpotLights[lightIndex].SourceRadius = sourceLight.sourceRadius;
 		lighting.SpotLights[lightIndex].Direction = {sourceLight.direction.x, sourceLight.direction.y, sourceLight.direction.z};
 		lighting.SpotLights[lightIndex].InnerConeCosine = sourceLight.innerConeCosine;
 		lighting.SpotLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};

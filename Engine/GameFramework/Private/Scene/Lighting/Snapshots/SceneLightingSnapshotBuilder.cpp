@@ -26,6 +26,7 @@ namespace
 		desc.direction = MathUtils::Normalize3(directional.direction, {0.0f, -1.0f, 0.0f});
 		desc.intensity = (std::max) (0.0f, common.intensity);
 		desc.color = common.color;
+		desc.angularDiameterRadians = (std::max) (0.0f, directional.angularDiameterRadians);
 		desc.castShadow = directional.castShadow;
 		return desc;
 	}
@@ -37,6 +38,7 @@ namespace
 		desc.range = (std::max) (0.0f, point.range);
 		desc.color = common.color;
 		desc.intensity = (std::max) (0.0f, common.intensity);
+		desc.sourceRadius = (std::max) (0.0f, point.sourceRadius);
 		desc.castShadow = point.castShadow;
 		return desc;
 	}
@@ -46,6 +48,7 @@ namespace
 		SpotLightSnapshotDesc desc;
 		desc.position = ExtractWorldPosition(common.worldTransform);
 		desc.range = (std::max) (0.0f, spot.range);
+		desc.sourceRadius = (std::max) (0.0f, spot.sourceRadius);
 		desc.direction = MathUtils::Normalize3(spot.direction, {0.0f, -1.0f, 0.0f});
 		desc.innerConeAngleRadians = (std::max) (0.0f, spot.innerConeAngleRadians);
 		desc.color = common.color;

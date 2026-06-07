@@ -7,5 +7,6 @@
 struct SPARKLE_ENGINE_API SceneDirectionalLightDesc
 {
 	DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
+	float angularDiameterRadians = 0.009308f;
 	bool castShadow = true;
 };

@@ -42,10 +42,13 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
 		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
-		const float directionalShadowVisibility = RayTracedShadows::TraceDirectionalShadow(
+		const ShadowVisibilitySignal directionalShadow = RayTracedShadows::TraceDirectionalShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
 		    lightDirection,
+		    ViewLighting.DirectionalLights[lightIndex].AngularDiameter,
+		    dispatchThreadId.xy,
+		    lightIndex,
 		    ViewLighting.DirectionalLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
@@ -56,7 +59,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
-		    directionalShadowVisibility,
+		    directionalShadow.Visibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);
@@ -68,11 +71,14 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
-		const float pointShadowVisibility = RayTracedShadows::TracePointShadow(
+		const ShadowVisibilitySignal pointShadow = RayTracedShadows::TracePointShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
 		    ViewLighting.PointLights[lightIndex].Position,
 		    ViewLighting.PointLights[lightIndex].Range,
+		    ViewLighting.PointLights[lightIndex].SourceRadius,
+		    dispatchThreadId.xy,
+		    lightIndex,
 		    ViewLighting.PointLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
@@ -84,7 +90,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
-		    pointShadowVisibility,
+		    pointShadow.Visibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);
@@ -96,13 +102,16 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
 	{
-		const float spotShadowVisibility = RayTracedShadows::TraceSpotShadow(
+		const ShadowVisibilitySignal spotShadow = RayTracedShadows::TraceSpotShadowSignal(
 		    positionWorld,
 		    gBuffer.NormalWorld,
 		    ViewLighting.SpotLights[lightIndex].Position,
 		    ViewLighting.SpotLights[lightIndex].Direction,
 		    ViewLighting.SpotLights[lightIndex].Range,
+		    ViewLighting.SpotLights[lightIndex].SourceRadius,
 		    ViewLighting.SpotLights[lightIndex].OuterConeCosine,
+		    dispatchThreadId.xy,
+		    lightIndex,
 		    ViewLighting.SpotLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
@@ -114,7 +123,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
-		    spotShadowVisibility,
+		    spotShadow.Visibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);

@@ -16,10 +16,10 @@ namespace RayTracedShadowPassData
 		}
 
 		return RayTracedShadowUniformData{
-		    .DirectionalShadowsEnabled = settings->UsesHardShadowVisibility() ? 1u : 0u,
-		    .LocalLightShadowsEnabled = settings->UsesHardShadowVisibility() ? 1u : 0u,
+		    .DirectionalShadowsEnabled = 1u,
+		    .LocalLightShadowsEnabled = 1u,
 		    .DiagnosticsEnabled = settings->DiagnosticsEnabled ? 1u : 0u,
-		    .RaysPerPixel = RayTracedShadowSettings::RaysPerPixel,
+		    .QualityMode = static_cast<std::uint32_t>(settings->QualityMode),
 		    .NormalBias = settings->NormalBias,
 		    .MaxDistance = settings->MaxDistance,
 		    .Padding0 = 0.0f,

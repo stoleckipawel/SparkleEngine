@@ -22,6 +22,7 @@ namespace Assets
 				{
 					PointLightDesc point;
 					point.range = lightRecord.range;
+					point.sourceRadius = 0.05f;
 					point.castShadow = true;
 					return point;
 				}
@@ -30,6 +31,7 @@ namespace Assets
 					SpotLightDesc spot;
 					spot.direction = lightRecord.direction;
 					spot.range = lightRecord.range;
+					spot.sourceRadius = 0.05f;
 					spot.innerConeAngleRadians = lightRecord.innerConeAngleRadians;
 					spot.outerConeAngleRadians = lightRecord.outerConeAngleRadians;
 					spot.castShadow = true;

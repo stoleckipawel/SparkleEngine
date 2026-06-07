@@ -3,8 +3,8 @@
 
 ConsoleVariable<RayTracedShadowQualityMode> CVarRayTracedShadowQualityMode(
 	"r.RayTracedShadows.Quality",
-	RayTracedShadowQualityMode::Hard,
-	"Ray traced shadow quality: 0=Hard, 1=SoftAreaLights (future path).");
+	RayTracedShadowQualityMode::SoftAreaLights,
+	"Ray traced shadow quality: 0=Hard, 1=SoftAreaLights.");
 ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
 	"r.RayTracedShadows.Denoiser",
 	RayTracedShadowDenoiserMode::NrdSigma,

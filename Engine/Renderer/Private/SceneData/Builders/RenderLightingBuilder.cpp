@@ -27,6 +27,7 @@ namespace RenderLightingBuilder
 			renderLight.direction = light.direction;
 			renderLight.intensity = light.intensity;
 			renderLight.color = light.color;
+			renderLight.angularDiameterRadians = light.angularDiameterRadians;
 			renderLight.castShadow = light.castShadow;
 			sceneData.directionalLights.push_back(renderLight);
 		}
@@ -39,6 +40,7 @@ namespace RenderLightingBuilder
 			renderLight.range = light.range;
 			renderLight.color = light.color;
 			renderLight.intensity = light.intensity;
+			renderLight.sourceRadius = light.sourceRadius;
 			renderLight.castShadow = light.castShadow;
 			sceneData.pointLights.push_back(renderLight);
 		}
@@ -49,6 +51,7 @@ namespace RenderLightingBuilder
 			SpotLight renderLight = {};
 			renderLight.position = light.position;
 			renderLight.range = light.range;
+			renderLight.sourceRadius = light.sourceRadius;
 			renderLight.direction = light.direction;
 			renderLight.innerConeCosine = std::cos(light.innerConeAngleRadians);
 			renderLight.color = light.color;
