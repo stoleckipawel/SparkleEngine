@@ -192,6 +192,8 @@ Implementation boundaries:
 
 ## Stage 3: FrameGraph Resource Integration
 
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
+
 Goal: Make AS build/use ordering explicit instead of hidden in pass execution.
 
 Implementation prompt:
@@ -209,6 +211,14 @@ Acceptance criteria:
 - Missing AS barriers are validation errors, not silent backend-specific behavior.
 - D3D12 and Vulkan use equivalent FrameGraph ownership.
 - Refactor gate: FrameGraph owns AS build/use ordering; no pass manually patches AS resource state around FrameGraph.
+
+Implementation boundaries:
+
+- `RenderRayTracingScene` remains the renderer-owned orchestrator for scene AS lifetime, but it now splits frame preparation from command recording so FrameGraph can own build/use ordering.
+- `Frame/RayTracingScene.*` owns the authored FrameGraph pass that declares TLAS build usage and records ray tracing scene build commands through `PassRuntimeServices`.
+- `FrameGraphAccelerationStructureRegistration.*` owns persistent TLAS reservation plus per-frame binding/clearing of external acceleration-structure resources; `Renderer.cpp` only binds the current frame's prepared TLAS before `FrameGraph::Setup`.
+- `Frame/DirectLighting.*` owns the lighting-side dependency edge by declaring TLAS read usage when a prepared scene TLAS exists, without moving ray tracing implementation detail into `DirectLightingPass` yet.
+- `RayTracingTlasBuilder` owns TLAS buffer preparation/build internals. It does not decide cross-pass ordering; FrameGraph now does that through the reserved persistent TLAS handle.
 
 ## Stage 4: Directional Ray Traced Shadow Visibility
 

@@ -7,6 +7,7 @@
 #include "../../Core/Public/Events/ScopedEventHandle.h"
 #include "Shaders/CookedShaderReloadResult.h"
 #include "Diagnostics/RendererMemoryDiagnostics.h"
+#include "FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Meshes/MeshDiagnostics.h"
 #include "Resources/Textures/TextureDiagnostics.h"
 
@@ -113,6 +114,7 @@ class SPARKLE_RENDERER_API Renderer final
 	ViewportRenderProducts m_viewportRenderProducts = {};
 	RenderProductHandle m_viewportSceneColorHandle = {};
 	RenderProductHandle m_viewportSceneDepthHandle = {};
+	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

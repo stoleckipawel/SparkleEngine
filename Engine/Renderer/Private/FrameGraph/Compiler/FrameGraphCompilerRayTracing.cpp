@@ -18,40 +18,7 @@ ResourceState FrameGraphCompilerRayTracing::InferRequiredResourceState(
 	return ResourceState::RayTracingAccelerationStructure;
 }
 
-bool FrameGraphCompilerRayTracing::RequiresExecutionBarrier(
-    const PassResourceDeclaration& declaration,
-    ResourceState currentState,
-    ResourceState requiredState) noexcept
+bool FrameGraphCompilerRayTracing::RequiresTransitionBarrier(ResourceState currentState, ResourceState requiredState) noexcept
 {
-	if (currentState != requiredState)
-	{
-		return true;
-	}
-
-	return declaration.usage == ResourceUsage::AccelerationStructureBuild;
-}
-
-FrameGraphBarrier FrameGraphCompilerRayTracing::BuildExecutionBarrier(
-    FrameGraphResourceHandle handle,
-    const PassResourceDeclaration& declaration,
-    ResourceState before,
-    ResourceState after) noexcept
-{
-	if (before != after)
-	{
-		return FrameGraphBarrier{
-		    .handle = handle,
-		    .type = FrameGraphBarrier::Type::Transition,
-		    .before = before,
-		    .after = after,
-		    .label = declaration.label};
-	}
-
-	assert(declaration.usage == ResourceUsage::AccelerationStructureBuild);
-	return FrameGraphBarrier{
-	    .handle = handle,
-	    .type = FrameGraphBarrier::Type::AccelerationStructure,
-	    .before = before,
-	    .after = after,
-	    .label = declaration.label};
+	return currentState != requiredState;
 }

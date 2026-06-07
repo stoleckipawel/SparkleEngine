@@ -100,16 +100,32 @@ void FrameGraphCompiler::Compile() noexcept
 			const ResourceState requiredState = InferRequiredResourceState(declaration, compiledResource);
 			if (FrameGraphCompilerRayTracing::UsesRayTracingState(declaration))
 			{
-				if (FrameGraphCompilerRayTracing::RequiresExecutionBarrier(declaration, compiledResource.currentState, requiredState))
+				if (FrameGraphCompilerRayTracing::RequiresTransitionBarrier(compiledResource.currentState, requiredState))
 				{
-					passRecord.compiledBarriers.push_back(FrameGraphCompilerRayTracing::BuildExecutionBarrier(
-					    declaration.handle,
-					    declaration,
-					    compiledResource.currentState,
-					    requiredState));
+					passRecord.compiledBarriers.push_back(
+					    FrameGraphBarrier{
+					        .handle = declaration.handle,
+					        .type = FrameGraphBarrier::Type::Transition,
+					        .before = compiledResource.currentState,
+					        .after = requiredState,
+					        .label = declaration.label});
 					compiledResource.currentState = requiredState;
 					m_resourceStateTracker.UpdateCurrentState(declaration.handle, requiredState);
 				}
+
+				if (compiledResource.pendingAccelerationStructureBarrier
+				    && !HasCompiledBarrier(passRecord, declaration.handle, FrameGraphBarrier::Type::AccelerationStructure))
+				{
+					passRecord.compiledBarriers.push_back(
+					    FrameGraphBarrier{
+					        .handle = declaration.handle,
+					        .type = FrameGraphBarrier::Type::AccelerationStructure,
+					        .before = requiredState,
+					        .after = requiredState,
+					        .label = declaration.label});
+				}
+
+				compiledResource.pendingAccelerationStructureBarrier = declaration.usage == ResourceUsage::AccelerationStructureBuild;
 			}
 			else if (compiledResource.currentState != requiredState)
 			{
@@ -197,6 +213,7 @@ void FrameGraphCompiler::ResetCompiledResourceStatesForBarrierPlanning() noexcep
 	for (FrameGraphResourceNode& compiledResource : m_plan.resources)
 	{
 		compiledResource.currentState = m_resourceStateTracker.GetRuntimeState(compiledResource.handle).currentState;
+		compiledResource.pendingAccelerationStructureBarrier = false;
 		m_resourceStateTracker.UpdateCurrentState(compiledResource.handle, compiledResource.currentState);
 	}
 }

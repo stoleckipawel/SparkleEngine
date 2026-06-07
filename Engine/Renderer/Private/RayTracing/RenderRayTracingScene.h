@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Frame/RayTracingSceneFrameData.h"
 #include "RayTracing/RayTracingBlasCache.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "RayTracing/RayTracingSceneDiagnostics.h"
@@ -22,7 +23,8 @@ class RenderRayTracingScene final
 	RenderRayTracingScene(RenderRayTracingScene&&) = delete;
 	RenderRayTracingScene& operator=(RenderRayTracingScene&&) = delete;
 
-	void Update(RenderCommandContext& cmd, const RenderSceneData& sceneData) noexcept;
+	RayTracingSceneFrameData Prepare(const RenderSceneData& sceneData) noexcept;
+	void Build(RenderCommandContext& cmd, const RenderSceneData& sceneData) noexcept;
 	void Clear() noexcept;
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsRayTracing; }

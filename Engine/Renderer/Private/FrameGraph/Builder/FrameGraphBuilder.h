@@ -76,6 +76,15 @@ class FrameGraphBuilder final
 	    NativeResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	void BindPersistentAccelerationStructure(
+	    FrameGraphAccelerationStructureHandle handle,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept
 	{
@@ -140,6 +149,7 @@ struct FrameGraphBuildResult
 	std::unique_ptr<FrameGraph> Graph;
 	FrameGraphTextureHandle SceneColor;
 	FrameGraphTextureHandle SceneDepth;
+	FrameGraphAccelerationStructureHandle SceneTlas;
 };
 
 class FrameGraphFactory final

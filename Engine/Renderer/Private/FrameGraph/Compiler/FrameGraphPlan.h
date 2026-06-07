@@ -90,6 +90,7 @@ struct FrameGraphResourceNode
 	ResourceState finalState = ResourceState::Common;
 	ResourceState currentState = ResourceState::Common;
 	std::string debugName;
+	bool pendingAccelerationStructureBarrier = false;
 	std::uint32_t currentVersion = 0;
 	std::vector<FrameGraphResourceVersion> versions;
 };

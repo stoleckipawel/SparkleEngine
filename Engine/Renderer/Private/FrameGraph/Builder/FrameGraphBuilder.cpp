@@ -72,6 +72,27 @@ FrameGraphAccelerationStructureHandle FrameGraphBuilder::ImportPersistentAcceler
 	return m_frameGraph.ImportPersistentAccelerationStructure(desc, resource, gpuAddress, initialState);
 }
 
+FrameGraphAccelerationStructureHandle FrameGraphBuilder::ReservePersistentAccelerationStructure(
+    const FrameGraphAccelerationStructureDesc& desc,
+    ResourceState initialState) noexcept
+{
+	return m_frameGraph.ReservePersistentAccelerationStructure(desc, initialState);
+}
+
+void FrameGraphBuilder::BindPersistentAccelerationStructure(
+    FrameGraphAccelerationStructureHandle handle,
+    NativeResourceHandle resource,
+    RhiGpuVirtualAddress gpuAddress,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentAccelerationStructure(handle, resource, gpuAddress, currentState);
+}
+
+void FrameGraphBuilder::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept
+{
+	m_frameGraph.ClearPersistentAccelerationStructureBinding(handle);
+}
+
 ShaderRenderTarget FrameGraphBuilder::CreateRenderTarget(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph.CreateRenderTarget(handle);
@@ -95,6 +116,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	FrameGraphBuildResult result{};
 	result.SceneColor = frameLoop.Scene.SceneColor;
 	result.SceneDepth = frameLoop.Scene.MainDepth;
+	result.SceneTlas = frameLoop.SceneTlas;
 	result.Graph = std::move(frameGraph);
 	return result;
 }

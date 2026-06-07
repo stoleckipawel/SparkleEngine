@@ -19,7 +19,28 @@ RenderRayTracingScene::RenderRayTracingScene(
 	m_tlasBuilder = std::make_unique<RayTracingTlasBuilder>(renderHardwareInterface);
 }
 
-void RenderRayTracingScene::Update(RenderCommandContext& cmd, const RenderSceneData& sceneData) noexcept
+RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& sceneData) noexcept
+{
+	if (m_tlasBuilder == nullptr)
+	{
+		return {};
+	}
+
+	RayTracingSceneFrameData frameData{};
+	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	if (!m_tlasBuilder->Prepare(estimatedInstanceCount))
+	{
+		return frameData;
+	}
+
+	frameData.IsAvailable = true;
+	frameData.TlasResource = m_tlasBuilder->GetTlas().resource;
+	frameData.TlasGpuAddress = m_tlasBuilder->GetTlas().gpuAddress;
+	frameData.EstimatedInstanceCount = estimatedInstanceCount;
+	return frameData;
+}
+
+void RenderRayTracingScene::Build(RenderCommandContext& cmd, const RenderSceneData& sceneData) noexcept
 {
 	if (m_blasCache == nullptr || m_tlasBuilder == nullptr)
 	{

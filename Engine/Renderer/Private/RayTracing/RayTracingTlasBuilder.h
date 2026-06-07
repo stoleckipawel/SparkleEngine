@@ -39,6 +39,7 @@ class RayTracingTlasBuilder final
 	RayTracingTlasBuilder(RayTracingTlasBuilder&&) = delete;
 	RayTracingTlasBuilder& operator=(RayTracingTlasBuilder&&) = delete;
 
+	bool Prepare(std::uint32_t instanceCapacity) noexcept;
 	BuildStats Build(RenderCommandContext& cmd, const RenderSceneData& sceneData, RayTracingBlasCache& blasCache) noexcept;
 	const TlasHandle& GetTlas() const noexcept { return m_tlas; }
 	void Clear() noexcept;

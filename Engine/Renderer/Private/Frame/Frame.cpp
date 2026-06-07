@@ -6,7 +6,9 @@
 #include "Frame/Lighting.h"
 #include "Frame/LightingRenderTargets.h"
 #include "Frame/Presentation.h"
+#include "Frame/RayTracingScene.h"
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h"
 #include "Renderer/Public/FrameGraph/FrameGraphTextureDesc.h"
 #include "RHI/Public/Interop/ResourceState.h"
 
@@ -26,13 +28,17 @@ FrameBuildResult BuildFrame(FrameGraphBuilder& builder, RenderViewportExtent sce
 	const GBufferRenderTargets gbuffer = CreateGBufferRenderTargets(builder, sceneExtent, sceneTargets);
 	AddGBufferPass(builder, gbuffer);
 
+	const FrameGraphAccelerationStructureHandle sceneTlas =
+	    builder.ReservePersistentAccelerationStructure(FrameGraphAccelerationStructureDesc::Create("SceneTlas"));
+	AddRayTracingSceneBuildPass(builder, sceneTlas);
+
 	const LightingRenderTargets lighting = CreateLightingRenderTargets(builder, sceneExtent);
-	AddLightingPasses(builder, sceneTargets, lighting, gbuffer);
+	AddLightingPasses(builder, sceneTargets, lighting, gbuffer, sceneTlas);
 
 	if (presentToBackBuffer)
 	{
 		AddPresentationPass(builder, sceneTargets);
 	}
 
-	return FrameBuildResult{.Scene = sceneTargets, .GBuffer = gbuffer};
+	return FrameBuildResult{.Scene = sceneTargets, .GBuffer = gbuffer, .SceneTlas = sceneTlas};
 }

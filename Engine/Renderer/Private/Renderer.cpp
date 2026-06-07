@@ -263,6 +263,7 @@ void Renderer::InitializeFrameGraph() noexcept
 	    buildResult.SceneDepth.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
+	m_frameGraphSceneTlas = buildResult.SceneTlas;
 	m_frameGraph = std::move(buildResult.Graph);
 }
 
@@ -372,6 +373,29 @@ void Renderer::RecordFrame() noexcept
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 
+	if (m_frameGraph != nullptr && m_frameGraphSceneTlas.IsValid())
+	{
+		if (m_renderRayTracingScene != nullptr)
+		{
+			frame.rayTracingScene = m_renderRayTracingScene->Prepare(frame.sceneData);
+			if (frame.rayTracingScene.HasBoundTlas())
+			{
+				m_frameGraph->BindPersistentAccelerationStructure(
+				    m_frameGraphSceneTlas,
+				    frame.rayTracingScene.TlasResource,
+				    frame.rayTracingScene.TlasGpuAddress);
+			}
+			else
+			{
+				m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+			}
+		}
+		else
+		{
+			m_frameGraph->ClearPersistentAccelerationStructureBinding(m_frameGraphSceneTlas);
+		}
+	}
+
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.FrameGraphSetup");
 		m_frameGraph->Setup(frame);
@@ -386,16 +410,12 @@ void Renderer::RecordFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
-	if (m_renderRayTracingScene != nullptr)
-	{
-		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.RayTracingSceneUpdate");
-		m_renderRayTracingScene->Update(cmd, frame.sceneData);
-	}
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
-	    .Textures = m_textureManager.get()};
+	    .Textures = m_textureManager.get(),
+	    .RayTracingScene = m_renderRayTracingScene.get()};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.

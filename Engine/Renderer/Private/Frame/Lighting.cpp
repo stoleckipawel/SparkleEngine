@@ -7,9 +7,14 @@
 #include "Frame/Sky.h"
 #include "Frame/VisualizeBuffers.h"
 
-void AddLightingPasses(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets, const LightingRenderTargets& lighting, const GBufferRenderTargets& gbuffer)
+void AddLightingPasses(
+    FrameGraphBuilder& builder,
+    const SceneRenderTargets& sceneTargets,
+    const LightingRenderTargets& lighting,
+    const GBufferRenderTargets& gbuffer,
+    FrameGraphAccelerationStructureHandle sceneTlas)
 {
-	AddDirectLightingPass(builder, lighting, gbuffer);
+	AddDirectLightingPass(builder, lighting, gbuffer, sceneTlas);
 	AddIndirectLightingPass(builder, lighting, gbuffer);
 	AddLightingCompositePass(builder, sceneTargets, lighting, gbuffer);
 	AddVisualizeBuffersPass(builder, sceneTargets, lighting, gbuffer);

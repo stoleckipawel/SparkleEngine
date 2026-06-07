@@ -192,6 +192,15 @@ class FrameGraph
 	    NativeResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	FrameGraphAccelerationStructureHandle ReservePersistentAccelerationStructure(
+	    const FrameGraphAccelerationStructureDesc& desc,
+	    ResourceState initialState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	void BindPersistentAccelerationStructure(
+	    FrameGraphAccelerationStructureHandle handle,
+	    NativeResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
 	ResourceState GetTrackedResourceState(FrameGraphResourceHandle handle) const noexcept;
 	void UpdateTrackedResourceState(FrameGraphResourceHandle handle, ResourceState currentState) const noexcept;
 	void BindRenderTarget(

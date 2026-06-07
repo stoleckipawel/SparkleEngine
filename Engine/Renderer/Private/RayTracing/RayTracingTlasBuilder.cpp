@@ -19,6 +19,35 @@ RayTracingTlasBuilder::~RayTracingTlasBuilder() noexcept
 	Clear();
 }
 
+bool RayTracingTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || instanceCapacity == 0)
+	{
+		m_tlas = {};
+		return false;
+	}
+
+	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
+	    m_renderHardwareInterface->GetTopLevelAccelerationStructurePrebuildInfo(instanceCapacity);
+	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
+	{
+		m_tlas = {};
+		return false;
+	}
+
+	if (!EnsureResources(prebuildInfo))
+	{
+		m_tlas = {};
+		return false;
+	}
+
+	m_tlas = TlasHandle{
+	    .resource = m_renderHardwareInterface->GetNativeResource(m_accelerationStructureBuffer),
+	    .gpuAddress = m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
+	    .instanceCount = 0};
+	return m_tlas.resource && m_tlas.gpuAddress != 0;
+}
+
 RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
     RenderCommandContext& cmd,
     const RenderSceneData& sceneData,
