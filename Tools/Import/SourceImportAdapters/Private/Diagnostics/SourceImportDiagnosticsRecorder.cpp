@@ -50,6 +50,21 @@ void SourceImportDiagnosticsRecorder::RecordImportedScenePayload(SourceImportRes
 	result.diagnostics.summary.importedMeshInstanceCount = result.scene.meshInstances.size();
 	result.diagnostics.summary.importedMeshInstanceGroupCount = result.scene.meshInstanceGroups.size();
 	result.diagnostics.summary.importedMaterialCount = result.scene.materials.size();
+	if (!result.scene.materialVariants.empty())
+	{
+		const std::size_t sourceVariantPayloadCount =
+		    result.diagnostics.sceneFeatures.materialVariantCount +
+		    result.diagnostics.sceneFeatures.materialVariantPrimitiveCount;
+		const bool importedAllVariants =
+		    result.scene.materialVariants.size() == result.diagnostics.sceneFeatures.materialVariantCount;
+		const bool importedMappingsForAllMappedPrimitives =
+		    result.diagnostics.sceneFeatures.materialVariantPrimitiveCount == 0 ||
+		    !result.scene.materialVariantMappings.empty();
+		result.diagnostics.featureCapabilities.materialVariants = {
+		    sourceVariantPayloadCount,
+		    importedAllVariants && importedMappingsForAllMappedPrimitives ? SourceImportFeatureSupport::Imported
+		                                                                  : SourceImportFeatureSupport::PartiallyImported};
+	}
 	std::size_t importedMorphTargetPrimitiveCount = 0;
 	for (const ImportedMeshPrimitive& primitive : result.scene.meshPrimitives)
 	{

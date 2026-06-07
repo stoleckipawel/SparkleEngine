@@ -527,6 +527,8 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("cameras", std::to_string(importResult.GetCameraCount())),
 	     ToolConsole::Field("lights", std::to_string(importResult.GetLightCount())),
 	     ToolConsole::Field("materials", std::to_string(importResult.GetMaterialCount())),
+	     ToolConsole::Field("materialVariants", std::to_string(importResult.GetMaterialVariantCount())),
+	     ToolConsole::Field("materialVariantMappings", std::to_string(importResult.GetMaterialVariantMappingCount())),
 	     ToolConsole::Field("importSourceMeshes", std::to_string(importResult.diagnostics.summary.sourceMeshCount)),
 	     ToolConsole::Field("importSourceMaterials", std::to_string(importResult.diagnostics.summary.sourceMaterialCount)),
 	     ToolConsole::Field("importTextureBindings", std::to_string(importResult.diagnostics.textures.resolvedTextureBindingCount)),
@@ -544,6 +546,8 @@ static bool AssetCookerCookImportedScene(
 	     ToolConsole::Field("cookedMeshAssetRefs", std::to_string(build.manifest.meshAssetReferences.size())),
 	     ToolConsole::Field("cookedInstances", std::to_string(build.manifest.instances.size())),
 	     ToolConsole::Field("cookedInstanceGroups", std::to_string(build.manifest.instanceGroups.size())),
+	     ToolConsole::Field("cookedMaterialVariants", std::to_string(build.manifest.materialVariants.size())),
+	     ToolConsole::Field("cookedVariantMappings", std::to_string(build.manifest.materialVariantMappings.size())),
 	     ToolConsole::Field("cookedCameras", std::to_string(build.manifest.cameras.size())),
 	     ToolConsole::Field("cookedLights", std::to_string(build.manifest.lights.size())),
 	     ToolConsole::PathField("manifest", build.identity.manifestPath)});

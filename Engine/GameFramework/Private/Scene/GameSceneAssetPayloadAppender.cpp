@@ -7,6 +7,8 @@
 #include "Scene/Animations/SceneAnimations.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Materials/SceneMaterials.h"
+#include "Scene/Materials/SceneMaterialVariantPayloadApplier.h"
+#include "Scene/Materials/SceneMaterialVariants.h"
 #include "Scene/Meshes/SceneAssetMeshComponentFactory.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "Scene/Skeletons/SceneSkeletons.h"
@@ -19,11 +21,19 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     SceneCameras& cameras,
     SceneLighting& lighting,
     SceneMaterials& materials,
+    SceneMaterialVariants& materialVariants,
     SceneMeshes& meshes,
     SceneSkeletons& skeletons,
     SceneAnimations& animations,
     SceneTextures& textures) noexcept :
-    m_cameras(cameras), m_lighting(lighting), m_materials(materials), m_meshes(meshes), m_skeletons(skeletons), m_animations(animations), m_textures(textures)
+    m_cameras(cameras),
+    m_lighting(lighting),
+    m_materials(materials),
+    m_materialVariants(materialVariants),
+    m_meshes(meshes),
+    m_skeletons(skeletons),
+    m_animations(animations),
+    m_textures(textures)
 {
 }
 
@@ -70,6 +80,9 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 	m_meshes.AppendMeshComponents(std::move(meshComponents));
 	m_meshes.AppendMeshInstanceGroups(
 	    SceneAssetMeshComponentFactory::BuildMeshInstanceGroups(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
+	m_materialVariants.AppendVariants(
+	    SceneMaterialVariantPayloadApplier::BuildVariantDescs(sceneAssetPayload),
+	    SceneMaterialVariantPayloadApplier::BuildVariantBindings(sceneAssetPayload, materialBaseHandle, sceneMeshBaseIndex));
 
 	for (SceneAssetPayload::Camera& camera : sceneAssetPayload.cameras)
 	{

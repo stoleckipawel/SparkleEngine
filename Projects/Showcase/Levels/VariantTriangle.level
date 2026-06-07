@@ -1,0 +1,17 @@
+[Level]
+Name = VariantTriangle
+
+[Camera]
+Position = 0.0, 0.6, -2.0
+YawRadians = 0.0
+PitchRadians = 0.0
+FovYDegrees = 55.0
+MoveSpeed = 0.15
+
+[Lighting]
+DirectionalLight0Direction = 0.42, -0.82, 0.39
+DirectionalLight0Intensity = 2.35
+DirectionalLight0Color = 1.0, 0.93, 0.82
+
+[SceneAssets]
+Asset = VariantTriangle/VariantTriangle

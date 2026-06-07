@@ -21,6 +21,8 @@ struct SourceImportResult
 	std::size_t GetLightCount() const noexcept { return scene.GetLightCount(); }
 	std::size_t GetAnimationCount() const noexcept { return scene.GetAnimationCount(); }
 	std::size_t GetMaterialCount() const noexcept { return scene.GetMaterialCount(); }
+	std::size_t GetMaterialVariantCount() const noexcept { return scene.GetMaterialVariantCount(); }
+	std::size_t GetMaterialVariantMappingCount() const noexcept { return scene.GetMaterialVariantMappingCount(); }
 	std::string_view GetImporterName() const noexcept { return scene.importerName; }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)

@@ -83,11 +83,6 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				continue;
 			}
 
-			if (primitive.mappings_count > 0)
-			{
-				GltfImportDiagnosticLog::ReportIgnoredMaterialVariantMappings(primitiveLabel, result);
-			}
-
 			ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(result.scene, sourceMeshIndex, sourcePrimitiveIndex);
 			if (importedPrimitiveIndex == kInvalidImportedMeshPrimitiveIndex)
 			{

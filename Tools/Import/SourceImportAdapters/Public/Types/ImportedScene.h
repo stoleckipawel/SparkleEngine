@@ -5,6 +5,7 @@
 #include "ImportedGeometry.h"
 #include "ImportedLight.h"
 #include "ImportedMaterial.h"
+#include "ImportedMaterialVariant.h"
 #include "ImportedSkin.h"
 
 #include <cstddef>
@@ -21,6 +22,8 @@ struct ImportedScene
 	std::vector<ImportedLight> lights;
 	std::vector<ImportedAnimationClip> animations;
 	std::vector<ImportedMaterial> materials;
+	std::vector<ImportedMaterialVariant> materialVariants;
+	std::vector<ImportedMaterialVariantMapping> materialVariantMappings;
 	std::vector<ImportedSkeleton> skeletons;
 	std::filesystem::path sourcePath;
 	std::string importerName = "SourceSceneImporter";
@@ -33,6 +36,8 @@ struct ImportedScene
 	std::size_t GetLightCount() const noexcept { return lights.size(); }
 	std::size_t GetAnimationCount() const noexcept { return animations.size(); }
 	std::size_t GetMaterialCount() const noexcept { return materials.size(); }
+	std::size_t GetMaterialVariantCount() const noexcept { return materialVariants.size(); }
+	std::size_t GetMaterialVariantMappingCount() const noexcept { return materialVariantMappings.size(); }
 	std::size_t GetSkeletonCount() const noexcept { return skeletons.size(); }
 
 	void ReserveMeshPrimitives(std::size_t primitiveCount)

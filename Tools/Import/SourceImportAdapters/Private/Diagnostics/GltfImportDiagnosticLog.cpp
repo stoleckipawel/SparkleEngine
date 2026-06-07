@@ -86,12 +86,6 @@ void GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(std::size_t co
 	    std::format("GltfImporter: {} animation clips imported for cooked runtime playback", count));
 }
 
-void GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(std::size_t count, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(g_gltfImportDiagnosticLogger, "{}", std::format("GltfImporter: {} material variants are present and will be ignored", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
 void GltfImportDiagnosticLog::ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result)
 {
 	SPDLOG_LOGGER_WARN(
@@ -107,15 +101,6 @@ void GltfImportDiagnosticLog::ReportIgnoredWeightedNodes(std::size_t count, Sour
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
 	    std::format("GltfImporter: {} weighted nodes are present and morph weights will be ignored", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
-void GltfImportDiagnosticLog::ReportFlattenedGpuInstancingNodes(std::size_t count, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format("GltfImporter: {} nodes use mesh GPU instancing and will be flattened to regular mesh instances", count));
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
@@ -137,15 +122,6 @@ void GltfImportDiagnosticLog::ReportSkippedDracoPrimitive(std::string_view primi
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
 	    std::format("GltfImporter: Skipping {} because Draco-compressed primitives are not supported yet", primitiveLabel));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
-void GltfImportDiagnosticLog::ReportIgnoredMaterialVariantMappings(std::string_view primitiveLabel, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format("GltfImporter: {} contains material variant mappings which will be ignored", primitiveLabel));
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 

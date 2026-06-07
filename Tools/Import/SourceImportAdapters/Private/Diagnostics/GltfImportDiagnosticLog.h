@@ -19,15 +19,12 @@ class GltfImportDiagnosticLog final
 
 	static void ReportIgnoredAnimations(std::size_t count, SourceImportResult& result);
 	static void ReportImportedAnimationsForPlayback(std::size_t count);
-	static void ReportIgnoredMaterialVariants(std::size_t count, SourceImportResult& result);
 	static void ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredWeightedNodes(std::size_t count, SourceImportResult& result);
-	static void ReportFlattenedGpuInstancingNodes(std::size_t count, SourceImportResult& result);
 
 	static void ReportSkippedNonTrianglePrimitive(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportIgnoredMorphTargets(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportSkippedDracoPrimitive(std::string_view primitiveLabel, SourceImportResult& result);
-	static void ReportIgnoredMaterialVariantMappings(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportSkippedIncompletePrimitive(std::string_view primitiveLabel, SourceImportResult& result);
 	static void ReportInvalidMaterialIndex(std::string_view primitiveLabel, std::uint32_t materialIndex, SourceImportResult& result);
 	static void ReportMalformedGpuInstancing(std::string_view nodeLabel, std::string_view reason, SourceImportResult& result);

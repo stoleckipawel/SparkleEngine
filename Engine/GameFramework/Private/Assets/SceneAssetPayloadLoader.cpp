@@ -5,6 +5,7 @@
 #include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
 #include "Assets/Payload/SceneAssetPayloadMaterialAppender.h"
+#include "Assets/Payload/SceneAssetPayloadMaterialVariantAppender.h"
 #include "Assets/Payload/SceneAssetPayloadAnimationAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMeshAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMetadataAppender.h"
@@ -64,6 +65,11 @@ namespace Assets
 		        instanceBaseIndex,
 		        materialBaseIndex,
 		        errorMessage) ||
+		    !SceneAssetPayloadMaterialVariantAppender::AppendMaterialVariants(
+		        sceneManifest,
+		        sceneAssetPayload,
+		        materialBaseIndex,
+		        errorMessage) ||
 		    !SceneAssetPayloadSkeletonAppender::AppendSkeletons(sceneManifest, sceneAssetPayload, errorMessage) ||
 		    !SceneAssetPayloadAnimationAppender::AppendAnimations(sceneManifest, sceneAssetPayload, errorMessage))
 		{
@@ -75,12 +81,14 @@ namespace Assets
 
 		SPDLOG_LOGGER_INFO(
 		    g_sceneAssetPayloadLoaderLogger,
-		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, cameras={}, lights={}, skeletonRefs={}, loadedSkeletons={}, animationRefs={}, featureFlags=0x{:08X}",
+		    "SceneAssetManager: Loaded scene asset '{}' - meshAssetRefs={}, meshInstances={}, instanceGroups={}, materials={}, materialVariants={}, variantMappings={}, cameras={}, lights={}, skeletonRefs={}, loadedSkeletons={}, animationRefs={}, featureFlags=0x{:08X}",
 		    sceneAssetId.value,
 		    sceneManifest.meshAssetReferences.size(),
 		    sceneManifest.instances.size(),
 		    sceneManifest.instanceGroups.size(),
 		    sceneManifest.materialAssetReferences.size(),
+		    sceneManifest.materialVariants.size(),
+		    sceneManifest.materialVariantMappings.size(),
 		    sceneManifest.cameras.size(),
 		    sceneManifest.lights.size(),
 		    sceneManifest.skeletonRefs.size(),

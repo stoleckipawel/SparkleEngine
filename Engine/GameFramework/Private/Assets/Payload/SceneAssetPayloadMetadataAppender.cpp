@@ -38,6 +38,8 @@ namespace Assets
 		sceneAssetPayload.diagnostics.lightCount += sceneManifest.lights.size();
 		sceneAssetPayload.diagnostics.skeletonRefCount += sceneManifest.skeletonRefs.size();
 		sceneAssetPayload.diagnostics.animationRefCount += sceneManifest.animationRefs.size();
+		sceneAssetPayload.diagnostics.materialVariantCount += sceneManifest.materialVariants.size();
+		sceneAssetPayload.diagnostics.materialVariantMappingCount += sceneManifest.materialVariantMappings.size();
 		sceneAssetPayload.diagnostics.sceneFeatureFlags |= sceneManifest.header.featureFlags;
 	}
 }

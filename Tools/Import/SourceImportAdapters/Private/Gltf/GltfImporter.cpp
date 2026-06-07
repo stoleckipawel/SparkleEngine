@@ -12,6 +12,7 @@
 #include "Gltf/GltfGeometryImporter.h"
 #include "Gltf/GltfLightImporter.h"
 #include "Gltf/GltfMaterialImporter.h"
+#include "Gltf/GltfMaterialVariantImporter.h"
 #include "Gltf/GltfMorphImportDiagnostics.h"
 #include "Gltf/GltfSkinImportDiagnostics.h"
 
@@ -43,6 +44,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	SourceImportDiagnosticsRecorder::RecordSourceSummary(result, scene.data->meshes_count, scene.data->materials_count);
 	result.scene.materials.reserve(scene.data->materials_count);
 	GltfMaterialImporter::ImportMaterials(scene.data, sourceDirectory, result);
+	GltfMaterialVariantImporter::ImportMaterialVariants(scene.data, result);
 
 	SourceImportDiagnosticsRecorder::RecordGeometryInstancingBaseline(result, GltfGeometryInstancingDiagnostics::CaptureBaseline(scene.data));
 	const std::size_t importedMeshInstanceCount = GltfGeometryImporter::CountImportedMeshInstances(scene.data);

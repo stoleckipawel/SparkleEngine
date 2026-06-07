@@ -86,11 +86,6 @@ void GltfSceneReader::CollectSceneWarnings(const cgltf_data* data, SourceImportR
 	const SourceSceneFeatureDiagnostics sceneFeatures = GltfSceneDiagnostics::CaptureFeatures(data);
 	SourceImportDiagnosticsRecorder::RecordSceneFeatures(result, sceneFeatures);
 
-	if (sceneFeatures.materialVariantCount > 0)
-	{
-		GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(sceneFeatures.materialVariantCount, result);
-	}
-
 }
 
 

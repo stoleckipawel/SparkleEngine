@@ -16,7 +16,7 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = MakeCookedAssetMagic('S', 'S', 'C', 'N');
-	inline constexpr std::uint32_t kCookedSceneManifestVersion = 7;
+	inline constexpr std::uint32_t kCookedSceneManifestVersion = 8;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneSkeletonRefIndex = (std::numeric_limits<std::uint32_t>::max)();
@@ -73,6 +73,8 @@ namespace Assets
 		std::uint32_t skeletonRefCount = 0;
 		std::uint32_t animationRefCount = 0;
 		std::uint32_t morphWeightCount = 0;
+		std::uint32_t materialVariantCount = 0;
+		std::uint32_t materialVariantMappingCount = 0;
 		std::uint32_t featureFlags = 0;
 	};
 }

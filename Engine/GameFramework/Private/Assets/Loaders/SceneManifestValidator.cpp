@@ -4,6 +4,7 @@
 
 #include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/SceneManifestFeatureValidator.h"
+#include "Assets/Loaders/SceneManifestMaterialVariantValidator.h"
 #include "Assets/Loaders/SceneManifestMeshValidator.h"
 #include "Assets/Loaders/SceneManifestMetadataValidator.h"
 
@@ -36,7 +37,8 @@ namespace Assets
 	{
 		if (!SceneManifestFeatureValidator::Validate(manifest, outErrorMessage) ||
 		    !SceneManifestMeshValidator::Validate(manifest, outErrorMessage) ||
-		    !SceneManifestMetadataValidator::Validate(manifest, outErrorMessage))
+		    !SceneManifestMetadataValidator::Validate(manifest, outErrorMessage) ||
+		    !SceneManifestMaterialVariantValidator::Validate(manifest, outErrorMessage))
 		{
 			return false;
 		}

@@ -38,7 +38,15 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
 	const SceneAssetPayloadDiagnostics diagnostics = sceneAssetPayload.diagnostics;
-	GameSceneAssetPayloadAppender appender(m_cameras, m_lighting, m_materials, m_meshes, m_skeletons, m_animations, m_textures);
+	GameSceneAssetPayloadAppender appender(
+	    m_cameras,
+	    m_lighting,
+	    m_materials,
+	    m_materialVariants,
+	    m_meshes,
+	    m_skeletons,
+	    m_animations,
+	    m_textures);
 	if (!appender.Append(std::move(sceneAssetPayload)))
 	{
 		return false;
@@ -46,15 +54,17 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials, {} skeletons, {} animation clips, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}, skeletonRefs={}, animationRefs={}, featureFlags=0x{:08X}",
+	    "Scene: Loaded {} meshes, {} materials, {} material variants, {} skeletons, {} animation clips, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, variantMappings={}, cameras={}, lights={}, skeletonRefs={}, animationRefs={}, featureFlags=0x{:08X}",
 	    m_meshes.GetMeshCount(),
 	    m_materials.GetMaterialCount(),
+	    m_materialVariants.GetVariantCount(),
 	    m_skeletons.GetSkeletonCount(),
 	    m_animations.GetClipCount(),
 	    diagnostics.loadedSceneAssetCount,
 	    diagnostics.meshAssetReferenceCount,
 	    diagnostics.meshInstanceCount,
 	    diagnostics.meshInstanceGroupCount,
+	    diagnostics.materialVariantMappingCount,
 	    diagnostics.cameraCount,
 	    diagnostics.lightCount,
 	    diagnostics.skeletonRefCount,
@@ -85,6 +95,7 @@ void GameScene::Clear()
 {
 	m_lighting.Reset();
 	m_materials.Reset();
+	m_materialVariants.Reset();
 	m_meshes.Reset();
 	m_skeletons.Clear();
 	m_animations.Clear();

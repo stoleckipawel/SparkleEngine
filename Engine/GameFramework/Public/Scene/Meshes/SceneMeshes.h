@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
+#include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
 
 #include <cstddef>
@@ -29,6 +30,7 @@ class SPARKLE_ENGINE_API SceneMeshes final
 
 	void AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent>>&& meshes);
 	void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& meshInstanceGroups);
+	bool SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept;
 	MeshSnapshot CaptureSnapshot() const;
 	void Reset() noexcept;
 

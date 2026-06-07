@@ -3,6 +3,7 @@
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Assets/SceneMeshAssetPayload.h"
+#include "GameFramework/Public/Assets/SceneMaterialVariantPayload.h"
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
 #include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeleton.h"
@@ -24,6 +25,8 @@ struct SPARKLE_ENGINE_API SceneAssetPayloadDiagnostics
 	std::size_t lightCount = 0;
 	std::size_t skeletonRefCount = 0;
 	std::size_t animationRefCount = 0;
+	std::size_t materialVariantCount = 0;
+	std::size_t materialVariantMappingCount = 0;
 	std::uint32_t sceneFeatureFlags = 0;
 };
 
@@ -34,6 +37,8 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 	using StaticMeshInstance = SceneAssetStaticMeshInstance;
 	using SkeletalMeshInstance = SceneAssetSkeletalMeshInstance;
 	using MeshInstanceGroup = SceneAssetMeshInstanceGroup;
+	using MaterialVariant = SceneAssetMaterialVariant;
+	using MaterialVariantMapping = SceneAssetMaterialVariantMapping;
 
 	struct Camera
 	{
@@ -53,6 +58,8 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 	std::vector<SceneSkeletonDesc> skeletons;
 	std::vector<SceneAnimationClipDesc> animations;
 	std::vector<MaterialDesc> materials;
+	std::vector<MaterialVariant> materialVariants;
+	std::vector<MaterialVariantMapping> materialVariantMappings;
 	SceneAssetPayloadDiagnostics diagnostics;
 
 	bool HasMeshes() const noexcept;

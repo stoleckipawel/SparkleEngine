@@ -41,6 +41,17 @@ void SceneMeshes::AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot
 	}
 }
 
+bool SceneMeshes::SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept
+{
+	if (meshInstanceIndex >= m_meshes.size() || !m_meshes[meshInstanceIndex])
+	{
+		return false;
+	}
+
+	m_meshes[meshInstanceIndex]->SetMaterialHandle(materialHandle);
+	return true;
+}
+
 void SceneMeshes::Reset() noexcept
 {
 	m_meshes.clear();

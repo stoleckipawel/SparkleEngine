@@ -57,6 +57,13 @@ namespace Assets::SceneManifestFeatureValidator
 			return false;
 		}
 
+		if ((!manifest.materialVariants.empty() || !manifest.materialVariantMappings.empty()) &&
+		    !HasFeatureFlag(manifest.header.featureFlags, CookedSceneFeatureFlags::MaterialVariants))
+		{
+			outErrorMessage = "Cooked scene manifest has material variant records but is missing the MaterialVariants feature flag";
+			return false;
+		}
+
 		return true;
 	}
 }

@@ -50,8 +50,7 @@ namespace
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MorphTargets);
 		}
 
-		if (importResult.diagnostics.sceneFeatures.materialVariantCount > 0 ||
-		    importResult.diagnostics.sceneFeatures.materialVariantPrimitiveCount > 0)
+		if (!importResult.scene.materialVariants.empty() || !importResult.scene.materialVariantMappings.empty())
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MaterialVariants);
 		}

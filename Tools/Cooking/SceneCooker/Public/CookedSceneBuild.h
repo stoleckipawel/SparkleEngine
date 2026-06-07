@@ -50,6 +50,8 @@ struct CookedSceneManifestBuildData final
 	std::vector<Assets::CookedSceneSkeletonRef> skeletonRefs;
 	std::vector<Assets::CookedSceneAnimationRef> animationRefs;
 	std::vector<float> morphWeights;
+	std::vector<Assets::CookedSceneMaterialVariantRecord> materialVariants;
+	std::vector<Assets::CookedSceneMaterialVariantMappingRecord> materialVariantMappings;
 };
 
 struct CookedSceneAssetOutputs final
