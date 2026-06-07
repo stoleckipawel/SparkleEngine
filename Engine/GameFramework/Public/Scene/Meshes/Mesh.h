@@ -3,6 +3,8 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "MeshData.h"
 
+#include <cstdint>
+
 class SPARKLE_ENGINE_API Mesh
 {
   public:
@@ -13,7 +15,9 @@ class SPARKLE_ENGINE_API Mesh
 	Mesh& operator=(Mesh&&) noexcept = default;
 
 	void RebuildGeometry();
+	void MarkGeometryDirty() noexcept;
 	const MeshData& GetMeshData() const;
+	std::uint64_t GetGeometryRevision() const noexcept { return m_geometryRevision; }
 
   protected:
 	Mesh() noexcept = default;
@@ -22,4 +26,5 @@ class SPARKLE_ENGINE_API Mesh
   private:
 	mutable MeshData m_meshData;
 	mutable bool m_bGeometryDirty = true;
+	std::uint64_t m_geometryRevision = 0;
 };

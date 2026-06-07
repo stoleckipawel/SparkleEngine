@@ -27,7 +27,8 @@ class VulkanBindingLayoutCompilerImpl final
 		std::vector<CompiledBinding> bindings;
 		std::vector<std::string> bindingNames;
 		std::vector<VkPushConstantRange> pushConstantRanges;
-		std::map<std::uint32_t, std::vector<VkDescriptorSetLayoutBinding>> descriptorBindingsBySet;
+		std::map<std::uint32_t, std::vector<PendingDescriptorBinding>> descriptorBindingsBySet;
+		std::vector<VkSampler> immutableSamplers;
 
 		bindings.reserve(shaderPackage.GetBindingRecords().size());
 		bindingNames.reserve(shaderPackage.GetBindingRecords().size());
@@ -71,6 +72,7 @@ class VulkanBindingLayoutCompilerImpl final
 			}
 
 			UpsertDescriptorBinding(
+			    rhi,
 			    descriptorBindingsBySet[location.Set],
 			    VkDescriptorSetLayoutBinding{
 			        .binding = location.Binding,
@@ -89,14 +91,28 @@ class VulkanBindingLayoutCompilerImpl final
 			}
 			std::ranges::sort(
 			    descriptorBindings,
-			    [](const VkDescriptorSetLayoutBinding& lhs, const VkDescriptorSetLayoutBinding& rhs) { return lhs.binding < rhs.binding; });
+			    [](const PendingDescriptorBinding& lhs, const PendingDescriptorBinding& rhs) { return lhs.Binding.binding < rhs.Binding.binding; });
+
+			std::vector<VkDescriptorSetLayoutBinding> nativeBindings;
+			std::vector<VkSampler> nativeImmutableSamplers;
+			nativeBindings.reserve(descriptorBindings.size());
+			nativeImmutableSamplers.reserve(descriptorBindings.size());
+			for (const PendingDescriptorBinding& descriptorBinding : descriptorBindings)
+			{
+				nativeBindings.push_back(descriptorBinding.Binding);
+				if (descriptorBinding.ImmutableSampler != VK_NULL_HANDLE)
+				{
+					nativeImmutableSamplers.push_back(descriptorBinding.ImmutableSampler);
+					nativeBindings.back().pImmutableSamplers = &nativeImmutableSamplers.back();
+				}
+			}
 
 			const VkDescriptorSetLayoutCreateInfo createInfo{
 			    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 			    .pNext = nullptr,
 			    .flags = 0,
-			    .bindingCount = static_cast<std::uint32_t>(descriptorBindings.size()),
-			    .pBindings = descriptorBindings.data()};
+			    .bindingCount = static_cast<std::uint32_t>(nativeBindings.size()),
+			    .pBindings = nativeBindings.data()};
 			VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 			const VkResult result = vkCreateDescriptorSetLayout(rhi.GetDevice(), &createInfo, nullptr, &descriptorSetLayout);
 			if (!VulkanResult::Succeeded(result))
@@ -106,6 +122,10 @@ class VulkanBindingLayoutCompilerImpl final
 				    __FILE__,
 				    __LINE__,
 				    VulkanResult::FormatFailure("vkCreateDescriptorSetLayout", result));
+			}
+			for (VkSampler sampler : nativeImmutableSamplers)
+			{
+				immutableSamplers.push_back(sampler);
 			}
 			descriptorSetLayouts[setIndex] = descriptorSetLayout;
 		}
@@ -138,6 +158,7 @@ class VulkanBindingLayoutCompilerImpl final
 		    rhi.GetDevice(),
 		    *desc.ParameterLayout,
 		    std::move(descriptorSetLayouts),
+		    std::move(immutableSamplers),
 		    std::move(pushConstantRanges),
 		    std::move(bindings),
 		    std::move(bindingNames));
@@ -148,6 +169,12 @@ class VulkanBindingLayoutCompilerImpl final
 	{
 		std::uint32_t Set = 0;
 		std::uint32_t Binding = 0;
+	};
+
+	struct PendingDescriptorBinding final
+	{
+		VkDescriptorSetLayoutBinding Binding = {};
+		VkSampler ImmutableSampler = VK_NULL_HANDLE;
 	};
 
 	static const PassParameterDesc* FindParameter(const PassParameterLayout& layout, std::string_view name) noexcept
@@ -254,19 +281,62 @@ class VulkanBindingLayoutCompilerImpl final
 		}
 	}
 
-	static void UpsertDescriptorBinding(std::vector<VkDescriptorSetLayoutBinding>& descriptorBindings, VkDescriptorSetLayoutBinding binding) noexcept
+	static void UpsertDescriptorBinding(
+	    VulkanRhi& rhi,
+	    std::vector<PendingDescriptorBinding>& descriptorBindings,
+	    VkDescriptorSetLayoutBinding binding) noexcept
 	{
-		for (VkDescriptorSetLayoutBinding& existingBinding : descriptorBindings)
+		for (PendingDescriptorBinding& existingBinding : descriptorBindings)
 		{
-			if (existingBinding.binding == binding.binding && existingBinding.descriptorType == binding.descriptorType)
+			if (existingBinding.Binding.binding == binding.binding && existingBinding.Binding.descriptorType == binding.descriptorType)
 			{
-				existingBinding.descriptorCount = std::max(existingBinding.descriptorCount, binding.descriptorCount);
-				existingBinding.stageFlags |= binding.stageFlags;
+				existingBinding.Binding.descriptorCount = std::max(existingBinding.Binding.descriptorCount, binding.descriptorCount);
+				existingBinding.Binding.stageFlags |= binding.stageFlags;
 				return;
 			}
 		}
 
-		descriptorBindings.push_back(binding);
+		PendingDescriptorBinding pendingBinding{.Binding = binding};
+		if (binding.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER)
+		{
+			pendingBinding.ImmutableSampler = CreateImmutableSampler(rhi);
+		}
+		descriptorBindings.push_back(pendingBinding);
+	}
+
+	static VkSampler CreateImmutableSampler(VulkanRhi& rhi) noexcept
+	{
+		const VkSamplerCreateInfo createInfo{
+		    .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+		    .pNext = nullptr,
+		    .flags = 0,
+		    .magFilter = VK_FILTER_LINEAR,
+		    .minFilter = VK_FILTER_LINEAR,
+		    .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+		    .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		    .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		    .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		    .mipLodBias = 0.0f,
+		    .anisotropyEnable = VK_FALSE,
+		    .maxAnisotropy = 1.0f,
+		    .compareEnable = VK_FALSE,
+		    .compareOp = VK_COMPARE_OP_ALWAYS,
+		    .minLod = 0.0f,
+		    .maxLod = VK_LOD_CLAMP_NONE,
+		    .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+		    .unnormalizedCoordinates = VK_FALSE};
+
+		VkSampler sampler = VK_NULL_HANDLE;
+		const VkResult result = vkCreateSampler(rhi.GetDevice(), &createInfo, nullptr, &sampler);
+		if (!VulkanResult::Succeeded(result))
+		{
+			Diagnostics::Fail(
+			    g_vulkanBindingLayoutLogger,
+			    __FILE__,
+			    __LINE__,
+			    VulkanResult::FormatFailure("vkCreateSampler", result));
+		}
+		return sampler;
 	}
 
 	static VkDescriptorType ToVkDescriptorType(ShaderParameterSemanticKind semanticKind) noexcept
@@ -315,11 +385,13 @@ VulkanBindingLayout::VulkanBindingLayout(
     VkDevice device,
     const PassParameterLayout& parameterLayout,
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+    std::vector<VkSampler> immutableSamplers,
     std::vector<VkPushConstantRange> pushConstantRanges,
     std::vector<CompiledBinding> bindings,
     std::vector<std::string> bindingNames) noexcept :
 	m_device(device), m_parameterLayout(&parameterLayout), m_descriptorSetLayouts(std::move(descriptorSetLayouts)),
-	m_pushConstantRanges(std::move(pushConstantRanges)), m_bindings(std::move(bindings)), m_bindingNames(std::move(bindingNames))
+	m_immutableSamplers(std::move(immutableSamplers)), m_pushConstantRanges(std::move(pushConstantRanges)), m_bindings(std::move(bindings)),
+	m_bindingNames(std::move(bindingNames))
 {
 	for (std::size_t bindingIndex = 0; bindingIndex < m_bindings.size() && bindingIndex < m_bindingNames.size(); ++bindingIndex)
 	{
@@ -339,6 +411,13 @@ VulkanBindingLayout::~VulkanBindingLayout() noexcept
 		if (descriptorSetLayout != VK_NULL_HANDLE)
 		{
 			vkDestroyDescriptorSetLayout(m_device, descriptorSetLayout, nullptr);
+		}
+	}
+	for (VkSampler sampler : m_immutableSamplers)
+	{
+		if (sampler != VK_NULL_HANDLE)
+		{
+			vkDestroySampler(m_device, sampler, nullptr);
 		}
 	}
 }

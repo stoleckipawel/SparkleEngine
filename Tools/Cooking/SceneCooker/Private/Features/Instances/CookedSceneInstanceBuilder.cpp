@@ -143,6 +143,7 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 		        .materialAssetIndex = materialAssetIndex,
 		        .groupIndex = groupIndex,
 		        .skeletonRefIndex = skeletonRefIndex,
+		        .sourceNodeIndex = importedInstance.sourceNodeIndex,
 		        .firstMorphWeight = firstMorphWeight,
 		        .morphWeightCount = morphWeightCount,
 		        .worldTransform = importedInstance.worldTransform});

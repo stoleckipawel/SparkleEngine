@@ -5,10 +5,13 @@
 #include "Mesh.h"
 #include "SkeletalMeshData.h"
 
+#include <span>
+#include <vector>
+
 class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 {
   public:
-	SkeletalCookedMesh(SkeletalMeshData&& meshData, Assets::CookedAssetId assetId) noexcept;
+	SkeletalCookedMesh(SkeletalMeshData&& meshData, Assets::CookedAssetId assetId, std::span<const float> initialMorphWeights = {}) noexcept;
 	~SkeletalCookedMesh() override = default;
 
 	SkeletalCookedMesh(const SkeletalCookedMesh&) = delete;
@@ -18,11 +21,15 @@ class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 
 	Assets::CookedAssetId GetAssetId() const noexcept { return m_assetId; }
 	const SkeletalMeshData& GetSkeletalMeshData() const noexcept { return m_skeletalData; }
+	void SetMorphWeights(std::span<const float> weights);
+	std::span<const float> GetMorphWeights() const noexcept { return m_morphWeights; }
 
   protected:
 	void GenerateGeometry(MeshData& outMeshData) const override;
 
   private:
 	SkeletalMeshData m_skeletalData;
+	MeshData m_baseGeometry;
+	std::vector<float> m_morphWeights;
 	Assets::CookedAssetId m_assetId = Assets::InvalidCookedAssetId;
 };

@@ -51,9 +51,20 @@ struct SPARKLE_ENGINE_API SceneAnimationPoseSnapshot
 	std::vector<DirectX::XMFLOAT4X4> skinningMatrices;
 };
 
+struct SPARKLE_ENGINE_API SceneMorphWeightSnapshot
+{
+	std::uint32_t targetNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
+	std::vector<float> weights;
+};
+
 struct SPARKLE_ENGINE_API SceneAnimationSnapshot
 {
 	std::vector<SceneAnimationPoseSnapshot> poses;
+	std::vector<SceneMorphWeightSnapshot> morphWeights;
 
-	void Reset() noexcept { poses.clear(); }
+	void Reset() noexcept
+	{
+		poses.clear();
+		morphWeights.clear();
+	}
 };

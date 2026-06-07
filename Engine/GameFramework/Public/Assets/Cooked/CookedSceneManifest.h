@@ -16,11 +16,12 @@
 namespace Assets
 {
 	inline constexpr std::uint32_t kCookedSceneManifestMagic = MakeCookedAssetMagic('S', 'S', 'C', 'N');
-	inline constexpr std::uint32_t kCookedSceneManifestVersion = 8;
+	inline constexpr std::uint32_t kCookedSceneManifestVersion = 9;
 	inline constexpr std::uint32_t kInvalidCookedMaterialAssetIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneInstanceGroupIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneSkeletonRefIndex = (std::numeric_limits<std::uint32_t>::max)();
 	inline constexpr std::uint32_t kInvalidCookedSceneMorphWeightIndex = (std::numeric_limits<std::uint32_t>::max)();
+	inline constexpr std::uint32_t kInvalidCookedSceneSourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	enum class CookedSceneInstanceGroupKind : std::uint32_t
 	{
@@ -46,6 +47,7 @@ namespace Assets
 		std::uint32_t materialAssetIndex = 0;
 		std::uint32_t groupIndex = kInvalidCookedSceneInstanceGroupIndex;
 		std::uint32_t skeletonRefIndex = kInvalidCookedSceneSkeletonRefIndex;
+		std::uint32_t sourceNodeIndex = kInvalidCookedSceneSourceNodeIndex;
 		std::uint32_t firstMorphWeight = kInvalidCookedSceneMorphWeightIndex;
 		std::uint32_t morphWeightCount = 0;
 		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();

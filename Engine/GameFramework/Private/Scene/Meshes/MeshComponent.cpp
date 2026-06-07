@@ -13,7 +13,8 @@ MeshComponent::MeshComponent(
 	Assets::CookedAssetId meshAssetId,
 	SceneMeshAssetIndex meshAssetIndex,
 	SceneMeshInstanceGroupIndex meshInstanceGroupIndex,
-	Assets::CookedAssetId skeletonAssetId) noexcept :
+	Assets::CookedAssetId skeletonAssetId,
+	std::uint32_t sourceNodeIndex) noexcept :
 	Component(),
 	m_mesh(std::move(mesh)),
 	m_transform(transform),
@@ -22,6 +23,7 @@ MeshComponent::MeshComponent(
 	m_meshAssetIndex(meshAssetIndex),
 	m_meshInstanceGroupIndex(meshInstanceGroupIndex),
 	m_skeletonAssetId(skeletonAssetId),
+	m_sourceNodeIndex(sourceNodeIndex),
 	m_kind(meshKind)
 {
 }

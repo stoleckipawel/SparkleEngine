@@ -27,8 +27,10 @@ struct VulkanFeatureStatus final
 {
 	bool SupportsSynchronization2 = false;
 	bool SupportsDynamicRendering = false;
+	bool SupportsSamplerAnisotropy = false;
 	bool EnabledSynchronization2 = false;
 	bool EnabledDynamicRendering = false;
+	bool EnabledSamplerAnisotropy = false;
 };
 
 class VulkanRhi final

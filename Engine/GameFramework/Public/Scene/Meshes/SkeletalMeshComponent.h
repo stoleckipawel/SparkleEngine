@@ -16,5 +16,6 @@ class SPARKLE_ENGINE_API SkeletalMeshComponent final : public MeshComponent
 	    MaterialHandle materialHandle,
 	    Assets::CookedAssetId meshAssetId,
 	    SceneMeshAssetIndex meshAssetIndex,
-	    Assets::CookedAssetId skeletonAssetId) noexcept;
+	    Assets::CookedAssetId skeletonAssetId,
+	    std::uint32_t sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex) noexcept;
 };

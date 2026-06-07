@@ -225,6 +225,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_adapterInfo = BuildAdapterInfo(selected.Properties);
 	m_featureStatus.SupportsSynchronization2 = selected.Features13.synchronization2 == VK_TRUE;
 	m_featureStatus.SupportsDynamicRendering = selected.Features13.dynamicRendering == VK_TRUE;
+	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
 
 	SPDLOG_LOGGER_INFO(
 	    g_vulkanRhiLogger,
@@ -263,6 +264,8 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 	}
 
 	VkPhysicalDeviceFeatures2 enabledFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+	enabledFeatures.features.samplerAnisotropy = m_featureStatus.SupportsSamplerAnisotropy ? VK_TRUE : VK_FALSE;
+	m_featureStatus.EnabledSamplerAnisotropy = enabledFeatures.features.samplerAnisotropy == VK_TRUE;
 	VkPhysicalDeviceVulkan13Features enabledFeatures13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
 	if (m_adapterInfo.ApiVersion >= VK_API_VERSION_1_3)
 	{
@@ -341,12 +344,14 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string instanceExtensions = std::format("Enabled Vulkan instance extensions: {}", m_enabledInstanceExtensions.size());
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
 	const std::string featureSummary = std::format(
-	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}",
+	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, samplerAnisotropy supported/enabled={}/{}",
 	    m_validationEnabled,
 	    m_featureStatus.SupportsSynchronization2,
 	    m_featureStatus.EnabledSynchronization2,
 	    m_featureStatus.SupportsDynamicRendering,
-	    m_featureStatus.EnabledDynamicRendering);
+	    m_featureStatus.EnabledDynamicRendering,
+	    m_featureStatus.SupportsSamplerAnisotropy,
+	    m_featureStatus.EnabledSamplerAnisotropy);
 	const std::string adapterSummary = std::format(
 	    "Vulkan adapter: name='{}', api={}, driver={}, queueFamily={}",
 	    m_adapterInfo.Name,

@@ -16,5 +16,6 @@ class SPARKLE_ENGINE_API StaticMeshComponent final : public MeshComponent
 	    MaterialHandle materialHandle,
 	    Assets::CookedAssetId meshAssetId,
 	    SceneMeshAssetIndex meshAssetIndex,
-	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex) noexcept;
+	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex,
+	    std::uint32_t sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex) noexcept;
 };

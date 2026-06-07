@@ -104,6 +104,9 @@ class VulkanRenderCommandList final : public RenderCommandList
 	    VkPipelineLayout pipelineLayout,
 	    std::uint32_t setIndex,
 	    VkDescriptorSet descriptorSet) noexcept;
+	void MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept;
+	void FlushGraphicsDescriptorSets() noexcept;
+	void FlushComputeDescriptorSets() noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
@@ -116,6 +119,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	VkPipelineLayout m_computePipelineLayout = VK_NULL_HANDLE;
 	std::vector<VkDescriptorSet> m_graphicsDescriptorSets;
 	std::vector<VkDescriptorSet> m_computeDescriptorSets;
+	std::vector<bool> m_graphicsDirtyDescriptorSets;
+	std::vector<bool> m_computeDirtyDescriptorSets;
 	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;

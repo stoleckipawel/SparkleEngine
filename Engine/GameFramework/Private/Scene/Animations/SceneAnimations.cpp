@@ -164,6 +164,28 @@ namespace
 		}
 	}
 
+	void AppendMorphWeightSnapshots(
+	    const SceneAnimationClipDesc& clip,
+	    float playbackTimeSeconds,
+	    std::vector<SceneMorphWeightSnapshot>& outMorphWeights)
+	{
+		for (const SceneAnimationChannel& channel : clip.channels)
+		{
+			if (channel.targetPath != Assets::CookedAnimationTargetPath::Weights)
+			{
+				continue;
+			}
+
+			const DirectX::XMVECTOR sampledWeights = SampleVectorChannel(clip, channel, playbackTimeSeconds);
+			DirectX::XMFLOAT4 storedWeights{};
+			DirectX::XMStoreFloat4(&storedWeights, sampledWeights);
+			outMorphWeights.push_back(
+			    SceneMorphWeightSnapshot{
+			        .targetNodeIndex = channel.targetNodeIndex,
+			        .weights = {storedWeights.x, storedWeights.y, storedWeights.z, storedWeights.w}});
+		}
+	}
+
 	void ComposeModelSpaceTransforms(
 	    const SceneSkeletonDesc& skeleton,
 	    const std::vector<JointLocalTransform>& localTransforms,
@@ -219,8 +241,7 @@ namespace
 		std::uint32_t unsupportedChannelCount = 0;
 		for (const SceneAnimationChannel& channel : clip.channels)
 		{
-			if (channel.targetPath == Assets::CookedAnimationTargetPath::Weights ||
-			    channel.targetPath == Assets::CookedAnimationTargetPath::Unknown)
+			if (channel.targetPath == Assets::CookedAnimationTargetPath::Unknown)
 			{
 				++unsupportedChannelCount;
 			}
@@ -234,6 +255,7 @@ void SceneAnimations::Clear() noexcept
 	m_clips.clear();
 	m_playbackStates.clear();
 	m_activePoses.clear();
+	m_activeMorphWeights.clear();
 	m_playbackDiagnosticLogCount = 0;
 }
 
@@ -270,6 +292,7 @@ void SceneAnimations::Update(float deltaSeconds, const SceneSkeletons& skeletons
 {
 	m_activePoses.clear();
 	m_activePoses.reserve(m_clips.size());
+	m_activeMorphWeights.clear();
 
 	for (std::size_t clipIndex = 0; clipIndex < m_clips.size(); ++clipIndex)
 	{
@@ -298,6 +321,8 @@ void SceneAnimations::Update(float deltaSeconds, const SceneSkeletons& skeletons
 			m_activePoses.push_back(EvaluateClip(clip, skeleton, playback.playbackTimeSeconds));
 			break;
 		}
+
+		AppendMorphWeightSnapshots(clip, playback.playbackTimeSeconds, m_activeMorphWeights);
 	}
 
 	if (m_playbackDiagnosticLogCount < 3u && !m_activePoses.empty())
@@ -318,5 +343,6 @@ SceneAnimationSnapshot SceneAnimations::CaptureSnapshot() const
 {
 	SceneAnimationSnapshot snapshot;
 	snapshot.poses = m_activePoses;
+	snapshot.morphWeights = m_activeMorphWeights;
 	return snapshot;
 }

@@ -173,6 +173,7 @@ namespace Assets
 				skeletalMeshInstance.transform = transform;
 				skeletalMeshInstance.material = material;
 				skeletalMeshInstance.skeletonAssetId = sceneManifest.skeletonRefs[instanceRecord.skeletonRefIndex].skeletonAssetId;
+				skeletalMeshInstance.sourceNodeIndex = instanceRecord.sourceNodeIndex;
 				skeletalMeshInstance.morphWeights = ResolveMorphWeights(sceneManifest, instanceRecord);
 				sceneAssetPayload.skeletalMeshInstances.push_back(std::move(skeletalMeshInstance));
 			}
@@ -187,6 +188,7 @@ namespace Assets
 				staticMeshInstance.meshAssetIndex = binding.payloadMeshAssetIndex;
 				staticMeshInstance.transform = transform;
 				staticMeshInstance.material = material;
+				staticMeshInstance.sourceNodeIndex = instanceRecord.sourceNodeIndex;
 				staticMeshInstance.groupIndex = instanceRecord.groupIndex == kInvalidCookedSceneInstanceGroupIndex
 				                                    ? kInvalidSceneMeshInstanceGroupIndex
 				                                    : groupBaseIndex + instanceRecord.groupIndex;

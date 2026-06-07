@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
+#include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Component.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
@@ -25,7 +26,8 @@ class SPARKLE_ENGINE_API MeshComponent : public Component
 	    Assets::CookedAssetId meshAssetId = Assets::InvalidCookedAssetId,
 	    SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex,
 	    SceneMeshInstanceGroupIndex meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex,
-	    Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId) noexcept;
+	    Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId,
+	    std::uint32_t sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex) noexcept;
 	~MeshComponent() override;
 
 	MeshComponent(const MeshComponent&) = delete;
@@ -54,6 +56,7 @@ class SPARKLE_ENGINE_API MeshComponent : public Component
 	SceneMeshInstanceGroupIndex GetMeshInstanceGroupIndex() const noexcept { return m_meshInstanceGroupIndex; }
 	void SetSkeletonAssetId(Assets::CookedAssetId skeletonAssetId) noexcept { m_skeletonAssetId = skeletonAssetId; }
 	Assets::CookedAssetId GetSkeletonAssetId() const noexcept { return m_skeletonAssetId; }
+	std::uint32_t GetSourceNodeIndex() const noexcept { return m_sourceNodeIndex; }
 	SceneMeshKind GetMeshKind() const noexcept { return m_kind; }
 	bool IsSkeletalMeshComponent() const noexcept { return m_kind == SceneMeshKind::Skeletal; }
 
@@ -68,5 +71,6 @@ class SPARKLE_ENGINE_API MeshComponent : public Component
 	SceneMeshAssetIndex m_meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	SceneMeshInstanceGroupIndex m_meshInstanceGroupIndex = kInvalidSceneMeshInstanceGroupIndex;
 	Assets::CookedAssetId m_skeletonAssetId = Assets::InvalidCookedAssetId;
+	std::uint32_t m_sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex;
 	SceneMeshKind m_kind = SceneMeshKind::Static;
 };

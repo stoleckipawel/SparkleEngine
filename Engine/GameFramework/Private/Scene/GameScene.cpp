@@ -77,6 +77,7 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 void GameScene::Update(float deltaSeconds)
 {
 	m_animations.Update(deltaSeconds, m_skeletons);
+	m_meshes.ApplyMorphWeights(m_animations.GetActiveMorphWeights());
 }
 
 GameSceneSnapshot GameScene::CaptureSnapshot() const

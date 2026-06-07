@@ -423,13 +423,16 @@ Use a glTF sample with visible morph targets, recook, run D3D12 and Vulkan smoke
 
 Current validation notes:
 
-- `ShowcaseRuntime`, `ShowcaseEditor`, `AssetCooker`, and `ShaderCompiler` build in `build-codex-ninja`.
-- Active Showcase recook should not include static morph target warnings.
-- A skeletal morph sample is still needed before marking morph playback functional.
+- `ShowcaseRuntime`, `ShowcaseEditor`, and `AssetCooker` build in `build-codex-ninja` after the skeletal morph runtime state pass.
+- Showcase recook writes scene manifest version `9`, preserving source node identity for mesh instances so animation weight channels can target skeletal/deformable mesh components deterministically.
+- Runtime now has mutable skeletal morph weight state on `SkeletalCookedMesh`; animation weight channels produce node-targeted morph weight snapshots and `SceneMeshes` applies them only to skeletal components.
+- Renderer remains importer-agnostic: changed CPU mesh geometry is detected through mesh geometry revisions and `GPUMeshCache` reuploads revised meshes without adding morph-specific renderer branches.
+- Static meshes stay on the static path and do not cook/load morph streams.
+- A visible skeletal morph validation sample is still needed to prove authored animated deformation visually, but the runtime plumbing for weight-channel playback is now in place.
 
 ## Stage 10: Material Variants and Mesh Instancing
 
-Status: Implemented with D3D12 validation. Material variants import/cook/load as scene metadata and are selectable through `SceneMaterialVariants` and the editor Inspector `Variants` tab. Authored mesh GPU instancing preserves imported instance groups through cook/load and renderer batching. Vulkan render validation remains blocked by the existing Vulkan default-texture/material null path.
+Status: Implemented with D3D12 and Vulkan validation. Material variants import/cook/load as scene metadata and are selectable through `SceneMaterialVariants` and the editor Inspector `Variants` tab. Authored mesh GPU instancing preserves imported instance groups through cook/load and renderer batching. Vulkan default texture upload, sampler binding, and descriptor-set submission now validate these scenes beyond cooked payload classification.
 
 Goal: Finish the remaining common glTF feature warnings after core scene, lighting, and animation content are functional.
 
@@ -460,29 +463,26 @@ Recook variant and instancing samples, launch editor/runtime smoke on D3D12 and 
 Current validation evidence:
 
 - `VariantTriangle/VariantTriangle.gltf` recook reports `materialVariants=2/imported`, `materialVariants=1`, `materialVariantMappings=1`, `cookedMaterialVariants=1`, and `cookedVariantMappings=1`.
-- `VariantTriangle.sscn` uses manifest version `8`, `variants=1`, `mappings=1`, and feature flags `0x00000040`.
-- D3D12 runtime smoke on `VariantTriangle` exits successfully after loading `materialVariants=1`, `variantMappings=1`, and feature flags `0x00000040`.
-- D3D12 editor smoke on `VariantTriangle` loads and renders the scene with viewport evidence, but exits with a shutdown access violation after `UI::~UI end`; treat editor smoke as evidence for load/render/UI startup, not a clean process exit.
+- `VariantTriangle.sscn` uses manifest version `9`, `variants=1`, `mappings=1`, and feature flags `0x00000040`.
+- Vulkan runtime smoke on `VariantTriangle` exits successfully after loading `materialVariants=1`, `variantMappings=1`, feature flags `0x00000040`, and default textures.
+- D3D12 editor smoke on `VariantTriangle` loads and renders the scene with viewport evidence, reaches frame limit 30, and exits cleanly after `RuntimeApplication` shutdown.
 - `Instancing/GpuInstancedCube.gltf` recook reports `meshGpuInstancing=1/imported`, `importedMeshInstanceGroups=1`, and `cookedInstanceGroups=1`.
-- `GpuInstancedCube.sscn` uses manifest version `8`, `instances=3`, `groups=1`, and feature flags `0x00000080`.
-- D3D12 runtime smoke on the `GpuInstancedCube` level exits successfully after loading `meshInstances=3`, `instanceGroups=1`, and feature flags `0x00000080`.
-- Vulkan runtime smoke loads `VariantTriangle` cooked payload metadata, then fails in the known Vulkan texture/material path before useful render validation.
+- `GpuInstancedCube.sscn` uses manifest version `9`, `instances=3`, `groups=1`, and feature flags `0x00000080`.
+- Vulkan runtime smoke on `GpuInstancedCube` exits successfully after loading `meshInstances=3`, `instanceGroups=1`, feature flags `0x00000080`, and default textures.
 
 ## Remaining Import-System Gaps
 
 Stage 0 through Stage 10 are now implemented except where explicitly called out below. Future work should preserve the static/skeletal mesh split, keep import/cook/runtime/renderer boundaries separate, and avoid routing feature-specific state through generic static mesh data.
 
-- Finish skeletal/deformable morph target playback only when we have a clean validation sample: add mutable runtime skeletal morph weight state and animation channels targeting weights.
-- Fix the Vulkan default texture/material null path so Vulkan smoke can validate Stage 8 lighting and Stage 10 variants/instancing beyond cooked payload classification.
-- Investigate the editor smoke shutdown access violation that occurs after `UI::~UI end`.
+- Add a visible skeletal/deformable morph target validation sample and assert animated weight-channel deformation in screenshots or deterministic geometry diagnostics.
 - Decide which advanced glTF material extensions Sparkle should care about next. Current importer diagnostics still report unsupported approximation for extensions such as clearcoat, transmission, volume, sheen, specular, iridescence, anisotropy, dispersion, unlit, and specular-glossiness.
 - Keep Draco-compressed primitives, non-triangle primitive modes, unsupported embedded/encoded texture sources, and FBX-only feature gaps explicit as unsupported diagnostics until they receive dedicated feature work.
 
 Suggested next implementation prompt:
 
 ```text
-Finish skeletal morph target runtime support without polluting static meshes.
+Add skeletal morph target validation without polluting static meshes.
 
-Add a skeletal morph validation sample, mutable skeletal morph weight state in GameFramework, cooked/runtime mapping from animation weight channels to skeletal morph targets, and renderer consumption through the existing skeletal/deformable path. Static mesh data and static mesh instances must remain free of morph streams, morph weights, and deformation flags.
+Add a skeletal morph validation sample that exercises the existing mutable skeletal morph weight state in GameFramework, cooked/runtime source-node mapping, animation weight channels, and geometry-revision renderer upload path. Static mesh data and static mesh instances must remain free of morph streams, morph weights, and deformation flags.
 ```
 

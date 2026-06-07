@@ -16,6 +16,7 @@ class VulkanBindingLayout final : public RenderBindingLayout
 	    VkDevice device,
 	    const PassParameterLayout& parameterLayout,
 	    std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+	    std::vector<VkSampler> immutableSamplers,
 	    std::vector<VkPushConstantRange> pushConstantRanges,
 	    std::vector<CompiledBinding> bindings,
 	    std::vector<std::string> bindingNames) noexcept;
@@ -37,6 +38,7 @@ class VulkanBindingLayout final : public RenderBindingLayout
 	VkDevice m_device = VK_NULL_HANDLE;
 	const PassParameterLayout* m_parameterLayout = nullptr;
 	std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
+	std::vector<VkSampler> m_immutableSamplers;
 	std::vector<VkPushConstantRange> m_pushConstantRanges;
 	std::vector<CompiledBinding> m_bindings;
 	std::vector<std::string> m_bindingNames;

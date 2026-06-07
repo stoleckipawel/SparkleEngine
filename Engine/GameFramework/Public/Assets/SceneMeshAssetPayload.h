@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/Cooked/CookedMeshAsset.h"
+#include "GameFramework/Public/Assets/Cooked/CookedSceneManifest.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
@@ -30,6 +31,7 @@ struct SPARKLE_ENGINE_API SceneAssetStaticMeshInstance
 	SceneMeshAssetIndex meshAssetIndex = kInvalidSceneMeshAssetIndex;
 	Transform transform;
 	MaterialHandle material;
+	std::uint32_t sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex;
 	SceneMeshInstanceGroupIndex groupIndex = kInvalidSceneMeshInstanceGroupIndex;
 };
 
@@ -39,6 +41,7 @@ struct SPARKLE_ENGINE_API SceneAssetSkeletalMeshInstance
 	Transform transform;
 	MaterialHandle material;
 	Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
+	std::uint32_t sourceNodeIndex = Assets::kInvalidCookedSceneSourceNodeIndex;
 	std::vector<float> morphWeights;
 };
 

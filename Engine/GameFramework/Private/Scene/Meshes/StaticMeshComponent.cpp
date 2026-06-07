@@ -10,7 +10,8 @@ StaticMeshComponent::StaticMeshComponent(
     MaterialHandle materialHandle,
     Assets::CookedAssetId meshAssetId,
     SceneMeshAssetIndex meshAssetIndex,
-    SceneMeshInstanceGroupIndex meshInstanceGroupIndex) noexcept :
+    SceneMeshInstanceGroupIndex meshInstanceGroupIndex,
+    std::uint32_t sourceNodeIndex) noexcept :
     MeshComponent(
         std::move(mesh),
         SceneMeshKind::Static,
@@ -19,6 +20,7 @@ StaticMeshComponent::StaticMeshComponent(
         meshAssetId,
         meshAssetIndex,
         meshInstanceGroupIndex,
-        Assets::InvalidCookedAssetId)
+        Assets::InvalidCookedAssetId,
+        sourceNodeIndex)
 {
 }

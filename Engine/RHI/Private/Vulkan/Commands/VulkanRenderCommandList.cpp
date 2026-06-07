@@ -47,6 +47,8 @@ void VulkanRenderCommandList::SetNativeCommandBuffer(
 	m_hasScissorRect = false;
 	m_graphicsDescriptorSets.clear();
 	m_computeDescriptorSets.clear();
+	m_graphicsDirtyDescriptorSets.clear();
+	m_computeDirtyDescriptorSets.clear();
 	m_retainedDescriptorTables.clear();
 	m_retainedDescriptorHandles.clear();
 	m_retainedDescriptorBuffers.clear();
@@ -91,6 +93,11 @@ void VulkanRenderCommandList::SetPipelineState(const RenderPipelineState& pipeli
 	}
 
 	const auto& vulkanPipelineState = static_cast<const VulkanPipelineState&>(pipelineState);
+	if (vulkanPipelineState.GetPipeline() == VK_NULL_HANDLE || vulkanPipelineState.GetPipelineLayout() == VK_NULL_HANDLE)
+	{
+		SPDLOG_LOGGER_ERROR(g_vulkanRenderCommandListLogger, "VulkanRenderCommandList: refused to bind an incomplete pipeline state.");
+		return;
+	}
 	if (vulkanPipelineState.GetBindPoint() == VK_PIPELINE_BIND_POINT_COMPUTE)
 	{
 		EndDynamicRenderingIfNeeded();
@@ -107,12 +114,14 @@ void VulkanRenderCommandList::SetGraphicsBindingLayout(const RenderBindingLayout
 {
 	m_graphicsBindingLayout = static_cast<const VulkanBindingLayout*>(&bindingLayout);
 	m_graphicsDescriptorSets.assign(m_graphicsBindingLayout->GetDescriptorSetLayouts().size(), VK_NULL_HANDLE);
+	m_graphicsDirtyDescriptorSets.assign(m_graphicsDescriptorSets.size(), false);
 }
 
 void VulkanRenderCommandList::SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
 {
 	m_computeBindingLayout = static_cast<const VulkanBindingLayout*>(&bindingLayout);
 	m_computeDescriptorSets.assign(m_computeBindingLayout->GetDescriptorSetLayouts().size(), VK_NULL_HANDLE);
+	m_computeDirtyDescriptorSets.assign(m_computeDescriptorSets.size(), false);
 }
 
 void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -125,7 +134,7 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
 	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
 	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -138,7 +147,7 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
 	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
 	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindGraphicsUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -154,9 +163,12 @@ void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingI
 		return;
 	}
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
-	m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
+	if (binding->Type != CompiledBindingType::SamplerTable)
+	{
+		m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
+	}
 	m_retainedDescriptorTables.push_back(tableBinding);
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
@@ -169,7 +181,7 @@ void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingI
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
 	m_descriptorAllocator->WriteDescriptorHandle(descriptorSet, *binding, baseDescriptor);
 	m_retainedDescriptorHandles.push_back(baseDescriptor);
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::SetGraphicsPushConstants(
@@ -203,7 +215,7 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
 	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
 	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -216,7 +228,7 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
 	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
 	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindComputeUnorderedAccess(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -232,9 +244,12 @@ void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIn
 		return;
 	}
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
-	m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
+	if (binding->Type != CompiledBindingType::SamplerTable)
+	{
+		m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
+	}
 	m_retainedDescriptorTables.push_back(tableBinding);
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIndex, RhiGpuDescriptorHandle baseDescriptor) noexcept
@@ -247,7 +262,7 @@ void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIn
 	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
 	m_descriptorAllocator->WriteDescriptorHandle(descriptorSet, *binding, baseDescriptor);
 	m_retainedDescriptorHandles.push_back(baseDescriptor);
-	BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, binding->BindingPoint.Set, descriptorSet);
+	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
 void VulkanRenderCommandList::SetComputePushConstants(
@@ -444,6 +459,7 @@ void VulkanRenderCommandList::DrawIndexedInstanced(
 	{
 		return;
 	}
+	FlushGraphicsDescriptorSets();
 	vkCmdDrawIndexed(m_commandBuffer, indexCountPerInstance, instanceCount, startIndexLocation, baseVertexLocation, startInstanceLocation);
 }
 
@@ -463,6 +479,7 @@ void VulkanRenderCommandList::DrawInstanced(
 	{
 		return;
 	}
+	FlushGraphicsDescriptorSets();
 	vkCmdDraw(m_commandBuffer, vertexCountPerInstance, instanceCount, startVertexLocation, startInstanceLocation);
 }
 
@@ -474,6 +491,7 @@ void VulkanRenderCommandList::Dispatch(std::uint32_t groupCountX, std::uint32_t 
 	}
 
 	EndDynamicRenderingIfNeeded();
+	FlushComputeDescriptorSets();
 	vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
@@ -826,6 +844,41 @@ void VulkanRenderCommandList::BindDescriptorSet(
 		return;
 	}
 	vkCmdBindDescriptorSets(m_commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
+}
+
+void VulkanRenderCommandList::MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept
+{
+	if (dirtySets.size() <= setIndex)
+	{
+		dirtySets.resize(static_cast<std::size_t>(setIndex) + 1u, false);
+	}
+	dirtySets[setIndex] = true;
+}
+
+void VulkanRenderCommandList::FlushGraphicsDescriptorSets() noexcept
+{
+	for (std::uint32_t setIndex = 0; setIndex < m_graphicsDescriptorSets.size() && setIndex < m_graphicsDirtyDescriptorSets.size(); ++setIndex)
+	{
+		if (!m_graphicsDirtyDescriptorSets[setIndex])
+		{
+			continue;
+		}
+		BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, setIndex, m_graphicsDescriptorSets[setIndex]);
+		m_graphicsDirtyDescriptorSets[setIndex] = false;
+	}
+}
+
+void VulkanRenderCommandList::FlushComputeDescriptorSets() noexcept
+{
+	for (std::uint32_t setIndex = 0; setIndex < m_computeDescriptorSets.size() && setIndex < m_computeDirtyDescriptorSets.size(); ++setIndex)
+	{
+		if (!m_computeDirtyDescriptorSets[setIndex])
+		{
+			continue;
+		}
+		BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, setIndex, m_computeDescriptorSets[setIndex]);
+		m_computeDirtyDescriptorSets[setIndex] = false;
+	}
 }
 
 void VulkanRenderCommandList::EndDynamicRenderingIfNeeded() noexcept

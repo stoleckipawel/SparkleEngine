@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 class SceneSkeletons;
@@ -20,6 +21,7 @@ class SPARKLE_ENGINE_API SceneAnimations final
 	std::size_t GetClipCount() const noexcept { return m_clips.size(); }
 	const std::vector<SceneAnimationClipDesc>& GetClips() const noexcept { return m_clips; }
 	std::size_t GetActivePoseCount() const noexcept { return m_activePoses.size(); }
+	std::span<const SceneMorphWeightSnapshot> GetActiveMorphWeights() const noexcept { return m_activeMorphWeights; }
 
   private:
 	struct PlaybackState final
@@ -33,5 +35,6 @@ class SPARKLE_ENGINE_API SceneAnimations final
 	std::vector<SceneAnimationClipDesc> m_clips;
 	std::vector<PlaybackState> m_playbackStates;
 	std::vector<SceneAnimationPoseSnapshot> m_activePoses;
+	std::vector<SceneMorphWeightSnapshot> m_activeMorphWeights;
 	std::uint32_t m_playbackDiagnosticLogCount = 0;
 };

@@ -10,7 +10,8 @@ SkeletalMeshComponent::SkeletalMeshComponent(
     MaterialHandle materialHandle,
     Assets::CookedAssetId meshAssetId,
     SceneMeshAssetIndex meshAssetIndex,
-    Assets::CookedAssetId skeletonAssetId) noexcept :
+    Assets::CookedAssetId skeletonAssetId,
+    std::uint32_t sourceNodeIndex) noexcept :
     MeshComponent(
         std::move(mesh),
         SceneMeshKind::Skeletal,
@@ -19,6 +20,7 @@ SkeletalMeshComponent::SkeletalMeshComponent(
         meshAssetId,
         meshAssetIndex,
         kInvalidSceneMeshInstanceGroupIndex,
-        skeletonAssetId)
+        skeletonAssetId,
+        sourceNodeIndex)
 {
 }

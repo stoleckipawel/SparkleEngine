@@ -6,7 +6,6 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 #include "Scene/Meshes/SkeletalMeshComponent.h"
-#include "Scene/Meshes/MeshMorphEvaluator.h"
 #include "Scene/Meshes/StaticMeshComponent.h"
 
 #include <memory>
@@ -78,7 +77,8 @@ namespace SceneAssetMeshComponentFactory
 			    ResolveMaterialHandle(meshInstance.material, materialBaseHandle, sceneMaterials),
 			    meshAsset.assetId,
 			    meshInstance.meshAssetIndex,
-			    sceneGroupIndex));
+			    sceneGroupIndex,
+			    meshInstance.sourceNodeIndex));
 		}
 
 		for (SceneAssetPayload::SkeletalMeshInstance& meshInstance : sceneAssetPayload.skeletalMeshInstances)
@@ -91,15 +91,15 @@ namespace SceneAssetMeshComponentFactory
 
 			const SceneAssetPayload::SkeletalMeshAsset& meshAsset = sceneAssetPayload.skeletalMeshAssets[meshInstance.meshAssetIndex];
 			SkeletalMeshData meshData = std::move(meshAsset.mesh);
-			MeshMorphEvaluator::ApplyWeights(meshData.geometry, meshData.morphTargets, meshInstance.morphWeights);
-			auto mesh = std::make_unique<SkeletalCookedMesh>(std::move(meshData), meshAsset.assetId);
+			auto mesh = std::make_unique<SkeletalCookedMesh>(std::move(meshData), meshAsset.assetId, meshInstance.morphWeights);
 			outMeshComponents.push_back(std::make_unique<SkeletalMeshComponent>(
 			    std::move(mesh),
 			    meshInstance.transform,
 			    ResolveMaterialHandle(meshInstance.material, materialBaseHandle, sceneMaterials),
 			    meshAsset.assetId,
 			    meshInstance.meshAssetIndex,
-			    meshInstance.skeletonAssetId));
+			    meshInstance.skeletonAssetId,
+			    meshInstance.sourceNodeIndex));
 		}
 
 		return true;

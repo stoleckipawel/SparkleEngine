@@ -725,7 +725,7 @@ namespace
 int RhiSmokeValidation::RunEditor() noexcept
 {
 	const EditorSmokeConfig config = LoadConfig();
-	RuntimeApplication app;
+	RuntimeApplication app(RuntimeApplicationOptions{.EnableRuntimeConsole = false});
 	EditorSmokeState state{};
 	ApplyLoggingConfig(config);
 	app.Initialize();

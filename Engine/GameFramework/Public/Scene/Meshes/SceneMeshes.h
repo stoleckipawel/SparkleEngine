@@ -2,10 +2,12 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
+#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
 
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
 
 class MeshComponent;
@@ -30,6 +32,7 @@ class SPARKLE_ENGINE_API SceneMeshes final
 
 	void AppendMeshComponents(std::vector<std::unique_ptr<MeshComponent>>&& meshes);
 	void AppendMeshInstanceGroups(std::vector<MeshInstanceGroupSnapshot>&& meshInstanceGroups);
+	void ApplyMorphWeights(std::span<const SceneMorphWeightSnapshot> morphWeights);
 	bool SetMeshMaterial(SceneMeshInstanceIndex meshInstanceIndex, MaterialHandle materialHandle) noexcept;
 	MeshSnapshot CaptureSnapshot() const;
 	void Reset() noexcept;
