@@ -10,6 +10,7 @@
 #include "Scene/Meshes/MeshData.h"
 #include "Scene/Meshes/SceneMeshes.h"
 #include "SceneData/Builders/MeshInstanceBatchBuilder.h"
+#include "SceneData/RenderMeshSnapshotAdapter.h"
 
 #include <algorithm>
 #include <limits>
@@ -115,10 +116,10 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		}
 
 		const GPUMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*meshInstance.mesh) : nullptr;
-		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
+		RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
 		if (meshInstance.instanceGroupIndex < meshSnapshot.meshInstanceGroups.size())
 		{
-			instanceGroupKind = meshSnapshot.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind;
+			instanceGroupKind = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupKind(meshSnapshot.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind);
 		}
 
 		renderItems.push_back(
@@ -128,17 +129,18 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		            .worldInvTranspose = meshInstance.worldInvTranspose,
 		            .materialSlot = meshInstance.materialHandle.IsValid() ? meshInstance.materialHandle.GetIndex() : 0u,
 		            .skeletonAssetId = meshInstance.skeletonAssetId,
-		            .meshKind = meshInstance.meshKind,
+		            .meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind),
 		            .gpuMesh = gpuMesh},
-		        .instanceGroupIndex = meshInstance.instanceGroupIndex,
+		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
 		        .instanceGroupKind = instanceGroupKind,
 		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
 	}
 
+	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(meshSnapshot);
 	MeshInstanceBatchBuilder batchBuilder;
 	MeshGeometryInstancingDiagnostics batchDiagnostics = batchBuilder.Build(
 	    renderItems,
-	    meshSnapshot.meshInstanceGroups,
+	    renderInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
 	        .requireMaterialBindingSet = false,

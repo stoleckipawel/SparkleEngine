@@ -8,7 +8,7 @@
 
 MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
     const std::vector<MeshRenderItem>& renderItems,
-    const std::vector<MeshInstanceGroupSnapshot>& instanceGroups,
+    const std::vector<RenderMeshInstanceGroup>& instanceGroups,
     const MeshInstanceBatchBuildOptions& options) const
 {
 	MeshInstanceBatchBuildResult result;
@@ -34,8 +34,8 @@ MeshInstanceBatchBuildResult MeshInstanceBatchBuilder::Build(
 	std::vector<bool> consumedItems(renderItems.size(), false);
 	for (std::size_t groupIndex = 0; groupIndex < instanceGroups.size(); ++groupIndex)
 	{
-		const MeshInstanceGroupSnapshot& group = instanceGroups[groupIndex];
-		if (group.groupKind == SceneMeshInstanceGroupKind::None)
+		const RenderMeshInstanceGroup& group = instanceGroups[groupIndex];
+		if (group.groupKind == RenderMeshInstanceGroupKind::None)
 		{
 			continue;
 		}
@@ -155,7 +155,7 @@ bool MeshInstanceBatchBuilder::IsValidCandidate(
 		return false;
 	}
 
-	if (item.instanceGroupIndex != kInvalidSceneMeshInstanceGroupIndex && item.instanceGroupIndex >= instanceGroupCount)
+	if (item.instanceGroupIndex != kInvalidRenderMeshInstanceGroupIndex && item.instanceGroupIndex >= instanceGroupCount)
 	{
 		if (options.collectDiagnostics)
 		{
@@ -195,10 +195,10 @@ bool MeshInstanceBatchBuilder::CanShareBatch(const MeshRenderItem& lhs, const Me
 	return MakeBatchKey(lhs) == MakeBatchKey(rhs);
 }
 
-MeshInstanceBatchSource MeshInstanceBatchBuilder::ResolvePreservedGroupSource(SceneMeshInstanceGroupKind groupKind) noexcept
+MeshInstanceBatchSource MeshInstanceBatchBuilder::ResolvePreservedGroupSource(RenderMeshInstanceGroupKind groupKind) noexcept
 {
-	return groupKind == SceneMeshInstanceGroupKind::AuthoredInstanceGroup ? MeshInstanceBatchSource::AuthoredGroup
-	                                                                    : MeshInstanceBatchSource::PreservedGroup;
+	return groupKind == RenderMeshInstanceGroupKind::AuthoredInstanceGroup ? MeshInstanceBatchSource::AuthoredGroup
+	                                                                      : MeshInstanceBatchSource::PreservedGroup;
 }
 
 void MeshInstanceBatchBuilder::AppendBatch(

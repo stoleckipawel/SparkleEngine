@@ -10,6 +10,8 @@
 #include "Scene/Meshes/Mesh.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
+#include "SceneData/RenderMeshSnapshotAdapter.h"
+#include "Scene/Meshes/MeshSnapshot.h"
 
 #include <cstddef>
 #include <utility>
@@ -80,13 +82,14 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		draw.worldInvTranspose = meshInstance.worldInvTranspose;
 		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.skeletonAssetId = meshInstance.skeletonAssetId;
-		draw.meshKind = meshInstance.meshKind;
+		draw.meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind);
 		draw.gpuMesh = gpuMesh;
 
-		SceneMeshInstanceGroupKind instanceGroupKind = SceneMeshInstanceGroupKind::None;
+		RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
 		if (meshInstance.instanceGroupIndex < sceneSnapshot.meshes.meshInstanceGroups.size())
 		{
-			instanceGroupKind = sceneSnapshot.meshes.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind;
+			instanceGroupKind =
+			    RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupKind(sceneSnapshot.meshes.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind);
 		}
 
 		renderItems.push_back(
@@ -94,15 +97,16 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		        .draw = draw,
 		        .materialBindingSet = draw.materialSlot < sceneData.materials.size() ? sceneData.materials[draw.materialSlot].textureBindingSet
 		                                                                           : nullptr,
-		        .instanceGroupIndex = meshInstance.instanceGroupIndex,
+		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
 		        .instanceGroupKind = instanceGroupKind,
 		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
 	}
 
+	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(sceneSnapshot.meshes);
 	MeshInstanceBatchBuilder batchBuilder;
 	MeshInstanceBatchBuildResult batchBuildResult = batchBuilder.Build(
 	    renderItems,
-	    sceneSnapshot.meshes.meshInstanceGroups,
+	    renderInstanceGroups,
 	    MeshInstanceBatchBuildOptions{
 	        .enableAutoBatching = CVarRendererMeshAutoBatching.Get(),
 	        .requireMaterialBindingSet = true,

@@ -64,7 +64,7 @@ class MeshInstanceBatchBuilder final
 	    MeshGeometryInstancingDiagnostics& diagnostics) noexcept;
 	static BatchKey MakeBatchKey(const MeshRenderItem& item) noexcept;
 	static bool CanShareBatch(const MeshRenderItem& lhs, const MeshRenderItem& rhs) noexcept;
-	static MeshInstanceBatchSource ResolvePreservedGroupSource(SceneMeshInstanceGroupKind groupKind) noexcept;
+	static MeshInstanceBatchSource ResolvePreservedGroupSource(RenderMeshInstanceGroupKind groupKind) noexcept;
 	static void AppendBatch(
 	    const std::vector<MeshRenderItem>& renderItems,
 	    const std::vector<std::size_t>& itemIndices,
