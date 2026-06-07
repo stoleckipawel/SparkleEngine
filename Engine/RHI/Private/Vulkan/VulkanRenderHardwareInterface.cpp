@@ -20,6 +20,7 @@
 #include "Vulkan/Samplers/VulkanSamplerLibrary.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/Textures/VulkanTextureFactory.h"
+#include "Vulkan/Resources/VulkanTexture.h"
 #include "Vulkan/UI/VulkanImGuiBackend.h"
 #include "Vulkan/VulkanTypeConversions.h"
 #include "RHI/Public/Validation/RhiValidation.h"
@@ -327,9 +328,17 @@ NativeResourceHandle VulkanRenderHardwareInterface::GetBackBufferResource() cons
 
 std::unique_ptr<Texture> VulkanRenderHardwareInterface::CreateTexture(RhiTextureUploadDesc textureUpload, std::wstring_view debugName)
 {
-	(void) textureUpload;
-	(void) debugName;
-	return {};
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr || m_descriptorManager == nullptr || !textureUpload.IsValid())
+	{
+		return {};
+	}
+
+	return std::make_unique<VulkanTexture>(
+	    *m_rhi,
+	    *m_memoryAllocator,
+	    *m_descriptorManager,
+	    std::move(textureUpload),
+	    debugName.empty() ? L"VulkanTexture" : debugName);
 }
 
 RhiOwnedResourceHandle VulkanRenderHardwareInterface::CreateTextureResource(
