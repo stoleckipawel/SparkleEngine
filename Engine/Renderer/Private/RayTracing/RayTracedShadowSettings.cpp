@@ -1,0 +1,45 @@
+#include "../PCH.h"
+#include "RayTracing/RayTracedShadowSettings.h"
+
+#include "RayTracing/RayTracedShadowCVars.h"
+#include "RayTracing/RayTracingCapabilityReport.h"
+
+RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept
+{
+	return RayTracedShadowSettings{
+	    .QualityMode = CVarRayTracedShadowQualityMode.Get(),
+	    .DenoiserMode = CVarRayTracedShadowDenoiserMode.Get(),
+	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
+	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
+}
+
+void LogRayTracedShadowSettingsOnce(
+    const RayTracedShadowSettings& settings,
+    const RayTracingCapabilityReport& capabilities) noexcept
+{
+	static bool s_logged = false;
+	if (s_logged)
+	{
+		return;
+	}
+
+	s_logged = true;
+	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RayTracing");
+	SPDLOG_LOGGER_INFO(
+	    logger,
+	    "Ray traced shadow settings: quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel=1 requiresTlas=true "
+	    "requiresDenoiser={}",
+	    RayTracedShadowQualityModeToString(settings.QualityMode),
+	    RayTracedShadowDenoiserModeToString(settings.DenoiserMode),
+	    settings.NormalBias,
+	    settings.MaxDistance,
+	    settings.RequiresDenoiser() ? "true" : "false");
+
+	if (!capabilities.CanUseInlineRayQueryShadows())
+	{
+		SPDLOG_LOGGER_ERROR(
+		    logger,
+		    "Ray traced shadows are the engine shadow path, but the active backend does not expose the required inline ray query "
+		    "capability.");
+	}
+}

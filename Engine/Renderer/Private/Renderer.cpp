@@ -33,6 +33,8 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "RayTracing/RayTracedShadowSettings.h"
+#include "RayTracing/RayTracingCapabilityReport.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -187,6 +189,11 @@ void Renderer::InitializeCoreSystems() noexcept
 	}
 
 	RenderDiagnostics& backendDiagnostics = GetRenderHardwareInterface().GetDiagnostics();
+	const RayTracingCapabilityReport rayTracingCapabilities =
+	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
+	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
+	LogRayTracedShadowSettingsOnce(BuildRayTracedShadowSettingsFromCVars(), rayTracingCapabilities);
+
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
 	for (std::unique_ptr<FrameExecutionDiagnostics>& frameDiagnostics : m_frameExecutionDiagnostics)
