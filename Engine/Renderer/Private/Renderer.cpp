@@ -33,6 +33,7 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Pipeline/PipelineStateManager.h"
+#include "RayTracing/RenderRayTracingScene.h"
 #include "RayTracing/RayTracedShadowSettings.h"
 #include "RayTracing/RayTracingCapabilityReport.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
@@ -193,6 +194,7 @@ void Renderer::InitializeCoreSystems() noexcept
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
 	LogRayTracedShadowSettingsOnce(BuildRayTracedShadowSettingsFromCVars(), rayTracingCapabilities);
+	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
 	m_frameExecutionDiagnostics.resize(RenderConfig::FramesInFlight);
@@ -382,14 +384,18 @@ void Renderer::RecordFrame() noexcept
 		return m_frameGraph->Compile();
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
+	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
+	RenderCommandContext cmd(commandList);
+	if (m_renderRayTracingScene != nullptr)
+	{
+		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.RayTracingSceneUpdate");
+		m_renderRayTracingScene->Update(cmd, frame.sceneData);
+	}
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
 	    .Textures = m_textureManager.get()};
-
-	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
-	RenderCommandContext cmd(commandList);
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.

@@ -154,6 +154,8 @@ Implementation boundaries:
 
 ## Stage 2: Renderer Ray Tracing Scene
 
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
+
 Goal: Build renderer-owned BLAS/TLAS data from existing render mesh data.
 
 Implementation prompt:
@@ -179,6 +181,14 @@ Acceptance criteria:
 - Renderer logs AS instance counts, BLAS builds, TLAS builds, and backend support once per scene/load.
 - No GameFramework, importer, cooker, or editor selection code references AS resources.
 - Refactor gate: mesh GPU data exposes ray tracing geometry through stable renderer contracts, not ad hoc access to GPUMesh internals.
+
+Implementation boundaries:
+
+- `RenderRayTracingScene` is the renderer-owned scene orchestrator. It consumes `RenderSceneData` and owns no GameFramework-facing concepts.
+- `RayTracingBlasCache` owns BLAS lifetime, geometry-change detection, reuse, and stale-entry eviction for `GPUMesh` inputs.
+- `RayTracingTlasBuilder` owns per-frame instance gathering, TLAS scratch/result resources, instance-buffer upload, and build command recording.
+- `RayTracingSceneDiagnostics` owns scene-level logging so `Renderer.cpp` stays focused on frame orchestration.
+- `GPUMesh` remains the mesh upload/resource owner and exposes ray tracing geometry through its stable public contract. The ray tracing scene cache does not reach into unrelated mesh internals.
 
 ## Stage 3: FrameGraph Resource Integration
 

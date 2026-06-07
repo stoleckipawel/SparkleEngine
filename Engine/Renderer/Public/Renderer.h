@@ -33,6 +33,7 @@ class RenderSceneDataBuilder;
 class ViewLightingBuilder;
 class FrameExecutionDiagnostics;
 class RendererMemoryMonitor;
+class RenderRayTracingScene;
 struct RenderSceneSnapshot;
 struct ResolvedGpuTiming;
 
@@ -99,6 +100,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<TextureManager> m_textureManager;
 	std::unique_ptr<MaterialCacheManager> m_materialCacheManager;
 	std::unique_ptr<RenderSceneDataBuilder> m_renderSceneDataBuilder;
+	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
 	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;

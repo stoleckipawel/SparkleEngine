@@ -1,0 +1,228 @@
+#include "PCH.h"
+
+#include "RayTracing/RayTracingTlasBuilder.h"
+
+#include "Commands/RenderCommandContext.h"
+#include "SceneData/RenderSceneData.h"
+
+#include <unordered_set>
+
+static const auto g_rayTracingTlasBuilderLogger = Logging::GetOrCreateLogger("Renderer.RayTracing");
+
+RayTracingTlasBuilder::RayTracingTlasBuilder(RenderHardwareInterface& renderHardwareInterface) noexcept :
+    m_renderHardwareInterface(&renderHardwareInterface)
+{
+}
+
+RayTracingTlasBuilder::~RayTracingTlasBuilder() noexcept
+{
+	Clear();
+}
+
+RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
+    RenderCommandContext& cmd,
+    const RenderSceneData& sceneData,
+    RayTracingBlasCache& blasCache) noexcept
+{
+	BuildStats stats{};
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return stats;
+	}
+
+	std::unordered_set<void*> builtBlasResources;
+	std::vector<RhiRayTracingInstanceDesc> instances;
+	instances.reserve(sceneData.meshInstances.size());
+	for (std::uint32_t index = 0; index < static_cast<std::uint32_t>(sceneData.meshInstances.size()); ++index)
+	{
+		const MeshDraw& draw = sceneData.meshInstances[index];
+		if (draw.gpuMesh == nullptr || !draw.gpuMesh->IsValid())
+		{
+			continue;
+		}
+
+		const RayTracingBlasCache::BlasHandle blas = blasCache.EnsureBlas(cmd, *draw.gpuMesh);
+		if (!blas.IsValid())
+		{
+			continue;
+		}
+		if (blas.builtThisFrame)
+		{
+			builtBlasResources.insert(blas.resource.Value);
+		}
+
+		instances.push_back(
+		    RhiRayTracingInstanceDesc{
+		        .Transform = BuildInstanceTransform(draw.worldMatrix),
+		        .InstanceID = index,
+		        .InstanceMask = 0xFFu,
+		        .InstanceContributionToHitGroupIndex = 0u,
+		        .AccelerationStructure = blas.gpuAddress});
+	}
+
+	stats.instanceCount = static_cast<std::uint32_t>(instances.size());
+	if (instances.empty())
+	{
+		m_tlas = {};
+		if (m_instanceBuffer)
+		{
+			m_renderHardwareInterface->ReleaseOwnedResource(m_instanceBuffer);
+			m_instanceBuffer = {};
+		}
+		return stats;
+	}
+
+	const RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo =
+	    m_renderHardwareInterface->GetTopLevelAccelerationStructurePrebuildInfo(stats.instanceCount);
+	if (prebuildInfo.ResultDataMaxSizeInBytes == 0 || prebuildInfo.ScratchDataSizeInBytes == 0)
+	{
+		m_tlas = {};
+		SPDLOG_LOGGER_WARN(
+		    g_rayTracingTlasBuilderLogger,
+		    "RayTracingTlasBuilder: skipping TLAS build because prebuild info was invalid (instanceCount={}).",
+		    stats.instanceCount);
+		return stats;
+	}
+
+	if (!EnsureResources(prebuildInfo))
+	{
+		m_tlas = {};
+		return stats;
+	}
+
+	if (m_instanceBuffer)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_instanceBuffer);
+		m_instanceBuffer = {};
+	}
+
+	m_instanceBuffer = m_renderHardwareInterface->CreateRayTracingInstanceBuffer(
+	    instances.data(),
+	    stats.instanceCount,
+	    L"RayTracingTlasInstances");
+	if (!m_instanceBuffer)
+	{
+		m_tlas = {};
+		SPDLOG_LOGGER_WARN(
+		    g_rayTracingTlasBuilderLogger,
+		    "RayTracingTlasBuilder: failed to upload {} TLAS instances.",
+		    stats.instanceCount);
+		return stats;
+	}
+
+	for (void* resourceValue : builtBlasResources)
+	{
+		cmd.UnorderedAccessBarrier(NativeResourceHandle{resourceValue});
+	}
+
+	cmd.BuildTopLevelAccelerationStructure(
+	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_instanceBuffer),
+	    stats.instanceCount,
+	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_scratchBuffer),
+	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer));
+
+	m_tlas = TlasHandle{
+	    .resource = m_renderHardwareInterface->GetNativeResource(m_accelerationStructureBuffer),
+	    .gpuAddress = m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
+	    .instanceCount = stats.instanceCount};
+	stats.builtTlas = m_tlas.IsValid();
+	return stats;
+}
+
+void RayTracingTlasBuilder::Clear() noexcept
+{
+	ReleaseResources();
+	m_tlas = {};
+}
+
+std::array<float, 12> RayTracingTlasBuilder::BuildInstanceTransform(const DirectX::XMFLOAT4X4& worldMatrix) noexcept
+{
+	return {
+	    worldMatrix._11,
+	    worldMatrix._12,
+	    worldMatrix._13,
+	    worldMatrix._14,
+	    worldMatrix._21,
+	    worldMatrix._22,
+	    worldMatrix._23,
+	    worldMatrix._24,
+	    worldMatrix._31,
+	    worldMatrix._32,
+	    worldMatrix._33,
+	    worldMatrix._34};
+}
+
+void RayTracingTlasBuilder::ReleaseResources() noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		m_instanceBuffer = {};
+		m_scratchBuffer = {};
+		m_accelerationStructureBuffer = {};
+		m_scratchBufferSizeInBytes = 0;
+		m_accelerationStructureSizeInBytes = 0;
+		return;
+	}
+
+	if (m_instanceBuffer)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_instanceBuffer);
+	}
+	if (m_scratchBuffer)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_scratchBuffer);
+	}
+	if (m_accelerationStructureBuffer)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_accelerationStructureBuffer);
+	}
+
+	m_instanceBuffer = {};
+	m_scratchBuffer = {};
+	m_accelerationStructureBuffer = {};
+	m_scratchBufferSizeInBytes = 0;
+	m_accelerationStructureSizeInBytes = 0;
+}
+
+bool RayTracingTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo) noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return false;
+	}
+
+	if (m_scratchBuffer && m_scratchBufferSizeInBytes < prebuildInfo.ScratchDataSizeInBytes)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_scratchBuffer);
+		m_scratchBuffer = {};
+		m_scratchBufferSizeInBytes = 0;
+	}
+	if (m_accelerationStructureBuffer && m_accelerationStructureSizeInBytes < prebuildInfo.ResultDataMaxSizeInBytes)
+	{
+		m_renderHardwareInterface->ReleaseOwnedResource(m_accelerationStructureBuffer);
+		m_accelerationStructureBuffer = {};
+		m_accelerationStructureSizeInBytes = 0;
+	}
+
+	if (!m_scratchBuffer)
+	{
+		m_scratchBuffer =
+		    m_renderHardwareInterface->CreateRayTracingScratchBuffer(prebuildInfo.ScratchDataSizeInBytes, L"RayTracingTlasScratch");
+		m_scratchBufferSizeInBytes = prebuildInfo.ScratchDataSizeInBytes;
+	}
+	if (!m_accelerationStructureBuffer)
+	{
+		m_accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
+		    prebuildInfo.ResultDataMaxSizeInBytes,
+		    L"RayTracingTlas");
+		m_accelerationStructureSizeInBytes = prebuildInfo.ResultDataMaxSizeInBytes;
+	}
+
+	if (!m_scratchBuffer || !m_accelerationStructureBuffer)
+	{
+		SPDLOG_LOGGER_WARN(g_rayTracingTlasBuilderLogger, "RayTracingTlasBuilder: failed to allocate TLAS scratch or result buffers.");
+		return false;
+	}
+
+	return true;
+}
