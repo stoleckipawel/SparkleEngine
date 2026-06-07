@@ -5,6 +5,7 @@
 
 #include <DirectXMath.h>
 #include <cstdint>
+#include <limits>
 
 class GPUMesh;
 
@@ -22,6 +23,7 @@ struct SPARKLE_RENDERER_API MeshDraw
 	DirectX::XMFLOAT3X4 worldInvTranspose = {};
 	std::uint32_t materialSlot = 0;
 	std::uint64_t skeletonAssetId = 0;
+	std::uint32_t jointMatrixOffset = (std::numeric_limits<std::uint32_t>::max)();
 	RenderMeshKind meshKind = RenderMeshKind::Static;
 	const GPUMesh* gpuMesh = nullptr;
 };

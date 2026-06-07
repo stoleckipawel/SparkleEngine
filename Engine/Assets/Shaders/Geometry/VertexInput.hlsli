@@ -9,6 +9,7 @@ namespace VS
 		float4 Color : COLOR;
 		float3 Normal : NORMAL;
 		float4 Tangent : TANGENT;
+		uint VertexId : SV_VertexID;
 		uint InstanceId : SV_InstanceID;
 	};
 }  // namespace VS

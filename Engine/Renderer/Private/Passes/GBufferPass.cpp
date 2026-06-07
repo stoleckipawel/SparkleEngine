@@ -250,6 +250,8 @@ void GBufferPass::DrawOpaqueMeshes(
 
 		PassBindingOverrides overrides;
 		overrides.SetDescriptorTable("MeshInstances", frame.meshInstances.GetShaderResourceView());
+		overrides.SetDescriptorTable("SkinInfluences", gpuMesh->GetSkinInfluencesShaderResourceView());
+		overrides.SetDescriptorTable("JointMatrices", frame.skinning.GetShaderResourceView());
 		const bool bound = PassUtilities::BindAvailableRasterPassWithRuntime(
 		    resources,
 		    cmd,

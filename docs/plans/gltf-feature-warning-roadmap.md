@@ -277,6 +277,8 @@ Recook a scene with at least one glTF animation, verify cooked animation assets 
 
 ## Stage 6: Runtime Animation Playback
 
+Status: Implemented for cooked TRS skeletal animation playback. GameFramework owns playback state and pose evaluation; Renderer consumes immutable pose snapshots and uploads per-frame joint palettes for skeletal mesh draws. Morph-weight animation channels remain deferred and are reported by `SceneAnimations` as unsupported runtime channels.
+
 Goal: Evaluate cooked animation clips into skeleton poses at runtime.
 
 Why this is harder: It introduces time state, clip selection, pose blending policy, skeleton ownership, level switching behavior, and editor/runtime controls.
@@ -306,16 +308,18 @@ Launch runtime smoke on D3D12 and Vulkan with level switching enabled and an ani
 
 ## Stage 7: Renderer Skinning Path
 
-Goal: Move from CPU/neutral-pose readiness to a scalable renderer-owned skinning path.
+Status: Partially implemented by Stage 6. The renderer now has explicit skin influence and joint matrix shader bindings, a per-frame skinning buffer, and skeletal draw classification. Remaining Stage 7 work should focus on scalability and backend polish, not on moving animation state into Renderer.
+
+Goal: Move from the current per-frame joint-palette upload path to a scalable renderer-owned skinning submission path.
 
 Why hardest in the core chain: It crosses Renderer, RHI, shader layouts, mesh buffers, FrameGraph scheduling, and backend parity.
 
 Implementation prompt:
 
 ```text
-Implement the renderer skinning path for animated skeletal meshes.
+Extend the renderer skinning path for animated skeletal meshes.
 
-Add skinned mesh GPU buffers and pose palette upload or compute skinning according to the renderer architecture. Keep animation evaluation in GameFramework and pass immutable pose data through renderer snapshots. Add shader layout metadata for skinning resources, update D3D12 and Vulkan binding paths, and schedule any compute skinning pass through FrameGraph. Do not add backend-specific shortcuts in Renderer.
+Preserve the Stage 6 boundary: animation evaluation stays in GameFramework and Renderer receives immutable pose data through scene snapshots. Build on the existing skinned mesh GPU buffers, pose palette upload, shader layout metadata, D3D12/Vulkan binding metadata, and skeletal draw classification. Add batching/scalability improvements or compute skinning through FrameGraph if profiling justifies it. Do not add backend-specific shortcuts in Renderer.
 ```
 
 Acceptance criteria:

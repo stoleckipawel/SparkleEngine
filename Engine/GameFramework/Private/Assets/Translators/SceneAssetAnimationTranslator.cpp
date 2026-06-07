@@ -24,7 +24,7 @@ namespace Assets
 	    const LoadedAnimationAsset& animationAsset,
 	    CookedAssetId animationAssetId)
 	{
-		return SceneAnimationClipDesc{
+		SceneAnimationClipDesc clip{
 		    .animationAssetId = animationAssetId,
 		    .targetSkeletonAssetId = animationAsset.header.targetSkeletonAssetId,
 		    .name = AnimationNameToString(animationAsset.header),
@@ -32,5 +32,33 @@ namespace Assets
 		    .durationSeconds = animationAsset.header.durationSeconds,
 		    .channelCount = animationAsset.header.channelCount,
 		    .keyframeCount = animationAsset.header.keyframeCount};
+
+		clip.channels.reserve(animationAsset.channels.size());
+
+		for (const CookedAnimationChannelRecord& channel : animationAsset.channels)
+		{
+			clip.channels.push_back(
+			    SceneAnimationChannel{
+			        .targetPath = channel.targetPath,
+			        .interpolation = channel.interpolation,
+			        .targetNodeIndex = channel.targetNodeIndex,
+			        .targetJointIndex = channel.targetJointIndex,
+			        .firstKeyframe = channel.firstKeyframe,
+			        .keyframeCount = channel.keyframeCount});
+		}
+
+		clip.keyframes.reserve(animationAsset.keyframes.size());
+		
+		for (const CookedAnimationKeyframeRecord& keyframe : animationAsset.keyframes)
+		{
+			clip.keyframes.push_back(
+			    SceneAnimationKeyframe{
+			        .timeSeconds = keyframe.timeSeconds,
+			        .value = keyframe.value,
+			        .inTangent = keyframe.inTangent,
+			        .outTangent = keyframe.outTangent});
+		}
+
+		return clip;
 	}
 }

@@ -78,13 +78,12 @@ void GltfImportDiagnosticLog::ReportIgnoredAnimations(std::size_t count, SourceI
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
-void GltfImportDiagnosticLog::ReportImportedAnimationsNotPlayed(std::size_t count, SourceImportResult& result)
+void GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(std::size_t count)
 {
-	SPDLOG_LOGGER_WARN(
+	SPDLOG_LOGGER_INFO(
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
-	    std::format("GltfImporter: {} animation clips imported as cooked metadata; runtime playback is disabled until the pose system lands", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
+	    std::format("GltfImporter: {} animation clips imported for cooked runtime playback", count));
 }
 
 void GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(std::size_t count, SourceImportResult& result)

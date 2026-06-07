@@ -55,7 +55,11 @@ MeshInstanceFrameData MeshInstanceFrameData::Build(RenderHardwareInterface& rend
 		    MeshInstanceData{
 		        .WorldMTX = draw.worldMatrix,
 		        .WorldInvTransposeMTX = draw.worldInvTranspose,
-		        .MaterialSlot = draw.materialSlot});
+		        .MaterialSlot = draw.materialSlot,
+		        .Flags = draw.meshKind == RenderMeshKind::Skeletal && draw.jointMatrixOffset != kInvalidMeshInstanceJointMatrixOffset
+		                     ? MeshInstanceFlag_Skinned
+		                     : 0u,
+		        .JointMatrixOffset = draw.jointMatrixOffset});
 	}
 
 	RhiOwnedResourceHandle buffer = {};

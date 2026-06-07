@@ -2,6 +2,7 @@
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Scene/Camera/CameraSnapshot.h"
+#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
 #include "GameFramework/Public/Scene/Materials/MaterialSnapshot.h"
 #include "GameFramework/Public/Scene/Meshes/MeshSnapshot.h"
@@ -10,6 +11,7 @@
 struct SPARKLE_ENGINE_API GameSceneSnapshot
 {
 	CameraSnapshot camera = {};
+	SceneAnimationSnapshot animations = {};
 	LightingSnapshot lighting = {};
 	TextureSnapshot textures = {};
 	MeshSnapshot meshes = {};
@@ -18,6 +20,7 @@ struct SPARKLE_ENGINE_API GameSceneSnapshot
 	void Reset() noexcept
 	{
 		camera = {};
+		animations.Reset();
 		lighting = {};
 		textures.Reset();
 		meshes.Reset();

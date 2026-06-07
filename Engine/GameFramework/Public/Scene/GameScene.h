@@ -50,6 +50,7 @@ class SPARKLE_ENGINE_API GameScene final
 
 	GameSceneLoadResult LoadLevel(const LevelAsset& level);
 	GameSceneLoadResult LoadLevel(const LevelDesc& desc);
+	void Update(float deltaSeconds);
 	bool AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload);
 	GameSceneSnapshot CaptureSnapshot() const;
 

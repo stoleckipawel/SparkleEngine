@@ -64,10 +64,16 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 	return true;
 }
 
+void GameScene::Update(float deltaSeconds)
+{
+	m_animations.Update(deltaSeconds, m_skeletons);
+}
+
 GameSceneSnapshot GameScene::CaptureSnapshot() const
 {
 	GameSceneSnapshot snapshot;
 	snapshot.camera = m_cameras.GetActiveCamera().CaptureSnapshot();
+	snapshot.animations = m_animations.CaptureSnapshot();
 	snapshot.lighting = m_lighting.CaptureSnapshot();
 	snapshot.textures = m_textures.CaptureSnapshot();
 	snapshot.materials = m_materials.CaptureSnapshot();

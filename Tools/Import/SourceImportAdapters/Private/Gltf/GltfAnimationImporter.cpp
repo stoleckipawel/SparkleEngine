@@ -233,6 +233,6 @@ void GltfAnimationImporter::ImportAnimations(const cgltf_data* data, SourceImpor
 		result.diagnostics.featureCapabilities.animations = {
 		    result.scene.animations.size(),
 		    SourceImportFeatureSupport::Imported};
-		GltfImportDiagnosticLog::ReportImportedAnimationsNotPlayed(result.scene.animations.size(), result);
+		GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(result.scene.animations.size());
 	}
 }

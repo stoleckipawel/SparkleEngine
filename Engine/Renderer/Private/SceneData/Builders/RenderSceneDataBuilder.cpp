@@ -14,6 +14,7 @@
 #include "Scene/Meshes/MeshSnapshot.h"
 
 #include <cstddef>
+#include <unordered_map>
 #include <utility>
 
 static const auto g_renderSceneDataBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData");
@@ -63,6 +64,19 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(sceneSnapshot.meshes.meshInstances.size());
 
+	std::unordered_map<Assets::CookedAssetId, std::uint32_t> jointMatrixOffsets;
+	for (const SceneAnimationPoseSnapshot& pose : sceneSnapshot.animations.poses)
+	{
+		if (pose.skeletonAssetId == Assets::InvalidCookedAssetId || pose.skinningMatrices.empty())
+		{
+			continue;
+		}
+
+		const auto offset = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
+		jointMatrixOffsets.emplace(pose.skeletonAssetId, offset);
+		sceneData.jointMatrices.insert(sceneData.jointMatrices.end(), pose.skinningMatrices.begin(), pose.skinningMatrices.end());
+	}
+
 	for (const MeshInstanceSnapshot& meshInstance : sceneSnapshot.meshes.meshInstances)
 	{
 		const Mesh* mesh = meshInstance.mesh;
@@ -82,6 +96,14 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		draw.worldInvTranspose = meshInstance.worldInvTranspose;
 		draw.materialSlot = MaterialCacheUtils::ResolveMaterialSlot(meshInstance.materialHandle, sceneData.materials.size());
 		draw.skeletonAssetId = meshInstance.skeletonAssetId;
+		draw.jointMatrixOffset = kInvalidMeshInstanceJointMatrixOffset;
+		if (meshInstance.meshKind == SceneMeshKind::Skeletal)
+		{
+			if (const auto it = jointMatrixOffsets.find(meshInstance.skeletonAssetId); it != jointMatrixOffsets.end())
+			{
+				draw.jointMatrixOffset = it->second;
+			}
+		}
 		draw.meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind);
 		draw.gpuMesh = gpuMesh;
 

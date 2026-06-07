@@ -26,6 +26,12 @@ GPUMesh::~GPUMesh() noexcept
 
 bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const MeshData& meshData)
 {
+	return Upload(renderHardwareInterface, GPUMeshUploadDesc{.meshData = meshData});
+}
+
+bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const GPUMeshUploadDesc& uploadDesc)
+{
+	const MeshData& meshData = uploadDesc.meshData;
 	if (!meshData.IsValid())
 	{
 		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Cannot upload invalid MeshData (empty vertices or indices)");
@@ -60,6 +66,12 @@ bool GPUMesh::Upload(RenderHardwareInterface& renderHardwareInterface, const Mes
 
 	m_vertexCount = meshData.GetVertexCount();
 	m_indexCount = meshData.GetIndexCount();
+
+	if (!m_skinInfluences.Upload(renderHardwareInterface, m_vertexCount, uploadDesc.skinInfluences))
+	{
+		SPDLOG_LOGGER_ERROR(g_gpuMeshLogger, "[GPUMesh] Failed to create skin influence resources");
+		return false;
+	}
 
 	SPDLOG_LOGGER_TRACE(g_gpuMeshLogger, "[GPUMesh] Uploaded mesh buffers");
 

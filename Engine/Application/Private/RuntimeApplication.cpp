@@ -126,6 +126,10 @@ RuntimeApplicationFrameResult RuntimeApplication::BeginFrame()
 void RuntimeApplication::UpdateRuntime() noexcept
 {
 	SPARKLE_CPU_SCOPE("Application.RuntimeUpdate");
+	if (m_gameScene && m_timer)
+	{
+		m_gameScene->Update(static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds)));
+	}
 	if (m_gameCameraController)
 	{
 		m_gameCameraController->Update();

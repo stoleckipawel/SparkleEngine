@@ -18,7 +18,7 @@ class GltfImportDiagnosticLog final
 	static void ReportLoadedScene(const std::filesystem::path& filePath, const SourceImportResult& result);
 
 	static void ReportIgnoredAnimations(std::size_t count, SourceImportResult& result);
-	static void ReportImportedAnimationsNotPlayed(std::size_t count, SourceImportResult& result);
+	static void ReportImportedAnimationsForPlayback(std::size_t count);
 	static void ReportIgnoredMaterialVariants(std::size_t count, SourceImportResult& result);
 	static void ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredWeightedNodes(std::size_t count, SourceImportResult& result);

@@ -34,7 +34,22 @@ struct MeshInstanceData
 	row_major float3x4 WorldInvTransposeMTX;
 	uint MaterialSlot;
 	uint Flags;
-	uint2 Padding;
+	uint JointMatrixOffset;
+	uint Padding;
+};
+
+static const uint MeshInstanceFlag_Skinned = 1u << 0u;
+static const uint InvalidMeshInstanceJointMatrixOffset = 0xFFFFFFFFu;
+
+struct VertexSkinInfluenceData
+{
+	uint4 JointIndices;
+	float4 JointWeights;
+};
+
+struct JointMatrixData
+{
+	row_major float4x4 SkinningMTX;
 };
 
 cbuffer MeshInstanceDrawConstantBufferData
@@ -44,6 +59,8 @@ cbuffer MeshInstanceDrawConstantBufferData
 };
 
 StructuredBuffer<MeshInstanceData> MeshInstances;
+StructuredBuffer<VertexSkinInfluenceData> SkinInfluences;
+StructuredBuffer<JointMatrixData> JointMatrices;
 
 cbuffer PerObjectPSConstantBufferData
 {
