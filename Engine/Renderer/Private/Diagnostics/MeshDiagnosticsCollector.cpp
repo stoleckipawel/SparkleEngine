@@ -95,15 +95,16 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 	const MeshSnapshot meshSnapshot = sceneMeshes.CaptureSnapshot();
 	std::vector<MeshRenderItem> renderItems;
 	renderItems.reserve(meshSnapshot.meshInstances.size());
+	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(meshSnapshot);
 	MeshGeometryInstancingDiagnostics& instancingDiagnostics = snapshot.GeometryInstancing;
-	instancingDiagnostics.RuntimeInstanceGroupCount = static_cast<std::uint32_t>(meshSnapshot.meshInstanceGroups.size());
-	for (const MeshInstanceGroupSnapshot& group : meshSnapshot.meshInstanceGroups)
+	instancingDiagnostics.RuntimeInstanceGroupCount = static_cast<std::uint32_t>(renderInstanceGroups.size());
+	for (const RenderMeshInstanceGroup& group : renderInstanceGroups)
 	{
-		if (group.groupKind == SceneMeshInstanceGroupKind::AuthoredInstanceGroup)
+		if (group.groupKind == RenderMeshInstanceGroupKind::AuthoredInstanceGroup)
 		{
 			++instancingDiagnostics.RuntimeAuthoredGroupCount;
 		}
-		else if (group.groupKind == SceneMeshInstanceGroupKind::SharedMeshReference)
+		else if (group.groupKind == RenderMeshInstanceGroupKind::SharedMeshReference)
 		{
 			++instancingDiagnostics.RuntimeSharedMeshReferenceGroupCount;
 		}
@@ -116,11 +117,6 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		}
 
 		const GPUMesh* gpuMesh = gpuMeshCache != nullptr ? gpuMeshCache->Find(*meshInstance.mesh) : nullptr;
-		RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
-		if (meshInstance.instanceGroupIndex < meshSnapshot.meshInstanceGroups.size())
-		{
-			instanceGroupKind = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupKind(meshSnapshot.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind);
-		}
 
 		renderItems.push_back(
 		    MeshRenderItem{
@@ -132,11 +128,9 @@ MeshDiagnosticsSnapshot MeshDiagnosticsCollector::Capture(const SceneMeshes& sce
 		            .meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind),
 		            .gpuMesh = gpuMesh},
 		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
-		        .instanceGroupKind = instanceGroupKind,
 		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
 	}
 
-	const std::vector<RenderMeshInstanceGroup> renderInstanceGroups = RenderMeshSnapshotAdapter::BuildRenderMeshInstanceGroups(meshSnapshot);
 	MeshInstanceBatchBuilder batchBuilder;
 	MeshGeometryInstancingDiagnostics batchDiagnostics = batchBuilder.Build(
 	    renderItems,

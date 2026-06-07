@@ -4,6 +4,7 @@
 #include "Assets/SceneAssetPayload.h"
 #include "Scene/Camera/SceneCameraEntry.h"
 #include "Scene/Camera/SceneCameras.h"
+#include "Scene/Animations/SceneAnimations.h"
 #include "Scene/Lighting/SceneLighting.h"
 #include "Scene/Materials/SceneMaterials.h"
 #include "Scene/Meshes/SceneAssetMeshComponentFactory.h"
@@ -20,15 +21,16 @@ GameSceneAssetPayloadAppender::GameSceneAssetPayloadAppender(
     SceneMaterials& materials,
     SceneMeshes& meshes,
     SceneSkeletons& skeletons,
+    SceneAnimations& animations,
     SceneTextures& textures) noexcept :
-    m_cameras(cameras), m_lighting(lighting), m_materials(materials), m_meshes(meshes), m_skeletons(skeletons), m_textures(textures)
+    m_cameras(cameras), m_lighting(lighting), m_materials(materials), m_meshes(meshes), m_skeletons(skeletons), m_animations(animations), m_textures(textures)
 {
 }
 
 bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload)
 {
 	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty() &&
-	    sceneAssetPayload.skeletons.empty())
+	    sceneAssetPayload.skeletons.empty() && sceneAssetPayload.animations.empty())
 	{
 		return false;
 	}
@@ -36,6 +38,11 @@ bool GameSceneAssetPayloadAppender::Append(SceneAssetPayload&& sceneAssetPayload
 	if (!sceneAssetPayload.skeletons.empty())
 	{
 		m_skeletons.AppendSkeletons(std::move(sceneAssetPayload.skeletons));
+	}
+
+	if (!sceneAssetPayload.animations.empty())
+	{
+		m_animations.AppendClips(std::move(sceneAssetPayload.animations));
 	}
 
 	if (!sceneAssetPayload.materials.empty())

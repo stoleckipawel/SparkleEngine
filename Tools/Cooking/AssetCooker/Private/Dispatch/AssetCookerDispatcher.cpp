@@ -12,6 +12,7 @@
 #include "CookedMeshAssetBuilder.h"
 #include "CookedMeshAssetWriter.h"
 #include "CookedSkeletonAssetWriter.h"
+#include "CookedAnimationAssetWriter.h"
 #include "MaterialCooker.h"
 #include "SceneCooker.h"
 #include "SourceSceneImporter.h"
@@ -498,6 +499,12 @@ static bool AssetCookerCookImportedScene(
 	}
 
 	if (!CookedSkeletonAssetWriter::WriteSkeletonAssets(build.outputs.skeletonAssets, build.status.errorMessage))
+	{
+		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
+		return false;
+	}
+
+	if (!CookedAnimationAssetWriter::WriteAnimationAssets(build.outputs.animationAssets, build.status.errorMessage))
 	{
 		diagnostics.AddError(AssetCookerCategory_SceneAssets, build.status.errorMessage, sceneEntry.sourcePath);
 		return false;

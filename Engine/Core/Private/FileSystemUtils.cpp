@@ -187,6 +187,7 @@ namespace
 		std::filesystem::path cookedMeshRootPath;
 		std::filesystem::path cookedMaterialRootPath;
 		std::filesystem::path cookedSkeletonRootPath;
+		std::filesystem::path cookedAnimationRootPath;
 		std::filesystem::path sceneAssetRegistryPath;
 		std::filesystem::path shaderCacheRootPath;
 		std::filesystem::path shaderDebugArtifactRootPath;
@@ -245,6 +246,7 @@ namespace
 		state.cookedMeshRootPath = Paths::Normalize(state.cookedAssetRootPath / "Meshes");
 		state.cookedMaterialRootPath = Paths::Normalize(state.cookedAssetRootPath / "Materials");
 		state.cookedSkeletonRootPath = Paths::Normalize(state.cookedAssetRootPath / "Skeletons");
+		state.cookedAnimationRootPath = Paths::Normalize(state.cookedAssetRootPath / "Animations");
 		state.sceneAssetRegistryPath = Paths::Normalize(state.cookedAssetRootPath / "SceneAssetRegistry.sreg");
 		state.shaderSymbolsOutputPath = Paths::Normalize(state.buildOutputRootPath / "ShaderSymbols" / cookedProjectName);
 	}
@@ -269,6 +271,8 @@ namespace
 		std::filesystem::create_directories(state.cookedMaterialRootPath, ec);
 		ec.clear();
 		std::filesystem::create_directories(state.cookedSkeletonRootPath, ec);
+		ec.clear();
+		std::filesystem::create_directories(state.cookedAnimationRootPath, ec);
 		ec.clear();
 		std::filesystem::create_directories(state.shaderCacheRootPath, ec);
 
@@ -328,6 +332,7 @@ namespace
 		logPath("Cooked Asset Root", state.cookedAssetRootPath, true);
 		logPath("Cooked Shader Root", state.cookedShaderRootPath, true);
 		logPath("Cooked Skeleton Root", state.cookedSkeletonRootPath, true);
+		logPath("Cooked Animation Root", state.cookedAnimationRootPath, true);
 		logPath("Shader Cache Root", state.shaderCacheRootPath, true);
 		logPath("Engine", state.enginePath, !state.packageRuntimeRoot);
 		logPath("Engine Assets", state.engineAssetsPath, !state.packageRuntimeRoot);
@@ -596,6 +601,11 @@ namespace Filesystem
 	const std::filesystem::path& GetCookedSkeletonRootPath()
 	{
 		return GetAssetPathState().cookedSkeletonRootPath;
+	}
+
+	const std::filesystem::path& GetCookedAnimationRootPath()
+	{
+		return GetAssetPathState().cookedAnimationRootPath;
 	}
 
 	const std::filesystem::path& GetSceneAssetRegistryPath()

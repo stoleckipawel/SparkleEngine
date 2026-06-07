@@ -85,20 +85,12 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		draw.meshKind = RenderMeshSnapshotAdapter::ToRenderMeshKind(meshInstance.meshKind);
 		draw.gpuMesh = gpuMesh;
 
-		RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
-		if (meshInstance.instanceGroupIndex < sceneSnapshot.meshes.meshInstanceGroups.size())
-		{
-			instanceGroupKind =
-			    RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupKind(sceneSnapshot.meshes.meshInstanceGroups[meshInstance.instanceGroupIndex].groupKind);
-		}
-
 		renderItems.push_back(
 		    MeshRenderItem{
 		        .draw = draw,
 		        .materialBindingSet = draw.materialSlot < sceneData.materials.size() ? sceneData.materials[draw.materialSlot].textureBindingSet
 		                                                                           : nullptr,
 		        .instanceGroupIndex = RenderMeshSnapshotAdapter::ToRenderMeshInstanceGroupIndex(meshInstance.instanceGroupIndex),
-		        .instanceGroupKind = instanceGroupKind,
 		        .sourceInstanceIndex = static_cast<std::uint32_t>(renderItems.size())});
 	}
 

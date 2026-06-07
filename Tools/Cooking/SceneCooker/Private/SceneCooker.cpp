@@ -2,6 +2,7 @@
 
 #include "SceneCooker.h"
 
+#include "Features/Animations/CookedSceneAnimationBuilder.h"
 #include "Features/Cameras/CookedSceneCameraBuilder.h"
 #include "Features/Instances/CookedSceneInstanceBuilder.h"
 #include "Features/Lights/CookedSceneLightBuilder.h"
@@ -43,9 +44,15 @@ namespace
 			return false;
 		}
 
-		if (!build.manifest.animationRefs.empty())
+		if (build.manifest.animationRefs.size() != importResult.scene.animations.size())
 		{
-			outErrorMessage = "Cooked scene animation refs are present before animation asset cooking is implemented";
+			outErrorMessage = "Cooked scene animation metadata count does not match imported animation count";
+			return false;
+		}
+
+		if (build.outputs.animationAssets.size() != build.manifest.animationRefs.size())
+		{
+			outErrorMessage = "Cooked scene animation asset count does not match animation ref count";
 			return false;
 		}
 
@@ -82,6 +89,7 @@ bool SceneCooker::BuildManifest(
 	outBuild.manifest.instances.clear();
 	outBuild.manifest.instanceGroups.clear();
 	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
+	CookedSceneAnimationBuilder::BuildAnimations(importResult, outBuild.identity.assetId, outBuild);
 	if (!CookedSceneInstanceBuilder::BuildInstances(importResult, outBuild, outErrorMessage))
 	{
 		return false;

@@ -5,6 +5,7 @@
 #include "Assets/Cooked/LoadedSceneManifest.h"
 #include "Assets/Loaders/SceneManifestLoader.h"
 #include "Assets/Payload/SceneAssetPayloadMaterialAppender.h"
+#include "Assets/Payload/SceneAssetPayloadAnimationAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMeshAppender.h"
 #include "Assets/Payload/SceneAssetPayloadMetadataAppender.h"
 #include "Assets/Payload/SceneAssetPayloadSkeletonAppender.h"
@@ -63,7 +64,8 @@ namespace Assets
 		        instanceBaseIndex,
 		        materialBaseIndex,
 		        errorMessage) ||
-		    !SceneAssetPayloadSkeletonAppender::AppendSkeletons(sceneManifest, sceneAssetPayload, errorMessage))
+		    !SceneAssetPayloadSkeletonAppender::AppendSkeletons(sceneManifest, sceneAssetPayload, errorMessage) ||
+		    !SceneAssetPayloadAnimationAppender::AppendAnimations(sceneManifest, sceneAssetPayload, errorMessage))
 		{
 			return false;
 		}

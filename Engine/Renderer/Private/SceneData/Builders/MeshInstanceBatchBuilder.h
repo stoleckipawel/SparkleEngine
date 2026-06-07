@@ -15,7 +15,6 @@ struct MeshRenderItem final
 	MeshDraw draw;
 	const RenderBindingSet* materialBindingSet = nullptr;
 	RenderMeshInstanceGroupIndex instanceGroupIndex = kInvalidRenderMeshInstanceGroupIndex;
-	RenderMeshInstanceGroupKind instanceGroupKind = RenderMeshInstanceGroupKind::None;
 	std::uint32_t sourceInstanceIndex = 0;
 	std::uint32_t renderStateKey = 0;
 	std::uint32_t renderLayer = 0;

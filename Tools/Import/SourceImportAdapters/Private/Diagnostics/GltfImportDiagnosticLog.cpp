@@ -57,12 +57,13 @@ void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& fil
 	    g_gltfImportDiagnosticLogger,
 	    "{}",
 	    std::format(
-	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} cameras, {} lights, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
+	        "GltfImporter: Loaded '{}' - {} mesh primitives, {} mesh instances, {} cameras, {} lights, {} animation clips, {} materials, textures={}, warnings={}, instancing uniquePrimitiveCandidates={}, placements={}, authoredGroups={}",
 	        filePath.filename().string(),
 	        result.scene.meshPrimitives.size(),
 	        result.scene.meshInstances.size(),
 	        result.scene.cameras.size(),
 	        result.scene.lights.size(),
+	        result.scene.animations.size(),
 	        result.scene.materials.size(),
 	        result.diagnostics.textures.resolvedTextureBindingCount,
 	        result.diagnostics.issues.warningMessageCount,
@@ -74,6 +75,15 @@ void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& fil
 void GltfImportDiagnosticLog::ReportIgnoredAnimations(std::size_t count, SourceImportResult& result)
 {
 	SPDLOG_LOGGER_WARN(g_gltfImportDiagnosticLogger, "{}", std::format("GltfImporter: {} animations are present and will be ignored", count));
+	SourceImportDiagnosticsRecorder::RecordWarning(result);
+}
+
+void GltfImportDiagnosticLog::ReportImportedAnimationsNotPlayed(std::size_t count, SourceImportResult& result)
+{
+	SPDLOG_LOGGER_WARN(
+	    g_gltfImportDiagnosticLogger,
+	    "{}",
+	    std::format("GltfImporter: {} animation clips imported as cooked metadata; runtime playback is disabled until the pose system lands", count));
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 

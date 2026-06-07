@@ -3,6 +3,7 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Level/LevelDesc.h"
 #include "GameFramework/Public/Scene/Camera/SceneCameras.h"
+#include "GameFramework/Public/Scene/Animations/SceneAnimations.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLighting.h"
 #include "GameFramework/Public/Scene/Materials/SceneMaterials.h"
 #include "GameFramework/Public/Scene/Meshes/SceneMeshes.h"
@@ -62,9 +63,12 @@ class SPARKLE_ENGINE_API GameScene final
 	const SceneTextures& GetTextures() const noexcept { return m_textures; }
 	SceneSkeletons& GetSkeletons() noexcept { return m_skeletons; }
 	const SceneSkeletons& GetSkeletons() const noexcept { return m_skeletons; }
+	SceneAnimations& GetAnimations() noexcept { return m_animations; }
+	const SceneAnimations& GetAnimations() const noexcept { return m_animations; }
 
   private:
 	SceneCameras m_cameras;
+	SceneAnimations m_animations;
 	SceneLighting m_lighting;
 	SceneMaterials m_materials;
 	SceneMeshes m_meshes;

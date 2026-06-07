@@ -7,6 +7,7 @@ class SceneLighting;
 class SceneMaterials;
 class SceneMeshes;
 class SceneSkeletons;
+class SceneAnimations;
 class SceneTextures;
 
 class GameSceneAssetPayloadAppender final
@@ -18,6 +19,7 @@ class GameSceneAssetPayloadAppender final
 	    SceneMaterials& materials,
 	    SceneMeshes& meshes,
 	    SceneSkeletons& skeletons,
+	    SceneAnimations& animations,
 	    SceneTextures& textures) noexcept;
 
 	bool Append(SceneAssetPayload&& sceneAssetPayload);
@@ -28,5 +30,6 @@ class GameSceneAssetPayloadAppender final
 	SceneMaterials& m_materials;
 	SceneMeshes& m_meshes;
 	SceneSkeletons& m_skeletons;
+	SceneAnimations& m_animations;
 	SceneTextures& m_textures;
 };

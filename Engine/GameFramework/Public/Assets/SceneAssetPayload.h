@@ -4,6 +4,7 @@
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "GameFramework/Public/Assets/SceneMeshAssetPayload.h"
 #include "GameFramework/Public/Scene/Materials/MaterialDesc.h"
+#include "GameFramework/Public/Scene/Animations/SceneAnimation.h"
 #include "GameFramework/Public/Scene/Skeletons/SceneSkeleton.h"
 #include "GameFramework/Public/Scene/Camera/CameraDesc.h"
 #include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
@@ -50,6 +51,7 @@ struct SPARKLE_ENGINE_API SceneAssetPayload
 	std::vector<Camera> cameras;
 	std::vector<SceneLightDesc> lights;
 	std::vector<SceneSkeletonDesc> skeletons;
+	std::vector<SceneAnimationClipDesc> animations;
 	std::vector<MaterialDesc> materials;
 	SceneAssetPayloadDiagnostics diagnostics;
 

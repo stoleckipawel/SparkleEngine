@@ -19,6 +19,7 @@ struct SourceImportResult
 	std::size_t GetMeshInstanceGroupCount() const noexcept { return scene.GetMeshInstanceGroupCount(); }
 	std::size_t GetCameraCount() const noexcept { return scene.GetCameraCount(); }
 	std::size_t GetLightCount() const noexcept { return scene.GetLightCount(); }
+	std::size_t GetAnimationCount() const noexcept { return scene.GetAnimationCount(); }
 	std::size_t GetMaterialCount() const noexcept { return scene.GetMaterialCount(); }
 	std::string_view GetImporterName() const noexcept { return scene.importerName; }
 

@@ -57,6 +57,5 @@ namespace
 
 void CookedSceneMetadataBuilder::BuildMetadata(const SourceImportResult& importResult, CookedSceneBuild& outBuild)
 {
-	outBuild.manifest.animationRefs.clear();
 	outBuild.manifest.header.featureFlags = BuildFeatureFlags(importResult);
 }
