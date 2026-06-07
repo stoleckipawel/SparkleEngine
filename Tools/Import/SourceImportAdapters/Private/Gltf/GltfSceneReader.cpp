@@ -91,11 +91,6 @@ void GltfSceneReader::CollectSceneWarnings(const cgltf_data* data, SourceImportR
 		GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(sceneFeatures.materialVariantCount, result);
 	}
 
-	if (sceneFeatures.weightedNodeCount > 0)
-	{
-		GltfImportDiagnosticLog::ReportIgnoredWeightedNodes(sceneFeatures.weightedNodeCount, result);
-	}
-
 }
 
 

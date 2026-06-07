@@ -38,6 +38,18 @@ namespace Assets
 			Assets::CookedMeshAssetKind kind = Assets::CookedMeshAssetKind::Static;
 			SceneMeshAssetIndex payloadMeshAssetIndex = kInvalidSceneMeshAssetIndex;
 		};
+
+		std::vector<float> ResolveMorphWeights(const LoadedSceneManifest& sceneManifest, const CookedSceneInstanceRecord& instanceRecord)
+		{
+			if (instanceRecord.firstMorphWeight == kInvalidCookedSceneMorphWeightIndex || instanceRecord.morphWeightCount == 0u)
+			{
+				return {};
+			}
+
+			const auto first = sceneManifest.morphWeights.begin() + instanceRecord.firstMorphWeight;
+			const auto last = first + instanceRecord.morphWeightCount;
+			return std::vector<float>(first, last);
+		}
 	}  // namespace
 
 	bool SceneAssetPayloadMeshAppender::AppendMeshAssets(
@@ -161,6 +173,7 @@ namespace Assets
 				skeletalMeshInstance.transform = transform;
 				skeletalMeshInstance.material = material;
 				skeletalMeshInstance.skeletonAssetId = sceneManifest.skeletonRefs[instanceRecord.skeletonRefIndex].skeletonAssetId;
+				skeletalMeshInstance.morphWeights = ResolveMorphWeights(sceneManifest, instanceRecord);
 				sceneAssetPayload.skeletalMeshInstances.push_back(std::move(skeletalMeshInstance));
 			}
 			else

@@ -44,7 +44,12 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 		    .vertexStride = sizeof(Assets::CookedMeshVertex),
 		    .indexStride = sizeof(std::uint32_t),
 		    .skinInfluenceStride = sizeof(Assets::CookedMeshSkinInfluence),
-		    .flags = meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u,
+		    .morphTargetCount = static_cast<std::uint32_t>(meshAsset.morphTargets.size()),
+		    .morphTargetDeltaCount = static_cast<std::uint32_t>(meshAsset.morphTargetDeltas.size()),
+		    .morphTargetRecordStride = sizeof(Assets::CookedMeshMorphTargetRecord),
+		    .morphTargetDeltaStride = sizeof(Assets::CookedMeshMorphTargetDelta),
+		    .flags = (meshAsset.HasSkinInfluences() ? Assets::CookedMeshAssetFlag_HasSkinInfluences : 0u) |
+		             (meshAsset.HasMorphTargets() ? Assets::CookedMeshAssetFlag_HasMorphTargets : 0u),
 		    .assetKind = meshAsset.assetKind};
 		std::ofstream output;
 		if (!Files::TryOpenBinaryOutput(outputPath, output, outErrorMessage))
@@ -55,7 +60,9 @@ bool CookedMeshAssetWriter::WriteMeshAssets(const std::vector<CookedMeshAssetBui
 		if (!Files::BinaryStreamWriter::WriteValue(output, header, outErrorMessage) ||
 		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.vertices, outErrorMessage) ||
 		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.indices, outErrorMessage) ||
-		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, outErrorMessage))
+		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.skinInfluences, outErrorMessage) ||
+		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargets, outErrorMessage) ||
+		    !Files::BinaryStreamWriter::WriteArray(output, meshAsset.morphTargetDeltas, outErrorMessage))
 		{
 			return false;
 		}

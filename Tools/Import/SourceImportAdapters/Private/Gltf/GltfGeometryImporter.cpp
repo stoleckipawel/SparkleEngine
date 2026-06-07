@@ -6,6 +6,7 @@
 #include "Gltf/GltfMeshGeometryExtractor.h"
 #include "Gltf/GltfMeshInstanceAppender.h"
 #include "Gltf/GltfMeshInstancingImporter.h"
+#include "Gltf/GltfMorphTargetImporter.h"
 #include "Gltf/GltfNodeTransformUtils.h"
 #include "Gltf/GltfPrimitiveMaterialResolver.h"
 #include "Gltf/GltfSkinImporter.h"
@@ -76,11 +77,6 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				continue;
 			}
 
-			if (primitive.targets_count > 0)
-			{
-				GltfImportDiagnosticLog::ReportIgnoredMorphTargets(primitiveLabel, result);
-			}
-
 			if (primitive.has_draco_mesh_compression)
 			{
 				GltfImportDiagnosticLog::ReportSkippedDracoPrimitive(primitiveLabel, result);
@@ -95,11 +91,16 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 			ImportedMeshPrimitiveIndex importedPrimitiveIndex = FindImportedPrimitiveIndex(result.scene, sourceMeshIndex, sourcePrimitiveIndex);
 			if (importedPrimitiveIndex == kInvalidImportedMeshPrimitiveIndex)
 			{
-				ImportedMeshGeometry meshGeometry = GltfMeshGeometryExtractor::ExtractMeshGeometry(primitive);
+				ImportedMeshGeometry meshGeometry = GltfMeshGeometryExtractor::ExtractMeshGeometry(*node.mesh, primitive);
 				if (!meshGeometry.IsValid())
 				{
 					GltfImportDiagnosticLog::ReportSkippedIncompletePrimitive(primitiveLabel, result);
 					continue;
+				}
+
+				if (primitive.targets_count > 0 && (!meshGeometry.HasSkinInfluences() || !meshGeometry.HasMorphTargets()))
+				{
+					GltfImportDiagnosticLog::ReportIgnoredMorphTargets(primitiveLabel, result);
 				}
 
 				ImportedMeshPrimitive primitiveEntry;
@@ -112,6 +113,12 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 			}
 
 			const ImportedMaterialIndex materialIndex = GltfPrimitiveMaterialResolver::Resolve(primitive, data, primitiveLabel, result);
+			std::vector<float> morphWeights;
+			const ImportedMeshGeometry& importedGeometry = result.scene.meshPrimitives[importedPrimitiveIndex].geometry;
+			if (importedGeometry.HasSkinInfluences() && importedGeometry.HasMorphTargets())
+			{
+				morphWeights = GltfMorphTargetImporter::BuildNodeMorphWeights(*node.mesh, node.weights, node.weights_count);
+			}
 			if (importMeshGpuInstancing)
 			{
 				GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
@@ -122,7 +129,8 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				    worldTransform,
 				    skeletonIndex,
 				    static_cast<std::uint32_t>(nodeIndex),
-				    node.name ? std::string_view(node.name) : std::string_view());
+				    node.name ? std::string_view(node.name) : std::string_view(),
+				    morphWeights);
 			}
 			else
 			{
@@ -134,7 +142,8 @@ void GltfGeometryImporter::ImportGeometry(const cgltf_data* data, SourceImportRe
 				    kInvalidImportedMeshInstanceGroupIndex,
 				    skeletonIndex,
 				    static_cast<std::uint32_t>(nodeIndex),
-				    node.name ? std::string_view(node.name) : std::string_view());
+				    node.name ? std::string_view(node.name) : std::string_view(),
+				    morphWeights);
 			}
 		}
 	}

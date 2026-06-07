@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 
 #include <cstdint>
+#include <span>
 #include <string_view>
 
 class GltfMeshInstanceAppender final
@@ -19,7 +20,8 @@ class GltfMeshInstanceAppender final
 	    ImportedMeshInstanceGroupIndex groupIndex,
 	    ImportedSkeletonIndex skeletonIndex,
 	    std::uint32_t sourceNodeIndex,
-	    std::string_view sourceNodeName);
+	    std::string_view sourceNodeName,
+	    std::span<const float> morphWeights = {});
 
 	static void AppendMeshGpuInstancingGroup(
 	    SourceImportResult& result,
@@ -29,5 +31,6 @@ class GltfMeshInstanceAppender final
 	    DirectX::FXMMATRIX nodeWorldTransform,
 	    ImportedSkeletonIndex skeletonIndex,
 	    std::uint32_t sourceNodeIndex,
-	    std::string_view sourceNodeName);
+	    std::string_view sourceNodeName,
+	    std::span<const float> morphWeights = {});
 };

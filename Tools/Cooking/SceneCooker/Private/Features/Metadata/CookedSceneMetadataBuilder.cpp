@@ -35,7 +35,17 @@ namespace
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::Animations);
 		}
 
-		if (importResult.diagnostics.sceneFeatures.morphTargetPrimitiveCount > 0 || importResult.diagnostics.sceneFeatures.weightedNodeCount > 0)
+		bool hasSkeletalMorphTargets = false;
+		for (const ImportedMeshPrimitive& primitive : importResult.scene.meshPrimitives)
+		{
+			if (primitive.geometry.HasSkinInfluences() && primitive.geometry.HasMorphTargets())
+			{
+				hasSkeletalMorphTargets = true;
+				break;
+			}
+		}
+
+		if (hasSkeletalMorphTargets)
 		{
 			AddFeatureFlag(flags, Assets::CookedSceneFeatureFlags::MorphTargets);
 		}

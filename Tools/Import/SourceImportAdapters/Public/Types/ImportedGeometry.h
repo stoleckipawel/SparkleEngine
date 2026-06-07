@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Public/Math/MathUtils.h"
+#include "ImportedMeshDeformation.h"
 #include "ImportedSceneIndices.h"
-#include "ImportedSkin.h"
 
 #include <DirectXMath.h>
 
@@ -26,7 +26,6 @@ struct ImportedVertex
 	DirectX::XMFLOAT4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 	DirectX::XMFLOAT3 normal = {0.0f, 1.0f, 0.0f};
 	DirectX::XMFLOAT4 tangent = {1.0f, 0.0f, 0.0f, 1.0f};
-	ImportedSkinInfluence skinInfluence;
 };
 
 static_assert(std::is_trivially_copyable_v<ImportedVertex>, "ImportedVertex must be trivially copyable for mesh cooking");
@@ -35,9 +34,11 @@ struct ImportedMeshGeometry
 {
 	std::vector<ImportedVertex> vertices;
 	std::vector<std::uint32_t> indices;
-	bool hasSkinInfluences = false;
+	ImportedMeshDeformation deformation;
 
 	bool IsValid() const noexcept { return !vertices.empty() && !indices.empty(); }
+	bool HasSkinInfluences() const noexcept { return deformation.HasSkinInfluences(); }
+	bool HasMorphTargets() const noexcept { return deformation.HasMorphTargets(); }
 
 	void Reserve(std::uint32_t vertexCount, std::uint32_t indexCount)
 	{
@@ -60,6 +61,7 @@ struct ImportedMeshInstance
 	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
 	ImportedMeshInstanceGroupIndex groupIndex = kInvalidImportedMeshInstanceGroupIndex;
 	ImportedSkeletonIndex skeletonIndex = kInvalidImportedSkeletonIndex;
+	std::vector<float> morphWeights;
 	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 	std::string sourceNodeName;

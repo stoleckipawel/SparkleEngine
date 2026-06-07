@@ -35,6 +35,7 @@ namespace Assets
 		}
 
 		const bool hasSkinInfluences = (header.flags & CookedMeshAssetFlag_HasSkinInfluences) != 0u;
+		const bool hasMorphTargets = (header.flags & CookedMeshAssetFlag_HasMorphTargets) != 0u;
 		const bool isSkeletal = header.assetKind == CookedMeshAssetKind::Skeletal;
 		if (header.assetKind != CookedMeshAssetKind::Static && header.assetKind != CookedMeshAssetKind::Skeletal)
 		{
@@ -49,13 +50,26 @@ namespace Assets
 			outErrorMessage = "Invalid cooked mesh skin influence stream";
 			return false;
 		}
+		if ((!isSkeletal && hasMorphTargets) ||
+		    (hasMorphTargets && (header.morphTargetCount == 0u || header.morphTargetDeltaCount == 0u)) ||
+		    (!hasMorphTargets && (header.morphTargetCount != 0u || header.morphTargetDeltaCount != 0u)) ||
+		    header.morphTargetRecordStride != sizeof(CookedMeshMorphTargetRecord) ||
+		    header.morphTargetDeltaStride != sizeof(CookedMeshMorphTargetDelta))
+		{
+			outErrorMessage = "Invalid cooked mesh morph target stream";
+			return false;
+		}
 
 		std::vector<CookedMeshVertex> cookedVertices;
 		std::vector<std::uint32_t> cookedIndices;
 		std::vector<CookedMeshSkinInfluence> cookedSkinInfluences;
+		std::vector<CookedMeshMorphTargetRecord> cookedMorphTargets;
+		std::vector<CookedMeshMorphTargetDelta> cookedMorphTargetDeltas;
 		if (!reader.ReadArray(header.vertexCount, cookedVertices, outErrorMessage) ||
 		    !reader.ReadArray(header.indexCount, cookedIndices, outErrorMessage) ||
-		    !reader.ReadArray(header.skinInfluenceCount, cookedSkinInfluences, outErrorMessage))
+		    !reader.ReadArray(header.skinInfluenceCount, cookedSkinInfluences, outErrorMessage) ||
+		    !reader.ReadArray(header.morphTargetCount, cookedMorphTargets, outErrorMessage) ||
+		    !reader.ReadArray(header.morphTargetDeltaCount, cookedMorphTargetDeltas, outErrorMessage))
 		{
 			return false;
 		}
@@ -75,10 +89,35 @@ namespace Assets
 			geometry.vertices[vertexIndex] =
 			    VertexData(cookedVertex.position, cookedVertex.uv, cookedVertex.color, cookedVertex.normal, cookedVertex.tangent);
 		}
+		MeshMorphData morphTargets;
+		morphTargets.targets.reserve(cookedMorphTargets.size());
+		for (const CookedMeshMorphTargetRecord& cookedMorphTarget : cookedMorphTargets)
+		{
+			if (cookedMorphTarget.firstDelta > cookedMorphTargetDeltas.size() ||
+			    cookedMorphTarget.deltaCount > cookedMorphTargetDeltas.size() - cookedMorphTarget.firstDelta ||
+			    cookedMorphTarget.deltaCount != header.vertexCount)
+			{
+				outErrorMessage = "Cooked mesh morph target references an invalid delta range";
+				return false;
+			}
+
+			MeshMorphTarget morphTarget;
+			morphTarget.name = cookedMorphTarget.name;
+			morphTarget.defaultWeight = cookedMorphTarget.defaultWeight;
+			morphTarget.deltas.resize(cookedMorphTarget.deltaCount);
+			for (std::uint32_t deltaIndex = 0; deltaIndex < cookedMorphTarget.deltaCount; ++deltaIndex)
+			{
+				const CookedMeshMorphTargetDelta& cookedDelta = cookedMorphTargetDeltas[cookedMorphTarget.firstDelta + deltaIndex];
+				morphTarget.deltas[deltaIndex] =
+				    MeshMorphTargetDelta{.position = cookedDelta.position, .normal = cookedDelta.normal, .tangent = cookedDelta.tangent};
+			}
+			morphTargets.targets.push_back(std::move(morphTarget));
+		}
 		if (isSkeletal)
 		{
 			SkeletalMeshData loadedSkeletalMesh;
 			loadedSkeletalMesh.geometry = std::move(geometry);
+			loadedSkeletalMesh.morphTargets = std::move(morphTargets);
 			loadedSkeletalMesh.skinInfluences.resize(cookedSkinInfluences.size());
 			for (std::size_t influenceIndex = 0; influenceIndex < cookedSkinInfluences.size(); ++influenceIndex)
 			{
@@ -91,7 +130,9 @@ namespace Assets
 		}
 		else
 		{
-			outMeshAsset.payload = std::move(geometry);
+			StaticMeshData loadedStaticMesh;
+			loadedStaticMesh.geometry = std::move(geometry);
+			outMeshAsset.payload = std::move(loadedStaticMesh);
 		}
 
 		outErrorMessage.clear();

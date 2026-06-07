@@ -6,6 +6,7 @@
 #include "Scene/Meshes/CookedMesh.h"
 #include "Scene/Meshes/SkeletalCookedMesh.h"
 #include "Scene/Meshes/SkeletalMeshComponent.h"
+#include "Scene/Meshes/MeshMorphEvaluator.h"
 #include "Scene/Meshes/StaticMeshComponent.h"
 
 #include <memory>
@@ -66,7 +67,7 @@ namespace SceneAssetMeshComponentFactory
 			}
 
 			const SceneAssetPayload::StaticMeshAsset& meshAsset = sceneAssetPayload.staticMeshAssets[meshInstance.meshAssetIndex];
-			MeshData meshData = meshAsset.mesh;
+			MeshData meshData = meshAsset.mesh.geometry;
 			auto mesh = std::make_unique<CookedMesh>(std::move(meshData), meshAsset.assetId);
 			const SceneMeshInstanceGroupIndex sceneGroupIndex = meshInstance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
 			                                                    ? kInvalidSceneMeshInstanceGroupIndex
@@ -90,6 +91,7 @@ namespace SceneAssetMeshComponentFactory
 
 			const SceneAssetPayload::SkeletalMeshAsset& meshAsset = sceneAssetPayload.skeletalMeshAssets[meshInstance.meshAssetIndex];
 			SkeletalMeshData meshData = std::move(meshAsset.mesh);
+			MeshMorphEvaluator::ApplyWeights(meshData.geometry, meshData.morphTargets, meshInstance.morphWeights);
 			auto mesh = std::make_unique<SkeletalCookedMesh>(std::move(meshData), meshAsset.assetId);
 			outMeshComponents.push_back(std::make_unique<SkeletalMeshComponent>(
 			    std::move(mesh),

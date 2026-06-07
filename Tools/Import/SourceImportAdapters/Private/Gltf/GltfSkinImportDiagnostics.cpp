@@ -21,7 +21,7 @@ std::size_t GltfSkinImportDiagnostics::CountSkinnedMeshNodesImportedThroughSkinP
 		}
 
 		const ImportedMeshPrimitive& primitive = result.scene.meshPrimitives[meshInstance.primitiveIndex];
-		if (primitive.geometry.hasSkinInfluences)
+		if (primitive.geometry.HasSkinInfluences())
 		{
 			skinnedSourceNodes.insert(meshInstance.sourceNodeIndex);
 		}

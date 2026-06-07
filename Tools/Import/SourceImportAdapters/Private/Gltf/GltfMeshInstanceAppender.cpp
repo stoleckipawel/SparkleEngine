@@ -12,7 +12,8 @@ void GltfMeshInstanceAppender::AppendMeshInstance(
     ImportedMeshInstanceGroupIndex groupIndex,
     ImportedSkeletonIndex skeletonIndex,
     std::uint32_t sourceNodeIndex,
-    std::string_view sourceNodeName)
+    std::string_view sourceNodeName,
+    std::span<const float> morphWeights)
 {
 	ImportedMeshInstance instanceEntry;
 	instanceEntry.primitiveIndex = importedPrimitiveIndex;
@@ -22,6 +23,7 @@ void GltfMeshInstanceAppender::AppendMeshInstance(
 	DirectX::XMStoreFloat4x4(&instanceEntry.worldTransform, worldTransform);
 	instanceEntry.sourceNodeIndex = sourceNodeIndex;
 	instanceEntry.sourceNodeName = sourceNodeName;
+	instanceEntry.morphWeights.assign(morphWeights.begin(), morphWeights.end());
 	result.scene.meshInstances.push_back(std::move(instanceEntry));
 }
 
@@ -33,7 +35,8 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
     DirectX::FXMMATRIX nodeWorldTransform,
     ImportedSkeletonIndex skeletonIndex,
     std::uint32_t sourceNodeIndex,
-    std::string_view sourceNodeName)
+    std::string_view sourceNodeName,
+    std::span<const float> morphWeights)
 {
 	const ImportedMeshInstanceGroupIndex groupIndex = static_cast<ImportedMeshInstanceGroupIndex>(result.scene.meshInstanceGroups.size());
 	const ImportedMeshInstanceIndex firstInstanceIndex = static_cast<ImportedMeshInstanceIndex>(result.scene.meshInstances.size());
@@ -51,7 +54,8 @@ void GltfMeshInstanceAppender::AppendMeshGpuInstancingGroup(
 		    groupIndex,
 		    skeletonIndex,
 		    sourceNodeIndex,
-		    sourceNodeName);
+		    sourceNodeName,
+		    morphWeights);
 	}
 
 	ImportedMeshInstanceGroup groupEntry;

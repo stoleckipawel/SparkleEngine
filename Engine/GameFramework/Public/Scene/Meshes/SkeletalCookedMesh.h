@@ -3,7 +3,7 @@
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 #include "Mesh.h"
-#include "MeshSkinningData.h"
+#include "SkeletalMeshData.h"
 
 class SPARKLE_ENGINE_API SkeletalCookedMesh final : public Mesh
 {

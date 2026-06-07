@@ -378,6 +378,8 @@ Current validation evidence:
 
 ## Stage 9: Morph Targets and Weighted Nodes
 
+Status: Partially implemented with a revised boundary: morph targets are treated as a skeletal/deformable mesh feature, not a static mesh feature. Static mesh data remains plain geometry and static mesh instances do not carry morph weights. glTF morph target deltas can be parsed into imported deformation data, but MeshCooker only writes morph streams for skeletal mesh assets. Remaining work is a skeletal morph validation sample, runtime mutable morph weight state, and animation channels targeting weights.
+
 Goal: Address morph target and weighted-node warnings after the animation/skinning data model exists.
 
 Why late: Morph targets overlap animation, mesh vertex streams, runtime pose/evaluation state, shader layouts, and memory pressure.
@@ -385,24 +387,32 @@ Why late: Morph targets overlap animation, mesh vertex streams, runtime pose/eva
 Implementation prompt:
 
 ```text
-Implement glTF morph target import and runtime weights.
+Extend glTF morph target import into full runtime weight playback.
 
-Import morph target deltas for positions, normals, and tangents where available. Cook morph target streams as versioned mesh data. Add runtime morph weight state and animation channel evaluation for weights. Update Renderer to blend morph targets either CPU-side, vertex-shader-side, or compute-side through FrameGraph according to the selected architecture.
+Preserve the static/skeletal split. SourceImportAdapters may parse morph target deltas and node/default weights into imported deformation data, but MeshCooker writes morph streams only for skeletal mesh assets. SceneCooker stores per-instance morph weights only for skeletal instances. GameFramework applies default skeletal morph weights before Renderer sees mesh data. Static meshes must not carry morph target streams, morph weights, deformation state, or renderer classification flags. Add runtime mutable morph weight state and animation channel evaluation for skeletal weights. If a GPU or compute morph path replaces CPU default application, route it through RHI-neutral skeletal mesh/FrameGraph data rather than backend-specific renderer branches.
 ```
 
 Acceptance criteria:
 
-- Morph target streams are imported, cooked, loaded, and bound to the correct mesh primitives.
-- Weighted nodes initialize runtime morph weights from glTF defaults.
+- Skeletal morph target streams are imported, cooked, loaded, and bound to the correct skeletal mesh primitives.
+- Skeletal weighted nodes initialize runtime morph weights from glTF defaults.
 - Animation channels targeting weights can drive morph weights if Stage 6 animation playback exists.
 - Renderer path works on D3D12 and Vulkan without backend-specific renderer branches.
-- Existing static and skinned meshes without morph targets keep their old memory/layout path.
+- Static meshes, including static glTF primitives with morph targets, stay on the static path and do not cook/load morph streams.
+- Existing `MorphTriangle` static sample remains useful as negative validation: it reports unsupported static morph targets and weighted nodes instead of polluting the static mesh path.
 
 Validation prompt:
 
 ```text
 Use a glTF sample with visible morph targets, recook, run D3D12 and Vulkan smoke, and verify default and animated weights produce expected mesh deformation without warnings about ignored weighted nodes.
 ```
+
+Current validation notes:
+
+- `ShowcaseRuntime`, `ShowcaseEditor`, `AssetCooker`, and `ShaderCompiler` build in `build-codex-ninja`.
+- `AssetCooker recook Showcase scene DevelopmentEditor --root .` reports static `MorphTriangle/MorphTriangle.gltf` with `weightedNodes=1/unsupported`, `morphTargets=1/unsupported`, and explicit ignored-morph warnings.
+- D3D12 runtime smoke on `MorphTriangle` remains a static-path smoke and reaches frame 20 with no morph feature flag.
+- A skeletal morph sample is still needed before marking Stage 9 functional for imported morph playback.
 
 ## Stage 10: Material Variants and Mesh Instancing
 

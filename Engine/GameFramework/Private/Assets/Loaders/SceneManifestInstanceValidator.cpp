@@ -54,6 +54,27 @@ namespace Assets::SceneManifestInstanceValidator
 				return false;
 			}
 
+			if (instance.firstMorphWeight != kInvalidCookedSceneMorphWeightIndex)
+			{
+				if (instance.morphWeightCount == 0u ||
+				    instance.firstMorphWeight >= manifest.morphWeights.size() ||
+				    instance.morphWeightCount > manifest.morphWeights.size() - instance.firstMorphWeight)
+				{
+					outErrorMessage = std::format(
+					    "Cooked scene instance {} references invalid morph weight range first={} count={} with {} weights",
+					    instanceIndex,
+					    instance.firstMorphWeight,
+					    instance.morphWeightCount,
+					    manifest.morphWeights.size());
+					return false;
+				}
+			}
+			else if (instance.morphWeightCount != 0u)
+			{
+				outErrorMessage = std::format("Cooked scene instance {} has morph weights without a valid first weight index", instanceIndex);
+				return false;
+			}
+
 			return true;
 		}
 

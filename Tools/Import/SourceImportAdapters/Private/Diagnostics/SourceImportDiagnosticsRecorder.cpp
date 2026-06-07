@@ -50,6 +50,23 @@ void SourceImportDiagnosticsRecorder::RecordImportedScenePayload(SourceImportRes
 	result.diagnostics.summary.importedMeshInstanceCount = result.scene.meshInstances.size();
 	result.diagnostics.summary.importedMeshInstanceGroupCount = result.scene.meshInstanceGroups.size();
 	result.diagnostics.summary.importedMaterialCount = result.scene.materials.size();
+	std::size_t importedMorphTargetPrimitiveCount = 0;
+	for (const ImportedMeshPrimitive& primitive : result.scene.meshPrimitives)
+	{
+		importedMorphTargetPrimitiveCount += primitive.geometry.HasSkinInfluences() && primitive.geometry.HasMorphTargets() ? 1u : 0u;
+	}
+	if (importedMorphTargetPrimitiveCount > 0)
+	{
+		result.diagnostics.featureCapabilities.morphTargets = {
+		    result.diagnostics.sceneFeatures.morphTargetPrimitiveCount,
+		    SourceImportFeatureSupport::Imported};
+	}
+	if (result.diagnostics.sceneFeatures.weightedNodeCount > 0 && importedMorphTargetPrimitiveCount > 0)
+	{
+		result.diagnostics.featureCapabilities.weightedNodes = {
+		    result.diagnostics.sceneFeatures.weightedNodeCount,
+		    SourceImportFeatureSupport::Imported};
+	}
 
 	std::size_t resolvedTextureBindingCount = 0;
 	std::size_t alphaMaskMaterialCount = 0;

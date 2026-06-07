@@ -64,6 +64,16 @@ namespace
 
 		return true;
 	}
+
+	bool SupportsMorphWeights(const ImportedMeshInstance& importedInstance, const CookedSceneBuild& build) noexcept
+	{
+		if (importedInstance.primitiveIndex >= build.manifest.meshAssetReferences.size())
+		{
+			return false;
+		}
+
+		return build.manifest.meshAssetReferences[importedInstance.primitiveIndex].meshAssetKind == Assets::CookedMeshAssetKind::Skeletal;
+	}
 }  // namespace
 
 bool CookedSceneInstanceBuilder::BuildInstances(
@@ -115,12 +125,26 @@ bool CookedSceneInstanceBuilder::BuildInstances(
 			skeletonRefIndex = importedInstance.skeletonIndex;
 		}
 
+		std::uint32_t firstMorphWeight = Assets::kInvalidCookedSceneMorphWeightIndex;
+		std::uint32_t morphWeightCount = 0;
+		if (!importedInstance.morphWeights.empty() && SupportsMorphWeights(importedInstance, build))
+		{
+			firstMorphWeight = static_cast<std::uint32_t>(build.manifest.morphWeights.size());
+			morphWeightCount = static_cast<std::uint32_t>(importedInstance.morphWeights.size());
+			build.manifest.morphWeights.insert(
+			    build.manifest.morphWeights.end(),
+			    importedInstance.morphWeights.begin(),
+			    importedInstance.morphWeights.end());
+		}
+
 		build.manifest.instances.push_back(
 		    Assets::CookedSceneInstanceRecord{
 		        .meshAssetIndex = importedInstance.primitiveIndex,
 		        .materialAssetIndex = materialAssetIndex,
 		        .groupIndex = groupIndex,
 		        .skeletonRefIndex = skeletonRefIndex,
+		        .firstMorphWeight = firstMorphWeight,
+		        .morphWeightCount = morphWeightCount,
 		        .worldTransform = importedInstance.worldTransform});
 	}
 

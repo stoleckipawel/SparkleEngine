@@ -6,14 +6,16 @@
 #include "GameFramework/Public/Scene/Materials/MaterialHandle.h"
 #include "GameFramework/Public/Scene/Meshes/MeshData.h"
 #include "GameFramework/Public/Scene/Meshes/MeshInstanceGroup.h"
-#include "GameFramework/Public/Scene/Meshes/MeshSkinningData.h"
+#include "GameFramework/Public/Scene/Meshes/SkeletalMeshData.h"
+#include "GameFramework/Public/Scene/Meshes/StaticMeshData.h"
 #include "GameFramework/Public/Scene/Transform.h"
 
 #include <cstdint>
+#include <vector>
 
 struct SPARKLE_ENGINE_API SceneAssetStaticMeshAsset
 {
-	MeshData mesh;
+	StaticMeshData mesh;
 	Assets::CookedAssetId assetId = Assets::InvalidCookedAssetId;
 };
 
@@ -37,6 +39,7 @@ struct SPARKLE_ENGINE_API SceneAssetSkeletalMeshInstance
 	Transform transform;
 	MaterialHandle material;
 	Assets::CookedAssetId skeletonAssetId = Assets::InvalidCookedAssetId;
+	std::vector<float> morphWeights;
 };
 
 struct SPARKLE_ENGINE_API SceneAssetMeshInstanceGroup

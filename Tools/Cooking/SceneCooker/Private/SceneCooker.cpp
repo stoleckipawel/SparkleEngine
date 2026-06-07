@@ -88,6 +88,7 @@ bool SceneCooker::BuildManifest(
 {
 	outBuild.manifest.instances.clear();
 	outBuild.manifest.instanceGroups.clear();
+	outBuild.manifest.morphWeights.clear();
 	CookedSceneSkeletonBuilder::BuildSkeletons(importResult, outBuild.identity.assetId, outBuild);
 	CookedSceneAnimationBuilder::BuildAnimations(importResult, outBuild.identity.assetId, outBuild);
 	if (!CookedSceneInstanceBuilder::BuildInstances(importResult, outBuild, outErrorMessage))
@@ -111,6 +112,7 @@ bool SceneCooker::BuildManifest(
 	outBuild.manifest.header.lightCount = static_cast<std::uint32_t>(outBuild.manifest.lights.size());
 	outBuild.manifest.header.skeletonRefCount = static_cast<std::uint32_t>(outBuild.manifest.skeletonRefs.size());
 	outBuild.manifest.header.animationRefCount = static_cast<std::uint32_t>(outBuild.manifest.animationRefs.size());
+	outBuild.manifest.header.morphWeightCount = static_cast<std::uint32_t>(outBuild.manifest.morphWeights.size());
 	outErrorMessage.clear();
 	return true;
 }
@@ -130,7 +132,8 @@ bool SceneCooker::WriteSceneManifestAndRegistry(const CookedSceneBuild& build, s
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.cameras, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.lights, outErrorMessage) ||
 	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.skeletonRefs, outErrorMessage) ||
-	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationRefs, outErrorMessage))
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.animationRefs, outErrorMessage) ||
+	    !Files::BinaryStreamWriter::WriteArray(manifestOutput, build.manifest.morphWeights, outErrorMessage))
 	{
 		return false;
 	}

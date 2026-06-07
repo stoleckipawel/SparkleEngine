@@ -17,5 +17,6 @@ namespace Assets
 		std::vector<CookedSceneLightRecord> lights;
 		std::vector<CookedSceneSkeletonRef> skeletonRefs;
 		std::vector<CookedSceneAnimationRef> animationRefs;
+		std::vector<float> morphWeights;
 	};
 }

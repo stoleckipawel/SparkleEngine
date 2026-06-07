@@ -12,6 +12,7 @@
 #include "Gltf/GltfGeometryImporter.h"
 #include "Gltf/GltfLightImporter.h"
 #include "Gltf/GltfMaterialImporter.h"
+#include "Gltf/GltfMorphImportDiagnostics.h"
 #include "Gltf/GltfSkinImportDiagnostics.h"
 
 #include <cgltf.h>
@@ -51,6 +52,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	GltfGeometryImporter::ImportGeometry(scene.data, result);
 	GltfAnimationImporter::ImportAnimations(scene.data, result);
 	GltfSkinImportDiagnostics::ReportStaticOnlySkinnedNodes(result);
+	GltfMorphImportDiagnostics::ReportUnsupportedWeightedNodes(result);
 	GltfGeometryInstancingDiagnostics::RecordImportedPlacements(result);
 	SourceImportDiagnosticsRecorder::RecordImportedScenePayload(result);
 

@@ -4,7 +4,9 @@
 
 #include "Core/Public/Hash/HashUtils.h"
 
+#include <algorithm>
 #include <string>
+#include <cstring>
 #include <utility>
 
 namespace
@@ -28,6 +30,21 @@ namespace
 		         skinInfluence.jointWeights[2],
 		         skinInfluence.jointWeights[3]}};
 	}
+
+	Assets::CookedMeshMorphTargetDelta BuildCookedMorphTargetDelta(const ImportedMorphTargetDelta& delta) noexcept
+	{
+		return Assets::CookedMeshMorphTargetDelta{
+		    .position = delta.position,
+		    .normal = delta.normal,
+		    .tangent = delta.tangent};
+	}
+
+	void CopyMorphTargetName(std::string_view sourceName, char (&outName)[Assets::kCookedMeshMorphTargetNameCapacity]) noexcept
+	{
+		const std::size_t copyLength = (std::min)(sourceName.size(), static_cast<std::size_t>(Assets::kCookedMeshMorphTargetNameCapacity - 1u));
+		std::memcpy(outName, sourceName.data(), copyLength);
+		outName[copyLength] = '\0';
+	}
 }  // namespace
 
 MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult& importResult, std::string_view sceneAssetId)
@@ -44,11 +61,11 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 		meshAsset.assetId = BuildMeshAssetId(sceneAssetId, primitiveIndex);
 		meshAsset.displayName = importedPrimitive.displayName;
 		meshAsset.sourcePath = importResult.scene.sourcePath;
-		meshAsset.assetKind = meshGeometry.hasSkinInfluences ? Assets::CookedMeshAssetKind::Skeletal : Assets::CookedMeshAssetKind::Static;
+		meshAsset.assetKind = meshGeometry.HasSkinInfluences() ? Assets::CookedMeshAssetKind::Skeletal : Assets::CookedMeshAssetKind::Static;
 		meshAsset.vertices.reserve(meshGeometry.vertices.size());
-		if (meshGeometry.hasSkinInfluences)
+		if (meshGeometry.HasSkinInfluences())
 		{
-			meshAsset.skinInfluences.reserve(meshGeometry.vertices.size());
+			meshAsset.skinInfluences.reserve(meshGeometry.deformation.skinInfluences.size());
 		}
 
 		for (const ImportedVertex& vertex : meshGeometry.vertices)
@@ -60,12 +77,36 @@ MeshCookOutput CookedMeshAssetBuilder::BuildMeshAssets(const SourceImportResult&
 			        .color = vertex.color,
 			        .normal = vertex.normal,
 			        .tangent = vertex.tangent});
-			if (meshGeometry.hasSkinInfluences)
-			{
-				meshAsset.skinInfluences.push_back(BuildCookedSkinInfluence(vertex.skinInfluence));
-			}
+		}
+
+		for (const ImportedSkinInfluence& skinInfluence : meshGeometry.deformation.skinInfluences)
+		{
+			meshAsset.skinInfluences.push_back(BuildCookedSkinInfluence(skinInfluence));
 		}
 		meshAsset.indices = meshGeometry.indices;
+		if (meshAsset.IsSkeletal())
+		{
+			meshAsset.morphTargets.reserve(meshGeometry.deformation.morphTargets.size());
+			for (const ImportedMorphTarget& morphTarget : meshGeometry.deformation.morphTargets)
+			{
+				if (!morphTarget.IsValidForVertexCount(static_cast<std::uint32_t>(meshGeometry.vertices.size())))
+				{
+					continue;
+				}
+
+				Assets::CookedMeshMorphTargetRecord record;
+				CopyMorphTargetName(morphTarget.name, record.name);
+				record.defaultWeight = morphTarget.defaultWeight;
+				record.firstDelta = static_cast<std::uint32_t>(meshAsset.morphTargetDeltas.size());
+				record.deltaCount = static_cast<std::uint32_t>(morphTarget.deltas.size());
+				meshAsset.morphTargets.push_back(record);
+				meshAsset.morphTargetDeltas.reserve(meshAsset.morphTargetDeltas.size() + morphTarget.deltas.size());
+				for (const ImportedMorphTargetDelta& delta : morphTarget.deltas)
+				{
+					meshAsset.morphTargetDeltas.push_back(BuildCookedMorphTargetDelta(delta));
+				}
+			}
+		}
 
 		output.assetReferences.push_back({meshAsset.assetId, meshAsset.assetKind});
 		output.assets.push_back(std::move(meshAsset));
