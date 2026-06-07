@@ -34,5 +34,6 @@ struct SPARKLE_RENDERER_API MeshInstanceBatch
 	std::uint32_t materialSlot = 0;
 	std::uint32_t firstInstance = 0;
 	std::uint32_t instanceCount = 0;
+	RenderMeshKind meshKind = RenderMeshKind::Static;
 	MeshInstanceBatchSource source = MeshInstanceBatchSource::AutoBatch;
 };

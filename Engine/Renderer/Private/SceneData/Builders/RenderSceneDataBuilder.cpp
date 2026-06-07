@@ -19,6 +19,39 @@
 
 static const auto g_renderSceneDataBuilderLogger = Logging::GetOrCreateLogger("Renderer.SceneData");
 
+namespace
+{
+	void CountMeshInstanceWorkload(const std::vector<MeshDraw>& meshInstances, RenderMeshWorkloadSummary& outWorkload) noexcept
+	{
+		for (const MeshDraw& meshInstance : meshInstances)
+		{
+			if (meshInstance.meshKind == RenderMeshKind::Skeletal)
+			{
+				++outWorkload.skinnedInstanceCount;
+			}
+			else
+			{
+				++outWorkload.staticInstanceCount;
+			}
+		}
+	}
+
+	void CountMeshBatchWorkload(const std::vector<MeshInstanceBatch>& meshBatches, RenderMeshWorkloadSummary& outWorkload) noexcept
+	{
+		for (const MeshInstanceBatch& batch : meshBatches)
+		{
+			if (batch.meshKind == RenderMeshKind::Skeletal)
+			{
+				++outWorkload.skinnedBatchCount;
+			}
+			else
+			{
+				++outWorkload.staticBatchCount;
+			}
+		}
+	}
+}
+
 RenderSceneDataBuilder::RenderSceneDataBuilder(MaterialCacheManager& materialCache, GPUMeshCache& gpuMeshCache) noexcept :
     m_materialCache(&materialCache), m_gpuMeshCache(&gpuMeshCache)
 {
@@ -127,6 +160,10 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	        .collectDiagnostics = true});
 	sceneData.meshInstances = std::move(batchBuildResult.batchInstances);
 	sceneData.meshInstanceBatches = std::move(batchBuildResult.batches);
+	sceneData.meshWorkload = {};
+	sceneData.meshWorkload.jointMatrixCount = static_cast<std::uint32_t>(sceneData.jointMatrices.size());
+	CountMeshInstanceWorkload(sceneData.meshInstances, sceneData.meshWorkload);
+	CountMeshBatchWorkload(sceneData.meshInstanceBatches, sceneData.meshWorkload);
 
 	static bool loggedFirstMeshBatchSummary = false;
 	static bool loggedMissingMeshBatchWarning = false;
@@ -135,10 +172,15 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 		loggedFirstMeshBatchSummary = true;
 		SPDLOG_LOGGER_INFO(
 		    g_renderSceneDataBuilderLogger,
-		    "RenderSceneDataBuilder: prepared {} renderable mesh instances in {} batches from {} scene mesh instances (rejected={}, missingGpuMesh={}, invalidMaterial={}).",
+		    "RenderSceneDataBuilder: prepared {} renderable mesh instances in {} batches from {} scene mesh instances (staticInstances={}, skinnedInstances={}, staticBatches={}, skinnedBatches={}, jointMatrices={}, rejected={}, missingGpuMesh={}, invalidMaterial={}).",
 		    sceneData.meshInstances.size(),
 		    sceneData.meshInstanceBatches.size(),
 		    sceneSnapshot.meshes.meshInstances.size(),
+		    sceneData.meshWorkload.staticInstanceCount,
+		    sceneData.meshWorkload.skinnedInstanceCount,
+		    sceneData.meshWorkload.staticBatchCount,
+		    sceneData.meshWorkload.skinnedBatchCount,
+		    sceneData.meshWorkload.jointMatrixCount,
 		    batchBuildResult.diagnostics.RejectedCandidateCount,
 		    batchBuildResult.diagnostics.RejectedMissingGpuMeshCount,
 		    batchBuildResult.diagnostics.RejectedInvalidMaterialCount);

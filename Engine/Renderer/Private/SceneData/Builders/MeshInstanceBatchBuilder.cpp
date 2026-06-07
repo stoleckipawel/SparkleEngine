@@ -226,6 +226,7 @@ void MeshInstanceBatchBuilder::AppendBatch(
 	        .materialSlot = firstItem.draw.materialSlot,
 	        .firstInstance = firstInstance,
 	        .instanceCount = static_cast<std::uint32_t>(itemIndices.size()),
+	        .meshKind = firstItem.draw.meshKind,
 	        .source = source});
 
 	if (collectDiagnostics)
