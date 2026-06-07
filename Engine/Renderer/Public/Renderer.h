@@ -35,6 +35,7 @@ class ViewLightingBuilder;
 class FrameExecutionDiagnostics;
 class RendererMemoryMonitor;
 class RenderRayTracingScene;
+struct RayTracedShadowSettings;
 struct RenderSceneSnapshot;
 struct ResolvedGpuTiming;
 
@@ -115,6 +116,7 @@ class SPARKLE_RENDERER_API Renderer final
 	RenderProductHandle m_viewportSceneColorHandle = {};
 	RenderProductHandle m_viewportSceneDepthHandle = {};
 	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
+	std::unique_ptr<RayTracedShadowSettings> m_rayTracedShadowSettings;
 	ScopedEventHandle m_resizeHandle;
 	bool m_bResizePending = false;
 };

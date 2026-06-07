@@ -37,6 +37,7 @@ namespace
 		desc.range = (std::max) (0.0f, point.range);
 		desc.color = common.color;
 		desc.intensity = (std::max) (0.0f, common.intensity);
+		desc.castShadow = point.castShadow;
 		return desc;
 	}
 
@@ -50,6 +51,7 @@ namespace
 		desc.color = common.color;
 		desc.intensity = (std::max) (0.0f, common.intensity);
 		desc.outerConeAngleRadians = (std::max) (desc.innerConeAngleRadians, spot.outerConeAngleRadians);
+		desc.castShadow = spot.castShadow;
 		return desc;
 	}
 

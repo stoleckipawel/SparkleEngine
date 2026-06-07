@@ -34,6 +34,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		lighting.PointLights[lightIndex].Range = sourceLight.range;
 		lighting.PointLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};
 		lighting.PointLights[lightIndex].Intensity = sourceLight.intensity;
+		lighting.PointLights[lightIndex].CastShadow = sourceLight.castShadow ? 1u : 0u;
 	}
 
 	for (std::size_t lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
@@ -46,6 +47,7 @@ PerViewLightingConstantBufferData ViewLightingBuilder::Build(const RenderSceneDa
 		lighting.SpotLights[lightIndex].Color = {sourceLight.color.x, sourceLight.color.y, sourceLight.color.z};
 		lighting.SpotLights[lightIndex].Intensity = sourceLight.intensity;
 		lighting.SpotLights[lightIndex].OuterConeCosine = sourceLight.outerConeCosine;
+		lighting.SpotLights[lightIndex].CastShadow = sourceLight.castShadow ? 1u : 0u;
 	}
 
 	return lighting;

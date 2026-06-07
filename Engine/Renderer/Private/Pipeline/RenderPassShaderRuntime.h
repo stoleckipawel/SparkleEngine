@@ -309,7 +309,8 @@ class RenderPassShaderRuntime final
 	    std::string& outErrorMessage)
 	{
 		const RhiCapabilities& capabilities = rhi.GetCapabilities();
-		const CookedShaderPackageFeatureFlags packageFeatures = shaderPackage.GetHeader().PackageFeatures;
+		const CookedShaderPackageFeatureFlags packageFeatures =
+		    shaderPackage.GetHeader().PackageFeatures | desc.Package.RequiredFeatures;
 		if (HasCookedShaderPackageFeature(packageFeatures, CookedShaderPackageFeatureFlags::UsesAccelerationStructure) &&
 		    !capabilities.RayTracing.SupportsRayTracing)
 		{

@@ -3,8 +3,8 @@
 
 ConsoleVariable<RayTracedShadowQualityMode> CVarRayTracedShadowQualityMode(
 	"r.RayTracedShadows.Quality",
-	RayTracedShadowQualityMode::SoftAreaLights,
-	"Ray traced shadow quality: 0=Hard, 1=SoftAreaLights.");
+	RayTracedShadowQualityMode::Hard,
+	"Ray traced shadow quality: 0=Hard, 1=SoftAreaLights (future path).");
 ConsoleVariable<RayTracedShadowDenoiserMode> CVarRayTracedShadowDenoiserMode(
 	"r.RayTracedShadows.Denoiser",
 	RayTracedShadowDenoiserMode::NrdSigma,
@@ -17,3 +17,7 @@ ConsoleVariable<float> CVarRayTracedShadowMaxDistance(
 	"r.RayTracedShadows.MaxDistance",
 	100000.0f,
 	"Maximum ray distance for directional ray traced shadows.");
+ConsoleVariable<bool> CVarRayTracedShadowDiagnosticsEnabled(
+	"r.RayTracedShadows.Diagnostics",
+	false,
+	"Enable additional ray traced shadow diagnostics.");

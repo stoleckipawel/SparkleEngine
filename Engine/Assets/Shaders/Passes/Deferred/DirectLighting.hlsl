@@ -1,6 +1,7 @@
 #include "Resources/ConstantBuffers.hlsli"
 #include "Passes/Deferred/DirectLightingCommon.hlsli"
 #include "Passes/Deferred/GBufferUtils.hlsli"
+#include "Passes/Deferred/RayTracedShadows.hlsli"
 
 RWTexture2D<float4> DirectDiffuseTexture;
 RWTexture2D<float4> DirectSpecularTexture;
@@ -40,6 +41,12 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
+		const float3 lightDirection = DirectLighting::GetDirectionalLightDirection(lightIndex);
+		const float directionalShadowVisibility = RayTracedShadows::TraceDirectionalShadow(
+		    positionWorld,
+		    gBuffer.NormalWorld,
+		    lightDirection,
+		    ViewLighting.DirectionalLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -49,6 +56,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
+		    directionalShadowVisibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);
@@ -60,6 +68,12 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
 	{
+		const float pointShadowVisibility = RayTracedShadows::TracePointShadow(
+		    positionWorld,
+		    gBuffer.NormalWorld,
+		    ViewLighting.PointLights[lightIndex].Position,
+		    ViewLighting.PointLights[lightIndex].Range,
+		    ViewLighting.PointLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -70,6 +84,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
+		    pointShadowVisibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);
@@ -81,6 +96,14 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 
 	[loop] for (uint lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
 	{
+		const float spotShadowVisibility = RayTracedShadows::TraceSpotShadow(
+		    positionWorld,
+		    gBuffer.NormalWorld,
+		    ViewLighting.SpotLights[lightIndex].Position,
+		    ViewLighting.SpotLights[lightIndex].Direction,
+		    ViewLighting.SpotLights[lightIndex].Range,
+		    ViewLighting.SpotLights[lightIndex].OuterConeCosine,
+		    ViewLighting.SpotLights[lightIndex].CastShadow != 0u);
 		float3 lightDiffuse;
 		float3 lightSpecular;
 		float3 lightSubsurface;
@@ -91,6 +114,7 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		    gBuffer.Roughness,
 		    evaluateSubsurface,
 		    lightIndex,
+		    spotShadowVisibility,
 		    lightDiffuse,
 		    lightSpecular,
 		    lightSubsurface);

@@ -3,9 +3,9 @@
 #include "Pipeline/PipelineStateManager.h"
 
 #include "RHI/Public/Device/RenderHardwareInterface.h"
+#include "RayTracing/RenderRayTracingPassServices.h"
 
 class TextureManager;
-class RenderRayTracingScene;
 
 // Stable execute-time runtime services exposed to authored render passes.
 //
@@ -20,7 +20,7 @@ struct PassRuntimeServices
 	RenderDiagnostics& BackendDiagnostics;
 	const PipelineStateManager& RuntimeManager;
 	const TextureManager* Textures = nullptr;
-	RenderRayTracingScene* RayTracingScene = nullptr;
+	const RenderRayTracingPassServices* RayTracing = nullptr;
 
 	template <typename TPass> const typename RenderPassPipelineTraits<TPass>::RuntimeType& GetPassRuntime() const noexcept
 	{

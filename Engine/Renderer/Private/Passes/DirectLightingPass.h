@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Frame/Targets/FrameRenderTargets.h"
+#include "RayTracing/RayTracedShadowUniformData.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterFields.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
 #include "Renderer/Public/ShaderParameters/TypedPassParameterInstance.h"
@@ -26,8 +28,10 @@ struct DirectLightingPassParameters
 	ShaderTexture2D<void> GBufferMaterial;
 	ShaderTexture2D<void> GBufferSubsurface;
 	ShaderTexture2D<void> GBufferDeviceZ;
+	ShaderAccelerationStructure SceneTlas;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<RayTracedShadowUniformData> RayTracedShadows;
 
 	static void Describe(ShaderParameterStructBuilder<DirectLightingPassParameters>& builder)
 	{
@@ -39,8 +43,10 @@ struct DirectLightingPassParameters
 		builder.ReadTexture("GBufferMaterial", &DirectLightingPassParameters::GBufferMaterial, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferSubsurface", &DirectLightingPassParameters::GBufferSubsurface, ShaderStageVisibility::Compute);
 		builder.ReadTexture("GBufferDeviceZ", &DirectLightingPassParameters::GBufferDeviceZ, ShaderStageVisibility::Compute);
+		builder.AccelerationStructure("SceneTlas", &DirectLightingPassParameters::SceneTlas, ShaderStageVisibility::Compute);
 		builder.Uniform("PerFrame", &DirectLightingPassParameters::PerFrame, ShaderStageVisibility::Compute);
 		builder.Uniform("PerView", &DirectLightingPassParameters::PerView, ShaderStageVisibility::Compute);
+		builder.Uniform("RayTracedShadows", &DirectLightingPassParameters::RayTracedShadows, ShaderStageVisibility::Compute);
 	}
 };
 
@@ -62,6 +68,7 @@ class DirectLightingPass final
 	    FrameGraphBuilder& builder,
 	    const LightingRenderTargets& lighting,
 	    const GBufferRenderTargets& gbuffer,
+	    FrameGraphAccelerationStructureHandle sceneTlas,
 	    ParameterInstance& parameters);
 	void Execute(PassExecutionContext& context, ParameterInstance& parameters) const;
 
@@ -69,7 +76,8 @@ class DirectLightingPass final
 	void SetParameters(
 	    ParameterInstance& parameters,
 	    const RenderViewData& viewData,
-	    const PassRuntimeServices& passRuntimeServices) const;
+	    const PassRuntimeServices& passRuntimeServices,
+	    bool hasSceneTlas) const;
 
 	const ComputePassPipelineRuntime& m_runtime;
 };

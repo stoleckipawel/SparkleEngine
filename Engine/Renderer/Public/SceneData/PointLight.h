@@ -10,4 +10,5 @@ struct SPARKLE_RENDERER_API PointLight
 	float range = 0.0f;
 	DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
 	float intensity = 1.0f;
+	bool castShadow = true;
 };

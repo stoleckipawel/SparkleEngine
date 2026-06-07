@@ -193,7 +193,8 @@ void Renderer::InitializeCoreSystems() noexcept
 	const RayTracingCapabilityReport rayTracingCapabilities =
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
-	LogRayTracedShadowSettingsOnce(BuildRayTracedShadowSettingsFromCVars(), rayTracingCapabilities);
+	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
+	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
 
 	m_memoryMonitor = std::make_unique<RendererMemoryMonitor>(backendDiagnostics);
@@ -410,12 +411,15 @@ void Renderer::RecordFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame frame graph compile end (passes={})", compiledPlan.executionOrder.size());
 	RenderCommandList& commandList = m_backend->GetCurrentGraphicsCommandList();
 	RenderCommandContext cmd(commandList);
+	const RenderRayTracingPassServices rayTracingPassServices{
+	    .Scene = m_renderRayTracingScene.get(),
+	    .ShadowSettings = m_rayTracedShadowSettings.get()};
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
 	    .Textures = m_textureManager.get(),
-	    .RayTracingScene = m_renderRayTracingScene.get()};
+	    .RayTracing = &rayTracingPassServices};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.

@@ -18,6 +18,9 @@ struct PointLightConstantBufferData
 
 	float3 Color;
 	float Intensity;
+
+	uint CastShadow;
+	uint3 Padding;
 };
 
 struct SpotLightConstantBufferData
@@ -32,7 +35,8 @@ struct SpotLightConstantBufferData
 	float Intensity;
 
 	float OuterConeCosine;
-	float3 Padding;
+	uint CastShadow;
+	uint2 Padding;
 };
 
 struct PerViewLightingConstantBufferData

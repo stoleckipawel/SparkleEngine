@@ -22,6 +22,7 @@ namespace Assets
 				{
 					PointLightDesc point;
 					point.range = lightRecord.range;
+					point.castShadow = true;
 					return point;
 				}
 				case CookedSceneLightKind::Spot:
@@ -31,6 +32,7 @@ namespace Assets
 					spot.range = lightRecord.range;
 					spot.innerConeAngleRadians = lightRecord.innerConeAngleRadians;
 					spot.outerConeAngleRadians = lightRecord.outerConeAngleRadians;
+					spot.castShadow = true;
 					return spot;
 				}
 				case CookedSceneLightKind::Unknown:

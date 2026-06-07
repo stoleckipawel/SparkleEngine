@@ -10,7 +10,8 @@ RayTracedShadowSettings BuildRayTracedShadowSettingsFromCVars() noexcept
 	    .QualityMode = CVarRayTracedShadowQualityMode.Get(),
 	    .DenoiserMode = CVarRayTracedShadowDenoiserMode.Get(),
 	    .NormalBias = CVarRayTracedShadowNormalBias.Get(),
-	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get()};
+	    .MaxDistance = CVarRayTracedShadowMaxDistance.Get(),
+	    .DiagnosticsEnabled = CVarRayTracedShadowDiagnosticsEnabled.Get()};
 }
 
 void LogRayTracedShadowSettingsOnce(
@@ -27,13 +28,24 @@ void LogRayTracedShadowSettingsOnce(
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.RayTracing");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "Ray traced shadow settings: quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel=1 requiresTlas=true "
-	    "requiresDenoiser={}",
+	    "Ray traced shadow settings: quality={} denoiser={} normalBias={} maxDistance={} raysPerPixel={} diagnostics={} "
+	    "requiresTlas=true requiresDenoiser={}",
 	    RayTracedShadowQualityModeToString(settings.QualityMode),
 	    RayTracedShadowDenoiserModeToString(settings.DenoiserMode),
 	    settings.NormalBias,
 	    settings.MaxDistance,
+	    RayTracedShadowSettings::RaysPerPixel,
+	    settings.DiagnosticsEnabled ? "true" : "false",
 	    settings.RequiresDenoiser() ? "true" : "false");
+
+	if (settings.QualityMode != RayTracedShadowQualityMode::Hard)
+	{
+		SPDLOG_LOGGER_INFO(
+		    logger,
+		    "Directional ray traced shadow visibility currently uses the hard-shadow path; requested quality '{}' will not change "
+		    "behavior until the stochastic soft-shadow stages land.",
+		    RayTracedShadowQualityModeToString(settings.QualityMode));
+	}
 
 	if (!capabilities.CanUseInlineRayQueryShadows())
 	{

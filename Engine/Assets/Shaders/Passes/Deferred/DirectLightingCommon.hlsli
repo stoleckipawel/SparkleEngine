@@ -6,6 +6,25 @@
 
 namespace DirectLighting
 {
+	float3 GetDirectionalLightDirection(uint lightIndex)
+	{
+		return normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
+	}
+
+	float3 GetPointLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
+	{
+		const float3 surfaceToLight = ViewLighting.PointLights[lightIndex].Position - positionWorld;
+		distanceToLight = length(surfaceToLight);
+		return surfaceToLight / max(distanceToLight, 0.0001f);
+	}
+
+	float3 GetSpotLightDirection(float3 positionWorld, uint lightIndex, out float distanceToLight)
+	{
+		const float3 surfaceToLight = ViewLighting.SpotLights[lightIndex].Position - positionWorld;
+		distanceToLight = length(surfaceToLight);
+		return surfaceToLight / max(distanceToLight, 0.0001f);
+	}
+
 	float ComputeDistanceAttenuation(float distanceToLight, float range)
 	{
 		const float inverseSquare = rcp(max(distanceToLight * distanceToLight, 0.01f));
@@ -66,12 +85,14 @@ namespace DirectLighting
 	    float roughness,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
+	    float shadowVisibility,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
-		const float3 lightDirection = normalize(-ViewLighting.DirectionalLights[lightIndex].Direction);
-		const float3 radiance = ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity;
+		const float3 lightDirection = GetDirectionalLightDirection(lightIndex);
+		const float3 radiance =
+		    ViewLighting.DirectionalLights[lightIndex].Color * ViewLighting.DirectionalLights[lightIndex].Intensity * shadowVisibility;
 		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
 	}
 
@@ -82,16 +103,16 @@ namespace DirectLighting
 	    float roughness,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
+	    float shadowVisibility,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
 		const PointLightConstantBufferData light = ViewLighting.PointLights[lightIndex];
-		const float3 surfaceToLight = light.Position - positionWorld;
-		const float distanceToLight = length(surfaceToLight);
-		const float3 lightDirection = surfaceToLight / max(distanceToLight, 0.0001f);
+		float distanceToLight = 0.0f;
+		const float3 lightDirection = GetPointLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float attenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
-		const float3 radiance = light.Color * light.Intensity * attenuation;
+		const float3 radiance = light.Color * light.Intensity * attenuation * shadowVisibility;
 		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
 	}
 
@@ -102,18 +123,18 @@ namespace DirectLighting
 	    float roughness,
 	    bool evaluateSubsurface,
 	    uint lightIndex,
+	    float shadowVisibility,
 	    out float3 outDiffuse,
 	    out float3 outSpecular,
 	    out float3 outSubsurface)
 	{
 		const SpotLightConstantBufferData light = ViewLighting.SpotLights[lightIndex];
-		const float3 surfaceToLight = light.Position - positionWorld;
-		const float distanceToLight = length(surfaceToLight);
-		const float3 lightDirection = surfaceToLight / max(distanceToLight, 0.0001f);
+		float distanceToLight = 0.0f;
+		const float3 lightDirection = GetSpotLightDirection(positionWorld, lightIndex, distanceToLight);
 		const float3 lightToSurfaceDirection = -lightDirection;
 		const float distanceAttenuation = ComputeDistanceAttenuation(distanceToLight, light.Range);
 		const float coneAttenuation = ComputeSpotConeAttenuation(lightToSurfaceDirection, light.Direction, light.InnerConeCosine, light.OuterConeCosine);
-		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation;
+		const float3 radiance = light.Color * light.Intensity * distanceAttenuation * coneAttenuation * shadowVisibility;
 		EvaluateDirectLight(viewDirWorld, normalWorld, roughness, evaluateSubsurface, lightDirection, radiance, outDiffuse, outSpecular, outSubsurface);
 	}
 }

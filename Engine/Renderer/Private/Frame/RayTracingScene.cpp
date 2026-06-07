@@ -28,11 +28,12 @@ void AddRayTracingSceneBuildPass(FrameGraphBuilder& builder, FrameGraphAccelerat
 	    },
 	    [](PassExecutionContext& context)
 	    {
-		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.RuntimeServices.RayTracingScene == nullptr)
+		    if (!context.Frame.rayTracingScene.HasBoundTlas() || context.RuntimeServices.RayTracing == nullptr ||
+		        context.RuntimeServices.RayTracing->Scene == nullptr)
 		    {
 			    return;
 		    }
 
-		    context.RuntimeServices.RayTracingScene->Build(context.Commands, context.Frame.sceneData);
+		    context.RuntimeServices.RayTracing->Scene->Build(context.Commands, context.Frame.sceneData);
 	    });
 }

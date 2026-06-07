@@ -14,6 +14,7 @@ struct ShaderPackageDefinition final
 	const char* PackageId = nullptr;
 	const char* BindingLayoutId = nullptr;
 	ShaderStageMask ExpectedStages = ShaderStageMask::None;
+	CookedShaderPackageFeatureFlags RequiredFeatures = CookedShaderPackageFeatureFlags::None;
 
 	bool IsValid() const noexcept { return PackageId != nullptr && PackageId[0] != '\0' && ExpectedStages != ShaderStageMask::None; }
 

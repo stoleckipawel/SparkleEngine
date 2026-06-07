@@ -11,7 +11,9 @@
 #include "Passes/ShaderPass.h"
 #include "Pipeline/PassPipelineRuntime.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
+#include "RayTracing/RayTracedShadowPassData.h"
 #include "Renderer/Public/ShaderParameters/ShaderParameterStructBuilder.h"
+#include "Renderer/Public/FrameGraph/FrameGraphAccelerationStructureHandle.h"
 
 #include <cassert>
 
@@ -32,13 +34,18 @@ const DirectLightingPass::ParameterMetadata& DirectLightingPass::GetParameterMet
 
 ShaderPackageDefinition DirectLightingPass::DescribeShaderPackage() noexcept
 {
-	return ShaderPackageDefinition{.PackageId = PassName, .BindingLayoutId = PassName, .ExpectedStages = ShaderStageMask::Compute};
+	return ShaderPackageDefinition{
+	    .PackageId = PassName,
+	    .BindingLayoutId = PassName,
+	    .ExpectedStages = ShaderStageMask::Compute,
+	    .RequiredFeatures = CookedShaderPackageFeatureFlags::UsesInlineRayQuery | CookedShaderPackageFeatureFlags::UsesAccelerationStructure};
 }
 
 void DirectLightingPass::DeclareResources(
     FrameGraphBuilder& builder,
     const LightingRenderTargets& lighting,
     const GBufferRenderTargets& gbuffer,
+    FrameGraphAccelerationStructureHandle sceneTlas,
     ParameterInstance& parameters)
 {
 	parameters->DirectDiffuse = builder.CreateUAV(lighting.DirectDiffuse);
@@ -49,15 +56,18 @@ void DirectLightingPass::DeclareResources(
 	parameters->GBufferMaterial = builder.CreateSRV(gbuffer.Material);
 	parameters->GBufferSubsurface = builder.CreateSRV(gbuffer.Subsurface);
 	parameters->GBufferDeviceZ = builder.CreateSRV(gbuffer.DeviceZ);
+	parameters->SceneTlas = builder.Read(sceneTlas);
 }
 
 void DirectLightingPass::SetParameters(
     ParameterInstance& parameters,
     const RenderViewData& viewData,
-	const PassRuntimeServices& passRuntimeServices) const
+    const PassRuntimeServices& passRuntimeServices,
+    bool hasSceneTlas) const
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
+	parameters->RayTracedShadows = RayTracedShadowPassData::Build(passRuntimeServices.RayTracing, hasSceneTlas);
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
@@ -66,7 +76,7 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
 
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
+	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasBoundTlas());
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),

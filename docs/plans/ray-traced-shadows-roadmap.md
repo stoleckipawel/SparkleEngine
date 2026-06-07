@@ -222,6 +222,8 @@ Implementation boundaries:
 
 ## Stage 4: Directional Ray Traced Shadow Visibility
 
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
+
 Goal: Add hard ray traced directional shadow visibility to deferred direct lighting.
 
 Implementation prompt:
@@ -249,7 +251,18 @@ Acceptance criteria:
 - Vulkan either validates the same path or emits a clear capability skip if Stage 0 proves missing support.
 - Refactor gate: DirectLighting remains lighting orchestration; ray query helpers and shadow signal code live in dedicated shadow shader/source files.
 
+Implementation boundaries:
+
+- `DirectLightingPass` remains the pass-level orchestrator. It binds the scene TLAS and resolved shadow settings but does not own ray-query math.
+- `RenderRayTracingPassServices` groups the execute-time ray tracing scene pointer and resolved shadow settings so generic pass runtime services do not accumulate per-feature fields.
+- `Passes/Deferred/RayTracedShadows.hlsli` owns directional shadow-ray setup, normal-bias application, and inline ray-query visibility evaluation.
+- `Passes/Deferred/DirectLightingCommon.hlsli` remains the BRDF and light-accumulation home. It only consumes a scalar visibility term for directional lighting.
+- `RayTracedShadowSettings.*` and `RayTracedShadowUniformData` own subsystem shadow settings and the pass-facing uniform payload. GameFramework light records still only provide `CastShadow`.
+- Renderer pipeline capability validation treats `DirectLightingPass` as an inline-ray-query pass through explicit required shader-package features instead of relying on hidden backend assumptions.
+
 ## Stage 5: Shadow Settings
+
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
 
 Goal: Keep ray traced shadow settings centralized without spreading feature knobs through unrelated systems.
 
@@ -270,7 +283,16 @@ Acceptance criteria:
 - Missing backend capability is an error diagnostic for the shadow system, not a request to silently use another shadow technique.
 - Refactor gate: generic renderer CVar files do not accumulate feature-specific settings.
 
+Implementation boundaries:
+
+- `RayTracedShadowCVars.*` owns ray tracing shadow feature CVars, including diagnostics. No generic renderer CVar file should gain shadow-specific state.
+- `RayTracedShadowSettings.*` owns resolved subsystem settings and startup logging, including the fixed `raysPerPixel=1` contract.
+- `RenderRayTracingPassServices` is the execute-time bridge from renderer-owned ray tracing subsystem state into passes.
+- `RayTracedShadowPassData.*` owns translation from resolved subsystem settings into per-pass uniform payloads so lighting passes do not interpret CVars or shadow policy directly.
+
 ## Stage 6: Local Light Shadow Extension
+
+Status: Source implemented. Build validation is currently blocked by the local MSVC environment failing to locate standard library headers before compiling the changed code.
 
 Goal: Extend ray traced shadows beyond directional lights once the directional path is stable.
 
@@ -289,6 +311,13 @@ Acceptance criteria:
 - Existing 512-light support remains bounded and diagnosable.
 - Shader code remains organized by light type and common ray query helper.
 - Refactor gate: local-light shadow data extends renderer light records without adding directional-light assumptions to shared lighting code.
+
+Implementation boundaries:
+
+- Renderer-facing `PointLight` and `SpotLight` records carry `castShadow` as part of normal lighting data; there is no imported-vs-authored shadow branch.
+- `RenderLightingBuilder` and `ViewLightingBuilder` propagate local-light shadow capability into renderer scene data and per-view lighting buffers.
+- `RayTracedShadows.hlsli` owns the common shadow-ray helper plus local-light-specific trace entry points. `DirectLightingCommon.hlsli` only consumes scalar visibility terms during BRDF accumulation.
+- Point and spot shadow math stays in light-specific functions and uses local-light range/cone information without adding directional-only assumptions to shared lighting helpers.
 
 ## Stage 7: Stochastic Soft Shadow Visibility
 

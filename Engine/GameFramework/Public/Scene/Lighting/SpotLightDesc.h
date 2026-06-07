@@ -10,4 +10,5 @@ struct SPARKLE_ENGINE_API SpotLightDesc
 	float range = 0.0f;
 	float innerConeAngleRadians = 0.0f;
 	float outerConeAngleRadians = 0.0f;
+	bool castShadow = true;
 };
