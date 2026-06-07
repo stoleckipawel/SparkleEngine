@@ -4,9 +4,9 @@
 
 #include "Meshes/GPUMeshCache.h"
 #include "Renderer/Public/Debug/RendererCVars.h"
-#include "Renderer/Public/SceneData/DirectionalLight.h"
 #include "SceneData/RenderSceneData.h"
 #include "SceneData/Builders/MeshInstanceBatchBuilder.h"
+#include "SceneData/Builders/RenderLightingBuilder.h"
 #include "Scene/Meshes/Mesh.h"
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Caching/MaterialCacheUtils.h"
@@ -73,7 +73,7 @@ RenderSceneData RenderSceneDataBuilder::Build(const RenderSceneSnapshot& sceneSn
 
 	BuildMaterials(sceneSnapshot, sceneData);
 	BuildMeshInstanceBatches(sceneSnapshot, sceneData);
-	BuildLighting(sceneSnapshot, sceneData);
+	RenderLightingBuilder::Build(sceneSnapshot.lighting, sceneData);
 	return sceneData;
 }
 
@@ -200,20 +200,3 @@ void RenderSceneDataBuilder::BuildMeshInstanceBatches(const RenderSceneSnapshot&
 	}
 }
 
-void RenderSceneDataBuilder::BuildLighting(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const noexcept
-{
-	const LightingSnapshot& lightingSnapshot = sceneSnapshot.lighting;
-	sceneData.directionalLights.clear();
-	sceneData.directionalLights.reserve(lightingSnapshot.directionalLightCount);
-
-	for (std::size_t lightIndex = 0; lightIndex < lightingSnapshot.directionalLightCount; ++lightIndex)
-	{
-		const DirectionalLightDesc& light = lightingSnapshot.directionalLights[lightIndex];
-		DirectionalLight renderLight = {};
-		renderLight.direction = light.direction;
-		renderLight.intensity = light.intensity;
-		renderLight.color = light.color;
-		renderLight.castShadow = light.castShadow;
-		sceneData.directionalLights.push_back(renderLight);
-	}
-}

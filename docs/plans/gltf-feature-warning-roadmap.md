@@ -339,6 +339,8 @@ Build ShowcaseRuntime and ShowcaseEditor, force recook animated assets, run D3D1
 
 ## Stage 8: Renderer Point and Spot Light Shading
 
+Status: Implemented in the renderer lighting path with D3D12 validation. Vulkan validation is blocked before lighting submission by the existing Vulkan texture/material fallback failure (`MaterialCacheManager::Rebuild: Material texture slot 0 resolved to null`) after default texture creation fails.
+
 Goal: Consume already-imported point and spot lights in Renderer so all punctual light types affect shading.
 
 Why after the scene metadata path is proven: Import, cook, load, GameFramework ownership, and editor presentation already carry point and spot lights. The remaining work crosses Renderer, RHI-facing constant/storage layouts, light culling policy, shading changes, and backend parity.
@@ -363,6 +365,15 @@ Validation prompt:
 
 ```text
 Recook a scene with directional, point, and spot glTF lights. Launch editor and runtime smoke on D3D12 and Vulkan and verify each light type contributes visibly or through deterministic renderer diagnostics.
+
+Current validation evidence:
+
+- `CameraCube.gltf` carries imported directional, point, and spot lights through `KHR_lights_punctual`; recook reports `lightNodes=3/imported` and `cookedLights=3`.
+- GameFramework lighting snapshots carry directional, point, and spot records without importer-specific runtime behavior.
+- Renderer scene data and per-view lighting constants carry point and spot lights through RHI-neutral layouts shared by D3D12 and Vulkan shader packages.
+- DirectLighting HLSL consumes directional, point, and spot arrays from the same per-view lighting block.
+- D3D12 runtime smoke on `CameraCubeImportedCamera` reaches frame 40 and logs `RenderLightingBuilder: prepared scene lighting (directionalLights=2, pointLights=1, spotLights=1)`.
+- Vulkan runtime smoke loads the same scene asset with `lights=3` but fails before renderer scene extraction because default Vulkan texture creation leaves material texture slot 0 null.
 ```
 
 ## Stage 9: Morph Targets and Weighted Nodes

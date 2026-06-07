@@ -35,6 +35,8 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 	float3 directSubsurface = 0.0f;
 	const bool evaluateSubsurface = any(gBuffer.SubsurfaceColor > 0.0f.xxx) && gBuffer.SubsurfaceStrength > 0.0f;
 	const uint directionalLightCount = min(ViewLighting.DirectionalLightCount, MAX_DIRECTIONAL_LIGHTS);
+	const uint pointLightCount = min(ViewLighting.PointLightCount, MAX_POINT_LIGHTS);
+	const uint spotLightCount = min(ViewLighting.SpotLightCount, MAX_SPOT_LIGHTS);
 
 	[loop] for (uint lightIndex = 0; lightIndex < directionalLightCount; ++lightIndex)
 	{
@@ -42,6 +44,48 @@ RWTexture2D<float4> DirectSubsurfaceTexture;
 		float3 lightSpecular;
 		float3 lightSubsurface;
 		DirectLighting::AccumulateDirectionalLight(
+		    viewDirWorld,
+		    gBuffer.NormalWorld,
+		    gBuffer.Roughness,
+		    evaluateSubsurface,
+		    lightIndex,
+		    lightDiffuse,
+		    lightSpecular,
+		    lightSubsurface);
+
+		directDiffuse += lightDiffuse;
+		directSpecular += lightSpecular;
+		directSubsurface += lightSubsurface;
+	}
+
+	[loop] for (uint lightIndex = 0; lightIndex < pointLightCount; ++lightIndex)
+	{
+		float3 lightDiffuse;
+		float3 lightSpecular;
+		float3 lightSubsurface;
+		DirectLighting::AccumulatePointLight(
+		    positionWorld,
+		    viewDirWorld,
+		    gBuffer.NormalWorld,
+		    gBuffer.Roughness,
+		    evaluateSubsurface,
+		    lightIndex,
+		    lightDiffuse,
+		    lightSpecular,
+		    lightSubsurface);
+
+		directDiffuse += lightDiffuse;
+		directSpecular += lightSpecular;
+		directSubsurface += lightSubsurface;
+	}
+
+	[loop] for (uint lightIndex = 0; lightIndex < spotLightCount; ++lightIndex)
+	{
+		float3 lightDiffuse;
+		float3 lightSpecular;
+		float3 lightSubsurface;
+		DirectLighting::AccumulateSpotLight(
+		    positionWorld,
 		    viewDirWorld,
 		    gBuffer.NormalWorld,
 		    gBuffer.Roughness,

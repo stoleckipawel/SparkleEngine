@@ -16,14 +16,44 @@ struct DirectionalLightConstantBufferData
 	std::uint32_t CastShadow = 1u;
 };
 
+struct PointLightConstantBufferData
+{
+	DirectX::XMFLOAT3 Position = {0.0f, 0.0f, 0.0f};
+	float Range = 0.0f;
+
+	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
+	float Intensity = 1.0f;
+};
+
+struct SpotLightConstantBufferData
+{
+	DirectX::XMFLOAT3 Position = {0.0f, 0.0f, 0.0f};
+	float Range = 0.0f;
+
+	DirectX::XMFLOAT3 Direction = {0.0f, -1.0f, 0.0f};
+	float InnerConeCosine = 1.0f;
+
+	DirectX::XMFLOAT3 Color = {1.0f, 1.0f, 1.0f};
+	float Intensity = 1.0f;
+
+	float OuterConeCosine = 0.0f;
+	DirectX::XMFLOAT3 Padding = {0.0f, 0.0f, 0.0f};
+};
+
 struct PerViewLightingConstantBufferData
 {
 	static constexpr std::size_t MaxDirectionalLights = RenderConfig::Lights::MaxDirectionalLights;
+	static constexpr std::size_t MaxPointLights = RenderConfig::Lights::MaxPointLights;
+	static constexpr std::size_t MaxSpotLights = RenderConfig::Lights::MaxSpotLights;
 
 	std::uint32_t DirectionalLightCount = 0;
-	std::uint32_t PaddingCounts[3] = {};
+	std::uint32_t PointLightCount = 0;
+	std::uint32_t SpotLightCount = 0;
+	std::uint32_t PaddingCount = 0;
 
 	DirectionalLightConstantBufferData DirectionalLights[MaxDirectionalLights] = {};
+	PointLightConstantBufferData PointLights[MaxPointLights] = {};
+	SpotLightConstantBufferData SpotLights[MaxSpotLights] = {};
 };
 
 static_assert(sizeof(DirectionalLightConstantBufferData) == 32, "Directional light constant buffer data must be 32 bytes");
@@ -37,10 +67,39 @@ static_assert(offsetof(DirectionalLightConstantBufferData, Color) == 16, "Direct
 static_assert(
     offsetof(DirectionalLightConstantBufferData, CastShadow) == 28,
     "DirectionalLightConstantBufferData::CastShadow must be at c1.w");
-static_assert(sizeof(PerViewLightingConstantBufferData) == 80, "Per-view lighting constant buffer data must match the shader layout");
+static_assert(sizeof(PointLightConstantBufferData) == 32, "Point light constant buffer data must be 32 bytes");
+static_assert(offsetof(PointLightConstantBufferData, Position) == 0, "PointLightConstantBufferData::Position must start at c0.xyz");
+static_assert(offsetof(PointLightConstantBufferData, Range) == 12, "PointLightConstantBufferData::Range must be at c0.w");
+static_assert(offsetof(PointLightConstantBufferData, Color) == 16, "PointLightConstantBufferData::Color must start at c1.xyz");
+static_assert(offsetof(PointLightConstantBufferData, Intensity) == 28, "PointLightConstantBufferData::Intensity must be at c1.w");
+static_assert(sizeof(SpotLightConstantBufferData) == 64, "Spot light constant buffer data must be 64 bytes");
+static_assert(offsetof(SpotLightConstantBufferData, Position) == 0, "SpotLightConstantBufferData::Position must start at c0.xyz");
+static_assert(offsetof(SpotLightConstantBufferData, Range) == 12, "SpotLightConstantBufferData::Range must be at c0.w");
+static_assert(offsetof(SpotLightConstantBufferData, Direction) == 16, "SpotLightConstantBufferData::Direction must start at c1.xyz");
+static_assert(
+    offsetof(SpotLightConstantBufferData, InnerConeCosine) == 28,
+    "SpotLightConstantBufferData::InnerConeCosine must be at c1.w");
+static_assert(offsetof(SpotLightConstantBufferData, Color) == 32, "SpotLightConstantBufferData::Color must start at c2.xyz");
+static_assert(offsetof(SpotLightConstantBufferData, Intensity) == 44, "SpotLightConstantBufferData::Intensity must be at c2.w");
+static_assert(
+    offsetof(SpotLightConstantBufferData, OuterConeCosine) == 48,
+    "SpotLightConstantBufferData::OuterConeCosine must start at c3.x");
+static_assert(sizeof(PerViewLightingConstantBufferData) == 49232, "Per-view lighting constant buffer data must match the shader layout");
 static_assert(
     offsetof(PerViewLightingConstantBufferData, DirectionalLightCount) == 0,
     "PerViewLightingConstantBufferData::DirectionalLightCount must start at c0.x");
 static_assert(
+    offsetof(PerViewLightingConstantBufferData, PointLightCount) == 4,
+    "PerViewLightingConstantBufferData::PointLightCount must start at c0.y");
+static_assert(
+    offsetof(PerViewLightingConstantBufferData, SpotLightCount) == 8,
+    "PerViewLightingConstantBufferData::SpotLightCount must start at c0.z");
+static_assert(
     offsetof(PerViewLightingConstantBufferData, DirectionalLights) == 16,
     "PerViewLightingConstantBufferData::DirectionalLights must start at c1");
+static_assert(
+    offsetof(PerViewLightingConstantBufferData, PointLights) == 80,
+    "PerViewLightingConstantBufferData::PointLights must start after directional lights");
+static_assert(
+    offsetof(PerViewLightingConstantBufferData, SpotLights) == 16464,
+    "PerViewLightingConstantBufferData::SpotLights must start after point lights");

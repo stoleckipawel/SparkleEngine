@@ -19,10 +19,9 @@ class RenderSceneDataBuilder final
 
 	RenderSceneData Build(const RenderSceneSnapshot& sceneSnapshot);
 
-  private:
+ private:
 	void BuildMaterials(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
 	void BuildMeshInstanceBatches(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const;
-	void BuildLighting(const RenderSceneSnapshot& sceneSnapshot, RenderSceneData& sceneData) const noexcept;
 
 	MaterialCacheManager* m_materialCache = nullptr;
 	GPUMeshCache* m_gpuMeshCache = nullptr;

@@ -41,7 +41,7 @@ static_assert(offsetof(PerViewConstantBufferData, Camera) == 0, "PerViewConstant
 static_assert(
     offsetof(PerViewConstantBufferData, ViewLighting) == 352,
     "PerViewConstantBufferData::ViewLighting must start after camera data");
-static_assert(sizeof(PerViewConstantBufferData) == 512, "PerViewConstantBufferData must fit in aligned CBV slots");
+static_assert(sizeof(PerViewConstantBufferData) == 49664, "PerViewConstantBufferData must fit in aligned CBV slots");
 
 struct alignas(256) PerObjectVSConstantBufferData
 {
