@@ -2,6 +2,7 @@
 
 #include "../Bindings/RenderBindingSet.h"
 #include "../Core/RhiCapabilities.h"
+#include "../RayTracing/RhiRayTracingDesc.h"
 #include "../Resources/RhiResourceDesc.h"
 #include "../RHIAPI.h"
 
@@ -26,5 +27,23 @@ namespace RhiValidation
 	SPARKLE_RHI_API bool ValidateTextureResourceDesc(
 	    const RhiCapabilities& capabilities,
 	    const RhiTextureResourceDesc& desc,
+	    std::string_view owner) noexcept;
+	SPARKLE_RHI_API bool ValidateRayTracingGeometryDesc(
+	    const RhiRayTracingGeometryDesc& geometry,
+	    std::string_view owner) noexcept;
+	SPARKLE_RHI_API bool ValidateRayTracingInstanceDescs(
+	    const RhiRayTracingInstanceDesc* instances,
+	    std::uint32_t instanceCount,
+	    std::string_view owner) noexcept;
+	SPARKLE_RHI_API bool ValidateRayTracingAccelerationStructurePrebuildInfo(
+	    const RhiRayTracingAccelerationStructurePrebuildInfo& prebuildInfo,
+	    std::string_view owner) noexcept;
+	SPARKLE_RHI_API bool ValidateRayTracingScratchOrResultAddress(
+	    RhiGpuVirtualAddress gpuAddress,
+	    std::string_view addressRole,
+	    std::string_view owner) noexcept;
+	SPARKLE_RHI_API bool ValidateRayTracingBufferSize(
+	    std::uint64_t sizeInBytes,
+	    std::uint64_t alignmentInBytes,
 	    std::string_view owner) noexcept;
 }

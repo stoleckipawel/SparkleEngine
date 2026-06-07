@@ -9,6 +9,7 @@
 #include "Core/Public/Hash/HashUtils.h"
 #include "Core/Public/Paths/DirectoryPaths.h"
 #include "ShaderParameters/PassParameterLayout.h"
+#include "Shaders/ShaderRayTracingMetadataValidation.h"
 
 #include <array>
 #include <format>
@@ -910,6 +911,17 @@ bool CookedShaderPackageCache::ValidatePackage(
 		outErrorMessage = std::format(
 		    "Cooked shader package '{}' is a ray tracing library package with valid metadata, but runtime RT state object execution is not enabled yet.",
 		    definition.PackageId);
+		return false;
+	}
+
+	if (HasCookedShaderPackageFeature(package.GetHeader().PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery) &&
+	    !ShaderRayTracingMetadataValidation::ValidateInlineRayQueryMetadata(package, requiredBinaryFormat, outErrorMessage))
+	{
+		const std::string inlineRayQueryError = outErrorMessage;
+		outErrorMessage = std::format(
+		    "Cooked shader package '{}' failed inline ray query metadata validation: {}",
+		    definition.PackageId,
+		    inlineRayQueryError);
 		return false;
 	}
 

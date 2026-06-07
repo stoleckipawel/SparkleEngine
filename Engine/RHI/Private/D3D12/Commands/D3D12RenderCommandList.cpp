@@ -7,6 +7,7 @@
 #include "D3D12/Diagnostics/D3D12PixEvents.h"
 #include "D3D12/Pipeline/D3D12BindingLayout.h"
 #include "D3D12/Pipeline/D3D12PipelineState.h"
+#include "RHI/Public/Validation/RhiValidation.h"
 
 #include <array>
 #include <string>
@@ -383,8 +384,16 @@ void D3D12RenderCommandList::BuildBottomLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	if (m_commandList == nullptr || scratchGpuAddress == 0 || resultGpuAddress == 0 || geometry.VertexBuffer == 0 ||
-	    geometry.IndexBuffer == 0)
+	if (m_commandList == nullptr ||
+	    !RhiValidation::ValidateRayTracingGeometryDesc(geometry, "D3D12.BuildBottomLevelAccelerationStructure") ||
+	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(
+	        scratchGpuAddress,
+	        "scratch",
+	        "D3D12.BuildBottomLevelAccelerationStructure") ||
+	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(
+	        resultGpuAddress,
+	        "result",
+	        "D3D12.BuildBottomLevelAccelerationStructure"))
 	{
 		return;
 	}
@@ -421,8 +430,22 @@ void D3D12RenderCommandList::BuildTopLevelAccelerationStructure(
     RhiGpuVirtualAddress scratchGpuAddress,
     RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	if (m_commandList == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 || scratchGpuAddress == 0 || resultGpuAddress == 0)
+	if (m_commandList == nullptr ||
+	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(
+	        instanceDescsGpuAddress,
+	        "instance descriptor",
+	        "D3D12.BuildTopLevelAccelerationStructure") ||
+	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(scratchGpuAddress, "scratch", "D3D12.BuildTopLevelAccelerationStructure") ||
+	    !RhiValidation::ValidateRayTracingScratchOrResultAddress(resultGpuAddress, "result", "D3D12.BuildTopLevelAccelerationStructure") ||
+	    instanceCount == 0)
 	{
+		if (instanceCount == 0)
+		{
+			RhiValidation::ReportContractViolation(
+			    "D3D12.BuildTopLevelAccelerationStructure",
+			    "ray tracing TLAS build instance count is zero",
+			    "skip TLAS build until at least one instance exists");
+		}
 		return;
 	}
 

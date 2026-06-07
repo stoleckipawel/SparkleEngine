@@ -226,6 +226,7 @@ void VulkanRhi::SelectPhysicalDevice() noexcept
 	m_featureStatus.SupportsSynchronization2 = selected.Features13.synchronization2 == VK_TRUE;
 	m_featureStatus.SupportsDynamicRendering = selected.Features13.dynamicRendering == VK_TRUE;
 	m_featureStatus.SupportsSamplerAnisotropy = selected.Features.features.samplerAnisotropy == VK_TRUE;
+	m_featureStatus.RayTracing = VulkanRayTracingFeatureQuery::Query(m_physicalDevice);
 
 	SPDLOG_LOGGER_INFO(
 	    g_vulkanRhiLogger,
@@ -344,14 +345,24 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	const std::string instanceExtensions = std::format("Enabled Vulkan instance extensions: {}", m_enabledInstanceExtensions.size());
 	const std::string deviceExtensions = std::format("Enabled Vulkan device extensions: {}", m_enabledDeviceExtensions.size());
 	const std::string featureSummary = std::format(
-	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, samplerAnisotropy supported/enabled={}/{}",
+	    "Vulkan features: validation={}, synchronization2 supported/enabled={}/{}, dynamicRendering supported/enabled={}/{}, "
+	    "samplerAnisotropy supported/enabled={}/{}, rtExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}), "
+	    "rtFeatures(as={}, pipeline={}, rayQuery={}), rtBackendEnabled={}",
 	    m_validationEnabled,
 	    m_featureStatus.SupportsSynchronization2,
 	    m_featureStatus.EnabledSynchronization2,
 	    m_featureStatus.SupportsDynamicRendering,
 	    m_featureStatus.EnabledDynamicRendering,
 	    m_featureStatus.SupportsSamplerAnisotropy,
-	    m_featureStatus.EnabledSamplerAnisotropy);
+	    m_featureStatus.EnabledSamplerAnisotropy,
+	    m_featureStatus.RayTracing.SupportsAccelerationStructureExtension,
+	    m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension,
+	    m_featureStatus.RayTracing.SupportsRayQueryExtension,
+	    m_featureStatus.RayTracing.SupportsDeferredHostOperationsExtension,
+	    m_featureStatus.RayTracing.SupportsAccelerationStructureFeature,
+	    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
+	    m_featureStatus.RayTracing.SupportsRayQueryFeature,
+	    m_featureStatus.RayTracing.EnabledBackend);
 	const std::string adapterSummary = std::format(
 	    "Vulkan adapter: name='{}', api={}, driver={}, queueFamily={}",
 	    m_adapterInfo.Name,
@@ -367,6 +378,22 @@ void VulkanRhi::LogBootstrapSummary() noexcept
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Validation, featureSummary);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, instanceExtensions);
 	PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Info, ERhiDiagnosticMessageCategory::Driver, deviceExtensions);
+
+	if (!m_featureStatus.RayTracing.EnabledBackend)
+	{
+		const std::string rayTracingSummary = std::format(
+		    "Vulkan ray tracing backend disabled: hardwareExtensions(as={}, pipeline={}, rayQuery={}, deferredHostOps={}) "
+		    "hardwareFeatures(as={}, pipeline={}, rayQuery={}). Sparkle Vulkan AS resources and build commands are not implemented yet.",
+		    m_featureStatus.RayTracing.SupportsAccelerationStructureExtension,
+		    m_featureStatus.RayTracing.SupportsRayTracingPipelineExtension,
+		    m_featureStatus.RayTracing.SupportsRayQueryExtension,
+		    m_featureStatus.RayTracing.SupportsDeferredHostOperationsExtension,
+		    m_featureStatus.RayTracing.SupportsAccelerationStructureFeature,
+		    m_featureStatus.RayTracing.SupportsRayTracingPipelineFeature,
+		    m_featureStatus.RayTracing.SupportsRayQueryFeature);
+		SPDLOG_LOGGER_WARN(g_vulkanRhiLogger, "{}", rayTracingSummary);
+		PushDiagnosticMessage(ERhiDiagnosticMessageSeverity::Warning, ERhiDiagnosticMessageCategory::Validation, rayTracingSummary);
+	}
 }
 
 void VulkanRhi::PushDiagnosticMessage(

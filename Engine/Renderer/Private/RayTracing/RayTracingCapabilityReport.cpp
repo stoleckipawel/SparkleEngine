@@ -36,13 +36,16 @@ void RayTracingCapabilityReporter::LogOnce(const RayTracingCapabilityReport& rep
 	SPDLOG_LOGGER_INFO(
 	    logger,
 	    "Ray tracing capability summary: backend={} rayTracing={} inlineRayQuery={} asAlignment={} scratchAlignment={} "
-	    "instanceDescSize={} inlineShadowReady={}",
+	    "instanceDescSize={} maxRecursionDepth={} maxPayloadBytes={} maxAttributeBytes={} inlineShadowReady={}",
 	    RhiBackendApiToString(report.BackendApi),
 	    BoolToString(report.SupportsRayTracing),
 	    BoolToString(report.SupportsInlineRayQuery),
 	    report.AccelerationStructureByteAlignment,
 	    report.ScratchBufferByteAlignment,
 	    report.InstanceDescSizeInBytes,
+	    report.MaxTraceRecursionDepth,
+	    report.MaxRayPayloadSizeInBytes,
+	    report.MaxRayAttributeSizeInBytes,
 	    BoolToString(report.CanUseInlineRayQueryShadows()));
 }
 
@@ -57,6 +60,9 @@ RayTracingCapabilityReport RayTracingCapabilityReporter::Build(
 	    .HasAccelerationStructureAlignment = rayTracing.AccelerationStructureByteAlignment != 0,
 	    .HasScratchBufferAlignment = rayTracing.ScratchBufferByteAlignment != 0,
 	    .HasInstanceDescSize = rayTracing.InstanceDescSizeInBytes != 0,
+	    .MaxTraceRecursionDepth = rayTracing.MaxTraceRecursionDepth,
+	    .MaxRayPayloadSizeInBytes = rayTracing.MaxRayPayloadSizeInBytes,
+	    .MaxRayAttributeSizeInBytes = rayTracing.MaxRayAttributeSizeInBytes,
 	    .AccelerationStructureByteAlignment = rayTracing.AccelerationStructureByteAlignment,
 	    .ScratchBufferByteAlignment = rayTracing.ScratchBufferByteAlignment,
 	    .InstanceDescSizeInBytes = rayTracing.InstanceDescSizeInBytes};

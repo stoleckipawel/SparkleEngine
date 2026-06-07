@@ -15,6 +15,9 @@ struct RayTracingCapabilityReport final
 	bool HasAccelerationStructureAlignment = false;
 	bool HasScratchBufferAlignment = false;
 	bool HasInstanceDescSize = false;
+	std::uint32_t MaxTraceRecursionDepth = 0;
+	std::uint32_t MaxRayPayloadSizeInBytes = 0;
+	std::uint32_t MaxRayAttributeSizeInBytes = 0;
 	std::uint64_t AccelerationStructureByteAlignment = 0;
 	std::uint64_t ScratchBufferByteAlignment = 0;
 	std::uint32_t InstanceDescSizeInBytes = 0;

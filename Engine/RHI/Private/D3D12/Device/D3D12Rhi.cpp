@@ -8,6 +8,7 @@
 #include "Core/Public/Diagnostics/Trace.h"
 
 static const auto g_d3d12RhiLogger = Logging::GetOrCreateLogger("RHI.D3D12");
+static constexpr std::uint32_t kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes = 4096;
 
 static const char* RaytracingTierToString(D3D12_RAYTRACING_TIER tier) noexcept
 {
@@ -186,6 +187,7 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		if (m_rayTracingCapabilities.SupportsRayTracing)
 		{
 			m_rayTracingCapabilities.MaxTraceRecursionDepth = D3D12_RAYTRACING_MAX_DECLARABLE_TRACE_RECURSION_DEPTH;
+			m_rayTracingCapabilities.MaxRayPayloadSizeInBytes = kD3D12RayTracingMaxDeclarableShaderPayloadSizeInBytes;
 			m_rayTracingCapabilities.MaxRayAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 			m_rayTracingCapabilities.ShaderTableAlignmentInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
@@ -198,14 +200,21 @@ void D3D12Rhi::CheckRayTracingSupport() noexcept
 		SPDLOG_LOGGER_INFO(
 		    g_d3d12RhiLogger,
 		    "DXR capability: tier={}({}), SupportsPipelineRayTracing={}, SupportsInlineRayQuery={}, maxRecursionDepth={}, "
-		    "maxAttributeBytes={}, shaderIdentifierBytes={}",
+		    "maxPayloadBytes={}, maxAttributeBytes={}, shaderIdentifierBytes={}, shaderTableAlign={}, shaderRecordAlign={}, asAlign={}, "
+		    "scratchAlign={}, instanceDescBytes={}",
 		    static_cast<int>(options5.RaytracingTier),
 		    RaytracingTierToString(options5.RaytracingTier),
 		    m_rayTracingCapabilities.SupportsRayTracing,
 		    m_rayTracingCapabilities.SupportsInlineRayQuery,
 		    m_rayTracingCapabilities.MaxTraceRecursionDepth,
+		    m_rayTracingCapabilities.MaxRayPayloadSizeInBytes,
 		    m_rayTracingCapabilities.MaxRayAttributeSizeInBytes,
-		    m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes);
+		    m_rayTracingCapabilities.ShaderGroupHandleSizeInBytes,
+		    m_rayTracingCapabilities.ShaderTableAlignmentInBytes,
+		    m_rayTracingCapabilities.ShaderTableRecordAlignmentInBytes,
+		    m_rayTracingCapabilities.AccelerationStructureByteAlignment,
+		    m_rayTracingCapabilities.ScratchBufferByteAlignment,
+		    m_rayTracingCapabilities.InstanceDescSizeInBytes);
 	}
 	else
 	{

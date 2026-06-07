@@ -728,7 +728,8 @@ RhiGpuVirtualAddress D3D12RenderHardwareInterface::GetResourceGpuVirtualAddress(
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetBottomLevelAccelerationStructurePrebuildInfo(
     const RhiRayTracingGeometryDesc& geometry) const noexcept
 {
-	if (m_rhi == nullptr || geometry.VertexBuffer == 0 || geometry.IndexBuffer == 0)
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing ||
+	    !RhiValidation::ValidateRayTracingGeometryDesc(geometry, "D3D12.GetBottomLevelAccelerationStructurePrebuildInfo"))
 	{
 		return {};
 	}
@@ -754,17 +755,26 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::Get
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
 	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
-	return RhiRayTracingAccelerationStructurePrebuildInfo{
+	RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+	(void)RhiValidation::ValidateRayTracingAccelerationStructurePrebuildInfo(
+	    prebuildInfo,
+	    "D3D12.GetBottomLevelAccelerationStructurePrebuildInfo");
+	return prebuildInfo;
 }
 
 RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::GetTopLevelAccelerationStructurePrebuildInfo(
     std::uint32_t instanceCount) const noexcept
 {
-	if (m_rhi == nullptr || instanceCount == 0)
+	if (m_rhi == nullptr || !m_rhi->GetRayTracingCapabilities().SupportsRayTracing)
 	{
+		return {};
+	}
+	if (instanceCount == 0)
+	{
+		(void)RhiValidation::ValidateRayTracingInstanceDescs(nullptr, instanceCount, "D3D12.GetTopLevelAccelerationStructurePrebuildInfo");
 		return {};
 	}
 
@@ -776,15 +786,21 @@ RhiRayTracingAccelerationStructurePrebuildInfo D3D12RenderHardwareInterface::Get
 
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO nativeInfo{};
 	m_rhi->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &nativeInfo);
-	return RhiRayTracingAccelerationStructurePrebuildInfo{
+	RhiRayTracingAccelerationStructurePrebuildInfo prebuildInfo{
 	    .ResultDataMaxSizeInBytes = nativeInfo.ResultDataMaxSizeInBytes,
 	    .ScratchDataSizeInBytes = nativeInfo.ScratchDataSizeInBytes,
 	    .UpdateScratchDataSizeInBytes = nativeInfo.UpdateScratchDataSizeInBytes};
+	(void)RhiValidation::ValidateRayTracingAccelerationStructurePrebuildInfo(
+	    prebuildInfo,
+	    "D3D12.GetTopLevelAccelerationStructurePrebuildInfo");
+	return prebuildInfo;
 }
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || sizeInBytes == 0)
+	const std::uint64_t scratchAlignment = m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().ScratchBufferByteAlignment : 0;
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
+	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, scratchAlignment, "D3D12.CreateRayTracingScratchBuffer"))
 	{
 		return {};
 	}
@@ -810,7 +826,10 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAcceleratio
     std::uint64_t sizeInBytes,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || sizeInBytes == 0)
+	const std::uint64_t asAlignment =
+	    m_rhi != nullptr ? m_rhi->GetRayTracingCapabilities().AccelerationStructureByteAlignment : 0;
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
+	    !RhiValidation::ValidateRayTracingBufferSize(sizeInBytes, asAlignment, "D3D12.CreateRayTracingAccelerationStructureBuffer"))
 	{
 		return {};
 	}
@@ -837,7 +856,8 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingInstanceBuf
     std::uint32_t instanceCount,
     std::wstring_view debugName)
 {
-	if (m_rhi == nullptr || m_memoryAllocator == nullptr || instances == nullptr || instanceCount == 0)
+	if (m_rhi == nullptr || m_memoryAllocator == nullptr ||
+	    !RhiValidation::ValidateRayTracingInstanceDescs(instances, instanceCount, "D3D12.CreateRayTracingInstanceBuffer"))
 	{
 		return {};
 	}

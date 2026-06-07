@@ -5,6 +5,7 @@
 #include "Diagnostics/RhiDiagnostics.h"
 #include "RayTracing/RhiRayTracingDesc.h"
 #include "Vulkan/Diagnostics/VulkanDebugLayer.h"
+#include "Vulkan/Device/VulkanRayTracingFeatureQuery.h"
 
 #include <cstdint>
 #include <mutex>
@@ -31,6 +32,7 @@ struct VulkanFeatureStatus final
 	bool EnabledSynchronization2 = false;
 	bool EnabledDynamicRendering = false;
 	bool EnabledSamplerAnisotropy = false;
+	VulkanRayTracingFeatureStatus RayTracing;
 };
 
 class VulkanRhi final
