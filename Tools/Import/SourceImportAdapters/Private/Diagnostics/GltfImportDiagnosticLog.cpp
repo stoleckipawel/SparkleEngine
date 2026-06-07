@@ -83,24 +83,6 @@ void GltfImportDiagnosticLog::ReportIgnoredMaterialVariants(std::size_t count, S
 	SourceImportDiagnosticsRecorder::RecordWarning(result);
 }
 
-void GltfImportDiagnosticLog::ReportUnsupportedPointLights(std::size_t count, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format("GltfImporter: {} point lights were imported as metadata only because runtime point lighting is not supported yet", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
-void GltfImportDiagnosticLog::ReportUnsupportedSpotLights(std::size_t count, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(
-	    g_gltfImportDiagnosticLogger,
-	    "{}",
-	    std::format("GltfImporter: {} spot lights were imported as metadata only because runtime spot lighting is not supported yet", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
 void GltfImportDiagnosticLog::ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result)
 {
 	SPDLOG_LOGGER_WARN(

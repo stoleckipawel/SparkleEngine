@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/Public/Math/MathUtils.h"
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneCameraRecord.h"
 #include "GameFramework/Public/Assets/Cooked/CookedSceneLightRecord.h"
@@ -39,7 +40,7 @@ namespace Assets
 		std::uint32_t meshAssetIndex = 0;
 		std::uint32_t materialAssetIndex = 0;
 		std::uint32_t groupIndex = kInvalidCookedSceneInstanceGroupIndex;
-		DirectX::XMFLOAT4X4 worldTransform = {};
+		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	};
 
 	struct SPARKLE_ENGINE_API CookedSceneInstanceGroupRecord

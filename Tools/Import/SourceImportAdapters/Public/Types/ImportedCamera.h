@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Math/MathUtils.h"
+
 #include <DirectXMath.h>
 
 #include <cstdint>
@@ -16,23 +18,7 @@ enum class ImportedCameraProjectionKind : std::uint32_t
 struct ImportedCamera
 {
 	std::string name;
-	DirectX::XMFLOAT4X4 worldTransform = {
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f};
+	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	ImportedCameraProjectionKind projectionKind = ImportedCameraProjectionKind::Unknown;
 	float verticalFovRadians = 0.0f;
 	float nearPlane = 0.1f;

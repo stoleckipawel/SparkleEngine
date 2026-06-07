@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Math/MathUtils.h"
 #include "GameFramework/Public/Assets/Cooked/CookedAssetCommon.h"
 
 #include <DirectXMath.h>
@@ -21,7 +22,7 @@ namespace Assets
 	struct SPARKLE_ENGINE_API CookedSceneCameraRecord
 	{
 		char name[kCookedSceneCameraNameCapacity] = {};
-		DirectX::XMFLOAT4X4 worldTransform = {};
+		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 		CookedSceneCameraProjectionKind projectionKind = CookedSceneCameraProjectionKind::Unknown;
 		float verticalFovRadians = 0.0f;
 		float nearPlane = 0.1f;

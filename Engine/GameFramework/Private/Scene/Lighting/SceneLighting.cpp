@@ -1,57 +1,64 @@
 #include "PCH.h"
 #include "Scene/Lighting/SceneLighting.h"
 
-void SceneLighting::ApplyFromDesc(const LevelLightingDesc& desc) noexcept
+#include "Scene/Lighting/Loading/LevelLightingSceneBuilder.h"
+#include "Scene/Lighting/Snapshots/SceneLightingSnapshotBuilder.h"
+
+#include <utility>
+
+void SceneLighting::ApplyFromDesc(const LevelLightingDesc& desc)
 {
-	m_directionalLightComponents.clear();
-	const std::size_t count = (std::min) (static_cast<std::size_t>(desc.directionalLightCount), MaxDirectionalLights);
-	m_directionalLightComponents.reserve(count);
-	for (std::size_t i = 0; i < count; ++i)
-	{
-		m_directionalLightComponents.emplace_back(desc.directionalLights[i]);
-	}
+	m_lights = LevelLightingSceneBuilder::BuildLights(desc);
 }
 
-bool SceneLighting::AppendDirectionalLight(const DirectionalLightDesc& desc, bool visible) noexcept
+void SceneLighting::AppendLight(SceneLightDesc light)
 {
-	if (!CanAppendDirectionalLight())
+	m_lights.push_back(std::move(light));
+}
+
+const SceneLightDesc* SceneLighting::GetLight(std::size_t index) const noexcept
+{
+	return index < m_lights.size() ? &m_lights[index] : nullptr;
+}
+
+bool SceneLighting::IsLightVisible(std::size_t index) const noexcept
+{
+	const SceneLightDesc* light = GetLight(index);
+	return light == nullptr || light->common.visible;
+}
+
+void SceneLighting::SetLightVisible(std::size_t index, bool visible)
+{
+	if (index >= m_lights.size())
+	{
+		return;
+	}
+
+	m_lights[index].common.visible = visible;
+}
+
+bool SceneLighting::ApplyLightDesc(std::size_t lightIndex, SceneLightDesc light)
+{
+	if (lightIndex >= m_lights.size())
 	{
 		return false;
 	}
 
-	DirectionalLightComponent& lightComponent = m_directionalLightComponents.emplace_back(desc);
-	lightComponent.SetVisible(visible);
+	m_lights[lightIndex] = std::move(light);
 	return true;
 }
 
 LevelLightingDesc SceneLighting::CaptureToDesc() const noexcept
 {
-	LevelLightingDesc desc = {};
-	desc.directionalLightCount = static_cast<std::uint32_t>((std::min) (m_directionalLightComponents.size(), MaxDirectionalLights));
-	for (std::size_t i = 0; i < desc.directionalLightCount; ++i)
-	{
-		desc.directionalLights[i] = m_directionalLightComponents[i].GetDesc();
-	}
-	return desc;
+	return SceneLightingSnapshotBuilder::BuildLevelDesc(m_lights);
 }
 
 LightingSnapshot SceneLighting::CaptureSnapshot() const noexcept
 {
-	LightingSnapshot snapshot = {};
-	for (const DirectionalLightComponent& lightComponent : m_directionalLightComponents)
-	{
-		if (!lightComponent.IsVisible())
-		{
-			continue;
-		}
+	return SceneLightingSnapshotBuilder::BuildSnapshot(m_lights);
+}
 
-		if (snapshot.directionalLightCount >= MaxDirectionalLights)
-		{
-			break;
-		}
-
-		snapshot.directionalLights[snapshot.directionalLightCount] = lightComponent.GetDesc();
-		++snapshot.directionalLightCount;
-	}
-	return snapshot;
+void SceneLighting::Reset() noexcept
+{
+	m_lights.clear();
 }

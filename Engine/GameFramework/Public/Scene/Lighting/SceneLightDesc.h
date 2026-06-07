@@ -1,31 +1,49 @@
 #pragma once
 
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Lighting/DirectionalLightDesc.h"
+#include "GameFramework/Public/Scene/Lighting/PointLightDesc.h"
+#include "GameFramework/Public/Scene/Lighting/SceneDirectionalLightDesc.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLightCommonDesc.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLightKind.h"
+#include "GameFramework/Public/Scene/Lighting/SpotLightDesc.h"
 
-#include <DirectXMath.h>
+#include <variant>
 
-#include <cstdint>
-#include <string>
-
-enum class SceneLightKind : std::uint32_t
-{
-	Directional = 0,
-	Point = 1,
-	Spot = 2,
-	Unknown = 3,
-};
+using SceneLightPayload = std::variant<std::monostate, SceneDirectionalLightDesc, PointLightDesc, SpotLightDesc>;
 
 struct SPARKLE_ENGINE_API SceneLightDesc
 {
-	std::string name;
-	SceneLightKind kind = SceneLightKind::Unknown;
-	DirectionalLightDesc directional;
-	DirectX::XMFLOAT4X4 worldTransform = {};
-	float range = 0.0f;
-	float innerConeAngleRadians = 0.0f;
-	float outerConeAngleRadians = 0.0f;
-	bool visible = true;
+	SceneLightCommonDesc common;
+	SceneLightPayload payload;
 
-	bool IsDirectional() const noexcept { return kind == SceneLightKind::Directional; }
+	SceneLightKind GetKind() const noexcept
+	{
+		if (std::holds_alternative<SceneDirectionalLightDesc>(payload))
+		{
+			return SceneLightKind::Directional;
+		}
+
+		if (std::holds_alternative<PointLightDesc>(payload))
+		{
+			return SceneLightKind::Point;
+		}
+
+		if (std::holds_alternative<SpotLightDesc>(payload))
+		{
+			return SceneLightKind::Spot;
+		}
+
+		return SceneLightKind::Unknown;
+	}
+
+	const SceneDirectionalLightDesc* GetDirectional() const noexcept { return std::get_if<SceneDirectionalLightDesc>(&payload); }
+	SceneDirectionalLightDesc* GetDirectional() noexcept { return std::get_if<SceneDirectionalLightDesc>(&payload); }
+	const PointLightDesc* GetPoint() const noexcept { return std::get_if<PointLightDesc>(&payload); }
+	PointLightDesc* GetPoint() noexcept { return std::get_if<PointLightDesc>(&payload); }
+	const SpotLightDesc* GetSpot() const noexcept { return std::get_if<SpotLightDesc>(&payload); }
+	SpotLightDesc* GetSpot() noexcept { return std::get_if<SpotLightDesc>(&payload); }
+
+	bool IsDirectional() const noexcept { return GetDirectional() != nullptr; }
+	bool IsPoint() const noexcept { return GetPoint() != nullptr; }
+	bool IsSpot() const noexcept { return GetSpot() != nullptr; }
 };

@@ -43,6 +43,27 @@ namespace MathUtils
 		return {DegreesToRadians(degrees.x), DegreesToRadians(degrees.y), DegreesToRadians(degrees.z)};
 	}
 
+	inline DirectX::XMFLOAT4X4 IdentityFloat4x4() noexcept
+	{
+		return {
+		    1.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    1.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    1.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    0.0f,
+		    1.0f};
+	}
+
 	inline DirectX::XMFLOAT3 DirectionToRotationDegrees(const DirectX::XMFLOAT3& direction) noexcept
 	{
 		const float clampedY = (std::max) (-1.0f, (std::min) (1.0f, direction.y));

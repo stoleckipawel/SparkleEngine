@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Core/Public/Math/MathUtils.h"
+
 #include <DirectXMath.h>
 
 #include <cstdint>
@@ -18,23 +20,7 @@ struct ImportedLight
 {
 	std::string name;
 	ImportedLightKind kind = ImportedLightKind::Unknown;
-	DirectX::XMFLOAT4X4 worldTransform = {
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f};
+	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
 	DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};
 	float intensity = 1.0f;
@@ -45,4 +31,6 @@ struct ImportedLight
 	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 
 	bool IsDirectional() const noexcept { return kind == ImportedLightKind::Directional; }
+	bool IsPoint() const noexcept { return kind == ImportedLightKind::Point; }
+	bool IsSpot() const noexcept { return kind == ImportedLightKind::Spot; }
 };

@@ -8,19 +8,34 @@ namespace Assets
 {
 	namespace
 	{
-		SceneLightKind ToSceneLightKind(CookedSceneLightKind lightKind) noexcept
+		SceneLightPayload BuildSceneLightPayload(const CookedSceneLightRecord& lightRecord)
 		{
-			switch (lightKind)
+			switch (lightRecord.kind)
 			{
 				case CookedSceneLightKind::Directional:
-					return SceneLightKind::Directional;
+				{
+					SceneDirectionalLightDesc directional;
+					directional.direction = lightRecord.direction;
+					return directional;
+				}
 				case CookedSceneLightKind::Point:
-					return SceneLightKind::Point;
+				{
+					PointLightDesc point;
+					point.range = lightRecord.range;
+					return point;
+				}
 				case CookedSceneLightKind::Spot:
-					return SceneLightKind::Spot;
+				{
+					SpotLightDesc spot;
+					spot.direction = lightRecord.direction;
+					spot.range = lightRecord.range;
+					spot.innerConeAngleRadians = lightRecord.innerConeAngleRadians;
+					spot.outerConeAngleRadians = lightRecord.outerConeAngleRadians;
+					return spot;
+				}
 				case CookedSceneLightKind::Unknown:
 				default:
-					return SceneLightKind::Unknown;
+					return std::monostate{};
 			}
 		}
 
@@ -44,16 +59,12 @@ namespace Assets
 	SceneLightDesc BuildSceneAssetLight(const CookedSceneLightRecord& lightRecord, std::size_t lightIndex)
 	{
 		SceneLightDesc light;
-		light.name = CookedLightNameToString(lightRecord, lightIndex);
-		light.kind = ToSceneLightKind(lightRecord.kind);
-		light.directional.direction = lightRecord.direction;
-		light.directional.color = lightRecord.color;
-		light.directional.intensity = lightRecord.intensity;
-		light.worldTransform = lightRecord.worldTransform;
-		light.range = lightRecord.range;
-		light.innerConeAngleRadians = lightRecord.innerConeAngleRadians;
-		light.outerConeAngleRadians = lightRecord.outerConeAngleRadians;
-		light.visible = (lightRecord.flags & 1u) != 0u;
+		light.common.name = CookedLightNameToString(lightRecord, lightIndex);
+		light.common.worldTransform = lightRecord.worldTransform;
+		light.common.color = lightRecord.color;
+		light.common.intensity = lightRecord.intensity;
+		light.common.visible = (lightRecord.flags & 1u) != 0u;
+		light.payload = BuildSceneLightPayload(lightRecord);
 		return light;
 	}
 }  // namespace Assets

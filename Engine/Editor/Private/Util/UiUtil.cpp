@@ -5,6 +5,8 @@
 #include "Style/SparkleUiTheme.h"
 #include "Util/EditorIconGlyphs.h"
 
+#include "Core/Public/Strings/StringUtils.h"
+
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
@@ -244,8 +246,14 @@ namespace UiUtil
 				return EditorIconGlyphs::FontAwesome::FolderOpen;
 			case EditorIcon::Camera:
 				return EditorIconGlyphs::FontAwesome::Camera;
+			case EditorIcon::Light:
+				return EditorIconGlyphs::FontAwesome::Light;
 			case EditorIcon::DirectionalLight:
 				return EditorIconGlyphs::FontAwesome::DirectionalLight;
+			case EditorIcon::PointLight:
+				return EditorIconGlyphs::FontAwesome::PointLight;
+			case EditorIcon::SpotLight:
+				return EditorIconGlyphs::FontAwesome::SpotLight;
 			case EditorIcon::StaticMesh:
 				return EditorIconGlyphs::FontAwesome::StaticMesh;
 			case EditorIcon::Material:
@@ -339,6 +347,17 @@ namespace UiUtil
 		return result;
 	}
 
+	bool MatchesDetailsFilter(const std::string& filterText, const char* title, const char* keywords) noexcept
+	{
+		return filterText.empty() || Strings::ContainsIgnoreCase(title, filterText) || Strings::ContainsIgnoreCase(keywords, filterText);
+	}
+
+	ImU32 WithAlphaU32(ImVec4 color, float alpha) noexcept
+	{
+		color.w *= alpha;
+		return ImGui::ColorConvertFloat4ToU32(color);
+	}
+
 	void DrawEditorIcon(EditorIcon icon, const char* tooltip, bool drawBadgeBackground)
 	{
 		DrawPlaceholderTypeIcon(GetEditorIconGlyph(icon), tooltip, drawBadgeBackground);
@@ -361,6 +380,48 @@ namespace UiUtil
 		ImGui::PopStyleVar();
 		ImGui::PopID();
 		return pressed;
+	}
+
+	bool DrawFilterChip(const char* label, bool active) noexcept
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 2.0f));
+		if (active)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackgroundActive());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextPrimary());
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, SparkleUiPalette::ButtonBackground());
+			ImGui::PushStyleColor(ImGuiCol_Text, SparkleUiPalette::TextMuted());
+		}
+
+		ImGui::PushID("FilterChip");
+		const bool pressed = ImGui::SmallButton(label);
+		ImGui::PopID();
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
+		return pressed;
+	}
+
+	void DrawMutedText(const char* text, float alpha) noexcept
+	{
+		ImVec4 color = SparkleUiPalette::TextMuted();
+		color.w *= alpha;
+		ImGui::PushStyleColor(ImGuiCol_Text, color);
+		ImGui::TextUnformatted(text);
+		ImGui::PopStyleColor();
+	}
+
+	bool DrawCenteredVisibilityIconButton(const char* id, bool visible) noexcept
+	{
+		constexpr float kVisibilityIconSize = 14.0f;
+		const float availableWidth = ImGui::GetContentRegionAvail().x;
+		const float horizontalOffset = (std::max) (0.0f, (availableWidth - kVisibilityIconSize) * 0.5f);
+		const float verticalOffset = (std::max) (0.0f, (ImGui::GetFrameHeight() - kVisibilityIconSize) * 0.5f);
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + horizontalOffset);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + verticalOffset);
+		return DrawVisibilityIconButton(id, visible);
 	}
 
 	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip, bool drawBadgeBackground)
@@ -680,6 +741,11 @@ namespace UiUtil
 	}
 
 	void EndDetailsCategory() {}
+
+	void DrawDetailsEmptyState(const char* text)
+	{
+		ImGui::TextDisabled("%s", text);
+	}
 
 	void DrawDetailsValueRow(const char* label, const char* value)
 	{

@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <imgui.h>
+
 namespace UiUtil
 {
 	enum class EditorIcon
@@ -10,7 +12,10 @@ namespace UiUtil
 		Folder,
 		FolderOpen,
 		Camera,
+		Light,
 		DirectionalLight,
+		PointLight,
+		SpotLight,
 		StaticMesh,
 		Material,
 		EyeVisible,
@@ -53,10 +58,15 @@ namespace UiUtil
 
 	const char* GetEditorIconGlyph(EditorIcon icon) noexcept;
 	std::string MakeIconLabel(EditorIcon icon, const char* label);
+	bool MatchesDetailsFilter(const std::string& filterText, const char* title, const char* keywords) noexcept;
+	ImU32 WithAlphaU32(ImVec4 color, float alpha) noexcept;
 	void DrawEditorIcon(EditorIcon icon, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawEditorIconButton(EditorIcon icon, const char* id, const char* tooltip = nullptr);
 	void DrawPlaceholderTypeIcon(const char* text, const char* tooltip = nullptr, bool drawBadgeBackground = true);
 	bool DrawVisibilityIconButton(const char* id, bool visible);
+	bool DrawFilterChip(const char* label, bool active) noexcept;
+	void DrawMutedText(const char* text, float alpha = 0.72f) noexcept;
+	bool DrawCenteredVisibilityIconButton(const char* id, bool visible) noexcept;
 
 	void DrawPanelHeader(const char* title, const char* subtitle);
 	void BeginSectionCard(const char* title);
@@ -87,6 +97,7 @@ namespace UiUtil
 
 	bool BeginDetailsCategory(const char* title, bool defaultOpen = true);
 	void EndDetailsCategory();
+	void DrawDetailsEmptyState(const char* text = "Select an object from the scene outliner to inspect its properties.");
 	void DrawDetailsValueRow(const char* label, const char* value);
 	void DrawDetailsAssetRow(const char* label, EditorIcon thumbnailIcon, const char* value, const char* typeText = nullptr);
 	bool EditDetailsFloat(

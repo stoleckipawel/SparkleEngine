@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Math/MathUtils.h"
 #include "ImportedSceneIndices.h"
 
 #include <DirectXMath.h>
@@ -55,23 +56,7 @@ struct ImportedMeshInstance
 	ImportedMeshPrimitiveIndex primitiveIndex = kInvalidImportedMeshPrimitiveIndex;
 	ImportedMaterialIndex materialIndex = kInvalidImportedMaterialIndex;
 	ImportedMeshInstanceGroupIndex groupIndex = kInvalidImportedMeshInstanceGroupIndex;
-	DirectX::XMFLOAT4X4 worldTransform = {
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    0.0f,
-	    1.0f};
+	DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 	std::uint32_t sourceNodeIndex = (std::numeric_limits<std::uint32_t>::max)();
 	std::string sourceNodeName;
 

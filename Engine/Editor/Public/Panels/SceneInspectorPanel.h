@@ -4,25 +4,8 @@
 
 #include <string>
 
-#include <DirectXMath.h>
-
 class GameScene;
-class Mesh;
-class MeshComponent;
-class CameraComponent;
-class DirectionalLightComponent;
-class SceneCamera;
-struct DirectionalLightDesc;
 struct SceneObjectSelection;
-
-enum class SceneInspectorFilter
-{
-	All,
-	General,
-	Transform,
-	Rendering,
-	Materials
-};
 
 class SceneInspectorPanel final
 {
@@ -46,34 +29,6 @@ class SceneInspectorPanel final
 	void BuildSelectionHeader() noexcept;
 	void BuildDetailsToolbar() noexcept;
 	void BuildSelectionInspector() noexcept;
-	bool ShouldShowDetailsCategory(SceneInspectorFilter category, const char* title, const char* keywords) const noexcept;
-	static void ClampCameraUiValues(float& fovYDegrees, float& moveSpeed) noexcept;
-	static void ClampLightingUiValues(DirectX::XMFLOAT3& color, float& intensity) noexcept;
-	void BuildEmptyState() noexcept;
-	void BuildCameraInspector() noexcept;
-	void BuildDirectionalLightInspector(std::size_t lightIndex) noexcept;
-	void BuildMeshInspector(std::size_t meshIndex) noexcept;
-	void BuildCameraTransformCategory(CameraComponent& cameraComponent) noexcept;
-	void BuildCameraCategory(CameraComponent& cameraComponent) noexcept;
-	void BuildCameraMovementCategory(SceneCamera& sceneCamera) noexcept;
-	void BuildCameraAdvancedParametersCategory(CameraComponent& cameraComponent) noexcept;
-	void BuildDirectionalLightTransformCategory(DirectionalLightDesc& lightDesc) noexcept;
-	void BuildDirectionalLightCategory(DirectionalLightComponent& light, DirectionalLightDesc& lightDesc) noexcept;
-	void BuildDirectionalLightAdvancedParametersCategory(DirectionalLightComponent& light) noexcept;
-	void BuildMeshTransformCategory(MeshComponent& meshComponent) noexcept;
-	void BuildStaticMeshCategory(const Mesh& mesh, MeshComponent& meshComponent) noexcept;
-	void BuildStaticMeshAdvancedCategory(const Mesh& mesh) noexcept;
-	void BuildMeshAdvancedParametersCategory(MeshComponent& meshComponent) noexcept;
-	void BuildMeshMaterialsCategory(const MeshComponent& meshComponent) noexcept;
-
-	static constexpr float kPositionSliderMin = -500.0f;
-	static constexpr float kPositionSliderMax = 500.0f;
-	static constexpr float kDirectionSliderMin = -1.0f;
-	static constexpr float kDirectionSliderMax = 1.0f;
-	static constexpr float kIntensitySliderMin = 0.0f;
-	static constexpr float kIntensitySliderMax = 20.0f;
-	static constexpr float kScaleSliderMin = 0.001f;
-	static constexpr float kScaleSliderMax = 100.0f;
 
 	GameScene* m_gameScene = nullptr;
 	SceneObjectSelection* m_selection = nullptr;

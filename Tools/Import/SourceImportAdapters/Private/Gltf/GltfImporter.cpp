@@ -6,52 +6,13 @@
 #include "Diagnostics/GltfGeometryInstancingDiagnostics.h"
 #include "Diagnostics/SourceImportDiagnosticsRecorder.h"
 #include "Gltf/GltfCameraImporter.h"
+#include "Gltf/GltfImportFeatureDiagnostics.h"
 #include "Gltf/GltfSceneReader.h"
 #include "Gltf/GltfGeometryImporter.h"
 #include "Gltf/GltfLightImporter.h"
 #include "Gltf/GltfMaterialImporter.h"
 
 #include <cgltf.h>
-
-#include <algorithm>
-
-namespace
-{
-	void RecordLightImportDiagnostics(SourceImportResult& result)
-	{
-		if (result.scene.lights.empty())
-		{
-			return;
-		}
-
-		const auto isPointLight = [](const ImportedLight& light) noexcept { return light.kind == ImportedLightKind::Point; };
-		const auto isSpotLight = [](const ImportedLight& light) noexcept { return light.kind == ImportedLightKind::Spot; };
-		const auto isUnsupportedRuntimeLight = [](const ImportedLight& light) noexcept {
-			return light.kind == ImportedLightKind::Point || light.kind == ImportedLightKind::Spot || light.kind == ImportedLightKind::Unknown;
-		};
-
-		const std::size_t pointLightCount = static_cast<std::size_t>(
-		    std::count_if(result.scene.lights.begin(), result.scene.lights.end(), isPointLight));
-		const std::size_t spotLightCount = static_cast<std::size_t>(
-		    std::count_if(result.scene.lights.begin(), result.scene.lights.end(), isSpotLight));
-		const bool hasUnsupportedRuntimeLights =
-		    std::any_of(result.scene.lights.begin(), result.scene.lights.end(), isUnsupportedRuntimeLight);
-
-		result.diagnostics.featureCapabilities.lightNodes = {
-		    result.scene.lights.size(),
-		    hasUnsupportedRuntimeLights ? SourceImportFeatureSupport::PartiallyImported : SourceImportFeatureSupport::Imported};
-
-		if (pointLightCount > 0)
-		{
-			GltfImportDiagnosticLog::ReportUnsupportedPointLights(pointLightCount, result);
-		}
-
-		if (spotLightCount > 0)
-		{
-			GltfImportDiagnosticLog::ReportUnsupportedSpotLights(spotLightCount, result);
-		}
-	}
-}  // namespace
 
 bool GltfImporter::SupportsExtension(std::wstring_view extension) const noexcept
 {
@@ -73,13 +34,7 @@ SourceImportResult GltfImporter::Import(const std::filesystem::path& filePath) c
 	GltfSceneReader::CollectSceneWarnings(scene.data, result);
 	GltfCameraImporter::ImportCameras(scene.data, result);
 	GltfLightImporter::ImportLights(scene.data, result);
-	if (!result.scene.cameras.empty())
-	{
-		result.diagnostics.featureCapabilities.cameraNodes = {
-		    result.scene.cameras.size(),
-		    SourceImportFeatureSupport::Imported};
-	}
-	RecordLightImportDiagnostics(result);
+	GltfImportFeatureDiagnostics::RecordImportedFeatureSupport(result);
 
 	const std::filesystem::path sourceDirectory = filePath.parent_path();
 	SourceImportDiagnosticsRecorder::RecordSourceSummary(result, scene.data->meshes_count, scene.data->materials_count);

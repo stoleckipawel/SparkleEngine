@@ -2,38 +2,17 @@
 #include "Scene/GameScene.h"
 
 #include "Assets/SceneAssetPayload.h"
-#include "Scene/Meshes/CookedMesh.h"
-#include "Scene/Meshes/MeshComponent.h"
+#include "Scene/GameSceneAssetPayloadAppender.h"
 #include "Level/Level.h"
 #include "Level/LevelDesc.h"
 
-#include <memory>
-#include <string_view>
+#include <utility>
 
 static const auto g_gameSceneLogger = Logging::GetOrCreateLogger("GameFramework.GameScene");
 
 GameScene::GameScene() = default;
 
 GameScene::~GameScene() noexcept = default;
-
-namespace
-{
-	std::string_view ToLogString(SceneLightKind lightKind) noexcept
-	{
-		switch (lightKind)
-		{
-			case SceneLightKind::Directional:
-				return "directional";
-			case SceneLightKind::Point:
-				return "point";
-			case SceneLightKind::Spot:
-				return "spot";
-			case SceneLightKind::Unknown:
-			default:
-				return "unknown";
-		}
-	}
-}  // namespace
 
 GameSceneLoadResult GameScene::LoadLevel(const LevelAsset& level)
 {
@@ -58,111 +37,16 @@ GameSceneLoadResult GameScene::LoadLevel(const LevelDesc& desc)
 
 bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 {
-	if (!sceneAssetPayload.HasMeshes() && sceneAssetPayload.cameras.empty() && sceneAssetPayload.lights.empty())
+	const SceneAssetPayloadDiagnostics diagnostics = sceneAssetPayload.diagnostics;
+	GameSceneAssetPayloadAppender appender(m_cameras, m_lighting, m_materials, m_meshes, m_textures);
+	if (!appender.Append(std::move(sceneAssetPayload)))
 	{
 		return false;
 	}
 
-	const SceneAssetPayloadDiagnostics diagnostics = sceneAssetPayload.diagnostics;
-
-	if (!sceneAssetPayload.materials.empty())
-	{
-		m_textures.AppendMaterialTextureReferences(sceneAssetPayload.materials);
-	}
-
-	const MaterialHandle materialBaseHandle = sceneAssetPayload.materials.empty()
-	                                              ? MaterialHandle::Invalid()
-	                                              : m_materials.AppendMaterials(std::move(sceneAssetPayload.materials));
-	const auto sceneMeshBaseIndex = static_cast<SceneMeshInstanceIndex>(m_meshes.GetMeshCount());
-	const auto sceneGroupBaseIndex = static_cast<SceneMeshInstanceGroupIndex>(m_meshes.GetMeshInstanceGroupCount());
-
-	std::vector<std::unique_ptr<MeshComponent>> meshComponents;
-	meshComponents.reserve(sceneAssetPayload.meshInstances.size());
-	for (SceneAssetPayload::MeshInstance& meshInstance : sceneAssetPayload.meshInstances)
-	{
-		if (meshInstance.meshAssetIndex >= sceneAssetPayload.meshAssets.size())
-		{
-			return false;
-		}
-
-		const SceneAssetPayload::MeshAsset& meshAsset = sceneAssetPayload.meshAssets[meshInstance.meshAssetIndex];
-		MeshData meshData = meshAsset.mesh;
-		auto mesh = std::make_unique<CookedMesh>(std::move(meshData), meshAsset.assetId);
-		const MaterialHandle materialHandle = meshInstance.material.IsValid() && materialBaseHandle.IsValid()
-		                                          ? MaterialHandle(materialBaseHandle.GetIndex() + meshInstance.material.GetIndex())
-		                                          : m_materials.GetOrCreateDefaultMaterialHandle();
-		const SceneMeshInstanceGroupIndex sceneGroupIndex = meshInstance.groupIndex == kInvalidSceneMeshInstanceGroupIndex
-		                                                    ? kInvalidSceneMeshInstanceGroupIndex
-		                                                    : sceneGroupBaseIndex + meshInstance.groupIndex;
-		meshComponents.push_back(std::make_unique<MeshComponent>(
-			    std::move(mesh), meshInstance.transform, materialHandle, meshAsset.assetId, meshInstance.meshAssetIndex, sceneGroupIndex));
-	}
-
-	m_meshes.AppendMeshComponents(std::move(meshComponents));
-
-	std::vector<MeshInstanceGroupSnapshot> meshInstanceGroups;
-	meshInstanceGroups.reserve(sceneAssetPayload.meshInstanceGroups.size());
-	for (const SceneAssetPayload::MeshInstanceGroup& payloadGroup : sceneAssetPayload.meshInstanceGroups)
-	{
-		MeshInstanceGroupSnapshot meshInstanceGroup;
-		meshInstanceGroup.meshAssetIndex = payloadGroup.meshAssetIndex;
-		meshInstanceGroup.meshAssetId = payloadGroup.meshAssetIndex < sceneAssetPayload.meshAssets.size()
-		                                ? sceneAssetPayload.meshAssets[payloadGroup.meshAssetIndex].assetId
-		                                : Assets::InvalidCookedAssetId;
-		meshInstanceGroup.materialHandle = payloadGroup.material.IsValid() && materialBaseHandle.IsValid()
-		                                       ? MaterialHandle(materialBaseHandle.GetIndex() + payloadGroup.material.GetIndex())
-		                                       : MaterialHandle::Invalid();
-		meshInstanceGroup.firstInstance = payloadGroup.firstInstance == kInvalidSceneMeshInstanceIndex
-		                                  ? kInvalidSceneMeshInstanceIndex
-		                                  : sceneMeshBaseIndex + payloadGroup.firstInstance;
-		meshInstanceGroup.instanceCount = payloadGroup.instanceCount;
-		meshInstanceGroup.groupKind = payloadGroup.groupKind;
-		meshInstanceGroup.flags = payloadGroup.flags;
-		meshInstanceGroups.push_back(meshInstanceGroup);
-	}
-	m_meshes.AppendMeshInstanceGroups(std::move(meshInstanceGroups));
-
-	for (SceneAssetPayload::Camera& camera : sceneAssetPayload.cameras)
-	{
-		SceneCameraEntry sceneCamera;
-		sceneCamera.name = std::move(camera.name);
-		sceneCamera.desc = camera.desc;
-		m_cameras.AppendCamera(std::move(sceneCamera));
-	}
-
-	std::size_t appendedDirectionalLightCount = 0;
-	std::size_t skippedUnsupportedLightCount = 0;
-	std::size_t truncatedDirectionalLightCount = 0;
-	for (const SceneLightDesc& light : sceneAssetPayload.lights)
-	{
-		if (!light.IsDirectional())
-		{
-			++skippedUnsupportedLightCount;
-			SPDLOG_LOGGER_WARN(
-			    g_gameSceneLogger,
-			    "Scene: Light '{}' of type '{}' is loaded as metadata but is not supported by runtime scene lighting yet",
-			    light.name,
-			    ToLogString(light.kind));
-			continue;
-		}
-
-		if (!m_lighting.AppendDirectionalLight(light.directional, light.visible))
-		{
-			++truncatedDirectionalLightCount;
-			SPDLOG_LOGGER_WARN(
-			    g_gameSceneLogger,
-			    "Scene: Directional light '{}' was skipped because the scene reached the directional light limit ({})",
-			    light.name,
-			    SceneLighting::MaxDirectionalLights);
-			continue;
-		}
-
-		++appendedDirectionalLightCount;
-	}
-
 	SPDLOG_LOGGER_INFO(
 	    g_gameSceneLogger,
-	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}, directionalLightsApplied={}, unsupportedLights={}, truncatedDirectionalLights={}",
+	    "Scene: Loaded {} meshes, {} materials, payload sceneAssets={}, meshAssetRefs={}, meshInstances={}, instanceGroups={}, cameras={}, lights={}",
 	    m_meshes.GetMeshCount(),
 	    m_materials.GetMaterialCount(),
 	    diagnostics.loadedSceneAssetCount,
@@ -170,10 +54,7 @@ bool GameScene::AppendSceneAssetPayload(SceneAssetPayload&& sceneAssetPayload)
 	    diagnostics.meshInstanceCount,
 	    diagnostics.meshInstanceGroupCount,
 	    diagnostics.cameraCount,
-	    diagnostics.lightCount,
-	    appendedDirectionalLightCount,
-	    skippedUnsupportedLightCount,
-	    truncatedDirectionalLightCount);
+	    diagnostics.lightCount);
 
 	return true;
 }

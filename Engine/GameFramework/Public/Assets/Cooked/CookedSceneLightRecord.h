@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Core/Public/Math/MathUtils.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
 
 #include <DirectXMath.h>
@@ -25,7 +26,7 @@ namespace Assets
 	{
 		char name[kCookedSceneLightNameCapacity] = {};
 		CookedSceneLightKind kind = CookedSceneLightKind::Unknown;
-		DirectX::XMFLOAT4X4 worldTransform = {};
+		DirectX::XMFLOAT4X4 worldTransform = MathUtils::IdentityFloat4x4();
 		DirectX::XMFLOAT3 direction = {0.0f, -1.0f, 0.0f};
 		float intensity = 1.0f;
 		DirectX::XMFLOAT3 color = {1.0f, 1.0f, 1.0f};

@@ -130,7 +130,7 @@ void ViewportTopPanel::DrawViewModeCategory(const char* label) noexcept
 	UiUtil::EditorIcon icon = UiUtil::EditorIcon::ViewMode;
 	if (std::strcmp(label, "Lighting") == 0)
 	{
-		icon = UiUtil::EditorIcon::DirectionalLight;
+		icon = UiUtil::EditorIcon::Light;
 	}
 	const std::string categoryLabel = UiUtil::MakeIconLabel(icon, label);
 	ImGui::TextDisabled("%s", categoryLabel.c_str());

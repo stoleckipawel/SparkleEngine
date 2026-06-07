@@ -1,20 +1,16 @@
 #pragma once
 
-#include "Config/RenderConfig.h"
 #include "GameFramework/Public/GameFrameworkAPI.h"
-#include "GameFramework/Public/Scene/Lighting/DirectionalLightComponent.h"
 #include "GameFramework/Public/Scene/Lighting/LightingSnapshot.h"
 #include "GameFramework/Public/Scene/Lighting/LevelLightingDesc.h"
+#include "GameFramework/Public/Scene/Lighting/SceneLightDesc.h"
 
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 class SPARKLE_ENGINE_API SceneLighting final
 {
   public:
-	static constexpr std::size_t MaxDirectionalLights = RenderConfig::Lights::MaxDirectionalLights;
-
 	SceneLighting() noexcept = default;
 	~SceneLighting() noexcept = default;
 
@@ -23,24 +19,21 @@ class SPARKLE_ENGINE_API SceneLighting final
 	SceneLighting(SceneLighting&&) = delete;
 	SceneLighting& operator=(SceneLighting&&) = delete;
 
-	std::size_t GetDirectionalLightCount() const noexcept { return m_directionalLightComponents.size(); }
-	bool CanAppendDirectionalLight() const noexcept { return m_directionalLightComponents.size() < MaxDirectionalLights; }
+	std::size_t GetLightCount() const noexcept { return m_lights.size(); }
 
-	const DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) const noexcept
-	{
-		return m_directionalLightComponents[index];
-	}
-	DirectionalLightComponent& GetDirectionalLightComponent(std::size_t index) noexcept { return m_directionalLightComponents[index]; }
+	const std::vector<SceneLightDesc>& GetLights() const noexcept { return m_lights; }
+	const SceneLightDesc* GetLight(std::size_t index) const noexcept;
+	bool IsLightVisible(std::size_t index) const noexcept;
+	void SetLightVisible(std::size_t index, bool visible);
+	bool ApplyLightDesc(std::size_t lightIndex, SceneLightDesc light);
 
-	const std::vector<DirectionalLightComponent>& GetDirectionalLightComponents() const noexcept { return m_directionalLightComponents; }
-
-	void ApplyFromDesc(const LevelLightingDesc& desc) noexcept;
-	bool AppendDirectionalLight(const DirectionalLightDesc& desc, bool visible = true) noexcept;
+	void ApplyFromDesc(const LevelLightingDesc& desc);
+	void AppendLight(SceneLightDesc light);
 	LevelLightingDesc CaptureToDesc() const noexcept;
 	LightingSnapshot CaptureSnapshot() const noexcept;
 
-	void Reset() noexcept { m_directionalLightComponents.clear(); }
+	void Reset() noexcept;
 
   private:
-	std::vector<DirectionalLightComponent> m_directionalLightComponents;
+	std::vector<SceneLightDesc> m_lights;
 };

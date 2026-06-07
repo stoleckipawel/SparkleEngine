@@ -3,8 +3,10 @@
 #include <cstddef>
 
 #include <string>
+#include <vector>
 
 class GameScene;
+struct SceneOutlinerEntry;
 struct SceneObjectSelection;
 
 enum class SceneOutlinerFilter
@@ -32,7 +34,6 @@ class SceneOutlinerPanel final
 	void BuildUI(bool disableInteraction = false);
 
   private:
-	static std::string BuildMeshLabel(std::size_t meshIndex);
 	void BuildToolbar() noexcept;
 	void BuildFooter() noexcept;
 	bool IsSelectionValid() const noexcept;
@@ -40,6 +41,7 @@ class SceneOutlinerPanel final
 	void BuildCameraSection() noexcept;
 	void BuildLightSection() noexcept;
 	void BuildMeshSection() noexcept;
+	void DrawEntrySection(const char* id, const char* label, const char* emptyText, const std::vector<SceneOutlinerEntry>& entries) noexcept;
 	bool PassesActiveFilter(const SceneObjectSelection& selection) const noexcept;
 	bool MatchesSearch(const char* label, const char* typeLabel) const noexcept;
 	std::size_t CountVisibleEntries() const noexcept;

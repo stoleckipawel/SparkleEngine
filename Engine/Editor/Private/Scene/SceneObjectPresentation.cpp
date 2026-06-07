@@ -1,0 +1,80 @@
+#include "PCH.h"
+#include "Scene/SceneObjectPresentation.h"
+
+#include "Scene/SceneObjectSelection.h"
+#include "Scene/GameScene.h"
+#include "Scene/Lighting/SceneLightDesc.h"
+#include "Scene/Lighting/SceneLighting.h"
+
+namespace SceneObjectPresentation
+{
+	UiUtil::EditorIcon GetLightIcon(SceneLightKind kind) noexcept
+	{
+		switch (kind)
+		{
+			case SceneLightKind::Directional:
+				return UiUtil::EditorIcon::DirectionalLight;
+			case SceneLightKind::Point:
+				return UiUtil::EditorIcon::PointLight;
+			case SceneLightKind::Spot:
+				return UiUtil::EditorIcon::SpotLight;
+			case SceneLightKind::Unknown:
+			default:
+				return UiUtil::EditorIcon::Light;
+		}
+	}
+
+	const char* GetLightTypeLabel(SceneLightKind kind) noexcept
+	{
+		switch (kind)
+		{
+			case SceneLightKind::Directional:
+				return "Directional Light";
+			case SceneLightKind::Point:
+				return "Point Light";
+			case SceneLightKind::Spot:
+				return "Spot Light";
+			case SceneLightKind::Unknown:
+			default:
+				return "Light";
+		}
+	}
+
+	std::string BuildLightLabel(const SceneLightDesc& light, std::size_t lightIndex)
+	{
+		if (!light.common.name.empty())
+		{
+			return light.common.name;
+		}
+
+		return std::string(GetLightTypeLabel(light.GetKind())) + " " + std::to_string(lightIndex + 1);
+	}
+
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection& selection, const GameScene* gameScene) noexcept
+	{
+		switch (selection.type)
+		{
+			case SceneObjectType::Camera:
+				return UiUtil::EditorIcon::Camera;
+			case SceneObjectType::Light:
+				if (gameScene != nullptr)
+				{
+					if (const SceneLightDesc* light = gameScene->GetLighting().GetLight(selection.index))
+					{
+						return GetLightIcon(light->GetKind());
+					}
+				}
+				return UiUtil::EditorIcon::Light;
+			case SceneObjectType::Mesh:
+				return UiUtil::EditorIcon::StaticMesh;
+			case SceneObjectType::None:
+			default:
+				return UiUtil::EditorIcon::None;
+		}
+	}
+
+	UiUtil::EditorIcon BuildSelectionIcon(const SceneObjectSelection* selection, const GameScene* gameScene) noexcept
+	{
+		return selection != nullptr ? BuildSelectionIcon(*selection, gameScene) : UiUtil::EditorIcon::None;
+	}
+}  // namespace SceneObjectPresentation
