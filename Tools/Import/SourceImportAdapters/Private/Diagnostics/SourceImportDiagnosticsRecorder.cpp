@@ -4,6 +4,18 @@
 
 #include "SourceImportResult.h"
 
+namespace
+{
+	SourceImportFeatureCapability BuildFeatureCapability(
+	    std::size_t count,
+	    SourceImportFeatureSupport presentFeatureSupport) noexcept
+	{
+		return {
+		    count,
+		    count == 0 ? SourceImportFeatureSupport::NotPresent : presentFeatureSupport};
+	}
+}
+
 void SourceImportDiagnosticsRecorder::RecordSourceSummary(
     SourceImportResult& result,
     std::size_t sourceMeshCount,
@@ -18,30 +30,23 @@ void SourceImportDiagnosticsRecorder::RecordSceneFeatures(
     const SourceSceneFeatureDiagnostics& diagnostics) noexcept
 {
 	result.diagnostics.sceneFeatures = diagnostics;
-	result.diagnostics.featureCapabilities.animations = {
-	    diagnostics.animationCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.cameraNodes = {
-	    diagnostics.cameraNodeCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.lightNodes = {
-	    diagnostics.lightNodeCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.skinnedNodes = {
-	    diagnostics.skinnedNodeCount,
-	    SourceImportFeatureSupport::PartiallyImported};
-	result.diagnostics.featureCapabilities.weightedNodes = {
-	    diagnostics.weightedNodeCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.morphTargets = {
-	    diagnostics.morphTargetPrimitiveCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.materialVariants = {
+	result.diagnostics.featureCapabilities.animations =
+	    BuildFeatureCapability(diagnostics.animationCount, SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.cameraNodes =
+	    BuildFeatureCapability(diagnostics.cameraNodeCount, SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.lightNodes =
+	    BuildFeatureCapability(diagnostics.lightNodeCount, SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.skinnedNodes =
+	    BuildFeatureCapability(diagnostics.skinnedNodeCount, SourceImportFeatureSupport::PartiallyImported);
+	result.diagnostics.featureCapabilities.weightedNodes =
+	    BuildFeatureCapability(diagnostics.weightedNodeCount, SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.morphTargets =
+	    BuildFeatureCapability(diagnostics.morphTargetPrimitiveCount, SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.materialVariants = BuildFeatureCapability(
 	    diagnostics.materialVariantCount + diagnostics.materialVariantPrimitiveCount,
-	    SourceImportFeatureSupport::Unsupported};
-	result.diagnostics.featureCapabilities.meshGpuInstancing = {
-	    diagnostics.authoredInstancingNodeCount,
-	    SourceImportFeatureSupport::PartiallyImported};
+	    SourceImportFeatureSupport::Unsupported);
+	result.diagnostics.featureCapabilities.meshGpuInstancing =
+	    BuildFeatureCapability(diagnostics.authoredInstancingNodeCount, SourceImportFeatureSupport::PartiallyImported);
 }
 
 void SourceImportDiagnosticsRecorder::RecordImportedScenePayload(SourceImportResult& result) noexcept
@@ -116,6 +121,16 @@ void SourceImportDiagnosticsRecorder::RecordGeometryInstancingPlacements(SourceI
 {
 	result.diagnostics.geometryInstancing.meshPlacementCount = result.scene.meshInstances.size();
 	result.diagnostics.geometryInstancing.authoredInstanceGroupCount = result.scene.meshInstanceGroups.size();
+	if (result.diagnostics.sceneFeatures.authoredInstancingNodeCount > 0)
+	{
+		const SourceImportFeatureSupport support =
+		    result.scene.meshInstanceGroups.size() >= result.diagnostics.sceneFeatures.authoredInstancingNodeCount
+		        ? SourceImportFeatureSupport::Imported
+		        : SourceImportFeatureSupport::PartiallyImported;
+		result.diagnostics.featureCapabilities.meshGpuInstancing = {
+		    result.diagnostics.sceneFeatures.authoredInstancingNodeCount,
+		    support};
+	}
 }
 
 void SourceImportDiagnosticsRecorder::RecordWarning(SourceImportResult& result) noexcept

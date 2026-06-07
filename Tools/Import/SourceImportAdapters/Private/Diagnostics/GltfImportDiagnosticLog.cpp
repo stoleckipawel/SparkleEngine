@@ -72,12 +72,6 @@ void GltfImportDiagnosticLog::ReportLoadedScene(const std::filesystem::path& fil
 	        result.diagnostics.geometryInstancing.authoredInstanceGroupCount));
 }
 
-void GltfImportDiagnosticLog::ReportIgnoredAnimations(std::size_t count, SourceImportResult& result)
-{
-	SPDLOG_LOGGER_WARN(g_gltfImportDiagnosticLogger, "{}", std::format("GltfImporter: {} animations are present and will be ignored", count));
-	SourceImportDiagnosticsRecorder::RecordWarning(result);
-}
-
 void GltfImportDiagnosticLog::ReportImportedAnimationsForPlayback(std::size_t count)
 {
 	SPDLOG_LOGGER_INFO(

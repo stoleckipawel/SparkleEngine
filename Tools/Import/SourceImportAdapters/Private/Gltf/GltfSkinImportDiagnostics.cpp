@@ -33,6 +33,15 @@ std::size_t GltfSkinImportDiagnostics::CountSkinnedMeshNodesImportedThroughSkinP
 void GltfSkinImportDiagnostics::ReportStaticOnlySkinnedNodes(SourceImportResult& result)
 {
 	const std::size_t importedSkinnedNodeCount = CountSkinnedMeshNodesImportedThroughSkinPath(result);
+	if (result.diagnostics.sceneFeatures.skinnedNodeCount > 0)
+	{
+		result.diagnostics.featureCapabilities.skinnedNodes = {
+		    result.diagnostics.sceneFeatures.skinnedNodeCount,
+		    importedSkinnedNodeCount >= result.diagnostics.sceneFeatures.skinnedNodeCount
+		        ? SourceImportFeatureSupport::Imported
+		        : SourceImportFeatureSupport::PartiallyImported};
+	}
+
 	if (result.diagnostics.sceneFeatures.skinnedNodeCount > importedSkinnedNodeCount)
 	{
 		GltfImportDiagnosticLog::ReportStaticSkinnedNodes(result.diagnostics.sceneFeatures.skinnedNodeCount - importedSkinnedNodeCount, result);

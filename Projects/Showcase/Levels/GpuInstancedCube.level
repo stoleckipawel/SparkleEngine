@@ -1,11 +1,11 @@
 [Level]
-Name = MorphTriangle
+Name = GpuInstancedCube
 
 [Camera]
-Position = 0.0, 0.7, -2.0
+Position = 0.0, 1.0, -4.0
 YawRadians = 0.0
 PitchRadians = 0.0
-FovYDegrees = 55.0
+FovYDegrees = 60.0
 MoveSpeed = 0.15
 
 [Lighting]
@@ -14,4 +14,4 @@ DirectionalLight0Intensity = 2.35
 DirectionalLight0Color = 1.0, 0.93, 0.82
 
 [SceneAssets]
-Asset = MorphTriangle/MorphTriangle
+Asset = Instancing/GpuInstancedCube

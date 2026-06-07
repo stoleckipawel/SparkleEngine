@@ -3,6 +3,7 @@
 
 #include "Panels/SceneCameraInspector.h"
 #include "Panels/SceneLightInspector.h"
+#include "Panels/SceneMaterialVariantInspector.h"
 #include "Panels/SceneMeshInspector.h"
 #include "Scene/SceneObjectSelection.h"
 #include "Scene/SceneObjectPresentation.h"
@@ -212,6 +213,13 @@ void SceneInspectorPanel::BuildUI(bool disableInteraction)
 		{
 			ImGui::Spacing();
 			BuildSelectionInspector();
+			ImGui::EndTabItem();
+		}
+
+		if (m_gameScene->GetMaterialVariants().GetVariantCount() > 0 && ImGui::BeginTabItem("Variants"))
+		{
+			ImGui::Spacing();
+			SceneMaterialVariantInspector::Build(*m_gameScene);
 			ImGui::EndTabItem();
 		}
 

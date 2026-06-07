@@ -6,15 +6,18 @@
 
 enum class SourceImportFeatureSupport : std::uint32_t
 {
-	Imported = 0,
-	PartiallyImported = 1,
-	Unsupported = 2,
+	NotPresent = 0,
+	Imported = 1,
+	PartiallyImported = 2,
+	Unsupported = 3,
 };
 
 inline std::string_view ToString(SourceImportFeatureSupport support) noexcept
 {
 	switch (support)
 	{
+	case SourceImportFeatureSupport::NotPresent:
+		return "not-present";
 	case SourceImportFeatureSupport::Imported:
 		return "imported";
 	case SourceImportFeatureSupport::PartiallyImported:
@@ -29,7 +32,7 @@ inline std::string_view ToString(SourceImportFeatureSupport support) noexcept
 struct SourceImportFeatureCapability
 {
 	std::size_t count = 0;
-	SourceImportFeatureSupport support = SourceImportFeatureSupport::Unsupported;
+	SourceImportFeatureSupport support = SourceImportFeatureSupport::NotPresent;
 };
 
 struct SourceImportSummaryDiagnostics

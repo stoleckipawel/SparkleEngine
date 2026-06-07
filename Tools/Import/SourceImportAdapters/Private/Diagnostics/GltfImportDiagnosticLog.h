@@ -17,7 +17,6 @@ class GltfImportDiagnosticLog final
 	static void ReportNoSupportedMeshPrimitives(const std::filesystem::path& filePath, SourceImportResult& result);
 	static void ReportLoadedScene(const std::filesystem::path& filePath, const SourceImportResult& result);
 
-	static void ReportIgnoredAnimations(std::size_t count, SourceImportResult& result);
 	static void ReportImportedAnimationsForPlayback(std::size_t count);
 	static void ReportStaticSkinnedNodes(std::size_t count, SourceImportResult& result);
 	static void ReportIgnoredWeightedNodes(std::size_t count, SourceImportResult& result);
