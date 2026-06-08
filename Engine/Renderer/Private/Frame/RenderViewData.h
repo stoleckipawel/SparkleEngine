@@ -6,6 +6,7 @@
 struct RenderViewData
 {
 	PerViewConstantBufferData perViewData = {};
+	PerTemporalConstantBufferData perTemporalData = {};
 	RhiGpuVirtualAddress perViewGpuAddress = 0;
 	RhiViewport viewport = {};
 	RhiRect scissorRect = {};

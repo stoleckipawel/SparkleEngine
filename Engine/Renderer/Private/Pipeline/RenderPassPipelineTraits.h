@@ -49,7 +49,8 @@ template <> struct RenderPassPipelineTraits<GBufferPass>
 			    pipelineDesc.RenderTargetFormats[3] = RenderConfig::GBuffer::EmissiveFormat;
 			    pipelineDesc.RenderTargetFormats[4] = RenderConfig::GBuffer::SubsurfaceFormat;
 			    pipelineDesc.RenderTargetFormats[5] = RenderConfig::GBuffer::DeviceZFormat;
-			    pipelineDesc.RenderTargetCount = 6;
+			    pipelineDesc.RenderTargetFormats[6] = RenderConfig::GBuffer::MotionVectorFormat;
+			    pipelineDesc.RenderTargetCount = 7;
 			    pipelineDesc.DepthStencilFormat = RenderConfig::DepthStencilFormat;
 			    pipelineDesc.DepthTest.DepthEnable = true;
 			    pipelineDesc.DepthTest.DepthWriteEnable = true;

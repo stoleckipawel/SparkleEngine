@@ -31,9 +31,11 @@ struct GBufferPassParameters
 	ShaderRenderTarget Emissive;
 	ShaderRenderTarget Subsurface;
 	ShaderRenderTarget DeviceZ;
+	ShaderRenderTarget MotionVector;
 	ShaderDepthTarget MainDepth;
 	ShaderUniform<PerFrameConstantBufferData> PerFrame;
 	ShaderUniform<PerViewConstantBufferData> PerView;
+	ShaderUniform<PerTemporalConstantBufferData> PerTemporal;
 	ShaderSamplerSet SamplerAniso16xWrap;
 
 	static void Describe(ShaderParameterStructBuilder<GBufferPassParameters>& builder)
@@ -44,9 +46,11 @@ struct GBufferPassParameters
 		builder.RenderTarget("Emissive", &GBufferPassParameters::Emissive, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("Subsurface", &GBufferPassParameters::Subsurface, ShaderStageVisibility::AllGraphics);
 		builder.RenderTarget("DeviceZ", &GBufferPassParameters::DeviceZ, ShaderStageVisibility::AllGraphics);
+		builder.RenderTarget("MotionVector", &GBufferPassParameters::MotionVector, ShaderStageVisibility::AllGraphics);
 		builder.DepthTarget("MainDepth", &GBufferPassParameters::MainDepth, ShaderStageVisibility::AllGraphics);
 		builder.Uniform("PerFrame", &GBufferPassParameters::PerFrame, ShaderStageVisibility::Pixel);
 		builder.Uniform("PerView", &GBufferPassParameters::PerView, ShaderStageVisibility::Vertex);
+		builder.Uniform("PerTemporal", &GBufferPassParameters::PerTemporal, ShaderStageVisibility::Vertex | ShaderStageVisibility::Pixel);
 		builder.Sampler("SamplerAniso16xWrap", &GBufferPassParameters::SamplerAniso16xWrap, ShaderStageVisibility::Pixel);
 	}
 };

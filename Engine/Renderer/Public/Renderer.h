@@ -32,6 +32,7 @@ class MaterialCacheManager;
 class PerViewDataBuilder;
 class RenderSceneDataBuilder;
 class ViewLightingBuilder;
+class TemporalDataBuilder;
 class FrameExecutionDiagnostics;
 class RendererMemoryMonitor;
 class RenderRayTracingScene;
@@ -104,6 +105,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<RenderSceneDataBuilder> m_renderSceneDataBuilder;
 	std::unique_ptr<RenderRayTracingScene> m_renderRayTracingScene;
 	std::unique_ptr<PerViewDataBuilder> m_perViewDataBuilder;
+	std::unique_ptr<TemporalDataBuilder> m_temporalDataBuilder;
 	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;

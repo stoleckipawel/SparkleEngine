@@ -29,6 +29,12 @@ float4 PositionWorldToClip(float4 worldPosition)
 	return mul(worldPosition, Camera.ViewProjMTX);
 }
 
+float4 ApplyTemporalJitterClipOffset(float4 clipPosition, float2 jitterNdc)
+{
+	clipPosition.xy += jitterNdc;
+	return clipPosition;
+}
+
 
 float3 NormalLocalToWorld(float3 normalLocal)
 {

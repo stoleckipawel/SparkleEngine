@@ -60,6 +60,18 @@ Reviewer gate:
 - Prefer inline ray queries in the existing compute direct-lighting path first if both D3D12 and Vulkan can support it cleanly. Add full ray tracing pipelines/SBT only if a later feature needs ray generation/miss/hit shaders.
 - FrameGraph front end and execution back end are part of this feature work. Do not route around weak FrameGraph areas with manual one-off command recording.
 
+## Contract-first design (applies to all renderer feature stages)
+
+To avoid hidden coupling, each pass should define a contract that is explicit in code:
+
+- **Inputs**: resources it consumes (for example G-buffer, depth, normals, TLAS, motion vectors).
+- **Outputs**: resources it produces or writes (for example visibility buffers, denoised visibility, lighting targets).
+- **Assumptions**: required states or flags (for example TLAS build/read state, history validity, max light counts).
+- **Ownership rules**: which subsystem creates and transitions each resource.
+
+This roadmap uses contracts so feature code can be added by adding/expanding the relevant contract and then implementing against the declared interfaces.
+A contract is not extra complexity by itself; it is a structure that makes ownership, ordering, and fallback behavior readable.
+
 ## FrameGraph Refactor Track
 
 This track runs alongside every feature stage.
@@ -347,54 +359,150 @@ Suggested shader structure:
 - `Engine/Assets/Shaders/Passes/Deferred/RayTracedShadowDenoiserInputs.hlsli`
 - Refactor gate: stochastic visibility generation is a shadow-signal stage; final lighting should consume a visibility result and not own sampling details.
 
-## Stage 8: NVIDIA NRD SIGMA Integration
+## Stage 8: Temporal + AA Readiness Before Denoiser
 
-Goal: Integrate NVIDIA NRD SIGMA as the production denoiser path for soft ray traced shadows.
+Goal: Provide a stable temporal and anti-aliasing foundation before moving into NRD denoiser stages.
+
+The denoiser chain below depends on motion vectors, history buffers, and temporal contract ownership.
+
+### Stage 8.1: Temporal Inputs And Motion Vectors
+
+Status: In progress.
+
+Goal: Provide temporal data required by shadow denoising and temporal upscaling.
 
 Implementation prompt:
 
 ```text
-Add an NRD integration layer for ray traced shadow denoising.
-
-Introduce a Renderer-owned NRD adapter that translates Sparkle FrameGraph resources into NRD dispatches. Feed SIGMA-compatible shadow visibility, hit distance or equivalent confidence data, view depth, normals, motion vectors when available, and camera jitter/history metadata. Keep NRD resource lifetime and dispatch scheduling in Renderer/FrameGraph. Keep NRD-specific headers and library calls out of RHI, GameFramework, import, cook, and shader authoring surfaces except for dedicated denoiser shader/resource wrappers.
+Track previous view/projection, camera jitter, per-pixel motion vectors, history validity, and responsive resets.
+Keep temporal ownership in renderer frame state and FrameGraph resource lifetime.
 ```
 
-Suggested file structure:
+Acceptance criteria:
 
-- `Engine/Renderer/Private/Denoising/Nrd/NrdDenoiserContext.h/.cpp`
-- `Engine/Renderer/Private/Denoising/Nrd/NrdSigmaShadowPass.h/.cpp`
+- Motion vectors are available for temporal passes and shadow-consumption flows.
+- Temporal history resets deterministically on resize, level switch, and camera cuts.
+- Missing inputs are logged and do not silently enable incomplete temporal paths.
+- Refactor gate: temporal state stays in renderer frame systems and shared contracts, not in lighting or denoiser passes.
+
+Current implementation status (Stage 8.1):
+
+- Added per-frame temporal state tracking for previous view/projection matrices, history validity, and history reset requests.
+- Motion vectors are now emitted from G-Buffer as `MotionVector`.
+- Temporal history resets are driven by renderer- and level-lifecycle events (resize, extent change, level change/unload) and deterministic camera-cut heuristics.
+- Camera-cut reset diagnostics now log position delta, direction dot, and FOV delta.
+
+### Stage 8.2: DLAA Baseline
+
+Goal: introduce DLAA as an immediate temporal anti-aliasing baseline.
+
+Implementation prompt:
+
+```text
+Add DLAA-style accumulation driven by jitter and motion vectors before moving to DLSS and NRD denoiser integration.
+```
+
+Acceptance criteria:
+
+- DLAA can be selected and disabled independently.
+- DLAA history and jitter are explicit renderer/FrameGraph contracts.
+- The path is stable and does not introduce denoiser-specific behavior.
+- Refactor gate: DLAA owns only anti-aliasing state and does not own denoiser/shadow decisions.
+
+### Stage 8.3: DLSS (Optional / Gated)
+
+Goal: add DLSS as an optional upscale upgrade while preserving the same temporal contracts.
+
+Implementation prompt:
+
+```text
+Add optional DLSS path as a renderer-owned optional upscaler with deterministic fallback to DLAA/hard output.
+```
+
+Acceptance criteria:
+
+- DLSS path is capability- and runtime-gated with clear logs.
+- Fallback remains deterministic when DLSS is disabled/unavailable.
+- DLSS ownership stays in renderer upscaling systems and frame state.
+
+## Stage 9: NVIDIA NRD SIGMA Integration
+
+Goal: Integrate NVIDIA NRD SIGMA as the production denoiser path for soft ray traced shadows.
+
+This stage starts only after Stage 8.1/8.2/8.3 complete.
+
+### Stage 9.1: NRD contract, contracts, and scheduling
+
+Implementation prompt:
+
+```text
+Add denoiser contracts for resources, view-state inputs, and denoising modes.
+
+Define what NRD needs for soft shadow denoising, how those resources are represented in FrameGraph, and how renderer-owned scheduling expresses `compute soft visibility` -> `NRD denoise` -> `consume denoised visibility`. Implement diagnostics for missing contracts and clear capability gating before any backend-specific callsites.
+```
+
+Suggested file additions:
+
+- `Engine/Renderer/Public/Denoising/ShadowDenoiseContract.h`
+- `Engine/Renderer/Private/Denoising/ShadowDenoiseContract.cpp`
+- `Engine/Renderer/Private/FrameGraph/Resources/FrameGraphDenoiserRegistration.*`
+
+Acceptance criteria:
+
+- FrameGraph exposes denoiser input, intermediate, and output resources for shadow visibility and history.
+- Soft shadow path logs an explicit contract summary (motion vectors, depth, normals, jitter, history) before any NRD dependency runs.
+- The engine can run with NRD off and still produce valid hard or raw soft visibility paths under clear mode selection.
+- Missing contracts are treated as renderer diagnostics, not silent fallbacks in shader code.
+- Refactor gate: NRD-specific terms are not introduced in RHI, GameFramework, cookers, or importer surfaces.
+
+### Stage 9.2: NRD adapter and D3D12 path
+
+Goal: ship the first working SIGMA integration using an explicit renderer adapter.
+
+Implementation prompt:
+
+```text
+Introduce a Renderer-owned NRD adapter for D3D12 that consumes Sparkle shadow visibility inputs and emits denoised visibility output in a FrameGraph-owned resource graph.
+
+Build an adapter boundary around NRD headers/libraries, translate Sparkle descriptors to NRD descs, and schedule SIGMA dispatches as normal renderer passes. Keep the denoiser path optional but explicit.
+```
+
+Suggested file additions:
+
+- `Engine/Renderer/Private/Denoising/NrdDenoiserContext.h/.cpp`
+- `Engine/Renderer/Private/Denoising/NrdSigmaShadowPass.h/.cpp`
 - `Engine/Renderer/Private/Denoising/ShadowDenoiserPolicy.h/.cpp`
 - `Engine/Renderer/Private/Denoising/ShadowDenoiserResources.h/.cpp`
 
 Acceptance criteria:
 
-- NRD is an optional renderer dependency guarded by CMake feature flags and runtime capability diagnostics.
-- D3D12 and Vulkan use equivalent FrameGraph resource declarations and denoiser dispatch scheduling.
-- NRD SIGMA can denoise directional and local-light soft-shadow visibility.
-- When NRD is unavailable, `SoftAreaLights + NrdSigma` emits a clear renderer diagnostic. The implementation may temporarily use hard ray traced shadows while NRD is absent, but it must not introduce a second engine shadow path.
-- Direct lighting consumes denoised visibility, not NRD-owned resources directly.
-- History reset works on resize, camera cut, level switch, and denoiser setting changes.
-- Refactor gate: NRD integration adds a denoiser adapter and FrameGraph resource declarations; it must not add NVIDIA-specific concepts to RHI or generic pass code.
+- NRD is optional and CMake-gated with runtime-capability diagnostics.
+- D3D12 can schedule and execute SIGMA denoising for soft directional and local shadows from FrameGraph resources.
+- Direct lighting consumes denoised visibility and no NRD types leak into lighting passes.
+- History behavior includes deterministic reset on resize, level switch, and denoiser-mode changes.
+- Fixed one visibility sample per pixel remains preserved in the production soft-shadow path.
+- Refactor gate: NRD integration is isolated in dedicated denoising files and does not add backend hacks in pass orchestration.
 
-## Stage 9: Temporal Inputs And Motion Vectors
+### Stage 9.3: Vulkan parity and temporal stability
 
-Goal: Provide the temporal data needed for stable soft-shadow denoising under camera and object motion.
+Goal: complete NRD SIGMA integration readiness under parity and temporal stability expectations.
 
 Implementation prompt:
 
 ```text
-Add renderer temporal inputs required by NRD.
+Implement Vulkan NRD SIGMA scheduling where backend support exists; otherwise keep explicit capability diagnostics and deterministic fallback behavior that is visible to users and logs.
 
-Track previous view/projection, camera jitter, per-pixel motion vectors, history validity, and responsive resets. Add object motion for moving/skinned meshes once animation ray tracing geometry handling exists. Keep temporal resource ownership in FrameGraph and renderer frame state.
+Complete temporal inputs needed by NRD denoising (jitter, view-motion/history metadata, motion vectors when available) and validate convergence behavior with movement and resize paths.
 ```
 
 Acceptance criteria:
 
-- NRD history resets deterministically on level switch and resize.
-- Static camera soft shadows converge without visible instability.
-- Moving camera soft shadows remain stable using camera motion vectors.
-- Animated or deforming shadow casters either provide object motion or emit a clear reduced-quality diagnostic.
-- Refactor gate: temporal frame state has a single owner and reset path shared by denoisers/upscalers/future temporal effects.
+- D3D12 and Vulkan share the same denoiser FrameGraph contract and scheduling model.
+- If Vulkan lacks a required feature set, startup logs a clear skip/error and runs the allowed fallback mode by design.
+- NRD SIGMA consumes and outputs FrameGraph-owned resources with no direct resource ownership in shader, pass-local, or GameFramework code.
+- Camera cuts and level switches reset denoiser history deterministically.
+- Motion/temporal inputs are present in the denoiser contract where available; missing inputs are logged explicitly.
+- Refactor gate: temporal-state logic remains in renderer frame systems, not in denoiser internals or lighting shader code.
 
 ## Stage 10: Deforming Mesh And Animation Handling
 
@@ -486,3 +594,4 @@ Log evidence to require:
 - Which NRD package version should be vendored, and should it live under a CMake option such as `SPARKLE_ENABLE_NRD`?
 - Should point/spot soft shadows be capped per frame independently from lighting count to avoid tracing and denoising too many of the 512 punctual lights?
 - Do we need shadow visibility atlases/tiled denoising for many local lights, or is one screen-space aggregate visibility signal enough for the first NRD SIGMA integration?
+

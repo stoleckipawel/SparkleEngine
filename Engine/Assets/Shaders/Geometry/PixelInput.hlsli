@@ -12,6 +12,8 @@ namespace PS
 		float4 TangentWorld : TEXCOORD3;
 		float3 BitangentWorld : TEXCOORD4;
 		nointerpolation uint InstanceId : TEXCOORD5;
+		float4 ClipPosition : TEXCOORD6;
+		float4 PrevClipPosition : TEXCOORD7;
 		bool IsFrontFace : SV_IsFrontFace;
 	};
 

@@ -31,6 +31,7 @@
 
 #include "Frame/Builders/BuildFrameContext.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
+#include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Pipeline/PipelineStateManager.h"
 #include "RayTracing/RenderRayTracingScene.h"
@@ -212,6 +213,7 @@ void Renderer::InitializeSceneSystems(LevelManager& levelManager) noexcept
 	m_materialCacheManager = std::make_unique<MaterialCacheManager>(*m_textureManager, GetRenderHardwareInterface());
 	m_renderSceneDataBuilder = std::make_unique<RenderSceneDataBuilder>(*m_materialCacheManager, *m_gpuMeshCache);
 	m_perViewDataBuilder = std::make_unique<PerViewDataBuilder>();
+	m_temporalDataBuilder = std::make_unique<TemporalDataBuilder>();
 	m_viewLightingBuilder = std::make_unique<ViewLightingBuilder>();
 	m_sceneSnapshot = std::make_unique<RenderSceneSnapshot>();
 
@@ -295,6 +297,10 @@ void Renderer::BeginFrame() noexcept
 	if (m_bResizePending)
 	{
 		m_bResizePending = false;
+		if (m_temporalDataBuilder != nullptr)
+		{
+			m_temporalDataBuilder->ResetHistory("Window resize");
+		}
 
 		if (m_window->HasValidSize())
 		{
@@ -307,6 +313,10 @@ void Renderer::BeginFrame() noexcept
 	const RenderViewportExtent sceneExtent = ResolveSceneExtent();
 	if (sceneExtent.Width != m_frameGraphSceneExtent.Width || sceneExtent.Height != m_frameGraphSceneExtent.Height)
 	{
+		if (m_temporalDataBuilder != nullptr)
+		{
+			m_temporalDataBuilder->ResetHistory("Scene extent changed");
+		}
 		RefreshFrameExecution();
 	}
 
@@ -361,6 +371,12 @@ void Renderer::RecordFrame() noexcept
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context begin");
 
 	RenderHardwareInterface& renderHardwareInterface = GetRenderHardwareInterface();
+	std::string temporalResetReason;
+	if (m_sceneRenderStateCoordinator != nullptr && m_sceneRenderStateCoordinator->ConsumeTemporalHistoryResetRequest(temporalResetReason))
+	{
+		m_temporalDataBuilder->ResetHistory(temporalResetReason);
+	}
+
 	FrameContext frame = [&]()
 	{
 		SPARKLE_CPU_SCOPE("Renderer.RecordFrame.BuildFrameContext");
@@ -370,7 +386,8 @@ void Renderer::RecordFrame() noexcept
 		    *m_renderCamera,
 		    *m_renderSceneDataBuilder,
 		    *m_perViewDataBuilder,
-		    *m_viewLightingBuilder);
+		    *m_viewLightingBuilder,
+		    *m_temporalDataBuilder);
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
 

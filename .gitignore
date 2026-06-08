@@ -96,6 +96,8 @@ Makefile
 .LOG
 .tmp
 .cache
+tmp_donut/
+tmp_donut_repo/
 
 # Generated logs and measurement captures stay out of commits.
 # If a performance investigation needs to be preserved, move the artifact to a

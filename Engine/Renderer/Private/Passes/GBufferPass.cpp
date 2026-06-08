@@ -82,6 +82,7 @@ void GBufferPass::DeclareResources(FrameGraphBuilder& builder, const GBufferRend
 	parameters->Emissive = builder.CreateRenderTarget(targets.Emissive);
 	parameters->Subsurface = builder.CreateRenderTarget(targets.Subsurface);
 	parameters->DeviceZ = builder.CreateRenderTarget(targets.DeviceZ);
+	parameters->MotionVector = builder.CreateRenderTarget(targets.MotionVector);
 	parameters->MainDepth = builder.CreateDepthTarget(targets.MainDepth);
 	parameters->SamplerAniso16xWrap = RhiSamplerDesc{.MaxAnisotropy = RhiSamplerAnisotropy::X16};
 }
@@ -93,19 +94,21 @@ void GBufferPass::SetParameters(
 {
 	parameters->PerFrame = passRuntimeServices.HardwareInterface.GetPerFrameConstantData();
 	parameters->PerView = viewData.perViewData;
+	parameters->PerTemporal = viewData.perTemporalData;
 	const bool valid = parameters.Sync();
 	assert(valid);
 }
 
 void GBufferPass::PrepareTargets(PassExecutionContext& context, const GBufferPass::Parameters& parameters) const
 {
-	const std::array<FrameGraphTextureHandle, 6> renderTargets = {
+	const std::array<FrameGraphTextureHandle, 7> renderTargets = {
 	    parameters.BaseColor[0],
 	    parameters.Normal[0],
 	    parameters.Material[0],
 	    parameters.Emissive[0],
 	    parameters.Subsurface[0],
-	    parameters.DeviceZ[0]};
+	    parameters.DeviceZ[0],
+	    parameters.MotionVector[0]};
 	context.Resources.BindRenderTargets(context.Commands, renderTargets, parameters.MainDepth[0]);
 	for (FrameGraphTextureHandle renderTarget : renderTargets)
 	{

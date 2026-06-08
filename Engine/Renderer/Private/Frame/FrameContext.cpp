@@ -5,6 +5,7 @@
 #include "RHI/Public/Device/RenderHardwareInterface.h"
 #include "RHI/Public/Resources/RenderViewLightingData.h"
 #include "Frame/Builders/PerViewDataBuilder.h"
+#include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
 #include "Camera/RenderCamera.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
@@ -19,7 +20,8 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
-    ViewLightingBuilder& viewLightingBuilder)
+    ViewLightingBuilder& viewLightingBuilder,
+    TemporalDataBuilder& temporalDataBuilder)
 {
 	FrameContext frame{};
 	frame.sceneData = renderSceneDataBuilder.Build(sceneSnapshot);
@@ -27,6 +29,8 @@ FrameContext BuildFrameContext(
 	frame.skinning = SkinningFrameData::Build(renderHardwareInterface, frame.sceneData);
 	const PerViewLightingConstantBufferData lighting = viewLightingBuilder.Build(frame.sceneData);
 	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, lighting, renderHardwareInterface);
+	const RhiViewport backBufferViewport = renderHardwareInterface.GetBackBufferViewport();
+	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, backBufferViewport);
 
 	frame.mainView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(frame.mainView.perViewData);
 

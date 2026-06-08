@@ -37,6 +37,12 @@ GBufferRenderTargets CreateGBufferRenderTargets(FrameGraphBuilder& builder, Rend
 	        sceneExtent.Width,
 	        sceneExtent.Height,
 	        RenderConfig::GBuffer::SubsurfaceFormat));
+	targets.MotionVector = builder.CreateTexture(
+	    FrameGraphTextureDesc::CreateColor(
+	        "GBufferMotionVector",
+	        sceneExtent.Width,
+	        sceneExtent.Height,
+	        RenderConfig::GBuffer::MotionVectorFormat));
 	targets.DeviceZ = builder.CreateTexture(
 	    FrameGraphTextureDesc::CreateDepth("GBufferDeviceZ", sceneExtent.Width, sceneExtent.Height, RenderConfig::GBuffer::DeviceZFormat));
 	targets.MainDepth = sceneTargets.MainDepth;

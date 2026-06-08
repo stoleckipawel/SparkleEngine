@@ -17,6 +17,7 @@ struct GBufferRenderTargets
 	FrameGraphTextureHandle Emissive;
 	FrameGraphTextureHandle Subsurface;
 	FrameGraphTextureHandle DeviceZ;
+	FrameGraphTextureHandle MotionVector;
 	FrameGraphTextureHandle MainDepth;
 };
 

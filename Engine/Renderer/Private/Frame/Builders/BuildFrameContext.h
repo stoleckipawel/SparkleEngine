@@ -3,6 +3,7 @@
 class PerViewDataBuilder;
 class RenderCamera;
 class RenderHardwareInterface;
+class TemporalDataBuilder;
 class RenderSceneDataBuilder;
 class ViewLightingBuilder;
 struct FrameContext;
@@ -14,4 +15,5 @@ FrameContext BuildFrameContext(
     const RenderCamera& renderCamera,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
-    ViewLightingBuilder& viewLightingBuilder);
+    ViewLightingBuilder& viewLightingBuilder,
+    TemporalDataBuilder& temporalDataBuilder);

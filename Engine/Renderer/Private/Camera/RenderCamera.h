@@ -29,6 +29,7 @@ class SPARKLE_RENDERER_API RenderCamera final
 	const Frustum& GetFrustum() const noexcept { return m_frustum; }
 
 	PerViewCameraConstantBufferData GetCameraConstantBufferData() const noexcept;
+	float GetFovYDegrees() const noexcept { return m_snapshot.fovYDegrees; }
 
   private:
 	void RebuildMatrices(const CameraSnapshot& snapshot) noexcept;

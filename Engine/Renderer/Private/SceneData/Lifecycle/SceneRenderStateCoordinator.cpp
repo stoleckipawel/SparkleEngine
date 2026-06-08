@@ -50,12 +50,29 @@ void SceneRenderStateCoordinator::SubscribeToLevelLifecycleEvents(LevelChangeEve
 
 void SceneRenderStateCoordinator::OnLevelWillUnload() noexcept
 {
+	m_temporalHistoryResetRequested = true;
+	m_temporalHistoryResetReason = "Level will unload";
 	InvalidateSceneScopedRendererState();
 }
 
 void SceneRenderStateCoordinator::OnLevelChanged() noexcept
 {
+	m_temporalHistoryResetRequested = true;
+	m_temporalHistoryResetReason = "Level changed";
 	RefreshSceneScopedRendererState();
+}
+
+bool SceneRenderStateCoordinator::ConsumeTemporalHistoryResetRequest(std::string& outReason) noexcept
+{
+	if (!m_temporalHistoryResetRequested)
+	{
+		return false;
+	}
+
+	outReason = m_temporalHistoryResetReason;
+	m_temporalHistoryResetRequested = false;
+	m_temporalHistoryResetReason.clear();
+	return true;
 }
 
 void SceneRenderStateCoordinator::InvalidateSceneScopedRendererState() noexcept

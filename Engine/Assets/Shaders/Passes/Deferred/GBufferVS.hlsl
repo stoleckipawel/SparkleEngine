@@ -17,8 +17,12 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float3 bitangentWorld = ComputeBitangent(normalWorld, tangentWorld);
 
 	const float4 positionClip = PositionWorldToClip(positionWorld);
+	const float4 jitteredPositionClip = ApplyTemporalJitterClipOffset(positionClip, PerTemporal.JitterCurrent);
+	const float4 jitteredPrevClipPosition = ApplyTemporalJitterClipOffset(
+	    mul(positionWorld, PerTemporal.PrevViewProjMTX),
+	    PerTemporal.JitterPrevious);
 
-	Output.Position = positionClip;
+	Output.Position = jitteredPositionClip;
 	Output.PositionWorld = positionWorld.xyz;
 	Output.NormalWorld = normalWorld;
 	Output.TangentWorld = tangentWorld;
@@ -26,4 +30,6 @@ void main(in VS::Input Input, out VS::Output Output)
 	Output.TexCoord = Input.TexCoord;
 	Output.Color = Input.Color;
 	Output.InstanceId = instanceId;
+	Output.ClipPosition = jitteredPositionClip;
+	Output.PrevClipPosition = jitteredPrevClipPosition;
 }

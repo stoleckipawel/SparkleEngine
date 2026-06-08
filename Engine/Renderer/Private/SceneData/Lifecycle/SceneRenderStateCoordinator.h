@@ -2,6 +2,8 @@
 
 #include "Events/ScopedEventHandle.h"
 
+#include <string>
+
 class GPUMeshCache;
 class LevelChangeEvents;
 class MaterialCacheManager;
@@ -34,6 +36,7 @@ class SceneRenderStateCoordinator final
 	void SubscribeToLevelLifecycleEvents(LevelChangeEvents& levelChangeEvents) noexcept;
 	void OnLevelWillUnload() noexcept;
 	void OnLevelChanged() noexcept;
+	bool ConsumeTemporalHistoryResetRequest(std::string& outReason) noexcept;
 	void InvalidateSceneScopedRendererState() noexcept;
 	void RefreshSceneScopedRendererState() noexcept;
 	void ReleaseSceneScopedMaterialResources() noexcept;
@@ -47,4 +50,6 @@ class SceneRenderStateCoordinator final
 	MaterialCacheManager* m_materialCache = nullptr;
 	ScopedEventHandle m_levelWillUnloadHandle;
 	ScopedEventHandle m_levelChangedHandle;
+	bool m_temporalHistoryResetRequested = false;
+	std::string m_temporalHistoryResetReason;
 };
