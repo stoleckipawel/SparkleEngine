@@ -3,6 +3,7 @@
 #include "Device/RenderDeviceServices.h"
 #include "Device/RenderDeviceBackendFactory.h"
 #include "Device/RenderDeviceBackendServices.h"
+#include "Device/RhiCapabilityLogFormatting.h"
 
 #include "Shaders/CookedShaderPackageUtils.h"
 
@@ -30,7 +31,7 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    "timestampQueries={} rayTracing={} inlineRayQuery={} rtLimits(recursion={}, payloadBytes={}, attributeBytes={}, "
 	    "shaderIdBytes={}, tableAlign={}, recordAlign={}, asAlign={}, scratchAlign={}, instanceDescBytes={}) "
 	    "meshShaders={} taskShaders={} queues(graphics={}, compute={}, copy={}) "
-	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={})",
+	    "limits(descriptorSets={}, shaderResources={}, samplers={}, tableEntries={}, pushConstantsBytes={}) {}",
 	    RhiBackendApiToString(capabilities.BackendApi),
 	    CookedShaderBinaryFormatToString(capabilities.RequiredShaderBinaryFormat),
 	    RhiDescriptorModelToString(capabilities.DescriptorModel),
@@ -60,7 +61,8 @@ static void LogRhiCapabilities(const RhiCapabilities& capabilities) noexcept
 	    capabilities.BindingLimits.MaxShaderResourceDescriptors,
 	    capabilities.BindingLimits.MaxSamplerDescriptors,
 	    capabilities.BindingLimits.MaxDescriptorTableEntries,
-	    capabilities.BindingLimits.MaxPushConstantBytes);
+	    capabilities.BindingLimits.MaxPushConstantBytes,
+	    FormatExternalFeatureInteropCapabilities(capabilities.ExternalFeatureInterop));
 }
 
 struct RenderDeviceServices::Impl

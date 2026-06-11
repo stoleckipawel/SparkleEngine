@@ -11,6 +11,7 @@
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorManager.h"
 #include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/Device/VulkanExternalFeatureInteropCapabilities.h"
 #include "Vulkan/Diagnostics/VulkanRenderDiagnostics.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
@@ -148,6 +149,7 @@ RhiCapabilities VulkanRenderHardwareInterface::BuildCapabilities() const noexcep
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::VulkanManaged;
+	capabilities.ExternalFeatureInterop = BuildVulkanExternalFeatureInteropCapabilities(m_rhi, m_commandContext != nullptr);
 	return capabilities;
 }
 

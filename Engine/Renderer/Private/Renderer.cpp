@@ -41,6 +41,7 @@
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "Upscaling/UpscalingStartupDiagnostics.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -194,6 +195,7 @@ void Renderer::InitializeCoreSystems() noexcept
 	const RayTracingCapabilityReport rayTracingCapabilities =
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
+	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);

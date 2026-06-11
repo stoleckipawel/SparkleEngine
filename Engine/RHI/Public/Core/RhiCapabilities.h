@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 
 enum class ERhiDescriptorModel : std::uint8_t
 {
@@ -45,6 +46,42 @@ struct RhiQueueCapabilities
 	bool SupportsCopy = false;
 };
 
+enum class ERhiExternalFeatureBridgeKind : std::uint8_t
+{
+	None = 0,
+	D3D12NativeDevice,
+	VulkanManualFunctionPointers,
+	VulkanInterposer,
+};
+
+struct RhiAdapterIdentity
+{
+	std::string Name;
+	std::string DriverDescription;
+	std::uint32_t VendorId = 0;
+	std::uint32_t DeviceId = 0;
+};
+
+struct RhiExternalFeatureInteropCapabilities
+{
+	ERhiExternalFeatureBridgeKind BridgeKind = ERhiExternalFeatureBridgeKind::None;
+	RhiAdapterIdentity Adapter;
+	bool ExposesNativeDevice = false;
+	bool ExposesNativeGraphicsQueue = false;
+	bool ExposesNativeGraphicsCommandList = false;
+	bool ExposesNativeResources = false;
+	bool SupportsExplicitResourceStates = false;
+	bool SupportsExternalProviderEvaluation = false;
+	bool SupportsRuntimeProviderChecks = false;
+	bool VulkanHasInstanceHandle = false;
+	bool VulkanHasPhysicalDeviceHandle = false;
+	bool VulkanHasDeviceHandle = false;
+	bool VulkanHasGraphicsQueueHandle = false;
+	bool VulkanHasGraphicsQueueFamilyIndex = false;
+	bool VulkanManualFunctionPointerHookingReady = false;
+	bool VulkanInterposerRequired = false;
+};
+
 struct RhiFormatSupport
 {
 	PixelFormat Format = PixelFormat::Unknown;
@@ -78,6 +115,7 @@ struct RhiCapabilities
 	RhiQueueCapabilities Queues;
 	bool SupportsPresent = false;
 	ERhiMemoryAllocatorBackend MemoryAllocator = ERhiMemoryAllocatorBackend::Unknown;
+	RhiExternalFeatureInteropCapabilities ExternalFeatureInterop;
 
 	const RhiFormatSupport* FindFormatSupport(PixelFormat format) const noexcept
 	{
@@ -118,5 +156,21 @@ constexpr const char* RhiMemoryAllocatorBackendToString(ERhiMemoryAllocatorBacke
 		case ERhiMemoryAllocatorBackend::Unknown:
 		default:
 			return "Unknown";
+	}
+}
+
+constexpr const char* RhiExternalFeatureBridgeKindToString(ERhiExternalFeatureBridgeKind kind) noexcept
+{
+	switch (kind)
+	{
+		case ERhiExternalFeatureBridgeKind::D3D12NativeDevice:
+			return "D3D12NativeDevice";
+		case ERhiExternalFeatureBridgeKind::VulkanManualFunctionPointers:
+			return "VulkanManualFunctionPointers";
+		case ERhiExternalFeatureBridgeKind::VulkanInterposer:
+			return "VulkanInterposer";
+		case ERhiExternalFeatureBridgeKind::None:
+		default:
+			return "None";
 	}
 }

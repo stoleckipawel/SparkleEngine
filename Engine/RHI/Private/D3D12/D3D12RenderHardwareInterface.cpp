@@ -3,6 +3,7 @@
 #include "D3D12/D3D12RenderHardwareInterface.h"
 
 #include "D3D12/Commands/D3D12RenderCommandList.h"
+#include "D3D12/Device/D3D12ExternalFeatureInteropCapabilities.h"
 #include "D3D12/Device/D3D12Rhi.h"
 #include "D3D12/SwapChain/D3D12SwapChain.h"
 #include "D3D12/D3D12TypeConversions.h"
@@ -125,6 +126,9 @@ RhiCapabilities D3D12RenderHardwareInterface::BuildCapabilities() const noexcept
 	capabilities.Queues = RhiQueueCapabilities{.SupportsGraphics = true, .SupportsCompute = false, .SupportsCopy = false};
 	capabilities.SupportsPresent = m_swapChain != nullptr && m_swapChain->GetBackBufferFormat() != PixelFormat::Unknown;
 	capabilities.MemoryAllocator = ERhiMemoryAllocatorBackend::D3D12Managed;
+	capabilities.ExternalFeatureInterop = BuildD3D12ExternalFeatureInteropCapabilities(
+	    m_rhi,
+	    !m_commandLists.empty() && m_commandLists[0] != nullptr);
 	return capabilities;
 }
 
