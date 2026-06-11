@@ -73,6 +73,7 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 	report.FeatureSupported = runtimeCapabilities.FeatureSupported;
 	report.RuntimeState = report.CanCreateFeature() ? EDlssProviderRuntimeState::AvailableNotCreated : EDlssProviderRuntimeState::Unavailable;
 	report.SdkVersion = runtimeCapabilities.SdkVersion;
+	report.FeatureMatrix = runtimeCapabilities.FeatureMatrix;
 	report.UnavailableReason = BuildUnavailableReason(capabilities, report);
 	return report;
 }
@@ -82,6 +83,7 @@ void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& repor
 	report.RuntimeState = diagnostics.State;
 	report.SdkVersion = diagnostics.SdkVersion;
 	report.SelectedQualityMode = diagnostics.SelectedQualityMode;
+	report.FeatureMatrix = diagnostics.FeatureMatrix;
 	report.RenderExtent = diagnostics.RenderExtent;
 	report.OutputExtent = diagnostics.OutputExtent;
 	report.ResetRequested = diagnostics.ResetRequested;
@@ -132,6 +134,23 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	    BoolToString(report.ResetRequested),
 	    report.ResetReason,
 	    report.UnavailableReason);
+
+	for (const DlssFeatureMatrixEntry& entry : report.FeatureMatrix.Entries)
+	{
+		SPDLOG_LOGGER_INFO(
+		    logger,
+		    "DLSS feature matrix: backend={} feature={} state={} supported={} latencyHookRequired={} qualityModes='{}' "
+		    "presetRecommendation='{}' requiredResources='{}' reason='{}'",
+		    RhiBackendApiToString(report.BackendApi),
+		    DlssFeatureKindToString(entry.Feature),
+		    DlssFeatureStateToString(entry.State),
+		    BoolToString(entry.Supported),
+		    BoolToString(entry.RequiresLatencyHook),
+		    entry.QualityModes,
+		    entry.ModelPresetRecommendation,
+		    entry.RequiredResources,
+		    entry.Reason);
+	}
 }
 
 std::string DlssCapabilityReporter::BuildUnavailableReason(const RhiCapabilities& capabilities, const DlssCapabilityReport& report)

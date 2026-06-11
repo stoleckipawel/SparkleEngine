@@ -39,6 +39,7 @@ struct UpscalerProviderCapabilities final
 	std::string ExternalRuntimeVersion;
 	std::string RuntimeState;
 	std::string SelectedQualityMode;
+	std::string FeatureMatrixSummary;
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	bool ResetRequested = false;

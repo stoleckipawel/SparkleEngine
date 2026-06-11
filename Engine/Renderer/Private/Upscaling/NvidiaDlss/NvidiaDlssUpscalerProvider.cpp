@@ -3,6 +3,58 @@
 
 #include "Upscaling/UpscalerSettings.h"
 
+#include <string>
+
+namespace
+{
+	EDlssFeatureKind GetSelectedDlssFeature(EUpscalerQualityMode qualityMode) noexcept
+	{
+		return qualityMode == EUpscalerQualityMode::NativeAA ? EDlssFeatureKind::NativeAA : EDlssFeatureKind::SuperResolution;
+	}
+
+	std::string BuildFeatureMatrixSummary(const DlssFeatureMatrix& matrix)
+	{
+		std::string summary;
+		for (const DlssFeatureMatrixEntry& entry : matrix.Entries)
+		{
+			if (!summary.empty())
+			{
+				summary += ", ";
+			}
+			summary += DlssFeatureKindToString(entry.Feature);
+			summary += "=";
+			summary += DlssFeatureStateToString(entry.State);
+		}
+		return summary;
+	}
+
+	void MarkSelectedFeature(DlssFeatureMatrix& matrix, EDlssFeatureKind selectedFeature)
+	{
+		for (DlssFeatureMatrixEntry& entry : matrix.Entries)
+		{
+			if (entry.Feature == selectedFeature)
+			{
+				if (entry.State == EDlssFeatureState::Available)
+				{
+					entry.State = EDlssFeatureState::Enabled;
+				}
+				continue;
+			}
+
+			if (entry.State == EDlssFeatureState::Available || entry.State == EDlssFeatureState::Enabled)
+			{
+				entry.State = EDlssFeatureState::NotSelected;
+			}
+		}
+	}
+
+	bool NativeAAExtentContractValid(const UpscalerInputContract& inputContract) noexcept
+	{
+		return inputContract.RenderExtent.Width == inputContract.OutputExtent.Width &&
+		       inputContract.RenderExtent.Height == inputContract.OutputExtent.Height;
+	}
+}
+
 UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const RhiCapabilities& capabilities) const
 {
 	const DlssCapabilityReport dlss = DlssCapabilityReporter::Build(capabilities);
@@ -16,6 +68,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 	    .ProviderName = "NVIDIA DLSS",
 	    .ExternalRuntimeVersion = dlss.SdkVersion,
 	    .RuntimeState = DlssProviderRuntimeStateToString(dlss.RuntimeState),
+	    .FeatureMatrixSummary = BuildFeatureMatrixSummary(dlss.FeatureMatrix),
 	    .Reason = dlss.UnavailableReason};
 }
 
@@ -24,6 +77,7 @@ bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities)
 	m_qualityMode = BuildUpscalerSettingsFromCVars().QualityMode;
 	m_dlssCapabilities = DlssCapabilityReporter::Build(capabilities);
 	m_dlssCapabilities.SelectedQualityMode = UpscalerQualityModeToString(m_qualityMode);
+	MarkSelectedFeature(m_dlssCapabilities.FeatureMatrix, GetSelectedDlssFeature(m_qualityMode));
 	m_diagnostics = QueryCapabilities(capabilities);
 	if (!m_dlssCapabilities.CanCreateFeature())
 	{
@@ -66,6 +120,22 @@ void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputCo
 	m_dlssCapabilities.OutputExtent = m_outputExtent;
 	m_dlssCapabilities.ResetRequested = inputContract.ResetRequested;
 	m_dlssCapabilities.ResetReason = inputContract.ResetReason;
+	if (m_qualityMode == EUpscalerQualityMode::NativeAA && !NativeAAExtentContractValid(inputContract))
+	{
+		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::FailedWithFallback;
+		m_dlssCapabilities.UnavailableReason =
+		    "DLSS NativeAA requires render extent to equal output extent; using deterministic passthrough fallback.";
+		for (DlssFeatureMatrixEntry& entry : m_dlssCapabilities.FeatureMatrix.Entries)
+		{
+			if (entry.Feature == EDlssFeatureKind::NativeAA)
+			{
+				entry.State = EDlssFeatureState::FailedWithFallback;
+				entry.Reason = m_dlssCapabilities.UnavailableReason;
+			}
+		}
+		m_diagnostics = GetDiagnostics();
+		return;
+	}
 
 	if (m_runtime != nullptr)
 	{
@@ -155,6 +225,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::GetDiagnostics() const
 	    .ExternalRuntimeVersion = m_dlssCapabilities.SdkVersion,
 	    .RuntimeState = DlssProviderRuntimeStateToString(m_dlssCapabilities.RuntimeState),
 	    .SelectedQualityMode = m_dlssCapabilities.SelectedQualityMode,
+	    .FeatureMatrixSummary = BuildFeatureMatrixSummary(m_dlssCapabilities.FeatureMatrix),
 	    .RenderExtent = m_dlssCapabilities.RenderExtent,
 	    .OutputExtent = m_dlssCapabilities.OutputExtent,
 	    .ResetRequested = m_dlssCapabilities.ResetRequested,

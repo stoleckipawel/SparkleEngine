@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 enum class EDlssProviderRuntimeState : std::uint8_t
 {
@@ -20,12 +21,51 @@ enum class EDlssProviderRuntimeState : std::uint8_t
 	FailedWithFallback = 5
 };
 
+enum class EDlssFeatureKind : std::uint8_t
+{
+	SuperResolution = 0,
+	NativeAA = 1,
+	RayReconstruction = 2,
+	FrameGeneration = 3,
+	MultiFrameGeneration = 4,
+	DynamicMultiFrameGeneration = 5,
+	LatencyHook = 6
+};
+
+enum class EDlssFeatureState : std::uint8_t
+{
+	NotSelected = 0,
+	Unavailable = 1,
+	Available = 2,
+	Enabled = 3,
+	Active = 4,
+	FailedWithFallback = 5
+};
+
+struct DlssFeatureMatrixEntry final
+{
+	EDlssFeatureKind Feature = EDlssFeatureKind::SuperResolution;
+	EDlssFeatureState State = EDlssFeatureState::Unavailable;
+	bool Supported = false;
+	bool RequiresLatencyHook = false;
+	std::string QualityModes;
+	std::string ModelPresetRecommendation;
+	std::string RequiredResources;
+	std::string Reason;
+};
+
+struct DlssFeatureMatrix final
+{
+	std::vector<DlssFeatureMatrixEntry> Entries;
+};
+
 struct StreamlineDlssRuntimeCapabilities final
 {
 	bool RuntimeIntegrated = false;
 	bool RuntimeAvailable = false;
 	bool FeatureQuerySucceeded = false;
 	bool FeatureSupported = false;
+	DlssFeatureMatrix FeatureMatrix;
 	std::string SdkVersion;
 	std::string Reason;
 };
@@ -43,6 +83,7 @@ struct StreamlineDlssRuntimeDiagnostics final
 	EDlssProviderRuntimeState State = EDlssProviderRuntimeState::NotSelected;
 	std::string SdkVersion;
 	std::string SelectedQualityMode;
+	DlssFeatureMatrix FeatureMatrix;
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	bool ResetRequested = false;
@@ -64,5 +105,7 @@ class IStreamlineDlssRuntime
 };
 
 const char* DlssProviderRuntimeStateToString(EDlssProviderRuntimeState state) noexcept;
+const char* DlssFeatureKindToString(EDlssFeatureKind feature) noexcept;
+const char* DlssFeatureStateToString(EDlssFeatureState state) noexcept;
 StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const RhiCapabilities& capabilities) noexcept;
 std::unique_ptr<IStreamlineDlssRuntime> CreateStreamlineDlssRuntime();

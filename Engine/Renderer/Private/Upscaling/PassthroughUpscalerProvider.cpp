@@ -12,6 +12,7 @@ UpscalerProviderCapabilities PassthroughUpscalerProvider::QueryCapabilities(cons
 	    .ProviderName = "Passthrough",
 	    .ExternalRuntimeVersion = "none",
 	    .RuntimeState = "Active",
+	    .FeatureMatrixSummary = "external features not selected",
 	    .Reason = "Deterministic passthrough fallback is always available."};
 }
 

@@ -55,7 +55,7 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities)
 	SPDLOG_LOGGER_INFO(
 	    logger,
 	    "Upscaler provider: requested={} active={} status={} canEvaluate={} externalSdk={} runtimeVersion='{}' runtimeState='{}' "
-	    "qualityMode='{}' renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
+	    "qualityMode='{}' featureMatrix='{}' renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    UpscalerProviderKindToString(m_settings.RequestedProvider),
 	    m_activeProvider->GetName(),
 	    UpscalerProviderStatusToString(m_diagnostics.Status),
@@ -64,6 +64,7 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities)
 	    m_diagnostics.ExternalRuntimeVersion,
 	    m_diagnostics.RuntimeState,
 	    m_diagnostics.SelectedQualityMode,
+	    m_diagnostics.FeatureMatrixSummary,
 	    m_diagnostics.RenderExtent.Width,
 	    m_diagnostics.RenderExtent.Height,
 	    m_diagnostics.OutputExtent.Width,

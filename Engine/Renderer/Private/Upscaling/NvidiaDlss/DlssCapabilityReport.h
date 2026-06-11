@@ -21,6 +21,7 @@ struct DlssCapabilityReport final
 	EDlssProviderRuntimeState RuntimeState = EDlssProviderRuntimeState::NotSelected;
 	std::string SdkVersion;
 	std::string SelectedQualityMode;
+	DlssFeatureMatrix FeatureMatrix;
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	bool ResetRequested = false;

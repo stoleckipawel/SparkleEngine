@@ -372,10 +372,20 @@ Validation:
 
 ## Step 9: DLSS Feature Matrix And Native AA
 
+Status: Source/API feature matrix added; all DLSS features currently report unavailable until the Streamline SDK-backed runtime is added.
+
 Work:
 
 - Query support for Super Resolution, native AA mode, Ray Reconstruction, Frame Generation, Multi Frame Generation, Dynamic Multi Frame Generation, latency hook requirements, quality modes, model/preset recommendations, and required resources.
 - Add native-resolution DLSS AA mode by reusing the Super Resolution contract with render extent equal to output extent.
+
+Output:
+
+- Added a DLSS feature matrix with independent entries for Super Resolution, NativeAA, Ray Reconstruction, Frame Generation, Multi Frame Generation, Dynamic Multi Frame Generation, and latency hook requirements.
+- Each matrix entry reports state, support, latency-hook requirement, quality-mode summary, model/preset recommendation, required resources, and failure reason.
+- Startup DLSS diagnostics now emit one feature-matrix line per feature in addition to the provider summary.
+- NativeAA uses the Super Resolution input/output contract and validates that render extent equals output extent.
+- Unsupported or unavailable features are reported independently so future SDK-backed support for one feature is not hidden by another feature failure.
 
 Acceptance criteria:
 
