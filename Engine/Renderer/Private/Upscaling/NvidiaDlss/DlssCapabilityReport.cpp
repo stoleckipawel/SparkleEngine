@@ -65,12 +65,31 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 	                           interop.SupportsExplicitResourceStates &&
 	                           interop.SupportsExternalProviderEvaluation;
 	report.RhiBridgeReady = report.D3D12BridgeReady || report.VulkanBridgeReady;
-	report.SdkRuntimeIntegrated = false;
-	report.SdkRuntimeAvailable = false;
-	report.FeatureQuerySucceeded = false;
-	report.FeatureSupported = false;
+
+	const StreamlineDlssRuntimeCapabilities runtimeCapabilities = QueryStreamlineDlssRuntimeCapabilities(capabilities);
+	report.SdkRuntimeIntegrated = runtimeCapabilities.RuntimeIntegrated;
+	report.SdkRuntimeAvailable = runtimeCapabilities.RuntimeAvailable;
+	report.FeatureQuerySucceeded = runtimeCapabilities.FeatureQuerySucceeded;
+	report.FeatureSupported = runtimeCapabilities.FeatureSupported;
+	report.RuntimeState = report.CanCreateFeature() ? EDlssProviderRuntimeState::AvailableNotCreated : EDlssProviderRuntimeState::Unavailable;
+	report.SdkVersion = runtimeCapabilities.SdkVersion;
 	report.UnavailableReason = BuildUnavailableReason(capabilities, report);
 	return report;
+}
+
+void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& report, const StreamlineDlssRuntimeDiagnostics& diagnostics)
+{
+	report.RuntimeState = diagnostics.State;
+	report.SdkVersion = diagnostics.SdkVersion;
+	report.SelectedQualityMode = diagnostics.SelectedQualityMode;
+	report.RenderExtent = diagnostics.RenderExtent;
+	report.OutputExtent = diagnostics.OutputExtent;
+	report.ResetRequested = diagnostics.ResetRequested;
+	report.ResetReason = diagnostics.ResetReason;
+	if (!diagnostics.FailureReason.empty())
+	{
+		report.UnavailableReason = diagnostics.FailureReason;
+	}
 }
 
 void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcept
@@ -87,7 +106,8 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	    logger,
 	    "DLSS capability summary: backend={} bridge={} adapter='{}' vendorId={:#06x} deviceId={:#06x} driver='{}' "
 	    "rhiBridgeReady={} d3d12BridgeReady={} vulkanBridgeReady={} sdkRuntimeIntegrated={} sdkRuntimeAvailable={} "
-	    "featureQuerySucceeded={} featureSupported={} canCreateFeature={} reason='{}'",
+	    "featureQuerySucceeded={} featureSupported={} canCreateFeature={} runtimeState={} sdkVersion='{}' selectedMode='{}' "
+	    "renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    RhiBackendApiToString(report.BackendApi),
 	    RhiExternalFeatureBridgeKindToString(report.BridgeKind),
 	    report.Adapter.Name,
@@ -102,6 +122,15 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	    BoolToString(report.FeatureQuerySucceeded),
 	    BoolToString(report.FeatureSupported),
 	    BoolToString(report.CanCreateFeature()),
+	    DlssProviderRuntimeStateToString(report.RuntimeState),
+	    report.SdkVersion,
+	    report.SelectedQualityMode,
+	    report.RenderExtent.Width,
+	    report.RenderExtent.Height,
+	    report.OutputExtent.Width,
+	    report.OutputExtent.Height,
+	    BoolToString(report.ResetRequested),
+	    report.ResetReason,
 	    report.UnavailableReason);
 }
 

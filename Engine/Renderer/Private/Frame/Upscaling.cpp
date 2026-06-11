@@ -4,6 +4,7 @@
 #include "FrameGraph/Builder/FrameGraphBuilder.h"
 #include "FrameGraph/Execution/PassExecutionContext.h"
 #include "FrameGraph/PassRuntimeServices.h"
+#include "Commands/RenderCommandContext.h"
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSubsystem.h"
 
@@ -38,7 +39,7 @@ void AddExternalProviderEvaluationPass(
 		    resourceBuilder.Read(gbuffer.MotionVector, ResourceUsage::ShaderRead, "MotionVectors");
 		    resourceBuilder.Write(sceneTargets.FinalSceneColor, ResourceUsage::CopyDest, "FinalSceneColor");
 	    },
-	    [sceneTargets, sceneExtent](PassExecutionContext& context)
+	    [sceneTargets, gbuffer, sceneExtent](PassExecutionContext& context)
 	    {
 		    UpscalerEvaluationResult result{
 		        .ProducedOutput = false,
@@ -50,7 +51,15 @@ void AddExternalProviderEvaluationPass(
 			    result = context.RuntimeServices.Upscaling->Subsystem->Evaluate(
 			        UpscalerEvaluationDesc{
 			            .InputColor = ToRenderProductHandle(sceneTargets.SceneColor),
+			            .Depth = ToRenderProductHandle(sceneTargets.MainDepth),
+			            .MotionVectors = ToRenderProductHandle(gbuffer.MotionVector),
 			            .OutputColor = ToRenderProductHandle(sceneTargets.FinalSceneColor),
+			            .BackendApi = context.Commands.GetRenderCommandList().GetBackendApi(),
+			            .NativeCommandList = context.Commands.GetRenderCommandList().GetNativeHandle(),
+			            .NativeInputColor = context.Resources.ResolveResource(sceneTargets.SceneColor),
+			            .NativeDepth = context.Resources.ResolveResource(sceneTargets.MainDepth),
+			            .NativeMotionVectors = context.Resources.ResolveResource(gbuffer.MotionVector),
+			            .NativeOutputColor = context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
 			            .RenderExtent = sceneExtent,
 			            .OutputExtent = sceneExtent});
 		    }

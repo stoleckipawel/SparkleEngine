@@ -2,6 +2,8 @@
 
 #include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
+#include "RHI/Public/Core/RhiBackendApi.h"
+#include "RHI/Public/Interop/RhiNativeHandles.h"
 
 #include <cstdint>
 #include <string>
@@ -34,15 +36,31 @@ struct UpscalerProviderCapabilities final
 	bool CanEvaluate = false;
 	bool UsesExternalSdk = false;
 	std::string ProviderName;
+	std::string ExternalRuntimeVersion;
+	std::string RuntimeState;
+	std::string SelectedQualityMode;
+	RenderViewportExtent RenderExtent = {};
+	RenderViewportExtent OutputExtent = {};
+	bool ResetRequested = false;
+	std::string ResetReason;
 	std::string Reason;
 };
 
 struct UpscalerEvaluationDesc final
 {
 	RenderProductHandle InputColor = {};
+	RenderProductHandle Depth = {};
+	RenderProductHandle MotionVectors = {};
 	RenderProductHandle OutputColor = {};
+	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
+	NativeGraphicsCommandListHandle NativeCommandList = {};
+	NativeResourceHandle NativeInputColor = {};
+	NativeResourceHandle NativeDepth = {};
+	NativeResourceHandle NativeMotionVectors = {};
+	NativeResourceHandle NativeOutputColor = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
+	std::uint64_t FrameIndex = 0;
 };
 
 struct UpscalerEvaluationResult final

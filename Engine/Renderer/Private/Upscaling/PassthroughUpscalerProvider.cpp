@@ -10,6 +10,8 @@ UpscalerProviderCapabilities PassthroughUpscalerProvider::QueryCapabilities(cons
 	    .CanEvaluate = true,
 	    .UsesExternalSdk = false,
 	    .ProviderName = "Passthrough",
+	    .ExternalRuntimeVersion = "none",
+	    .RuntimeState = "Active",
 	    .Reason = "Deterministic passthrough fallback is always available."};
 }
 
@@ -24,6 +26,10 @@ void PassthroughUpscalerProvider::SetupFrame(const UpscalerInputContract& inputC
 {
 	m_renderExtent = inputContract.RenderExtent;
 	m_outputExtent = inputContract.OutputExtent;
+	m_diagnostics.RenderExtent = m_renderExtent;
+	m_diagnostics.OutputExtent = m_outputExtent;
+	m_diagnostics.ResetRequested = inputContract.ResetRequested;
+	m_diagnostics.ResetReason = inputContract.ResetReason;
 }
 
 UpscalerEvaluationResult PassthroughUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluation)
@@ -39,6 +45,8 @@ void PassthroughUpscalerProvider::OnResize(RenderViewportExtent renderExtent, Re
 {
 	m_renderExtent = renderExtent;
 	m_outputExtent = outputExtent;
+	m_diagnostics.RenderExtent = renderExtent;
+	m_diagnostics.OutputExtent = outputExtent;
 }
 
 void PassthroughUpscalerProvider::ResetHistory(std::string_view)

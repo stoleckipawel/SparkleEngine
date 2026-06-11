@@ -337,6 +337,8 @@ Validation:
 
 ## Step 8: NVIDIA DLSS Super Resolution Provider
 
+Status: Provider/runtime architecture added; actual Streamline SDK calls remain unavailable until the SDK headers, binaries, and packaging path are added.
+
 Work:
 
 - Integrate Streamline-backed DLSS Super Resolution behind the provider boundary.
@@ -345,6 +347,16 @@ Work:
 - Evaluate after scene rendering and before UI/presentation through the FrameGraph external-provider scheduling point.
 - Implement deterministic fallback when SDK initialization, capability query, feature creation, tagging, or evaluation fails.
 - Implement D3D12 and Vulkan bridges through the shared provider contract.
+
+Output:
+
+- Added a DLSS runtime state model covering `NotSelected`, `Unavailable`, `AvailableNotCreated`, `Created`, `Evaluating`, and `FailedWithFallback`.
+- Added provider-neutral quality mode settings with `r.Upscaler.QualityMode`.
+- Extended the external-provider evaluation contract with backend API, native command-list/command-buffer handle, and native input/output/depth/motion-vector resources.
+- Added a Streamline runtime adapter boundary under `Upscaling/NvidiaDlss`; SDK lifetime, feature creation, resource tagging, options, constants, and evaluation belong there, not in frame orchestration.
+- Added a compiled unavailable Streamline runtime adapter so builds without the SDK deterministically report DLSS unavailable and fall back to passthrough.
+- DLSS diagnostics now carry SDK/runtime version, backend, adapter, selected quality mode, render/output extents, reset state, runtime state, and failure reason.
+- D3D12 and Vulkan still use the same provider contract; backend-specific SDK calls remain isolated to the future Streamline runtime implementation.
 
 Acceptance criteria:
 

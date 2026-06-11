@@ -54,12 +54,22 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities)
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(
 	    logger,
-	    "Upscaler provider: requested={} active={} status={} canEvaluate={} externalSdk={} reason='{}'",
+	    "Upscaler provider: requested={} active={} status={} canEvaluate={} externalSdk={} runtimeVersion='{}' runtimeState='{}' "
+	    "qualityMode='{}' renderExtent={}x{} outputExtent={}x{} resetRequested={} resetReason='{}' reason='{}'",
 	    UpscalerProviderKindToString(m_settings.RequestedProvider),
 	    m_activeProvider->GetName(),
 	    UpscalerProviderStatusToString(m_diagnostics.Status),
 	    BoolToString(m_diagnostics.CanEvaluate),
 	    BoolToString(m_diagnostics.UsesExternalSdk),
+	    m_diagnostics.ExternalRuntimeVersion,
+	    m_diagnostics.RuntimeState,
+	    m_diagnostics.SelectedQualityMode,
+	    m_diagnostics.RenderExtent.Width,
+	    m_diagnostics.RenderExtent.Height,
+	    m_diagnostics.OutputExtent.Width,
+	    m_diagnostics.OutputExtent.Height,
+	    BoolToString(m_diagnostics.ResetRequested),
+	    m_diagnostics.ResetReason,
 	    m_diagnostics.Reason);
 }
 

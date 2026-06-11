@@ -1,7 +1,11 @@
 #pragma once
 
 #include "Upscaling/NvidiaDlss/DlssCapabilityReport.h"
+#include "Upscaling/NvidiaDlss/StreamlineDlssRuntime.h"
 #include "Upscaling/UpscalerProvider.h"
+#include "Upscaling/UpscalerSettings.h"
+
+#include <memory>
 
 class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 {
@@ -15,11 +19,14 @@ class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent) override;
 	void ResetHistory(std::string_view reason) override;
 	void Shutdown() noexcept override;
-	UpscalerProviderCapabilities GetDiagnostics() const override { return m_diagnostics; }
+	UpscalerProviderCapabilities GetDiagnostics() const override;
 
   private:
 	UpscalerProviderCapabilities m_diagnostics = {};
 	DlssCapabilityReport m_dlssCapabilities = {};
+	UpscalerInputContract m_lastInputContract = {};
+	std::unique_ptr<IStreamlineDlssRuntime> m_runtime;
+	EUpscalerQualityMode m_qualityMode = EUpscalerQualityMode::Quality;
 	RenderViewportExtent m_renderExtent = {};
 	RenderViewportExtent m_outputExtent = {};
 };
