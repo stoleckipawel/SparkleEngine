@@ -179,6 +179,11 @@ NativeGraphicsQueueHandle D3D12RenderHardwareInterface::GetGraphicsQueueHandle()
 	return NativeGraphicsQueueHandle{m_rhi != nullptr ? m_rhi->GetCommandQueue().Get() : nullptr};
 }
 
+bool D3D12RenderHardwareInterface::UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
+{
+	return m_swapChain != nullptr && m_swapChain->UpgradeNativeInterface(callback, userData);
+}
+
 RenderCommandList& D3D12RenderHardwareInterface::GetGraphicsCommandList(std::uint32_t frameIndex) noexcept
 {
 	DrainCompletedOwnedResourceReleases();

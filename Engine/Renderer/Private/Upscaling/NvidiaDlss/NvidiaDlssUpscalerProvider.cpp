@@ -72,9 +72,13 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 	    .Reason = dlss.UnavailableReason};
 }
 
-bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice)
+bool NvidiaDlssUpscalerProvider::Initialize(
+    const RhiCapabilities& capabilities,
+    NativeGraphicsDeviceHandle nativeDevice,
+    UpscalerPresentationBridge presentationBridge)
 {
-	m_qualityMode = BuildUpscalerSettingsFromCVars().QualityMode;
+	const UpscalerSettings settings = BuildUpscalerSettingsFromCVars();
+	m_qualityMode = settings.QualityMode;
 	m_dlssCapabilities = DlssCapabilityReporter::Build(capabilities);
 	m_dlssCapabilities.SelectedQualityMode = UpscalerQualityModeToString(m_qualityMode);
 	MarkSelectedFeature(m_dlssCapabilities.FeatureMatrix, GetSelectedDlssFeature(m_qualityMode));
@@ -103,7 +107,9 @@ bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities,
 	    StreamlineDlssRuntimeDesc{
 	        .Capabilities = capabilities,
 	        .NativeDevice = nativeDevice,
+	        .PresentationBridge = presentationBridge,
 	        .QualityMode = m_qualityMode,
+	        .DiagnosticsEnabled = settings.DiagnosticsEnabled,
 	        .ApplicationName = "SparkleEngine",
 	        .ApplicationId = 0});
 	DlssCapabilityReporter::ApplyRuntimeDiagnostics(m_dlssCapabilities, m_runtime->GetDiagnostics());

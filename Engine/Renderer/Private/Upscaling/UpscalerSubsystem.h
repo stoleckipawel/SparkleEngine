@@ -22,7 +22,10 @@ class UpscalerSubsystem final
 	UpscalerSubsystem(UpscalerSubsystem&&) = delete;
 	UpscalerSubsystem& operator=(UpscalerSubsystem&&) = delete;
 
-	void Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice);
+	void Initialize(
+	    const RhiCapabilities& capabilities,
+	    NativeGraphicsDeviceHandle nativeDevice,
+	    UpscalerPresentationBridge presentationBridge);
 	void SetupFrame(const UpscalerInputContract& inputContract);
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation);
 	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent);
@@ -44,6 +47,7 @@ class UpscalerSubsystem final
 	UpscalerInputContractValidation m_lastInputValidation = {};
 	std::string m_frameFallbackReason;
 	NativeGraphicsDeviceHandle m_nativeDevice = {};
+	UpscalerPresentationBridge m_presentationBridge = {};
 	bool m_useFrameFallback = false;
 	bool m_shutdown = true;
 };

@@ -21,6 +21,8 @@ struct NativeGraphicsCommandListHandle
 	constexpr explicit operator bool() const noexcept { return Value != nullptr; }
 };
 
+using RhiNativeInterfaceUpgradeCallback = bool (*)(void** nativeInterface, void* userData);
+
 struct NativeResourceHandle
 {
 	void* Value = nullptr;

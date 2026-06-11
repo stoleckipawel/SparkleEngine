@@ -45,6 +45,18 @@
 #include "Upscaling/UpscalingStartupDiagnostics.h"
 #include "Upscaling/UpscalerSubsystem.h"
 
+namespace
+{
+	bool UpgradePresentationInterfaceThroughRhi(
+	    RhiNativeInterfaceUpgradeCallback callback,
+	    void* callbackUserData,
+	    void* bridgeUserData)
+	{
+		RenderHardwareInterface* const hardware = static_cast<RenderHardwareInterface*>(bridgeUserData);
+		return hardware != nullptr && hardware->UpgradePresentationInterface(callback, callbackUserData);
+	}
+}
+
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
 {
@@ -199,7 +211,13 @@ void Renderer::InitializeCoreSystems() noexcept
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
 	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
 	m_upscalerSubsystem = std::make_unique<UpscalerSubsystem>();
-	m_upscalerSubsystem->Initialize(GetRenderHardwareInterface().GetCapabilities(), GetRenderHardwareInterface().GetDeviceHandle());
+	RenderHardwareInterface& renderHardware = GetRenderHardwareInterface();
+	m_upscalerSubsystem->Initialize(
+	    renderHardware.GetCapabilities(),
+	    renderHardware.GetDeviceHandle(),
+	    UpscalerPresentationBridge{
+	        .UpgradePresentationInterface = &UpgradePresentationInterfaceThroughRhi,
+	        .UserData = &renderHardware});
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);

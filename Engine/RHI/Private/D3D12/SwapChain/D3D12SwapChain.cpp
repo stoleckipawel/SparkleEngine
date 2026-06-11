@@ -87,6 +87,29 @@ void D3D12SwapChain::Resize()
 	UpdateFrameInFlightIndex();
 }
 
+bool D3D12SwapChain::UpgradeNativeInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept
+{
+	if (callback == nullptr || m_swapChain == nullptr)
+	{
+		return false;
+	}
+
+	void* upgradedInterface = m_swapChain.Get();
+	if (!callback(&upgradedInterface, userData) || upgradedInterface == nullptr)
+	{
+		return false;
+	}
+
+	ComPtr<IDXGISwapChain3> upgradedSwapChain;
+	if (FAILED(static_cast<IUnknown*>(upgradedInterface)->QueryInterface(IID_PPV_ARGS(upgradedSwapChain.ReleaseAndGetAddressOf()))))
+	{
+		return false;
+	}
+
+	m_swapChain = std::move(upgradedSwapChain);
+	return true;
+}
+
 void D3D12SwapChain::ResizeBuffersToWindow()
 {
 	CHECK(m_swapChain->ResizeBuffers(

@@ -47,6 +47,16 @@ struct UpscalerProviderCapabilities final
 	std::string Reason;
 };
 
+struct UpscalerPresentationBridge final
+{
+	using UpgradePresentationInterfaceFn = bool (*)(RhiNativeInterfaceUpgradeCallback callback, void* callbackUserData, void* bridgeUserData);
+
+	UpgradePresentationInterfaceFn UpgradePresentationInterface = nullptr;
+	void* UserData = nullptr;
+
+	constexpr explicit operator bool() const noexcept { return UpgradePresentationInterface != nullptr; }
+};
+
 struct UpscalerEvaluationDesc final
 {
 	RenderProductHandle InputColor = {};
@@ -82,7 +92,10 @@ class IUpscalerProvider
 	virtual EUpscalerProviderKind GetKind() const noexcept = 0;
 	virtual std::string_view GetName() const noexcept = 0;
 	virtual UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const = 0;
-	virtual bool Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice) = 0;
+	virtual bool Initialize(
+	    const RhiCapabilities& capabilities,
+	    NativeGraphicsDeviceHandle nativeDevice,
+	    UpscalerPresentationBridge presentationBridge) = 0;
 	virtual void SetupFrame(const UpscalerInputContract& inputContract) = 0;
 	virtual UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent) = 0;

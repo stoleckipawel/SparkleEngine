@@ -74,7 +74,9 @@ struct StreamlineDlssRuntimeDesc final
 {
 	RhiCapabilities Capabilities = {};
 	NativeGraphicsDeviceHandle NativeDevice = {};
+	UpscalerPresentationBridge PresentationBridge = {};
 	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::Quality;
+	bool DiagnosticsEnabled = false;
 	std::string ApplicationName;
 	std::uint32_t ApplicationId = 0;
 };

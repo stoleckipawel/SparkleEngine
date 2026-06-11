@@ -42,6 +42,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void WaitForIdle() noexcept override;
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
+	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;

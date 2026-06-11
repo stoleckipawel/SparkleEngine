@@ -173,6 +173,11 @@ namespace
 		constants.motionVectorsJittered = sl::Boolean::eTrue;
 	}
 
+	bool UpgradePresentationInterfaceWithStreamline(void** nativeInterface, void*) noexcept
+	{
+		return nativeInterface != nullptr && slUpgradeInterface(nativeInterface) == sl::Result::eOk;
+	}
+
 	class StreamlineDlssRuntime final : public IStreamlineDlssRuntime
 	{
 	  public:
@@ -207,7 +212,7 @@ namespace
 			const sl::Feature features[] = {sl::kFeatureDLSS};
 			sl::Preferences preferences{};
 			preferences.showConsole = false;
-			preferences.logLevel = sl::LogLevel::eVerbose;
+			preferences.logLevel = desc.DiagnosticsEnabled ? sl::LogLevel::eVerbose : sl::LogLevel::eDefault;
 			preferences.featuresToLoad = features;
 			preferences.numFeaturesToLoad = static_cast<std::uint32_t>(std::size(features));
 			preferences.flags = sl::PreferenceFlags::eDisableCLStateTracking | sl::PreferenceFlags::eUseManualHooking |
@@ -219,7 +224,8 @@ namespace
 			preferences.projectId = "535041524B4C45454E47494E45303031";
 			preferences.renderAPI = sl::RenderAPI::eD3D12;
 			std::error_code logPathError;
-			m_streamlineLogPath = (std::filesystem::current_path(logPathError) / "StreamlineLogs").wstring();
+			m_streamlineLogPath =
+			    (std::filesystem::current_path(logPathError) / ".." / ".." / "logs" / "Streamline").lexically_normal().wstring();
 			if (!logPathError)
 			{
 				std::filesystem::create_directories(m_streamlineLogPath, logPathError);
@@ -238,6 +244,18 @@ namespace
 				return false;
 			}
 			m_initialized = true;
+
+			if (desc.PresentationBridge &&
+			    !desc.PresentationBridge.UpgradePresentationInterface(
+			        &UpgradePresentationInterfaceWithStreamline,
+			        nullptr,
+			        desc.PresentationBridge.UserData))
+			{
+				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureReason = "Streamline failed to upgrade the RHI presentation interface for manual present hooks.";
+				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
+				return false;
+			}
 
 			result = slSetD3DDevice(desc.NativeDevice.Value);
 			if (result != sl::Result::eOk)

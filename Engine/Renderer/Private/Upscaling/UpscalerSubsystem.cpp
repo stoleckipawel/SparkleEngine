@@ -19,9 +19,13 @@ UpscalerSubsystem::~UpscalerSubsystem() noexcept
 	Shutdown();
 }
 
-void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice)
+void UpscalerSubsystem::Initialize(
+    const RhiCapabilities& capabilities,
+    NativeGraphicsDeviceHandle nativeDevice,
+    UpscalerPresentationBridge presentationBridge)
 {
 	m_nativeDevice = nativeDevice;
+	m_presentationBridge = presentationBridge;
 	m_settings = BuildUpscalerSettingsFromCVars();
 	m_activeProvider = CreateProvider(m_settings.RequestedProvider);
 	if (m_activeProvider == nullptr)
@@ -29,12 +33,12 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities, NativeGr
 		m_activeProvider = CreateFallbackProvider();
 	}
 
-	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeDevice);
+	const bool initialized = m_activeProvider->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
 	if (!initialized && m_settings.RequestedProvider != EUpscalerProviderKind::Passthrough)
 	{
 		const UpscalerProviderCapabilities failedDiagnostics = m_activeProvider->GetDiagnostics();
 		std::unique_ptr<IUpscalerProvider> fallback = CreateFallbackProvider();
-		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeDevice);
+		const bool fallbackInitialized = fallback->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
 		m_activeProvider = std::move(fallback);
 		m_diagnostics = m_activeProvider->GetDiagnostics();
 		m_diagnostics.Status = fallbackInitialized ? EUpscalerProviderStatus::FailedWithFallback : EUpscalerProviderStatus::Unavailable;
@@ -50,7 +54,7 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities, NativeGr
 	}
 
 	m_frameFallbackProvider = CreateFallbackProvider();
-	m_frameFallbackProvider->Initialize(capabilities, m_nativeDevice);
+	m_frameFallbackProvider->Initialize(capabilities, m_nativeDevice, m_presentationBridge);
 	m_shutdown = false;
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(
