@@ -13,6 +13,7 @@
 #   - Dear ImGui     (v1.92.5)  - Immediate-mode GUI core + Win32 platform backend
 #   - spdlog         (v1.14.1)  - Repo-wide logging backend (header-only)
 #   - Font Awesome Free Solid (v6.7.1) - Editor/launcher icon font asset only
+#   - NVIDIA Streamline SDK (v2.11.1) - DLSS headers, import library, and runtime DLLs
 #
 #   Optional content pipeline (SPARKLE_ENABLE_CONTENT_PIPELINE):
 #   - cgltf          (v1.15)    - Single-header glTF 2.0 parser
@@ -139,7 +140,7 @@ if(SPARKLE_VERBOSE_DEPENDENCIES)
     message(STATUS "")
     message(STATUS "=== Third-Party Dependencies ===")
     message(STATUS "")
-    message(STATUS "  Total download on fresh cache: ~87 MB (shallow clones, LFS skipped)")
+    message(STATUS "  Total download on fresh cache: ~314 MB with Streamline enabled (shallow clones, LFS skipped)")
     message(STATUS "  Output mode: detailed dependency context")
     message(STATUS "  Git progress: ${SPARKLE_GIT_PROGRESS}")
     message(STATUS "")
@@ -751,6 +752,78 @@ download_sparkle_editor_asset(
 )
 
 sparkle_log_dependency_ready("Font Awesome" "${SPARKLE_FONT_AWESOME_SOLID_TTF}" "~0.5 MB asset-only")
+
+# ============================================================================
+# NVIDIA Streamline SDK - DLSS provider runtime
+# https://github.com/NVIDIA-RTX/Streamline
+#
+# The SDK release zip contains headers, the Streamline interposer import
+# library, signed Streamline plugin DLLs, and NVIDIA DLSS runtime DLLs. Keep it
+# out of source and cache it under build/_deps so fresh syncs are reproducible.
+# ============================================================================
+if(SPARKLE_ENABLE_NVIDIA_STREAMLINE)
+    sparkle_log_dependency_step(12 12 "NVIDIA Streamline SDK" "v2.11.1" "~217 MB" "DLSS external upscaler SDK headers, import library, and runtime DLLs" "https://github.com/NVIDIA-RTX/Streamline/releases")
+
+    set(_sparkle_streamline_url "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.11.1/streamline-sdk-v2.11.1.zip")
+    set(_sparkle_streamline_zip "${FETCHCONTENT_BASE_DIR}/streamline-sdk-v2.11.1.zip")
+    set(_sparkle_streamline_root "${FETCHCONTENT_BASE_DIR}/streamline-sdk-src")
+
+    if(NOT EXISTS "${_sparkle_streamline_root}/include/sl.h" OR NOT EXISTS "${_sparkle_streamline_root}/bin/x64/sl.dlss.dll")
+        file(MAKE_DIRECTORY "${FETCHCONTENT_BASE_DIR}")
+        file(DOWNLOAD
+            "${_sparkle_streamline_url}"
+            "${_sparkle_streamline_zip}"
+            EXPECTED_HASH SHA256=0C1D562E59557434CABFB8997157CB8C04FC7D23F077C8BDF5260975B73DFB89
+            STATUS _streamline_download_status
+            TLS_VERIFY ON
+            SHOW_PROGRESS
+        )
+        list(GET _streamline_download_status 0 _streamline_download_code)
+        list(GET _streamline_download_status 1 _streamline_download_message)
+        if(NOT _streamline_download_code EQUAL 0)
+            file(REMOVE "${_sparkle_streamline_zip}")
+            message(FATAL_ERROR "Failed to download NVIDIA Streamline SDK v2.11.1: ${_streamline_download_message}")
+        endif()
+
+        file(REMOVE_RECURSE "${_sparkle_streamline_root}")
+        file(MAKE_DIRECTORY "${_sparkle_streamline_root}")
+        file(ARCHIVE_EXTRACT INPUT "${_sparkle_streamline_zip}" DESTINATION "${_sparkle_streamline_root}")
+    endif()
+
+    if(NOT EXISTS "${_sparkle_streamline_root}/include/sl.h")
+        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing include/sl.h at '${_sparkle_streamline_root}'.")
+    endif()
+    if(NOT EXISTS "${_sparkle_streamline_root}/lib/x64/sl.interposer.lib")
+        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing lib/x64/sl.interposer.lib at '${_sparkle_streamline_root}'.")
+    endif()
+    if(NOT EXISTS "${_sparkle_streamline_root}/bin/x64/sl.dlss.dll" OR NOT EXISTS "${_sparkle_streamline_root}/bin/x64/nvngx_dlss.dll")
+        message(FATAL_ERROR "NVIDIA Streamline SDK extraction is missing required DLSS runtime DLLs at '${_sparkle_streamline_root}/bin/x64'.")
+    endif()
+
+    set(SPARKLE_NVIDIA_STREAMLINE_ROOT "${_sparkle_streamline_root}" CACHE PATH "NVIDIA Streamline SDK root used by Sparkle DLSS integration." FORCE)
+    set(SPARKLE_NVIDIA_STREAMLINE_BIN_DIR "${_sparkle_streamline_root}/bin/x64" CACHE PATH "NVIDIA Streamline runtime DLL directory." FORCE)
+    set(SPARKLE_NVIDIA_STREAMLINE_INCLUDE_DIR "${_sparkle_streamline_root}/include" CACHE PATH "NVIDIA Streamline include directory." FORCE)
+    set(SPARKLE_NVIDIA_STREAMLINE_INTERPOSER_LIB "${_sparkle_streamline_root}/lib/x64/sl.interposer.lib" CACHE FILEPATH "NVIDIA Streamline interposer import library." FORCE)
+
+    if(NOT TARGET NVIDIA::Streamline)
+        add_library(NVIDIA::Streamline INTERFACE IMPORTED GLOBAL)
+        set_target_properties(NVIDIA::Streamline PROPERTIES
+            INTERFACE_INCLUDE_DIRECTORIES "${SPARKLE_NVIDIA_STREAMLINE_INCLUDE_DIR}"
+            INTERFACE_LINK_LIBRARIES "${SPARKLE_NVIDIA_STREAMLINE_INTERPOSER_LIB}"
+        )
+    endif()
+
+    set(SPARKLE_NVIDIA_STREAMLINE_RUNTIME_DLLS
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.interposer.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.common.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/sl.dlss.dll"
+        "${SPARKLE_NVIDIA_STREAMLINE_BIN_DIR}/nvngx_dlss.dll"
+        CACHE STRING "NVIDIA Streamline DLSS Super Resolution runtime DLLs staged beside Sparkle products."
+        FORCE
+    )
+
+    sparkle_log_dependency_ready("NVIDIA Streamline SDK" "${SPARKLE_NVIDIA_STREAMLINE_ROOT}" "~217 MB release SDK")
+endif()
 
 # ============================================================================
 # Restore LFS behavior

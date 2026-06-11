@@ -98,6 +98,11 @@ Makefile
 .cache
 tmp_donut/
 tmp_donut_repo/
+tmp_streamline_sdk/
+
+# Large third-party SDK downloads are declared by CMake and cached under
+# build/_deps; keep ad-hoc local copies out of source.
+/External/NVIDIA/*.zip
 
 # Generated logs and measurement captures stay out of commits.
 # If a performance investigation needs to be preserved, move the artifact to a

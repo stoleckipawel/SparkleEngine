@@ -44,6 +44,9 @@ sparkle_declare_runtime_dll_owner(
     SparkleCore
 )
 
+sparkle_stage_nvidia_streamline_runtime(ShowcaseEditor)
+sparkle_stage_nvidia_streamline_runtime(ShowcaseRuntime)
+
 if(MSVC)
     set_target_properties(ShowcaseEditor PROPERTIES
         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

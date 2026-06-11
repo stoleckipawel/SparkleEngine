@@ -16,7 +16,7 @@ UpscalerProviderCapabilities PassthroughUpscalerProvider::QueryCapabilities(cons
 	    .Reason = "Deterministic passthrough fallback is always available."};
 }
 
-bool PassthroughUpscalerProvider::Initialize(const RhiCapabilities& capabilities)
+bool PassthroughUpscalerProvider::Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle)
 {
 	m_diagnostics = QueryCapabilities(capabilities);
 	m_diagnostics.Status = EUpscalerProviderStatus::Active;

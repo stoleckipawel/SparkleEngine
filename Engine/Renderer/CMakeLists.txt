@@ -60,6 +60,13 @@ target_link_libraries(SparkleRenderer
         SparkleGameFramework
 )
 
+if(SPARKLE_ENABLE_NVIDIA_STREAMLINE AND TARGET NVIDIA::Streamline)
+    target_link_libraries(SparkleRenderer PRIVATE NVIDIA::Streamline)
+    target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=1)
+else()
+    target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=0)
+endif()
+
 sparkle_configure_runtime_support_artifacts(SparkleRenderer)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RENDERER_PUBLIC_HEADERS})

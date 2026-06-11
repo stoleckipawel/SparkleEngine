@@ -2,6 +2,7 @@
 
 #include "Upscaling/UpscalerProvider.h"
 #include "Upscaling/UpscalerSettings.h"
+#include "RHI/Public/Interop/RhiNativeHandles.h"
 
 #include <memory>
 
@@ -21,7 +22,7 @@ class UpscalerSubsystem final
 	UpscalerSubsystem(UpscalerSubsystem&&) = delete;
 	UpscalerSubsystem& operator=(UpscalerSubsystem&&) = delete;
 
-	void Initialize(const RhiCapabilities& capabilities);
+	void Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice);
 	void SetupFrame(const UpscalerInputContract& inputContract);
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation);
 	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent);
@@ -42,6 +43,7 @@ class UpscalerSubsystem final
 	UpscalerProviderCapabilities m_diagnostics = {};
 	UpscalerInputContractValidation m_lastInputValidation = {};
 	std::string m_frameFallbackReason;
+	NativeGraphicsDeviceHandle m_nativeDevice = {};
 	bool m_useFrameFallback = false;
 	bool m_shutdown = true;
 };

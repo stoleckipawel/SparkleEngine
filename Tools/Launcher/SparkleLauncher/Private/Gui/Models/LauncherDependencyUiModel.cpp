@@ -87,6 +87,22 @@ namespace SparkleLauncher
 			    {
 			        {"SPIRV-Reflect", "vulkan-sdk-1.3.290.0", "SPIR-V reflection for offline shader compiler backends.", "spirv_reflect-src"},
 			    }});
+#if SPARKLE_ENABLE_NVIDIA_STREAMLINE
+			const bool nvidiaStreamlineEnabled = true;
+#else
+			const bool nvidiaStreamlineEnabled = false;
+#endif
+			entries.push_back({
+			    "nvidia-streamline",
+			    "NVIDIA Streamline Runtime Tier",
+			    "Optional NVIDIA Streamline SDK dependency used by the DLSS provider.",
+			    "Unlocks DLSS Super Resolution runtime integration and stages signed Streamline/DLSS DLLs beside editor and runtime executables.",
+			    "SPARKLE_ENABLE_NVIDIA_STREAMLINE",
+			    false,
+			    nvidiaStreamlineEnabled,
+			    {
+			        {"NVIDIA Streamline SDK", "v2.11.1", "Headers, import library, Streamline plugins, and DLSS runtime redistributables.", "streamline-sdk-src"},
+			    }});
 			return entries;
 		}();
 		return groups;
@@ -225,6 +241,11 @@ namespace SparkleLauncher
 		if (group.Id == "ktx-support")
 		{
 			return operationId == "workspace.sync-source-tiers" || operationId == "cook.textures" || operationId == "cook.project";
+		}
+		if (group.Id == "nvidia-streamline")
+		{
+			return operationId == "workspace.sync-source-tiers" || operationId == "workspace.generate-build-files" ||
+			    operationId == "workspace.build-all" || operationId.startsWith("project.build");
 		}
 		return false;
 	}

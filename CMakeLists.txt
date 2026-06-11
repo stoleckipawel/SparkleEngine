@@ -90,6 +90,7 @@ option(SPARKLE_RUN_CLANG_FORMAT_ON_BUILD "Run clang-format checks as dependencie
 option(SPARKLE_ENABLE_CONTENT_PIPELINE "Build source import, conversion, and asset/texture cooking tools" ON)
 option(SPARKLE_ENABLE_SHADER_COMPILER "Build offline shader compiler tooling" ON)
 option(SPARKLE_ENABLE_KTX_SUPPORT "Fetch and build KTX tooling support for the content pipeline" OFF)
+option(SPARKLE_ENABLE_NVIDIA_STREAMLINE "Fetch and stage NVIDIA Streamline SDK runtime for DLSS providers" ON)
 
 # ---------------------------
 # Output directories

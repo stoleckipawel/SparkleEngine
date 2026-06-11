@@ -37,7 +37,7 @@ void AddExternalProviderEvaluationPass(
 		    resourceBuilder.Read(sceneTargets.SceneColor, ResourceUsage::CopySource, "HudlessSceneColor");
 		    resourceBuilder.Read(sceneTargets.MainDepth, ResourceUsage::DepthRead, "Depth");
 		    resourceBuilder.Read(gbuffer.MotionVector, ResourceUsage::ShaderRead, "MotionVectors");
-		    resourceBuilder.Write(sceneTargets.FinalSceneColor, ResourceUsage::CopyDest, "FinalSceneColor");
+		    resourceBuilder.Write(sceneTargets.FinalSceneColor, ResourceUsage::UnorderedAccess, "FinalSceneColor");
 	    },
 	    [sceneTargets, gbuffer, sceneExtent](PassExecutionContext& context)
 	    {

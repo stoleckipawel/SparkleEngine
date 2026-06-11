@@ -82,7 +82,7 @@ class IUpscalerProvider
 	virtual EUpscalerProviderKind GetKind() const noexcept = 0;
 	virtual std::string_view GetName() const noexcept = 0;
 	virtual UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const = 0;
-	virtual bool Initialize(const RhiCapabilities& capabilities) = 0;
+	virtual bool Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice) = 0;
 	virtual void SetupFrame(const UpscalerInputContract& inputContract) = 0;
 	virtual UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent) = 0;

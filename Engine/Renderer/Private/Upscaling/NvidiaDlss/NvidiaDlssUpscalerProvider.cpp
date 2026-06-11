@@ -72,7 +72,7 @@ UpscalerProviderCapabilities NvidiaDlssUpscalerProvider::QueryCapabilities(const
 	    .Reason = dlss.UnavailableReason};
 }
 
-bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities)
+bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities, NativeGraphicsDeviceHandle nativeDevice)
 {
 	m_qualityMode = BuildUpscalerSettingsFromCVars().QualityMode;
 	m_dlssCapabilities = DlssCapabilityReporter::Build(capabilities);
@@ -102,11 +102,21 @@ bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities)
 	const bool initialized = m_runtime->Initialize(
 	    StreamlineDlssRuntimeDesc{
 	        .Capabilities = capabilities,
+	        .NativeDevice = nativeDevice,
 	        .QualityMode = m_qualityMode,
 	        .ApplicationName = "SparkleEngine",
 	        .ApplicationId = 0});
 	DlssCapabilityReporter::ApplyRuntimeDiagnostics(m_dlssCapabilities, m_runtime->GetDiagnostics());
 	m_diagnostics = GetDiagnostics();
+	if (!initialized)
+	{
+		const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.DLSS");
+		SPDLOG_LOGGER_WARN(
+		    logger,
+		    "DLSS provider initialization failed: runtimeState={} reason='{}'",
+		    DlssProviderRuntimeStateToString(m_dlssCapabilities.RuntimeState),
+		    m_dlssCapabilities.UnavailableReason);
+	}
 	DlssCapabilityReporter::LogOnce(m_dlssCapabilities);
 	return initialized;
 }

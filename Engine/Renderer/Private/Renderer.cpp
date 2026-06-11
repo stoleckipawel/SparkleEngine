@@ -199,7 +199,7 @@ void Renderer::InitializeCoreSystems() noexcept
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
 	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
 	m_upscalerSubsystem = std::make_unique<UpscalerSubsystem>();
-	m_upscalerSubsystem->Initialize(GetRenderHardwareInterface().GetCapabilities());
+	m_upscalerSubsystem->Initialize(GetRenderHardwareInterface().GetCapabilities(), GetRenderHardwareInterface().GetDeviceHandle());
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);

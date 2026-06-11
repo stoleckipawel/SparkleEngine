@@ -122,6 +122,33 @@ function(sparkle_declare_runtime_dll_owner product_target)
     endforeach()
 endfunction()
 
+function(sparkle_stage_nvidia_streamline_runtime product_target)
+    if(NOT TARGET ${product_target})
+        message(FATAL_ERROR "Unknown Sparkle product target '${product_target}'")
+    endif()
+
+    if(NOT SPARKLE_ENABLE_NVIDIA_STREAMLINE)
+        return()
+    endif()
+
+    if(NOT DEFINED SPARKLE_NVIDIA_STREAMLINE_RUNTIME_DLLS)
+        message(FATAL_ERROR "NVIDIA Streamline runtime DLL list is not configured. FetchDependencies.cmake must run before staging Streamline.")
+    endif()
+
+    foreach(runtime_dll IN LISTS SPARKLE_NVIDIA_STREAMLINE_RUNTIME_DLLS)
+        if(NOT EXISTS "${runtime_dll}")
+            message(FATAL_ERROR "NVIDIA Streamline runtime DLL is missing: '${runtime_dll}'")
+        endif()
+        add_custom_command(TARGET ${product_target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${runtime_dll}"
+                "$<TARGET_FILE_DIR:${product_target}>"
+            COMMENT "Copying NVIDIA Streamline runtime ${runtime_dll} for ${product_target}"
+            VERBATIM
+        )
+    endforeach()
+endfunction()
+
 if(NOT TARGET sparkle_release_assembly)
     add_custom_target(sparkle_release_assembly
         COMMAND ${CMAKE_COMMAND}

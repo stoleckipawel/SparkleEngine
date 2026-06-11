@@ -60,6 +60,8 @@ struct RhiAdapterIdentity
 	std::string DriverDescription;
 	std::uint32_t VendorId = 0;
 	std::uint32_t DeviceId = 0;
+	std::array<std::uint8_t, 8> NativeLuid = {};
+	std::uint32_t NativeLuidSizeInBytes = 0;
 };
 
 struct RhiExternalFeatureInteropCapabilities

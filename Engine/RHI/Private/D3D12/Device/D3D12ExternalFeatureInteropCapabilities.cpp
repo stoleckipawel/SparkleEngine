@@ -5,6 +5,7 @@
 #include "D3D12/Device/D3D12Rhi.h"
 
 #include <d3d12.h>
+#include <cstring>
 #include <string>
 #include <string_view>
 
@@ -38,11 +39,15 @@ namespace
 			return {};
 		}
 
-		return RhiAdapterIdentity{
+		RhiAdapterIdentity identity{
 		    .Name = NarrowAdapterDescription(adapterDesc.Description),
 		    .DriverDescription = "DXGI",
 		    .VendorId = adapterDesc.VendorId,
 		    .DeviceId = adapterDesc.DeviceId};
+		static_assert(sizeof(adapterDesc.AdapterLuid) <= identity.NativeLuid.size());
+		std::memcpy(identity.NativeLuid.data(), &adapterDesc.AdapterLuid, sizeof(adapterDesc.AdapterLuid));
+		identity.NativeLuidSizeInBytes = static_cast<std::uint32_t>(sizeof(adapterDesc.AdapterLuid));
+		return identity;
 	}
 }
 
@@ -63,4 +68,3 @@ RhiExternalFeatureInteropCapabilities BuildD3D12ExternalFeatureInteropCapabiliti
 	capabilities.SupportsRuntimeProviderChecks = capabilities.SupportsExternalProviderEvaluation;
 	return capabilities;
 }
-

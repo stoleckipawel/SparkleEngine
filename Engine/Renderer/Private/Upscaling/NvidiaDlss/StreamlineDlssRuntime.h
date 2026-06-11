@@ -73,6 +73,7 @@ struct StreamlineDlssRuntimeCapabilities final
 struct StreamlineDlssRuntimeDesc final
 {
 	RhiCapabilities Capabilities = {};
+	NativeGraphicsDeviceHandle NativeDevice = {};
 	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::Quality;
 	std::string ApplicationName;
 	std::uint32_t ApplicationId = 0;
