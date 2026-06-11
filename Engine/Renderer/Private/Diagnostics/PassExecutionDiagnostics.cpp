@@ -103,6 +103,8 @@ RhiDiagnosticLabelColor PassExecutionDiagnostics::GetPassEventColor(EFrameGraphP
 			return RhiDiagnosticLabelColor{.Red = 255, .Green = 162, .Blue = 76, .Alpha = 255};
 		case EFrameGraphPassFlags::Transfer:
 			return RhiDiagnosticLabelColor{.Red = 115, .Green = 204, .Blue = 122, .Alpha = 255};
+		case EFrameGraphPassFlags::ExternalProvider:
+			return RhiDiagnosticLabelColor{.Red = 186, .Green = 128, .Blue = 255, .Alpha = 255};
 		default:
 			return RhiDiagnosticLabelColor{.Red = 224, .Green = 224, .Blue = 224, .Alpha = 255};
 	}

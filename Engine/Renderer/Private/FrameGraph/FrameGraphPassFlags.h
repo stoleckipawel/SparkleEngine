@@ -8,6 +8,7 @@ enum class EFrameGraphPassFlags : std::uint8_t
 	Raster = 1 << 0,
 	Compute = 1 << 1,
 	Transfer = 1 << 2,
+	ExternalProvider = 1 << 3,
 };
 
 constexpr EFrameGraphPassFlags operator|(EFrameGraphPassFlags lhs, EFrameGraphPassFlags rhs) noexcept
@@ -33,7 +34,8 @@ constexpr bool HasAnyPassFlags(EFrameGraphPassFlags value, EFrameGraphPassFlags 
 
 constexpr EFrameGraphPassFlags GetFrameGraphPassKindMask() noexcept
 {
-	return EFrameGraphPassFlags::Raster | EFrameGraphPassFlags::Compute | EFrameGraphPassFlags::Transfer;
+	return EFrameGraphPassFlags::Raster | EFrameGraphPassFlags::Compute | EFrameGraphPassFlags::Transfer |
+	       EFrameGraphPassFlags::ExternalProvider;
 }
 
 constexpr EFrameGraphPassFlags GetFrameGraphPassKind(EFrameGraphPassFlags flags) noexcept
@@ -44,7 +46,8 @@ constexpr EFrameGraphPassFlags GetFrameGraphPassKind(EFrameGraphPassFlags flags)
 constexpr bool HasExactlyOnePassKind(EFrameGraphPassFlags flags) noexcept
 {
 	const EFrameGraphPassFlags kind = GetFrameGraphPassKind(flags);
-	return kind == EFrameGraphPassFlags::Raster || kind == EFrameGraphPassFlags::Compute || kind == EFrameGraphPassFlags::Transfer;
+	return kind == EFrameGraphPassFlags::Raster || kind == EFrameGraphPassFlags::Compute || kind == EFrameGraphPassFlags::Transfer ||
+	       kind == EFrameGraphPassFlags::ExternalProvider;
 }
 
 constexpr const char* FrameGraphPassKindToString(EFrameGraphPassFlags flags) noexcept
@@ -57,6 +60,8 @@ constexpr const char* FrameGraphPassKindToString(EFrameGraphPassFlags flags) noe
 			return "Compute";
 		case EFrameGraphPassFlags::Transfer:
 			return "Transfer";
+		case EFrameGraphPassFlags::ExternalProvider:
+			return "ExternalProvider";
 		default:
 			return "None";
 	}
@@ -72,6 +77,8 @@ constexpr const char* FrameGraphPassFlagToString(EFrameGraphPassFlags flag) noex
 			return "Compute";
 		case EFrameGraphPassFlags::Transfer:
 			return "Transfer";
+		case EFrameGraphPassFlags::ExternalProvider:
+			return "ExternalProvider";
 		default:
 			return "None";
 	}

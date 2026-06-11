@@ -6,5 +6,5 @@
 
 void AddPresentationPass(FrameGraphBuilder& builder, const SceneRenderTargets& sceneTargets)
 {
-	PassUtilities::AddCopyTexturePass(builder, "CopySceneColorToBackBuffer", sceneTargets.BackBuffer, sceneTargets.SceneColor);
+	PassUtilities::AddCopyTexturePass(builder, "CopyFinalSceneColorToBackBuffer", sceneTargets.BackBuffer, sceneTargets.FinalSceneColor);
 }

@@ -268,6 +268,10 @@ void Renderer::InitializeFrameGraph() noexcept
 	    buildResult.SceneColor.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
+	m_frameProducts.FinalSceneColor =
+	    buildResult.FinalSceneColor.IsValid()
+	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.FinalSceneColor.GetResourceHandle().index) + 1ull}
+	        : RenderProductHandle{};
 	m_frameProducts.SceneDepth =
 	    buildResult.SceneDepth.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
@@ -376,7 +380,7 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
-	    RenderProduct{m_frameProducts.SceneColor, extent, RenderProductFormat::ColorLdr});
+	    RenderProduct{m_frameProducts.FinalSceneColor, extent, RenderProductFormat::ColorLdr});
 
 	if (m_frameProducts.SceneDepth && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
@@ -421,7 +425,7 @@ void Renderer::RecordFrame() noexcept
 		            .HudlessSceneColor = m_frameProducts.SceneColor,
 		            .Depth = m_frameProducts.SceneDepth,
 		            .MotionVectors = m_frameProducts.MotionVectors,
-		            .FinalOutput = m_frameProducts.SceneColor,
+		            .FinalOutput = m_frameProducts.FinalSceneColor,
 		            .RenderExtent = m_frameGraphSceneExtent,
 		            .OutputExtent = m_frameGraphSceneExtent,
 		            .FrameIndex = m_timer->GetFrameCount(),
@@ -469,12 +473,15 @@ void Renderer::RecordFrame() noexcept
 	const RenderRayTracingPassServices rayTracingPassServices{
 	    .Scene = m_renderRayTracingScene.get(),
 	    .ShadowSettings = m_rayTracedShadowSettings.get()};
+	const RenderUpscalingPassServices upscalingPassServices{
+	    .Subsystem = m_upscalerSubsystem.get()};
 	const PassRuntimeServices passRuntimeServices{
 	    .HardwareInterface = renderHardwareInterface,
 	    .BackendDiagnostics = renderHardwareInterface.GetDiagnostics(),
 	    .RuntimeManager = *m_pipelineStateManager,
 	    .Textures = m_textureManager.get(),
-	    .RayTracing = &rayTracingPassServices};
+	    .RayTracing = &rayTracingPassServices,
+	    .Upscaling = &upscalingPassServices};
 	FrameExecutionDiagnostics& frameDiagnostics = GetCurrentFrameDiagnostics();
 
 	// A top-level GPU event covering the entire recorded frame.

@@ -40,15 +40,36 @@ class PassResourceBuilder final
 	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphResourceHandle Read(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphResourceHandle Write(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphResourceHandle Use(FrameGraphResourceHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	FrameGraphTextureHandle Read(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphTextureHandle Write(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphTextureHandle Use(FrameGraphTextureHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphTextureHandle Read(FrameGraphTextureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphTextureHandle Write(FrameGraphTextureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphTextureHandle Use(FrameGraphTextureHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	FrameGraphBufferHandle Read(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphBufferHandle Write(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphBufferHandle Use(FrameGraphBufferHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphBufferHandle Read(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphBufferHandle Write(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
+	FrameGraphBufferHandle Use(FrameGraphBufferHandle handle, ResourceUsage usage, std::string_view label) noexcept;
 	FrameGraphAccelerationStructureHandle Read(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphAccelerationStructureHandle Write(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept;
 	FrameGraphAccelerationStructureHandle Use(FrameGraphAccelerationStructureHandle handle, ResourceUsage usage) noexcept;
+	FrameGraphAccelerationStructureHandle Read(
+	    FrameGraphAccelerationStructureHandle handle,
+	    ResourceUsage usage,
+	    std::string_view label) noexcept;
+	FrameGraphAccelerationStructureHandle Write(
+	    FrameGraphAccelerationStructureHandle handle,
+	    ResourceUsage usage,
+	    std::string_view label) noexcept;
+	FrameGraphAccelerationStructureHandle Use(
+	    FrameGraphAccelerationStructureHandle handle,
+	    ResourceUsage usage,
+	    std::string_view label) noexcept;
 	bool DeclareParameterUsages(const PassParameterSet& parameterSet, std::string_view passName = {}) noexcept;
 
   private:

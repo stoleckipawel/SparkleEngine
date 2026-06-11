@@ -289,11 +289,22 @@ Validation:
 
 ## Step 6: FrameGraph External Provider Evaluation
 
+Status: Source/API shape added; the evaluation node currently writes the deterministic passthrough fallback into `FinalSceneColor` until the DLSS provider runtime is integrated.
+
 Work:
 
 - Add FrameGraph concepts for external provider evaluation instead of modeling DLSS as an authored shader pass.
 - Declare provider reads/writes, resource states, fallback output, and command-list or command-buffer execution requirements.
 - Make presentation consume `FinalSceneColor`, regardless of whether native rendering, fallback, or DLSS produced it.
+
+Output:
+
+- Added `FinalSceneColor` as a generic renderer frame product, separate from HUD-less `SceneColor`.
+- Added an `ExternalProvider` FrameGraph pass kind so provider scheduling is visible in pass labels, event scopes, GPU marker coloring, and FrameGraph diagnostics.
+- Added labeled resource declarations for non-shader FrameGraph passes, allowing the provider boundary to declare `HudlessSceneColor`, `Depth`, `MotionVectors`, and `FinalSceneColor`.
+- Added `EvaluateExternalUpscalerProvider` between lighting and presentation. It invokes the renderer upscaler subsystem through execution-time services and writes the deterministic fallback copy when the active provider does not produce output.
+- Updated presentation and viewport products to consume `FinalSceneColor`.
+- Kept provider implementation details outside `FrameContext`, lighting, denoiser, G-buffer, and presentation code. RHI remains responsible only for backend-native capability and handle bridges.
 
 Acceptance criteria:
 

@@ -96,6 +96,7 @@ class SPARKLE_RENDERER_API Renderer final
 	struct RendererFrameProductHandles
 	{
 		RenderProductHandle SceneColor = {};
+		RenderProductHandle FinalSceneColor = {};
 		RenderProductHandle SceneDepth = {};
 		RenderProductHandle MotionVectors = {};
 	};

@@ -115,6 +115,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 
 	FrameGraphBuildResult result{};
 	result.SceneColor = frameLoop.Scene.SceneColor;
+	result.FinalSceneColor = frameLoop.Scene.FinalSceneColor;
 	result.SceneDepth = frameLoop.Scene.MainDepth;
 	result.MotionVectors = frameLoop.GBuffer.MotionVector;
 	result.SceneTlas = frameLoop.SceneTlas;
