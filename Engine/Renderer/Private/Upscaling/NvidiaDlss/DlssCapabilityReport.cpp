@@ -1,7 +1,6 @@
-#include "../PCH.h"
-#include "Upscaling/DlssCapabilityReport.h"
+#include "../../PCH.h"
+#include "Upscaling/NvidiaDlss/DlssCapabilityReport.h"
 
-#include "Core/Public/Console/CVar.h"
 #include "RHI/Public/Core/RhiBackendSelection.h"
 
 #include <format>
@@ -10,11 +9,6 @@
 
 namespace
 {
-	ConsoleVariable<bool> CVarRendererDlssEnabled(
-	    "r.DLSS.Enabled",
-	    false,
-	    "Enable NVIDIA DLSS provider selection when the provider runtime and backend bridge are available.");
-
 	constexpr const char* BoolToString(bool value) noexcept
 	{
 		return value ? "true" : "false";
@@ -45,7 +39,7 @@ namespace
 
 bool DlssCapabilityReport::CanCreateFeature() const noexcept
 {
-	return !UserDisabled && RhiBridgeReady && SdkRuntimeIntegrated && SdkRuntimeAvailable && FeatureQuerySucceeded && FeatureSupported;
+	return RhiBridgeReady && SdkRuntimeIntegrated && SdkRuntimeAvailable && FeatureQuerySucceeded && FeatureSupported;
 }
 
 DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabilities) noexcept
@@ -55,7 +49,6 @@ DlssCapabilityReport DlssCapabilityReporter::Build(const RhiCapabilities& capabi
 	report.BackendApi = capabilities.BackendApi;
 	report.BridgeKind = interop.BridgeKind;
 	report.Adapter = interop.Adapter;
-	report.UserDisabled = !CVarRendererDlssEnabled.Get();
 	report.D3D12BridgeReady = capabilities.BackendApi == ERhiBackendApi::D3D12 &&
 	                          interop.BridgeKind == ERhiExternalFeatureBridgeKind::D3D12NativeDevice &&
 	                          interop.ExposesNativeDevice &&
@@ -114,11 +107,6 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 
 std::string DlssCapabilityReporter::BuildUnavailableReason(const RhiCapabilities& capabilities, const DlssCapabilityReport& report)
 {
-	if (report.UserDisabled)
-	{
-		return "DLSS disabled by user settings.";
-	}
-
 	const RhiExternalFeatureInteropCapabilities& interop = capabilities.ExternalFeatureInterop;
 	if (!report.RhiBridgeReady)
 	{

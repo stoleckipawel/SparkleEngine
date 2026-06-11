@@ -42,6 +42,7 @@
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
 #include "Upscaling/UpscalingStartupDiagnostics.h"
+#include "Upscaling/UpscalerSubsystem.h"
 
 Renderer::Renderer(Timer& timer, GameScene& gameScene, Window& window, LevelManager& levelManager) noexcept :
     m_timer(&timer), m_gameScene(&gameScene), m_window(&window)
@@ -196,6 +197,8 @@ void Renderer::InitializeCoreSystems() noexcept
 	    RayTracingCapabilityReporter::Build(GetRenderHardwareInterface().GetCapabilities());
 	RayTracingCapabilityReporter::LogOnce(rayTracingCapabilities);
 	LogUpscalingStartupDiagnostics(GetRenderHardwareInterface().GetCapabilities());
+	m_upscalerSubsystem = std::make_unique<UpscalerSubsystem>();
+	m_upscalerSubsystem->Initialize(GetRenderHardwareInterface().GetCapabilities());
 	m_rayTracedShadowSettings = std::make_unique<RayTracedShadowSettings>(BuildRayTracedShadowSettingsFromCVars());
 	LogRayTracedShadowSettingsOnce(*m_rayTracedShadowSettings, rayTracingCapabilities);
 	m_renderRayTracingScene = std::make_unique<RenderRayTracingScene>(GetRenderHardwareInterface(), rayTracingCapabilities);
@@ -291,6 +294,10 @@ void Renderer::RefreshFrameExecution() noexcept
 
 	m_frameGraph.reset();
 	InitializeFrameGraph();
+	if (m_upscalerSubsystem != nullptr)
+	{
+		m_upscalerSubsystem->OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
+	}
 }
 
 void Renderer::BeginFrame() noexcept
@@ -302,6 +309,10 @@ void Renderer::BeginFrame() noexcept
 		if (m_temporalDataBuilder != nullptr)
 		{
 			m_temporalDataBuilder->ResetHistory("Window resize");
+		}
+		if (m_upscalerSubsystem != nullptr)
+		{
+			m_upscalerSubsystem->ResetHistory("Window resize");
 		}
 
 		if (m_window->HasValidSize())
@@ -318,6 +329,10 @@ void Renderer::BeginFrame() noexcept
 		if (m_temporalDataBuilder != nullptr)
 		{
 			m_temporalDataBuilder->ResetHistory("Scene extent changed");
+		}
+		if (m_upscalerSubsystem != nullptr)
+		{
+			m_upscalerSubsystem->ResetHistory("Scene extent changed");
 		}
 		RefreshFrameExecution();
 	}
@@ -340,6 +355,14 @@ void Renderer::SetupFrame() noexcept
 		m_memoryMonitor->Tick(m_timer->GetFrameCount());
 	}
 	RefreshViewportRenderProducts();
+	if (m_upscalerSubsystem != nullptr)
+	{
+		m_upscalerSubsystem->SetupFrame(
+		    UpscalerFrameSetupDesc{
+		        .RenderExtent = m_frameGraphSceneExtent,
+		        .OutputExtent = m_frameGraphSceneExtent,
+		        .FrameIndex = m_timer->GetFrameCount()});
+	}
 
 	m_sceneSnapshot->Capture(m_gameScene->CaptureSnapshot());
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
@@ -552,6 +575,11 @@ void Renderer::OnRender() noexcept
 
 Renderer::~Renderer() noexcept
 {
+	if (m_upscalerSubsystem != nullptr)
+	{
+		m_upscalerSubsystem->Shutdown();
+	}
+
 	if (m_backend)
 	{
 		m_backend->Flush();

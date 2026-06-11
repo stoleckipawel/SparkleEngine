@@ -166,6 +166,15 @@ Separation rules:
 - Presentation consumes `FinalSceneColor` and never branches on DLSS, Streamline, NGX, or quality mode.
 - Frame assembly schedules high-level stages. It must not calculate DLSS constants, SDK tags, resource tagging, or backend-specific reset rules inline.
 
+Layer ownership guide:
+
+| Layer | Owns | Must not own |
+| --- | --- | --- |
+| RHI | Backend API identity, adapter identity, native handle availability, queue/command-list or command-buffer exposure, native resource exposure, explicit state support, backend bridge readiness diagnostics. | DLSS availability policy, Streamline/NGX headers, SDK feature handles, quality modes, resource tags, SDK binary lookup, provider fallback decisions. |
+| Renderer upscaling subsystem | Provider selection, provider lifetime, provider-neutral settings, frame setup/reset notifications, diagnostics, fallback policy, final output product policy. | Backend object casts, direct D3D12/Vulkan object ownership, authored shader PSO workarounds, lighting/denoiser implementation details. |
+| NVIDIA DLSS provider | DLSS capability interpretation, SDK/runtime integration, SDK feature lifetime, quality/render extent translation, resource tagging, per-frame constants, SDK evaluation, DLSS-specific diagnostics. | Generic frame state fields, generic RHI capability fields, lighting pass ownership, presentation branching. |
+| FrameGraph | External-provider scheduling contract, declared reads/writes, resource states, barrier assumptions, final scene color handoff. | SDK calls, SDK tags, provider feature policy, backend-specific native handle casts. |
+
 DLSS feature menu:
 
 - Super Resolution: first shippable DLSS feature and baseline temporal upscaler.
@@ -224,11 +233,22 @@ Validation:
 
 #### Phase 8.2.3: Renderer Upscaler Provider Boundary
 
+Status: Source/API shape added; provider evaluation remains passthrough/stub until later phases add FrameGraph external-provider execution and the NVIDIA SDK runtime.
+
 Work:
 
-- Introduce a renderer-owned upscaler subsystem with providers: disabled, deterministic passthrough, and NVIDIA DLSS.
+- Introduce a renderer-owned upscaler subsystem with providers: deterministic passthrough and NVIDIA DLSS.
 - Define provider interfaces for initialization, capability query, frame setup, evaluation, resize/reset, shutdown, diagnostics, and fallback.
 - Keep SDK lifetime, feature handles, quality mode, render extent, and reset handling inside provider implementation.
+
+Output:
+
+- Added a renderer-owned upscaler subsystem with a provider-neutral `IUpscalerProvider` interface.
+- Added a deterministic passthrough provider.
+- Added an NVIDIA DLSS provider stub under a dedicated `Upscaling/NvidiaDlss` folder. It consumes the DLSS capability report but owns no SDK state until the provider implementation phase.
+- Added `r.Upscaler.Provider` as the provider-neutral selection CVar: `0=Passthrough`, `1=NVIDIA DLSS`.
+- Renderer startup owns provider selection and lifecycle through the upscaler subsystem without adding DLSS fields to `FrameContext`.
+- RHI remains provider-neutral and exposes only external-feature interop facts; DLSS availability policy stays in the renderer provider layer.
 
 Acceptance criteria:
 

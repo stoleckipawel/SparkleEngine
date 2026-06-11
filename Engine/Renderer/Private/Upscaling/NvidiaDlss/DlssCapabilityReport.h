@@ -10,7 +10,6 @@ struct DlssCapabilityReport final
 	ERhiBackendApi BackendApi = ERhiBackendApi::Unknown;
 	ERhiExternalFeatureBridgeKind BridgeKind = ERhiExternalFeatureBridgeKind::None;
 	RhiAdapterIdentity Adapter;
-	bool UserDisabled = false;
 	bool RhiBridgeReady = false;
 	bool D3D12BridgeReady = false;
 	bool VulkanBridgeReady = false;
@@ -32,4 +31,3 @@ class DlssCapabilityReporter final
   private:
 	static std::string BuildUnavailableReason(const RhiCapabilities& capabilities, const DlssCapabilityReport& report);
 };
-

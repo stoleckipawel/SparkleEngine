@@ -36,6 +36,7 @@ class TemporalDataBuilder;
 class FrameExecutionDiagnostics;
 class RendererMemoryMonitor;
 class RenderRayTracingScene;
+class UpscalerSubsystem;
 struct RayTracedShadowSettings;
 struct RenderSceneSnapshot;
 struct ResolvedGpuTiming;
@@ -109,6 +110,7 @@ class SPARKLE_RENDERER_API Renderer final
 	std::unique_ptr<ViewLightingBuilder> m_viewLightingBuilder;
 	std::unique_ptr<RenderCamera> m_renderCamera;
 	std::unique_ptr<SceneRenderStateCoordinator> m_sceneRenderStateCoordinator;
+	std::unique_ptr<UpscalerSubsystem> m_upscalerSubsystem;
 	std::unique_ptr<FrameGraph> m_frameGraph;
 	std::vector<std::unique_ptr<FrameExecutionDiagnostics>> m_frameExecutionDiagnostics;
 	std::unique_ptr<RenderSceneSnapshot> m_sceneSnapshot;
