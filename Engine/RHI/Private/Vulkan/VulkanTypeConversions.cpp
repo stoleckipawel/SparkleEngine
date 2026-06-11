@@ -10,6 +10,8 @@ VkFormat VulkanTypeConversions::ToVkFormat(PixelFormat format) noexcept
 			return VK_FORMAT_R32G32B32A32_SFLOAT;
 		case PixelFormat::R16G16B16A16_Float:
 			return VK_FORMAT_R16G16B16A16_SFLOAT;
+		case PixelFormat::R16G16_Float:
+			return VK_FORMAT_R16G16_SFLOAT;
 		case PixelFormat::R8G8B8A8_UNorm:
 			return VK_FORMAT_R8G8B8A8_UNORM;
 		case PixelFormat::R8G8B8A8_UNorm_Srgb:
@@ -62,6 +64,8 @@ PixelFormat VulkanTypeConversions::ToPixelFormat(VkFormat format) noexcept
 			return PixelFormat::R32G32B32A32_Float;
 		case VK_FORMAT_R16G16B16A16_SFLOAT:
 			return PixelFormat::R16G16B16A16_Float;
+		case VK_FORMAT_R16G16_SFLOAT:
+			return PixelFormat::R16G16_Float;
 		case VK_FORMAT_R8G8B8A8_UNORM:
 			return PixelFormat::R8G8B8A8_UNorm;
 		case VK_FORMAT_R8G8B8A8_SRGB:

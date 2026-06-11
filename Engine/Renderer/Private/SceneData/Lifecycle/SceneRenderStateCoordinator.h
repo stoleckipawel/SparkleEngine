@@ -32,11 +32,12 @@ class SceneRenderStateCoordinator final
 	SceneRenderStateCoordinator(SceneRenderStateCoordinator&&) = delete;
 	SceneRenderStateCoordinator& operator=(SceneRenderStateCoordinator&&) = delete;
 
+	bool ConsumeTemporalHistoryResetRequest(std::string& outReason) noexcept;
+
   private:
 	void SubscribeToLevelLifecycleEvents(LevelChangeEvents& levelChangeEvents) noexcept;
 	void OnLevelWillUnload() noexcept;
 	void OnLevelChanged() noexcept;
-	bool ConsumeTemporalHistoryResetRequest(std::string& outReason) noexcept;
 	void InvalidateSceneScopedRendererState() noexcept;
 	void RefreshSceneScopedRendererState() noexcept;
 	void ReleaseSceneScopedMaterialResources() noexcept;

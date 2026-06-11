@@ -2,9 +2,9 @@
 
 namespace MotionVectors
 {
-	float2 Compute(const float4 currentClipPosition, const float4 previousClipPosition, const float2 viewportSize) noexcept
+	float2 Compute(const float4 currentClipPosition, const float4 previousClipPosition, const float2 viewportSize)
 	{
-		const bool bPreviousFrameValid = (PerTemporal.HistoryValid != 0u);
+		const bool bPreviousFrameValid = (HistoryValid != 0u);
 		if (!bPreviousFrameValid || abs(previousClipPosition.w) <= 1e-6f)
 		{
 			return float2(0.0f, 0.0f);

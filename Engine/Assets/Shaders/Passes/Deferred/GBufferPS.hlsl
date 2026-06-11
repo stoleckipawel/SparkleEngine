@@ -35,5 +35,5 @@ void main(in PS::Input Input, out GBufferOutput Output)
 	Output.MotionVector = MotionVectors::Compute(
 		Input.Position,
 		Input.PrevClipPosition,
-		PerFrame.ViewportSize);
+		ViewportSize);
 }

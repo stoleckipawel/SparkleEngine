@@ -17,10 +17,8 @@ void main(in VS::Input Input, out VS::Output Output)
 	const float3 bitangentWorld = ComputeBitangent(normalWorld, tangentWorld);
 
 	const float4 positionClip = PositionWorldToClip(positionWorld);
-	const float4 jitteredPositionClip = ApplyTemporalJitterClipOffset(positionClip, PerTemporal.JitterCurrent);
-	const float4 jitteredPrevClipPosition = ApplyTemporalJitterClipOffset(
-	    mul(positionWorld, PerTemporal.PrevViewProjMTX),
-	    PerTemporal.JitterPrevious);
+	const float4 jitteredPositionClip = ApplyTemporalJitterClipOffset(positionClip, JitterCurrent);
+	const float4 jitteredPrevClipPosition = ApplyTemporalJitterClipOffset(mul(positionWorld, PrevViewProjMTX), JitterPrevious);
 
 	Output.Position = jitteredPositionClip;
 	Output.PositionWorld = positionWorld.xyz;

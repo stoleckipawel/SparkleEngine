@@ -10,6 +10,8 @@ DXGI_FORMAT D3D12TypeConversions::ToDxgiFormat(PixelFormat format) noexcept
 			return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case PixelFormat::R16G16B16A16_Float:
 			return DXGI_FORMAT_R16G16B16A16_FLOAT;
+		case PixelFormat::R16G16_Float:
+			return DXGI_FORMAT_R16G16_FLOAT;
 		case PixelFormat::R8G8B8A8_UNorm:
 			return DXGI_FORMAT_R8G8B8A8_UNORM;
 		case PixelFormat::R8G8B8A8_UNorm_Srgb:
