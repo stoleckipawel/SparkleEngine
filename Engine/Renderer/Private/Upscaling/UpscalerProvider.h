@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Upscaling/UpscalerInputContract.h"
 #include "Viewport/ViewportContracts.h"
 
 #include <cstdint>
@@ -36,15 +37,6 @@ struct UpscalerProviderCapabilities final
 	std::string Reason;
 };
 
-struct UpscalerFrameSetupDesc final
-{
-	RenderViewportExtent RenderExtent = {};
-	RenderViewportExtent OutputExtent = {};
-	std::uint64_t FrameIndex = 0;
-	bool ResetRequested = false;
-	std::string_view ResetReason = {};
-};
-
 struct UpscalerEvaluationDesc final
 {
 	RenderProductHandle InputColor = {};
@@ -72,7 +64,7 @@ class IUpscalerProvider
 	virtual std::string_view GetName() const noexcept = 0;
 	virtual UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const = 0;
 	virtual bool Initialize(const RhiCapabilities& capabilities) = 0;
-	virtual void SetupFrame(const UpscalerFrameSetupDesc& frameSetup) = 0;
+	virtual void SetupFrame(const UpscalerInputContract& inputContract) = 0;
 	virtual UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) = 0;
 	virtual void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent) = 0;
 	virtual void ResetHistory(std::string_view reason) = 0;

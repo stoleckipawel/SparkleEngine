@@ -48,6 +48,8 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities)
 		m_diagnostics = m_activeProvider->GetDiagnostics();
 	}
 
+	m_frameFallbackProvider = CreateFallbackProvider();
+	m_frameFallbackProvider->Initialize(capabilities);
 	m_shutdown = false;
 	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
 	SPDLOG_LOGGER_INFO(
@@ -61,17 +63,35 @@ void UpscalerSubsystem::Initialize(const RhiCapabilities& capabilities)
 	    m_diagnostics.Reason);
 }
 
-void UpscalerSubsystem::SetupFrame(const UpscalerFrameSetupDesc& frameSetup)
+void UpscalerSubsystem::SetupFrame(const UpscalerInputContract& inputContract)
 {
-	if (m_activeProvider != nullptr)
+	m_lastInputValidation = ValidateUpscalerInputContract(inputContract);
+	m_useFrameFallback = !m_lastInputValidation.Valid && m_activeProvider != nullptr &&
+	                     m_activeProvider->GetKind() != EUpscalerProviderKind::Passthrough;
+	m_frameFallbackReason.clear();
+
+	const std::shared_ptr<spdlog::logger> logger = Logging::GetOrCreateLogger("Renderer.Upscaling");
+	if (!m_lastInputValidation.Valid)
 	{
-		m_activeProvider->SetupFrame(frameSetup);
+		m_frameFallbackReason = std::format("Upscaler input contract invalid: {}", m_lastInputValidation.Summary);
+		SPDLOG_LOGGER_WARN(logger, "{}. Using deterministic passthrough for this frame.", m_frameFallbackReason);
+	}
+	else if (m_settings.DiagnosticsEnabled)
+	{
+		SPDLOG_LOGGER_DEBUG(logger, "Upscaler input contract: {}", m_lastInputValidation.Summary);
+	}
+
+	IUpscalerProvider* const provider = m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
+	if (provider != nullptr)
+	{
+		provider->SetupFrame(inputContract);
 	}
 }
 
 UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDesc& evaluation)
 {
-	if (m_activeProvider == nullptr)
+	IUpscalerProvider* const provider = m_useFrameFallback && m_frameFallbackProvider != nullptr ? m_frameFallbackProvider.get() : m_activeProvider.get();
+	if (provider == nullptr)
 	{
 		return UpscalerEvaluationResult{
 		    .ProducedOutput = false,
@@ -79,7 +99,13 @@ UpscalerEvaluationResult UpscalerSubsystem::Evaluate(const UpscalerEvaluationDes
 		    .Reason = "No upscaler provider is active."};
 	}
 
-	return m_activeProvider->Evaluate(evaluation);
+	UpscalerEvaluationResult result = provider->Evaluate(evaluation);
+	if (m_useFrameFallback)
+	{
+		result.UsedFallback = true;
+		result.Reason = m_frameFallbackReason;
+	}
+	return result;
 }
 
 void UpscalerSubsystem::OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent)
@@ -88,6 +114,10 @@ void UpscalerSubsystem::OnResize(RenderViewportExtent renderExtent, RenderViewpo
 	{
 		m_activeProvider->OnResize(renderExtent, outputExtent);
 	}
+	if (m_frameFallbackProvider != nullptr)
+	{
+		m_frameFallbackProvider->OnResize(renderExtent, outputExtent);
+	}
 }
 
 void UpscalerSubsystem::ResetHistory(std::string_view reason)
@@ -95,6 +125,10 @@ void UpscalerSubsystem::ResetHistory(std::string_view reason)
 	if (m_activeProvider != nullptr)
 	{
 		m_activeProvider->ResetHistory(reason);
+	}
+	if (m_frameFallbackProvider != nullptr)
+	{
+		m_frameFallbackProvider->ResetHistory(reason);
 	}
 }
 
@@ -108,6 +142,10 @@ void UpscalerSubsystem::Shutdown() noexcept
 	if (m_activeProvider != nullptr)
 	{
 		m_activeProvider->Shutdown();
+	}
+	if (m_frameFallbackProvider != nullptr)
+	{
+		m_frameFallbackProvider->Shutdown();
 	}
 	m_shutdown = true;
 }

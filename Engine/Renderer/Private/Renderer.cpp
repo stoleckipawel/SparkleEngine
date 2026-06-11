@@ -41,6 +41,7 @@
 #include "SceneData/Caching/MaterialCacheManager.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
 #include "SceneData/Lifecycle/SceneRenderStateCoordinator.h"
+#include "Upscaling/UpscalerInputContractBuilder.h"
 #include "Upscaling/UpscalingStartupDiagnostics.h"
 #include "Upscaling/UpscalerSubsystem.h"
 
@@ -263,13 +264,17 @@ void Renderer::InitializeFrameGraph() noexcept
 	FrameGraphBuildResult buildResult = frameGraphFactory.Build();
 	m_frameGraphSceneExtent = dependencies.sceneExtent;
 
-	m_viewportSceneColorHandle =
+	m_frameProducts.SceneColor =
 	    buildResult.SceneColor.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneColor.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
-	m_viewportSceneDepthHandle =
+	m_frameProducts.SceneDepth =
 	    buildResult.SceneDepth.IsValid()
 	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.SceneDepth.GetResourceHandle().index) + 1ull}
+	        : RenderProductHandle{};
+	m_frameProducts.MotionVectors =
+	    buildResult.MotionVectors.IsValid()
+	        ? RenderProductHandle{static_cast<std::uint64_t>(buildResult.MotionVectors.GetResourceHandle().index) + 1ull}
 	        : RenderProductHandle{};
 	m_frameGraphSceneTlas = buildResult.SceneTlas;
 	m_frameGraph = std::move(buildResult.Graph);
@@ -355,14 +360,6 @@ void Renderer::SetupFrame() noexcept
 		m_memoryMonitor->Tick(m_timer->GetFrameCount());
 	}
 	RefreshViewportRenderProducts();
-	if (m_upscalerSubsystem != nullptr)
-	{
-		m_upscalerSubsystem->SetupFrame(
-		    UpscalerFrameSetupDesc{
-		        .RenderExtent = m_frameGraphSceneExtent,
-		        .OutputExtent = m_frameGraphSceneExtent,
-		        .FrameIndex = m_timer->GetFrameCount()});
-	}
 
 	m_sceneSnapshot->Capture(m_gameScene->CaptureSnapshot());
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
@@ -379,13 +376,13 @@ void Renderer::RefreshViewportRenderProducts() noexcept
 	m_viewportRenderProducts.Clear();
 	m_viewportRenderProducts.SetProduct(
 	    RenderOutputFlags::SceneColor,
-	    RenderProduct{m_viewportSceneColorHandle, extent, RenderProductFormat::ColorLdr});
+	    RenderProduct{m_frameProducts.SceneColor, extent, RenderProductFormat::ColorLdr});
 
-	if (m_viewportSceneDepthHandle && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
+	if (m_frameProducts.SceneDepth && HasAnyRenderOutputFlags(m_viewportRenderRequest.RequestedOutputs, RenderOutputFlags::SceneDepth))
 	{
 		m_viewportRenderProducts.SetProduct(
 		    RenderOutputFlags::SceneDepth,
-		    RenderProduct{m_viewportSceneDepthHandle, extent, RenderProductFormat::DepthStencil});
+		    RenderProduct{m_frameProducts.SceneDepth, extent, RenderProductFormat::DepthStencil});
 	}
 }
 
@@ -415,6 +412,22 @@ void Renderer::RecordFrame() noexcept
 		    *m_temporalDataBuilder);
 	}();
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::RecordFrame build context end");
+
+	if (m_upscalerSubsystem != nullptr)
+	{
+		const UpscalerInputContract upscalerInputContract =
+		    BuildUpscalerInputContract(
+		        UpscalerInputContractBuildDesc{
+		            .HudlessSceneColor = m_frameProducts.SceneColor,
+		            .Depth = m_frameProducts.SceneDepth,
+		            .MotionVectors = m_frameProducts.MotionVectors,
+		            .FinalOutput = m_frameProducts.SceneColor,
+		            .RenderExtent = m_frameGraphSceneExtent,
+		            .OutputExtent = m_frameGraphSceneExtent,
+		            .FrameIndex = m_timer->GetFrameCount(),
+		            .TemporalState = frame.mainView.temporalState});
+		m_upscalerSubsystem->SetupFrame(upscalerInputContract);
+	}
 
 	if (m_frameGraph != nullptr && m_frameGraphSceneTlas.IsValid())
 	{

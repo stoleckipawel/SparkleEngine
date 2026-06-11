@@ -93,6 +93,13 @@ class SPARKLE_RENDERER_API Renderer final
 	void ReportResolvedTimings(std::uint32_t frameIndex, const FrameExecutionDiagnostics& frameDiagnostics) const noexcept;
 	void PublishLiveGpuTimings(const std::vector<ResolvedGpuTiming>& resolvedTimers) const noexcept;
 
+	struct RendererFrameProductHandles
+	{
+		RenderProductHandle SceneColor = {};
+		RenderProductHandle SceneDepth = {};
+		RenderProductHandle MotionVectors = {};
+	};
+
 	Timer* m_timer = nullptr;
 	GameScene* m_gameScene = nullptr;
 	Window* m_window = nullptr;
@@ -117,8 +124,7 @@ class SPARKLE_RENDERER_API Renderer final
 	RenderViewportExtent m_frameGraphSceneExtent = {};
 	ViewportRenderRequest m_viewportRenderRequest = {};
 	ViewportRenderProducts m_viewportRenderProducts = {};
-	RenderProductHandle m_viewportSceneColorHandle = {};
-	RenderProductHandle m_viewportSceneDepthHandle = {};
+	RendererFrameProductHandles m_frameProducts = {};
 	FrameGraphAccelerationStructureHandle m_frameGraphSceneTlas = FrameGraphAccelerationStructureHandle::Invalid();
 	std::unique_ptr<RayTracedShadowSettings> m_rayTracedShadowSettings;
 	ScopedEventHandle m_resizeHandle;

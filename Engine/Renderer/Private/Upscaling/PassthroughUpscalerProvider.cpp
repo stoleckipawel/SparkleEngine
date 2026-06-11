@@ -20,10 +20,10 @@ bool PassthroughUpscalerProvider::Initialize(const RhiCapabilities& capabilities
 	return true;
 }
 
-void PassthroughUpscalerProvider::SetupFrame(const UpscalerFrameSetupDesc& frameSetup)
+void PassthroughUpscalerProvider::SetupFrame(const UpscalerInputContract& inputContract)
 {
-	m_renderExtent = frameSetup.RenderExtent;
-	m_outputExtent = frameSetup.OutputExtent;
+	m_renderExtent = inputContract.RenderExtent;
+	m_outputExtent = inputContract.OutputExtent;
 }
 
 UpscalerEvaluationResult PassthroughUpscalerProvider::Evaluate(const UpscalerEvaluationDesc& evaluation)

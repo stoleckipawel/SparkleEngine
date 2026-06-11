@@ -9,7 +9,7 @@ class PassthroughUpscalerProvider final : public IUpscalerProvider
 	std::string_view GetName() const noexcept override { return "Passthrough"; }
 	UpscalerProviderCapabilities QueryCapabilities(const RhiCapabilities& capabilities) const override;
 	bool Initialize(const RhiCapabilities& capabilities) override;
-	void SetupFrame(const UpscalerFrameSetupDesc& frameSetup) override;
+	void SetupFrame(const UpscalerInputContract& inputContract) override;
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation) override;
 	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent) override;
 	void ResetHistory(std::string_view reason) override;

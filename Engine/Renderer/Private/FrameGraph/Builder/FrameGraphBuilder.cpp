@@ -116,6 +116,7 @@ FrameGraphBuildResult FrameGraphFactory::Build() const
 	FrameGraphBuildResult result{};
 	result.SceneColor = frameLoop.Scene.SceneColor;
 	result.SceneDepth = frameLoop.Scene.MainDepth;
+	result.MotionVectors = frameLoop.GBuffer.MotionVector;
 	result.SceneTlas = frameLoop.SceneTlas;
 	result.Graph = std::move(frameGraph);
 	return result;

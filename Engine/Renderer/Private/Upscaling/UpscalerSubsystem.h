@@ -22,7 +22,7 @@ class UpscalerSubsystem final
 	UpscalerSubsystem& operator=(UpscalerSubsystem&&) = delete;
 
 	void Initialize(const RhiCapabilities& capabilities);
-	void SetupFrame(const UpscalerFrameSetupDesc& frameSetup);
+	void SetupFrame(const UpscalerInputContract& inputContract);
 	UpscalerEvaluationResult Evaluate(const UpscalerEvaluationDesc& evaluation);
 	void OnResize(RenderViewportExtent renderExtent, RenderViewportExtent outputExtent);
 	void ResetHistory(std::string_view reason);
@@ -38,6 +38,10 @@ class UpscalerSubsystem final
 
 	UpscalerSettings m_settings = {};
 	std::unique_ptr<IUpscalerProvider> m_activeProvider;
+	std::unique_ptr<IUpscalerProvider> m_frameFallbackProvider;
 	UpscalerProviderCapabilities m_diagnostics = {};
+	UpscalerInputContractValidation m_lastInputValidation = {};
+	std::string m_frameFallbackReason;
+	bool m_useFrameFallback = false;
 	bool m_shutdown = true;
 };

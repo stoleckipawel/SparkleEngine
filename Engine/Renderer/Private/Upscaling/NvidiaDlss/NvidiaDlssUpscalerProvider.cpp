@@ -28,10 +28,10 @@ bool NvidiaDlssUpscalerProvider::Initialize(const RhiCapabilities& capabilities)
 	return true;
 }
 
-void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerFrameSetupDesc& frameSetup)
+void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputContract)
 {
-	m_renderExtent = frameSetup.RenderExtent;
-	m_outputExtent = frameSetup.OutputExtent;
+	m_renderExtent = inputContract.RenderExtent;
+	m_outputExtent = inputContract.OutputExtent;
 }
 
 UpscalerEvaluationResult NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEvaluationDesc&)

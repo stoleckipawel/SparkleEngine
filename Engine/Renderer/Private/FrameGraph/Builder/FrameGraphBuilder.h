@@ -149,6 +149,7 @@ struct FrameGraphBuildResult
 	std::unique_ptr<FrameGraph> Graph;
 	FrameGraphTextureHandle SceneColor;
 	FrameGraphTextureHandle SceneDepth;
+	FrameGraphTextureHandle MotionVectors;
 	FrameGraphAccelerationStructureHandle SceneTlas;
 };
 

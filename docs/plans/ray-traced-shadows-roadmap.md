@@ -16,11 +16,11 @@ Sparkle should follow the same spirit: keep ray tracing scene resources as rende
 
 ## Daily Refactor Principle
 
-Every stage in this roadmap must include a cleanup/refactor slice. The feature is not considered done if it works by increasing coupling, hiding backend behavior, or making FrameGraph harder to reason about.
+Every implementation step in this roadmap must include a cleanup/refactor slice. The feature is not considered done if it works by increasing coupling, hiding backend behavior, or making FrameGraph harder to reason about.
 
-Per-stage refactor checklist:
+Per-step refactor checklist:
 
-- Identify one renderer/RHI/FrameGraph responsibility that became clearer because of the stage.
+- Identify one renderer/RHI/FrameGraph responsibility that became clearer because of the step.
 - Move capability-specific details out of orchestrators and into dedicated subsystem files.
 - Keep pass setup declarative: resources, bindings, barriers, and shader expectations should be inspectable without reading pass body details.
 - Add or preserve diagnostics before optimizing; missing barriers, unsupported backend features, missing shader bindings, stale history, and invalid AS data must be visible.
@@ -60,7 +60,7 @@ Reviewer gate:
 - Prefer inline ray queries in the existing compute direct-lighting path first if both D3D12 and Vulkan can support it cleanly. Add full ray tracing pipelines/SBT only if a later feature needs ray generation/miss/hit shaders.
 - FrameGraph front end and execution back end are part of this feature work. Do not route around weak FrameGraph areas with manual one-off command recording.
 
-## Contract-first design (applies to all renderer feature stages)
+## Contract-first design (applies to all renderer feature steps)
 
 To avoid hidden coupling, each pass should define a contract that is explicit in code:
 
@@ -74,7 +74,7 @@ A contract is not extra complexity by itself; it is a structure that makes owner
 
 ## FrameGraph Refactor Track
 
-This track runs alongside every feature stage.
+This track runs alongside every feature step.
 
 Front-end goals:
 
@@ -93,13 +93,13 @@ Back-end goals:
 Ray tracing pressure tests:
 
 - BLAS build, TLAS build, TLAS read, shadow visibility output, NRD permanent history, NRD transient resources, denoised visibility output, and final lighting consume must all appear as first-class FrameGraph resources or explicitly documented external resources.
-- If a resource cannot be represented in FrameGraph yet, the stage must add the missing FrameGraph concept instead of hiding the resource in pass code.
+- If a resource cannot be represented in FrameGraph yet, the step must add the missing FrameGraph concept instead of hiding the resource in pass code.
 
-## Completed Foundation: Stages 0-7
+## Completed Foundation
 
 Status: Source implemented; full build/runtime validation remains blocked by the local MSVC environment issue noted in earlier work.
 
-The detailed historical prompts for Stages 0-7 have been removed from this living roadmap so the remaining document focuses on active architecture and next work. The completed foundation is:
+The detailed historical prompts for the completed foundation have been removed from this living roadmap so the remaining document focuses on active architecture and next work. The completed foundation is:
 
 - RHI ray tracing capability reporting, validation, AS resource descriptions, AS build commands, and shader metadata checks.
 - FrameGraph support for ray tracing resources, external persistent resources, resource contract diagnostics, and compiled barrier playback.
@@ -115,13 +115,13 @@ Foundation rules that still apply:
 - Final lighting consumes visibility products. Shadow sampling and denoiser preparation remain separate from lighting composition.
 - No backend-specific renderer shortcuts, shadow-map compatibility branch, imported-vs-authored shadow behavior, or GameFramework-owned AS state should be added.
 
-## Stage 8: Temporal, Upscaling, And DLSS Architecture
+## Active Plan: Temporal, Upscaling, DLSS, And Denoising
 
 Goal: establish the temporal, external-feature, and upscaler architecture needed by DLSS, NRD SIGMA, and future renderer features without putting provider details in frame orchestration.
 
-This stage is the single source of truth for DLSS planning. Do not maintain a separate DLSS implementation record unless a later vendor SDK integration needs version-specific release notes.
+This section is the single source of truth for DLSS planning. Do not maintain a separate DLSS implementation record unless a later vendor SDK integration needs version-specific release notes.
 
-### Stage 8.1: Temporal Inputs And Motion Vectors
+## Step 1: Temporal Inputs And Motion Vectors
 
 Status: Source implemented; build validation remains deferred with the surrounding renderer/RHI work.
 
@@ -139,7 +139,7 @@ Validation:
 - Renderer/RHI build when the current renderer changes are validated together.
 - Runtime smoke for resize, level switch, camera cut, camera pan, and static camera history stability.
 
-### Stage 8.2: Production DLSS Integration
+## DLSS Integration Rules
 
 Goal: integrate NVIDIA DLSS as a production external upscaler provider while improving Sparkle's RHI capabilities, FrameGraph shape, pass declaration, runtime scheduling, and final-frame product architecture.
 
@@ -164,7 +164,7 @@ Separation rules:
 - Renderer owns provider selection, SDK lifetime, quality mode, reset propagation, diagnostics, and fallback policy.
 - FrameGraph owns declared reads/writes, scheduling point, resource state intent, external-provider barriers, and the selected `FinalSceneColor`.
 - Presentation consumes `FinalSceneColor` and never branches on DLSS, Streamline, NGX, or quality mode.
-- Frame assembly schedules high-level stages. It must not calculate DLSS constants, SDK tags, resource tagging, or backend-specific reset rules inline.
+- Frame assembly schedules high-level steps. It must not calculate DLSS constants, SDK tags, resource tagging, or backend-specific reset rules inline.
 
 Layer ownership guide:
 
@@ -192,7 +192,7 @@ Signal denoiser ownership:
 - Final lighting composition consumes resolved products and does not denoise.
 - The same signal must not be routed through both NRD and DLSS-RR.
 
-#### Phase 8.2.1: Reference Decision And Architecture Rules
+## Step 2: Reference Decision And Architecture Rules
 
 Status: Complete; merged into this roadmap.
 
@@ -200,13 +200,13 @@ Output:
 
 - Streamline-first is the default production path. Direct NGX remains an investigation fallback only if Streamline blocks a required backend, packaging, or feature requirement.
 - Required provider inputs are identified: HUD-less scene color, output color, depth, motion vectors, optional exposure, jitter, render/output extents, frame index, reset state, and native command execution context.
-- Ownership boundaries are defined in this Stage 8.2 section.
+- Ownership boundaries are defined in the DLSS integration rules above.
 
 Validation:
 
 - Documentation review only.
 
-#### Phase 8.2.2: RHI Capability And External Feature Surface
+## Step 3: RHI Capability And External Feature Surface
 
 Status: Source/API shape added; full build deferred.
 
@@ -231,9 +231,9 @@ Validation:
 - Header/API review and diagnostic text review.
 - Expected compile target when toolchain is available: `cmake --build build --config DevelopmentEditor --target SparkleLauncher -- /nologo /v:minimal /m:1`.
 
-#### Phase 8.2.3: Renderer Upscaler Provider Boundary
+## Step 4: Renderer Upscaler Provider Boundary
 
-Status: Source/API shape added; provider evaluation remains passthrough/stub until later phases add FrameGraph external-provider execution and the NVIDIA SDK runtime.
+Status: Source/API shape added; provider evaluation remains passthrough/stub until later steps add FrameGraph external-provider execution and the NVIDIA SDK runtime.
 
 Work:
 
@@ -245,7 +245,7 @@ Output:
 
 - Added a renderer-owned upscaler subsystem with a provider-neutral `IUpscalerProvider` interface.
 - Added a deterministic passthrough provider.
-- Added an NVIDIA DLSS provider stub under a dedicated `Upscaling/NvidiaDlss` folder. It consumes the DLSS capability report but owns no SDK state until the provider implementation phase.
+- Added an NVIDIA DLSS provider stub under a dedicated `Upscaling/NvidiaDlss` folder. It consumes the DLSS capability report but owns no SDK state until the provider implementation step.
 - Added `r.Upscaler.Provider` as the provider-neutral selection CVar: `0=Passthrough`, `1=NVIDIA DLSS`.
 - Renderer startup owns provider selection and lifecycle through the upscaler subsystem without adding DLSS fields to `FrameContext`.
 - RHI remains provider-neutral and exposes only external-feature interop facts; DLSS availability policy stays in the renderer provider layer.
@@ -260,13 +260,23 @@ Validation:
 
 - Static dependency and include review.
 
-#### Phase 8.2.4: Temporal And Resource Input Contract
+## Step 5: Temporal And Resource Input Contract
+
+Status: Source/API shape added; final output remains the native scene color until Step 6 adds a FrameGraph external-provider scheduling point and final scene color product.
 
 Work:
 
 - Define `UpscalerInputContract`: HUD-less scene color, depth, motion vectors, exposure/HDR metadata, jitter, render extent, display extent, frame index, reset state, camera-cut state, and final output target.
 - Formalize motion-vector units, sign, jitter inclusion, viewport scaling, and depth convention for provider consumption.
 - Keep temporal derivation in temporal/frame helpers, not in frame assembly or provider callsites.
+
+Output:
+
+- Added `UpscalerInputContract` for HUD-less scene color, depth, motion vectors, optional exposure, final output, render/output extents, frame index, temporal state, reset state, and provider-facing conventions.
+- Added provider-neutral validation that reports missing required inputs and causes deterministic passthrough fallback for that frame.
+- Formalized the current Sparkle motion-vector convention as pixel-space `CurrentMinusPrevious` values generated from jittered current and previous clip positions.
+- Formalized the current depth input as device depth.
+- Exposed the G-buffer motion-vector texture as a generic renderer frame product. Upscaling consumes it through the input contract, but it is not named or owned as an upscaler-only resource.
 
 Acceptance criteria:
 
@@ -277,7 +287,7 @@ Validation:
 
 - Contract review and diagnostic-path review.
 
-#### Phase 8.2.5: FrameGraph External Provider Evaluation
+## Step 6: FrameGraph External Provider Evaluation
 
 Work:
 
@@ -296,11 +306,11 @@ Validation:
 
 - FrameGraph contract and diagnostic review.
 
-#### Phase 8.2.6: Pass Declaration, Runtime, And PSO Cleanup
+## Step 7: Pass Declaration, Runtime, And PSO Cleanup
 
 Work:
 
-- Use the upscaler integration to move frame assembly toward high-level stages that declare inputs, outputs, and final products.
+- Use the upscaler integration to move frame assembly toward high-level steps that declare inputs, outputs, and final products.
 - Keep authored shader PSO management separate from external SDK runtime management.
 - Add external-provider contract validation parallel to shader pass parameter validation.
 
@@ -314,30 +324,30 @@ Validation:
 
 - Code review checklist before provider implementation.
 
-#### Phase 8.2.7: NVIDIA DLSS Super Resolution Provider
+## Step 8: NVIDIA DLSS Super Resolution Provider
 
 Work:
 
 - Integrate Streamline-backed DLSS Super Resolution behind the provider boundary.
 - Initialize SDK state from RHI native handles and renderer application metadata.
 - Query supported quality modes and recommended render extents from the SDK.
-- Evaluate after scene rendering and before UI/presentation through the FrameGraph external-provider stage.
+- Evaluate after scene rendering and before UI/presentation through the FrameGraph external-provider scheduling point.
 - Implement deterministic fallback when SDK initialization, capability query, feature creation, tagging, or evaluation fails.
 - Implement D3D12 and Vulkan bridges through the shared provider contract.
 
 Acceptance criteria:
 
-- DLSS is disabled until SDK availability, resource contract, hardware support, and user settings are valid.
+- DLSS is not selected until SDK availability, resource contract, hardware support, and user settings are valid.
 - Provider diagnostics include SDK version, backend, adapter, selected mode, input/output extents, reset state, and failure reason.
-- D3D12 and Vulkan both reach equivalent states: unavailable, available-not-created, created, evaluating, failed-with-fallback, and disabled-by-user.
+- D3D12 and Vulkan both reach equivalent states: unavailable, available-not-created, created, evaluating, failed-with-fallback, and not-selected.
 - A failure on one backend does not hide capability on the other.
 
 Validation:
 
-- First required build phase: targeted renderer/editor build.
+- First required build step: targeted renderer/editor build.
 - No-DLSS fallback smoke and DLSS-enabled smoke on D3D12 and Vulkan where supported hardware and SDK runtime are available.
 
-#### Phase 8.2.8: DLSS Feature Matrix And Native AA
+## Step 9: DLSS Feature Matrix And Native AA
 
 Work:
 
@@ -346,7 +356,7 @@ Work:
 
 Acceptance criteria:
 
-- Startup logs a D3D12/Vulkan feature matrix with independent states: unavailable, available, enabled, active, failed-with-fallback, and disabled-by-user.
+- Startup logs a D3D12/Vulkan feature matrix with independent states: unavailable, available, enabled, active, failed-with-fallback, and not-selected.
 - Native AA can be selected without introducing custom native-AA shader ownership.
 - Unsupported hardware keeps supported DLSS features available.
 
@@ -355,7 +365,7 @@ Validation:
 - Feature-matrix review.
 - Static camera, camera pan, sub-pixel geometry, and high-contrast edge validation.
 
-#### Phase 8.2.9: Frame Pacing, Frame Generation, And MFG
+## Step 10: Frame Pacing, Frame Generation, And MFG
 
 Work:
 
@@ -375,7 +385,7 @@ Validation:
 - Frame pacing diagnostics review.
 - D3D12 and Vulkan generated-frame smoke where supported, plus fallback smoke where unsupported.
 
-#### Phase 8.2.10: Ray-Traced Indirect Diffuse And Specular Contracts
+## Step 11: Ray-Traced Indirect Diffuse And Specular Contracts
 
 Work:
 
@@ -395,13 +405,13 @@ Validation:
 - FrameGraph contract review.
 - Static diagnostic review that SIGMA owns direct shadow visibility and DLSS-RR owns only validated indirect signals.
 
-#### Phase 8.2.11: DLSS Ray Reconstruction
+## Step 12: DLSS Ray Reconstruction
 
 Work:
 
 - Add Ray Reconstruction as a separate feature contract for explicit ray-traced/path-traced signals.
 - Require noisy indirect diffuse/specular ownership, guide buffers, linear depth, correct motion/specular motion data, normal/roughness, mip-bias policy, and denoiser ownership.
-- Coordinate with Stage 9 so SIGMA remains the direct shadow visibility owner.
+- Coordinate with Step 14 so SIGMA remains the direct shadow visibility owner.
 
 Acceptance criteria:
 
@@ -413,7 +423,7 @@ Validation:
 
 - Static camera, camera pan, disocclusion, glossy/specular motion, and denoiser-off comparisons.
 
-#### Phase 8.2.12: Production Quality Validation
+## Step 13: Production Quality Validation
 
 Work:
 
@@ -430,11 +440,11 @@ Validation:
 
 - Targeted build, shader/cook validation if affected, D3D12 runtime smoke, Vulkan runtime smoke, resize smoke, quality-switch smoke, generated-frame smoke where supported, and backend-specific fallback smoke.
 
-## Stage 9: NVIDIA NRD SIGMA Integration
+## Step 14: NVIDIA NRD SIGMA Integration
 
 Goal: Integrate NVIDIA NRD SIGMA as the production denoiser path for direct ray traced shadow visibility.
 
-This stage starts only after Stage 8.1 and the relevant Stage 8.2 temporal/upscaler contracts are complete.
+This step starts only after the relevant temporal and upscaler contracts are complete.
 
 Ownership split:
 
@@ -442,7 +452,7 @@ Ownership split:
 - DLSS-RR owns indirect diffuse/specular reconstruction when its contract is valid.
 - Final lighting composition consumes resolved products and does not denoise again.
 
-### Stage 9.1: NRD contract, contracts, and scheduling
+## Step 15: NRD Contract And Scheduling
 
 Implementation prompt:
 
@@ -466,7 +476,7 @@ Acceptance criteria:
 - Missing contracts are treated as renderer diagnostics, not silent fallbacks in shader code.
 - Refactor gate: NRD-specific terms are not introduced in RHI, GameFramework, cookers, or importer surfaces.
 
-### Stage 9.2: NRD adapter and D3D12 path
+## Step 16: NRD Adapter And D3D12 Path
 
 Goal: ship the first working SIGMA integration using an explicit renderer adapter.
 
@@ -494,7 +504,7 @@ Acceptance criteria:
 - Fixed one visibility sample per pixel remains preserved in the production soft-shadow path.
 - Refactor gate: NRD integration is isolated in dedicated denoising files and does not add backend hacks in pass orchestration.
 
-### Stage 9.3: Vulkan parity and temporal stability
+## Step 17: Vulkan Parity And Temporal Stability
 
 Goal: complete NRD SIGMA integration readiness under parity and temporal stability expectations.
 
@@ -515,7 +525,7 @@ Acceptance criteria:
 - Motion/temporal inputs are present in the denoiser contract where available; missing inputs are logged explicitly.
 - Refactor gate: temporal-state logic remains in renderer frame systems, not in denoiser internals or lighting shader code.
 
-## Stage 10: Deforming Mesh And Animation Handling
+## Step 18: Deforming Mesh And Animation Handling
 
 Goal: Decide how animated skeletal/morph meshes participate in acceleration structures without muddying static mesh paths.
 
@@ -534,7 +544,7 @@ Acceptance criteria:
 - Renderer does not infer AS update behavior from importer data.
 - Refactor gate: static and deformable ray tracing geometry paths are explicit and do not pollute each other's mesh upload or AS update code.
 
-## Stage 11: Quality, Performance, And Many-Light Handling
+## Step 19: Quality, Performance, And Many-Light Handling
 
 Goal: Improve quality and scalability after hard and denoised soft shadows are correct.
 
@@ -569,7 +579,7 @@ Required smokes:
 - Vulkan runtime smoke for the same scene or a clear capability skip with diagnostic proof.
 - Existing scenes with shadow casting disabled at the light level.
 - `CameraCubeImportedCamera` or another imported-light scene to prove glTF/imported lights use the same light and shadow path.
-- `SkeletalMorphTriangle` once Stage 10 decides animated/deformable AS handling.
+- `SkeletalMorphTriangle` once Step 18 decides animated/deformable AS handling.
 - A directional soft-shadow scene with large penumbra and camera motion.
 - A local-light soft-shadow scene with point and spot lights at different radii/ranges.
 - NRD unavailable and enabled diagnostics.
