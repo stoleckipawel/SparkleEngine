@@ -7,6 +7,7 @@
 #include "Frame/Builders/PerViewDataBuilder.h"
 #include "Frame/Builders/TemporalDataBuilder.h"
 #include "Frame/Builders/ViewLightingBuilder.h"
+#include "Frame/TemporalFrameState.h"
 #include "Camera/RenderCamera.h"
 #include "SceneData/Builders/RenderSceneDataBuilder.h"
 #include "SceneData/Lifecycle/RenderSceneSnapshot.h"
@@ -31,6 +32,7 @@ FrameContext BuildFrameContext(
 	frame.mainView = perViewDataBuilder.BuildMainView(renderCamera, lighting, renderHardwareInterface);
 	const RhiViewport backBufferViewport = renderHardwareInterface.GetBackBufferViewport();
 	frame.mainView.perTemporalData = temporalDataBuilder.BuildTemporalData(renderCamera, frame.mainView.perViewData.Camera, backBufferViewport);
+	frame.mainView.temporalState = BuildRenderTemporalFrameState(frame.mainView.perTemporalData);
 
 	frame.mainView.perViewGpuAddress = renderHardwareInterface.AllocatePerViewConstantBuffer(frame.mainView.perViewData);
 

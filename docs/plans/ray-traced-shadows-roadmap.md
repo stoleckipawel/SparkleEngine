@@ -391,39 +391,235 @@ Current implementation status (Stage 8.1):
 - Motion vectors are now emitted from G-Buffer as `MotionVector`.
 - Temporal history resets are driven by renderer- and level-lifecycle events (resize, extent change, level change/unload) and deterministic camera-cut heuristics.
 - Camera-cut reset diagnostics now log position delta, direction dot, and FOV delta.
+- `RenderViewData` now exposes a provider-neutral temporal frame summary with current/previous jitter and history validity, keeping future DLSS/NRD consumers away from pass-local temporal internals.
 
-### Stage 8.2: DLAA Baseline
+### Stage 8.2: Production DLSS Integration
 
-Goal: introduce DLAA as an immediate temporal anti-aliasing baseline.
-
-Implementation prompt:
-
-```text
-Add DLAA-style accumulation driven by jitter and motion vectors before moving to DLSS and NRD denoiser integration.
-```
-
-Acceptance criteria:
-
-- DLAA can be selected and disabled independently.
-- DLAA history and jitter are explicit renderer/FrameGraph contracts.
-- The path is stable and does not introduce denoiser-specific behavior.
-- Refactor gate: DLAA owns only anti-aliasing state and does not own denoiser/shadow decisions.
-
-### Stage 8.3: DLSS (Optional / Gated)
-
-Goal: add DLSS as an optional upscale upgrade while preserving the same temporal contracts.
+Goal: integrate NVIDIA DLSS Super Resolution as the production temporal upscaler and anti-aliasing provider while using the integration to mature Sparkle's renderer, RHI, FrameGraph, pass orchestration, and runtime feature architecture.
 
 Implementation prompt:
 
 ```text
-Add optional DLSS path as a renderer-owned optional upscaler with deterministic fallback to DLAA/hard output.
+Replace the planned in-house temporal anti-aliasing baseline with a production DLSS integration using NVIDIA Streamline or NGX.
+Treat DLSS as a first-class renderer feature provider, not as an ordinary authored shader pass.
+Refactor pass orchestration, FrameGraph contracts, and RHI capability reporting so vendor upscalers can be scheduled, validated, and disabled cleanly.
+```
+
+Reference posture:
+
+- Primary references:
+  - NVIDIA Streamline repository and programming guide: `https://github.com/NVIDIA-RTX/Streamline`
+  - NVIDIA Streamline DLSS programming guide: `https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideDLSS.md`
+  - NVIDIA Streamline sample: `https://github.com/NVIDIA-RTX/Streamline_Sample`
+  - NVIDIA Vulkan Streamline sample: `https://github.com/nvpro-samples/vk_streamline`
+  - NVIDIA DLSS programming guide: `https://github.com/NVIDIA/DLSS/blob/main/doc/DLSS_Programming_Guide_Release.pdf`
+- Prefer NVIDIA Streamline as the integration surface unless a backend-specific constraint requires direct NGX.
+- Treat NVIDIA references as production architecture pressure, not as names to copy into Sparkle's general renderer. Inherit the practices: explicit resource contracts, provider-owned SDK lifetime, narrow native-handle bridges, capability diagnostics, deterministic fallback, and presentation through a renderer-owned final product.
+- Follow NVIDIA's DLSS integration checklist inside the DLSS provider: tagged color, depth, motion-vector, exposure/HDR, jitter, reset, frame-index, and resource-state inputs must be valid at evaluation time.
+- DLSS replaces the primary scene upscale/resolve path only. It must not be used for secondary buffers such as shadow, reflection, or denoiser intermediate resources.
+- General renderer, RHI, FrameGraph, temporal, lighting, denoiser, and presentation code must stay provider-neutral. DLSS, Streamline, NGX, and NVIDIA SDK names belong only inside the NVIDIA provider module and documentation.
+
+Implementation phases:
+
+#### Phase 8.2.1: Reference Study And Integration Decision
+
+Work:
+
+- Review NVIDIA Streamline, Streamline Sample, `vk_streamline`, and the DLSS programming guide before code changes.
+- Write a short implementation record in `docs/` that extracts production practices from NVIDIA references and turns them into Sparkle architecture requirements: explicit resource contracts, command-list hooks, viewport/render extents, jitter, motion-vector convention, reset state, final output product, fallback behavior, and ownership boundaries.
+- Decide Streamline-first versus direct NGX and record why. Default decision should be Streamline-first for production DLSS unless a backend constraint blocks it.
+
+Acceptance criteria:
+
+- The implementation record identifies required SDK calls, required resources, required per-frame constants, unsupported backends, SDK binary/runtime dependencies, and the fallback path.
+- The record explicitly states which Sparkle layer owns SDK initialization, feature lifetime, quality mode, command-list evaluation, and resource tagging.
+- No renderer code is changed in this phase unless needed to add documentation anchors or TODO records.
+
+Validation:
+
+- Documentation review only. No build required.
+- Cross-check against NVIDIA references listed above and record the versions/commits used.
+
+Current implementation status (Phase 8.2.1):
+
+- Added `docs/plans/dlss-integration-implementation-record.md` as the reference-backed implementation record.
+- Recorded the integration decision: Streamline-first for production DLSS, with direct NGX kept only as a fallback investigation path if Streamline blocks a required backend or packaging model.
+- Recorded Sparkle ownership boundaries for SDK initialization, feature lifetime, quality mode, command-list evaluation, FrameGraph resource contracts, RHI native handles, fallback behavior, and presentation output.
+- Added separation rules so DLSS-specific names and SDK details stay inside the NVIDIA provider module while general renderer code receives only reusable architecture concepts.
+
+#### Phase 8.2.2: RHI Capability And External Feature Surface
+
+Work:
+
+- Add RHI capability reporting for external upscalers: backend API support, native device/queue/command-list handle availability, adapter identity, driver/runtime availability, and supported SDK feature flags.
+- Separate "backend can expose native handles" from "DLSS provider is available." DLSS availability depends on SDK/runtime/device checks and must not be hard-coded to the RHI backend alone.
+- Add diagnostics that explain why DLSS is unavailable: backend unsupported, SDK missing, adapter unsupported, feature query failed, invalid resource contract, or user disabled.
+
+Acceptance criteria:
+
+- Renderer startup can report a structured DLSS capability summary without creating any DLSS feature instance.
+- RHI capability structs remain vendor-neutral enough to support future external providers.
+- Native handle access stays behind RHI interfaces; renderer systems do not cast backend objects directly.
+- No NVIDIA-specific SDK fields, enums, or handles are added to generic RHI capability structs.
+
+Validation:
+
+- Header/API review and diagnostic text review. No full build required until final integration.
+- Unit-style compile validation can be deferred if local toolchain is unavailable, but the expected compile target must be listed in the phase record.
+
+#### Phase 8.2.3: Renderer Upscaler Provider Boundary
+
+Work:
+
+- Introduce a renderer-owned `Upscaler` or `SuperResolution` subsystem with provider selection: `None`, deterministic passthrough, and NVIDIA DLSS Super Resolution.
+- Define provider interfaces for initialization, capability query, per-frame setup, evaluation, resize/reset, shutdown, and diagnostic capture.
+- Keep SDK lifetime, SDK feature handles, quality mode, dynamic-resolution state, and reset handling inside the provider subsystem.
+- Do not expose NVIDIA SDK headers through general renderer, RHI, FrameGraph, lighting, or presentation headers.
+- If the provider needs renderer data that does not exist yet, add provider-neutral contracts first instead of threading DLSS-specific fields through `FrameContext` or frame target structs.
+
+Acceptance criteria:
+
+- The renderer can select a provider without changing lighting, shadow denoising, G-buffer, or presentation code.
+- DLSS settings are not stored in generic `FrameContext` unless they are provider-agnostic render settings.
+- Fallback output remains deterministic and produces the same scene color product as the pre-DLSS renderer.
+- General frame orchestration schedules the provider through an upscaler interface and does not calculate DLSS constants, tags, or reset rules inline.
+
+Validation:
+
+- Static architecture review: includes, ownership, and dependency direction.
+- No build required until final integration.
+
+#### Phase 8.2.4: Temporal And Resource Input Contract
+
+Work:
+
+- Define a typed `UpscalerInputContract` containing HUD-less scene color, depth, motion vectors, exposure/HDR metadata, jitter, render extent, display extent, frame index, reset state, and camera-cut state.
+- Validate motion-vector convention against NVIDIA expectations: units, sign, jitter inclusion/exclusion, resolution scaling, and depth range.
+- Make temporal jitter ownership explicit: temporal state generates jitter; DLSS consumes it; provider code must not duplicate jitter generation.
+- Keep temporal derivation out of general frame assembly: shared temporal summaries should be built by temporal/frame helpers and consumed through provider-neutral contracts.
+
+Acceptance criteria:
+
+- Missing required DLSS inputs are logged and force deterministic fallback.
+- Motion-vector convention is documented in code and docs with a validation scene plan.
+- Resize, quality-mode change, scene cut, invalid history, and device change all flow into a provider reset/recreate path.
+
+Validation:
+
+- Contract review and diagnostic-path review. No full build required until final integration.
+
+#### Phase 8.2.5: FrameGraph External Provider Evaluation
+
+Work:
+
+- Add explicit FrameGraph concepts for external provider evaluation rather than modeling DLSS as a normal shader pass.
+- Represent provider reads and writes with typed declarations: color input, depth input, motion-vector input, exposure input, output color, required states, external SDK call, and barrier assumptions.
+- Ensure FrameGraph diagnostics can print provider inputs, output, scheduling position, resource states, and fallback reason.
+- Make presentation consume a selected `FinalSceneColor` product, not a hard-coded scene color texture.
+
+Acceptance criteria:
+
+- DLSS scheduling is visible in FrameGraph diagnostics even though the SDK performs the work externally.
+- Provider evaluation cannot accidentally read lighting internals, denoiser intermediates, or editor/HUD overlays.
+- Non-DLSS frame graphs remain stable and do not allocate provider-only resources.
+
+Validation:
+
+- FrameGraph contract/diagnostic review. No full build required until final integration.
+
+#### Phase 8.2.6: Pass Declaration, Runtime, And PSO Architecture Cleanup
+
+Work:
+
+- Use the DLSS integration to reduce ad hoc pass insertion in frame assembly.
+- Move toward high-level frame stages and feature modules that declare resources, schedule work, and expose final products through narrow hooks.
+- Keep authored shader PSO handling separate from external SDK feature runtime handling. A DLSS provider should not require a fake shader package, fake PSO, or authored pass type.
+- Preserve existing typed pass parameter validation for authored shader passes while adding equivalent contract validation for external providers.
+- Remove or relocate provider-specific constants and resource decisions from general frame files as part of this phase; frame orchestration should remain stage scheduling plus product selection.
+
+Acceptance criteria:
+
+- Frame assembly reads as stage orchestration, not implementation detail.
+- Shader pass runtime management and external provider runtime management are distinct code paths with parallel diagnostics.
+- Feature modules can participate in scheduling without adding vendor fields to generic scene target structs.
+
+Validation:
+
+- Code review checklist only for this phase. No full build required until final integration.
+
+#### Phase 8.2.7: NVIDIA DLSS Provider Implementation
+
+Work:
+
+- Integrate the selected NVIDIA SDK path behind the provider boundary.
+- Initialize SDK state from RHI-provided native handles and renderer-provided application/version metadata.
+- Query supported DLSS modes and recommended render extents from the SDK.
+- Evaluate DLSS after opaque/transparent scene rendering and before UI/presentation, using the typed input contract and FrameGraph external-provider scheduling.
+- Implement deterministic fallback when SDK initialization, capability query, feature creation, resource tagging, or evaluation fails.
+
+Acceptance criteria:
+
+- DLSS is disabled by default until SDK availability, resource contract, and settings are valid.
+- DLSS quality mode and render/display extent choices come from SDK queries, not hard-coded guesses.
+- All SDK calls are isolated to the provider implementation and a narrow platform/RHI bridge.
+- Provider diagnostics include SDK version, backend, adapter, selected mode, input/output extents, reset state, and failure reason.
+
+Validation:
+
+- This is the first phase that requires a real build.
+- Build targeted renderer/editor target, then run a no-DLSS fallback smoke and a DLSS-enabled smoke on supported hardware.
+
+#### Phase 8.2.8: Production Quality Validation
+
+Work:
+
+- Add validation scenes and captures for static camera, camera pan, disocclusion, thin geometry, alpha-tested geometry, emissive/high-contrast content, transparent content policy, resize, quality-mode switch, and scene-cut reset.
+- Add capture/repro instructions for DLSS artifacts without leaking SDK internals into global renderer state.
+- Add backend parity notes for D3D12 and Vulkan. If a backend is not supported by the selected SDK path, report that explicitly.
+
+Acceptance criteria:
+
+- DLSS output, fallback output, reset behavior, and resize behavior have repeatable smoke coverage.
+- Logs make DLSS provider state understandable without a debugger.
+- Artifact reports can identify input contract violations versus SDK/provider failures.
+
+Validation:
+
+- Final validation only: targeted build, shader/cook validation if affected, runtime smoke, resize smoke, quality-switch smoke, and unsupported-backend fallback smoke.
+
+Input contract:
+
+- HUD-less scene color, depth, motion vectors, exposure/HDR metadata, camera jitter, render/display extents, frame index, and reset/camera-cut state must be available through a typed renderer contract.
+- Motion vectors must match NVIDIA's expected space, scale, and sign for the selected SDK path; log the convention at startup and validate it in smoke scenes.
+- Jitter must be owned by the temporal state system and exposed to DLSS without duplicating the pattern generator in the provider.
+- Resize, quality-mode changes, device changes, DLSS toggles, scene cuts, and invalid history events must recreate or reset DLSS features deterministically.
+
+Acceptance criteria:
+
+- DLSS availability is reported through RHI/renderer capabilities with clear backend, adapter, driver, SDK, and reason-for-unavailable diagnostics.
+- DLSS quality modes and dynamic-resolution behavior are queried from the SDK and only exposed when supported.
+- DLSS evaluation is scheduled as an explicit renderer upscaler stage with declared inputs and output; fallback is deterministic when unavailable or disabled.
+- FrameGraph diagnostics show the color/depth/motion/exposure inputs, output resource, external-provider barrier/state assumptions, and reset reason when applicable.
+- The renderer can run with DLSS disabled without allocating DLSS SDK state or changing the non-DLSS pass graph unexpectedly.
+- Validation includes static camera, camera pan, disocclusion, thin geometry, alpha-tested geometry, emissive/high-contrast content, resize, quality-mode switch, and scene-cut reset cases.
+- Refactor gate: the implementation improves renderer architecture by separating feature-provider integration, pass orchestration, RHI capability reporting, and temporal contracts.
+
+### Stage 8.3: Upscaler Hardening And DLSS Quality Validation
+
+Goal: harden the DLSS integration until it is production-ready across supported backends, quality modes, and renderer workflows.
+
+Implementation prompt:
+
+```text
+Add DLSS validation scenes, diagnostics, runtime toggles, fallback tests, and backend parity checks.
+Use this stage to prove the architecture introduced in Stage 8.2 rather than adding new temporal algorithms.
 ```
 
 Acceptance criteria:
 
-- DLSS path is capability- and runtime-gated with clear logs.
-- Fallback remains deterministic when DLSS is disabled/unavailable.
-- DLSS ownership stays in renderer upscaling systems and frame state.
+- DLSS and fallback output paths are covered by targeted smoke tests where platform tooling allows.
+- Runtime logs identify SDK/provider selection, quality mode, render/display extents, jitter, motion-vector convention, reset state, and resource tagging.
+- Capture/debug flows preserve enough information to reproduce DLSS artifacts without exposing SDK internals as renderer-global state.
 
 ## Stage 9: NVIDIA NRD SIGMA Integration
 
