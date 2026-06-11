@@ -111,6 +111,8 @@ const char* UpscalerDepthConventionToString(EUpscalerDepthConvention convention)
 	{
 		case EUpscalerDepthConvention::DeviceDepth:
 			return "DeviceDepth";
+		case EUpscalerDepthConvention::ReversedDeviceDepth:
+			return "ReversedDeviceDepth";
 		case EUpscalerDepthConvention::Unknown:
 		default:
 			return "Unknown";

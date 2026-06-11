@@ -18,11 +18,13 @@ UpscalerInputContract BuildUpscalerInputContract(const UpscalerInputContractBuil
 	    .CameraCut = false,
 	    .HistoryInvalid = historyInvalid,
 	    .ResetReason = historyInvalid ? "Temporal history invalid or unavailable" : "",
+	    .Camera = desc.Camera,
+	    .TemporalData = desc.TemporalData,
 	    .TemporalState = desc.TemporalState,
 	    .MotionVectorConvention =
 	        UpscalerMotionVectorConvention{
 	            .Units = EUpscalerMotionVectorUnits::PixelDelta,
 	            .Direction = EUpscalerMotionVectorDirection::CurrentMinusPrevious,
 	            .JitterMode = EUpscalerMotionVectorJitterMode::CurrentAndPreviousClipPositionsAreJittered},
-	    .DepthConvention = EUpscalerDepthConvention::DeviceDepth};
+	    .DepthConvention = EUpscalerDepthConvention::ReversedDeviceDepth};
 }

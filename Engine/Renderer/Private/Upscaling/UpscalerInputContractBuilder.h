@@ -11,6 +11,8 @@ struct UpscalerInputContractBuildDesc final
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	std::uint64_t FrameIndex = 0;
+	PerViewCameraConstantBufferData Camera = {};
+	PerTemporalConstantBufferData TemporalData = {};
 	RenderTemporalFrameState TemporalState = {};
 };
 

@@ -28,7 +28,8 @@ enum class EUpscalerMotionVectorJitterMode : std::uint8_t
 enum class EUpscalerDepthConvention : std::uint8_t
 {
 	Unknown = 0,
-	DeviceDepth = 1
+	DeviceDepth = 1,
+	ReversedDeviceDepth = 2
 };
 
 struct UpscalerMotionVectorConvention final
@@ -54,6 +55,8 @@ struct UpscalerInputContract final
 	bool CameraCut = false;
 	bool HistoryInvalid = true;
 	std::string ResetReason;
+	PerViewCameraConstantBufferData Camera = {};
+	PerTemporalConstantBufferData TemporalData = {};
 	RenderTemporalFrameState TemporalState = {};
 	UpscalerMotionVectorConvention MotionVectorConvention = {};
 	EUpscalerDepthConvention DepthConvention = EUpscalerDepthConvention::Unknown;

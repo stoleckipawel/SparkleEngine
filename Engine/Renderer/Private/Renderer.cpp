@@ -447,6 +447,8 @@ void Renderer::RecordFrame() noexcept
 		            .RenderExtent = m_frameGraphSceneExtent,
 		            .OutputExtent = m_frameGraphSceneExtent,
 		            .FrameIndex = m_timer->GetFrameCount(),
+		            .Camera = frame.mainView.perViewData.Camera,
+		            .TemporalData = frame.mainView.perTemporalData,
 		            .TemporalState = frame.mainView.temporalState});
 		m_upscalerSubsystem->SetupFrame(upscalerInputContract);
 	}
