@@ -44,7 +44,17 @@ Sprawdzone 2026-06-12:
 - Virtualenv dla `adk-agents` jest gotowy w `C:\EB\m1\adk-agents\.venv`.
 - Zaleznosci `google-adk 1.19.0` i `litellm 1.88.1` sa zainstalowane w tym virtualenv.
 - Komenda `adk --help` dziala z virtualenv.
-- Lokalny `gcloud` nie jest jeszcze zalogowany. To wymaga Twojego logowania Google w przegladarce.
+- Agenci z repo warsztatowego laduja sie lokalnie: `content_creator_agent` i `culinary_guide_agent`.
+- Lokalny ADK Web startuje i odpowiada HTTP 200 na `http://127.0.0.1:8765`.
+- `GOOGLE_API_KEY` jest wpisany do `C:\EB\m1\.env`.
+- Test `ListModels` dla Gemini API dziala, co potwierdza, ze klucz/projekt sa rozpoznawane.
+- Test `generateContent` dla `gemini-2.0-flash` zwraca `429 RESOURCE_EXHAUSTED`, bo free-tier quota dla tego projektu/modelu wynosi `0`. To nie jest problem instalacji lokalnej.
+- Lokalny `gcloud auth login` jest gotowy dla konta `stoleckipawel98@gmail.com`.
+- Lokalny `gcloud auth application-default login` jest gotowy; ADC zapisane w profilu uzytkownika.
+- Aktywny projekt `gcloud` ustawiony na `project-4efc201e-a329-4966-822` (`My First Project`).
+- ADC quota project ustawiony na `project-4efc201e-a329-4966-822`.
+- Proba wlaczenia Cloud Run/Cloud Build/Artifact Registry/Compute API zostala zablokowana, bo billing account projektu nie jest otwarty.
+- `gcloud billing accounts list` pokazuje billing accounts jako `OPEN=False`. To wymaga decyzji/uaktywnienia billing/free trial albo kredytow OnRamp przez uzytkownika/prowadzacego.
 
 Do sprawdzenia recznie w nowym PowerShellu:
 
@@ -70,12 +80,17 @@ Zrob to najpozniej dzien przed zajeciami.
 | Chrome | Zainstalowana przegladarka Chrome | `chrome://version` | Gotowe - Chrome zainstalowany |
 | Konto Google | Zalogowane konto prywatne lub wskazane przez organizatora | Wejdz na `https://myaccount.google.com/` | Gotowe w przegladarce wedlug uzytkownika |
 | Google Cloud | Dostep do Console i zaakceptowane regulaminy | Wejdz na `https://console.cloud.google.com/` | Gotowe - zalogowane |
-| Billing/kredyty | Aktywne OnRamp credits albo skonfigurowany billing, jesli wymagane | Google Cloud Console -> Billing -> Credits | Gotowe - Free Trial aktywny |
+| Billing/kredyty | Aktywne OnRamp credits albo skonfigurowany billing, jesli wymagane | Google Cloud Console -> Billing -> Credits | Blokuje Cloud Run API - billing account `OPEN=False` |
 | Git | Zainstalowany Git | `git --version` | Gotowe - Git 2.54.0 |
 | Python | Python i pip | `python --version`; `python -m pip --version` | Gotowe lokalnie |
 | Terminal | PowerShell lub Windows Terminal | Otworz terminal i uruchom komendy kontrolne | Gotowe - PowerShell dziala |
-| Google AI Studio | Dostep do utworzenia Gemini API key | Wejdz na `https://aistudio.google.com/` | Wymaga uzytkownika |
+| Google AI Studio | Dostep do utworzenia Gemini API key | Wejdz na `https://aistudio.google.com/` | Czescowo - klucz jest, generowanie blokuje quota 0 |
 | Repo warsztatowe | Mozliwosc sklonowania repo | `git clone https://github.com/speakleash/eskadra-bielik-misja1` | Gotowe - `C:\EB\m1` |
+| ADK Web | Lokalny interfejs ADK startuje | `adk web --host 127.0.0.1 --port 8765` | Gotowe - HTTP 200 |
+| Gemini API key | Klucz zapisany lokalnie | `C:\EB\m1\.env` | Czescowo - klucz rozpoznany, generowanie blokuje quota 0 |
+| Bielik/Ollama endpoint | URL `OLLAMA_API_BASE` po deployu Bielika | Cloud Run URL | Czeka na zajecia/prowadzacego |
+| `gcloud` lokalnie | Konto i projekt lokalny | `gcloud auth list`; `gcloud config get-value project` | Gotowe - konto i projekt ustawione |
+| Cloud Run API | API wymagane do deployu Bielika/ADK | `gcloud services enable run.googleapis.com ...` | Zablokowane przez zamkniety billing |
 
 ## Instalacje Lokalne
 
@@ -383,6 +398,39 @@ python -m pip show google-adk litellm
 adk --help
 ```
 
+Test ladowania agentow:
+
+```powershell
+cd C:\EB\m1\adk-agents
+.\.venv\Scripts\python.exe -c "import content_creator.agent as c; import culinary_guide_agent.agent as g; print(c.root_agent.name); print(g.root_agent.name)"
+```
+
+Oczekiwany wynik:
+
+```text
+content_creator_agent
+culinary_guide_agent
+```
+
+Test lokalnego ADK Web bez wysylania promptow do modeli:
+
+```powershell
+cd C:\EB\m1\adk-agents
+.\.venv\Scripts\adk.exe web --host 127.0.0.1 --port 8765
+```
+
+Nastepnie otworz w przegladarce:
+
+```text
+http://127.0.0.1:8765
+```
+
+Uwaga: lokalny ADK Web startuje, ale uruchomienie agentow moze wymagac:
+
+- dzialajacego `OLLAMA_API_BASE` dla Bielika,
+- dzialajacego limitu Gemini API,
+- albo instrukcji/projektu/kredytow od prowadzacego.
+
 Jesli trzeba odtworzyc virtualenv od zera:
 
 ```powershell
@@ -424,7 +472,10 @@ Na miejscu:
 | `Activate.ps1` jest blokowany | PowerShell execution policy | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | Cloud Shell nie startuje | Konto/region/przegladarka | Odwiezenie strony, inne konto Chrome, incognito, sprawdzenie 2FA |
 | Brak billing/kredytow | Cloud Run/GPU moze sie nie wdrozyc | Zapytaj prowadzacego o OnRamp credits albo gotowy projekt |
+| `gcloud services enable` zwraca `Billing account ... is not open` | Projekt nie ma aktywnego billing/free trial albo billing account jest zamkniety | Otworz Billing -> linked account dla projektu albo poczekaj na OnRamp/projekt prowadzacego |
 | `GOOGLE_API_KEY` nie dziala | Zly projekt albo ograniczenia klucza | Utworz nowy klucz w AI Studio na wlasciwym koncie |
+| Gemini API zwraca `429 RESOURCE_EXHAUSTED` | Klucz jest rozpoznany, ale projekt/model ma quota 0 albo wyczerpany limit | Nie kupuj prepaid bez instrukcji; zapytaj prowadzacego o projekt/kredyty albo uzyj limitu warsztatowego |
+| Agenci startuja, ale nie odpowiadaja | Brak `OLLAMA_API_BASE`, brak quota Gemini albo brak deployu Bielika | Najpierw skonfiguruj Cloud Run/Bielika wedlug prowadzacego |
 | Deploy Cloud Run trwa dlugo | Budowanie obrazu i pobieranie modelu | Czekaj; sprawdz Cloud Build logs i Cloud Run logs |
 | Publiczny URL Cloud Run | `--allow-unauthenticated` wystawia usluge | Uzywaj tylko do warsztatu; po zajeciach usun usluge |
 
@@ -451,11 +502,12 @@ Tych rzeczy agent nie powinien robic sam, bo wymagaja Twojego konta, 2FA, sekret
 
 | Zadanie | Dlaczego wymaga Ciebie | Komenda albo miejsce |
 | --- | --- | --- |
-| Lokalne logowanie `gcloud` | Otwiera przegladarke i wymaga Twojego konta Google/2FA | `gcloud auth login` oraz `gcloud auth application-default login` |
-| Wybor aktywnego projektu GCP | Tylko Ty widzisz, ktory projekt jest wlasciwy dla warsztatu | `gcloud config set project PROJECT_ID` |
-| Gemini API key | To sekret przypisany do Twojego konta; nie powinien byc udostepniany agentowi | https://aistudio.google.com/ |
-| Wklejenie `GOOGLE_API_KEY` do `.env` | Agent nie powinien znac ani zapisywac Twojego sekretu z chatu | `C:\EB\m1\.env` |
+| Billing/free trial dla projektu GCP | API Cloud Run/Cloud Build nie da sie wlaczyc przy billing account `OPEN=False` | Google Cloud Console -> Billing -> Linked billing account |
+| Potwierdzenie projektu warsztatowego | Obecnie ustawiony jest `project-4efc201e-a329-4966-822`, ale prowadzacy moze wymagac innego projektu | `gcloud config set project PROJECT_ID` |
+| Gemini API billing/quota | Obecny klucz jest rozpoznany, ale generowanie ma quota 0; zakup prepaid to decyzja kosztowa | Nie kupowac bez polecenia prowadzacego |
+| Stary ujawniony API key | Klucz raz wklejony do chatu nalezy traktowac jako ujawniony | Usun stary klucz w Google AI Studio |
 | Kod `BIELIK_EVENT_ID` / OnRamp | Zalezy od organizatora i wydarzenia | Mail/Luma/prowadzacy |
+| `OLLAMA_API_BASE` | Powstanie dopiero po deployu Bielika do Cloud Run albo po podaniu gotowego endpointu | Wpis do `C:\EB\m1\.env` |
 | Docker Desktop | Opcjonalny, ciezki, moze wymagac restartu/WSL2 | Zainstalowac tylko jesli chcesz |
 | LM Studio/Ollama lokalnie | Opcjonalne, moze pobierac duze modele | Zainstalowac tylko jesli chcesz testowac Bielika lokalnie |
 
@@ -469,5 +521,14 @@ Maszyna jest gotowa na zajecia, gdy:
 - Wiesz, czy masz billing/kredyty OnRamp.
 - Masz przygotowany katalog roboczy poza repo SparkleEngine.
 - Masz zasilacz, 2FA i link do wydarzenia.
+
+Aktualna ocena 2026-06-12:
+
+- Maszyna lokalna jest przygotowana technicznie.
+- Repo warsztatowe i ADK dzialaja lokalnie na poziomie instalacji, importow i UI.
+- `gcloud` jest zalogowany i ma ustawiony projekt `project-4efc201e-a329-4966-822`.
+- Pelne uruchomienie agentow czeka na dane/projekt od prowadzacego: `BIELIK_EVENT_ID`, OnRamp/kredyty albo decyzje billingowa, oraz `OLLAMA_API_BASE`.
+- Deploy Cloud Run jest obecnie zablokowany, bo billing account projektu jest zamkniety (`OPEN=False`).
+- Nie kupuj Gemini prepaid ani nie wlaczaj platnego API bez jasnej instrukcji prowadzacego.
 
 Jesli te punkty sa zielone, jestes w dobrej pozycji: nawet gdy lokalne narzedzie odmowi wspolpracy, Cloud Shell powinien pozwolic zrobic zasadnicza czesc warsztatu.

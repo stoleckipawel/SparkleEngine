@@ -24,6 +24,10 @@ Stage artifacts:
   - `docs/architecture/ray-tracing-contract.md`
   - `docs/architecture/pass-authoring-contract.md`
   - `docs/architecture/pipeline-runtime-contract.md`
+- Stage 3 mechanical guardrails:
+  - `CMake/ArchitectureBoundaryCheck.cmake`
+  - `architecture_boundary_check`
+  - `docs/architecture/architecture-boundary-guardrails.md`
 
 Current code evidence used while writing this plan:
 

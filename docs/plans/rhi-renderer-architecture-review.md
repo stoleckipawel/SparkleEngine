@@ -25,6 +25,7 @@ Reviewer architecture docs:
 - `docs/architecture/ray-tracing-contract.md`
 - `docs/architecture/pass-authoring-contract.md`
 - `docs/architecture/pipeline-runtime-contract.md`
+- `docs/architecture/architecture-boundary-guardrails.md`
 
 ## Goal
 
