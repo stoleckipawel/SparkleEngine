@@ -1,9 +1,19 @@
 # Architecture Review Acceptance Rubric
 
-Status: initial criteria draft  
-Date: 2026-06-12  
+Status: initial criteria draft
+Date: 2026-06-12
 Use with: `docs/plans/rhi-renderer-architecture-review.md`
 Execution plan: `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
+
+Reviewer architecture docs:
+
+- `docs/architecture/rendering-glossary.md`
+- `docs/architecture/rendering-system-map.md`
+- `docs/architecture/rhi-contract-map.md`
+- `docs/architecture/frame-graph-contract.md`
+- `docs/architecture/ray-tracing-contract.md`
+- `docs/architecture/pass-authoring-contract.md`
+- `docs/architecture/pipeline-runtime-contract.md`
 
 ## Purpose
 

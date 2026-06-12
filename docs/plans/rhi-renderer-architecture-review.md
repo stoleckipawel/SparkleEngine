@@ -1,7 +1,7 @@
 # Sparkle RHI and Renderer Architecture Review
 
-Status: strategic system-design review draft  
-Date: 2026-06-12  
+Status: strategic system-design review draft
+Date: 2026-06-12
 Scope: `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, DLSS/upscaling integration
 
 Companion rubric:
@@ -15,6 +15,16 @@ Execution plan:
 Tracked architecture status:
 
 - `docs/architecture/rendering-coverage-status.md`
+
+Reviewer architecture docs:
+
+- `docs/architecture/rendering-glossary.md`
+- `docs/architecture/rendering-system-map.md`
+- `docs/architecture/rhi-contract-map.md`
+- `docs/architecture/frame-graph-contract.md`
+- `docs/architecture/ray-tracing-contract.md`
+- `docs/architecture/pass-authoring-contract.md`
+- `docs/architecture/pipeline-runtime-contract.md`
 
 ## Goal
 
@@ -1042,8 +1052,11 @@ Goal:
 
 Actions:
 
+- Add `docs/architecture/rendering-glossary.md`.
 - Add `docs/architecture/rendering-system-map.md`.
 - Add `docs/architecture/rhi-contract-map.md`.
+- Add `docs/architecture/frame-graph-contract.md`.
+- Add `docs/architecture/ray-tracing-contract.md`.
 - Add `docs/architecture/pass-authoring-contract.md`.
 - Add `docs/architecture/pipeline-runtime-contract.md`.
 

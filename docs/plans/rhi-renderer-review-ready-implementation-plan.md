@@ -1,7 +1,7 @@
 # RHI/Renderer Review-Ready Implementation Plan
 
-Status: execution plan draft  
-Date: 2026-06-12  
+Status: execution plan draft
+Date: 2026-06-12
 Scope: `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, shader/pass runtime, PSO handling, upscaling, smoke validation, and reviewer-facing repository presentation
 
 ## Purpose
@@ -16,6 +16,14 @@ Primary source documents:
 Stage artifacts:
 
 - Stage 1 baseline status: `docs/architecture/rendering-coverage-status.md`
+- Stage 2 reviewer docs:
+  - `docs/architecture/rendering-glossary.md`
+  - `docs/architecture/rendering-system-map.md`
+  - `docs/architecture/rhi-contract-map.md`
+  - `docs/architecture/frame-graph-contract.md`
+  - `docs/architecture/ray-tracing-contract.md`
+  - `docs/architecture/pass-authoring-contract.md`
+  - `docs/architecture/pipeline-runtime-contract.md`
 
 Current code evidence used while writing this plan:
 
