@@ -85,6 +85,11 @@ struct RhiExternalFeatureInteropCapabilities
 	bool VulkanHasDeviceHandle = false;
 	bool VulkanHasGraphicsQueueHandle = false;
 	bool VulkanHasGraphicsQueueFamilyIndex = false;
+	void* VulkanInstance = nullptr;
+	void* VulkanPhysicalDevice = nullptr;
+	void* VulkanDevice = nullptr;
+	void* VulkanGraphicsQueue = nullptr;
+	std::uint32_t VulkanGraphicsQueueFamilyIndex = UINT32_MAX;
 	bool VulkanManualFunctionPointerHookingReady = false;
 	bool VulkanInterposerRequired = false;
 };

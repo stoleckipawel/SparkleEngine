@@ -60,6 +60,10 @@ void AddExternalProviderEvaluationPass(
 			            .NativeDepth = context.Resources.ResolveResource(sceneTargets.MainDepth),
 			            .NativeMotionVectors = context.Resources.ResolveResource(gbuffer.MotionVector),
 			            .NativeOutputColor = context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
+			            .NativeInputColorView = context.Resources.ResolveNativeTextureView(sceneTargets.SceneColor, ResourceState::CopySource),
+			            .NativeDepthView = context.Resources.ResolveNativeTextureView(sceneTargets.MainDepth, ResourceState::DepthRead),
+			            .NativeMotionVectorsView = context.Resources.ResolveNativeTextureView(gbuffer.MotionVector, ResourceState::ShaderResource),
+			            .NativeOutputColorView = context.Resources.ResolveNativeTextureView(sceneTargets.FinalSceneColor, ResourceState::UnorderedAccess),
 			            .RenderExtent = sceneExtent,
 			            .OutputExtent = sceneExtent});
 		    }

@@ -2,9 +2,11 @@
 #include "Upscaling/NvidiaDlss/StreamlineDlssRuntime.h"
 
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
+#include <vulkan/vulkan.h>
 #include <sl.h>
 #include <sl_dlss.h>
 #include <sl_helpers.h>
+#include <sl_helpers_vk.h>
 #endif
 
 #include <array>
@@ -25,8 +27,16 @@ namespace
 
 	bool HasNativeEvaluationContract(const UpscalerEvaluationDesc& evaluation) noexcept
 	{
-		return evaluation.NativeCommandList && evaluation.NativeInputColor && evaluation.NativeDepth && evaluation.NativeMotionVectors &&
-		       evaluation.NativeOutputColor;
+		const bool hasNativeResources =
+		    evaluation.NativeCommandList && evaluation.NativeInputColor && evaluation.NativeDepth && evaluation.NativeMotionVectors &&
+		    evaluation.NativeOutputColor;
+		if (evaluation.BackendApi != ERhiBackendApi::Vulkan)
+		{
+			return hasNativeResources;
+		}
+
+		return hasNativeResources && evaluation.NativeInputColorView && evaluation.NativeDepthView &&
+		       evaluation.NativeMotionVectorsView && evaluation.NativeOutputColorView;
 	}
 
 	DlssFeatureMatrix BuildUnavailableFeatureMatrix(std::string_view reason)
@@ -210,6 +220,35 @@ namespace
 		    inputContract.RenderExtent.Height > 0 ? directionScale / static_cast<float>(inputContract.RenderExtent.Height) : directionScale};
 	}
 
+	sl::SubresourceRange BuildStreamlineSubresourceRange(const NativeTextureViewInfo& view) noexcept
+	{
+		sl::SubresourceRange range{};
+		range.aspectMask = view.SubresourceAspectMask;
+		range.baseMipLevel = view.SubresourceBaseMipLevel;
+		range.levelCount = view.SubresourceLevelCount;
+		range.baseArrayLayer = view.SubresourceBaseArrayLayer;
+		range.layerCount = view.SubresourceLayerCount;
+		return range;
+	}
+
+	sl::Resource BuildVulkanStreamlineTextureResource(const NativeTextureViewInfo& view) noexcept
+	{
+		sl::Resource resource{
+		    sl::ResourceType::eTex2d,
+		    view.Resource.Value,
+		    nullptr,
+		    view.View.Value,
+		    view.NativeState};
+		resource.width = view.Width;
+		resource.height = view.Height;
+		resource.nativeFormat = view.NativeFormat;
+		resource.mipLevels = view.MipLevels;
+		resource.arrayLayers = view.ArrayLayers;
+		resource.flags = view.NativeFlags;
+		resource.usage = view.NativeUsage;
+		return resource;
+	}
+
 	void FillStreamlineConstants(sl::Constants& constants, const UpscalerInputContract& inputContract) noexcept
 	{
 		DirectX::XMMATRIX clipToPrevClip = DirectX::XMMatrixIdentity();
@@ -263,22 +302,33 @@ namespace
 			m_diagnostics.SdkVersion = kStreamlineSdkVersion;
 			m_diagnostics.SelectedQualityMode = UpscalerQualityModeToString(desc.QualityMode);
 
-			if (desc.Capabilities.BackendApi != ERhiBackendApi::D3D12)
+			const bool isD3D12 = desc.Capabilities.BackendApi == ERhiBackendApi::D3D12;
+			const bool isVulkan = desc.Capabilities.BackendApi == ERhiBackendApi::Vulkan;
+			if (!isD3D12 && !isVulkan)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
-				m_diagnostics.FailureReason =
-				    "Streamline DLSS Vulkan evaluation is not enabled until the RHI provider contract exposes native image view/layout metadata.";
+				m_diagnostics.FailureReason = "Streamline DLSS is only implemented for D3D12 and Vulkan backends.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
 			}
-			if (!desc.NativeDevice)
+			if (isD3D12 && !desc.NativeDevice)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
 				m_diagnostics.FailureReason = "D3D12 native device handle is unavailable.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
 			}
-			if (!HasNativeAdapterLuid(desc.Capabilities.ExternalFeatureInterop.Adapter))
+			if (isVulkan && (!desc.Capabilities.ExternalFeatureInterop.VulkanInstance ||
+			                 !desc.Capabilities.ExternalFeatureInterop.VulkanPhysicalDevice ||
+			                 !desc.Capabilities.ExternalFeatureInterop.VulkanDevice ||
+			                 desc.Capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex == UINT32_MAX))
+			{
+				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+				m_diagnostics.FailureReason = "Vulkan native instance, physical device, device, or graphics queue family is unavailable.";
+				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
+				return false;
+			}
+			if (isD3D12 && !HasNativeAdapterLuid(desc.Capabilities.ExternalFeatureInterop.Adapter))
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
 				m_diagnostics.FailureReason = "D3D12 adapter native LUID is unavailable for Streamline feature support query.";
@@ -299,7 +349,7 @@ namespace
 			preferences.engine = sl::EngineType::eCustom;
 			preferences.engineVersion = "SparkleEngine-Development";
 			preferences.projectId = "535041524B4C45454E47494E45303031";
-			preferences.renderAPI = sl::RenderAPI::eD3D12;
+			preferences.renderAPI = isVulkan ? sl::RenderAPI::eVulkan : sl::RenderAPI::eD3D12;
 			std::error_code logPathError;
 			m_streamlineLogPath =
 			    (std::filesystem::current_path(logPathError) / ".." / ".." / "logs" / "Streamline").lexically_normal().wstring();
@@ -322,7 +372,7 @@ namespace
 			}
 			m_initialized = true;
 
-			if (desc.PresentationBridge &&
+			if (isD3D12 && desc.PresentationBridge &&
 			    !desc.PresentationBridge.UpgradePresentationInterface(
 			        &UpgradePresentationInterfaceWithStreamline,
 			        nullptr,
@@ -334,19 +384,48 @@ namespace
 				return false;
 			}
 
-			result = slSetD3DDevice(desc.NativeDevice.Value);
-			if (result != sl::Result::eOk)
+			if (isD3D12)
 			{
-				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
-				m_diagnostics.FailureReason = FormatStreamlineFailure("slSetD3DDevice", result);
-				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
-				return false;
+				result = slSetD3DDevice(desc.NativeDevice.Value);
+				if (result != sl::Result::eOk)
+				{
+					m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+					m_diagnostics.FailureReason = FormatStreamlineFailure("slSetD3DDevice", result);
+					m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
+					return false;
+				}
+			}
+			else
+			{
+				sl::VulkanInfo vulkanInfo{};
+				vulkanInfo.instance = static_cast<VkInstance>(desc.Capabilities.ExternalFeatureInterop.VulkanInstance);
+				vulkanInfo.physicalDevice = static_cast<VkPhysicalDevice>(desc.Capabilities.ExternalFeatureInterop.VulkanPhysicalDevice);
+				vulkanInfo.device = static_cast<VkDevice>(desc.Capabilities.ExternalFeatureInterop.VulkanDevice);
+				vulkanInfo.graphicsQueueFamily = desc.Capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex;
+				vulkanInfo.computeQueueFamily = desc.Capabilities.ExternalFeatureInterop.VulkanGraphicsQueueFamilyIndex;
+				vulkanInfo.graphicsQueueIndex = 0;
+				vulkanInfo.computeQueueIndex = 0;
+				result = slSetVulkanInfo(vulkanInfo);
+				if (result != sl::Result::eOk)
+				{
+					m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
+					m_diagnostics.FailureReason = FormatStreamlineFailure("slSetVulkanInfo", result);
+					m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
+					return false;
+				}
 			}
 
 			std::array<std::uint8_t, 8> adapterLuid = desc.Capabilities.ExternalFeatureInterop.Adapter.NativeLuid;
 			sl::AdapterInfo adapterInfo{};
-			adapterInfo.deviceLUID = adapterLuid.data();
-			adapterInfo.deviceLUIDSizeInBytes = desc.Capabilities.ExternalFeatureInterop.Adapter.NativeLuidSizeInBytes;
+			if (isVulkan)
+			{
+				adapterInfo.vkPhysicalDevice = desc.Capabilities.ExternalFeatureInterop.VulkanPhysicalDevice;
+			}
+			else
+			{
+				adapterInfo.deviceLUID = adapterLuid.data();
+				adapterInfo.deviceLUIDSizeInBytes = desc.Capabilities.ExternalFeatureInterop.Adapter.NativeLuidSizeInBytes;
+			}
 			result = slIsFeatureSupported(sl::kFeatureDLSS, adapterInfo);
 			if (result != sl::Result::eOk)
 			{
@@ -434,13 +513,34 @@ namespace
 
 			sl::Extent renderExtent{.top = 0, .left = 0, .width = evaluation.RenderExtent.Width, .height = evaluation.RenderExtent.Height};
 			sl::Extent outputExtent{.top = 0, .left = 0, .width = evaluation.OutputExtent.Width, .height = evaluation.OutputExtent.Height};
-			sl::Resource colorIn{sl::ResourceType::eTex2d, evaluation.NativeInputColor.Value, kD3D12ResourceStateCopySource};
-			sl::Resource colorOut{sl::ResourceType::eTex2d, evaluation.NativeOutputColor.Value, kD3D12ResourceStateUnorderedAccess};
-			sl::Resource depth{sl::ResourceType::eTex2d, evaluation.NativeDepth.Value, kD3D12ResourceStateDepthRead};
-			sl::Resource motionVectors{
-			    sl::ResourceType::eTex2d,
-			    evaluation.NativeMotionVectors.Value,
-			    kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource};
+			sl::Resource colorIn = evaluation.BackendApi == ERhiBackendApi::Vulkan ?
+			                           BuildVulkanStreamlineTextureResource(evaluation.NativeInputColorView) :
+			                           sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeInputColor.Value, kD3D12ResourceStateCopySource};
+			sl::Resource colorOut =
+			    evaluation.BackendApi == ERhiBackendApi::Vulkan ?
+			        BuildVulkanStreamlineTextureResource(evaluation.NativeOutputColorView) :
+			        sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeOutputColor.Value, kD3D12ResourceStateUnorderedAccess};
+			sl::Resource depth = evaluation.BackendApi == ERhiBackendApi::Vulkan ?
+			                         BuildVulkanStreamlineTextureResource(evaluation.NativeDepthView) :
+			                         sl::Resource{sl::ResourceType::eTex2d, evaluation.NativeDepth.Value, kD3D12ResourceStateDepthRead};
+			sl::Resource motionVectors =
+			    evaluation.BackendApi == ERhiBackendApi::Vulkan ?
+			        BuildVulkanStreamlineTextureResource(evaluation.NativeMotionVectorsView) :
+			        sl::Resource{
+			            sl::ResourceType::eTex2d,
+			            evaluation.NativeMotionVectors.Value,
+			            kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource};
+			sl::SubresourceRange colorInRange = BuildStreamlineSubresourceRange(evaluation.NativeInputColorView);
+			sl::SubresourceRange colorOutRange = BuildStreamlineSubresourceRange(evaluation.NativeOutputColorView);
+			sl::SubresourceRange depthRange = BuildStreamlineSubresourceRange(evaluation.NativeDepthView);
+			sl::SubresourceRange motionVectorsRange = BuildStreamlineSubresourceRange(evaluation.NativeMotionVectorsView);
+			if (evaluation.BackendApi == ERhiBackendApi::Vulkan)
+			{
+				colorIn.next = &colorInRange;
+				colorOut.next = &colorOutRange;
+				depth.next = &depthRange;
+				motionVectors.next = &motionVectorsRange;
+			}
 			std::array<sl::ResourceTag, 4> tags = {
 			    sl::ResourceTag{&colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
 			    sl::ResourceTag{&colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &outputExtent},
@@ -620,7 +720,7 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	const bool vulkanBridgeReady = capabilities.BackendApi == ERhiBackendApi::Vulkan &&
 	                               capabilities.ExternalFeatureInterop.VulkanManualFunctionPointerHookingReady &&
 	                               capabilities.ExternalFeatureInterop.ExposesNativeResources;
-	const bool runtimeReady = d3d12BridgeReady;
+	const bool runtimeReady = d3d12BridgeReady || vulkanBridgeReady;
 	std::string reason;
 	if (d3d12BridgeReady)
 	{
@@ -628,9 +728,7 @@ StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const R
 	}
 	else if (vulkanBridgeReady)
 	{
-		reason =
-		    "NVIDIA Streamline SDK is integrated, but Vulkan DLSS evaluation needs native image view/layout metadata in the RHI "
-		    "provider contract before Streamline resource tagging can be enabled.";
+		reason = "NVIDIA Streamline SDK is integrated; Vulkan runtime support will be verified during provider initialization.";
 	}
 	else
 	{

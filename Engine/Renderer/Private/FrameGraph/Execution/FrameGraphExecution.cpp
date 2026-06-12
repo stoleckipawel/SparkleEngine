@@ -128,6 +128,11 @@ NativeResourceHandle FrameGraphResourceCommands::ResolveResource(FrameGraphTextu
 	return m_frameGraph->ResolveResource(handle);
 }
 
+NativeTextureViewInfo FrameGraphResourceCommands::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept
+{
+	return m_frameGraph->ResolveNativeTextureView(handle, state);
+}
+
 RhiGpuDescriptorHandle FrameGraphResourceCommands::ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept
 {
 	return m_frameGraph->ResolveShaderResourceView(handle);
@@ -256,6 +261,12 @@ NativeResourceHandle FrameGraph::ResolveResource(FrameGraphTextureHandle handle)
 {
 	assert(handle.IsValid());
 	return ResolveResource(handle.GetResourceHandle());
+}
+
+NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept
+{
+	assert(handle.IsValid());
+	return ResolveNativeTextureView(handle.GetResourceHandle(), state);
 }
 
 void FrameGraph::CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept

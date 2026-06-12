@@ -408,6 +408,8 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateImage
 		record->Format = imageCreateInfo.format;
 		record->Extent = imageCreateInfo.extent;
 		record->AspectMask = ResolveImageAspectMask(imageCreateInfo.format);
+		record->ImageFlags = imageCreateInfo.flags;
+		record->Usage = imageCreateInfo.usage;
 	}
 	return record;
 }
@@ -466,6 +468,8 @@ std::unique_ptr<VulkanGpuAllocationRecord> VulkanGpuMemoryAllocator::CreateAlias
 		record->Format = imageCreateInfo.format;
 		record->Extent = imageCreateInfo.extent;
 		record->AspectMask = ResolveImageAspectMask(imageCreateInfo.format);
+		record->ImageFlags = imageCreateInfo.flags;
+		record->Usage = imageCreateInfo.usage;
 	}
 	return record;
 }

@@ -81,6 +81,11 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 			        .Kind = desc.Kind,
 			        .Image = static_cast<VkImage>(desc.Resource.Value),
 			        .ImageView = imageView,
+			        .Format = desc.Format,
+			        .Texture = desc.Texture,
+			        .Usage = desc.Kind == ERhiResourceViewKind::TextureUnorderedAccess ?
+			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_STORAGE_BIT) :
+			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_SAMPLED_BIT),
 			        .DescriptorHandle = descriptorHandle,
 			        .OwnsImageView = true});
 		}
@@ -91,6 +96,11 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 			        .Kind = desc.Kind,
 			        .Image = static_cast<VkImage>(desc.Resource.Value),
 			        .ImageView = CreateImageView(desc),
+			        .Format = desc.Format,
+			        .Texture = desc.Texture,
+			        .Usage = desc.Kind == ERhiResourceViewKind::DepthStencil ?
+			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) :
+			                     static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT),
 			        .OwnsImageView = true});
 		case ERhiResourceViewKind::BufferShaderResource:
 		case ERhiResourceViewKind::BufferUnorderedAccess:
@@ -159,6 +169,49 @@ RhiGpuDescriptorHandle VulkanDescriptorManager::GetResourceViewGpuHandle(RhiReso
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	return record != nullptr ? record->DescriptorHandle : RhiGpuDescriptorHandle{};
+}
+
+NativeTextureViewInfo VulkanDescriptorManager::GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept
+{
+	const ResourceViewRecord* const record = FindResourceViewRecord(view);
+	if (record == nullptr || record->Image == VK_NULL_HANDLE || record->ImageView == VK_NULL_HANDLE)
+	{
+		return {};
+	}
+
+	const VulkanGpuAllocationRecord* const allocation = m_memoryAllocator.FindAllocationRecord(NativeResourceHandle{record->Image});
+	const VulkanResourceStateMapping stateMapping = VulkanTypeConversions::ToResourceStateMapping(state);
+	const RhiResourceViewDesc viewDesc{
+	    .Kind = record->Kind,
+	    .Resource = NativeResourceHandle{record->Image},
+	    .Format = record->Format,
+	    .Texture = record->Texture};
+	const VkImageAspectFlags aspectMask = ResolveViewAspectMask(viewDesc);
+	const VkExtent3D extent = allocation != nullptr ? allocation->Extent : VkExtent3D{};
+	const VkFormat format = allocation != nullptr && allocation->Format != VK_FORMAT_UNDEFINED ?
+	                            allocation->Format :
+	                            VulkanTypeConversions::ToVkFormat(record->Format);
+	const VkImageUsageFlags allocationUsage = allocation != nullptr ? allocation->Usage : 0;
+	const VkImageUsageFlags usage = allocationUsage != 0 ? allocationUsage : record->Usage;
+	const bool readWrite = (usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0 || record->Kind == ERhiResourceViewKind::TextureUnorderedAccess;
+
+	return NativeTextureViewInfo{
+	    .Resource = NativeResourceHandle{record->Image},
+	    .View = NativeTextureViewHandle{record->ImageView},
+	    .NativeState = static_cast<std::uint32_t>(stateMapping.ImageLayout),
+	    .NativeFormat = static_cast<std::uint32_t>(format),
+	    .Width = extent.width,
+	    .Height = extent.height,
+	    .MipLevels = record->Texture.MipCount,
+	    .ArrayLayers = record->Texture.ArraySize,
+	    .SubresourceAspectMask = static_cast<std::uint32_t>(aspectMask),
+	    .SubresourceBaseMipLevel = record->Texture.MostDetailedMip,
+	    .SubresourceLevelCount = record->Texture.MipCount,
+	    .SubresourceBaseArrayLayer = record->Texture.FirstArraySlice,
+	    .SubresourceLayerCount = record->Texture.ArraySize,
+	    .NativeFlags = allocation != nullptr ? static_cast<std::uint32_t>(allocation->ImageFlags) : 0u,
+	    .NativeUsage = static_cast<std::uint32_t>(usage),
+	    .ReadWrite = readWrite};
 }
 
 VkImageView VulkanDescriptorManager::GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept

@@ -1265,6 +1265,11 @@ RhiGpuDescriptorHandle VulkanRenderHardwareInterface::GetResourceViewGpuHandle(R
 	return m_descriptorManager != nullptr ? m_descriptorManager->GetResourceViewGpuHandle(view) : RhiGpuDescriptorHandle{};
 }
 
+NativeTextureViewInfo VulkanRenderHardwareInterface::GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept
+{
+	return m_descriptorManager != nullptr ? m_descriptorManager->GetNativeTextureViewInfo(view, state) : NativeTextureViewInfo{};
+}
+
 std::uint64_t VulkanRenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	if (m_descriptorManager == nullptr || m_imguiBackend == nullptr)

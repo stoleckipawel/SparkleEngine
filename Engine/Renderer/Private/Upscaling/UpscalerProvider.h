@@ -69,6 +69,10 @@ struct UpscalerEvaluationDesc final
 	NativeResourceHandle NativeDepth = {};
 	NativeResourceHandle NativeMotionVectors = {};
 	NativeResourceHandle NativeOutputColor = {};
+	NativeTextureViewInfo NativeInputColorView = {};
+	NativeTextureViewInfo NativeDepthView = {};
+	NativeTextureViewInfo NativeMotionVectorsView = {};
+	NativeTextureViewInfo NativeOutputColorView = {};
 	RenderViewportExtent RenderExtent = {};
 	RenderViewportExtent OutputExtent = {};
 	std::uint64_t FrameIndex = 0;

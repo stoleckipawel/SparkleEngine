@@ -1360,6 +1360,11 @@ RhiGpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewGpuHandle(Rh
 	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
 }
 
+NativeTextureViewInfo D3D12RenderHardwareInterface::GetNativeTextureViewInfo(RhiResourceViewHandle, ResourceState) const noexcept
+{
+	return {};
+}
+
 std::uint64_t D3D12RenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
 {
 	return shaderResourceView.Value;

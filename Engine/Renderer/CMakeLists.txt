@@ -4,6 +4,8 @@
 # Renderer consumes runtime scene/material data only. Source import, conversion,
 # and authoring-side dependencies must stay out of this module.
 
+find_package(Vulkan QUIET)
+
 file(GLOB_RECURSE SPARKLE_RENDERER_PUBLIC_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Public/*.h
 )
@@ -63,6 +65,9 @@ target_link_libraries(SparkleRenderer
 if(SPARKLE_ENABLE_NVIDIA_STREAMLINE AND TARGET NVIDIA::Streamline)
     target_link_libraries(SparkleRenderer PRIVATE NVIDIA::Streamline)
     target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=1)
+    if(TARGET Vulkan::Vulkan)
+        target_link_libraries(SparkleRenderer PRIVATE Vulkan::Vulkan)
+    endif()
 else()
     target_compile_definitions(SparkleRenderer PRIVATE SPARKLE_WITH_NVIDIA_STREAMLINE=0)
 endif()

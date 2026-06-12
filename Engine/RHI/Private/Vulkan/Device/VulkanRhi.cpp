@@ -10,11 +10,61 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <format>
 #include <limits>
 #include <utility>
 
 static const auto g_vulkanRhiLogger = Logging::GetOrCreateLogger("RHI.Vulkan");
+
+namespace
+{
+	constexpr const char* kNvidiaBinaryImportExtensionName = "VK_NVX_binary_import";
+	constexpr const char* kNvidiaImageViewHandleExtensionName = "VK_NVX_image_view_handle";
+
+	bool AppendAvailableDeviceExtension(
+	    VkPhysicalDevice physicalDevice,
+	    std::vector<const char*>& extensions,
+	    const char* extensionName) noexcept
+	{
+		if (extensionName == nullptr ||
+		    std::find_if(
+		        extensions.begin(),
+		        extensions.end(),
+		        [extensionName](const char* enabled) noexcept { return std::strcmp(enabled, extensionName) == 0; }) != extensions.end())
+		{
+			return false;
+		}
+
+		std::uint32_t extensionCount = 0;
+		VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+		if (!VulkanResult::Succeeded(result))
+		{
+			return false;
+		}
+
+		std::vector<VkExtensionProperties> available(extensionCount);
+		result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, available.data());
+		if (!VulkanResult::Succeeded(result))
+		{
+			return false;
+		}
+
+		const bool availableOnDevice = std::any_of(
+		    available.begin(),
+		    available.end(),
+		    [extensionName](const VkExtensionProperties& properties) noexcept {
+			    return std::strcmp(properties.extensionName, extensionName) == 0;
+		    });
+		if (!availableOnDevice)
+		{
+			return false;
+		}
+
+		extensions.push_back(extensionName);
+		return true;
+	}
+}
 
 VulkanRhi::VulkanRhi() noexcept
 {
@@ -271,6 +321,18 @@ void VulkanRhi::CreateLogicalDevice() noexcept
 		{
 			deviceExtensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 		}
+	}
+	const bool enabledNvidiaBinaryImport =
+	    AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaBinaryImportExtensionName);
+	const bool enabledNvidiaImageViewHandle =
+	    AppendAvailableDeviceExtension(m_physicalDevice, deviceExtensions, kNvidiaImageViewHandleExtensionName);
+	if (enabledNvidiaBinaryImport || enabledNvidiaImageViewHandle)
+	{
+		SPDLOG_LOGGER_INFO(
+		    g_vulkanRhiLogger,
+		    "Enabled Vulkan NVIDIA external-feature interop extensions: binaryImport={}, imageViewHandle={}",
+		    enabledNvidiaBinaryImport,
+		    enabledNvidiaImageViewHandle);
 	}
 	for (const char* extension : deviceExtensions)
 	{

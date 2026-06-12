@@ -150,6 +150,7 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
+	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept override;
 	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;

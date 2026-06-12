@@ -108,3 +108,49 @@ NativeResourceHandle FrameGraph::ResolveResource(FrameGraphResourceHandle handle
 			return {};
 	}
 }
+
+NativeTextureViewInfo FrameGraph::ResolveNativeTextureView(FrameGraphResourceHandle handle, ResourceState state) const noexcept
+{
+	if (m_renderHardwareInterface == nullptr)
+	{
+		return {};
+	}
+
+	const FrameGraphResourceMetadata& metadata = m_resourceRegistry.GetMetadata(handle);
+	const FrameGraphResourceAccess& access = m_resourceResolver.GetResolvedAccess(handle);
+	RhiResourceViewHandle view = {};
+	switch (state)
+	{
+		case ResourceState::DepthRead:
+		case ResourceState::DepthWrite:
+			view = access.depthStencilView;
+			break;
+		case ResourceState::UnorderedAccess:
+			view = access.unorderedAccessView;
+			break;
+		case ResourceState::RenderTarget:
+			view = access.renderTargetView;
+			break;
+		case ResourceState::ShaderResource:
+		case ResourceState::CopySource:
+		case ResourceState::Common:
+		default:
+			view = access.shaderResourceView;
+			break;
+	}
+
+	if (!view && metadata.kind == FrameGraphResourceKind::DepthStencil)
+	{
+		view = access.depthStencilView;
+	}
+	if (!view && metadata.kind == FrameGraphResourceKind::ColorRenderTarget)
+	{
+		view = access.shaderResourceView ? access.shaderResourceView : access.renderTargetView;
+	}
+	if (!view)
+	{
+		return {};
+	}
+
+	return m_renderHardwareInterface->GetNativeTextureViewInfo(view, state);
+}

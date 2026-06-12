@@ -221,6 +221,7 @@ class FrameGraph
 	void ClearRenderTarget(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	void ClearDepthStencil(RenderCommandContext& cmd, FrameGraphTextureHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphTextureHandle handle) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphTextureHandle handle, ResourceState state) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphTextureHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveShaderResourceView(FrameGraphBufferHandle handle) const noexcept;
 	RhiGpuDescriptorHandle ResolveUnorderedAccessView(FrameGraphTextureHandle handle) const noexcept;
@@ -354,6 +355,7 @@ class FrameGraph
 	std::array<float, 4> GetClearColor(FrameGraphResourceHandle handle) const noexcept;
 	float GetClearDepth(FrameGraphResourceHandle handle) const noexcept;
 	NativeResourceHandle ResolveResource(FrameGraphResourceHandle handle) const noexcept;
+	NativeTextureViewInfo ResolveNativeTextureView(FrameGraphResourceHandle handle, ResourceState state) const noexcept;
 	void CopyResource(RenderCommandContext& cmd, FrameGraphResourceHandle destinationHandle, FrameGraphResourceHandle sourceHandle) const noexcept;
 	void SyncImportedResourceAccesses() const noexcept;
 	void BuildTransientMaterializationPlan(FrameGraphPlan& plan) const noexcept;

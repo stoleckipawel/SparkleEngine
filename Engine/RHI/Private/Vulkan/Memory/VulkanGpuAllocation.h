@@ -41,6 +41,8 @@ struct VulkanGpuAllocationRecord final
 	VkFormat Format = VK_FORMAT_UNDEFINED;
 	VkExtent3D Extent = {};
 	VkImageAspectFlags AspectMask = 0;
+	VkImageCreateFlags ImageFlags = 0;
+	VkImageUsageFlags Usage = 0;
 	std::wstring DebugName;
 	VulkanGpuMemoryAllocator* Owner = nullptr;
 	bool IsMapped = false;

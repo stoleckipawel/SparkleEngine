@@ -37,6 +37,7 @@ class VulkanDescriptorManager final
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept;
+	NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept;
 	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
 	RhiResourceViewHandle GetSwapChainBackBufferView(std::uint32_t backBufferIndex) const noexcept;
@@ -50,6 +51,9 @@ class VulkanDescriptorManager final
 		VkBuffer Buffer = VK_NULL_HANDLE;
 		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
+		PixelFormat Format = PixelFormat::Unknown;
+		RhiTextureViewRange Texture = {};
+		VkImageUsageFlags Usage = 0;
 		RhiGpuDescriptorHandle DescriptorHandle = {};
 		bool OwnsImageView = false;
 	};

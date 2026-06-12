@@ -144,6 +144,7 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual void ReleaseResourceView(RhiResourceViewHandle view) noexcept = 0;
 	virtual RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept = 0;
 	virtual RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept = 0;
+	virtual NativeTextureViewInfo GetNativeTextureViewInfo(RhiResourceViewHandle view, ResourceState state) const noexcept = 0;
 	virtual std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept = 0;
 	virtual bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept = 0;
 	virtual void BeginPresentRenderPass(const float clearColor[4]) noexcept = 0;
