@@ -39,6 +39,11 @@ class SPARKLE_RHI_API RenderHardwareInterface
 	virtual NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept = 0;
 	virtual NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept = 0;
 	virtual bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept = 0;
+	virtual bool CaptureTextureToBmp(
+	    NativeResourceHandle resource,
+	    std::uint32_t width,
+	    std::uint32_t height,
+	    const std::filesystem::path& outputPath) noexcept = 0;
 	virtual RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept = 0;
 	virtual RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept = 0;
 	virtual RenderDiagnostics& GetDiagnostics() noexcept = 0;

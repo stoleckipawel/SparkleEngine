@@ -26,7 +26,10 @@
 #include "Vulkan/VulkanTypeConversions.h"
 #include "RHI/Public/Validation/RhiValidation.h"
 
+#include <algorithm>
 #include <array>
+#include <cstring>
+#include <fstream>
 #include <format>
 #include <vector>
 
@@ -34,6 +37,113 @@ static const auto g_vulkanRenderHardwareInterfaceLogger = Logging::GetOrCreateLo
 
 namespace
 {
+#pragma pack(push, 1)
+	struct DiagnosticBmpFileHeader final
+	{
+		std::uint16_t Type = 0x4D42;
+		std::uint32_t Size = 0;
+		std::uint16_t Reserved1 = 0;
+		std::uint16_t Reserved2 = 0;
+		std::uint32_t OffBits = 54;
+	};
+
+	struct DiagnosticBmpInfoHeader final
+	{
+		std::uint32_t Size = sizeof(DiagnosticBmpInfoHeader);
+		std::int32_t Width = 0;
+		std::int32_t Height = 0;
+		std::uint16_t Planes = 1;
+		std::uint16_t BitCount = 32;
+		std::uint32_t Compression = 0;
+		std::uint32_t SizeImage = 0;
+		std::int32_t XPelsPerMeter = 2835;
+		std::int32_t YPelsPerMeter = 2835;
+		std::uint32_t ClrUsed = 0;
+		std::uint32_t ClrImportant = 0;
+	};
+#pragma pack(pop)
+
+	std::byte ToByte(float value) noexcept
+	{
+		const float clamped = std::clamp(value, 0.0f, 1.0f);
+		return static_cast<std::byte>(static_cast<std::uint32_t>(clamped * 255.0f + 0.5f));
+	}
+
+	bool WriteRgbaFloatDiagnosticBmp(
+	    const std::filesystem::path& outputPath,
+	    const std::byte* sourcePixels,
+	    std::uint32_t width,
+	    std::uint32_t height) noexcept
+	{
+		if (sourcePixels == nullptr || width == 0 || height == 0)
+		{
+			return false;
+		}
+
+		std::error_code error;
+		if (const std::filesystem::path parentPath = outputPath.parent_path(); !parentPath.empty())
+		{
+			std::filesystem::create_directories(parentPath, error);
+			if (error)
+			{
+				return false;
+			}
+		}
+
+		const std::uint32_t outputRowPitch = width * 4u;
+		std::vector<std::byte> outputPixels(static_cast<std::size_t>(outputRowPitch) * height);
+		for (std::uint32_t y = 0; y < height; ++y)
+		{
+			for (std::uint32_t x = 0; x < width; ++x)
+			{
+				const float* rgba = reinterpret_cast<const float*>(
+				    sourcePixels + (static_cast<std::size_t>(y) * width + x) * sizeof(float) * 4u);
+				std::byte* outputPixel = outputPixels.data() + (static_cast<std::size_t>(y) * width + x) * 4u;
+				outputPixel[0] = ToByte(rgba[2]);
+				outputPixel[1] = ToByte(rgba[1]);
+				outputPixel[2] = ToByte(rgba[0]);
+				outputPixel[3] = ToByte(rgba[3]);
+			}
+		}
+
+		DiagnosticBmpFileHeader fileHeader{};
+		DiagnosticBmpInfoHeader infoHeader{};
+		infoHeader.Width = static_cast<std::int32_t>(width);
+		infoHeader.Height = -static_cast<std::int32_t>(height);
+		infoHeader.SizeImage = static_cast<std::uint32_t>(outputPixels.size());
+		fileHeader.Size = fileHeader.OffBits + infoHeader.SizeImage;
+
+		std::ofstream output(outputPath, std::ios::binary);
+		if (!output)
+		{
+			return false;
+		}
+
+		output.write(reinterpret_cast<const char*>(&fileHeader), sizeof(fileHeader));
+		output.write(reinterpret_cast<const char*>(&infoHeader), sizeof(infoHeader));
+		output.write(reinterpret_cast<const char*>(outputPixels.data()), static_cast<std::streamsize>(outputPixels.size()));
+		return output.good();
+	}
+
+	std::uint32_t FindVulkanMemoryType(
+	    VkPhysicalDevice physicalDevice,
+	    std::uint32_t typeBits,
+	    VkMemoryPropertyFlags requiredFlags) noexcept
+	{
+		VkPhysicalDeviceMemoryProperties memoryProperties{};
+		vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+		for (std::uint32_t index = 0; index < memoryProperties.memoryTypeCount; ++index)
+		{
+			const bool typeAvailable = (typeBits & (1u << index)) != 0;
+			const bool flagsMatch = (memoryProperties.memoryTypes[index].propertyFlags & requiredFlags) == requiredFlags;
+			if (typeAvailable && flagsMatch)
+			{
+				return index;
+			}
+		}
+		return UINT32_MAX;
+	}
+
 	VkAccelerationStructureTypeKHR ToVkAccelerationStructureType(ERhiRayTracingAccelerationStructureType type) noexcept
 	{
 		switch (type)
@@ -148,6 +258,216 @@ bool VulkanRenderHardwareInterface::UpgradePresentationInterface(RhiNativeInterf
 	return false;
 }
 
+bool VulkanRenderHardwareInterface::CaptureTextureToBmp(
+    NativeResourceHandle resource,
+    std::uint32_t width,
+    std::uint32_t height,
+    const std::filesystem::path& outputPath) noexcept
+{
+	if (m_rhi == nullptr || resource.Value == nullptr || width == 0 || height == 0)
+	{
+		return false;
+	}
+
+	const VkDevice device = m_rhi->GetDevice();
+	const VkPhysicalDevice physicalDevice = m_rhi->GetPhysicalDevice();
+	const VkQueue queue = m_rhi->GetGraphicsQueue();
+	const std::uint32_t queueFamilyIndex = m_rhi->GetGraphicsQueueFamilyIndex();
+	const VkImage sourceImage = static_cast<VkImage>(resource.Value);
+	if (device == VK_NULL_HANDLE || physicalDevice == VK_NULL_HANDLE || queue == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE)
+	{
+		return false;
+	}
+
+	const VkDeviceSize bytesPerPixel = sizeof(float) * 4u;
+	const VkDeviceSize readbackSize = static_cast<VkDeviceSize>(width) * height * bytesPerPixel;
+	const VkBufferCreateInfo bufferInfo{
+	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+	    .pNext = nullptr,
+	    .flags = 0,
+	    .size = readbackSize,
+	    .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+	    .queueFamilyIndexCount = 0,
+	    .pQueueFamilyIndices = nullptr};
+
+	VkBuffer readbackBuffer = VK_NULL_HANDLE;
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &readbackBuffer) != VK_SUCCESS || readbackBuffer == VK_NULL_HANDLE)
+	{
+		return false;
+	}
+
+	VkMemoryRequirements memoryRequirements{};
+	vkGetBufferMemoryRequirements(device, readbackBuffer, &memoryRequirements);
+	const std::uint32_t memoryTypeIndex = FindVulkanMemoryType(
+	    physicalDevice,
+	    memoryRequirements.memoryTypeBits,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	if (memoryTypeIndex == UINT32_MAX)
+	{
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkMemoryAllocateInfo allocateInfo{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+	    .pNext = nullptr,
+	    .allocationSize = memoryRequirements.size,
+	    .memoryTypeIndex = memoryTypeIndex};
+	VkDeviceMemory readbackMemory = VK_NULL_HANDLE;
+	if (vkAllocateMemory(device, &allocateInfo, nullptr, &readbackMemory) != VK_SUCCESS || readbackMemory == VK_NULL_HANDLE ||
+	    vkBindBufferMemory(device, readbackBuffer, readbackMemory, 0) != VK_SUCCESS)
+	{
+		if (readbackMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(device, readbackMemory, nullptr);
+		}
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkCommandPoolCreateInfo poolInfo{
+	    .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+	    .pNext = nullptr,
+	    .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+	    .queueFamilyIndex = queueFamilyIndex};
+	VkCommandPool commandPool = VK_NULL_HANDLE;
+	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS || commandPool == VK_NULL_HANDLE)
+	{
+		vkFreeMemory(device, readbackMemory, nullptr);
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkCommandBufferAllocateInfo commandBufferInfo{
+	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+	    .pNext = nullptr,
+	    .commandPool = commandPool,
+	    .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+	    .commandBufferCount = 1};
+	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+	if (vkAllocateCommandBuffers(device, &commandBufferInfo, &commandBuffer) != VK_SUCCESS || commandBuffer == VK_NULL_HANDLE)
+	{
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		vkFreeMemory(device, readbackMemory, nullptr);
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkCommandBufferBeginInfo beginInfo{
+	    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+	    .pNext = nullptr,
+	    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+	    .pInheritanceInfo = nullptr};
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+	{
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		vkFreeMemory(device, readbackMemory, nullptr);
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkImageMemoryBarrier2 toTransferSource{
+	    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+	    .srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+	    .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+	    .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+	    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+	    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+	    .image = sourceImage,
+	    .subresourceRange = VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1}};
+	const VkDependencyInfo toTransferDependency{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 0,
+	    .pMemoryBarriers = nullptr,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 1,
+	    .pImageMemoryBarriers = &toTransferSource};
+	vkCmdPipelineBarrier2(commandBuffer, &toTransferDependency);
+
+	const VkBufferImageCopy copyRegion{
+	    .bufferOffset = 0,
+	    .bufferRowLength = 0,
+	    .bufferImageHeight = 0,
+	    .imageSubresource = VkImageSubresourceLayers{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1},
+	    .imageOffset = VkOffset3D{.x = 0, .y = 0, .z = 0},
+	    .imageExtent = VkExtent3D{.width = width, .height = height, .depth = 1}};
+	vkCmdCopyImageToBuffer(commandBuffer, sourceImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, readbackBuffer, 1, &copyRegion);
+
+	VkImageMemoryBarrier2 toGeneral = toTransferSource;
+	toGeneral.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	toGeneral.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+	toGeneral.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	toGeneral.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+	toGeneral.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	toGeneral.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	const VkDependencyInfo toGeneralDependency{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 0,
+	    .pMemoryBarriers = nullptr,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 1,
+	    .pImageMemoryBarriers = &toGeneral};
+	vkCmdPipelineBarrier2(commandBuffer, &toGeneralDependency);
+
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+	{
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		vkFreeMemory(device, readbackMemory, nullptr);
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+
+	const VkSubmitInfo submitInfo{
+	    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+	    .pNext = nullptr,
+	    .waitSemaphoreCount = 0,
+	    .pWaitSemaphores = nullptr,
+	    .pWaitDstStageMask = nullptr,
+	    .commandBufferCount = 1,
+	    .pCommandBuffers = &commandBuffer,
+	    .signalSemaphoreCount = 0,
+	    .pSignalSemaphores = nullptr};
+	VkFence fence = VK_NULL_HANDLE;
+	const VkFenceCreateInfo fenceInfo{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+	if (vkCreateFence(device, &fenceInfo, nullptr, &fence) != VK_SUCCESS || vkQueueSubmit(queue, 1, &submitInfo, fence) != VK_SUCCESS ||
+	    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS)
+	{
+		if (fence != VK_NULL_HANDLE)
+		{
+			vkDestroyFence(device, fence, nullptr);
+		}
+		vkDestroyCommandPool(device, commandPool, nullptr);
+		vkFreeMemory(device, readbackMemory, nullptr);
+		vkDestroyBuffer(device, readbackBuffer, nullptr);
+		return false;
+	}
+	vkDestroyFence(device, fence, nullptr);
+
+	void* mappedData = nullptr;
+	const bool mapped = vkMapMemory(device, readbackMemory, 0, readbackSize, 0, &mappedData) == VK_SUCCESS && mappedData != nullptr;
+	const bool wroteCapture = mapped ? WriteRgbaFloatDiagnosticBmp(outputPath, static_cast<const std::byte*>(mappedData), width, height) : false;
+	if (mapped)
+	{
+		vkUnmapMemory(device, readbackMemory);
+	}
+
+	vkDestroyCommandPool(device, commandPool, nullptr);
+	vkFreeMemory(device, readbackMemory, nullptr);
+	vkDestroyBuffer(device, readbackBuffer, nullptr);
+	return wroteCapture;
+}
+
 RenderCommandList& VulkanRenderHardwareInterface::GetGraphicsCommandList(std::uint32_t) noexcept
 {
 	return m_commandContext->GetCommandList(m_currentFrameIndex);
@@ -236,6 +556,14 @@ const RenderDiagnostics& VulkanRenderHardwareInterface::GetDiagnostics() const n
 RhiImGuiRenderer& VulkanRenderHardwareInterface::GetImGuiRenderer() noexcept
 {
 	return *m_imguiBackend;
+}
+
+void VulkanRenderHardwareInterface::UpdatePerFrameConstants(const PerFrameConstantBufferData& data) noexcept
+{
+	if (m_constantBufferManager != nullptr)
+	{
+		m_constantBufferManager->UpdatePerFrame(data);
+	}
 }
 
 std::unique_ptr<RenderBindingSet> VulkanRenderHardwareInterface::CreateBindingSet(const RenderBindingSetDesc& desc)

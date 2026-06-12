@@ -43,11 +43,17 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	NativeGraphicsDeviceHandle GetDeviceHandle() const noexcept override;
 	NativeGraphicsQueueHandle GetGraphicsQueueHandle() const noexcept override;
 	bool UpgradePresentationInterface(RhiNativeInterfaceUpgradeCallback callback, void* userData) noexcept override;
+	bool CaptureTextureToBmp(
+	    NativeResourceHandle resource,
+	    std::uint32_t width,
+	    std::uint32_t height,
+	    const std::filesystem::path& outputPath) noexcept override;
 	RenderCommandList& GetGraphicsCommandList(std::uint32_t frameIndex) noexcept override;
 	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept override;
 	RenderDiagnostics& GetDiagnostics() noexcept override;
 	const RenderDiagnostics& GetDiagnostics() const noexcept override;
 	RhiImGuiRenderer& GetImGuiRenderer() noexcept;
+	void UpdatePerFrameConstants(const PerFrameConstantBufferData& data) noexcept;
 	std::unique_ptr<RenderBindingSet> CreateBindingSet(const RenderBindingSetDesc& desc) override;
 	std::unique_ptr<RenderBindingLayout> CreateBindingLayout(const RenderBindingLayoutCompileDesc& desc) override;
 	std::unique_ptr<RenderPipelineState> CreateGraphicsPipelineState(const GraphicsPipelineStateDesc& desc) override;

@@ -37,7 +37,7 @@ class D3D12RenderDeviceServices final : public RenderDeviceBackendServices
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept override;
+	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept override;
 	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:
@@ -192,9 +192,12 @@ void D3D12RenderDeviceServices::AdvanceFrameInFlight() noexcept
 	m_swapChain->UpdateFrameInFlightIndex();
 }
 
-void D3D12RenderDeviceServices::UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept
+void D3D12RenderDeviceServices::UpdatePerFrameConstants(
+    std::uint32_t renderViewMode,
+    std::uint32_t viewportWidth,
+    std::uint32_t viewportHeight) noexcept
 {
-	m_constantBufferManager->UpdatePerFrame(renderViewMode);
+	m_constantBufferManager->UpdatePerFrame(renderViewMode, viewportWidth, viewportHeight);
 }
 
 void D3D12RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept

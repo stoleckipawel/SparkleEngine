@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config/RenderConfig.h"
 #include "Resources/RenderConstantBufferData.h"
 #include "Resources/RhiResourceDesc.h"
 #include "Vulkan/Resources/VulkanLinearAllocator.h"
@@ -20,12 +21,14 @@ class VulkanConstantBufferManager final
 	void BeginFrame(std::uint32_t frameIndex) noexcept;
 	const PerFrameConstantBufferData& GetPerFrameData() const noexcept;
 	RhiGpuVirtualAddress GetPerFrameGpuAddress() const noexcept;
+	void UpdatePerFrame(const PerFrameConstantBufferData& data) noexcept;
 	RhiGpuVirtualAddress AllocateUniform(const void* data, std::uint32_t sizeInBytes);
 	RhiGpuVirtualAddress AllocatePerView(const PerViewConstantBufferData& data);
 	RhiGpuVirtualAddress AllocatePerObjectVertexConstants(const PerObjectVSConstantBufferData& data);
 	RhiGpuVirtualAddress AllocatePerObjectPixelConstants(const PerObjectPSConstantBufferData& data);
 
   private:
-	PerFrameConstantBufferData m_emptyPerFrameConstants = {};
+	PerFrameConstantBufferData m_perFrameData[RenderConfig::FramesInFlight] = {};
 	VulkanLinearAllocator m_uniformAllocator;
+	std::uint32_t m_currentFrameIndex = 0;
 };

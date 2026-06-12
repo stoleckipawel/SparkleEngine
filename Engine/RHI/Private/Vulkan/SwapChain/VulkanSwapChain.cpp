@@ -130,6 +130,11 @@ VkImageView VulkanSwapChain::GetCurrentBackBufferImageView() const noexcept
 	return GetBackBufferImageView(m_currentBackBufferIndex);
 }
 
+VkSemaphore VulkanSwapChain::GetCurrentRenderFinishedSemaphore() const noexcept
+{
+	return m_currentBackBufferIndex < m_backBuffers.size() ? m_backBuffers[m_currentBackBufferIndex].RenderFinishedSemaphore : VK_NULL_HANDLE;
+}
+
 VkImage VulkanSwapChain::GetBackBufferImage(std::uint32_t index) const noexcept
 {
 	return index < m_backBuffers.size() ? m_backBuffers[index].Image : VK_NULL_HANDLE;
@@ -249,7 +254,18 @@ void VulkanSwapChain::CreateBackBufferImageViews()
 	m_backBuffers.reserve(images.size());
 	for (VkImage image : images)
 	{
-		m_backBuffers.push_back(BackBufferRecord{.Image = image, .ImageView = CreateImageView(image, m_surfaceFormat.format)});
+		BackBufferRecord record{.Image = image, .ImageView = CreateImageView(image, m_surfaceFormat.format)};
+		const VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = nullptr, .flags = 0};
+		const VkResult semaphoreResult = vkCreateSemaphore(m_rhi.GetDevice(), &semaphoreInfo, nullptr, &record.RenderFinishedSemaphore);
+		if (!VulkanResult::Succeeded(semaphoreResult))
+		{
+			Diagnostics::Fail(
+			    g_vulkanSwapChainLogger,
+			    __FILE__,
+			    __LINE__,
+			    VulkanResult::FormatFailure("vkCreateSemaphore", semaphoreResult));
+		}
+		m_backBuffers.push_back(record);
 	}
 	m_currentBackBufferIndex = 0;
 }
@@ -262,6 +278,11 @@ void VulkanSwapChain::ReleaseBackBufferImageViews() noexcept
 		{
 			vkDestroyImageView(m_rhi.GetDevice(), backBuffer.ImageView, nullptr);
 			backBuffer.ImageView = VK_NULL_HANDLE;
+		}
+		if (backBuffer.RenderFinishedSemaphore != VK_NULL_HANDLE)
+		{
+			vkDestroySemaphore(m_rhi.GetDevice(), backBuffer.RenderFinishedSemaphore, nullptr);
+			backBuffer.RenderFinishedSemaphore = VK_NULL_HANDLE;
 		}
 		backBuffer.Image = VK_NULL_HANDLE;
 	}

@@ -397,7 +397,13 @@ void Renderer::SetupFrame() noexcept
 	m_textureManager->LoadSceneTextures(m_sceneSnapshot->textures);
 	m_renderCamera->Update(m_sceneSnapshot->camera);
 
-	m_backend->UpdatePerFrameConstants(static_cast<std::uint32_t>(CVarRenderViewMode.Get()));
+	const RenderViewportExtent sceneExtent = m_frameGraphSceneExtent.IsValid() ? m_frameGraphSceneExtent : ResolveSceneExtent();
+	const std::uint32_t viewportWidth = sceneExtent.Width != 0u ? sceneExtent.Width : 1u;
+	const std::uint32_t viewportHeight = sceneExtent.Height != 0u ? sceneExtent.Height : 1u;
+	m_backend->UpdatePerFrameConstants(
+	    static_cast<std::uint32_t>(CVarRenderViewMode.Get()),
+	    viewportWidth,
+	    viewportHeight);
 	SPDLOG_LOGGER_TRACE(rendererLogger, "Renderer::SetupFrame end");
 }
 

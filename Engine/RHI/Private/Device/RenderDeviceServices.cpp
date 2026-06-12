@@ -179,9 +179,12 @@ void RenderDeviceServices::AdvanceFrameInFlight() noexcept
 	m_impl->backend->AdvanceFrameInFlight();
 }
 
-void RenderDeviceServices::UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept
+void RenderDeviceServices::UpdatePerFrameConstants(
+    std::uint32_t renderViewMode,
+    std::uint32_t viewportWidth,
+    std::uint32_t viewportHeight) noexcept
 {
-	m_impl->backend->UpdatePerFrameConstants(renderViewMode);
+	m_impl->backend->UpdatePerFrameConstants(renderViewMode, viewportWidth, viewportHeight);
 }
 
 void RenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept

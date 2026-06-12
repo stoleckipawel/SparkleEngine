@@ -478,9 +478,9 @@ void VulkanRenderCommandList::SetViewport(const RhiViewport& viewport) noexcept
 
 	const VkViewport nativeViewport{
 	    .x = viewport.X,
-	    .y = viewport.Y,
+	    .y = viewport.Y + viewport.Height,
 	    .width = viewport.Width,
-	    .height = viewport.Height,
+	    .height = -viewport.Height,
 	    .minDepth = viewport.MinDepth,
 	    .maxDepth = viewport.MaxDepth};
 	vkCmdSetViewport(m_commandBuffer, 0, 1, &nativeViewport);
@@ -1058,6 +1058,14 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	{
 		const VkDescriptorSet previousSet = descriptorSets[setIndex];
 		descriptorSets[setIndex] = m_descriptorAllocator->AllocateTransientSet(layout->GetDescriptorSetLayouts()[setIndex]);
+		if (descriptorSets[setIndex] != VK_NULL_HANDLE)
+		{
+			m_descriptorAllocator->WriteFallbackDescriptors(
+			    descriptorSets[setIndex],
+			    layout->GetBindings(),
+			    layout->GetBindingCount(),
+			    setIndex);
+		}
 		if (previousSet != VK_NULL_HANDLE && boundSets[setIndex] && descriptorSets[setIndex] != VK_NULL_HANDLE)
 		{
 			CopyDescriptorSet(layout, setIndex, previousSet, descriptorSets[setIndex]);

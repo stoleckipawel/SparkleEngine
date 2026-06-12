@@ -36,7 +36,7 @@ class SPARKLE_RHI_API RenderDeviceServices final
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept;
 	void SubmitFrame() noexcept;
 	void AdvanceFrameInFlight() noexcept;
-	void UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept;
+	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept;
 	void CloseExecuteAndFlushCurrentFrame() noexcept;
 
   private:

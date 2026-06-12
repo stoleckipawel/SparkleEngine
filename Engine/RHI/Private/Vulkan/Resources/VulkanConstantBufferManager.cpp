@@ -6,17 +6,23 @@ VulkanConstantBufferManager::VulkanConstantBufferManager(VulkanGpuMemoryAllocato
 
 void VulkanConstantBufferManager::BeginFrame(std::uint32_t frameIndex) noexcept
 {
+	m_currentFrameIndex = frameIndex % RenderConfig::FramesInFlight;
 	m_uniformAllocator.BeginFrame(frameIndex);
 }
 
 const PerFrameConstantBufferData& VulkanConstantBufferManager::GetPerFrameData() const noexcept
 {
-	return m_emptyPerFrameConstants;
+	return m_perFrameData[m_currentFrameIndex];
 }
 
 RhiGpuVirtualAddress VulkanConstantBufferManager::GetPerFrameGpuAddress() const noexcept
 {
 	return {};
+}
+
+void VulkanConstantBufferManager::UpdatePerFrame(const PerFrameConstantBufferData& data) noexcept
+{
+	m_perFrameData[m_currentFrameIndex] = data;
 }
 
 RhiGpuVirtualAddress VulkanConstantBufferManager::AllocateUniform(const void* data, std::uint32_t sizeInBytes)

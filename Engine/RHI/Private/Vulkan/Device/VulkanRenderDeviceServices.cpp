@@ -36,7 +36,7 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	RenderCommandList& GetCurrentGraphicsCommandList() noexcept override;
 	void SubmitFrame() noexcept override;
 	void AdvanceFrameInFlight() noexcept override;
-	void UpdatePerFrameConstants(std::uint32_t renderViewMode) noexcept override;
+	void UpdatePerFrameConstants(std::uint32_t renderViewMode, std::uint32_t viewportWidth, std::uint32_t viewportHeight) noexcept override;
 	void CloseExecuteAndFlushCurrentFrame() noexcept override;
 
   private:
@@ -47,6 +47,8 @@ class VulkanRenderDeviceServices final : public RenderDeviceBackendServices
 	std::unique_ptr<VulkanSwapChain> m_swapChain;
 	std::unique_ptr<VulkanCommandContext> m_commandContext;
 	std::unique_ptr<VulkanRenderHardwareInterface> m_renderHardwareInterface;
+	Timer* m_timer = nullptr;
+	Window* m_window = nullptr;
 	std::uint32_t m_currentFrameIndex = 0;
 	bool m_hasAcquiredBackBuffer = false;
 };
@@ -56,9 +58,11 @@ std::unique_ptr<RenderDeviceBackendServices> CreateVulkanRenderDeviceServices(Ti
 	return VulkanRenderDeviceServices::Create(timer, window);
 }
 
-std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Timer&, Window& window) noexcept
+std::unique_ptr<VulkanRenderDeviceServices> VulkanRenderDeviceServices::Create(Timer& timer, Window& window) noexcept
 {
 	auto services = std::unique_ptr<VulkanRenderDeviceServices>(new VulkanRenderDeviceServices());
+	services->m_timer = &timer;
+	services->m_window = &window;
 	{
 		SPARKLE_CPU_SCOPE("RHI.Vulkan.CreateDevice");
 		services->m_rhi = std::make_unique<VulkanRhi>();
@@ -164,7 +168,7 @@ void VulkanRenderDeviceServices::SubmitFrame() noexcept
 	}
 
 	const VkSemaphore imageAvailableSemaphore = m_commandContext->GetImageAvailableSemaphore(m_currentFrameIndex);
-	const VkSemaphore renderFinishedSemaphore = m_commandContext->GetRenderFinishedSemaphore(m_currentFrameIndex);
+	const VkSemaphore renderFinishedSemaphore = m_swapChain->GetCurrentRenderFinishedSemaphore();
 	m_commandContext->SubmitFrame(m_currentFrameIndex, imageAvailableSemaphore, renderFinishedSemaphore);
 	if (m_swapChain->Present(renderFinishedSemaphore))
 	{
@@ -179,7 +183,30 @@ void VulkanRenderDeviceServices::AdvanceFrameInFlight() noexcept
 	m_renderHardwareInterface->SetCurrentFrameIndex(m_currentFrameIndex);
 }
 
-void VulkanRenderDeviceServices::UpdatePerFrameConstants(std::uint32_t) noexcept {}
+void VulkanRenderDeviceServices::UpdatePerFrameConstants(
+    std::uint32_t renderViewMode,
+    std::uint32_t viewportWidth,
+    std::uint32_t viewportHeight) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || m_timer == nullptr)
+	{
+		return;
+	}
+
+	PerFrameConstantBufferData data = {};
+	data.FrameIndex = m_timer->GetFrameCount();
+	data.TotalTime = static_cast<float>(m_timer->GetTotalTime(TimeDomain::Unscaled, TimeUnit::Seconds));
+	data.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
+	data.ScaledTotalTime = static_cast<float>(m_timer->GetTotalTime(TimeDomain::Scaled, TimeUnit::Seconds));
+	data.ScaledDeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
+	const float width = static_cast<float>(viewportWidth);
+	const float height = static_cast<float>(viewportHeight);
+	data.ViewModeIndex = renderViewMode;
+	data.ViewportSize = DirectX::XMFLOAT2(width, height);
+	data.ViewportSizeInv = DirectX::XMFLOAT2(width != 0.0f ? 1.0f / width : 0.0f, height != 0.0f ? 1.0f / height : 0.0f);
+
+	m_renderHardwareInterface->UpdatePerFrameConstants(data);
+}
 
 void VulkanRenderDeviceServices::CloseExecuteAndFlushCurrentFrame() noexcept
 {

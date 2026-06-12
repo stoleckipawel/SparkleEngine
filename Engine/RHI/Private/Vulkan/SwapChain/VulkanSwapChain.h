@@ -30,6 +30,7 @@ class VulkanSwapChain final
 	NativeResourceHandle GetCurrentBackBufferResource() const noexcept;
 	VkImage GetCurrentBackBufferImage() const noexcept;
 	VkImageView GetCurrentBackBufferImageView() const noexcept;
+	VkSemaphore GetCurrentRenderFinishedSemaphore() const noexcept;
 	VkImage GetBackBufferImage(std::uint32_t index) const noexcept;
 	VkImageView GetBackBufferImageView(std::uint32_t index) const noexcept;
 	std::uint32_t GetBackBufferCount() const noexcept { return static_cast<std::uint32_t>(m_backBuffers.size()); }
@@ -43,6 +44,7 @@ class VulkanSwapChain final
 	{
 		VkImage Image = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
+		VkSemaphore RenderFinishedSemaphore = VK_NULL_HANDLE;
 	};
 
 	void CreateSurface();

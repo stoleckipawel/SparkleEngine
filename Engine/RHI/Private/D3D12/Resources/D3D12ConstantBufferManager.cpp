@@ -40,7 +40,10 @@ const PerFrameConstantBufferData& D3D12ConstantBufferManager::GetPerFrameData() 
 	return m_perFrameData[m_swapChain->GetFrameInFlightIndex()];
 }
 
-void D3D12ConstantBufferManager::UpdatePerFrame(std::uint32_t viewModeIndex)
+void D3D12ConstantBufferManager::UpdatePerFrame(
+    std::uint32_t viewModeIndex,
+    std::uint32_t viewportWidth,
+    std::uint32_t viewportHeight)
 {
 	PerFrameConstantBufferData data = {};
 	data.FrameIndex = m_timer->GetFrameCount();
@@ -48,8 +51,8 @@ void D3D12ConstantBufferManager::UpdatePerFrame(std::uint32_t viewModeIndex)
 	data.DeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Unscaled, TimeUnit::Seconds));
 	data.ScaledTotalTime = static_cast<float>(m_timer->GetTotalTime(TimeDomain::Scaled, TimeUnit::Seconds));
 	data.ScaledDeltaTime = static_cast<float>(m_timer->GetDelta(TimeDomain::Scaled, TimeUnit::Seconds));
-	const float width = static_cast<float>(m_window->GetWidth());
-	const float height = static_cast<float>(m_window->GetHeight());
+	const float width = static_cast<float>(viewportWidth);
+	const float height = static_cast<float>(viewportHeight);
 	data.ViewportSize = DirectX::XMFLOAT2(width, height);
 	data.ViewportSizeInv = DirectX::XMFLOAT2(width != 0.0f ? 1.0f / width : 0.0f, height != 0.0f ? 1.0f / height : 0.0f);
 	data.ViewModeIndex = viewModeIndex;

@@ -36,7 +36,7 @@ class D3D12ConstantBufferManager final
 	D3D12_GPU_VIRTUAL_ADDRESS GetPerFrameGpuAddress() const;
 	const PerFrameConstantBufferData& GetPerFrameData() const noexcept;
 
-	void UpdatePerFrame(std::uint32_t viewModeIndex);
+	void UpdatePerFrame(std::uint32_t viewModeIndex, std::uint32_t viewportWidth, std::uint32_t viewportHeight);
 	D3D12_GPU_VIRTUAL_ADDRESS AllocateUniform(const void* data, std::uint32_t sizeInBytes);
 	D3D12_GPU_VIRTUAL_ADDRESS AllocatePerView(const PerViewConstantBufferData& data);
 

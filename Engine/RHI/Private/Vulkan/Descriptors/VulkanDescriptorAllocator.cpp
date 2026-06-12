@@ -16,6 +16,16 @@ VulkanDescriptorAllocator::VulkanDescriptorAllocator(VulkanRhi& rhi) noexcept : 
 
 VulkanDescriptorAllocator::~VulkanDescriptorAllocator() noexcept
 {
+	if (m_fallbackBuffer != VK_NULL_HANDLE)
+	{
+		vkDestroyBuffer(m_rhi.GetDevice(), m_fallbackBuffer, nullptr);
+		m_fallbackBuffer = VK_NULL_HANDLE;
+	}
+	if (m_fallbackBufferMemory != VK_NULL_HANDLE)
+	{
+		vkFreeMemory(m_rhi.GetDevice(), m_fallbackBufferMemory, nullptr);
+		m_fallbackBufferMemory = VK_NULL_HANDLE;
+	}
 	for (std::vector<DescriptorPoolPage>& poolPages : m_framePoolPages)
 	{
 		for (DescriptorPoolPage& page : poolPages)
@@ -211,7 +221,6 @@ void VulkanDescriptorAllocator::ReleaseRegisteredDescriptor(RhiGpuDescriptorHand
 		return;
 	}
 	m_registeredDescriptors[index] = DescriptorEntry{};
-	m_freeRegisteredDescriptorIndices.push_back(index);
 }
 
 void VulkanDescriptorAllocator::WriteImageDescriptor(
@@ -521,6 +530,113 @@ VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
 	return pool;
 }
 
+VkBuffer VulkanDescriptorAllocator::EnsureFallbackBuffer() noexcept
+{
+	if (m_fallbackBuffer != VK_NULL_HANDLE)
+	{
+		return m_fallbackBuffer;
+	}
+
+	const VkBufferCreateInfo bufferInfo{
+	    .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+	    .pNext = nullptr,
+	    .flags = 0,
+	    .size = 256,
+	    .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+	    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+	    .queueFamilyIndexCount = 0,
+	    .pQueueFamilyIndices = nullptr};
+	if (vkCreateBuffer(m_rhi.GetDevice(), &bufferInfo, nullptr, &m_fallbackBuffer) != VK_SUCCESS || m_fallbackBuffer == VK_NULL_HANDLE)
+	{
+		return VK_NULL_HANDLE;
+	}
+
+	VkMemoryRequirements memoryRequirements{};
+	vkGetBufferMemoryRequirements(m_rhi.GetDevice(), m_fallbackBuffer, &memoryRequirements);
+	VkPhysicalDeviceMemoryProperties memoryProperties{};
+	vkGetPhysicalDeviceMemoryProperties(m_rhi.GetPhysicalDevice(), &memoryProperties);
+	std::uint32_t memoryTypeIndex = UINT32_MAX;
+	for (std::uint32_t index = 0; index < memoryProperties.memoryTypeCount; ++index)
+	{
+		const bool typeAvailable = (memoryRequirements.memoryTypeBits & (1u << index)) != 0;
+		const bool flagsMatch = (memoryProperties.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+		if (typeAvailable && flagsMatch)
+		{
+			memoryTypeIndex = index;
+			break;
+		}
+	}
+	if (memoryTypeIndex == UINT32_MAX)
+	{
+		vkDestroyBuffer(m_rhi.GetDevice(), m_fallbackBuffer, nullptr);
+		m_fallbackBuffer = VK_NULL_HANDLE;
+		return VK_NULL_HANDLE;
+	}
+
+	const VkMemoryAllocateInfo allocateInfo{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+	    .pNext = nullptr,
+	    .allocationSize = memoryRequirements.size,
+	    .memoryTypeIndex = memoryTypeIndex};
+	if (vkAllocateMemory(m_rhi.GetDevice(), &allocateInfo, nullptr, &m_fallbackBufferMemory) != VK_SUCCESS ||
+	    vkBindBufferMemory(m_rhi.GetDevice(), m_fallbackBuffer, m_fallbackBufferMemory, 0) != VK_SUCCESS)
+	{
+		if (m_fallbackBufferMemory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(m_rhi.GetDevice(), m_fallbackBufferMemory, nullptr);
+			m_fallbackBufferMemory = VK_NULL_HANDLE;
+		}
+		vkDestroyBuffer(m_rhi.GetDevice(), m_fallbackBuffer, nullptr);
+		m_fallbackBuffer = VK_NULL_HANDLE;
+		return VK_NULL_HANDLE;
+	}
+
+	return m_fallbackBuffer;
+}
+
+void VulkanDescriptorAllocator::WriteFallbackDescriptors(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding* bindings,
+    std::size_t bindingCount,
+    std::uint32_t setIndex) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || bindings == nullptr)
+	{
+		return;
+	}
+
+	const VkBuffer fallbackBuffer = EnsureFallbackBuffer();
+	if (fallbackBuffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	for (std::size_t index = 0; index < bindingCount; ++index)
+	{
+		const CompiledBinding& binding = bindings[index];
+		if (binding.BindingPoint.Set != setIndex || binding.Type == CompiledBindingType::PushConstants ||
+		    binding.Type == CompiledBindingType::SamplerTable)
+		{
+			continue;
+		}
+
+		if (binding.SemanticKind == ShaderParameterSemanticKind::ReadBuffer || binding.SemanticKind == ShaderParameterSemanticKind::RWBuffer)
+		{
+			DescriptorEntry entry{};
+			entry.Kind = EntryKind::StorageBuffer;
+			entry.Buffer = VkDescriptorBufferInfo{.buffer = fallbackBuffer, .offset = 0, .range = VK_WHOLE_SIZE};
+			WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+		}
+		else if (binding.SemanticKind == ShaderParameterSemanticKind::UniformData)
+		{
+			DescriptorEntry entry{};
+			entry.Kind = EntryKind::UniformBuffer;
+			entry.Buffer = VkDescriptorBufferInfo{.buffer = fallbackBuffer, .offset = 0, .range = 256};
+			WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+		}
+	}
+}
+
 void VulkanDescriptorAllocator::WriteEntries(
     VkDescriptorSet descriptorSet,
     const CompiledBinding& binding,
@@ -535,6 +651,23 @@ void VulkanDescriptorAllocator::WriteEntries(
 	const VkDescriptorType descriptorType = ToDescriptorType(entryKind);
 	if (descriptorType == VK_DESCRIPTOR_TYPE_MAX_ENUM)
 	{
+		return;
+	}
+
+	const bool entryMatchesBinding =
+	    (binding.SemanticKind == ShaderParameterSemanticKind::ReadTexture && entryKind == EntryKind::SampledImage) ||
+	    ((binding.SemanticKind == ShaderParameterSemanticKind::ReadBuffer || binding.SemanticKind == ShaderParameterSemanticKind::RWBuffer) &&
+	     entryKind == EntryKind::StorageBuffer) ||
+	    (binding.SemanticKind == ShaderParameterSemanticKind::RWTexture && entryKind == EntryKind::StorageImage) ||
+	    (binding.SemanticKind == ShaderParameterSemanticKind::UniformData && entryKind == EntryKind::UniformBuffer) ||
+	    (binding.SemanticKind == ShaderParameterSemanticKind::SamplerSet && entryKind == EntryKind::Sampler) ||
+	    (binding.SemanticKind == ShaderParameterSemanticKind::AccelerationStructure && entryKind == EntryKind::AccelerationStructure);
+	if (!entryMatchesBinding)
+	{
+		SPDLOG_LOGGER_ERROR(
+		    g_vulkanDescriptorAllocatorLogger,
+		    "Refused Vulkan descriptor write for binding '{}' because entry kind does not match compiled semantic.",
+		    binding.Name != nullptr ? binding.Name : "<unnamed>");
 		return;
 	}
 

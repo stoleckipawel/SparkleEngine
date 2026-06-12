@@ -15,8 +15,8 @@ enum class EUpscalerQualityMode : std::uint8_t
 
 struct UpscalerSettings final
 {
-	EUpscalerProviderKind RequestedProvider = EUpscalerProviderKind::Passthrough;
-	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::Quality;
+	EUpscalerProviderKind RequestedProvider = EUpscalerProviderKind::NvidiaDlss;
+	EUpscalerQualityMode QualityMode = EUpscalerQualityMode::NativeAA;
 	bool DiagnosticsEnabled = false;
 };
 

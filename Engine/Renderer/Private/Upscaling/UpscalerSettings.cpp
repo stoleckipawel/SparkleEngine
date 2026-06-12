@@ -7,8 +7,8 @@ namespace
 {
 	ConsoleVariable<EUpscalerProviderKind> CVarUpscalerProvider(
 	    "r.Upscaler.Provider",
-	    EUpscalerProviderKind::Passthrough,
-	    "Renderer upscaler provider: 0=Passthrough, 1=NVIDIA DLSS.");
+	    EUpscalerProviderKind::NvidiaDlss,
+	    "Renderer upscaler provider: 0=Passthrough, 1=NVIDIA DLSS. Defaults to NVIDIA DLSS with deterministic passthrough fallback when unavailable.");
 
 	ConsoleVariable<bool> CVarUpscalerDiagnosticsEnabled(
 	    "r.Upscaler.Diagnostics",

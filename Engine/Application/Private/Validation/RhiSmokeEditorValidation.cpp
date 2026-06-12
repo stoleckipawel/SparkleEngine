@@ -552,14 +552,12 @@ namespace
 		const NativeResourceHandle sceneColorResource =
 		    renderer.ResolveRenderProductResource(viewportProducts.GetSceneColor().Handle);
 
-#if defined(_WIN32)
-		const bool captured = CaptureD3D12SceneColor(
-		    renderer.GetRenderHardwareInterface(),
+		const RenderProduct& sceneColorProduct = viewportProducts.GetSceneColor();
+		const bool captured = renderer.GetRenderHardwareInterface().CaptureTextureToBmp(
 		    sceneColorResource,
+		    sceneColorProduct.Extent.Width,
+		    sceneColorProduct.Extent.Height,
 		    std::filesystem::path(config.SceneColorCapturePath));
-#else
-		const bool captured = false;
-#endif
 
 		if (captured)
 		{

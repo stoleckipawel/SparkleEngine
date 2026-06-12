@@ -5,6 +5,7 @@
 #include "Samplers/RhiSamplerDesc.h"
 #include "Vulkan/VulkanIncludes.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -45,6 +46,7 @@ class VulkanDescriptorAllocator final
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
 
 	VkDescriptorSet AllocateTransientSet(VkDescriptorSetLayout layout);
+	void WriteFallbackDescriptors(VkDescriptorSet descriptorSet, const CompiledBinding* bindings, std::size_t bindingCount, std::uint32_t setIndex) noexcept;
 	void WriteDescriptorTable(
 	    VkDescriptorSet descriptorSet,
 	    const CompiledBinding& binding,
@@ -106,6 +108,7 @@ class VulkanDescriptorAllocator final
 	DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) noexcept;
 	const DescriptorEntry* FindRegisteredEntry(RhiGpuDescriptorHandle handle) const noexcept;
 	VkDescriptorPool CreatePoolPage();
+	VkBuffer EnsureFallbackBuffer() noexcept;
 	void WriteEntries(VkDescriptorSet descriptorSet, const CompiledBinding& binding, std::span<const DescriptorEntry> entries) noexcept;
 
 	VulkanRhi& m_rhi;
@@ -116,4 +119,6 @@ class VulkanDescriptorAllocator final
 	std::vector<std::uint32_t> m_freeTableIndices;
 	std::vector<DescriptorEntry> m_registeredDescriptors;
 	std::vector<std::uint32_t> m_freeRegisteredDescriptorIndices;
+	VkBuffer m_fallbackBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory m_fallbackBufferMemory = VK_NULL_HANDLE;
 };
