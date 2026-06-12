@@ -39,6 +39,7 @@ class VulkanDescriptorAllocator final
 	    VkBuffer buffer,
 	    std::uint64_t offsetInBytes,
 	    std::uint64_t sizeInBytes);
+	RhiGpuDescriptorHandle RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure);
 	void ReleaseRegisteredDescriptor(RhiGpuDescriptorHandle handle) noexcept;
 	void WriteImageDescriptor(RhiCpuDescriptorHandle destination, ERhiResourceViewKind viewKind, VkImageView imageView) noexcept;
 	void WriteSamplerDescriptor(RhiCpuDescriptorHandle destination, VkSampler sampler) noexcept;
@@ -55,6 +56,10 @@ class VulkanDescriptorAllocator final
 	    VkBuffer buffer,
 	    VkDeviceSize offset,
 	    VkDeviceSize range) noexcept;
+	void WriteAccelerationStructureDescriptor(
+	    VkDescriptorSet descriptorSet,
+	    const CompiledBinding& binding,
+	    VkAccelerationStructureKHR accelerationStructure) noexcept;
 
   private:
 	enum class EntryKind : std::uint8_t
@@ -65,6 +70,7 @@ class VulkanDescriptorAllocator final
 		UniformBuffer,
 		StorageBuffer,
 		Sampler,
+		AccelerationStructure,
 	};
 
 	struct DescriptorEntry final
@@ -72,6 +78,7 @@ class VulkanDescriptorAllocator final
 		EntryKind Kind = EntryKind::Empty;
 		VkDescriptorImageInfo Image = {};
 		VkDescriptorBufferInfo Buffer = {};
+		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 	};
 
 	struct DescriptorTableRecord final
@@ -92,7 +99,6 @@ class VulkanDescriptorAllocator final
 	static VkDescriptorType ToDescriptorType(EntryKind kind) noexcept;
 	static EntryKind ToImageEntryKind(ERhiResourceViewKind viewKind) noexcept;
 	static EntryKind ToBufferEntryKind(ERhiResourceViewKind viewKind) noexcept;
-	static EntryKind ToTableEntryKind(ERhiDescriptorAllocatorType descriptorType) noexcept;
 	static VkImageLayout ToImageLayout(EntryKind kind) noexcept;
 
 	DescriptorTableRecord* FindTableRecord(RhiDescriptorTableHandle tableHandle) noexcept;

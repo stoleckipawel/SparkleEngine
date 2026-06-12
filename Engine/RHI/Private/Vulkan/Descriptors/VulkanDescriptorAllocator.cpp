@@ -80,7 +80,7 @@ RhiDescriptorTableHandle VulkanDescriptorAllocator::AllocateDescriptorTable(
 	std::scoped_lock lock(m_mutex);
 	DescriptorTableRecord record{};
 	record.Type = descriptorType;
-	record.Entries.assign(descriptorCount, DescriptorEntry{.Kind = ToTableEntryKind(descriptorType)});
+	record.Entries.assign(descriptorCount, DescriptorEntry{});
 	record.Allocated = true;
 
 	if (!m_freeTableIndices.empty())
@@ -159,6 +159,30 @@ RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterBufferDescriptor(
 	entry.Kind = ToBufferEntryKind(viewKind);
 	entry.Buffer =
 	    VkDescriptorBufferInfo{.buffer = buffer, .offset = offsetInBytes, .range = sizeInBytes != 0 ? sizeInBytes : VK_WHOLE_SIZE};
+
+	std::scoped_lock lock(m_mutex);
+	if (!m_freeRegisteredDescriptorIndices.empty())
+	{
+		const std::uint32_t index = m_freeRegisteredDescriptorIndices.back();
+		m_freeRegisteredDescriptorIndices.pop_back();
+		m_registeredDescriptors[index] = entry;
+		return VulkanDescriptorHandles::MakeGpuDescriptorHandle(index);
+	}
+
+	m_registeredDescriptors.push_back(entry);
+	return VulkanDescriptorHandles::MakeGpuDescriptorHandle(static_cast<std::uint32_t>(m_registeredDescriptors.size() - 1));
+}
+
+RhiGpuDescriptorHandle VulkanDescriptorAllocator::RegisterAccelerationStructureDescriptor(VkAccelerationStructureKHR accelerationStructure)
+{
+	if (accelerationStructure == VK_NULL_HANDLE)
+	{
+		return {};
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = EntryKind::AccelerationStructure;
+	entry.AccelerationStructure = accelerationStructure;
 
 	std::scoped_lock lock(m_mutex);
 	if (!m_freeRegisteredDescriptorIndices.empty())
@@ -361,6 +385,22 @@ void VulkanDescriptorAllocator::WriteBufferDescriptor(
 	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
 }
 
+void VulkanDescriptorAllocator::WriteAccelerationStructureDescriptor(
+    VkDescriptorSet descriptorSet,
+    const CompiledBinding& binding,
+    VkAccelerationStructureKHR accelerationStructure) noexcept
+{
+	if (descriptorSet == VK_NULL_HANDLE || accelerationStructure == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	DescriptorEntry entry{};
+	entry.Kind = EntryKind::AccelerationStructure;
+	entry.AccelerationStructure = accelerationStructure;
+	WriteEntries(descriptorSet, binding, std::span<const DescriptorEntry>(&entry, 1));
+}
+
 VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noexcept
 {
 	switch (kind)
@@ -375,6 +415,8 @@ VkDescriptorType VulkanDescriptorAllocator::ToDescriptorType(EntryKind kind) noe
 			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		case EntryKind::Sampler:
 			return VK_DESCRIPTOR_TYPE_SAMPLER;
+		case EntryKind::AccelerationStructure:
+			return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 		case EntryKind::Empty:
 		default:
 			return VK_DESCRIPTOR_TYPE_MAX_ENUM;
@@ -402,18 +444,6 @@ VulkanDescriptorAllocator::EntryKind VulkanDescriptorAllocator::ToBufferEntryKin
 		case ERhiResourceViewKind::BufferShaderResource:
 		default:
 			return EntryKind::StorageBuffer;
-	}
-}
-
-VulkanDescriptorAllocator::EntryKind VulkanDescriptorAllocator::ToTableEntryKind(ERhiDescriptorAllocatorType descriptorType) noexcept
-{
-	switch (descriptorType)
-	{
-		case ERhiDescriptorAllocatorType::Sampler:
-			return EntryKind::Sampler;
-		case ERhiDescriptorAllocatorType::ShaderResource:
-		default:
-			return EntryKind::SampledImage;
 	}
 }
 
@@ -464,12 +494,13 @@ const VulkanDescriptorAllocator::DescriptorEntry* VulkanDescriptorAllocator::Fin
 
 VkDescriptorPool VulkanDescriptorAllocator::CreatePoolPage()
 {
-	static constexpr std::array<VkDescriptorPoolSize, 5> poolSizes = {
+	static constexpr std::array<VkDescriptorPoolSize, 6> poolSizes = {
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 1024},
 	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, .descriptorCount = 512},
-	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256}};
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 256},
+	    VkDescriptorPoolSize{.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, .descriptorCount = 128}};
 	const VkDescriptorPoolCreateInfo createInfo{
 	    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 	    .pNext = nullptr,
@@ -509,8 +540,10 @@ void VulkanDescriptorAllocator::WriteEntries(
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
+	std::vector<VkAccelerationStructureKHR> accelerationStructures;
 	imageInfos.reserve(entries.size());
 	bufferInfos.reserve(entries.size());
+	accelerationStructures.reserve(entries.size());
 	for (const DescriptorEntry& entry : entries)
 	{
 		if (entry.Kind != entryKind)
@@ -522,15 +555,24 @@ void VulkanDescriptorAllocator::WriteEntries(
 		{
 			imageInfos.push_back(entry.Image);
 		}
+		else if (entryKind == EntryKind::AccelerationStructure)
+		{
+			accelerationStructures.push_back(entry.AccelerationStructure);
+		}
 		else
 		{
 			bufferInfos.push_back(entry.Buffer);
 		}
 	}
 
+	const VkWriteDescriptorSetAccelerationStructureKHR accelerationStructureWrite{
+	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+	    .pNext = nullptr,
+	    .accelerationStructureCount = static_cast<std::uint32_t>(accelerationStructures.size()),
+	    .pAccelerationStructures = accelerationStructures.empty() ? nullptr : accelerationStructures.data()};
 	const VkWriteDescriptorSet write{
 	    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-	    .pNext = nullptr,
+	    .pNext = entryKind == EntryKind::AccelerationStructure ? &accelerationStructureWrite : nullptr,
 	    .dstSet = descriptorSet,
 	    .dstBinding = binding.BindingPoint.Binding,
 	    .dstArrayElement = 0,

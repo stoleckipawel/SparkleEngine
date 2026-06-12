@@ -51,6 +51,7 @@ ShaderBackendCapabilities DxcShaderBackend::GetStaticCapabilities() noexcept
 	capabilities.SupportsSpirV = true;
 	capabilities.SupportsDxilRayTracingLibrary = true;
 	capabilities.SupportsDxilInlineRayQuery = true;
+	capabilities.SupportsSpirVInlineRayQuery = true;
 	return capabilities;
 }
 
@@ -311,6 +312,10 @@ void DxcShaderBackend::BuildCompileArguments(
 	if (IsSpirVTarget(options.Target))
 	{
 		outArgs.push_back(L"-spirv");
+		if (HasCookedShaderPackageFeature(options.PackageFeatures, CookedShaderPackageFeatureFlags::UsesInlineRayQuery))
+		{
+			outArgs.push_back(L"-fspv-extension=SPV_KHR_ray_query");
+		}
 	}
 }
 

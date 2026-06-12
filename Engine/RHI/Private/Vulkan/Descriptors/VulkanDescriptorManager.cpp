@@ -5,12 +5,17 @@
 #include "Vulkan/Core/VulkanResult.h"
 #include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
 #include "Vulkan/Device/VulkanRhi.h"
+#include "Vulkan/Memory/VulkanGpuAllocation.h"
+#include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/SwapChain/VulkanSwapChain.h"
 #include "Vulkan/VulkanTypeConversions.h"
 
 static const auto g_vulkanDescriptorManagerLogger = Logging::GetOrCreateLogger("RHI.Vulkan.DescriptorManager");
 
-VulkanDescriptorManager::VulkanDescriptorManager(VulkanRhi& rhi) noexcept : m_rhi(rhi), m_allocator(rhi) {}
+VulkanDescriptorManager::VulkanDescriptorManager(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept :
+    m_rhi(rhi), m_memoryAllocator(memoryAllocator), m_allocator(rhi)
+{
+}
 
 VulkanDescriptorManager::~VulkanDescriptorManager() noexcept
 {
@@ -55,7 +60,7 @@ void VulkanDescriptorManager::ReleaseDescriptorTable(RhiDescriptorTableHandle ta
 
 RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResourceViewDesc& desc)
 {
-	if (!desc.Resource)
+	if (!desc.Resource && desc.Kind != ERhiResourceViewKind::AccelerationStructureShaderResource)
 	{
 		return {};
 	}
@@ -102,6 +107,23 @@ RhiResourceViewHandle VulkanDescriptorManager::CreateResourceView(const RhiResou
 			        .DescriptorHandle = descriptorHandle});
 		}
 		case ERhiResourceViewKind::AccelerationStructureShaderResource:
+		{
+			VulkanGpuAllocationRecord* const record =
+			    m_memoryAllocator.FindAllocationRecordByDeviceAddress(desc.AccelerationStructureGpuAddress);
+			if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+			{
+				return {};
+			}
+
+			const RhiGpuDescriptorHandle descriptorHandle =
+			    m_allocator.RegisterAccelerationStructureDescriptor(record->AccelerationStructure);
+			return AddResourceView(
+			    ResourceViewRecord{
+			        .Kind = desc.Kind,
+			        .Buffer = record->Buffer,
+			        .AccelerationStructure = record->AccelerationStructure,
+			        .DescriptorHandle = descriptorHandle});
+		}
 		default:
 			return {};
 	}
@@ -137,6 +159,24 @@ RhiGpuDescriptorHandle VulkanDescriptorManager::GetResourceViewGpuHandle(RhiReso
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	return record != nullptr ? record->DescriptorHandle : RhiGpuDescriptorHandle{};
+}
+
+VkImageView VulkanDescriptorManager::GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept
+{
+	if (!descriptorHandle)
+	{
+		return VK_NULL_HANDLE;
+	}
+
+	for (const ResourceViewRecord& record : m_resourceViewRecords)
+	{
+		if (record.DescriptorHandle.Value == descriptorHandle.Value)
+		{
+			return record.ImageView;
+		}
+	}
+
+	return VK_NULL_HANDLE;
 }
 
 void VulkanDescriptorManager::RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept

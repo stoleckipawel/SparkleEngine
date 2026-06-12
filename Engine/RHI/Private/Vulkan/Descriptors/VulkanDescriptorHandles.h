@@ -24,5 +24,8 @@ class VulkanDescriptorHandles final
 
   private:
 	static constexpr std::uint64_t GpuDescriptorMagic = 0x5350564B00000000ull;
-	static constexpr std::uintptr_t CpuDescriptorMagic = static_cast<std::uintptr_t>(0x4350564B00000000ull);
+	static constexpr std::uintptr_t CpuDescriptorMagic = static_cast<std::uintptr_t>(0x4350000000000000ull);
+	static constexpr std::uintptr_t CpuDescriptorMagicMask = static_cast<std::uintptr_t>(0xFFFF000000000000ull);
+	static constexpr std::uintptr_t CpuDescriptorIndexMask = static_cast<std::uintptr_t>(0xFFFFFFull);
+	static constexpr std::uint32_t CpuDescriptorTableShift = 24u;
 };

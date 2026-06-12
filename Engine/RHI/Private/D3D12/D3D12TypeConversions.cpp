@@ -120,6 +120,7 @@ D3D12_RESOURCE_STATES D3D12TypeConversions::ToResourceStates(ResourceState state
 {
 	switch (state)
 	{
+		case ResourceState::Undefined:
 		case ResourceState::Common:
 			return D3D12_RESOURCE_STATE_COMMON;
 		case ResourceState::RenderTarget:

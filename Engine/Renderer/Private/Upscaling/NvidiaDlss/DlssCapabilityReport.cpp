@@ -92,6 +92,10 @@ void DlssCapabilityReporter::ApplyRuntimeDiagnostics(DlssCapabilityReport& repor
 	{
 		report.UnavailableReason = diagnostics.FailureReason;
 	}
+	else if (diagnostics.State == EDlssProviderRuntimeState::Created || diagnostics.State == EDlssProviderRuntimeState::Evaluating)
+	{
+		report.UnavailableReason = "DLSS Super Resolution is active or ready for evaluation.";
+	}
 }
 
 void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcept
@@ -139,13 +143,12 @@ void DlssCapabilityReporter::LogOnce(const DlssCapabilityReport& report) noexcep
 	{
 		SPDLOG_LOGGER_INFO(
 		    logger,
-		    "DLSS feature matrix: backend={} feature={} state={} supported={} latencyHookRequired={} qualityModes='{}' "
+		    "DLSS feature matrix: backend={} feature={} state={} supported={} qualityModes='{}' "
 		    "presetRecommendation='{}' requiredResources='{}' reason='{}'",
 		    RhiBackendApiToString(report.BackendApi),
 		    DlssFeatureKindToString(entry.Feature),
 		    DlssFeatureStateToString(entry.State),
 		    BoolToString(entry.Supported),
-		    BoolToString(entry.RequiresLatencyHook),
 		    entry.QualityModes,
 		    entry.ModelPresetRecommendation,
 		    entry.RequiredResources,

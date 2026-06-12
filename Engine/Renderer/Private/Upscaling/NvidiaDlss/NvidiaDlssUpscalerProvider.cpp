@@ -7,9 +7,16 @@
 
 namespace
 {
+	constexpr std::uint32_t kStableExtentFramesBeforeDlssEvaluation = 2;
+
 	EDlssFeatureKind GetSelectedDlssFeature(EUpscalerQualityMode qualityMode) noexcept
 	{
 		return qualityMode == EUpscalerQualityMode::NativeAA ? EDlssFeatureKind::NativeAA : EDlssFeatureKind::SuperResolution;
+	}
+
+	bool ExtentsEqual(RenderViewportExtent lhs, RenderViewportExtent rhs) noexcept
+	{
+		return lhs.Width == rhs.Width && lhs.Height == rhs.Height;
 	}
 
 	std::string BuildFeatureMatrixSummary(const DlssFeatureMatrix& matrix)
@@ -132,6 +139,19 @@ void NvidiaDlssUpscalerProvider::SetupFrame(const UpscalerInputContract& inputCo
 	m_lastInputContract = inputContract;
 	m_renderExtent = inputContract.RenderExtent;
 	m_outputExtent = inputContract.OutputExtent;
+	if (ExtentsEqual(m_lastObservedRenderExtent, inputContract.RenderExtent) &&
+	    ExtentsEqual(m_lastObservedOutputExtent, inputContract.OutputExtent))
+	{
+		++m_stableExtentFrameCount;
+	}
+	else
+	{
+		m_lastObservedRenderExtent = inputContract.RenderExtent;
+		m_lastObservedOutputExtent = inputContract.OutputExtent;
+		m_stableExtentFrameCount = 1;
+	}
+	m_extentReadyForEvaluation = m_stableExtentFrameCount >= kStableExtentFramesBeforeDlssEvaluation;
+
 	m_dlssCapabilities.RenderExtent = m_renderExtent;
 	m_dlssCapabilities.OutputExtent = m_outputExtent;
 	m_dlssCapabilities.ResetRequested = inputContract.ResetRequested;
@@ -172,6 +192,18 @@ UpscalerEvaluationResult NvidiaDlssUpscalerProvider::Evaluate(const UpscalerEval
 		    .Reason = m_dlssCapabilities.UnavailableReason};
 	}
 
+	if (!m_extentReadyForEvaluation)
+	{
+		m_dlssCapabilities.RuntimeState = EDlssProviderRuntimeState::Created;
+		m_dlssCapabilities.UnavailableReason =
+		    "Waiting for stable render/output extent before first DLSS evaluation; using deterministic passthrough fallback.";
+		m_diagnostics = GetDiagnostics();
+		return UpscalerEvaluationResult{
+		    .ProducedOutput = false,
+		    .UsedFallback = true,
+		    .Reason = m_dlssCapabilities.UnavailableReason};
+	}
+
 	UpscalerEvaluationResult result = m_runtime->Evaluate(evaluation);
 	DlssCapabilityReporter::ApplyRuntimeDiagnostics(m_dlssCapabilities, m_runtime->GetDiagnostics());
 	m_diagnostics = GetDiagnostics();
@@ -182,6 +214,10 @@ void NvidiaDlssUpscalerProvider::OnResize(RenderViewportExtent renderExtent, Ren
 {
 	m_renderExtent = renderExtent;
 	m_outputExtent = outputExtent;
+	m_lastObservedRenderExtent = renderExtent;
+	m_lastObservedOutputExtent = outputExtent;
+	m_stableExtentFrameCount = 0;
+	m_extentReadyForEvaluation = false;
 	m_dlssCapabilities.RenderExtent = renderExtent;
 	m_dlssCapabilities.OutputExtent = outputExtent;
 }

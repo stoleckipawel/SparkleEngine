@@ -52,7 +52,7 @@ bool RayTracingTlasBuilder::Prepare(std::uint32_t instanceCapacity) noexcept
 	}
 
 	m_tlas = TlasHandle{
-	    .resource = m_renderHardwareInterface->GetNativeResource(m_accelerationStructureBuffer),
+	    .resource = m_accelerationStructureBuffer,
 	    .gpuAddress = m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
 	    .instanceCount = 0};
 	return m_tlas.resource && m_tlas.gpuAddress != 0;
@@ -161,7 +161,7 @@ RayTracingTlasBuilder::BuildStats RayTracingTlasBuilder::Build(
 	    m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer));
 
 	m_tlas = TlasHandle{
-	    .resource = m_renderHardwareInterface->GetNativeResource(m_accelerationStructureBuffer),
+	    .resource = m_accelerationStructureBuffer,
 	    .gpuAddress = m_renderHardwareInterface->GetResourceGpuVirtualAddress(m_accelerationStructureBuffer),
 	    .instanceCount = stats.instanceCount};
 	stats.builtTlas = m_tlas.IsValid();
@@ -259,6 +259,7 @@ bool RayTracingTlasBuilder::EnsureResources(const RhiRayTracingAccelerationStruc
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
 		m_accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
 		    alignedAccelerationStructureSize,
+		    ERhiRayTracingAccelerationStructureType::TopLevel,
 		    L"RayTracingTlas");
 		m_accelerationStructureSizeInBytes = alignedAccelerationStructureSize;
 	}

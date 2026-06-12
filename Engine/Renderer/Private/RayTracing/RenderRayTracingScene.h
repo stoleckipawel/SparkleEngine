@@ -29,7 +29,7 @@ class RenderRayTracingScene final
 
 	bool IsAvailable() const noexcept { return m_capabilityReport.SupportsRayTracing; }
 	bool HasValidTlas() const noexcept { return m_tlasBuilder != nullptr && m_tlasBuilder->GetTlas().IsValid(); }
-	NativeResourceHandle GetTlasResource() const noexcept;
+	RhiOwnedResourceHandle GetTlasResource() const noexcept;
 	RhiGpuVirtualAddress GetTlasGpuAddress() const noexcept;
 	std::uint32_t GetTlasInstanceCount() const noexcept;
 	const RayTracingCapabilityReport& GetCapabilities() const noexcept { return m_capabilityReport; }

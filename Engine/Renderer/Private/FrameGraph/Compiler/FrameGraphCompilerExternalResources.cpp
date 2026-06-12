@@ -29,5 +29,10 @@ void FrameGraphCompilerExternalResources::ValidateResourceBoundaryState(
 
 bool FrameGraphCompilerExternalResources::ShouldRestoreFinalState(const FrameGraphResourceNode& resource) noexcept
 {
+	if (resource.finalState == ResourceState::Undefined)
+	{
+		return false;
+	}
+
 	return resource.ownership != FrameGraphResourceOwnership::Transient || resource.kind == FrameGraphResourceKind::DepthStencil;
 }

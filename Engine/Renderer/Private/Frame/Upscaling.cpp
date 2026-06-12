@@ -66,7 +66,15 @@ void AddExternalProviderEvaluationPass(
 
 		    if (!result.ProducedOutput || result.UsedFallback)
 		    {
+			    context.Commands.TransitionResource(
+			        context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
+			        ResourceState::UnorderedAccess,
+			        ResourceState::CopyDest);
 			    context.Resources.CopyTexture(context.Commands, sceneTargets.FinalSceneColor, sceneTargets.SceneColor);
+			    context.Commands.TransitionResource(
+			        context.Resources.ResolveResource(sceneTargets.FinalSceneColor),
+			        ResourceState::CopyDest,
+			        ResourceState::UnorderedAccess);
 		    }
 	    });
 }

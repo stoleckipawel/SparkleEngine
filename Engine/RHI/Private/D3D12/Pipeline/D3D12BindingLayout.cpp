@@ -293,6 +293,7 @@ class D3D12BindingLayoutCompilerImpl final
 				    CompiledBinding{
 				        .Name = bindingNames.back().c_str(),
 				        .Type = CompiledBindingType::PushConstants,
+				        .SemanticKind = bindingRecord.SemanticKind,
 				        .BindingIndex = bindingIndex,
 				        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 				        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -306,6 +307,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = CompiledBindingType::ConstantBuffer,
+			        .SemanticKind = bindingRecord.SemanticKind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -347,6 +349,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = bindingType,
+			        .SemanticKind = bindingRecord.SemanticKind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,
@@ -384,6 +387,7 @@ class D3D12BindingLayoutCompilerImpl final
 			    CompiledBinding{
 			        .Name = bindingNames.back().c_str(),
 			        .Type = CompiledBindingType::ReadOnlyAddress,
+			        .SemanticKind = bindingRecord.SemanticKind,
 			        .BindingIndex = bindingIndex,
 			        .BindingPoint = RhiBindingPoint{.Set = registerSpace, .Binding = shaderRegister},
 			        .VisibilityMask = reflectedLocation.VisibilityMask,

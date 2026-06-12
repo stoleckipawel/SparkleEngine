@@ -67,7 +67,7 @@ class SPARKLE_RENDERER_API Renderer final
 	void PrepareHostFrame() noexcept;
 	void RecordHostFrame() noexcept;
 	void SubmitHostFrame() noexcept;
-	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept;
+	std::uint64_t ResolveRenderProductTextureId(RenderProductHandle handle) noexcept;
 	NativeResourceHandle ResolveRenderProductResource(RenderProductHandle handle) const noexcept;
 	void TransitionRenderProduct(RenderProductHandle handle, ResourceState before, ResourceState after) noexcept;
 
@@ -78,8 +78,10 @@ class SPARKLE_RENDERER_API Renderer final
 	void InitializeCoreSystems() noexcept;
 	void InitializeSceneSystems(LevelManager& levelManager) noexcept;
 	void InitializeFrameGraph() noexcept;
+	void InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept;
 	void BindWindowResizeEvent() noexcept;
 	void RefreshFrameExecution() noexcept;
+	void RefreshFrameExecution(RenderViewportExtent sceneExtent) noexcept;
 	bool ShouldPresentSceneToBackBuffer() const noexcept;
 	RenderViewportExtent ResolveSceneExtent() const noexcept;
 	void BeginFrame() noexcept;

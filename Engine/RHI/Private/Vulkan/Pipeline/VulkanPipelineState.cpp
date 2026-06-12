@@ -57,6 +57,17 @@ namespace
 		    .reference = 0};
 	}
 
+	bool HasStencilAspect(PixelFormat format) noexcept
+	{
+		switch (format)
+		{
+			case PixelFormat::D24_UNorm_S8_UInt:
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	void HandlePipelineCreateFailure(std::string_view debugName, const char* functionName, VkResult result)
 	{
 		Diagnostics::Fail(
@@ -211,7 +222,8 @@ VulkanPipelineState::VulkanPipelineState(VulkanRhi& rhi, const GraphicsPipelineS
 	    .colorAttachmentCount = desc.RenderTargetCount,
 	    .pColorAttachmentFormats = renderTargetFormats.data(),
 	    .depthAttachmentFormat = VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat),
-	    .stencilAttachmentFormat = VK_FORMAT_UNDEFINED};
+	    .stencilAttachmentFormat =
+	        HasStencilAspect(desc.DepthStencilFormat) ? VulkanTypeConversions::ToVkFormat(desc.DepthStencilFormat) : VK_FORMAT_UNDEFINED};
 
 	const VulkanPipelineCacheKey cacheKey{
 	    .Layout = reinterpret_cast<std::uint64_t>(GetPipelineLayout()),

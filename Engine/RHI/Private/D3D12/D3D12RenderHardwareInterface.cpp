@@ -833,6 +833,7 @@ RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingScratchBuff
 
 RhiOwnedResourceHandle D3D12RenderHardwareInterface::CreateRayTracingAccelerationStructureBuffer(
     std::uint64_t sizeInBytes,
+    ERhiRayTracingAccelerationStructureType,
     std::wstring_view debugName)
 {
 	const std::uint64_t asAlignment =
@@ -1103,6 +1104,11 @@ RhiGpuDescriptorHandle D3D12RenderHardwareInterface::GetResourceViewGpuHandle(Rh
 {
 	const ResourceViewRecord* const record = FindResourceViewRecord(view);
 	return record != nullptr ? record->descriptorAllocation.GpuHandle : RhiGpuDescriptorHandle{};
+}
+
+std::uint64_t D3D12RenderHardwareInterface::ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept
+{
+	return shaderResourceView.Value;
 }
 
 bool D3D12RenderHardwareInterface::WriteD3D12ResourceViewDescriptor(

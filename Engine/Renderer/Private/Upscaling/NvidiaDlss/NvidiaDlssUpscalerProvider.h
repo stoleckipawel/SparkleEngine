@@ -32,4 +32,8 @@ class NvidiaDlssUpscalerProvider final : public IUpscalerProvider
 	EUpscalerQualityMode m_qualityMode = EUpscalerQualityMode::Quality;
 	RenderViewportExtent m_renderExtent = {};
 	RenderViewportExtent m_outputExtent = {};
+	RenderViewportExtent m_lastObservedRenderExtent = {};
+	RenderViewportExtent m_lastObservedOutputExtent = {};
+	std::uint32_t m_stableExtentFrameCount = 0;
+	bool m_extentReadyForEvaluation = false;
 };

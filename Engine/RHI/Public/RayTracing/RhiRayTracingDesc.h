@@ -20,6 +20,12 @@ struct RhiRayTracingCapabilities
 	std::uint32_t InstanceDescSizeInBytes = 0;
 };
 
+enum class ERhiRayTracingAccelerationStructureType : std::uint8_t
+{
+	BottomLevel,
+	TopLevel,
+};
+
 struct RhiRayTracingGeometryDesc
 {
 	RhiGpuVirtualAddress VertexBuffer = 0;

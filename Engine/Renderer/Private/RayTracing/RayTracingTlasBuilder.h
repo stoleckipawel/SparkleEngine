@@ -24,7 +24,7 @@ class RayTracingTlasBuilder final
 
 	struct TlasHandle final
 	{
-		NativeResourceHandle resource = {};
+		RhiOwnedResourceHandle resource = {};
 		RhiGpuVirtualAddress gpuAddress = 0;
 		std::uint32_t instanceCount = 0;
 

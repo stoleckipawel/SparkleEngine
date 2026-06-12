@@ -139,7 +139,7 @@ void Renderer::SubmitHostFrame() noexcept
 	EndFrame();
 }
 
-std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle) const noexcept
+std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle) noexcept
 {
 	if (!handle || !m_frameGraph)
 	{
@@ -147,7 +147,7 @@ std::uint64_t Renderer::ResolveRenderProductTextureId(RenderProductHandle handle
 	}
 
 	const FrameGraphResourceHandle resourceHandle{static_cast<std::uint32_t>(handle.Value - 1ull)};
-	return m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}).Value;
+	return GetRenderHardwareInterface().ResolveImGuiTextureId(m_frameGraph->ResolveShaderResourceView(FrameGraphTextureHandle{resourceHandle}));
 }
 
 NativeResourceHandle Renderer::ResolveRenderProductResource(RenderProductHandle handle) const noexcept
@@ -271,11 +271,16 @@ bool Renderer::ShouldPresentSceneToBackBuffer() const noexcept
 
 void Renderer::InitializeFrameGraph() noexcept
 {
+	InitializeFrameGraph(ResolveSceneExtent());
+}
+
+void Renderer::InitializeFrameGraph(RenderViewportExtent sceneExtent) noexcept
+{
 	SPARKLE_CPU_SCOPE("Renderer.InitializeFrameGraph");
 	const FrameGraphDependencies dependencies{
 	    GetRenderHardwareInterface(),
 	    *m_window,
-	    ResolveSceneExtent(),
+	    sceneExtent,
 	    ShouldPresentSceneToBackBuffer()};
 
 	FrameGraphFactory frameGraphFactory(dependencies);
@@ -314,13 +319,18 @@ void Renderer::BindWindowResizeEvent() noexcept
 
 void Renderer::RefreshFrameExecution() noexcept
 {
+	RefreshFrameExecution(ResolveSceneExtent());
+}
+
+void Renderer::RefreshFrameExecution(RenderViewportExtent sceneExtent) noexcept
+{
 	if (m_backend)
 	{
 		m_backend->Flush();
 	}
 
 	m_frameGraph.reset();
-	InitializeFrameGraph();
+	InitializeFrameGraph(sceneExtent);
 	if (m_upscalerSubsystem != nullptr)
 	{
 		m_upscalerSubsystem->OnResize(m_frameGraphSceneExtent, m_frameGraphSceneExtent);
@@ -346,7 +356,7 @@ void Renderer::BeginFrame() noexcept
 		{
 			m_backend->Flush();
 			m_backend->ResizeSwapChain();
-			RefreshFrameExecution();
+			RefreshFrameExecution(ResolveSceneExtent());
 		}
 	}
 
@@ -361,7 +371,7 @@ void Renderer::BeginFrame() noexcept
 		{
 			m_upscalerSubsystem->ResetHistory("Scene extent changed");
 		}
-		RefreshFrameExecution();
+		RefreshFrameExecution(sceneExtent);
 	}
 
 	m_backend->BeginFrame();
@@ -428,6 +438,7 @@ void Renderer::RecordFrame() noexcept
 		    *m_sceneSnapshot,
 		    renderHardwareInterface,
 		    *m_renderCamera,
+		    m_frameGraphSceneExtent,
 		    *m_renderSceneDataBuilder,
 		    *m_perViewDataBuilder,
 		    *m_viewLightingBuilder,

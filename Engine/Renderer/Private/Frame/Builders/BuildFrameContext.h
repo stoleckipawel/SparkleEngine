@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Renderer/Public/Viewport/ViewportContracts.h"
+
 class PerViewDataBuilder;
 class RenderCamera;
 class RenderHardwareInterface;
@@ -13,6 +15,7 @@ FrameContext BuildFrameContext(
     const RenderSceneSnapshot& sceneSnapshot,
     RenderHardwareInterface& renderHardwareInterface,
     const RenderCamera& renderCamera,
+    RenderViewportExtent sceneExtent,
     RenderSceneDataBuilder& renderSceneDataBuilder,
     PerViewDataBuilder& perViewDataBuilder,
     ViewLightingBuilder& viewLightingBuilder,

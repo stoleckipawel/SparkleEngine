@@ -181,6 +181,7 @@ bool RayTracingBlasCache::EnsureEntryResources(
 		    m_renderHardwareInterface->GetCapabilities().RayTracing.AccelerationStructureByteAlignment);
 		entry.accelerationStructureBuffer = m_renderHardwareInterface->CreateRayTracingAccelerationStructureBuffer(
 		    alignedAccelerationStructureSize,
+		    ERhiRayTracingAccelerationStructureType::BottomLevel,
 		    L"RayTracingBlas");
 		entry.accelerationStructureSizeInBytes = alignedAccelerationStructureSize;
 	}

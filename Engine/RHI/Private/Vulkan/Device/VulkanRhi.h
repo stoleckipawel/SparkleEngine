@@ -29,9 +29,11 @@ struct VulkanFeatureStatus final
 	bool SupportsSynchronization2 = false;
 	bool SupportsDynamicRendering = false;
 	bool SupportsSamplerAnisotropy = false;
+	bool SupportsFillModeNonSolid = false;
 	bool EnabledSynchronization2 = false;
 	bool EnabledDynamicRendering = false;
 	bool EnabledSamplerAnisotropy = false;
+	bool EnabledFillModeNonSolid = false;
 	VulkanRayTracingFeatureStatus RayTracing;
 };
 
@@ -64,9 +66,18 @@ class VulkanRhi final
 	const std::vector<std::string>& GetEnabledInstanceExtensions() const noexcept { return m_enabledInstanceExtensions; }
 	const std::vector<std::string>& GetEnabledDeviceExtensions() const noexcept { return m_enabledDeviceExtensions; }
 	bool IsValidationEnabled() const noexcept { return m_validationEnabled; }
-	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept
+	RhiRayTracingCapabilities GetRayTracingCapabilities() const noexcept { return m_rayTracingCapabilities; }
+	PFN_vkGetBufferDeviceAddress GetGetBufferDeviceAddress() const noexcept { return m_getBufferDeviceAddress; }
+	PFN_vkCreateAccelerationStructureKHR GetCreateAccelerationStructure() const noexcept { return m_createAccelerationStructure; }
+	PFN_vkDestroyAccelerationStructureKHR GetDestroyAccelerationStructure() const noexcept { return m_destroyAccelerationStructure; }
+	PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizes() const noexcept
 	{
-		return RhiRayTracingCapabilities{.SupportsRayTracing = false, .SupportsInlineRayQuery = false};
+		return m_getAccelerationStructureBuildSizes;
+	}
+	PFN_vkCmdBuildAccelerationStructuresKHR GetCmdBuildAccelerationStructures() const noexcept { return m_cmdBuildAccelerationStructures; }
+	PFN_vkGetAccelerationStructureDeviceAddressKHR GetAccelerationStructureDeviceAddress() const noexcept
+	{
+		return m_getAccelerationStructureDeviceAddress;
 	}
 
   private:
@@ -85,6 +96,8 @@ class VulkanRhi final
 	void SelectPhysicalDevice() noexcept;
 	void CreateLogicalDevice() noexcept;
 	void LoadDeviceDebugFunctions() noexcept;
+	void LoadRayTracingFunctions() noexcept;
+	void BuildRayTracingCapabilities() noexcept;
 	void NameBootstrapObjects() noexcept;
 	void LogBootstrapSummary() noexcept;
 	void PushDiagnosticMessage(ERhiDiagnosticMessageSeverity severity, ERhiDiagnosticMessageCategory category, std::string text) noexcept;
@@ -116,6 +129,13 @@ class VulkanRhi final
 	PFN_vkCmdInsertDebugUtilsLabelEXT m_cmdInsertDebugUtilsLabel = nullptr;
 	VulkanAdapterInfo m_adapterInfo;
 	VulkanFeatureStatus m_featureStatus;
+	RhiRayTracingCapabilities m_rayTracingCapabilities;
+	PFN_vkGetBufferDeviceAddress m_getBufferDeviceAddress = nullptr;
+	PFN_vkCreateAccelerationStructureKHR m_createAccelerationStructure = nullptr;
+	PFN_vkDestroyAccelerationStructureKHR m_destroyAccelerationStructure = nullptr;
+	PFN_vkGetAccelerationStructureBuildSizesKHR m_getAccelerationStructureBuildSizes = nullptr;
+	PFN_vkCmdBuildAccelerationStructuresKHR m_cmdBuildAccelerationStructures = nullptr;
+	PFN_vkGetAccelerationStructureDeviceAddressKHR m_getAccelerationStructureDeviceAddress = nullptr;
 	std::vector<std::string> m_enabledInstanceExtensions;
 	std::vector<std::string> m_enabledDeviceExtensions;
 	std::vector<std::string> m_enabledLayers;

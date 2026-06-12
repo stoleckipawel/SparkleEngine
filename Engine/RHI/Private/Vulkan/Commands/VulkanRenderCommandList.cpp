@@ -4,6 +4,7 @@
 
 #include "Vulkan/Descriptors/VulkanDescriptorAllocator.h"
 #include "Vulkan/Descriptors/VulkanDescriptorHandles.h"
+#include "Vulkan/Device/VulkanRhi.h"
 #include "Vulkan/Memory/VulkanGpuAllocation.h"
 #include "Vulkan/Memory/VulkanGpuMemoryAllocator.h"
 #include "Vulkan/Pipeline/VulkanBindingLayout.h"
@@ -15,18 +16,6 @@
 #include <string_view>
 
 static const auto g_vulkanRenderCommandListLogger = Logging::GetOrCreateLogger("RHI.Vulkan.CommandList");
-
-namespace
-{
-	void FailVulkanRayTracingCommandUnsupported(std::string_view operation) noexcept
-	{
-		Diagnostics::Fail(
-		    g_vulkanRenderCommandListLogger,
-		    __FILE__,
-		    __LINE__,
-		    std::format("Vulkan ray tracing command '{}' is deferred until VK_KHR_acceleration_structure support is implemented.", operation));
-	}
-}
 
 void VulkanRenderCommandList::CloseOpenRendering() noexcept
 {
@@ -49,6 +38,8 @@ void VulkanRenderCommandList::SetNativeCommandBuffer(
 	m_computeDescriptorSets.clear();
 	m_graphicsDirtyDescriptorSets.clear();
 	m_computeDirtyDescriptorSets.clear();
+	m_graphicsBoundDescriptorSets.clear();
+	m_computeBoundDescriptorSets.clear();
 	m_retainedDescriptorTables.clear();
 	m_retainedDescriptorHandles.clear();
 	m_retainedDescriptorBuffers.clear();
@@ -115,6 +106,7 @@ void VulkanRenderCommandList::SetGraphicsBindingLayout(const RenderBindingLayout
 	m_graphicsBindingLayout = static_cast<const VulkanBindingLayout*>(&bindingLayout);
 	m_graphicsDescriptorSets.assign(m_graphicsBindingLayout->GetDescriptorSetLayouts().size(), VK_NULL_HANDLE);
 	m_graphicsDirtyDescriptorSets.assign(m_graphicsDescriptorSets.size(), false);
+	m_graphicsBoundDescriptorSets.assign(m_graphicsDescriptorSets.size(), false);
 }
 
 void VulkanRenderCommandList::SetComputeBindingLayout(const RenderBindingLayout& bindingLayout) noexcept
@@ -122,6 +114,7 @@ void VulkanRenderCommandList::SetComputeBindingLayout(const RenderBindingLayout&
 	m_computeBindingLayout = static_cast<const VulkanBindingLayout*>(&bindingLayout);
 	m_computeDescriptorSets.assign(m_computeBindingLayout->GetDescriptorSetLayouts().size(), VK_NULL_HANDLE);
 	m_computeDirtyDescriptorSets.assign(m_computeDescriptorSets.size(), false);
+	m_computeBoundDescriptorSets.assign(m_computeDescriptorSets.size(), false);
 }
 
 void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIndex, RhiGpuVirtualAddress gpuAddress) noexcept
@@ -131,9 +124,23 @@ void VulkanRenderCommandList::BindGraphicsConstantBuffer(std::uint32_t bindingIn
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
-	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
+	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
+	{
+		VulkanGpuAllocationRecord* const record =
+		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
+		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		{
+			return;
+		}
+		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+	}
+	else
+	{
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
+		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
@@ -144,9 +151,23 @@ void VulkanRenderCommandList::BindGraphicsShaderResource(std::uint32_t bindingIn
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
-	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
+	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
+	{
+		VulkanGpuAllocationRecord* const record =
+		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
+		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		{
+			return;
+		}
+		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+	}
+	else
+	{
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
+		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
 }
 
@@ -162,7 +183,8 @@ void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingI
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
 	if (binding->Type != CompiledBindingType::SamplerTable)
 	{
 		m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
@@ -178,7 +200,8 @@ void VulkanRenderCommandList::BindGraphicsDescriptorTable(std::uint32_t bindingI
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets);
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_graphicsBindingLayout, binding->BindingPoint.Set, m_graphicsDescriptorSets, m_graphicsBoundDescriptorSets);
 	m_descriptorAllocator->WriteDescriptorHandle(descriptorSet, *binding, baseDescriptor);
 	m_retainedDescriptorHandles.push_back(baseDescriptor);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_graphicsDirtyDescriptorSets);
@@ -212,9 +235,23 @@ void VulkanRenderCommandList::BindComputeConstantBuffer(std::uint32_t bindingInd
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
-	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
+	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
+	{
+		VulkanGpuAllocationRecord* const record =
+		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
+		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		{
+			return;
+		}
+		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+	}
+	else
+	{
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
+		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
@@ -225,9 +262,23 @@ void VulkanRenderCommandList::BindComputeShaderResource(std::uint32_t bindingInd
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
-	m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
-	m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
+	if (binding->SemanticKind == ShaderParameterSemanticKind::AccelerationStructure)
+	{
+		VulkanGpuAllocationRecord* const record =
+		    m_memoryAllocator != nullptr ? m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress) : nullptr;
+		if (record == nullptr || record->AccelerationStructure == VK_NULL_HANDLE)
+		{
+			return;
+		}
+		m_descriptorAllocator->WriteAccelerationStructureDescriptor(descriptorSet, *binding, record->AccelerationStructure);
+	}
+	else
+	{
+		m_descriptorAllocator->WriteBufferDescriptor(descriptorSet, *binding, reinterpret_cast<VkBuffer>(gpuAddress), 0, VK_WHOLE_SIZE);
+		m_retainedDescriptorBuffers.push_back(reinterpret_cast<VkBuffer>(gpuAddress));
+	}
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
 }
 
@@ -243,7 +294,8 @@ void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIn
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
 	if (binding->Type != CompiledBindingType::SamplerTable)
 	{
 		m_descriptorAllocator->WriteDescriptorTable(descriptorSet, *binding, tableBinding);
@@ -259,7 +311,8 @@ void VulkanRenderCommandList::BindComputeDescriptorTable(std::uint32_t bindingIn
 	{
 		return;
 	}
-	VkDescriptorSet descriptorSet = EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets);
+	VkDescriptorSet descriptorSet =
+	    EnsureDescriptorSet(m_computeBindingLayout, binding->BindingPoint.Set, m_computeDescriptorSets, m_computeBoundDescriptorSets);
 	m_descriptorAllocator->WriteDescriptorHandle(descriptorSet, *binding, baseDescriptor);
 	m_retainedDescriptorHandles.push_back(baseDescriptor);
 	MarkDescriptorSetDirty(binding->BindingPoint.Set, m_computeDirtyDescriptorSets);
@@ -295,7 +348,11 @@ void VulkanRenderCommandList::BindVertexBuffer(const RhiVertexBufferView& view) 
 		return;
 	}
 
-	const VkBuffer buffer = reinterpret_cast<VkBuffer>(view.BufferLocation);
+	const VkBuffer buffer = ResolveBuffer(view.BufferLocation);
+	if (buffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
 	constexpr VkDeviceSize offset = 0;
 	vkCmdBindVertexBuffers(m_commandBuffer, 0, 1, &buffer, &offset);
 }
@@ -307,7 +364,11 @@ void VulkanRenderCommandList::BindIndexBuffer(const RhiIndexBufferView& view) no
 		return;
 	}
 
-	const VkBuffer buffer = reinterpret_cast<VkBuffer>(view.BufferLocation);
+	const VkBuffer buffer = ResolveBuffer(view.BufferLocation);
+	if (buffer == VK_NULL_HANDLE)
+	{
+		return;
+	}
 	vkCmdBindIndexBuffer(m_commandBuffer, buffer, 0, VulkanTypeConversions::ToVkIndexType(view.Format));
 }
 
@@ -496,20 +557,152 @@ void VulkanRenderCommandList::Dispatch(std::uint32_t groupCountX, std::uint32_t 
 }
 
 void VulkanRenderCommandList::BuildBottomLevelAccelerationStructure(
-    const RhiRayTracingGeometryDesc&,
-    RhiGpuVirtualAddress,
-    RhiGpuVirtualAddress) noexcept
+    const RhiRayTracingGeometryDesc& geometry,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	FailVulkanRayTracingCommandUnsupported("BuildBottomLevelAccelerationStructure");
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
+	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || scratchGpuAddress == 0 || resultGpuAddress == 0)
+	{
+		return;
+	}
+	EndDynamicRenderingIfNeeded();
+
+	VulkanGpuAllocationRecord* const resultRecord = m_memoryAllocator->FindAllocationRecordByDeviceAddress(resultGpuAddress);
+	if (resultRecord == nullptr || resultRecord->AccelerationStructure == VK_NULL_HANDLE ||
+	    resultRecord->AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR)
+	{
+		return;
+	}
+
+	const VkAccelerationStructureGeometryTrianglesDataKHR triangles{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR,
+	    .pNext = nullptr,
+	    .vertexFormat = VK_FORMAT_R32G32B32_SFLOAT,
+	    .vertexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.VertexBuffer},
+	    .vertexStride = geometry.VertexStrideInBytes,
+	    .maxVertex = geometry.VertexCount > 0 ? geometry.VertexCount - 1u : 0u,
+	    .indexType = VulkanTypeConversions::ToVkIndexType(geometry.IndexFormat),
+	    .indexData = VkDeviceOrHostAddressConstKHR{.deviceAddress = geometry.IndexBuffer},
+	    .transformData = VkDeviceOrHostAddressConstKHR{.deviceAddress = 0}};
+	const VkAccelerationStructureGeometryKHR nativeGeometry{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
+	    .pNext = nullptr,
+	    .geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR,
+	    .geometry = VkAccelerationStructureGeometryDataKHR{.triangles = triangles},
+	    .flags = geometry.Opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0u};
+	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
+	    .pNext = nullptr,
+	    .type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
+	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+	    .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
+	    .srcAccelerationStructure = VK_NULL_HANDLE,
+	    .dstAccelerationStructure = resultRecord->AccelerationStructure,
+	    .geometryCount = 1,
+	    .pGeometries = &nativeGeometry,
+	    .ppGeometries = nullptr,
+	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = scratchGpuAddress}};
+	const std::uint32_t primitiveCount = geometry.IndexCount / 3u;
+	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{
+	    .primitiveCount = primitiveCount,
+	    .primitiveOffset = 0,
+	    .firstVertex = 0,
+	    .transformOffset = 0};
+	const VkAccelerationStructureBuildRangeInfoKHR* rangeInfos[] = {&rangeInfo};
+	m_rhi->GetCmdBuildAccelerationStructures()(m_commandBuffer, 1, &buildInfo, rangeInfos);
+
+	const VkMemoryBarrier2 buildBarrier{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+	                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 1,
+	    .pMemoryBarriers = &buildBarrier,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
 void VulkanRenderCommandList::BuildTopLevelAccelerationStructure(
-    RhiGpuVirtualAddress,
-    std::uint32_t,
-    RhiGpuVirtualAddress,
-    RhiGpuVirtualAddress) noexcept
+    RhiGpuVirtualAddress instanceDescsGpuAddress,
+    std::uint32_t instanceCount,
+    RhiGpuVirtualAddress scratchGpuAddress,
+    RhiGpuVirtualAddress resultGpuAddress) noexcept
 {
-	FailVulkanRayTracingCommandUnsupported("BuildTopLevelAccelerationStructure");
+	if (m_commandBuffer == VK_NULL_HANDLE || m_rhi == nullptr || m_memoryAllocator == nullptr ||
+	    m_rhi->GetCmdBuildAccelerationStructures() == nullptr || instanceDescsGpuAddress == 0 || instanceCount == 0 ||
+	    scratchGpuAddress == 0 || resultGpuAddress == 0)
+	{
+		return;
+	}
+	EndDynamicRenderingIfNeeded();
+
+	VulkanGpuAllocationRecord* const resultRecord = m_memoryAllocator->FindAllocationRecordByDeviceAddress(resultGpuAddress);
+	if (resultRecord == nullptr || resultRecord->AccelerationStructure == VK_NULL_HANDLE ||
+	    resultRecord->AccelerationStructureType != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+	{
+		return;
+	}
+
+	const VkAccelerationStructureGeometryInstancesDataKHR instances{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR,
+	    .pNext = nullptr,
+	    .arrayOfPointers = VK_FALSE,
+	    .data = VkDeviceOrHostAddressConstKHR{.deviceAddress = instanceDescsGpuAddress}};
+	const VkAccelerationStructureGeometryKHR geometry{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR,
+	    .pNext = nullptr,
+	    .geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR,
+	    .geometry = VkAccelerationStructureGeometryDataKHR{.instances = instances},
+	    .flags = VK_GEOMETRY_OPAQUE_BIT_KHR};
+	const VkAccelerationStructureBuildGeometryInfoKHR buildInfo{
+	    .sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR,
+	    .pNext = nullptr,
+	    .type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR,
+	    .flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR,
+	    .mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR,
+	    .srcAccelerationStructure = VK_NULL_HANDLE,
+	    .dstAccelerationStructure = resultRecord->AccelerationStructure,
+	    .geometryCount = 1,
+	    .pGeometries = &geometry,
+	    .ppGeometries = nullptr,
+	    .scratchData = VkDeviceOrHostAddressKHR{.deviceAddress = scratchGpuAddress}};
+	const VkAccelerationStructureBuildRangeInfoKHR rangeInfo{
+	    .primitiveCount = instanceCount,
+	    .primitiveOffset = 0,
+	    .firstVertex = 0,
+	    .transformOffset = 0};
+	const VkAccelerationStructureBuildRangeInfoKHR* rangeInfos[] = {&rangeInfo};
+	m_rhi->GetCmdBuildAccelerationStructures()(m_commandBuffer, 1, &buildInfo, rangeInfos);
+
+	const VkMemoryBarrier2 buildBarrier{
+	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+	    .pNext = nullptr,
+	    .srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+	    .srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
+	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+	    .dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR};
+	const VkDependencyInfo dependencyInfo{
+	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+	    .pNext = nullptr,
+	    .dependencyFlags = 0,
+	    .memoryBarrierCount = 1,
+	    .pMemoryBarriers = &buildBarrier,
+	    .bufferMemoryBarrierCount = 0,
+	    .pBufferMemoryBarriers = nullptr,
+	    .imageMemoryBarrierCount = 0,
+	    .pImageMemoryBarriers = nullptr};
+	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
 void VulkanRenderCommandList::CopyResource(NativeResourceHandle destinationResource, NativeResourceHandle sourceResource) noexcept
@@ -695,7 +888,7 @@ void VulkanRenderCommandList::TransitionResource(NativeResourceHandle resource, 
 	vkCmdPipelineBarrier2(m_commandBuffer, &dependencyInfo);
 }
 
-void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle) noexcept
+void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle resource) noexcept
 {
 	if (m_commandBuffer == VK_NULL_HANDLE)
 	{
@@ -703,15 +896,28 @@ void VulkanRenderCommandList::UnorderedAccessBarrier(NativeResourceHandle) noexc
 	}
 	EndDynamicRenderingIfNeeded();
 
+	VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+	VkAccessFlags2 srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+	VkPipelineStageFlags2 dstStageMask = srcStageMask;
+	VkAccessFlags2 dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+	VulkanGpuAllocationRecord* const record =
+	    m_memoryAllocator != nullptr && resource ? m_memoryAllocator->FindAllocationRecord(resource) : nullptr;
+	if (record != nullptr && record->AccelerationStructure != VK_NULL_HANDLE)
+	{
+		srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+		srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+		dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+		               VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+		dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	}
+
 	const VkMemoryBarrier2 memoryBarrier{
 	    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
 	    .pNext = nullptr,
-	    .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-	                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-	    .srcAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-	    .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-	                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
-	    .dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT};
+	    .srcStageMask = srcStageMask,
+	    .srcAccessMask = srcAccessMask,
+	    .dstStageMask = dstStageMask,
+	    .dstAccessMask = dstAccessMask};
 	const VkDependencyInfo dependencyInfo{
 	    .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
 	    .pNext = nullptr,
@@ -759,6 +965,23 @@ VkShaderStageFlags VulkanRenderCommandList::ToVkShaderStages(ShaderStageMask vis
 		result |= VK_SHADER_STAGE_COMPUTE_BIT;
 	}
 	return result != 0 ? result : VK_SHADER_STAGE_ALL;
+}
+
+VkBuffer VulkanRenderCommandList::ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept
+{
+	if (gpuAddress == 0)
+	{
+		return VK_NULL_HANDLE;
+	}
+	if (m_memoryAllocator != nullptr)
+	{
+		VulkanGpuAllocationRecord* const record = m_memoryAllocator->FindAllocationRecordByDeviceAddress(gpuAddress);
+		if (record != nullptr && record->Buffer != VK_NULL_HANDLE)
+		{
+			return record->Buffer;
+		}
+	}
+	return reinterpret_cast<VkBuffer>(gpuAddress);
 }
 
 void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
@@ -815,7 +1038,8 @@ void VulkanRenderCommandList::BeginDynamicRenderingIfNeeded() noexcept
 VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
     const VulkanBindingLayout* layout,
     std::uint32_t setIndex,
-    std::vector<VkDescriptorSet>& descriptorSets) noexcept
+    std::vector<VkDescriptorSet>& descriptorSets,
+    std::vector<bool>& boundSets) noexcept
 {
 	if (layout == nullptr || m_descriptorAllocator == nullptr || setIndex >= layout->GetDescriptorSetLayouts().size())
 	{
@@ -826,9 +1050,19 @@ VkDescriptorSet VulkanRenderCommandList::EnsureDescriptorSet(
 	{
 		descriptorSets.resize(setIndex + 1u, VK_NULL_HANDLE);
 	}
-	if (descriptorSets[setIndex] == VK_NULL_HANDLE)
+	if (boundSets.size() <= setIndex)
 	{
+		boundSets.resize(setIndex + 1u, false);
+	}
+	if (descriptorSets[setIndex] == VK_NULL_HANDLE || boundSets[setIndex])
+	{
+		const VkDescriptorSet previousSet = descriptorSets[setIndex];
 		descriptorSets[setIndex] = m_descriptorAllocator->AllocateTransientSet(layout->GetDescriptorSetLayouts()[setIndex]);
+		if (previousSet != VK_NULL_HANDLE && boundSets[setIndex] && descriptorSets[setIndex] != VK_NULL_HANDLE)
+		{
+			CopyDescriptorSet(layout, setIndex, previousSet, descriptorSets[setIndex]);
+		}
+		boundSets[setIndex] = false;
 	}
 	return descriptorSets[setIndex];
 }
@@ -844,6 +1078,48 @@ void VulkanRenderCommandList::BindDescriptorSet(
 		return;
 	}
 	vkCmdBindDescriptorSets(m_commandBuffer, bindPoint, pipelineLayout, setIndex, 1, &descriptorSet, 0, nullptr);
+}
+
+void VulkanRenderCommandList::CopyDescriptorSet(
+    const VulkanBindingLayout* layout,
+    std::uint32_t setIndex,
+    VkDescriptorSet sourceSet,
+    VkDescriptorSet destinationSet) noexcept
+{
+	if (m_rhi == nullptr || layout == nullptr || sourceSet == VK_NULL_HANDLE || destinationSet == VK_NULL_HANDLE)
+	{
+		return;
+	}
+
+	std::vector<VkCopyDescriptorSet> copies;
+	copies.reserve(layout->GetBindingCount());
+	const CompiledBinding* const bindings = layout->GetBindings();
+	for (std::size_t bindingIndex = 0; bindingIndex < layout->GetBindingCount(); ++bindingIndex)
+	{
+		const CompiledBinding& binding = bindings[bindingIndex];
+		if (binding.BindingPoint.Set != setIndex || binding.Type == CompiledBindingType::PushConstants ||
+		    binding.Type == CompiledBindingType::SamplerTable)
+		{
+			continue;
+		}
+
+		copies.push_back(
+		    VkCopyDescriptorSet{
+		        .sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET,
+		        .pNext = nullptr,
+		        .srcSet = sourceSet,
+		        .srcBinding = binding.BindingPoint.Binding,
+		        .srcArrayElement = 0,
+		        .dstSet = destinationSet,
+		        .dstBinding = binding.BindingPoint.Binding,
+		        .dstArrayElement = 0,
+		        .descriptorCount = binding.DescriptorCount});
+	}
+
+	if (!copies.empty())
+	{
+		vkUpdateDescriptorSets(m_rhi->GetDevice(), 0, nullptr, static_cast<std::uint32_t>(copies.size()), copies.data());
+	}
 }
 
 void VulkanRenderCommandList::MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept
@@ -865,6 +1141,11 @@ void VulkanRenderCommandList::FlushGraphicsDescriptorSets() noexcept
 		}
 		BindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipelineLayout, setIndex, m_graphicsDescriptorSets[setIndex]);
 		m_graphicsDirtyDescriptorSets[setIndex] = false;
+		if (m_graphicsBoundDescriptorSets.size() <= setIndex)
+		{
+			m_graphicsBoundDescriptorSets.resize(static_cast<std::size_t>(setIndex) + 1u, false);
+		}
+		m_graphicsBoundDescriptorSets[setIndex] = true;
 	}
 }
 
@@ -878,6 +1159,11 @@ void VulkanRenderCommandList::FlushComputeDescriptorSets() noexcept
 		}
 		BindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, setIndex, m_computeDescriptorSets[setIndex]);
 		m_computeDirtyDescriptorSets[setIndex] = false;
+		if (m_computeBoundDescriptorSets.size() <= setIndex)
+		{
+			m_computeBoundDescriptorSets.resize(static_cast<std::size_t>(setIndex) + 1u, false);
+		}
+		m_computeBoundDescriptorSets[setIndex] = true;
 	}
 }
 

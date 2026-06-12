@@ -24,12 +24,7 @@ enum class EDlssProviderRuntimeState : std::uint8_t
 enum class EDlssFeatureKind : std::uint8_t
 {
 	SuperResolution = 0,
-	NativeAA = 1,
-	RayReconstruction = 2,
-	FrameGeneration = 3,
-	MultiFrameGeneration = 4,
-	DynamicMultiFrameGeneration = 5,
-	LatencyHook = 6
+	NativeAA = 1
 };
 
 enum class EDlssFeatureState : std::uint8_t
@@ -47,7 +42,6 @@ struct DlssFeatureMatrixEntry final
 	EDlssFeatureKind Feature = EDlssFeatureKind::SuperResolution;
 	EDlssFeatureState State = EDlssFeatureState::Unavailable;
 	bool Supported = false;
-	bool RequiresLatencyHook = false;
 	std::string QualityModes;
 	std::string ModelPresetRecommendation;
 	std::string RequiredResources;

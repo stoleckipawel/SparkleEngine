@@ -28,6 +28,17 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 
 	RayTracingSceneFrameData frameData{};
 	const std::uint32_t estimatedInstanceCount = static_cast<std::uint32_t>(sceneData.meshInstances.size());
+	if (estimatedInstanceCount == 0)
+	{
+		if (m_tlasBuilder->GetTlas().IsValid())
+		{
+			frameData.IsAvailable = true;
+			frameData.TlasResource = m_tlasBuilder->GetTlas().resource;
+			frameData.TlasGpuAddress = m_tlasBuilder->GetTlas().gpuAddress;
+		}
+		return frameData;
+	}
+
 	if (!m_tlasBuilder->Prepare(estimatedInstanceCount))
 	{
 		return frameData;
@@ -43,6 +54,11 @@ RayTracingSceneFrameData RenderRayTracingScene::Prepare(const RenderSceneData& s
 void RenderRayTracingScene::Build(RenderCommandContext& cmd, const RenderSceneData& sceneData) noexcept
 {
 	if (m_blasCache == nullptr || m_tlasBuilder == nullptr)
+	{
+		return;
+	}
+
+	if (sceneData.meshInstances.empty())
 	{
 		return;
 	}
@@ -66,9 +82,9 @@ void RenderRayTracingScene::Clear() noexcept
 	}
 }
 
-NativeResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept
+RhiOwnedResourceHandle RenderRayTracingScene::GetTlasResource() const noexcept
 {
-	return m_tlasBuilder != nullptr ? m_tlasBuilder->GetTlas().resource : NativeResourceHandle{};
+	return m_tlasBuilder != nullptr ? m_tlasBuilder->GetTlas().resource : RhiOwnedResourceHandle{};
 }
 
 RhiGpuVirtualAddress RenderRayTracingScene::GetTlasGpuAddress() const noexcept

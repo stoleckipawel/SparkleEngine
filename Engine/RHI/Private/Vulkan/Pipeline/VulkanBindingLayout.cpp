@@ -49,6 +49,7 @@ class VulkanBindingLayoutCompilerImpl final
 			CompiledBinding compiledBinding{};
 			compiledBinding.Name = bindingNames.back().c_str();
 			compiledBinding.Type = ToCompiledBindingType(bindingRecord.SemanticKind, desc.InlineUniformDataAsPushConstants);
+			compiledBinding.SemanticKind = bindingRecord.SemanticKind;
 			compiledBinding.BindingIndex = bindingRecord.LogicalBindingIndex;
 			compiledBinding.BindingPoint = RhiBindingPoint{.Set = location.Set, .Binding = location.Binding};
 			compiledBinding.VisibilityMask = bindingRecord.VisibilityMask;

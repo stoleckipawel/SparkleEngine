@@ -133,6 +133,25 @@ void FrameGraph::BindPersistentAccelerationStructure(
 	m_resourceStateTracker.UpdateCurrentState(resourceHandle, currentState);
 }
 
+void FrameGraph::BindPersistentAccelerationStructure(
+    FrameGraphAccelerationStructureHandle handle,
+    RhiOwnedResourceHandle resource,
+    RhiGpuVirtualAddress gpuAddress,
+    ResourceState currentState) noexcept
+{
+	if (m_renderHardwareInterface == nullptr || !resource)
+	{
+		ClearPersistentAccelerationStructureBinding(handle);
+		return;
+	}
+
+	BindPersistentAccelerationStructure(
+	    handle,
+	    m_renderHardwareInterface->GetNativeResource(resource),
+	    gpuAddress,
+	    currentState);
+}
+
 void FrameGraph::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept
 {
 	if (!handle.IsValid())

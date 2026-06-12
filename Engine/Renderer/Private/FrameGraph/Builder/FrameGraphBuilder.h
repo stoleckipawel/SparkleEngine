@@ -84,6 +84,11 @@ class FrameGraphBuilder final
 	    NativeResourceHandle resource,
 	    RhiGpuVirtualAddress gpuAddress,
 	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
+	void BindPersistentAccelerationStructure(
+	    FrameGraphAccelerationStructureHandle handle,
+	    RhiOwnedResourceHandle resource,
+	    RhiGpuVirtualAddress gpuAddress,
+	    ResourceState currentState = ResourceState::RayTracingAccelerationStructure) noexcept;
 	void ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept;
 
 	template <typename TValue = void> ShaderTexture2D<TValue> Read(FrameGraphTextureHandle handle) const noexcept

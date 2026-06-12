@@ -25,6 +25,9 @@ struct VulkanGpuAllocationRecord final
 {
 	VkBuffer Buffer = VK_NULL_HANDLE;
 	VkImage Image = VK_NULL_HANDLE;
+	VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
+	VkDeviceAddress DeviceAddress = 0;
+	VkAccelerationStructureTypeKHR AccelerationStructureType = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 	VmaAllocation_T* Allocation = nullptr;
 	VulkanGpuMemoryBlockRecord* ParentMemoryBlock = nullptr;
 	VulkanGpuAllocationResourceKind ResourceKind = VulkanGpuAllocationResourceKind::Unknown;

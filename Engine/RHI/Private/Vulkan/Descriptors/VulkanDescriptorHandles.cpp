@@ -15,7 +15,8 @@ RhiGpuDescriptorHandle VulkanDescriptorHandles::MakeGpuDescriptorHandle(std::uin
 RhiCpuDescriptorHandle VulkanDescriptorHandles::MakeCpuDescriptorHandle(std::uint32_t tableIndex, std::uint32_t descriptorIndex) noexcept
 {
 	return RhiCpuDescriptorHandle{
-	    CpuDescriptorMagic | (static_cast<std::uintptr_t>(tableIndex + 1u) << 24u) | static_cast<std::uintptr_t>(descriptorIndex + 1u)};
+	    CpuDescriptorMagic | (static_cast<std::uintptr_t>(tableIndex + 1u) << CpuDescriptorTableShift) |
+	    static_cast<std::uintptr_t>(descriptorIndex + 1u)};
 }
 
 bool VulkanDescriptorHandles::DecodeGpuDescriptorHandle(RhiGpuDescriptorHandle handle, std::uint32_t& outIndex) noexcept
@@ -38,12 +39,13 @@ bool VulkanDescriptorHandles::DecodeCpuDescriptorHandle(
     std::uint32_t& outTableIndex,
     std::uint32_t& outDescriptorIndex) noexcept
 {
-	if ((handle.Value & static_cast<std::uintptr_t>(0xFFFFFFFF00000000ull)) != CpuDescriptorMagic)
+	if ((handle.Value & CpuDescriptorMagicMask) != CpuDescriptorMagic)
 	{
 		return false;
 	}
-	const std::uint32_t encodedTableIndex = static_cast<std::uint32_t>((handle.Value >> 24u) & 0xFFFFFFu);
-	const std::uint32_t encodedDescriptorIndex = static_cast<std::uint32_t>(handle.Value & 0xFFFFFFu);
+	const std::uint32_t encodedTableIndex =
+	    static_cast<std::uint32_t>((handle.Value >> CpuDescriptorTableShift) & CpuDescriptorIndexMask);
+	const std::uint32_t encodedDescriptorIndex = static_cast<std::uint32_t>(handle.Value & CpuDescriptorIndexMask);
 	if (encodedTableIndex == 0 || encodedDescriptorIndex == 0)
 	{
 		return false;

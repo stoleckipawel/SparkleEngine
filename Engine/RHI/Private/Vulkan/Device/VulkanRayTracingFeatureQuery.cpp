@@ -44,8 +44,12 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	status.SupportsRayQueryExtension = IsDeviceExtensionAvailable(physicalDevice, VK_KHR_RAY_QUERY_EXTENSION_NAME);
 	status.SupportsDeferredHostOperationsExtension =
 	    IsDeviceExtensionAvailable(physicalDevice, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	status.SupportsBufferDeviceAddressExtension =
+	    IsDeviceExtensionAvailable(physicalDevice, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
 	VkPhysicalDeviceFeatures2 features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{
+	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES};
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures{
 	    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR};
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{
@@ -53,6 +57,8 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR};
 
 	void** next = &features.pNext;
+	*next = &bufferDeviceAddressFeatures;
+	next = &bufferDeviceAddressFeatures.pNext;
 	if (status.SupportsAccelerationStructureExtension)
 	{
 		*next = &accelerationStructureFeatures;
@@ -69,9 +75,12 @@ VulkanRayTracingFeatureStatus VulkanRayTracingFeatureQuery::Query(VkPhysicalDevi
 	}
 
 	vkGetPhysicalDeviceFeatures2(physicalDevice, &features);
+	status.SupportsBufferDeviceAddressFeature = bufferDeviceAddressFeatures.bufferDeviceAddress == VK_TRUE;
 	status.SupportsAccelerationStructureFeature = accelerationStructureFeatures.accelerationStructure == VK_TRUE;
 	status.SupportsRayTracingPipelineFeature = rayTracingPipelineFeatures.rayTracingPipeline == VK_TRUE;
 	status.SupportsRayQueryFeature = rayQueryFeatures.rayQuery == VK_TRUE;
-	status.EnabledBackend = false;
+	status.EnabledBackend = status.SupportsAccelerationStructureExtension && status.SupportsRayQueryExtension &&
+	                        status.SupportsDeferredHostOperationsExtension && status.SupportsBufferDeviceAddressFeature &&
+	                        status.SupportsAccelerationStructureFeature && status.SupportsRayQueryFeature;
 	return status;
 }

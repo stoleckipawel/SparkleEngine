@@ -229,9 +229,14 @@ if(SPARKLE_RHI_WITH_VULKAN)
         ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan/*.h
     )
 
+    set(SPARKLE_RHI_VULKAN_THIRD_PARTY_SOURCES
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+    )
+
     add_library(SparkleRHI_Vulkan STATIC
         ${SPARKLE_RHI_VULKAN_SOURCES}
         ${SPARKLE_RHI_VULKAN_HEADERS}
+        ${SPARKLE_RHI_VULKAN_THIRD_PARTY_SOURCES}
     )
 
     sparkle_configure_rhi_implementation_target(SparkleRHI_Vulkan)
@@ -239,6 +244,7 @@ if(SPARKLE_RHI_WITH_VULKAN)
     target_link_libraries(SparkleRHI_Vulkan
         PUBLIC
             SparkleCore
+            imgui
         PRIVATE
             SparklePlatform
             Vulkan::Vulkan
@@ -292,6 +298,11 @@ if(SPARKLE_RHI_WITH_D3D12)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/D3D12 PREFIX "Private\\D3D12" FILES ${SPARKLE_RHI_D3D12_SOURCES} ${SPARKLE_RHI_D3D12_HEADERS})
     source_group("ThirdParty\\ImGui\\D3D12" FILES ${SPARKLE_RHI_D3D12_THIRD_PARTY_SOURCES})
     source_group("ThirdParty\\D3D12MA" FILES ${SPARKLE_D3D12MA_SOURCES})
+endif()
+
+if(SPARKLE_RHI_WITH_VULKAN)
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private/Vulkan PREFIX "Private\\Vulkan" FILES ${SPARKLE_RHI_VULKAN_SOURCES} ${SPARKLE_RHI_VULKAN_HEADERS})
+    source_group("ThirdParty\\ImGui\\Vulkan" FILES ${SPARKLE_RHI_VULKAN_THIRD_PARTY_SOURCES})
 endif()
 
 if(SPARKLE_RHI_WITH_VULKAN)

@@ -116,7 +116,10 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount) const noexcept override;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
+	    std::uint64_t sizeInBytes,
+	    ERhiRayTracingAccelerationStructureType type,
+	    std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
@@ -143,6 +146,7 @@ class D3D12RenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
+	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
 	void BeginPresentOverlayPass() noexcept override;

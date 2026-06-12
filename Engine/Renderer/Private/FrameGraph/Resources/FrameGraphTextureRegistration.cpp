@@ -95,10 +95,8 @@ FrameGraphTextureHandle FrameGraph::CreateTexture(const FrameGraphTextureDesc& d
 	    handle,
 	    resolvedDesc,
 	    kind,
-	    kind == FrameGraphResourceKind::DepthStencil ? ResourceState::DepthRead : ResourceState::Common);
-	m_resourceStateTracker.RegisterResource(
-	    handle,
-	    kind == FrameGraphResourceKind::DepthStencil ? ResourceState::DepthRead : ResourceState::Common);
+	    ResourceState::Undefined);
+	m_resourceStateTracker.RegisterResource(handle, ResourceState::Undefined);
 	m_resourceResolver.ClearResolvedAccess(handle);
 	return FrameGraphTextureHandle{handle};
 }

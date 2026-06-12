@@ -4,6 +4,7 @@
 
 enum class ResourceState : std::uint8_t
 {
+	Undefined,
 	Common,
 	RenderTarget,
 	DepthWrite,
@@ -22,6 +23,8 @@ constexpr const char* ResourceStateToString(ResourceState state) noexcept
 {
 	switch (state)
 	{
+		case ResourceState::Undefined:
+			return "Undefined";
 		case ResourceState::Common:
 			return "Common";
 		case ResourceState::RenderTarget:

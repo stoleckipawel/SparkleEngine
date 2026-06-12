@@ -204,6 +204,7 @@ bool VulkanTypeConversions::IsBufferResourceStateSupported(ResourceState state) 
 		case ResourceState::CopySource:
 		case ResourceState::CopyDest:
 			return true;
+		case ResourceState::Undefined:
 		case ResourceState::RenderTarget:
 		case ResourceState::DepthWrite:
 		case ResourceState::DepthRead:
@@ -218,6 +219,7 @@ bool VulkanTypeConversions::IsImageResourceStateSupported(ResourceState state) n
 {
 	switch (state)
 	{
+		case ResourceState::Undefined:
 		case ResourceState::Common:
 		case ResourceState::RenderTarget:
 		case ResourceState::DepthWrite:
@@ -239,6 +241,11 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 {
 	switch (state)
 	{
+		case ResourceState::Undefined:
+			return VulkanResourceStateMapping{
+			    .StageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+			    .AccessMask = 0,
+			    .ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED};
 		case ResourceState::Common:
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
@@ -263,18 +270,18 @@ VulkanResourceStateMapping VulkanTypeConversions::ToResourceStateMapping(Resourc
 		case ResourceState::ShaderResource:
 			return VulkanResourceStateMapping{
 			    .StageMask = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-			                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+			                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
 		case ResourceState::UnorderedAccess:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-			                 VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+			    .StageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::RayTracingAccelerationStructure:
 			return VulkanResourceStateMapping{
-			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR,
+			    .StageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+			                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
 			    .AccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR,
 			    .ImageLayout = VK_IMAGE_LAYOUT_GENERAL};
 		case ResourceState::CopySource:

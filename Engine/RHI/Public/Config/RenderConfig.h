@@ -10,7 +10,7 @@ namespace RenderConfig
 	inline constexpr unsigned FramesInFlight = 2u;
 
 	inline constexpr PixelFormat BackBufferFormat = PixelFormat::R8G8B8A8_UNorm;
-	inline constexpr PixelFormat SceneColorFormat = BackBufferFormat;
+	inline constexpr PixelFormat SceneColorFormat = PixelFormat::R32G32B32A32_Float;
 
 	inline constexpr PixelFormat DepthStencilFormat = PixelFormat::D24_UNorm_S8_UInt;
 

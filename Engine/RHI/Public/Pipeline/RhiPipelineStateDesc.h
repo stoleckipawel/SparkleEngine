@@ -3,6 +3,7 @@
 #include "../Formats/CompareOp.h"
 #include "../Formats/PixelFormat.h"
 #include "../RHIAPI.h"
+#include "../ShaderParameters/ShaderParameterSemantics.h"
 #include "../Shaders/ShaderStage.h"
 
 #include <array>
@@ -72,6 +73,7 @@ struct CompiledBinding
 {
 	const char* Name = nullptr;
 	CompiledBindingType Type = CompiledBindingType::ReadOnlyResourceTable;
+	ShaderParameterSemanticKind SemanticKind = ShaderParameterSemanticKind::ReadTexture;
 	std::uint32_t BindingIndex = 0;
 	RhiBindingPoint BindingPoint = {};
 	ShaderStageMask VisibilityMask = ShaderStageMask::None;

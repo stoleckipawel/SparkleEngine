@@ -68,8 +68,8 @@ void GBufferPass::Execute(PassExecutionContext& context, ParameterInstance& para
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.GBuffer.Execute");
 
 	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices);
-	PrepareTargets(context, parameters.GetFields());
 	ConfigurePipeline(context.Commands, context.Frame.mainView);
+	PrepareTargets(context, parameters.GetFields());
 	BindPassResources(context.Resources, context.Commands, parameters, context.RuntimeServices);
 	DrawOpaqueMeshes(context.Resources, context.Commands, context.Frame, context.RuntimeServices);
 }

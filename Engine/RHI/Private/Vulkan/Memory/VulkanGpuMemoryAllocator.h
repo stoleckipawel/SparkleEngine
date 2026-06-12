@@ -59,6 +59,7 @@ class VulkanGpuMemoryAllocator final
 	    std::wstring_view debugName) noexcept;
 	bool WriteAllocation(VulkanGpuAllocationRecord& record, const void* data, std::size_t sizeInBytes) noexcept;
 	VulkanGpuAllocationRecord* FindAllocationRecord(NativeResourceHandle resource) const noexcept;
+	VulkanGpuAllocationRecord* FindAllocationRecordByDeviceAddress(VkDeviceAddress deviceAddress) const noexcept;
 
 	void QueueDestroyResource(std::unique_ptr<VulkanGpuAllocationRecord> record, std::uint64_t retireFenceValue) noexcept;
 	void QueueDestroyMemoryBlock(std::unique_ptr<VulkanGpuMemoryBlockRecord> record, std::uint64_t retireFenceValue) noexcept;

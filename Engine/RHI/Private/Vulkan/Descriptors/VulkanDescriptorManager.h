@@ -9,11 +9,12 @@
 
 class VulkanRhi;
 class VulkanSwapChain;
+class VulkanGpuMemoryAllocator;
 
 class VulkanDescriptorManager final
 {
   public:
-	explicit VulkanDescriptorManager(VulkanRhi& rhi) noexcept;
+	VulkanDescriptorManager(VulkanRhi& rhi, VulkanGpuMemoryAllocator& memoryAllocator) noexcept;
 	~VulkanDescriptorManager() noexcept;
 
 	VulkanDescriptorManager(const VulkanDescriptorManager&) = delete;
@@ -36,6 +37,7 @@ class VulkanDescriptorManager final
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept;
+	VkImageView GetRegisteredImageView(RhiGpuDescriptorHandle descriptorHandle) const noexcept;
 	void RebuildSwapChainBackBufferViews(const VulkanSwapChain& swapChain) noexcept;
 	RhiResourceViewHandle GetSwapChainBackBufferView(std::uint32_t backBufferIndex) const noexcept;
 	void ReleaseAllResourceViews() noexcept;
@@ -46,6 +48,7 @@ class VulkanDescriptorManager final
 		ERhiResourceViewKind Kind = ERhiResourceViewKind::TextureShaderResource;
 		VkImage Image = VK_NULL_HANDLE;
 		VkBuffer Buffer = VK_NULL_HANDLE;
+		VkAccelerationStructureKHR AccelerationStructure = VK_NULL_HANDLE;
 		VkImageView ImageView = VK_NULL_HANDLE;
 		RhiGpuDescriptorHandle DescriptorHandle = {};
 		bool OwnsImageView = false;
@@ -60,6 +63,7 @@ class VulkanDescriptorManager final
 	VkImageAspectFlags ResolveViewAspectMask(const RhiResourceViewDesc& desc) const noexcept;
 
 	VulkanRhi& m_rhi;
+	VulkanGpuMemoryAllocator& m_memoryAllocator;
 	VulkanDescriptorAllocator m_allocator;
 	std::vector<ResourceViewRecord> m_resourceViewRecords;
 	std::vector<std::uint32_t> m_freeResourceViewIndices;

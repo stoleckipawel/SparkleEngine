@@ -13,9 +13,11 @@
 class VulkanGpuMemoryAllocator;
 class VulkanDescriptorAllocator;
 class VulkanBindingLayout;
+class VulkanRhi;
 class VulkanRenderCommandList final : public RenderCommandList
 {
   public:
+	void SetRhi(const VulkanRhi* rhi) noexcept { m_rhi = rhi; }
 	void SetMemoryAllocator(const VulkanGpuMemoryAllocator* memoryAllocator) noexcept { m_memoryAllocator = memoryAllocator; }
 	void SetDescriptorAllocator(VulkanDescriptorAllocator* descriptorAllocator) noexcept { m_descriptorAllocator = descriptorAllocator; }
 	void CloseOpenRendering() noexcept;
@@ -93,23 +95,31 @@ class VulkanRenderCommandList final : public RenderCommandList
   private:
 	static const CompiledBinding* FindBindingByIndex(const VulkanBindingLayout* layout, std::uint32_t bindingIndex) noexcept;
 	static VkShaderStageFlags ToVkShaderStages(ShaderStageMask visibilityMask) noexcept;
+	VkBuffer ResolveBuffer(RhiGpuVirtualAddress gpuAddress) const noexcept;
 	void BeginDynamicRenderingIfNeeded() noexcept;
 	void EndDynamicRenderingIfNeeded() noexcept;
 	VkDescriptorSet EnsureDescriptorSet(
 	    const VulkanBindingLayout* layout,
 	    std::uint32_t setIndex,
-	    std::vector<VkDescriptorSet>& descriptorSets) noexcept;
+	    std::vector<VkDescriptorSet>& descriptorSets,
+	    std::vector<bool>& boundSets) noexcept;
 	void BindDescriptorSet(
 	    VkPipelineBindPoint bindPoint,
 	    VkPipelineLayout pipelineLayout,
 	    std::uint32_t setIndex,
 	    VkDescriptorSet descriptorSet) noexcept;
+	void CopyDescriptorSet(
+	    const VulkanBindingLayout* layout,
+	    std::uint32_t setIndex,
+	    VkDescriptorSet sourceSet,
+	    VkDescriptorSet destinationSet) noexcept;
 	void MarkDescriptorSetDirty(std::uint32_t setIndex, std::vector<bool>& dirtySets) noexcept;
 	void FlushGraphicsDescriptorSets() noexcept;
 	void FlushComputeDescriptorSets() noexcept;
 
 	static constexpr std::uint32_t MaxRenderTargets = 8;
 
+	const VulkanRhi* m_rhi = nullptr;
 	const VulkanGpuMemoryAllocator* m_memoryAllocator = nullptr;
 	VulkanDescriptorAllocator* m_descriptorAllocator = nullptr;
 	VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
@@ -121,6 +131,8 @@ class VulkanRenderCommandList final : public RenderCommandList
 	std::vector<VkDescriptorSet> m_computeDescriptorSets;
 	std::vector<bool> m_graphicsDirtyDescriptorSets;
 	std::vector<bool> m_computeDirtyDescriptorSets;
+	std::vector<bool> m_graphicsBoundDescriptorSets;
+	std::vector<bool> m_computeBoundDescriptorSets;
 	std::vector<RhiDescriptorTableBinding> m_retainedDescriptorTables;
 	std::vector<RhiGpuDescriptorHandle> m_retainedDescriptorHandles;
 	std::vector<VkBuffer> m_retainedDescriptorBuffers;

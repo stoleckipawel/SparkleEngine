@@ -88,6 +88,15 @@ void FrameGraphBuilder::BindPersistentAccelerationStructure(
 	m_frameGraph.BindPersistentAccelerationStructure(handle, resource, gpuAddress, currentState);
 }
 
+void FrameGraphBuilder::BindPersistentAccelerationStructure(
+    FrameGraphAccelerationStructureHandle handle,
+    RhiOwnedResourceHandle resource,
+    RhiGpuVirtualAddress gpuAddress,
+    ResourceState currentState) noexcept
+{
+	m_frameGraph.BindPersistentAccelerationStructure(handle, resource, gpuAddress, currentState);
+}
+
 void FrameGraphBuilder::ClearPersistentAccelerationStructureBinding(FrameGraphAccelerationStructureHandle handle) noexcept
 {
 	m_frameGraph.ClearPersistentAccelerationStructureBinding(handle);

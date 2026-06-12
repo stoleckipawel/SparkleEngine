@@ -114,7 +114,10 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	RhiRayTracingAccelerationStructurePrebuildInfo GetTopLevelAccelerationStructurePrebuildInfo(
 	    std::uint32_t instanceCount) const noexcept override;
 	RhiOwnedResourceHandle CreateRayTracingScratchBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
-	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(std::uint64_t sizeInBytes, std::wstring_view debugName) override;
+	RhiOwnedResourceHandle CreateRayTracingAccelerationStructureBuffer(
+	    std::uint64_t sizeInBytes,
+	    ERhiRayTracingAccelerationStructureType type,
+	    std::wstring_view debugName) override;
 	RhiOwnedResourceHandle CreateRayTracingInstanceBuffer(
 	    const RhiRayTracingInstanceDesc* instances,
 	    std::uint32_t instanceCount,
@@ -141,17 +144,25 @@ class VulkanRenderHardwareInterface final : public RenderHardwareInterface
 	void ReleaseResourceView(RhiResourceViewHandle view) noexcept override;
 	RhiCpuDescriptorHandle GetResourceViewCpuHandle(RhiResourceViewHandle view) const noexcept override;
 	RhiGpuDescriptorHandle GetResourceViewGpuHandle(RhiResourceViewHandle view) const noexcept override;
+	std::uint64_t ResolveImGuiTextureId(RhiGpuDescriptorHandle shaderResourceView) noexcept override;
 	bool SupportsUnorderedAccess(NativeResourceHandle resource) const noexcept override;
 	void BeginPresentRenderPass(const float clearColor[4]) noexcept override;
 	void BeginPresentOverlayPass() noexcept override;
 	void EndPresentRenderPass() noexcept override;
 	PixelFormat GetPresentColorFormat() const noexcept override;
+	VkInstance GetVulkanInstance() const noexcept;
+	VkPhysicalDevice GetVulkanPhysicalDevice() const noexcept;
+	VkDevice GetVulkanDevice() const noexcept;
+	VkQueue GetVulkanGraphicsQueue() const noexcept;
+	std::uint32_t GetVulkanGraphicsQueueFamilyIndex() const noexcept;
+	std::uint32_t GetVulkanApiVersion() const noexcept;
+	std::uint32_t GetSwapChainBackBufferCount() const noexcept;
+	VkFormat GetNativeBackBufferFormat() const noexcept;
 	void SetCurrentFrameIndex(std::uint32_t frameIndex) noexcept;
 	void ResetTransientFrameResources() noexcept;
 	void RebuildSwapChainBackBufferViews() noexcept;
 
   private:
-	static void FailRenderingNotImplemented(std::string_view operation) noexcept;
 	RhiCapabilities BuildCapabilities() const noexcept;
 	RhiFormatSupport QueryFormatSupport(PixelFormat format) const noexcept;
 	RhiResourceViewHandle GetCurrentBackBufferViewHandle() const noexcept;

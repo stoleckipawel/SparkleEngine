@@ -76,7 +76,7 @@ void DirectLightingPass::Execute(PassExecutionContext& context, ParameterInstanc
 {
 	SPARKLE_GPU_PASS_SCOPE(context.Diagnostics, "Renderer.DirectLighting.Execute");
 
-	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasBoundTlas());
+	SetParameters(parameters, context.Frame.mainView, context.RuntimeServices, context.Frame.rayTracingScene.HasTraceableInstances());
 	const ComputeDispatchDesc dispatch{
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Width), ThreadGroupSizeX),
 	    MathUtils::DivideRoundUp(static_cast<std::uint32_t>(context.Frame.mainView.viewport.Height), ThreadGroupSizeY),

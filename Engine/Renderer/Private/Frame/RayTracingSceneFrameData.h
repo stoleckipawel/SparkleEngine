@@ -8,12 +8,17 @@
 struct RayTracingSceneFrameData
 {
 	bool IsAvailable = false;
-	NativeResourceHandle TlasResource = {};
+	RhiOwnedResourceHandle TlasResource = {};
 	RhiGpuVirtualAddress TlasGpuAddress = 0;
 	std::uint32_t EstimatedInstanceCount = 0;
 
 	bool HasBoundTlas() const noexcept
 	{
 		return IsAvailable && TlasResource && TlasGpuAddress != 0;
+	}
+
+	bool HasTraceableInstances() const noexcept
+	{
+		return HasBoundTlas() && EstimatedInstanceCount > 0;
 	}
 };

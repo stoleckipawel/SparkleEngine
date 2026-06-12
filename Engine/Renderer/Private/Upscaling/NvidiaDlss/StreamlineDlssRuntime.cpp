@@ -46,44 +46,6 @@ namespace
 		        .QualityModes = "NativeAA",
 		        .ModelPresetRecommendation = "Reuse Super Resolution preset recommendation at render extent equal to output extent.",
 		        .RequiredResources = "Same as Super Resolution; render extent must equal output extent",
-		        .Reason = std::string(reason)},
-		    DlssFeatureMatrixEntry{
-		        .Feature = EDlssFeatureKind::RayReconstruction,
-		        .State = EDlssFeatureState::Unavailable,
-		        .QualityModes = "SDK queried modes required.",
-		        .ModelPresetRecommendation = "SDK queried preset recommendation required.",
-		        .RequiredResources = "Noisy indirect lighting signals plus guide buffers; not direct shadow visibility",
-		        .Reason = std::string(reason)},
-		    DlssFeatureMatrixEntry{
-		        .Feature = EDlssFeatureKind::FrameGeneration,
-		        .State = EDlssFeatureState::Unavailable,
-		        .RequiresLatencyHook = true,
-		        .QualityModes = "SDK queried generated-frame modes required.",
-		        .ModelPresetRecommendation = "SDK queried frame-generation model recommendation required.",
-		        .RequiredResources = "Present contract, frame IDs, optical-flow inputs, UI separation, latency hooks",
-		        .Reason = std::string(reason)},
-		    DlssFeatureMatrixEntry{
-		        .Feature = EDlssFeatureKind::MultiFrameGeneration,
-		        .State = EDlssFeatureState::Unavailable,
-		        .RequiresLatencyHook = true,
-		        .QualityModes = "SDK queried generated-frame multiplier modes required.",
-		        .ModelPresetRecommendation = "SDK queried MFG model recommendation required.",
-		        .RequiredResources = "Frame Generation contract plus SDK-reported MFG limits",
-		        .Reason = std::string(reason)},
-		    DlssFeatureMatrixEntry{
-		        .Feature = EDlssFeatureKind::DynamicMultiFrameGeneration,
-		        .State = EDlssFeatureState::Unavailable,
-		        .RequiresLatencyHook = true,
-		        .QualityModes = "SDK queried dynamic generated-frame modes required.",
-		        .ModelPresetRecommendation = "SDK queried dynamic MFG model recommendation required.",
-		        .RequiredResources = "MFG contract plus runtime frame-pacing and scheduling policy",
-		        .Reason = std::string(reason)},
-		    DlssFeatureMatrixEntry{
-		        .Feature = EDlssFeatureKind::LatencyHook,
-		        .State = EDlssFeatureState::Unavailable,
-		        .QualityModes = "Required only by selected generated-frame paths.",
-		        .ModelPresetRecommendation = "Not applicable.",
-		        .RequiredResources = "Frame markers and latency hook points required by selected SDK feature",
 		        .Reason = std::string(reason)}};
 		return matrix;
 	}
@@ -304,7 +266,8 @@ namespace
 			if (desc.Capabilities.BackendApi != ERhiBackendApi::D3D12)
 			{
 				m_diagnostics.State = EDlssProviderRuntimeState::Unavailable;
-				m_diagnostics.FailureReason = "Initial Streamline DLSS runtime is wired for D3D12; Vulkan support remains behind the same provider boundary.";
+				m_diagnostics.FailureReason =
+				    "Streamline DLSS Vulkan evaluation is not enabled until the RHI provider contract exposes native image view/layout metadata.";
 				m_diagnostics.FeatureMatrix = BuildStreamlineFeatureMatrix(false, m_diagnostics.FailureReason);
 				return false;
 			}
@@ -479,10 +442,10 @@ namespace
 			    evaluation.NativeMotionVectors.Value,
 			    kD3D12ResourceStateNonPixelShaderResource | kD3D12ResourceStatePixelShaderResource};
 			std::array<sl::ResourceTag, 4> tags = {
-			    sl::ResourceTag{&colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eOnlyValidNow, &renderExtent},
-			    sl::ResourceTag{&colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eOnlyValidNow, &outputExtent},
+			    sl::ResourceTag{&colorIn, sl::kBufferTypeScalingInputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
+			    sl::ResourceTag{&colorOut, sl::kBufferTypeScalingOutputColor, sl::ResourceLifecycle::eValidUntilEvaluate, &outputExtent},
 			    sl::ResourceTag{&depth, sl::kBufferTypeDepth, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent},
-			    sl::ResourceTag{&motionVectors, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eOnlyValidNow, &renderExtent}};
+			    sl::ResourceTag{&motionVectors, sl::kBufferTypeMotionVectors, sl::ResourceLifecycle::eValidUntilEvaluate, &renderExtent}};
 
 			auto* commandBuffer = static_cast<sl::CommandBuffer*>(evaluation.NativeCommandList.Value);
 			result = slSetTagForFrame(*frameToken, m_viewport, tags.data(), static_cast<std::uint32_t>(tags.size()), commandBuffer);
@@ -621,16 +584,6 @@ const char* DlssFeatureKindToString(EDlssFeatureKind feature) noexcept
 			return "SuperResolution";
 		case EDlssFeatureKind::NativeAA:
 			return "NativeAA";
-		case EDlssFeatureKind::RayReconstruction:
-			return "RayReconstruction";
-		case EDlssFeatureKind::FrameGeneration:
-			return "FrameGeneration";
-		case EDlssFeatureKind::MultiFrameGeneration:
-			return "MultiFrameGeneration";
-		case EDlssFeatureKind::DynamicMultiFrameGeneration:
-			return "DynamicMultiFrameGeneration";
-		case EDlssFeatureKind::LatencyHook:
-			return "LatencyHook";
 	}
 
 	return "Unknown";
@@ -660,18 +613,36 @@ const char* DlssFeatureStateToString(EDlssFeatureState state) noexcept
 StreamlineDlssRuntimeCapabilities QueryStreamlineDlssRuntimeCapabilities(const RhiCapabilities& capabilities) noexcept
 {
 #if SPARKLE_WITH_NVIDIA_STREAMLINE
-	const bool bridgeReady = capabilities.BackendApi == ERhiBackendApi::D3D12 &&
-	                         capabilities.ExternalFeatureInterop.ExposesNativeDevice &&
-	                         capabilities.ExternalFeatureInterop.ExposesNativeGraphicsCommandList &&
-	                         capabilities.ExternalFeatureInterop.ExposesNativeResources;
-	const std::string reason = bridgeReady ? "NVIDIA Streamline SDK is integrated; runtime support will be verified during provider initialization."
-	                                      : "D3D12 native device, command-list, or resource interop is unavailable.";
+	const bool d3d12BridgeReady = capabilities.BackendApi == ERhiBackendApi::D3D12 &&
+	                              capabilities.ExternalFeatureInterop.ExposesNativeDevice &&
+	                              capabilities.ExternalFeatureInterop.ExposesNativeGraphicsCommandList &&
+	                              capabilities.ExternalFeatureInterop.ExposesNativeResources;
+	const bool vulkanBridgeReady = capabilities.BackendApi == ERhiBackendApi::Vulkan &&
+	                               capabilities.ExternalFeatureInterop.VulkanManualFunctionPointerHookingReady &&
+	                               capabilities.ExternalFeatureInterop.ExposesNativeResources;
+	const bool runtimeReady = d3d12BridgeReady;
+	std::string reason;
+	if (d3d12BridgeReady)
+	{
+		reason = "NVIDIA Streamline SDK is integrated; D3D12 runtime support will be verified during provider initialization.";
+	}
+	else if (vulkanBridgeReady)
+	{
+		reason =
+		    "NVIDIA Streamline SDK is integrated, but Vulkan DLSS evaluation needs native image view/layout metadata in the RHI "
+		    "provider contract before Streamline resource tagging can be enabled.";
+	}
+	else
+	{
+		reason = "Native device, command-list/command-buffer, or resource interop is unavailable for DLSS.";
+	}
+
 	return StreamlineDlssRuntimeCapabilities{
 	    .RuntimeIntegrated = true,
-	    .RuntimeAvailable = bridgeReady,
-	    .FeatureQuerySucceeded = bridgeReady,
-	    .FeatureSupported = bridgeReady,
-	    .FeatureMatrix = BuildStreamlineFeatureMatrix(bridgeReady, reason),
+	    .RuntimeAvailable = runtimeReady,
+	    .FeatureQuerySucceeded = runtimeReady,
+	    .FeatureSupported = runtimeReady,
+	    .FeatureMatrix = BuildStreamlineFeatureMatrix(runtimeReady, reason),
 	    .SdkVersion = kStreamlineSdkVersion,
 	    .Reason = reason};
 #else

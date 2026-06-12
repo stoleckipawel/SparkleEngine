@@ -99,9 +99,10 @@ struct RhiFormatSupport
 	bool SupportsDepthStencil = false;
 };
 
-inline constexpr std::array<PixelFormat, 6> kRhiCapabilityPixelFormats = {
+inline constexpr std::array<PixelFormat, 7> kRhiCapabilityPixelFormats = {
 	PixelFormat::R8G8B8A8_UNorm,
 	PixelFormat::B8G8R8A8_UNorm,
+	PixelFormat::R32G32B32A32_Float,
 	PixelFormat::R16G16B16A16_Float,
 	PixelFormat::R16G16_Float,
 	PixelFormat::D24_UNorm_S8_UInt,
