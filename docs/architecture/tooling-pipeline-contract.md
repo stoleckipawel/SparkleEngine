@@ -15,11 +15,13 @@ Reference basis:
 - NVIDIA Donut reusable rendering framework and ShaderMake dependency: https://github.com/NVIDIA-RTX/Donut
 - NVIDIA Falcor shader/rendering framework and tooling model: https://github.com/NVIDIAGameWorks/Falcor
 - AMD Cauldron content/sample framework for DX12/Vulkan: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+- AMD Cauldron thread pool and backend command-list rings as focused execution support: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
 - AMD Compressonator GUI/CLI/SDK split for texture and mesh optimization tools: https://github.com/GPUOpen-Tools/compressonator
 - CMake target usage requirements: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 - Qt model/view programming for launcher UI separation: https://doc.qt.io/qt-6/model-view-programming.html
 - glTF as an API-neutral runtime asset delivery format: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 - KTX texture tooling/container model: https://github.com/KhronosGroup/KTX-Software
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Ownership Summary
 
@@ -117,6 +119,27 @@ Rules:
 - Runtime modules load cooked artifacts; they do not read source formats.
 - Launcher and AssetCooker orchestrate tool execution; they do not duplicate focused tool algorithms.
 - ShaderCompiler consumes `ShaderContracts` pass catalogs/manifests plus generic shader package primitives, but does not link full renderer runtime.
+
+## Threading Readiness Contract
+
+Tooling should be designed as deterministic jobs even while the first implementation remains serial.
+
+| Tool area | Threading-ready rule |
+| --- | --- |
+| SourceImporters | Each import job owns one source asset/source group and emits imported DTOs plus diagnostics. |
+| Focused cookers | Each cook job owns its temp output, validates it, then publishes the final artifact/manifest. |
+| ShaderCompiler | Shader jobs are keyed by package id, backend format, options, and generation; package output is immutable after publish. |
+| AssetCooker | Planning owns the dependency graph; execution owns job requests, dependencies, cancellation, retry, and report aggregation. |
+| LauncherCore | UI intent becomes process/tool requests; long operations report progress/history without Qt widgets owning work. |
+| Reports | Job reports include job id, source path, artifact/package id, profile/backend, output path, failure reason, and elapsed time when available. |
+
+Forbidden threading shortcuts:
+
+- Do not make cook jobs write final artifacts before validation succeeds.
+- Do not let AssetCooker reimplement focused cooker work to make dispatch easier.
+- Do not put mutable global caches behind generic `CookCommon`/`ToolCommon` names without owner and invalidation policy.
+- Do not let Launcher Qt widgets start worker threads or tools directly.
+- Do not rely on nondeterministic filesystem iteration order for artifact manifests or shader package lists.
 
 ## Boundary Rules
 

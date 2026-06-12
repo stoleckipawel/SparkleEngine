@@ -12,7 +12,9 @@ Source basis:
 
 - arc42 building-block, runtime-view, and context/scope sections: https://arc42.org/overview
 - NVIDIA Donut's visible split between core, engine, render, app, shaders, and NVRHI: https://github.com/NVIDIA-RTX/Donut
+- NVIDIA Donut-Samples threaded rendering sample for independent command-list recording: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
 - NVIDIA Falcor's docs that make `RenderPasses`, render graphs, samples, and shader/data layout easy to find: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
+- Diligent Engine multithreading and command-queue samples for deferred contexts, command lists, queues, and fences: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials
 
 Companion docs:
 
@@ -28,6 +30,7 @@ Companion docs:
 - [Ray tracing contract](ray-tracing-contract.md)
 - [Pass authoring contract](pass-authoring-contract.md)
 - [Pipeline runtime contract](pipeline-runtime-contract.md)
+- [Threading readiness](after/repository-threading-readiness.md)
 - [Rendering coverage status](rendering-coverage-status.md)
 
 ## Layer Hierarchy
@@ -165,6 +168,37 @@ sequenceDiagram
 ```
 
 The frame graph owns execution order and resource transitions. Passes own command intent. RHI owns command vocabulary and backend translation.
+
+## Threading Readiness View
+
+Rendering remains allowed to execute serially. The architecture must still preserve phases that can later become jobs.
+
+```mermaid
+flowchart LR
+    Game[GameFramework mutation]
+    Snapshot[Immutable RenderContracts snapshot]
+    Stage[Renderer scene/resource staging]
+    Setup[FrameGraph setup]
+    Compile[FrameGraph compile]
+    Record[Per-pass/view command batches]
+    Submit[RHI central submission]
+    Backend[D3D12/Vulkan queues]
+
+    Game --> Snapshot
+    Snapshot --> Stage
+    Stage --> Setup
+    Setup --> Compile
+    Compile --> Record
+    Record --> Submit
+    Submit --> Backend
+```
+
+Threading-ready rules:
+
+- Renderer does not read mutable GameFramework internals during pass execution.
+- Frame graph compile output is a frozen `FrameGraphPlan`.
+- Pass execution can be described as command batches with pass/view/resource/queue identity.
+- RHI submission remains centralized, so future worker recording does not become arbitrary backend queue access.
 
 ## Shader Package Runtime View
 

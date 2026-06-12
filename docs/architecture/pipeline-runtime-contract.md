@@ -23,7 +23,9 @@ Reference basis:
 
 - Donut separates render passes, shaders, and NVRHI-backed rendering infrastructure visibly in the repo: https://github.com/NVIDIA-RTX/Donut
 - Falcor makes render passes/render graphs first-class workflow concepts: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
+- Diligent Engine render state cache/packager samples show PSO/package work as explicit artifacts: https://github.com/DiligentGraphics/DiligentSamples
 - arc42 crosscutting concept and runtime-view guidance: https://arc42.org/overview
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
 
@@ -166,6 +168,24 @@ Not required in the key:
 - Native D3D12/Vulkan handles.
 - Renderer scene data.
 - Frame graph resource handles unless the resource changes pipeline shape.
+
+## Threading Readiness Contract
+
+Pipeline runtime must be safe to warm, inspect, invalidate, or rebuild in future background jobs without hidden renderer state.
+
+| Runtime part | Threading-ready rule |
+| --- | --- |
+| PSO key | Immutable, printable, deterministic, and independent of C++ pointer/type identity. |
+| Package cache | Keyed by package id, backend format, options, and generation; reload publishes a new generation instead of mutating readers in place. |
+| Binding layout | Built from package reflection and pass catalog data; errors name package/layout/pass/backend. |
+| Runtime cache | Mutated by one owner phase or protected by explicit generation swap; readers consume stable handles for the frame. |
+| Warmup/validation | Future warmup jobs use package manifests and RHI capability reports, not live frame/pass objects. |
+
+Forbidden shortcuts:
+
+- Do not retain `std::type_index` as the final identity if it hides package/layout/backend state.
+- Do not let background package validation reach into Renderer private pass instances.
+- Do not mutate a cache entry while a frame may still consume it; publish by generation or frame-safe swap.
 
 ## Shader Package Flow
 

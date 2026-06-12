@@ -22,7 +22,11 @@ Reference basis:
 - NVIDIA NVRHI focused RHI and backend libraries: https://github.com/NVIDIA-RTX/NVRHI
 - NVIDIA NRI low-level D3D12/Vulkan render interface: https://github.com/NVIDIA-RTX/NRI
 - NVIDIA Donut uses NVRHI as the graphics abstraction while application/device-manager code handles windows/devices: https://github.com/NVIDIA-RTX/Donut
+- NVIDIA Donut-Samples threaded rendering records separate command lists and submits them together: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- AMD Cauldron D3D12/Vulkan command-list rings keep per-frame command allocation explicit: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+- Diligent Engine Tutorial 23 demonstrates graphics/compute/transfer queues with fences: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
 - arc42 building-block and interface documentation guidance: https://arc42.org/overview
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
 
@@ -138,6 +142,26 @@ The D3D12 and Vulkan folders already have similar service groupings. Stage 19 sh
 | Samplers | [D3D12/Samplers](../../Engine/RHI/Private/D3D12/Samplers) | [Vulkan/Samplers](../../Engine/RHI/Private/Vulkan/Samplers) | Map `RhiSamplerDesc` consistently. |
 | Swap chain | [D3D12/SwapChain](../../Engine/RHI/Private/D3D12/SwapChain) | [Vulkan/SwapChain](../../Engine/RHI/Private/Vulkan/SwapChain) | Own back-buffer acquisition, resize, present formats, and presentable state. |
 | UI | [D3D12/UI](../../Engine/RHI/Private/D3D12/UI) | [Vulkan/UI](../../Engine/RHI/Private/Vulkan/UI) | Own ImGui backend integration without leaking native objects upward. |
+
+## Threading Readiness Contract
+
+RHI does not need to become multithreaded in the current stages, but its services must not block future parallel command recording or queue work.
+
+| RHI area | Threading-ready owner | Required future-safe shape |
+| --- | --- | --- |
+| Command lists | RHI command service plus backend command allocator/ring. | Command list ownership is per frame, queue type, and recording batch; workers never borrow hidden global command lists. |
+| Descriptor/upload scratch | RHI descriptor and upload services. | Scratch allocations are scoped by frame and recording owner, with generation/fence lifetime when reused. |
+| Queues | RHI queue/submission service. | Submission is centralized through queue packets that name ordered command batches, waits, signals, and diagnostic labels. |
+| Resource states | Frame graph/RHI resource services. | State transitions and UAV/AS barriers come from declared resource access, not worker-local guesses. |
+| Capture/readback | RHI/backend capture services. | Capture jobs name source resource, frame, queue/fence dependency, output path, and backend reason on failure. |
+| Native interop | RHI public interop service. | Native handles carry owner, queue/list state, backend, and lifetime/fallback diagnostics. |
+
+Forbidden RHI threading shortcuts:
+
+- Do not expose raw backend command allocators, command pools, queues, or fences to Renderer, GameFramework, Application, or tools.
+- Do not make worker threads submit directly to backend queues.
+- Do not hide descriptor heap/page ownership in a global singleton that command recording jobs share implicitly.
+- Do not implement async compute/transfer without queue capability reports, resource hazard declarations, waits/signals, and measurement evidence.
 
 ## Native Interop Contract
 

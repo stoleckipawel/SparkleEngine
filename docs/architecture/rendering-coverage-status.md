@@ -99,6 +99,7 @@ Explicit scope boundary:
 - In scope here: `Engine/Renderer`, `Engine/RHI`, RHI smoke validation under `Engine/Application/Private/Validation`, launcher smoke operations, and `Tools/Shaders/ShaderCompiler`.
 - Whole-repository scope: use [repository-coverage-status.md](repository-coverage-status.md) for Core, Platform, GameFramework, Editor, Application host surfaces outside RHI smoke validation, launcher UI/workflows, source import, cookers, conversion tools, CMake, CI, projects, and docs.
 - If a later implementation stage needs to edit an out-of-scope file, that stage must first update [repository-coverage-status.md](repository-coverage-status.md) or add a linked subsystem status document.
+- Stage 30 revisits every row here for threading-readiness: mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, diagnostics identity, and deterministic output.
 
 ## Module Build And Support Coverage
 

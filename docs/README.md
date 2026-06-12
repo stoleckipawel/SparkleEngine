@@ -20,14 +20,16 @@ Broad before/after comparison:
 3. [architecture/after/repository-target-architecture.md](architecture/after/repository-target-architecture.md)
 4. [architecture/after/repository-target-graphs.md](architecture/after/repository-target-graphs.md)
 5. [architecture/after/repository-target-folder-architecture.md](architecture/after/repository-target-folder-architecture.md)
+6. [architecture/after/repository-threading-readiness.md](architecture/after/repository-threading-readiness.md)
 
 Detailed system design:
 
 1. [architecture/after/system-design-index.md](architecture/after/system-design-index.md)
-2. [architecture/repository-system-map.md](architecture/repository-system-map.md)
-3. [architecture/tooling-pipeline-contract.md](architecture/tooling-pipeline-contract.md)
-4. [architecture/game-framework-contract.md](architecture/game-framework-contract.md)
-5. [architecture/rendering-system-map.md](architecture/rendering-system-map.md)
+2. [architecture/after/repository-threading-readiness.md](architecture/after/repository-threading-readiness.md)
+3. [architecture/repository-system-map.md](architecture/repository-system-map.md)
+4. [architecture/tooling-pipeline-contract.md](architecture/tooling-pipeline-contract.md)
+5. [architecture/game-framework-contract.md](architecture/game-framework-contract.md)
+6. [architecture/rendering-system-map.md](architecture/rendering-system-map.md)
 
 Implementation plan:
 

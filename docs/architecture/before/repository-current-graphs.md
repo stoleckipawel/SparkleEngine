@@ -8,6 +8,8 @@ Last synchronized: 2026-06-13
 
 This page shows the current architecture as graphs. Use it to understand existing module edges, artifact flow, and transitional risk points before continuing the global refactor.
 
+Target threading-readiness comparison: [../after/repository-threading-readiness.md](../after/repository-threading-readiness.md)
+
 ## Current Global Module Graph
 
 ```mermaid
@@ -203,3 +205,32 @@ flowchart TD
 ```
 
 Current boundary checks protect the RHI/Renderer edges today. Stage 28 expands the same mechanical protection to the rest of this graph.
+
+## Current Threading Readiness Risk Graph
+
+```mermaid
+flowchart TD
+    LiveGame[Mutable GameFramework scene]
+    Renderer[Renderer frame and passes]
+    FrameGraph[Frame graph setup/compile/execute]
+    RHI[RHI command and queue services]
+    Tools[Import/cook/shader tools]
+    Launcher[LauncherCore and Qt UI]
+    FutureRuntime[Future runtime workers]
+    FutureQueues[Future GPU queues]
+    FutureToolJobs[Future tool jobs]
+
+    LiveGame -. must become immutable RenderContracts snapshots .-> Renderer
+    Renderer -. must become frame data and command batches .-> FrameGraph
+    FrameGraph -. must name queue, batch, resource access, and fences .-> RHI
+    RHI -. central submission must protect queues .-> FutureQueues
+    Tools -. must become deterministic job requests and reports .-> FutureToolJobs
+    Launcher -. UI must send process requests, not own work .-> FutureToolJobs
+
+    FutureRuntime -. must not read producer-private mutable state .-> LiveGame
+    FutureRuntime -. must not mutate pass/global state .-> Renderer
+```
+
+Current note:
+
+- The repository is not required to implement multithreading now. The risk is preserving live mutable owner access in places where future workers, render-thread work, async queues, cook jobs, shader jobs, or launcher workflows would need stable handoff data.

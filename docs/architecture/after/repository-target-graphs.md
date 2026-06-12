@@ -8,13 +8,14 @@ Last synchronized: 2026-06-13
 
 This page shows the finished-product architecture as graphs. It is deliberately stricter than the current repository shape: direct edges are shown only when they represent ownership, public contracts, produced artifacts, or runtime execution. Validation and evidence edges are dashed so they cannot be mistaken for production dependencies.
 
-Folder/source-root flow is tracked in [repository-target-folder-architecture.md](repository-target-folder-architecture.md).
+Folder/source-root flow is tracked in [repository-target-folder-architecture.md](repository-target-folder-architecture.md). Threading-ready data ownership is tracked in [repository-threading-readiness.md](repository-threading-readiness.md).
 
 Reference model:
 
 - NVIDIA NVRHI/NRI: low-level graphics interfaces sit below renderer code and hide D3D12/Vulkan backends.
 - NVIDIA Donut/Falcor: renderer passes and render graphs live above the hardware abstraction.
 - AMD Cauldron/FidelityFX: sample/runtime rendering, backend implementations, assets, shaders, and validation artifacts are separated enough to make D3D12/Vulkan parity reviewable.
+- NVIDIA Donut-Samples threaded rendering, AMD Cauldron command-list rings, Diligent multithreading/command-queue samples, and NVIDIA async compute guidance: command recording, queues, fences, and overlap opportunities require explicit ownership and measurement.
 - AMD Compressonator, Khronos glTF, and Khronos KTX: source/import/cook tooling should have explicit artifact schemas and inspection paths.
 - Qt model/view: the Launcher UI presents operation state; orchestration and process execution live behind UI models/core workflows.
 
@@ -26,6 +27,7 @@ Reference model:
 | Dashed arrow | Validation, evidence, report, or documentation relation. Not a runtime/module dependency. |
 | `Contracts` nodes | Versioned schema and API surfaces that prevent private module coupling. |
 | `Providers` nodes | Narrow vendor integrations owned by Renderer/RHI public interop contracts, not broad backend leakage. |
+| `Threading` nodes | Future execution lanes. They show phase ownership and handoff shape, not a requirement to implement worker threads now. |
 
 ## Target Global Module Graph
 
@@ -331,6 +333,70 @@ Target rule:
 
 - A refactor is not finished when code compiles. It is finished when ownership, checks, validation artifacts, and docs agree.
 
+## Target Threading Readiness Graph
+
+```mermaid
+flowchart TD
+    subgraph MainThread["Main/UI/host thread"]
+        HostInput[Host input and window events]
+        LauncherGui[Launcher Qt models/views]
+        Submit[Central RHI submission]
+    end
+
+    subgraph RuntimePhase["Runtime phase"]
+        GameMutation[GameFramework mutation]
+        RenderSnapshot[RenderContracts immutable snapshot]
+    end
+
+    subgraph RenderPreparation["Renderer preparation"]
+        SceneStage[Scene/resource staging]
+        GraphSetup[FrameGraph setup declarations]
+        GraphCompile[FrameGraph plan compile]
+        CommandBatches[Per-pass/view command batches]
+    end
+
+    subgraph GraphicsQueues["RHI queues"]
+        GraphicsQueue[Graphics queue packet]
+        ComputeQueue[Compute queue packet]
+        TransferQueue[Transfer queue packet]
+        Fences[Wait/signal fences]
+    end
+
+    subgraph ToolJobs["Tool job graph"]
+        CookPlan[AssetCooker plan]
+        ImportJobs[Source import jobs]
+        CookJobs[Focused cook jobs]
+        ShaderJobs[Shader compile jobs]
+        Reports[Deterministic reports]
+    end
+
+    HostInput --> GameMutation
+    GameMutation -->|freeze once per frame| RenderSnapshot
+    RenderSnapshot --> SceneStage
+    SceneStage --> GraphSetup
+    GraphSetup --> GraphCompile
+    GraphCompile --> CommandBatches
+    CommandBatches --> Submit
+    Submit --> GraphicsQueue
+    Submit --> ComputeQueue
+    Submit --> TransferQueue
+    GraphicsQueue --> Fences
+    ComputeQueue --> Fences
+    TransferQueue --> Fences
+
+    LauncherGui --> CookPlan
+    CookPlan --> ImportJobs
+    CookPlan --> CookJobs
+    CookPlan --> ShaderJobs
+    ImportJobs --> Reports
+    CookJobs --> Reports
+    ShaderJobs --> Reports
+```
+
+Target rule:
+
+- Future multithreading is enabled by phase ownership, not by shared mutable objects with locks. Gameplay mutation, snapshot production, graph compile, command recording, queue submission, tool jobs, and UI presentation each have a named owner and handoff shape.
+
 ## Edge Quality Checklist
 
 | Question | Required answer before an edge is accepted |
@@ -345,3 +411,4 @@ Target rule:
 | Does the edge make a tool depend on runtime internals? | No; use artifact schemas, DTOs, reports, or CLI/process contracts. |
 | Does the edge make renderer code depend on backend-native APIs? | No; use RHI public descriptors, capabilities, or narrow provider interop. |
 | Does the edge hide dependency ownership through broad CMake `PUBLIC` links? | No; target scopes must match the documented owner/consumer direction. |
+| Would this edge remain safe if producer and consumer run on different threads later? | Yes; it must use immutable snapshots, DTOs, manifests, command batches, queue packets, requests, or reports with explicit ownership. |

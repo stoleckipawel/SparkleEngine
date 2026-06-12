@@ -13,6 +13,7 @@ Navigation:
 - Stage map: [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
 - Architecture before/after index: [../architecture/README.md](../architecture/README.md)
 - Target folder architecture: [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Threading readiness contract: [../architecture/after/repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 ## Purpose
 
@@ -31,6 +32,7 @@ Stage artifacts:
   - `docs/architecture/repository-system-map.md`
   - `docs/architecture/repository-coverage-status.md`
   - `docs/architecture/after/repository-target-folder-architecture.md`
+  - `docs/architecture/after/repository-threading-readiness.md`
   - `docs/architecture/game-framework-contract.md`
   - `docs/architecture/tooling-pipeline-contract.md`
 - Stage 1 baseline status: `docs/architecture/rendering-coverage-status.md`
@@ -83,6 +85,7 @@ Current code evidence used while writing this plan:
 - Each stage must classify touched systems as `Keep and refine`, `Improve and extract`, or `Replace or redesign` using `docs/architecture/after/repository-target-architecture.md`. Existing bodies, names, folders, and CMake targets are not preserved unless they match the target ownership model.
 - Each stage must apply the right-to-exist complexity test: every retained abstraction, compatibility path, helper, registry, target, schema, and command must name the problem it uniquely solves and the validation or maintenance value that justifies it.
 - Each stage must treat folder architecture as architecture: name current source folders, target folders, forbidden folder edges, CMake target changes, and cleanup/deletion of replaced paths.
+- Each stage must treat threading readiness as architecture: name the mutable owner, execution phase, handoff shape, isolation boundary, ordering/synchronization expectation, diagnostics identity, and deterministic-output expectation for every changed edge.
 - Temporary compatibility adapters are allowed only inside a stage. They must be removed before that stage is accepted unless the stage explicitly says otherwise.
 - Do not keep legacy paths "just in case." If the new path replaces the old path and validation passes, delete the old path in the same stage or the immediately following cleanup stage.
 - Rename, split, merge, or rebuild systems when the current shape would require broad exceptions, duplicate owners, private dependency edges, or misleading names.
@@ -92,6 +95,9 @@ Current code evidence used while writing this plan:
 - Every RHI change must answer whether it introduces a GPU/API concept, a backend implementation detail, or a renderer convenience. Renderer conveniences do not belong in RHI.
 - Every RHI/Renderer change must check GameFramework and tool blast radius: ShaderCompiler, TextureCooker, AssetCooker, SourceImporters/current SourceImportAdapters, Launcher workflows, Application validation, and project/sample content where relevant.
 - Every stage must satisfy the `Global Refactor Stage Impact Matrix` below. A stage is not accepted until its local work and its whole-repository protection checks are both addressed.
+- Every stage must satisfy the threading-readiness contract in `docs/architecture/after/repository-threading-readiness.md`. A stage does not need to add threads, but it must not leave a data shape that would require future workers to read private mutable owner state.
+- Every stage must satisfy its row in `Stage Contract Coverage Matrix` below. If the row names a contract surface, the implementation prompt, acceptance evidence, and validation notes must prove that surface was preserved or improved.
+- Every stage listed in `Mandatory Split Checkpoints For Large Stages` must complete each checkpoint independently before the stage can be marked `Almost finished`. If a checkpoint cannot be completed, validated, and documented cleanly in the same implementation window, promote that checkpoint into a new numbered stage before continuing.
 - Runtime engine modules must not depend on tool internals. Tools may consume public runtime/cooked contracts, but source import and cooking algorithms must stay under `Tools/`.
 - Launcher changes must preserve the split between workflow/process orchestration and Qt UI presentation.
 - Every backend parity claim must be backed by logs, smoke reports, screenshots/captures, or a clearly marked measurement plan.
@@ -109,12 +115,37 @@ Every stage implementation prompt is governed by the stage-local positive guardr
 - The diagnostics or validation evidence that proves the handoff works.
 - The deleted, merged, renamed, or simplified path that reduces future maintenance.
 - The folder architecture effect: current path, target path, source root owner, forbidden destination folders, and any CMake target rename or split.
+- The threading-readiness effect: mutable owner, phase, handoff shape, isolation scope, queue/job/batch identity when relevant, ordering rule, and deterministic diagnostics.
 - The transitional exception, if any, including the exact removal stage.
+
+Stage completion packet:
+
+Every stage implementation record must include these fields before the stage can be accepted:
+
+| Field | Required content |
+| --- | --- |
+| Target docs opened | The stage row from `Required Target Documents By Stage`, plus any touched subsystem row from `system-design-index.md`. |
+| Contract surfaces | Which of `RhiContracts`, `RenderContracts`, `ShaderContracts`, `AssetContracts`, `ToolContracts`, `ThreadingReadiness`, folder architecture, and mechanical guardrails were touched. |
+| Rubric critical criteria | Evidence for requirements/constraints, separation of concerns, runtime behavior clarity, observability, reliability/failure handling, threading readiness, maintainability/naming, complexity right-to-exist, testability, and communication/reviewability where relevant. |
+| Split decision | Whether the stage was small enough to complete as written, which mandatory checkpoints were completed, or which checkpoint must become a new numbered stage. |
+| Ownership/disposition | `Keep and refine`, `Improve and extract`, or `Replace or redesign` for every touched module, folder, target, schema, command, or compatibility path. |
+| Folder and target plan | Current folders, target folders, forbidden destination folders, CMake target changes, and cleanup/deletion paths. |
+| Data transfer plan | Producer, contract shape, schema/package/job/frame id, consumer, diagnostics, and validation command. |
+| Threading-readiness plan | Mutable owner, phase, immutable or versioned handoff, isolation scope, ordering/synchronization expectation, and deterministic output/report behavior. |
+| Acceptance evidence | Observable file/code/CMake/docs state that proves the stage goal, not only a statement of intent. |
+| Validation evidence | Commands run, artifacts/logs inspected, commands not run and why, and remaining risk owner. |
+
+Acceptance completeness rule:
+
+- A stage acceptance section is incomplete if it does not prove the matching contract surfaces in `Stage Contract Coverage Matrix`.
+- A broad stage is incomplete if any checkpoint in `Mandatory Split Checkpoints For Large Stages` is skipped, merged silently, or left without validation/evidence.
+- A stage is too large when it touches more than one contract surface and any surface lacks an independent validation artifact. Split it before implementation instead of hoping the final gate catches drift.
 
 Positive edge rule:
 
 - Prefer explicit public contracts, DTOs, manifests, registries, process requests, CMake target links, and validation artifacts over private includes or ad hoc global state.
 - Prefer one-way data flow from producer to consumer: source import produces DTOs, cookers produce cooked artifacts, GameFramework produces runtime snapshots, Renderer produces render products, RHI produces backend evidence, Launcher records process evidence.
+- Prefer future-threading-safe handoffs: immutable snapshots, DTOs, manifests, command batches, queue submission packets, tool job requests, process requests, and reports.
 - Prefer narrow targets and APIs such as `SparkleRendererShaderRegistrations`, public cooked schemas, RHI public primitives, LauncherCore process requests, and inspection commands.
 - Prefer names from the repository naming canon: `*Contracts`, `*Backend`, `*Pass`, `*FrameGraph`, `*PipelineRuntime`, `*Dto`, `*Snapshot`, `*Manifest`, `Cooked*`, `*Cooker`, `*Compiler`, `*Importer`, `*Provider`, `*Request`, `*Report`, and `*History`.
 - Prefer deleting duplicate paths, reducing ceremony, consolidating ownership, and making diagnostics stronger before adding new abstractions.
@@ -129,18 +160,28 @@ Negative edge rule:
 - Do not keep an old body and a new body as parallel production paths. Transitional duplication must have one owner, one removal stage, and one validation plan.
 - Do not add abstraction because a future feature might need it. Add it only when current callers, contracts, and validation evidence prove it reduces net complexity.
 - Do not create or preserve folders whose names hide ownership, such as broad `Common`, `Utils`, `Helpers`, `Bridge`, or `Managers`, unless the stage proves the owner, contract, validation value, and smaller alternative.
+- Do not claim threading readiness by adding broad locks around shared mutable state. Fix ownership and handoff shape first.
+- Do not add a job system, render thread, async queue, or background worker abstraction for hypothetical use without current callers, diagnostics, and validation value.
 
 Controlled data-transfer rule:
 
 - Cross-system data must move through named contracts: public C++ DTOs, cooked artifact schemas, shader package manifests/reflection, renderer snapshots, RHI public descriptors/handles, CMake target usage requirements, CLI/process request structs, logs/reports, or validation artifacts.
 - If a handoff does not have a named contract, create or document the contract before moving code.
 - If the handoff crosses runtime/tool boundaries, name the producer, schema owner, consumer, inspection command, and failure diagnostics.
+- If a handoff may later become threaded, name the frame/job/package/artifact id, generation, queue/fence/order rule, and report path now.
 
 Folder architecture rule:
 
 - Follow [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) when adding, moving, renaming, or deleting folders.
 - A stage prompt must identify which folders are migration sources, which folders are target owners, which old folders are deleted or aliased temporarily, and which folders must not receive code.
 - Owner-specific folders are preferred over generic roots: `Engine/Contracts/Asset`, `Engine/Contracts/Render`, `Engine/Contracts/Shader`, `Tools/Contracts`, `Engine/Renderer/Shaders`, `Engine/RHI/Shaders`, `Projects/*/Data`, `Projects/*/Shaders`, `Tools/Import/SourceImporters`, focused `*Cooker` folders, `Tools/Inspection/AssetInspector`, `Tools/Support/ToolConsoleSupport`, and `Tools/Cooking/CookDiagnostics`.
+
+Threading readiness rule:
+
+- Follow [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) for every changed edge.
+- A stage must leave future worker/render/tool jobs able to consume owned data without reading producer-private mutable state.
+- Preferred handoff shapes are immutable snapshots, DTOs, manifests, command batches, queue packets, tool job requests, process requests, and reports.
+- Existing single-thread behavior may remain, but the data shape must already name owner, phase, generation/job/frame identity, ordering, and diagnostics.
 
 ## Global Refactor Stage Impact Matrix
 
@@ -157,7 +198,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 7 | RHI service extraction | Renderer frame graph, upscaling, Application validation, texture/runtime loaders. | Service extraction must preserve public contracts used by tools and GameFramework, or update the paired contracts in the same stage. |
 | 8 | Capture/readback validation ownership | Application validation, launcher smoke, backend diagnostics, artifact paths. | Application may orchestrate capture, but backend-native capture/readback implementation must be owned by RHI/backend services. |
 | 9 | Native interop and vendor provider boundary | Streamline/DLSS, future FSR-style providers, RHI backends, Renderer upscaling. | Provider code may request native metadata; ordinary renderer passes and GameFramework must not see backend-native handles. |
-| 10 | Backend parity milestone | Launcher smoke workflows, Projects/Showcase, validation artifacts, docs. | D3D12/Vulkan evidence must use the same scene/camera path and record artifact paths for later Stage 29 comparison. |
+| 10 | Backend parity milestone | Launcher smoke workflows, Projects/Showcase, validation artifacts, docs. | D3D12/Vulkan evidence must use the same scene/camera path and record artifact paths for later Stage 29 evidence and Stage 30 threading-readiness review. |
 | 11 | Renderer facade decomposition | Application, Editor viewport, GameFramework snapshots, launcher smoke. | Public renderer host protocol must stay stable or update all host callers and docs together. |
 | 12 | Presentation/viewport bridge | Editor panels, Application hosts, RHI present resources, launcher smoke. | Editor/Application must receive presentation products through the bridge, not frame graph internals or backend resources. |
 | 13 | Scene and resource ownership | GameFramework scene/assets, SourceImporters/current SourceImportAdapters, cookers, renderer texture/mesh managers. | Renderer scene DTO changes require GameFramework snapshot/schema impact notes and affected cooker checks. |
@@ -167,7 +208,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 17 | Pass authoring model | ShaderCompiler, Editor shader lists, FrameGraph, RHI shader runtime. | Ordinary pass authoring must remain above RHI and must not add central runtime duplication without a migration note. |
 | 18 | Ray tracing ownership | GameFramework scene snapshots, Renderer passes, RHI RT descs, backend AS builders. | RT changes must not move shadow/pass data into RHI or GameFramework as a shortcut. |
 | 19 | Backend service cleanup | D3D12/Vulkan parity, RHI public contracts, tools using RHI headers. | Backend-private folders must not include each other; public RHI changes must update tool/runtime impact notes. |
-| 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 29 whole-repo gate. |
+| 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 29 evidence gate and Stage 30 threading-readiness audit. |
 | 21 | Reviewer presentation | README, docs, launcher screenshots/workflows, validation artifacts. | Reviewer path must cover whole repository, not only graphics internals. |
 | 22 | RHI/Renderer final cleanup | Whole-repo coverage, boundary exceptions, stale docs, generated/local-only policy. | Final RHI/Renderer scoring cannot leave contradictions in repository-level architecture docs. |
 | 23 | Whole-repository coverage and dependency map | All durable roots. | Every root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
@@ -176,7 +217,7 @@ This plan is a global repository refactor. The early stages still focus on RHI/R
 | 26 | Launcher and host boundaries | LauncherCore, Qt GUI, Application, Editor, tools, smoke validation. | Launcher invokes tools/processes and records evidence; Qt UI remains presentation/model code. |
 | 27 | Shader and cook artifact validation matrix | ShaderCompiler, cookers, GameFramework loaders, Renderer resource managers, Projects. | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
 | 28 | Build, CI, and guardrail expansion | CMake, `.github`, runtime-to-tools dependencies, generated/local-only folders. | Boundary checks cover RHI/Renderer plus runtime-to-tools, GameFramework/launcher/tool ownership, and generated folder policy. |
-| 29 | Whole-repository final gate | All modules, tools, samples, docs, CI/local validation. | No unowned `Needs refactor` rows remain; final evidence proves code, docs, checks, and validation agree. |
+| 29 | Whole-repository evidence gate | All modules, tools, samples, docs, CI/local validation. | No unowned `Needs refactor` rows remain; evidence proves code, docs, checks, and validation agree before the Stage 30 threading-readiness audit. |
 
 ## Acceptance Criteria Traceability
 
@@ -186,33 +227,35 @@ This section verifies that the execution plan touches every criterion from `docs
 
 | Rubric criterion | Covered by stages | Required evidence before final acceptance |
 | --- | --- | --- |
-| Problem framing | 1, 2, 22, 23, 29 | Coverage status map names the subsystem, current risk, intended owner, and linked stage. Final rubric scoring cites the exact issue each completed stage solved. |
-| Requirements and constraints | 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29 | Architecture docs and milestone reports state D3D12/Vulkan, ray tracing, DLSS, frame graph, debug view, shader cooking, content cooking, GameFramework, launcher, platform, and validation constraints. |
-| Separation of concerns | 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29 | Boundary checks pass; runtime modules do not depend on tool internals; RHI has no Renderer-private includes; Renderer has no backend-private includes outside documented provider integration; Application has no backend-native capture implementation. |
-| Source/folder architecture | 1, 3, 4, 7, 11, 16, 19, 23, 24, 25, 26, 28, 29 | Target folder architecture is updated; new/moved code lands in owner folders; shared schemas use contract roots; backend folders stay sibling/private; tool role folders are explicit; generated/local roots stay out of durable architecture. |
-| Cohesion and interface size | 6, 7, 11, 12, 16, 19, 22, 24, 25, 26, 29 | RHI method ownership table is complete; root facades shrink behind named services; `Renderer` becomes a host facade; LauncherCore, cookers, and GameFramework have focused owners. |
-| Tradeoff reasoning | 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29 | Design docs record alternatives for shader registration ownership, RHI service extraction, interop, pass definition, PSO keying, backend parity, cooked schema ownership, tool orchestration, and launcher workflow ownership. |
-| Quality attributes | 1, 2, 10, 15, 20, 22, 23, 27, 29 | Each strategic stage updates quality impact for maintainability, reliability, portability, performance reasoning, operability, and reviewability. |
-| Risk and technical debt visibility | 1, 3, 5, 10, 15, 20, 22, 23, 28, 29 | Coverage status tracks `Accepted`, `Needs refactor`, and `Needs design decision`; final gate has no unowned `Needs refactor` rows across rendering and repository coverage. |
-| Runtime behavior clarity | 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29 | Docs include frame execution, frame graph, pass definition, shader package, PSO, ray tracing, presentation, GameFramework snapshots, cooked artifact flow, and backend flow diagrams. |
-| Observability and diagnostics | 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29 | Smoke reports include frame graph diagnostics, capability reports, debug names/markers, PSO keys, shader package IDs, DLSS status, RT status, cook/tool failures, launcher evidence, and capture artifacts. |
-| Reliability/failure handling | 7, 8, 9, 14, 18, 20, 22, 25, 26, 27, 29 | Missing DLSS/RT/extensions/capture/tool/schema support produces deterministic reasons; unresolved frame graph resources fail development smoke. |
-| Performance reasoning | 2, 16, 19, 20, 21, 22, 25, 27, 29 | PSO/runtime and cook/tool changes include measurement plan or logs; README and final scoring avoid unsupported performance claims. |
-| Portability/backend parity | 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29 | D3D12/Vulkan service responsibilities are symmetric where appropriate; source/cooked formats stay API-neutral where possible; known differences are documented. |
-| Maintainability and naming | 2, 11, 12, 13, 14, 17, 18, 19, 22, 23, 24, 25, 26, 29 | Folder ownership docs, naming conventions, pass/frame split, ray tracing terms, backend services, launcher/cooker names, and artifact ownership are updated to match final code. |
-| Testability | 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29 | Boundary checks, build targets, shader compiler validation, cook validation, launcher workflow checks, smoke validation, captures, and final command list are repeatable. |
-| Communication/reviewability | 1, 2, 21, 22, 23, 29 | Docs, diagrams, README, reviewer path, feature matrix, known issues, validation artifacts, repository coverage, and final rubric score make the whole repo inspectable. |
+| Problem framing | 1, 2, 22, 23, 29, 30 | Coverage status map names the subsystem, current risk, intended owner, linked stage, and threading-readiness risk. Final rubric scoring cites the exact issue each completed stage solved. |
+| Requirements and constraints | 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29, 30 | Architecture docs and milestone reports state D3D12/Vulkan, ray tracing, DLSS, frame graph, debug view, shader cooking, content cooking, GameFramework, launcher, platform, validation, and future-threading constraints. |
+| Separation of concerns | 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29, 30 | Boundary checks pass; runtime modules do not depend on tool internals; RHI has no Renderer-private includes; Renderer has no backend-private includes outside documented provider integration; Application has no backend-native capture implementation; future workers need no private mutable owner access. |
+| Source/folder architecture | 1, 3, 4, 7, 11, 16, 19, 23, 24, 25, 26, 28, 29, 30 | Target folder architecture is updated; new/moved code lands in owner folders; shared schemas use contract roots; backend folders stay sibling/private; tool role folders are explicit; generated/local roots stay out of durable architecture; threading folders are not added prematurely. |
+| Threading readiness and data isolation | 1-30 | The threading-readiness contract is opened for each stage; changed edges name mutable owner, phase, handoff shape, isolation scope, ordering/synchronization expectation, and deterministic diagnostics. |
+| Cohesion and interface size | 6, 7, 11, 12, 16, 19, 22, 24, 25, 26, 29, 30 | RHI method ownership table is complete; root facades shrink behind named services; `Renderer` becomes a host facade; LauncherCore, cookers, and GameFramework have focused owners. |
+| Tradeoff reasoning | 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29, 30 | Design docs record alternatives for shader registration ownership, RHI service extraction, interop, pass definition, PSO keying, backend parity, cooked schema ownership, tool orchestration, launcher workflow ownership, and future-threading handoff choices. |
+| Quality attributes | 1, 2, 10, 15, 20, 22, 23, 27, 29, 30 | Each strategic stage updates quality impact for maintainability, reliability, portability, performance reasoning, operability, reviewability, and threading-readiness. |
+| Risk and technical debt visibility | 1, 3, 5, 10, 15, 20, 22, 23, 28, 29, 30 | Coverage status tracks `Accepted`, `Needs refactor`, and `Needs design decision`; final gates have no unowned `Needs refactor` rows or unresolved private mutable handoff risks across rendering and repository coverage. |
+| Runtime behavior clarity | 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29, 30 | Docs include frame execution, frame graph, pass definition, shader package, PSO, ray tracing, presentation, GameFramework snapshots, cooked artifact flow, backend flow diagrams, and future execution-lane handoffs. |
+| Observability and diagnostics | 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29, 30 | Smoke reports include frame graph diagnostics, capability reports, debug names/markers, PSO keys, shader package IDs, DLSS status, RT status, cook/tool failures, launcher evidence, capture artifacts, and job/frame/pass/package/artifact identity. |
+| Reliability/failure handling | 7, 8, 9, 14, 18, 20, 22, 25, 26, 27, 29, 30 | Missing DLSS/RT/extensions/capture/tool/schema support produces deterministic reasons; unresolved frame graph resources fail development smoke; future tool jobs and queue work have deterministic failure reports. |
+| Performance reasoning | 2, 16, 19, 20, 21, 22, 25, 27, 29, 30 | PSO/runtime and cook/tool changes include measurement plan or logs; async compute/transfer remains a measured future step; README and final scoring avoid unsupported performance claims. |
+| Portability/backend parity | 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29, 30 | D3D12/Vulkan service responsibilities are symmetric where appropriate; source/cooked formats stay API-neutral where possible; known differences are documented; queue/fence ownership is explicit. |
+| Maintainability and naming | 2, 11, 12, 13, 14, 17, 18, 19, 22, 23, 24, 25, 26, 29, 30 | Folder ownership docs, naming conventions, pass/frame split, ray tracing terms, backend services, launcher/cooker names, artifact ownership, and threading handoff terms are updated to match final code. |
+| Testability | 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29, 30 | Boundary checks, build targets, shader compiler validation, cook validation, launcher workflow checks, smoke validation, captures, final command list, docs link scan, and threading-readiness audit are repeatable. |
+| Communication/reviewability | 1, 2, 21, 22, 23, 29, 30 | Docs, diagrams, README, reviewer path, feature matrix, known issues, validation artifacts, repository coverage, threading-readiness evidence, and final rubric score make the whole repo inspectable. |
 
 Critical rubric categories are covered by multiple stages:
 
-- Requirements and constraints: 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29.
-- Separation of concerns: 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29.
-- Source/folder architecture: 1, 3, 4, 7, 11, 16, 19, 23, 24, 25, 26, 28, 29.
-- Tradeoff reasoning: 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29.
-- Runtime behavior clarity: 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29.
-- Observability and diagnostics: 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29.
-- Portability/backend parity: 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29.
-- Testability: 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29.
+- Requirements and constraints: 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29, 30.
+- Separation of concerns: 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29, 30.
+- Source/folder architecture: 1, 3, 4, 7, 11, 16, 19, 23, 24, 25, 26, 28, 29, 30.
+- Threading readiness and data isolation: 1-30.
+- Tradeoff reasoning: 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29, 30.
+- Runtime behavior clarity: 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29, 30.
+- Observability and diagnostics: 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29, 30.
+- Portability/backend parity: 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29, 30.
+- Testability: 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29, 30.
 
 ### Portfolio Skill Signal Coverage
 
@@ -222,20 +265,21 @@ Critical rubric categories are covered by multiple stages:
 | Modern C++ systems skill | 6, 7, 11, 13, 16, 19, 22 | Ownership docs, service extraction, RAII/lifetime contracts, allocator/resource lifetime notes, and clean build commands. |
 | Graphics API fluency | 7, 8, 10, 18, 19, 20 | D3D12/Vulkan resource state/layout, descriptors, PSO, swap chain, ray tracing, and capture parity evidence. |
 | Shader and pipeline systems | 4, 5, 16, 17, 20 | Renderer-owned shader registration, explicit PSO keys, pass definition model, shader compiler validation. |
-| Content pipeline architecture | 23, 24, 25, 27, 29 | Source import, focused cooking, cooked schemas, runtime loading, and renderer resource creation are separate and validated. |
-| Developer tooling/product workflow | 23, 25, 26, 28, 29 | LauncherCore, Qt launcher UI, AssetCooker, focused tools, process evidence, and recovery paths are cohesive and repeatable. |
+| Content pipeline architecture | 23, 24, 25, 27, 29, 30 | Source import, focused cooking, cooked schemas, runtime loading, and renderer resource creation are separate, deterministic, and validated. |
+| Developer tooling/product workflow | 23, 25, 26, 28, 29, 30 | LauncherCore, Qt launcher UI, AssetCooker, focused tools, process evidence, and recovery paths are cohesive and repeatable. |
 | Rendering fundamentals | 10, 14, 18, 20, 21 | Lit, normal/debug, GBuffer, lighting, shadows, temporal/upscaling captures and notes. |
 | GPU architecture and performance reasoning | 16, 19, 20, 21, 22 | Timing/diagnostic output, PSO/runtime logs, memory diagnostics, and no unsupported performance claims. |
 | Cross-backend architecture | 3, 7, 8, 9, 19, 20 | Mechanical boundary checks and D3D12/Vulkan parity report. |
-| Source and folder architecture | 1, 4, 7, 11, 16, 23, 24, 25, 26, 28, 29 | Target folder architecture, source-root inventory, contract roots, backend sibling folders, owner-specific shader/data roots, focused tool folders, and generated/local-only policy. |
+| Source and folder architecture | 1, 4, 7, 11, 16, 23, 24, 25, 26, 28, 29, 30 | Target folder architecture, source-root inventory, contract roots, backend sibling folders, owner-specific shader/data roots, focused tool folders, generated/local-only policy, and no premature threading folders. |
+| Multithreading readiness | 1-30 | Repository threading-readiness contract, immutable render snapshots, frame graph phase split, command-batch/queue-packet model, deterministic cook/shader jobs, LauncherCore requests/reports, and no private mutable cross-module worker edges. |
 | Debuggability and validation | 3, 8, 10, 14, 15, 20 | Smoke reports, logs, capture artifacts, validation failure policy. |
 | Reliability and fallback behavior | 7, 8, 9, 18, 20 | Deterministic feature fallback reasons for DLSS, RT, capture, and backend capabilities. |
-| Testability and CI thinking | 3, 5, 10, 15, 20, 22, 27, 28, 29 | Local/CI-ready commands for boundary checks, formatting, shader compiler, cook tools, launcher, build, smoke. |
-| Documentation and onboarding | 2, 21, 22, 23, 29 | Architecture docs, whole-repo review, README, reviewer path, feature matrix, known issues. |
-| Communication and design rationale | 1, 2, 6, 21, 22, 23, 29 | Decision notes, alternatives, risks, non-goals, final rubric score, and whole-repository architecture narrative. |
+| Testability and CI thinking | 3, 5, 10, 15, 20, 22, 27, 28, 29, 30 | Local/CI-ready commands for boundary checks, formatting, shader compiler, cook tools, launcher, build, smoke, docs link scan, and threading-readiness audit. |
+| Documentation and onboarding | 2, 21, 22, 23, 29, 30 | Architecture docs, whole-repo review, README, reviewer path, feature matrix, known issues, and threading-readiness map. |
+| Communication and design rationale | 1, 2, 6, 21, 22, 23, 29, 30 | Decision notes, alternatives, risks, non-goals, final rubric score, whole-repository architecture narrative, and future-threading tradeoffs. |
 | Git/review hygiene | 21, 22 | CONTRIBUTING or equivalent review guide, commit/PR conventions, no generated junk in source docs. |
-| Product/demo clarity | 10, 20, 21, 27, 29 | Showcase launch/cook/load path, screenshots/captures, feature matrix, current backend and content-pipeline status. |
-| Collaboration readiness | 21, 22, 28, 29 | Build/report/validation instructions, known issue guidance, license/status links, contribution path, CI/local check coverage. |
+| Product/demo clarity | 10, 20, 21, 27, 29, 30 | Showcase launch/cook/load path, screenshots/captures, feature matrix, current backend and content-pipeline status. |
+| Collaboration readiness | 21, 22, 28, 29, 30 | Build/report/validation instructions, known issue guidance, license/status links, contribution path, CI/local check coverage, and threading-readiness review prompts. |
 
 ### Architecture Review Goal Coverage
 
@@ -249,16 +293,16 @@ Critical rubric categories are covered by multiple stages:
 | DLSS/native interop has a documented backend contract | 7, 9, 10, 20, 22 | Upscaler/native interop contract and per-backend DLSS status logs. |
 | D3D12/Vulkan smoke validation passes with no unresolved frame graph warnings | 10, 15, 20, 22 | Smoke logs and captures show no unresolved resource/barrier warnings. |
 | Visual debug modes are validated for both APIs | 10, 20, 22 | D3D12 and Vulkan debug/normal captures exist and are linked from final evidence. |
-| Whole-repository ownership is documented | 23, 29 | Every durable root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
-| GameFramework runtime/cooked boundary is protected | 24, 27, 29 | GameFramework has no renderer-private, backend-private, or tool-private dependencies and cooked schemas name producers/consumers. |
-| Tooling/content pipeline ownership is protected | 25, 27, 29 | Source import, focused cooking, AssetCooker orchestration, shader compilation, and conversion/debug CLI roles are separate. |
-| Launcher and host boundaries are protected | 26, 28, 29 | LauncherCore owns process/evidence workflows; Qt GUI owns presentation; Application/Editor do not own cook/import/backend-native internals. |
-| Build/CI guardrails cover the global architecture | 28, 29 | Local/CI-friendly checks catch runtime-to-tools, private include, launcher/tool, generated-folder, and RHI/Renderer boundary drift. |
+| Whole-repository ownership is documented | 23, 29, 30 | Every durable root has owner, allowed dependencies, forbidden dependencies, validation target, acceptance evidence, and threading-ready handoff shape. |
+| GameFramework runtime/cooked boundary is protected | 24, 27, 29, 30 | GameFramework has no renderer-private, backend-private, or tool-private dependencies and cooked schemas name producers/consumers. |
+| Tooling/content pipeline ownership is protected | 25, 27, 29, 30 | Source import, focused cooking, AssetCooker orchestration, shader compilation, and conversion/debug CLI roles are separate and job-shaped. |
+| Launcher and host boundaries are protected | 26, 28, 29, 30 | LauncherCore owns process/evidence workflows; Qt GUI owns presentation; Application/Editor do not own cook/import/backend-native internals. |
+| Build/CI guardrails cover the global architecture | 28, 29, 30 | Local/CI-friendly checks catch runtime-to-tools, private include, launcher/tool, generated-folder, RHI/Renderer boundary drift, and threading-hostile handoffs. |
 
 Traceability conclusion:
 
 - The plan covers all rubric criteria, all critical categories, all portfolio skill signals, the RHI/Renderer definition-of-done goals, and the whole-repository goals from `sparkle-whole-repository-architecture-review.md`.
-- The criteria that rely primarily on late-stage work are repo presentation, Git/review hygiene, collaboration readiness, global CI/local guardrails, cooked artifact validation, and whole-repository final scoring. Stages 21 through 29 are therefore mandatory, not optional polish.
+- The criteria that rely primarily on late-stage work are repo presentation, Git/review hygiene, collaboration readiness, global CI/local guardrails, cooked artifact validation, whole-repository evidence scoring, and threading-readiness auditing. Stages 21 through 30 are therefore mandatory, not optional polish.
 
 ## Reference Basis By Stage
 
@@ -341,7 +385,8 @@ Stage-to-reference map:
 | 26 | Qt model/view programming, Compressonator GUI/CLI/SDK split, Streamline integration guides | Workflow core separated from UI and host orchestration | LauncherCore owns operations/processes/evidence; Qt GUI owns presentation; Application/Editor host systems | Widgets or host code duplicating cook/render/backend implementation details |
 | 27 | NVRHI shader packages/validation, Falcor shader/render tooling, KTX/glTF artifact contracts | Artifact producer/schema/consumer validation matrix | Every shader/cooked asset type has producer, owner, consumer, inspector, and smoke/load evidence | Schema changes accepted with only a build or source-level compile |
 | 28 | CMake target usage requirements, NVRHI/NRI/Cauldron backend boundaries, CI workflows in reference repos | Mechanical guardrails beyond RHI/Renderer | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders | Broad allowlists that hide architecture drift |
-| 29 | Whole-repository review, architecture rubric, arc42/ATAM/ADR | Global final gate | Code, docs, CMake, CI/local checks, sample content, tools, and validation evidence agree | Declaring review-ready while any source root has unowned risk |
+| 29 | Whole-repository review, architecture rubric, arc42/ATAM/ADR | Global evidence gate | Code, docs, CMake, CI/local checks, sample content, tools, and validation evidence agree | Declaring review-ready while any source root has unowned risk |
+| 30 | Donut threaded rendering, Cauldron thread pool/command-list rings, Diligent multithreading/command queues, NVIDIA async compute guidance | Threading-ready ownership without premature threading implementation | Mutable owners, immutable handoffs, command batches, queue packets, tool jobs, launcher process reports, and deterministic diagnostics are documented across all modules | Adding a broad job system or global locks before data ownership is correct |
 
 Reference use rules:
 
@@ -357,41 +402,102 @@ Stage-local source references name the immediate review/code context. The target
 
 | Stage | Required target documents before implementation |
 | --- | --- |
-| 1 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md) |
-| 2 | [system-design-index.md](../architecture/after/system-design-index.md), [rendering-glossary.md](../architecture/rendering-glossary.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md) |
-| 3 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md) |
-| 4 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 5 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md) |
-| 6 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md) |
-| 7 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 8 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md) |
-| 9 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md) |
-| 10 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md) |
-| 11 | [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md) |
-| 12 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md) |
-| 13 | [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 14 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md) |
-| 15 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md) |
-| 16 | [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 17 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 18 | [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md) |
-| 19 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md) |
-| 20 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md) |
-| 21 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [docs README](../README.md) |
-| 22 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md) |
-| 23 | [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
-| 24 | [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [system-design-index.md](../architecture/after/system-design-index.md) |
-| 25 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md) |
-| 26 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md) |
-| 27 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [system-design-index.md](../architecture/after/system-design-index.md) |
-| 28 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md) |
-| 29 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md) |
+| 1 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 2 | [system-design-index.md](../architecture/after/system-design-index.md), [rendering-glossary.md](../architecture/rendering-glossary.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 3 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 4 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 5 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 6 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 7 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 8 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 9 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 10 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 11 | [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 12 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 13 | [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 14 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 15 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 16 | [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 17 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 18 | [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 19 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 20 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 21 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [docs README](../README.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 22 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 23 | [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 24 | [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [system-design-index.md](../architecture/after/system-design-index.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 25 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 26 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 27 | [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [system-design-index.md](../architecture/after/system-design-index.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 28 | [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 29 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 30 | [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md) |
 
 Implementation rule:
 
 - If a stage changes a subsystem that has a row in [system-design-index.md](../architecture/after/system-design-index.md), open that subsystem row too, even if it is not listed explicitly above.
 - If a target document contradicts the local stage prompt, update the prompt or the target document before editing code. Do not silently choose one.
 - If implementation discovers that the target shape is wrong, update the relevant after/target doc, stage status, and acceptance evidence before continuing.
+
+## Stage Contract Coverage Matrix
+
+This matrix makes the contract burden explicit for each stage. Stage-local prompts still provide the exact implementation task; this table defines what the stage must prove before it can be accepted.
+
+| Stage | Contract surfaces to prove | Stage-local acceptance proof required |
+| --- | --- | --- |
+| 1 | Coverage, folder architecture, threading readiness | Rendering coverage delegates non-rendering roots to whole-repo coverage; current risks name owners, stages, validation evidence, and threading-sensitive handoffs. |
+| 2 | Architecture navigation, glossary, contract surfaces | Reviewer docs use one vocabulary for RHI, Renderer, GameFramework, tooling, artifacts, and threading data shapes; graphs and contracts link to the same target model. |
+| 3 | Mechanical guardrails, RhiContracts, folder policy, threading-hostile edge prevention | Boundary check reports actionable paths/reasons, counts transitional exceptions, and blocks new private edges that would force future workers through owner-private state. |
+| 4 | ShaderContracts, pass authoring, RhiContracts, ToolContracts, threading-ready package catalogs | Renderer pass shader metadata lives above RHI, package ids stay stable, ShaderCompiler sees the same packages, and pass/package data can be consumed as immutable manifests. |
+| 5 | Validation evidence, ShaderContracts, guardrails | Boundary and shader-registration validation proves Stage 4 behavior without an editor build; package enumeration/build evidence is recorded with remaining exception counts. |
+| 6 | RhiContracts, folder architecture, complexity budget, threading owner map | Each RHI method is classified by service owner, caller category, backend impact, future command/queue ownership, and reason to remain on the public facade if retained. |
+| 7 | RHI services, diagnostics, interop, capture, presentation, ThreadingReadiness | First RHI services have caller evidence, public contracts, per-frame/queue/resource ownership notes, diagnostics, and no new service-locator or private backend shortcuts. |
+| 8 | Application host boundary, RHI capture/readback services, ToolContracts | Application orchestrates smoke/capture only; backend-native capture/readback implementation moves behind RHI/backend services and the Stage 8 exception is removed. |
+| 9 | Provider boundary, native interop, RhiContracts, Renderer feature ownership | Vendor/native metadata flows through provider-owned and RHI/backend-owned contracts; ordinary renderer passes and GameFramework never see D3D12/Vulkan native handles. |
+| 10 | Backend parity, validation artifacts, launcher smoke, threading evidence reuse | D3D12/Vulkan smoke evidence uses comparable scene/camera/artifact paths and records logs/captures usable by Stage 29 and Stage 30. |
+| 11 | Renderer facade, composition root, RenderContracts, ThreadingReadiness | Public `Renderer` becomes host protocol; frame pipeline/system root owns detailed orchestration; future render-thread work can start from owned snapshots/frame data. |
+| 12 | Presentation bridge, host protocol, RhiContracts | Application/Editor receive presentation products through a bridge; hosts do not drive frame graph internals, backend resources, or manual state transitions. |
+| 13 | RenderContracts, AssetContracts, renderer scene/resource ownership, ToolContracts | Renderer consumes immutable render-domain DTOs/snapshots; mesh/material/texture/temporal managers name cooked/runtime producers and do not read gameplay/tool internals. |
+| 14 | Frame graph contract, pass authoring, pipeline runtime, RHI resource access | Frame graph setup, compile, and execute phases are distinct; resource/barrier diagnostics are actionable; future command batches can be derived from frozen graph data. |
+| 15 | Frame graph validation, backend smoke, diagnostics | D3D12/Vulkan smoke-visible graph diagnostics prove unresolved resources/barriers are absent or fail development validation with actionable evidence. |
+| 16 | PipelineRuntime, ShaderContracts, RhiContracts, ToolContracts | PSO keys are explicit, printable, deterministic, backend-normalized, and tied to package/reflection/layout identity rather than type-index or pass-private state. |
+| 17 | PassCatalog/pass definition, ShaderContracts, frame graph, pipeline runtime | Ordinary pass authoring becomes declarative enough that new passes avoid RHI edits and central trait duplication; pass definitions are immutable runtime/tool inputs. |
+| 18 | Ray tracing contract, RhiContracts, RenderContracts, ThreadingReadiness | Renderer owns RT scene/shadow policy; RHI owns API-level AS descriptors/build commands; BLAS/TLAS generations and AS build requests are explicit. |
+| 19 | Backend-private symmetry, RHI services, CMake target scopes | D3D12/Vulkan services are sibling implementations with named differences, no cross-backend includes, and no backend-native details leaking into common RHI/Renderer. |
+| 20 | Full graphics validation, backend parity, ToolContracts, reviewer evidence | Build/smoke/capture/log evidence covers shader compiler, launcher, RT/upscaling/frame graph/PSO diagnostics, and known backend differences without unsupported performance claims. |
+| 21 | Reviewer presentation, documentation, evidence navigation | README/reviewer path points to architecture maps, contracts, validation commands, screenshots/captures, known issues, and threading-readiness model without marketing-only claims. |
+| 22 | RHI/Renderer cleanup, rubric scoring, guardrails | First-track RHI/Renderer debt is removed or explicitly owned, rubric critical criteria score acceptably, and stale exceptions/docs/duplicate paths are gone. |
+| 23 | Repository ownership, folder architecture, coverage | Every durable root has owner, allowed dependencies, forbidden dependencies, target folder shape, validation command, complexity status, and threading handoff risk. |
+| 24 | GameFramework, AssetContracts, RenderContracts, ToolContracts | GameFramework owns runtime scene/cooked loading and emits render snapshots; source import/cook/renderer pass logic stays outside GameFramework. |
+| 25 | SourceImporters, focused cookers, AssetCooker, ToolContracts, AssetContracts | Import/cook/conversion architecture is split into deterministic DTOs, focused cooker outputs, orchestration requests/reports, diagnostics support, and no production `AssetConverter` path. |
+| 26 | LauncherCore, Qt GUI, Application/Editor host boundaries, ToolContracts | LauncherCore owns process/workflow state and reports; Qt GUI owns presentation; Application/Editor do not duplicate cook/import/backend/tool algorithms. |
+| 27 | Artifact validation matrix, ShaderContracts, AssetContracts, ToolContracts | Every shader/cooked artifact names producer, schema owner, consumer, inspector, validation command, failure report, and smoke/load evidence. |
+| 28 | Repo-wide guardrails, CMake/CI/local checks, generated-root policy | Local/CI-friendly checks cover runtime-to-tools, private include, launcher/tool ownership, generated/local roots, folder policy, and threading-hostile handoffs. |
+| 29 | Whole-repo evidence gate, coverage, docs/code/CMake consistency | Repository coverage, target architecture, graphs, CMake/CI, tools, samples, docs, and validation evidence agree; no unowned refactor rows or duplicate production paths remain. |
+| 30 | ThreadingReadiness across all contracts | Every durable module names mutable owner, phase, handoff shape, isolation, ordering, diagnostics identity, deterministic output, and any remaining non-blocking risk owner. |
+
+## Mandatory Split Checkpoints For Large Stages
+
+These checkpoints are stage-local acceptance gates. They are intentionally smaller than the stage title, so implementation can stop at a clean boundary instead of blending unrelated architectural work. Promote a checkpoint into a new numbered stage when it cannot be implemented, validated, and documented cleanly with the rest of the stage.
+
+| Stage | Required checkpoints before acceptance |
+| --- | --- |
+| 7 | RHI interop service; RHI capture/readback service; RHI diagnostics service; RHI presentation service; public facade cleanup after each service has callers and validation. |
+| 10 | Shader/package validation; launcher smoke workflow validation; D3D12 lit/debug evidence; Vulkan lit/debug evidence; RT/upscaling/capture capability reports; docs/evidence update. |
+| 11 | Public Renderer host protocol; composition/system root extraction; frame pipeline extraction; diagnostics and lifecycle handoff; old facade responsibility deletion. |
+| 13 | Render snapshot contract; mesh/material scene staging; texture/cooked upload ownership; temporal/upscaling input ownership; denoising placeholder disposition. |
+| 16 | Package identity and generation; binding layout/reflection validation; printable PSO key; runtime cache ownership; D3D12/Vulkan normalized descriptor evidence. |
+| 17 | Pass definition schema; pass catalog ownership; graph setup integration; pipeline runtime lookup integration; proof pass migration; old trait/duplicate registration cleanup. |
+| 18 | Renderer RT scene generation; BLAS cache/build request ownership; TLAS frame data ownership; RHI AS descriptor/build command contract; shadow pass data ownership; fallback diagnostics. |
+| 19 | D3D12 service map; Vulkan service map; shared common RHI surface; CMake target scope cleanup; cross-backend include check; parity evidence for named service differences. |
+| 20 | Build/tool validation; shader/package validation; D3D12 smoke artifacts; Vulkan smoke artifacts; feature fallback reports; performance-claim audit; final graphics evidence index. |
+| 23 | Durable root inventory; owner/dependency/forbidden dependency rows; target folder comparison; generated/local-only audit; validation command map; threading handoff risk map. |
+| 25 | SourceImporters rename/extract; imported DTO diagnostics; focused cooker boundaries; AssetCooker orchestration-only proof; ToolConsoleSupport/CookDiagnostics split; AssetConverter production-path retirement. |
+| 26 | LauncherCore process request/report contract; Qt model/view presentation boundary; Application host boundary; Editor host boundary; operation history/recovery evidence; no widget-owned tool algorithms. |
+| 27 | Shader package matrix; texture artifact matrix; mesh artifact matrix; material artifact matrix; scene artifact matrix; inspector commands; smoke/load evidence. |
+| 28 | Runtime-to-tools check; GameFramework/private edge check; launcher/tool ownership check; generated/local root check; CMake target-scope check; threading-hostile handoff check; CI/local wiring. |
+| 29 | Coverage final state; docs/code/CMake consistency; sample/tool evidence; remaining risk table; duplicate path cleanup; final reviewer path. |
+| 30 | Engine runtime threading-readiness audit; graphics/RHI threading-readiness audit; tooling/content threading-readiness audit; launcher/host threading-readiness audit; CMake/CI/docs evidence audit. |
 
 ## Stage 1 - Baseline Status And Evidence Freeze
 
@@ -408,7 +514,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 1 row.
-- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -484,7 +590,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 2 row.
-- Primary target docs: [system-design-index.md](../architecture/after/system-design-index.md), [rendering-glossary.md](../architecture/rendering-glossary.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md)
+- Primary target docs: [system-design-index.md](../architecture/after/system-design-index.md), [rendering-glossary.md](../architecture/rendering-glossary.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -564,7 +670,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 3 row.
-- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md)
+- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -642,7 +748,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 4 row.
-- Primary target docs: [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -728,7 +834,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 5 row.
-- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md)
+- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -797,7 +903,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 6 row.
-- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md)
+- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -872,7 +978,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 7 row.
-- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -956,7 +1062,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 8 row.
-- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md)
+- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1032,7 +1138,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 9 row.
-- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1106,7 +1212,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 10 row.
-- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md)
+- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1189,7 +1295,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 11 row.
-- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md)
+- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1269,7 +1375,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 12 row.
-- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Primary target docs: [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1348,7 +1454,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 13 row.
-- Primary target docs: [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1424,7 +1530,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 14 row.
-- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md)
+- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1495,7 +1601,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 15 row.
-- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md)
+- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1574,7 +1680,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 16 row.
-- Primary target docs: [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1653,7 +1759,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 17 row.
-- Primary target docs: [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1733,7 +1839,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 18 row.
-- Primary target docs: [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md)
+- Primary target docs: [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1811,7 +1917,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 19 row.
-- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md)
+- Primary target docs: [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1891,7 +1997,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 20 row.
-- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md)
+- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1984,7 +2090,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 21 row.
-- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [docs README](../README.md)
+- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [docs README](../README.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -2071,7 +2177,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 22 row.
-- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
+- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -2162,7 +2268,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 23 row.
-- Primary target docs: [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Primary target docs: [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2216,7 +2322,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 24 row.
-- Primary target docs: [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [system-design-index.md](../architecture/after/system-design-index.md)
+- Primary target docs: [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [system-design-index.md](../architecture/after/system-design-index.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2271,7 +2377,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 25 row.
-- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md)
+- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2338,7 +2444,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 26 row.
-- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md)
+- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2394,7 +2500,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 27 row.
-- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [system-design-index.md](../architecture/after/system-design-index.md)
+- Primary target docs: [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [system-design-index.md](../architecture/after/system-design-index.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2451,7 +2557,7 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 28 row.
-- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Primary target docs: [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
@@ -2494,7 +2600,7 @@ Validation:
 - Run boundary checks.
 - Run CMake configure when compiler/toolchain is available.
 
-## Stage 29 - Whole-Repository Final Gate
+## Stage 29 - Whole-Repository Evidence Gate
 
 Goal:
 
@@ -2511,12 +2617,12 @@ Source references:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 29 row.
-- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md)
+- Primary target docs: [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation prompt:
 
 ```text
-Run the final repository-wide architecture gate. Verify coverage maps, target folder architecture, boundary checks, build/tool validation, launcher workflows, cooked artifact compatibility, renderer/RHI backend evidence, docs, README, and known issues. Do not call the repository review-ready while any source root has unowned risk, ambiguous folder ownership, stale migration folders, or contradictory docs.
+Run the repository-wide architecture evidence gate before the final threading-readiness audit. Verify coverage maps, target folder architecture, boundary checks, build/tool validation, launcher workflows, cooked artifact compatibility, renderer/RHI backend evidence, docs, README, and known issues. Do not call the repository review-ready while any source root has unowned risk, ambiguous folder ownership, stale migration folders, contradictory docs, or unresolved handoff shape required by Stage 30.
 ```
 
 Positive guardrails:
@@ -2556,6 +2662,81 @@ Validation:
 - Smallest meaningful target builds: `ShaderCompiler`, `AssetCooker`, `TextureCooker`, `SparkleLauncher`, affected runtime/editor target.
 - Targeted sample cook/load/smoke where available.
 
+## Stage 30 - Threading Readiness Final Audit
+
+Goal:
+
+- Triple-check that every engine module, tool, subsystem, contract, graph, folder, and implementation prompt is shaped for future multithreading without implementing multithreading prematurely.
+- Ensure future render-thread, command-recording, async queue, cook-job, shader-job, and launcher workflow work can consume explicit handoff data rather than private mutable state.
+
+Source references:
+
+- `repository-threading-readiness.md`
+- `repository-target-architecture.md`
+- `repository-target-graphs.md`
+- `system-design-index.md`
+- `architecture-review-acceptance-rubric.md`
+- All architecture contracts and stage evidence
+
+Target shape references:
+
+- Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 30 row.
+- Primary target docs: [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
+
+External implementation references:
+
+- NVIDIA Donut threaded rendering sample: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- NVIDIA Donut thread pool: https://github.com/NVIDIA-RTX/Donut/blob/main/include/donut/engine/ThreadPool.h
+- AMD Cauldron thread pool and command-list rings: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+- Diligent Engine Tutorial 06 multithreading: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial06_Multithreading
+- Diligent Engine Tutorial 23 command queues: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
+- NVIDIA async compute and overlap guidance: https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
+
+Implementation prompt:
+
+```text
+Run a repository-wide threading-readiness audit without adding a job system or new worker-thread implementation. For every durable module and every stage-owned target, verify mutable-state owner, execution phase, handoff shape, isolation scope, ordering/synchronization expectation, diagnostics identity, and deterministic-output expectation. Update docs, stage evidence, and guardrails when an edge would force future workers, render threads, async queues, cook jobs, shader jobs, or launcher workflows to read private mutable state. Prefer redesigning the data shape over adding locks or generic schedulers.
+```
+
+Positive guardrails:
+
+- Keep current serial execution where it is simpler and sufficient.
+- Prefer immutable snapshots, DTOs, manifests, command batches, queue packets, tool job requests, process requests, and reports.
+- Require frame/job/package/artifact ids, generations, queue/fence/order rules, and report paths where future parallelism is expected.
+- Preserve central RHI submission ownership while allowing future worker-side command recording through explicit command batches.
+- Preserve LauncherCore as workflow/process owner and Qt GUI as UI presentation owner.
+
+Negative guardrails:
+
+- Do not add a global job system, render thread, async compute scheduler, or worker pool just to satisfy this stage.
+- Do not declare a design threading-ready because shared objects are locked.
+- Do not let future workers require `Engine/Renderer/Private`, `Engine/RHI/Private`, `Tools/*` implementation, backend-native headers, or Qt widget internals across owner boundaries.
+- Do not accept nondeterministic cook/shader/package output ordering.
+- Do not claim async compute or transfer performance benefit without measurement plan and queue/fence/resource hazard evidence.
+
+Data transfer contracts:
+
+- Runtime-to-renderer data transfers through immutable `RenderContracts` snapshots.
+- Renderer-to-RHI recording transfers through frame graph plans, command batches, RHI descriptors, and queue submission packets.
+- Shader/pass data transfers through `ShaderContracts` package manifests, pass catalogs, reflection, and explicit PSO keys.
+- Tool work transfers through imported DTOs, cooked artifacts, tool job requests, temp/final artifact policy, reports, and inspection commands.
+- Launcher work transfers through process requests, operation reports, and history records.
+
+Acceptance:
+
+- `repository-threading-readiness.md` covers all durable modules and tool areas.
+- Every stage in this plan references the threading-readiness target doc.
+- Target graphs show future execution lanes and controlled handoff shapes.
+- Detailed contracts for RHI, Renderer/frame graph/pass/pipeline/ray tracing, GameFramework, and tooling name threading-ready ownership rules.
+- No final architecture edge requires future workers to read producer-private mutable state.
+- Stage status map includes this audit and names remaining non-blocking threading-readiness risks, if any.
+
+Validation:
+
+- Docs/link scan.
+- Boundary check.
+- No full build required unless this audit discovers code/CMake changes.
+
 ## Final Review-Ready Definition
 
 SparkleEngine is review-ready when all of these are true:
@@ -2577,5 +2758,6 @@ SparkleEngine is review-ready when all of these are true:
 - Launcher workflows are process/evidence orchestration over focused tools, with Qt UI separated from operation logic.
 - Runtime engine modules do not depend on tool internals.
 - Cooked artifact schemas have producer, owner, consumer, and validation evidence.
+- Future multithreading is already designed into the architecture: mutable state has phase owners, and parallel-ready handoffs use snapshots, DTOs, manifests, command batches, queue packets, job/process requests, and reports.
 - CMake and CI/local checks make module dependencies and validation commands repeatable.
 - Repository docs make the whole system navigable for an external graphics, engine, or tools reviewer.

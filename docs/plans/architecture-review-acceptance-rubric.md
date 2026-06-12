@@ -22,6 +22,7 @@ Reviewer architecture docs:
 - `docs/architecture/repository-system-map.md`
 - `docs/architecture/repository-coverage-status.md`
 - `docs/architecture/after/repository-target-folder-architecture.md`
+- `docs/architecture/after/repository-threading-readiness.md`
 - `docs/architecture/game-framework-contract.md`
 - `docs/architecture/tooling-pipeline-contract.md`
 - `docs/architecture/rendering-system-map.md`
@@ -78,6 +79,11 @@ The criteria below are synthesized from established architecture-review and inte
   - https://github.com/NVIDIAGameWorks/Falcor
   - https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
   - https://github.com/DiligentGraphics/DiligentEngine
+- Reference threading/queue patterns: public rendering samples make command-list recording, queue/fence synchronization, and async overlap measurable rather than implicit.
+  - https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+  - https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial06_Multithreading
+  - https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
+  - https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
 
 ## Portfolio Review Skill Signals
 
@@ -95,6 +101,7 @@ This is not a claim that every reviewer will inspect every item. It is a list of
 | Developer tooling/product workflow | Candidate can make build/cook/launch/recovery workflows repeatable and observable. | SparkleLauncherCore, Qt launcher UI models/shell/widgets, process runner, operation history, recovery paths, tool resolver. | Launcher invokes focused tools, records actionable output, and does not duplicate cook/render logic. |
 | Rendering fundamentals | Candidate understands lighting, PBR, GBuffer data, normals, depth, shadows, temporal behavior, and debug views. | GBuffer, lighting, shadow, visualize-buffer, ray-tracing, and upscaling passes with screenshots/captures. | Lit and normal/debug captures exist for both D3D12 and Vulkan, with known-difference notes. |
 | GPU architecture and performance reasoning | Candidate can reason about memory bandwidth, cache behavior, occupancy, synchronization, CPU/GPU work split, and measurement. | Profiling notes, GPU markers, timing reports, memory monitor, performance hypotheses separated from measurements. | Performance claims include data or an explicit measurement plan; no undocumented "faster" claims. |
+| Multithreading readiness | Candidate can design data ownership so future worker threads, render-thread work, cook jobs, and async queues are safe to add. | Threading readiness contract, immutable render snapshots, frame graph phase split, RHI queue/batch contracts, deterministic cook jobs, LauncherCore process reports. | A reviewer can see mutable owners, handoff shapes, queue/fence plans, and diagnostics before any thread pool is implemented. |
 | Cross-module architecture | Candidate can separate renderer intent, runtime scene ownership, backend implementation, and tool ownership. | Repository system map, RHI/Renderer layer map, forbidden include checks, tool/runtime contracts, backend-private folders, vendor SDK boundaries. | `RHI -> Renderer` dependency count is zero, runtime modules do not depend on tool internals, and launcher/tools use focused owners. |
 | Source and folder architecture | Candidate can make ownership visible from repository layout, not only prose. | Target folder architecture, before/current source-root inventory, owner-specific shader/data roots, contract roots, backend sibling folders, focused tool folders. | Folder layout reveals ownership and data flow; old/new duplicate folders, ambiguous roots, and generated/local source pollution are absent. |
 | Debuggability and validation | Candidate can make failures explainable and reproducible. | Frame graph diagnostics, validation layers, smoke validation, capture/readback utilities, capability reports. | Development smoke runs fail on unresolved graph resources and produce per-backend evidence. |
@@ -117,6 +124,7 @@ Before using SparkleEngine as a portfolio artifact for NVIDIA/AMD-style intervie
 - A documented "add a shader pass" walkthrough showing that ordinary pass work stays in Renderer/shaders/tools and does not require RHI edits.
 - Architecture diagrams for layer direction, frame execution, shader package flow, PSO creation, and backend parity.
 - A folder architecture map showing public contracts, backend roots, renderer pass/shader roots, tools, samples, CMake checks, and generated/local-only exclusions.
+- A threading-readiness map showing mutable owners, immutable snapshots, command batches, queue packets, tool jobs, launcher process requests, and reports.
 - Validation commands that a reviewer can run locally, plus the expected log/capture artifacts.
 - A known-issues section that is honest about remaining gaps instead of hiding them.
 - CI or local scripts for formatting, forbidden include checks, shader compiler validation, and runtime/editor smoke where practical.
@@ -140,6 +148,7 @@ Use this table for architecture/design proposals. A proposal does not need to be
 | Observability and diagnostics | Failures can be found and explained. | New architecture preserves logs, validation layers, debug names, GPU markers, smoke evidence, capability reports, cook diagnostics, package inspection, launcher operation history, and asset paths. |
 | Reliability/failure handling | Expected failures have deterministic handling. | Missing DLSS/RT support falls back with reason. Resource resolution failures are not silent. Cook/import/tool failures report actionable asset/package/target context. |
 | Performance reasoning | Performance claims are supported by measurement or marked as hypotheses. | Proposal identifies likely GPU/CPU bottlenecks and gives a measurement plan before claiming improvement. |
+| Threading readiness and data isolation | The design can later support worker threads, render-thread work, command-list recording, async queues, and tool job graphs without redesign. | Mutable state has a phase owner; cross-system data moves through immutable snapshots, DTOs, manifests, command batches, queue packets, process requests, or reports; queue/fence and deterministic-output expectations are named. |
 | Portability/backend parity | API-specific behavior is contained; shared semantics are explicit. | D3D12/Vulkan differences are mapped at the RHI boundary, with parity tests or known-difference notes. |
 | Maintainability and naming | Names reveal role and ownership; file locations help reviewers navigate. | Orchestration files, implementation files, contracts, and backend files follow documented naming rules. |
 | Complexity right to exist | Complexity is retained only when it pays for itself in clarity, reuse, validation, safety, or reduced future change cost. | Duplicate paths, vague helpers, broad managers, compatibility layers, schemas, commands, and CMake targets name owner, consumer, contract, validation value, smaller alternative, and removal stage when temporary. |
@@ -180,6 +189,7 @@ Critical categories for whole-repository work:
 - Runtime behavior clarity
 - Observability and diagnostics
 - Reliability/failure handling
+- Threading readiness and data isolation
 - Maintainability and naming
 - Complexity right to exist
 - Testability
@@ -195,12 +205,14 @@ Ask these during each design session.
 4. What are the D3D12 and Vulkan semantics, and where do they intentionally differ?
 5. Does this add a renderer concept to RHI, an API concept to Renderer, a tool concept to runtime, or runtime policy to a tool?
 6. Does it change shader-visible layout, cooked asset schema, resource state, descriptor lifetime, command ordering, memory lifetime, synchronization, import/cook outputs, or launch/build artifacts?
-7. What logs, validation messages, smoke tests, captures, debug views, cook reports, package inspection output, or launcher operation history prove it works?
-8. What failure path is expected, and is that path deterministic?
-9. What alternative was rejected, and why?
-10. What code, abstraction, target, schema, command, or compatibility path is being removed or simplified?
-11. If complexity remains, what does it uniquely solve and what validation proves it earns its right to exist?
-12. What future change becomes easier after this?
+7. Would the new data flow still be safe if producer and consumer later run on different threads or queues?
+8. Which phase owns mutable state, and what immutable snapshot, DTO, manifest, command batch, queue packet, process request, or report crosses the boundary?
+9. What logs, validation messages, smoke tests, captures, debug views, cook reports, package inspection output, or launcher operation history prove it works?
+10. What failure path is expected, and is that path deterministic?
+11. What alternative was rejected, and why?
+12. What code, abstraction, target, schema, command, or compatibility path is being removed or simplified?
+13. If complexity remains, what does it uniquely solve and what validation proves it earns its right to exist?
+14. What future change becomes easier after this?
 
 ## Rubric Template
 
@@ -222,6 +234,7 @@ Copy this into future design notes.
 | Observability and diagnostics |  |  |  |
 | Reliability/failure handling |  |  |  |
 | Performance reasoning |  |  |  |
+| Threading readiness and data isolation |  |  |  |
 | Portability/backend parity |  |  |  |
 | Maintainability and naming |  |  |  |
 | Complexity right to exist |  |  |  |
@@ -242,7 +255,8 @@ Before implementing a renderer/RHI architecture change, we should now require:
 3. A D3D12/Vulkan impact statement.
 4. A quality-attribute impact statement.
 5. A complexity right-to-exist statement naming what is kept, simplified, deleted, or temporarily tolerated.
-6. A validation plan.
-7. A rubric score.
+6. A threading-readiness statement naming mutable owner, handoff shape, ordering/synchronization expectations, and deterministic diagnostics.
+7. A validation plan.
+8. A rubric score.
 
 This does not mean every tiny bug fix needs ceremony. It means structural changes should be reviewable before they become code.

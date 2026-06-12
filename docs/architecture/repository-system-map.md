@@ -18,6 +18,7 @@ Companion docs:
 - [Tooling and content pipeline contract](tooling-pipeline-contract.md)
 - [Architecture boundary guardrails](architecture-boundary-guardrails.md)
 - [Target folder architecture](after/repository-target-folder-architecture.md)
+- [Threading readiness](after/repository-threading-readiness.md)
 
 Reference basis:
 
@@ -29,6 +30,10 @@ Reference basis:
 - AMD Cauldron DX12/Vulkan framework separation: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
 - AMD FidelityFX SDK provider/sample ecosystem: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
 - AMD Compressonator texture/model optimization tool suite: https://github.com/GPUOpen-Tools/compressonator
+- NVIDIA Donut threaded rendering sample: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- AMD Cauldron thread pool and command-list rings: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+- Diligent Engine multithreading and command-queue samples: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials
+- NVIDIA async compute and overlap guidance: https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
 - arc42 system/context and building-block views: https://arc42.org/overview
 - CMake target usage requirements: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 - Qt model/view separation for launcher UI structure: https://doc.qt.io/qt-6/model-view-programming.html
@@ -53,6 +58,7 @@ GameFramework owns runtime scenes, levels, gameplay-facing assets, and cooked-da
 Editor/Application own host orchestration and editor UI.
 Tools own source import, cooking, shader compilation, launcher workflows, and artifact production.
 Runtime engine modules must not depend on tool internals.
+Future multithreading depends on these same boundaries: runtime, renderer, RHI, tools, launcher, and CI must exchange immutable snapshots, DTOs, manifests, command batches, queue packets, requests, and reports instead of private mutable state.
 ```
 
 Current practical dependency shape:
@@ -202,6 +208,19 @@ This table applies the keep/improve/replace rule to the current source roots. It
 | CMake/CI | Dependency ownership and repeatable validation. | Broad transitive links and hidden CI-only behavior. |
 | `Projects` | Sample content that exercises cook/load/render paths. | Decorative samples that do not validate contracts. |
 | `docs` | Navigation, contracts, evidence, current/target truth. | Unlinked docs or prose that duplicates without deciding. |
+
+## Threading Readiness Overlay
+
+Threading readiness is documented in [after/repository-threading-readiness.md](after/repository-threading-readiness.md). This map applies it to source-root ownership.
+
+| Source area | Mutable owner before future threading | Allowed handoff shape | Forbidden shortcut |
+| --- | --- | --- | --- |
+| `Engine/GameFramework` | Runtime scene/update phase. | Immutable `RenderContracts` snapshots and versioned `AssetContracts` records. | Renderer or tools reading mutable gameplay/private loader state. |
+| `Engine/Renderer` | Frame pipeline, scene staging, frame graph, pass execution phases. | Frame-scoped render data, `FrameGraphPlan`, command batches, diagnostics records. | Worker tasks mutating shared renderer globals or live GameFramework objects. |
+| `Engine/RHI` | RHI services and selected backend queue/submission owner. | Per-frame/per-queue command lists, submission packets, fences, capability reports. | Workers borrowing native command objects from hidden global state. |
+| `Tools/Import` and `Tools/Cooking` | Import/cook job owners. | Imported DTOs, cooked artifact temp outputs, final manifests, reports. | Tool jobs writing final artifacts before validation or mutating runtime state. |
+| `Tools/Shaders/ShaderCompiler` | Shader package job owner. | Package manifests, reflection, backend-format outputs, inspection reports. | Reading full renderer runtime state to discover packages. |
+| `Tools/Launcher/SparkleLauncher` | LauncherCore operation state, Qt UI presentation state. | Process requests, operation reports, history records. | Qt widgets starting worker threads or tools directly. |
 
 ## Refactor Blast-Radius Rules
 

@@ -13,10 +13,13 @@ They should also remove or justify complexity: retained code must have an owner,
 
 ## Read First
 
-- [repository-refactor-stage-map.md](repository-refactor-stage-map.md): grouped Stage 1-29 navigation, status tracker, and before/after evidence.
+- [repository-refactor-stage-map.md](repository-refactor-stage-map.md): grouped Stage 1-30 navigation, status tracker, and before/after evidence.
 - [../rhi-renderer-review-ready-implementation-plan.md](../rhi-renderer-review-ready-implementation-plan.md): canonical detailed execution plan.
+- [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix): contract surfaces and acceptance proof each stage must satisfy.
+- [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages): smaller acceptance gates for broad stages.
 - [../../architecture/after/repository-target-architecture.md](../../architecture/after/repository-target-architecture.md): broad target architecture.
 - [../../architecture/after/repository-target-folder-architecture.md](../../architecture/after/repository-target-folder-architecture.md): target folder structure and per-stage folder guardrails.
+- [../../architecture/after/repository-threading-readiness.md](../../architecture/after/repository-threading-readiness.md): future multithreading-readiness contract for owners, phases, handoffs, queues, jobs, and reports.
 - [../../architecture/after/system-design-index.md](../../architecture/after/system-design-index.md): detailed target system contracts.
 
 ## Target Planning Questions
@@ -28,3 +31,5 @@ They should also remove or justify complexity: retained code must have an owner,
 - Which folders are current migration sources, target owners, or forbidden destinations?
 - Which before/after docs should be updated when the architecture changes?
 - Which touched systems should be kept, improved, renamed, extracted, rebuilt, or removed?
+- Which data handoffs keep future render, RHI, cook, shader, and launcher parallelism safe?
+- Which broad stage checkpoint must be split into a new numbered stage before implementation continues?

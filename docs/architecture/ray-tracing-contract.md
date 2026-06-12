@@ -22,6 +22,9 @@ Reference basis:
 
 - arc42 runtime-view and crosscutting concept guidance: https://arc42.org/overview
 - NVIDIA Donut uses reusable render passes and a graphics abstraction rather than putting renderer feature policy into the API layer: https://github.com/NVIDIA-RTX/Donut
+- NVIDIA async compute guidance discusses AS build overlap candidates and the need for resource/fence measurement: https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
+- Diligent command-queue sample demonstrates explicit compute/transfer/graphics fences: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial23_CommandQueues
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
 
@@ -138,6 +141,24 @@ Fallback must be deterministic:
 - If AS prebuild info is invalid, BLAS/TLAS build skips with a diagnostic.
 - If no mesh instances exist, TLAS is cleared or left invalid.
 - If shader package uses inline ray query and backend lacks support, runtime creation must fail with a clear message.
+
+## Threading Readiness Contract
+
+Ray tracing is a high-value future parallelism area, but it needs explicit ownership before BLAS/TLAS work can move to jobs or async queues.
+
+| Area | Threading-ready rule |
+| --- | --- |
+| BLAS cache | Cache entries have mesh id, geometry generation, build status, owning frame/job, and backend capability reason. |
+| TLAS builder | TLAS instance data is built from immutable render snapshots and BLAS handles, not live scene mutation. |
+| AS build requests | Requests name geometry/instance descs, scratch/result resources, queue type, barriers, and diagnostics labels. |
+| Async candidates | AS build overlap is a measured option only after frame graph hazards and queue fences are explicit. |
+| Fallback | Unsupported RT, invalid prebuild info, missing instances, and package feature mismatch produce deterministic reasons. |
+
+Forbidden shortcuts:
+
+- Do not let worker jobs mutate renderer ray tracing scene state without cache generation ownership.
+- Do not move shadow settings or pass data into RHI to make AS workers easier.
+- Do not overlap AS builds with graphics/compute work unless resource hazards, waits, signals, and measurement evidence exist.
 
 ## Diagnostics
 

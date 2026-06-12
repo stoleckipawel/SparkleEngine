@@ -22,6 +22,7 @@ This folder captures the architecture before the whole-repository refactor is co
 | [../repository-coverage-status.md](../repository-coverage-status.md) | Current source-root coverage and owner/risk status. |
 | [../rendering-coverage-status.md](../rendering-coverage-status.md) | Current detailed RHI/Renderer coverage and risk status. |
 | [../architecture-boundary-guardrails.md](../architecture-boundary-guardrails.md) | Current mechanical guardrails and transitional exceptions. |
+| [../after/repository-threading-readiness.md](../after/repository-threading-readiness.md) | Target comparison for current mutable-state, handoff, queue, job, and diagnostics risks. |
 
 ## What This Folder Answers
 
@@ -30,3 +31,4 @@ This folder captures the architecture before the whole-repository refactor is co
 - Which current relationships are expected, risky, or transitional?
 - What must not regress while RHI/Renderer refactors continue?
 - Which modules require follow-up design or validation before final acceptance?
+- Which current edges need snapshot, DTO, command-batch, queue-packet, job-request, or report contracts before future multithreading?

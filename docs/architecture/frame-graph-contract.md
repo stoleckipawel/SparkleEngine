@@ -21,6 +21,9 @@ Reference basis:
 
 - arc42 runtime-view and crosscutting-concept guidance: https://arc42.org/overview
 - Falcor's documentation presents render passes and render graphs as the recommended rendering workflow: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
+- NVIDIA Donut-Samples threaded rendering records independent command lists before submission: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- Diligent Engine Tutorial 06 demonstrates parallel command-list generation through per-thread deferred contexts: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials/Tutorial06_Multithreading
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
 
@@ -146,6 +149,25 @@ Compiler must not:
 - Execute pass callbacks.
 - Create backend-native resources directly.
 - Hide unresolved resources as success.
+
+## Threading Readiness Contract
+
+The frame graph should remain serial-executable today while being structurally ready for later parallel setup, compile analysis, and command recording.
+
+| Phase | Single-thread behavior today | Threading-ready rule |
+| --- | --- | --- |
+| Setup | Passes declare resources and callbacks. | Setup must declare all read/write/use intent without command recording side effects. |
+| Compile | `FrameGraphPlan` is built from declarations. | Compile output must be a frozen plan that can be consumed without reading mutable builder state. |
+| Transient planning | Transient resources and aliasing are planned before execution. | Lifetime/aliasing data must be per-frame and explicit, never hidden in pass globals. |
+| Execute | Passes run in compiled order. | A future command batch must be derivable from pass id, view/batch id, resource access set, and queue type. |
+| Diagnostics | Warnings identify pass/resource failures. | Diagnostics must include frame index, pass name, resource name/handle, and future batch label when batching exists. |
+
+Forbidden threading shortcuts:
+
+- Do not make execute touch undeclared resources and "fix" it with a mutex later.
+- Do not let passes mutate shared frame graph registries during execution.
+- Do not let command recording depend on live GameFramework state or backend-private objects.
+- Do not add async compute or transfer scheduling until the graph can name queue type, waits, signals, and resource hazards.
 
 ## Execution Contract
 

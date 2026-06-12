@@ -7,6 +7,7 @@ Last synchronized: 2026-06-13
 Graph view: [repository-target-graphs.md](repository-target-graphs.md)
 Detailed system index: [system-design-index.md](system-design-index.md)
 Target folder architecture: [repository-target-folder-architecture.md](repository-target-folder-architecture.md)
+Threading readiness contract: [repository-threading-readiness.md](repository-threading-readiness.md)
 
 ## Purpose
 
@@ -22,6 +23,9 @@ The target is calibrated against public, recognizable graphics repositories:
 - AMD Cauldron: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
 - AMD FidelityFX SDK: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
 - AMD Compressonator: https://github.com/GPUOpen-Tools/compressonator
+- NVIDIA Donut threaded rendering sample: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- Diligent Engine multithreading and command-queue samples: https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials
+- NVIDIA async compute and overlap guidance: https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/
 - Khronos glTF 2.0: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 - Khronos KTX-Software: https://github.com/KhronosGroup/KTX-Software
 - CMake target usage requirements: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
@@ -38,6 +42,7 @@ The target is calibrated against public, recognizable graphics repositories:
 7. Cross-system data must move through explicit contracts: DTOs, cooked schemas, shader package manifests, pass catalogs, RHI descriptors, process requests, logs, and validation artifacts.
 8. Code must earn its right to exist. Extra abstraction, duplicate paths, compatibility layers, and broad helpers are accepted only when they reduce net complexity, improve validation, or protect a clear contract.
 9. Folder architecture is architecture. New folders, renamed folders, deleted folders, and CMake targets must make ownership and data flow easier to infer.
+10. Threading readiness is architecture. Mutable state has a single phase owner, handoffs are immutable or versioned, and future jobs/queues must not need private cross-module state to run safely.
 
 ## Right-To-Exist Complexity Test
 
@@ -123,6 +128,25 @@ The disposition policy changes the target design in concrete ways:
 | AssetCooker | Discovery, planning, dispatch, aggregation, reports. | Reimplementing focused cookers or preserving a second `AssetConverter` pipeline. |
 | Launcher | Process orchestration, operation state, evidence and UI presentation. | Build/cook/shader algorithms inside widgets or duplicated tool logic. |
 | CMake/CI | Target ownership, validation wiring, reproducible evidence. | Broad transitive links that hide architecture or CI-only magic paths. |
+
+## Threading Readiness Target
+
+Detailed threading-readiness rules live in [repository-threading-readiness.md](repository-threading-readiness.md). The target architecture is designed so later multithreading becomes a straightforward implementation step rather than a redesign.
+
+Threading-ready means:
+
+- GameFramework mutates gameplay/runtime scene state, then produces immutable `RenderContracts` snapshots for Renderer.
+- Renderer frame pipeline separates snapshot ingestion, resource staging, frame graph setup, graph compile, command recording, and submission.
+- Frame graph setup declares read/write intent; compile produces a frozen plan; execution consumes that plan and can later split independent recording batches.
+- RHI command recording owns command lists, allocators, descriptor scratch, upload scratch, queues, and fences by frame, queue, and batch.
+- Shader packages, pass catalogs, PSO keys, cooked artifacts, and tool reports are immutable or versioned records that workers can consume without reading private live state.
+- Source import, focused cooking, shader compilation, AssetCooker orchestration, and LauncherCore workflows are modelled as deterministic job requests and reports even while they run serially.
+
+Rejected shortcuts:
+
+- Adding locks around shared mutable gameplay, renderer, RHI, tool, or launcher objects instead of establishing ownership and handoff phases.
+- Letting workers reach through private module headers because the public snapshot/DTO/manifest/command-batch contract is missing.
+- Introducing async compute, transfer, or background cooking without resource hazards, queue/fence ownership, deterministic output paths, and diagnostics.
 
 ## Folder Architecture Target
 
@@ -268,6 +292,7 @@ These edges should not appear in the finished architecture:
 | `ShaderContracts` | Pass catalog, shader package manifest, reflection, binding layout identity, package versions. | Renderer pass authoring, ShaderCompiler. | Renderer pipeline runtime, RHI shader primitives, inspection tools. |
 | `ToolContracts` | Process requests, tool reports, artifact paths, failure diagnostics, operation history. | LauncherCore, AssetCooker, cookers, ShaderCompiler. | Launcher GUI, CI/local checks, docs/evidence index. |
 | `RhiContracts` | Resource/descriptor/command/pipeline/ray tracing/capture/interop descriptors and diagnostics. | RHI public layer. | Renderer, providers, Application validation through public services. |
+| `ThreadingReadiness` | Mutable-state ownership, immutable handoff shapes, job/queue/batch identity, deterministic report requirements. | Architecture docs and implementation stages. | Future job system, render thread, RHI queues, cook workers, Launcher workflows. |
 
 Some of these surfaces may initially live in existing modules. The production target should not be blocked by the current file layout: if the current module creates a bad edge, extract a small contract module rather than preserving a polluted dependency.
 
@@ -278,6 +303,7 @@ Some of these surfaces may initially live in existing modules. The production ta
 | Requirements and constraints | The old graph mixed runtime, tooling, validation, and CI edges without edge types. | Graphs now classify dependency, production, process, and validation edges. |
 | Separation of concerns | Tools pointed directly at GameFramework/RHI and ShaderCompiler pointed at Renderer. | Contract surfaces separate tools, runtime, renderer, and RHI. |
 | Runtime behavior clarity | The flow did not show who produces artifacts versus who consumes them. | Asset, shader, render snapshot, launcher, and validation flows are explicit. |
+| Threading readiness | The old target did not explicitly show how data ownership would survive future jobs, render threads, or async queues. | The target now requires single-writer phases, immutable handoffs, queue/batch identity, deterministic tool jobs, and diagnostics before multithreading work begins. |
 | Observability and diagnostics | Evidence was represented as generic CI arrows. | Tool reports, validation artifacts, logs/captures, and final evidence are separate contracts. |
 | Maintainability and naming | Existing module names dominated the graph. | Target names use production roles: contracts, runtime, graphics, toolchain, evidence. |
 | Testability | Validation edges looked like dependencies. | CI/local checks are dashed validation edges with reports as output. |
@@ -295,4 +321,5 @@ The target architecture is accepted only when:
 - ShaderCompiler consumes a pass catalog or generated manifest, not full Renderer runtime.
 - Cooked artifact schemas name producer, schema owner, runtime consumer, inspector, and smoke/load evidence.
 - Boundary checks cover RHI/Renderer, runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, backend-native leakage, and generated/local-only policy.
+- Threading readiness checks pass at the design level: every mutable subsystem has a phase owner and every future parallel handoff has a named contract.
 - README, plans, graph pages, CMake/CI, sample projects, and validation artifacts describe the same architecture.

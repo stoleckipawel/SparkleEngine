@@ -11,6 +11,7 @@ Navigation:
 - Before/current architecture: [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
 - After/target architecture: [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
 - Target folder architecture: [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Threading readiness: [../architecture/after/repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 - Target system detail index: [../architecture/after/system-design-index.md](../architecture/after/system-design-index.md)
 - Stage map: [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
 
@@ -26,6 +27,7 @@ This review complements:
 - [repository-system-map.md](../architecture/repository-system-map.md)
 - [repository-coverage-status.md](../architecture/repository-coverage-status.md)
 - [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 - [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md)
 - [game-framework-contract.md](../architecture/game-framework-contract.md)
 
@@ -45,6 +47,10 @@ The design target is calibrated against public NVIDIA, AMD, and adjacent primary
 | AMD Cauldron | https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron | A rapid prototyping framework for Vulkan and DirectX 12 with visible API-specific build/output separation and glTF-oriented sample features. | D3D12 and Vulkan code should stay backend-private and symmetric where useful. Sample/project validation should exercise real content paths. |
 | AMD FidelityFX SDK | https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | AMD effect SDK and samples for DirectX 12/Vulkan applications, with explicit feature/API support status. | Upscaling/denoising/provider integrations must have capability reports, backend support notes, and deterministic fallback reasons. |
 | AMD Compressonator | https://github.com/GPUOpen-Tools/compressonator | Texture and mesh optimization tool suite with GUI, CLI, and SDK integration surfaces. | `TextureCooker` and related cook tools should stay focused and callable; Launcher should orchestrate them, not duplicate compression/import logic. |
+| NVIDIA Donut-Samples threaded rendering | https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering | A rendering sample that records independent command lists and submits them as a batch. | Renderer and RHI data should be separable into frame/pass/view command batches before a render thread/job system is implemented. |
+| AMD Cauldron thread pool and command-list rings | https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron | Focused thread-pool support and per-backend command-list recycling. | Task execution support and backend command allocation must have explicit owners rather than hidden global state. |
+| Diligent multithreading and command queues | https://github.com/DiligentGraphics/DiligentSamples/tree/master/Tutorials | Tutorials for per-thread deferred command contexts and graphics/compute/transfer queue synchronization. | Sparkle should model command recording ownership, queue packets, waits, signals, and dynamic-resource lifetime before adding parallel rendering or async compute. |
+| NVIDIA async compute guidance | https://developer.nvidia.com/blog/advanced-api-performance-async-compute-and-overlap/ | Async overlap is useful only when resource hazards, queues/fences, and whole-frame measurement are understood. | Async compute/transfer is a measured future optimization, not a speculative architecture shortcut. |
 | CMake target usage requirements | https://cmake.org/cmake/help/latest/command/target_link_libraries.html | `PUBLIC`, `PRIVATE`, and `INTERFACE` link scopes encode dependency propagation. | CMake links are architecture. Incorrect `PUBLIC`/`PRIVATE` scope is a design bug, not only a build detail. |
 | Qt model/view programming | https://doc.qt.io/qt-6/model-view-programming.html | Qt separates models, views, and delegates to decouple data from presentation. | `SparkleLauncherCore` owns operation state and process requests; Qt widgets own presentation and prompts. |
 | Khronos glTF 2.0 | https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html | API-neutral runtime asset delivery from authoring tools to graphics applications. | Source import should produce DTOs and diagnostics; runtime should load cooked/runtime artifacts, not source authoring formats. |
@@ -63,6 +69,7 @@ Launcher orchestrates workflows and records evidence.
 CMake and CI make dependency direction repeatable.
 Docs explain the exact current architecture and accepted debt.
 Folder names reveal ownership instead of preserving accidental history.
+Threading readiness is designed in: mutable state has one phase owner, and cross-system handoffs use immutable snapshots, DTOs, manifests, command batches, queue packets, requests, and reports.
 ```
 
 The global target is not "no dependencies." The target is known dependencies with a reason, owner, and validation artifact.
@@ -170,6 +177,7 @@ Avoid names that encode temporary migration paths, duplicate ownership, or conce
 | Cooked artifact drift | Shader, texture, material, mesh, scene, animation, and skeleton artifacts are produced by tools and loaded by runtime. | Schema drift creates late runtime failures. | Stage 27 artifact matrix maps producer, schema owner, consumer, inspector, and smoke evidence. |
 | Launcher responsibility creep | Launcher can become a second implementation of build/cook/launch logic. | A developer tool loses reliability if UI and operation logic duplicate each other. | LauncherCore plans and runs processes; GUI observes and presents state. |
 | Build graph drift | CMake `PUBLIC`/`PRIVATE` links can expose private implementation dependencies. | Transitive links can hide architecture violations. | Stage 28 expands checks to runtime-to-tools and target-scope policy. |
+| Threading-hostile data flow | Future render/cook/tool parallelism can be blocked by mutable cross-module reads. | Adding a job system later becomes risky if current refactors preserve live owner access. | Every stage must pass [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md): single-writer phase owner, immutable handoff shape, deterministic diagnostics. |
 | CI/documentation lag | Docs and CI can continue describing a previous architecture. | Reviewers lose trust if plans, checks, and code disagree. | Stage 29 requires docs, coverage maps, checks, and validation artifacts to agree. |
 
 ## Module Review Matrix
@@ -212,6 +220,7 @@ These invariants apply to every stage, including RHI/Renderer-specific stages:
 - Launcher owns workflow orchestration and evidence. Focused tools own actual build/cook/shader/import algorithms.
 - CMake dependency scopes must express ownership. A convenient transitive link is not acceptable if it hides a layer violation.
 - Folder architecture must express ownership. Shared contracts, backend implementations, renderer pass/shader ownership, tool roles, project data, and generated/local-only roots should be recognizable from their paths.
+- Threading-ready architecture must be preserved. New edges must not require future jobs, render threads, async queues, cook workers, or launcher workflows to read private mutable state across owners.
 - Generated/local-only folders are not durable architecture sources.
 - Every exception must be narrow, counted, stage-labeled, and removed by its owning stage.
 
@@ -291,6 +300,16 @@ Acceptance:
 - Showcase content exercises representative runtime/cook/render paths.
 - Docs match the final code and known debt.
 
+### Track G - Threading Readiness
+
+Goal: make future multithreading a mechanical extension of the architecture rather than a risky redesign.
+
+Acceptance:
+
+- GameFramework, Renderer, RHI, tools, Launcher, CMake/CI, and docs name mutable-state owners and handoff shapes.
+- Frame graph, pass authoring, RHI command recording, and tool/cook workflows can be described as snapshots, plans, command batches, queue packets, jobs, and reports.
+- No implementation stage keeps a private mutable cross-module edge that would force future workers to share live owner state.
+
 ## Review-Ready Definition
 
 SparkleEngine is globally architecture-review-ready when:
@@ -300,5 +319,6 @@ SparkleEngine is globally architecture-review-ready when:
 - Runtime modules do not depend on tool internals.
 - Source import, focused cooking, shader compilation, project cook orchestration, runtime loading, and renderer resource creation are separate responsibilities.
 - Vendor integrations are provider-owned and backend-supported through explicit capability/interop contracts.
+- Future multithreading is already designed into the data shapes: mutable state has phase owners, and parallel-ready handoffs use snapshots, DTOs, manifests, command batches, queue packets, job requests, and reports.
 - Build targets and CI/local checks make the architecture mechanically repeatable.
 - The implementation plan links every stage to global safeguards, not only local rendering goals.

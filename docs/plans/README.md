@@ -26,6 +26,7 @@ Repository-wide architecture:
 2. [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
 3. [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
 4. [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+5. [../architecture/after/repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 Implementation:
 
@@ -40,9 +41,12 @@ Implementation:
 | What is the global refactor vision? | [sparkle-whole-repository-architecture-review.md](sparkle-whole-repository-architecture-review.md) |
 | What are the exact implementation prompts and guardrails? | [rhi-renderer-review-ready-implementation-plan.md](rhi-renderer-review-ready-implementation-plan.md) |
 | Which target docs must be opened for each stage? | [Required Target Documents By Stage](rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage) |
+| What contract surfaces must each stage prove before acceptance? | [Stage Contract Coverage Matrix](rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix) |
+| Which broad stages have mandatory split checkpoints? | [Mandatory Split Checkpoints For Large Stages](rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages) |
 | What is each stage status? | [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md) |
 | What does acceptance mean? | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md) |
 | What is the target architecture and folder layout? | [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md) and [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md) |
+| What keeps future multithreading easy instead of risky? | [../architecture/after/repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 
 RHI/Renderer first track:
 

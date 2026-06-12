@@ -19,8 +19,10 @@ Reference basis:
 - NVIDIA Donut scene/component framework above NVRHI: https://github.com/NVIDIA-RTX/Donut
 - NVIDIA Falcor scene/rendering separation: https://github.com/NVIDIAGameWorks/Falcor
 - AMD Cauldron glTF/sample framework over DX12/Vulkan backends: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+- NVIDIA Donut threaded rendering and scene loading patterns: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
 - Khronos glTF runtime asset delivery format: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 - Khronos KTX texture container/tooling model: https://github.com/KhronosGroup/KTX-Software
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Ownership Summary
 
@@ -105,6 +107,25 @@ Rules:
 - Renderer converts snapshots into render-domain DTOs and GPU resources.
 - Tools produce cooked assets using public cooked/runtime schemas.
 - RHI remains GPU/API-level; GameFramework should not receive descriptor, command-list, pipeline, or backend-native handles.
+
+## Threading Readiness Contract
+
+GameFramework is the owner of gameplay/runtime scene mutation. Future renderer and cook parallelism depends on keeping that mutable state isolated.
+
+| Area | Threading-ready rule |
+| --- | --- |
+| Scene mutation | Mutate entities/components in the GameFramework/runtime phase only. Renderer and tools consume copies, snapshots, or cooked records. |
+| Render handoff | Build immutable `RenderContracts` snapshots with frame/generation id, camera/light/material/mesh references, and diagnostics labels. |
+| Cooked loading | Load versioned `AssetContracts` records and report schema/asset failures before exposing runtime payloads to renderer staging. |
+| Runtime asset caches | Give caches one owner and generation policy; do not let cook jobs or renderer jobs mutate loader internals. |
+| Editor interaction | Editor writes intent through public runtime/editor APIs; background jobs should not mutate live scene components directly. |
+
+Forbidden threading shortcuts:
+
+- Do not let Renderer read mutable GameFramework components to avoid writing a snapshot.
+- Do not let SourceImporters, cookers, or AssetCooker write GameFramework runtime objects directly.
+- Do not add background loading that publishes partially validated cooked data.
+- Do not move renderer pass data into GameFramework to make a future worker job easier.
 
 ## Tooling Contract
 

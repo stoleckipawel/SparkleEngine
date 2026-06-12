@@ -8,6 +8,7 @@ Related architecture:
 
 - [repository-target-architecture.md](repository-target-architecture.md)
 - [repository-target-graphs.md](repository-target-graphs.md)
+- [repository-threading-readiness.md](repository-threading-readiness.md)
 - [system-design-index.md](system-design-index.md)
 - [../../plans/after/repository-refactor-stage-map.md](../../plans/after/repository-refactor-stage-map.md)
 
@@ -26,8 +27,10 @@ The target is based on visible patterns from established graphics and tooling re
 | NVIDIA NVRHI: https://github.com/NVIDIA-RTX/NVRHI | Public API under `include/nvrhi`, implementation under `src`, CMake/build support under `cmake`, and separate backend targets such as `nvrhi_d3d12` and `nvrhi_vk`. | Public GPU contracts and backend implementation must be visibly separated. D3D12/Vulkan code should be sibling backend implementations, not renderer folders. |
 | NVIDIA NRI: https://github.com/NVIDIA-RTX/NRI | `Include`, `Source`, `Resources`, and `Shaders` are explicit roots. | Public contracts, implementation, resources, and shaders should not be mixed under vague common roots. |
 | NVIDIA Donut: https://github.com/NVIDIA-RTX/Donut | Static libraries separate core, engine, render, app, and shader build surfaces. | Sparkle should keep foundation, renderer, host/application, and shader tooling as separate targets and folders. |
+| NVIDIA Donut-Samples threaded rendering: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering | Threaded command recording is isolated by command list/view work, not by mixing app and backend state. | Renderer/RHI folders must make command batch, frame, and queue ownership separable later. |
 | NVIDIA Falcor: https://github.com/NVIDIAGameWorks/Falcor | Core framework, shared render passes, samples, render-graph app, `Data`, and `Shaders` are distinct source/content roots. | Renderer passes, sample projects, data, and shaders need explicit owner roots. Ordinary passes should not live in RHI folders. |
 | AMD Cauldron: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron | `src/common`, `src/DX12`, `src/VK`, `libs`, and `media` expose backend and content separation. | Backend implementations are sibling roots with symmetric service folders; sample media/content is not hidden inside runtime code. |
+| AMD Cauldron command-list rings: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron | Backend command buffers/lists are allocated and recycled per frame/back buffer. | RHI backend folders should keep command allocation, queue, and fence ownership visible. |
 | AMD FidelityFX SDK: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | `Kits`, `Samples`, `Tools`, and `docs` separate reusable effects, sample integration, tooling, and documentation. | Vendor/provider integrations, samples, tools, and docs should have separate ownership and validation paths. |
 | AMD Compressonator: https://github.com/GPUOpen-Tools/compressonator | `applications`, core/framework libraries, runtime, examples, scripts, docs, and tests are separate. | Developer tools should expose focused libraries/CLIs/apps rather than one broad conversion or common folder. |
 
@@ -72,6 +75,9 @@ Engine/
       Public/
       Private/
     Shader/
+      Public/
+      Private/
+    Threading/
       Public/
       Private/
   RHI/
@@ -238,6 +244,7 @@ flowchart TD
 | `Engine/Contracts/Asset` | Versioned cooked/imported schema contracts shared by tools and runtime. | Source import algorithms, runtime loader bodies, renderer resource caches. |
 | `Engine/Contracts/Render` | Immutable renderer-facing snapshots, viewport products, render-domain DTOs. | Frame graph internals, pass code, gameplay mutation. |
 | `Engine/Contracts/Shader` | Pass catalog records, shader package manifests, reflection/binding schema shared by Renderer and ShaderCompiler. | Renderer runtime execution, backend compiler implementation, RHI pass ownership. |
+| `Engine/Contracts/Threading` | Optional future home for public job, command-batch, queue-packet, or report primitives once real callers exist. | A premature global job system, hidden scheduler policy, or domain-specific mutable owner state. |
 | `Tools/Contracts` | Process requests, tool reports, artifact reports, operation history records. | Engine runtime schemas or GUI widget logic. |
 | `Engine/RHI/Private/Services` | API-neutral GPU service implementations that back public RHI contracts. | Renderer pass names, GameFramework scene data, source/cook policy. |
 | `Engine/RHI/Private/D3D12` and `Engine/RHI/Private/Vulkan` | Native API translation, backend resources, memory, descriptors, pipelines, diagnostics. | Cross-backend includes, renderer feature policy, Application validation ownership. |
@@ -274,6 +281,7 @@ Each implementation prompt must name the current folders touched, target folders
 | 27 | Add or update inspection/validation folders only where they have read-only artifact ownership, such as `Tools/Inspection/AssetInspector` or ShaderCompiler inspection commands. |
 | 28 | Expand CMake and CI guardrail folders: prefer `CMake/Checks`, `CMake/Profiles`, `CMake/Artifacts`, and documented `.github` workflow commands over flat, unowned scripts. |
 | 29 | Remove stale transitional folders, aliases, duplicate bodies, old registry paths, empty/unowned roots, and compatibility shims that fail the right-to-exist test. |
+| 30 | Verify future-threading folder readiness: no permanent source root should require workers to access private owner state; optional `Engine/Contracts/Threading` or `Tools/Contracts` additions must have real callers and validation value before landing. |
 
 ## Implementation Prompt Folder Contract
 
@@ -302,3 +310,4 @@ Controlled data-transfer folders:
 - Renderer-to-shader-tool data moves through `Engine/Contracts/Shader` pass catalogs, package manifests, reflection, and binding layouts.
 - Launcher-to-tool data moves through `Tools/Contracts` process requests, tool reports, artifact paths, and operation history.
 - RHI/backend data moves through public RHI descriptors, capabilities, native interop records, validation reports, and backend diagnostics.
+- Future threaded data moves through immutable snapshots, job requests, command batches, queue packets, fences, and reports named by [repository-threading-readiness.md](repository-threading-readiness.md).

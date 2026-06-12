@@ -6,6 +6,7 @@ Last synchronized: 2026-06-13
 
 Graph view: [repository-current-graphs.md](repository-current-graphs.md)
 Target folder comparison: [../after/repository-target-folder-architecture.md](../after/repository-target-folder-architecture.md)
+Threading readiness target: [../after/repository-threading-readiness.md](../after/repository-threading-readiness.md)
 
 ## Purpose
 
@@ -93,6 +94,13 @@ Current interpretation:
 - `Tools -> GameFramework/RHI public contracts` is expected for cooked schemas. Runtime modules must not depend on tool internals.
 - Launcher currently has a useful split between `SparkleLauncherCore` and Qt GUI code. That split must be preserved.
 
+Current threading-readiness interpretation:
+
+- The repository is not yet implementing a job system, render thread, parallel cooker, or async queue scheduler.
+- Several good foundations already exist: renderer pass/frame graph phases, focused cookers, LauncherCore/Qt separation, backend-private RHI folders, and Stage 4's narrow shader-registration target.
+- The current architecture still needs a stricter data-shape audit before multithreading would be safe: Renderer should not rely on mutable GameFramework internals, frame graph execution needs frozen plans and future command-batch identity, RHI command/queue ownership needs frame/queue/batch labels, and tools need deterministic job requests/reports.
+- The target for this audit is [repository-threading-readiness.md](../after/repository-threading-readiness.md), not broad locks or premature worker abstractions.
+
 ## Current Source-Root Shape
 
 Observed durable roots:
@@ -142,6 +150,7 @@ Generated/local-only roots seen in this workspace, such as `build/`, `build-*`, 
 | CMake/CI | Profiles, dependencies, target links, boundary checks, shader-cook workflow. | Target scopes and CI can lag the intended architecture and hide drift. |
 | Projects | Showcase sample content and launch targets. | Sample content can stop exercising representative cook/runtime/render paths. |
 | Docs | Architecture contracts, plans, and coverage maps. | Flat structure and stale wording make before/after reasoning hard. |
+| Threading readiness | Future parallelism is mostly implicit today. | Without explicit owners, snapshots, command batches, queue packets, tool jobs, and reports, future multithreading would require risky redesign. |
 
 ## Baseline Acceptance
 

@@ -15,6 +15,7 @@ The target architecture is not constrained to current bodies or names. It preser
 - [repository-target-architecture.md](repository-target-architecture.md): broad target architecture and before-to-after changes.
 - [repository-target-graphs.md](repository-target-graphs.md): finished-product global, runtime, graphics, tooling, launcher, and validation graphs.
 - [repository-target-folder-architecture.md](repository-target-folder-architecture.md): target folder ownership, current-to-target path moves, and folder guardrails.
+- [repository-threading-readiness.md](repository-threading-readiness.md): future multithreading-readiness contract for phase ownership, immutable handoffs, command batches, queues, jobs, and reports.
 - [system-design-index.md](system-design-index.md): detailed target design by subsystem with links to the living contracts.
 
 ## Related Target Documents
@@ -24,6 +25,7 @@ The target architecture is not constrained to current bodies or names. It preser
 | [../repository-system-map.md](../repository-system-map.md) | Living whole-repository target map and dependency intent. |
 | [../game-framework-contract.md](../game-framework-contract.md) | Target runtime scene and cooked asset ownership. |
 | [../tooling-pipeline-contract.md](../tooling-pipeline-contract.md) | Target Launcher, ShaderCompiler, import, cooking, and conversion ownership. |
+| [repository-threading-readiness.md](repository-threading-readiness.md) | Target data isolation and future job/queue readiness across all modules. |
 | [../rhi-contract-map.md](../rhi-contract-map.md) | Target RHI method/service ownership. |
 | [../frame-graph-contract.md](../frame-graph-contract.md) | Target renderer frame graph contract. |
 | [../pass-authoring-contract.md](../pass-authoring-contract.md) | Target pass/shader authoring model. |
@@ -35,5 +37,6 @@ The target architecture is not constrained to current bodies or names. It preser
 - What should the repository look like after the refactor?
 - What are the final broad system interactions?
 - Which folders should exist, move, split, or disappear?
+- Which data shapes and ownership rules keep the repo ready for future multithreading?
 - Where are the detailed contracts for each subsystem?
 - What before-to-after changes are expected?

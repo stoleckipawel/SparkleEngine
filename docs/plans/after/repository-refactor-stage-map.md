@@ -8,9 +8,10 @@ Last synchronized: 2026-06-13
 
 This map makes the implementation plan navigable as a whole-repository refactor. The canonical details remain in [../rhi-renderer-review-ready-implementation-plan.md](../rhi-renderer-review-ready-implementation-plan.md); this file groups stages by architecture area and shows what before/after evidence each group should update.
 
-Folder architecture is tracked in [repository-target-folder-architecture.md](../../architecture/after/repository-target-folder-architecture.md). Each stage must make source folders, target folders, forbidden folders, and cleanup paths visible before implementation.
+Folder architecture is tracked in [repository-target-folder-architecture.md](../../architecture/after/repository-target-folder-architecture.md). Threading readiness is tracked in [repository-threading-readiness.md](../../architecture/after/repository-threading-readiness.md). Each stage must make source folders, target folders, forbidden folders, cleanup paths, mutable owners, and future-safe handoff shapes visible before implementation.
 
 Required target documents for each individual stage live in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage). Open that row before starting the stage.
+Required contract proof and split checkpoints live in [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix) and [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages). A broad stage cannot be accepted until each listed checkpoint has independent evidence, or the unfinished checkpoint has been promoted into a new numbered stage.
 
 Before accepting any stage, classify touched systems as `Keep and refine`, `Improve and extract`, or `Replace or redesign`. The stage may rename, split, merge, rebuild, or delete existing code when that is the cleanest path to the target architecture.
 
@@ -57,7 +58,8 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 26 | Not started | Launcher/host split is documented. | Verify LauncherCore/Qt GUI/Application/Editor boundaries. |
 | 27 | Not started | Artifact validation matrix requirements are documented. | Build producer/schema/consumer/inspector evidence for shader and cooked artifacts. |
 | 28 | Not started | Future guardrail rules are documented. | Expand local/CI checks for runtime/tools/folder/generated-root policy. |
-| 29 | Not started | Final repository gate is documented. | Run final whole-repo evidence, cleanup, and status reconciliation. |
+| 29 | Not started | Whole-repository evidence gate is documented. | Run whole-repo evidence, cleanup, and status reconciliation before the final threading-readiness audit. |
+| 30 | Not started | Threading-readiness contract and final audit stage are documented. | Audit all modules/stages for mutable owners, immutable handoffs, command batches, queue packets, tool jobs, launcher reports, and deterministic diagnostics. |
 
 ## Stage Groups
 
@@ -75,27 +77,29 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 26 | Launcher workflow and Editor/Application host boundaries | [current state](../../architecture/before/repository-current-state.md) | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md), [repository target](../../architecture/after/repository-target-architecture.md) | LauncherCore owns workflows/evidence; Qt GUI owns presentation; hosts do not own backend/cook/import internals. |
 | 27 | Shader and cook artifact validation matrix | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md) | [target system design index](../../architecture/after/system-design-index.md) | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
 | 28 | Build, CI, and boundary guardrail expansion | [architecture guardrails](../../architecture/architecture-boundary-guardrails.md) | [repository target](../../architecture/after/repository-target-architecture.md) | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders, and RHI/Renderer boundaries. |
-| 29 | Whole-repository final gate | [current state](../../architecture/before/repository-current-state.md), [coverage status](../../architecture/repository-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [system design index](../../architecture/after/system-design-index.md) | No unowned `Needs refactor` rows remain; docs, code, CMake/CI, samples, tools, and validation evidence agree. |
+| 29 | Whole-repository evidence gate | [current state](../../architecture/before/repository-current-state.md), [coverage status](../../architecture/repository-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [system design index](../../architecture/after/system-design-index.md) | No unowned `Needs refactor` rows remain; docs, code, CMake/CI, samples, tools, and validation evidence agree before the final threading-readiness audit. |
+| 30 | Threading-readiness final audit | [current state](../../architecture/before/repository-current-state.md), [repository threading readiness](../../architecture/after/repository-threading-readiness.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [target graphs](../../architecture/after/repository-target-graphs.md), [system design index](../../architecture/after/system-design-index.md) | All modules and stage outputs are safe for future worker threads, render-thread work, async queues, cook jobs, shader jobs, and launcher process workflows without private mutable cross-owner access. |
 
 ## Module To Stage Index
 
 | Module or subsystem | Main stages |
 | --- | --- |
-| Core / Platform | 23, 28, 29 |
-| RHI common and backends | 3, 6, 7, 8, 9, 19, 20, 22, 28, 29 |
-| Renderer facade/frame/passes/pipeline | 4, 10-17, 20, 22, 29 |
-| Ray tracing | 18, 20, 22, 29 |
-| GameFramework | 13, 24, 27, 29 |
-| Editor/Application | 8, 12, 20, 26, 29 |
-| ShaderCompiler | 4, 5, 16, 17, 20, 27, 29 |
-| SourceImporters / current SourceImportAdapters | 25, 27, 29 |
-| Texture/Mesh/Material/Scene cookers | 25, 27, 29 |
-| AssetCooker / retired AssetConverter commands / ToolConsoleSupport / CookDiagnostics | 25, 27, 29 |
-| SparkleLauncher | 10, 20, 21, 26, 28, 29 |
-| CMake / CI | 3, 5, 20, 23, 28, 29 |
-| Projects / Showcase | 10, 20, 27, 29 |
-| Folder architecture / source-root ownership | 1-29 |
-| Docs / reviewer presentation | 1, 2, 21, 22, 23, 29 |
+| Core / Platform | 23, 28, 29, 30 |
+| RHI common and backends | 3, 6, 7, 8, 9, 19, 20, 22, 28, 29, 30 |
+| Renderer facade/frame/passes/pipeline | 4, 10-17, 20, 22, 29, 30 |
+| Ray tracing | 18, 20, 22, 29, 30 |
+| GameFramework | 13, 24, 27, 29, 30 |
+| Editor/Application | 8, 12, 20, 26, 29, 30 |
+| ShaderCompiler | 4, 5, 16, 17, 20, 27, 29, 30 |
+| SourceImporters / current SourceImportAdapters | 25, 27, 29, 30 |
+| Texture/Mesh/Material/Scene cookers | 25, 27, 29, 30 |
+| AssetCooker / retired AssetConverter commands / ToolConsoleSupport / CookDiagnostics | 25, 27, 29, 30 |
+| SparkleLauncher | 10, 20, 21, 26, 28, 29, 30 |
+| CMake / CI | 3, 5, 20, 23, 28, 29, 30 |
+| Projects / Showcase | 10, 20, 27, 29, 30 |
+| Folder architecture / source-root ownership | 1-30 |
+| Threading readiness / data isolation | 1-30 |
+| Docs / reviewer presentation | 1, 2, 21, 22, 23, 29, 30 |
 
 ## Disposition Outcomes By Stage
 
@@ -110,6 +114,7 @@ Stage status tracks implementation acceptance, not merely whether planning docs 
 | 25 | Focused cookers. | `SourceImportAdapters` becomes `SourceImporters`; `CookCommon` becomes `ToolConsoleSupport`/`CookDiagnostics`; AssetCooker stays orchestration-only. | `AssetConverter` as a production cook path. |
 | 26 | Qt GUI presentation/model split. | LauncherCore routes operation data through `ToolContracts`. | Launcher widgets owning build/cook/shader algorithms. |
 | 27-29 | Showcase as evidence project and docs as evidence set. | CMake/CI/docs align with contract surfaces and final validation artifacts. | Ambiguous or unowned durable roots, stale names, and duplicate production paths. |
+| 30 | Existing serial paths that are simpler and validated. | Mutable ownership, immutable handoffs, command batches, queue packets, deterministic jobs, and reports are made explicit. | Broad global locks, speculative job systems, and worker access to private mutable owner state. |
 
 ## Stage-By-Stage Folder Architecture Budget
 
@@ -146,6 +151,7 @@ Each implementation prompt must name the current folders touched, the target fol
 | 27 | Artifact inspection/validation folders are read-only and tied to contracts. | Inspectors mutating production cook policy. |
 | 28 | `CMake/Checks`, CMake target scopes, and CI/local commands enforce folder edges. | Generated/local roots becoming durable architecture or checks hidden in CI only. |
 | 29 | Final source-root inventory matches target folder architecture or stricter documented alternatives. | Duplicate old/new folders, ambiguous roots, stale aliases, or compatibility shims. |
+| 30 | Optional future `Engine/Contracts/Threading`/`Tools/Contracts` additions only when real callers need job, command-batch, queue-packet, or report primitives. | Premature global scheduler folders, worker code under owner-private folders, or "threading" folders that hide domain policy. |
 
 ## Stage-By-Stage Complexity Budget
 
@@ -182,6 +188,7 @@ Each stage must show that retained code earns its right to exist.
 | 27 | Artifact matrix with producer/schema/consumer/inspector/evidence. | Artifact compatibility proven only by build success. |
 | 28 | Boundary checks that enforce target edges locally and in CI. | Checks that only document debt but do not fail new drift. |
 | 29 | Final evidence set that removes unearned complexity. | Any duplicate path, vague owner, or exception without an accepted follow-up. |
+| 30 | Threading-readiness evidence that names owners, phases, handoffs, ordering, and diagnostics. | Global locks, speculative schedulers, nondeterministic tool output, or hidden mutable cross-module reads. |
 
 ## Stage Acceptance Checklist
 
@@ -190,8 +197,11 @@ For any stage:
 - Open the before/current document for the affected subsystem.
 - Open the after/target contract for the subsystem.
 - Open the matching row in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage).
+- Open the matching row in [Stage Contract Coverage Matrix](../rhi-renderer-review-ready-implementation-plan.md#stage-contract-coverage-matrix).
+- Complete any listed row in [Mandatory Split Checkpoints For Large Stages](../rhi-renderer-review-ready-implementation-plan.md#mandatory-split-checkpoints-for-large-stages), or split the unfinished checkpoint into a new numbered stage before implementation continues.
 - Classify each touched subsystem using the refactor disposition policy in [../../architecture/after/repository-target-architecture.md](../../architecture/after/repository-target-architecture.md).
 - Apply the stage complexity budget above and name the code that earns its right to remain.
+- Apply [repository-threading-readiness.md](../../architecture/after/repository-threading-readiness.md) and name mutable owner, phase, handoff shape, isolation, ordering/synchronization expectation, and deterministic diagnostics for changed edges.
 - Check new names against the repository naming canon before adding files, targets, types, commands, or schemas.
 - Confirm the `Global Refactor Stage Impact Matrix` in the canonical implementation plan names the adjacent modules to protect.
 - Run the smallest meaningful validation available locally.

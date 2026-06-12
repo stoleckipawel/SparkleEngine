@@ -25,6 +25,8 @@ Reference basis:
 
 - Falcor documents render passes and render graphs as the normal way to prototype rendering techniques: https://github.com/NVIDIAGameWorks/Falcor/blob/master/docs/getting-started.md
 - Donut describes reusable rendering passes in its render module and separates shader building from the main framework: https://github.com/NVIDIA-RTX/Donut
+- NVIDIA Donut-Samples threaded rendering shows independent command-list recording by view/face: https://github.com/NVIDIA-RTX/Donut-Samples/tree/main/examples/threaded_rendering
+- Repository threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 
 ## Contract Summary
 
@@ -190,6 +192,25 @@ It should not require:
 | What fixed-function pipeline state is needed? | Renderer pass definition normalized into RHI pipeline desc. |
 | How does D3D12/Vulkan create the native PSO? | RHI backend pipeline service. |
 | How is the pass debugged? | Renderer diagnostics, frame graph diagnostics, RHI markers, shader package inspection. |
+
+## Threading Readiness Contract
+
+Passes should be authorable as future command-recording jobs without changing their ownership model.
+
+| Pass part | Threading-ready rule |
+| --- | --- |
+| Pass definition | Immutable pass metadata: name, package id, resource access, pipeline intent, feature requirements, diagnostics label. |
+| Setup | Declares all graph resource reads/writes and does not record commands or mutate global pass state. |
+| Execute | Consumes `PassExecutionContext`, frame data, pipeline runtime, and graph resources; any mutation is local to the recording batch or explicitly owned runtime cache. |
+| Parameters | Shader-visible data is copied into pass/frame parameter blocks, not read from live GameFramework objects. |
+| Diagnostics | Errors include pass name, package id, frame/batch label when available, binding/resource name, and backend. |
+
+Forbidden shortcuts:
+
+- Do not use static mutable pass state for per-frame data.
+- Do not let execute discover hidden resources that setup did not declare.
+- Do not make pass execution depend on current UI/GameFramework mutable objects.
+- Do not make ordinary passes submit command lists or wait on queues directly.
 
 ## Current Gaps
 

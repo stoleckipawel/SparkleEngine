@@ -10,6 +10,7 @@ Navigation:
 - Before/current architecture: [before/repository-current-state.md](before/repository-current-state.md)
 - After/target architecture: [after/repository-target-architecture.md](after/repository-target-architecture.md)
 - Target folder architecture: [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md)
+- Threading readiness: [after/repository-threading-readiness.md](after/repository-threading-readiness.md)
 - Target system detail index: [after/system-design-index.md](after/system-design-index.md)
 
 ## Purpose
@@ -68,6 +69,8 @@ Stage 3 intentionally checks only the first RHI/Renderer boundary. The whole-rep
 | `NO_UNOWNED_SOURCE_ROOT` | Durable `Engine`, `Tools`, `Projects`, `CMake`, `.github`, and `docs` roots | A durable root exists without owner, allowed dependencies, forbidden dependencies, and validation command. |
 | `NO_UNEARNED_COMPATIBILITY_LAYER` | Engine/tools/CMake/docs | A compatibility adapter, duplicate registry, or old/new parallel body exists without owner, reason, validation value, and removal stage. |
 | `NO_ABSTRACTION_WITHOUT_CALLER_EVIDENCE` | New public APIs, targets, schemas, and helper libraries | A new abstraction is added for hypothetical future use without current callers, contract ownership, and diagnostics/validation benefit. |
+| `NO_THREADING_HOSTILE_HANDOFF` | Cross-module contracts and new mutable services | A new edge requires workers/future jobs to access private mutable owner state instead of snapshots, DTOs, manifests, command batches, queue packets, requests, or reports. |
+| `NO_THREADING_BY_GLOBAL_LOCK` | Runtime, renderer, RHI, tools, launcher | A design claims future thread safety by adding broad locks around shared mutable state without naming phase ownership and handoff shape. |
 
 ## Transitional Exceptions
 
@@ -98,6 +101,7 @@ Result:
 - Do not add broad allowlists.
 - Every exception must name the owning removal stage.
 - Every exception and compatibility path must explain why its complexity earns temporary right to exist.
+- Every new cross-module edge must pass the threading-readiness handoff check from [after/repository-threading-readiness.md](after/repository-threading-readiness.md).
 - New ordinary renderer passes must not add `Engine/RHI` dependencies.
 - New backend-native validation work belongs behind RHI/backend-owned services, not Application.
 - When a later stage fixes a debt row, remove the exception in the same stage.
