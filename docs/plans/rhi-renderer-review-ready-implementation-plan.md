@@ -13,6 +13,10 @@ Primary source documents:
 - `docs/plans/rhi-renderer-architecture-review.md`
 - `docs/plans/architecture-review-acceptance-rubric.md`
 
+Stage artifacts:
+
+- Stage 1 baseline status: `docs/architecture/rendering-coverage-status.md`
+
 Current code evidence used while writing this plan:
 
 - `Engine/RHI/Public/Device/RenderHardwareInterface.h`

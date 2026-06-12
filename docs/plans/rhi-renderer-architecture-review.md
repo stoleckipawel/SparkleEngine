@@ -12,6 +12,10 @@ Execution plan:
 
 - `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
 
+Tracked architecture status:
+
+- `docs/architecture/rendering-coverage-status.md`
+
 ## Goal
 
 Make SparkleEngine easier to review as a serious renderer/RHI implementation by NVIDIA, AMD, or similar graphics engineers.
