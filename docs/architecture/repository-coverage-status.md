@@ -2,15 +2,16 @@
 
 Status: whole-repository coverage baseline
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 Source plan: `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
 Source review: `docs/plans/sparkle-whole-repository-architecture-review.md`
 Related detail: [Rendering coverage status](rendering-coverage-status.md)
 
 ## Purpose
 
-This document extends the Renderer/RHI coverage map to every durable source root in SparkleEngine. It is a guardrail for large refactors: changing RHI or Renderer is not accepted if it silently degrades Launcher, ShaderCompiler, AssetCooker, TextureCooker, SourceImportAdapters, GameFramework, Editor/Application, build profiles, or project content.
+This document extends the Renderer/RHI coverage map to every durable source root in SparkleEngine. It is a guardrail for large refactors: changing RHI or Renderer is not accepted if it silently degrades Launcher, ShaderCompiler, AssetCooker, TextureCooker, SourceImporters/current SourceImportAdapters, GameFramework, Editor/Application, build profiles, or project content.
 
-Generated/local-only folders remain out of scope: `build/`, `cmake-build-debug/`, `artifacts/`, `dist/`, and `logs/`.
+Generated/local-only folders remain out of scope: `build/`, `build-*`, `cmake-build-debug/`, `artifacts/`, `dist/`, `logs/`, and local reference/scratch roots such as `tmp_*`.
 
 ## Inventory Snapshot
 
@@ -36,15 +37,58 @@ Snapshot:
 | `Tools/Cooking` | 106 | Cook pipeline rows below. |
 | `Tools/Import` | 85 | Source import rows below. |
 | `Tools/Conversion` | 4 | AssetConverter row below. |
-| `Engine/Assets` | 0 | Placeholder/root policy row below. |
+| `Engine/Assets` | 0 | Non-code asset root policy row below. Current subfolders include `Meshes`, `Shaders`, and `Textures`. |
 
 ## Status Legend
 
 | Status | Meaning |
 | --- | --- |
-| `Accepted` | Current ownership appears aligned; later stages must preserve it. |
+| `Accepted` | Current ownership appears aligned; later stages preserve the role, but may still rename or extract if the naming canon requires it. |
 | `Needs refactor` | Known implementation, ownership, validation, or documentation gap. |
 | `Needs design decision` | Ownership or policy question must be resolved before moving code. |
+
+## Disposition Pass
+
+This pass applies the target architecture's keep/improve/replace policy to the coverage map. It is the design answer to "what should survive?"
+
+| Area | Disposition | Target decision |
+| --- | --- | --- |
+| `Engine/Core` | Keep and refine | Keep foundation code if it remains policy-free. |
+| `Engine/Platform` | Improve and extract | Keep OS/window/input; push presentation and host behavior upward. |
+| `Engine/RHI` | Improve and extract | Split broad facade into `RhiContracts` and focused services. |
+| D3D12/Vulkan backend folders | Keep and refine | Preserve backend-private roots and improve service parity. |
+| `Engine/Renderer` | Improve and extract | Keep renderer ownership, but split facade, frame pipeline, pass authoring, providers, and pipeline runtime. |
+| Renderer central pass traits | Replace or redesign | Replace with `PassCatalog` and `PipelineRuntimeLibrary`. |
+| `Engine/GameFramework` | Improve and extract | Keep runtime scene/cooked loading; move shared schemas to `AssetContracts` and renderer handoff to `RenderContracts`. |
+| `Engine/Editor` | Improve and extract | Keep UI/panels; prevent backend/tool logic from entering editor code. |
+| `Engine/Application` | Improve and extract | Keep orchestration; replace backend-native validation body with RHI/backend services. |
+| `Engine/Assets` | Replace or redesign | Narrow to built-in engine assets with manifest/validation, or move shaders/data to owner-specific roots. |
+| `Tools/Launcher/SparkleLauncherCore` | Improve and extract | Keep workflow planning/process execution; route handoffs through `ToolContracts`. |
+| SparkleLauncher Qt GUI | Keep and refine | Preserve presentation/model split. |
+| `Tools/Shaders/ShaderCompiler` | Improve and extract | Consume `ShaderContracts`, not renderer runtime. |
+| `Tools/Import/SourceImportAdapters` | Improve and extract | Rename/extract target to `SourceImporters`. |
+| Focused cookers | Keep and refine | Preserve focused cookers and tighten artifact contracts. |
+| `Tools/Cooking/AssetCooker` | Improve and extract | Keep orchestration only. |
+| `Tools/Conversion/AssetConverter` | Replace or redesign | Fold into AssetCooker or explicit inspect/debug commands. |
+| `Tools/Cooking/CookCommon` | Improve and extract | Rename/split to `ToolConsoleSupport` and/or `CookDiagnostics`. |
+| `CMake` | Improve and extract | Make target scopes enforce architecture. |
+| `.github` | Improve and extract | Mirror local checks and evidence capture. |
+| `Projects` | Keep and refine | Preserve as validation/sample evidence. |
+| `docs` | Keep and refine | Keep as architecture evidence, updated with code changes. |
+
+## Right-To-Exist Review Pass
+
+| Area | Must prove | Default action when it cannot prove it |
+| --- | --- | --- |
+| Foundation helpers | Multiple consumers and no domain policy. | Move to owning subsystem or delete. |
+| Platform abstractions | Real OS/window/input boundary value. | Move host/presentation behavior upward. |
+| RHI services | GPU/API concept, backend parity, diagnostics, or explicit interop value. | Keep out of RHI and implement in Renderer/provider/host. |
+| Renderer subsystems | Clear render-domain owner and validation path. | Split, fold into pass/feature owner, or delete duplicate registry. |
+| GameFramework schemas | Runtime ownership without tool/renderer/private coupling. | Extract to `AssetContracts` or `RenderContracts`. |
+| Editor/Application code | Orchestration/presentation value. | Move implementation to RHI/backend/tool/renderer owner. |
+| Tools | Focused transformation or orchestration value with actionable reports. | Fold into focused tool, AssetCooker, or inspect/debug command. |
+| CMake/CI | Enforces ownership or captures evidence. | Remove broad links or redundant checks. |
+| Projects/docs | Validates or explains a real contract. | Remove stale/unlinked content or rewrite it as evidence. |
 
 ## Engine Module Coverage
 
@@ -57,7 +101,7 @@ Snapshot:
 | `Engine/GameFramework` | Needs refactor | Runtime scene and cooked assets | Runtime scene/cooked schema changes can desync cookers, Renderer scene data, and asset loaders. | Stage 24, Stage 29 | GameFramework contract review and affected cooker build. | GameFramework stays cooked-data/runtime-scene oriented and uses immutable renderer-facing snapshots. |
 | `Engine/Editor` | Needs refactor | Editor UI surface | Editor can absorb tool internals or backend-native validation shortcuts. | Stage 26, Stage 29 | `SparkleLauncher` or editor target build. | Editor owns UI/panels/viewport controls only; cook/import remains behind tools. |
 | `Engine/Application` | Needs refactor | Runtime/editor host | Application validation already has backend-native debt; host code can become a service locator. | Stage 8, Stage 26, Stage 29 | Application validation include scan and smoke command. | Application orchestrates runtime/editor/validation without backend-native or cook/import implementation. |
-| `Engine/Assets` | Needs design decision | Asset root placeholder | Empty roots confuse ownership if future assets land there. | Question: keep as placeholder, remove, or document intended runtime asset role? Stage 29 | Repository root audit. | Root is documented, populated with a contract, or removed. |
+| `Engine/Assets` | Needs refactor | Non-code asset root | Current `Meshes`, `Shaders`, and `Textures` ownership is ambiguous: built-in engine assets, renderer shaders, and project content need separate policies. | Stage 23, Stage 27, Stage 29 | Repository root audit and asset/shader source inventory. | Root is narrowed to documented built-in assets with manifest/validation, or content moves to owner-specific shader/data roots. |
 
 ## Tool Module Coverage
 
@@ -66,14 +110,14 @@ Snapshot:
 | `Tools/Launcher/SparkleLauncherCore` | Needs refactor | Developer workflow orchestration | Launcher operation logic can duplicate build/cook/import/render behavior instead of invoking owners. | Stage 26, Stage 29 | `SparkleLauncherProbe` and workflow command inspection. | LauncherCore plans and runs processes, records evidence, and does not own focused tool algorithms. |
 | `Tools/Launcher/SparkleLauncher` GUI | Needs refactor | Qt developer UI | UI models/widgets can absorb workflow state or hide recovery paths. | Stage 26, Stage 29 | `SparkleLauncher` build and UI model review. | Qt UI follows model/view-style separation: core workflows in LauncherCore, GUI owns presentation and prompts. |
 | `Tools/Shaders/ShaderCompiler` | Needs refactor | Shader toolchain | Shader package/reflection changes can break renderer pass runtime and RHI contracts. | Stage 4, Stage 17, Stage 27, Stage 29 | `ShaderCompiler list-shaders` and package inspection. | ShaderCompiler compiles, verifies, cooks, lists, and inspects renderer packages without RHI-specific pass edits. |
-| `Tools/Import/SourceImportAdapters` | Needs refactor | Source scene import | Source format assumptions can leak into GameFramework runtime or cookers. | Stage 25, Stage 29 | Import diagnostics and sample source import/cook. | Import adapters produce imported DTOs plus diagnostics; runtime modules do not read source formats. |
+| `Tools/Import/SourceImportAdapters` | Needs refactor | Source scene import | Source format assumptions can leak into GameFramework runtime or cookers; current name is pattern-centered. | Stage 25, Stage 29 | Import diagnostics and sample source import/cook. | Target `SourceImporters` produce imported DTOs plus diagnostics; runtime modules do not read source formats. |
 | `Tools/Cooking/TextureCooker` | Needs refactor | Texture cook pipeline | Texture format/schema changes can desync RHI cooked texture contract and renderer texture manager. | Stage 25, Stage 27, Stage 29 | Texture request inspect/cook command. | TextureCooker emits cooked texture assets compatible with runtime loaders and reports source/format errors clearly. |
 | `Tools/Cooking/MeshCooker` | Needs refactor | Mesh cook pipeline | Mesh schema can drift from GameFramework loaders and renderer mesh cache. | Stage 25, Stage 29 | Targeted mesh cook. | MeshCooker converts imported mesh DTOs to cooked runtime mesh records with validation. |
 | `Tools/Cooking/MaterialCooker` | Needs refactor | Material cook pipeline | Material/texture reference generation can drift from renderer material cache. | Stage 25, Stage 29 | Targeted material cook plus texture request output. | MaterialCooker emits cooked material records and deterministic texture cook requests. |
 | `Tools/Cooking/SceneCooker` | Needs refactor | Scene manifest cook pipeline | Scene manifest changes can break level/runtime loading and renderer scene snapshots. | Stage 25, Stage 29 | Targeted scene cook/load validation. | SceneCooker emits cooked scene manifests compatible with GameFramework loaders and renderer scene data. |
 | `Tools/Cooking/AssetCooker` | Needs refactor | Cook orchestration | Orchestration can hide focused tool failures or duplicate cook algorithms. | Stage 25, Stage 29 | Cook plan/dispatch diagnostic output. | AssetCooker discovers projects, builds cook plans, dispatches focused tools, and reports actionable failures. |
-| `Tools/Conversion/AssetConverter` | Needs refactor | Debug conversion CLI | Legacy direct conversion can become a second cook pipeline. | Stage 25, Stage 29 | CLI command review. | AssetConverter remains a debug/developer shell over focused modules or is folded into AssetCooker. |
-| `Tools/Cooking/CookCommon` | Accepted | Tool console support | Shared helpers can grow tool policy. | Preserve through Stage 29 | Include/build check. | CookCommon remains small console/tool support only. |
+| `Tools/Conversion/AssetConverter` | Needs refactor | Debug conversion CLI | Legacy direct conversion can become a second cook pipeline. | Stage 25, Stage 29 | CLI command review. | AssetConverter is removed as a production path; useful commands fold into AssetCooker or explicit inspect/debug commands. |
+| `Tools/Cooking/CookCommon` | Needs refactor | Tool console support | Vague `Common` naming can become a policy sink. | Rename/split to `ToolConsoleSupport` and/or `CookDiagnostics` in Stage 25/29. | Include/build check. | Shared support has a precise name, owner, and no asset/shader policy. |
 
 ## Build, Project, And Documentation Coverage
 

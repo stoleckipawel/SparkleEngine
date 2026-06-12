@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer vocabulary
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -29,10 +30,10 @@ Use this document as the naming source for Stage 2 and later stages. If code use
 | Application | The host/editor/game layer that owns windows, project flow, launch flow, and smoke orchestration. | [RhiSmokeValidation.cpp](../../Engine/Application/Private/Validation/RhiSmokeValidation.cpp) | Application can orchestrate renderer/RHI use, but should not implement backend-native capture or rendering behavior. |
 | GameFramework | Runtime scene, level, component, and cooked asset layer. | [Engine/GameFramework](../../Engine/GameFramework), [game-framework-contract.md](game-framework-contract.md) | GameFramework owns runtime scenes and cooked-data loading. It must not own renderer passes, backend-native RHI details, or source import/cooking algorithms. |
 | SparkleLauncher | Developer workflow application for build, cook, launch, maintenance, and smoke workflows. | [Tools/Launcher/SparkleLauncher](../../Tools/Launcher/SparkleLauncher), [tooling-pipeline-contract.md](tooling-pipeline-contract.md) | Launcher owns workflow/process orchestration and UI presentation. It must not duplicate focused cook/import/render algorithms. |
-| ShaderCompiler | The tool that compiles/cooks shader packages and reflection consumed at runtime. | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Tools own source compilation, reflection extraction, package writing, registry output, and inspection commands. |
+| ShaderCompiler | The tool that compiles/cooks shader packages and reflection consumed at runtime. | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Tools own source compilation, reflection extraction, package writing, and inspection commands through `ShaderContracts`, not full renderer runtime. |
 | AssetCooker | Project-level cook orchestrator. | [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | AssetCooker owns discovery, planning, dispatch, process isolation, and diagnostics. Focused cookers own actual transformations. |
 | TextureCooker | Focused texture cooking tool. | [Tools/Cooking/TextureCooker](../../Tools/Cooking/TextureCooker) | TextureCooker owns source image loading, texture pipeline stages, compression policy, and cooked texture asset emission. |
-| SourceImportAdapters | Source asset import library for formats such as glTF/FBX. | [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Source import adapters produce imported DTOs and diagnostics. Runtime modules must not read source formats directly. |
+| SourceImporters | Source asset importers for formats such as glTF/FBX. Current path: `Tools/Import/SourceImportAdapters`. | [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Source importers produce imported DTOs and diagnostics. Runtime modules must not read source formats directly. |
 | Vendor provider | Renderer feature adapter for an external SDK such as NVIDIA DLSS. | [Upscaling](../../Engine/Renderer/Private/Upscaling) | Provider owns SDK-level policy; RHI/backend owns native handles and API metadata. |
 
 ## Runtime Terms

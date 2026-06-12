@@ -1,10 +1,19 @@
 # Architecture Review Acceptance Rubric
 
-Status: initial criteria draft
+Status: living architecture acceptance rubric
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 Use with: `docs/plans/rhi-renderer-architecture-review.md`
 Whole-repo review: `docs/plans/sparkle-whole-repository-architecture-review.md`
 Execution plan: `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
+
+Navigation:
+
+- Plans index: [README.md](README.md)
+- Before plans: [before/README.md](before/README.md)
+- After plans: [after/README.md](after/README.md)
+- Stage map: [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
+- Architecture index: [../architecture/README.md](../architecture/README.md)
 
 Reviewer architecture docs:
 
@@ -12,6 +21,7 @@ Reviewer architecture docs:
 - `docs/architecture/rendering-glossary.md`
 - `docs/architecture/repository-system-map.md`
 - `docs/architecture/repository-coverage-status.md`
+- `docs/architecture/after/repository-target-folder-architecture.md`
 - `docs/architecture/game-framework-contract.md`
 - `docs/architecture/tooling-pipeline-contract.md`
 - `docs/architecture/rendering-system-map.md`
@@ -81,11 +91,12 @@ This is not a claim that every reviewer will inspect every item. It is a list of
 | Modern C++ systems skill | Candidate can build maintainable low-level systems, not just isolated demos. | Ownership model, RAII patterns, allocator/resource lifetime rules, command abstractions, build profiles, clear module boundaries. | Core engine code has coherent ownership, narrow interfaces, no obvious lifetime shortcuts, and build commands documented. |
 | Graphics API fluency | Candidate understands D3D12/Vulkan semantics, resource states/layouts, descriptors, synchronization, PSOs, and swap chain/presentation. | RHI contracts, D3D12/Vulkan backend parity table, command list implementations, barrier/resource diagnostics. | D3D12 and Vulkan behavior is documented as shared semantics plus explicit API-specific differences. |
 | Shader and pipeline systems | Candidate understands host/shader contracts, reflection, cooked packages, binding layouts, PSO keys, permutations, and reload/caching. | Shader compiler/cook path, shader package cache, pass runtime, PSO key design, pass authoring contract. | Adding an ordinary renderer pass requires no RHI edits and has a short documented path. |
-| Content pipeline architecture | Candidate can separate source import, cooking, cooked schemas, runtime loading, and renderer resource creation. | SourceImportAdapters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, GameFramework loaders, renderer resource managers. | Source import/cook changes update runtime schemas and validation without leaking tool internals into runtime modules. |
+| Content pipeline architecture | Candidate can separate source import, cooking, cooked schemas, runtime loading, and renderer resource creation. | SourceImporters/current SourceImportAdapters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, GameFramework loaders, renderer resource managers. | Source import/cook changes update runtime schemas and validation without leaking tool internals into runtime modules. |
 | Developer tooling/product workflow | Candidate can make build/cook/launch/recovery workflows repeatable and observable. | SparkleLauncherCore, Qt launcher UI models/shell/widgets, process runner, operation history, recovery paths, tool resolver. | Launcher invokes focused tools, records actionable output, and does not duplicate cook/render logic. |
 | Rendering fundamentals | Candidate understands lighting, PBR, GBuffer data, normals, depth, shadows, temporal behavior, and debug views. | GBuffer, lighting, shadow, visualize-buffer, ray-tracing, and upscaling passes with screenshots/captures. | Lit and normal/debug captures exist for both D3D12 and Vulkan, with known-difference notes. |
 | GPU architecture and performance reasoning | Candidate can reason about memory bandwidth, cache behavior, occupancy, synchronization, CPU/GPU work split, and measurement. | Profiling notes, GPU markers, timing reports, memory monitor, performance hypotheses separated from measurements. | Performance claims include data or an explicit measurement plan; no undocumented "faster" claims. |
 | Cross-module architecture | Candidate can separate renderer intent, runtime scene ownership, backend implementation, and tool ownership. | Repository system map, RHI/Renderer layer map, forbidden include checks, tool/runtime contracts, backend-private folders, vendor SDK boundaries. | `RHI -> Renderer` dependency count is zero, runtime modules do not depend on tool internals, and launcher/tools use focused owners. |
+| Source and folder architecture | Candidate can make ownership visible from repository layout, not only prose. | Target folder architecture, before/current source-root inventory, owner-specific shader/data roots, contract roots, backend sibling folders, focused tool folders. | Folder layout reveals ownership and data flow; old/new duplicate folders, ambiguous roots, and generated/local source pollution are absent. |
 | Debuggability and validation | Candidate can make failures explainable and reproducible. | Frame graph diagnostics, validation layers, smoke validation, capture/readback utilities, capability reports. | Development smoke runs fail on unresolved graph resources and produce per-backend evidence. |
 | Reliability and fallback behavior | Candidate handles unavailable features deterministically. | DLSS/RT/device capability reporting, passthrough upscaler, backend feature checks. | Missing DLSS, ray tracing, or extension support produces an actionable reason and stable fallback. |
 | Testability and CI thinking | Candidate can prove behavior repeatedly, not manually hope it works. | Build profiles, smoke tests, shader compiler validation, formatting/tidy checks, backend parity reports. | README/docs list exact validation commands and expected artifacts. |
@@ -105,6 +116,7 @@ Before using SparkleEngine as a portfolio artifact for NVIDIA/AMD-style intervie
 - Screenshots or captures for D3D12 and Vulkan lit output plus GBuffer normal/debug modes.
 - A documented "add a shader pass" walkthrough showing that ordinary pass work stays in Renderer/shaders/tools and does not require RHI edits.
 - Architecture diagrams for layer direction, frame execution, shader package flow, PSO creation, and backend parity.
+- A folder architecture map showing public contracts, backend roots, renderer pass/shader roots, tools, samples, CMake checks, and generated/local-only exclusions.
 - Validation commands that a reviewer can run locally, plus the expected log/capture artifacts.
 - A known-issues section that is honest about remaining gaps instead of hiding them.
 - CI or local scripts for formatting, forbidden include checks, shader compiler validation, and runtime/editor smoke where practical.
@@ -119,6 +131,7 @@ Use this table for architecture/design proposals. A proposal does not need to be
 | Problem framing | The candidate/proposal clarifies what is being solved and what is out of scope. | Proposal names the exact subsystem, bug class, performance goal, or review concern. Non-goals are listed. |
 | Requirements and constraints | Functional and non-functional requirements are made explicit before design. | D3D12/Vulkan parity, ray tracing, DLSS, frame graph, debug view, shader cooking, content cooking, launcher workflows, GameFramework runtime loading, and platform constraints are stated. |
 | Separation of concerns | Clear module ownership and dependency direction. | RHI does not include Renderer private headers. Runtime modules do not depend on tool internals. Launcher orchestrates focused tools. Vendor SDK code is isolated. |
+| Source/folder architecture | Repository layout makes ownership and data flow obvious. | New or moved code lands in target owner folders; shared schemas use contract roots; backend implementations are sibling roots; shader/data roots are owner-specific; generated/local roots stay out of durable architecture. |
 | Cohesion and interface size | Interfaces are focused; classes have one understandable reason to change. | Large interfaces such as `RenderHardwareInterface`, `Renderer`, `AssetCookerCore`, and launcher UI/backend models are classified by responsibility before new methods are added. |
 | Tradeoff reasoning | Alternatives are considered; tradeoffs are named instead of hidden. | Proposal compares at least two options when changing RHI contracts, frame graph ownership, memory lifetime, or native interop. |
 | Quality attributes | Design is judged against reliability, performance, maintainability, portability, operability, and security/safety where relevant. | Proposal includes a quality-attribute impact section, even if some entries say "not affected." |
@@ -129,6 +142,7 @@ Use this table for architecture/design proposals. A proposal does not need to be
 | Performance reasoning | Performance claims are supported by measurement or marked as hypotheses. | Proposal identifies likely GPU/CPU bottlenecks and gives a measurement plan before claiming improvement. |
 | Portability/backend parity | API-specific behavior is contained; shared semantics are explicit. | D3D12/Vulkan differences are mapped at the RHI boundary, with parity tests or known-difference notes. |
 | Maintainability and naming | Names reveal role and ownership; file locations help reviewers navigate. | Orchestration files, implementation files, contracts, and backend files follow documented naming rules. |
+| Complexity right to exist | Complexity is retained only when it pays for itself in clarity, reuse, validation, safety, or reduced future change cost. | Duplicate paths, vague helpers, broad managers, compatibility layers, schemas, commands, and CMake targets name owner, consumer, contract, validation value, smaller alternative, and removal stage when temporary. |
 | Testability | Claims can be validated repeatedly. | Proposal includes targeted build/smoke/tool tests and, for graphics, capture or log evidence for both APIs where relevant. |
 | Communication/reviewability | The design can be reviewed by someone new to the repo. | Proposal includes diagrams, owner map, decision record, acceptance criteria, and exact files touched. |
 
@@ -167,6 +181,7 @@ Critical categories for whole-repository work:
 - Observability and diagnostics
 - Reliability/failure handling
 - Maintainability and naming
+- Complexity right to exist
 - Testability
 - Communication/reviewability
 
@@ -175,7 +190,7 @@ Critical categories for whole-repository work:
 Ask these during each design session.
 
 1. What exact behavior, risk, or review concern is this proposal solving?
-2. Which layer owns the decision: Core, Platform, RHI common, D3D12 backend, Vulkan backend, Renderer frame graph, Renderer pass, GameFramework runtime, SourceImportAdapters, TextureCooker, AssetCooker, ShaderCompiler, Launcher, Application/Editor, or vendor provider?
+2. Which layer owns the decision: Core, Platform, RHI common, D3D12 backend, Vulkan backend, Renderer frame graph, Renderer pass, GameFramework runtime, SourceImporters/current SourceImportAdapters, TextureCooker, AssetCooker, ShaderCompiler, Launcher, Application/Editor, or vendor provider?
 3. What would NVIDIA/AMD reviewers need to inspect first to trust this design?
 4. What are the D3D12 and Vulkan semantics, and where do they intentionally differ?
 5. Does this add a renderer concept to RHI, an API concept to Renderer, a tool concept to runtime, or runtime policy to a tool?
@@ -183,7 +198,9 @@ Ask these during each design session.
 7. What logs, validation messages, smoke tests, captures, debug views, cook reports, package inspection output, or launcher operation history prove it works?
 8. What failure path is expected, and is that path deterministic?
 9. What alternative was rejected, and why?
-10. What future change becomes easier after this?
+10. What code, abstraction, target, schema, command, or compatibility path is being removed or simplified?
+11. If complexity remains, what does it uniquely solve and what validation proves it earns its right to exist?
+12. What future change becomes easier after this?
 
 ## Rubric Template
 
@@ -207,6 +224,7 @@ Copy this into future design notes.
 | Performance reasoning |  |  |  |
 | Portability/backend parity |  |  |  |
 | Maintainability and naming |  |  |  |
+| Complexity right to exist |  |  |  |
 | Testability |  |  |  |
 | Communication/reviewability |  |  |  |
 
@@ -223,7 +241,8 @@ Before implementing a renderer/RHI architecture change, we should now require:
 2. A layer ownership statement.
 3. A D3D12/Vulkan impact statement.
 4. A quality-attribute impact statement.
-5. A validation plan.
-6. A rubric score.
+5. A complexity right-to-exist statement naming what is kept, simplified, deleted, or temporarily tolerated.
+6. A validation plan.
+7. A rubric score.
 
 This does not mean every tiny bug fix needs ceremony. It means structural changes should be reviewable before they become code.

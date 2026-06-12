@@ -1,8 +1,18 @@
 # Sparkle Whole-Repository Architecture Review
 
-Status: strategic system-design review draft
+Status: living whole-repository architecture review
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 Scope: all durable SparkleEngine source roots under `Engine/`, `Tools/`, `Projects/`, `CMake/`, `.github/`, and `docs/`.
+
+Navigation:
+
+- Plans index: [README.md](README.md)
+- Before/current architecture: [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
+- After/target architecture: [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Target folder architecture: [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Target system detail index: [../architecture/after/system-design-index.md](../architecture/after/system-design-index.md)
+- Stage map: [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
 
 ## Purpose
 
@@ -15,10 +25,11 @@ This review complements:
 - [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md)
 - [repository-system-map.md](../architecture/repository-system-map.md)
 - [repository-coverage-status.md](../architecture/repository-coverage-status.md)
+- [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
 - [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md)
 - [game-framework-contract.md](../architecture/game-framework-contract.md)
 
-Generated or local-only folders are out of scope unless a stage explicitly audits generated output policy: `build/`, `cmake-build-debug/`, `artifacts/`, `dist/`, and `logs/`.
+Generated or local-only folders are out of scope unless a stage explicitly audits generated output policy: `build/`, `build-*`, `cmake-build-debug/`, `artifacts/`, `dist/`, `logs/`, and local reference/scratch roots such as `tmp_*`.
 
 ## Reference Model
 
@@ -51,9 +62,61 @@ Runtime modules consume public cooked/runtime contracts.
 Launcher orchestrates workflows and records evidence.
 CMake and CI make dependency direction repeatable.
 Docs explain the exact current architecture and accepted debt.
+Folder names reveal ownership instead of preserving accidental history.
 ```
 
 The global target is not "no dependencies." The target is known dependencies with a reason, owner, and validation artifact.
+
+Implementation progress is tracked in [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md) using the shared statuses `Not started`, `Started`, `Almost finished`, and `Fully completed`. Those statuses track implementation acceptance, not merely the existence of design docs.
+
+## Refactor Disposition Rule
+
+Every module, folder, target, tool, and schema touched by a stage must be assigned one of three dispositions before implementation:
+
+| Disposition | Meaning | What the stage may do |
+| --- | --- | --- |
+| Keep and refine | The current body is already excellent: ownership is clear, dependencies point the right way, diagnostics are useful, and the name matches production vocabulary. | Preserve the body, tighten contracts, improve validation, and remove incidental clutter. |
+| Improve and extract | The current body has good foundations but mixes concerns, lacks a crisp handoff, or has a misleading name. | Split contracts from implementation, rename targets/types/files, move code to the right owner, and delete transitional paths after validation. |
+| Replace or redesign | The current body has no production future because it duplicates another owner, depends on wrong layers, hides data flow, or requires broad exceptions. | Rebuild around the target graph, migrate callers, remove the old body, and reject compatibility layers that become permanent debt. |
+
+This rule intentionally allows large changes. A reviewer should see that Sparkle keeps what is strong, upgrades what has a sound core, and removes designs that cannot support the target architecture.
+
+## Code Right-To-Exist Rule
+
+Code earns its right to exist only when its maintenance cost is lower than the clarity, reuse, validation, or safety it provides. Complexity is treated as a liability until proven useful.
+
+Required proof for retained complexity:
+
+- It has a named owner and consumer.
+- It crosses systems through a named contract.
+- It removes duplication or prevents a known class of bugs.
+- It improves diagnostics, validation, or backend/tool parity.
+- It has a smaller alternative documented and rejected for a concrete reason.
+- If temporary, it has a removal stage.
+
+Default removals:
+
+- Duplicate registries or old/new parallel paths.
+- Vague `Common`, `Utils`, `Helper`, `Bridge`, or `Manager` owners.
+- Compatibility layers without a removal stage.
+- Empty, ambiguous, or unowned durable source roots.
+- Abstractions added only for hypothetical future use.
+
+## Repository Naming Rules
+
+Naming must be cohesive across `Engine/`, `Tools/`, `Projects/`, `CMake/`, and docs. Names should expose ownership, data transfer, and review boundaries.
+
+| Name family | Use for | Reference basis | Sparkle examples |
+| --- | --- | --- | --- |
+| `*Contracts` | Public schema/API surfaces that prevent private coupling. | NVRHI/NRI public interfaces, glTF/KTX schemas, CMake usage requirements. | `AssetContracts`, `RenderContracts`, `ShaderContracts`, `ToolContracts`, `RhiContracts`. |
+| `*Backend` / backend service | API-specific implementations behind public RHI contracts. | NVRHI/NRI backend libraries, Cauldron `DX12` and `VK` folders. | `D3D12Backend`, `VulkanBackend`, capture/readback/upload services. |
+| `*Pass`, `*FrameGraph`, `*PipelineRuntime` | Renderer-owned render work above RHI. | Falcor render passes/graphs, Donut reusable render passes. | `RenderPass`, `PassCatalog`, `FrameGraph`, `PsoKey`. |
+| `*Dto`, `*Snapshot`, `*Manifest`, `Cooked*` | Data crossing import/cook/runtime/render boundaries. | glTF runtime delivery, KTX texture containers, Donut scene handoff. | `ImportedSceneDto`, `RenderSnapshot`, `CookedTexture`, `SceneManifest`. |
+| `*Cooker`, `*Compiler`, `*Importer` | Focused CLI/library tools that transform source into artifacts. | Compressonator tool suite, Cauldron asset/shader preparation. | `TextureCooker`, `ShaderCompiler`, `SourceImporters`. |
+| `*Provider`, `*CapabilityReport`, `*FallbackReason` | Vendor feature integrations and support diagnostics. | Streamline and FidelityFX provider integrations. | `NvidiaDlssProvider`, `UpscalerCapabilityReport`. |
+| `*Request`, `*Report`, `*History` | Launcher/tool/process orchestration and evidence. | Qt model/view and GUI/CLI/SDK separation. | `ProcessRequest`, `ToolReport`, `OperationHistory`. |
+
+Avoid names that encode temporary migration paths, duplicate ownership, or conceal direction, such as generic `Manager`, `Helper`, `Common`, `Bridge`, or `Utils` names without a documented owner and contract.
 
 ## Whole-Repository Findings
 
@@ -62,9 +125,38 @@ The global target is not "no dependencies." The target is known dependencies wit
 - The repository already has meaningful top-level module boundaries: `Core`, `Platform`, `RHI`, `Renderer`, `GameFramework`, `Editor`, `Application`, focused cooking tools, shader compiler, and launcher.
 - Stage 4 removed the clearest hard violation: RHI-owned renderer shader registration depending on renderer-private data.
 - `Tools/Launcher/SparkleLauncher` already shows a useful split between core workflow code, GUI app/models/shell/widgets, and probe executable.
-- Cooking is already split into focused tools: `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, `AssetCooker`, and `CookCommon`.
+- Cooking is already split into focused tools: `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker`, and `AssetCooker`; current `CookCommon` is useful support code but needs a precise target name.
 - `ShaderCompiler` already has backend, CLI, cooking, cache, inspection, verification, and reflection areas that can become strong reviewer evidence.
 - CMake target names mostly reflect architectural modules, which gives us a practical place to enforce dependency intent.
+
+### Design Changes From The Disposition Pass
+
+| Area | Disposition result | Concrete target change |
+| --- | --- | --- |
+| `SourceImportAdapters` | Improve and extract | Target name becomes `SourceImporters`; the design centers on per-format importers emitting DTOs and diagnostics through `AssetContracts`. |
+| `CookCommon` | Improve and extract | No longer accepted as a permanent architecture label; split/rename to `ToolConsoleSupport` and/or `CookDiagnostics`. |
+| `AssetConverter` | Replace or redesign | Remove as a production path; fold useful commands into `AssetCooker` or explicit inspect/debug commands. |
+| `Engine/Assets` | Replace or redesign | Current `Meshes`, `Shaders`, and `Textures` make this a non-code asset root, not an empty root. Narrow it to documented built-in engine assets or move shaders/data to owner-specific roots. |
+| GameFramework cooked schemas | Improve and extract | Shared producer/consumer schemas move to `AssetContracts`; GameFramework remains runtime loading and scene owner. |
+| Renderer/GameFramework scene handoff | Improve and extract | Renderer consumes `RenderContracts` snapshots instead of mutable GameFramework internals. |
+| ShaderCompiler renderer edge | Improve and extract | ShaderCompiler consumes `ShaderContracts` pass catalogs/manifests, not full renderer runtime. |
+| Renderer pass traits | Replace or redesign | Central `RenderPassPipelineTraits` is replaced by `PassCatalog` and `PipelineRuntimeLibrary`. |
+| Application validation D3D12 body | Replace or redesign | Backend-native capture/readback moves behind RHI/backend validation services. |
+| RHI broad facade | Improve and extract | The root facade is split into service ownership categories without moving renderer conveniences into RHI. |
+
+### Complexity Removed Or Justified By Target Design
+
+| Complexity pressure | Target answer |
+| --- | --- |
+| RHI facade breadth | Keep only API-neutral services; split by capability/device/command/resource/descriptor/pipeline/memory/presentation/capture/interop/diagnostics ownership. |
+| Renderer pass ceremony | Replace central traits and duplicate registrations with `PassCatalog`, pass definitions, and explicit runtime keys. |
+| ShaderCompiler renderer coupling | Replace renderer runtime linkage with `ShaderContracts` pass catalog/package manifest handoff. |
+| GameFramework schema gravity | Extract shared cooked schemas into `AssetContracts`; use `RenderContracts` for renderer handoff. |
+| Source import naming and ownership | Rename/extract `SourceImportAdapters` to `SourceImporters` and keep source formats out of runtime. |
+| Tool support vagueness | Replace `CookCommon` as architecture label with `ToolConsoleSupport` and/or `CookDiagnostics`. |
+| Parallel conversion pipeline | Retire `AssetConverter` as production path; preserve only explicit inspect/debug commands if they pay for themselves. |
+| Ambiguous asset root | Narrow `Engine/Assets` to built-in assets with manifest/validation, or split renderer shaders, RHI shader fixtures, and project content into owner-specific roots. |
+| Launcher complexity | Keep workflow/process/evidence logic in LauncherCore and presentation in Qt GUI; no tool algorithms in widgets. |
 
 ### Critical Risks
 
@@ -91,16 +183,16 @@ The global target is not "no dependencies." The target is known dependencies wit
 | `Engine/GameFramework` | Runtime levels, scenes, components, cameras, lighting, cooked asset loading, gameplay-facing data. | Can absorb source import/cook algorithms or renderer pass data. | Donut scene component boundary, glTF runtime delivery model. | GameFramework loads cooked data and emits immutable render snapshots; no `Tools/*` or renderer-private dependencies. |
 | `Engine/Editor` | Editor panels, viewport UI, profiler/output/material/mesh/scene inspectors. | Editor can duplicate cook/import or backend validation logic. | Qt model/view and host/presentation separation. | Editor consumes public Application/Renderer/GameFramework protocols only. |
 | `Engine/Application` | Runtime/editor host lifecycle, validation orchestration, runtime console, shader recook process bridge. | Existing validation debt uses backend-native D3D12 capture. | NVRHI validation/capture ownership, Vulkan validation tooling. | Application orchestrates validation; backend-native capture/readback lives behind RHI/backend services. |
-| `Engine/Assets` | Source/default content and shader assets. | Content root can become an implicit schema owner without docs. | glTF and KTX explicit asset/container specs. | Asset root has documented source/cooked/generated policy and sample validation coverage. |
-| `Tools/Shaders/ShaderCompiler` | Shader backend selection, preprocessing, reflection, package cooking, cache, inspection, verification. | Can become tightly linked to full renderer runtime instead of a narrow registry/schema contract. | Falcor shader/tooling productivity model, Donut ShaderMake usage, NVRHI shader package/runtime concepts. | `ShaderCompiler` lists/cooks/inspects renderer packages via renderer-owned registration target and generic RHI shader primitives. |
-| `Tools/Import/SourceImportAdapters` | glTF/FBX/source scene import into imported DTOs and diagnostics. | Source format assumptions can leak into runtime loaders. | glTF runtime asset delivery, Cauldron glTF sample pipeline. | Import adapters emit DTOs and diagnostics only; runtime modules never parse source formats directly. |
+| `Engine/Assets` | Non-code asset root with current `Meshes`, `Shaders`, and `Textures` subfolders. | Ambiguous asset roots create fake ownership and can mix engine built-ins, renderer pass shaders, and project content. | Falcor/Donut explicit `Shaders` roots, Cauldron `media`, glTF and KTX explicit asset/container specs. | Root is narrowed to built-in engine assets with manifest/validation, or content moves to owner-specific shader/data roots. |
+| `Tools/Shaders/ShaderCompiler` | Shader backend selection, preprocessing, reflection, package cooking, cache, inspection, verification. | Can become tightly linked to full renderer runtime instead of a narrow registry/schema contract. | Falcor shader/tooling productivity model, Donut ShaderMake usage, NVRHI shader package/runtime concepts. | `ShaderCompiler` lists/cooks/inspects packages through `ShaderContracts`, not full renderer runtime. |
+| `Tools/Import/SourceImportAdapters` -> target `SourceImporters` | glTF/FBX/source scene import into imported DTOs and diagnostics. | Pattern-centered adapter naming can hide importer ownership; source format assumptions can leak into runtime loaders. | glTF runtime asset delivery, Cauldron glTF sample pipeline. | Target `SourceImporters` emit DTOs and diagnostics only; runtime modules never parse source formats directly. |
 | `Tools/Cooking/TextureCooker` | Source image loading, texture pipeline stages, compression policy, cooked texture emission. | RHI texture upload contracts and cooked texture schema can drift. | AMD Compressonator CLI/SDK/tool model, KTX texture container model. | Texture cook output includes format/mip/schema diagnostics and is validated against runtime loader/upload expectations. |
 | `Tools/Cooking/MeshCooker` | Imported mesh to cooked mesh conversion. | Mesh schema can drift from GameFramework loaders and Renderer mesh cache. | Cauldron/glTF mesh/material sample handling. | Cooked mesh records have producer, schema owner, runtime loader, renderer consumer, and sample validation. |
 | `Tools/Cooking/MaterialCooker` | Imported material conversion and texture cook request generation. | Material schema can drift from renderer material cache and texture cooker. | glTF PBR material model and Cauldron material support. | Material cook output and texture requests are deterministic and inspectable. |
 | `Tools/Cooking/SceneCooker` | Cooked scene manifest assembly for cameras, lights, instances, skeletons, animations, metadata. | Scene manifest changes can break GameFramework load and Renderer scene snapshots. | Donut scene/component graph and glTF scene delivery. | Scene manifests validate against GameFramework loaders and renderer scene-data builders. |
 | `Tools/Cooking/AssetCooker` | Project discovery, cook planning, dispatch, diagnostics. | Can hide focused cooker failures or duplicate their algorithms. | Compressonator CLI/SDK split and CMake target separation. | AssetCooker orchestrates focused tools and reports source path, artifact path, step, target, and reason on failure. |
-| `Tools/Cooking/CookCommon` | Shared tool console/helpers. | Common helper can become policy sink. | CMake `PRIVATE`/`PUBLIC` dependency discipline. | Remains small support library with no asset/shader policy. |
-| `Tools/Conversion/AssetConverter` | Debug/direct conversion CLI. | Can become a parallel cook pipeline. | Tool CLI shells over focused libraries. | Thin debug shell or folded into AssetCooker; no unique production cook policy. |
+| `Tools/Cooking/CookCommon` -> target `ToolConsoleSupport` / `CookDiagnostics` | Shared tool console/helpers. | Vague common helper can become policy sink. | CMake `PRIVATE`/`PUBLIC` dependency discipline. | Renamed/split support surface with no asset/shader policy. |
+| `Tools/Conversion/AssetConverter` | Debug/direct conversion CLI. | Can become a parallel cook pipeline. | Tool CLI shells over focused libraries. | Replaced as production path; useful commands fold into AssetCooker or explicit inspect/debug commands. |
 | `Tools/Launcher/SparkleLauncherCore` | Build/cook/launch/maintenance workflow planning, tool resolution, process requests, history. | Can duplicate focused build/cook/render logic. | Qt model/view, Compressonator GUI/CLI/SDK separation. | LauncherCore plans and runs processes, captures evidence, and delegates implementation to owning tools. |
 | `Tools/Launcher/SparkleLauncher` GUI | Qt presentation, models, shell, widgets, style, prompts. | UI can absorb operation logic and hide recovery paths. | Qt model/view separation. | GUI models present LauncherCore state and requests; widgets remain presentation. |
 | `CMake` | Build profiles, dependencies, artifact contract, Qt discovery, release assembly, boundary checks. | Build links can silently encode wrong architecture. | CMake target usage requirements. | Target graph matches layer rules and validation targets exist for local/CI use. |
@@ -114,11 +206,12 @@ These invariants apply to every stage, including RHI/Renderer-specific stages:
 
 - Runtime engine modules do not include or link tool-private implementation.
 - Tools may use public runtime/cooked contracts, but runtime modules must not depend on source import or cook algorithms.
-- RHI owns GPU/API primitives and backend implementation. Renderer owns render intent, pass metadata, shader registrations, frame graph, and features.
-- GameFramework owns runtime scene and cooked-data loading. It hands immutable snapshots/DTOs to Renderer.
+- RHI owns GPU/API primitives and backend implementation. Renderer owns render intent, pass authoring, frame graph, and features; shared pass/package metadata moves through `ShaderContracts`.
+- GameFramework owns runtime scene and cooked-data loading. Shared cooked schemas move through `AssetContracts`; renderer handoff moves through immutable `RenderContracts` snapshots/DTOs.
 - Application and Editor orchestrate systems and UI. They do not own backend-native capture/readback, cook/import implementation, or renderer internals.
 - Launcher owns workflow orchestration and evidence. Focused tools own actual build/cook/shader/import algorithms.
 - CMake dependency scopes must express ownership. A convenient transitive link is not acceptable if it hides a layer violation.
+- Folder architecture must express ownership. Shared contracts, backend implementations, renderer pass/shader ownership, tool roles, project data, and generated/local-only roots should be recognizable from their paths.
 - Generated/local-only folders are not durable architecture sources.
 - Every exception must be narrow, counted, stage-labeled, and removed by its owning stage.
 
@@ -131,7 +224,7 @@ These invariants apply to every stage, including RHI/Renderer-specific stages:
 | Renderer pass, frame graph, or PSO runtime | `ShaderCompiler`, GameFramework snapshots, Application validation, launcher smoke, Projects/Showcase. | Boundary check, shader package enumeration, smoke or documented validation plan. |
 | Renderer scene DTOs | GameFramework scene/camera/light/material/mesh snapshots, `SceneCooker`, editor scene panels. | Snapshot/schema compatibility note and targeted scene load/render validation. |
 | GameFramework cooked schema | Source import adapters, focused cookers, AssetCooker, Renderer scene/material/mesh/texture consumers. | Producer/owner/consumer matrix update and sample cook/load evidence. |
-| Source import DTOs | Mesh/Material/Scene cookers, AssetConverter, GameFramework loaders, docs. | Import diagnostics and targeted cook validation. |
+| Source import DTOs | Mesh/Material/Scene cookers, AssetCooker inspect/debug commands, GameFramework loaders, docs. | Import diagnostics and targeted cook validation. |
 | Texture/mesh/material/scene cookers | AssetCooker, Launcher workflows, GameFramework loaders, Renderer resource managers. | Focused tool build plus dispatch/log evidence. |
 | Launcher workflow or tool names | CMake artifact contract, AssetCooker, ShaderCompiler, TextureCooker, Projects, docs. | LauncherCore/Probe or workflow inspection output. |
 | CMake target links or dependency fetch | Every target that consumes the linked module, `.github`, launcher tool resolution. | Configure/build plan and target-scope review. |
@@ -169,7 +262,7 @@ Acceptance:
 
 ### Track D - Tooling And Content Pipeline
 
-Goal: make SourceImportAdapters, focused cookers, AssetCooker, ShaderCompiler, AssetConverter, and CookCommon reviewable as a content toolchain.
+Goal: make SourceImporters/current SourceImportAdapters, focused cookers, AssetCooker, ShaderCompiler, ToolConsoleSupport/CookDiagnostics, and retired AssetConverter commands reviewable as a content toolchain.
 
 Acceptance:
 

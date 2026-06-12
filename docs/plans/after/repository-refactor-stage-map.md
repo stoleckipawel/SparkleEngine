@@ -1,0 +1,199 @@
+# Repository Refactor Stage Map
+
+Status: execution navigation and stage status tracker
+Date: 2026-06-12
+Last synchronized: 2026-06-13
+
+## Purpose
+
+This map makes the implementation plan navigable as a whole-repository refactor. The canonical details remain in [../rhi-renderer-review-ready-implementation-plan.md](../rhi-renderer-review-ready-implementation-plan.md); this file groups stages by architecture area and shows what before/after evidence each group should update.
+
+Folder architecture is tracked in [repository-target-folder-architecture.md](../../architecture/after/repository-target-folder-architecture.md). Each stage must make source folders, target folders, forbidden folders, and cleanup paths visible before implementation.
+
+Required target documents for each individual stage live in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage). Open that row before starting the stage.
+
+Before accepting any stage, classify touched systems as `Keep and refine`, `Improve and extract`, or `Replace or redesign`. The stage may rename, split, merge, rebuild, or delete existing code when that is the cleanest path to the target architecture.
+
+Stage status tracks implementation acceptance, not merely whether planning docs exist. Future-stage design docs may be seeded before the stage starts; the stage status should advance only when implementation work, validation, and cleanup evidence justify it.
+
+## Stage Status Vocabulary
+
+| Status | Meaning | When to update |
+| --- | --- | --- |
+| `Not started` | The stage is planned, but no stage-owned implementation or validation work is underway. Planning docs may already exist. | Default for future stages. |
+| `Started` | Stage-owned code/docs/CMake/check work has begun, but acceptance evidence is incomplete. | Set when implementation begins or when a stage-owned migration is opened. |
+| `Almost finished` | Main implementation is in place, but validation, cleanup, evidence, or final doc synchronization remains. | Set when the next work is mostly verification, cleanup, or final exception removal. |
+| `Fully completed` | Acceptance and validation for the stage are satisfied, docs agree with code, and transitional debt owned by the stage is resolved or explicitly carried by a later stage. | Set only after validation evidence is recorded. |
+
+## Stage Status Tracker
+
+| Stage | Status | Current evidence | Remaining before next status update |
+| --- | --- | --- | --- |
+| 1 | Fully completed | Rendering coverage baseline and repository coverage docs exist and are linked. | Reopen only if a new durable root appears without coverage. |
+| 2 | Fully completed | Glossary, rendering map, RHI, frame graph, pass authoring, pipeline runtime, ray tracing, whole-repo, and folder architecture docs are linked. | Reopen only if vocabulary or maps drift from code. |
+| 3 | Fully completed | `architecture_boundary_check` exists; direct CMake script passes with counted Stage 8/9 transitional exceptions. | Stage 28 expands checks repo-wide. |
+| 4 | Almost finished | Renderer shader registrations are above RHI, and boundary checks show no `RHI -> Renderer/Private` violation. | Stage 5 must validate shader enumeration/build surface and record final evidence. |
+| 5 | Not started | Validation target and acceptance path are documented. | Run boundary, shader compiler, package enumeration, and affected build checks. |
+| 6 | Not started | RHI contract map defines method ownership categories. | Start RHI method audit and owner table implementation. |
+| 7 | Not started | RHI service/folder target is documented. | Extract first RHI services with caller evidence. |
+| 8 | Not started | Stage 8 D3D12 Application validation exception is counted. | Move backend-native capture/readback behind RHI/backend services and remove exception. |
+| 9 | Not started | Stage 9 Vulkan/native Streamline exceptions are counted. | Formalize provider/native interop and remove Renderer-native exceptions. |
+| 10 | Not started | Backend parity milestone requirements are documented. | Run D3D12/Vulkan milestone validation and record artifacts. |
+| 11 | Not started | Renderer facade target is documented. | Start facade/frame-pipeline decomposition. |
+| 12 | Not started | Presentation/viewport bridge target is documented. | Implement host presentation protocol. |
+| 13 | Not started | Scene/resource ownership and denoising decision points are documented. | Clean renderer scene/resource ownership and resolve placeholder feature folders. |
+| 14 | Not started | Frame graph contract and folder split are documented. | Tighten frame graph diagnostics and resource/barrier planning. |
+| 15 | Not started | Frame graph validation milestone is documented. | Run graph validation and smoke-visible diagnostics checks. |
+| 16 | Not started | Pipeline runtime target and PSO identity model are documented. | Implement explicit pipeline runtime/key ownership. |
+| 17 | Not started | Pass authoring target and PassCatalog/ShaderContracts direction are documented. | Remove central ordinary-pass ceremony and duplicate registration policy. |
+| 18 | Not started | Ray tracing ownership contract is documented. | Align RT scene policy, AS contracts, and backend build ownership. |
+| 19 | Not started | Backend folder/service symmetry target is documented. | Clean backend services and cross-backend include policy. |
+| 20 | Not started | Full graphics validation milestone is documented. | Run full D3D12/Vulkan graphics validation evidence. |
+| 21 | Not started | Reviewer presentation requirements are documented. | Build reviewer path, README/evidence navigation, and screenshots/captures as required. |
+| 22 | Not started | RHI/Renderer final cleanup gate is documented. | Remove stale graphics exceptions/docs and score final first-track state. |
+| 23 | Not started | Whole-repo coverage and folder architecture docs are seeded. | Audit every durable source root against owner/dependency/validation rows. |
+| 24 | Not started | GameFramework contract and Asset/RenderContracts target are documented. | Extract or document runtime/cooked schema and render snapshot ownership. |
+| 25 | Not started | Tooling pipeline folder and disposition targets are documented. | Rename/extract SourceImporters, split support/diagnostics, retire AssetConverter production path. |
+| 26 | Not started | Launcher/host split is documented. | Verify LauncherCore/Qt GUI/Application/Editor boundaries. |
+| 27 | Not started | Artifact validation matrix requirements are documented. | Build producer/schema/consumer/inspector evidence for shader and cooked artifacts. |
+| 28 | Not started | Future guardrail rules are documented. | Expand local/CI checks for runtime/tools/folder/generated-root policy. |
+| 29 | Not started | Final repository gate is documented. | Run final whole-repo evidence, cleanup, and status reconciliation. |
+
+## Stage Groups
+
+| Stages | Theme | Primary before docs | Primary after docs | Required evidence |
+| --- | --- | --- | --- | --- |
+| 1-3 | Baseline coverage, vocabulary, mechanical boundary guardrails | [current state](../../architecture/before/repository-current-state.md), [rendering coverage](../../architecture/rendering-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [guardrails](../../architecture/architecture-boundary-guardrails.md) | Coverage maps exist; boundary checks are local/CI-friendly and exceptions are counted. |
+| 4-5 | Renderer-owned shader registration and first validation | [RHI/Renderer review](../rhi-renderer-architecture-review.md) | [pass authoring](../../architecture/pass-authoring-contract.md), [pipeline runtime](../../architecture/pipeline-runtime-contract.md) | RHI has no renderer-private includes; ShaderCompiler can still enumerate packages. |
+| 6-10 | RHI ownership, services, capture/readback, vendor interop, backend parity milestone | [current state](../../architecture/before/repository-current-state.md), [RHI contract map](../../architecture/rhi-contract-map.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [guardrails](../../architecture/architecture-boundary-guardrails.md) | RHI method ownership exists; Application validation delegates backend-native work; D3D12/Vulkan evidence is recorded. |
+| 11-15 | Renderer facade, presentation, scene/resource ownership, frame graph contract, graph validation | [rendering coverage](../../architecture/rendering-coverage-status.md) | [rendering system map](../../architecture/rendering-system-map.md), [frame graph contract](../../architecture/frame-graph-contract.md) | Renderer becomes a clearer facade; frame graph diagnostics are actionable; host presentation uses stable products. |
+| 16-20 | Shader package, pass authoring, PSO runtime, ray tracing, backend services, full graphics validation | [RHI/Renderer review](../rhi-renderer-architecture-review.md) | [pass authoring](../../architecture/pass-authoring-contract.md), [pipeline runtime](../../architecture/pipeline-runtime-contract.md), [ray tracing](../../architecture/ray-tracing-contract.md) | PSO keys are explicit; pass additions avoid RHI edits; RT ownership is clear; D3D12/Vulkan smoke evidence exists. |
+| 21-22 | Reviewer presentation and RHI/Renderer final gate | [acceptance rubric](../architecture-review-acceptance-rubric.md) | [target system design index](../../architecture/after/system-design-index.md) | README/reviewer path, final cleanup, and RHI/Renderer rubric scoring are complete. |
+| 23 | Whole-repository coverage and dependency map | [current state](../../architecture/before/repository-current-state.md) | [repository target](../../architecture/after/repository-target-architecture.md), [repository coverage](../../architecture/repository-coverage-status.md) | Every durable source root has owner, dependencies, validation target, and acceptance evidence. |
+| 24 | GameFramework runtime and cooked asset contract | [current state](../../architecture/before/repository-current-state.md) | [GameFramework contract](../../architecture/game-framework-contract.md) | GameFramework has no renderer-private, backend-private, or tool-private dependencies; schema impacts are paired with producers/consumers. |
+| 25 | Source import, asset cooking, and conversion architecture | [current state](../../architecture/before/repository-current-state.md) | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md) | SourceImporters/current import adapters, focused cookers, AssetCooker, ToolConsoleSupport/CookDiagnostics, and retired AssetConverter commands have separate ownership and validation. |
+| 26 | Launcher workflow and Editor/Application host boundaries | [current state](../../architecture/before/repository-current-state.md) | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md), [repository target](../../architecture/after/repository-target-architecture.md) | LauncherCore owns workflows/evidence; Qt GUI owns presentation; hosts do not own backend/cook/import internals. |
+| 27 | Shader and cook artifact validation matrix | [tooling pipeline contract](../../architecture/tooling-pipeline-contract.md) | [target system design index](../../architecture/after/system-design-index.md) | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
+| 28 | Build, CI, and boundary guardrail expansion | [architecture guardrails](../../architecture/architecture-boundary-guardrails.md) | [repository target](../../architecture/after/repository-target-architecture.md) | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders, and RHI/Renderer boundaries. |
+| 29 | Whole-repository final gate | [current state](../../architecture/before/repository-current-state.md), [coverage status](../../architecture/repository-coverage-status.md) | [target architecture](../../architecture/after/repository-target-architecture.md), [system design index](../../architecture/after/system-design-index.md) | No unowned `Needs refactor` rows remain; docs, code, CMake/CI, samples, tools, and validation evidence agree. |
+
+## Module To Stage Index
+
+| Module or subsystem | Main stages |
+| --- | --- |
+| Core / Platform | 23, 28, 29 |
+| RHI common and backends | 3, 6, 7, 8, 9, 19, 20, 22, 28, 29 |
+| Renderer facade/frame/passes/pipeline | 4, 10-17, 20, 22, 29 |
+| Ray tracing | 18, 20, 22, 29 |
+| GameFramework | 13, 24, 27, 29 |
+| Editor/Application | 8, 12, 20, 26, 29 |
+| ShaderCompiler | 4, 5, 16, 17, 20, 27, 29 |
+| SourceImporters / current SourceImportAdapters | 25, 27, 29 |
+| Texture/Mesh/Material/Scene cookers | 25, 27, 29 |
+| AssetCooker / retired AssetConverter commands / ToolConsoleSupport / CookDiagnostics | 25, 27, 29 |
+| SparkleLauncher | 10, 20, 21, 26, 28, 29 |
+| CMake / CI | 3, 5, 20, 23, 28, 29 |
+| Projects / Showcase | 10, 20, 27, 29 |
+| Folder architecture / source-root ownership | 1-29 |
+| Docs / reviewer presentation | 1, 2, 21, 22, 23, 29 |
+
+## Disposition Outcomes By Stage
+
+| Stage group | Keep/refine | Improve/extract | Replace/redesign |
+| --- | --- | --- | --- |
+| 1-3 | Existing boundary check entry points and docs navigation. | Guardrails become repository-wide instead of RHI/Renderer-only. | Broad allowlists and undocumented exceptions. |
+| 4-5 | Generic RHI shader package primitives. | Renderer pass metadata moves toward `ShaderContracts`. | RHI-owned renderer pass registration. |
+| 6-10 | Backend-private D3D12/Vulkan roots. | Broad RHI facade becomes named services and contracts. | Application-owned D3D12 capture/readback body. |
+| 11-15 | Frame graph ownership and diagnostics. | Renderer facade splits into host facade, frame pipeline, scene staging, and presentation products. | Renderer consuming mutable GameFramework internals as the long-term handoff. |
+| 16-20 | `PassBinder` and normalized RHI pipeline descriptors. | `RenderPassShaderRuntime` becomes observable pipeline stages. | `RenderPassPipelineTraits` and type-index PSO identity. |
+| 23-24 | GameFramework runtime scene/cooked loading role. | Shared schemas and render handoff become `AssetContracts` and `RenderContracts`. | GameFramework as source-import/schema/pipeline owner. |
+| 25 | Focused cookers. | `SourceImportAdapters` becomes `SourceImporters`; `CookCommon` becomes `ToolConsoleSupport`/`CookDiagnostics`; AssetCooker stays orchestration-only. | `AssetConverter` as a production cook path. |
+| 26 | Qt GUI presentation/model split. | LauncherCore routes operation data through `ToolContracts`. | Launcher widgets owning build/cook/shader algorithms. |
+| 27-29 | Showcase as evidence project and docs as evidence set. | CMake/CI/docs align with contract surfaces and final validation artifacts. | Ambiguous or unowned durable roots, stale names, and duplicate production paths. |
+
+## Stage-By-Stage Folder Architecture Budget
+
+Each implementation prompt must name the current folders touched, the target folders strengthened, the folders that must not receive code, and the cleanup path for old folders.
+
+| Stage | Folder shape to make truer | Folder shape to reject |
+| --- | --- | --- |
+| 1 | Coverage docs accurately inventory source roots and generated/local-only roots. | Coverage that hides roots or treats scratch folders as architecture. |
+| 2 | Glossary and maps use target folder names from the naming canon. | Diagrams that preserve noisy folder names without disposition. |
+| 3 | Boundary checks live in local/CMake-friendly check files with documented exceptions. | Broad allowlists or CI-only folder policy. |
+| 4 | Renderer pass shader metadata moves out of `Engine/RHI/Private/Shaders` toward renderer pass catalog and `ShaderContracts`. | RHI-owned renderer pass folders or duplicate shader registration roots. |
+| 5 | Validation commands reference the new shader registration target/folder names. | Build evidence that still relies on old RHI pass folders. |
+| 6 | RHI public/private folders map to method ownership categories. | Facade categories with no folder or service consequence. |
+| 7 | `Engine/RHI/Private/Services` or equivalent focused service folders become the non-backend owner. | Splitting one broad RHI folder into many vague service-locator folders. |
+| 8 | Application validation stays host orchestration; backend capture/readback moves to RHI/backend folders. | D3D12/Vulkan capture code under Application. |
+| 9 | Vendor providers stay under renderer feature/provider folders and use RHI interop contracts. | Vendor SDK/native API folders in ordinary passes, GameFramework, or Application. |
+| 10 | Smoke artifacts and sample paths are organized as validation evidence, not source folders. | One-off validation output under durable source roots. |
+| 11 | Renderer host facade separates from frame pipeline, features, scene staging, and diagnostics. | One giant renderer private folder hiding subsystem ownership. |
+| 12 | Presentation/viewport bridge folders expose host-facing products. | Hosts reading frame graph or backend folders directly. |
+| 13 | Renderer scene/resource folders consume GameFramework snapshots/contracts. | Renderer resource folders including GameFramework private or tool folders. |
+| 14 | Frame graph compiler/execution/resources/diagnostics folders remain explicit. | Pass code hiding resource/barrier ownership. |
+| 15 | Validation evidence names frame graph folders and sample content roots. | Advancing with unresolved resource warnings hidden in logs only. |
+| 16 | `PipelineRuntime`, `PassCatalog`, and `Engine/Contracts/Shader` own package/PSO identity. | Type-index traits or duplicate registries in unrelated folders. |
+| 17 | Pass authoring folders allow new passes without RHI edits. | Central folder edits for every ordinary pass. |
+| 18 | Ray tracing folders stay renderer-feature owned; RHI owns AS contracts/backends only. | Moving shadow/pass data into RHI or GameFramework folders. |
+| 19 | D3D12/Vulkan backend folders are sibling implementations with matching service names where useful. | Cross-backend includes or shared native helper folders that hide API ownership. |
+| 20 | Full graphics validation links artifacts to backend, renderer, and project folders. | Passing one backend while the folder evidence assumes parity. |
+| 21 | Reviewer docs point to before/after, graph, contract, and folder docs. | More docs without navigation value. |
+| 22 | RHI/Renderer cleanup deletes stale transition folders and exceptions. | Keeping old registration/provider/backend shortcuts for comfort. |
+| 23 | Every durable root has an owner, allowed dependencies, forbidden dependencies, and validation command. | Empty, ambiguous, or unowned source roots. |
+| 24 | Shared schemas move toward `Engine/Contracts/Asset` and renderer handoff toward `Engine/Contracts/Render`. | GameFramework becoming a schema dump, source importer, or renderer-pass folder. |
+| 25 | Source importers, focused cookers, AssetCooker, diagnostics/support, and inspectors have separate role folders. | `CookCommon`, `AssetConverter`, `Tools/Common`, or `Tools/Conversion` as production architecture. |
+| 26 | LauncherCore/workflow folders and Qt GUI folders remain separate. | Launcher folders containing cooker/compiler/render algorithms. |
+| 27 | Artifact inspection/validation folders are read-only and tied to contracts. | Inspectors mutating production cook policy. |
+| 28 | `CMake/Checks`, CMake target scopes, and CI/local commands enforce folder edges. | Generated/local roots becoming durable architecture or checks hidden in CI only. |
+| 29 | Final source-root inventory matches target folder architecture or stricter documented alternatives. | Duplicate old/new folders, ambiguous roots, stale aliases, or compatibility shims. |
+
+## Stage-By-Stage Complexity Budget
+
+Each stage must show that retained code earns its right to exist.
+
+| Stage | Complexity allowed to remain | Complexity to reduce, delete, or justify |
+| --- | --- | --- |
+| 1 | Coverage/status tables that expose real ownership. | Stale rows, unowned roots, and docs that hide risk. |
+| 2 | Glossary and system maps that shorten reviewer navigation. | Duplicate terms, vague labels, and diagrams that preserve bad edges. |
+| 3 | Small mechanical checks with counted exceptions. | Broad allowlists and silent suppression. |
+| 4 | Generic shader package primitives and renderer-owned pass metadata. | RHI-owned renderer pass registration and renderer-private includes from RHI. |
+| 5 | Minimal validation commands proving Stage 4 behavior. | Build-only confidence without package enumeration evidence. |
+| 6 | RHI method ownership table if it clarifies service extraction. | Facade categories that do not drive code or guardrail changes. |
+| 7 | Focused RHI services with caller evidence. | Splitting one broad facade into many unclear facades. |
+| 8 | Validation orchestration and backend capture services. | Application-owned D3D12/Vulkan capture implementation. |
+| 9 | Narrow provider/native interop contracts with diagnostics. | Renderer-level Vulkan/D3D12 leakage and provider SDK shortcuts. |
+| 10 | Backend parity evidence tied to sample paths. | One-off smoke paths that cannot be reproduced. |
+| 11 | Renderer facade as host protocol. | Subsystem ownership hidden behind one large renderer object. |
+| 12 | Presentation bridge and viewport products. | Hosts reading frame graph internals or backend resources. |
+| 13 | Render-domain scene/resource staging. | Renderer depending on mutable GameFramework internals. |
+| 14 | Frame graph diagnostics, resource planning, barrier evidence. | Suppressed warnings and hidden pass/resource coupling. |
+| 15 | Milestone validation artifacts. | Advancing while frame graph warnings remain unexplained. |
+| 16 | Explicit `PipelineRuntimeLibrary`, `PsoKey`, and package/runtime separation. | Type-index PSO identity and opaque lazy runtime storage. |
+| 17 | `PassCatalog` / pass definition authoring. | Central `RenderPassPipelineTraits` edits for ordinary passes. |
+| 18 | Renderer AS scene policy plus RHI AS build contracts. | Moving shadow/pass data into RHI or GameFramework as a shortcut. |
+| 19 | Symmetric backend services and named differences. | Cross-backend includes and backend-private policy leaks. |
+| 20 | Full graphics evidence across D3D12/Vulkan. | Passing one backend and assuming the other is fine. |
+| 21 | Reviewer path docs that reduce orientation cost. | More docs without navigation or ownership value. |
+| 22 | Final RHI/Renderer debt cleanup. | Transitional exceptions that survived their owning stage. |
+| 23 | Whole-repo map with every durable root owned. | Empty roots, stale target names, and hidden dependency direction. |
+| 24 | `AssetContracts` and `RenderContracts` around GameFramework. | GameFramework as source-import/schema/renderer pipeline owner. |
+| 25 | Focused cookers, `SourceImporters`, `ToolConsoleSupport`/`CookDiagnostics`, `AssetCooker` orchestration. | `AssetConverter` as production path, `CookCommon` as broad policy sink, import adapter naming as final design. |
+| 26 | LauncherCore requests/reports/history and Qt presentation split. | Widgets owning tool algorithms or host/backend implementation. |
+| 27 | Artifact matrix with producer/schema/consumer/inspector/evidence. | Artifact compatibility proven only by build success. |
+| 28 | Boundary checks that enforce target edges locally and in CI. | Checks that only document debt but do not fail new drift. |
+| 29 | Final evidence set that removes unearned complexity. | Any duplicate path, vague owner, or exception without an accepted follow-up. |
+
+## Stage Acceptance Checklist
+
+For any stage:
+
+- Open the before/current document for the affected subsystem.
+- Open the after/target contract for the subsystem.
+- Open the matching row in [Required Target Documents By Stage](../rhi-renderer-review-ready-implementation-plan.md#required-target-documents-by-stage).
+- Classify each touched subsystem using the refactor disposition policy in [../../architecture/after/repository-target-architecture.md](../../architecture/after/repository-target-architecture.md).
+- Apply the stage complexity budget above and name the code that earns its right to remain.
+- Check new names against the repository naming canon before adding files, targets, types, commands, or schemas.
+- Confirm the `Global Refactor Stage Impact Matrix` in the canonical implementation plan names the adjacent modules to protect.
+- Run the smallest meaningful validation available locally.
+- Update coverage/status docs when ownership, dependencies, or validation expectations change.
+- Update the `Stage Status Tracker` row when the stage starts, reaches validation/cleanup-only state, or is fully accepted.

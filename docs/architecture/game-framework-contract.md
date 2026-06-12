@@ -2,6 +2,7 @@
 
 Status: whole-repository GameFramework contract
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -10,6 +11,8 @@ This document defines how `Engine/GameFramework` participates in the whole-repos
 GameFramework is the runtime owner for levels, scene entities/components, cameras, lighting descriptions, runtime asset payloads, cooked mesh/material/scene/animation/skeleton data, and gameplay-facing scene APIs.
 
 It must stay cooked-data oriented. Source import, authoring conversion, and cook algorithms belong in `Tools/`.
+
+Target folder structure for shared schemas and render handoff is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md).
 
 Reference basis:
 
@@ -23,7 +26,7 @@ Reference basis:
 
 | Area | Owns | Does not own |
 | --- | --- | --- |
-| `Assets` | Runtime asset IDs, registries, cooked payload loading, payload assembly, cooked record translators/loaders. | Source import adapters, cook planning, renderer GPU resources. |
+| `Assets` | Runtime asset IDs, registries, cooked payload loading, payload assembly, cooked record translators/loaders. | Source importers, cook planning, renderer GPU resources, shared schema ownership when tools also produce the data. |
 | `Level` | Registered levels, level descriptions, level loading/change requests, level parsing. | Renderer frame graph, launcher workflows, source scene import. |
 | `Scene` root | Runtime scene entities, components, scene snapshots, runtime scene API. | RHI command recording, renderer pass execution. |
 | `Scene/Camera` | Runtime camera components/controllers and camera snapshot data. | Backend projection convention policy beyond documented shared DTOs. |
@@ -32,13 +35,42 @@ Reference basis:
 | `Scene/Meshes` | Runtime mesh data/components, cooked mesh references, skeletal/static mesh data. | Renderer GPU mesh cache, backend buffers. |
 | `Scene/Skeletons` / `Scene/Animations` | Runtime skeletal/animation data contracts. | Import/cook algorithms and renderer skinning buffer allocation. |
 
+## Disposition Decisions
+
+| Current area | Disposition | Target decision |
+| --- | --- | --- |
+| GameFramework runtime world | Keep and refine | Preserve runtime scene, levels, components, gameplay-facing APIs, and cooked loading responsibilities. |
+| GameFramework as cooked schema owner | Improve and extract | Move shared producer/consumer schemas to `AssetContracts` when tools and runtime both need the type. |
+| Renderer-facing scene state | Improve and extract | Move handoff types to `RenderContracts` snapshots so Renderer does not consume mutable gameplay internals. |
+| Source asset handling in runtime | Replace or redesign | Do not add glTF/FBX/image parsing to GameFramework; source formats belong to `SourceImporters` and cookers. |
+| RHI-facing runtime asset data | Improve and extract | Keep only public GPU-adjacent descriptors needed for loading; route final GPU creation through Renderer/RHI contracts. |
+
+## Folder Target
+
+| Current pressure | Target folder rule | Cleanup rule |
+| --- | --- | --- |
+| Shared cooked schemas in GameFramework | Move tool/runtime shared records to `Engine/Contracts/Asset` when cookers and runtime both need them. | Do not let GameFramework become the schema dumping ground for tools. |
+| Renderer-facing scene handoff | Move immutable snapshot/viewport/product types to `Engine/Contracts/Render` when Renderer and hosts consume them. | Do not let Renderer include GameFramework private scene/component folders. |
+| Source import assumptions | Keep source-format handling in `Tools/Import/SourceImporters` and focused cookers. | Do not create glTF/FBX/image importer folders under GameFramework. |
+| Runtime loaders | Keep loader bodies in GameFramework private folders and expose only public runtime/cooked contracts. | Do not make tools depend on private loader folders. |
+| Project/sample content | Keep project content under `Projects/*/Data` and `Projects/*/Shaders`. | Do not put project validation content under GameFramework. |
+
+## GameFramework Complexity Budget
+
+| GameFramework complexity | Earns its right when | Remove or extract when |
+| --- | --- | --- |
+| Runtime components and scene APIs | They serve gameplay/runtime ownership and can produce stable snapshots. | They exist only to feed a renderer pass or cooker shortcut. |
+| Cooked loaders | They validate versioned `AssetContracts` and report asset-oriented errors. | They become the only schema documentation tools can understand. |
+| Snapshot builders | They produce immutable `RenderContracts` with clear frame ownership. | Renderer still needs mutable gameplay internals. |
+| RHI-facing data | It is a narrow public contract needed for loading/upload handoff. | It exposes descriptors, command recording, backend handles, or pass policy. |
+
 ## Allowed Dependencies
 
 GameFramework may depend on:
 
 - `SparkleCore` for foundation types, diagnostics, files, math, IDs, strings, and events.
 - `SparklePlatform` for runtime host/platform concepts already exposed through the module.
-- Stable public RHI data contracts that currently own cooked GPU-adjacent types.
+- Stable public `AssetContracts`, `RenderContracts`, and narrow RHI data contracts that currently own cooked GPU-adjacent types. Direct RHI use must not grow into descriptors, command recording, backend-native handles, or renderer pass ownership.
 
 GameFramework must not depend on:
 
@@ -52,13 +84,15 @@ GameFramework must not depend on:
 ```mermaid
 flowchart LR
     Cooked[Cooked assets]
+    AssetContracts[AssetContracts schemas]
     GameAssets[GameFramework asset loaders]
     Scene[GameScene and components]
-    Snapshot[Scene/camera/light/material/mesh snapshots]
+    Snapshot[RenderContracts snapshots]
     Renderer[Renderer SceneData builders]
     GPU[Renderer/RHI resources]
 
-    Cooked --> GameAssets
+    Cooked --> AssetContracts
+    AssetContracts --> GameAssets
     GameAssets --> Scene
     Scene --> Snapshot
     Snapshot --> Renderer

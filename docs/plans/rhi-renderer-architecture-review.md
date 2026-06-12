@@ -1,8 +1,18 @@
 # Sparkle Repository Architecture Review - RHI/Renderer First Track
 
-Status: strategic system-design review draft
+Status: living RHI/Renderer first-track architecture review
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 Scope: whole-repository architecture, with the first implementation track focused on `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, shader/pass runtime, DLSS/upscaling integration, and the tool/GameFramework surfaces that those systems depend on.
+
+Navigation:
+
+- Plans index: [README.md](README.md)
+- Whole-repository review: [sparkle-whole-repository-architecture-review.md](sparkle-whole-repository-architecture-review.md)
+- Before/current architecture: [../architecture/before/repository-current-state.md](../architecture/before/repository-current-state.md)
+- After/target architecture: [../architecture/after/repository-target-architecture.md](../architecture/after/repository-target-architecture.md)
+- Target folder architecture: [../architecture/after/repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md)
+- Stage map: [after/repository-refactor-stage-map.md](after/repository-refactor-stage-map.md)
 
 Companion rubric:
 
@@ -17,10 +27,12 @@ Tracked architecture status:
 
 - `docs/architecture/rendering-coverage-status.md`
 - `docs/architecture/repository-coverage-status.md`
+- `docs/architecture/after/repository-target-folder-architecture.md`
 
 Reviewer architecture docs:
 
 - `docs/architecture/repository-system-map.md`
+- `docs/architecture/after/repository-target-folder-architecture.md`
 - `docs/architecture/game-framework-contract.md`
 - `docs/architecture/tooling-pipeline-contract.md`
 - `docs/architecture/rendering-glossary.md`
@@ -72,12 +84,15 @@ These are used as comparison anchors, not as templates to copy blindly.
 Observed source-tree patterns:
 
 - Donut splits `app`, `core`, `engine`, and `render`, and carries `nvrhi` as the graphics abstraction layer.
-- NVRHI is a focused graphics API abstraction library rather than a full renderer.
+- NVRHI and NRI keep public graphics contracts distinct from implementation/backend code.
 - Falcor exposes clear top-level systems such as `RenderGraph`, `RenderPasses`, `Rendering`, `Scene`, and `Core/API`.
 - Cauldron visibly separates `src/common`, `src/DX12`, and `src/VK`, keeping backend code obvious from the folder tree.
+- FidelityFX SDK separates kits/effects, samples, tools, and docs; Compressonator separates applications, core/framework libraries, runtime, examples, scripts, and docs.
 - CMake target usage requirements make dependency intent visible through `PUBLIC`, `PRIVATE`, and `INTERFACE` links.
 - Qt model/view separation is the right reference shape for `SparkleLauncher`: core operations and UI models should stay separate from widgets.
 - glTF and KTX both reinforce the tool/runtime split: source delivery and cooked/runtime artifacts need explicit schemas and validators.
+
+Folder action points are consolidated in [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md). That document is the source of truth for current-to-target folder moves while this review remains focused on the first RHI/Renderer track.
 
 ## Current Sparkle Map
 
@@ -97,6 +112,7 @@ Current rough file count from local inventory:
 | `Tools/Cooking` | 106 | Cook pipeline must produce stable runtime artifacts without leaking source logic into runtime modules. |
 | `Tools/Import` | 85 | Source adapters must translate external source assets into imported DTOs with diagnostics. |
 | `Tools/Conversion` | 4 | Debug conversion CLI must not become a second cook architecture. |
+| `Engine/Assets` | 0 | Non-code `Meshes`, `Shaders`, and `Textures` roots need explicit built-in/project/renderer ownership. |
 
 Important rendering interface sizes:
 
@@ -162,9 +178,9 @@ The detailed tables below remain the first-track RHI/Renderer audit. The whole-r
 | `Engine/Editor` and `Engine/Application` | Host/editor orchestration, editor UI, smoke validation. | Validation and viewport behavior can accidentally own backend or cook implementation details. | Host layers orchestrate systems and report evidence; backend-native and cook logic live in their owning modules. |
 | `Tools/Launcher/SparkleLauncher` | Developer build/cook/launch/maintenance workflows and Qt UI. | Final review depends on repeatable launcher evidence and tool discovery. | Launcher invokes focused tools/processes and keeps UI models separate from operation execution. |
 | `Tools/Shaders/ShaderCompiler` | Shader compile, reflection, cook packages, verification, inspection. | Renderer pass authoring and PSO runtime depend on stable shader package/reflection output. | ShaderCompiler can enumerate/cook/inspect renderer packages without RHI-specific renderer pass edits. |
-| `Tools/Import/SourceImportAdapters` | External source format import into imported DTOs. | Source import must not leak into GameFramework or Renderer runtime. | Import adapters produce source diagnostics and imported DTOs only. |
+| `Tools/Import/SourceImportAdapters` -> target `SourceImporters` | External source format import into imported DTOs. | Source import must not leak into GameFramework or Renderer runtime; current adapter naming should not be preserved as the production concept. | SourceImporters produce source diagnostics and imported DTOs only. |
 | `Tools/Cooking/*` | Texture, mesh, material, scene, and project-level asset cooking. | Cooked schemas must stay aligned with GameFramework loaders, Renderer resource managers, and RHI upload contracts. | Focused cookers own transformations; AssetCooker orchestrates and reports process evidence. |
-| `Tools/Conversion/AssetConverter` | Direct developer/debug conversion CLI. | Legacy debug paths can diverge from AssetCooker and focused cookers. | Converter stays a thin debug surface or is folded into the main cook workflow. |
+| `Tools/Conversion/AssetConverter` | Direct developer/debug conversion CLI. | Legacy debug paths can diverge from AssetCooker and focused cookers. | Converter is removed as a production path; useful commands fold into AssetCooker or explicit inspect/debug commands. |
 | `CMake`, `.github`, `Projects`, `docs` | Build profiles, CI, sample content, and architecture records. | Refactors fail review if validation commands, sample content, or docs drift. | Build/CI/docs/sample status agree with code and final evidence. |
 
 ### Renderer Private Coverage

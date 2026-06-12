@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer contract
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -14,9 +15,12 @@ Primary code references:
 - [RenderDeviceServices.h](../../Engine/RHI/Public/Device/RenderDeviceServices.h)
 - [D3D12 backend](../../Engine/RHI/Private/D3D12)
 - [Vulkan backend](../../Engine/RHI/Private/Vulkan)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 
 Reference basis:
 
+- NVIDIA NVRHI focused RHI and backend libraries: https://github.com/NVIDIA-RTX/NVRHI
+- NVIDIA NRI low-level D3D12/Vulkan render interface: https://github.com/NVIDIA-RTX/NRI
 - NVIDIA Donut uses NVRHI as the graphics abstraction while application/device-manager code handles windows/devices: https://github.com/NVIDIA-RTX/Donut
 - arc42 building-block and interface documentation guidance: https://arc42.org/overview
 
@@ -32,7 +36,7 @@ RHI must not own renderer feature concepts such as GBuffer layout, lighting comp
 flowchart TD
     Renderer[Renderer and tools]
     Public[RHI/Public contracts]
-    Common[RHI/Private common services]
+    Common[RHI/Private/Services]
     D3D12[D3D12 implementation]
     Vulkan[Vulkan implementation]
 
@@ -42,7 +46,7 @@ flowchart TD
     Common --> Vulkan
 ```
 
-Only `RHI/Public` is visible to Renderer. `RHI/Private/D3D12` and `RHI/Private/Vulkan` are backend-private implementation roots.
+Only `RHI/Public` is visible to Renderer. Target API-neutral implementation lives under `RHI/Private/Services` or an equally focused service structure. `RHI/Private/D3D12` and `RHI/Private/Vulkan` are backend-private sibling implementation roots.
 
 ## Public Facade Ownership
 
@@ -70,6 +74,39 @@ The current `RenderHardwareInterface` is intentionally mapped before Stage 6/7 s
 | Feature queries | `SupportsUnorderedAccess` | RHI facade | RHI resource/capability service |
 
 Current debt: the facade is broad because it holds many service categories. The mapping above is the required baseline for Stage 6 and Stage 7.
+
+## Disposition Decisions
+
+| Current body | Disposition | Target decision |
+| --- | --- | --- |
+| `RenderHardwareInterface` broad root facade | Improve and extract | Keep as compatibility/front-door during migration, but extract service ownership into capability, device, command, resource, descriptor, pipeline, memory, presentation, capture, interop, and diagnostics services. |
+| Generic shader package/reflection primitives | Keep and refine | Preserve in RHI because they are API-facing package/layout/runtime primitives, not renderer pass ownership. |
+| Renderer pass registrations formerly in RHI | Replace or redesign | Do not preserve or reintroduce; renderer/pass metadata belongs to `ShaderContracts`. |
+| Capture/readback method on root facade | Improve and extract | Move implementation to RHI/backend capture service and expose only public validation-facing requests/results. |
+| Native interop handles | Improve and extract | Keep explicit interop contracts, but require capability reports and structured fallback reasons. |
+| Backend service folders | Keep and refine | Preserve D3D12/Vulkan privacy and improve service symmetry. |
+| UI bridge on root facade | Improve and extract | Keep only API-neutral texture/descriptor bridge; do not let UI policy move into RHI. |
+
+## Folder Target
+
+| Target folder | Owns | Must not own |
+| --- | --- | --- |
+| `Engine/RHI/Public` | Public RHI descriptors, handles, device/command/resource/pipeline contracts, capability reports, validation request/result types. | Renderer pass names, GameFramework scene data, tool process models. |
+| `Engine/RHI/Private/Services` | API-neutral service implementations for capability, device, commands, descriptors, resources, pipeline, memory, presentation, capture, interop, diagnostics, and validation. | Backend-native policy hidden from the backend folders or renderer conveniences. |
+| `Engine/RHI/Private/D3D12` | D3D12 native resource, descriptor, command, memory, pipeline, swapchain, diagnostics, and capture/readback implementation. | Vulkan includes, renderer feature policy, Application validation ownership. |
+| `Engine/RHI/Private/Vulkan` | Vulkan native resource, descriptor, command, memory, pipeline, swapchain, diagnostics, and capture/readback implementation. | D3D12 includes, renderer feature policy, Application validation ownership. |
+| `Engine/RHI/Shaders/BuiltIn` | Generic RHI validation shader fixtures only. | Renderer GBuffer, lighting, sky, debug visualization, or material pass shaders. |
+
+## RHI Complexity Budget
+
+RHI complexity earns its right to exist only when it represents a real GPU/API contract, backend parity requirement, explicit interop need, or validation/diagnostic surface.
+
+| Keep or add | Remove or reject |
+| --- | --- |
+| Descriptor/resource/command/pipeline/memory/presentation services with D3D12 and Vulkan semantics. | Renderer convenience methods that simply save a caller from owning its feature logic. |
+| Native interop metadata with capability and fallback diagnostics. | Native handles leaked upward without owner, state, or lifetime contract. |
+| Backend-specific services hidden behind public contracts. | Backend-private headers in Renderer, GameFramework, Application validation, or tools. |
+| Validation/capture services that expose structured requests/results. | Permanent backend-native validation bodies in Application. |
 
 ## Command List Contract
 

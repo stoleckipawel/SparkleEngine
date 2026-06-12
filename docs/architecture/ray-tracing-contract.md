@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer contract
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -15,6 +16,7 @@ Primary code references:
 - [RayTracingCapabilityReport.h](../../Engine/Renderer/Private/RayTracing/RayTracingCapabilityReport.h)
 - [RhiRayTracingDesc.h](../../Engine/RHI/Public/RayTracing/RhiRayTracingDesc.h)
 - [FrameGraphAccelerationStructureDesc.h](../../Engine/Renderer/Public/FrameGraph/FrameGraphAccelerationStructureDesc.h)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 
 Reference basis:
 
@@ -26,6 +28,8 @@ Reference basis:
 Renderer owns ray tracing scene meaning. RHI owns API-neutral ray tracing GPU operations. Backends own D3D12/Vulkan acceleration structure implementation details.
 
 Hard rule: shadow quality, denoiser selection, scene membership, and render pass policy do not belong in RHI.
+
+Folder rule: renderer ray tracing policy lives under `Engine/Renderer/Private/Features/RayTracing` or the current `Engine/Renderer/Private/RayTracing` migration folder. RHI owns public AS contracts and backend AS implementation only.
 
 ## Ownership Table
 
@@ -40,6 +44,15 @@ Hard rule: shadow quality, denoiser selection, scene membership, and render pass
 | AS build commands | RHI command list | [RenderCommandList.h](../../Engine/RHI/Public/Commands/RenderCommandList.h) | `BuildBottomLevelAccelerationStructure`, `BuildTopLevelAccelerationStructure`. | Deciding which meshes/lights need ray tracing. |
 | D3D12/Vulkan AS implementation | Backend | [D3D12](../../Engine/RHI/Private/D3D12), [Vulkan](../../Engine/RHI/Private/Vulkan) | Native AS buffers, scratch alignment, API function calls, barriers. | Renderer feature settings. |
 | Ray traced shadow settings | Renderer feature | [RayTracedShadowSettings.h](../../Engine/Renderer/Private/RayTracing/RayTracedShadowSettings.h) | Quality mode, denoiser mode, normal bias, max distance, diagnostics. | RHI public API. |
+
+## Folder Target
+
+| Folder | Target role | Rejected use |
+| --- | --- | --- |
+| `Engine/Renderer/Private/Features/RayTracing` | Renderer scene meaning, BLAS/TLAS cache policy, capability report, shadow settings, pass services. | Native D3D12/Vulkan AS implementation or RHI public API expansion for shadow policy. |
+| `Engine/RHI/Public/RayTracing` | API-neutral acceleration structure descriptors, build sizes, instance/geometry records, public capability fields. | Renderer shadow settings, denoiser selection, or scene membership. |
+| `Engine/RHI/Private/D3D12` and `Engine/RHI/Private/Vulkan` | Native AS buffers, scratch/result resources, barriers, backend build calls. | Renderer feature policy. |
+| `Engine/Renderer/Private/Passes` and `PassCatalog` | Ray traced shadow pass code and shader/package metadata. | RHI-private shader registration or backend-native pass code. |
 
 ## Runtime Flow
 

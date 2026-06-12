@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer contract
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -14,6 +15,7 @@ Primary code references:
 - [FrameGraphPlan.h](../../Engine/Renderer/Private/FrameGraph/Compiler/FrameGraphPlan.h)
 - [PassExecutionContext.h](../../Engine/Renderer/Private/FrameGraph/Execution/PassExecutionContext.h)
 - [FrameGraphResourceCommands.h](../../Engine/Renderer/Private/FrameGraph/Execution/FrameGraphResourceCommands.h)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 
 Reference basis:
 
@@ -40,6 +42,16 @@ The frame graph does not own:
 - Backend-native API objects beyond opaque RHI handles.
 - Pass-specific feature policy.
 - Vendor SDK behavior.
+
+Target folder ownership:
+
+| Folder | Owns | Must not own |
+| --- | --- | --- |
+| `Engine/Renderer/Private/FrameGraph/Builder` | Pass/resource declaration APIs and setup helpers. | Command recording or hidden resource allocation side effects. |
+| `Engine/Renderer/Private/FrameGraph/Compiler` | Dependency planning, barrier planning, transient lifetime/aliasing plan. | Pass-specific feature policy. |
+| `Engine/Renderer/Private/FrameGraph/Execution` | Ordered pass execution, resource resolution, RHI command handoff. | Pass reordering at execute time or backend-native API implementation. |
+| `Engine/Renderer/Private/FrameGraph/Resources` | Graph resource descriptors, transient allocation, import/persistent resource bookkeeping. | Renderer scene ownership or RHI backend allocation policy. |
+| `Engine/Renderer/Private/FrameGraph/Diagnostics` | Warnings, validation records, graph dumps, smoke-visible failure details. | Suppressed warning state or generic "graph failed" messages. |
 
 ## Runtime Flow
 
@@ -209,4 +221,3 @@ The frame graph contract is complete when:
 - D3D12 and Vulkan smoke logs show no unresolved frame graph warnings.
 - A frame graph plan diagnostic artifact can explain pass order, resource usage, barriers, and transients.
 - Pass authoring docs show how pass parameter usage enters frame graph declarations.
-

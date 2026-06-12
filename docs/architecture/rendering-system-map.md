@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer system map
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -18,6 +19,7 @@ Companion docs:
 - [Whole-repository architecture review](../plans/sparkle-whole-repository-architecture-review.md)
 - [Repository system map](repository-system-map.md)
 - [Repository coverage status](repository-coverage-status.md)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 - [GameFramework contract](game-framework-contract.md)
 - [Tooling and content pipeline contract](tooling-pipeline-contract.md)
 - [Rendering glossary](rendering-glossary.md)
@@ -72,7 +74,7 @@ flowchart TD
     RHI --> Vulkan
 ```
 
-Important rule: the arrow from `Tools` to `RHI` is for shared shader package structs and reflection formats. Runtime engine modules must not depend on tool internals.
+Important rule: the arrow from `Tools` to `RHI` is current-state shorthand for shared shader package structs and reflection formats. The target route is `ShaderCompiler -> ShaderContracts -> Renderer/RHI shader primitives`; runtime engine modules must not depend on tool internals.
 
 For whole-repository boundaries, use [repository-system-map.md](repository-system-map.md). This rendering map remains the detailed view for frame rendering and graphics contracts.
 
@@ -82,8 +84,10 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | --- | --- | --- |
 | [Engine/Renderer/Public](../../Engine/Renderer/Public) | Public renderer API, debug contracts, frame graph handles/descs, render-domain DTOs, shader parameter authoring, viewport products. | API width, stability, whether public types leak internals. |
 | [Engine/Renderer/Private](../../Engine/Renderer/Private) | Renderer implementation: frame setup, graph, passes, pipeline runtime, ray tracing scene, scene data, textures, upscaling, diagnostics. | Ownership clarity and whether each subsystem has one reason to change. |
+| Target `Engine/Renderer/Private/PassCatalog` and `Engine/Renderer/Shaders` ([folder plan](after/repository-target-folder-architecture.md)) | Renderer-owned pass metadata and renderer pass shader sources. | Whether adding a pass avoids RHI edits and duplicate registration paths. |
 | [Engine/RHI/Public](../../Engine/RHI/Public) | API-neutral graphics contracts: device, commands, resources, pipeline descs, descriptors, shaders, memory, ray tracing, diagnostics, validation. | Whether concepts are GPU/API-level rather than renderer-level. |
 | [Engine/RHI/Private](../../Engine/RHI/Private) | Common RHI helpers plus D3D12/Vulkan backend implementations. | Backend privacy, service symmetry, diagnostics, and type conversion completeness. |
+| Target `Engine/RHI/Private/Services`, `D3D12`, and `Vulkan` | API-neutral RHI services plus sibling backend implementations. | Whether service folders clarify ownership without becoming new broad facades. |
 | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Shader compilation, reflection extraction, cook graph, package writing, CLI inspection. | Whether pass authoring and runtime packages can evolve without RHI-specific renderer edits. |
 | [Engine/Application/Private/Validation](../../Engine/Application/Private/Validation) | Smoke validation orchestration. | Whether validation orchestrates systems without owning backend-native implementation details. |
 | [Tools/Launcher/SparkleLauncher/Private/Launch/Smoke](../../Tools/Launcher/SparkleLauncher/Private/Launch/Smoke) | Launcher smoke workflow. | Whether reviewer-facing launch/validation paths are discoverable and repeatable. |
@@ -106,6 +110,31 @@ For whole-repository boundaries, use [repository-system-map.md](repository-syste
 | Ray tracing scene | Renderer | [RayTracing](../../Engine/Renderer/Private/RayTracing) | BLAS cache policy, TLAS instance data, renderer-level capability report, shadow settings. | API-native AS build implementation. |
 | Upscaling | Renderer plus RHI interop | [Upscaling](../../Engine/Renderer/Private/Upscaling), [Interop](../../Engine/RHI/Public/Interop) | Provider selection, DLSS/passthrough behavior, upscaler input contract, fallback reasons. | Backend handle fabrication or API feature enablement. |
 | Shader compiler | Tooling | [ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Compile/cook/reflect/package/inspect shader artifacts. | Runtime rendering or backend command recording. |
+
+## Disposition-Driven Rendering Decisions
+
+| Current building block | Disposition | Target action |
+| --- | --- | --- |
+| Renderer facade | Improve and extract | Keep host-facing lifecycle, but split frame pipeline, scene staging, pass authoring, feature providers, and presentation products. |
+| Scene bridge | Improve and extract | Consume `RenderContracts` snapshots instead of direct mutable GameFramework state. |
+| Frame builders and frame graph | Keep and refine | Preserve renderer ownership and improve diagnostics/resource validation. |
+| Renderer passes | Keep and refine | Preserve pass ownership above RHI; require pass definitions to name graph resources, shader package, PSO intent, and diagnostics. |
+| `RenderPassPipelineTraits` | Replace or redesign | Remove central per-pass traits in favor of pass catalog/runtime registration. |
+| `PipelineStateManager` type-index identity | Replace or redesign | Replace implicit C++ type identity with explicit `PsoKey` and `PipelineRuntimeLibrary`. |
+| RHI broad facade | Improve and extract | Split service ownership without moving renderer conveniences into RHI. |
+| Application D3D12 capture body | Replace or redesign | Move backend-native capture/readback to RHI/backend validation services. |
+| ShaderCompiler renderer edge | Improve and extract | Replace renderer target linkage with `ShaderContracts` pass catalog/package manifest consumption. |
+
+## Rendering Complexity Budget
+
+| Rendering area | Complexity that earns its right | Complexity to remove or redesign |
+| --- | --- | --- |
+| Renderer facade | Stable host protocol, lifecycle, diagnostics entry points. | Owning every subsystem directly because it is convenient. |
+| Scene staging | Conversion from `RenderContracts` snapshots to render-domain data. | Direct mutation/read of GameFramework internals. |
+| Frame graph | Resource lifetime, pass order, barriers, diagnostics. | Silent warnings, hidden resource aliases, pass-specific hacks. |
+| Pass system | Feature-specific draw/dispatch intent and validation names. | Backend-specific pass code or central per-pass boilerplate. |
+| Pipeline runtime | Explicit package/layout/PSO identity and reload diagnostics. | `std::type_index` identity and opaque lazy runtime state. |
+| Providers | SDK-specific policy and fallback reasons. | Vendor SDK calls in ordinary passes or root RHI policy. |
 
 ## Frame Runtime View
 
@@ -141,7 +170,7 @@ The frame graph owns execution order and resource transitions. Passes own comman
 
 ```mermaid
 flowchart LR
-    Reg[Renderer-owned shader registrations]
+    Reg[ShaderContracts pass catalog]
     Cook[ShaderCompiler cook plan]
     Reflect[Reflection extraction]
     Package[Cooked shader package]
@@ -161,7 +190,7 @@ flowchart LR
     PSO --> Backend
 ```
 
-Renderer pass shader registrations live in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). RHI keeps the generic registry, package layout, reflection, cache, and runtime primitives; it no longer owns renderer pass package declarations.
+Current renderer pass shader registrations live in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). The target design improves this into `ShaderContracts` pass catalogs and package manifests so registration identity is not duplicated between pass code and cook metadata. RHI keeps only generic package layout, reflection, cache, and runtime primitives.
 
 ## Backend Boundary View
 

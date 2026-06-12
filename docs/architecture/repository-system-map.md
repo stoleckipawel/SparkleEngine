@@ -2,6 +2,7 @@
 
 Status: whole-repository architecture map
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -16,6 +17,7 @@ Companion docs:
 - [GameFramework contract](game-framework-contract.md)
 - [Tooling and content pipeline contract](tooling-pipeline-contract.md)
 - [Architecture boundary guardrails](architecture-boundary-guardrails.md)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 
 Reference basis:
 
@@ -123,7 +125,7 @@ flowchart TD
 
 Notes:
 
-- The `ShaderCompiler --> Renderer` edge is intentionally narrow: it consumes the renderer-owned shader registration target, not full renderer runtime behavior.
+- The `ShaderCompiler --> Renderer` edge is current-state only. The target replaces it with `ShaderCompiler --> ShaderContracts`, so the compiler consumes pass catalogs and package manifests without linking full renderer runtime behavior.
 - `GameFramework --> RHI` exists today for shared render/cooked asset contracts. It must not grow into renderer pass, backend, descriptor, or command ownership.
 - `Renderer --> GameFramework` exists today while renderer consumes scene and asset state. The target direction is immutable render-domain snapshots and DTOs so renderer refactors do not mutate gameplay ownership.
 - `Tools --> GameFramework` exists for public imported/cooked data contracts. Tools must not depend on GameFramework private runtime loading policy.
@@ -147,6 +149,59 @@ Notes:
 | [Projects](../../Projects) | Sample project content | Runnable project manifests, assets, showcase content. | Engine/tool architecture policy. |
 | [CMake](../../CMake) | Build infrastructure | Profiles, dependency fetch, Qt discovery, artifacts, release assembly, validation targets. | Runtime logic or durable generated artifacts. |
 | [.github](../../.github) | CI workflow | Repeatable validation wiring. | Local-only machine state. |
+
+## Disposition-Driven Target Map
+
+This table applies the keep/improve/replace rule to the current source roots. It is intentionally stricter than the current dependency graph.
+
+| Current root or body | Disposition | Target action | New or stable name |
+| --- | --- | --- | --- |
+| [Engine/Core](../../Engine/Core) | Keep and refine | Keep only foundation utilities; reject platform/render/tool policy. | `Core` |
+| [Engine/Platform](../../Engine/Platform) | Improve and extract | Keep OS/window/input; move presentation and host policy upward. | `Platform` |
+| [Engine/RHI](../../Engine/RHI) facade | Improve and extract | Split broad facade into explicit GPU/API services and public contracts. | `RhiContracts`, RHI services |
+| [Engine/RHI/Private/D3D12](../../Engine/RHI/Private/D3D12), [Vulkan](../../Engine/RHI/Private/Vulkan) | Keep and refine | Preserve backend-private trees and tighten parity/service symmetry. | `D3D12Backend`, `VulkanBackend` |
+| [Engine/Renderer](../../Engine/Renderer) facade | Improve and extract | Keep host-facing renderer entry point; split frame pipeline, scene staging, pass authoring, and providers. | `Renderer`, `FramePipeline`, `RenderFeatures` |
+| Renderer pass traits and shader registration duplication | Replace or redesign | Remove central per-pass traits and duplicate package declarations. | `PassCatalog`, `PipelineRuntimeLibrary`, `ShaderContracts` |
+| [Engine/GameFramework](../../Engine/GameFramework) | Improve and extract | Keep runtime scene/cooked loading; extract shared schemas and renderer handoff. | `AssetContracts`, `RenderContracts` |
+| [Engine/Editor](../../Engine/Editor) | Improve and extract | Keep editor UI; prevent cook/import/backend logic from living in panels. | Editor UI models/panels |
+| [Engine/Application](../../Engine/Application) | Improve and extract | Keep host orchestration; move backend-native capture/readback behind RHI/backend services. | Host validation orchestrator |
+| [Engine/Assets](../../Engine/Assets) | Replace or redesign | Narrow to built-in engine assets with manifest/validation, or move shaders/data to owner-specific roots. | `Engine/Assets/BuiltIn` or owner-specific shader/data roots |
+| [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Improve and extract | Consume shader/pass contracts, not renderer runtime. | `ShaderCompiler` + `ShaderContracts` |
+| [Tools/Import/SourceImportAdapters](../../Tools/Import/SourceImportAdapters) | Improve and extract | Rename/extract from pattern-centered adapters to focused source importers. | `SourceImporters` |
+| Focused cookers under [Tools/Cooking](../../Tools/Cooking) | Keep and refine | Keep focused transformations; tighten schemas, diagnostics, and inspectors. | `TextureCooker`, `MeshCooker`, `MaterialCooker`, `SceneCooker` |
+| [Tools/Cooking/AssetCooker](../../Tools/Cooking/AssetCooker) | Improve and extract | Keep orchestration only; remove duplicated cook algorithms. | `AssetCooker` |
+| [Tools/Conversion/AssetConverter](../../Tools/Conversion/AssetConverter) | Replace or redesign | Fold into AssetCooker or explicit inspect/debug commands. | No production `AssetConverter` path |
+| [Tools/Cooking/CookCommon](../../Tools/Cooking/CookCommon) | Improve and extract | Rename/split vague common helpers into support and diagnostics surfaces. | `ToolConsoleSupport`, `CookDiagnostics` |
+| [Tools/Launcher/SparkleLauncher](../../Tools/Launcher/SparkleLauncher) core | Improve and extract | Keep workflow orchestration; prevent UI/tool algorithm duplication. | `LauncherCore`, `ToolContracts` |
+| Launcher Qt GUI | Keep and refine | Preserve presentation split; models observe LauncherCore state. | Qt models/widgets |
+| [CMake](../../CMake) | Improve and extract | Make target scopes express ownership and validation. | Narrow target graph |
+| [.github](../../.github) | Improve and extract | Mirror local checks and tool validation. | CI evidence workflows |
+| [Projects](../../Projects) | Keep and refine | Keep representative content and smoke coverage. | `Showcase` evidence project |
+| [docs](../) | Keep and refine | Keep before/after docs, contracts, stage maps, and evidence aligned with code. | Architecture evidence set |
+
+## Module Right-To-Exist Budget
+
+| Module/system | Complexity that earns its right to exist | Complexity that does not |
+| --- | --- | --- |
+| `Engine/Core` | Small shared primitives with many consumers and no domain policy. | Convenience wrappers for one subsystem or policy hidden in foundation. |
+| `Engine/Platform` | OS/window/input behavior that cannot live in Core. | Renderer presentation policy or editor workflow. |
+| `Engine/RHI` | API-neutral GPU contracts, explicit native interop, backend parity diagnostics. | Renderer convenience methods, pass names, broad service-locator behavior. |
+| D3D12/Vulkan backends | Native API translation, validation, memory/resource/pipeline services. | Cross-backend dependencies or renderer/vendor feature policy. |
+| `Engine/Renderer` | Frame graph, pass authoring, pipeline runtime, render features, diagnostics. | Duplicate pass/package registries, central traits churn, backend-native shortcuts. |
+| `Engine/GameFramework` | Runtime scene/cooked loading and gameplay-facing state. | Source import, cook policy, shared schema ownership, renderer pass data. |
+| `Engine/Editor` | UI panels and editor models that present public system state. | Tool algorithms, backend capture, renderer internals. |
+| `Engine/Application` | Host lifecycle and validation orchestration. | Native backend capture/readback bodies or hidden service locator behavior. |
+| `Engine/Assets` | Concrete built-in assets with documented source/cooked policy, or no root if ownership moves elsewhere. | Ambiguous asset roots mixing built-ins, renderer shaders, and project content. |
+| `ShaderCompiler` | Compile/reflection/package/inspect logic through `ShaderContracts`. | Full renderer runtime linkage or duplicated pass catalog. |
+| `SourceImporters` | Per-format importers and DTO diagnostics. | Runtime loader policy or renderer resource creation. |
+| Focused cookers | Deterministic artifact transforms and schema diagnostics. | Project workflow, UI prompts, runtime mutation. |
+| `AssetCooker` | Planning, dispatch, aggregation, reports. | Reimplemented cooker algorithms. |
+| `AssetConverter` | Only explicit inspect/debug commands that do not mutate cook policy. | A parallel production cook pipeline. |
+| `ToolConsoleSupport` / `CookDiagnostics` | Shared reporting/console behavior with no asset policy. | Broad `Common` helper ownership. |
+| Launcher | Process orchestration, operation state, evidence, presentation. | Build/cook/shader algorithms in GUI code. |
+| CMake/CI | Dependency ownership and repeatable validation. | Broad transitive links and hidden CI-only behavior. |
+| `Projects` | Sample content that exercises cook/load/render paths. | Decorative samples that do not validate contracts. |
+| `docs` | Navigation, contracts, evidence, current/target truth. | Unlinked docs or prose that duplicates without deciding. |
 
 ## Refactor Blast-Radius Rules
 

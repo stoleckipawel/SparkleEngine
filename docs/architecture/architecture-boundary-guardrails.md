@@ -2,6 +2,15 @@
 
 Status: Stage 3 mechanical guardrail
 Date: 2026-06-12
+Last synchronized: 2026-06-13
+
+Navigation:
+
+- Architecture index: [README.md](README.md)
+- Before/current architecture: [before/repository-current-state.md](before/repository-current-state.md)
+- After/target architecture: [after/repository-target-architecture.md](after/repository-target-architecture.md)
+- Target folder architecture: [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md)
+- Target system detail index: [after/system-design-index.md](after/system-design-index.md)
 
 ## Purpose
 
@@ -42,6 +51,24 @@ The direct script path is the lowest-friction local and CI entry point because i
 | `VULKAN_NO_D3D12_BACKEND` | `Engine/RHI/Private/Vulkan` | Vulkan backend code includes or uses D3D12 backend/native identifiers. |
 | `APPLICATION_VALIDATION_NO_BACKEND_NATIVE` | `Engine/Application/Private/Validation` | Application validation grows backend-native capture/API dependencies. |
 
+## Stage 28 Expansion From Disposition Pass
+
+Stage 3 intentionally checks only the first RHI/Renderer boundary. The whole-repository disposition pass adds future checks that should become local/CI-friendly Stage 28 rules.
+
+| Future rule | Scope | Fails when |
+| --- | --- | --- |
+| `RUNTIME_NO_TOOLS_IMPL` | `Engine/*` | Runtime/editor modules include or link `Tools/*` implementation headers or targets. |
+| `GAMEFRAMEWORK_NO_RENDERER_PRIVATE` | `Engine/GameFramework` | GameFramework includes `Engine/Renderer/Private` or renderer pass/pipeline internals. |
+| `TOOLS_NO_GAMEFRAMEWORK_PRIVATE` | `Tools/*` | Importers/cookers depend on GameFramework private loaders instead of `AssetContracts`. |
+| `SHADERCOMPILER_NO_RENDERER_RUNTIME` | `Tools/Shaders/ShaderCompiler` | ShaderCompiler links full renderer runtime instead of `ShaderContracts`/package primitives. |
+| `LAUNCHER_GUI_NO_TOOL_ALGORITHMS` | Launcher Qt GUI folders | Widgets/models include focused cooker/compiler implementation or own build/cook/shader algorithms. |
+| `NO_PARALLEL_ASSET_CONVERTER_PIPELINE` | `Tools/Conversion/AssetConverter`, `Tools/Cooking` | AssetConverter remains a production cook path instead of debug/inspect commands or AssetCooker dispatch. |
+| `NO_VAGUE_COMMON_POLICY` | Durable source/CMake targets | New permanent `Common`, `Utils`, `Helper`, `Bridge`, or `Manager` owner names appear without a documented contract and stage disposition. |
+| `NO_AMBIGUOUS_ASSET_ROOT` | `Engine/Assets`, `Engine/*/Shaders`, `Projects/*/Data`, `Projects/*/Shaders`, and future content roots | Asset/source roots mix built-ins, renderer shaders, RHI fixtures, project content, or generated output without a concrete owner and validation policy. |
+| `NO_UNOWNED_SOURCE_ROOT` | Durable `Engine`, `Tools`, `Projects`, `CMake`, `.github`, and `docs` roots | A durable root exists without owner, allowed dependencies, forbidden dependencies, and validation command. |
+| `NO_UNEARNED_COMPATIBILITY_LAYER` | Engine/tools/CMake/docs | A compatibility adapter, duplicate registry, or old/new parallel body exists without owner, reason, validation value, and removal stage. |
+| `NO_ABSTRACTION_WITHOUT_CALLER_EVIDENCE` | New public APIs, targets, schemas, and helper libraries | A new abstraction is added for hypothetical future use without current callers, contract ownership, and diagnostics/validation benefit. |
+
 ## Transitional Exceptions
 
 These exceptions are count-limited and stage-labeled. Renderer/provider exceptions are also line-pattern limited, so unrelated native API usage in the same file still fails. If the count grows, the check fails. If a stage removes the debt, it must remove or tighten the exception in [ArchitectureBoundaryCheck.cmake](../../CMake/ArchitectureBoundaryCheck.cmake).
@@ -70,6 +97,7 @@ Result:
 
 - Do not add broad allowlists.
 - Every exception must name the owning removal stage.
+- Every exception and compatibility path must explain why its complexity earns temporary right to exist.
 - New ordinary renderer passes must not add `Engine/RHI` dependencies.
 - New backend-native validation work belongs behind RHI/backend-owned services, not Application.
 - When a later stage fixes a debt row, remove the exception in the same stage.

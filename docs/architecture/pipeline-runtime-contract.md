@@ -2,6 +2,7 @@
 
 Status: Stage 2 reviewer contract
 Date: 2026-06-12
+Last synchronized: 2026-06-13
 
 ## Purpose
 
@@ -16,6 +17,7 @@ Primary code references:
 - [RhiPipelineStateDesc.h](../../Engine/RHI/Public/Pipeline/RhiPipelineStateDesc.h)
 - [D3D12/Pipeline](../../Engine/RHI/Private/D3D12/Pipeline)
 - [Vulkan/Pipeline](../../Engine/RHI/Private/Vulkan/Pipeline)
+- [Target folder architecture](after/repository-target-folder-architecture.md)
 
 Reference basis:
 
@@ -85,6 +87,36 @@ This path is functional, but the identity is implicit and pass-specific runtime 
 | `RhiPipelineStateDesc` | Backend-neutral graphics/compute pipeline descriptors. | Needs to become part of an explicit key/diagnostic model. |
 | D3D12/Vulkan pipeline services | Native root signature/layout/shader module/PSO creation. | Should consume normalized descs without renderer pass policy. |
 
+## Disposition Decisions
+
+| Current object/body | Disposition | Target decision |
+| --- | --- | --- |
+| `PipelineStateManager` | Improve and extract | Preserve cache/reload responsibility, but replace type-index identity with explicit package/layout/backend-aware keys. |
+| `RenderPassPipelineTraits<TPass>` | Replace or redesign | Remove as a permanent central per-pass construction registry. |
+| `RenderPassShaderRuntime` | Improve and extract | Preserve useful validation/package-loading work, but expose observable stages and diagnostics through `PipelineRuntimeLibrary`. |
+| `PassBinder` | Keep and refine | Preserve as the binding error hotspot; improve diagnostics and reflection mismatch reporting. |
+| `RhiPipelineStateDesc` | Keep and refine | Preserve normalized backend-neutral descriptors and make them part of printable PSO identity. |
+| Shader package declaration duplication | Replace or redesign | Replace duplicate declarations with `ShaderContracts` pass catalog/package manifests. |
+
+## Folder Target
+
+| Folder | Target role | Rejected use |
+| --- | --- | --- |
+| `Engine/Renderer/Private/PipelineRuntime` | Explicit package/layout/backend/PSO identity, runtime cache, reload invalidation, printable diagnostics. | Opaque catch-all manager for pass-specific policy. |
+| `Engine/Renderer/Private/PassCatalog` | Source of pass package metadata consumed by runtime and ShaderCompiler. | Duplicate declarations split from pass definitions. |
+| `Engine/Contracts/Shader` | Shared manifest/reflection/binding schema. | Renderer execution or backend compiler internals. |
+| `Engine/RHI/Public/Pipeline` | Normalized backend-neutral pipeline descriptor contracts. | Pass-specific render intent or material policy. |
+| `Engine/RHI/Private/D3D12/Pipeline` and `Engine/RHI/Private/Vulkan/Pipeline` | Native PSO/root-signature/pipeline-layout implementation. | Renderer pass traits, shader package selection, or GameFramework data. |
+
+## Pipeline Runtime Complexity Budget
+
+| Runtime complexity | Earns its right when | Remove or redesign when |
+| --- | --- | --- |
+| `PipelineRuntimeLibrary` | It centralizes explicit package/layout/backend/PSO identity and reload invalidation. | It becomes another opaque manager hiding pass-specific policy. |
+| `PsoKey` / pipeline key | It is printable, deterministic, and explains backend object creation. | It omits enough state that failures still require code spelunking. |
+| Package cache | It avoids duplicate loads and reports package generation/hash. | It hides stale packages or reload behavior. |
+| Binding validation | It names pass, binding, package, layout, backend, and source of mismatch. | It collapses failures into generic missing-resource messages. |
+
 ## Target Runtime Flow
 
 ```mermaid
@@ -109,7 +141,7 @@ flowchart TD
     Library --> Diagnostics
 ```
 
-`PipelineRuntimeLibrary` is a planned Stage 16 concept. It is not implemented today. It should make PSO identity explicit and reviewable.
+`PipelineRuntimeLibrary` is a planned Stage 16 concept. It is not implemented today. It is the replacement target for the parts of the current runtime that only exist to preserve implicit C++ type identity.
 
 ## PSO Key Definition
 
