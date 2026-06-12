@@ -3,6 +3,7 @@
 Status: initial criteria draft  
 Date: 2026-06-12  
 Use with: `docs/plans/rhi-renderer-architecture-review.md`
+Execution plan: `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
 
 ## Purpose
 
@@ -31,6 +32,65 @@ The criteria below are synthesized from established architecture-review and inte
   - https://www.hellointerview.com/learn/system-design/in-a-hurry/introduction
   - https://interviewing.io/guides/system-design-interview/part-three
   - https://www.hellointerview.com/guides/meta/e5
+- NVIDIA recruiting/interview guidance: reported recruiter guidance emphasizes role-relevant technical skills, problem solving, reasoning, communication, understanding the company's work, and firsthand experience with the technology.
+  - https://www.businessinsider.com/nvidia-internship-college-graduates-recruitment-careers-2024-8
+- Current graphics/GPU job requirements from NVIDIA/AMD-style roles repeatedly mention C/C++, graphics APIs, shader programming, GPU architecture, rendering algorithms, validation, performance testing, and temporal upscaling.
+  - https://jobs.nvidia.com/careers/job/893393627432
+  - https://jobs.nvidia.com/careers/job/893393886049
+  - https://careers.amd.com/careers-home/jobs/86334?lang=en-us
+  - https://careers.amd.com/careers-home/jobs/80570?lang=en-us
+  - https://careers.amd.com/careers-home/jobs/86359?lang=en-us
+- AMD GPUOpen graphics-programming guidance frames Vulkan and DirectX 12 as APIs that force lower-level understanding of GPU work, explicit resource control, and what happens on the GPU.
+  - https://gpuopen.com/learn/how_do_you_become_a_graphics_programmer/
+- GitHub portfolio guidance: employers and interviewers may inspect README quality, code, project structure, testing, commit history, screenshots/videos, and whether the project lets them understand the candidate's decisions quickly.
+  - https://flatironschool.com/blog/github-profile-and-git-practices-for-job-seekers/
+  - https://www.hackerrank.com/blog/what-to-put-on-github/
+  - https://coding-boot-camp.github.io/full-stack/github/professional-readme-guide/
+- Reference engine/repo presentation patterns: serious public graphics repositories make platform/API support, documentation, build status, modularity, and backend abstraction visible from the repository entry points.
+  - https://github.com/NVIDIA-RTX/Donut
+  - https://github.com/NVIDIAGameWorks/nvrhi
+  - https://github.com/NVIDIAGameWorks/Falcor
+  - https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
+  - https://github.com/DiligentGraphics/DiligentEngine
+
+## Portfolio Review Skill Signals
+
+Use this section to decide what SparkleEngine should deliberately showcase in a GitHub repo reviewed by NVIDIA, AMD, Intel, Arm, Apple, Epic, Unity, or similar graphics/system-software teams.
+
+This is not a claim that every reviewer will inspect every item. It is a list of qualities that make the repo easier to trust when an engineer does open it.
+
+| Skill / quality to show | What a reviewer is likely trying to infer | Sparkle evidence we should make obvious | Acceptance signal |
+| --- | --- | --- | --- |
+| Role relevance | The repo matches the role, not just generic programming ability. | README and docs state Sparkle is a C++20 renderer/engine with D3D12, Vulkan, frame graph, ray tracing, shader tooling, and upscaling. | A reviewer can understand the engine's technical scope in under two minutes from repo entry points. |
+| Modern C++ systems skill | Candidate can build maintainable low-level systems, not just isolated demos. | Ownership model, RAII patterns, allocator/resource lifetime rules, command abstractions, build profiles, clear module boundaries. | Core engine code has coherent ownership, narrow interfaces, no obvious lifetime shortcuts, and build commands documented. |
+| Graphics API fluency | Candidate understands D3D12/Vulkan semantics, resource states/layouts, descriptors, synchronization, PSOs, and swap chain/presentation. | RHI contracts, D3D12/Vulkan backend parity table, command list implementations, barrier/resource diagnostics. | D3D12 and Vulkan behavior is documented as shared semantics plus explicit API-specific differences. |
+| Shader and pipeline systems | Candidate understands host/shader contracts, reflection, cooked packages, binding layouts, PSO keys, permutations, and reload/caching. | Shader compiler/cook path, shader package cache, pass runtime, PSO key design, pass authoring contract. | Adding an ordinary renderer pass requires no RHI edits and has a short documented path. |
+| Rendering fundamentals | Candidate understands lighting, PBR, GBuffer data, normals, depth, shadows, temporal behavior, and debug views. | GBuffer, lighting, shadow, visualize-buffer, ray-tracing, and upscaling passes with screenshots/captures. | Lit and normal/debug captures exist for both D3D12 and Vulkan, with known-difference notes. |
+| GPU architecture and performance reasoning | Candidate can reason about memory bandwidth, cache behavior, occupancy, synchronization, CPU/GPU work split, and measurement. | Profiling notes, GPU markers, timing reports, memory monitor, performance hypotheses separated from measurements. | Performance claims include data or an explicit measurement plan; no undocumented "faster" claims. |
+| Cross-backend architecture | Candidate can separate renderer intent from backend implementation. | RHI/Renderer layer map, forbidden include checks, backend-private folders, vendor SDK boundaries. | `RHI -> Renderer` dependency count is zero and renderer does not include backend-private headers. |
+| Debuggability and validation | Candidate can make failures explainable and reproducible. | Frame graph diagnostics, validation layers, smoke validation, capture/readback utilities, capability reports. | Development smoke runs fail on unresolved graph resources and produce per-backend evidence. |
+| Reliability and fallback behavior | Candidate handles unavailable features deterministically. | DLSS/RT/device capability reporting, passthrough upscaler, backend feature checks. | Missing DLSS, ray tracing, or extension support produces an actionable reason and stable fallback. |
+| Testability and CI thinking | Candidate can prove behavior repeatedly, not manually hope it works. | Build profiles, smoke tests, shader compiler validation, formatting/tidy checks, backend parity reports. | README/docs list exact validation commands and expected artifacts. |
+| Documentation and onboarding | Candidate can make a complex system reviewable by strangers. | Architecture review, glossary, system map, pass authoring guide, screenshots, diagrams, run instructions. | A reviewer can find: how to build, how to launch D3D12/Vulkan, how a frame is rendered, and where to add a pass. |
+| Communication and design rationale | Candidate can explain tradeoffs and not just dump code. | Design notes, acceptance criteria, risks, non-goals, rejected alternatives, architecture decision records. | Strategic changes include owner, alternatives, risks, validation, and rollback plan. |
+| Git/review hygiene | Candidate works in a way that could fit a serious engineering team. | Small commits, descriptive commit messages, no generated junk in source history, clean docs, CI status where possible. | Public history shows reviewable increments rather than only one massive unreviewable drop. |
+| Product/demo clarity | Candidate can make technical work inspectable quickly. | Screenshots/videos, sample project, launcher/editor instructions, feature matrix, known issues. | Repo front page links to current screenshots and a reproducible Showcase launch path. |
+| Collaboration readiness | Candidate understands open-source/team maintenance expectations. | CONTRIBUTING notes, issue templates or bug report guidance, license, coding standards, diagnostics instructions. | External reviewer knows how to build, report a bug, run checks, and understand project status. |
+
+## Sparkle Portfolio Acceptance Checklist
+
+Before using SparkleEngine as a portfolio artifact for NVIDIA/AMD-style interviews, the repo should have these visible signals:
+
+- A top-level README section that explains the renderer/RHI architecture, supported APIs, current features, known limitations, and exact build/launch commands.
+- A feature matrix covering D3D12, Vulkan, ray tracing, debug view modes, DLSS/upscaling, shader compiler/cook, frame graph diagnostics, and smoke validation.
+- A short "reviewer's path" that points to the most representative systems: RHI contract, Vulkan backend, D3D12 backend, frame graph, pass authoring, shader runtime/PSO, ray tracing, and upscaling.
+- Screenshots or captures for D3D12 and Vulkan lit output plus GBuffer normal/debug modes.
+- A documented "add a shader pass" walkthrough showing that ordinary pass work stays in Renderer/shaders/tools and does not require RHI edits.
+- Architecture diagrams for layer direction, frame execution, shader package flow, PSO creation, and backend parity.
+- Validation commands that a reviewer can run locally, plus the expected log/capture artifacts.
+- A known-issues section that is honest about remaining gaps instead of hiding them.
+- CI or local scripts for formatting, forbidden include checks, shader compiler validation, and runtime/editor smoke where practical.
+- Commit and PR conventions that make large rendering changes reviewable.
 
 ## The Criteria
 

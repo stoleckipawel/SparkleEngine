@@ -8,6 +8,10 @@ Companion rubric:
 
 - `docs/plans/architecture-review-acceptance-rubric.md`
 
+Execution plan:
+
+- `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
+
 ## Goal
 
 Make SparkleEngine easier to review as a serious renderer/RHI implementation by NVIDIA, AMD, or similar graphics engineers.
@@ -80,6 +84,134 @@ Concrete boundary violations or exceptions:
 
 - `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` includes `Renderer/Private/RayTracing/RayTracedShadowUniformData.h`.
 - `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` contains direct D3D12 capture code using `ID3D12Device`, `ID3D12CommandQueue`, and `ID3D12Resource`. This may be acceptable as temporary validation code, but architecturally it should move behind RHI capture/readback services or a backend-owned validation helper.
+
+## Whole-Codebase Coverage Audit
+
+This section is the "no subsystem left behind" checklist. The goal is not to refactor everything at once. The goal is to ensure every Renderer/RHI code area is evaluated against the same quality bar before we call the architecture designed as a whole.
+
+Coverage rule:
+
+- Every folder must have a named responsibility.
+- Every folder must have an owner layer.
+- Every folder must have a target contract.
+- Every folder must have acceptance evidence.
+- Any folder that cannot be explained in this table is architectural debt.
+
+### Renderer Private Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| `Renderer.cpp` root orchestration | 1 / 644 | Renderer lifecycle, subsystem construction, frame execution, presentation products, diagnostics. | Too central; currently acts as facade, composition root, frame scheduler, feature coordinator, and editor bridge. | Split responsibilities into facade, system root, frame pipeline, feature systems, and presentation bridge. Reviewer can diagram frame execution without reading the whole file. |
+| `Camera` | 2 / 96 | Render camera data and view/projection behavior. | Small and readable, but camera/depth/API convention must be proven by D3D12/Vulkan parity because previous bugs showed backend convention drift. | Document handedness, clip/depth convention, jitter placement, and projection ownership. Lit/normal captures match across backends. |
+| `Commands` | 2 / 311 | Renderer command context wrapper over RHI command recording. | Useful boundary, but ownership between renderer command context and RHI command list needs sharper vocabulary. | Renderer commands express render intent; RHI commands express GPU/API operations. No backend-specific behavior leaks upward. |
+| `Debug` | 1 / 7 | Renderer CVars implementation. | Tiny area; mostly fine. | Debug CVars documented in renderer diagnostics/readme and stable across backend smoke runs. |
+| `Denoising` | 0 / 0 | Placeholder/private folder. | Empty folder creates uncertainty. | Either remove, or add a short doc/contract explaining planned denoiser ownership and relationship to ray-traced shadows/upscalers. |
+| `Diagnostics` | 8 / 971 | Frame/pass execution diagnostics, mesh diagnostics, renderer memory monitor. | Strong direction; should become more central to acceptance evidence. | Smoke report includes diagnostics summary, GPU markers, memory state, frame graph warnings, and backend capability status. |
+| `Frame` | 42 / 1,176 | Per-frame builders, pass composition, targets, presentation, temporal state, ray tracing scene frame data. | Good modular split, but naming must make orchestration-only responsibility explicit. | `Frame/*` only wires frame graph passes/resources. Pass binding/execution logic stays in `Passes`/`Pipeline`. Entry points follow `Add*FramePasses` style or equivalent. |
+| `FrameGraph` | 44 / 5,081 | Pass/resource declaration, compile, dependencies, external resources, ray tracing registration, transient allocation, barriers, execution, diagnostics. | Most important renderer system. Promising but must become a formally documented contract because unresolved resource warnings existed. | Frame graph contract doc covers declare/compile/plan/resolve/execute. Development smoke fails unresolved handles. Transient aliasing and barrier plans are diagnosable. |
+| `Meshes` | 8 / 354 | GPU mesh resources, upload descriptors, skin influence buffers, mesh cache. | Reasonably cohesive; needs clearer boundary with scene snapshots/material cache. | Mesh cache accepts render-domain DTOs and produces RHI resources. Upload lifetime, buffer ownership, and skinning data flow are documented. |
+| `Passes` | 19 / 2,200 | Concrete pass implementations and draw/dispatch helpers. | Correct ownership for pass logic, but pass authoring is too ceremonial and depends on central traits/runtime mechanics. | Ordinary pass addition requires one pass definition and shader files, no RHI edits, no central trait edits. Pass errors mention pass/shader/binding/backend. |
+| `Pipeline` | 8 / 1,231 | Pass binding, runtime storage, pipeline traits, shader runtime integration. | High-leverage complexity. Needs explicit PSO key/library model and separation between package loading, binding layout, validation, and PSO creation. | `PipelineRuntimeLibrary` owns explicit PSO keys and cache invalidation. D3D12/Vulkan receive equivalent normalized descriptors. Logs print complete PSO key. |
+| `RayTracing` | 20 / 997 | BLAS cache, TLAS builder, RT scene, shadow settings, diagnostics, shadow pass data. | Mostly well bounded, but names blur scene ownership, pass services, and shadow-specific data. | Ray tracing contract explains BLAS/TLAS lifetime, frame graph AS import/binding, pass services, and shadow uniform ownership. No backend-private includes. |
+| `SceneData` | 20 / 1,138 | Render scene data builders, mesh/material snapshots, lifecycle coordination, light/material DTOs. | Important boundary between GameFramework and Renderer. Needs stricter DTO/snapshot identity. | Renderer consumes immutable render snapshots, not gameplay internals. Material/mesh/light data contracts are stable and documented. |
+| `Temporal` | 2 / 116 | Temporal jitter patterns. | Small but central to DLSS/TAA/debug parity. | Jitter convention, reset rules, motion-vector relation, and native-resolution/DLSS behavior are documented and validated. |
+| `Textures` | 5 / 585 | Cooked texture loading, defaults, texture manager. | Cohesive; needs diagnostics and lifetime ownership tied to RHI resources. | Texture manager contract covers cooked asset input, default fallback, residency/lifetime, and diagnostic output. |
+| `Upscaling` | 21 / 2,028 | Upscaler abstraction, input contract, DLSS provider/runtime, passthrough provider, startup diagnostics. | Correct feature/provider separation; native interop contract is the sensitive area. | Provider owns vendor SDK details. RHI owns native handles/layouts. Capability failures are actionable. D3D12/Vulkan DLSS smoke shows active provider or deterministic fallback. |
+
+### Renderer Public Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| `Renderer.h` / `RendererAPI.h` | 2 public root files | Public renderer lifecycle/API. | Needs to remain narrow as internals are decomposed. | Public API reads as host protocol, not internal subsystem access. Editor/application use stable methods. |
+| `Debug` | 2 / 29 | View modes and renderer CVars. | Important because debug view modes are acceptance evidence. | View modes work on both D3D12 and Vulkan. Debug mode list is documented and smoke-tested. |
+| `Denoising` | 1 / 50 | Shadow denoise contract. | Public contract exists while private implementation area is empty. | Either implement/route denoising ownership or mark as future contract with exact integration point. |
+| `Diagnostics` | 1 / 58 | Renderer memory diagnostics. | Good public diagnostic surface. | Memory diagnostics are emitted in smoke reports and tied to RHI memory diagnostics. |
+| `FrameGraph` | 7 / 122 | Public frame graph handles/descs. | Useful, but must avoid leaking implementation. | Public types are stable handles/descs only. Compiler/execution internals stay private. |
+| `Meshes` | 1 / 67 | Mesh diagnostics. | Narrow and fine. | Diagnostic schema documented and used by smoke/tools. |
+| `Resources` | 2 / 65 | Public texture/default texture diagnostics. | Fine if kept diagnostic/resource-contract oriented. | Resource diagnostics expose health without leaking backend objects. |
+| `SceneData` | 5 / 95 | Render-domain light/mesh/classification DTOs. | Good boundary candidate with GameFramework. | DTOs are immutable frame inputs and do not expose gameplay internals. |
+| `ShaderParameters` | 4 / 1,079 | Shader parameter fields/builders/typed instances. | Large public surface; overlaps RHI shader parameter concepts and needs ownership decision. | Decide whether this belongs in Renderer, RHI, or neutral shader-authoring module. Pass-specific parameters must not force RHI dependencies upward/downward. |
+| `Shaders` | 1 / 21 | Shader reload result. | Small but connected to pipeline runtime. | Reload result includes enough evidence for affected packages/runtimes and backend invalidation. |
+| `Viewport` | 1 / 204 | Viewport contracts/presentation. | Important editor/application boundary. | Editor receives viewport products via presentation contract, not ad hoc frame graph transitions. |
+
+### RHI Public Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| `Device` | 2 / 187 | `RenderHardwareInterface`, `RenderDeviceServices`. | Root RHI facade is too broad and backend implementations are too large. | Every method categorized by owner service. New methods require category, caller, and backend parity note. |
+| `Commands` | 1 / 83 | RHI command-list interface. | Central contract, should remain GPU/API level. | Command list exposes explicit resource state, draw/dispatch/copy/RT build operations with no renderer pass concepts. |
+| `Resources` | 8 / 529 | RHI texture/resource descriptors, views, constants, uploads. | Core abstraction surface. Must be exact and backend-neutral. | Resource descriptors map cleanly to D3D12/Vulkan. State/layout/view/subresource rules are documented. |
+| `Pipeline` | 1 / 143 | Pipeline state descriptions. | Needs to become part of explicit PSO key/runtime model. | Pipeline desc is normalized and sufficient for both D3D12 and Vulkan PSO creation. |
+| `Shaders` | 9 / 1,505 | Cooked packages, reflection, bytecode, package layout, authoring primitives. | Valuable infrastructure, but renderer pass registration currently lives in RHI private code. | RHI shader public types are generic package/reflection/runtime primitives only. Renderer-specific pass declarations live above RHI. |
+| `ShaderParameters` | 2 / 258 | Parameter layout and semantics. | Potential overlap with Renderer public shader parameters. | Ownership decision made: lower shared shader-authoring primitives vs renderer pass parameter authoring. No circular dependency. |
+| `Bindings` | 1 / 30 | Binding set public type. | Small surface; tied to descriptor/pipeline model. | Binding sets are backend-neutral and validated against reflection/layout. |
+| `Descriptors` | 1 / 36 | Descriptor handle abstractions. | Thin and likely okay. | Handle lifetime and shader-visible/CPU-only distinction documented. |
+| `Formats` | 2 / 152 | Pixel/compare formats. | Core API translation surface. | Format support matrix exists for D3D12/Vulkan, including depth/stencil and sRGB rules. |
+| `Interop` | 2 / 105 | Native handles/resource state for external SDKs. | Necessary but risky catch-all. | Interop structs are consumer-scoped, documented by DLSS/FSR/etc., and filled deterministically by backends. |
+| `Memory` | 2 / 111 | RHI memory diagnostics/types. | Good diagnostic surface. | Backend allocation stats map to common categories and show in smoke reports. |
+| `RayTracing` | 1 / 47 | Generic ray tracing descriptors. | Good narrow RHI contract. | Descs expose GPU/API concepts only: AS geometry/build/prebuild/scratch/result. No renderer shadow/pass concepts. |
+| `Samplers` | 1 / 44 | Sampler descriptors. | Small and appropriate. | Sampler desc maps equivalently to both backends and has default library policy. |
+| `Textures` | 1 / 57 | Cooked texture asset contract. | Possible RHI/asset boundary concern. | Keep runtime GPU upload contract here; source import/cook stays in tools. |
+| `Diagnostics` | 1 / 112 | RHI diagnostic contract. | Important for external review. | Backend debug layers, markers, names, errors, and capability logs flow through this surface. |
+| `Validation` | 1 / 46 | RHI validation entry points. | Useful but should grow into mechanical guardrails. | Validation covers resource descs, RT descs, binding layout compatibility, and backend feature requirements. |
+| `Config` / `Core` / `CVars` / `UI` | 7 combined | Backend selection, render config, capabilities, CVars, ImGui surface. | Mostly support surfaces; UI may be too coupled if it grows. | Config/capability contracts are stable. ImGui integration stays behind RHI UI bridge, not renderer internals. |
+
+### RHI Private Common Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| `Bindings` | 1 / 64 | Binding set implementation. | Small but coupled to descriptor/pipeline validation. | Binding set creation validates against layout/reflection and logs actionable errors. |
+| `Config` | 1 / 77 | Depth convention implementation. | Critical for D3D12/Vulkan parity because projection/depth conventions caused visual bugs. | One documented convention for clip space, depth range, reverse-Z if used, viewport Y, and culling/winding interaction. |
+| `Core` | 1 / 131 | Backend selection. | Fine if kept policy-only. | Backend selection logs selected API, fallback reason, and feature limits. |
+| `CVars` | 1 / 7 | RHI CVars implementation. | Tiny. | RHI CVars documented and not used as hidden architecture switches. |
+| `Device` | 5 / 229 | Backend factory/services/capability log formatting. | Good composition boundary. | Backend service creation is the only D3D12/Vulkan selection point. Capability logs are consistent across APIs. |
+| `Shaders` | 17 / 1,881 | Builtin/global shader registration, cooked shader package cache/utils, package layout builder, ray tracing metadata validation. | Mixed responsibility: generic shader runtime plus renderer pass declarations. | Split generic shader infrastructure from renderer shader registration. Package cache/layout builder remain backend-neutral. |
+| `Validation` | 2 / 256 | RHI validation helpers. | Good foundation. | Validation becomes mandatory in development paths for resource descs, bindings, RT metadata, and unsupported feature use. |
+
+### D3D12 Backend Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| Root facade and type conversions | 5 root files plus `Device` | D3D12 RHI facade, device services, type conversions, external feature interop. | Large facade mirrors broad public RHI. Type conversions are appropriate backend boundary. | Facade shrinks as services own commands/resources/pipelines/interop. Type conversions remain total and tested for all public enums/descs. |
+| `Commands` | 2 | D3D12 command recording. | Core backend correctness area. | Command behavior matches RHI semantics and Vulkan parity for barriers, draw/dispatch, copies, AS builds, debug markers. |
+| `Descriptors` | 8 | CPU/GPU descriptor heaps, handles, allocator/manager. | Cohesive backend-specific system. | Descriptor lifetime, shader-visible heap policy, recycling, and failure diagnostics documented. |
+| `Diagnostics` | 6 | Debug layer, PIX events, diagnostics. | Strong and review-positive. | Debug names/events/errors appear in captures and smoke reports. |
+| `Memory` | 4 | GPU allocation/allocator. | Backend-specific complexity is well placed. | Allocation strategy, alignment, heap type mapping, budget diagnostics, and transient interaction documented. |
+| `Pipeline` | 10 | Binding layout, root signature, PSO, vertex layout. | Correct backend ownership; should consume normalized descriptors/PSO keys. | Root signature/PSO creation is deterministic from common descriptors and reflection. No renderer pass policy. |
+| `Resources` / `Textures` | 12 | Constant buffers, frame resources, upload buffers, D3D12 textures, texture factory. | Correct backend ownership; constants/upload should be service-owned instead of root facade-owned. | Resource lifetime, state tracking assumptions, upload path, and view creation are documented and validated. |
+| `Samplers` | 2 | D3D12 sampler library. | Small and cohesive. | Default sampler set matches Vulkan behavior where possible. |
+| `SwapChain` | 2 | D3D12 swap chain. | Correct backend area. | Presentation states, resize, back-buffer lifetime, and editor viewport integration are explicit. |
+| `ThirdParty` | 2 | D3DX12 headers. | Acceptable as isolated third-party utility. | Third-party code remains isolated and not edited for engine policy. |
+| `UI` | 2 | D3D12 ImGui backend. | Backend-specific UI integration is fine, but public renderer/editor boundary must stay clean. | ImGui path uses RHI UI bridge and does not leak D3D12 objects to application code. |
+
+### Vulkan Backend Coverage
+
+| Area | Files / lines | Current responsibility | Current evaluation | Target quality bar / acceptance evidence |
+| --- | ---: | --- | --- | --- |
+| Root facade, includes, type conversions | 5 root files plus `Device` | Vulkan RHI facade, device creation, type conversion, feature queries, external interop. | Large facade mirrors broad public RHI; device feature/extension setup is critical for DLSS/RT. | Facade shrinks behind services. Feature/extension enablement logs why each optional capability is enabled. |
+| `Commands` | 4 | Vulkan command context/list recording. | High-risk correctness area due to layouts, barriers, descriptor binding, dynamic rendering, and AS builds. | Matches RHI semantics and D3D12 captures for lit/normal/debug modes. Layout transitions and queue ownership are diagnosable. |
+| `Core` | 2 | Vulkan result handling. | Good small utility. | Every failed Vulkan call reports context and result string. |
+| `Descriptors` | 6 | Descriptor allocation/handles/manager. | Correct backend area; likely central to DLSS/noise/resource binding bugs. | Descriptor set/layout lifetime, pool growth, update validation, and bindless/future policy documented. |
+| `Diagnostics` | 8 | Debug layer/events/names/render diagnostics. | Strong review signal. | Validation layer warnings are zero in smoke or classified as known exceptions. Debug names/events present in captures. |
+| `Memory` | 4 | Vulkan allocation/allocator. | Backend-specific complexity is well placed. | Memory type selection, alignment, budgets, transient compatibility, and external memory requirements documented. |
+| `Pipeline` | 8 | Binding layout, pipeline layout, shader modules, PSO, vertex layout. | Correct backend ownership; most important parity point after command recording. | Consumes normalized pipeline desc/PSO key. Winding/cull/depth/viewport conventions are explicitly mapped from RHI. |
+| `Resources` / `Textures` | 8 | Constant buffers, linear allocator, Vulkan texture, texture factory. | Correct backend ownership; external texture view/native metadata needs formal contract. | Image/view/layout/subresource ownership is documented. Native view info is deterministic for DLSS and future SDKs. |
+| `Samplers` | 2 | Vulkan sampler library. | Small and cohesive. | Matches common sampler desc behavior and default sampler library. |
+| `SwapChain` | 2 | Vulkan swap chain. | Correct backend area. | Present layout, resize, image acquisition, and back-buffer import into frame graph are documented. |
+| `UI` | 2 | Vulkan ImGui backend. | Backend-specific UI integration is fine if isolated. | ImGui descriptor/image state handling does not leak into renderer/application policy. |
+
+### Coverage Acceptance Criteria
+
+Sparkle should not be considered architecturally reviewed until:
+
+- Every row above has either `Accepted`, `Needs refactor`, or `Needs design decision` status in a future tracking pass.
+- Every `Needs refactor` row links to a concrete refactor track or design note.
+- Every public interface has an owner, caller set, and "reason to change."
+- Every backend-private area has a D3D12/Vulkan parity statement or a documented one-backend-only reason.
+- Every shader-visible contract has one owner and one source of truth.
+- Every diagnostics/validation path has a named artifact: log, capture, smoke report, screenshot, or test output.
+- Empty or placeholder folders are removed or documented.
+- The final repo README points reviewers to this architecture map and the current status of each area.
 
 High-level structure:
 
@@ -1121,7 +1253,17 @@ Acceptance:
 
 Do these in order.
 
-1. Add architecture docs, no code motion.
+1. Turn the whole-codebase coverage audit into a tracked status table.
+
+   For every row in `Whole-Codebase Coverage Audit`, assign:
+
+   - status: `Accepted`, `Needs refactor`, or `Needs design decision`
+   - owner layer
+   - primary risk
+   - first validation artifact
+   - linked refactor track or design note
+
+2. Add architecture docs, no code motion.
 
    Create:
 
@@ -1130,23 +1272,23 @@ Do these in order.
    - `docs/architecture/frame-graph-contract.md`
    - `docs/architecture/ray-tracing-contract.md`
 
-2. Fix the clear RHI-to-Renderer include violation.
+3. Fix the clear RHI-to-Renderer include violation.
 
    Move renderer pass shader registration out of RHI or move only the shared uniform struct to a lower neutral module if it is truly shared. Preferred: renderer owns `DirectLighting` shader registration.
 
-3. Add forbidden-include checks.
+4. Add forbidden-include checks.
 
    This is low-risk and prevents regression.
 
-4. Build an RHI method ownership table.
+5. Build an RHI method ownership table.
 
    This should precede sub-interface extraction.
 
-5. Rename or document frame composition entry points.
+6. Rename or document frame composition entry points.
 
    Make the `Frame/*` versus `Passes/*` split obvious.
 
-6. Add backend parity smoke evidence.
+7. Add backend parity smoke evidence.
 
    Extend current smoke validation so it produces one small report per backend covering DLSS, ray tracing, frame graph warnings, and debug view modes.
 
