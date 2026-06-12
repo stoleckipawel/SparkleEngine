@@ -217,7 +217,7 @@ Backend pipeline code may log debug names and native errors. It should not know 
 | PSO identity is implicit. | [PipelineStateManager.h](../../Engine/Renderer/Private/Pipeline/PipelineStateManager.h) uses `std::type_index`. | Stage 16 |
 | Central traits file grows with pass count. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) has one specialization per pass. | Stage 17 |
 | Runtime creation mixes package loading, binding validation, capability validation, and PSO construction. | [RenderPassShaderRuntime.h](../../Engine/Renderer/Private/Pipeline/RenderPassShaderRuntime.h) performs all steps. | Stage 16 |
-| Renderer-specific shader registration is under RHI private. | [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders) | Stage 4 |
+| Shader package declaration is still duplicated between pass runtime code and renderer registration files. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) consumes pass package descriptions while [ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations) declares cook-time registrations. | Stage 17 |
 | Pipeline diagnostics are not yet final acceptance artifacts. | Logs exist, but final smoke reports need package/key/backend evidence. | Stage 16, Stage 20 |
 
 ## Change Rules
@@ -239,4 +239,3 @@ This contract is accepted when:
 - D3D12/Vulkan PSO creation consumes normalized descriptors and reports failures with enough context.
 - Shader reload invalidates by explicit package/runtime identity.
 - Final smoke evidence includes pipeline runtime diagnostics for lit and debug/normal view modes.
-

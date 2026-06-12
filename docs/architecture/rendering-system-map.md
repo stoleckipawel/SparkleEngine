@@ -15,6 +15,11 @@ Source basis:
 
 Companion docs:
 
+- [Whole-repository architecture review](../plans/sparkle-whole-repository-architecture-review.md)
+- [Repository system map](repository-system-map.md)
+- [Repository coverage status](repository-coverage-status.md)
+- [GameFramework contract](game-framework-contract.md)
+- [Tooling and content pipeline contract](tooling-pipeline-contract.md)
 - [Rendering glossary](rendering-glossary.md)
 - [RHI contract map](rhi-contract-map.md)
 - [Frame graph contract](frame-graph-contract.md)
@@ -69,6 +74,8 @@ flowchart TD
 
 Important rule: the arrow from `Tools` to `RHI` is for shared shader package structs and reflection formats. Runtime engine modules must not depend on tool internals.
 
+For whole-repository boundaries, use [repository-system-map.md](repository-system-map.md). This rendering map remains the detailed view for frame rendering and graphics contracts.
+
 ## Source Roots
 
 | Root | Role | Reviewer should inspect |
@@ -80,6 +87,8 @@ Important rule: the arrow from `Tools` to `RHI` is for shared shader package str
 | [Tools/Shaders/ShaderCompiler](../../Tools/Shaders/ShaderCompiler) | Shader compilation, reflection extraction, cook graph, package writing, CLI inspection. | Whether pass authoring and runtime packages can evolve without RHI-specific renderer edits. |
 | [Engine/Application/Private/Validation](../../Engine/Application/Private/Validation) | Smoke validation orchestration. | Whether validation orchestrates systems without owning backend-native implementation details. |
 | [Tools/Launcher/SparkleLauncher/Private/Launch/Smoke](../../Tools/Launcher/SparkleLauncher/Private/Launch/Smoke) | Launcher smoke workflow. | Whether reviewer-facing launch/validation paths are discoverable and repeatable. |
+| [Engine/GameFramework](../../Engine/GameFramework) | Runtime scene, levels, cooked asset loading, gameplay-facing data contracts. | Whether renderer refactors preserve immutable scene/cooked-data contracts. |
+| [Tools/Cooking](../../Tools/Cooking) and [Tools/Import](../../Tools/Import) | Source import and cooked artifact production. | Whether RHI/Renderer schema changes preserve cook/runtime compatibility. |
 
 ## Main Building Blocks
 
@@ -132,7 +141,7 @@ The frame graph owns execution order and resource transitions. Passes own comman
 
 ```mermaid
 flowchart LR
-    Reg[Global shader registrations]
+    Reg[Renderer-owned shader registrations]
     Cook[ShaderCompiler cook plan]
     Reflect[Reflection extraction]
     Package[Cooked shader package]
@@ -152,7 +161,7 @@ flowchart LR
     PSO --> Backend
 ```
 
-Current debt: several renderer pass shader registrations live in [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders). Stage 4 moves renderer-specific registration ownership above RHI while preserving generic shader package primitives.
+Renderer pass shader registrations live in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations). RHI keeps the generic registry, package layout, reflection, cache, and runtime primitives; it no longer owns renderer pass package declarations.
 
 ## Backend Boundary View
 
@@ -182,7 +191,6 @@ The backend boundary is correct only when Renderer talks through `RHI/Public` co
 
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
-| RHI includes renderer-private shader data. | `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` includes `Renderer/Private/RayTracing/RayTracedShadowUniformData.h`. | Stage 3, Stage 4 |
 | Renderer pass addition requires central runtime/traits edits. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) specializes each pass. | Stage 16, Stage 17 |
 | `Renderer` is still a broad facade/composition/frame host. | [Renderer.h](../../Engine/Renderer/Public/Renderer.h) owns many subsystem pointers and lifecycle methods. | Stage 11, Stage 12 |
 | RHI root interface is broad. | [RenderHardwareInterface.h](../../Engine/RHI/Public/Device/RenderHardwareInterface.h) contains device, capture, command list, descriptors, constants, resources, memory, ray tracing, views, UI, and presentation. | Stage 6, Stage 7, Stage 19 |
@@ -217,4 +225,3 @@ Then inspect implementation:
 - Any new pass must obey the [pass authoring contract](pass-authoring-contract.md).
 - Any new RHI method must be categorized in the [RHI contract map](rhi-contract-map.md).
 - Any new shader/runtime path must be represented in the [pipeline runtime contract](pipeline-runtime-contract.md).
-

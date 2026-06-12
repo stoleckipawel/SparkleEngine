@@ -18,6 +18,42 @@ file(GLOB_RECURSE SPARKLE_RENDERER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Private/*.h
 )
 
+file(GLOB_RECURSE SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations/*.cpp
+)
+
+file(GLOB_RECURSE SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations/*.h
+)
+
+add_library(SparkleRendererShaderRegistrations STATIC
+    ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES}
+    ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS}
+)
+
+target_include_directories(SparkleRendererShaderRegistrations
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Public
+        ${CMAKE_CURRENT_SOURCE_DIR}/Private
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Core/Public/Diagnostics
+)
+
+target_compile_features(SparkleRendererShaderRegistrations PUBLIC cxx_std_20)
+
+target_link_libraries(SparkleRendererShaderRegistrations
+    PUBLIC
+        SparkleRHI
+    PRIVATE
+        SparkleCore
+)
+
+sparkle_target_precompile_headers(SparkleRendererShaderRegistrations
+    ${CMAKE_CURRENT_SOURCE_DIR}/Private/PCH.h
+)
+
 if(SPARKLE_BUILD_SHARED)
     add_library(SparkleRenderer SHARED
         ${SPARKLE_RENDERER_PUBLIC_HEADERS}
@@ -60,6 +96,7 @@ target_link_libraries(SparkleRenderer
     PRIVATE
         SparklePlatform
         SparkleGameFramework
+        SparkleRendererShaderRegistrations
 )
 
 if(SPARKLE_ENABLE_NVIDIA_STREAMLINE AND TARGET NVIDIA::Streamline)
@@ -76,3 +113,4 @@ sparkle_configure_runtime_support_artifacts(SparkleRenderer)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Public PREFIX "Public" FILES ${SPARKLE_RENDERER_PUBLIC_HEADERS})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Private PREFIX "Private" FILES ${SPARKLE_RENDERER_PRIVATE_SOURCES} ${SPARKLE_RENDERER_PRIVATE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ShaderRegistrations PREFIX "ShaderRegistrations" FILES ${SPARKLE_RENDERER_SHADER_REGISTRATION_SOURCES} ${SPARKLE_RENDERER_SHADER_REGISTRATION_HEADERS})

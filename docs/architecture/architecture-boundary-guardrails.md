@@ -7,6 +7,8 @@ Date: 2026-06-12
 
 This document records the mechanical boundary checks added before the Renderer/RHI refactor begins. The goal is to make layer direction enforceable instead of relying on memory.
 
+Repository-wide ownership is tracked in [repository-system-map.md](repository-system-map.md), [repository-coverage-status.md](repository-coverage-status.md), and [sparkle-whole-repository-architecture-review.md](../plans/sparkle-whole-repository-architecture-review.md). This check is the rendering/RHI guardrail; Stage 28 extends the same mechanical treatment to runtime-to-tools, GameFramework, launcher, and content-pipeline boundaries.
+
 Reference basis:
 
 - NVIDIA NVRHI keeps a focused graphics abstraction layer: https://github.com/NVIDIA-RTX/NVRHI
@@ -42,11 +44,10 @@ The direct script path is the lowest-friction local and CI entry point because i
 
 ## Transitional Exceptions
 
-These exceptions are count-limited and stage-labeled. If the count grows, the check fails. If a stage removes the debt, it must remove or tighten the exception in [ArchitectureBoundaryCheck.cmake](../../CMake/ArchitectureBoundaryCheck.cmake).
+These exceptions are count-limited and stage-labeled. Renderer/provider exceptions are also line-pattern limited, so unrelated native API usage in the same file still fails. If the count grows, the check fails. If a stage removes the debt, it must remove or tighten the exception in [ArchitectureBoundaryCheck.cmake](../../CMake/ArchitectureBoundaryCheck.cmake).
 
 | Exception | Frozen count | Removal stage | Reason |
 | --- | ---: | --- | --- |
-| [DirectLightingShaders.cpp](../../Engine/RHI/Private/Shaders/DirectLightingShaders.cpp) includes Renderer-private `RayTracedShadowUniformData`. | 1 | Stage 4 | Renderer-specific shader registration moves out of RHI. |
 | [Engine/Renderer/CMakeLists.txt](../../Engine/Renderer/CMakeLists.txt) links `Vulkan::Vulkan` for Streamline. | 2 | Stage 9 | DLSS/native interop wiring moves behind RHI/backend-owned metadata. |
 | [StreamlineDlssRuntime.cpp](../../Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp) uses Vulkan native identifiers for DLSS integration. | 5 | Stage 9 | Provider integration is reviewed and narrowed to documented native interop. |
 | [RhiSmokeEditorValidation.cpp](../../Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp) contains D3D12-native capture logic. | 36 | Stage 8 | Backend-native capture/readback moves behind RHI/backend validation services. |
@@ -62,7 +63,7 @@ cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake
 Result:
 
 - No new architecture boundary violations.
-- Four transitional exception groups reported.
+- Three transitional exception groups reported.
 - Full target build validation was not possible in this shell because Visual Studio and C/C++ compilers were not discoverable.
 
 ## Change Rules
@@ -72,4 +73,3 @@ Result:
 - New ordinary renderer passes must not add `Engine/RHI` dependencies.
 - New backend-native validation work belongs behind RHI/backend-owned services, not Application.
 - When a later stage fixes a debt row, remove the exception in the same stage.
-

@@ -1,20 +1,27 @@
-# RHI/Renderer Review-Ready Implementation Plan
+# Sparkle Repository Review-Ready Implementation Plan
 
 Status: execution plan draft
 Date: 2026-06-12
-Scope: `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, shader/pass runtime, PSO handling, upscaling, smoke validation, and reviewer-facing repository presentation
+Scope: whole-repository architecture, with the first implementation track focused on `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, shader/pass runtime, PSO handling, upscaling, smoke validation, and reviewer-facing repository presentation. The plan now explicitly tracks GameFramework, Launcher, ShaderCompiler, AssetCooker, TextureCooker, source import, cookers, CMake, CI, projects, and docs so RHI/Renderer refactors do not degrade adjacent modules.
 
 ## Purpose
 
-This document turns the architecture review and acceptance rubric into an execution runbook. The goal is to make SparkleEngine feel designed as a coherent renderer/RHI system rather than a set of accumulated fixes.
+This document turns the architecture review and acceptance rubric into an execution runbook. The goal is to make SparkleEngine feel designed as a coherent renderer/runtime/tooling repository rather than a set of accumulated fixes.
 
 Primary source documents:
 
+- `docs/plans/sparkle-whole-repository-architecture-review.md`
 - `docs/plans/rhi-renderer-architecture-review.md`
 - `docs/plans/architecture-review-acceptance-rubric.md`
 
 Stage artifacts:
 
+- Whole-repo architecture status:
+  - `docs/plans/sparkle-whole-repository-architecture-review.md`
+  - `docs/architecture/repository-system-map.md`
+  - `docs/architecture/repository-coverage-status.md`
+  - `docs/architecture/game-framework-contract.md`
+  - `docs/architecture/tooling-pipeline-contract.md`
 - Stage 1 baseline status: `docs/architecture/rendering-coverage-status.md`
 - Stage 2 reviewer docs:
   - `docs/architecture/rendering-glossary.md`
@@ -35,7 +42,8 @@ Current code evidence used while writing this plan:
 - `Engine/RHI/Public/Commands/RenderCommandList.h`
 - `Engine/RHI/Public/Pipeline/RhiPipelineStateDesc.h`
 - `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp`
-- `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/RendererGlobalShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp`
 - `Engine/Renderer/Public/Renderer.h`
 - `Engine/Renderer/Private/Renderer.cpp`
 - `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`
@@ -46,6 +54,12 @@ Current code evidence used while writing this plan:
 - `Engine/Application/Private/Validation/RhiSmokeValidation.cpp`
 - `Engine/Renderer/CMakeLists.txt`
 - `Engine/RHI/CMakeLists.txt`
+- `Engine/GameFramework/CMakeLists.txt`
+- `Tools/Launcher/SparkleLauncher/CMakeLists.txt`
+- `Tools/Shaders/ShaderCompiler/CMakeLists.txt`
+- `Tools/Cooking/TextureCooker/CMakeLists.txt`
+- `Tools/Cooking/AssetCooker/CMakeLists.txt`
+- `Tools/Import/SourceImportAdapters/CMakeLists.txt`
 
 ## Execution Rules
 
@@ -57,41 +71,81 @@ Current code evidence used while writing this plan:
 - Every strategic code stage must include the rubric fields from `docs/plans/architecture-review-acceptance-rubric.md`: owner, dependency impact, D3D12/Vulkan impact, validation plan, risks, and rollback path.
 - Every renderer pass or shader change must obey the hard gate from `docs/plans/rhi-renderer-architecture-review.md`: adding an ordinary renderer shader pass must not require editing `Engine/RHI`.
 - Every RHI change must answer whether it introduces a GPU/API concept, a backend implementation detail, or a renderer convenience. Renderer conveniences do not belong in RHI.
+- Every RHI/Renderer change must check GameFramework and tool blast radius: ShaderCompiler, TextureCooker, AssetCooker, SourceImportAdapters, Launcher workflows, Application validation, and project/sample content where relevant.
+- Every stage must satisfy the `Global Refactor Stage Impact Matrix` below. A stage is not accepted until its local work and its whole-repository protection checks are both addressed.
+- Runtime engine modules must not depend on tool internals. Tools may consume public runtime/cooked contracts, but source import and cooking algorithms must stay under `Tools/`.
+- Launcher changes must preserve the split between workflow/process orchestration and Qt UI presentation.
 - Every backend parity claim must be backed by logs, smoke reports, screenshots/captures, or a clearly marked measurement plan.
+
+## Global Refactor Stage Impact Matrix
+
+This plan is a global repository refactor. The early stages still focus on RHI/Renderer, but none of them are allowed to damage GameFramework, tools, launcher workflows, CMake/CI, sample content, or docs.
+
+| Stage | Local focus | Adjacent modules to protect | Required whole-repo check before acceptance |
+| --- | --- | --- | --- |
+| 1 | Rendering coverage baseline | `repository-coverage-status.md`, GameFramework, tools, CMake, CI, Projects. | Confirm the rendering coverage table delegates non-rendering roots to whole-repo coverage instead of leaving them unowned. |
+| 2 | Rendering glossary/system docs | Whole-repo vocabulary, GameFramework/tooling contracts. | New rendering terms must not contradict repository-level ownership names. |
+| 3 | RHI/Renderer boundary guardrails | Application validation, launcher smoke, backend folders, generated/third-party policy. | Boundary check exceptions must be counted, stage-labeled, and cross-referenced with repository-wide guardrail expansion in Stage 28. |
+| 4 | Renderer shader registration ownership | `ShaderCompiler`, renderer shader registrations, RHI shader primitives, editor shader lists. | ShaderCompiler must enumerate the same packages through a narrow renderer registration target, not full renderer runtime. |
+| 5 | First validation milestone | Build graph, shader compiler, launcher target names, boundary script. | Validate smallest tool targets affected by shader registration and CMake wiring; no editor build required unless configure/build wiring changed. |
+| 6 | RHI method ownership table | Renderer callers, GameFramework RHI-facing contracts, tools that use RHI public types. | Each RHI method classification must name caller categories and note tool/runtime consumers. |
+| 7 | RHI service extraction | Renderer frame graph, upscaling, Application validation, texture/runtime loaders. | Service extraction must preserve public contracts used by tools and GameFramework, or update the paired contracts in the same stage. |
+| 8 | Capture/readback validation ownership | Application validation, launcher smoke, backend diagnostics, artifact paths. | Application may orchestrate capture, but backend-native capture/readback implementation must be owned by RHI/backend services. |
+| 9 | Native interop and vendor provider boundary | Streamline/DLSS, future FSR-style providers, RHI backends, Renderer upscaling. | Provider code may request native metadata; ordinary renderer passes and GameFramework must not see backend-native handles. |
+| 10 | Backend parity milestone | Launcher smoke workflows, Projects/Showcase, validation artifacts, docs. | D3D12/Vulkan evidence must use the same scene/camera path and record artifact paths for later Stage 29 comparison. |
+| 11 | Renderer facade decomposition | Application, Editor viewport, GameFramework snapshots, launcher smoke. | Public renderer host protocol must stay stable or update all host callers and docs together. |
+| 12 | Presentation/viewport bridge | Editor panels, Application hosts, RHI present resources, launcher smoke. | Editor/Application must receive presentation products through the bridge, not frame graph internals or backend resources. |
+| 13 | Scene and resource ownership | GameFramework scene/assets, SourceImportAdapters, cookers, renderer texture/mesh managers. | Renderer scene DTO changes require GameFramework snapshot/schema impact notes and affected cooker checks. |
+| 14 | Frame graph contract | Renderer passes, RHI resources/barriers, diagnostics, smoke validation. | Frame graph warnings must stay diagnosable from launcher/Application smoke output. |
+| 15 | Frame graph validation milestone | D3D12/Vulkan backends, Projects/Showcase, docs. | Validation artifacts must include unresolved-resource/barrier status and sample scene path. |
+| 16 | Shader package, binding, PSO runtime | ShaderCompiler, RHI shader primitives, renderer registrations, CMake. | PSO/shader package changes require shader inspection/list/cook evidence or a documented unavailable-tool note. |
+| 17 | Pass authoring model | ShaderCompiler, Editor shader lists, FrameGraph, RHI shader runtime. | Ordinary pass authoring must remain above RHI and must not add central runtime duplication without a migration note. |
+| 18 | Ray tracing ownership | GameFramework scene snapshots, Renderer passes, RHI RT descs, backend AS builders. | RT changes must not move shadow/pass data into RHI or GameFramework as a shortcut. |
+| 19 | Backend service cleanup | D3D12/Vulkan parity, RHI public contracts, tools using RHI headers. | Backend-private folders must not include each other; public RHI changes must update tool/runtime impact notes. |
+| 20 | Full graphics validation | ShaderCompiler, Launcher, Projects/Showcase, Application validation, docs. | Final graphics evidence must be reusable by Stage 29 whole-repo gate. |
+| 21 | Reviewer presentation | README, docs, launcher screenshots/workflows, validation artifacts. | Reviewer path must cover whole repository, not only graphics internals. |
+| 22 | RHI/Renderer final cleanup | Whole-repo coverage, boundary exceptions, stale docs, generated/local-only policy. | Final RHI/Renderer scoring cannot leave contradictions in repository-level architecture docs. |
+| 23 | Whole-repository coverage and dependency map | All durable roots. | Every root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
+| 24 | GameFramework runtime/cooked contract | Renderer snapshots, SourceImportAdapters, cookers, AssetCooker. | GameFramework has no Renderer-private, backend-private, or tool-private dependencies; schema changes name paired producers/consumers. |
+| 25 | Source import/cooking/conversion architecture | TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, AssetConverter, GameFramework loaders. | Focused cookers own transformations; AssetCooker orchestrates; runtime consumes cooked outputs only. |
+| 26 | Launcher and host boundaries | LauncherCore, Qt GUI, Application, Editor, tools, smoke validation. | Launcher invokes tools/processes and records evidence; Qt UI remains presentation/model code. |
+| 27 | Shader and cook artifact validation matrix | ShaderCompiler, cookers, GameFramework loaders, Renderer resource managers, Projects. | Every artifact type has producer, schema owner, consumer, inspector, and smoke/load evidence. |
+| 28 | Build, CI, and guardrail expansion | CMake, `.github`, runtime-to-tools dependencies, generated/local-only folders. | Boundary checks cover RHI/Renderer plus runtime-to-tools, GameFramework/launcher/tool ownership, and generated folder policy. |
+| 29 | Whole-repository final gate | All modules, tools, samples, docs, CI/local validation. | No unowned `Needs refactor` rows remain; final evidence proves code, docs, checks, and validation agree. |
 
 ## Acceptance Criteria Traceability
 
-This section verifies that the execution plan touches every criterion from `docs/plans/architecture-review-acceptance-rubric.md` and every review-ready goal from `docs/plans/rhi-renderer-architecture-review.md`.
+This section verifies that the execution plan touches every criterion from `docs/plans/architecture-review-acceptance-rubric.md`, every review-ready goal from `docs/plans/rhi-renderer-architecture-review.md`, and the global constraints in `docs/plans/sparkle-whole-repository-architecture-review.md`.
 
 ### Rubric Criteria Coverage
 
 | Rubric criterion | Covered by stages | Required evidence before final acceptance |
 | --- | --- | --- |
-| Problem framing | 1, 2, 22 | Coverage status map names the subsystem, current risk, intended owner, and linked stage. Final rubric scoring cites the exact issue each completed stage solved. |
-| Requirements and constraints | 1, 2, 5, 10, 15, 20, 22 | Architecture docs and milestone reports state D3D12/Vulkan, ray tracing, DLSS, frame graph, debug view, shader cooking, platform, and validation constraints. |
-| Separation of concerns | 3, 4, 7, 8, 9, 11, 12, 19, 22 | Boundary checks pass; RHI has no Renderer-private includes; Renderer has no backend-private includes outside documented provider integration; Application has no backend-native capture implementation. |
-| Cohesion and interface size | 6, 7, 11, 12, 16, 19, 22 | RHI method ownership table is complete; root facades shrink behind named services; `Renderer` becomes a host facade; old god-object responsibilities are deleted or owned elsewhere. |
-| Tradeoff reasoning | 2, 6, 7, 9, 16, 17, 22 | Design docs record alternatives for shader registration ownership, RHI service extraction, interop, pass definition, PSO keying, and backend parity. |
-| Quality attributes | 1, 2, 10, 15, 20, 22 | Each strategic stage updates quality impact for maintainability, reliability, portability, performance reasoning, operability, and reviewability. |
-| Risk and technical debt visibility | 1, 3, 5, 10, 15, 20, 22 | Coverage status tracks `Accepted`, `Needs refactor`, and `Needs design decision`; final gate has no unowned `Needs refactor` rows. |
-| Runtime behavior clarity | 2, 11, 12, 14, 16, 17, 18, 20, 21 | Docs include frame execution, frame graph, pass definition, shader package, PSO, ray tracing, presentation, and backend flow diagrams. |
-| Observability and diagnostics | 7, 8, 10, 14, 15, 16, 18, 20, 22 | Smoke reports include frame graph diagnostics, capability reports, debug names/markers, PSO keys, shader package IDs, DLSS status, RT status, and capture artifacts. |
-| Reliability/failure handling | 7, 8, 9, 14, 18, 20, 22 | Missing DLSS/RT/extensions/capture support produces deterministic reasons; unresolved frame graph resources fail development smoke. |
-| Performance reasoning | 2, 16, 19, 20, 21, 22 | PSO/runtime changes include measurement plan or logs; README and final scoring avoid unsupported performance claims. |
-| Portability/backend parity | 3, 5, 7, 8, 9, 10, 18, 19, 20, 22 | D3D12/Vulkan service responsibilities are symmetric where appropriate; lit and debug/normal captures exist for both APIs; known differences are documented. |
-| Maintainability and naming | 2, 11, 12, 13, 14, 17, 18, 19, 22 | Folder ownership docs, naming conventions, pass/frame split, ray tracing terms, and backend service names are updated to match final code. |
-| Testability | 3, 5, 8, 10, 15, 20, 22 | Boundary checks, build targets, shader compiler validation, smoke validation, captures, and final command list are repeatable. |
-| Communication/reviewability | 1, 2, 21, 22 | Docs, diagrams, README, reviewer path, feature matrix, known issues, validation artifacts, and final rubric score make the repo inspectable. |
+| Problem framing | 1, 2, 22, 23, 29 | Coverage status map names the subsystem, current risk, intended owner, and linked stage. Final rubric scoring cites the exact issue each completed stage solved. |
+| Requirements and constraints | 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29 | Architecture docs and milestone reports state D3D12/Vulkan, ray tracing, DLSS, frame graph, debug view, shader cooking, content cooking, GameFramework, launcher, platform, and validation constraints. |
+| Separation of concerns | 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29 | Boundary checks pass; runtime modules do not depend on tool internals; RHI has no Renderer-private includes; Renderer has no backend-private includes outside documented provider integration; Application has no backend-native capture implementation. |
+| Cohesion and interface size | 6, 7, 11, 12, 16, 19, 22, 24, 25, 26, 29 | RHI method ownership table is complete; root facades shrink behind named services; `Renderer` becomes a host facade; LauncherCore, cookers, and GameFramework have focused owners. |
+| Tradeoff reasoning | 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29 | Design docs record alternatives for shader registration ownership, RHI service extraction, interop, pass definition, PSO keying, backend parity, cooked schema ownership, tool orchestration, and launcher workflow ownership. |
+| Quality attributes | 1, 2, 10, 15, 20, 22, 23, 27, 29 | Each strategic stage updates quality impact for maintainability, reliability, portability, performance reasoning, operability, and reviewability. |
+| Risk and technical debt visibility | 1, 3, 5, 10, 15, 20, 22, 23, 28, 29 | Coverage status tracks `Accepted`, `Needs refactor`, and `Needs design decision`; final gate has no unowned `Needs refactor` rows across rendering and repository coverage. |
+| Runtime behavior clarity | 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29 | Docs include frame execution, frame graph, pass definition, shader package, PSO, ray tracing, presentation, GameFramework snapshots, cooked artifact flow, and backend flow diagrams. |
+| Observability and diagnostics | 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29 | Smoke reports include frame graph diagnostics, capability reports, debug names/markers, PSO keys, shader package IDs, DLSS status, RT status, cook/tool failures, launcher evidence, and capture artifacts. |
+| Reliability/failure handling | 7, 8, 9, 14, 18, 20, 22, 25, 26, 27, 29 | Missing DLSS/RT/extensions/capture/tool/schema support produces deterministic reasons; unresolved frame graph resources fail development smoke. |
+| Performance reasoning | 2, 16, 19, 20, 21, 22, 25, 27, 29 | PSO/runtime and cook/tool changes include measurement plan or logs; README and final scoring avoid unsupported performance claims. |
+| Portability/backend parity | 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29 | D3D12/Vulkan service responsibilities are symmetric where appropriate; source/cooked formats stay API-neutral where possible; known differences are documented. |
+| Maintainability and naming | 2, 11, 12, 13, 14, 17, 18, 19, 22, 23, 24, 25, 26, 29 | Folder ownership docs, naming conventions, pass/frame split, ray tracing terms, backend services, launcher/cooker names, and artifact ownership are updated to match final code. |
+| Testability | 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29 | Boundary checks, build targets, shader compiler validation, cook validation, launcher workflow checks, smoke validation, captures, and final command list are repeatable. |
+| Communication/reviewability | 1, 2, 21, 22, 23, 29 | Docs, diagrams, README, reviewer path, feature matrix, known issues, validation artifacts, repository coverage, and final rubric score make the whole repo inspectable. |
 
 Critical rubric categories are covered by multiple stages:
 
-- Requirements and constraints: 1, 2, 5, 10, 15, 20, 22.
-- Separation of concerns: 3, 4, 7, 8, 9, 11, 12, 19, 22.
-- Tradeoff reasoning: 2, 6, 7, 9, 16, 17, 22.
-- Runtime behavior clarity: 2, 11, 12, 14, 16, 17, 18, 20, 21.
-- Observability and diagnostics: 7, 8, 10, 14, 15, 16, 18, 20, 22.
-- Portability/backend parity: 3, 5, 7, 8, 9, 10, 18, 19, 20, 22.
-- Testability: 3, 5, 8, 10, 15, 20, 22.
+- Requirements and constraints: 1, 2, 5, 10, 15, 20, 22, 23, 24, 25, 26, 27, 29.
+- Separation of concerns: 3, 4, 7, 8, 9, 11, 12, 19, 22, 24, 25, 26, 28, 29.
+- Tradeoff reasoning: 2, 6, 7, 9, 16, 17, 22, 23, 24, 25, 26, 27, 29.
+- Runtime behavior clarity: 2, 11, 12, 14, 16, 17, 18, 20, 21, 24, 27, 29.
+- Observability and diagnostics: 7, 8, 10, 14, 15, 16, 18, 20, 22, 25, 26, 27, 29.
+- Portability/backend parity: 3, 5, 7, 8, 9, 10, 18, 19, 20, 22, 25, 27, 29.
+- Testability: 3, 5, 8, 10, 15, 20, 22, 25, 26, 27, 28, 29.
 
 ### Portfolio Skill Signal Coverage
 
@@ -101,17 +155,19 @@ Critical rubric categories are covered by multiple stages:
 | Modern C++ systems skill | 6, 7, 11, 13, 16, 19, 22 | Ownership docs, service extraction, RAII/lifetime contracts, allocator/resource lifetime notes, and clean build commands. |
 | Graphics API fluency | 7, 8, 10, 18, 19, 20 | D3D12/Vulkan resource state/layout, descriptors, PSO, swap chain, ray tracing, and capture parity evidence. |
 | Shader and pipeline systems | 4, 5, 16, 17, 20 | Renderer-owned shader registration, explicit PSO keys, pass definition model, shader compiler validation. |
+| Content pipeline architecture | 23, 24, 25, 27, 29 | Source import, focused cooking, cooked schemas, runtime loading, and renderer resource creation are separate and validated. |
+| Developer tooling/product workflow | 23, 25, 26, 28, 29 | LauncherCore, Qt launcher UI, AssetCooker, focused tools, process evidence, and recovery paths are cohesive and repeatable. |
 | Rendering fundamentals | 10, 14, 18, 20, 21 | Lit, normal/debug, GBuffer, lighting, shadows, temporal/upscaling captures and notes. |
 | GPU architecture and performance reasoning | 16, 19, 20, 21, 22 | Timing/diagnostic output, PSO/runtime logs, memory diagnostics, and no unsupported performance claims. |
 | Cross-backend architecture | 3, 7, 8, 9, 19, 20 | Mechanical boundary checks and D3D12/Vulkan parity report. |
 | Debuggability and validation | 3, 8, 10, 14, 15, 20 | Smoke reports, logs, capture artifacts, validation failure policy. |
 | Reliability and fallback behavior | 7, 8, 9, 18, 20 | Deterministic feature fallback reasons for DLSS, RT, capture, and backend capabilities. |
-| Testability and CI thinking | 3, 5, 10, 15, 20, 22 | Local/CI-ready commands for boundary checks, formatting, shader compiler, build, smoke. |
-| Documentation and onboarding | 2, 21, 22 | Architecture docs, README, reviewer path, feature matrix, known issues. |
-| Communication and design rationale | 1, 2, 6, 21, 22 | Decision notes, alternatives, risks, non-goals, final rubric score. |
+| Testability and CI thinking | 3, 5, 10, 15, 20, 22, 27, 28, 29 | Local/CI-ready commands for boundary checks, formatting, shader compiler, cook tools, launcher, build, smoke. |
+| Documentation and onboarding | 2, 21, 22, 23, 29 | Architecture docs, whole-repo review, README, reviewer path, feature matrix, known issues. |
+| Communication and design rationale | 1, 2, 6, 21, 22, 23, 29 | Decision notes, alternatives, risks, non-goals, final rubric score, and whole-repository architecture narrative. |
 | Git/review hygiene | 21, 22 | CONTRIBUTING or equivalent review guide, commit/PR conventions, no generated junk in source docs. |
-| Product/demo clarity | 10, 20, 21 | Showcase launch path, screenshots/captures, feature matrix, current backend status. |
-| Collaboration readiness | 21, 22 | Build/report/validation instructions, known issue guidance, license/status links, contribution path. |
+| Product/demo clarity | 10, 20, 21, 27, 29 | Showcase launch/cook/load path, screenshots/captures, feature matrix, current backend and content-pipeline status. |
+| Collaboration readiness | 21, 22, 28, 29 | Build/report/validation instructions, known issue guidance, license/status links, contribution path, CI/local check coverage. |
 
 ### Architecture Review Goal Coverage
 
@@ -125,11 +181,16 @@ Critical rubric categories are covered by multiple stages:
 | DLSS/native interop has a documented backend contract | 7, 9, 10, 20, 22 | Upscaler/native interop contract and per-backend DLSS status logs. |
 | D3D12/Vulkan smoke validation passes with no unresolved frame graph warnings | 10, 15, 20, 22 | Smoke logs and captures show no unresolved resource/barrier warnings. |
 | Visual debug modes are validated for both APIs | 10, 20, 22 | D3D12 and Vulkan debug/normal captures exist and are linked from final evidence. |
+| Whole-repository ownership is documented | 23, 29 | Every durable root has owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. |
+| GameFramework runtime/cooked boundary is protected | 24, 27, 29 | GameFramework has no renderer-private, backend-private, or tool-private dependencies and cooked schemas name producers/consumers. |
+| Tooling/content pipeline ownership is protected | 25, 27, 29 | Source import, focused cooking, AssetCooker orchestration, shader compilation, and conversion/debug CLI roles are separate. |
+| Launcher and host boundaries are protected | 26, 28, 29 | LauncherCore owns process/evidence workflows; Qt GUI owns presentation; Application/Editor do not own cook/import/backend-native internals. |
+| Build/CI guardrails cover the global architecture | 28, 29 | Local/CI-friendly checks catch runtime-to-tools, private include, launcher/tool, generated-folder, and RHI/Renderer boundary drift. |
 
 Traceability conclusion:
 
-- The plan covers all rubric criteria, all critical categories, all portfolio skill signals, and all architecture review definition-of-done goals.
-- The only criteria that rely primarily on late-stage work are repo presentation, Git/review hygiene, and collaboration readiness. Stage 21 and Stage 22 are therefore mandatory, not optional polish.
+- The plan covers all rubric criteria, all critical categories, all portfolio skill signals, the RHI/Renderer definition-of-done goals, and the whole-repository goals from `sparkle-whole-repository-architecture-review.md`.
+- The criteria that rely primarily on late-stage work are repo presentation, Git/review hygiene, collaboration readiness, global CI/local guardrails, cooked artifact validation, and whole-repository final scoring. Stages 21 through 29 are therefore mandatory, not optional polish.
 
 ## Reference Basis By Stage
 
@@ -142,7 +203,7 @@ Reference index:
 - NVIDIA Donut: https://github.com/NVIDIA-RTX/Donut
 - NVIDIA Donut Samples: https://github.com/NVIDIA-RTX/Donut-Samples
 - NVIDIA NVRHI: https://github.com/NVIDIA-RTX/NVRHI
-- NVIDIA NVRHI tutorial: https://github.com/NVIDIAGameWorks/nvrhi/blob/main/doc/Tutorial.md
+- NVIDIA NVRHI tutorial: https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md
 - NVIDIA NVRHI technical blog: https://developer.nvidia.com/blog/writing-portable-rendering-code-with-nvrhi/
 - NVIDIA NRI: https://github.com/NVIDIA-RTX/NRI
 - NVIDIA Falcor: https://github.com/NVIDIAGameWorks/Falcor
@@ -153,6 +214,8 @@ Reference index:
 - AMD Cauldron: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
 - AMD FidelityFX SDK: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
 - AMD FidelityFX SDK overview: https://gpuopen.com/amd-fidelityfx-sdk-1/
+- AMD Compressonator: https://github.com/GPUOpen-Tools/compressonator
+- AMD Compressonator GPUOpen page: https://gpuopen.com/compressonator/
 - Diligent Engine: https://github.com/DiligentGraphics/DiligentEngine
 - Diligent Core PSO model: https://github.com/DiligentGraphics/DiligentCore
 - Microsoft D3D12 PSO docs: https://learn.microsoft.com/en-us/windows/win32/direct3d12/pipelines-and-shaders-with-directx-12
@@ -171,6 +234,10 @@ Reference index:
 - Composition Root pattern: https://blog.ploeh.dk/2011/07/28/CompositionRoot/
 - Facade pattern: https://refactoring.guru/design-patterns/facade
 - Command pattern in game code: https://gameprogrammingpatterns.com/command.html
+- CMake target usage requirements: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
+- Qt model/view programming: https://doc.qt.io/qt-6/model-view-programming.html
+- Khronos glTF 2.0 specification: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
+- Khronos KTX-Software: https://github.com/KhronosGroup/KTX-Software
 - GitHub portfolio guidance: https://flatironschool.com/blog/github-profile-and-git-practices-for-job-seekers/
 - README guidance: https://coding-boot-camp.github.io/full-stack/github/professional-readme-guide/
 
@@ -200,6 +267,13 @@ Stage-to-reference map:
 | 20 | Donut Samples, NVRHI tutorial, Vulkan validation layers, Streamline/FidelityFX docs | Full backend parity validation | Lit/debug captures, DLSS/RT/frame graph/PSO logs, backend feature reports | Exact image match claims where numeric/API differences require tolerance |
 | 21 | GitHub portfolio guidance, README guidance, Donut/Falcor/Cauldron repo presentation | Reviewer-facing repo entry point | README, feature matrix, reviewer path, screenshots/captures, known issues, validation commands | Marketing copy without evidence |
 | 22 | Architecture rubric, arc42, ADR practice, CMU SEI ATAM | Final quality gate and decision record | Rubric scoring, final cleanup, evidence index, no lingering legacy contradictions | Calling the repo review-ready with weak critical criteria |
+| 23 | Whole-repository architecture review, CMake target usage requirements, Donut/Falcor/Cauldron repo layout | Repository-wide ownership map | Every durable root has owner, dependency intent, validation target, and acceptance evidence | Treating non-rendering modules as "out of scope" during a graphics refactor |
+| 24 | Donut scene/component graph, Falcor scene/render split, glTF runtime asset delivery | Runtime scene and cooked asset contract | GameFramework owns runtime/cooked loading and emits immutable renderer-facing snapshots | Moving source import, cook algorithms, or renderer pass data into GameFramework |
+| 25 | AMD Compressonator, Cauldron content/sample pipeline, glTF, KTX | Focused import/cook tools plus orchestration | SourceImportAdapters and focused cookers own transformations; AssetCooker orchestrates and reports | AssetCooker becoming a second implementation of every cooker |
+| 26 | Qt model/view programming, Compressonator GUI/CLI/SDK split, Streamline integration guides | Workflow core separated from UI and host orchestration | LauncherCore owns operations/processes/evidence; Qt GUI owns presentation; Application/Editor host systems | Widgets or host code duplicating cook/render/backend implementation details |
+| 27 | NVRHI shader packages/validation, Falcor shader/render tooling, KTX/glTF artifact contracts | Artifact producer/schema/consumer validation matrix | Every shader/cooked asset type has producer, owner, consumer, inspector, and smoke/load evidence | Schema changes accepted with only a build or source-level compile |
+| 28 | CMake target usage requirements, NVRHI/NRI/Cauldron backend boundaries, CI workflows in reference repos | Mechanical guardrails beyond RHI/Renderer | Checks cover runtime-to-tools, GameFramework/private coupling, launcher/tool ownership, generated folders | Broad allowlists that hide architecture drift |
+| 29 | Whole-repository review, architecture rubric, arc42/ATAM/ADR | Global final gate | Code, docs, CMake, CI/local checks, sample content, tools, and validation evidence agree | Declaring review-ready while any source root has unowned risk |
 
 Reference use rules:
 
@@ -352,7 +426,7 @@ Goal:
 
 Source references:
 
-- `rhi-renderer-architecture-review.md`: `Phase 1: Boundary Audit`, `Strategic Refactor Tracks`, `Shader Registration Lives In RHI But Reaches Into Renderer`
+- `rhi-renderer-architecture-review.md`: `Phase 1: Boundary Audit`, `Strategic Refactor Tracks`, `Shader Registration Ownership`
 - `architecture-review-acceptance-rubric.md`: `Separation of concerns`, `Testability`
 
 External implementation references:
@@ -364,7 +438,7 @@ External implementation references:
 
 Current violations to protect against:
 
-- `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` includes `Renderer/Private/RayTracing/RayTracedShadowUniformData.h`.
+- Resolved by Stage 4, but kept protected by the check: RHI must not include `Renderer/Private` headers. The former `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` dependency on `Renderer/Private/RayTracing/RayTracedShadowUniformData.h` must not return.
 - `Engine/Renderer/CMakeLists.txt` links `Vulkan::Vulkan` when Streamline is enabled.
 - `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` includes D3D12 headers and owns D3D12-native capture logic.
 
@@ -418,8 +492,8 @@ Goal:
 
 Source references:
 
-- `rhi-renderer-architecture-review.md`: `Shader Registration Lives In RHI But Reaches Into Renderer`, `Shader Pass And PSO Handling`
-- `architecture-review-acceptance-rubric.md`: `Shader and pipeline systems`, `Cross-backend architecture`
+- `rhi-renderer-architecture-review.md`: `Shader Registration Ownership`, `Shader Pass And PSO Handling`
+- `architecture-review-acceptance-rubric.md`: `Shader and pipeline systems`, `Cross-module architecture`
 
 External implementation references:
 
@@ -430,12 +504,13 @@ External implementation references:
 Code references:
 
 - `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp`
-- `Engine/RHI/Private/Shaders/GBufferShaders.cpp`
-- `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp`
-- `Engine/RHI/Private/Shaders/IndirectLightingShaders.cpp`
-- `Engine/RHI/Private/Shaders/LightingCompositeShaders.cpp`
-- `Engine/RHI/Private/Shaders/SkyShaders.cpp`
-- `Engine/RHI/Private/Shaders/VisualizeBuffersShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/RendererGlobalShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/GBufferShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/IndirectLightingShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/LightingCompositeShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/SkyShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/VisualizeBuffersShaders.cpp`
 - `Engine/RHI/Private/Shaders/ComputeClearShader.cpp`
 - `Engine/Renderer/Private/Passes`
 - `Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h`
@@ -443,7 +518,7 @@ Code references:
 
 Tutor note:
 
-- What is wrong today: renderer-specific shader pass declarations live in RHI, and DirectLighting even pulls renderer-private shadow data into RHI.
+- What was wrong before Stage 4: renderer-specific shader pass declarations lived in RHI, and DirectLighting pulled renderer-private shadow data into RHI.
 - What changes: shader pass registration moves up to Renderer or a neutral shader-authoring layer, while RHI keeps only generic shader package and layout primitives.
 - Why it improves the engine: an RHI should know how to create/bind GPU objects, not know that a renderer has GBuffer, Sky, or DirectLighting passes.
 
@@ -493,7 +568,7 @@ Goal:
 
 External implementation references:
 
-- NVIDIA NVRHI tutorial validation mindset: https://github.com/NVIDIAGameWorks/nvrhi/blob/main/doc/Tutorial.md
+- NVIDIA NVRHI tutorial validation mindset: https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md
 - NVIDIA Donut Samples as executable graphics evidence: https://github.com/NVIDIA-RTX/Donut-Samples
 - Khronos Vulkan validation layers: https://github.com/KhronosGroup/Vulkan-ValidationLayers
 
@@ -817,7 +892,7 @@ Goal:
 External implementation references:
 
 - NVIDIA Donut Samples validation-by-running approach: https://github.com/NVIDIA-RTX/Donut-Samples
-- NVIDIA NVRHI tutorial: https://github.com/NVIDIAGameWorks/nvrhi/blob/main/doc/Tutorial.md
+- NVIDIA NVRHI tutorial: https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md
 - Khronos Vulkan validation layers: https://github.com/KhronosGroup/Vulkan-ValidationLayers
 - NVIDIA Streamline programming guide: https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuide.md
 
@@ -1150,7 +1225,7 @@ Goal:
 
 External implementation references:
 
-- NVIDIA NVRHI tutorial: https://github.com/NVIDIAGameWorks/nvrhi/blob/main/doc/Tutorial.md
+- NVIDIA NVRHI tutorial: https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md
 - NVIDIA Donut Samples: https://github.com/NVIDIA-RTX/Donut-Samples
 - Khronos Vulkan validation layers: https://github.com/KhronosGroup/Vulkan-ValidationLayers
 
@@ -1492,7 +1567,7 @@ Goal:
 External implementation references:
 
 - NVIDIA Donut Samples executable graphics evidence: https://github.com/NVIDIA-RTX/Donut-Samples
-- NVIDIA NVRHI tutorial: https://github.com/NVIDIAGameWorks/nvrhi/blob/main/doc/Tutorial.md
+- NVIDIA NVRHI tutorial: https://github.com/NVIDIA-RTX/NVRHI/blob/main/doc/Tutorial.md
 - Khronos Vulkan validation layers: https://github.com/KhronosGroup/Vulkan-ValidationLayers
 - NVIDIA Streamline programming guide: https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuide.md
 - AMD FidelityFX SDK: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
@@ -1710,9 +1785,234 @@ Final acceptance:
 - README and docs let an external reviewer understand and validate the repo.
 - The repo has no known legacy code path contradicting the final architecture.
 
+## Whole-Repository Extension Stages
+
+The first 22 stages keep the RHI/Renderer track reviewable. The following stages extend the same treatment to the rest of the repository so the final architecture is cohesive across engine runtime, tools, content pipeline, launcher, build, CI, projects, and docs.
+
+## Stage 23 - Whole-Repository Coverage And Dependency Map
+
+Goal:
+
+- Make every durable source root visible in the architecture review.
+- Freeze the dependency intent before refactoring GameFramework or tools.
+
+Source references:
+
+- `repository-system-map.md`
+- `repository-coverage-status.md`
+- `architecture-review-acceptance-rubric.md`
+
+Implementation prompt:
+
+```text
+Using the repository system map and CMake target dependency graph as the source of truth, verify every Engine, Tools, Projects, CMake, docs, and CI root has a named owner, allowed dependencies, forbidden dependencies, validation target, and acceptance evidence. Update the coverage map before moving code.
+```
+
+Acceptance:
+
+- `repository-coverage-status.md` covers every durable source root.
+- Rendering detail remains delegated to `rendering-coverage-status.md`.
+- Any new source folder added during later stages must update one of the coverage maps.
+
+Validation:
+
+- Docs/link scan with `rg`.
+- No build required.
+
+## Stage 24 - GameFramework Runtime And Cooked Asset Contract
+
+Goal:
+
+- Protect runtime scene/gameplay ownership while renderer and tools evolve.
+- Prevent source import/cooking or renderer pass policy from leaking into GameFramework.
+
+Source references:
+
+- `game-framework-contract.md`
+- `Engine/GameFramework/CMakeLists.txt`
+- `Tools/Cooking/*`
+- `Tools/Import/SourceImportAdapters`
+
+Implementation prompt:
+
+```text
+Review GameFramework as the runtime owner for scenes, levels, components, cameras, lighting, cooked assets, and runtime loaders. Document and then enforce the split between public cooked/runtime schemas, tool-side source import/cooking, and renderer-side render snapshots/resources.
+```
+
+Acceptance:
+
+- GameFramework has no Renderer-private, RHI-backend-private, or Tools-private dependencies.
+- Cooked schema changes identify paired cooker, loader, and renderer-scene-data updates.
+- Renderer consumes immutable runtime snapshots or DTOs, not gameplay mutation paths.
+
+Validation:
+
+- Targeted include scan.
+- Build `SparkleGameFramework` when a compiler is available.
+- Run affected cook/load smoke when schema changes occur.
+
+## Stage 25 - Source Import, Asset Cooking, And Conversion Architecture
+
+Goal:
+
+- Apply the same owner/contract/refactor treatment to SourceImportAdapters, TextureCooker, MeshCooker, MaterialCooker, SceneCooker, AssetCooker, CookCommon, and AssetConverter.
+
+Source references:
+
+- `tooling-pipeline-contract.md`
+- `Tools/Import/SourceImportAdapters`
+- `Tools/Cooking`
+- `Tools/Conversion/AssetConverter`
+
+Implementation prompt:
+
+```text
+Separate source import, focused cooking, project-level cook orchestration, and debug conversion into clear ownership boundaries. AssetCooker should orchestrate and report focused tool work. Focused cookers should own transformations and cooked artifact emission. Runtime modules should consume cooked outputs only.
+```
+
+Acceptance:
+
+- Import adapters produce imported DTOs and diagnostics only.
+- Focused cookers own focused transformations.
+- AssetCooker owns discovery, planning, dispatch, process isolation, and diagnostics.
+- AssetConverter is either a thin debug shell over focused modules or retired in favor of AssetCooker.
+
+Validation:
+
+- Build affected cook/import target.
+- Run targeted sample cook when available.
+- Verify failures report source path, asset id, output artifact, and reason.
+
+## Stage 26 - Launcher Workflow And Editor/Application Host Boundaries
+
+Goal:
+
+- Make launcher, editor, and application hosts reliable orchestration layers rather than hidden owners of cook/render/backend behavior.
+
+Source references:
+
+- `tooling-pipeline-contract.md`
+- `Tools/Launcher/SparkleLauncher`
+- `Engine/Application`
+- `Engine/Editor`
+
+Implementation prompt:
+
+```text
+Review SparkleLauncher as a developer workflow product. Keep LauncherCore responsible for build/cook/launch/maintenance process orchestration and evidence. Keep Qt GUI code responsible for presentation, models, prompts, and action history. Keep Application/Editor as runtime/editor hosts that orchestrate systems without owning backend-native or cook/import implementation details.
+```
+
+Acceptance:
+
+- Launcher UI models and widgets do not duplicate operation logic.
+- LauncherCore invokes tools/processes and records actionable evidence.
+- Application validation does not grow new backend-native dependencies.
+- Editor does not include tool-private cook/import internals.
+
+Validation:
+
+- Build `SparkleLauncher` and `SparkleLauncherProbe` when a compiler/Qt are available.
+- Run launcher workflow inspection or smoke command where available.
+
+## Stage 27 - Shader And Cook Artifact Validation Matrix
+
+Goal:
+
+- Ensure shader packages, cooked textures, cooked scenes, and runtime loaders stay compatible as renderer/RHI contracts change.
+
+Source references:
+
+- `ShaderCompiler`
+- `TextureCooker`
+- `AssetCooker`
+- `GameFramework` cooked loaders
+- `Renderer` texture/material/mesh/scene data paths
+
+Implementation prompt:
+
+```text
+Create a validation matrix that maps every produced artifact type to its producer, schema owner, runtime consumer, inspection command, and smoke/load evidence. Include shader packages, cooked textures, cooked materials, cooked meshes, cooked scene manifests, animations, skeletons, and project cook plans.
+```
+
+Acceptance:
+
+- Every cooked artifact type has producer, schema owner, consumer, and validation evidence.
+- ShaderCompiler package enumeration includes renderer packages.
+- Texture/material/mesh/scene cooker outputs are tied to runtime loader expectations.
+
+Validation:
+
+- `ShaderCompiler` list/inspect/cook commands.
+- `TextureCooker` inspect/cook request commands.
+- `AssetCooker` plan/dispatch output.
+- Runtime/editor smoke that loads cooked sample content.
+
+## Stage 28 - Build, CI, And Boundary Guardrail Expansion
+
+Goal:
+
+- Extend mechanical checks beyond RHI/Renderer so future changes cannot quietly reintroduce tool/runtime or launcher/cooker coupling.
+
+Source references:
+
+- `CMake/ArchitectureBoundaryCheck.cmake`
+- `repository-system-map.md`
+- `repository-coverage-status.md`
+- `.github`
+- `CMake`
+
+Implementation prompt:
+
+```text
+Add or extend local/CI-friendly checks for runtime-to-tools dependencies, tool-private include leaks, GameFramework-to-Renderer private coupling, launcher-to-cooker implementation coupling, and generated/local-only folder policy. Keep exceptions narrow, counted, documented, and stage-labeled.
+```
+
+Acceptance:
+
+- Boundary checks cover RHI/Renderer plus at least runtime-to-tools and GameFramework/launcher/tool ownership.
+- Checks report actionable file paths and reasons.
+- CI or documented local commands run the checks without building the editor.
+
+Validation:
+
+- Run boundary checks.
+- Run CMake configure when compiler/toolchain is available.
+
+## Stage 29 - Whole-Repository Final Gate
+
+Goal:
+
+- Score SparkleEngine as a cohesive repository, not only a renderer/RHI track.
+
+Source references:
+
+- `architecture-review-acceptance-rubric.md`
+- `repository-coverage-status.md`
+- `rendering-coverage-status.md`
+- All architecture docs
+
+Implementation prompt:
+
+```text
+Run the final repository-wide architecture gate. Verify coverage maps, boundary checks, build/tool validation, launcher workflows, cooked artifact compatibility, renderer/RHI backend evidence, docs, README, and known issues. Do not call the repository review-ready while any source root has unowned risk or contradictory docs.
+```
+
+Acceptance:
+
+- No unowned `Needs refactor` rows remain in repository or rendering coverage maps.
+- RHI/Renderer final definition is satisfied.
+- GameFramework, Launcher, ShaderCompiler, AssetCooker, TextureCooker, source import, CMake, CI, Projects, and docs all have final evidence or documented non-blocking risks.
+- README/reviewer path points to whole-repo architecture, not only rendering internals.
+
+Validation:
+
+- Boundary checks.
+- Smallest meaningful target builds: `ShaderCompiler`, `AssetCooker`, `TextureCooker`, `SparkleLauncher`, affected runtime/editor target.
+- Targeted sample cook/load/smoke where available.
+
 ## Final Review-Ready Definition
 
-SparkleEngine is review-ready for the targeted renderer/RHI scope only when all of these are true:
+SparkleEngine is review-ready when all of these are true:
 
 - RHI does not depend on Renderer.
 - Renderer does not own backend-native API details outside documented provider integration.
@@ -1726,4 +2026,10 @@ SparkleEngine is review-ready for the targeted renderer/RHI scope only when all 
 - Ray tracing ownership is clear from scene data to TLAS binding and pass usage.
 - DLSS/upscaling interop is provider-owned and backend-supported through explicit contracts.
 - Validation artifacts prove lit and debug/normal parity across D3D12 and Vulkan.
-- Repository docs make the system navigable for an external graphics reviewer.
+- GameFramework remains cooked-data/runtime-scene oriented and does not absorb source import, cook algorithms, renderer pass policy, or backend-native RHI objects.
+- Source import, focused cooking, project-level cook orchestration, shader compilation, and debug conversion have explicit owners and validation evidence.
+- Launcher workflows are process/evidence orchestration over focused tools, with Qt UI separated from operation logic.
+- Runtime engine modules do not depend on tool internals.
+- Cooked artifact schemas have producer, owner, consumer, and validation evidence.
+- CMake and CI/local checks make module dependencies and validation commands repeatable.
+- Repository docs make the whole system navigable for an external graphics, engine, or tools reviewer.

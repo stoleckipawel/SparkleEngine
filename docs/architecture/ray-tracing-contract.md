@@ -105,9 +105,10 @@ Rules:
 - Passes declare AS usage through frame graph parameters/handles.
 - RHI sees only `RhiRayTracing*` descs, GPU addresses, resources, command methods, and capabilities.
 
-Current debt:
+Stage 4 boundary update:
 
-- RHI private shader registration currently includes renderer-private `RayTracedShadowUniformData`. That violates the intended boundary and is owned by Stage 4.
+- `DirectLighting` shader registration is Renderer-owned and may include renderer-private `RayTracedShadowUniformData`.
+- RHI no longer includes renderer-private shadow uniform data.
 
 ## Capability And Fallback
 
@@ -147,7 +148,7 @@ Expected smoke evidence:
 
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
-| Renderer-private shadow uniform included from RHI private shader registration. | `DirectLightingShaders.cpp` includes `Renderer/Private/RayTracing/RayTracedShadowUniformData.h`. | Stage 4 |
+| Direct lighting shader registration still mirrors pass package identity. | [DirectLightingShaders.cpp](../../Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp) declares the package while `DirectLightingPass` describes it for runtime. | Stage 17 |
 | Ray tracing contract was implicit. | Ownership spread across Renderer/RayTracing, Frame/RT frame data, FrameGraph AS import, RHI RT descs, and backend command lists. | Stage 2 |
 | Backend parity evidence is not final. | Need lit/debug captures and RT smoke for both APIs. | Stage 18, Stage 20 |
 | Denoiser ownership is still a decision. | Public denoise contract exists while private denoising folder is empty. | Stage 13, Stage 22 |
@@ -170,4 +171,3 @@ This contract is accepted when:
 - BLAS/TLAS ownership is documented in final reviewer docs.
 - D3D12/Vulkan smoke logs show capability report and AS build diagnostics.
 - Ray traced shadow pass data is owned by Renderer or a neutral shader contract, not RHI private pass registration.
-

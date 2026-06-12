@@ -127,18 +127,18 @@ Generic shader runtime primitives are allowed in RHI:
 - [ShaderBytecode.h](../../Engine/RHI/Public/Shaders/ShaderBytecode.h)
 - [ShaderPackageLayoutBuilder.h](../../Engine/RHI/Public/Shaders/ShaderPackageLayoutBuilder.h)
 
-Renderer-specific pass registrations are not a long-term RHI responsibility.
+Renderer-specific pass registrations are not an RHI responsibility.
 
-Current debt:
+Current Stage 4 state:
 
-- [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders) contains pass-specific files like `GBufferShaders.cpp`, `DirectLightingShaders.cpp`, and `VisualizeBuffersShaders.cpp`.
-- `DirectLightingShaders.cpp` currently reaches into Renderer-private ray traced shadow uniform data.
+- [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations) owns pass-specific files like `GBufferShaders.cpp`, `DirectLightingShaders.cpp`, and `VisualizeBuffersShaders.cpp`.
+- RHI no longer reaches into Renderer-private ray traced shadow uniform data.
 
 Target:
 
 - RHI keeps generic shader package/reflection/cache primitives.
 - Renderer owns pass package declarations and pass-specific shader parameter structs.
-- ShaderCompiler consumes generic registrations/package descriptions without creating a Renderer -> Tool runtime dependency.
+- ShaderCompiler consumes RHI shader primitives plus the Renderer-owned shader registration target without linking the full renderer runtime.
 
 ## Change Rules
 
@@ -171,4 +171,3 @@ This contract is accepted when later stages provide:
 - D3D12/Vulkan backend service map with expected one-backend-only differences documented.
 - Smoke logs showing backend API, capabilities, diagnostics, and feature fallback reasons.
 - Pass authoring evidence showing a regular pass can be added without RHI edits.
-

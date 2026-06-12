@@ -13,7 +13,6 @@ set(SPARKLE_BOUNDARY_VULKAN_IN_D3D12_REGEX "Vulkan/|<vulkan/vulkan\\.h>|Vk[A-Z]|
 
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_FAILURES "")
 set_property(GLOBAL PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "")
-set_property(GLOBAL PROPERTY SPARKLE_RHI_RENDERER_PRIVATE_EXCEPTION_COUNT 0)
 set_property(GLOBAL PROPERTY SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT 0)
 set_property(GLOBAL PROPERTY SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT 0)
 set_property(GLOBAL PROPERTY SPARKLE_APP_VALIDATION_NATIVE_EXCEPTION_COUNT 0)
@@ -46,6 +45,15 @@ endfunction()
 
 function(sparkle_boundary_append_exception_summary summary_text)
     set_property(GLOBAL APPEND PROPERTY SPARKLE_BOUNDARY_EXCEPTION_SUMMARIES "${summary_text}")
+endfunction()
+
+function(sparkle_boundary_try_counted_exception out_var relative_path expected_path line_text allowed_regex property_name)
+    if(relative_path STREQUAL expected_path AND line_text MATCHES "${allowed_regex}")
+        sparkle_boundary_increment_property(${property_name})
+        set(${out_var} TRUE PARENT_SCOPE)
+    else()
+        set(${out_var} FALSE PARENT_SCOPE)
+    endif()
 endfunction()
 
 function(sparkle_boundary_validate_counted_exception label property_name max_count removal_stage reason)
@@ -97,24 +105,30 @@ function(sparkle_boundary_scan_file absolute_path)
         string(REPLACE "__SPARKLE_SEMICOLON__" ";" _line "${_line}")
 
         if(_relative_path MATCHES "^Engine/RHI/" AND _line MATCHES "Renderer/Private")
-            if(_relative_path STREQUAL "Engine/RHI/Private/Shaders/DirectLightingShaders.cpp"
-                AND _line MATCHES "Renderer/Private/RayTracing/RayTracedShadowUniformData\\.h")
-                sparkle_boundary_increment_property(SPARKLE_RHI_RENDERER_PRIVATE_EXCEPTION_COUNT)
-            else()
-                sparkle_boundary_append_failure(
-                    "RHI_NO_RENDERER_PRIVATE"
-                    "${_relative_path}"
-                    "${_line_number}"
-                    "RHI code must not include Renderer-private headers."
-                    "${_line}")
-            endif()
+            sparkle_boundary_append_failure(
+                "RHI_NO_RENDERER_PRIVATE"
+                "${_relative_path}"
+                "${_line_number}"
+                "RHI code must not include Renderer-private headers."
+                "${_line}")
         endif()
 
         if(_relative_path MATCHES "^Engine/Renderer/" AND _line MATCHES "${SPARKLE_BOUNDARY_NATIVE_API_REGEX}")
-            if(_relative_path STREQUAL "Engine/Renderer/CMakeLists.txt" AND _line MATCHES "Vulkan::Vulkan")
-                sparkle_boundary_increment_property(SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT)
-            elseif(_relative_path STREQUAL "Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp")
-                sparkle_boundary_increment_property(SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
+            sparkle_boundary_try_counted_exception(
+                _allowed_renderer_cmake_vulkan
+                "${_relative_path}"
+                "Engine/Renderer/CMakeLists.txt"
+                "${_line}"
+                "^[ \t]*(if\\(TARGET Vulkan::Vulkan\\)|target_link_libraries\\(SparkleRenderer PRIVATE Vulkan::Vulkan\\))"
+                SPARKLE_RENDERER_CMAKE_VULKAN_EXCEPTION_COUNT)
+            sparkle_boundary_try_counted_exception(
+                _allowed_streamline_vulkan
+                "${_relative_path}"
+                "Engine/Renderer/Private/Upscaling/NvidiaDlss/StreamlineDlssRuntime.cpp"
+                "${_line}"
+                "^[ \t]*(#include <vulkan/vulkan\\.h>|vulkanInfo\\.(instance|physicalDevice|device) = static_cast<Vk(Instance|PhysicalDevice|Device)>|adapterInfo\\.vkPhysicalDevice =)"
+                SPARKLE_RENDERER_STREAMLINE_NATIVE_EXCEPTION_COUNT)
+            if(_allowed_renderer_cmake_vulkan OR _allowed_streamline_vulkan)
             else()
                 sparkle_boundary_append_failure(
                     "RENDERER_NO_BACKEND_NATIVE"
@@ -170,13 +184,6 @@ sparkle_boundary_collect_source_files(
 foreach(_file IN LISTS SPARKLE_BOUNDARY_SOURCE_FILES)
     sparkle_boundary_scan_file("${_file}")
 endforeach()
-
-sparkle_boundary_validate_counted_exception(
-    "RHI_NO_RENDERER_PRIVATE: Engine/RHI/Private/Shaders/DirectLightingShaders.cpp"
-    SPARKLE_RHI_RENDERER_PRIVATE_EXCEPTION_COUNT
-    1
-    "Stage 4"
-    "Renderer-specific shader registration moves out of RHI.")
 
 sparkle_boundary_validate_counted_exception(
     "RENDERER_NO_BACKEND_NATIVE: Engine/Renderer/CMakeLists.txt Vulkan::Vulkan link"

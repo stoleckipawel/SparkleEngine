@@ -62,10 +62,10 @@ target_link_libraries(ShaderCompiler
     PRIVATE
         CookCommon
         SparkleCore
-    # ShaderCompiler is allowed to depend only on the shared cooked-shader
-    # contract surface from SparkleRHI. Offline DXC ownership stays inside
-    # this tool target and is enforced separately by CMake validation.
+    # ShaderCompiler consumes RHI's cooked-shader contract plus Renderer-owned
+    # shader declarations. It does not link the full renderer runtime.
         SparkleRHI
+        SparkleRendererShaderRegistrations
     ${DXC_IMPORT_LIBRARY}
     # SPIRV-Reflect: SPIR-V → ShaderReflection extractor. Confined to
     # Backends/Dxc/ by the boundary validator.

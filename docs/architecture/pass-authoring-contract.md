@@ -16,7 +16,7 @@ Primary code references:
 - [PassUtilities.h](../../Engine/Renderer/Private/Passes/PassUtilities.h)
 - [FrameGraph.h](../../Engine/Renderer/Private/FrameGraph/FrameGraph.h)
 - [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h)
-- [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders)
+- [Renderer shader registrations](../../Engine/Renderer/ShaderRegistrations)
 - [ShaderCompiler](../../Tools/Shaders/ShaderCompiler)
 
 Reference basis:
@@ -51,7 +51,7 @@ flowchart TD
     PassCpp[Implement pass and DescribeShaderPackage]
     Frame[Wire pass into Frame/* composition]
     Traits[Add RenderPassPipelineTraits specialization]
-    ShaderReg[Add RHI-private shader registration]
+    ShaderReg[Add renderer-owned shader registration]
     Cook[Run ShaderCompiler cook]
     Runtime[PipelineStateManager lazy runtime]
     Execute[FrameGraph executes pass]
@@ -66,14 +66,14 @@ flowchart TD
     Runtime --> Execute
 ```
 
-This flow works, but it violates the target authoring bar because a regular renderer pass can require edits in:
+This flow works, and Stage 4 removes the RHI-private shader registration edit. A regular renderer pass can still require edits in:
 
 - [Engine/Renderer/Private/Passes](../../Engine/Renderer/Private/Passes)
 - [Engine/Renderer/Private/Frame](../../Engine/Renderer/Private/Frame)
 - [Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h)
-- [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders)
+- [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations)
 
-The RHI edit is the key boundary violation. The central traits edit is maintainability debt.
+The renderer-owned shader registration location keeps pass package identity above RHI. The central traits edit remains maintainability debt.
 
 ## Target Authoring Flow
 
@@ -106,8 +106,8 @@ Target rule:
 | Piece | Current owner | Current examples | Target direction |
 | --- | --- | --- | --- |
 | Pass parameter struct | Renderer pass | `GBufferPass::Parameters`, `VisualizeBuffersPassParameters` | Keep in Renderer or neutral shader-authoring layer if shared. |
-| Parameter metadata | Renderer public shader parameter helpers | [ShaderParameters](../../Engine/Renderer/Public/ShaderParameters) | Decide final owner in Stage 4/17. |
-| Shader package declaration | Renderer pass plus RHI-private shader registration | `DescribeShaderPackage`, `IMPLEMENT_GLOBAL_SHADER` files | Move renderer-specific registration above RHI. |
+| Parameter metadata | Renderer public shader parameter helpers | [ShaderParameters](../../Engine/Renderer/Public/ShaderParameters) | Decide final consolidation in Stage 17. |
+| Shader package declaration | Renderer pass plus Renderer-owned shader registration | `DescribeShaderPackage`, [ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations) | Keep renderer pass package identity above RHI. |
 | Graph setup | Renderer frame graph/pass helpers | `AddRasterPass`, `AddComputePass`, `ShaderPass::Setup` | Keep Renderer-owned. |
 | Execute callback | Renderer pass | `GBufferPass::Execute`, `SkyPass::Execute`, etc. | Keep Renderer-owned. |
 | Runtime traits | Renderer pipeline | `RenderPassPipelineTraits<TPass>` | Replace or reduce central trait edits in Stage 16/17. |
@@ -124,7 +124,7 @@ Until Stage 4/16/17 replace the path, a current pass usually needs:
 4. Implement package description with expected stages.
 5. Add frame graph setup/execute wiring in [Frame](../../Engine/Renderer/Private/Frame).
 6. Add runtime creation in [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h).
-7. Add shader registration in [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders). This is current debt.
+7. Add shader registration in [Engine/Renderer/ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations).
 8. Cook/inspect shader package through [ShaderCompiler](../../Tools/Shaders/ShaderCompiler).
 9. Validate pass in D3D12 and Vulkan smoke if shader-visible layout or resource states changed.
 
@@ -161,8 +161,7 @@ It should not require:
 
 | Gap | Evidence | Owning stage |
 | --- | --- | --- |
-| Pass-specific shader registrations live in RHI private files. | [Engine/RHI/Private/Shaders](../../Engine/RHI/Private/Shaders) contains `GBufferShaders.cpp`, `DirectLightingShaders.cpp`, etc. | Stage 4 |
-| RHI private shader registration includes Renderer-private data. | `DirectLightingShaders.cpp` includes `RayTracedShadowUniformData.h`. | Stage 4 |
+| Renderer pass registration still duplicates shader package declarations from pass code. | [ShaderRegistrations](../../Engine/Renderer/ShaderRegistrations) mirrors `DescribeShaderPackage` identity. | Stage 17 |
 | Central traits file grows with pass count. | [RenderPassPipelineTraits.h](../../Engine/Renderer/Private/Pipeline/RenderPassPipelineTraits.h) specializes each pass. | Stage 16, Stage 17 |
 | Adding a pass requires knowing too much about cook/runtime/PSO details. | Pass code, traits, shader registration, cook tooling, and binding validation are separate. | Stage 16, Stage 17 |
 

@@ -1,6 +1,7 @@
 #include "Cli/CommandRegistry.h"
 #include "Cli/ICommand.h"
 #include "Constants/ShaderCompilerConstants.h"
+#include "RendererShaderRegistration.h"
 
 #include <iostream>
 #include <span>
@@ -9,6 +10,8 @@
 
 int main(int argc, char** argv)
 {
+	RegisterRendererGlobalShaders();
+
 	const CommandRegistry registry;
 
 	if (argc >= 2)

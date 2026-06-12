@@ -1,6 +1,8 @@
 #include "PCH.h"
 #include "Renderer.h"
 
+#include "RendererShaderRegistration.h"
+
 #include "Level/LevelManager.h"
 #include "RHI/Public/Device/RenderDeviceServices.h"
 #include "RHI/Public/Device/RenderHardwareInterface.h"
@@ -191,6 +193,8 @@ void Renderer::TransitionRenderProduct(RenderProductHandle handle, ResourceState
 void Renderer::InitializeCoreSystems() noexcept
 {
 	SPARKLE_CPU_SCOPE("Renderer.InitializeCoreSystems");
+
+	RegisterRendererGlobalShaders();
 
 	{
 		SPARKLE_CPU_SCOPE("Renderer.CreateBackend");

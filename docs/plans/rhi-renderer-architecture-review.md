@@ -1,12 +1,13 @@
-# Sparkle RHI and Renderer Architecture Review
+# Sparkle Repository Architecture Review - RHI/Renderer First Track
 
 Status: strategic system-design review draft
 Date: 2026-06-12
-Scope: `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, DLSS/upscaling integration
+Scope: whole-repository architecture, with the first implementation track focused on `Engine/RHI`, `Engine/Renderer`, D3D12, Vulkan, ray tracing, frame graph, shader/pass runtime, DLSS/upscaling integration, and the tool/GameFramework surfaces that those systems depend on.
 
 Companion rubric:
 
 - `docs/plans/architecture-review-acceptance-rubric.md`
+- `docs/plans/sparkle-whole-repository-architecture-review.md`
 
 Execution plan:
 
@@ -15,9 +16,13 @@ Execution plan:
 Tracked architecture status:
 
 - `docs/architecture/rendering-coverage-status.md`
+- `docs/architecture/repository-coverage-status.md`
 
 Reviewer architecture docs:
 
+- `docs/architecture/repository-system-map.md`
+- `docs/architecture/game-framework-contract.md`
+- `docs/architecture/tooling-pipeline-contract.md`
 - `docs/architecture/rendering-glossary.md`
 - `docs/architecture/rendering-system-map.md`
 - `docs/architecture/rhi-contract-map.md`
@@ -27,11 +32,17 @@ Reviewer architecture docs:
 - `docs/architecture/pipeline-runtime-contract.md`
 - `docs/architecture/architecture-boundary-guardrails.md`
 
+Whole-repository review:
+
+- `docs/plans/sparkle-whole-repository-architecture-review.md`
+
 ## Goal
 
-Make SparkleEngine easier to review as a serious renderer/RHI implementation by NVIDIA, AMD, or similar graphics engineers.
+Make SparkleEngine easier to review as a serious renderer, runtime, and tooling repository by NVIDIA, AMD, or similar graphics/system-software engineers.
 
 This document is not a refactor checklist yet. It is a decision aid: what exists, what is unclear, what good public repositories appear to do, how Sparkle's systems currently connect, and what acceptance criteria we should use before moving files or changing APIs.
+
+For the full engine/tooling/content-pipeline review, use [sparkle-whole-repository-architecture-review.md](sparkle-whole-repository-architecture-review.md). This document remains the detailed first-track analysis for RHI, Renderer, backend parity, shader/pass runtime, and graphics validation.
 
 The desired end state:
 
@@ -41,16 +52,22 @@ The desired end state:
 - Less bug-prone.
 - Recognizable to external graphics reviewers.
 - Less manual technical ceremony to add a shader pass.
+- Tooling, GameFramework, editor/application, and content-pipeline contracts that survive RHI/Renderer refactors.
 
 ## External Reference Repositories
 
 These are used as comparison anchors, not as templates to copy blindly.
 
 - NVIDIA Donut: https://github.com/NVIDIA-RTX/Donut
-- NVIDIA NVRHI: https://github.com/NVIDIAGameWorks/nvrhi
+- NVIDIA NVRHI: https://github.com/NVIDIA-RTX/NVRHI
 - NVIDIA Falcor: https://github.com/NVIDIAGameWorks/Falcor
 - AMD Cauldron: https://github.com/GPUOpen-LibrariesAndSDKs/Cauldron
 - AMD FidelityFX SDK: https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK
+- AMD Compressonator: https://github.com/GPUOpen-Tools/compressonator
+- CMake target usage requirements: https://cmake.org/cmake/help/latest/command/target_link_libraries.html
+- Qt model/view programming: https://doc.qt.io/qt-6/model-view-programming.html
+- Khronos glTF 2.0 specification: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
+- Khronos KTX-Software: https://github.com/KhronosGroup/KTX-Software
 
 Observed source-tree patterns:
 
@@ -58,14 +75,31 @@ Observed source-tree patterns:
 - NVRHI is a focused graphics API abstraction library rather than a full renderer.
 - Falcor exposes clear top-level systems such as `RenderGraph`, `RenderPasses`, `Rendering`, `Scene`, and `Core/API`.
 - Cauldron visibly separates `src/common`, `src/DX12`, and `src/VK`, keeping backend code obvious from the folder tree.
+- CMake target usage requirements make dependency intent visible through `PUBLIC`, `PRIVATE`, and `INTERFACE` links.
+- Qt model/view separation is the right reference shape for `SparkleLauncher`: core operations and UI models should stay separate from widgets.
+- glTF and KTX both reinforce the tool/runtime split: source delivery and cooked/runtime artifacts need explicit schemas and validators.
 
 ## Current Sparkle Map
 
 Current rough file count from local inventory:
 
-- `Engine/Application`: 32 C++ files, 3,734 lines.
-- `Engine/RHI`: 196 C++ files, with 44 public and 152 private/backend files.
-- `Engine/Renderer`: 231 C++ files, with 27 public and 204 private files.
+| Root | C/C++ files | Architecture concern |
+| --- | ---: | --- |
+| `Engine/Core` | 83 | Foundation helpers must not absorb platform, renderer, or tool policy. |
+| `Engine/Platform` | 11 | OS/window/input abstraction must stay below renderer/editor policy. |
+| `Engine/RHI` | 189 | GPU/API contract and backend implementation require strict renderer/tool boundaries. |
+| `Engine/Renderer` | 240 | Render intent, frame graph, passes, shader registrations, and feature systems must stay above RHI and below host/editor policy. |
+| `Engine/GameFramework` | 185 | Runtime scene and cooked asset ownership must stay source-import/cook-tool free. |
+| `Engine/Editor` | 58 | Editor UI must not absorb cook/import or backend-native validation internals. |
+| `Engine/Application` | 32 | Host orchestration must avoid backend-native capture and tool implementation ownership. |
+| `Tools/Launcher` | 103 | Developer workflow product must orchestrate processes without duplicating focused tool algorithms. |
+| `Tools/Shaders` | 110 | Shader toolchain must stay compatible with renderer pass authoring and RHI shader primitives. |
+| `Tools/Cooking` | 106 | Cook pipeline must produce stable runtime artifacts without leaking source logic into runtime modules. |
+| `Tools/Import` | 85 | Source adapters must translate external source assets into imported DTOs with diagnostics. |
+| `Tools/Conversion` | 4 | Debug conversion CLI must not become a second cook architecture. |
+
+Important rendering interface sizes:
+
 - `RenderHardwareInterface.h`: 154 lines, 68 virtual declarations.
 - `RenderCommandList.h`: 87 lines, 40 virtual declarations.
 
@@ -93,12 +127,16 @@ Observed include/module edge counts from local scan:
 | Application -> RHI | 4 | Acceptable only for validation/host presentation boundaries; should be watched. |
 | Renderer -> RHI | 121 | Expected, but should route through stable contracts. |
 | Renderer -> GameFramework | 34 | Expected while renderer consumes scene/camera/level data; should ideally pass through render snapshots. |
-| RHI -> Renderer | 1 | Architectural violation; RHI includes renderer-private pass data. |
+| RHI -> Renderer | 0 | Stage 4 moved renderer pass shader registrations out of RHI. This must stay mechanically checked. |
+| ShaderCompiler -> RHI/Renderer shader registration | narrow | Expected for shader package/reflection primitives and renderer-owned pass registrations; must not become full renderer runtime ownership. |
+| Cook tools -> GameFramework/RHI public contracts | expected | Tools write cooked runtime artifacts and may use public schemas; runtime modules must not depend on tool internals. |
+| Launcher -> tools/processes | expected | Launcher owns workflow orchestration, not tool algorithms. |
 
 Concrete boundary violations or exceptions:
 
-- `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` includes `Renderer/Private/RayTracing/RayTracedShadowUniformData.h`.
+- Stage 4 removed the RHI-to-Renderer shader registration violation by moving renderer pass registrations to `Engine/Renderer/ShaderRegistrations`.
 - `Engine/Application/Private/Validation/RhiSmokeEditorValidation.cpp` contains direct D3D12 capture code using `ID3D12Device`, `ID3D12CommandQueue`, and `ID3D12Resource`. This may be acceptable as temporary validation code, but architecturally it should move behind RHI capture/readback services or a backend-owned validation helper.
+- `Engine/Renderer/CMakeLists.txt` and Streamline DLSS runtime still carry documented Stage 9 Vulkan/native interop exceptions.
 
 ## Whole-Codebase Coverage Audit
 
@@ -111,6 +149,23 @@ Coverage rule:
 - Every folder must have a target contract.
 - Every folder must have acceptance evidence.
 - Any folder that cannot be explained in this table is architectural debt.
+
+### Whole-Repository Coverage Extension
+
+The detailed tables below remain the first-track RHI/Renderer audit. The whole-repository extension is tracked in [repository-coverage-status.md](../architecture/repository-coverage-status.md) and [repository-system-map.md](../architecture/repository-system-map.md). Future RHI/Renderer refactors must evaluate these adjacent owners before acceptance.
+
+| Area | Current responsibility | Why it matters to RHI/Renderer refactors | Target quality bar / acceptance evidence |
+| --- | --- | --- | --- |
+| `Engine/Core` | Foundation diagnostics, math, files, strings, events, time, input value types. | Every module depends on it; misplaced policy here spreads everywhere. | Core stays policy-free and has no renderer/tool/platform ownership leakage. |
+| `Engine/Platform` | Window/input/platform integration. | Application, renderer presentation, launcher, and editor behavior depend on stable host contracts. | Platform owns OS behavior only; renderer/editor policy stays above it. |
+| `Engine/GameFramework` | Runtime scenes, levels, components, cooked asset loading, gameplay-facing data. | Renderer consumes scene data, while tools produce cooked assets GameFramework loads. | GameFramework remains cooked-data/runtime-scene oriented and exposes immutable renderer-facing snapshots. |
+| `Engine/Editor` and `Engine/Application` | Host/editor orchestration, editor UI, smoke validation. | Validation and viewport behavior can accidentally own backend or cook implementation details. | Host layers orchestrate systems and report evidence; backend-native and cook logic live in their owning modules. |
+| `Tools/Launcher/SparkleLauncher` | Developer build/cook/launch/maintenance workflows and Qt UI. | Final review depends on repeatable launcher evidence and tool discovery. | Launcher invokes focused tools/processes and keeps UI models separate from operation execution. |
+| `Tools/Shaders/ShaderCompiler` | Shader compile, reflection, cook packages, verification, inspection. | Renderer pass authoring and PSO runtime depend on stable shader package/reflection output. | ShaderCompiler can enumerate/cook/inspect renderer packages without RHI-specific renderer pass edits. |
+| `Tools/Import/SourceImportAdapters` | External source format import into imported DTOs. | Source import must not leak into GameFramework or Renderer runtime. | Import adapters produce source diagnostics and imported DTOs only. |
+| `Tools/Cooking/*` | Texture, mesh, material, scene, and project-level asset cooking. | Cooked schemas must stay aligned with GameFramework loaders, Renderer resource managers, and RHI upload contracts. | Focused cookers own transformations; AssetCooker orchestrates and reports process evidence. |
+| `Tools/Conversion/AssetConverter` | Direct developer/debug conversion CLI. | Legacy debug paths can diverge from AssetCooker and focused cookers. | Converter stays a thin debug surface or is folded into the main cook workflow. |
+| `CMake`, `.github`, `Projects`, `docs` | Build profiles, CI, sample content, and architecture records. | Refactors fail review if validation commands, sample content, or docs drift. | Build/CI/docs/sample status agree with code and final evidence. |
 
 ### Renderer Private Coverage
 
@@ -157,7 +212,7 @@ Coverage rule:
 | `Commands` | 1 / 83 | RHI command-list interface. | Central contract, should remain GPU/API level. | Command list exposes explicit resource state, draw/dispatch/copy/RT build operations with no renderer pass concepts. |
 | `Resources` | 8 / 529 | RHI texture/resource descriptors, views, constants, uploads. | Core abstraction surface. Must be exact and backend-neutral. | Resource descriptors map cleanly to D3D12/Vulkan. State/layout/view/subresource rules are documented. |
 | `Pipeline` | 1 / 143 | Pipeline state descriptions. | Needs to become part of explicit PSO key/runtime model. | Pipeline desc is normalized and sufficient for both D3D12 and Vulkan PSO creation. |
-| `Shaders` | 9 / 1,505 | Cooked packages, reflection, bytecode, package layout, authoring primitives. | Valuable infrastructure, but renderer pass registration currently lives in RHI private code. | RHI shader public types are generic package/reflection/runtime primitives only. Renderer-specific pass declarations live above RHI. |
+| `Shaders` | 9 / 1,505 | Cooked packages, reflection, bytecode, package layout, authoring primitives. | Valuable infrastructure; Stage 4 moved renderer pass registration above RHI, so this surface must stay generic. | RHI shader public types are generic package/reflection/runtime primitives only. Renderer-specific pass declarations live above RHI. |
 | `ShaderParameters` | 2 / 258 | Parameter layout and semantics. | Potential overlap with Renderer public shader parameters. | Ownership decision made: lower shared shader-authoring primitives vs renderer pass parameter authoring. No circular dependency. |
 | `Bindings` | 1 / 30 | Binding set public type. | Small surface; tied to descriptor/pipeline model. | Binding sets are backend-neutral and validated against reflection/layout. |
 | `Descriptors` | 1 / 36 | Descriptor handle abstractions. | Thin and likely okay. | Handle lifetime and shader-visible/CPU-only distinction documented. |
@@ -180,7 +235,7 @@ Coverage rule:
 | `Core` | 1 / 131 | Backend selection. | Fine if kept policy-only. | Backend selection logs selected API, fallback reason, and feature limits. |
 | `CVars` | 1 / 7 | RHI CVars implementation. | Tiny. | RHI CVars documented and not used as hidden architecture switches. |
 | `Device` | 5 / 229 | Backend factory/services/capability log formatting. | Good composition boundary. | Backend service creation is the only D3D12/Vulkan selection point. Capability logs are consistent across APIs. |
-| `Shaders` | 17 / 1,881 | Builtin/global shader registration, cooked shader package cache/utils, package layout builder, ray tracing metadata validation. | Mixed responsibility: generic shader runtime plus renderer pass declarations. | Split generic shader infrastructure from renderer shader registration. Package cache/layout builder remain backend-neutral. |
+| `Shaders` | 17 / 1,881 | Builtin/global shader infrastructure, cooked shader package cache/utils, package layout builder, ray tracing metadata validation. | Stage 4 moved renderer pass registrations above RHI; remaining risk is keeping generic package/layout/runtime primitives free of pass policy. | Package cache/layout builder remain backend-neutral. New renderer passes register through Renderer or a lower shader-authoring layer, not RHI. |
 | `Validation` | 2 / 256 | RHI validation helpers. | Good foundation. | Validation becomes mandatory in development paths for resource descs, bindings, RT metadata, and unsupported feature use. |
 
 ### D3D12 Backend Coverage
@@ -575,23 +630,23 @@ Acceptance criteria:
 - No renderer feature requires adding a backend-specific convenience method to the root RHI facade unless it passes an explicit review note.
 - New external SDK interop goes through `IRhiExternalInterop`-style capability/resource metadata, not ad hoc API-specific calls in renderer passes.
 
-### 2. Shader Registration Lives In RHI But Reaches Into Renderer
+### 2. Shader Registration Ownership
 
-Concrete finding:
+Resolved finding to keep guarded:
 
-`Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` includes:
+Before Stage 4, `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp` included:
 
 ```cpp
 #include "Renderer/Private/RayTracing/RayTracedShadowUniformData.h"
 ```
 
-That violates the stated layer order:
+That violated the stated layer order:
 
 ```text
 Core -> Platform -> RHI -> Renderer -> GameFramework -> Editor/Application
 ```
 
-This is the clearest current separation-of-concerns issue. RHI should not include renderer-private pass data.
+That was the clearest separation-of-concerns issue in the first RHI/Renderer pass. RHI must not include renderer-private pass data, and the mechanical boundary check now protects this rule.
 
 Hard acceptance criterion:
 
@@ -631,14 +686,16 @@ Acceptance criteria:
 - Adding Bloom, SSAO, SSR, a debug visualization, a lighting variant, or a material shader requires no RHI edit.
 - RHI edits for shader/pass work are allowed only when the pass needs a new GPU capability or API abstraction.
 
-Current renderer pass declarations living in RHI:
+Current renderer pass declarations now live above RHI:
 
-- `Engine/RHI/Private/Shaders/GBufferShaders.cpp`
-- `Engine/RHI/Private/Shaders/DirectLightingShaders.cpp`
-- `Engine/RHI/Private/Shaders/IndirectLightingShaders.cpp`
-- `Engine/RHI/Private/Shaders/LightingCompositeShaders.cpp`
-- `Engine/RHI/Private/Shaders/SkyShaders.cpp`
-- `Engine/RHI/Private/Shaders/VisualizeBuffersShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/GBufferShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/IndirectLightingShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/LightingCompositeShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/SkyShaders.cpp`
+- `Engine/Renderer/ShaderRegistrations/VisualizeBuffersShaders.cpp`
+
+RHI keeps generic shader package, reflection, layout, runtime, and genuinely builtin test shader infrastructure.
 
 Correct boundary:
 

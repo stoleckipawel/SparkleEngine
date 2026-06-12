@@ -4,10 +4,11 @@ Status: Stage 1 baseline
 Date: 2026-06-12
 Source plan: `docs/plans/rhi-renderer-review-ready-implementation-plan.md`
 Source audit: `docs/plans/rhi-renderer-architecture-review.md`
+Whole-repository status: `docs/architecture/repository-coverage-status.md`
 
 ## Purpose
 
-This document is the tracked status map for the Renderer/RHI review-ready refactor. It converts the prose coverage audit into an evidence table so every subsystem has an owner, a risk, a stage, and a final acceptance target.
+This document is the detailed status map for the Renderer/RHI review-ready refactor. It converts the prose coverage audit into an evidence table so every rendering subsystem has an owner, a risk, a stage, and a final acceptance target. Whole-repository coverage for GameFramework, tools, launcher, CMake, CI, projects, and docs lives in [repository-coverage-status.md](repository-coverage-status.md).
 
 This is an evidence-freeze stage. No runtime code is changed here.
 
@@ -46,12 +47,12 @@ Verification snapshot:
 
 | Scope | Files | Coverage result |
 | --- | ---: | --- |
-| `Engine/Renderer` | 232 | Mapped to Renderer private/public/module-support rows. |
-| `Engine/RHI` | 197 | Mapped to RHI public/common/D3D12/Vulkan/module-support rows. |
+| `Engine/Renderer` | 241 | Mapped to Renderer private/public/module-support rows, including renderer-owned shader registrations. |
+| `Engine/RHI` | 190 | Mapped to RHI public/common/D3D12/Vulkan/module-support rows. |
 | `Engine/Application/Private/Validation` | 3 | Mapped to supporting validation rows. |
 | `Tools/Launcher/SparkleLauncher/Private/Launch/Smoke` | 2 | Mapped to supporting validation rows. |
 | `Tools/Shaders/ShaderCompiler` | 111 | Mapped to shader compiler and cooking rows. |
-| Total tracked files | 545 | 545 mapped. |
+| Total tracked files | 547 | 547 mapped. |
 | Unmapped files | 0 | None. |
 
 Shader-source check:
@@ -68,6 +69,7 @@ Mapping rules:
 | --- | --- |
 | `Engine/Renderer/CMakeLists.txt` | Renderer module build contract. |
 | `Engine/Renderer/Private/PCH.h` | Renderer private module support. |
+| `Engine/Renderer/ShaderRegistrations/**` | Renderer-owned shader registration row under module build/support coverage. |
 | `Engine/Renderer/Private/Renderer.cpp` | `Renderer.cpp` root orchestration. |
 | `Engine/Renderer/Private/{Camera,Commands,Debug,Diagnostics,Frame,FrameGraph,Meshes,Passes,Pipeline,RayTracing,SceneData,Temporal,Textures,Upscaling}/**` | Matching Renderer Private Coverage row. |
 | `Engine/Renderer/Public/Renderer.h`, `Engine/Renderer/Public/RendererAPI.h` | `Renderer.h` / `RendererAPI.h`. |
@@ -93,9 +95,9 @@ Confidence rule: a later implementation stage is not considered ready if this in
 
 Explicit scope boundary:
 
-- In scope: `Engine/Renderer`, `Engine/RHI`, RHI smoke validation under `Engine/Application/Private/Validation`, launcher smoke operations, and `Tools/Shaders/ShaderCompiler`.
-- Out of scope for this document: generated/local folders, non-rendering engine modules, non-shader tools, project content, and launcher UI outside the RHI smoke workflow.
-- If a later implementation stage needs to edit an out-of-scope file, that stage must first add a coverage row here or create a linked status document for that subsystem.
+- In scope here: `Engine/Renderer`, `Engine/RHI`, RHI smoke validation under `Engine/Application/Private/Validation`, launcher smoke operations, and `Tools/Shaders/ShaderCompiler`.
+- Whole-repository scope: use [repository-coverage-status.md](repository-coverage-status.md) for Core, Platform, GameFramework, Editor, Application host surfaces outside RHI smoke validation, launcher UI/workflows, source import, cookers, conversion tools, CMake, CI, projects, and docs.
+- If a later implementation stage needs to edit an out-of-scope file, that stage must first update [repository-coverage-status.md](repository-coverage-status.md) or add a linked subsystem status document.
 
 ## Module Build And Support Coverage
 
@@ -105,6 +107,7 @@ These rows were added during the file-level confrontation because module build/s
 | --- | --- | --- | --- | --- | --- | --- |
 | `Engine/Renderer/CMakeLists.txt` | Needs refactor | Renderer module build contract | Build dependencies can hide architecture cycles and make feature ownership unclear. | Stage 3, Stage 4, Stage 22 | CMake configure and `SparkleLauncher` build after dependency changes. | Renderer target links only the layers it should own, and dependency intent is documented. |
 | `Engine/Renderer/Private/PCH.h` | Accepted | Renderer private module support | PCH can hide include debt if later refactors are not checked. | Preserve through Stage 22 | Include review during final cleanup. | PCH remains a compile-speed helper only and does not become an architecture dependency shortcut. |
+| `Engine/Renderer/ShaderRegistrations` | Needs refactor | Renderer shader registration ownership | Renderer pass registration moved above RHI in Stage 4, but package declarations still duplicate pass runtime descriptions. | Stage 4, Stage 17, Stage 22 | `ShaderCompiler` package enumeration. | Ordinary renderer shader packages are owned above RHI and final pass definition work removes unnecessary duplication. |
 | `Engine/RHI/CMakeLists.txt` | Needs refactor | RHI module build contract | Backend-specific dependencies can leak into common RHI or renderer-facing code. | Stage 3, Stage 4, Stage 19, Stage 22 | CMake configure and D3D12/Vulkan runtime builds after dependency changes. | Common RHI, D3D12, Vulkan, shader runtime, and optional SDK dependencies are separated intentionally. |
 | `Engine/RHI/Private/PCH.h` | Accepted | RHI private module support | PCH can hide backend include coupling. | Preserve through Stage 22 | Include review during final cleanup. | PCH remains common support and does not include backend policy. |
 | `Engine/RHI/Public/RHIAPI.h` | Accepted | RHI public ABI/export boundary | Export macro policy is small but must remain the only public module linkage helper. | Preserve through Stage 22 | Header include/build check. | Public API macro remains isolated and has no renderer/backend policy. |
@@ -154,7 +157,7 @@ These rows were added during the file-level confrontation because module build/s
 | `Commands` | Needs design decision | RHI command service | Command-list surface must remain GPU/API level and not absorb renderer pass policy. | Question: which commands stay root command-list operations versus service helpers? Stage 6, Stage 19 | Command contract map. | Command list exposes GPU/API operations with no renderer concepts. |
 | `Resources` | Needs refactor | RHI resource service | Resource descriptors/state/view rules must map cleanly to both APIs. | Stage 6, Stage 7, Stage 19 | Resource contract doc. | Resource descriptors, state/layout, view, and subresource rules are documented and parity-tested. |
 | `Pipeline` | Needs refactor | RHI pipeline service | Pipeline desc must align with explicit PSO key/runtime model. | Stage 16, Stage 19, Stage 20 | PSO key/runtime logs. | Pipeline desc is normalized and sufficient for D3D12/Vulkan PSO creation. |
-| `Shaders` | Needs refactor | RHI shader package/runtime primitives | Renderer pass registration currently lives in RHI private code. | Stage 4, Stage 16, Stage 17 | ShaderCompiler build and package enumeration. | RHI shader public types are generic package/reflection/runtime primitives only. |
+| `Shaders` | Needs refactor | RHI shader package/runtime primitives | Stage 4 moved renderer pass registration above RHI; the remaining risk is generic shader package/runtime primitives absorbing pass policy. | Stage 4, Stage 16, Stage 17 | ShaderCompiler build and package enumeration. | RHI shader public types are generic package/reflection/runtime primitives only. |
 | `ShaderParameters` | Needs design decision | RHI or neutral shader authoring boundary | Ownership overlaps Renderer public shader parameters. | Question: what is the lower shared owner for parameter primitives and what stays pass-specific? Stage 4, Stage 17 | Shader authoring design note. | No circular dependency; pass-specific parameters stay above RHI. |
 | `Bindings` | Needs refactor | RHI binding layout service | Binding sets need validation against reflection/layout. | Stage 16, Stage 19 | Binding layout validation logs. | Binding sets are backend-neutral and validated against reflection/layout. |
 | `Descriptors` | Needs refactor | RHI descriptor service | Handle lifetime and shader-visible versus CPU-only policy needs documentation. | Stage 6, Stage 19 | Descriptor ownership table. | Descriptor lifetime and visibility policy are documented and backend-parity checked. |
@@ -177,7 +180,7 @@ These rows were added during the file-level confrontation because module build/s
 | `Core` | Needs refactor | RHI backend selection | Backend selection should log selected API and fallback reasons. | Stage 6, Stage 20 | Backend selection log. | Backend selection is policy-only and logs backend/fallback/feature limits. |
 | `CVars` | Needs refactor | RHI runtime config | RHI CVars should not be hidden architecture switches. | Stage 21, Stage 22 | README/config docs. | RHI CVars are documented or removed if not needed. |
 | `Device` | Needs refactor | RHI backend factory/services | Device services are a good boundary but need method ownership alignment. | Stage 6, Stage 19 | RHI method ownership table. | Backend service creation is the only backend selection point and capability logs are consistent. |
-| `Shaders` | Needs refactor | RHI shader infrastructure | Mixed generic shader runtime and renderer pass declarations. | Stage 4, Stage 16, Stage 17 | ShaderCompiler build/package enumeration. | Generic shader infrastructure remains; renderer registrations move above RHI. |
+| `Shaders` | Needs refactor | RHI shader infrastructure | Renderer registrations have moved above RHI; generic shader infrastructure still needs package/layout/runtime ownership tightening. | Stage 4, Stage 16, Stage 17 | ShaderCompiler build/package enumeration. | Generic shader infrastructure remains in RHI while renderer registrations stay above RHI. |
 | `Validation` | Needs refactor | RHI validation implementation | Validation must become mandatory for development paths. | Stage 3, Stage 14, Stage 20 | Validation and smoke logs. | Development paths validate resources, bindings, RT metadata, and unsupported features. |
 
 ## D3D12 Backend Coverage
