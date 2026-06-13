@@ -417,17 +417,17 @@ Stage-local source references name the immediate review/code context. The target
 | 7 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 8 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-system-map.md](../architecture/repository-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 9 | [rendering-system-map.md](../architecture/rendering-system-map.md), [upscaler-provider-contract.md](../architecture/upscaler-provider-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
-| 10 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 10 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 11 | [rendering-system-map.md](../architecture/rendering-system-map.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 12 | [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [game-framework-contract.md](../architecture/game-framework-contract.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 13 | [game-framework-contract.md](../architecture/game-framework-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 14 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
-| 15 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 15 | [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 16 | [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 17 | [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 18 | [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [frame-graph-contract.md](../architecture/frame-graph-contract.md), [pass-authoring-contract.md](../architecture/pass-authoring-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 19 | [rhi-contract-map.md](../architecture/rhi-contract-map.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
-| 20 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
+| 20 | [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 21 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [system-design-index.md](../architecture/after/system-design-index.md), [docs README](../README.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 22 | [architecture-review-acceptance-rubric.md](architecture-review-acceptance-rubric.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-refactor-stage-map.md](after/repository-refactor-stage-map.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
 | 23 | [repository-system-map.md](../architecture/repository-system-map.md), [repository-coverage-status.md](../architecture/repository-coverage-status.md), [repository-current-state.md](../architecture/before/repository-current-state.md), [repository-target-architecture.md](../architecture/after/repository-target-architecture.md), [repository-target-folder-architecture.md](../architecture/after/repository-target-folder-architecture.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md) |
@@ -1243,7 +1243,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 10 row.
-- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
+- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1261,7 +1261,7 @@ Tutor note:
 Implementation prompt:
 
 ```text
-Using Donut Samples, NVRHI tutorial practices, Vulkan validation layers, and Streamline diagnostics as references, build the affected editor/runtime targets and run smoke validation for D3D12 and Vulkan with lit and debug/normal captures. Verify Application has no backend-native capture code and DLSS reports active provider or deterministic fallback. Record exact commands and artifacts.
+Using Donut Samples, NVRHI tutorial practices, Vulkan validation layers, Streamline diagnostics, and the local validation workflow contract as references, build the affected editor/runtime targets and run smoke validation for D3D12 and Vulkan with lit and debug/normal captures. Prefer the Launcher smoke workflow. If executing the project executable directly for automation, mirror `LaunchOperationPlan`: `RunProject`, `Showcase`, target/profile, `Projects/Showcase` working directory, smoke environment fields, logs, and artifact paths. Verify Application has no backend-native capture code and DLSS reports active provider or deterministic fallback. Record exact commands, launcher-plan fields, and artifacts.
 ```
 
 Positive guardrails:
@@ -1270,17 +1270,20 @@ Positive guardrails:
 - Capture logs and screenshots/BMPs with backend and view mode in file names.
 - Treat frame graph unresolved handles as a failure.
 - Treat silent DLSS fallback as a failure.
+- Use launcher-shaped validation: same project working directory, target/profile, smoke environment, logs, and artifact naming that the launcher operation plan would use.
 
 Negative guardrails:
 
 - Do not accept "it launched" without capture/log evidence.
 - Do not compare D3D12 and Vulkan only in lit mode; include normal/debug view mode.
+- Do not close the milestone with a direct executable run that does not mirror the launcher launch contract.
 
 Data transfer contracts:
 
 - Milestone evidence transfers through smoke logs, capture artifacts, backend capability reports, and coverage-status updates.
 - Each validation artifact must name backend, scene/project, view mode, frame count, feature flags, output paths, and command.
 - DLSS/upscaler and capture status must be reported as structured state, not inferred from screenshots alone.
+- Each editor/runtime launch must name whether it was run through Launcher, LauncherCore plan, or launcher-shaped direct execution.
 
 Suggested validation:
 
@@ -1320,11 +1323,11 @@ Acceptance:
 | Format command | `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target clang_format_check -- /nologo /v:minimal` could not run because this build tree does not generate `clang_format_check.vcxproj`. |
 | Boundary command | `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with provider-owned counted exceptions only: `SparkleRendererNvidiaDlssProvider` Vulkan linkage and `StreamlineDlssRuntime.cpp` Vulkan identifiers. |
 | Application native-header scan | `rg -n "#include <d3d12|#include <vulkan|ID3D12|D3D12_|Vk[A-Z]|vk[A-Z]|Vulkan/|D3D12/" Engine/Application/Private/Validation` returned no matches. |
-| Editor smoke command shape | Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/editor/DevelopmentEditor/ShowcaseEditor.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE_FRAME=30`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, view mode `0`/`3`, per-run `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`, `SPARKLE_LOG_FILE`, and console capture. |
+| Editor smoke command shape | Launcher-shaped direct execution of the `RunProject` smoke path for `Showcase` editor. Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/editor/DevelopmentEditor/ShowcaseEditor.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE_FRAME=30`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, view mode `0`/`3`, per-run `SPARKLE_SMOKE_SCENE_COLOR_CAPTURE`, `SPARKLE_LOG_FILE`, and console capture. |
 | Editor capture artifacts | `artifacts/validation/stage10/d3d12-lit.bmp`, `d3d12-normal.bmp`, `vulkan-lit.bmp`, and `vulkan-normal.bmp` exist. Each is a 32-bit BMP with `BM` signature, 21,608,214 bytes, and dimensions recorded as width 4578 and top-down height 1180. |
 | Editor D3D12 smoke | Lit and GBufferNormal runs exited `0`; logs report `backend=D3D12`, `frameGraphUnresolvedBarrierWarnings=0`, `upscalerProvider='NVIDIA DLSS'`, `upscalerStatus=Active`, `failureDomain=None`, `rayTracing=true`, `inlineRayQuery=true`, and capture paths at frame 30. |
 | Editor Vulkan smoke | Lit and GBufferNormal runs exited `0`; logs report `backend=Vulkan`, `frameGraphUnresolvedBarrierWarnings=0`, `upscalerProvider='NVIDIA DLSS'`, `upscalerStatus=Active`, `failureDomain=None`, `rayTracing=true`, `inlineRayQuery=true`, and capture paths at frame 30. |
-| Runtime smoke command shape | Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/runtime/DevelopmentEditor/ShowcaseRuntime.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, per-run `SPARKLE_LOG_FILE`, and console capture. |
+| Runtime smoke command shape | Launcher-shaped direct execution of the `RunProject` smoke path for `Showcase` runtime. Working directory `Projects/Showcase`; executable `artifacts/dev/projects/Showcase/runtime/DevelopmentEditor/ShowcaseRuntime.exe`; env: `SPARKLE_SMOKE_VALIDATE_RHI=1`, `SPARKLE_SMOKE_FRAME_LIMIT=120`, `SPARKLE_SMOKE_SKIP_LEVEL_SWITCHING=1`, backend `D3D12`/`Vulkan`, per-run `SPARKLE_LOG_FILE`, and console capture. |
 | Runtime D3D12 smoke | Run exited `0`; `artifacts/validation/stage10/d3d12-runtime.log` reports `frameGraphUnresolvedBarrierWarnings=0`, DLSS active, `failureDomain=None`, ray tracing enabled, and no error/critical lines. |
 | Runtime Vulkan smoke | Run exited `0` and reports DLSS active with `failureDomain=None`, ray tracing enabled, and `frameGraphUnresolvedBarrierWarnings=0`, but `artifacts/validation/stage10/vulkan-runtime.log` contains validation-layer errors at `VulkanRhi.cpp:750`: `vkQueueSubmit()` expects swapchain images in `VK_IMAGE_LAYOUT_PRESENT_SRC_KHR` while current layout is `VK_IMAGE_LAYOUT_UNDEFINED`. |
 | Artifact index | Editor matrix: `artifacts/validation/stage10/stage10-smoke-results.json`. Runtime matrix: `artifacts/validation/stage10/stage10-runtime-results.json`. Logs and console output sit beside each BMP using backend/view-mode/runtime names. |
@@ -1411,6 +1414,22 @@ Acceptance:
 Validation:
 
 - Defer full build to Stage 15 unless refactor creates obvious compile blockers.
+
+Completion evidence:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed for facade decomposition, system-root ownership, frame-pipeline extraction, CMake source discovery, and targeted build validation. Full D3D12/Vulkan launcher-shaped smoke remains Stage 15. |
+| Renderer facade | `Engine/Renderer/Private/Renderer.cpp` now delegates host API calls to `RendererSystemRoot` and `FramePipeline`. It no longer owns backend construction, scene systems, frame graph construction, resize handling, frame context build, frame graph setup/compile/execute, or frame submission. |
+| System root | `Engine/Renderer/Private/Host/RendererSystemRoot.*` owns subsystem construction/lifetime for backend services, pipeline manager, mesh/texture/material/scene builders, ray tracing scene/settings, upscaler subsystem, memory monitor, and scene coordinator. Dependencies are passed at construction rather than fetched through globals. |
+| Frame pipeline | `Engine/Renderer/Private/FramePipeline/FramePipeline.*` owns resize tracking, frame graph lifetime, viewport products, frame diagnostics, begin/setup/record/submit/end frame, frame context build, frame graph setup/compile/execute, RT/TLAS binding, and upscaler frame setup. |
+| Public API stability | `Renderer.h` keeps the existing host-facing API and RHI include behavior so Application/Editor callers do not need Stage 12 migration yet. Private feature systems are not exposed through `Renderer.h`; the class owns only `RendererSystemRoot` and `FramePipeline`. |
+| CMake ownership | `Engine/Renderer/CMakeLists.txt` now uses `CONFIGURE_DEPENDS` for renderer public/private source globs so new source files under renderer ownership enter the generated build graph predictably. |
+| Data transfer contract | Host data still enters through `Renderer` public API. Frame state moves into `FramePipeline` through explicit references to `RendererSystemRoot`, `FrameContext`, frame graph products, pass runtime services, and diagnostics. Feature systems receive dependencies from `RendererSystemRoot`; no singleton/global access path was introduced. |
+| Threading readiness handoff | The extraction makes future render-thread work easier by isolating mutable lifetime ownership in `RendererSystemRoot` and per-frame graph/diagnostic state in `FramePipeline`. Frame setup, compile, record, submit, and diagnostics are now named phases. |
+| Validation | `cmake -S . -B build/windows-vs2026-stage5 -G "Visual Studio 18 2026" -A x64` passed; `cmake --build build/windows-vs2026-stage5 --config DevelopmentEditor --target ShowcaseEditor -- /nologo /v:minimal /m:1` passed; `SparkleLauncher` passed; `cmake -DSPARKLE_REPO_ROOT="$PWD" -P CMake/ArchitectureBoundaryCheck.cmake` passed with only provider-owned counted exceptions. Source text hygiene scan over changed renderer source found no planning/stage/provenance text. |
+| Validation notes | `clang-format` is not discoverable in this shell, so formatting target validation remains unavailable. Configure still emits existing third-party developer warnings from Assimp custom commands and FetchContent deprecation in RHI dependencies. `SparkleLauncher` Qt deploy still warns that `VCINSTALLDIR` is not set after producing the executable. |
+| Remaining risk | Stage 12 still owns public host protocol cleanup for render-product texture/resource resolution and manual transition helpers. Stage 15 owns launcher-shaped D3D12/Vulkan smoke after frame facade/presentation work. |
 
 ## Stage 12 - Add Viewport Presentation Bridge And Clean Host Protocol
 
@@ -1653,7 +1672,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 15 row.
-- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
+- Primary target docs: [frame-graph-contract.md](../architecture/frame-graph-contract.md), [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [architecture-boundary-guardrails.md](../architecture/architecture-boundary-guardrails.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-target-graphs.md](../architecture/after/repository-target-graphs.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -1670,7 +1689,7 @@ Tutor note:
 Implementation prompt:
 
 ```text
-Using NVRHI tutorial validation, Donut Samples, and Vulkan validation layers as references, build the editor/runtime targets and run D3D12/Vulkan smoke validation with lit and debug/normal view modes. Confirm frame graph diagnostics are clean, render products present correctly, and Application no longer owns renderer resource transitions.
+Using NVRHI tutorial validation, Donut Samples, Vulkan validation layers, and the local validation workflow contract as references, build the editor/runtime targets and run D3D12/Vulkan smoke validation with lit and debug/normal view modes. Prefer the Launcher smoke workflow; if using direct execution, mirror `LaunchOperationPlan` exactly for target/profile, `Projects/Showcase` working directory, smoke environment, logs, and artifacts. Confirm frame graph diagnostics are clean, render products present correctly, and Application no longer owns renderer resource transitions.
 ```
 
 Positive guardrails:
@@ -1678,17 +1697,20 @@ Positive guardrails:
 - Validate window resize/restore/maximize if smoke supports it.
 - Validate shader reload if the current milestone touched pipeline/runtime ownership.
 - Capture frame graph diagnostic output.
+- Record launcher-plan fields or launcher-shaped direct execution fields for every editor/runtime smoke run.
 
 Negative guardrails:
 
 - Do not move into PSO/pass runtime redesign with unresolved frame graph warnings.
 - Do not accept editor viewport presentation if it only works through legacy transition helpers.
+- Do not accept a manually launched executable if it used a different working directory, project, target profile, smoke environment, or artifact path than the launcher workflow.
 
 Data transfer contracts:
 
 - Validation transfers renderer facade, presentation bridge, frame graph, and shader reload evidence through logs and coverage-status updates.
 - Smoke evidence must name backend, view mode, render product path, frame graph warning count, and whether legacy transition helpers were used.
 - If validation fails, record the failing contract owner: host protocol, presentation bridge, frame graph, RHI, or shader runtime.
+- Launch evidence must name whether the run used Launcher, LauncherCore plan, or launcher-shaped direct execution.
 
 Suggested validation:
 
@@ -2049,7 +2071,7 @@ Goal:
 Target shape references:
 
 - Stage target-doc checklist: [Required Target Documents By Stage](#required-target-documents-by-stage), Stage 20 row.
-- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
+- Primary target docs: [rendering-coverage-status.md](../architecture/rendering-coverage-status.md), [rendering-system-map.md](../architecture/rendering-system-map.md), [rhi-contract-map.md](../architecture/rhi-contract-map.md), [ray-tracing-contract.md](../architecture/ray-tracing-contract.md), [pipeline-runtime-contract.md](../architecture/pipeline-runtime-contract.md), [tooling-pipeline-contract.md](../architecture/tooling-pipeline-contract.md), [validation-workflow-contract.md](../architecture/validation-workflow-contract.md), [repository-threading-readiness.md](../architecture/after/repository-threading-readiness.md)
 
 External implementation references:
 
@@ -2068,7 +2090,7 @@ Tutor note:
 Implementation prompt:
 
 ```text
-Using Donut Samples, NVRHI tutorial validation, Vulkan validation layers, Streamline diagnostics, and FidelityFX-style feature reporting as references, run the full D3D12/Vulkan validation suite for build, shader compiler, launcher, smoke validation, lit captures, normal/debug captures, ray tracing, DLSS/upscaling, frame graph diagnostics, PSO runtime logs, and boundary checks. Record artifacts and compare against the architecture rubric.
+Using Donut Samples, NVRHI tutorial validation, Vulkan validation layers, Streamline diagnostics, FidelityFX-style feature reporting, and the local validation workflow contract as references, run the full D3D12/Vulkan validation suite for build, shader compiler, launcher, smoke validation, lit captures, normal/debug captures, ray tracing, DLSS/upscaling, frame graph diagnostics, PSO runtime logs, and boundary checks. Use Launcher or LauncherCore plan execution for user-facing launch validation whenever practical; direct execution must mirror the launcher plan and be recorded as launcher-shaped. Record artifacts and compare against the architecture rubric.
 ```
 
 Positive guardrails:
@@ -2077,18 +2099,21 @@ Positive guardrails:
 - Capture lit and normal/debug outputs.
 - Check logs for PSO keys, shader package IDs, backend capability reports, DLSS provider status, RT capability status, and frame graph diagnostics.
 - Keep exact commands and artifact paths.
+- Keep launch validation aligned with launcher operation planning: project, target, profile, working directory, smoke environment, log path, and artifacts.
 
 Negative guardrails:
 
 - Do not accept visual parity based only on memory.
 - Do not ignore validation warnings that indicate contract drift.
 - Do not hide known differences; document them with reason and owner.
+- Do not use private direct-launch habits as final evidence when the launcher path would use different readiness checks, environment, working directory, or artifact locations.
 
 Data transfer contracts:
 
 - Final graphics evidence transfers through build logs, smoke logs, captures, PSO logs, shader package reports, capability reports, and coverage-status updates.
 - Each artifact must name producer command, backend, project/scene, output path, and consumer reviewer doc.
 - Known differences transfer into docs as owned issues with reason and follow-up, not as unstated acceptance gaps.
+- Launcher evidence transfers through operation records, dry-run/plan fields, process logs, smoke artifacts, and coverage-status updates.
 
 Suggested validation:
 

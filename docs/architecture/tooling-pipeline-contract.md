@@ -9,6 +9,7 @@ Last synchronized: 2026-06-13
 This document defines the architecture contract for Sparkle's developer tools and content pipeline. It exists so RHI/Renderer refactors do not silently break shader cooking, texture cooking, asset cooking, launcher workflows, or source import.
 
 Target folder structure for these tools is tracked in [after/repository-target-folder-architecture.md](after/repository-target-folder-architecture.md).
+Validation workflow shape is tracked in [validation-workflow-contract.md](validation-workflow-contract.md).
 
 Reference basis:
 
@@ -174,6 +175,8 @@ When RHI or Renderer changes, check:
 ## Launcher Smoke Contract
 
 Launcher smoke workflows transfer validation data through launch request fields and environment variables rather than Application internals.
+
+Runtime/editor smoke validation should be launcher-first. A direct executable run is valid milestone evidence only when it mirrors the launcher plan: `RunProject`, project target/profile, `Projects/<ProjectId>` working directory, smoke environment, log path, and artifact paths. The reusable rules live in [validation-workflow-contract.md](validation-workflow-contract.md).
 
 | Launcher request field | Environment variable | Consumer | Notes |
 | --- | --- | --- | --- |
