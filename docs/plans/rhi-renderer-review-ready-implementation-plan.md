@@ -53,7 +53,6 @@ Current code evidence used while writing this plan:
 - `Engine/RHI/Public/Commands/RenderCommandList.h`
 - `Engine/RHI/Public/Pipeline/RhiPipelineStateDesc.h`
 - `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp`
-- `Engine/Renderer/ShaderRegistrations/RendererGlobalShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp`
 - `Engine/Renderer/Public/Renderer.h`
 - `Engine/Renderer/Private/Renderer.cpp`
@@ -784,14 +783,13 @@ External implementation references:
 Code references:
 
 - `Engine/RHI/Private/Shaders/BuiltinGlobalShaders.cpp`
-- `Engine/Renderer/ShaderRegistrations/RendererGlobalShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/GBufferShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/DirectLightingShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/IndirectLightingShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/LightingCompositeShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/SkyShaders.cpp`
 - `Engine/Renderer/ShaderRegistrations/VisualizeBuffersShaders.cpp`
-- `Engine/RHI/Private/Shaders/ComputeClearShader.cpp`
+- `Engine/Renderer/ShaderRegistrations/ComputeClearShader.cpp`
 - `Engine/Renderer/Private/Passes`
 - `Engine/Renderer/Private/Passes/RenderPassDefinition.h`
 - `Engine/Renderer/Private/Pipeline/RenderPassDefinitionRuntime.h`
@@ -2172,7 +2170,7 @@ Data transfer contracts:
 
 Legacy cleanup:
 
-- Remove manual central registration calls when a generated/manifest pass catalog can enumerate registrations deterministically.
+- Keep manual central renderer registration calls deleted; future manifest/catalog work must not reintroduce another hand-written central registration list.
 - Remove duplicate package/debug-name/string constants that can be derived from the pass authoring record.
 - Delete unused pass-specific helper skeletons if the shared dispatch/draw helpers cover the ordinary case with better diagnostics.
 
@@ -2549,6 +2547,16 @@ Validation:
 
 - Docs/link scan with `rg`.
 - No build required.
+
+Execution status:
+
+| Field | Evidence |
+| --- | --- |
+| Status | Fully completed. |
+| Coverage freeze | [repository-coverage-status.md](../architecture/repository-coverage-status.md) contains the Stage 23 coverage freeze matrix for Engine, Tools, Projects, CMake, `.github/workflows`, `docs/architecture`, `docs/plans`, and `External/NVIDIA`. |
+| Dependency intent | [repository-system-map.md](../architecture/repository-system-map.md) contains the Stage 23 dependency-intent table for Core, Platform, RHI, Renderer, GameFramework, Editor/Application, Tools, LauncherCore, CMake/CI, and Projects. |
+| Acceptance evidence | Every Stage 23 coverage row names owner, producer/consumer role, allowed dependencies, forbidden dependencies, validation target, active refactor stage, and final acceptance evidence. Rendering detail remains delegated to [rendering-coverage-status.md](../architecture/rendering-coverage-status.md). |
+| Validation | Docs-only validation used `rg` scans for Stage 23 rows, dependency-intent text, vague bucket names, and rows pointing only at final evidence stages. No build was required. |
 
 ## Stage 24 - Core And Platform Foundation Boundary Refactor
 

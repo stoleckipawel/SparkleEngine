@@ -136,6 +136,24 @@ Notes:
 - `Renderer --> GameFramework` exists today while renderer consumes scene and asset state. The target direction is immutable render-domain snapshots and DTOs so renderer refactors do not mutate gameplay ownership.
 - `Tools --> GameFramework` exists for public imported/cooked data contracts. Tools must not depend on GameFramework private runtime loading policy.
 
+## Stage 23 Dependency Intent
+
+The detailed source-root freeze lives in [repository-coverage-status.md](repository-coverage-status.md). This table is the broad edge policy used before stages 24-33 move code.
+
+| Edge family | Allowed contact | Forbidden contact | Data transfer shape |
+| --- | --- | --- | --- |
+| `Core -> all modules` | Core may provide foundation primitives, diagnostics, math, file/string/event/time/input value types. | Core must not include Platform, RHI, Renderer, GameFramework, Editor, Application, or Tools policy. | Plain value types, diagnostics records, file/path helpers, event primitives. |
+| `Platform -> Core` | Platform may consume Core and OS/window/input APIs. | Platform must not own renderer frame graph, RHI backend details, editor workflow, or tool policy. | Window/input events and platform state packets. |
+| `RHI -> Core/Platform` | RHI may consume Core, Platform, backend SDKs inside backend folders, and RHI-owned third-party allocators. | RHI must not include `Engine/Renderer/Private`, GameFramework gameplay objects, Application validation bodies, or `Tools/*`. | Public RHI descriptors, handles, service requests, capability reports, command lists, diagnostics. |
+| `Renderer -> RHI` | Renderer may consume public RHI services and descriptors. | Renderer must not include D3D12/Vulkan private headers outside documented provider integration. | Frame graph plans, resource/view descriptors, pipeline keys, command-recording contexts. |
+| `Renderer -> GameFramework` | Renderer may consume immutable render-domain snapshots/DTOs and cooked runtime records. | Renderer must not mutate live gameplay state or import/cook source structures. | Render scene snapshots, mesh/material/camera/light DTOs, temporal frame inputs. |
+| `GameFramework -> Core/Platform/public schemas` | GameFramework may own runtime scenes, levels, cooked loading, and public asset contracts. | GameFramework must not depend on `Engine/Renderer/Private`, `Engine/RHI/Private`, or `Tools/*`. | Runtime scene state, cooked asset records, renderer-facing snapshots. |
+| `Editor/Application -> public Engine APIs` | Hosts may orchestrate lifecycle, UI, validation, presentation, and public renderer/RHI services. | Hosts must not own backend-native capture, renderer-private transitions, cook/import algorithms, or vendor SDK policy. | Host requests, viewport/presentation DTOs, validation configs, smoke evidence. |
+| `Tools -> public contracts` | Tools may consume public cooked/import/shader schemas and focused tool libraries. | Tools must not depend on runtime private implementation, renderer private systems, or RHI backend-private headers. | Source DTOs, cooked artifacts, shader packages, reports, process exit evidence. |
+| `LauncherCore -> tools/processes` | LauncherCore may plan and execute build/cook/launch/process requests. | LauncherCore and Qt widgets must not implement cook/import/shader/render algorithms. | Process requests, environment packets, operation reports, history records. |
+| `CMake/CI -> targets` | Build/CI may encode target usage requirements and local-equivalent validation commands. | Build/CI must not hide architecture by broad public include/link scopes or CI-only behavior. | `PUBLIC`/`PRIVATE`/`INTERFACE` target links, artifact paths, validation commands. |
+| `Projects -> public Engine` | Projects may consume public engine modules and project-local source/content. | Projects must not include private engine/tool internals or store generated logs as source. | Project manifests, source assets, cooked outputs, smoke artifacts. |
+
 ## Source Roots
 
 | Root | Owner | Does own | Must not own |
@@ -155,6 +173,8 @@ Notes:
 | [Projects](../../Projects) | Sample project content | Runnable project manifests, assets, showcase content. | Engine/tool architecture policy. |
 | [CMake](../../CMake) | Build infrastructure | Profiles, dependency fetch, Qt discovery, artifacts, release assembly, validation targets. | Runtime logic or durable generated artifacts. |
 | [.github](../../.github) | CI workflow | Repeatable validation wiring. | Local-only machine state. |
+| [docs](../) | Architecture and execution records | Architecture contracts, coverage maps, target maps, stage prompts, tutor notes, and evidence routing. | Generated logs/artifacts, stale paths, or contradictory plans. |
+| [External/NVIDIA](../../External/NVIDIA) | Vendor SDK holding root | Vendor SDK inputs consumed by narrow provider/build integration when present. | Engine policy edits inside vendor code or broad runtime linkage. |
 
 ## Disposition-Driven Target Map
 
